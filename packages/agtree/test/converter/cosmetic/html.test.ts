@@ -43,150 +43,337 @@ describe('HtmlRuleConverter', () => {
 
         describe('from uBO - valid cases', () => {
             test.each([
+                // complex selector without special parts
                 {
-                    actual: '##^tag',
-                    expected: ['$$tag[max-length="262144"]'],
-                },
-                {
-                    actual: '##^tag[attr1="value1"][attr2=value2][attr3]',
-                    expected: ['$$tag[attr1="value1"][attr2="value2"][attr3][max-length="262144"]'],
-                },
-                {
-                    actual: '##^tag[min-length="1"]',
-                    expected: ['$$tag[min-length="1"][max-length="262144"]'],
-                },
-                {
-                    actual: '##^tag[max-length="10"]',
-                    expected: ['$$tag[max-length="10"]'],
-                },
-                {
-                    actual: '##^tag[tag-content="test"]',
-                    expected: ['$$tag[tag-content="test"][max-length="262144"]'],
-                },
-                {
-                    actual: '##^tag[tag-content="test1\\"test2"]',
-                    expected: ['$$tag[tag-content="test1""test2"][max-length="262144"]'],
-                },
-                {
-                    actual: '##^tag[wildcard="value"]',
-                    expected: ['$$tag[wildcard="value"][max-length="262144"]'],
-                },
-                {
+                    actual: '##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
                     // eslint-disable-next-line max-len
-                    actual: '##^tag[min-length="5"][max-length="15"][tag-content="example"][attr="val"][wildcard="value"]',
-                    // eslint-disable-next-line max-len
-                    expected: ['$$tag[attr="val"][wildcard="value"][tag-content="example"][min-length="5"][max-length="15"]'],
+                    expected: ['$$div[attr="value"][max-length="262144"] + span:nth-child(2)[max-length="262144"] > a[href^="https"]:not(.className)[max-length="262144"]'],
                 },
+
+                // `:min-text-length()` special pseudo class
                 {
-                    actual: '##^tag:min-text-length(1)',
-                    expected: ['$$tag[min-length="1"][max-length="262144"]'],
+                    actual: '##^div:min-text-length(10)',
+                    expected: ['$$div[min-length="10"][max-length="262144"]'],
                 },
+
+                // `:has-text()` special pseudo class
                 {
-                    actual: '##^tag:has-text(test)',
-                    expected: ['$$tag[tag-content="test"][max-length="262144"]'],
+                    actual: '##^div:has-text(example)',
+                    expected: ['$$div[tag-content="example"][max-length="262144"]'],
                 },
+
+                // `:has-text()` special pseudo class - double quotes are handled
                 {
-                    actual: '##^tag:has-text(test1\\"test2)',
-                    expected: ['$$tag[tag-content="test1""test2"][max-length="262144"]'],
+                    actual: '##^div:has-text("example")',
+                    expected: ['$$div[tag-content="example"][max-length="262144"]'],
                 },
+
+                // `:has-text()` special pseudo class - single quotes are handled
                 {
-                    actual: '##^tag:contains(test)',
-                    expected: ['$$tag[tag-content="test"][max-length="262144"]'],
+                    actual: "##^div:has-text('example')",
+                    expected: ['$$div[tag-content="example"][max-length="262144"]'],
                 },
+
+                // mix of multiple `[min-length]` special attributes - latter takes precedence
                 {
-                    actual: '##^tag:contains(test1\\"test2)',
-                    expected: ['$$tag[tag-content="test1""test2"][max-length="262144"]'],
+                    actual: '##^div[min-length="5"][min-length="10"]',
+                    expected: ['$$div[min-length="10"][max-length="262144"]'],
                 },
+
+                // mix of multiple `[min-length]` special attributes - latter takes precedence
                 {
-                    actual: '##^tag[min-length="1"]:min-text-length(2)',
-                    expected: ['$$tag[min-length="2"][max-length="262144"]'],
+                    actual: '##^div[min-length="10"][min-length="5"]',
+                    expected: ['$$div[min-length="5"][max-length="262144"]'],
                 },
+
+                // mix of multiple `:min-text-length()` special pseudo classes - latter takes precedence
                 {
-                    actual: '##^tag[tag-content="test1"]:has-text(test2)',
-                    expected: ['$$tag[tag-content="test2"][max-length="262144"]'],
+                    actual: '##^div:min-text-length(5):min-text-length(10)',
+                    expected: ['$$div[min-length="10"][max-length="262144"]'],
                 },
+
+                // mix of multiple `:min-text-length()` special pseudo classes - latter takes precedence
                 {
-                    actual: '##^tag[tag-content="test1"]:contains(test2)',
-                    expected: ['$$tag[tag-content="test2"][max-length="262144"]'],
+                    actual: '##^div:min-text-length(10):min-text-length(5)',
+                    expected: ['$$div[min-length="5"][max-length="262144"]'],
                 },
+
+                // mix of `[min-length]` special attribute
+                // and `:min-text-length()` special pseudo class
+                // latter takes precedence
                 {
-                    actual: '##^tag1[attr1="value1"], tag2[attr2="value2"], tag3[attr3="value3"]',
-                    expected: [
-                        '$$tag1[attr1="value1"][max-length="262144"]',
-                        '$$tag2[attr2="value2"][max-length="262144"]',
-                        '$$tag3[attr3="value3"][max-length="262144"]',
-                    ],
+                    actual: '##^div[min-length="5"]:min-text-length(10)',
+                    expected: ['$$div[min-length="10"][max-length="262144"]'],
                 },
-            ])('should convert \'$input\' to \'$expected\'', (testData) => {
+
+                // mix of `:min-text-length()` special pseudo class
+                // and `[min-length]` special attribute
+                // latter takes precedence
+                {
+                    actual: '##^div:min-text-length(10)[min-length="5"]',
+                    expected: ['$$div[min-length="5"][max-length="262144"]'],
+                },
+
+                // mix of multiple `[tag-content]` special attributes - latter takes precedence
+                {
+                    actual: '##^div[tag-content="a"][tag-content="b"]',
+                    expected: ['$$div[tag-content="b"][max-length="262144"]'],
+                },
+
+                // mix of multiple `[tag-content]` special attributes - latter takes precedence
+                {
+                    actual: '##^div[tag-content="b"][tag-content="a"]',
+                    expected: ['$$div[tag-content="a"][max-length="262144"]'],
+                },
+
+                // mix of multiple `:has-text()` special pseudo classes - latter takes precedence
+                {
+                    actual: '##^div:has-text(a):has-text(b)',
+                    expected: ['$$div[tag-content="b"][max-length="262144"]'],
+                },
+
+                // mix of multiple `:has-text()` special pseudo classes - latter takes precedence
+                {
+                    actual: '##^div:has-text(b):has-text(a)',
+                    expected: ['$$div[tag-content="a"][max-length="262144"]'],
+                },
+
+                // mix of `[tag-content]` special attribute
+                // and `:has-text()` special pseudo class
+                // latter takes precedence
+                {
+                    actual: '##^div[tag-content="a"]:has-text(b)',
+                    expected: ['$$div[tag-content="b"][max-length="262144"]'],
+                },
+
+                // mix of `:has-text()` special pseudo class
+                // and `[tag-content]` special attribute
+                // latter takes precedence
+                {
+                    actual: '##^div[tag-content="b"]:has-text(a)',
+                    expected: ['$$div[tag-content="a"][max-length="262144"]'],
+                },
+            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
             });
         });
 
         describe('from uBO - invalid cases', () => {
             test.each<InvalidTestData>([
+                /* Common cases */
+                // invalid body - empty selector list
                 {
                     input: {
                         body: {
-                            selectors: [],
+                            children: [],
                         },
                     } as unknown as HtmlFilteringRule,
-                    error: 'Invalid HTML filtering rule: Rule must contain at least one selector',
+                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one selector list',
                 },
+
+                // invalid selector list - empty selector in selector list
                 {
-                    input: '##^tag[attr="value" i]',
-                    error: 'Attribute selector value with flags is not supported',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one selector in selector list',
                 },
+
+                // invalid selector - empty parts in selector
                 {
-                    input: '##^tag[min-length]',
-                    error: 'Attribute selector \'min-length\' requires a value',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [],
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one part in selector',
                 },
+
+                // invalid selector - combinator in first selector
                 {
-                    input: '##^tag[max-length]',
-                    error: 'Attribute selector \'max-length\' requires a value',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{}],
+                                    combinator: {},
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: First selector cannot start with a combinator',
                 },
+
+                // invalid selector - missing combinator between selectors
                 {
-                    input: '##^tag[wildcard]',
-                    error: 'Attribute selector \'wildcard\' requires a value',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{
+                                        type: 'Value',
+                                        value: 'div',
+                                    }],
+                                }, {
+                                    children: [{}],
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: Missing combinator between selectors',
                 },
+
+                // invalid attribute - operator without value
                 {
-                    input: '##^tag[tag-content]',
-                    error: 'Attribute selector \'tag-content\' requires a value',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{
+                                        type: 'HtmlFilteringRuleSelectorAttribute',
+                                        operator: {},
+                                    }],
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: Attribute selector operator specified without a value',
                 },
+
+                // invalid attribute - flag without value
                 {
-                    input: '##^tag[min-length="test"]',
-                    error: 'The value of attribute selector \'min-length\' must be an integer, got \'test\'',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{
+                                        type: 'HtmlFilteringRuleSelectorAttribute',
+                                        flag: {},
+                                    }],
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: Attribute selector flag specified without a value',
                 },
+
+                // invalid attribute - value without operator
                 {
-                    input: '##^tag[max-length="test"]',
-                    error: 'The value of attribute selector \'max-length\' must be an integer, got \'test\'',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{
+                                        type: 'HtmlFilteringRuleSelectorAttribute',
+                                        value: {},
+                                    }],
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: Attribute selector value specified without an operator',
                 },
+
+                // invalid pseudo class - argument without flag
                 {
-                    input: '##^tag[min-length="-1"]',
-                    error: 'The value of attribute selector \'min-length\' must be a positive integer, got \'-1\'',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{
+                                        type: 'HtmlFilteringRuleSelectorPseudoClass',
+                                        argument: {},
+                                    }],
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: Non-function pseudo class cannot have an argument',
                 },
+
+                // invalid special attribute - value not provided
                 {
-                    input: '##^tag[max-length="-1"]',
-                    error: 'The value of attribute selector \'max-length\' must be a positive integer, got \'-1\'',
+                    input: '##^[tag-content]',
+                    error: 'Special attribute selector \'tag-content\' requires a value',
                 },
+
+                // invalid special attribute - invalid operator
                 {
-                    input: '##^tag:some-pseudo()',
-                    error: 'Pseudo class \'some-pseudo\' is not supported',
+                    input: '##^[tag-content~="value"]',
+                    error: 'Special attribute selector \'tag-content\' has invalid operator \'~=\'',
                 },
+
+                // invalid special attribute - flag provided
                 {
-                    input: '##^tag:has-text(/some-regexp/)',
-                    error: 'Regular expressions are not supported in the pseudo class content \'has-text\'',
+                    input: '##^[tag-content="value" i]',
+                    error: 'Special attribute selector \'tag-content\' does not support flags',
                 },
+
+                // invalid special attribute - length value not number
                 {
-                    input: '##^tag:contains(/some-regexp/)',
-                    error: 'Regular expressions are not supported in the pseudo class content \'contains\'',
+                    input: '##^[min-length="abc"]',
+                    error: 'Value of special attribute selector \'min-length\' must be an integer, got \'abc\'',
                 },
+
+                // invalid special attribute - length value negative
                 {
-                    input: '##^tag:min-text-length()',
-                    error: 'Pseudo class \'min-text-length\' requires a content value',
+                    input: '##^[min-length="-1"]',
+                    error: 'Value of special attribute selector \'min-length\' must be a positive integer, got \'-1\'',
                 },
+
+                // invalid special pseudo class - argument missing
                 {
-                    input: '##^tag:min-text-length(   )',
-                    error: 'Pseudo class \'min-text-length\' requires a content value',
+                    input: '##^:has-text()',
+                    error: 'Special pseudo class \'has-text\' requires an argument',
+                },
+
+                // invalid special pseudo class - length value not number
+                {
+                    input: '##^:min-text-length(abc)',
+                    error: 'Argument of special pseudo class \'min-text-length\' must be an integer, got \'abc\'',
+                },
+
+                // invalid special pseudo class - length value not number
+                {
+                    input: '##^:min-text-length(-1)',
+                    // eslint-disable-next-line max-len
+                    error: 'Argument of special pseudo class \'min-text-length\' must be a positive integer, got \'-1\'',
+                },
+
+                // invalid selector - only special parts
+                {
+                    input: '##^[min-length="10"]:has-text("example")',
+                    error: 'Selector cannot contain only special attribute selectors or pseudo classes',
+                },
+
+                /* uBO -> ADG specific cases */
+                // can't convert `:contains()` pseudo class
+                {
+                    input: '##^:contains("example")',
+                    error: 'Special pseudo class \'contains\' is not supported in conversion',
+                },
+
+                // can't convert regexp in `:has-text()` pseudo class
+                {
+                    input: '##^:has-text(/example/)',
+                    // eslint-disable-next-line max-len
+                    error: 'Argument of special pseudo class \'has-text\' is a regular expression, which is not supported',
                 },
             ])('should not convert \'$input\'', ({ input, error }) => {
                 if (typeof input !== 'string') {
@@ -223,117 +410,323 @@ describe('HtmlRuleConverter', () => {
 
         describe('from ADG - valid cases', () => {
             test.each([
+                // complex selector without special parts
                 {
-                    actual: '$$tag',
-                    expected: ['##^tag'],
+                    actual: '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                    expected: ['##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
                 },
+
+                // `[min-length]` special attribute
                 {
-                    actual: '$$tag[attr1="value1"][attr2=value2][attr3]',
-                    expected: ['##^tag[attr1="value1"][attr2="value2"][attr3]'],
+                    actual: '$$div[min-length="10"]',
+                    expected: ['##^div:min-text-length(10)'],
                 },
+
+                // `[max-length]` special attribute is ignored during conversion
                 {
-                    actual: '$$tag[min-length="5"]',
-                    expected: ['##^tag:min-text-length(5)'],
+                    actual: '$$div[max-length="100"]',
+                    expected: ['##^div'],
                 },
+
+                // `[tag-content]` special attribute
                 {
-                    actual: '$$tag[max-length="262144"]',
-                    expected: ['##^tag'],
+                    actual: '$$div[tag-content="example"]',
+                    expected: ['##^div:has-text(example)'],
                 },
+
+                // mix of multiple `[min-length]` special attributes - latter takes precedence
                 {
-                    actual: '$$tag[tag-content="test"]',
-                    expected: ['##^tag:has-text(test)'],
+                    actual: '$$div[min-length="5"][min-length="10"]',
+                    expected: ['##^div:min-text-length(10)'],
                 },
+
+                // mix of multiple `[min-length]` special attributes - latter takes precedence
                 {
-                    actual: '$$tag[tag-content="test1""test2"]',
-                    expected: ['##^tag:has-text(test1\\"test2)'],
+                    actual: '$$div[min-length="10"][min-length="5"]',
+                    expected: ['##^div:min-text-length(5)'],
                 },
+
+                // mix of multiple `:min-text-length()` special pseudo classes - latter takes precedence
                 {
-                    actual: '$$tag[min-length="10"][tag-content="test"]',
-                    expected: ['##^tag:min-text-length(10):has-text(test)'],
+                    actual: '$$div:min-text-length(5):min-text-length(10)',
+                    expected: ['##^div:min-text-length(10)'],
                 },
+
+                // mix of multiple `:min-text-length()` special pseudo classes - latter takes precedence
                 {
-                    actual: '$$tag[min-length="10"][tag-content="test1""test2"]',
-                    expected: ['##^tag:min-text-length(10):has-text(test1\\"test2)'],
+                    actual: '$$div:min-text-length(10):min-text-length(5)',
+                    expected: ['##^div:min-text-length(5)'],
                 },
-            ])('should convert \'$input\' to \'$expected\'', (testData) => {
+
+                // mix of `[min-length]` special attribute
+                // and `:min-text-length()` special pseudo class
+                // latter takes precedence
+                {
+                    actual: '$$div[min-length="5"]:min-text-length(10)',
+                    expected: ['##^div:min-text-length(10)'],
+                },
+
+                // mix of `:min-text-length()` special pseudo class
+                // and `[min-length]` special attribute
+                // latter takes precedence
+                {
+                    actual: '$$div:min-text-length(10)[min-length="5"]',
+                    expected: ['##^div:min-text-length(5)'],
+                },
+
+                // mix of multiple `[tag-content]` special attributes - latter takes precedence
+                {
+                    actual: '$$div[tag-content="a"][tag-content="b"]',
+                    expected: ['##^div:has-text(b)'],
+                },
+
+                // mix of multiple `[tag-content]` special attributes - latter takes precedence
+                {
+                    actual: '$$div[tag-content="b"][tag-content="a"]',
+                    expected: ['##^div:has-text(a)'],
+                },
+
+                // mix of multiple `:has-text()` special pseudo classes - latter takes precedence
+                {
+                    actual: '$$div:has-text(a):has-text(b)',
+                    expected: ['##^div:has-text(b)'],
+                },
+
+                // mix of multiple `:has-text()` special pseudo classes - latter takes precedence
+                {
+                    actual: '$$div:has-text(b):has-text(a)',
+                    expected: ['##^div:has-text(a)'],
+                },
+
+                // mix of `[tag-content]` special attribute
+                // and `:has-text()` special pseudo class
+                // latter takes precedence
+                {
+                    actual: '$$div[tag-content="a"]:has-text(b)',
+                    expected: ['##^div:has-text(b)'],
+                },
+
+                // mix of `:has-text()` special pseudo class
+                // and `[tag-content]` special attribute
+                // latter takes precedence
+                {
+                    actual: '$$div[tag-content="b"]:has-text(a)',
+                    expected: ['##^div:has-text(a)'],
+                },
+            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToUbo');
             });
         });
 
         describe('from ADG - invalid cases', () => {
             test.each<InvalidTestData>([
+                /* Common cases */
+                // invalid body - empty selector list
                 {
                     input: {
                         body: {
-                            selectors: [],
+                            children: [],
                         },
                     } as unknown as HtmlFilteringRule,
-                    // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: AdGuard HTML filtering rules support only one selector per rule, got 0 selectors',
+                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one selector list',
                 },
+
+                // invalid selector list - empty selector in selector list
                 {
                     input: {
                         body: {
-                            selectors: [{}, {}],
-                        },
-                    } as unknown as HtmlFilteringRule,
-                    // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: AdGuard HTML filtering rules support only one selector per rule, got 2 selectors',
-                },
-                {
-                    input: {
-                        body: {
-                            selectors: [{
-                                pseudoClasses: [{}],
+                            children: [{
+                                children: [],
                             }],
                         },
                     } as unknown as HtmlFilteringRule,
-                    error: 'Invalid HTML filtering rule: AdGuard HTML filtering rules do not support pseudo classes',
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one selector in selector list',
                 },
+
+                // invalid selector - empty parts in selector
                 {
                     input: {
                         body: {
-                            selectors: [{
-                                attributes: [{
-                                    flags: {},
+                            children: [{
+                                children: [{
+                                    children: [],
                                 }],
-                                pseudoClasses: [],
                             }],
                         },
                     } as unknown as HtmlFilteringRule,
-                    error: 'Invalid HTML filtering rule: Attribute selector value with flags is not supported',
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one part in selector',
                 },
+
+                // invalid selector - combinator in first selector
                 {
-                    input: '$$tag[min-length]',
-                    error: 'Attribute selector \'min-length\' requires a value',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{}],
+                                    combinator: {},
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: First selector cannot start with a combinator',
                 },
+
+                // invalid selector - missing combinator between selectors
                 {
-                    input: '$$tag[max-length]',
-                    error: 'Attribute selector \'max-length\' requires a value',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{
+                                        type: 'Value',
+                                        value: 'div',
+                                    }],
+                                }, {
+                                    children: [{}],
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: Missing combinator between selectors',
                 },
+
+                // invalid attribute - operator without value
                 {
-                    input: '$$tag[wildcard]',
-                    error: 'Attribute selector \'wildcard\' requires a value',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{
+                                        type: 'HtmlFilteringRuleSelectorAttribute',
+                                        operator: {},
+                                    }],
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: Attribute selector operator specified without a value',
                 },
+
+                // invalid attribute - flag without value
                 {
-                    input: '$$tag[tag-content]',
-                    error: 'Attribute selector \'tag-content\' requires a value',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{
+                                        type: 'HtmlFilteringRuleSelectorAttribute',
+                                        flag: {},
+                                    }],
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: Attribute selector flag specified without a value',
                 },
+
+                // invalid attribute - value without operator
                 {
-                    input: '$$tag[min-length="test"]',
-                    error: 'The value of attribute selector \'min-length\' must be an integer, got \'test\'',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{
+                                        type: 'HtmlFilteringRuleSelectorAttribute',
+                                        value: {},
+                                    }],
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: Attribute selector value specified without an operator',
                 },
+
+                // invalid pseudo class - argument without flag
                 {
-                    input: '$$tag[max-length="test"]',
-                    error: 'The value of attribute selector \'max-length\' must be an integer, got \'test\'',
+                    input: {
+                        body: {
+                            children: [{
+                                children: [{
+                                    children: [{
+                                        type: 'HtmlFilteringRuleSelectorPseudoClass',
+                                        argument: {},
+                                    }],
+                                }],
+                            }],
+                        },
+                    } as unknown as HtmlFilteringRule,
+                    // eslint-disable-next-line max-len
+                    error: 'Invalid HTML filtering rule: Non-function pseudo class cannot have an argument',
                 },
+
+                // invalid special attribute - value not provided
                 {
-                    input: '$$tag[min-length="-1"]',
-                    error: 'The value of attribute selector \'min-length\' must be a positive integer, got \'-1\'',
+                    input: '$$[tag-content]',
+                    error: 'Special attribute selector \'tag-content\' requires a value',
                 },
+
+                // invalid special attribute - invalid operator
                 {
-                    input: '$$tag[max-length="-1"]',
-                    error: 'The value of attribute selector \'max-length\' must be a positive integer, got \'-1\'',
+                    input: '$$[tag-content~="value"]',
+                    error: 'Special attribute selector \'tag-content\' has invalid operator \'~=\'',
+                },
+
+                // invalid special attribute - flag provided
+                {
+                    input: '$$[tag-content="value" i]',
+                    error: 'Special attribute selector \'tag-content\' does not support flags',
+                },
+
+                // invalid special attribute - length value not number
+                {
+                    input: '$$[min-length="abc"]',
+                    error: 'Value of special attribute selector \'min-length\' must be an integer, got \'abc\'',
+                },
+
+                // invalid special attribute - length value negative
+                {
+                    input: '$$[min-length="-1"]',
+                    error: 'Value of special attribute selector \'min-length\' must be a positive integer, got \'-1\'',
+                },
+
+                // invalid special pseudo class - argument missing
+                {
+                    input: '$$:has-text()',
+                    error: 'Special pseudo class \'has-text\' requires an argument',
+                },
+
+                // invalid special pseudo class - length value not number
+                {
+                    input: '$$:min-text-length(abc)',
+                    error: 'Argument of special pseudo class \'min-text-length\' must be an integer, got \'abc\'',
+                },
+
+                // invalid special pseudo class - length value not number
+                {
+                    input: '$$:min-text-length(-1)',
+                    // eslint-disable-next-line max-len
+                    error: 'Argument of special pseudo class \'min-text-length\' must be a positive integer, got \'-1\'',
+                },
+
+                // invalid selector - only special parts
+                {
+                    input: '$$[min-length="10"]:has-text("example")',
+                    error: 'Selector cannot contain only special attribute selectors or pseudo classes',
+                },
+
+                /* ADG -> uBO specific cases */
+                // can't convert `[wildcard]` attribute
+                {
+                    input: '$$[wildcard="example"]',
+                    error: 'Special attribute selector \'wildcard\' is not supported in conversion',
                 },
             ])('should not convert \'$input\'', ({ input, error }) => {
                 if (typeof input !== 'string') {

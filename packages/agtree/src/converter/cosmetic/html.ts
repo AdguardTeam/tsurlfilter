@@ -22,6 +22,7 @@ import { RegExpUtils } from '../../utils/regexp';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode } from '../../ast-utils/clone';
 import { EQUALS } from '../../utils/constants';
+import { QuoteUtils } from '../../utils';
 
 /**
  * From the AdGuard docs:
@@ -241,7 +242,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                             // Note, it's safe to assert that argument node is not null,
                             // because it's validated inside `assertValidSpecialPseudoClass`
-                            const argument = part.argument!.value;
+                            const argument = QuoteUtils.removeQuotesAndUnescape(part.argument!.value);
 
                             if (name === PseudoClasses.MinTextLength) {
                                 HtmlRuleConverter.assertValidLengthValue(
@@ -433,7 +434,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                             // Note, it's safe to assert that argument node is not null,
                             // because it's validated inside `assertValidSpecialPseudoClass`
-                            const argument = part.argument!.value;
+                            const argument = QuoteUtils.removeQuotesAndUnescape(part.argument!.value);
 
                             /**
                              * Record found special pseudo class selectors in case

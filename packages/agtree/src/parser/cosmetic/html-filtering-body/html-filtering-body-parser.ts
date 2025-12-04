@@ -11,19 +11,17 @@ import {
 import { BaseParser } from '../../base-parser';
 import { CssTokenStream, type TokenData } from '../../css/css-token-stream';
 import { defaultParserOptions, type ParserOptions } from '../../options';
-import { QuoteType, QuoteUtils } from '../../../utils/quotes';
+import { QuoteUtils } from '../../../utils/quotes';
 import {
     ASTERISK,
     CARET,
     COMMA,
     DOLLAR_SIGN,
     DOT,
-    DOUBLE_QUOTE,
     EQUALS,
     GREATER_THAN,
     PIPE,
     PLUS,
-    SINGLE_QUOTE,
     SPACE,
     TILDE,
 } from '../../../utils/constants';
@@ -744,38 +742,12 @@ export class HtmlFilteringBodyParser extends BaseParser {
             // Extract attribute value raw value
             const attributeValueRaw = stream.fragment();
 
-            // Get quote type of the attribute value
-            const quoteType = QuoteUtils.getStringQuoteType(attributeValueRaw);
-
             // We should unescape respective quotes inside of the string value
-            let attributeValueUnescaped: string;
-            switch (quoteType) {
-                // [attr='value \\' test'] -> value ' test
-                case QuoteType.Single:
-                    attributeValueUnescaped = QuoteUtils.unescapeSingleEscapedOccurrences(
-                        attributeValueRaw.slice(1, -1), // Remove surrounding quotes
-                        SINGLE_QUOTE,
-                    );
-                    break;
-
-                // [attr="value \\" test"] -> value " test
-                case QuoteType.Double:
-                    attributeValueUnescaped = QuoteUtils.unescapeSingleEscapedOccurrences(
-                        attributeValueRaw.slice(1, -1), // Remove surrounding quotes
-                        DOUBLE_QUOTE,
-                    );
-                    break;
-
-                // No quotes - no need to unescape anything
-                // Backticks are not supported in CSS selectors
-                default:
-                    attributeValueUnescaped = attributeValueRaw;
-                    break;
-            }
+            const attributeValueUnquotedAndUnescaped = QuoteUtils.removeQuotesAndUnescape(attributeValueRaw);
 
             // Construct attribute value node
             attributeNode.value = ValueParser.parse(
-                attributeValueUnescaped,
+                attributeValueUnquotedAndUnescaped,
                 options,
                 // Calculate attribute value start position (+1 if string to skip starting quote)
                 baseOffset + token.start + (isValueString ? 1 : 0),

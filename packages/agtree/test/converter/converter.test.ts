@@ -78,52 +78,26 @@ describe('Converter integration tests', () => {
         describe('should throw error on invalid uBO HTML filtering rules', () => {
             test.each([
                 {
-                    actual: '##^tag[attr="value" i]',
-                    expected: 'Attribute selector value with flags is not supported',
+                    actual: '##^:has-text()',
+                    expected: 'Special pseudo class \'has-text\' requires an argument',
                 },
                 {
-                    actual: '##^tag[min-length]',
-                    expected: 'Attribute selector \'min-length\' requires a value',
+                    actual: '##^:min-text-length(abc)',
+                    expected: 'Argument of special pseudo class \'min-text-length\' must be an integer, got \'abc\'',
                 },
                 {
-                    actual: '##^tag[max-length]',
-                    expected: 'Attribute selector \'max-length\' requires a value',
+                    actual: '##^:min-text-length(-1)',
+                    // eslint-disable-next-line max-len
+                    expected: 'Argument of special pseudo class \'min-text-length\' must be a positive integer, got \'-1\'',
                 },
                 {
-                    actual: '##^tag[wildcard]',
-                    expected: 'Attribute selector \'wildcard\' requires a value',
+                    actual: '##^:has-text("example")',
+                    expected: 'Selector cannot contain only special attribute selectors or pseudo classes',
                 },
                 {
-                    actual: '##^tag[tag-content]',
-                    expected: 'Attribute selector \'tag-content\' requires a value',
-                },
-                {
-                    actual: '##^tag[min-length="test"]',
-                    expected: 'The value of attribute selector \'min-length\' must be an integer, got \'test\'',
-                },
-                {
-                    actual: '##^tag[max-length="test"]',
-                    expected: 'The value of attribute selector \'max-length\' must be an integer, got \'test\'',
-                },
-                {
-                    actual: '##^tag[min-length="-1"]',
-                    expected: 'The value of attribute selector \'min-length\' must be a positive integer, got \'-1\'',
-                },
-                {
-                    actual: '##^tag[max-length="-1"]',
-                    expected: 'The value of attribute selector \'max-length\' must be a positive integer, got \'-1\'',
-                },
-                {
-                    actual: '##^tag:some-pseudo()',
-                    expected: 'Pseudo class \'some-pseudo\' is not supported',
-                },
-                {
-                    actual: '##^tag:has-text(/some-regexp/)',
-                    expected: 'Regular expressions are not supported in the pseudo class content \'has-text\'',
-                },
-                {
-                    actual: '##^tag:contains(/some-regexp/)',
-                    expected: 'Regular expressions are not supported in the pseudo class content \'contains\'',
+                    actual: '##^:has-text(/example/)',
+                    // eslint-disable-next-line max-len
+                    expected: 'Argument of special pseudo class \'has-text\' is a regular expression, which is not supported',
                 },
             ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
                 expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual))).toThrowError(
@@ -901,7 +875,7 @@ describe('Converter integration tests', () => {
                 // eslint-disable-next-line max-len
                     actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
                     expected: [
-                        'example.com,~example.net#@#^script:has-text(console.log(\\"doubles\\"))',
+                        'example.com,~example.net#@#^script:has-text(console.log("doubles"))',
                     ],
                     shouldConvert: true,
                 },
@@ -981,7 +955,7 @@ describe('Converter integration tests', () => {
                 // eslint-disable-next-line max-len
                     actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
                     expected: [
-                        'example.com,~example.net#@#^script:has-text(console.log(\\"doubles\\"))',
+                        'example.com,~example.net#@#^script:has-text(console.log("doubles"))',
                     ],
                     shouldConvert: true,
                 },
