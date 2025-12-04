@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - HTML filtering rules support in parser, generator, serializer,
   deserializer and converter for `AdGuard` and `uBlock` syntaxes [tsurlfilter#96].
-- Added combinators (` `, `>`, `+`, `~`, `,`) support for HTML filtering rules [tsurlfilter#96].
+- Added combinators (`<space>`, `>`, `+`, `~`, `,`) support for HTML filtering rules [tsurlfilter#96].
 - Added CSS-native pseudo-classes support for HTML filtering rules
   (e.g., `:nth-child()`, `:first-of-type`, etc.) [tsurlfilter#96].
 
