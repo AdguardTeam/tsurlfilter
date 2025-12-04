@@ -241,16 +241,30 @@ export class QuoteUtils {
      * @returns String without quotes
      */
     public static removeQuotesAndUnescape(string: string): string {
-        if (
-            // We should check for string length to avoid false positives
-            string.length > 1
-            && (string[0] === SINGLE_QUOTE || string[0] === DOUBLE_QUOTE || string[0] === BACKTICK_QUOTE)
-            && string[0] === string[string.length - 1]
-        ) {
-            return QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), string[0]);
-        }
+        const quoteType = QuoteUtils.getStringQuoteType(string);
 
-        return string;
+        switch (quoteType) {
+            case QuoteType.Single:
+                return QuoteUtils.unescapeSingleEscapedOccurrences(
+                    string.slice(1, -1),
+                    SINGLE_QUOTE,
+                );
+
+            case QuoteType.Double:
+                return QuoteUtils.unescapeSingleEscapedOccurrences(
+                    string.slice(1, -1),
+                    DOUBLE_QUOTE,
+                );
+
+            case QuoteType.Backtick:
+                return QuoteUtils.unescapeSingleEscapedOccurrences(
+                    string.slice(1, -1),
+                    BACKTICK_QUOTE,
+                );
+
+            default:
+                return string;
+        }
     }
 
     /**
