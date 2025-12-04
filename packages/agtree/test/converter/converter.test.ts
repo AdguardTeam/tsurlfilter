@@ -900,24 +900,6 @@ describe('Converter integration tests', () => {
                     ],
                     shouldConvert: true,
                 },
-                // FIXME: update test after clarification
-                // {
-                //     actual: String.raw`~example.com,google.com$$div[id="ad_text"][wildcard="*teasernet*tararar*"]`,
-                //     expected: [
-                //         String.raw`~example.com,google.com##^div[id="ad_text"][wildcard="*teasernet*tararar*"]`,
-                //     ],
-                //     shouldConvert: true,
-                // },
-                // FIXME: update test after clarification
-                // {
-                // eslint-disable-next-line max-len
-                //     actual: String.raw`~example.com,google.com$$div[id="ad_text"][tag-content="teas""ernet"][max-length="500"][min-length="50"][wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]`,
-                //     expected: [
-                // eslint-disable-next-line max-len
-                //         String.raw`~example.com,google.com##^div[id="ad_text"]:has-text(teas""ernet)[wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]:min-text-length(50)`,
-                //     ],
-                //     shouldConvert: true,
-                // },
                 {
                     // eslint-disable-next-line max-len
                     actual: String.raw`~example.com,google.com$$div[id="ad_text"][max-length="500000"][min-length="50"]`,
