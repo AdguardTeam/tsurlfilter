@@ -145,6 +145,8 @@ export interface IRuleSet {
      * output. If this parameter is provided, number of unsafe rules will be
      * excluded from the counter of declarative rules in the serialized metadata.
      *
+     * IMPORTANT: currently multiple filters in a single ruleset are not supported.
+     *
      * @returns Serialized rule set.
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.

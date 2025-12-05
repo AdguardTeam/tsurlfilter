@@ -1,4 +1,3 @@
-import { UNDERSCORE } from '../utils/constants';
 import { VALIDATION_ERROR_PREFIX } from './constants';
 
 /**
@@ -12,17 +11,6 @@ export type ValidationResult = {
     valid: boolean;
     error?: string;
     warn?: string;
-};
-
-/**
- * Validates the noop modifier (i.e. only underscores).
- *
- * @param value Value of the modifier.
- *
- * @returns True if the modifier is valid, false otherwise.
- */
-export const isValidNoopModifier = (value: string): boolean => {
-    return value.split('').every((char) => char === UNDERSCORE);
 };
 
 /**

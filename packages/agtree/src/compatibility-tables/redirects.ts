@@ -8,7 +8,7 @@ import { redirectsCompatibilityTableData } from './compatibility-table-data';
 import { type CompatibilityTable } from './types';
 import { deepFreeze } from '../utils/deep-freeze';
 import { COLON } from '../utils/constants';
-import { type GenericPlatform, type SpecificPlatform } from './platforms';
+import { type AnyPlatform } from './platforms';
 import { getResourceTypeModifier } from './utils/resource-type-helpers';
 import { isNull, isString, isUndefined } from '../utils/type-guards';
 
@@ -35,13 +35,17 @@ const redirectNameNormalizer = (name: string): string => {
         return name.slice(ABP_RESOURCE_PREFIX_LENGTH);
     }
 
-    // Remove :[integer] priority suffix from the name, if present
-    // See:
-    // - https://github.com/AdguardTeam/tsurlfilter/issues/59
-    // - https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
+    /**
+     * Remove :[integer] priority suffix from the name, if present.
+     *
+     * Note: negative values are also supported, see AG-48788.
+     *
+     * @see https://github.com/AdguardTeam/tsurlfilter/issues/59
+     * @see https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
+     */
     const colonIndex = name.lastIndexOf(COLON);
 
-    if (colonIndex !== -1 && /^\d+$/.test(name.slice(colonIndex + 1))) {
+    if (colonIndex !== -1 && /^-?\d+$/.test(name.slice(colonIndex + 1))) {
         return name.slice(0, colonIndex);
     }
 
@@ -66,13 +70,13 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
      * based on the `resourceTypes` field.
      *
      * @param redirect Redirect name or redirect data.
-     * @param platform Platform to get the modifiers for.
+     * @param platform Platform to get the modifiers for (can be specific, generic, or combined platforms).
      *
      * @returns Set of resource type modifiers or an empty set if the redirect is not found or has no resource types.
      */
     public getResourceTypeModifiers(
         redirect: string | RedirectDataSchema,
-        platform: SpecificPlatform | GenericPlatform,
+        platform: AnyPlatform,
     ): Set<string> {
         let redirectData: RedirectDataSchema | null = null;
 

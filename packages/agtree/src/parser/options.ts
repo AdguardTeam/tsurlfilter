@@ -3,6 +3,13 @@
  */
 
 /**
+ * Callback function type for handling parse errors in tolerant mode.
+ *
+ * @param error The error that occurred during parsing
+ */
+export type OnParseError = (error: unknown) => void;
+
+/**
  * Common options for all parsers.
  */
 export interface ParserOptions {
@@ -41,6 +48,11 @@ export interface ParserOptions {
      * Whether to parse host rules.
      */
     parseHostRules?: boolean;
+
+    /**
+     * Callback function to handle parse errors when tolerant mode is enabled.
+     */
+    onParseError?: OnParseError;
 }
 
 /**

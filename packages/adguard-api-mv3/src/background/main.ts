@@ -22,9 +22,18 @@ import {
     type MessageHandler,
     FilterListPreprocessor,
     LF,
+    type LocalScriptFunctionData,
 } from '@adguard/tswebextension/mv3';
 import { type Configuration, configurationValidator } from './configuration';
 import { RequestBlockingLogger } from './request-blocking-logger';
+
+export type AdguardApiParams = {
+    /**
+     * Local script rules data in JS format needed for validate unsafe script
+     * rules when UserScripts permission is not granted.
+     */
+    localScriptRulesJs?: LocalScriptFunctionData;
+};
 
 /**
  * AdGuard API is filtering library, provided following features:
@@ -53,12 +62,20 @@ export class AdguardApi {
     /**
      * Creates new AdguardApi instance.
      * @param tswebextension Instance of {@link TsWebExtension}.
+     * @param params Optional {@link AdguardApiParams} for AdguardApi.
      */
-    constructor(private readonly tswebextension: TsWebExtension) {
+    constructor(
+        private readonly tswebextension: TsWebExtension,
+        params?: AdguardApiParams,
+    ) {
         this.onAssistantCreateRule = this.tswebextension.onAssistantCreateRule;
         this.onRequestBlocked = new RequestBlockingLogger();
 
         this.openAssistant = this.openAssistant.bind(this);
+
+        if (params?.localScriptRulesJs) {
+            TsWebExtension.setLocalScriptRules(params.localScriptRulesJs);
+        }
     }
 
     /**
@@ -73,7 +90,9 @@ export class AdguardApi {
     /**
      * Initializes AdGuard with specified {@link Configuration} and starts it immediately.
      *
-     * @param configuration - Api {@link Configuration}.
+     * @param configuration Api {@link Configuration}.
+     *
+     * @throws Error if Adguard is not started.
      *
      * @returns Applied {@link Configuration} promise.
      */
@@ -82,7 +101,26 @@ export class AdguardApi {
 
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
-        await this.tswebextension.start(tsWebExtensionConfiguration);
+        const result = await this.tswebextension.start(tsWebExtensionConfiguration);
+
+        // Throw error if static filters failed to enable
+        if (result.staticFiltersStatus.errors.length > 0) {
+            throw new Error(
+                `Failed to enable rulesets: ${result.staticFiltersStatus.errors.map((e) => e.message).join(', ')}`,
+            );
+        }
+
+        // Log dynamic rules errors and limitations
+        if (result.dynamicRules) {
+            if (result.dynamicRules.errors.length > 0) {
+                // eslint-disable-next-line no-console
+                console.debug('Dynamic rules conversion errors:', result.dynamicRules.errors);
+            }
+            if (result.dynamicRules.limitations.length > 0) {
+                // eslint-disable-next-line no-console
+                console.debug('Dynamic rules were truncated:', result.dynamicRules.limitations);
+            }
+        }
 
         return this.configuration;
     }
@@ -97,7 +135,9 @@ export class AdguardApi {
     /**
      * Modifies AdGuard {@link Configuration}. Please note, that Adguard must be already started.
      *
-     * @param configuration - Api {@link Configuration}.
+     * @param configuration Api {@link Configuration}.
+     *
+     * @throws Error if Adguard is not started.
      *
      * @returns Applied {@link Configuration} promise.
      */
@@ -106,7 +146,26 @@ export class AdguardApi {
 
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
-        await this.tswebextension.configure(tsWebExtensionConfiguration);
+        const result = await this.tswebextension.configure(tsWebExtensionConfiguration);
+
+        // Throw error if static filters failed to enable
+        if (result.staticFiltersStatus.errors.length > 0) {
+            throw new Error(
+                `Failed to enable rulesets: ${result.staticFiltersStatus.errors.map((e) => e.message).join(', ')}`,
+            );
+        }
+
+        // Log dynamic rules errors and limitations
+        if (result.dynamicRules) {
+            if (result.dynamicRules.errors.length > 0) {
+                // eslint-disable-next-line no-console
+                console.debug('Dynamic rules conversion errors:', result.dynamicRules.errors);
+            }
+            if (result.dynamicRules.limitations.length > 0) {
+                // eslint-disable-next-line no-console
+                console.debug('Dynamic rules were truncated:', result.dynamicRules.limitations);
+            }
+        }
 
         return this.configuration;
     }
@@ -186,6 +245,7 @@ export class AdguardApi {
                 // Related stealth option is disabled
                 hideDocumentReferrerScriptUrl: 'whatever',
                 filteringEnabled: this.configuration.filteringEnabled,
+                documentBlockingPageUrl: this.configuration.documentBlockingPageUrl,
                 debugScriptlets: false,
                 stealthModeEnabled: true,
                 collectStats: false,
@@ -209,11 +269,16 @@ export class AdguardApi {
     /**
      * Creates new adguardApi instance.
      *
+     * @param params Optional {@link AdguardApiParams} for AdguardApi.
+     *
      * @returns AdguardApi instance.
      */
-    public static async create(): Promise<AdguardApi> {
+    public static async create(params?: AdguardApiParams): Promise<AdguardApi> {
         const tswebextension = new TsWebExtension(AdguardApi.WEB_ACCESSIBLE_RESOURCES_PATH);
         await tswebextension.initStorage();
-        return new AdguardApi(tswebextension);
+        return new AdguardApi(
+            tswebextension,
+            params,
+        );
     }
 }

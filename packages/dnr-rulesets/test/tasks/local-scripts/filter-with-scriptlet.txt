@@ -1,0 +1,8 @@
+! JS injection rules - should be included
+example.org#%#console.log('js injection')
+example.net#%#document.body.style.background = 'red'
+
+! Scriptlets - should be excluded
+example.com#%#//scriptlet('abort-on-property-read', 'ads')
+test.com#%#//scriptlet('set-constant', 'adblock', 'false')
+

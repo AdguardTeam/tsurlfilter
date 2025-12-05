@@ -9,7 +9,6 @@ import {
     FILTERS_URL,
     LOCAL_I18N_METADATA_FILE_NAME,
     LOCAL_METADATA_FILE_NAME,
-    QUICK_FIXES_FILTER_ID,
 } from './constants';
 import { downloadI18nMetadata, downloadMetadata, type Metadata } from './metadata';
 
@@ -24,7 +23,6 @@ type FilterDTO = {
 
 /**
  * Gets {@link FilterDTO} array from filter metadata.
- * AdGuard Quick Fixes filter is excluded from downloading and conversion.
  *
  * @param metadata Filters metadata downloaded from `FILTERS_METADATA_URL`.
  *
@@ -33,16 +31,11 @@ type FilterDTO = {
 const getUrlsOfFiltersResources = async (
     metadata: Metadata,
 ): Promise<FilterDTO[]> => {
-    return metadata.filters
-        // We exclude this filter from downloading and conversion,
-        // because it should be loaded from the server on the client and applied
-        // dynamically.
-        .filter(({ filterId }) => filterId !== QUICK_FIXES_FILTER_ID)
-        .map(({ filterId }) => ({
-            id: filterId,
-            url: `${FILTERS_URL}/${filterId}.txt`,
-            file: `filter_${filterId}.txt`,
-        }));
+    return metadata.filters.map(({ filterId }) => ({
+        id: filterId,
+        url: `${FILTERS_URL}/${filterId}.txt`,
+        file: `filter_${filterId}.txt`,
+    }));
 };
 
 /**

@@ -13,6 +13,7 @@ describe('Redirects Compatibility Table', () => {
     it('redirectsCompatibilityTable.existsAny', () => {
         expect(redirectsCompatibilityTable.existsAny('noopjs')).toBeTruthy();
         expect(redirectsCompatibilityTable.existsAny('noopjs:99')).toBeTruthy();
+        expect(redirectsCompatibilityTable.existsAny('noopjs:-1')).toBeTruthy();
         expect(redirectsCompatibilityTable.existsAny('blank-js')).toBeTruthy();
 
         expect(redirectsCompatibilityTable.existsAny('nonexistent')).toBeFalsy();

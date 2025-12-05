@@ -58,8 +58,7 @@ Build:
     - script:
         interpreter: SHELL
         scripts:
-          - |-
-            "./bamboo-specs/scripts/cleanup.sh packages/tsurlfilter/tsurlfilter.tgz"
+          - "./bamboo-specs/scripts/cleanup.sh packages/tsurlfilter/tsurlfilter.tgz"
   artifacts:
     - name: tsurlfilter.tgz
       location: packages/tsurlfilter/

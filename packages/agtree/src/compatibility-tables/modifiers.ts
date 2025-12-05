@@ -5,9 +5,10 @@
 import { CompatibilityTableBase } from './base';
 import { type ModifierDataSchema } from './schemas';
 import { modifiersCompatibilityTableData } from './compatibility-table-data';
-import { EMPTY, UNDERSCORE } from '../utils/constants';
+import { UNDERSCORE } from '../utils/constants';
 import { type CompatibilityTable } from './types';
 import { deepFreeze } from '../utils/deep-freeze';
+import { isValidNoopModifier } from '../utils/noop-modifier';
 
 /**
  * Transforms the name of the modifier to a normalized form.
@@ -19,7 +20,7 @@ import { deepFreeze } from '../utils/deep-freeze';
  */
 const noopModifierNameNormalizer = (name: string): string => {
     if (name.startsWith(UNDERSCORE)) {
-        if (name.split(EMPTY).every((char) => char === UNDERSCORE)) {
+        if (isValidNoopModifier(name)) {
             // in compatibility tables, we just store '_', so we need to reduce the number of underscores to 1
             // before checking the existence of the noop modifier
             return UNDERSCORE;

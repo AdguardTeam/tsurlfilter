@@ -172,6 +172,12 @@ export class RuleParser extends BaseParser {
                 throw error;
             }
 
+            // If tolerant mode is enabled and we have an onParseError callback,
+            // call it for any error instances
+            if (options.onParseError) {
+                options.onParseError(error);
+            }
+
             const errorNode: InvalidRuleError = {
                 type: 'InvalidRuleError',
                 name: error.name,
