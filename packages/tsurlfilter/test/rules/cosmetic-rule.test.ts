@@ -592,12 +592,6 @@ describe('CosmeticRule.CSS', () => {
         expect(cssRule).toBeDefined();
         expect(cssRule.getContent()).toBe(selector);
 
-        selector = '.some-class:if(test)';
-        ruleText = `example.org##${selector}`;
-        cssRule = createCosmeticRule(ruleText, 0);
-        expect(cssRule).toBeDefined();
-        expect(cssRule.getContent()).toBe(selector);
-
         selector = '.some-class:if-not(test)';
         ruleText = `example.org##${selector}`;
         cssRule = createCosmeticRule(ruleText, 0);
@@ -635,12 +629,12 @@ describe('CosmeticRule.CSS', () => {
         expect(cssRule.getContent()).toBe(selector);
     });
 
-    it('does not fails pseudo classes search on bad selector', () => {
-        const selector = 'a[src^="http:';
-        const ruleText = `example.org##${selector}`;
-        const cssRule = createCosmeticRule(ruleText, 0);
-        expect(cssRule).toBeDefined();
-        expect(cssRule.getContent()).toBe(selector);
+    it('throws syntax error on bad selector', () => {
+        expect(() => {
+            const selector = 'a[src^="http:';
+            const ruleText = `example.org##${selector}`;
+            createCosmeticRule(ruleText, 0);
+        }).toThrow(new SyntaxError("Expected '<]-token>', but got 'end of input'"));
     });
 
     it('throws error when cosmetic rule does not contain css style', () => {
@@ -741,9 +735,8 @@ describe('Extended css rule', () => {
     ruleText = '~example.com,example.org##.sponsored:has(test)';
     rule = createCosmeticRule(ruleText, 0);
 
-    // TODO: change later to 'toBeFalsy'
-    // after ':has(' is removed from EXT_CSS_PSEUDO_INDICATORS
-    expect(rule.isExtendedCss()).toBeTruthy();
+    // :has() is treated as native CSS now when used alone with ## separator
+    expect(rule.isExtendedCss()).toBeFalsy();
     expect(rule.getContent()).toEqual('.sponsored:has(test)');
 
     // but :has() pseudo-class should be considered as ExtendedCss
@@ -753,6 +746,14 @@ describe('Extended css rule', () => {
 
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('.sponsored:has(.banner)');
+
+    // :has() combined with other extended CSS pseudo-classes
+    // should be considered as ExtendedCss even with `##` marker
+    ruleText = 'example.org##.sponsored:has(.banner):contains(ad)';
+    rule = createCosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.sponsored:has(.banner):contains(ad)');
 
     // :is() pseudo-class has native implementation alike :has(),
     // so the rule with `##` marker and `:is()` should not be considered as ExtendedCss
@@ -786,6 +787,20 @@ describe('Extended css rule', () => {
 
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('.banner:not(.main, .content)');
+
+    // :is() and :not() combined with other extended CSS
+    // should be considered as ExtendedCss even with `##` marker
+    ruleText = 'example.org##.banner:is(div):contains(ad)';
+    rule = createCosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.banner:is(div):contains(ad)');
+
+    ruleText = 'example.org##.banner:not(.main):upward(2)';
+    rule = createCosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.banner:not(.main):upward(2)');
 
     ruleText = '~example.com,example.org#?#div';
     rule = createCosmeticRule(ruleText, 0);

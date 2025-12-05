@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## Unreleased <!-- release/browser-extension-v5.3 -->
+
+### Added
+
+- Export of `CssTokenStream`.
+- `CssTokenStream.hasNativeCssPseudoClass()` for checking
+  if there are any pseudo-classes that may be considered as extended
+  but also supported natively as standard CSS, i.e. `:has()`, `:is()`, `:not()`.
+
 ## [3.4.1] - 2025-11-28
 
 ### Added
