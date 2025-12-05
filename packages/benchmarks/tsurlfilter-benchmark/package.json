@@ -1,5 +1,5 @@
 {
-  "name": "agtree-browser-benchmark",
+  "name": "tsurlfilter-benchmark",
   "version": "1.0.0",
   "private": "true",
   "type": "module",
@@ -11,11 +11,7 @@
     "lint:types": "tsc"
   },
   "dependencies": {
-    "@adguard/agtree": "workspace:^",
-    "agtree-v1": "npm:@adguard/agtree@^1.1.7",
-    "agtree-v2": "npm:@adguard/agtree@^2.3.0",
-    "agtree-v3": "npm:@adguard/agtree@^3.1.2",
-    "benchmark": "catalog:",
+    "@adguard/tsurlfilter": "workspace:^",
     "consola": "catalog:",
     "console-table-printer": "catalog:",
     "date-fns": "catalog:",
@@ -23,15 +19,13 @@
     "lodash": "catalog:",
     "markdown-table": "catalog:",
     "node-fetch": "catalog:",
-    "object-sizeof": "^2.6.4",
     "os-name": "catalog:",
     "playwright": "catalog:",
     "systeminformation": "catalog:",
-    "tsurlfilter-v1": "npm:@adguard/tsurlfilter@^1.0.80",
-    "tsurlfilter-v2": "npm:@adguard/tsurlfilter@2.2.7"
+    "tinybench": "^6.0.0",
+    "tsurlfilter-v3": "npm:@adguard/tsurlfilter@^3.x"
   },
   "devDependencies": {
-    "@types/benchmark": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "eslint-config-airbnb-typescript": "catalog:",
