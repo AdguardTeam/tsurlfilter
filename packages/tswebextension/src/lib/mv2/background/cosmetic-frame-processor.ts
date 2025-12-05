@@ -9,6 +9,7 @@ import {
     type HandleMainFrameProps,
 } from '../../common/cosmetic-frame-processor';
 import { DocumentLifecycle } from '../../common/interfaces';
+import { CssCapabilities } from '../../common/utils/css-capabilities';
 
 import { documentApi } from './api';
 import { appContext } from './app-context';
@@ -218,7 +219,15 @@ export class CosmeticFrameProcessor {
         const { configuration } = appContext;
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
 
-        const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
+        const isNativeHasSupported = CssCapabilities.isNativeHasPseudoClassSupported();
+
+        const cssText = CosmeticApi.getCssText(
+            cosmeticResult,
+            {
+                areHitsStatsCollected,
+                isNativeHasSupported,
+            },
+        );
 
         const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
         const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, matchingResult);

@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Export `isUserScriptsApiSupported` function to check if the current browser
   supports User Scripts API.
 - CSP report blocking service for Manifest V3.
+- Detection whether the `:has()`, `:not()`, and `:is()` pseudo-classes
+  are supported by browser natively, and if not, apply rules with them
+  as extended CSS, otherwise apply as standard CSS [AdguardBrowserExtension#2587].
 
 ### Removed
 
@@ -26,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tracking protection rules are applied after filtering is disabled in MV3.
 - Blocked iframes are not collapsed on Firefox [AdguardBrowserExtension#3116].
 
+[AdguardBrowserExtension#2587]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2587
 [AdguardBrowserExtension#3116]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3116
 [AdguardBrowserExtension#3193]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3193
 [AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
