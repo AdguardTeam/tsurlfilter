@@ -40,7 +40,6 @@ const ADG_HTML_CONVERSION_MAX_LENGTH = `"${ADG_HTML_DEFAULT_MAX_LENGTH * 32}"`;
  * Supported special pseudo-classes from uBlock.
  */
 enum PseudoClasses {
-    Contains = 'contains',
     HasText = 'has-text',
     MinTextLength = 'min-text-length',
 }
@@ -59,7 +58,6 @@ enum AttributeSelectors {
  * Set of {@link PseudoClasses}.
  */
 const SUPPORTED_UBO_PSEUDO_CLASSES = new Set<string>([
-    PseudoClasses.Contains,
     PseudoClasses.HasText,
     PseudoClasses.MinTextLength,
 ]);

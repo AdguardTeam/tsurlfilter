@@ -363,12 +363,6 @@ describe('HtmlRuleConverter', () => {
                 },
 
                 /* uBO -> ADG specific cases */
-                // can't convert `:contains()` pseudo class
-                {
-                    input: '##^:contains("example")',
-                    error: 'Special pseudo class \'contains\' is not supported in conversion',
-                },
-
                 // can't convert regexp in `:has-text()` pseudo class
                 {
                     input: '##^:has-text(/example/)',
