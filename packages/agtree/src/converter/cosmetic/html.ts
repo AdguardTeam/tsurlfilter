@@ -300,11 +300,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                 continue;
                             }
 
-                            // Throw an error if the pseudo class cannot be converted.
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED,
-                                name,
-                            ));
+                            // Throw an error if the uBlock-specific pseudo class cannot be converted.
+                            if (HtmlRuleConverter.isSpecialUboPseudoClass(part)) {
+                                throw new RuleConversionError(sprintf(
+                                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED,
+                                    name,
+                                ));
+                            }
                         }
                     }
 
