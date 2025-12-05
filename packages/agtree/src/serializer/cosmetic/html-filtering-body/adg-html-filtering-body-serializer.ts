@@ -4,6 +4,7 @@ import { BaseSerializer } from '../../base-serializer';
 import { HtmlFilteringBodySerializer } from './html-filtering-body-serializer';
 import {
     FREQUENT_ADG_HTML_FILTERING_ATTRIBUTE_SERIALIZATION_MAP,
+    FREQUENT_ADG_HTML_FILTERING_PSEUDO_CLASS_SERIALIZATION_MAP,
 } from '../../../marshalling-utils/cosmetic/body/adg-html-filtering-body-common';
 
 /**
@@ -31,6 +32,7 @@ export class AdgHtmlFilteringBodySerializer extends BaseSerializer {
             node,
             buffer,
             FREQUENT_ADG_HTML_FILTERING_ATTRIBUTE_SERIALIZATION_MAP,
+            FREQUENT_ADG_HTML_FILTERING_PSEUDO_CLASS_SERIALIZATION_MAP,
         );
     }
 }

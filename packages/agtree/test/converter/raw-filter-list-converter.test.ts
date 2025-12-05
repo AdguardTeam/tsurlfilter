@@ -52,7 +52,7 @@ describe('RawFilterListConverter', () => {
             '||delivery.tf1.fr/pub$media,redirect=noopmp3-0.1s,domain=tf1.fr',
             "example.com#%#//scriptlet('abp-snippet1', 'arg0', 'arg1')",
             "example.com#%#//scriptlet('abp-snippet2', 'arg0', 'arg1')",
-            '$$script[tag-content="ad"][max-length="262144"]',
+            '$$script[max-length="262144"]:contains(ad)',
         ].join(NEWLINE);
 
         const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
@@ -64,8 +64,8 @@ describe('RawFilterListConverter', () => {
     test('Tolerant mode should work correctly', () => {
         const filterListContent = [
             '! Title: Foo',
-            // ADG HTML filtering doesn't support regexp argument in `:has-text()` pseudo class
-            '##^body:has-text(/ad/)',
+            // Invalid rule because `:has-text()` provided without argument
+            '##^body:has-text()',
             // Should be converted
             '||example.com^$3p',
         ].join(NEWLINE);
@@ -73,7 +73,7 @@ describe('RawFilterListConverter', () => {
         // Expected tolerantly converted filter list
         const expectedFilterListContent = [
             '! Title: Foo',
-            '##^body:has-text(/ad/)', // Left as is
+            '##^body:has-text()', // Left as is
             '||example.com^$third-party', // Converted
         ].join(NEWLINE);
 

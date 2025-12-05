@@ -25,7 +25,7 @@ describe('Raw rule converter wrapper should work correctly', () => {
             {
                 actual: 'example.com##^script:has-text(foo)',
                 expected: [
-                    'example.com$$script[tag-content="foo"][max-length="262144"]',
+                    'example.com$$script[max-length="262144"]:contains(foo)',
                 ],
             },
             {

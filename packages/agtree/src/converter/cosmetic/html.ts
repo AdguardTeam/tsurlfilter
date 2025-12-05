@@ -18,7 +18,6 @@ import {
 import { AdblockSyntax } from '../../utils/adblockers';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { RegExpUtils } from '../../utils/regexp';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode } from '../../ast-utils/clone';
 import { EQUALS } from '../../utils/constants';
@@ -34,12 +33,12 @@ import { QuoteUtils } from '../../utils';
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
  */
 const ADG_HTML_DEFAULT_MAX_LENGTH = 8192;
-const ADG_HTML_CONVERSION_MAX_LENGTH = `"${ADG_HTML_DEFAULT_MAX_LENGTH * 32}"`;
+const ADG_HTML_CONVERSION_MAX_LENGTH = ADG_HTML_DEFAULT_MAX_LENGTH * 32;
 
 /**
  * Supported special pseudo-classes from uBlock.
  */
-enum PseudoClasses {
+enum UboPseudoClasses {
     HasText = 'has-text',
     MinTextLength = 'min-text-length',
 }
@@ -47,7 +46,7 @@ enum PseudoClasses {
 /**
  * Supported special attribute selectors from AdGuard.
  */
-enum AttributeSelectors {
+enum AdgAttributeSelectors {
     MaxLength = 'max-length',
     MinLength = 'min-length',
     TagContent = 'tag-content',
@@ -55,21 +54,35 @@ enum AttributeSelectors {
 }
 
 /**
- * Set of {@link PseudoClasses}.
+ * Supported special pseudo-classes from AdGuard.
+ */
+enum AdgPseudoClasses {
+    Contains = 'contains',
+}
+
+/**
+ * Set of {@link UboPseudoClasses}.
  */
 const SUPPORTED_UBO_PSEUDO_CLASSES = new Set<string>([
-    PseudoClasses.HasText,
-    PseudoClasses.MinTextLength,
+    UboPseudoClasses.HasText,
+    UboPseudoClasses.MinTextLength,
 ]);
 
 /**
- * Set of {@link AttributeSelectors}.
+ * Set of {@link AdgAttributeSelectors}.
  */
 const SUPPORTED_ADG_ATTRIBUTE_SELECTORS = new Set<string>([
-    AttributeSelectors.MaxLength,
-    AttributeSelectors.MinLength,
-    AttributeSelectors.TagContent,
-    AttributeSelectors.Wildcard,
+    AdgAttributeSelectors.MaxLength,
+    AdgAttributeSelectors.MinLength,
+    AdgAttributeSelectors.TagContent,
+    AdgAttributeSelectors.Wildcard,
+]);
+
+/**
+ * Set of {@link AdgPseudoClasses}.
+ */
+const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
+    AdgPseudoClasses.Contains,
 ]);
 
 /**
@@ -102,7 +115,6 @@ export const ERROR_MESSAGES = {
     SPECIAL_PSEUDO_CLASS_ARGUMENT_REQUIRED: 'Special pseudo class \'%s\' requires an argument',
     SPECIAL_PSEUDO_CLASS_ARGUMENT_INT: 'Argument of special pseudo class \'%s\' must be an integer, got \'%s\'',
     SPECIAL_PSEUDO_CLASS_ARGUMENT_POSITIVE: 'Argument of special pseudo class \'%s\' must be a positive integer, got \'%s\'',
-    SPECIAL_PSEUDO_CLASS_REGEXP_NOT_SUPPORTED: 'Argument of special pseudo class \'%s\' is a regular expression, which is not supported',
     SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED: 'Special pseudo class \'%s\' is not supported in conversion',
 } as const;
 /* eslint-enable max-len */
@@ -156,9 +168,16 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                 const { children: parts, combinator } = selector;
 
-                let tagContent: string | null = null;
-                let minLength: string | null = null;
-                let maxLength: string | null = null;
+                const convertedAttributes = new Map<AdgAttributeSelectors, string>();
+                const convertedPseudoClasses = new Map<AdgPseudoClasses, string>();
+
+                /**
+                 * Keep track of present special pseudo-classes to lower ambiguity
+                 * of AdGuard-specific attributes, since they are deprecated and soon will be removed.
+                 * - If `:min-text-length()` is present, `[min-length]` attribute is ignored.
+                 * - If `:has-text()` / `:contains()` is present, `[tag-content]` attribute is ignored.
+                 */
+                const presentPseudoClasses = new Set<AdgPseudoClasses | UboPseudoClasses>();
 
                 /**
                  * Keep track of the number of special parts found in the selector.
@@ -197,11 +216,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
                              * if there are same functional special pseudo classes
                              * in the same selector:
                              * - `[min-length]` attribute and `:min-text-length()` pseudo class
-                             * - `[tag-content]` attribute and `:has-text()` pseudo class
+                             * - `[tag-content]` attribute and `:has-text()` / `:contains()` pseudo class
                              * - `max-length` is special case, because there's no corresponding pseudo class,
-                             *   but we if it's not specified, we set it to the default conversion value.
+                             *   but if it's not specified we set it to the default conversion value.
                              */
-                            if (name === AttributeSelectors.MinLength || name === AttributeSelectors.MaxLength) {
+                            if (name === AdgAttributeSelectors.MinLength || name === AdgAttributeSelectors.MaxLength) {
                                 // Validate numeric value
                                 HtmlRuleConverter.assertValidLengthValue(
                                     name,
@@ -210,14 +229,21 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                     ERROR_MESSAGES.SPECIAL_ATTRIBUTE_VALUE_POSITIVE,
                                 );
 
-                                if (name === AttributeSelectors.MinLength) {
-                                    minLength = value;
+                                if (name === AdgAttributeSelectors.MinLength) {
+                                    if (!presentPseudoClasses.has(UboPseudoClasses.MinTextLength)) {
+                                        convertedAttributes.set(AdgAttributeSelectors.MinLength, value);
+                                    }
                                 } else {
-                                    maxLength = value;
+                                    convertedAttributes.set(AdgAttributeSelectors.MaxLength, value);
                                 }
                                 continue;
-                            } else if (name === AttributeSelectors.TagContent) {
-                                tagContent = value;
+                            } else if (name === AdgAttributeSelectors.TagContent) {
+                                if (
+                                    !presentPseudoClasses.has(UboPseudoClasses.HasText)
+                                    && !presentPseudoClasses.has(AdgPseudoClasses.Contains)
+                                ) {
+                                    convertedPseudoClasses.set(AdgPseudoClasses.Contains, value);
+                                }
                                 continue;
                             }
                         }
@@ -227,10 +253,18 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                         /**
                          * Handle uBlock-specific pseudo classes:
-                         * - `:has-text()` -> `[tag-content]`
+                         * - `:has-text()` -> `:contains()`
                          * - `:min-text-length()` -> `[min-length]`
+                         *
+                         * Also handle AdGuard-specific pseudo class selectors.
+                         * Please, note that AdGuard-specific pseudo class selectors
+                         * shouldn't be specified in uBlock rules in the first place,
+                         * but we still handle them here for completeness and de-duplication.
                          */
-                        if (HtmlRuleConverter.isSpecialUboPseudoClass(part)) {
+                        if (
+                            HtmlRuleConverter.isSpecialUboPseudoClass(part)
+                            || HtmlRuleConverter.isSpecialAdgPseudoClass(part)
+                        ) {
                             specialParts += 1;
 
                             // Validate special pseudo class
@@ -240,9 +274,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                             // Note, it's safe to assert that argument node is not null,
                             // because it's validated inside `assertValidSpecialPseudoClass`
-                            const argument = QuoteUtils.removeQuotesAndUnescape(part.argument!.value);
+                            let argument = part.argument!.value;
 
-                            if (name === PseudoClasses.MinTextLength) {
+                            if (name === UboPseudoClasses.MinTextLength) {
+                                // Unescape and remove quotes from argument only
+                                // if it's needs to be converted into attribute value
+                                argument = QuoteUtils.removeQuotesAndUnescape(argument);
+
                                 HtmlRuleConverter.assertValidLengthValue(
                                     name,
                                     argument,
@@ -250,19 +288,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                     ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_ARGUMENT_POSITIVE,
                                 );
 
-                                minLength = argument;
+                                presentPseudoClasses.add(name);
+                                convertedAttributes.set(AdgAttributeSelectors.MinLength, argument);
                                 continue;
-                            } else if (name === PseudoClasses.HasText) {
-                                // Throw an error if argument is a regex pattern
-                                // Because AdGuard doesn't support regexps in `has-text` attribute
-                                if (RegExpUtils.isRegexPattern(argument)) {
-                                    throw new RuleConversionError(sprintf(
-                                        ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_REGEXP_NOT_SUPPORTED,
-                                        name,
-                                    ));
-                                }
-
-                                tagContent = argument;
+                            } else if (
+                                name === UboPseudoClasses.HasText
+                                || name === AdgPseudoClasses.Contains
+                            ) {
+                                presentPseudoClasses.add(name);
+                                convertedPseudoClasses.set(AdgPseudoClasses.Contains, argument);
                                 continue;
                             }
 
@@ -284,38 +318,35 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     throw new RuleConversionError(ERROR_MESSAGES.SPECIALS_ONLY_SELECTOR);
                 }
 
-                // Add last found `[tag-content]` or `:has-text()`
-                if (tagContent !== null) {
+                // Add converted special attributes
+                for (const [name, value] of convertedAttributes) {
                     convertedParts.push(
                         HtmlRuleConverter.getAttributeNode(
-                            AttributeSelectors.TagContent,
-                            tagContent,
-                        ),
-                    );
-                }
-
-                // Add last found `[min-length]` or `:min-text-length()`
-                if (minLength !== null) {
-                    convertedParts.push(
-                        HtmlRuleConverter.getAttributeNode(
-                            AttributeSelectors.MinLength,
-                            minLength,
+                            name,
+                            value,
                         ),
                     );
                 }
 
                 // If `[max-length]` was not specified, set it to the conversion default
-                if (maxLength === null) {
-                    maxLength = ADG_HTML_CONVERSION_MAX_LENGTH;
+                if (!convertedAttributes.has(AdgAttributeSelectors.MaxLength)) {
+                    convertedParts.push(
+                        HtmlRuleConverter.getAttributeNode(
+                            AdgAttributeSelectors.MaxLength,
+                            String(ADG_HTML_CONVERSION_MAX_LENGTH),
+                        ),
+                    );
                 }
 
-                // Add `[max-length]` attribute
-                convertedParts.push(
-                    HtmlRuleConverter.getAttributeNode(
-                        AttributeSelectors.MaxLength,
-                        maxLength,
-                    ),
-                );
+                // Add converted special pseudo-classes
+                for (const [name, argument] of convertedPseudoClasses) {
+                    convertedParts.push(
+                        HtmlRuleConverter.getPseudoClassNode(
+                            name,
+                            argument,
+                        ),
+                    );
+                }
 
                 convertedSelectors.push({
                     type: 'HtmlFilteringRuleSelector',
@@ -399,8 +430,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                 const { children: parts, combinator } = selector;
 
-                let hasText: string | null = null;
-                let minTextLength: string | null = null;
+                const convertedPseudoClasses = new Map<UboPseudoClasses, string>();
+
+                /**
+                 * Keep track of present special pseudo-classes to lower ambiguity
+                 * of AdGuard-specific attributes, since they are deprecated and soon will be removed.
+                 * - If `:min-text-length()` is present, `[min-length]` attribute is ignored.
+                 * - If `:has-text()` / `:contains()` is present, `[tag-content]` attribute is ignored.
+                 */
+                const presentPseudoClasses = new Set<AdgPseudoClasses | UboPseudoClasses>();
 
                 /**
                  * Keep track of the number of special parts found in the selector.
@@ -422,7 +460,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
                          * shouldn't be specified in AdGuard rules in the first place,
                          * but we still handle them here for completeness and de-duplication.
                          */
-                        if (HtmlRuleConverter.isSpecialUboPseudoClass(part)) {
+                        if (
+                            HtmlRuleConverter.isSpecialUboPseudoClass(part)
+                            || HtmlRuleConverter.isSpecialAdgPseudoClass(part)
+                        ) {
                             specialParts += 1;
 
                             // Validate special pseudo class
@@ -432,28 +473,42 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                             // Note, it's safe to assert that argument node is not null,
                             // because it's validated inside `assertValidSpecialPseudoClass`
-                            const argument = QuoteUtils.removeQuotesAndUnescape(part.argument!.value);
+                            const argument = part.argument!.value;
 
                             /**
                              * Record found special pseudo class selectors in case
                              * if there are same functional special attribute
                              * in the same selector:
                              * - `:min-text-length()` pseudo class and `[min-length]` attribute
-                             * - `:has-text()` pseudo class and `[tag-content]` attribute
+                             * - `:has-text()` / `:contains()` pseudo class and `[tag-content]` attribute
                              */
-                            if (name === PseudoClasses.MinTextLength) {
+                            if (name === UboPseudoClasses.MinTextLength) {
                                 HtmlRuleConverter.assertValidLengthValue(
                                     name,
-                                    argument,
+                                    // Unescape and remove quotes from argument to validate it correctly
+                                    QuoteUtils.removeQuotesAndUnescape(argument),
                                     ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_ARGUMENT_INT,
                                     ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_ARGUMENT_POSITIVE,
                                 );
 
-                                minTextLength = argument;
+                                presentPseudoClasses.add(name);
+                                convertedPseudoClasses.set(UboPseudoClasses.MinTextLength, argument);
                                 continue;
-                            } else if (name === PseudoClasses.HasText) {
-                                hasText = argument;
+                            } else if (
+                                name === UboPseudoClasses.HasText
+                                || name === AdgPseudoClasses.Contains
+                            ) {
+                                presentPseudoClasses.add(name);
+                                convertedPseudoClasses.set(UboPseudoClasses.HasText, argument);
                                 continue;
+                            }
+
+                            // Throw an error if the AdGuard-specific pseudo class cannot be converted
+                            if (HtmlRuleConverter.isSpecialAdgPseudoClass(part)) {
+                                throw new RuleConversionError(sprintf(
+                                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED,
+                                    name,
+                                ));
                             }
                         }
                     } else if (part.type === 'HtmlFilteringRuleSelectorAttribute') {
@@ -479,8 +534,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             const { value } = part.value!;
 
                             if (
-                                name === AttributeSelectors.MinLength
-                                || name === AttributeSelectors.MaxLength
+                                name === AdgAttributeSelectors.MinLength
+                                || name === AdgAttributeSelectors.MaxLength
                             ) {
                                 HtmlRuleConverter.assertValidLengthValue(
                                     name,
@@ -489,13 +544,22 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                     ERROR_MESSAGES.SPECIAL_ATTRIBUTE_VALUE_POSITIVE,
                                 );
 
-                                if (name === AttributeSelectors.MinLength) {
-                                    minTextLength = value;
+                                if (
+                                    name === AdgAttributeSelectors.MinLength
+                                    && !presentPseudoClasses.has(UboPseudoClasses.MinTextLength)
+                                ) {
+                                    convertedPseudoClasses.set(UboPseudoClasses.MinTextLength, value);
                                 }
 
                                 continue;
-                            } else if (name === AttributeSelectors.TagContent) {
-                                hasText = value;
+                            } else if (name === AdgAttributeSelectors.TagContent) {
+                                if (
+                                    !presentPseudoClasses.has(UboPseudoClasses.HasText)
+                                    && !presentPseudoClasses.has(AdgPseudoClasses.Contains)
+                                ) {
+                                    convertedPseudoClasses.set(UboPseudoClasses.HasText, value);
+                                }
+
                                 continue;
                             }
 
@@ -517,22 +581,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     throw new RuleConversionError(ERROR_MESSAGES.SPECIALS_ONLY_SELECTOR);
                 }
 
-                // Add last found `:has-text()` or `[tag-content]`
-                if (hasText !== null) {
+                // Add converted special pseudo-classes
+                for (const [name, argument] of convertedPseudoClasses) {
                     convertedParts.push(
                         HtmlRuleConverter.getPseudoClassNode(
-                            PseudoClasses.HasText,
-                            hasText,
-                        ),
-                    );
-                }
-
-                // Add last found `:min-text-length()` or `[min-length]`
-                if (minTextLength !== null) {
-                    convertedParts.push(
-                        HtmlRuleConverter.getPseudoClassNode(
-                            PseudoClasses.MinTextLength,
-                            minTextLength,
+                            name,
+                            argument,
                         ),
                     );
                 }
@@ -586,6 +640,19 @@ export class HtmlRuleConverter extends RuleConverterBase {
         attribute: HtmlFilteringRuleSelectorAttribute,
     ): boolean {
         return SUPPORTED_ADG_ATTRIBUTE_SELECTORS.has(attribute.name.value);
+    }
+
+    /**
+     * Checks whether the given selector pseudo class is a special AdGuard pseudo class.
+     *
+     * @param pseudoClass Selector pseudo class to check.
+     *
+     * @returns True if the pseudo class is a special AdGuard pseudo class, false otherwise.
+     */
+    private static isSpecialAdgPseudoClass(
+        pseudoClass: HtmlFilteringRuleSelectorPseudoClass,
+    ): boolean {
+        return SUPPORTED_ADG_PSEUDO_CLASSES.has(pseudoClass.name.value);
     }
 
     /**
