@@ -25,9 +25,9 @@ export const configurationValidator = zod.object({
     /**
      * An array of filter identifiers.
      *
-     * You can find possible filter identifiers in the filters metadata file.
+     * You can find possible filter identifiers in the @adguard/dnr-rulesets README file.
      *
-     * @see https://filters.adtidy.org/extension/chromium/filters.json
+     * @see https://www.npmjs.com/package/@adguard/dnr-rulesets#included-filter-lists
      */
     filters: zod.number().array(),
 
@@ -60,9 +60,28 @@ export const configurationValidator = zod.object({
      *
      * These custom rules might be created by a user via the AdGuard Assistant UI.
      *
-     * @see https://adguard.com/en/filterrules.html
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/
      */
     rules: zod.string().array().optional(),
+
+    /**
+     * Optional redirect url for blocking rules with `$document` modifier.
+     * If not specified, default browser page will be shown.
+     *
+     * Page will receive following query parameters:
+     * - url - blocked url;
+     * - rule - blocking rule, that triggered on this url;
+     * - filterId - id of the filter, that contains this rule (0 for user rules).
+     *
+     * @example
+     * // Address format:
+     * `chrome-extension://<extension_id>/blocking-page.html`
+     *
+     * @example
+     * // Full URL example after redirect:
+     * `chrome-extension://<extension_id>/blocking-page.html?url=https%3A%2F%2Fexample.net%2F&rule=example.net%24document&filterId=0`
+     */
+    documentBlockingPageUrl: zod.string().optional(),
 });
 
 export type Configuration = zod.infer<typeof configurationValidator>;

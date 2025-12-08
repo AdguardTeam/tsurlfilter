@@ -4,11 +4,11 @@
  */
 
 import { type BaseCompatibilityDataSchema } from './schemas';
-import { GenericPlatform, type SpecificPlatform } from './platforms';
+import { type AnyPlatform, GenericPlatform, type SpecificPlatform } from './platforms';
 import { isUndefined } from '../utils/type-guards';
 import { type CompatibilityTable, type CompatibilityTableRow } from './types';
 import { isGenericPlatform, getSpecificPlatformName } from './utils/platform-helpers';
-import { AdblockSyntax } from '../utils/adblockers';
+import { type AdblockProduct, AdblockSyntax } from '../utils/adblockers';
 
 /**
  * Lists all supported entity records by a product.
@@ -24,14 +24,14 @@ export type ProductRecords<T> = {
 /**
  * Defines a compatibility table row by product.
  *
- * Keys are Adblock syntaxes, values are product records.
+ * Keys are Adblock products, values are product records.
  *
  * @template T Compatibility data schema.
  */
 export type RowByProduct<T> = {
-    [AdblockSyntax.Adg]: ProductRecords<T>;
-    [AdblockSyntax.Ubo]: ProductRecords<T>;
-    [AdblockSyntax.Abp]: ProductRecords<T>;
+    [AdblockProduct.Adg]: ProductRecords<T>;
+    [AdblockProduct.Ubo]: ProductRecords<T>;
+    [AdblockProduct.Abp]: ProductRecords<T>;
 };
 
 /**
@@ -129,7 +129,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
      *
      * @returns True if the compatibility data exists, false otherwise.
      */
-    public exists(name: string, platform: SpecificPlatform | GenericPlatform): boolean {
+    public exists(name: string, platform: AnyPlatform): boolean {
         const normalizedName = this.nameTransformer ? this.nameTransformer(name) : name;
         const data = this.getRowStorage(normalizedName);
 
@@ -197,7 +197,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
      */
     public getMultiple(
         name: string,
-        platform: SpecificPlatform | GenericPlatform,
+        platform: AnyPlatform,
     ): SinglePlatformRecords<T> | null {
         const normalizedName = this.nameTransformer ? this.nameTransformer(name) : name;
         const data = this.getRowStorage(normalizedName);
@@ -238,7 +238,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
      *
      * @returns Array of multiple records grouped by platforms.
      */
-    public getAllMultiple(platform: SpecificPlatform | GenericPlatform): SinglePlatformRecords<T>[] {
+    public getAllMultiple(platform: AnyPlatform): SinglePlatformRecords<T>[] {
         const result: SinglePlatformRecords<T>[] = [];
 
         for (let i = 0; i < this.data.shared.length; i += 1) {
@@ -261,11 +261,11 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
      * Returns the first compatibility data record for name and specified platform.
      *
      * @param name Compatibility data name.
-     * @param platform Specific or generic platform.
+     * @param platform Specific, generic, or combined platform.
      *
      * @returns First found compatibility data record or `null` if not found.
      */
-    public getFirst(name: string, platform: SpecificPlatform | GenericPlatform): T | null {
+    public getFirst(name: string, platform: AnyPlatform): T | null {
         const normalizedName = this.nameTransformer ? this.nameTransformer(name) : name;
         const data = this.getRowStorage(normalizedName);
 

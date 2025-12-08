@@ -12,10 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Export `isUserScriptsApiSupported` function to check if the current browser
   supports User Scripts API.
 - CSP report blocking service for Manifest V3.
-
-### Changed
-
-- Updated [@adguard/assistant] to `v4.3.77`.
+- Detection whether the `:has()`, `:not()`, and `:is()` pseudo-classes
+  are supported by browser natively, and if not, apply rules with them
+  as extended CSS, otherwise apply as standard CSS [AdguardBrowserExtension#2587].
 
 ### Removed
 
@@ -23,16 +22,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Network rules with $important modifier are applied
+- Network rules with `$important` modifier are applied
   even if protection is disabled [AdguardBrowserExtension#3227].
-- Some requests are blocked in 'Inverted allowlist' mode even though
+- Some requests are blocked in _Inverted allowlist_ mode even though
   there're no websites added to the Allowlist [AdguardBrowserExtension#3193].
 - Tracking protection rules are applied after filtering is disabled in MV3.
 - Blocked iframes are not collapsed on Firefox [AdguardBrowserExtension#3116].
 
-[AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
-[AdguardBrowserExtension#3193]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3193
+[AdguardBrowserExtension#2587]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2587
 [AdguardBrowserExtension#3116]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3116
+[AdguardBrowserExtension#3193]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3193
+[AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
+
+## [3.2.17] - 2025-12-01
+
+### Changed
+
+- Export `LocalScriptRules` type from MV2.
+
+[3.2.17]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.17
+
+## [3.2.16] - 2025-11-26
+
+### Changed
+
+- Updated [@adguard/assistant] to `v4.3.77`.
+- Updated [@adguard/agtree] to `v3.3.1`.
+- Updated [@adguard/scriptlets] to `v2.2.13`.
+- Updated [@adguard/tsurlfilter] to `v3.5.1`.
+
+[3.2.16]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.16
+
+## [3.2.15] - 2025-11-12
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.5`.
+- Updated [@adguard/scriptlets] to `v2.2.12`.
+- Updated [@adguard/tsurlfilter] to `v3.4.8`.
+
+[3.2.15]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.15
+
+## [3.2.14] - 2025-10-17
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.4`.
+- Updated [@adguard/scriptlets] to `v2.2.11`.
+- Updated [@adguard/tsurlfilter] to `v3.4.7`.
+
+[3.2.14]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.14
+
+## [3.2.13] - 2025-10-15
+
+### Fixed
+
+- Original DNR rules for unsafe rules aren’t being logged in the Filtering Log [AdguardBrowserExtension#3327].
+
+[3.2.13]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.13
+[AdguardBrowserExtension#3327]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3327
+
+## [3.2.12] - 2025-10-14
+
+### Fixed
+
+- Unsafe rules were not removed on disabling filtering in MV3.
+
+[3.2.12]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.12
 
 ## [3.2.11] - 2025-09-11
 

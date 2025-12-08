@@ -10,12 +10,29 @@ import { nodeExternals } from 'rollup-plugin-node-externals';
 
 const DIST_DIR = 'dist';
 
-const re2WasmUrl = await import.meta.resolve('@adguard/re2-wasm/build/wasm/re2.wasm');
+const re2WasmUrl = import.meta.resolve('@adguard/re2-wasm/build/wasm/re2.wasm');
 const re2WasmPath = fileURLToPath(re2WasmUrl);
 
 const entryPoints = {
     'lib/index': 'src/lib/index.ts',
     'utils/index': 'src/utils/index.ts',
+};
+
+// Suppress specific warnings from `terser` package
+// TODO: Remove when terser will update their code
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const onwarn = (warning: any, warn: any) => {
+    const isTerserWarning = warning.id?.includes('terser')
+        || warning.ids?.some((id: string) => id.includes('terser'));
+    const isCircularDependency = warning.code === 'CIRCULAR_DEPENDENCY';
+    const isInvalidAnnotation = warning.code === 'INVALID_ANNOTATION';
+
+    if (isTerserWarning && (isCircularDependency || isInvalidAnnotation)) {
+        return;
+    }
+
+    // Show all other warnings
+    warn(warning);
 };
 
 const mainConfig = {
@@ -25,6 +42,7 @@ const mainConfig = {
         format: 'esm',
         exports: 'named',
     }],
+    onwarn,
     plugins: [
         nodeExternals(),
         resolve({ extensions: ['.ts', '.js'] }),
@@ -45,6 +63,7 @@ const cliConfig = {
         exports: 'named',
         banner: '#!/usr/bin/env node',
     }],
+    onwarn,
     plugins: [
         resolve({ extensions: ['.ts', '.js'] }),
         json(),

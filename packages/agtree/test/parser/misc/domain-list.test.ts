@@ -364,6 +364,183 @@ describe('DomainListParser', () => {
         );
     });
 
+    describe('regex domain patterns with special characters', () => {
+        test('should parse regex domains with commas correctly', () => {
+            // Single regex domain with comma in quantifier
+            const singleRegex = String.raw`/example\d{1,}\.com/`;
+            expect(DomainListParser.parse(singleRegex)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: singleRegex.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: singleRegex.length,
+                        value: singleRegex,
+                        exception: false,
+                    },
+                ],
+            });
+
+            // Regex domain with comma in alternation
+            const regexWithAlternation = String.raw`/example\d{1,}\.(com|org)/`;
+            expect(DomainListParser.parse(regexWithAlternation)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: regexWithAlternation.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexWithAlternation.length,
+                        value: regexWithAlternation,
+                        exception: false,
+                    },
+                ],
+            });
+
+            // Multiple domains with regex containing comma
+            const mixedDomains = String.raw`/example\d{1,}\.com/,example.net`;
+            const regexPart = String.raw`/example\d{1,}\.com/`;
+            expect(DomainListParser.parse(mixedDomains)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: mixedDomains.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexPart.length,
+                        value: regexPart,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: regexPart.length + 1,
+                        end: mixedDomains.length,
+                        value: 'example.net',
+                        exception: false,
+                    },
+                ],
+            });
+
+            // Complex regex with multiple commas
+            const complexRegex = String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/`;
+            expect(DomainListParser.parse(complexRegex)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: complexRegex.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: complexRegex.length,
+                        value: complexRegex,
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should parse regex domains with pipes correctly', () => {
+            // Regex domain with pipe in alternation (comma separator)
+            const regexWithPipes = String.raw`/(com|org|net)/`;
+            expect(DomainListParser.parse(regexWithPipes)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: regexWithPipes.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexWithPipes.length,
+                        value: regexWithPipes,
+                        exception: false,
+                    },
+                ],
+            });
+
+            // Multiple domains with pipe separator and regex containing pipe
+            const mixedWithPipeSep = String.raw`/example\.(com|org)/|example.net`;
+            const regexPartPipe = String.raw`/example\.(com|org)/`;
+            expect(
+                DomainListParser.parse(mixedWithPipeSep, defaultParserOptions, 0, '|'),
+            ).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: mixedWithPipeSep.length,
+                separator: '|',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexPartPipe.length,
+                        value: regexPartPipe,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: regexPartPipe.length + 1,
+                        end: mixedWithPipeSep.length,
+                        value: 'example.net',
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should parse negated regex domains with special characters', () => {
+            const negatedRegex = String.raw`~/example\d{1,}\.com/`;
+            const regexValue = String.raw`/example\d{1,}\.com/`;
+            expect(DomainListParser.parse(negatedRegex)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: negatedRegex.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 1,
+                        end: negatedRegex.length,
+                        value: regexValue,
+                        exception: true,
+                    },
+                ],
+            });
+
+            const mixedNegated = String.raw`example.com,~/test\.(org|net)/`;
+            const negatedPart = String.raw`/test\.(org|net)/`;
+            expect(DomainListParser.parse(mixedNegated)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: mixedNegated.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: 11,
+                        value: 'example.com',
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 13,
+                        end: mixedNegated.length,
+                        value: negatedPart,
+                        exception: true,
+                    },
+                ],
+            });
+        });
+    });
+
     describe('serialize & deserialize', () => {
         test.each([
             'example.com',

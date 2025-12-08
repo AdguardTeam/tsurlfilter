@@ -1,0 +1,8 @@
+! JS rules with different domain configurations
+example.com,test.com#%#console.log('multi domain')
+example.org#%#alert('single domain')
+~blocked.com#%#console.log('restricted domain')
+example.net,~excluded.net#%#document.title = 'mixed'
+
+
+

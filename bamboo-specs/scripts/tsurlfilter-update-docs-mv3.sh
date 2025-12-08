@@ -15,6 +15,37 @@ echo "@adguard/tsurlfilter docs mv3 update starting"
 # import helper functions and some common variables
 . ./bamboo-specs/scripts/helpers.sh
 
+# Check if there are any changes to files that affect MV3 documentation
+# Relevant files:
+# - Source code in tsurlfilter package (affects the declarative converter behavior)
+# - The input documentation file (readme.txt)
+# - The generation script itself
+echo "Checking for changes since last commit..."
+
+# Get the last commit that modified the generated README.md
+LAST_DOC_COMMIT=$(git log -1 --format="%H" -- packages/tsurlfilter/src/rules/declarative-converter/README.md 2>/dev/null || echo "")
+
+if [ -n "$LAST_DOC_COMMIT" ]; then
+    echo "Last doc update commit: $LAST_DOC_COMMIT"
+
+    # Check if any relevant files have changed since the last doc update
+    CHANGED_FILES=$(git diff --name-only "$LAST_DOC_COMMIT" HEAD -- \
+        'packages/tsurlfilter/src/' \
+        'packages/tsurlfilter/tasks/generate-examples.ts' \
+        'packages/tsurlfilter/src/rules/declarative-converter/readme.txt' 2>/dev/null || echo "")
+
+    if [ -z "$CHANGED_FILES" ]; then
+        echo "No changes detected in files that affect MV3 documentation since last update."
+        echo "Skipping documentation generation."
+        exit 0
+    fi
+
+    echo "Changes detected in the following files:"
+    echo "$CHANGED_FILES"
+else
+    echo "No previous doc update found - proceeding with generation"
+fi
+
 # Install dependencies
 pnpm install
 

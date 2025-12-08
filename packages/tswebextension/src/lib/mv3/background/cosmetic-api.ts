@@ -223,7 +223,15 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const cosmeticResult = engineApi.matchCosmetic(matchQuery);
 
-        data.extCssRules = CosmeticApi.getExtCssRules(cosmeticResult, areHitsStatsCollected);
+        data.extCssRules = CosmeticApi.getExtCssRules(
+            cosmeticResult,
+            {
+                areHitsStatsCollected,
+                // always true for MV3
+                // since minimum version of mv3 browser already supports :has()
+                isNativeHasSupported: true,
+            },
+        );
 
         return data;
     }
