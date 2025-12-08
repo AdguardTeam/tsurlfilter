@@ -13,11 +13,6 @@ import {
 import { BaseGenerator } from '../../base-generator';
 
 /**
- * HTML Filtering attribute value transformer.
- */
-type AttributeValueTransformer = (value: string) => string;
-
-/**
  * HTML Filtering body generator.
  */
 export class HtmlFilteringBodyGenerator extends BaseGenerator {
@@ -36,23 +31,22 @@ export class HtmlFilteringBodyGenerator extends BaseGenerator {
         PSEUDO_CLASS_ARGUMENT_WITHOUT_FLAG: 'Non-function pseudo class cannot have an argument',
     };
 
-    private static defaultAttributeValueTransformer: AttributeValueTransformer = (value: string): string => value;
-
     /**
      * Generates a string representation of the HTML filtering rule body.
      *
      * @param node HTML filtering rule body.
-     * @param attributeValueTransformer Optional transformer for attribute values.
      *
      * @returns String representation of the rule body.
      *
      * @throws Error if the rule body is invalid.
      */
-    public static generate(
-        node: HtmlFilteringRuleBody,
-        attributeValueTransformer = HtmlFilteringBodyGenerator.defaultAttributeValueTransformer,
-    ): string {
+    public static generate(node: HtmlFilteringRuleBody): string {
         const result: string[] = [];
+
+        // If the node is not parsed body, return raw value as-is
+        if (node.type === 'Value') {
+            return node.value;
+        }
 
         // Throw an error if the body is empty
         if (node.children.length === 0) {
@@ -154,10 +148,7 @@ export class HtmlFilteringBodyGenerator extends BaseGenerator {
                             // Quote the attribute value using double quotes
                             const quotedValue = QuoteUtils.setStringQuoteType(value, QuoteType.Double);
 
-                            // Transform the attribute value if a transformer is provided
-                            const transformedValue = attributeValueTransformer(quotedValue);
-
-                            result.push(transformedValue);
+                            result.push(quotedValue);
 
                             // If there is a flag, add it as well
                             if (part.flag) {

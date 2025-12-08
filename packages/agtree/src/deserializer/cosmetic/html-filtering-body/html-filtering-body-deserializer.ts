@@ -6,6 +6,7 @@ import {
     type HtmlFilteringRuleSelectorPseudoClass,
     type Value,
     type HtmlFilteringRuleSelectorList,
+    type HtmlFilteringRuleBodyParsed,
 } from '../../../nodes';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import { NULL } from '../../../utils/constants';
@@ -38,9 +39,24 @@ export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
         frequentPseudoClasses?: Map<number, string>,
     ): void {
         buffer.assertUint8(BinaryTypeMarshallingMap.HtmlFilteringRuleBody);
-        node.type = 'HtmlFilteringRuleBody';
-
         let prop = buffer.readUint8();
+
+        // Handle raw body
+        if (prop === HtmlFilteringBodyMarshallingMap.Raw) {
+            ValueDeserializer.deserialize(buffer, node as Partial<Value>);
+            return;
+        }
+
+        // Throw in case of invalid body type
+        if (prop !== HtmlFilteringBodyMarshallingMap.Parsed) {
+            throw new Error(`Invalid HTML filtering rule body type: ${prop}`);
+        }
+
+        // Handle parsed body
+        node = node as Partial<HtmlFilteringRuleBodyParsed>;
+        node.type = 'HtmlFilteringRuleBody';
+        prop = buffer.readUint8();
+
         while (prop !== NULL) {
             switch (prop) {
                 case HtmlFilteringBodyMarshallingMap.SelectorList:

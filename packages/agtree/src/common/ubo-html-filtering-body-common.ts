@@ -1,4 +1,4 @@
-import { type HtmlFilteringRuleBody } from '../nodes';
+import { type HtmlFilteringRuleBodyParsed } from '../nodes';
 import { UBO_RESPONSEHEADER_FN } from '../utils/constants';
 
 /**
@@ -8,10 +8,10 @@ import { UBO_RESPONSEHEADER_FN } from '../utils/constants';
  *
  * @returns `true` if the node is a response header removal rule, `false` otherwise.
  *
- * @note This method checks `HtmlFilteringRuleBody` because, response header
+ * @note This method checks `HtmlFilteringRuleBodyParsed` because, response header
  * removal rule syntax is same as uBlock-style HTML filtering rule syntax.
  */
-export function isUboResponseHeaderRemovalRuleBody(node: HtmlFilteringRuleBody): boolean {
+export function isUboResponseHeaderRemovalRuleBody(node: HtmlFilteringRuleBodyParsed): boolean {
     // Must have exactly one selector list
     if (node.children.length !== 1) {
         return false;

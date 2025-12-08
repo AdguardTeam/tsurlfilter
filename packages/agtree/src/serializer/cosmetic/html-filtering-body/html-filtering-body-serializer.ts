@@ -38,6 +38,16 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
         // Write node type
         buffer.writeUint8(BinaryTypeMarshallingMap.HtmlFilteringRuleBody);
 
+        // Handle raw body
+        if (node.type === 'Value') {
+            buffer.writeUint8(HtmlFilteringBodyMarshallingMap.Raw);
+            ValueSerializer.serialize(node, buffer);
+            return;
+        }
+
+        // Handle parsed body
+        buffer.writeUint8(HtmlFilteringBodyMarshallingMap.Parsed);
+
         // Write selector list length
         HtmlFilteringBodySerializer.writeArray(
             buffer,

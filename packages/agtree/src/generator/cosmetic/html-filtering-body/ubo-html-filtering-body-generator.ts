@@ -1,5 +1,9 @@
 import { isUboResponseHeaderRemovalRuleBody } from '../../../common/ubo-html-filtering-body-common';
-import { type HtmlFilteringRuleSelectorPseudoClass, type HtmlFilteringRuleBody } from '../../../nodes';
+import {
+    type HtmlFilteringRuleSelectorPseudoClass,
+    type HtmlFilteringRuleBody,
+    type HtmlFilteringRuleBodyParsed,
+} from '../../../nodes';
 import {
     CLOSE_PARENTHESIS,
     EMPTY,
@@ -24,10 +28,13 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
      * @throws Error if the rule body is invalid.
      */
     public static generate(node: HtmlFilteringRuleBody): string {
-        // First, check if it's a response header removal rule and return if so
-        const responseHeaderBody = UboHtmlFilteringBodyGenerator.generateResponseHeaderRule(node);
-        if (responseHeaderBody !== null) {
-            return responseHeaderBody;
+        // First, check if it's a response header removal rule
+        // and return if so only if the node is parsed body type
+        if (node.type === 'HtmlFilteringRuleBody') {
+            const responseHeaderBody = UboHtmlFilteringBodyGenerator.generateResponseHeaderRule(node);
+            if (responseHeaderBody !== null) {
+                return responseHeaderBody;
+            }
         }
 
         return HtmlFilteringBodyGenerator.generate(node);
@@ -44,7 +51,7 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
      * @note This method accepts `HtmlFilteringRuleBody` as `node` because,
      * response header removal rule syntax is same as uBlock-style HTML filtering rule syntax.
      */
-    private static generateResponseHeaderRule(node: HtmlFilteringRuleBody): string | null {
+    private static generateResponseHeaderRule(node: HtmlFilteringRuleBodyParsed): string | null {
         if (!isUboResponseHeaderRemovalRuleBody(node)) {
             return null;
         }

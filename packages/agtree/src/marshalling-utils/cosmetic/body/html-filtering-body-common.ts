@@ -13,33 +13,37 @@ export const HtmlFilteringBodyMarshallingMap = {
     Start: 1,
     End: 2,
 
+    // Body type
+    Raw: 3,
+    Parsed: 4,
+
     // `HtmlFilteringRuleBody` node
-    SelectorList: 3,
+    SelectorList: 5,
 
     // `HtmlFilteringRuleSelectorList` node
-    SelectorListItem: 4,
-    Selectors: 5,
+    SelectorListItem: 6,
+    Selectors: 7,
 
     // `HtmlFilteringRuleSelector` node
-    SelectorsItem: 6,
-    Parts: 7,
-    Combinator: 8,
+    SelectorsItem: 8,
+    Parts: 9,
+    Combinator: 10,
 
     // `HtmlFilteringRuleSelectorPart` nodes
-    Value: 9,
-    Attribute: 10,
-    PseudoClass: 11,
+    Value: 11,
+    Attribute: 12,
+    PseudoClass: 13,
 
     // `HtmlFilteringRuleSelectorAttribute` node
-    AttributeName: 12,
-    AttributeOperator: 13,
-    AttributeValue: 14,
-    AttributeFlag: 15,
+    AttributeName: 14,
+    AttributeOperator: 15,
+    AttributeValue: 16,
+    AttributeFlag: 17,
 
     // `HtmlFilteringRuleSelectorPseudoClass` node
-    PseudoClassName: 16,
-    PseudoClassIsFunction: 17,
-    PseudoClassArgument: 18,
+    PseudoClassName: 18,
+    PseudoClassIsFunction: 19,
+    PseudoClassArgument: 20,
 } as const;
 
 // intentionally naming the variable the same as the type

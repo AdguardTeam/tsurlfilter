@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Added combinators (`<space>`, `>`, `+`, `~`, `,`) support for HTML filtering rules [tsurlfilter#96].
 - Added CSS-native pseudo-classes support for HTML filtering rules
   (e.g., `:nth-child()`, `:first-of-type`, etc.) [tsurlfilter#96].
+- Added `parseHtmlFilteringRules` option to `ParserOptions` which enables/disables
+  HTML filtering rules parsing, defaulting to `false`.
 
 [tsurlfilter#96]: https://github.com/AdguardTeam/tsurlfilter/issues/96
 

@@ -66,9 +66,12 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         baseOffset = 0,
     ): HtmlFilteringRuleBody {
         // First, check if it's a response header removal rule and return if so
-        const responseHeaderBody = UboHtmlFilteringBodyParser.parseResponseHeaderRule(raw, options, baseOffset);
-        if (responseHeaderBody !== null) {
-            return responseHeaderBody;
+        // only if parsing of HTML filtering rules is option is enabled
+        if (options.parseHtmlFilteringRules) {
+            const responseHeaderBody = UboHtmlFilteringBodyParser.parseResponseHeaderRule(raw, options, baseOffset);
+            if (responseHeaderBody !== null) {
+                return responseHeaderBody;
+            }
         }
 
         return HtmlFilteringBodyParser.parse(raw, options, baseOffset);
@@ -95,7 +98,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
      * response header removal rule syntax is same as uBlock-style
      * HTML filtering rule syntax.
      */
-    private static parseResponseHeaderRule(
+    public static parseResponseHeaderRule(
         raw: string,
         options = defaultParserOptions,
         baseOffset = 0,

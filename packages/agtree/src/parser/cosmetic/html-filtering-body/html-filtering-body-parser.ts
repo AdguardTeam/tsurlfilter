@@ -119,6 +119,16 @@ export class HtmlFilteringBodyParser extends BaseParser {
         options = defaultParserOptions,
         baseOffset = 0,
     ): HtmlFilteringRuleBody {
+        // If HTML filtering rules parsing is disabled, return raw value node
+        if (!options.parseHtmlFilteringRules) {
+            return {
+                type: 'Value',
+                value: raw,
+                start: baseOffset,
+                end: baseOffset + raw.length,
+            };
+        }
+
         // Construct body node
         const result: HtmlFilteringRuleBody = {
             type: 'HtmlFilteringRuleBody',

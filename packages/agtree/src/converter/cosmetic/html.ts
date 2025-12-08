@@ -8,6 +8,7 @@ import {
     CosmeticRuleSeparator,
     CosmeticRuleType,
     type HtmlFilteringRule,
+    type HtmlFilteringRuleBodyParsed,
     type HtmlFilteringRuleSelector,
     type HtmlFilteringRuleSelectorAttribute,
     type HtmlFilteringRuleSelectorList,
@@ -22,6 +23,8 @@ import { type NodeConversionResult, createNodeConversionResult } from '../base-i
 import { cloneDomainListNode } from '../../ast-utils/clone';
 import { EQUALS } from '../../utils/constants';
 import { QuoteUtils } from '../../utils';
+import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import { AdgHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
 
 /**
  * From the AdGuard docs:
@@ -147,7 +150,18 @@ export class HtmlRuleConverter extends RuleConverterBase {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
-        const selectorLists = rule.body.children;
+        // Handle case when body is raw value string.
+        // If so, parse it first as we need to work with AST nodes.
+        let selectorLists: HtmlFilteringRuleSelectorList[];
+        if (rule.body.type === 'Value') {
+            const parsedBody = UboHtmlFilteringBodyParser.parse(rule.body.value, {
+                isLocIncluded: false,
+                parseHtmlFilteringRules: true,
+            }) as HtmlFilteringRuleBodyParsed;
+            selectorLists = parsedBody.children;
+        } else {
+            selectorLists = rule.body.children;
+        }
 
         // Selector lists must not be empty
         HtmlRuleConverter.assertNotEmpty(selectorLists, ERROR_MESSAGES.EMPTY_SELECTOR_LISTS);
@@ -411,7 +425,18 @@ export class HtmlRuleConverter extends RuleConverterBase {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
-        const selectorLists = rule.body.children;
+        // Handle case when body is raw value string.
+        // If so, parse it first as we need to work with AST nodes.
+        let selectorLists: HtmlFilteringRuleSelectorList[];
+        if (rule.body.type === 'Value') {
+            const parsedBody = AdgHtmlFilteringBodyParser.parse(rule.body.value, {
+                isLocIncluded: false,
+                parseHtmlFilteringRules: true,
+            }) as HtmlFilteringRuleBodyParsed;
+            selectorLists = parsedBody.children;
+        } else {
+            selectorLists = rule.body.children;
+        }
 
         // Selector lists must not be empty
         HtmlRuleConverter.assertNotEmpty(selectorLists, ERROR_MESSAGES.EMPTY_SELECTOR_LISTS);

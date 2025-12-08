@@ -8,6 +8,7 @@ import {
     type HtmlFilteringRuleSelectorPseudoClass,
     RuleCategory,
     type AnyRule,
+    type HtmlFilteringRuleBodyParsed,
 } from '../../nodes';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
@@ -17,6 +18,7 @@ import { createNetworkRuleNode } from '../../ast-utils/network-rules';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { isUboResponseHeaderRemovalRuleBody } from '../../common/ubo-html-filtering-body-common';
+import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
 
 const ADG_REMOVEHEADER_MODIFIER = 'removeheader';
 
@@ -57,9 +59,20 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
             return createNodeConversionResult([rule], false);
         }
 
+        // Handle case when body is raw value string.
+        // If so, parse it first as we need to work with AST nodes.
+        let body: HtmlFilteringRuleBodyParsed | null = null;
+        if (rule.body.type === 'HtmlFilteringRuleBody') {
+            body = rule.body;
+        } else {
+            body = UboHtmlFilteringBodyParser.parseResponseHeaderRule(rule.body.value, {
+                isLocIncluded: false,
+                parseHtmlFilteringRules: true,
+            }) as HtmlFilteringRuleBodyParsed | null;
+        }
+
         // Check if the rule body is a uBO responseheader(...) function
-        const { body } = rule;
-        if (!isUboResponseHeaderRemovalRuleBody(body)) {
+        if (!body || !isUboResponseHeaderRemovalRuleBody(body)) {
             return createNodeConversionResult([rule], false);
         }
 
