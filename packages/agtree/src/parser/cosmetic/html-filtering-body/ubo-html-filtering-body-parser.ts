@@ -229,7 +229,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
             // Get last non-whitespace token
             const lastNonWsToken = stream.lookbehindForNonWs();
 
-            // It should'nt be null here, but just to be safe if it is
+            // It shouldn't be null here, but just to be safe if it is
             // it means that raw is empty or contains only whitespaces
             if (!lastNonWsToken) {
                 return null;
