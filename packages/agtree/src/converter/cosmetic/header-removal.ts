@@ -62,13 +62,13 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
         // Handle case when body is raw value string.
         // If so, parse it first as we need to work with AST nodes.
         let body: HtmlFilteringRuleBodyParsed | null = null;
-        if (rule.body.type === 'HtmlFilteringRuleBody') {
-            body = rule.body;
-        } else {
+        if (rule.body.type === 'Value') {
             body = UboHtmlFilteringBodyParser.parseResponseHeaderRule(rule.body.value, {
                 isLocIncluded: false,
                 parseHtmlFilteringRules: true,
             }) as HtmlFilteringRuleBodyParsed | null;
+        } else {
+            body = rule.body;
         }
 
         // Check if the rule body is a uBO responseheader(...) function

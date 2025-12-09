@@ -41,12 +41,12 @@ export class HtmlFilteringBodyGenerator extends BaseGenerator {
      * @throws Error if the rule body is invalid.
      */
     public static generate(node: HtmlFilteringRuleBody): string {
-        const result: string[] = [];
-
         // If the node is not parsed body, return raw value as-is
         if (node.type === 'Value') {
             return node.value;
         }
+
+        const result: string[] = [];
 
         // Throw an error if the body is empty
         if (node.children.length === 0) {
