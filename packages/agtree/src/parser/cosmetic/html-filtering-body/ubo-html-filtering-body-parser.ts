@@ -220,7 +220,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
 
         // Construct body node
         const result: HtmlFilteringRuleBody = {
-            type: 'HtmlFilteringRuleBody',
+            type: 'HtmlFilteringRuleBodyParsed',
             children: [selectorList],
         };
 

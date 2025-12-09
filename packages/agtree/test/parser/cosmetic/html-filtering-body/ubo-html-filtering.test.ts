@@ -41,7 +41,7 @@ describe('UboHtmlFilteringBodyParser', () => {
             {
                 actual: 'responseheader(Test)',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -73,7 +73,7 @@ describe('UboHtmlFilteringBodyParser', () => {
             {
                 actual: '  responseheader(  Test  )  ',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{

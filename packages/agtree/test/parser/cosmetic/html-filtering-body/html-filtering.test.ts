@@ -36,7 +36,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'div',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -58,7 +58,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'my-tag',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -80,7 +80,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'my_tag',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -102,7 +102,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '#id',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -124,7 +124,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '#my-id',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -146,7 +146,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '#my_id',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -168,7 +168,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '#-myid',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -190,7 +190,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '.class',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -212,7 +212,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '.my-class',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -234,7 +234,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '.my_class',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -256,7 +256,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '.-myclass',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -278,7 +278,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr="value"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -314,7 +314,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -340,7 +340,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr=value]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -376,7 +376,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: "[attr='value']",
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -412,7 +412,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr="value" i]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -453,7 +453,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr="value"i]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -494,7 +494,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr=value i]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -535,7 +535,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: "[attr='value' i]",
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -576,7 +576,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr~="value"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -612,7 +612,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr^="value"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -648,7 +648,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr$="value"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -684,7 +684,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr*="value"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -720,7 +720,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr|="value"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -756,7 +756,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[data-test-value="x"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -792,7 +792,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[data_test_value="x"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -828,7 +828,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[-data="x"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -864,7 +864,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr=""]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -901,7 +901,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr1="value1"][attr2^="value2"][attr3]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -967,7 +967,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo(arg)',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -999,7 +999,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo()',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1026,7 +1026,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1053,7 +1053,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo-class-name(arg)',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1085,7 +1085,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo_class_name(arg)',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1117,7 +1117,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: ':-pseudo(arg)',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1149,7 +1149,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo1(arg):pseudo2():pseudo3',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1203,7 +1203,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: ':not(div, span.class)',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1235,7 +1235,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'div#id.class[attr~="value" i]:pseudo(arg)',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1308,7 +1308,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'div span',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [
@@ -1346,7 +1346,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'div > span',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [
@@ -1384,7 +1384,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'div + span',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [
@@ -1422,7 +1422,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'div ~ span',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [
@@ -1460,7 +1460,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'div > span + a ~ h1',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [
@@ -1526,7 +1526,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'div, span[attr="value"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [
                         {
                             type: 'HtmlFilteringRuleSelectorList',
@@ -1584,7 +1584,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'div > span, .class + #id',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [
                         {
                             type: 'HtmlFilteringRuleSelectorList',
@@ -1653,7 +1653,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '   div   ',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1675,7 +1675,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: 'div   >    span',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [
@@ -1713,7 +1713,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[  attr   =   "value"  ]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1749,7 +1749,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[  attr   =   value  ]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1785,7 +1785,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo(  arg with spaces  )',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1817,7 +1817,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr="value with \\"escaped\\" quotes"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1852,7 +1852,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: "[attr='value with \\'escaped\\' quotes']",
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1887,7 +1887,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: '[attr="value with \'escaped\' quotes"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -1922,7 +1922,7 @@ describe('HtmlFilteringBodyParser', () => {
             {
                 actual: "[attr='value with \"escaped\" quotes']",
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{

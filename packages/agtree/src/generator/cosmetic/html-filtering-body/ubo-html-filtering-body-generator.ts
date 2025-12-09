@@ -30,7 +30,7 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
     public static generate(node: HtmlFilteringRuleBody): string {
         // First, check if it's a response header removal rule
         // and return if so only if the node is parsed body type
-        if (node.type === 'HtmlFilteringRuleBody') {
+        if (node.type === 'HtmlFilteringRuleBodyParsed') {
             const responseHeaderBody = UboHtmlFilteringBodyGenerator.generateResponseHeaderRule(node);
             if (responseHeaderBody !== null) {
                 return responseHeaderBody;

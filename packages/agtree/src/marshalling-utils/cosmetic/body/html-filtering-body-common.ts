@@ -17,7 +17,7 @@ export const HtmlFilteringBodyMarshallingMap = {
     Raw: 3,
     Parsed: 4,
 
-    // `HtmlFilteringRuleBody` node
+    // `HtmlFilteringRuleBodyParsed` node
     SelectorList: 5,
 
     // `HtmlFilteringRuleSelectorList` node

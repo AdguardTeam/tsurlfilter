@@ -36,7 +36,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: '[attr="value with "" quotes"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -72,7 +72,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: '[attr=""" value with quotes"]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -108,7 +108,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: '[attr="value with quotes """]',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -144,7 +144,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: '[attr=\'value with " quotes\']',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -180,7 +180,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: '[attr=\'" value with quotes\']',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -216,7 +216,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: '[attr=\'value with quotes "\']',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -252,7 +252,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: '[attr=\'value with "" quotes\']',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -288,7 +288,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: '[attr=\'"" value with quotes\']',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -324,7 +324,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: '[attr=\'value with quotes ""\']',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -360,7 +360,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo("value with "" quotes")',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -392,7 +392,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo(""" value with quotes")',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{
@@ -424,7 +424,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo("value with quotes """)',
                 expected: (context) => ({
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: [{
                         type: 'HtmlFilteringRuleSelectorList',
                         children: [{

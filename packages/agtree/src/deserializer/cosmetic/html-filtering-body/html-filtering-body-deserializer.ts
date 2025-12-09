@@ -54,7 +54,7 @@ export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
 
         // Handle parsed body
         node = node as Partial<HtmlFilteringRuleBodyParsed>;
-        node.type = 'HtmlFilteringRuleBody';
+        node.type = 'HtmlFilteringRuleBodyParsed';
         prop = buffer.readUint8();
 
         while (prop !== NULL) {

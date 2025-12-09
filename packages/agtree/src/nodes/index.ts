@@ -1143,8 +1143,7 @@ export interface HtmlFilteringRuleSelectorList extends Node {
  * Represents an HTML filtering rule body.
  */
 export interface HtmlFilteringRuleBodyParsed extends Node {
-    // FIXME: Should we rename it to `HtmlFilteringRuleBodyParsed`?
-    type: 'HtmlFilteringRuleBody';
+    type: 'HtmlFilteringRuleBodyParsed';
 
     /**
      * List of selectors of the HTML filtering rule separated by commas.

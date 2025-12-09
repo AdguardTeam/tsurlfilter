@@ -377,6 +377,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             });
         }
 
+        // FIXME: Convert to Value if node was Value initially?
         return createNodeConversionResult(
             [{
                 category: RuleCategory.Cosmetic,
@@ -395,7 +396,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 },
 
                 body: {
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: convertedSelectorLists,
                 },
             }],
@@ -631,6 +632,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             });
         }
 
+        // FIXME: Convert to Value if node was Value initially?
         return createNodeConversionResult(
             [{
                 category: RuleCategory.Cosmetic,
@@ -648,7 +650,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 },
 
                 body: {
-                    type: 'HtmlFilteringRuleBody',
+                    type: 'HtmlFilteringRuleBodyParsed',
                     children: convertedSelectorLists,
                 },
             }],
