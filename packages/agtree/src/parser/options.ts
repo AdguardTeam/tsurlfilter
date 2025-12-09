@@ -60,6 +60,5 @@ export const defaultParserOptions: ParserOptions = Object.freeze({
     includeRaws: true,
     ignoreComments: false,
     parseHostRules: false,
-    // FIXME: Make default `false` after updating tests
-    parseHtmlFilteringRules: true,
+    parseHtmlFilteringRules: false,
 });

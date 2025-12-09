@@ -14,6 +14,15 @@ import {
 import {
     AdgHtmlFilteringBodyDeserializer,
 } from '../../../../src/deserializer/cosmetic/html-filtering-body/adg-html-filtering-body-deserializer';
+import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
+
+/**
+ * Default parser options with HTML filtering rules parsing enabled.
+ */
+const parsingEnabledDefaultParserOptions: ParserOptions = {
+    ...defaultParserOptions,
+    parseHtmlFilteringRules: true,
+};
 
 /**
  * Please note that most of the test cases are covered in `html-filtering.test.ts` file,
@@ -443,7 +452,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 }),
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(AdgHtmlFilteringBodyParser.parse(actual)).toEqual(
+            expect(AdgHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions)).toEqual(
                 expectedFn(new NodeExpectContext(actual)),
             );
         });
@@ -500,7 +509,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 expected: ':pseudo("value with quotes """)',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = AdgHtmlFilteringBodyParser.parse(actual);
+            const ruleNode = AdgHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions);
 
             if (ruleNode === null) {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);

@@ -19,6 +19,15 @@ import {
 import {
     UboHtmlFilteringBodyDeserializer,
 } from '../../../../src/deserializer/cosmetic/html-filtering-body/ubo-html-filtering-body-deserializer';
+import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
+
+/**
+ * Default parser options with HTML filtering rules parsing enabled.
+ */
+const parsingEnabledDefaultParserOptions: ParserOptions = {
+    ...defaultParserOptions,
+    parseHtmlFilteringRules: true,
+};
 
 /**
  * Please note that most of the test cases are covered in `html-filtering.test.ts` file,
@@ -92,7 +101,7 @@ describe('UboHtmlFilteringBodyParser', () => {
                 }),
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(UboHtmlFilteringBodyParser.parse(actual)).toMatchObject(
+            expect(UboHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions)).toMatchObject(
                 expectedFn(new NodeExpectContext(actual)),
             );
         });
@@ -139,7 +148,7 @@ describe('UboHtmlFilteringBodyParser', () => {
                 ),
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = vi.fn(() => UboHtmlFilteringBodyParser.parse(actual));
+            const fn = vi.fn(() => UboHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions));
 
             // parse should throw
             expect(fn).toThrow();
@@ -166,7 +175,7 @@ describe('UboHtmlFilteringBodyParser', () => {
                 expected: 'responseheader(Test)',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = UboHtmlFilteringBodyParser.parse(actual);
+            const ruleNode = UboHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions);
 
             if (ruleNode === null) {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);

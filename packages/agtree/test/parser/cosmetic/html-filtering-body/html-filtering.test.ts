@@ -19,6 +19,15 @@ import {
 import {
     HtmlFilteringBodyDeserializer,
 } from '../../../../src/deserializer/cosmetic/html-filtering-body/html-filtering-body-deserializer';
+import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
+
+/**
+ * Default parser options with HTML filtering rules parsing enabled.
+ */
+const parsingEnabledDefaultParserOptions: ParserOptions = {
+    ...defaultParserOptions,
+    parseHtmlFilteringRules: true,
+};
 
 describe('HtmlFilteringBodyParser', () => {
     describe('HtmlFilteringBodyParser.parse - valid cases', () => {
@@ -1944,7 +1953,7 @@ describe('HtmlFilteringBodyParser', () => {
                 }),
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(HtmlFilteringBodyParser.parse(actual)).toMatchObject(
+            expect(HtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions)).toMatchObject(
                 expectedFn(new NodeExpectContext(actual)),
             );
         });
@@ -2244,7 +2253,7 @@ describe('HtmlFilteringBodyParser', () => {
                 )),
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = vi.fn(() => HtmlFilteringBodyParser.parse(actual));
+            const fn = vi.fn(() => HtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions));
 
             // parse should throw
             expect(fn).toThrow();
@@ -2479,7 +2488,7 @@ describe('HtmlFilteringBodyParser', () => {
                 expected: '[attr="value with \\"escaped\\" quotes"]',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = HtmlFilteringBodyParser.parse(actual);
+            const ruleNode = HtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions);
 
             if (ruleNode === null) {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
