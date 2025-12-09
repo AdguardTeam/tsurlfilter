@@ -102,7 +102,7 @@ export const ERROR_MESSAGES = {
 
     FIRST_SELECTOR_WITH_COMBINATOR: 'First selector cannot start with a combinator',
     MISSING_COMBINATOR: 'Missing combinator between selectors',
-    SPECIALS_ONLY_SELECTOR: 'Selector cannot contain only special attribute selectors or pseudo classes',
+    SPECIALS_ONLY_SELECTOR: 'Selector cannot contain only special attribute selectors or pseudo-classes',
 
     ATTRIBUTE_OPERATOR_WITHOUT_VALUE: 'Attribute selector operator specified without a value',
     ATTRIBUTE_FLAG_WITHOUT_VALUE: 'Attribute selector flag specified without a value',
@@ -227,7 +227,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                             /**
                              * Record found special attribute selectors in case
-                             * if there are same functional special pseudo classes
+                             * if there are same functional special pseudo-classes
                              * in the same selector:
                              * - `[min-length]` attribute and `:min-text-length()` pseudo class
                              * - `[tag-content]` attribute and `:has-text()` / `:contains()` pseudo class
@@ -262,7 +262,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             }
                         }
                     } else if (part.type === 'HtmlFilteringRuleSelectorPseudoClass') {
-                        // Validate pseudo class
+                        // Validate pseudo-class
                         HtmlRuleConverter.assertValidPseudoClass(part);
 
                         /**
@@ -281,7 +281,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         ) {
                             specialParts += 1;
 
-                            // Validate special pseudo class
+                            // Validate special pseudo-class
                             HtmlRuleConverter.assertValidSpecialPseudoClass(part);
 
                             const name = part.name.value;
@@ -478,12 +478,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 const convertedParts: HtmlFilteringRuleSelectorPart[] = [];
                 for (const part of parts) {
                     if (part.type === 'HtmlFilteringRuleSelectorPseudoClass') {
-                        // Validate pseudo class
+                        // Validate pseudo-class
                         HtmlRuleConverter.assertValidPseudoClass(part);
 
                         /**
-                         * Handle uBlock-specific pseudo class selectors.
-                         * Please, note that uBlock-specific pseudo class selectors
+                         * Handle uBlock-specific pseudo-class selectors.
+                         * Please, note that uBlock-specific pseudo-class selectors
                          * shouldn't be specified in AdGuard rules in the first place,
                          * but we still handle them here for completeness and de-duplication.
                          */
@@ -493,7 +493,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         ) {
                             specialParts += 1;
 
-                            // Validate special pseudo class
+                            // Validate special pseudo-class
                             HtmlRuleConverter.assertValidSpecialPseudoClass(part);
 
                             const name = part.name.value;
@@ -503,7 +503,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             const argument = part.argument!.value;
 
                             /**
-                             * Record found special pseudo class selectors in case
+                             * Record found special pseudo-class selectors in case
                              * if there are same functional special attribute
                              * in the same selector:
                              * - `:min-text-length()` pseudo class and `[min-length]` attribute
@@ -725,12 +725,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Constructs an HTML filtering rule selector pseudo class node.
+     * Constructs an HTML filtering rule selector pseudo-class node.
      *
-     * @param name Name of the pseudo class.
-     * @param argument Argument of the pseudo class.
+     * @param name Name of the pseudo-class.
+     * @param argument Argument of the pseudo-class.
      *
-     * @returns Constructed pseudo class node.
+     * @returns Constructed pseudo-class node.
      */
     private static getPseudoClassNode(
         name: string,
@@ -894,11 +894,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Asserts that the given selector pseudo class is a valid pseudo class.
+     * Asserts that the given selector pseudo-class is a valid pseudo-class.
      *
-     * @param pseudoClass Selector pseudo class to check.
+     * @param pseudoClass Selector pseudo-class to check.
      *
-     * @throws If the part is not a valid pseudo class.
+     * @throws If the part is not a valid pseudo-class.
      */
     private static assertValidPseudoClass(
         pseudoClass: HtmlFilteringRuleSelectorPseudoClass,
@@ -951,11 +951,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Asserts that the given selector pseudo class is a valid special pseudo class.
+     * Asserts that the given selector pseudo-class is a valid special pseudo-class.
      *
-     * @param pseudoClass Selector pseudo class to check.
+     * @param pseudoClass Selector pseudo-class to check.
      *
-     * @throws If the part is not a valid special pseudo class.
+     * @throws If the part is not a valid special pseudo-class.
      */
     private static assertValidSpecialPseudoClass(
         pseudoClass: HtmlFilteringRuleSelectorPseudoClass,
@@ -970,7 +970,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Asserts that the given special attribute / pseudo class length value is valid.
+     * Asserts that the given special attribute / pseudo-class length value is valid.
      *
      * @param name Name of the attribute or pseudo-class.
      * @param value Value to parse.

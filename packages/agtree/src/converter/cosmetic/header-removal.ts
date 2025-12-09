@@ -76,7 +76,8 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
             return createNodeConversionResult([rule], false);
         }
 
-        // Indexes and types checked in `isUboResponseHeaderRemovalRuleBody`
+        // Length of AST nodes, types of nodes, non-null argument
+        // check are already done in `isUboResponseHeaderRemovalRuleBody()`
         const selectorList = body.children[0];
         const selector = selectorList.children[0];
         const pseudoClass = selector.children[0] as HtmlFilteringRuleSelectorPseudoClass;

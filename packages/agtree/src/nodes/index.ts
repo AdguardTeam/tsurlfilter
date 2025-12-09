@@ -1054,23 +1054,23 @@ export interface ScriptletInjectionRuleBody extends Node {
 }
 
 /**
- * Represents an HTML filtering rule selector pseudo class.
+ * Represents an HTML filtering rule selector pseudo-class.
  */
 export interface HtmlFilteringRuleSelectorPseudoClass extends Node {
     type: 'HtmlFilteringRuleSelectorPseudoClass';
 
     /**
-     * Name of the HTML filtering rule selector pseudo class.
+     * Name of the HTML filtering rule selector pseudo-class.
      */
     name: Value;
 
     /**
-     * Indicates whether the pseudo class is functional (has callee brackets) or not.
+     * Indicates whether the pseudo-class is functional (has callee brackets) or not.
      */
     isFunction: boolean;
 
     /**
-     * Argument of the HTML filtering rule selector pseudo class.
+     * Argument of the HTML filtering rule selector pseudo-class.
      */
     argument?: Value;
 }
@@ -1117,7 +1117,7 @@ export interface HtmlFilteringRuleSelector extends Node {
     type: 'HtmlFilteringRuleSelector';
 
     /**
-     * Parts of the HTML filtering rule selector (tag name, id, class name, attribute, pseudo class).
+     * Parts of the HTML filtering rule selector (tag name, id, class name, attribute, pseudo-class).
      */
     children: HtmlFilteringRuleSelectorPart[];
 

@@ -79,16 +79,16 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: '##^:has-text()',
-                    expected: 'Special pseudo class \'has-text\' requires an argument',
+                    expected: 'Special pseudo-class \'has-text\' requires an argument',
                 },
                 {
                     actual: '##^:min-text-length(abc)',
-                    expected: 'Argument of special pseudo class \'min-text-length\' must be an integer, got \'abc\'',
+                    expected: 'Argument of special pseudo-class \'min-text-length\' must be an integer, got \'abc\'',
                 },
                 {
                     actual: '##^:min-text-length(-1)',
                     // eslint-disable-next-line max-len
-                    expected: 'Argument of special pseudo class \'min-text-length\' must be a positive integer, got \'-1\'',
+                    expected: 'Argument of special pseudo-class \'min-text-length\' must be a positive integer, got \'-1\'',
                 },
                 {
                     actual: '##^:has-text("example")',

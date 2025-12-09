@@ -34,11 +34,11 @@ export function isUboResponseHeaderRemovalRuleBody(node: HtmlFilteringRuleBodyPa
     const part = selector.children[0];
 
     return (
-        // Should be a pseudo class
+        // Should be a pseudo-class
         part.type === 'HtmlFilteringRuleSelectorPseudoClass'
-        // Pseudo class name should match `responseheader`
+        // Pseudo-class name should match `responseheader`
         && part.name.value === UBO_RESPONSEHEADER_FN
-        // Should be a functional pseudo class
+        // Should be a functional pseudo-class
         && part.isFunction
         // Should have argument
         && part.argument !== undefined

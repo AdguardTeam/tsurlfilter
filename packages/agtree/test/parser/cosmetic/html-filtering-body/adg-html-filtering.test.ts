@@ -347,7 +347,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // pseudo class - double quotes are not escaped - in middle
+            // pseudo-class - double quotes are not escaped - in middle
             {
                 actual: ':pseudo("value with "" quotes")',
                 expected: (context) => ({
@@ -379,7 +379,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // pseudo class - double quotes are not escaped - at beginning
+            // pseudo-class - double quotes are not escaped - at beginning
             {
                 actual: ':pseudo(""" value with quotes")',
                 expected: (context) => ({
@@ -411,7 +411,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // pseudo class - double quotes are not escaped - at end
+            // pseudo-class - double quotes are not escaped - at end
             {
                 actual: ':pseudo("value with quotes """)',
                 expected: (context) => ({

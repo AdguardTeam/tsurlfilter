@@ -277,7 +277,7 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
         // Write node type
         buffer.writeUint8(HtmlFilteringBodyMarshallingMap.PseudoClass);
 
-        // Write pseudo class name
+        // Write pseudo-class name
         buffer.writeUint8(HtmlFilteringBodyMarshallingMap.PseudoClassName);
         ValueSerializer.serialize(node.name, buffer, frequentPseudoClasses);
 
@@ -285,19 +285,19 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
         buffer.writeUint8(HtmlFilteringBodyMarshallingMap.PseudoClassIsFunction);
         buffer.writeUint8(node.isFunction ? 1 : 0);
 
-        // Write pseudo class argument
+        // Write pseudo-class argument
         if (!isUndefined(node.argument)) {
             buffer.writeUint8(HtmlFilteringBodyMarshallingMap.PseudoClassArgument);
             ValueSerializer.serialize(node.argument, buffer);
         }
 
-        // Write pseudo class start position
+        // Write pseudo-class start position
         if (!isUndefined(node.start)) {
             buffer.writeUint8(HtmlFilteringBodyMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
-        // Write pseudo class end position
+        // Write pseudo-class end position
         if (!isUndefined(node.end)) {
             buffer.writeUint8(HtmlFilteringBodyMarshallingMap.End);
             buffer.writeUint32(node.end);
