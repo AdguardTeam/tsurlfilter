@@ -6,6 +6,7 @@ import {
     type HtmlFilteringRuleBody,
     type HtmlFilteringRuleSelectorPseudoClass,
     type HtmlFilteringRuleSelectorList,
+    type HtmlFilteringRuleBodyParsed,
 } from '../../../nodes';
 import { BaseParser } from '../../base-parser';
 import { CssTokenStream } from '../../css/css-token-stream';
@@ -94,7 +95,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
      * responseheader(header-name)
      * ```
      *
-     * @note This method returns `HtmlFilteringRuleBody` because,
+     * @note This method returns `HtmlFilteringRuleBodyParsed` because,
      * response header removal rule syntax is same as uBlock-style
      * HTML filtering rule syntax.
      */
@@ -102,7 +103,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         raw: string,
         options = defaultParserOptions,
         baseOffset = 0,
-    ): HtmlFilteringRuleBody | null {
+    ): HtmlFilteringRuleBodyParsed | null {
         const stream = new CssTokenStream(raw, baseOffset);
 
         // Skip whitespaces before function

@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { AdblockSyntaxError, type HtmlFilteringRuleBody } from '../../../../src';
+import { AdblockSyntaxError, type HtmlFilteringRuleBodyParsed } from '../../../../src';
 import {
     UboHtmlFilteringBodyParser,
 } from '../../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
@@ -36,7 +36,7 @@ const parsingEnabledDefaultParserOptions: ParserOptions = {
  */
 describe('UboHtmlFilteringBodyParser', () => {
     describe('UboHtmlFilteringBodyParser.parse - valid cases', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBody> }>([
+        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBodyParsed> }>([
             // responseheader removal rule
             {
                 actual: 'responseheader(Test)',

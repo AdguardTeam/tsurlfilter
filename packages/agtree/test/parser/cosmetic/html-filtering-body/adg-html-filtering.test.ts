@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { type HtmlFilteringRuleBody } from '../../../../src';
+import { type HtmlFilteringRuleBodyParsed } from '../../../../src';
 import {
     AdgHtmlFilteringBodyParser,
 } from '../../../../src/parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
@@ -31,7 +31,7 @@ const parsingEnabledDefaultParserOptions: ParserOptions = {
  */
 describe('AdgHtmlFilteringBodyParser', () => {
     describe('AdgHtmlFilteringBodyParser.parse - valid cases', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBody> }>([
+        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBodyParsed> }>([
             // attribute - double quotes are escaped - in middle
             {
                 actual: '[attr="value with "" quotes"]',

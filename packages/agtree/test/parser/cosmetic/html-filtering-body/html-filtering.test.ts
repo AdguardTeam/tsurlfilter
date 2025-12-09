@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { AdblockSyntaxError, type HtmlFilteringRuleBody } from '../../../../src';
+import { AdblockSyntaxError, type HtmlFilteringRuleBodyParsed } from '../../../../src';
 import {
     HtmlFilteringBodyParser,
 } from '../../../../src/parser/cosmetic/html-filtering-body/html-filtering-body-parser';
@@ -31,7 +31,7 @@ const parsingEnabledDefaultParserOptions: ParserOptions = {
 
 describe('HtmlFilteringBodyParser', () => {
     describe('HtmlFilteringBodyParser.parse - valid cases', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBody> }>([
+        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBodyParsed> }>([
             // tag name only
             {
                 actual: 'div',
