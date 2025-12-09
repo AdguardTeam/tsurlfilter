@@ -74,7 +74,7 @@ describe('HtmlRuleConverter', () => {
                     expected: ["$$div[max-length=\"262144\"]:contains('example')"],
                 },
 
-                // `:has-text()` special pseudo class - regexp are handled
+                // `:has-text()` special pseudo-class - regexp are handled
                 {
                     actual: '##^div:has-text(/ex.*ple/i)',
                     expected: ['$$div[max-length="262144"]:contains(/ex.*ple/i)'],
@@ -345,7 +345,7 @@ describe('HtmlRuleConverter', () => {
                 // invalid selector - only special parts
                 {
                     input: '##^[min-length="10"]:has-text("example")',
-                    error: 'Selector cannot contain only special attribute selectors or pseudo classes',
+                    error: 'Selector cannot contain only special attribute selectors or pseudo-classes',
                 },
             ])('should not convert \'$input\'', ({ input, error }) => {
                 if (typeof input !== 'string') {
@@ -406,43 +406,43 @@ describe('HtmlRuleConverter', () => {
                     expected: ['##^div:has-text(example)'],
                 },
 
-                // `:contains()` special pseudo class
+                // `:contains()` special pseudo-class
                 {
                     actual: '$$div:contains(example)',
                     expected: ['##^div:has-text(example)'],
                 },
 
-                // `:contains()` special pseudo class - double quotes are handled
+                // `:contains()` special pseudo-class - double quotes are handled
                 {
                     actual: '$$div:contains("example")',
                     expected: ['##^div:has-text("example")'],
                 },
 
-                // `:contains()` special pseudo class - single quotes are handled
+                // `:contains()` special pseudo-class - single quotes are handled
                 {
                     actual: "$$div:contains('example')",
                     expected: ["##^div:has-text('example')"],
                 },
 
-                // `:contains()` special pseudo class - regexp are handled
+                // `:contains()` special pseudo-class - regexp are handled
                 {
                     actual: '$$div:contains(/ex.*ple/i)',
                     expected: ['##^div:has-text(/ex.*ple/i)'],
                 },
 
-                // edge case - `[min-length]` ignored when `:min-text-length()` (uBO pseudo class) is present
+                // edge case - `[min-length]` ignored when `:min-text-length()` (uBO pseudo-class) is present
                 {
                     actual: '$$div[min-length="5"]:min-text-length(10)',
                     expected: ['##^div:min-text-length(10)'],
                 },
 
-                // edge case - `[tag-content]` ignored when `:has-text()` (uBO pseudo class) is present
+                // edge case - `[tag-content]` ignored when `:has-text()` (uBO pseudo-class) is present
                 {
                     actual: '$$div[tag-content="a"]:has-text(b)',
                     expected: ['##^div:has-text(b)'],
                 },
 
-                // edge case - `[tag-content]` ignored when `:contains()` (uBO pseudo class) is present
+                // edge case - `[tag-content]` ignored when `:contains()` (uBO pseudo-class) is present
                 {
                     actual: '$$div[tag-content="a"]:contains(b)',
                     expected: ['##^div:has-text(b)'],

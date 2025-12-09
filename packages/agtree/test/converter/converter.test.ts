@@ -92,7 +92,7 @@ describe('Converter integration tests', () => {
                 },
                 {
                     actual: '##^:has-text("example")',
-                    expected: 'Selector cannot contain only special attribute selectors or pseudo classes',
+                    expected: 'Selector cannot contain only special attribute selectors or pseudo-classes',
                 },
             ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
                 expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual))).toThrowError(

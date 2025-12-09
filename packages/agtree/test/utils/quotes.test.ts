@@ -590,7 +590,7 @@ describe('Quote utils', () => {
                 expected: ':pseudo("test""")',
             },
 
-            // should not escape - edge case - attribute pattern inside of the value of pseudo class
+            // should not escape - edge case - attribute pattern inside of the value of pseudo-class
             {
                 actual: ':pseudo("[attr=""test""]")',
                 expected: ':pseudo("[attr=""test""]")',
@@ -686,7 +686,7 @@ describe('Quote utils', () => {
                 expected: ':pseudo("test\\"")',
             },
 
-            // should not escape - edge case - attribute pattern inside of the value of pseudo class
+            // should not escape - edge case - attribute pattern inside of the value of pseudo-class
             {
                 actual: ':pseudo("[attr=\\"test\\"]")',
                 expected: ':pseudo("[attr=\\"test\\"]")',

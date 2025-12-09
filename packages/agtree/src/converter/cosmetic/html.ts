@@ -114,11 +114,11 @@ export const ERROR_MESSAGES = {
     SPECIAL_ATTRIBUTE_VALUE_POSITIVE: 'Value of special attribute selector \'%s\' must be a positive integer, got \'%s\'',
     SPECIAL_ATTRIBUTE_NOT_SUPPORTED: 'Special attribute selector \'%s\' is not supported in conversion',
 
-    PSEUDO_CLASS_ARGUMENT_WITHOUT_FLAG: 'Non-function pseudo class cannot have an argument',
-    SPECIAL_PSEUDO_CLASS_ARGUMENT_REQUIRED: 'Special pseudo class \'%s\' requires an argument',
-    SPECIAL_PSEUDO_CLASS_ARGUMENT_INT: 'Argument of special pseudo class \'%s\' must be an integer, got \'%s\'',
-    SPECIAL_PSEUDO_CLASS_ARGUMENT_POSITIVE: 'Argument of special pseudo class \'%s\' must be a positive integer, got \'%s\'',
-    SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED: 'Special pseudo class \'%s\' is not supported in conversion',
+    PSEUDO_CLASS_ARGUMENT_WITHOUT_FLAG: 'Non-function pseudo-class cannot have an argument',
+    SPECIAL_PSEUDO_CLASS_ARGUMENT_REQUIRED: 'Special pseudo-class \'%s\' requires an argument',
+    SPECIAL_PSEUDO_CLASS_ARGUMENT_INT: 'Argument of special pseudo-class \'%s\' must be an integer, got \'%s\'',
+    SPECIAL_PSEUDO_CLASS_ARGUMENT_POSITIVE: 'Argument of special pseudo-class \'%s\' must be a positive integer, got \'%s\'',
+    SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED: 'Special pseudo-class \'%s\' is not supported in conversion',
 } as const;
 /* eslint-enable max-len */
 
@@ -229,9 +229,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
                              * Record found special attribute selectors in case
                              * if there are same functional special pseudo-classes
                              * in the same selector:
-                             * - `[min-length]` attribute and `:min-text-length()` pseudo class
-                             * - `[tag-content]` attribute and `:has-text()` / `:contains()` pseudo class
-                             * - `max-length` is special case, because there's no corresponding pseudo class,
+                             * - `[min-length]` attribute and `:min-text-length()` pseudo-class
+                             * - `[tag-content]` attribute and `:has-text()` / `:contains()` pseudo-class
+                             * - `max-length` is special case, because there's no corresponding pseudo-class,
                              *   but if it's not specified we set it to the default conversion value.
                              */
                             if (name === AdgAttributeSelectors.MinLength || name === AdgAttributeSelectors.MaxLength) {
@@ -266,12 +266,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         HtmlRuleConverter.assertValidPseudoClass(part);
 
                         /**
-                         * Handle uBlock-specific pseudo classes:
+                         * Handle uBlock-specific pseudo-classes:
                          * - `:has-text()` -> `:contains()`
                          * - `:min-text-length()` -> `[min-length]`
                          *
-                         * Also handle AdGuard-specific pseudo class selectors.
-                         * Please, note that AdGuard-specific pseudo class selectors
+                         * Also handle AdGuard-specific pseudo-class selectors.
+                         * Please, note that AdGuard-specific pseudo-class selectors
                          * shouldn't be specified in uBlock rules in the first place,
                          * but we still handle them here for completeness and de-duplication.
                          */
@@ -314,7 +314,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                 continue;
                             }
 
-                            // Throw an error if the uBlock-specific pseudo class cannot be converted.
+                            // Throw an error if the uBlock-specific pseudo-class cannot be converted.
                             if (HtmlRuleConverter.isSpecialUboPseudoClass(part)) {
                                 throw new RuleConversionError(sprintf(
                                     ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED,
@@ -506,8 +506,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
                              * Record found special pseudo-class selectors in case
                              * if there are same functional special attribute
                              * in the same selector:
-                             * - `:min-text-length()` pseudo class and `[min-length]` attribute
-                             * - `:has-text()` / `:contains()` pseudo class and `[tag-content]` attribute
+                             * - `:min-text-length()` pseudo-class and `[min-length]` attribute
+                             * - `:has-text()` / `:contains()` pseudo-class and `[tag-content]` attribute
                              */
                             if (name === UboPseudoClasses.MinTextLength) {
                                 HtmlRuleConverter.assertValidLengthValue(
@@ -530,7 +530,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                 continue;
                             }
 
-                            // Throw an error if the AdGuard-specific pseudo class cannot be converted
+                            // Throw an error if the AdGuard-specific pseudo-class cannot be converted
                             if (HtmlRuleConverter.isSpecialAdgPseudoClass(part)) {
                                 throw new RuleConversionError(sprintf(
                                     ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED,
@@ -670,11 +670,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Checks whether the given selector pseudo class is a special AdGuard pseudo class.
+     * Checks whether the given selector pseudo-class is a special AdGuard pseudo-class.
      *
-     * @param pseudoClass Selector pseudo class to check.
+     * @param pseudoClass Selector pseudo-class to check.
      *
-     * @returns True if the pseudo class is a special AdGuard pseudo class, false otherwise.
+     * @returns True if the pseudo-class is a special AdGuard pseudo-class, false otherwise.
      */
     private static isSpecialAdgPseudoClass(
         pseudoClass: HtmlFilteringRuleSelectorPseudoClass,
@@ -683,11 +683,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Checks whether the given selector pseudo class is a special uBlock pseudo class.
+     * Checks whether the given selector pseudo-class is a special uBlock pseudo-class.
      *
-     * @param pseudoClass Selector pseudo class to check.
+     * @param pseudoClass Selector pseudo-class to check.
      *
-     * @returns True if the pseudo class is a special uBlock pseudo class, false otherwise.
+     * @returns True if the pseudo-class is a special uBlock pseudo-class, false otherwise.
      */
     private static isSpecialUboPseudoClass(
         pseudoClass: HtmlFilteringRuleSelectorPseudoClass,
