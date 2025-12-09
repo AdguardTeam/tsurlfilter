@@ -116,7 +116,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         // Save the selector start position
         const selectorStart = token.start;
 
-        // Extract pseudo class name raw value
+        // Extract pseudo-class name raw value
         const pseudoClassNameRaw = raw.slice(token.start, token.end - 1);
 
         // Check if it's `responseheader` function
@@ -127,7 +127,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         // Advance function token
         stream.advance();
 
-        // Construct pseudo class name node
+        // Construct pseudo-class name node
         const pseudoClassNameNode = ValueParser.parse(
             pseudoClassNameRaw,
             options,
@@ -140,7 +140,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         // Get next token (argument)
         token = stream.getOrFail();
 
-        // Save pseudo class argument start position (starts after opening parenthesis)
+        // Save pseudo-class argument start position (starts after opening parenthesis)
         const pseudoClassArgumentStart = token.start;
 
         // Skip until balanced closing parenthesis
@@ -149,10 +149,10 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         // Get next token (closing parenthesis)
         token = stream.getOrFail();
 
-        // Save pseudo class argument end position (ends before closing parenthesis)
+        // Save pseudo-class argument end position (ends before closing parenthesis)
         const pseudoClassArgumentEnd = token.start;
 
-        // Extract pseudo class argument raw value
+        // Extract pseudo-class argument raw value
         const param = raw
             .slice(pseudoClassArgumentStart, pseudoClassArgumentEnd)
             .trimEnd();
@@ -166,7 +166,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
             );
         }
 
-        // Construct pseudo class argument node
+        // Construct pseudo-class argument node
         const pseudoClassArgumentNode = ValueParser.parse(
             param,
             options,
@@ -195,7 +195,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
             );
         }
 
-        // Construct pseudo class node
+        // Construct pseudo-class node
         const pseudoClassNode: HtmlFilteringRuleSelectorPseudoClass = {
             type: 'HtmlFilteringRuleSelectorPseudoClass',
             name: pseudoClassNameNode,

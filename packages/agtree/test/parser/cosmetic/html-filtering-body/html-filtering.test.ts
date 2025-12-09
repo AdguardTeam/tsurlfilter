@@ -954,7 +954,7 @@ describe('HtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // pseudo class only
+            // pseudo-class only
             {
                 actual: ':pseudo(arg)',
                 expected: (context) => ({
@@ -986,7 +986,7 @@ describe('HtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // pseudo class only - without argument
+            // pseudo-class only - without argument
             {
                 actual: ':pseudo()',
                 expected: (context) => ({
@@ -1013,7 +1013,7 @@ describe('HtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // pseudo class only - non function
+            // pseudo-class only - non function
             {
                 actual: ':pseudo',
                 expected: (context) => ({
@@ -1040,7 +1040,7 @@ describe('HtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // pseudo class only - name with hyphens
+            // pseudo-class only - name with hyphens
             {
                 actual: ':pseudo-class-name(arg)',
                 expected: (context) => ({
@@ -1072,7 +1072,7 @@ describe('HtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // pseudo class only - name with underscore
+            // pseudo-class only - name with underscore
             {
                 actual: ':pseudo_class_name(arg)',
                 expected: (context) => ({
@@ -1104,7 +1104,7 @@ describe('HtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // pseudo class only - name starting with hyphen
+            // pseudo-class only - name starting with hyphen
             {
                 actual: ':-pseudo(arg)',
                 expected: (context) => ({
@@ -1136,7 +1136,7 @@ describe('HtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // pseudo class only - multiple pseudo classes
+            // pseudo-class only - multiple pseudo-classes
             {
                 actual: ':pseudo1(arg):pseudo2():pseudo3',
                 expected: (context) => ({
@@ -1190,7 +1190,7 @@ describe('HtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // pseudo class only - native pseudo classes with nested selector
+            // pseudo-class only - native pseudo-classes with nested selector
             {
                 actual: ':not(div, span.class)',
                 expected: (context) => ({
@@ -1772,7 +1772,7 @@ describe('HtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // edge case - spaces in pseudo class function argument
+            // edge case - spaces in pseudo-class function argument
             {
                 actual: ':pseudo(  arg with spaces  )',
                 expected: (context) => ({
@@ -2101,7 +2101,7 @@ describe('HtmlFilteringBodyParser', () => {
                 )),
             },
 
-            // invalid pseudo class name - empty
+            // invalid pseudo-class name - empty
             {
                 actual: ':',
                 expected: (context) => (new AdblockSyntaxError(
@@ -2111,17 +2111,17 @@ describe('HtmlFilteringBodyParser', () => {
                 )),
             },
 
-            // invalid pseudo class name - as string
+            // invalid pseudo-class name - as string
             {
                 actual: ':"pseudo"',
                 expected: (context) => (new AdblockSyntaxError(
                     // eslint-disable-next-line max-len
-                    "Expected '<ident-token>' or '<function-token>' as pseudo class name, but got '<string-token>' with value '\"pseudo\"'",
+                    "Expected '<ident-token>' or '<function-token>' as pseudo-class name, but got '<string-token>' with value '\"pseudo\"'",
                     ...context.toTuple(context.getRangeFor('"pseudo"')),
                 )),
             },
 
-            // invalid pseudo class function - missing closing parenthesis (without argument)
+            // invalid pseudo-class function - missing closing parenthesis (without argument)
             {
                 actual: ':pseudo(',
                 expected: (context) => (new AdblockSyntaxError(
@@ -2131,7 +2131,7 @@ describe('HtmlFilteringBodyParser', () => {
                 )),
             },
 
-            // invalid pseudo class function - missing closing parenthesis (with argument)
+            // invalid pseudo-class function - missing closing parenthesis (with argument)
             {
                 actual: ':pseudo(arg',
                 expected: (context) => (new AdblockSyntaxError(

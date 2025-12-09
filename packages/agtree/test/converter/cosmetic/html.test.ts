@@ -50,31 +50,31 @@ describe('HtmlRuleConverter', () => {
                     expected: ['$$div[attr="value"][max-length="262144"] + span:nth-child(2)[max-length="262144"] > a[href^="https"]:not(.className)[max-length="262144"]'],
                 },
 
-                // `:min-text-length()` special pseudo class
+                // `:min-text-length()` special pseudo-class
                 {
                     actual: '##^div:min-text-length(10)',
                     expected: ['$$div[min-length="10"][max-length="262144"]'],
                 },
 
-                // `:has-text()` special pseudo class
+                // `:has-text()` special pseudo-class
                 {
                     actual: '##^div:has-text(example)',
                     expected: ['$$div[max-length="262144"]:contains(example)'],
                 },
 
-                // `:has-text()` special pseudo class - double quotes are handled
+                // `:has-text()` special pseudo-class - double quotes are handled
                 {
                     actual: '##^div:has-text("example")',
                     expected: ['$$div[max-length="262144"]:contains("example")'],
                 },
 
-                // `:has-text()` special pseudo class - single quotes are handled
+                // `:has-text()` special pseudo-class - single quotes are handled
                 {
                     actual: "##^div:has-text('example')",
                     expected: ["$$div[max-length=\"262144\"]:contains('example')"],
                 },
 
-                // `:has-text()` special pseudo class - regexp are handled
+                // `:has-text()` special pseudo-class - regexp are handled
                 {
                     actual: '##^div:has-text(/ex.*ple/i)',
                     expected: ['$$div[max-length="262144"]:contains(/ex.*ple/i)'],
@@ -275,7 +275,7 @@ describe('HtmlRuleConverter', () => {
                     error: 'Invalid HTML filtering rule: Attribute selector value specified without an operator',
                 },
 
-                // invalid pseudo class - argument without flag
+                // invalid pseudo-class - argument without flag
                 {
                     input: {
                         body: {
@@ -290,7 +290,7 @@ describe('HtmlRuleConverter', () => {
                         },
                     } as unknown as HtmlFilteringRule,
                     // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Non-function pseudo class cannot have an argument',
+                    error: 'Invalid HTML filtering rule: Non-function pseudo-class cannot have an argument',
                 },
 
                 // invalid special attribute - value not provided
@@ -323,29 +323,29 @@ describe('HtmlRuleConverter', () => {
                     error: 'Value of special attribute selector \'min-length\' must be a positive integer, got \'-1\'',
                 },
 
-                // invalid special pseudo class - argument missing
+                // invalid special pseudo-class - argument missing
                 {
                     input: '##^:has-text()',
-                    error: 'Special pseudo class \'has-text\' requires an argument',
+                    error: 'Special pseudo-class \'has-text\' requires an argument',
                 },
 
-                // invalid special pseudo class - length value not number
+                // invalid special pseudo-class - length value not number
                 {
                     input: '##^:min-text-length(abc)',
-                    error: 'Argument of special pseudo class \'min-text-length\' must be an integer, got \'abc\'',
+                    error: 'Argument of special pseudo-class \'min-text-length\' must be an integer, got \'abc\'',
                 },
 
-                // invalid special pseudo class - length value not number
+                // invalid special pseudo-class - length value not number
                 {
                     input: '##^:min-text-length(-1)',
                     // eslint-disable-next-line max-len
-                    error: 'Argument of special pseudo class \'min-text-length\' must be a positive integer, got \'-1\'',
+                    error: 'Argument of special pseudo-class \'min-text-length\' must be a positive integer, got \'-1\'',
                 },
 
                 // invalid selector - only special parts
                 {
                     input: '##^[min-length="10"]:has-text("example")',
-                    error: 'Selector cannot contain only special attribute selectors or pseudo classes',
+                    error: 'Selector cannot contain only special attribute selectors or pseudo-classes',
                 },
             ])('should not convert \'$input\'', ({ input, error }) => {
                 if (typeof input !== 'string') {
@@ -406,43 +406,43 @@ describe('HtmlRuleConverter', () => {
                     expected: ['##^div:has-text(example)'],
                 },
 
-                // `:contains()` special pseudo class
+                // `:contains()` special pseudo-class
                 {
                     actual: '$$div:contains(example)',
                     expected: ['##^div:has-text(example)'],
                 },
 
-                // `:contains()` special pseudo class - double quotes are handled
+                // `:contains()` special pseudo-class - double quotes are handled
                 {
                     actual: '$$div:contains("example")',
                     expected: ['##^div:has-text("example")'],
                 },
 
-                // `:contains()` special pseudo class - single quotes are handled
+                // `:contains()` special pseudo-class - single quotes are handled
                 {
                     actual: "$$div:contains('example')",
                     expected: ["##^div:has-text('example')"],
                 },
 
-                // `:contains()` special pseudo class - regexp are handled
+                // `:contains()` special pseudo-class - regexp are handled
                 {
                     actual: '$$div:contains(/ex.*ple/i)',
                     expected: ['##^div:has-text(/ex.*ple/i)'],
                 },
 
-                // edge case - `[min-length]` ignored when `:min-text-length()` (uBO pseudo class) is present
+                // edge case - `[min-length]` ignored when `:min-text-length()` (uBO pseudo-class) is present
                 {
                     actual: '$$div[min-length="5"]:min-text-length(10)',
                     expected: ['##^div:min-text-length(10)'],
                 },
 
-                // edge case - `[tag-content]` ignored when `:has-text()` (uBO pseudo class) is present
+                // edge case - `[tag-content]` ignored when `:has-text()` (uBO pseudo-class) is present
                 {
                     actual: '$$div[tag-content="a"]:has-text(b)',
                     expected: ['##^div:has-text(b)'],
                 },
 
-                // edge case - `[tag-content]` ignored when `:contains()` (uBO pseudo class) is present
+                // edge case - `[tag-content]` ignored when `:contains()` (uBO pseudo-class) is present
                 {
                     actual: '$$div[tag-content="a"]:contains(b)',
                     expected: ['##^div:has-text(b)'],
@@ -619,7 +619,7 @@ describe('HtmlRuleConverter', () => {
                     error: 'Invalid HTML filtering rule: Attribute selector value specified without an operator',
                 },
 
-                // invalid pseudo class - argument without flag
+                // invalid pseudo-class - argument without flag
                 {
                     input: {
                         body: {
@@ -634,7 +634,7 @@ describe('HtmlRuleConverter', () => {
                         },
                     } as unknown as HtmlFilteringRule,
                     // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Non-function pseudo class cannot have an argument',
+                    error: 'Invalid HTML filtering rule: Non-function pseudo-class cannot have an argument',
                 },
 
                 // invalid special attribute - value not provided
@@ -667,29 +667,29 @@ describe('HtmlRuleConverter', () => {
                     error: 'Value of special attribute selector \'min-length\' must be a positive integer, got \'-1\'',
                 },
 
-                // invalid special pseudo class - argument missing
+                // invalid special pseudo-class - argument missing
                 {
                     input: '$$:has-text()',
-                    error: 'Special pseudo class \'has-text\' requires an argument',
+                    error: 'Special pseudo-class \'has-text\' requires an argument',
                 },
 
-                // invalid special pseudo class - length value not number
+                // invalid special pseudo-class - length value not number
                 {
                     input: '$$:min-text-length(abc)',
-                    error: 'Argument of special pseudo class \'min-text-length\' must be an integer, got \'abc\'',
+                    error: 'Argument of special pseudo-class \'min-text-length\' must be an integer, got \'abc\'',
                 },
 
-                // invalid special pseudo class - length value not number
+                // invalid special pseudo-class - length value not number
                 {
                     input: '$$:min-text-length(-1)',
                     // eslint-disable-next-line max-len
-                    error: 'Argument of special pseudo class \'min-text-length\' must be a positive integer, got \'-1\'',
+                    error: 'Argument of special pseudo-class \'min-text-length\' must be a positive integer, got \'-1\'',
                 },
 
                 // invalid selector - only special parts
                 {
                     input: '$$[min-length="10"]:has-text("example")',
-                    error: 'Selector cannot contain only special attribute selectors or pseudo classes',
+                    error: 'Selector cannot contain only special attribute selectors or pseudo-classes',
                 },
 
                 /* ADG -> uBO specific cases */

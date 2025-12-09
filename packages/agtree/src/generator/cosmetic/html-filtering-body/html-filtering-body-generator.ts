@@ -33,7 +33,7 @@ export class HtmlFilteringBodyGenerator extends BaseGenerator {
         ATTRIBUTE_OPERATOR_WITHOUT_VALUE: 'Attribute selector operator specified without a value',
         ATTRIBUTE_FLAG_WITHOUT_VALUE: 'Attribute selector flag specified without a value',
         ATTRIBUTE_VALUE_WITHOUT_OPERATOR: 'Attribute selector value specified without an operator',
-        PSEUDO_CLASS_ARGUMENT_WITHOUT_FLAG: 'Non-function pseudo class cannot have an argument',
+        PSEUDO_CLASS_ARGUMENT_WITHOUT_FLAG: 'Non-function pseudo-class cannot have an argument',
     };
 
     private static defaultAttributeValueTransformer: AttributeValueTransformer = (value: string): string => value;
@@ -168,7 +168,7 @@ export class HtmlFilteringBodyGenerator extends BaseGenerator {
 
                         result.push(CLOSE_SQUARE_BRACKET);
                     } else if (part.type === 'HtmlFilteringRuleSelectorPseudoClass') {
-                        // Pseudo class selector
+                        // Pseudo-class selector
 
                         // Throw an error if isFunction is false but argument is provided
                         if (part.argument && !part.isFunction) {
@@ -180,7 +180,7 @@ export class HtmlFilteringBodyGenerator extends BaseGenerator {
                         result.push(COLON);
                         result.push(part.name.value);
 
-                        // Handle pseudo class functions
+                        // Handle pseudo-class functions
                         if (part.isFunction) {
                             result.push(OPEN_PARENTHESIS);
 

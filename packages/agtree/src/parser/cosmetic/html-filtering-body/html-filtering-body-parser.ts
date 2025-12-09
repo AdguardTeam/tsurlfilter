@@ -57,7 +57,7 @@ export class HtmlFilteringBodyParser extends BaseParser {
         INVALID_ATTRIBUTE_VALUE: `Expected '${getFormattedTokenName(TokenType.Ident)}' or '${getFormattedTokenName(TokenType.String)}' as attribute value, but got '%s' with value '%s'`,
         INVALID_ATTRIBUTE_OPERATOR: "Invalid attribute operator '%s'",
         // eslint-disable-next-line max-len
-        INVALID_PSEUDO_CLASS_NAME: `Expected '${getFormattedTokenName(TokenType.Ident)}' or '${getFormattedTokenName(TokenType.Function)}' as pseudo class name, but got '%s' with value '%s'`,
+        INVALID_PSEUDO_CLASS_NAME: `Expected '${getFormattedTokenName(TokenType.Ident)}' or '${getFormattedTokenName(TokenType.Function)}' as pseudo-class name, but got '%s' with value '%s'`,
     };
 
     /**
@@ -336,7 +336,7 @@ export class HtmlFilteringBodyParser extends BaseParser {
                     break;
                 }
 
-                // Pseudo class
+                // Pseudo-class
                 case TokenType.Colon: {
                     HtmlFilteringBodyParser.handlePseudoClass(
                         raw,
@@ -808,11 +808,11 @@ export class HtmlFilteringBodyParser extends BaseParser {
     }
 
     /**
-     * Handles pseudo class parsing by creating an pseudo class node and appending it to the given selector.
+     * Handles pseudo-class parsing by creating an pseudo-class node and appending it to the given selector.
      *
      * @param raw Raw input to parse.
      * @param stream Token stream.
-     * @param selector Selector node to append the pseudo class node to.
+     * @param selector Selector node to append the pseudo-class node to.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      */
@@ -826,13 +826,13 @@ export class HtmlFilteringBodyParser extends BaseParser {
         // Get token
         let token = stream.getOrFail();
 
-        // Save pseudo class start position
+        // Save pseudo-class start position
         const pseudoClassStart = token.start;
 
         // Advance colon token
         stream.advance();
 
-        // Get next token (pseudo class name)
+        // Get next token (pseudo-class name)
         token = stream.getOrFail();
 
         // It should be a function or identifier
@@ -849,7 +849,7 @@ export class HtmlFilteringBodyParser extends BaseParser {
             );
         }
 
-        // Extract pseudo class name raw value
+        // Extract pseudo-class name raw value
         let pseudoClassNameRaw: string;
         if (!isPseudoClassNameFunction) {
             pseudoClassNameRaw = raw.slice(token.start, token.end);
@@ -857,28 +857,28 @@ export class HtmlFilteringBodyParser extends BaseParser {
             pseudoClassNameRaw = raw.slice(token.start, token.end - 1); // Exclude '('
         }
 
-        // Construct pseudo class name node
+        // Construct pseudo-class name node
         const pseudoClassNameNode = ValueParser.parse(
             pseudoClassNameRaw,
             options,
             baseOffset + token.start,
         );
 
-        // Construct pseudo class node
+        // Construct pseudo-class node
         const pseudoClassNode: HtmlFilteringRuleSelectorPseudoClass = {
             type: 'HtmlFilteringRuleSelectorPseudoClass',
             name: pseudoClassNameNode,
             isFunction: isPseudoClassNameFunction,
         };
 
-        // Include pseudo class start location if needed
+        // Include pseudo-class start location if needed
         if (options.isLocIncluded) {
             pseudoClassNode.start = baseOffset + pseudoClassStart;
         }
 
         // If it's a function, parse its argument
         if (isPseudoClassNameFunction) {
-            // Advance pseudo class name token
+            // Advance pseudo-class name token
             stream.advance();
 
             // Skip whitespaces after opening parenthesis
@@ -889,7 +889,7 @@ export class HtmlFilteringBodyParser extends BaseParser {
 
             // Check if there is an any argument part
             if (token.type !== TokenType.CloseParenthesis) {
-                // Save pseudo class argument start position
+                // Save pseudo-class argument start position
                 const pseudoClassArgumentStart = token.start;
 
                 // Skip until closing parenthesis
@@ -898,15 +898,15 @@ export class HtmlFilteringBodyParser extends BaseParser {
                 // Get next token (closing parenthesis)
                 token = stream.getOrFail();
 
-                // Save pseudo class argument end position (ends before closing parenthesis)
+                // Save pseudo-class argument end position (ends before closing parenthesis)
                 const pseudoClassArgumentEnd = token.start;
 
-                // Extract pseudo class argument raw value
+                // Extract pseudo-class argument raw value
                 const pseudoClassArgumentRaw = raw
                     .slice(pseudoClassArgumentStart, pseudoClassArgumentEnd)
                     .trimEnd();
 
-                // Construct pseudo class argument node
+                // Construct pseudo-class argument node
                 pseudoClassNode.argument = ValueParser.parse(
                     pseudoClassArgumentRaw,
                     options,
@@ -918,15 +918,15 @@ export class HtmlFilteringBodyParser extends BaseParser {
             stream.expect(TokenType.CloseParenthesis);
         }
 
-        // Include pseudo class end location if needed
+        // Include pseudo-class end location if needed
         if (options.isLocIncluded) {
             pseudoClassNode.end = baseOffset + token.end;
         }
 
-        // Append pseudo class node to selector parts
+        // Append pseudo-class node to selector parts
         selector.children.push(pseudoClassNode);
 
-        // Advance pseudo class name token (if ident) or function closing parenthesis token (if function)
+        // Advance pseudo-class name token (if ident) or function closing parenthesis token (if function)
         stream.advance();
     }
 }

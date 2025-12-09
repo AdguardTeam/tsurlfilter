@@ -16,7 +16,7 @@ import { ValueDeserializer } from '../../misc/value-deserializer';
 
 /**
  * Deserializes binary data into HTML filtering rule body nodes.
- * Optionally uses a map of frequently used attribute names or pseudo class names.
+ * Optionally uses a map of frequently used attribute names or pseudo-class names.
  */
 export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
     /**
@@ -252,7 +252,7 @@ export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
     }
 
     /**
-     * Deserializes a HTML filtering rule selector pseudo class node from binary format.
+     * Deserializes a HTML filtering rule selector pseudo-class node from binary format.
      *
      * @param buffer ByteBuffer for reading binary data.
      * @param node Destination node.
@@ -295,7 +295,7 @@ export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
                     break;
 
                 default:
-                    throw new Error(`Invalid pseudo class property: ${prop}`);
+                    throw new Error(`Invalid pseudo-class property: ${prop}`);
             }
 
             prop = buffer.readUint8();

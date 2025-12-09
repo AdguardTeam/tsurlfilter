@@ -24,7 +24,7 @@ const getFrequentUboPseudoClassDeserializationMap = () => {
 /**
  * Deserializer for uBlock HTML filtering rule body nodes.
  * Converts binary data into a structured HTML filtering rule body node specific to uBlock,
- * using a predefined deserialization map for frequently used pseudo class names.
+ * using a predefined deserialization map for frequently used pseudo-class names.
  */
 export class UboHtmlFilteringBodyDeserializer extends BaseDeserializer {
     /**
