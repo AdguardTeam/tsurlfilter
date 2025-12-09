@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { AdblockSyntaxError, type HtmlFilteringRuleBodyParsed } from '../../../../src';
+import { AdblockSyntaxError, type Value, type HtmlFilteringRuleBodyParsed } from '../../../../src';
 import {
     UboHtmlFilteringBodyParser,
 } from '../../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
@@ -35,7 +35,7 @@ const parsingEnabledDefaultParserOptions: ParserOptions = {
  * the UBO parser/generator/serializer/deserializer are wired up correctly.
  */
 describe('UboHtmlFilteringBodyParser', () => {
-    describe('UboHtmlFilteringBodyParser.parse - valid cases', () => {
+    describe('UboHtmlFilteringBodyParser.parse - valid cases (parsed)', () => {
         test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBodyParsed> }>([
             // responseheader removal rule
             {
@@ -107,7 +107,7 @@ describe('UboHtmlFilteringBodyParser', () => {
         });
     });
 
-    describe('UboHtmlFilteringBodyParser.parse - invalid cases', () => {
+    describe('UboHtmlFilteringBodyParser.parse - invalid cases (parsed)', () => {
         test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
             // missing argument and closing parenthesis
             {
@@ -164,7 +164,7 @@ describe('UboHtmlFilteringBodyParser', () => {
         });
     });
 
-    describe('UboHtmlFilteringBodyGenerator.generate', () => {
+    describe('UboHtmlFilteringBodyGenerator.generate (parsed)', () => {
         test.each<{ actual: string; expected: string }>([
             {
                 actual: 'responseheader(Test)',
@@ -185,7 +185,78 @@ describe('UboHtmlFilteringBodyParser', () => {
         });
     });
 
-    describe('serialize & deserialize', () => {
+    describe('serialize & deserialize (parsed)', () => {
+        test.each([
+            'responseheader(Test)',
+            '  responseheader(  Test  )  ',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                UboHtmlFilteringBodyParser,
+                UboHtmlFilteringBodyGenerator,
+                UboHtmlFilteringBodySerializer,
+                UboHtmlFilteringBodyDeserializer,
+                parsingEnabledDefaultParserOptions,
+            );
+        });
+    });
+
+    /**
+     * Please not that if parsing is disabled, the parser will pass body value as-is,
+     * so these test cases are mainly to ensure that the uBO parser/generator/serializer/deserializer
+     * are wired up correctly. And since no parsing is done, the expected values are the same as the actual ones.
+     * And there is no need to test invalid cases here, as with parsing disabled,
+     * the parser will not be able to detect any invalid syntax.
+     */
+    describe('UboHtmlFilteringBodyParser.parse - valid cases (raw)', () => {
+        test.each<{ actual: string; expected: NodeExpectFn<Value> }>([
+            // responseheader removal rule
+            {
+                actual: 'responseheader(Test)',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: 'responseheader(Test)',
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // responseheader removal rule - with extra spaces
+            {
+                actual: '  responseheader(  Test  )  ',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: '  responseheader(  Test  )  ',
+                    ...context.getFullRange(),
+                }),
+            },
+        ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
+            expect(UboHtmlFilteringBodyParser.parse(actual)).toMatchObject(
+                expectedFn(new NodeExpectContext(actual)),
+            );
+        });
+    });
+
+    describe('UboHtmlFilteringBodyGenerator.generate (raw)', () => {
+        test.each<{ actual: string; expected: string }>([
+            {
+                actual: 'responseheader(Test)',
+                expected: 'responseheader(Test)',
+            },
+            {
+                actual: '  responseheader(  Test  )  ',
+                expected: '  responseheader(  Test  )  ',
+            },
+        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
+            const ruleNode = UboHtmlFilteringBodyParser.parse(actual);
+
+            if (ruleNode === null) {
+                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
+            }
+
+            expect(UboHtmlFilteringBodyGenerator.generate(ruleNode)).toBe(expected);
+        });
+    });
+
+    describe('serialize & deserialize (raw)', () => {
         test.each([
             'responseheader(Test)',
             '  responseheader(  Test  )  ',
@@ -199,5 +270,3 @@ describe('UboHtmlFilteringBodyParser', () => {
         });
     });
 });
-
-// FIXME: Add tests for raw body here

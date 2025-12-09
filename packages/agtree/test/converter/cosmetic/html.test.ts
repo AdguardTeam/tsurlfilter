@@ -5,6 +5,7 @@ import { type HtmlFilteringRule } from '../../../src/nodes';
 import { RuleParser } from '../../../src/parser/rule-parser';
 import { NotImplementedError } from '../../../src/errors/not-implemented-error';
 import { createNodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
+import { defaultParserOptions, type ParserOptions } from '../../../src/parser/options';
 
 /**
  * Invalid test data interface.
@@ -20,6 +21,14 @@ interface InvalidTestData {
      */
     error: string;
 }
+
+/**
+ * Default parser options with HTML filtering rules parsing enabled.
+ */
+const parsingEnabledDefaultParserOptions: ParserOptions = {
+    ...defaultParserOptions,
+    parseHtmlFilteringRules: true,
+};
 
 describe('HtmlRuleConverter', () => {
     describe('convertToAdg', () => {
@@ -41,7 +50,7 @@ describe('HtmlRuleConverter', () => {
             });
         });
 
-        describe('from uBO - valid cases', () => {
+        describe('from uBO - valid cases (parsed)', () => {
             test.each([
                 // complex selector without special parts
                 {
@@ -140,11 +149,15 @@ describe('HtmlRuleConverter', () => {
                     expected: ['$$div[max-length="262144"]:contains(b)'],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperly(
+                    HtmlRuleConverter,
+                    'convertToAdg',
+                    parsingEnabledDefaultParserOptions,
+                );
             });
         });
 
-        describe('from uBO - invalid cases', () => {
+        describe('from uBO - invalid cases (parsed)', () => {
             test.each<InvalidTestData>([
                 /* Common cases */
                 // invalid body - empty selector list
@@ -354,6 +367,75 @@ describe('HtmlRuleConverter', () => {
                     }).toThrowError(error);
                 } else {
                     expect(() => {
+                        HtmlRuleConverter.convertToAdg(
+                            RuleParser.parse(input, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                        );
+                    }).toThrowError(error);
+                }
+            });
+        });
+
+        /**
+         * Please not that if node is provided as raw string, we parse it first before conversion,
+         * everything else is the same as in parsed tests, so we don't need to repeat many cases here.
+         * It means that if the input parsing fails, the conversion will throw `AdblockSyntaxError` error.
+         */
+        describe('from uBO - valid cases (raw)', () => {
+            test.each([
+                {
+                    actual: '##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                    // eslint-disable-next-line max-len
+                    expected: ['$$div[attr="value"][max-length="262144"] + span:nth-child(2)[max-length="262144"] > a[href^="https"]:not(.className)[max-length="262144"]'],
+                },
+                {
+                    actual: '##^div:min-text-length(10)',
+                    expected: ['$$div[min-length="10"][max-length="262144"]'],
+                },
+                {
+                    actual: '##^div:has-text(example)',
+                    expected: ['$$div[max-length="262144"]:contains(example)'],
+                },
+            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+                expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
+            });
+        });
+
+        describe('from uBO - invalid cases (raw)', () => {
+            test.each<InvalidTestData>([
+                {
+                    input: '##^[tag-content]',
+                    error: 'Special attribute selector \'tag-content\' requires a value',
+                },
+                {
+                    input: '##^[tag-content~="value"]',
+                    error: 'Special attribute selector \'tag-content\' has invalid operator \'~=\'',
+                },
+                {
+                    input: '##^:has-text()',
+                    error: 'Special pseudo-class \'has-text\' requires an argument',
+                },
+                {
+                    input: '##^:min-text-length(abc)',
+                    error: 'Argument of special pseudo-class \'min-text-length\' must be an integer, got \'abc\'',
+                },
+                {
+                    input: '##^:min-text-length(-1)',
+                    // eslint-disable-next-line max-len
+                    error: 'Argument of special pseudo-class \'min-text-length\' must be a positive integer, got \'-1\'',
+                },
+
+                // Parsing errors
+                {
+                    input: '##^[attr="value"]div',
+                    error: 'Tag name must be the first part of the selector',
+                },
+            ])('should not convert \'$input\'', ({ input, error }) => {
+                if (typeof input !== 'string') {
+                    expect(() => {
+                        HtmlRuleConverter.convertToAdg(input);
+                    }).toThrowError(error);
+                } else {
+                    expect(() => {
                         HtmlRuleConverter.convertToAdg(RuleParser.parse(input) as HtmlFilteringRule);
                     }).toThrowError(error);
                 }
@@ -380,7 +462,7 @@ describe('HtmlRuleConverter', () => {
             });
         });
 
-        describe('from ADG - valid cases', () => {
+        describe('from ADG - valid cases (parsed)', () => {
             test.each([
                 // complex selector without special parts
                 {
@@ -484,11 +566,15 @@ describe('HtmlRuleConverter', () => {
                     expected: ['##^div:has-text(b)'],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToUbo');
+                expect(testData).toBeConvertedProperly(
+                    HtmlRuleConverter,
+                    'convertToUbo',
+                    parsingEnabledDefaultParserOptions,
+                );
             });
         });
 
-        describe('from ADG - invalid cases', () => {
+        describe('from ADG - invalid cases (parsed)', () => {
             test.each<InvalidTestData>([
                 /* Common cases */
                 // invalid body - empty selector list
@@ -705,6 +791,77 @@ describe('HtmlRuleConverter', () => {
                     }).toThrowError(error);
                 } else {
                     expect(() => {
+                        HtmlRuleConverter.convertToUbo(
+                            RuleParser.parse(input, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                        );
+                    }).toThrowError(error);
+                }
+            });
+        });
+
+        /**
+         * Please not that if node is provided as raw string, we parse it first before conversion,
+         * everything else is the same as in parsed tests, so we don't need to repeat many cases here.
+         * It means that if the input parsing fails, the conversion will throw `AdblockSyntaxError` error.
+         */
+        describe('from ADG - valid cases (raw)', () => {
+            test.each([
+                {
+                    actual: '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                    expected: ['##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                },
+                {
+                    actual: '$$div[min-length="10"]',
+                    expected: ['##^div:min-text-length(10)'],
+                },
+                {
+                    actual: '$$div[max-length="100"]',
+                    expected: ['##^div'],
+                },
+                {
+                    actual: '$$div[tag-content="example"]',
+                    expected: ['##^div:has-text(example)'],
+                },
+                {
+                    actual: '$$div:contains(example)',
+                    expected: ['##^div:has-text(example)'],
+                },
+            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+                expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToUbo');
+            });
+        });
+
+        describe('from ADG - invalid cases (raw)', () => {
+            test.each<InvalidTestData>([
+                {
+                    input: '$$[tag-content]',
+                    error: 'Special attribute selector \'tag-content\' requires a value',
+                },
+                {
+                    input: '$$[tag-content~="value"]',
+                    error: 'Special attribute selector \'tag-content\' has invalid operator \'~=\'',
+                },
+                {
+                    input: '$$[min-length="-1"]',
+                    error: 'Value of special attribute selector \'min-length\' must be a positive integer, got \'-1\'',
+                },
+                {
+                    input: '$$[wildcard="example"]',
+                    error: 'Special attribute selector \'wildcard\' is not supported in conversion',
+                },
+
+                // Parsing errors
+                {
+                    input: '$$[attr="value"]div',
+                    error: 'Tag name must be the first part of the selector',
+                },
+            ])('should not convert \'$input\'', ({ input, error }) => {
+                if (typeof input !== 'string') {
+                    expect(() => {
+                        HtmlRuleConverter.convertToUbo(input);
+                    }).toThrowError(error);
+                } else {
+                    expect(() => {
                         HtmlRuleConverter.convertToUbo(RuleParser.parse(input) as HtmlFilteringRule);
                     }).toThrowError(error);
                 }
@@ -738,5 +895,3 @@ describe('HtmlRuleConverter', () => {
         });
     });
 });
-
-// FIXME: Add tests for raw body here

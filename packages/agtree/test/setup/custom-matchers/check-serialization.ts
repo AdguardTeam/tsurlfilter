@@ -36,6 +36,8 @@ type ParamType = zod.infer<typeof paramSchema>;
  * @param generator Generator class to use
  * @param serializer Serializer class to use
  * @param deserializer Deserializer class to use
+ * @param parserOptions Optional parser options to use during parsing
+ *
  * @returns Vitest matcher result
  */
 const toBeSerializedAndDeserializedProperly = async (
@@ -44,6 +46,7 @@ const toBeSerializedAndDeserializedProperly = async (
     generator: typeof BaseGenerator,
     serializer: typeof BaseSerializer,
     deserializer: typeof BaseDeserializer,
+    parserOptions?: typeof defaultParserOptions,
 ): AsyncExpectationResult => {
     try {
         // Validate the received parameter
@@ -73,7 +76,7 @@ const toBeSerializedAndDeserializedProperly = async (
             try {
                 node = parser.parse(
                     raw,
-                    {
+                    parserOptions || {
                         ...defaultParserOptions,
                         // TODO: add support for raws, if ever needed
                         includeRaws: false,

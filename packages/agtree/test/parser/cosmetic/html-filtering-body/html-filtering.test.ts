@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { AdblockSyntaxError, type HtmlFilteringRuleBodyParsed } from '../../../../src';
+import { AdblockSyntaxError, type Value, type HtmlFilteringRuleBodyParsed } from '../../../../src';
 import {
     HtmlFilteringBodyParser,
 } from '../../../../src/parser/cosmetic/html-filtering-body/html-filtering-body-parser';
@@ -30,7 +30,7 @@ const parsingEnabledDefaultParserOptions: ParserOptions = {
 };
 
 describe('HtmlFilteringBodyParser', () => {
-    describe('HtmlFilteringBodyParser.parse - valid cases', () => {
+    describe('HtmlFilteringBodyParser.parse - valid cases (parsed)', () => {
         test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBodyParsed> }>([
             // tag name only
             {
@@ -1959,7 +1959,7 @@ describe('HtmlFilteringBodyParser', () => {
         });
     });
 
-    describe('HtmlFilteringBodyParser.parse - invalid cases', () => {
+    describe('HtmlFilteringBodyParser.parse - invalid cases (parsed)', () => {
         test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
             // empty input
             {
@@ -2269,7 +2269,7 @@ describe('HtmlFilteringBodyParser', () => {
         });
     });
 
-    describe('HtmlFilteringBodyGenerator.generate', () => {
+    describe('HtmlFilteringBodyGenerator.generate (parsed)', () => {
         test.each<{ actual: string; expected: string }>([
             {
                 actual: 'div',
@@ -2498,7 +2498,7 @@ describe('HtmlFilteringBodyParser', () => {
         });
     });
 
-    describe('serialize & deserialize', () => {
+    describe('serialize & deserialize (parsed)', () => {
         test.each([
             'div',
             'my-tag',
@@ -2560,9 +2560,128 @@ describe('HtmlFilteringBodyParser', () => {
                 HtmlFilteringBodyGenerator,
                 HtmlFilteringBodySerializer,
                 HtmlFilteringBodyDeserializer,
+                parsingEnabledDefaultParserOptions,
+            );
+        });
+    });
+
+    /**
+     * Please not that if parsing is disabled, the parser will pass body value as-is,
+     * so these test cases are mainly to ensure that the parser/generator/serializer/deserializer
+     * are wired up correctly. And since no parsing is done, the expected values are the same as the actual ones.
+     * And there is no need to test invalid cases here, as with parsing disabled,
+     * the parser will not be able to detect any invalid syntax.
+     */
+    describe('HtmlFilteringBodyParser.parse - valid cases (raw)', () => {
+        test.each<{ actual: string; expected: NodeExpectFn<Value> }>([
+            {
+                actual: '[attr1="value1"][attr2^="value2"][attr3]',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: '[attr1="value1"][attr2^="value2"][attr3]',
+                    ...context.getFullRange(),
+                }),
+            },
+            {
+                actual: 'div#id.class[attr~="value" i]:pseudo(arg)',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: 'div#id.class[attr~="value" i]:pseudo(arg)',
+                    ...context.getFullRange(),
+                }),
+            },
+            {
+                actual: 'div > span, .class + #id',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: 'div > span, .class + #id',
+                    ...context.getFullRange(),
+                }),
+            },
+            {
+                actual: 'div   >    span',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: 'div   >    span',
+                    ...context.getFullRange(),
+                }),
+            },
+            {
+                actual: '[  attr   =   value  ]',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: '[  attr   =   value  ]',
+                    ...context.getFullRange(),
+                }),
+            },
+            {
+                actual: ':pseudo(  arg with spaces  )',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: ':pseudo(  arg with spaces  )',
+                    ...context.getFullRange(),
+                }),
+            },
+        ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
+            expect(HtmlFilteringBodyParser.parse(actual)).toMatchObject(
+                expectedFn(new NodeExpectContext(actual)),
+            );
+        });
+    });
+
+    describe('HtmlFilteringBodyGenerator.generate (raw)', () => {
+        test.each<{ actual: string; expected: string }>([
+            {
+                actual: '[attr1="value1"][attr2^="value2"][attr3]',
+                expected: '[attr1="value1"][attr2^="value2"][attr3]',
+            },
+            {
+                actual: 'div#id.class[attr~="value" i]:pseudo(arg)',
+                expected: 'div#id.class[attr~="value" i]:pseudo(arg)',
+            },
+            {
+                actual: 'div > span, .class + #id',
+                expected: 'div > span, .class + #id',
+            },
+            {
+                actual: 'div   >    span',
+                expected: 'div   >    span',
+            },
+            {
+                actual: '[  attr   =   value  ]',
+                expected: '[  attr   =   value  ]',
+            },
+            {
+                actual: ':pseudo(  arg with spaces  )',
+                expected: ':pseudo(  arg with spaces  )',
+            },
+        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
+            const ruleNode = HtmlFilteringBodyParser.parse(actual);
+
+            if (ruleNode === null) {
+                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
+            }
+
+            expect(HtmlFilteringBodyGenerator.generate(ruleNode)).toBe(expected);
+        });
+    });
+
+    describe('serialize & deserialize (raw)', () => {
+        test.each([
+            '[attr1="value1"][attr2^="value2"][attr3]',
+            'div#id.class[attr~="value" i]:pseudo(arg)',
+            'div > span, .class + #id',
+            'div   >    span',
+            '[  attr   =   value  ]',
+            ':pseudo(  arg with spaces  )',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                HtmlFilteringBodyParser,
+                HtmlFilteringBodyGenerator,
+                HtmlFilteringBodySerializer,
+                HtmlFilteringBodyDeserializer,
+                parsingEnabledDefaultParserOptions,
             );
         });
     });
 });
-
-// FIXME: Add tests for raw body here

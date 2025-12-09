@@ -14,6 +14,7 @@ import { getErrorMessage } from '../../../src/utils/error';
 import { type AnyRule } from '../../../src/nodes';
 import { type NodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
 import { RuleGenerator } from '../../../src/generator';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 /**
  * Schema for the received parameter from expect()
@@ -47,6 +48,7 @@ type ReceivedSchema = z.infer<typeof receivedSchema>;
  * @param received Received parameter from expect()
  * @param converter Converter instance
  * @param method Method name to call on the converter
+ * @param parserOptions Parser options to use during rule parsing
  *
  * @returns Matcher result
  */
@@ -54,6 +56,7 @@ const toBeConvertedProperly = (
     received: unknown,
     converter: BaseConverter,
     method: string,
+    parserOptions = defaultParserOptions,
 ): SyncExpectationResult => {
     // Validate the received parameter with the zod schema
     let receivedParsed: ReceivedSchema;
@@ -71,7 +74,7 @@ const toBeConvertedProperly = (
     let ruleNode: AnyRule;
 
     try {
-        ruleNode = RuleParser.parse(receivedParsed.actual);
+        ruleNode = RuleParser.parse(receivedParsed.actual, parserOptions);
     } catch (error: unknown) {
         return {
             pass: false,
