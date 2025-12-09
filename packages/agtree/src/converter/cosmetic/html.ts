@@ -8,6 +8,7 @@ import {
     CosmeticRuleSeparator,
     CosmeticRuleType,
     type HtmlFilteringRule,
+    type HtmlFilteringRuleBody,
     type HtmlFilteringRuleBodyParsed,
     type HtmlFilteringRuleSelector,
     type HtmlFilteringRuleSelectorAttribute,
@@ -23,8 +24,14 @@ import { type NodeConversionResult, createNodeConversionResult } from '../base-i
 import { cloneDomainListNode } from '../../ast-utils/clone';
 import { EQUALS } from '../../utils/constants';
 import { QuoteUtils } from '../../utils';
-import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
 import { AdgHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
+import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import {
+    AdgHtmlFilteringBodyGenerator,
+} from '../../generator/cosmetic/html-filtering-body/adg-html-filtering-body-generator';
+import {
+    UboHtmlFilteringBodyGenerator,
+} from '../../generator/cosmetic/html-filtering-body/ubo-html-filtering-body-generator';
 
 /**
  * From the AdGuard docs:
@@ -377,7 +384,19 @@ export class HtmlRuleConverter extends RuleConverterBase {
             });
         }
 
-        // FIXME: Convert to Value if node was Value initially?
+        let resultBody: HtmlFilteringRuleBody = {
+            type: 'HtmlFilteringRuleBodyParsed',
+            children: convertedSelectorLists,
+        };
+
+        // Convert back to Value if the original body was Value
+        if (rule.body.type === 'Value') {
+            resultBody = {
+                type: 'Value',
+                value: AdgHtmlFilteringBodyGenerator.generate(resultBody),
+            };
+        }
+
         return createNodeConversionResult(
             [{
                 category: RuleCategory.Cosmetic,
@@ -395,10 +414,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         : CosmeticRuleSeparator.AdgHtmlFiltering,
                 },
 
-                body: {
-                    type: 'HtmlFilteringRuleBodyParsed',
-                    children: convertedSelectorLists,
-                },
+                body: resultBody,
             }],
             true,
         );
@@ -632,7 +648,19 @@ export class HtmlRuleConverter extends RuleConverterBase {
             });
         }
 
-        // FIXME: Convert to Value if node was Value initially?
+        let resultBody: HtmlFilteringRuleBody = {
+            type: 'HtmlFilteringRuleBodyParsed',
+            children: convertedSelectorLists,
+        };
+
+        // Convert back to Value if the original body was Value
+        if (rule.body.type === 'Value') {
+            resultBody = {
+                type: 'Value',
+                value: UboHtmlFilteringBodyGenerator.generate(resultBody),
+            };
+        }
+
         return createNodeConversionResult(
             [{
                 category: RuleCategory.Cosmetic,
@@ -649,10 +677,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         : CosmeticRuleSeparator.UboHtmlFiltering,
                 },
 
-                body: {
-                    type: 'HtmlFilteringRuleBodyParsed',
-                    children: convertedSelectorLists,
-                },
+                body: resultBody,
             }],
             true,
         );
