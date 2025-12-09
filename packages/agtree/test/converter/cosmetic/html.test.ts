@@ -59,99 +59,85 @@ describe('HtmlRuleConverter', () => {
                 // `:has-text()` special pseudo class
                 {
                     actual: '##^div:has-text(example)',
-                    expected: ['$$div[tag-content="example"][max-length="262144"]'],
+                    expected: ['$$div[max-length="262144"]:contains(example)'],
                 },
 
                 // `:has-text()` special pseudo class - double quotes are handled
                 {
                     actual: '##^div:has-text("example")',
-                    expected: ['$$div[tag-content="example"][max-length="262144"]'],
+                    expected: ['$$div[max-length="262144"]:contains("example")'],
                 },
 
                 // `:has-text()` special pseudo class - single quotes are handled
                 {
                     actual: "##^div:has-text('example')",
-                    expected: ['$$div[tag-content="example"][max-length="262144"]'],
+                    expected: ["$$div[max-length=\"262144\"]:contains('example')"],
                 },
 
-                // mix of multiple `[min-length]` special attributes - latter takes precedence
+                // `:has-text()` special pseudo class - regexp are handled
                 {
-                    actual: '##^div[min-length="5"][min-length="10"]',
-                    expected: ['$$div[min-length="10"][max-length="262144"]'],
+                    actual: '##^div:has-text(/ex.*ple/i)',
+                    expected: ['$$div[max-length="262144"]:contains(/ex.*ple/i)'],
                 },
 
-                // mix of multiple `[min-length]` special attributes - latter takes precedence
-                {
-                    actual: '##^div[min-length="10"][min-length="5"]',
-                    expected: ['$$div[min-length="5"][max-length="262144"]'],
-                },
-
-                // mix of multiple `:min-text-length()` special pseudo classes - latter takes precedence
-                {
-                    actual: '##^div:min-text-length(5):min-text-length(10)',
-                    expected: ['$$div[min-length="10"][max-length="262144"]'],
-                },
-
-                // mix of multiple `:min-text-length()` special pseudo classes - latter takes precedence
-                {
-                    actual: '##^div:min-text-length(10):min-text-length(5)',
-                    expected: ['$$div[min-length="5"][max-length="262144"]'],
-                },
-
-                // mix of `[min-length]` special attribute
-                // and `:min-text-length()` special pseudo class
-                // latter takes precedence
+                // edge case - `[min-length]` (ADG attr) ignored when `:min-text-length()` is present
                 {
                     actual: '##^div[min-length="5"]:min-text-length(10)',
                     expected: ['$$div[min-length="10"][max-length="262144"]'],
                 },
 
-                // mix of `:min-text-length()` special pseudo class
-                // and `[min-length]` special attribute
-                // latter takes precedence
-                {
-                    actual: '##^div:min-text-length(10)[min-length="5"]',
-                    expected: ['$$div[min-length="5"][max-length="262144"]'],
-                },
-
-                // mix of multiple `[tag-content]` special attributes - latter takes precedence
-                {
-                    actual: '##^div[tag-content="a"][tag-content="b"]',
-                    expected: ['$$div[tag-content="b"][max-length="262144"]'],
-                },
-
-                // mix of multiple `[tag-content]` special attributes - latter takes precedence
-                {
-                    actual: '##^div[tag-content="b"][tag-content="a"]',
-                    expected: ['$$div[tag-content="a"][max-length="262144"]'],
-                },
-
-                // mix of multiple `:has-text()` special pseudo classes - latter takes precedence
-                {
-                    actual: '##^div:has-text(a):has-text(b)',
-                    expected: ['$$div[tag-content="b"][max-length="262144"]'],
-                },
-
-                // mix of multiple `:has-text()` special pseudo classes - latter takes precedence
-                {
-                    actual: '##^div:has-text(b):has-text(a)',
-                    expected: ['$$div[tag-content="a"][max-length="262144"]'],
-                },
-
-                // mix of `[tag-content]` special attribute
-                // and `:has-text()` special pseudo class
-                // latter takes precedence
+                // edge case - `[tag-content]` (ADG attr) ignored when `:has-text()` is present
                 {
                     actual: '##^div[tag-content="a"]:has-text(b)',
-                    expected: ['$$div[tag-content="b"][max-length="262144"]'],
+                    expected: ['$$div[max-length="262144"]:contains(b)'],
                 },
 
-                // mix of `:has-text()` special pseudo class
-                // and `[tag-content]` special attribute
-                // latter takes precedence
+                // edge case - `[tag-content]` (ADG attr) ignored when `:contains()` is present
                 {
-                    actual: '##^div[tag-content="b"]:has-text(a)',
-                    expected: ['$$div[tag-content="a"][max-length="262144"]'],
+                    actual: '##^div[tag-content="a"]:contains(b)',
+                    expected: ['$$div[max-length="262144"]:contains(b)'],
+                },
+
+                // edge case - `[min-length]` de-duplication - latter takes precedence
+                {
+                    actual: '##^div[min-length="2000"][min-length="1000"]',
+                    expected: ['$$div[min-length="1000"][max-length="262144"]'],
+                },
+
+                // edge case - `:min-text-length()` de-duplication - latter takes precedence
+                {
+                    actual: '##^div:min-text-length(2000):min-text-length(1000)',
+                    expected: ['$$div[min-length="1000"][max-length="262144"]'],
+                },
+
+                // edge case - `[max-length]` de-duplication - latter takes precedence
+                {
+                    actual: '##^div[max-length="2000"][max-length="1000"]',
+                    expected: ['$$div[max-length="1000"]'],
+                },
+
+                // edge case - `[tag-content]` de-duplication - latter takes precedence
+                {
+                    actual: '##^div[tag-content="a"][tag-content="b"]',
+                    expected: ['$$div[max-length="262144"]:contains(b)'],
+                },
+
+                // edge case - `:has-text()` de-duplication - latter takes precedence
+                {
+                    actual: '##^div:has-text(a):has-text(b)',
+                    expected: ['$$div[max-length="262144"]:contains(b)'],
+                },
+
+                // edge case - `:contains()` de-duplication - latter takes precedence
+                {
+                    actual: '##^div:contains(a):contains(b)',
+                    expected: ['$$div[max-length="262144"]:contains(b)'],
+                },
+
+                // edge case - `:contains()` and `:has-text()` de-duplication - latter takes precedence
+                {
+                    actual: '##^div:contains(a):has-text(b)',
+                    expected: ['$$div[max-length="262144"]:contains(b)'],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
@@ -361,14 +347,6 @@ describe('HtmlRuleConverter', () => {
                     input: '##^[min-length="10"]:has-text("example")',
                     error: 'Selector cannot contain only special attribute selectors or pseudo classes',
                 },
-
-                /* uBO -> ADG specific cases */
-                // can't convert regexp in `:has-text()` pseudo class
-                {
-                    input: '##^:has-text(/example/)',
-                    // eslint-disable-next-line max-len
-                    error: 'Argument of special pseudo class \'has-text\' is a regular expression, which is not supported',
-                },
             ])('should not convert \'$input\'', ({ input, error }) => {
                 if (typeof input !== 'string') {
                     expect(() => {
@@ -428,84 +406,82 @@ describe('HtmlRuleConverter', () => {
                     expected: ['##^div:has-text(example)'],
                 },
 
-                // mix of multiple `[min-length]` special attributes - latter takes precedence
+                // `:contains()` special pseudo class
                 {
-                    actual: '$$div[min-length="5"][min-length="10"]',
-                    expected: ['##^div:min-text-length(10)'],
+                    actual: '$$div:contains(example)',
+                    expected: ['##^div:has-text(example)'],
                 },
 
-                // mix of multiple `[min-length]` special attributes - latter takes precedence
+                // `:contains()` special pseudo class - double quotes are handled
                 {
-                    actual: '$$div[min-length="10"][min-length="5"]',
-                    expected: ['##^div:min-text-length(5)'],
+                    actual: '$$div:contains("example")',
+                    expected: ['##^div:has-text("example")'],
                 },
 
-                // mix of multiple `:min-text-length()` special pseudo classes - latter takes precedence
+                // `:contains()` special pseudo class - single quotes are handled
                 {
-                    actual: '$$div:min-text-length(5):min-text-length(10)',
-                    expected: ['##^div:min-text-length(10)'],
+                    actual: "$$div:contains('example')",
+                    expected: ["##^div:has-text('example')"],
                 },
 
-                // mix of multiple `:min-text-length()` special pseudo classes - latter takes precedence
+                // `:contains()` special pseudo class - regexp are handled
                 {
-                    actual: '$$div:min-text-length(10):min-text-length(5)',
-                    expected: ['##^div:min-text-length(5)'],
+                    actual: '$$div:contains(/ex.*ple/i)',
+                    expected: ['##^div:has-text(/ex.*ple/i)'],
                 },
 
-                // mix of `[min-length]` special attribute
-                // and `:min-text-length()` special pseudo class
-                // latter takes precedence
+                // edge case - `[min-length]` ignored when `:min-text-length()` (uBO pseudo class) is present
                 {
                     actual: '$$div[min-length="5"]:min-text-length(10)',
                     expected: ['##^div:min-text-length(10)'],
                 },
 
-                // mix of `:min-text-length()` special pseudo class
-                // and `[min-length]` special attribute
-                // latter takes precedence
-                {
-                    actual: '$$div:min-text-length(10)[min-length="5"]',
-                    expected: ['##^div:min-text-length(5)'],
-                },
-
-                // mix of multiple `[tag-content]` special attributes - latter takes precedence
-                {
-                    actual: '$$div[tag-content="a"][tag-content="b"]',
-                    expected: ['##^div:has-text(b)'],
-                },
-
-                // mix of multiple `[tag-content]` special attributes - latter takes precedence
-                {
-                    actual: '$$div[tag-content="b"][tag-content="a"]',
-                    expected: ['##^div:has-text(a)'],
-                },
-
-                // mix of multiple `:has-text()` special pseudo classes - latter takes precedence
-                {
-                    actual: '$$div:has-text(a):has-text(b)',
-                    expected: ['##^div:has-text(b)'],
-                },
-
-                // mix of multiple `:has-text()` special pseudo classes - latter takes precedence
-                {
-                    actual: '$$div:has-text(b):has-text(a)',
-                    expected: ['##^div:has-text(a)'],
-                },
-
-                // mix of `[tag-content]` special attribute
-                // and `:has-text()` special pseudo class
-                // latter takes precedence
+                // edge case - `[tag-content]` ignored when `:has-text()` (uBO pseudo class) is present
                 {
                     actual: '$$div[tag-content="a"]:has-text(b)',
                     expected: ['##^div:has-text(b)'],
                 },
 
-                // mix of `:has-text()` special pseudo class
-                // and `[tag-content]` special attribute
-                // latter takes precedence
+                // edge case - `[tag-content]` ignored when `:contains()` (uBO pseudo class) is present
                 {
-                    actual: '$$div[tag-content="b"]:has-text(a)',
-                    expected: ['##^div:has-text(a)'],
+                    actual: '$$div[tag-content="a"]:contains(b)',
+                    expected: ['##^div:has-text(b)'],
+                },
+
+                // edge case - `[min-length]` de-duplication - latter takes precedence
+                {
+                    actual: '$$div[min-length="2000"][min-length="1000"]',
+                    expected: ['##^div:min-text-length(1000)'],
+                },
+
+                // edge case - `:min-text-length()` de-duplication - latter takes precedence
+                {
+                    actual: '$$div:min-text-length(2000):min-text-length(1000)',
+                    expected: ['##^div:min-text-length(1000)'],
+                },
+
+                // edge case - `[tag-content]` de-duplication - latter takes precedence
+                {
+                    actual: '$$div[tag-content="a"][tag-content="b"]',
+                    expected: ['##^div:has-text(b)'],
+                },
+
+                // edge case - `:has-text()` de-duplication - latter takes precedence
+                {
+                    actual: '$$div:has-text(a):has-text(b)',
+                    expected: ['##^div:has-text(b)'],
+                },
+
+                // edge case - `:contains()` de-duplication - latter takes precedence
+                {
+                    actual: '$$div:contains(a):contains(b)',
+                    expected: ['##^div:has-text(b)'],
+                },
+
+                // edge case - `:has-text()` and `:contains()` de-duplication - latter takes precedence
+                {
+                    actual: '$$div:has-text(a):contains(b)',
+                    expected: ['##^div:has-text(b)'],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToUbo');
