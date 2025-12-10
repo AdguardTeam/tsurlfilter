@@ -30,18 +30,16 @@ describe('load', () => {
 
     const mockResolve = vi.mocked(path.resolve);
     const mockCopy = vi.mocked(copy);
-    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('cwd');
+    const cwdSpy = vi.spyOn(process, 'cwd');
 
     beforeEach(() => {
+        // Vitest 4: Clear automock call history before each test
+        vi.clearAllMocks();
+        // Re-apply spy mock after clearing
+        cwdSpy.mockReturnValue('cwd');
         mockResolve
             .mockReturnValueOnce(to)
             .mockReturnValueOnce(src);
-    });
-
-    afterEach(() => {
-        mockResolve.mockClear();
-        mockCopy.mockClear();
-        cwdSpy.mockClear();
     });
 
     it('should load assets', async () => {

@@ -3,6 +3,7 @@ import {
     it,
     expect,
     beforeEach,
+    afterEach,
     vi,
 } from 'vitest';
 import * as idb from 'idb';
@@ -33,6 +34,10 @@ describe('IdbSingleton', () => {
         indexedDB.deleteDatabase(IdbSingleton.DB_NAME);
     });
 
+    afterEach(() => {
+        vi.restoreAllMocks(); // Restore manual spies created with vi.spyOn
+    });
+
     it('creates a database that contains the requested store', async () => {
         const db = await IdbSingleton.getOpenedDb('my-store');
         expect(db.objectStoreNames.contains('my-store')).toBe(true);
@@ -40,6 +45,10 @@ describe('IdbSingleton', () => {
 
     it('returns the *same* DB instance for subsequent calls with the same store', async () => {
         const first = await IdbSingleton.getOpenedDb('cache');
+
+        // With spy:true, vi.spyOn wraps the existing automock, which already has call history.
+        // Clear it so the spy only tracks subsequent calls.
+        vi.mocked(idb.openDB).mockClear();
         const openSpy = vi.spyOn(idb, 'openDB');
 
         const second = await IdbSingleton.getOpenedDb('cache');
@@ -51,6 +60,8 @@ describe('IdbSingleton', () => {
     });
 
     it('only calls openDB once when multiple callers race for the same store', async () => {
+        // Clear automock history before spying (see comment in previous test)
+        vi.mocked(idb.openDB).mockClear();
         const openSpy = vi.spyOn(idb, 'openDB');
 
         const [a, b, c] = await Promise.all([
