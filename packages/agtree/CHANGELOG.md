@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [3.4.2] - 2025-12-10
+
+### Added
+
+- Support of `googlesyndication.com/adsbygoogle.js` alias for
+  `googlesyndication-adsbygoogle` in compatibility tables.
+
+[3.4.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.4.2
+
 ## [3.4.1] - 2025-11-28
 
 ### Added

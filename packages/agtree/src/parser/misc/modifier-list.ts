@@ -48,7 +48,7 @@ export class ModifierListParser extends BaseParser {
 
             const modifierStart = offset;
 
-            // Check if this modifier has an incomplete regexp pattern
+            // Check if this modifier has a regexp pattern
             // Look for the `=` sign to find where the modifier value starts
             let useSimpleSearch = false;
             const equalsIndex = raw.indexOf('=', offset);
@@ -87,6 +87,11 @@ export class ModifierListParser extends BaseParser {
                             useSimpleSearch = true;
                         }
                     }
+                } else {
+                    // Value doesn't start with `/`, so it's not a regexp pattern.
+                    // Use simple search to avoid treating slashes in values
+                    // as regex markers, e.g. `redirect=googlesyndication.com/adsbygoogle.js`.
+                    useSimpleSearch = true;
                 }
             }
 
