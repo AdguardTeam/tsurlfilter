@@ -8,10 +8,10 @@ import {
     CosmeticRuleSeparator,
     CosmeticRuleType,
     type HtmlFilteringRule,
+    type HtmlFilteringRuleBody,
     type CssSimpleSelector,
     type CssComplexSelectorItem,
     type CssComplexSelector,
-    type CssSelectorList,
     type CssCompoundSelector,
     RuleCategory,
 } from '../../nodes';
@@ -175,9 +175,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
         const convertedPseudoClassSelectors = new Map<string, string>();
         const presentPseudoClassSelectors = new Set<string>();
 
-        // Convert each complex selector
-        const convertedSelectorList = HtmlRuleConverter.convertSelectorList(
-            rule.body.selectorList,
+        // Convert body
+        const convertedBody = HtmlRuleConverter.convertBody(
+            rule.body,
 
             /**
              * Handle AdGuard-specific attribute selectors:
@@ -382,10 +382,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         : CosmeticRuleSeparator.AdgHtmlFiltering,
                 },
 
-                body: {
-                    type: 'HtmlFilteringRuleBody',
-                    selectorList: convertedSelectorList,
-                },
+                body: convertedBody,
             }],
             true,
         );
@@ -424,8 +421,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
         const convertedPseudoClassSelectors = new Map<string, string>();
         const presentPseudoClassSelectors = new Set<string>();
 
-        const convertedSelectorList = HtmlRuleConverter.convertSelectorList(
-            rule.body.selectorList,
+        // Convert body
+        const convertedBody = HtmlRuleConverter.convertBody(
+            rule.body,
 
             /**
              * Handle AdGuard-specific attribute selectors:
@@ -577,20 +575,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         : CosmeticRuleSeparator.ElementHiding,
                 },
 
-                body: {
-                    type: 'HtmlFilteringRuleBody',
-                    selectorList: convertedSelectorList,
-                },
+                body: convertedBody,
             }],
             true,
         );
     }
 
     /**
-     * Converts a CSS selector list by handling special simple selectors via callbacks.
+     * Converts a HTML filtering rule body by handling special simple selectors via callbacks.
      * Special simple selectors are skipped in the converted selector list and should be handled from callee.
      *
-     * @param selectorList Selector list to convert.
+     * @param body HTML filtering rule body to convert.
      * @param onSpecialAttributeSelector Callback invoked when a special attribute selector is found.
      * @param onSpecialPseudoClassSelector Callback invoked when a special pseudo-class selector is found.
      * @param onCompoundSelectorFinish Callback invoked when a compound selector conversion is finished,
@@ -598,13 +593,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @returns Converted selector list without special simple selectors.
      */
-    private static convertSelectorList(
-        selectorList: CssSelectorList,
+    private static convertBody(
+        body: HtmlFilteringRuleBody,
         onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback,
         onSpecialPseudoClassSelector: OnSpecialPseudoClassSelectorCallback,
         onCompoundSelectorFinish: (convertedCompoundSelector: CssCompoundSelector) => void,
-    ): CssSelectorList {
-        const { children: complexSelectors } = selectorList;
+    ): HtmlFilteringRuleBody {
+        const { children: complexSelectors } = body.selectorList;
 
         // Selector list node must not be empty
         HtmlRuleConverter.assertNotEmpty(complexSelectors, ERROR_MESSAGES.EMPTY_SELECTOR_LIST);
@@ -804,8 +799,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
         }
 
         return {
-            type: 'CssSelectorList',
-            children: convertedComplexSelectors,
+            type: 'HtmlFilteringRuleBody',
+            selectorList: {
+                type: 'CssSelectorList',
+                children: convertedComplexSelectors,
+            },
         };
     }
 
