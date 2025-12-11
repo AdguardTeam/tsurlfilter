@@ -27,7 +27,7 @@ interface InvalidTestData {
  */
 const parsingEnabledDefaultParserOptions: ParserOptions = {
     ...defaultParserOptions,
-    parseHtmlFilteringRules: true,
+    parseHtmlFilteringRuleBodies: true,
 };
 
 describe('HtmlRuleConverter', () => {

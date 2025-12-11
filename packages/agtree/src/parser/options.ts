@@ -43,10 +43,10 @@ export interface ParserOptions {
     parseHostRules?: boolean;
 
     /**
-     * Whether to parse HTML filtering rules.
-     * If `false`, HTML filtering rules `body` will be plain string.
+     * Whether to parse HTML filtering rule bodies.
+     * If `false`, HTML filtering rule `body` property will be plain string.
      */
-    parseHtmlFilteringRules?: boolean;
+    parseHtmlFilteringRuleBodies?: boolean;
 }
 
 /**
@@ -60,5 +60,5 @@ export const defaultParserOptions: ParserOptions = Object.freeze({
     includeRaws: true,
     ignoreComments: false,
     parseHostRules: false,
-    parseHtmlFilteringRules: false,
+    parseHtmlFilteringRuleBodies: false,
 });

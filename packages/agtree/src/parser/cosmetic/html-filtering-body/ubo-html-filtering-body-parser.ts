@@ -95,7 +95,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         baseOffset = 0,
     ): HtmlFilteringRuleBody | null {
         // If HTML filtering rules parsing is disabled, return null
-        if (!options.parseHtmlFilteringRules) {
+        if (!options.parseHtmlFilteringRuleBodies) {
             return null;
         }
 

@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - CSS-native pseudo-classes support for HTML filtering rules
   (e.g., `:nth-child()`, `:first-of-type`, etc.) [tsurlfilter#96].
 - [`:contains()`] pseudo-class support for HTML filtering rules [tsurlfilter#96].
-- `parseHtmlFilteringRules` option to `ParserOptions` which enables/disables
+- `parseHtmlFilteringRuleBodies` option to `ParserOptions` which enables/disables
   HTML filtering rules parsing, defaults to `false`.
 
 [tsurlfilter#96]: https://github.com/AdguardTeam/tsurlfilter/issues/96

@@ -65,7 +65,7 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
         if (rule.body.type === 'Value') {
             body = UboHtmlFilteringBodyParser.parseResponseHeaderRule(rule.body.value, {
                 isLocIncluded: false,
-                parseHtmlFilteringRules: true,
+                parseHtmlFilteringRuleBodies: true,
             });
         } else {
             body = rule.body;

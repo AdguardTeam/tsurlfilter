@@ -45,7 +45,7 @@ export class HtmlFilteringBodyParser extends BaseParser {
     ): Value | HtmlFilteringRuleBody {
         // If HTML filtering rules parsing is disabled, return raw value node
         let result: Value | HtmlFilteringRuleBody;
-        if (!options.parseHtmlFilteringRules) {
+        if (!options.parseHtmlFilteringRuleBodies) {
             result = {
                 type: 'Value',
                 value: raw,

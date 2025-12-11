@@ -640,7 +640,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
         if (body.type === 'Value') {
             processedBody = parser.parse(body.value, {
                 isLocIncluded: false,
-                parseHtmlFilteringRules: true,
+                parseHtmlFilteringRuleBodies: true,
             }) as HtmlFilteringRuleBody;
         } else {
             processedBody = body;

@@ -21,7 +21,7 @@ import { defaultParserOptions, type ParserOptions } from '../../../../src/parser
  */
 const parsingEnabledDefaultParserOptions: ParserOptions = {
     ...defaultParserOptions,
-    parseHtmlFilteringRules: true,
+    parseHtmlFilteringRuleBodies: true,
 };
 
 /**
