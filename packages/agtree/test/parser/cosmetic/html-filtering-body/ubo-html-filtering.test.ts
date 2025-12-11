@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { AdblockSyntaxError, type Value, type HtmlFilteringRuleBodyParsed } from '../../../../src';
+import { AdblockSyntaxError, type Value, type HtmlFilteringRuleBody } from '../../../../src';
 import {
     UboHtmlFilteringBodyParser,
 } from '../../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
@@ -36,7 +36,7 @@ const parsingEnabledDefaultParserOptions: ParserOptions = {
  */
 describe('UboHtmlFilteringBodyParser', () => {
     describe('UboHtmlFilteringBodyParser.parse - valid cases (parsed)', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBodyParsed> }>([
+        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBody> }>([
             // responseheader removal rule
             {
                 actual: 'responseheader(Test)',
@@ -115,7 +115,7 @@ describe('UboHtmlFilteringBodyParser', () => {
                 }),
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(UboHtmlFilteringBodyParser.parse(actual)).toEqual(
+            expect(UboHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions)).toEqual(
                 expectedFn(new NodeExpectContext(actual)),
             );
         });
@@ -243,7 +243,7 @@ describe('UboHtmlFilteringBodyParser', () => {
                 }),
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(UboHtmlFilteringBodyParser.parse(actual)).toMatchObject(
+            expect(UboHtmlFilteringBodyParser.parse(actual)).toEqual(
                 expectedFn(new NodeExpectContext(actual)),
             );
         });

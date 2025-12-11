@@ -7,6 +7,7 @@ import { sprintf } from 'sprintf-js';
 import {
     CosmeticRuleSeparator,
     CosmeticRuleType,
+    type Value,
     type HtmlFilteringRule,
     type HtmlFilteringRuleBody,
     type CssSimpleSelector,
@@ -171,6 +172,18 @@ export class HtmlRuleConverter extends RuleConverterBase {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
+        // Handle case when body is raw value string.
+        // If so, parse it first as we need to work with AST nodes.
+        let body: HtmlFilteringRuleBody;
+        if (rule.body.type === 'Value') {
+            body = UboHtmlFilteringBodyParser.parse(rule.body.value, {
+                isLocIncluded: false,
+                parseHtmlFilteringRules: true,
+            }) as HtmlFilteringRuleBody;
+        } else {
+            body = rule.body;
+        }
+
         /**
          * Keep track of present special pseudo-class selectors to lower ambiguity
          * of AdGuard-specific attribute selectors, since they are deprecated and soon will be removed.
@@ -184,8 +197,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
         const presentPseudoClassSelectors = new Set<string>();
 
         // Convert body
-        const convertedBody = HtmlRuleConverter.convertBody(
-            rule.body,
+        let convertedBody: Value | HtmlFilteringRuleBody = HtmlRuleConverter.convertBody(
+            body,
 
             /**
              * Handle AdGuard-specific attribute selectors:
@@ -373,6 +386,14 @@ export class HtmlRuleConverter extends RuleConverterBase {
             },
         );
 
+        // Convert back to Value if the original body was Value
+        if (rule.body.type === 'Value') {
+            convertedBody = {
+                type: 'Value',
+                value: AdgHtmlFilteringBodyGenerator.generate(convertedBody),
+            };
+        }
+
         return createNodeConversionResult(
             [{
                 category: RuleCategory.Cosmetic,
@@ -418,6 +439,18 @@ export class HtmlRuleConverter extends RuleConverterBase {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
+        // Handle case when body is raw value string.
+        // If so, parse it first as we need to work with AST nodes.
+        let body: HtmlFilteringRuleBody;
+        if (rule.body.type === 'Value') {
+            body = AdgHtmlFilteringBodyParser.parse(rule.body.value, {
+                isLocIncluded: false,
+                parseHtmlFilteringRules: true,
+            }) as HtmlFilteringRuleBody;
+        } else {
+            body = rule.body;
+        }
+
         /**
          * Keep track of present special pseudo-class selectors to lower ambiguity
          * of AdGuard-specific attribute selectors, since they are deprecated and soon will be removed.
@@ -430,8 +463,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
         const presentPseudoClassSelectors = new Set<string>();
 
         // Convert body
-        const convertedBody = HtmlRuleConverter.convertBody(
-            rule.body,
+        let convertedBody: Value | HtmlFilteringRuleBody = HtmlRuleConverter.convertBody(
+            body,
 
             /**
              * Handle AdGuard-specific attribute selectors:
@@ -566,6 +599,14 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 presentPseudoClassSelectors.clear();
             },
         );
+
+        // Convert back to Value if the original body was Value
+        if (rule.body.type === 'Value') {
+            convertedBody = {
+                type: 'Value',
+                value: UboHtmlFilteringBodyGenerator.generate(convertedBody),
+            };
+        }
 
         return createNodeConversionResult(
             [{

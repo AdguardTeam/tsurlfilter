@@ -1,11 +1,12 @@
 /* eslint-disable no-param-reassign */
-import { type CssSelectorList, type HtmlFilteringRuleBody } from '../../../nodes';
+import { type Value, type CssSelectorList, type HtmlFilteringRuleBody } from '../../../nodes';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import { NULL } from '../../../utils/constants';
 import { BaseDeserializer } from '../../base-deserializer';
 import { BinaryTypeMarshallingMap } from '../../../marshalling-utils/misc/binary-type-common';
 import { HtmlFilteringBodyMarshallingMap } from '../../../marshalling-utils/cosmetic/body/html-filtering-body-common';
 import { CssSelectorListDeserializer } from '../css-selector/css-selector-list-deserializer';
+import { ValueDeserializer } from '../../misc/value-deserializer';
 
 /**
  * Deserializes binary data into HTML filtering rule body nodes.
@@ -26,7 +27,7 @@ export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
      */
     public static deserialize(
         buffer: InputByteBuffer,
-        node: Partial<HtmlFilteringRuleBody>,
+        node: Partial<Value | HtmlFilteringRuleBody>,
         frequentAttributes?: Map<number, string>,
         frequentPseudoClasses?: Map<number, string>,
     ): void {
@@ -45,8 +46,8 @@ export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
         }
 
         // Handle parsed body
-        node = node as Partial<HtmlFilteringRuleBodyParsed>;
-        node.type = 'HtmlFilteringRuleBodyParsed';
+        node = node as Partial<HtmlFilteringRuleBody>;
+        node.type = 'HtmlFilteringRuleBody';
         prop = buffer.readUint8();
 
         while (prop !== NULL) {

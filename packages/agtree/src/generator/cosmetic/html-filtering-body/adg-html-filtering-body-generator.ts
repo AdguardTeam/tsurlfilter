@@ -1,4 +1,4 @@
-import { type HtmlFilteringRuleBody } from '../../../nodes';
+import { type Value, type HtmlFilteringRuleBody } from '../../../nodes';
 import { QuoteUtils } from '../../../utils';
 import { BaseGenerator } from '../../base-generator';
 import { HtmlFilteringBodyGenerator } from './html-filtering-body-generator';
@@ -16,7 +16,7 @@ export class AdgHtmlFilteringBodyGenerator extends BaseGenerator {
      *
      * @throws Error if the rule body is invalid.
      */
-    public static generate(node: HtmlFilteringRuleBody): string {
+    public static generate(node: Value | HtmlFilteringRuleBody): string {
         const raw = HtmlFilteringBodyGenerator.generate(node);
         return QuoteUtils.unescapeAttributeDoubleQuotes(raw);
     }

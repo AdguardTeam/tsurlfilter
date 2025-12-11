@@ -2,6 +2,7 @@ import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
 import {
+    type Value,
     type CssSelectorList,
     type CssComplexSelector,
     type CssComplexSelectorItem,
@@ -57,14 +58,11 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         raw: string,
         options = defaultParserOptions,
         baseOffset = 0,
-    ): HtmlFilteringRuleBody {
+    ): Value | HtmlFilteringRuleBody {
         // First, check if it's a response header removal rule and return if so
-        // only if parsing of HTML filtering rules is option is enabled
-        if (options.parseHtmlFilteringRules) {
-            const responseHeaderBody = UboHtmlFilteringBodyParser.parseResponseHeaderRule(raw, options, baseOffset);
-            if (responseHeaderBody !== null) {
-                return responseHeaderBody;
-            }
+        const responseHeaderBody = UboHtmlFilteringBodyParser.parseResponseHeaderRule(raw, options, baseOffset);
+        if (responseHeaderBody !== null) {
+            return responseHeaderBody;
         }
 
         return HtmlFilteringBodyParser.parse(raw, options, baseOffset);
@@ -87,7 +85,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
      * responseheader(header-name)
      * ```
      *
-     * @note This method returns `HtmlFilteringRuleBodyParsed` because,
+     * @note This method returns `HtmlFilteringRuleBody` because,
      * response header removal rule syntax is same as uBlock-style
      * HTML filtering rule syntax.
      */
@@ -96,6 +94,11 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         options = defaultParserOptions,
         baseOffset = 0,
     ): HtmlFilteringRuleBody | null {
+        // If HTML filtering rules parsing is disabled, return null
+        if (!options.parseHtmlFilteringRules) {
+            return null;
+        }
+
         // Construct the stream
         const stream = new CssTokenStream(raw, baseOffset);
 

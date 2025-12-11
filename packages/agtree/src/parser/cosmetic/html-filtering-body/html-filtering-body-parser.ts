@@ -1,4 +1,4 @@
-import { type HtmlFilteringRuleBody } from '../../../nodes';
+import { type Value, type HtmlFilteringRuleBody } from '../../../nodes';
 import { BaseParser } from '../../base-parser';
 import { defaultParserOptions } from '../../options';
 import { CssSelectorListParser } from '../css-selector/css-selector-list-parser';
@@ -42,26 +42,24 @@ export class HtmlFilteringBodyParser extends BaseParser {
         raw: string,
         options = defaultParserOptions,
         baseOffset = 0,
-    ): HtmlFilteringRuleBody {
+    ): Value | HtmlFilteringRuleBody {
         // If HTML filtering rules parsing is disabled, return raw value node
+        let result: Value | HtmlFilteringRuleBody;
         if (!options.parseHtmlFilteringRules) {
-            return {
+            result = {
                 type: 'Value',
                 value: raw,
-                start: baseOffset,
-                end: baseOffset + raw.length,
+            };
+        } else {
+            result = {
+                type: 'HtmlFilteringRuleBody',
+                selectorList: CssSelectorListParser.parse(
+                    raw,
+                    options,
+                    baseOffset,
+                ),
             };
         }
-
-        // Construct body node
-        const result: HtmlFilteringRuleBody = {
-            type: 'HtmlFilteringRuleBody',
-            selectorList: CssSelectorListParser.parse(
-                raw,
-                options,
-                baseOffset,
-            ),
-        };
 
         // Include body locations if needed
         if (options.isLocIncluded) {

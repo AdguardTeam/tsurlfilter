@@ -1,5 +1,5 @@
 import { isUboResponseHeaderRemovalRuleBody } from '../../../common/ubo-html-filtering-body-common';
-import { type CssPseudoClassSelector, type HtmlFilteringRuleBody } from '../../../nodes';
+import { type Value, type CssPseudoClassSelector, type HtmlFilteringRuleBody } from '../../../nodes';
 import {
     CLOSE_PARENTHESIS,
     EMPTY,
@@ -24,14 +24,11 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
      *
      * @throws Error if the rule body is invalid.
      */
-    public static generate(node: HtmlFilteringRuleBody): string {
-        // First, check if it's a response header removal rule
-        // and return if so only if the node is parsed body type
-        if (node.type === 'HtmlFilteringRuleBodyParsed') {
-            const responseHeaderBody = UboHtmlFilteringBodyGenerator.generateResponseHeaderRule(node);
-            if (responseHeaderBody !== null) {
-                return responseHeaderBody;
-            }
+    public static generate(node: Value | HtmlFilteringRuleBody): string {
+        // First, check if it's a response header removal rule and return if so
+        const responseHeaderBody = UboHtmlFilteringBodyGenerator.generateResponseHeaderRule(node);
+        if (responseHeaderBody !== null) {
+            return responseHeaderBody;
         }
 
         return HtmlFilteringBodyGenerator.generate(node);
@@ -48,8 +45,8 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
      * @note This method accepts `HtmlFilteringRuleBody` as `node` because,
      * response header removal rule syntax is same as uBlock-style HTML filtering rule syntax.
      */
-    private static generateResponseHeaderRule(node: HtmlFilteringRuleBodyParsed): string | null {
-        if (!isUboResponseHeaderRemovalRuleBody(node)) {
+    private static generateResponseHeaderRule(node: Value | HtmlFilteringRuleBody): string | null {
+        if (node.type !== 'HtmlFilteringRuleBody' || !isUboResponseHeaderRemovalRuleBody(node)) {
             return null;
         }
 

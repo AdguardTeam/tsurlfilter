@@ -1,4 +1,4 @@
-import { type HtmlFilteringRuleBody } from '../../../nodes';
+import { type Value, type HtmlFilteringRuleBody } from '../../../nodes';
 import { BaseDeserializer } from '../../base-deserializer';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import {
@@ -35,7 +35,7 @@ export class UboHtmlFilteringBodyDeserializer extends BaseDeserializer {
      *
      * @throws If the binary data is malformed.
      */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<HtmlFilteringRuleBody>): void {
+    public static deserialize(buffer: InputByteBuffer, node: Partial<Value | HtmlFilteringRuleBody>): void {
         HtmlFilteringBodyDeserializer.deserialize(
             buffer,
             node,

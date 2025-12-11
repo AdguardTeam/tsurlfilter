@@ -12,6 +12,8 @@ export const HtmlFilteringBodyMarshallingMap = {
     Start: 1,
     End: 2,
     SelectorList: 3,
+    Raw: 4,
+    Parsed: 5,
 } as const;
 
 // intentionally naming the variable the same as the type

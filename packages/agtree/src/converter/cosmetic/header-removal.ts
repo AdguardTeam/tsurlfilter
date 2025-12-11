@@ -7,6 +7,7 @@ import {
     CosmeticRuleType,
     RuleCategory,
     type AnyRule,
+    type HtmlFilteringRuleBody,
     type CssPseudoClassSelector,
 } from '../../nodes';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
@@ -60,7 +61,7 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
 
         // Handle case when body is raw value string.
         // If so, parse it first as we need to work with AST nodes.
-        let body: HtmlFilteringRuleBodyParsed | null = null;
+        let body: HtmlFilteringRuleBody | null = null;
         if (rule.body.type === 'Value') {
             body = UboHtmlFilteringBodyParser.parseResponseHeaderRule(rule.body.value, {
                 isLocIncluded: false,

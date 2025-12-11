@@ -1,4 +1,4 @@
-import { type HtmlFilteringRuleBody } from '../../../nodes';
+import { type Value, type HtmlFilteringRuleBody } from '../../../nodes';
 import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
 import { BaseSerializer } from '../../base-serializer';
 import { HtmlFilteringBodySerializer } from './html-filtering-body-serializer';
@@ -30,7 +30,7 @@ export class UboHtmlFilteringBodySerializer extends BaseSerializer {
      * @param node Node to serialize.
      * @param buffer ByteBuffer for writing binary data.
      */
-    public static serialize(node: HtmlFilteringRuleBody, buffer: OutputByteBuffer): void {
+    public static serialize(node: Value | HtmlFilteringRuleBody, buffer: OutputByteBuffer): void {
         HtmlFilteringBodySerializer.serialize(
             node,
             buffer,

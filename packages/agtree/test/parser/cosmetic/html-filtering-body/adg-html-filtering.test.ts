@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { type Value, type HtmlFilteringRuleBodyParsed } from '../../../../src';
+import { type Value, type HtmlFilteringRuleBody } from '../../../../src';
 import {
     AdgHtmlFilteringBodyParser,
 } from '../../../../src/parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
@@ -31,7 +31,7 @@ const parsingEnabledDefaultParserOptions: ParserOptions = {
  */
 describe('AdgHtmlFilteringBodyParser', () => {
     describe('AdgHtmlFilteringBodyParser.parse - valid cases (parsed)', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBodyParsed> }>([
+        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBody> }>([
             // attribute - double quotes are escaped - in middle
             {
                 actual: '[attr="value with "" quotes"]',
@@ -811,6 +811,141 @@ describe('AdgHtmlFilteringBodyParser', () => {
             ':pseudo("value with "" quotes")',
             ':pseudo(""" value with quotes")',
             ':pseudo("value with quotes """)',
+            ':pseudo("[attr=""test""]")',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                AdgHtmlFilteringBodyParser,
+                AdgHtmlFilteringBodyGenerator,
+                AdgHtmlFilteringBodySerializer,
+                AdgHtmlFilteringBodyDeserializer,
+                parsingEnabledDefaultParserOptions,
+            );
+        });
+    });
+
+    /**
+     * Please not that if parsing is disabled, the parser will pass body value as-is,
+     * so these test cases are mainly to ensure that the ADG parser/generator/serializer/deserializer
+     * are wired up correctly. And since no parsing is done, the expected values are the same as the actual ones.
+     * And there is no need to test invalid cases here, as with parsing disabled,
+     * the parser will not be able to detect any invalid syntax.
+     *
+     * Only double quote escaping is handled by the parser even with parsing disabled.
+     */
+    describe('AdgHtmlFilteringBodyParser.parse - valid cases (raw)', () => {
+        test.each<{ actual: string; expected: NodeExpectFn<Value> }>([
+            {
+                actual: '[attr="value with "" quotes"]',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: '[attr="value with \\" quotes"]',
+                    ...context.getFullRange(),
+                }),
+            },
+            {
+                actual: '[attr="[attr=""test""]"]',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: '[attr="[attr=\\"test\\"]"]',
+                    ...context.getFullRange(),
+                }),
+            },
+            {
+                actual: '[attr=\'value with " quotes\']',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: '[attr=\'value with " quotes\']',
+                    ...context.getFullRange(),
+                }),
+            },
+            {
+                actual: '[attr=\'value with "" quotes\']',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: '[attr=\'value with "" quotes\']',
+                    ...context.getFullRange(),
+                }),
+            },
+            {
+                actual: '[attr=\'[attr=""test""]\']',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: '[attr=\'[attr=""test""]\']',
+                    ...context.getFullRange(),
+                }),
+            },
+            {
+                actual: ':pseudo("value with "" quotes")',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: ':pseudo("value with "" quotes")',
+                    ...context.getFullRange(),
+                }),
+            },
+            {
+                actual: ':pseudo("[attr=""test""]")',
+                expected: (context) => ({
+                    type: 'Value',
+                    value: ':pseudo("[attr=""test""]")',
+                    ...context.getFullRange(),
+                }),
+            },
+        ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
+            expect(AdgHtmlFilteringBodyParser.parse(actual)).toEqual(
+                expectedFn(new NodeExpectContext(actual)),
+            );
+        });
+    });
+
+    describe('AdgHtmlFilteringBodyGenerator.generate (raw)', () => {
+        test.each<{ actual: string; expected: string }>([
+            {
+                actual: '[attr="value with "" quotes"]',
+                expected: '[attr="value with "" quotes"]',
+            },
+            {
+                actual: '[attr="[attr=""test""]"]',
+                expected: '[attr="[attr=""test""]"]',
+            },
+            {
+                actual: '[attr=\'value with " quotes\']',
+                expected: '[attr=\'value with " quotes\']',
+            },
+            {
+                actual: '[attr=\'value with "" quotes\']',
+                expected: '[attr=\'value with "" quotes\']',
+            },
+            {
+                actual: '[attr=\'[attr=""test""]\']',
+                expected: '[attr=\'[attr=""test""]\']',
+            },
+            {
+                actual: ':pseudo("value with "" quotes")',
+                expected: ':pseudo("value with "" quotes")',
+            },
+            {
+                actual: ':pseudo("[attr=""test""]")',
+                expected: ':pseudo("[attr=""test""]")',
+            },
+        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
+            const ruleNode = AdgHtmlFilteringBodyParser.parse(actual);
+
+            if (ruleNode === null) {
+                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
+            }
+
+            expect(AdgHtmlFilteringBodyGenerator.generate(ruleNode)).toBe(expected);
+        });
+    });
+
+    describe('serialize & deserialize (raw)', () => {
+        test.each([
+            '[attr="value with "" quotes"]',
+            '[attr="[attr=""test""]"]',
+            '[attr=\'value with " quotes\']',
+            '[attr=\'value with "" quotes\']',
+            '[attr=\'[attr=""test""]\']',
+            ':pseudo("value with "" quotes")',
             ':pseudo("[attr=""test""]")',
         ])("should serialize and deserialize '%p'", async (input) => {
             await expect(input).toBeSerializedAndDeserializedProperly(

@@ -1186,19 +1186,14 @@ export interface CssSelectorList extends Node {
 /**
  * Represents an HTML filtering rule body.
  */
-export interface HtmlFilteringRuleBodyParsed extends Node {
-    type: 'HtmlFilteringRuleBodyParsed';
+export interface HtmlFilteringRuleBody extends Node {
+    type: 'HtmlFilteringRuleBody';
 
     /**
      * CSS selector list.
      */
     selectorList: CssSelectorList;
 }
-
-/**
- * Represents an HTML filtering rule body, either as raw value or parsed structure.
- */
-export type HtmlFilteringRuleBody = Value | HtmlFilteringRuleBodyParsed;
 
 /**
  * A generic representation of a cosmetic rule.
@@ -1352,7 +1347,7 @@ export interface ScriptletInjectionRule extends CosmeticRule {
  */
 export interface HtmlFilteringRule extends CosmeticRule {
     type: typeof CosmeticRuleType.HtmlFilteringRule;
-    body: HtmlFilteringRuleBody;
+    body: Value | HtmlFilteringRuleBody;
 }
 
 /**

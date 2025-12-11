@@ -1,4 +1,4 @@
-import { type HtmlFilteringRuleBody } from '../../../nodes';
+import { type Value, type HtmlFilteringRuleBody } from '../../../nodes';
 import { QuoteUtils } from '../../../utils/quotes';
 import { BaseParser } from '../../base-parser';
 import { defaultParserOptions } from '../../options';
@@ -39,7 +39,7 @@ export class AdgHtmlFilteringBodyParser extends BaseParser {
         raw: string,
         options = defaultParserOptions,
         baseOffset = 0,
-    ): HtmlFilteringRuleBody {
+    ): Value | HtmlFilteringRuleBody {
         const escapedRaw = QuoteUtils.escapeAttributeDoubleQuotes(raw);
         return HtmlFilteringBodyParser.parse(escapedRaw, options, baseOffset);
     }

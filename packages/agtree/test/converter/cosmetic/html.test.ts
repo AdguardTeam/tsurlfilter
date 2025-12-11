@@ -359,22 +359,23 @@ describe('HtmlRuleConverter', () => {
                 },
                 {
                     input: '##^:has-text()',
-                    error: 'Special pseudo-class \'has-text\' requires an argument',
+                    error: 'Special pseudo-class selector \'has-text\' requires an argument',
                 },
                 {
                     input: '##^:min-text-length(abc)',
-                    error: 'Argument of special pseudo-class \'min-text-length\' must be an integer, got \'abc\'',
+                    // eslint-disable-next-line max-len
+                    error: 'Argument of special pseudo-class selector \'min-text-length\' must be an integer, got \'abc\'',
                 },
                 {
                     input: '##^:min-text-length(-1)',
                     // eslint-disable-next-line max-len
-                    error: 'Argument of special pseudo-class \'min-text-length\' must be a positive integer, got \'-1\'',
+                    error: 'Argument of special pseudo-class selector \'min-text-length\' must be a positive integer, got \'-1\'',
                 },
 
                 // Parsing errors
                 {
                     input: '##^[attr="value"]div',
-                    error: 'Tag name must be the first part of the selector',
+                    error: 'Tag selector must be first in the compound selector',
                 },
             ])('should not convert \'$input\'', ({ input, error }) => {
                 if (typeof input !== 'string') {
@@ -747,7 +748,7 @@ describe('HtmlRuleConverter', () => {
                 // Parsing errors
                 {
                     input: '$$[attr="value"]div',
-                    error: 'Tag name must be the first part of the selector',
+                    error: 'Tag selector must be first in the compound selector',
                 },
             ])('should not convert \'$input\'', ({ input, error }) => {
                 if (typeof input !== 'string') {
