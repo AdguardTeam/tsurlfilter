@@ -151,201 +151,148 @@ describe('HtmlRuleConverter', () => {
                 {
                     input: {
                         body: {
-                            children: [],
-                        },
-                    } as unknown as HtmlFilteringRule,
-                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one selector list',
-                },
-
-                // invalid selector list - empty selector in selector list
-                {
-                    input: {
-                        body: {
-                            children: [{
+                            selectorList: {
                                 children: [],
-                            }],
+                            },
                         },
                     } as unknown as HtmlFilteringRule,
-                    // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one selector in selector list',
+                    error: 'Invalid HTML filtering rule: Selector list of HTML filtering rule must not be empty',
                 },
 
-                // invalid selector - empty parts in selector
+                // invalid selector list - empty complex selector items in complex selector
                 {
                     input: {
                         body: {
-                            children: [{
+                            selectorList: {
                                 children: [{
                                     children: [],
                                 }],
-                            }],
+                            },
                         },
                     } as unknown as HtmlFilteringRule,
                     // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one part in selector',
+                    error: 'Invalid HTML filtering rule: Complex selector of selector list must not be empty',
                 },
 
-                // invalid selector - combinator in first selector
+                // invalid selector - empty simple selectors in compound selector
                 {
                     input: {
                         body: {
-                            children: [{
-                                children: [{
-                                    children: [{}],
-                                    combinator: {},
-                                }],
-                            }],
-                        },
-                    } as unknown as HtmlFilteringRule,
-                    // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: First selector cannot start with a combinator',
-                },
-
-                // invalid selector - missing combinator between selectors
-                {
-                    input: {
-                        body: {
-                            children: [{
+                            selectorList: {
                                 children: [{
                                     children: [{
-                                        type: 'Value',
-                                        value: 'div',
+                                        selector: {
+                                            children: [],
+                                        },
                                     }],
-                                }, {
-                                    children: [{}],
                                 }],
-                            }],
+                            },
                         },
                     } as unknown as HtmlFilteringRule,
                     // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Missing combinator between selectors',
+                    error: 'Invalid HTML filtering rule: Compound selector of complex selector item must not be empty',
                 },
 
-                // invalid attribute - operator without value
+                // invalid selector - combinator in first complex selector item
                 {
                     input: {
                         body: {
-                            children: [{
+                            selectorList: {
                                 children: [{
                                     children: [{
-                                        type: 'HtmlFilteringRuleSelectorAttribute',
-                                        operator: {},
+                                        combinator: {},
+                                        selector: {
+                                            children: [{}],
+                                        },
                                     }],
                                 }],
-                            }],
+                            },
                         },
                     } as unknown as HtmlFilteringRule,
                     // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Attribute selector operator specified without a value',
+                    error: 'Invalid HTML filtering rule: First complex selector item cannot start with a combinator',
                 },
 
-                // invalid attribute - flag without value
+                // invalid selector - missing combinator between complex selector items
                 {
                     input: {
                         body: {
-                            children: [{
+                            selectorList: {
                                 children: [{
                                     children: [{
-                                        type: 'HtmlFilteringRuleSelectorAttribute',
-                                        flag: {},
+                                        selector: {
+                                            children: [{
+                                                type: 'Value',
+                                                value: 'div',
+                                            }],
+                                        },
+                                    }, {
+                                        selector: {
+                                            children: [{}],
+                                        },
                                     }],
                                 }],
-                            }],
+                            },
                         },
                     } as unknown as HtmlFilteringRule,
                     // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Attribute selector flag specified without a value',
+                    error: 'Invalid HTML filtering rule: Missing combinator between complex selector items',
                 },
 
-                // invalid attribute - value without operator
-                {
-                    input: {
-                        body: {
-                            children: [{
-                                children: [{
-                                    children: [{
-                                        type: 'HtmlFilteringRuleSelectorAttribute',
-                                        value: {},
-                                    }],
-                                }],
-                            }],
-                        },
-                    } as unknown as HtmlFilteringRule,
-                    // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Attribute selector value specified without an operator',
-                },
-
-                // invalid pseudo-class - argument without flag
-                {
-                    input: {
-                        body: {
-                            children: [{
-                                children: [{
-                                    children: [{
-                                        type: 'HtmlFilteringRuleSelectorPseudoClass',
-                                        argument: {},
-                                    }],
-                                }],
-                            }],
-                        },
-                    } as unknown as HtmlFilteringRule,
-                    // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Non-function pseudo-class cannot have an argument',
-                },
-
-                // invalid special attribute - value not provided
+                // invalid special attribute selector - value not provided
                 {
                     input: '##^[tag-content]',
                     error: 'Special attribute selector \'tag-content\' requires a value',
                 },
 
-                // invalid special attribute - invalid operator
+                // invalid special attribute selector - invalid operator
                 {
                     input: '##^[tag-content~="value"]',
                     error: 'Special attribute selector \'tag-content\' has invalid operator \'~=\'',
                 },
 
-                // invalid special attribute - flag provided
+                // invalid special attribute selector - flag provided
                 {
                     input: '##^[tag-content="value" i]',
                     error: 'Special attribute selector \'tag-content\' does not support flags',
                 },
 
-                // invalid special attribute - length value not number
+                // invalid special attribute selector - length value not number
                 {
                     input: '##^[min-length="abc"]',
                     error: 'Value of special attribute selector \'min-length\' must be an integer, got \'abc\'',
                 },
 
-                // invalid special attribute - length value negative
+                // invalid special attribute selector - length value negative
                 {
                     input: '##^[min-length="-1"]',
                     error: 'Value of special attribute selector \'min-length\' must be a positive integer, got \'-1\'',
                 },
 
-                // invalid special pseudo-class - argument missing
+                // invalid special pseudo-class selector - argument missing
                 {
                     input: '##^:has-text()',
-                    error: 'Special pseudo-class \'has-text\' requires an argument',
+                    error: 'Special pseudo-class selector \'has-text\' requires an argument',
                 },
 
-                // invalid special pseudo-class - length value not number
+                // invalid special pseudo-class selector - length value not number
                 {
                     input: '##^:min-text-length(abc)',
-                    error: 'Argument of special pseudo-class \'min-text-length\' must be an integer, got \'abc\'',
+                    // eslint-disable-next-line max-len
+                    error: 'Argument of special pseudo-class selector \'min-text-length\' must be an integer, got \'abc\'',
                 },
 
-                // invalid special pseudo-class - length value not number
+                // invalid special pseudo-class selector - length value not number
                 {
                     input: '##^:min-text-length(-1)',
                     // eslint-disable-next-line max-len
-                    error: 'Argument of special pseudo-class \'min-text-length\' must be a positive integer, got \'-1\'',
+                    error: 'Argument of special pseudo-class selector \'min-text-length\' must be a positive integer, got \'-1\'',
                 },
 
-                // invalid selector - only special parts
+                // invalid compound selector - only special simple selectors
                 {
                     input: '##^[min-length="10"]:has-text("example")',
-                    error: 'Selector cannot contain only special attribute selectors or pseudo-classes',
+                    error: 'Compound selector cannot contain only special simple selectors',
                 },
             ])('should not convert \'$input\'', ({ input, error }) => {
                 if (typeof input !== 'string') {
@@ -495,201 +442,148 @@ describe('HtmlRuleConverter', () => {
                 {
                     input: {
                         body: {
-                            children: [],
-                        },
-                    } as unknown as HtmlFilteringRule,
-                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one selector list',
-                },
-
-                // invalid selector list - empty selector in selector list
-                {
-                    input: {
-                        body: {
-                            children: [{
+                            selectorList: {
                                 children: [],
-                            }],
+                            },
                         },
                     } as unknown as HtmlFilteringRule,
-                    // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one selector in selector list',
+                    error: 'Invalid HTML filtering rule: Selector list of HTML filtering rule must not be empty',
                 },
 
-                // invalid selector - empty parts in selector
+                // invalid selector list - empty complex selector items in complex selector
                 {
                     input: {
                         body: {
-                            children: [{
+                            selectorList: {
                                 children: [{
                                     children: [],
                                 }],
-                            }],
+                            },
                         },
                     } as unknown as HtmlFilteringRule,
                     // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: HTML filtering rule must contain at least one part in selector',
+                    error: 'Invalid HTML filtering rule: Complex selector of selector list must not be empty',
                 },
 
-                // invalid selector - combinator in first selector
+                // invalid selector - empty simple selectors in compound selector
                 {
                     input: {
                         body: {
-                            children: [{
-                                children: [{
-                                    children: [{}],
-                                    combinator: {},
-                                }],
-                            }],
-                        },
-                    } as unknown as HtmlFilteringRule,
-                    // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: First selector cannot start with a combinator',
-                },
-
-                // invalid selector - missing combinator between selectors
-                {
-                    input: {
-                        body: {
-                            children: [{
+                            selectorList: {
                                 children: [{
                                     children: [{
-                                        type: 'Value',
-                                        value: 'div',
+                                        selector: {
+                                            children: [],
+                                        },
                                     }],
-                                }, {
-                                    children: [{}],
                                 }],
-                            }],
+                            },
                         },
                     } as unknown as HtmlFilteringRule,
                     // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Missing combinator between selectors',
+                    error: 'Invalid HTML filtering rule: Compound selector of complex selector item must not be empty',
                 },
 
-                // invalid attribute - operator without value
+                // invalid selector - combinator in first complex selector item
                 {
                     input: {
                         body: {
-                            children: [{
+                            selectorList: {
                                 children: [{
                                     children: [{
-                                        type: 'HtmlFilteringRuleSelectorAttribute',
-                                        operator: {},
+                                        combinator: {},
+                                        selector: {
+                                            children: [{}],
+                                        },
                                     }],
                                 }],
-                            }],
+                            },
                         },
                     } as unknown as HtmlFilteringRule,
                     // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Attribute selector operator specified without a value',
+                    error: 'Invalid HTML filtering rule: First complex selector item cannot start with a combinator',
                 },
 
-                // invalid attribute - flag without value
+                // invalid selector - missing combinator between complex selector items
                 {
                     input: {
                         body: {
-                            children: [{
+                            selectorList: {
                                 children: [{
                                     children: [{
-                                        type: 'HtmlFilteringRuleSelectorAttribute',
-                                        flag: {},
+                                        selector: {
+                                            children: [{
+                                                type: 'Value',
+                                                value: 'div',
+                                            }],
+                                        },
+                                    }, {
+                                        selector: {
+                                            children: [{}],
+                                        },
                                     }],
                                 }],
-                            }],
+                            },
                         },
                     } as unknown as HtmlFilteringRule,
                     // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Attribute selector flag specified without a value',
+                    error: 'Invalid HTML filtering rule: Missing combinator between complex selector items',
                 },
 
-                // invalid attribute - value without operator
-                {
-                    input: {
-                        body: {
-                            children: [{
-                                children: [{
-                                    children: [{
-                                        type: 'HtmlFilteringRuleSelectorAttribute',
-                                        value: {},
-                                    }],
-                                }],
-                            }],
-                        },
-                    } as unknown as HtmlFilteringRule,
-                    // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Attribute selector value specified without an operator',
-                },
-
-                // invalid pseudo-class - argument without flag
-                {
-                    input: {
-                        body: {
-                            children: [{
-                                children: [{
-                                    children: [{
-                                        type: 'HtmlFilteringRuleSelectorPseudoClass',
-                                        argument: {},
-                                    }],
-                                }],
-                            }],
-                        },
-                    } as unknown as HtmlFilteringRule,
-                    // eslint-disable-next-line max-len
-                    error: 'Invalid HTML filtering rule: Non-function pseudo-class cannot have an argument',
-                },
-
-                // invalid special attribute - value not provided
+                // invalid special attribute selector - value not provided
                 {
                     input: '$$[tag-content]',
                     error: 'Special attribute selector \'tag-content\' requires a value',
                 },
 
-                // invalid special attribute - invalid operator
+                // invalid special attribute selector - invalid operator
                 {
                     input: '$$[tag-content~="value"]',
                     error: 'Special attribute selector \'tag-content\' has invalid operator \'~=\'',
                 },
 
-                // invalid special attribute - flag provided
+                // invalid special attribute selector - flag provided
                 {
                     input: '$$[tag-content="value" i]',
                     error: 'Special attribute selector \'tag-content\' does not support flags',
                 },
 
-                // invalid special attribute - length value not number
+                // invalid special attribute selector - length value not number
                 {
                     input: '$$[min-length="abc"]',
                     error: 'Value of special attribute selector \'min-length\' must be an integer, got \'abc\'',
                 },
 
-                // invalid special attribute - length value negative
+                // invalid special attribute selector - length value negative
                 {
                     input: '$$[min-length="-1"]',
                     error: 'Value of special attribute selector \'min-length\' must be a positive integer, got \'-1\'',
                 },
 
-                // invalid special pseudo-class - argument missing
+                // invalid special pseudo-class selector - argument missing
                 {
                     input: '$$:has-text()',
-                    error: 'Special pseudo-class \'has-text\' requires an argument',
+                    error: 'Special pseudo-class selector \'has-text\' requires an argument',
                 },
 
-                // invalid special pseudo-class - length value not number
+                // invalid special pseudo-class selector - length value not number
                 {
                     input: '$$:min-text-length(abc)',
-                    error: 'Argument of special pseudo-class \'min-text-length\' must be an integer, got \'abc\'',
+                    // eslint-disable-next-line max-len
+                    error: 'Argument of special pseudo-class selector \'min-text-length\' must be an integer, got \'abc\'',
                 },
 
-                // invalid special pseudo-class - length value not number
+                // invalid special pseudo-class selector - length value not number
                 {
                     input: '$$:min-text-length(-1)',
                     // eslint-disable-next-line max-len
-                    error: 'Argument of special pseudo-class \'min-text-length\' must be a positive integer, got \'-1\'',
+                    error: 'Argument of special pseudo-class selector \'min-text-length\' must be a positive integer, got \'-1\'',
                 },
 
-                // invalid selector - only special parts
+                // invalid compound selector - only special simple selectors
                 {
                     input: '$$[min-length="10"]:has-text("example")',
-                    error: 'Selector cannot contain only special attribute selectors or pseudo-classes',
+                    error: 'Compound selector cannot contain only special simple selectors',
                 },
 
                 /* ADG -> uBO specific cases */

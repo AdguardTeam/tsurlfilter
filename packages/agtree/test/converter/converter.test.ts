@@ -79,20 +79,21 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: '##^:has-text()',
-                    expected: 'Special pseudo-class \'has-text\' requires an argument',
+                    expected: 'Special pseudo-class selector \'has-text\' requires an argument',
                 },
                 {
                     actual: '##^:min-text-length(abc)',
-                    expected: 'Argument of special pseudo-class \'min-text-length\' must be an integer, got \'abc\'',
+                    // eslint-disable-next-line max-len
+                    expected: 'Argument of special pseudo-class selector \'min-text-length\' must be an integer, got \'abc\'',
                 },
                 {
                     actual: '##^:min-text-length(-1)',
                     // eslint-disable-next-line max-len
-                    expected: 'Argument of special pseudo-class \'min-text-length\' must be a positive integer, got \'-1\'',
+                    expected: 'Argument of special pseudo-class selector \'min-text-length\' must be a positive integer, got \'-1\'',
                 },
                 {
                     actual: '##^:has-text("example")',
-                    expected: 'Selector cannot contain only special attribute selectors or pseudo-classes',
+                    expected: 'Compound selector cannot contain only special simple selectors',
                 },
             ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
                 expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual))).toThrowError(

@@ -33,29 +33,36 @@ describe('UboHtmlFilteringBodyParser', () => {
                 actual: 'responseheader(Test)',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorPseudoClass',
-                                name: {
-                                    type: 'Value',
-                                    value: 'responseheader',
-                                    ...context.getRangeFor('responseheader'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssPseudoClassSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'responseheader',
+                                            ...context.getRangeFor('responseheader'),
+                                        },
+                                        argument: {
+                                            type: 'Value',
+                                            value: 'Test',
+                                            ...context.getRangeFor('Test'),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                isFunction: true,
-                                argument: {
-                                    type: 'Value',
-                                    value: 'Test',
-                                    ...context.getRangeFor('Test'),
-                                },
-                                ...context.getRangeFor('responseheader(Test)'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor('responseheader(Test)'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('responseheader(Test)'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -65,34 +72,41 @@ describe('UboHtmlFilteringBodyParser', () => {
                 actual: '  responseheader(  Test  )  ',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorPseudoClass',
-                                name: {
-                                    type: 'Value',
-                                    value: 'responseheader',
-                                    ...context.getRangeFor('responseheader'),
-                                },
-                                isFunction: true,
-                                argument: {
-                                    type: 'Value',
-                                    value: 'Test',
-                                    ...context.getRangeFor('Test'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssPseudoClassSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'responseheader',
+                                            ...context.getRangeFor('responseheader'),
+                                        },
+                                        argument: {
+                                            type: 'Value',
+                                            value: 'Test',
+                                            ...context.getRangeFor('Test'),
+                                        },
+                                        ...context.getRangeFor('responseheader(  Test  )'),
+                                    }],
+                                    ...context.getRangeFor('responseheader(  Test  )'),
                                 },
                                 ...context.getRangeFor('responseheader(  Test  )'),
                             }],
                             ...context.getRangeFor('responseheader(  Test  )'),
                         }],
                         ...context.getRangeFor('responseheader(  Test  )'),
-                    }],
+                    },
                     ...context.getFullRange(),
                 }),
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(UboHtmlFilteringBodyParser.parse(actual)).toMatchObject(
+            expect(UboHtmlFilteringBodyParser.parse(actual)).toEqual(
                 expectedFn(new NodeExpectContext(actual)),
             );
         });

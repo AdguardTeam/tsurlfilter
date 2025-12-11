@@ -12,35 +12,42 @@ import { UBO_RESPONSEHEADER_FN } from '../utils/constants';
  * removal rule syntax is same as uBlock-style HTML filtering rule syntax.
  */
 export function isUboResponseHeaderRemovalRuleBody(node: HtmlFilteringRuleBody): boolean {
-    // Must have exactly one selector list
-    if (node.children.length !== 1) {
-        return false;
-    }
+    const { selectorList } = node;
 
-    const selectorList = node.children[0];
-
-    // Must have exactly one selector
+    // Must have exactly one complex selector
     if (selectorList.children.length !== 1) {
         return false;
     }
 
-    const selector = selectorList.children[0];
+    const complexSelector = selectorList.children[0];
 
-    // Must have exactly one part and should not have combinator
-    if (selector.children.length !== 1 || selector.combinator !== undefined) {
+    // Must have exactly one complex selector item
+    if (complexSelector.children.length !== 1) {
         return false;
     }
 
-    const part = selector.children[0];
+    const complexSelectorItem = complexSelector.children[0];
+
+    // Must not have combinator
+    if (complexSelectorItem.combinator !== undefined) {
+        return false;
+    }
+
+    const { selector } = complexSelectorItem;
+
+    // Must have exactly one simple selector
+    if (selector.children.length !== 1) {
+        return false;
+    }
+
+    const simpleSelector = selector.children[0];
 
     return (
-        // Should be a pseudo-class
-        part.type === 'HtmlFilteringRuleSelectorPseudoClass'
-        // Pseudo-class name should match `responseheader`
-        && part.name.value === UBO_RESPONSEHEADER_FN
-        // Should be a functional pseudo-class
-        && part.isFunction
+        // Should be a pseudo-class selector
+        simpleSelector.type === 'CssPseudoClassSelector'
+        // Pseudo-class selector name should match `UBO_RESPONSEHEADER_FN`
+        && simpleSelector.name.value === UBO_RESPONSEHEADER_FN
         // Should have argument
-        && part.argument !== undefined
+        && simpleSelector.argument !== undefined
     );
 }

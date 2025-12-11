@@ -39,6 +39,7 @@ export {
     type HintCommentRule,
     type HtmlFilteringRule,
     type HtmlFilteringRuleBody,
+    type CssSelectorList,
     type JsInjectionRule,
     type Location,
     type LocationRange,

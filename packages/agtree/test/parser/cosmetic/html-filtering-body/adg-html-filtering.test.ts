@@ -28,33 +28,45 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr="value with "" quotes"]',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorAttribute',
-                                name: {
-                                    type: 'Value',
-                                    value: 'attr',
-                                    ...context.getRangeFor('attr'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssAttributeSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'attr',
+                                            ...context.getRangeFor('attr'),
+                                        },
+                                        value: {
+                                            type: 'CssAttributeSelectorValue',
+                                            value: {
+                                                type: 'Value',
+                                                value: 'value with " quotes',
+                                                ...context.getRangeFor('value with "" quotes'),
+                                            },
+                                            operator: {
+                                                type: 'Value',
+                                                value: '=',
+                                                ...context.getRangeFor('='),
+                                            },
+                                            ...context.getRangeFor('="value with "" quotes"'),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                operator: {
-                                    type: 'Value',
-                                    value: '=',
-                                    ...context.getRangeFor('='),
-                                },
-                                value: {
-                                    type: 'Value',
-                                    value: 'value with " quotes',
-                                    ...context.getRangeFor('value with "" quotes'),
-                                },
-                                ...context.getRangeFor('[attr="value with "" quotes"]'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor('[attr="value with "" quotes"]'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('[attr="value with "" quotes"]'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -64,33 +76,45 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr=""" value with quotes"]',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorAttribute',
-                                name: {
-                                    type: 'Value',
-                                    value: 'attr',
-                                    ...context.getRangeFor('attr'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssAttributeSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'attr',
+                                            ...context.getRangeFor('attr'),
+                                        },
+                                        value: {
+                                            type: 'CssAttributeSelectorValue',
+                                            value: {
+                                                type: 'Value',
+                                                value: '" value with quotes',
+                                                ...context.getRangeFor('"" value with quotes'),
+                                            },
+                                            operator: {
+                                                type: 'Value',
+                                                value: '=',
+                                                ...context.getRangeFor('='),
+                                            },
+                                            ...context.getRangeFor('=""" value with quotes"'),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                operator: {
-                                    type: 'Value',
-                                    value: '=',
-                                    ...context.getRangeFor('='),
-                                },
-                                value: {
-                                    type: 'Value',
-                                    value: '" value with quotes',
-                                    ...context.getRangeFor('"" value with quotes'),
-                                },
-                                ...context.getRangeFor('[attr=""" value with quotes"]'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor('[attr=""" value with quotes"]'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('[attr=""" value with quotes"]'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -100,33 +124,45 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr="value with quotes """]',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorAttribute',
-                                name: {
-                                    type: 'Value',
-                                    value: 'attr',
-                                    ...context.getRangeFor('attr'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssAttributeSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'attr',
+                                            ...context.getRangeFor('attr'),
+                                        },
+                                        value: {
+                                            type: 'CssAttributeSelectorValue',
+                                            value: {
+                                                type: 'Value',
+                                                value: 'value with quotes "',
+                                                ...context.getRangeFor('value with quotes ""'),
+                                            },
+                                            operator: {
+                                                type: 'Value',
+                                                value: '=',
+                                                ...context.getRangeFor('='),
+                                            },
+                                            ...context.getRangeFor('="value with quotes """'),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                operator: {
-                                    type: 'Value',
-                                    value: '=',
-                                    ...context.getRangeFor('='),
-                                },
-                                value: {
-                                    type: 'Value',
-                                    value: 'value with quotes "',
-                                    ...context.getRangeFor('value with quotes ""'),
-                                },
-                                ...context.getRangeFor('[attr="value with quotes """]'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor('[attr="value with quotes """]'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('[attr="value with quotes """]'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -136,33 +172,45 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr=\'value with " quotes\']',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorAttribute',
-                                name: {
-                                    type: 'Value',
-                                    value: 'attr',
-                                    ...context.getRangeFor('attr'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssAttributeSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'attr',
+                                            ...context.getRangeFor('attr'),
+                                        },
+                                        value: {
+                                            type: 'CssAttributeSelectorValue',
+                                            value: {
+                                                type: 'Value',
+                                                value: 'value with " quotes',
+                                                ...context.getRangeFor('value with " quotes'),
+                                            },
+                                            operator: {
+                                                type: 'Value',
+                                                value: '=',
+                                                ...context.getRangeFor('='),
+                                            },
+                                            ...context.getRangeFor('=\'value with " quotes\''),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                operator: {
-                                    type: 'Value',
-                                    value: '=',
-                                    ...context.getRangeFor('='),
-                                },
-                                value: {
-                                    type: 'Value',
-                                    value: 'value with " quotes',
-                                    ...context.getRangeFor('value with " quotes'),
-                                },
-                                ...context.getRangeFor('[attr=\'value with " quotes\']'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor('[attr=\'value with " quotes\']'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('[attr=\'value with " quotes\']'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -172,33 +220,45 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr=\'" value with quotes\']',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorAttribute',
-                                name: {
-                                    type: 'Value',
-                                    value: 'attr',
-                                    ...context.getRangeFor('attr'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssAttributeSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'attr',
+                                            ...context.getRangeFor('attr'),
+                                        },
+                                        value: {
+                                            type: 'CssAttributeSelectorValue',
+                                            value: {
+                                                type: 'Value',
+                                                value: '" value with quotes',
+                                                ...context.getRangeFor('" value with quotes'),
+                                            },
+                                            operator: {
+                                                type: 'Value',
+                                                value: '=',
+                                                ...context.getRangeFor('='),
+                                            },
+                                            ...context.getRangeFor('=\'" value with quotes\''),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                operator: {
-                                    type: 'Value',
-                                    value: '=',
-                                    ...context.getRangeFor('='),
-                                },
-                                value: {
-                                    type: 'Value',
-                                    value: '" value with quotes',
-                                    ...context.getRangeFor('" value with quotes'),
-                                },
-                                ...context.getRangeFor('[attr=\'" value with quotes\']'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor('[attr=\'" value with quotes\']'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('[attr=\'" value with quotes\']'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -208,33 +268,45 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr=\'value with quotes "\']',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorAttribute',
-                                name: {
-                                    type: 'Value',
-                                    value: 'attr',
-                                    ...context.getRangeFor('attr'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssAttributeSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'attr',
+                                            ...context.getRangeFor('attr'),
+                                        },
+                                        value: {
+                                            type: 'CssAttributeSelectorValue',
+                                            value: {
+                                                type: 'Value',
+                                                value: 'value with quotes "',
+                                                ...context.getRangeFor('value with quotes "'),
+                                            },
+                                            operator: {
+                                                type: 'Value',
+                                                value: '=',
+                                                ...context.getRangeFor('='),
+                                            },
+                                            ...context.getRangeFor('=\'value with quotes "\''),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                operator: {
-                                    type: 'Value',
-                                    value: '=',
-                                    ...context.getRangeFor('='),
-                                },
-                                value: {
-                                    type: 'Value',
-                                    value: 'value with quotes "',
-                                    ...context.getRangeFor('value with quotes "'),
-                                },
-                                ...context.getRangeFor('[attr=\'value with quotes "\']'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor('[attr=\'value with quotes "\']'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('[attr=\'value with quotes "\']'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -244,33 +316,45 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr=\'value with "" quotes\']',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorAttribute',
-                                name: {
-                                    type: 'Value',
-                                    value: 'attr',
-                                    ...context.getRangeFor('attr'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssAttributeSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'attr',
+                                            ...context.getRangeFor('attr'),
+                                        },
+                                        value: {
+                                            type: 'CssAttributeSelectorValue',
+                                            value: {
+                                                type: 'Value',
+                                                value: 'value with "" quotes',
+                                                ...context.getRangeFor('value with "" quotes'),
+                                            },
+                                            operator: {
+                                                type: 'Value',
+                                                value: '=',
+                                                ...context.getRangeFor('='),
+                                            },
+                                            ...context.getRangeFor('=\'value with "" quotes\''),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                operator: {
-                                    type: 'Value',
-                                    value: '=',
-                                    ...context.getRangeFor('='),
-                                },
-                                value: {
-                                    type: 'Value',
-                                    value: 'value with "" quotes',
-                                    ...context.getRangeFor('value with "" quotes'),
-                                },
-                                ...context.getRangeFor('[attr=\'value with "" quotes\']'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor('[attr=\'value with "" quotes\']'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('[attr=\'value with "" quotes\']'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -280,33 +364,45 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr=\'"" value with quotes\']',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorAttribute',
-                                name: {
-                                    type: 'Value',
-                                    value: 'attr',
-                                    ...context.getRangeFor('attr'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssAttributeSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'attr',
+                                            ...context.getRangeFor('attr'),
+                                        },
+                                        value: {
+                                            type: 'CssAttributeSelectorValue',
+                                            value: {
+                                                type: 'Value',
+                                                value: '"" value with quotes',
+                                                ...context.getRangeFor('"" value with quotes'),
+                                            },
+                                            operator: {
+                                                type: 'Value',
+                                                value: '=',
+                                                ...context.getRangeFor('='),
+                                            },
+                                            ...context.getRangeFor('=\'"" value with quotes\''),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                operator: {
-                                    type: 'Value',
-                                    value: '=',
-                                    ...context.getRangeFor('='),
-                                },
-                                value: {
-                                    type: 'Value',
-                                    value: '"" value with quotes',
-                                    ...context.getRangeFor('"" value with quotes'),
-                                },
-                                ...context.getRangeFor('[attr=\'"" value with quotes\']'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor('[attr=\'"" value with quotes\']'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('[attr=\'"" value with quotes\']'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -316,33 +412,45 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr=\'value with quotes ""\']',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorAttribute',
-                                name: {
-                                    type: 'Value',
-                                    value: 'attr',
-                                    ...context.getRangeFor('attr'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssAttributeSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'attr',
+                                            ...context.getRangeFor('attr'),
+                                        },
+                                        value: {
+                                            type: 'CssAttributeSelectorValue',
+                                            value: {
+                                                type: 'Value',
+                                                value: 'value with quotes ""',
+                                                ...context.getRangeFor('value with quotes ""'),
+                                            },
+                                            operator: {
+                                                type: 'Value',
+                                                value: '=',
+                                                ...context.getRangeFor('='),
+                                            },
+                                            ...context.getRangeFor('=\'value with quotes ""\''),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                operator: {
-                                    type: 'Value',
-                                    value: '=',
-                                    ...context.getRangeFor('='),
-                                },
-                                value: {
-                                    type: 'Value',
-                                    value: 'value with quotes ""',
-                                    ...context.getRangeFor('value with quotes ""'),
-                                },
-                                ...context.getRangeFor('[attr=\'value with quotes ""\']'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor('[attr=\'value with quotes ""\']'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('[attr=\'value with quotes ""\']'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -352,29 +460,36 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: ':pseudo("value with "" quotes")',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorPseudoClass',
-                                name: {
-                                    type: 'Value',
-                                    value: 'pseudo',
-                                    ...context.getRangeFor('pseudo'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssPseudoClassSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'pseudo',
+                                            ...context.getRangeFor('pseudo'),
+                                        },
+                                        argument: {
+                                            type: 'Value',
+                                            value: '"value with "" quotes"',
+                                            ...context.getRangeFor('"value with "" quotes"'),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                isFunction: true,
-                                argument: {
-                                    type: 'Value',
-                                    value: '"value with "" quotes"',
-                                    ...context.getRangeFor('"value with "" quotes"'),
-                                },
-                                ...context.getRangeFor(':pseudo("value with "" quotes")'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor(':pseudo("value with "" quotes")'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor(':pseudo("value with "" quotes")'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -384,29 +499,36 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: ':pseudo(""" value with quotes")',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorPseudoClass',
-                                name: {
-                                    type: 'Value',
-                                    value: 'pseudo',
-                                    ...context.getRangeFor('pseudo'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssPseudoClassSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'pseudo',
+                                            ...context.getRangeFor('pseudo'),
+                                        },
+                                        argument: {
+                                            type: 'Value',
+                                            value: '""" value with quotes"',
+                                            ...context.getRangeFor('""" value with quotes"'),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                isFunction: true,
-                                argument: {
-                                    type: 'Value',
-                                    value: '""" value with quotes"',
-                                    ...context.getRangeFor('""" value with quotes"'),
-                                },
-                                ...context.getRangeFor(':pseudo(""" value with quotes")'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor(':pseudo(""" value with quotes")'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor(':pseudo(""" value with quotes")'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },
@@ -416,29 +538,36 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: ':pseudo("value with quotes """)',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    children: [{
-                        type: 'HtmlFilteringRuleSelectorList',
+                    selectorList: {
+                        type: 'CssSelectorList',
                         children: [{
-                            type: 'HtmlFilteringRuleSelector',
+                            type: 'CssComplexSelector',
                             children: [{
-                                type: 'HtmlFilteringRuleSelectorPseudoClass',
-                                name: {
-                                    type: 'Value',
-                                    value: 'pseudo',
-                                    ...context.getRangeFor('pseudo'),
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssPseudoClassSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'pseudo',
+                                            ...context.getRangeFor('pseudo'),
+                                        },
+                                        argument: {
+                                            type: 'Value',
+                                            value: '"value with quotes """',
+                                            ...context.getRangeFor('"value with quotes """'),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
                                 },
-                                isFunction: true,
-                                argument: {
-                                    type: 'Value',
-                                    value: '"value with quotes """',
-                                    ...context.getRangeFor('"value with quotes """'),
-                                },
-                                ...context.getRangeFor(':pseudo("value with quotes """)'),
+                                ...context.getFullRange(),
                             }],
-                            ...context.getRangeFor(':pseudo("value with quotes """)'),
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor(':pseudo("value with quotes """)'),
-                    }],
+                        ...context.getFullRange(),
+                    },
                     ...context.getFullRange(),
                 }),
             },

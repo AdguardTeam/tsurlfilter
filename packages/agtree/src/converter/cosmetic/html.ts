@@ -8,11 +8,11 @@ import {
     CosmeticRuleSeparator,
     CosmeticRuleType,
     type HtmlFilteringRule,
-    type HtmlFilteringRuleSelector,
-    type HtmlFilteringRuleSelectorAttribute,
-    type HtmlFilteringRuleSelectorList,
-    type HtmlFilteringRuleSelectorPart,
-    type HtmlFilteringRuleSelectorPseudoClass,
+    type CssAttributeSelector,
+    type CssPseudoClassSelector,
+    type CssSimpleSelector,
+    type CssComplexSelectorItem,
+    type CssComplexSelector,
     RuleCategory,
 } from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
@@ -20,7 +20,7 @@ import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode } from '../../ast-utils/clone';
-import { EQUALS } from '../../utils/constants';
+import { EMPTY, EQUALS } from '../../utils/constants';
 import { QuoteUtils } from '../../utils';
 
 /**
@@ -93,29 +93,25 @@ export const ERROR_MESSAGES = {
     ABP_NOT_SUPPORTED: 'Invalid rule, ABP does not support HTML filtering rules',
     INVALID_RULE: 'Invalid HTML filtering rule: %s',
 
-    EMPTY_SELECTOR_LISTS: 'HTML filtering rule must contain at least one selector list',
-    EMPTY_SELECTORS: 'HTML filtering rule must contain at least one selector in selector list',
-    EMPTY_PARTS: 'HTML filtering rule must contain at least one part in selector',
+    EMPTY_SELECTOR_LIST: 'Selector list of HTML filtering rule must not be empty',
+    EMPTY_COMPLEX_SELECTOR: 'Complex selector of selector list must not be empty',
+    EMPTY_COMPOUND_SELECTOR: 'Compound selector of complex selector item must not be empty',
 
-    FIRST_SELECTOR_WITH_COMBINATOR: 'First selector cannot start with a combinator',
-    MISSING_COMBINATOR: 'Missing combinator between selectors',
-    SPECIALS_ONLY_SELECTOR: 'Selector cannot contain only special attribute selectors or pseudo-classes',
+    FIRST_COMPLEX_SELECTOR_ITEM_WITH_COMBINATOR: 'First complex selector item cannot start with a combinator',
+    MISSING_COMBINATOR_BETWEEN_COMPLEX_SELECTOR_ITEMS: 'Missing combinator between complex selector items',
+    SPECIALS_ONLY_SELECTOR: 'Compound selector cannot contain only special simple selectors',
 
-    ATTRIBUTE_OPERATOR_WITHOUT_VALUE: 'Attribute selector operator specified without a value',
-    ATTRIBUTE_FLAG_WITHOUT_VALUE: 'Attribute selector flag specified without a value',
-    ATTRIBUTE_VALUE_WITHOUT_OPERATOR: 'Attribute selector value specified without an operator',
-    SPECIAL_ATTRIBUTE_OPERATOR_INVALID: 'Special attribute selector \'%s\' has invalid operator \'%s\'',
-    SPECIAL_ATTRIBUTE_FLAG_NOT_SUPPORTED: 'Special attribute selector \'%s\' does not support flags',
-    SPECIAL_ATTRIBUTE_VALUE_REQUIRED: 'Special attribute selector \'%s\' requires a value',
-    SPECIAL_ATTRIBUTE_VALUE_INT: 'Value of special attribute selector \'%s\' must be an integer, got \'%s\'',
-    SPECIAL_ATTRIBUTE_VALUE_POSITIVE: 'Value of special attribute selector \'%s\' must be a positive integer, got \'%s\'',
-    SPECIAL_ATTRIBUTE_NOT_SUPPORTED: 'Special attribute selector \'%s\' is not supported in conversion',
+    SPECIAL_ATTRIBUTE_SELECTOR_OPERATOR_INVALID: 'Special attribute selector \'%s\' has invalid operator \'%s\'',
+    SPECIAL_ATTRIBUTE_SELECTOR_FLAG_NOT_SUPPORTED: 'Special attribute selector \'%s\' does not support flags',
+    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_REQUIRED: 'Special attribute selector \'%s\' requires a value',
+    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT: 'Value of special attribute selector \'%s\' must be an integer, got \'%s\'',
+    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE: 'Value of special attribute selector \'%s\' must be a positive integer, got \'%s\'',
+    SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED: 'Special attribute selector \'%s\' is not supported in conversion',
 
-    PSEUDO_CLASS_ARGUMENT_WITHOUT_FLAG: 'Non-function pseudo-class cannot have an argument',
-    SPECIAL_PSEUDO_CLASS_ARGUMENT_REQUIRED: 'Special pseudo-class \'%s\' requires an argument',
-    SPECIAL_PSEUDO_CLASS_ARGUMENT_INT: 'Argument of special pseudo-class \'%s\' must be an integer, got \'%s\'',
-    SPECIAL_PSEUDO_CLASS_ARGUMENT_POSITIVE: 'Argument of special pseudo-class \'%s\' must be a positive integer, got \'%s\'',
-    SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED: 'Special pseudo-class \'%s\' is not supported in conversion',
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED: 'Special pseudo-class selector \'%s\' requires an argument',
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT: 'Argument of special pseudo-class selector \'%s\' must be an integer, got \'%s\'',
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE: 'Argument of special pseudo-class selector \'%s\' must be a positive integer, got \'%s\'',
+    SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED: 'Special pseudo-class selector \'%s\' is not supported in conversion',
 } as const;
 /* eslint-enable max-len */
 
@@ -147,112 +143,114 @@ export class HtmlRuleConverter extends RuleConverterBase {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
-        const selectorLists = rule.body.children;
+        const { children: complexSelectors } = rule.body.selectorList;
 
-        // Selector lists must not be empty
-        HtmlRuleConverter.assertNotEmpty(selectorLists, ERROR_MESSAGES.EMPTY_SELECTOR_LISTS);
+        // Selector list node must not be empty
+        HtmlRuleConverter.assertNotEmpty(complexSelectors, ERROR_MESSAGES.EMPTY_SELECTOR_LIST);
 
-        // Convert each selector list
-        const convertedSelectorLists: HtmlFilteringRuleSelectorList[] = [];
-        for (const { children: selectors } of selectorLists) {
-            // Selectors must not be empty
-            HtmlRuleConverter.assertNotEmpty(selectors, ERROR_MESSAGES.EMPTY_SELECTORS);
+        // Convert each complex selector
+        const convertedComplexSelectors: CssComplexSelector[] = [];
+        for (const { children: complexSelectorItems } of complexSelectors) {
+            // Complex selector node must not be empty
+            HtmlRuleConverter.assertNotEmpty(complexSelectorItems, ERROR_MESSAGES.EMPTY_COMPLEX_SELECTOR);
 
-            // Convert each selector
-            const convertedSelectors: HtmlFilteringRuleSelector[] = [];
-            for (let selectorIndex = 0; selectorIndex < selectors.length; selectorIndex += 1) {
-                const selector = selectors[selectorIndex];
+            // Convert each complex selector item
+            const convertedComplexSelectorItems: CssComplexSelectorItem[] = [];
+            for (let i = 0; i < complexSelectorItems.length; i += 1) {
+                const complexSelectorItem = complexSelectorItems[i];
 
-                // Validate selector
-                HtmlRuleConverter.assertValidSelector(selectorIndex, selector);
+                // Validate complex selector item
+                HtmlRuleConverter.assertValidComplexSelectorItem(i, complexSelectorItem);
 
-                const { children: parts, combinator } = selector;
+                const { selector: compoundSelector, combinator } = complexSelectorItem;
+                const { children: simpleSelectors } = compoundSelector;
 
-                const convertedAttributes = new Map<AdgAttributeSelectors, string>();
-                const convertedPseudoClasses = new Map<AdgPseudoClasses, string>();
-
-                /**
-                 * Keep track of present special pseudo-classes to lower ambiguity
-                 * of AdGuard-specific attributes, since they are deprecated and soon will be removed.
-                 * - If `:min-text-length()` is present, `[min-length]` attribute is ignored.
-                 * - If `:has-text()` / `:contains()` is present, `[tag-content]` attribute is ignored.
-                 */
-                const presentPseudoClasses = new Set<AdgPseudoClasses | UboPseudoClasses>();
+                const convertedAttributeSelectors = new Map<AdgAttributeSelectors, string>();
+                const convertedPseudoClassSelectors = new Map<AdgPseudoClasses, string>();
 
                 /**
-                 * Keep track of the number of special parts found in the selector.
-                 * If selector contains only special parts, it means it didn't have
-                 * any real selector parts, so we can throw an error in this case.
+                 * Keep track of present special pseudo-class selectors to lower ambiguity
+                 * of AdGuard-specific attribute selectors, since they are deprecated and soon will be removed.
+                 * - If `:min-text-length()` is present, `[min-length]` attribute selector is ignored.
+                 * - If `:has-text()` / `:contains()` is present, `[tag-content]` attribute selector is ignored.
                  */
-                let specialParts = 0;
+                const presentPseudoClassSelectors = new Set<AdgPseudoClasses | UboPseudoClasses>();
 
-                // Convert each part
-                const convertedParts: HtmlFilteringRuleSelectorPart[] = [];
-                for (const part of parts) {
-                    if (part.type === 'HtmlFilteringRuleSelectorAttribute') {
-                        // Validate attribute
-                        HtmlRuleConverter.assertValidAttribute(part);
+                /**
+                 * Keep track of the number of special simple selectors found in the compound selector.
+                 * If compound selector contains only special simple selectors, it means it didn't have
+                 * any real simple selector, so we can throw an error in this case.
+                 */
+                let specialSimpleSelectors = 0;
 
+                // Convert each simple selector
+                const convertedSimpleSelectors: CssSimpleSelector[] = [];
+                for (const simpleSelector of simpleSelectors) {
+                    if (
+                        simpleSelector.type === 'CssAttributeSelector'
+                        && HtmlRuleConverter.isSpecialAdgAttributeSelector(simpleSelector)
+                    ) {
                         /**
                          * Handle AdGuard-specific attribute selectors.
                          * Please, note that AdGuard-specific attribute selectors
                          * shouldn't be specified in uBlock rules in the first place,
                          * but we still handle them here for completeness and de-duplication.
                          */
-                        if (HtmlRuleConverter.isSpecialAdgAttribute(part)) {
-                            specialParts += 1;
+                        specialSimpleSelectors += 1;
 
-                            // Validate special attribute
-                            HtmlRuleConverter.assertValidSpecialAttribute(part);
+                        // Validate special attribute selector
+                        HtmlRuleConverter.assertValidSpecialAttributeSelector(simpleSelector);
 
-                            const name = part.name.value;
+                        const name = simpleSelector.name.value;
 
-                            // Note, it's safe to assert that value node is not null,
-                            // because it's validated inside `assertValidSpecialAttribute`
-                            const { value } = part.value!;
-
-                            /**
-                             * Record found special attribute selectors in case
-                             * if there are same functional special pseudo-classes
-                             * in the same selector:
-                             * - `[min-length]` attribute and `:min-text-length()` pseudo-class
-                             * - `[tag-content]` attribute and `:has-text()` / `:contains()` pseudo-class
-                             * - `max-length` is special case, because there's no corresponding pseudo-class,
-                             *   but if it's not specified we set it to the default conversion value.
-                             */
-                            if (name === AdgAttributeSelectors.MinLength || name === AdgAttributeSelectors.MaxLength) {
-                                // Validate numeric value
-                                HtmlRuleConverter.assertValidLengthValue(
-                                    name,
-                                    value,
-                                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_VALUE_INT,
-                                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_VALUE_POSITIVE,
-                                );
-
-                                if (name === AdgAttributeSelectors.MinLength) {
-                                    if (!presentPseudoClasses.has(UboPseudoClasses.MinTextLength)) {
-                                        convertedAttributes.set(AdgAttributeSelectors.MinLength, value);
-                                    }
-                                } else {
-                                    convertedAttributes.set(AdgAttributeSelectors.MaxLength, value);
-                                }
-                                continue;
-                            } else if (name === AdgAttributeSelectors.TagContent) {
-                                if (
-                                    !presentPseudoClasses.has(UboPseudoClasses.HasText)
-                                    && !presentPseudoClasses.has(AdgPseudoClasses.Contains)
-                                ) {
-                                    convertedPseudoClasses.set(AdgPseudoClasses.Contains, value);
-                                }
-                                continue;
-                            }
-                        }
-                    } else if (part.type === 'HtmlFilteringRuleSelectorPseudoClass') {
-                        // Validate pseudo-class
-                        HtmlRuleConverter.assertValidPseudoClass(part);
+                        // Note, it's safe to assert that value node is not null,
+                        // because it's validated inside `assertValidSpecialAttributeSelector`
+                        const { value } = simpleSelector.value!.value;
 
                         /**
-                         * Handle uBlock-specific pseudo-classes:
+                         * Record found special attribute selectors in case
+                         * if there are same functional special pseudo-class selectors
+                         * in the same compound selector:
+                         * - `[min-length]` attribute selector and `:min-text-length()` pseudo-class selector
+                         * - `[tag-content]` attribute selector and `:has-text()` / `:contains()` pseudo-class selector
+                         * - `max-length` is special case, because there's no corresponding pseudo-class selector,
+                         *   but if it's not specified we set it to the default conversion value.
+                         */
+                        if (name === AdgAttributeSelectors.MinLength || name === AdgAttributeSelectors.MaxLength) {
+                            // Validate numeric value
+                            HtmlRuleConverter.assertValidLengthValue(
+                                name,
+                                value,
+                                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
+                                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
+                            );
+
+                            if (name === AdgAttributeSelectors.MinLength) {
+                                if (!presentPseudoClassSelectors.has(UboPseudoClasses.MinTextLength)) {
+                                    convertedAttributeSelectors.set(AdgAttributeSelectors.MinLength, value);
+                                }
+                            } else {
+                                convertedAttributeSelectors.set(AdgAttributeSelectors.MaxLength, value);
+                            }
+                            continue;
+                        } else if (name === AdgAttributeSelectors.TagContent) {
+                            if (
+                                !presentPseudoClassSelectors.has(UboPseudoClasses.HasText)
+                                && !presentPseudoClassSelectors.has(AdgPseudoClasses.Contains)
+                            ) {
+                                convertedPseudoClassSelectors.set(AdgPseudoClasses.Contains, value);
+                            }
+                            continue;
+                        }
+                    } else if (
+                        simpleSelector.type === 'CssPseudoClassSelector'
+                        && (
+                            HtmlRuleConverter.isSpecialUboPseudoClassSelector(simpleSelector)
+                            || HtmlRuleConverter.isSpecialAdgPseudoClassSelector(simpleSelector)
+                        )
+                    ) {
+                        /**
+                         * Handle uBlock-specific pseudo-class selectors:
                          * - `:has-text()` -> `:contains()`
                          * - `:min-text-length()` -> `[min-length]`
                          *
@@ -261,69 +259,64 @@ export class HtmlRuleConverter extends RuleConverterBase {
                          * shouldn't be specified in uBlock rules in the first place,
                          * but we still handle them here for completeness and de-duplication.
                          */
-                        if (
-                            HtmlRuleConverter.isSpecialUboPseudoClass(part)
-                            || HtmlRuleConverter.isSpecialAdgPseudoClass(part)
+                        specialSimpleSelectors += 1;
+
+                        // Validate special pseudo-class
+                        HtmlRuleConverter.assertValidSpecialPseudoClassSelector(simpleSelector);
+
+                        const name = simpleSelector.name.value;
+
+                        // Note, it's safe to assert that argument node is not null,
+                        // because it's validated inside `assertValidSpecialPseudoClassSelector`
+                        let argument = simpleSelector.argument!.value;
+
+                        if (name === UboPseudoClasses.MinTextLength) {
+                            // Unescape and remove quotes from argument only
+                            // if it's needs to be converted into attribute selector value
+                            argument = QuoteUtils.removeQuotesAndUnescape(argument);
+
+                            HtmlRuleConverter.assertValidLengthValue(
+                                name,
+                                argument,
+                                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT,
+                                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE,
+                            );
+
+                            presentPseudoClassSelectors.add(name);
+                            convertedAttributeSelectors.set(AdgAttributeSelectors.MinLength, argument);
+                            continue;
+                        } else if (
+                            name === UboPseudoClasses.HasText
+                            || name === AdgPseudoClasses.Contains
                         ) {
-                            specialParts += 1;
+                            presentPseudoClassSelectors.add(name);
+                            convertedPseudoClassSelectors.set(AdgPseudoClasses.Contains, argument);
+                            continue;
+                        }
 
-                            // Validate special pseudo-class
-                            HtmlRuleConverter.assertValidSpecialPseudoClass(part);
-
-                            const name = part.name.value;
-
-                            // Note, it's safe to assert that argument node is not null,
-                            // because it's validated inside `assertValidSpecialPseudoClass`
-                            let argument = part.argument!.value;
-
-                            if (name === UboPseudoClasses.MinTextLength) {
-                                // Unescape and remove quotes from argument only
-                                // if it's needs to be converted into attribute value
-                                argument = QuoteUtils.removeQuotesAndUnescape(argument);
-
-                                HtmlRuleConverter.assertValidLengthValue(
-                                    name,
-                                    argument,
-                                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_ARGUMENT_INT,
-                                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_ARGUMENT_POSITIVE,
-                                );
-
-                                presentPseudoClasses.add(name);
-                                convertedAttributes.set(AdgAttributeSelectors.MinLength, argument);
-                                continue;
-                            } else if (
-                                name === UboPseudoClasses.HasText
-                                || name === AdgPseudoClasses.Contains
-                            ) {
-                                presentPseudoClasses.add(name);
-                                convertedPseudoClasses.set(AdgPseudoClasses.Contains, argument);
-                                continue;
-                            }
-
-                            // Throw an error if the uBlock-specific pseudo-class cannot be converted.
-                            if (HtmlRuleConverter.isSpecialUboPseudoClass(part)) {
-                                throw new RuleConversionError(sprintf(
-                                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED,
-                                    name,
-                                ));
-                            }
+                        // Throw an error if the uBlock-specific pseudo-class selector cannot be converted
+                        if (HtmlRuleConverter.isSpecialUboPseudoClassSelector(simpleSelector)) {
+                            throw new RuleConversionError(sprintf(
+                                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED,
+                                name,
+                            ));
                         }
                     }
 
-                    convertedParts.push(
-                        HtmlRuleConverter.cloneHtmlFilteringRuleSelectorPart(part),
+                    convertedSimpleSelectors.push(
+                        HtmlRuleConverter.cloneCssSimpleSelector(simpleSelector),
                     );
                 }
 
-                // Throw an error if selector contains only special parts
-                if (specialParts === parts.length) {
+                // Throw an error if compound selector contains only special simple selectors
+                if (specialSimpleSelectors === simpleSelectors.length) {
                     throw new RuleConversionError(ERROR_MESSAGES.SPECIALS_ONLY_SELECTOR);
                 }
 
-                // Add converted special attributes
-                for (const [name, value] of convertedAttributes) {
-                    convertedParts.push(
-                        HtmlRuleConverter.getAttributeNode(
+                // Add converted special attribute selectors
+                for (const [name, value] of convertedAttributeSelectors) {
+                    convertedSimpleSelectors.push(
+                        HtmlRuleConverter.getCssAttributeSelectorNode(
                             name,
                             value,
                         ),
@@ -331,35 +324,41 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 }
 
                 // If `[max-length]` was not specified, set it to the conversion default
-                if (!convertedAttributes.has(AdgAttributeSelectors.MaxLength)) {
-                    convertedParts.push(
-                        HtmlRuleConverter.getAttributeNode(
+                if (!convertedAttributeSelectors.has(AdgAttributeSelectors.MaxLength)) {
+                    convertedSimpleSelectors.push(
+                        HtmlRuleConverter.getCssAttributeSelectorNode(
                             AdgAttributeSelectors.MaxLength,
                             String(ADG_HTML_CONVERSION_MAX_LENGTH),
                         ),
                     );
                 }
 
-                // Add converted special pseudo-classes
-                for (const [name, argument] of convertedPseudoClasses) {
-                    convertedParts.push(
-                        HtmlRuleConverter.getPseudoClassNode(
+                // Add converted special pseudo-class selectors
+                for (const [name, argument] of convertedPseudoClassSelectors) {
+                    convertedSimpleSelectors.push(
+                        HtmlRuleConverter.getPseudoClassSelectorNode(
                             name,
                             argument,
                         ),
                     );
                 }
 
-                convertedSelectors.push({
-                    type: 'HtmlFilteringRuleSelector',
-                    children: convertedParts,
-                    combinator,
+                convertedComplexSelectorItems.push({
+                    type: 'CssComplexSelectorItem',
+                    selector: {
+                        type: 'CssCompoundSelector',
+                        children: convertedSimpleSelectors,
+                    },
+                    combinator: combinator ? {
+                        type: 'Value',
+                        value: combinator.value,
+                    } : undefined,
                 });
             }
 
-            convertedSelectorLists.push({
-                type: 'HtmlFilteringRuleSelectorList',
-                children: convertedSelectors,
+            convertedComplexSelectors.push({
+                type: 'CssComplexSelector',
+                children: convertedComplexSelectorItems,
             });
         }
 
@@ -382,7 +381,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                 body: {
                     type: 'HtmlFilteringRuleBody',
-                    children: convertedSelectorLists,
+                    selectorList: {
+                        type: 'CssSelectorList',
+                        children: convertedComplexSelectors,
+                    },
                 },
             }],
             true,
@@ -411,198 +413,201 @@ export class HtmlRuleConverter extends RuleConverterBase {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
-        const selectorLists = rule.body.children;
+        const { children: complexSelectors } = rule.body.selectorList;
 
-        // Selector lists must not be empty
-        HtmlRuleConverter.assertNotEmpty(selectorLists, ERROR_MESSAGES.EMPTY_SELECTOR_LISTS);
+        // Selector list node must not be empty
+        HtmlRuleConverter.assertNotEmpty(complexSelectors, ERROR_MESSAGES.EMPTY_SELECTOR_LIST);
 
-        // Convert each selector list
-        const convertedSelectorLists: HtmlFilteringRuleSelectorList[] = [];
-        for (const { children: selectors } of selectorLists) {
-            // Selectors must not be empty
-            HtmlRuleConverter.assertNotEmpty(selectors, ERROR_MESSAGES.EMPTY_SELECTORS);
+        // Convert each complex selector
+        const convertedComplexSelectors: CssComplexSelector[] = [];
+        for (const { children: complexSelectorItems } of complexSelectors) {
+            // Complex selector node must not be empty
+            HtmlRuleConverter.assertNotEmpty(complexSelectorItems, ERROR_MESSAGES.EMPTY_COMPLEX_SELECTOR);
 
-            // Convert each selector
-            const convertedSelectors: HtmlFilteringRuleSelector[] = [];
-            for (let selectorIndex = 0; selectorIndex < selectors.length; selectorIndex += 1) {
-                const selector = selectors[selectorIndex];
+            // Convert each complex selector item
+            const convertedComplexSelectorItems: CssComplexSelectorItem[] = [];
+            for (let i = 0; i < complexSelectorItems.length; i += 1) {
+                const complexSelectorItem = complexSelectorItems[i];
 
-                // Validate selector
-                HtmlRuleConverter.assertValidSelector(selectorIndex, selector);
+                // Validate complex selector item
+                HtmlRuleConverter.assertValidComplexSelectorItem(i, complexSelectorItem);
 
-                const { children: parts, combinator } = selector;
+                const { selector: compoundSelector, combinator } = complexSelectorItem;
+                const { children: simpleSelectors } = compoundSelector;
 
-                const convertedPseudoClasses = new Map<UboPseudoClasses, string>();
-
-                /**
-                 * Keep track of present special pseudo-classes to lower ambiguity
-                 * of AdGuard-specific attributes, since they are deprecated and soon will be removed.
-                 * - If `:min-text-length()` is present, `[min-length]` attribute is ignored.
-                 * - If `:has-text()` / `:contains()` is present, `[tag-content]` attribute is ignored.
-                 */
-                const presentPseudoClasses = new Set<AdgPseudoClasses | UboPseudoClasses>();
+                const convertedPseudoClassSelectors = new Map<UboPseudoClasses, string>();
 
                 /**
-                 * Keep track of the number of special parts found in the selector.
-                 * If selector contains only special parts, it means it didn't have
-                 * any real selector parts, so we can throw an error in this case.
+                 * Keep track of present special pseudo-class selectors to lower ambiguity
+                 * of AdGuard-specific attribute selectors, since they are deprecated and soon will be removed.
+                 * - If `:min-text-length()` is present, `[min-length]` attribute selector is ignored.
+                 * - If `:has-text()` / `:contains()` is present, `[tag-content]` attribute selector is ignored.
                  */
-                let specialParts = 0;
+                const presentPseudoClassSelectors = new Set<AdgPseudoClasses | UboPseudoClasses>();
 
-                // Convert each part
-                const convertedParts: HtmlFilteringRuleSelectorPart[] = [];
-                for (const part of parts) {
-                    if (part.type === 'HtmlFilteringRuleSelectorPseudoClass') {
-                        // Validate pseudo-class
-                        HtmlRuleConverter.assertValidPseudoClass(part);
+                /**
+                 * Keep track of the number of special simple selectors found in the compound selector.
+                 * If compound selector contains only special simple selectors, it means it didn't have
+                 * any real simple selector, so we can throw an error in this case.
+                 */
+                let specialSimpleSelectors = 0;
 
+                // Convert each simple selector
+                const convertedSimpleSelectors: CssSimpleSelector[] = [];
+                for (const simpleSelector of simpleSelectors) {
+                    if (
+                        simpleSelector.type === 'CssPseudoClassSelector'
+                        && (
+                            HtmlRuleConverter.isSpecialUboPseudoClassSelector(simpleSelector)
+                            || HtmlRuleConverter.isSpecialAdgPseudoClassSelector(simpleSelector)
+                        )
+                    ) {
                         /**
                          * Handle uBlock-specific pseudo-class selectors.
                          * Please, note that uBlock-specific pseudo-class selectors
                          * shouldn't be specified in AdGuard rules in the first place,
                          * but we still handle them here for completeness and de-duplication.
                          */
-                        if (
-                            HtmlRuleConverter.isSpecialUboPseudoClass(part)
-                            || HtmlRuleConverter.isSpecialAdgPseudoClass(part)
-                        ) {
-                            specialParts += 1;
+                        specialSimpleSelectors += 1;
 
-                            // Validate special pseudo-class
-                            HtmlRuleConverter.assertValidSpecialPseudoClass(part);
+                        // Validate special pseudo-class selector
+                        HtmlRuleConverter.assertValidSpecialPseudoClassSelector(simpleSelector);
 
-                            const name = part.name.value;
+                        const name = simpleSelector.name.value;
 
-                            // Note, it's safe to assert that argument node is not null,
-                            // because it's validated inside `assertValidSpecialPseudoClass`
-                            const argument = part.argument!.value;
-
-                            /**
-                             * Record found special pseudo-class selectors in case
-                             * if there are same functional special attribute
-                             * in the same selector:
-                             * - `:min-text-length()` pseudo-class and `[min-length]` attribute
-                             * - `:has-text()` / `:contains()` pseudo-class and `[tag-content]` attribute
-                             */
-                            if (name === UboPseudoClasses.MinTextLength) {
-                                HtmlRuleConverter.assertValidLengthValue(
-                                    name,
-                                    // Unescape and remove quotes from argument to validate it correctly
-                                    QuoteUtils.removeQuotesAndUnescape(argument),
-                                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_ARGUMENT_INT,
-                                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_ARGUMENT_POSITIVE,
-                                );
-
-                                presentPseudoClasses.add(name);
-                                convertedPseudoClasses.set(UboPseudoClasses.MinTextLength, argument);
-                                continue;
-                            } else if (
-                                name === UboPseudoClasses.HasText
-                                || name === AdgPseudoClasses.Contains
-                            ) {
-                                presentPseudoClasses.add(name);
-                                convertedPseudoClasses.set(UboPseudoClasses.HasText, argument);
-                                continue;
-                            }
-
-                            // Throw an error if the AdGuard-specific pseudo-class cannot be converted
-                            if (HtmlRuleConverter.isSpecialAdgPseudoClass(part)) {
-                                throw new RuleConversionError(sprintf(
-                                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED,
-                                    name,
-                                ));
-                            }
-                        }
-                    } else if (part.type === 'HtmlFilteringRuleSelectorAttribute') {
-                        // Validate attribute
-                        HtmlRuleConverter.assertValidAttribute(part);
+                        // Note, it's safe to assert that argument node is not null,
+                        // because it's validated inside `assertValidSpecialPseudoClassSelector`
+                        const argument = simpleSelector.argument!.value;
 
                         /**
-                         * Handle AdGuard-specific attributes:
+                         * Record found special pseudo-class selectors in case
+                         * if there are same functional special attribute selectors
+                         * in the same compound selector:
+                         * - `:min-text-length()` pseudo-class selector and `[min-length]` attribute selector
+                         * - `:has-text()` / `:contains()` pseudo-class selector and `[tag-content]` attribute selector
+                         */
+                        if (name === UboPseudoClasses.MinTextLength) {
+                            HtmlRuleConverter.assertValidLengthValue(
+                                name,
+                                // Unescape and remove quotes from argument to validate it correctly
+                                QuoteUtils.removeQuotesAndUnescape(argument),
+                                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT,
+                                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE,
+                            );
+
+                            presentPseudoClassSelectors.add(name);
+                            convertedPseudoClassSelectors.set(UboPseudoClasses.MinTextLength, argument);
+                            continue;
+                        } else if (
+                            name === UboPseudoClasses.HasText
+                            || name === AdgPseudoClasses.Contains
+                        ) {
+                            presentPseudoClassSelectors.add(name);
+                            convertedPseudoClassSelectors.set(UboPseudoClasses.HasText, argument);
+                            continue;
+                        }
+
+                        // Throw an error if the AdGuard-specific pseudo-class selector cannot be converted
+                        if (HtmlRuleConverter.isSpecialAdgPseudoClassSelector(simpleSelector)) {
+                            throw new RuleConversionError(sprintf(
+                                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED,
+                                name,
+                            ));
+                        }
+                    } else if (
+                        simpleSelector.type === 'CssAttributeSelector'
+                        && HtmlRuleConverter.isSpecialAdgAttributeSelector(simpleSelector)
+                    ) {
+                        /**
+                         * Handle AdGuard-specific attribute selectors:
                          * - `[tag-content]` -> `:has-text()`
                          * - `[min-length]` -> `:min-text-length()`
                          * - `[max-length]` is special case, we just ignore it during conversion
                          */
-                        if (HtmlRuleConverter.isSpecialAdgAttribute(part)) {
-                            specialParts += 1;
+                        specialSimpleSelectors += 1;
 
-                            // Validate special attribute
-                            HtmlRuleConverter.assertValidSpecialAttribute(part);
+                        // Validate special attribute selector
+                        HtmlRuleConverter.assertValidSpecialAttributeSelector(simpleSelector);
 
-                            const name = part.name.value;
+                        const name = simpleSelector.name.value;
 
-                            // Note, it's safe to assert that argument node is not null,
-                            // because it's validated inside `assertValidSpecialAttribute`
-                            const { value } = part.value!;
+                        // Note, it's safe to assert that value node is not null,
+                        // because it's validated inside `assertValidSpecialAttributeSelector`
+                        const { value } = simpleSelector.value!.value;
+
+                        if (
+                            name === AdgAttributeSelectors.MinLength
+                            || name === AdgAttributeSelectors.MaxLength
+                        ) {
+                            HtmlRuleConverter.assertValidLengthValue(
+                                name,
+                                value,
+                                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
+                                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
+                            );
 
                             if (
                                 name === AdgAttributeSelectors.MinLength
-                                || name === AdgAttributeSelectors.MaxLength
+                                && !presentPseudoClassSelectors.has(UboPseudoClasses.MinTextLength)
                             ) {
-                                HtmlRuleConverter.assertValidLengthValue(
-                                    name,
-                                    value,
-                                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_VALUE_INT,
-                                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_VALUE_POSITIVE,
-                                );
-
-                                if (
-                                    name === AdgAttributeSelectors.MinLength
-                                    && !presentPseudoClasses.has(UboPseudoClasses.MinTextLength)
-                                ) {
-                                    convertedPseudoClasses.set(UboPseudoClasses.MinTextLength, value);
-                                }
-
-                                continue;
-                            } else if (name === AdgAttributeSelectors.TagContent) {
-                                if (
-                                    !presentPseudoClasses.has(UboPseudoClasses.HasText)
-                                    && !presentPseudoClasses.has(AdgPseudoClasses.Contains)
-                                ) {
-                                    convertedPseudoClasses.set(UboPseudoClasses.HasText, value);
-                                }
-
-                                continue;
+                                convertedPseudoClassSelectors.set(UboPseudoClasses.MinTextLength, value);
                             }
 
-                            // Throw an error if the attribute cannot be converted.
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_NOT_SUPPORTED,
-                                name,
-                            ));
+                            continue;
+                        } else if (name === AdgAttributeSelectors.TagContent) {
+                            if (
+                                !presentPseudoClassSelectors.has(UboPseudoClasses.HasText)
+                                && !presentPseudoClassSelectors.has(AdgPseudoClasses.Contains)
+                            ) {
+                                convertedPseudoClassSelectors.set(UboPseudoClasses.HasText, value);
+                            }
+
+                            continue;
                         }
+
+                        // Throw an error if the attribute selector cannot be converted
+                        throw new RuleConversionError(sprintf(
+                            ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED,
+                            name,
+                        ));
                     }
 
-                    convertedParts.push(
-                        HtmlRuleConverter.cloneHtmlFilteringRuleSelectorPart(part),
+                    convertedSimpleSelectors.push(
+                        HtmlRuleConverter.cloneCssSimpleSelector(simpleSelector),
                     );
                 }
 
                 // Throw an error if selector contains only special parts
-                if (specialParts === parts.length) {
+                if (specialSimpleSelectors === simpleSelectors.length) {
                     throw new RuleConversionError(ERROR_MESSAGES.SPECIALS_ONLY_SELECTOR);
                 }
 
                 // Add converted special pseudo-classes
-                for (const [name, argument] of convertedPseudoClasses) {
-                    convertedParts.push(
-                        HtmlRuleConverter.getPseudoClassNode(
+                for (const [name, argument] of convertedPseudoClassSelectors) {
+                    convertedSimpleSelectors.push(
+                        HtmlRuleConverter.getPseudoClassSelectorNode(
                             name,
                             argument,
                         ),
                     );
                 }
 
-                convertedSelectors.push({
-                    type: 'HtmlFilteringRuleSelector',
-                    children: convertedParts,
-                    combinator,
+                convertedComplexSelectorItems.push({
+                    type: 'CssComplexSelectorItem',
+                    selector: {
+                        type: 'CssCompoundSelector',
+                        children: convertedSimpleSelectors,
+                    },
+                    combinator: combinator ? {
+                        type: 'Value',
+                        value: combinator.value,
+                    } : undefined,
                 });
             }
 
-            convertedSelectorLists.push({
-                type: 'HtmlFilteringRuleSelectorList',
-                children: convertedSelectors,
+            convertedComplexSelectors.push({
+                type: 'CssComplexSelector',
+                children: convertedComplexSelectorItems,
             });
         }
 
@@ -624,7 +629,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                 body: {
                     type: 'HtmlFilteringRuleBody',
-                    children: convertedSelectorLists,
+                    selectorList: {
+                        type: 'CssSelectorList',
+                        children: convertedComplexSelectors,
+                    },
                 },
             }],
             true,
@@ -632,92 +640,82 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Checks whether the given selector attribute is a special AdGuard attribute selector.
+     * Checks whether the given attribute selector is a special AdGuard attribute selector.
      *
-     * @param attribute Selector attribute to check.
+     * @param attributeSelector Attribute selector to check.
      *
-     * @returns True if the attribute is a special AdGuard attribute selector, false otherwise.
+     * @returns True if the attribute selector is a special AdGuard attribute selector, false otherwise.
      */
-    private static isSpecialAdgAttribute(
-        attribute: HtmlFilteringRuleSelectorAttribute,
-    ): boolean {
-        return SUPPORTED_ADG_ATTRIBUTE_SELECTORS.has(attribute.name.value);
+    private static isSpecialAdgAttributeSelector(attributeSelector: CssAttributeSelector): boolean {
+        return SUPPORTED_ADG_ATTRIBUTE_SELECTORS.has(attributeSelector.name.value);
     }
 
     /**
-     * Checks whether the given selector pseudo-class is a special AdGuard pseudo-class.
+     * Checks whether the given pseudo-class selector is a special AdGuard pseudo-class selector.
      *
-     * @param pseudoClass Selector pseudo-class to check.
+     * @param pseudoClassSelector Pseudo-class selector to check.
      *
-     * @returns True if the pseudo-class is a special AdGuard pseudo-class, false otherwise.
+     * @returns True if the pseudo-class selector is a special AdGuard pseudo-class selector, false otherwise.
      */
-    private static isSpecialAdgPseudoClass(
-        pseudoClass: HtmlFilteringRuleSelectorPseudoClass,
-    ): boolean {
-        return SUPPORTED_ADG_PSEUDO_CLASSES.has(pseudoClass.name.value);
+    private static isSpecialAdgPseudoClassSelector(pseudoClassSelector: CssPseudoClassSelector): boolean {
+        return SUPPORTED_ADG_PSEUDO_CLASSES.has(pseudoClassSelector.name.value);
     }
 
     /**
-     * Checks whether the given selector pseudo-class is a special uBlock pseudo-class.
+     * Checks whether the given pseudo-class selector is a special uBlock pseudo-class selector.
      *
-     * @param pseudoClass Selector pseudo-class to check.
+     * @param pseudoClassSelector Pseudo-class selector to check.
      *
-     * @returns True if the pseudo-class is a special uBlock pseudo-class, false otherwise.
+     * @returns True if the pseudo-class selector is a special uBlock pseudo-class selector, false otherwise.
      */
-    private static isSpecialUboPseudoClass(
-        pseudoClass: HtmlFilteringRuleSelectorPseudoClass,
-    ): boolean {
-        return SUPPORTED_UBO_PSEUDO_CLASSES.has(pseudoClass.name.value);
+    private static isSpecialUboPseudoClassSelector(pseudoClassSelector: CssPseudoClassSelector): boolean {
+        return SUPPORTED_UBO_PSEUDO_CLASSES.has(pseudoClassSelector.name.value);
     }
 
     /**
-     * Constructs an HTML filtering rule selector attribute node.
+     * Constructs a CSS attribute selector node.
      *
-     * @param name Name of the attribute.
-     * @param value Value of the attribute.
+     * @param name Name of the attribute selector.
+     * @param value Value of the attribute selector.
      *
-     * @returns Constructed attribute node.
+     * @returns Constructed attribute selector node.
      */
-    private static getAttributeNode(
-        name: string,
-        value: string,
-    ): HtmlFilteringRuleSelectorPart {
+    private static getCssAttributeSelectorNode(name: string, value: string): CssAttributeSelector {
         return {
-            type: 'HtmlFilteringRuleSelectorAttribute',
+            type: 'CssAttributeSelector',
             name: {
                 type: 'Value',
                 value: name,
             },
-            operator: {
-                type: 'Value',
-                value: EQUALS,
-            },
             value: {
-                type: 'Value',
-                value,
+                type: 'CssAttributeSelectorValue',
+                value: {
+                    type: 'Value',
+                    value,
+                },
+                operator: {
+                    type: 'Value',
+                    value: EQUALS,
+                },
             },
         };
     }
 
     /**
-     * Constructs an HTML filtering rule selector pseudo-class node.
+     * Constructs a CSS pseudo-class selector node.
      *
-     * @param name Name of the pseudo-class.
-     * @param argument Argument of the pseudo-class.
+     * @param name Name of the pseudo-class selector.
+     * @param argument Argument of the pseudo-class selector.
      *
-     * @returns Constructed pseudo-class node.
+     * @returns Constructed pseudo-class selector node.
      */
-    private static getPseudoClassNode(
-        name: string,
-        argument: string,
-    ): HtmlFilteringRuleSelectorPart {
+    private static getPseudoClassSelectorNode(name: string, argument: string): CssPseudoClassSelector {
         return {
-            type: 'HtmlFilteringRuleSelectorPseudoClass',
+            type: 'CssPseudoClassSelector',
             name: {
                 type: 'Value',
                 value: name,
             },
-            isFunction: true,
             argument: {
                 type: 'Value',
                 value: argument,
@@ -726,7 +724,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Clones a HTML filtering rule selector part node.
+     * Clones a CSS simple selector node.
      *
      * @param node Node to clone.
      *
@@ -734,9 +732,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @throws Error if the node type is unknown.
      */
-    private static cloneHtmlFilteringRuleSelectorPart(
-        node: HtmlFilteringRuleSelectorPart,
-    ): HtmlFilteringRuleSelectorPart {
+    private static cloneCssSimpleSelector(node: CssSimpleSelector): CssSimpleSelector {
         const { type } = node;
         switch (type) {
             case 'Value':
@@ -745,35 +741,34 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     value: node.value,
                 };
 
-            case 'HtmlFilteringRuleSelectorAttribute':
+            case 'CssAttributeSelector':
                 return {
-                    type: 'HtmlFilteringRuleSelectorAttribute',
+                    type: 'CssAttributeSelector',
                     name: {
                         type: 'Value',
                         value: node.name.value,
                     },
-                    operator: node.operator ? {
-                        type: 'Value',
-                        value: node.operator.value,
-                    } : undefined,
                     value: node.value ? {
-                        type: 'Value',
-                        value: node.value.value,
-                    } : undefined,
-                    flag: node.flag ? {
-                        type: 'Value',
-                        value: node.flag.value,
+                        type: 'CssAttributeSelectorValue',
+                        operator: {
+                            type: 'Value',
+                            value: node.value.operator.value,
+                        },
+                        value: {
+                            type: 'Value',
+                            value: node.value.value.value,
+                        },
+                        isCaseSensitive: node.value.isCaseSensitive,
                     } : undefined,
                 };
 
-            case 'HtmlFilteringRuleSelectorPseudoClass':
+            case 'CssPseudoClassSelector':
                 return {
-                    type: 'HtmlFilteringRuleSelectorPseudoClass',
+                    type: 'CssPseudoClassSelector',
                     name: {
                         type: 'Value',
                         value: node.name.value,
                     },
-                    isFunction: node.isFunction,
                     argument: node.argument ? {
                         type: 'Value',
                         value: node.argument.value,
@@ -803,143 +798,83 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Asserts that the given selector is valid.
+     * Asserts that the given complex selector item is valid.
      *
-     * @param index Index of the selector in the selector list.
-     * @param selector Selector to check.
+     * @param index Index of the complex selector item in the complex selector.
+     * @param complexSelectorItem Complex selector item to check.
      *
-     * @throws If the selector is empty or has invalid combinator usage.
+     * @throws If the compound selector inside of complex selector item is empty or has invalid combinator usage.
      */
-    private static assertValidSelector(
-        index: number,
-        selector: HtmlFilteringRuleSelector,
-    ): void {
-        HtmlRuleConverter.assertNotEmpty(selector.children, ERROR_MESSAGES.EMPTY_PARTS);
+    private static assertValidComplexSelectorItem(index: number, complexSelectorItem: CssComplexSelectorItem): void {
+        HtmlRuleConverter.assertNotEmpty(
+            complexSelectorItem.selector.children,
+            ERROR_MESSAGES.EMPTY_COMPOUND_SELECTOR,
+        );
 
-        // Throw if first selector has a combinator
-        if (index === 0 && selector.combinator) {
+        // Throw if this is the first complex selector item and it has a combinator
+        if (index === 0 && complexSelectorItem.combinator) {
             throw new RuleConversionError(sprintf(
                 ERROR_MESSAGES.INVALID_RULE,
-                ERROR_MESSAGES.FIRST_SELECTOR_WITH_COMBINATOR,
+                ERROR_MESSAGES.FIRST_COMPLEX_SELECTOR_ITEM_WITH_COMBINATOR,
             ));
         }
 
-        // Throw if combinator is missing
-        if (index > 0 && !selector.combinator) {
+        // Throw if combinator is missing between complex selector items
+        if (index > 0 && !complexSelectorItem.combinator) {
             throw new RuleConversionError(sprintf(
                 ERROR_MESSAGES.INVALID_RULE,
-                ERROR_MESSAGES.MISSING_COMBINATOR,
+                ERROR_MESSAGES.MISSING_COMBINATOR_BETWEEN_COMPLEX_SELECTOR_ITEMS,
             ));
         }
     }
 
     /**
-     * Asserts that the given selector attribute is a valid attribute.
+     * Asserts that the given attribute selector is a valid special attribute selector.
      *
-     * @param attribute Selector attribute to check.
+     * @param attributeSelector Attribute selector to check.
      *
-     * @throws If the part is not a valid attribute.
+     * @throws If attribute selector is not valid special attribute selector.
      */
-    private static assertValidAttribute(
-        attribute: HtmlFilteringRuleSelectorAttribute,
-    ): void {
-        // Throw an error if the operator is specified without a value
-        if (attribute.operator && !attribute.value) {
-            throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.INVALID_RULE,
-                ERROR_MESSAGES.ATTRIBUTE_OPERATOR_WITHOUT_VALUE,
-            ));
-        }
-
-        // Throw an error if the flag is specified without a value
-        if (attribute.flag && !attribute.value) {
-            throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.INVALID_RULE,
-                ERROR_MESSAGES.ATTRIBUTE_FLAG_WITHOUT_VALUE,
-            ));
-        }
-
-        // Throw an error if the value is specified without an operator
-        if (attribute.value && !attribute.operator) {
-            throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.INVALID_RULE,
-                ERROR_MESSAGES.ATTRIBUTE_VALUE_WITHOUT_OPERATOR,
-            ));
-        }
-    }
-
-    /**
-     * Asserts that the given selector pseudo-class is a valid pseudo-class.
-     *
-     * @param pseudoClass Selector pseudo-class to check.
-     *
-     * @throws If the part is not a valid pseudo-class.
-     */
-    private static assertValidPseudoClass(
-        pseudoClass: HtmlFilteringRuleSelectorPseudoClass,
-    ): void {
-        // Throw an error if isFunction is false but argument is provided
-        if (pseudoClass.argument && !pseudoClass.isFunction) {
-            throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.INVALID_RULE,
-                ERROR_MESSAGES.PSEUDO_CLASS_ARGUMENT_WITHOUT_FLAG,
-            ));
-        }
-    }
-
-    /**
-     * Asserts that the given selector attribute is a valid special attribute.
-     *
-     * @param attribute Selector attribute to check.
-     *
-     * @throws If the part is not a valid special attribute.
-     */
-    private static assertValidSpecialAttribute(
-        attribute: HtmlFilteringRuleSelectorAttribute,
-    ): void {
+    private static assertValidSpecialAttributeSelector(attributeSelector: CssAttributeSelector): void {
         // Throw an error if value is missing
-        if (!attribute.value) {
+        if (!attributeSelector.value) {
             throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_VALUE_REQUIRED,
-                attribute.name.value,
+                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_REQUIRED,
+                attributeSelector.name.value,
             ));
         }
 
         // Throw an error if operator is not '='
-        // Here we can safely assert that operator is not null,
-        // because it's validated inside `convertSelectorLists`
-        if (attribute.operator!.value !== EQUALS) {
+        if (attributeSelector.value.operator.value !== EQUALS) {
             throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_OPERATOR_INVALID,
-                attribute.name.value,
-                attribute.operator!.value,
+                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_OPERATOR_INVALID,
+                attributeSelector.name.value,
+                attributeSelector.value.operator.value,
             ));
         }
 
         // Throw an error if flag is specified
-        if (attribute.flag) {
+        if (attributeSelector.value.isCaseSensitive !== undefined) {
             throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_FLAG_NOT_SUPPORTED,
-                attribute.name.value,
+                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_FLAG_NOT_SUPPORTED,
+                attributeSelector.name.value,
             ));
         }
     }
 
     /**
-     * Asserts that the given selector pseudo-class is a valid special pseudo-class.
+     * Asserts that the given pseudo-class selector is a valid special pseudo-class selector.
      *
-     * @param pseudoClass Selector pseudo-class to check.
+     * @param pseudoClassSelector Pseudo-class selector to check.
      *
-     * @throws If the part is not a valid special pseudo-class.
+     * @throws If pseudo-class selector is not valid special pseudo-class selector.
      */
-    private static assertValidSpecialPseudoClass(
-        pseudoClass: HtmlFilteringRuleSelectorPseudoClass,
-    ): void {
+    private static assertValidSpecialPseudoClassSelector(pseudoClassSelector: CssPseudoClassSelector): void {
         // Throw an error if argument is missing
-        if (!pseudoClass.argument) {
+        if (!pseudoClassSelector.argument || pseudoClassSelector.argument.value === EMPTY) {
             throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_ARGUMENT_REQUIRED,
-                pseudoClass.name.value,
+                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED,
+                pseudoClassSelector.name.value,
             ));
         }
     }
