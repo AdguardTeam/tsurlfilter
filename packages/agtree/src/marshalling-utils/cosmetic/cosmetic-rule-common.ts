@@ -48,7 +48,4 @@ export const COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP = new Map<string, number>
 
     ['$$', 10],
     ['$@$', 11],
-
-    ['##^', 12],
-    ['#@#^', 13],
 ]);

@@ -27,8 +27,8 @@ describe('CosmeticRuleParser', () => {
                         domains: DomainListParser.parse(''),
                         separator: {
                             type: 'Value',
-                            value: '##^',
-                            ...context.getRangeFor('##^'),
+                            value: '##',
+                            ...context.getRangeFor('##'),
                         },
                         body: UboHtmlFilteringBodyParser.parse(
                             'script:has-text(adblock)',
@@ -51,8 +51,8 @@ describe('CosmeticRuleParser', () => {
                         domains: DomainListParser.parse(''),
                         separator: {
                             type: 'Value',
-                            value: '#@#^',
-                            ...context.getRangeFor('#@#^'),
+                            value: '#@#',
+                            ...context.getRangeFor('#@#'),
                         },
                         body: UboHtmlFilteringBodyParser.parse(
                             'script:has-text(adblock)',
@@ -77,8 +77,8 @@ describe('CosmeticRuleParser', () => {
                         domains: DomainListParser.parse('example.com,~example.net'),
                         separator: {
                             type: 'Value',
-                            value: '##^',
-                            ...context.getRangeFor('##^'),
+                            value: '##',
+                            ...context.getRangeFor('##'),
                         },
                         body: UboHtmlFilteringBodyParser.parse(
                             'script:has-text(adblock)',
@@ -101,8 +101,8 @@ describe('CosmeticRuleParser', () => {
                         domains: DomainListParser.parse('example.com,~example.net'),
                         separator: {
                             type: 'Value',
-                            value: '#@#^',
-                            ...context.getRangeFor('#@#^'),
+                            value: '#@#',
+                            ...context.getRangeFor('#@#'),
                         },
                         body: UboHtmlFilteringBodyParser.parse(
                             'script:has-text(adblock)',

@@ -573,8 +573,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 separator: {
                     type: 'Value',
                     value: rule.exception
-                        ? CosmeticRuleSeparator.UboHtmlFilteringException
-                        : CosmeticRuleSeparator.UboHtmlFiltering,
+                        ? CosmeticRuleSeparator.ElementHidingException
+                        : CosmeticRuleSeparator.ElementHiding,
                 },
 
                 body: {

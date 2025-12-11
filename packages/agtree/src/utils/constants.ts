@@ -221,6 +221,7 @@ export const REGEX_MARKER = '/';
 export const ADG_SCRIPTLET_MASK = '//scriptlet';
 export const UBO_SCRIPTLET_MASK = '+js';
 export const UBO_SCRIPTLET_MASK_LEGACY = 'script:inject';
+export const UBO_HTML_MASK = '^';
 export const UBO_MATCHES_PATH_OPERATOR = 'matches-path';
 export const UBO_RESPONSEHEADER_FN = 'responseheader';
 export const ADG_PATH_MODIFIER = 'path';

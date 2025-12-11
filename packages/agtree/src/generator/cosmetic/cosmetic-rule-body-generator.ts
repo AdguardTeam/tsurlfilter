@@ -6,6 +6,7 @@ import {
     EMPTY,
     OPEN_PARENTHESIS,
     SPACE,
+    UBO_HTML_MASK,
 } from '../../utils/constants';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AdgScriptletInjectionBodyGenerator } from './scriptlet-body/adg-scriptlet-injection-body-generator';
@@ -77,7 +78,7 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
                         break;
 
                     case AdblockSyntax.Ubo:
-                        result = UboHtmlFilteringBodyGenerator.generate(node.body);
+                        result = UBO_HTML_MASK + UboHtmlFilteringBodyGenerator.generate(node.body);
                         break;
 
                     case AdblockSyntax.Abp:
