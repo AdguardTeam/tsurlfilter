@@ -167,6 +167,54 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 }),
             },
 
+            // attribute - double quotes are escaped - attribute pattern inside of the value
+            {
+                actual: '[attr="[attr=""test""]"]',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'CssSelectorList',
+                        children: [{
+                            type: 'CssComplexSelector',
+                            children: [{
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssAttributeSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'attr',
+                                            ...context.getRangeFor('attr'),
+                                        },
+                                        value: {
+                                            type: 'CssAttributeSelectorValue',
+                                            value: {
+                                                type: 'Value',
+                                                value: '[attr="test"]',
+                                                ...context.getRangeFor('[attr=""test""]'),
+                                            },
+                                            operator: {
+                                                type: 'Value',
+                                                value: '=',
+                                                ...context.getRangeFor('='),
+                                            },
+                                            ...context.getRangeFor('="[attr=""test""]"'),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
+                                },
+                                ...context.getFullRange(),
+                            }],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
+
             // attribute - double quotes are not escaped - single quotes - in middle
             {
                 actual: '[attr=\'value with " quotes\']',
@@ -455,6 +503,54 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 }),
             },
 
+            // attribute - double quotes are not escaped - attribute pattern inside of the value but with single quotes
+            {
+                actual: '[attr=\'[attr=""test""]\']',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'CssSelectorList',
+                        children: [{
+                            type: 'CssComplexSelector',
+                            children: [{
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssAttributeSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'attr',
+                                            ...context.getRangeFor('attr'),
+                                        },
+                                        value: {
+                                            type: 'CssAttributeSelectorValue',
+                                            value: {
+                                                type: 'Value',
+                                                value: '[attr=""test""]',
+                                                ...context.getRangeFor('[attr=""test""]'),
+                                            },
+                                            operator: {
+                                                type: 'Value',
+                                                value: '=',
+                                                ...context.getRangeFor('='),
+                                            },
+                                            ...context.getRangeFor('=\'[attr=""test""]\''),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
+                                },
+                                ...context.getFullRange(),
+                            }],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
+
             // pseudo-class - double quotes are not escaped - in middle
             {
                 actual: ':pseudo("value with "" quotes")',
@@ -571,6 +667,45 @@ describe('AdgHtmlFilteringBodyParser', () => {
                     ...context.getFullRange(),
                 }),
             },
+
+            // pseudo-class - double quotes are not escaped - attribute pattern inside of the value of pseudo-class
+            {
+                actual: ':pseudo("[attr=""test""]")',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'CssSelectorList',
+                        children: [{
+                            type: 'CssComplexSelector',
+                            children: [{
+                                type: 'CssComplexSelectorItem',
+                                selector: {
+                                    type: 'CssCompoundSelector',
+                                    children: [{
+                                        type: 'CssPseudoClassSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'pseudo',
+                                            ...context.getRangeFor('pseudo'),
+                                        },
+                                        argument: {
+                                            type: 'Value',
+                                            value: '"[attr=""test""]"',
+                                            ...context.getRangeFor('"[attr=""test""]"'),
+                                        },
+                                        ...context.getFullRange(),
+                                    }],
+                                    ...context.getFullRange(),
+                                },
+                                ...context.getFullRange(),
+                            }],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
             expect(AdgHtmlFilteringBodyParser.parse(actual)).toEqual(
                 expectedFn(new NodeExpectContext(actual)),
@@ -591,6 +726,10 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: '[attr="value with quotes """]',
                 expected: '[attr="value with quotes """]',
+            },
+            {
+                actual: '[attr="[attr=""test""]"]',
+                expected: '[attr="[attr=""test""]"]',
             },
             {
                 actual: '[attr=\'value with " quotes\']',
@@ -617,6 +756,10 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 expected: '[attr="value with quotes """""]',
             },
             {
+                actual: '[attr=\'[attr=""test""]\']',
+                expected: '[attr="[attr=""""test""""]"]',
+            },
+            {
                 actual: ':pseudo("value with "" quotes")',
                 expected: ':pseudo("value with "" quotes")',
             },
@@ -627,6 +770,10 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo("value with quotes """)',
                 expected: ':pseudo("value with quotes """)',
+            },
+            {
+                actual: ':pseudo("[attr=""test""]")',
+                expected: ':pseudo("[attr=""test""]")',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = AdgHtmlFilteringBodyParser.parse(actual);
@@ -644,15 +791,18 @@ describe('AdgHtmlFilteringBodyParser', () => {
             '[attr="value with "" quotes"]',
             '[attr=""" value with quotes"]',
             '[attr="value with quotes """]',
+            '[attr="[attr=""test""]"]',
             '[attr=\'value with " quotes\']',
             '[attr=\'" value with quotes\']',
             '[attr=\'value with quotes "\']',
             '[attr=\'value with "" quotes\']',
             '[attr=\'"" value with quotes\']',
             '[attr=\'value with quotes ""\']',
+            '[attr=\'[attr=""test""]\']',
             ':pseudo("value with "" quotes")',
             ':pseudo(""" value with quotes")',
             ':pseudo("value with quotes """)',
+            ':pseudo("[attr=""test""]")',
         ])("should serialize and deserialize '%p'", async (input) => {
             await expect(input).toBeSerializedAndDeserializedProperly(
                 AdgHtmlFilteringBodyParser,
