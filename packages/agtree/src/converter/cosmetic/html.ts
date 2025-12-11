@@ -38,27 +38,27 @@ const ADG_HTML_CONVERSION_MAX_LENGTH = ADG_HTML_DEFAULT_MAX_LENGTH * 32;
 /**
  * Supported special pseudo-classes from uBlock.
  */
-enum UboPseudoClasses {
-    HasText = 'has-text',
-    MinTextLength = 'min-text-length',
-}
+const UboPseudoClasses = {
+    HasText: 'has-text',
+    MinTextLength: 'min-text-length',
+} as const;
 
 /**
  * Supported special attribute selectors from AdGuard.
  */
-enum AdgAttributeSelectors {
-    MaxLength = 'max-length',
-    MinLength = 'min-length',
-    TagContent = 'tag-content',
-    Wildcard = 'wildcard',
-}
+const AdgAttributeSelectors = {
+    MaxLength: 'max-length',
+    MinLength: 'min-length',
+    TagContent: 'tag-content',
+    Wildcard: 'wildcard',
+} as const;
 
 /**
  * Supported special pseudo-classes from AdGuard.
  */
-enum AdgPseudoClasses {
-    Contains = 'contains',
-}
+const AdgPseudoClasses = {
+    Contains: 'contains',
+} as const;
 
 /**
  * Set of {@link UboPseudoClasses}.
@@ -171,9 +171,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
          *
          * This maps/sets are reused for each compound selector during conversion.
          */
-        const convertedAttributeSelectors = new Map<AdgAttributeSelectors, string>();
-        const convertedPseudoClassSelectors = new Map<AdgPseudoClasses, string>();
-        const presentPseudoClassSelectors = new Set<AdgPseudoClasses | UboPseudoClasses>();
+        const convertedAttributeSelectors = new Map<string, string>();
+        const convertedPseudoClassSelectors = new Map<string, string>();
+        const presentPseudoClassSelectors = new Set<string>();
 
         // Convert each complex selector
         const convertedSelectorList = HtmlRuleConverter.convertSelectorList(
@@ -421,8 +421,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
          *
          * This maps/sets are reused for each compound selector during conversion.
          */
-        const convertedPseudoClassSelectors = new Map<UboPseudoClasses, string>();
-        const presentPseudoClassSelectors = new Set<AdgPseudoClasses | UboPseudoClasses>();
+        const convertedPseudoClassSelectors = new Map<string, string>();
+        const presentPseudoClassSelectors = new Set<string>();
 
         const convertedSelectorList = HtmlRuleConverter.convertSelectorList(
             rule.body.selectorList,
