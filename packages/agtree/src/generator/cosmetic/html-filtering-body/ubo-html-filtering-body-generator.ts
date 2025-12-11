@@ -1,9 +1,5 @@
 import { isUboResponseHeaderRemovalRuleBody } from '../../../common/ubo-html-filtering-body-common';
-import {
-    type HtmlFilteringRuleSelectorPseudoClass,
-    type HtmlFilteringRuleBody,
-    type HtmlFilteringRuleBodyParsed,
-} from '../../../nodes';
+import { type CssPseudoClassSelector, type HtmlFilteringRuleBody } from '../../../nodes';
 import {
     CLOSE_PARENTHESIS,
     EMPTY,
@@ -11,6 +7,7 @@ import {
     UBO_RESPONSEHEADER_FN,
 } from '../../../utils/constants';
 import { BaseGenerator } from '../../base-generator';
+import { ValueGenerator } from '../../misc/value-generator';
 import { HtmlFilteringBodyGenerator } from './html-filtering-body-generator';
 
 /**
@@ -56,11 +53,14 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
             return null;
         }
 
-        // Indexes and types checked in `isUboResponseHeaderRemovalRuleBody`
-        const selectorList = node.children[0];
-        const selector = selectorList.children[0];
-        const pseudoClass = selector.children[0] as HtmlFilteringRuleSelectorPseudoClass;
-        const headerName = pseudoClass.argument!.value;
+        // Length of AST nodes, types of nodes, non-null argument
+        // check are already done in `isUboResponseHeaderRemovalRuleBody()`
+        const { selectorList } = node;
+        const complexSelector = selectorList.children[0];
+        const complexSelectorItem = complexSelector.children[0];
+        const compoundSelector = complexSelectorItem.selector;
+        const pseudoClass = compoundSelector.children[0] as CssPseudoClassSelector;
+        const headerName = ValueGenerator.generate(pseudoClass.argument!);
 
         const result: string[] = [];
 

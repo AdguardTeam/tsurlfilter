@@ -5,10 +5,9 @@
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     CosmeticRuleType,
-    type HtmlFilteringRuleSelectorPseudoClass,
     RuleCategory,
     type AnyRule,
-    type HtmlFilteringRuleBodyParsed,
+    type CssPseudoClassSelector,
 } from '../../nodes';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
@@ -78,10 +77,12 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
 
         // Length of AST nodes, types of nodes, non-null argument
         // check are already done in `isUboResponseHeaderRemovalRuleBody()`
-        const selectorList = body.children[0];
-        const selector = selectorList.children[0];
-        const pseudoClass = selector.children[0] as HtmlFilteringRuleSelectorPseudoClass;
-        const headerName = pseudoClass.argument!.value;
+        const { selectorList } = body;
+        const complexSelector = selectorList.children[0];
+        const complexSelectorItem = complexSelector.children[0];
+        const compoundSelector = complexSelectorItem.selector;
+        const pseudoClassSelector = compoundSelector.children[0] as CssPseudoClassSelector;
+        const headerName = pseudoClassSelector.argument!.value;
 
         // Prepare network rule pattern
         const pattern: string[] = [];

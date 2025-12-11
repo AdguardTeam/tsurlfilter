@@ -2,11 +2,11 @@ import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
 import {
-    type HtmlFilteringRuleSelector,
+    type CssSelectorList,
+    type CssComplexSelector,
+    type CssComplexSelectorItem,
+    type CssPseudoClassSelector,
     type HtmlFilteringRuleBody,
-    type HtmlFilteringRuleSelectorPseudoClass,
-    type HtmlFilteringRuleSelectorList,
-    type HtmlFilteringRuleBodyParsed,
 } from '../../../nodes';
 import { BaseParser } from '../../base-parser';
 import { CssTokenStream } from '../../css/css-token-stream';
@@ -35,14 +35,6 @@ import { HtmlFilteringBodyParser } from './html-filtering-body-parser';
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#response-header-filtering}
  */
 export class UboHtmlFilteringBodyParser extends BaseParser {
-    /**
-     * Error messages used in the parser.
-     */
-    private static readonly ERROR_MESSAGES = {
-        EMPTY_RESPONSEHEADER_PARAMETER: `Empty parameter for '${UBO_RESPONSEHEADER_FN}' function`,
-        EXPECTED_END_OF_RULE: "Expected end of rule, but got '%s'",
-    };
-
     /**
      * Parses the body of an uBlock-style HTML filtering rule
      * and also uBlock-style response header removal rule.
@@ -103,7 +95,8 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         raw: string,
         options = defaultParserOptions,
         baseOffset = 0,
-    ): HtmlFilteringRuleBodyParsed | null {
+    ): HtmlFilteringRuleBody | null {
+        // Construct the stream
         const stream = new CssTokenStream(raw, baseOffset);
 
         // Skip whitespaces before function
@@ -117,65 +110,49 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
             return null;
         }
 
-        // Save the selector start position
-        const selectorStart = token.start;
+        // Save the function start position
+        const { start } = token;
 
-        // Extract pseudo-class name raw value
-        const pseudoClassNameRaw = raw.slice(token.start, token.end - 1);
+        // Extract function name raw value (without opening parenthesis)
+        const functionNameRaw = raw.slice(token.start, token.end - 1);
 
         // Check if it's `responseheader` function
-        if (pseudoClassNameRaw !== UBO_RESPONSEHEADER_FN) {
+        if (functionNameRaw !== UBO_RESPONSEHEADER_FN) {
             return null;
         }
 
         // Advance function token
         stream.advance();
 
-        // Construct pseudo-class name node
-        const pseudoClassNameNode = ValueParser.parse(
-            pseudoClassNameRaw,
-            options,
-            selectorStart + baseOffset,
-        );
-
         // Skip whitespaces after opening parenthesis
         stream.skipWhitespace();
 
-        // Get next token (argument)
+        // Get argument token
         token = stream.getOrFail();
 
-        // Save pseudo-class argument start position (starts after opening parenthesis)
-        const pseudoClassArgumentStart = token.start;
+        // Save argument start position (starts after opening parenthesis and whitespaces)
+        const argumentStart = token.start;
 
-        // Skip until balanced closing parenthesis
+        // Skip until balanced (search for closing parenthesis)
         stream.skipUntilBalanced();
 
-        // Get next token (closing parenthesis)
+        // Get closing parenthesis token
         token = stream.getOrFail();
 
-        // Save pseudo-class argument end position (ends before closing parenthesis)
-        const pseudoClassArgumentEnd = token.start;
+        // Save argument end position (ends before closing parenthesis)
+        const argumentEnd = token.start;
 
-        // Extract pseudo-class argument raw value
-        const param = raw
-            .slice(pseudoClassArgumentStart, pseudoClassArgumentEnd)
-            .trimEnd();
+        // Extract argument raw value
+        const argumentRaw = raw.slice(argumentStart, argumentEnd).trimEnd();
 
-        // Throw if the parameter is empty
-        if (param.length === 0) {
+        // Throw if the argument is empty
+        if (argumentRaw.length === 0) {
             throw new AdblockSyntaxError(
-                UboHtmlFilteringBodyParser.ERROR_MESSAGES.EMPTY_RESPONSEHEADER_PARAMETER,
-                pseudoClassArgumentStart + baseOffset,
-                pseudoClassArgumentEnd + baseOffset,
+                `Empty parameter for '${UBO_RESPONSEHEADER_FN}' function`,
+                argumentStart + baseOffset,
+                argumentEnd + baseOffset,
             );
         }
-
-        // Construct pseudo-class argument node
-        const pseudoClassArgumentNode = ValueParser.parse(
-            param,
-            options,
-            pseudoClassArgumentStart + baseOffset,
-        );
 
         // Expect closing parenthesis
         stream.expect(TokenType.CloseParenthesis);
@@ -191,7 +168,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
             token = stream.getOrFail();
             throw new AdblockSyntaxError(
                 sprintf(
-                    UboHtmlFilteringBodyParser.ERROR_MESSAGES.EXPECTED_END_OF_RULE,
+                    "Expected end of rule, but got '%s'",
                     getFormattedTokenName(token.type),
                 ),
                 token.start + baseOffset,
@@ -199,54 +176,76 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
             );
         }
 
-        // Construct pseudo-class node
-        const pseudoClassNode: HtmlFilteringRuleSelectorPseudoClass = {
-            type: 'HtmlFilteringRuleSelectorPseudoClass',
-            name: pseudoClassNameNode,
-            isFunction: true,
-            argument: pseudoClassArgumentNode,
+        // Construct pseudo-class selector node
+        const pseudoClassSelectorNode: CssPseudoClassSelector = {
+            type: 'CssPseudoClassSelector',
+            name: ValueParser.parse(
+                functionNameRaw,
+                options,
+                start + baseOffset,
+            ),
+            argument: ValueParser.parse(
+                argumentRaw,
+                options,
+                argumentStart + baseOffset,
+            ),
         };
 
-        // Construct selector node
-        const selector: HtmlFilteringRuleSelector = {
-            type: 'HtmlFilteringRuleSelector',
-            children: [pseudoClassNode],
+        // Construct complex selector item node
+        const complexSelectorItemNode: CssComplexSelectorItem = {
+            type: 'CssComplexSelectorItem',
+            selector: {
+                type: 'CssCompoundSelector',
+                children: [pseudoClassSelectorNode],
+            },
+        };
+
+        // Construct complex selector node
+        const complexSelectorNode: CssComplexSelector = {
+            type: 'CssComplexSelector',
+            children: [complexSelectorItemNode],
         };
 
         // Construct selector list node
-        const selectorList: HtmlFilteringRuleSelectorList = {
-            type: 'HtmlFilteringRuleSelectorList',
-            children: [selector],
+        const selectorList: CssSelectorList = {
+            type: 'CssSelectorList',
+            children: [complexSelectorNode],
         };
 
         // Construct body node
         const result: HtmlFilteringRuleBody = {
-            type: 'HtmlFilteringRuleBodyParsed',
-            children: [selectorList],
+            type: 'HtmlFilteringRuleBody',
+            selectorList,
         };
 
-        // Include location info if needed
+        // Get last non-whitespace token
+        const lastNonWsToken = stream.lookbehindForNonWs();
+
+        // It shouldn't be null here, but just to be safe if it is
+        // it means that raw is empty or contains only whitespaces
+        if (!lastNonWsToken) {
+            return null;
+        }
+
+        // Include locations info if needed
         if (options.isLocIncluded) {
             result.start = baseOffset;
             result.end = raw.length + baseOffset;
 
-            // Get last non-whitespace token
-            const lastNonWsToken = stream.lookbehindForNonWs();
-
-            // It shouldn't be null here, but just to be safe if it is
-            // it means that raw is empty or contains only whitespaces
-            if (!lastNonWsToken) {
-                return null;
-            }
-
-            selectorList.start = selectorStart + baseOffset;
+            selectorList.start = start + baseOffset;
             selectorList.end = lastNonWsToken.end + baseOffset;
 
-            selector.start = selectorList.start;
-            selector.end = selectorList.end;
+            complexSelectorNode.start = selectorList.start;
+            complexSelectorNode.end = selectorList.end;
 
-            pseudoClassNode.start = selector.start;
-            pseudoClassNode.end = selector.end;
+            complexSelectorItemNode.start = complexSelectorNode.start;
+            complexSelectorItemNode.end = complexSelectorNode.end;
+
+            complexSelectorItemNode.selector.start = complexSelectorItemNode.start;
+            complexSelectorItemNode.selector.end = complexSelectorItemNode.end;
+
+            pseudoClassSelectorNode.start = complexSelectorItemNode.selector.start;
+            pseudoClassSelectorNode.end = complexSelectorItemNode.selector.end;
         }
 
         return result;

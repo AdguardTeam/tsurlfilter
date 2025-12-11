@@ -255,16 +255,6 @@ export const CosmeticRuleSeparator = {
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules}
      */
     AdgHtmlFilteringException: '$@$',
-
-    /**
-     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
-     */
-    UboHtmlFiltering: '##^',
-
-    /**
-     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
-     */
-    UboHtmlFilteringException: '#@#^',
 } as const;
 
 // intentionally naming the variable the same as the type
@@ -1054,89 +1044,143 @@ export interface ScriptletInjectionRuleBody extends Node {
 }
 
 /**
- * Represents an HTML filtering rule selector pseudo-class.
+ * Represents CSS attribute selector operators.
  */
-export interface HtmlFilteringRuleSelectorPseudoClass extends Node {
-    type: 'HtmlFilteringRuleSelectorPseudoClass';
+export type CssAttributeSelectorOperator = '=' | '~=' | '|=' | '^=' | '$=' | '*=';
+
+/**
+ * Represents a value of a CSS attribute selector.
+ */
+export interface CssAttributeSelectorValue extends Node {
+    type: 'CssAttributeSelectorValue';
 
     /**
-     * Name of the HTML filtering rule selector pseudo-class.
+     * Value of the attribute selector.
+     */
+    value: Value;
+
+    /**
+     * Operator of the attribute selector.
+     */
+    operator: Value<CssAttributeSelectorOperator>;
+
+    /**
+     * If the attribute selector is case-sensitive.
+     * - `true` — case-sensitive (`s` flag specified)
+     * - `false` — case-insensitive (`i` flag specified)
+     * - `undefined` — not specified (default behavior of the browser applies)
+     */
+    isCaseSensitive?: boolean;
+}
+
+/**
+ * Represents a CSS attribute selector.
+ */
+export interface CssAttributeSelector extends Node {
+    type: 'CssAttributeSelector';
+
+    /**
+     * Name of the attribute selector.
      */
     name: Value;
 
     /**
-     * Indicates whether the pseudo-class is functional (has callee brackets) or not.
+     * Optional value of the attribute selector.
      */
-    isFunction: boolean;
+    value?: CssAttributeSelectorValue;
+}
+
+/**
+ * Represents a CSS pseudo-class selector.
+ */
+export interface CssPseudoClassSelector extends Node {
+    type: 'CssPseudoClassSelector';
 
     /**
-     * Argument of the HTML filtering rule selector pseudo-class.
+     * Name of the pseudo-class selector.
+     */
+    name: Value;
+
+    /**
+     * Optional argument of the pseudo-class selector.
      */
     argument?: Value;
 }
 
 /**
- * Represents an HTML filtering rule selector attribute.
+ * Represents a simple CSS selector.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#simple}
  */
-export interface HtmlFilteringRuleSelectorAttribute extends Node {
-    type: 'HtmlFilteringRuleSelectorAttribute';
-
-    /**
-     * Name of the HTML filtering rule selector attribute.
-     */
-    name: Value;
-
-    /**
-     * Operator of the HTML filtering rule selector attribute.
-     */
-    operator?: Value;
-
-    /**
-     * Value of the HTML filtering rule selector attribute.
-     */
-    value?: Value;
-
-    /**
-     * Flag of the HTML filtering rule selector attribute.
-     */
-    flag?: Value;
-}
-
-/**
- * Represents a part of an HTML filtering rule selector.
- */
-export type HtmlFilteringRuleSelectorPart =
+export type CssSimpleSelector =
     | Value
-    | HtmlFilteringRuleSelectorAttribute
-    | HtmlFilteringRuleSelectorPseudoClass;
+    | CssAttributeSelector
+    | CssPseudoClassSelector;
 
 /**
- * Represents an HTML filtering rule selector.
+ * Represents a compound CSS selector.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#compound}
  */
-export interface HtmlFilteringRuleSelector extends Node {
-    type: 'HtmlFilteringRuleSelector';
+export interface CssCompoundSelector extends Node {
+    type: 'CssCompoundSelector';
 
     /**
-     * Parts of the HTML filtering rule selector (tag name, id, class name, attribute, pseudo-class).
+     * List of simple selectors.
      */
-    children: HtmlFilteringRuleSelectorPart[];
-
-    /**
-     * Combinator between this selector and the previous one (if any).
-     */
-    combinator?: Value;
+    children: CssSimpleSelector[];
 }
 
 /**
- * Represents a list of HTML filtering rule selectors.
+ * Represents CSS selector combinators.
  */
-export interface HtmlFilteringRuleSelectorList extends Node {
-    type: 'HtmlFilteringRuleSelectorList';
+export type CssSelectorCombinator = ' ' | '>' | '+' | '~';
+
+/**
+ * Represents a complex CSS selector item.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#complex}
+ */
+export interface CssComplexSelectorItem extends Node {
+    type: 'CssComplexSelectorItem';
 
     /**
-     * List of HTML filtering rule selectors separated by combinators.
+     * Combinator between this and the previous selector in list of complex selectors.
      */
-    children: HtmlFilteringRuleSelector[];
+    combinator?: Value<CssSelectorCombinator>;
+
+    /**
+     * Compound selector.
+     */
+    selector: CssCompoundSelector;
+}
+
+/**
+ * Represents a complex CSS selector.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#complex}
+ */
+export interface CssComplexSelector extends Node {
+    type: 'CssComplexSelector';
+
+    /**
+     * List of complex selector items separated by combinators.
+     */
+    children: CssComplexSelectorItem[];
+}
+
+/**
+ * Represents a CSS selector list.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#selector-list}
+ */
+export interface CssSelectorList extends Node {
+    type: 'CssSelectorList';
+
+    /**
+     * List of complex CSS selectors separated by commas.
+     */
+    children: CssComplexSelector[];
 }
 
 /**
@@ -1146,9 +1190,9 @@ export interface HtmlFilteringRuleBodyParsed extends Node {
     type: 'HtmlFilteringRuleBodyParsed';
 
     /**
-     * List of selectors of the HTML filtering rule separated by commas.
+     * CSS selector list.
      */
-    children: HtmlFilteringRuleSelectorList[];
+    selectorList: CssSelectorList;
 }
 
 /**

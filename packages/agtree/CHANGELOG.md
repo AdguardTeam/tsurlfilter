@@ -13,13 +13,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - HTML filtering rules support in parser, generator, serializer,
   deserializer and converter for `AdGuard` and `uBlock` syntaxes [tsurlfilter#96].
-- Added combinators (`<space>`, `>`, `+`, `~`, `,`) support for HTML filtering rules [tsurlfilter#96].
-- Added CSS-native pseudo-classes support for HTML filtering rules
+- Combinators (`<space>`, `>`, `+`, `~`, `,`) support for HTML filtering rules [tsurlfilter#96].
+- CSS-native pseudo-classes support for HTML filtering rules
   (e.g., `:nth-child()`, `:first-of-type`, etc.) [tsurlfilter#96].
-- Added `parseHtmlFilteringRules` option to `ParserOptions` which enables/disables
-  HTML filtering rules parsing, defaulting to `false`.
+- [`:contains()`] pseudo-class support for HTML filtering rules [tsurlfilter#96].
+- `parseHtmlFilteringRules` option to `ParserOptions` which enables/disables
+  HTML filtering rules parsing, defaults to `false`.
 
 [tsurlfilter#96]: https://github.com/AdguardTeam/tsurlfilter/issues/96
+[`:contains()`]: https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains
 
 ## [3.2.3] - 2025-08-28
 

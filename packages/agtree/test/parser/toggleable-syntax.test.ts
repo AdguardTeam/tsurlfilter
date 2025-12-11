@@ -25,11 +25,11 @@ describe('Toggleable syntax', () => {
             },
             {
                 actual: String.raw`##^script:has-text(foo)`,
-                //                    ~~~~~~~~~~~~~~~~~~~~
+                //                   ~~~~~~~~~~~~~~~~~~~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Parsing 'UblockOrigin' syntax is disabled, but the rule uses it",
-                        ...context.toTuple(context.getRangeFor('script:has-text(foo)')),
+                        ...context.toTuple(context.getRangeFor('^script:has-text(foo)')),
                     );
                 },
             },
@@ -45,11 +45,11 @@ describe('Toggleable syntax', () => {
             },
             {
                 actual: String.raw`#@#^script:has-text(foo)`,
-                //                     ~~~~~~~~~~~~~~~~~~~~
+                //                    ~~~~~~~~~~~~~~~~~~~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Parsing 'UblockOrigin' syntax is disabled, but the rule uses it",
-                        ...context.toTuple(context.getRangeFor('script:has-text(foo)')),
+                        ...context.toTuple(context.getRangeFor('^script:has-text(foo)')),
                     );
                 },
             },
