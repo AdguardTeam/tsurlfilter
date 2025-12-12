@@ -43,7 +43,10 @@ import { QuoteUtils } from '../../../utils/quotes';
  *
  * but it didn't check if the given attribute or pseudo-class is valid or not.
  *
- * @see {@link https://www.w3.org/TR/selectors-4/#selector-list}
+ * @see {@link https://www.w3.org/TR/selectors-4/#selector-list}'
+ *
+ * @todo TODO: Consider splitting this parser into smaller parsers
+ * when parser context will be implemented for better maintainability.
  */
 export class CssSelectorListParser extends BaseParser {
     /**
