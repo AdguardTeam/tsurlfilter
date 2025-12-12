@@ -45,12 +45,7 @@ export class HtmlFilteringBodyParser extends BaseParser {
     ): Value | HtmlFilteringRuleBody {
         // If HTML filtering rules parsing is disabled, return raw value node
         let result: Value | HtmlFilteringRuleBody;
-        if (!options.parseHtmlFilteringRuleBodies) {
-            result = {
-                type: 'Value',
-                value: raw,
-            };
-        } else {
+        if (options.parseHtmlFilteringRuleBodies) {
             result = {
                 type: 'HtmlFilteringRuleBody',
                 selectorList: CssSelectorListParser.parse(
@@ -58,6 +53,11 @@ export class HtmlFilteringBodyParser extends BaseParser {
                     options,
                     baseOffset,
                 ),
+            };
+        } else {
+            result = {
+                type: 'Value',
+                value: raw,
             };
         }
 
