@@ -86,17 +86,15 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `[wildcard]` special attribute selector
-                    // FIXME: Test case needs proper glob -> regexp conversion implementation
                     {
                         actual: '$$div[wildcard="*example*"]',
-                        expected: ['$$div:contains(*example*)'],
+                        expected: ['$$div:contains(/^.*example.*$/)'],
                     },
 
                     // `[wildcard]` special attribute selector - multiple usages
-                    // FIXME: Test case needs proper glob -> regexp conversion implementation
                     {
                         actual: '$$div[wildcard="*example*"][wildcard="*test*"]',
-                        expected: ['$$div:contains(*example*):contains(*test*)'],
+                        expected: ['$$div:contains(/^.*example.*$/):contains(/^.*test.*$/)'],
                     },
 
                     // `:contains()` special pseudo-class selector (leave as-is)
@@ -130,10 +128,9 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
-                    // FIXME: Test case needs proper glob -> regexp conversion implementation
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]',
-                        expected: ['$$div:contains(a):contains(*example*)'],
+                        expected: ['$$div:contains(a):contains(/^.*example.*$/)'],
                     },
 
                     // `[tag-content]` and `:contains()` special simple selectors - mixed usage
@@ -143,17 +140,15 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `[wildcard]` and `:contains()` special simple selectors - mixed usage
-                    // FIXME: Test case needs proper glob -> regexp conversion implementation
                     {
                         actual: '$$div[wildcard="*example*"]:contains(b)',
-                        expected: ['$$div:contains(*example*):contains(b)'],
+                        expected: ['$$div:contains(/^.*example.*$/):contains(b)'],
                     },
 
                     // `[tag-content]`, `[wildcard]` and `:contains()` special simple selectors - mixed usage
-                    // FIXME: Test case needs proper glob -> regexp conversion implementation
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
-                        expected: ['$$div:contains(a):contains(*example*):contains(b)'],
+                        expected: ['$$div:contains(a):contains(/^.*example.*$/):contains(b)'],
                     },
                 ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                     expect(testData).toBeConvertedProperly(
@@ -719,17 +714,15 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `[wildcard]` special attribute selector
-                    // FIXME: Test case needs proper glob -> regexp conversion implementation
                     {
                         actual: '$$div[wildcard="*example*"]',
-                        expected: ['##^div:has-text(*example*)'],
+                        expected: ['##^div:has-text(/^.*example.*$/)'],
                     },
 
                     // `[wildcard]` special attribute selector - multiple usages
-                    // FIXME: Test case needs proper glob -> regexp conversion implementation
                     {
                         actual: '$$div[wildcard="*example*"][wildcard="*test*"]',
-                        expected: ['##^div:has-text(*example*):has-text(*test*)'],
+                        expected: ['##^div:has-text(/^.*example.*$/):has-text(/^.*test.*$/)'],
                     },
 
                     // `:contains()` special pseudo-class selector
@@ -763,10 +756,9 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
-                    // FIXME: Test case needs proper glob -> regexp conversion implementation
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]',
-                        expected: ['##^div:has-text(a):has-text(*example*)'],
+                        expected: ['##^div:has-text(a):has-text(/^.*example.*$/)'],
                     },
 
                     // `[tag-content]` and `:contains()` special simple selectors - mixed usage
@@ -776,17 +768,15 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `[wildcard]` and `:contains()` special simple selectors - mixed usage
-                    // FIXME: Test case needs proper glob -> regexp conversion implementation
                     {
                         actual: '$$div[wildcard="*example*"]:contains(b)',
-                        expected: ['##^div:has-text(*example*):has-text(b)'],
+                        expected: ['##^div:has-text(/^.*example.*$/):has-text(b)'],
                     },
 
                     // `[tag-content]`, `[wildcard]` and `:contains()` special simple selectors - mixed usage
-                    // FIXME: Test case needs proper glob -> regexp conversion implementation
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
-                        expected: ['##^div:has-text(a):has-text(*example*):has-text(b)'],
+                        expected: ['##^div:has-text(a):has-text(/^.*example.*$/):has-text(b)'],
                     },
                 ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                     expect(testData).toBeConvertedProperly(

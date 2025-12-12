@@ -23,6 +23,7 @@ import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode } from '../../ast-utils/clone';
 import { EMPTY, EQUALS } from '../../utils/constants';
+import { RegExpUtils } from '../../utils/regexp';
 import { AdgHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
 import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
 import {
@@ -31,7 +32,6 @@ import {
 import {
     UboHtmlFilteringBodyGenerator,
 } from '../../generator/cosmetic/html-filtering-body/ubo-html-filtering-body-generator';
-import { RegExpUtils } from '../../utils';
 
 /**
  * From the AdGuard docs:
@@ -331,8 +331,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             case AdgAttributeSelectors.Wildcard: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
-                    // FIXME: Implement glob -> regexp conversion properly
-                    value,
+                    RegExpUtils.globToRegExp(value),
                 );
             }
 
@@ -508,8 +507,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             case AdgAttributeSelectors.Wildcard: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
-                    // FIXME: Implement glob -> regexp conversion properly
-                    value,
+                    RegExpUtils.globToRegExp(value),
                 );
             }
 

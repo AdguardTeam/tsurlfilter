@@ -2,6 +2,8 @@
  * @file Regular expression utilities
  */
 
+import GlobToRegExp from 'glob-to-regexp';
+
 import {
     ASTERISK,
     CARET,
@@ -278,5 +280,16 @@ export class RegExpUtils {
         }
 
         return `/^(?=.{${calculatedMin},${max ?? ''}}$).*/s`;
+    }
+
+    /**
+     * Converts a glob pattern to a RegExp string.
+     *
+     * @param glob Glob pattern to convert.
+     *
+     * @returns RegExp string.
+     */
+    public static globToRegExp(glob: string): string {
+        return REGEX_MARKER + GlobToRegExp(glob).source + REGEX_MARKER;
     }
 }
