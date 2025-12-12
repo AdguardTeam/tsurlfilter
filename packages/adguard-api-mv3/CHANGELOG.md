@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2025-12-01
+
+### Added
+
+- UserScripts API support.
+- New logger in internal libraries with tags.
+- `documentBlockingPageUrl` configuration option to set a custom URL
+  for the document blocking page.
+
+### Changed
+
+- [BREAKING CHANGE] `start()` and `configure()` methods now throw errors when critical
+  operations fail (e.g., static filters fail to enable). Previously, these methods would
+  silently continue on errors.
+- `start()` and `configure()` methods now log dynamic rules conversion errors and limitations
+  to `console.debug()`.
+- `AdguardApi.create()` now accepts optional `AdguardApiParams` parameter with
+  `localScriptRulesJs` property for MV3 local script rules validation.
+- Updated [@adguard/dnr-rulesets] to `v3.3.1`.
+- Updated [@adguard/assistant] to `v4.3.77`.
+- Updated [@adguard/tswebextension] to `v3.2.17`.
+
+[1.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v1.0.0
+
 ## [0.3.0] - 2025-05-27
 
 ### Changed
@@ -92,5 +116,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `adguardApi.onRequestBlocking` API for tracking blocked requests.
 
 [0.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.1.0
+[@adguard/dnr-rulesets]: ../dnr-rulesets/CHANGELOG.md
 [@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/tswebextension]: ../tswebextension/CHANGELOG.md

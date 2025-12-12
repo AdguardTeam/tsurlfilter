@@ -187,7 +187,13 @@ describe('TabsCosmeticInjector', () => {
                 expect(ScriptingApi.insertCSS).toHaveBeenNthCalledWith(
                     // Because all CSS rules should be combined into one call.
                     1,
-                    { tabId, frameId, cssText: CosmeticApi.getCssText(cosmeticResult, false) },
+                    {
+                        tabId,
+                        frameId,
+                        cssText: CosmeticApi.getCssText(cosmeticResult, {
+                            areHitsStatsCollected: false,
+                        }),
+                    },
                 );
             }
 
@@ -262,7 +268,7 @@ describe('TabsCosmeticInjector', () => {
             // expect.arrayContaining since the order of rules might be different
             // depending on the way how they are stored in the engine.
             const preparedCosmeticResult = {
-                cssText: CosmeticApi.getCssText(cosmeticResult, false),
+                cssText: CosmeticApi.getCssText(cosmeticResult),
                 // Local script rules should be processed separately
                 // because they will be injected with two different calls
                 // to scripting API.

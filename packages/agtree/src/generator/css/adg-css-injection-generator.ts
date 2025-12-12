@@ -1,21 +1,18 @@
 import type { CssInjectionRuleBody } from '../../nodes';
 import {
     CLOSE_CURLY_BRACKET,
-    COLON,
     CSS_MEDIA_MARKER,
     EMPTY,
     OPEN_CURLY_BRACKET,
-    SEMICOLON,
     SPACE,
 } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
-import { REMOVE_PROPERTY, REMOVE_VALUE } from '../../parser/css/adg-css-injection-parser';
 
 /**
  * AdGuard CSS injection generator.
  */
 export class AdgCssInjectionGenerator extends BaseGenerator {
-    private static removeDeclaration = `${REMOVE_PROPERTY}${COLON}${SPACE}${REMOVE_VALUE}${SEMICOLON}`;
+    private static REMOVE_DECLARATION = 'remove: true;';
 
     /**
      * Serializes an AdGuard CSS injection node into a raw string.
@@ -33,7 +30,7 @@ export class AdgCssInjectionGenerator extends BaseGenerator {
         result.push(node.selectorList.value, SPACE, OPEN_CURLY_BRACKET, SPACE);
 
         if (node.remove) {
-            result.push(AdgCssInjectionGenerator.removeDeclaration);
+            result.push(AdgCssInjectionGenerator.REMOVE_DECLARATION);
         } else if (node.declarationList?.value) {
             result.push(node.declarationList.value);
         }

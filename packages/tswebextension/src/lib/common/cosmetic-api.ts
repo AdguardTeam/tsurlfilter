@@ -4,6 +4,7 @@ import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { LF, SEMICOLON } from './constants';
 import { defaultFilteringLog, FilteringEventType } from './filtering-log';
 import { type ContentType } from './request-type';
+import { CssCapabilities } from './utils/css-capabilities';
 import { getDomain } from './utils/url';
 import { nanoid } from './utils/nanoid';
 
@@ -50,6 +51,30 @@ export type ContentScriptCosmeticData = {
      * Extended css rules to apply.
      */
     extCssRules: string[] | null;
+};
+
+/**
+ * Options for cosmetic rules processing.
+ */
+export type CosmeticOptions = {
+    /**
+     * Flag indicating whether the browser natively supports :has pseudo-class.
+     * Pseudo-classes :is() and :not() are supported by older browser versions than :has(),
+     * so it is enough to check only :has() support.
+     *
+     * If true, rules with :has/:is/:not will be treated as native CSS.
+     * If false, they will be reclassified as extended CSS.
+     *
+     * @default false
+     */
+    isNativeHasSupported?: boolean;
+
+    /**
+     * Flag to collect cosmetic rules hits for statistics.
+     *
+     * @default false
+     */
+    areHitsStatsCollected?: boolean;
 };
 
 /**
@@ -242,28 +267,99 @@ export class CosmeticApiCommon {
     }
 
     /**
+     * Reclassifies rules containing native-and-ext pseudo-classes,
+     * e.g. :has, :is, :not, to extended CSS.
+     *
+     * @param nativeRules Rules that are marked as native CSS.
+     * @param extendedRules Rules that are marked as extended CSS.
+     * @param isNativeHasSupported Optional, flag indicating
+     * whether the browser natively supports :has/:is/:not pseudo-classes.
+     * If not provided, default value is false.
+     *
+     * @returns Object with reclassified native and extended rules.
+     */
+    protected static reclassifyNativeAndExtCssRules(
+        nativeRules: CosmeticRule[],
+        extendedRules: CosmeticRule[],
+        isNativeHasSupported = false,
+    ): { native: CosmeticRule[]; extended: CosmeticRule[] } {
+        // If browser natively supports :has/:is/:not pseudo-classes,
+        // no reclassification needed
+        if (isNativeHasSupported) {
+            return {
+                native: nativeRules,
+                extended: extendedRules,
+            };
+        }
+
+        // Move rules with :has/:is/:not to extended CSS
+        // if browser doesn't support them
+        const reclassifiedNativeRules: CosmeticRule[] = [];
+        const reclassifiedExtendedRules: CosmeticRule[] = [...extendedRules];
+
+        for (const rule of nativeRules) {
+            const content = rule.getContent();
+            if (CssCapabilities.isPotentiallyExtendedCss(content)) {
+                // Move to extended CSS
+                reclassifiedExtendedRules.push(rule);
+            } else {
+                // Keep as native CSS
+                reclassifiedNativeRules.push(rule);
+            }
+        }
+
+        return {
+            native: reclassifiedNativeRules,
+            extended: reclassifiedExtendedRules,
+        };
+    }
+
+    /**
      * Builds extended css rules from cosmetic result.
      *
      * @param cosmeticResult Cosmetic result.
-     * @param collectingCosmeticRulesHits Flag to collect cosmetic rules hits.
+     * @param options Options for processing cosmetic rules.
      *
      * @returns Array of extended css rules or null.
      */
     public static getExtCssRules(
         cosmeticResult: CosmeticResult,
-        collectingCosmeticRulesHits = false,
+        options: CosmeticOptions = {},
     ): string[] | null {
         const { elementHiding, CSS } = cosmeticResult;
 
-        const elemhideExtCss = elementHiding.genericExtCss.concat(elementHiding.specificExtCss);
-        const injectExtCss = CSS.genericExtCss.concat(CSS.specificExtCss);
+        const {
+            isNativeHasSupported = false,
+            areHitsStatsCollected = false,
+        } = options;
+
+        // Reclassify element hiding rules if needed
+        const elemhideReclassified = CosmeticApiCommon.reclassifyNativeAndExtCssRules(
+            elementHiding.generic.concat(elementHiding.specific),
+            elementHiding.genericExtCss.concat(elementHiding.specificExtCss),
+            isNativeHasSupported,
+        );
+
+        // Reclassify CSS injection rules if needed
+        const cssReclassified = CosmeticApiCommon.reclassifyNativeAndExtCssRules(
+            CSS.generic.concat(CSS.specific),
+            CSS.genericExtCss.concat(CSS.specificExtCss),
+            isNativeHasSupported,
+        );
 
         let extCssRules: string[];
 
-        if (collectingCosmeticRulesHits) {
-            extCssRules = CosmeticApiCommon.buildStyleSheetsWithHits(elemhideExtCss, injectExtCss);
+        if (areHitsStatsCollected) {
+            extCssRules = CosmeticApiCommon.buildStyleSheetsWithHits(
+                elemhideReclassified.extended,
+                cssReclassified.extended,
+            );
         } else {
-            extCssRules = CosmeticApiCommon.buildStyleSheets(elemhideExtCss, injectExtCss, false);
+            extCssRules = CosmeticApiCommon.buildStyleSheets(
+                elemhideReclassified.extended,
+                cssReclassified.extended,
+                false,
+            );
         }
 
         return extCssRules.length > 0
@@ -275,25 +371,47 @@ export class CosmeticApiCommon {
      * Retrieves CSS styles from the cosmetic result.
      *
      * @param cosmeticResult Cosmetic result.
-     * @param collectingCosmeticRulesHits Flag to collect cosmetic rules hits.
+     * @param options Options for processing cosmetic rules.
      *
      * @returns Css styles as string, or `undefined` if no styles found.
      */
     public static getCssText(
         cosmeticResult: CosmeticResult,
-        collectingCosmeticRulesHits = false,
+        options: CosmeticOptions = {},
     ): string | undefined {
         const { elementHiding, CSS } = cosmeticResult;
 
-        const elemhideCss = elementHiding.generic.concat(elementHiding.specific);
-        const injectCss = CSS.generic.concat(CSS.specific);
+        const {
+            areHitsStatsCollected = false,
+            isNativeHasSupported = false,
+        } = options;
+
+        // Reclassify rules - only native CSS rules should be included in getCssText
+        const elemhideReclassified = CosmeticApiCommon.reclassifyNativeAndExtCssRules(
+            elementHiding.generic.concat(elementHiding.specific),
+            elementHiding.genericExtCss.concat(elementHiding.specificExtCss),
+            isNativeHasSupported,
+        );
+
+        const cssReclassified = CosmeticApiCommon.reclassifyNativeAndExtCssRules(
+            CSS.generic.concat(CSS.specific),
+            CSS.genericExtCss.concat(CSS.specificExtCss),
+            isNativeHasSupported,
+        );
 
         let styles: string[];
 
-        if (collectingCosmeticRulesHits) {
-            styles = CosmeticApiCommon.buildStyleSheetsWithHits(elemhideCss, injectCss);
+        if (areHitsStatsCollected) {
+            styles = CosmeticApiCommon.buildStyleSheetsWithHits(
+                elemhideReclassified.native,
+                cssReclassified.native,
+            );
         } else {
-            styles = CosmeticApiCommon.buildStyleSheets(elemhideCss, injectCss, true);
+            styles = CosmeticApiCommon.buildStyleSheets(
+                elemhideReclassified.native,
+                cssReclassified.native,
+                true,
+            );
         }
 
         if (styles.length > 0) {

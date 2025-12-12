@@ -2,7 +2,7 @@
  * @file CSS token stream.
  */
 
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
+import { TokenType, getFormattedTokenName, tokenizeExtended } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
 import { tokenizeBalanced } from './balancing';
@@ -14,6 +14,7 @@ import {
     EXT_CSS_PSEUDO_CLASSES,
     EXT_CSS_PSEUDO_CLASSES_STRICT,
     LEGACY_EXT_CSS_ATTRIBUTE_PREFIX,
+    NATIVE_CSS_PSEUDO_CLASSES,
 } from '../../converter/data/css';
 
 /**
@@ -456,6 +457,7 @@ export class CssTokenStream {
 
     /**
      * Strictly checks whether the token stream contains any Extended CSS elements, such as `:contains()`.
+     *
      * Some Extended CSS elements are natively supported by browsers, like `:has()`.
      * This method is used to check for Extended CSS elements that are not natively supported by browsers,
      * this is why it called "strict", because it strictly checks for Extended CSS elements.
@@ -467,13 +469,51 @@ export class CssTokenStream {
     }
 
     /**
+     * _Lightweight_ static check for native CSS pseudo-classes — `:has()`, `:is()`, `:not()`.
+     *
+     * This method uses `tokenizeExtended` directly with early stopping,
+     * avoiding the overhead of:
+     * - full tokenization with balance tracking;
+     * - storing all tokens in memory;
+     * - processing remaining tokens after a match is found.
+     *
+     * Use this method when you only need to detect native pseudo-classes
+     * and don't need the full `CssTokenStream` functionality.
+     *
+     * @param selector CSS selector string to check.
+     * @returns True if the selector contains `:has()`, `:is()`, or `:not()`,
+     * otherwise false.
+     */
+    public static hasNativeCssPseudoClass(selector: string): boolean {
+        let found = false;
+
+        try {
+            tokenizeExtended(selector, (type, start, end, _props, stop) => {
+                if (type === TokenType.Function) {
+                    // Omit trailing '(' from function name
+                    const name = selector.slice(start, end - 1);
+                    if (NATIVE_CSS_PSEUDO_CLASSES.has(name)) {
+                        found = true;
+                        stop();
+                    }
+                }
+            });
+        } catch {
+            // Invalid CSS, treat as not containing native pseudo-classes
+            return false;
+        }
+
+        return found;
+    }
+
+    /**
      * Checks whether the token stream contains any Extended CSS elements, such as `:has()`, `:contains()`, etc.
      *
      * @param pseudos Set of pseudo-classes to check for.
      *
      * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
      */
-    private hasAnySelectorExtendedCssNodeInternal(pseudos: Set<string>): boolean {
+    private hasAnySelectorExtendedCssNodeInternal(pseudos: ReadonlySet<string>): boolean {
         for (let i = 0; i < this.tokens.length; i += 1) {
             const token = this.tokens[i];
 

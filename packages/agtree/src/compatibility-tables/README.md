@@ -15,6 +15,17 @@ Table of contents:
             - [Available compatibility table instances](#available-compatibility-table-instances)
             - [Platform flags](#platform-flags)
             - [Platform expressions parser](#platform-expressions-parser)
+            - [Stringify platforms bitmask to platform expression](#stringify-platforms-bitmask-to-platform-expression)
+            - [Platform helper functions](#platform-helper-functions)
+                - [Get platform ID from string](#get-platform-id-from-string)
+                - [Get platform string name from flag](#get-platform-string-name-from-flag)
+                - [Human-readable platform name](#human-readable-platform-name)
+                - [Check if platform is generic](#check-if-platform-is-generic)
+                - [Check if platform includes multiple products](#check-if-platform-includes-multiple-products)
+                - [Get product from platform](#get-product-from-platform)
+                - [Split platforms by product](#split-platforms-by-product)
+                - [Get all generic platforms for a product](#get-all-generic-platforms-for-a-product)
+                - [Get all specific platforms for a product](#get-all-specific-platforms-for-a-product)
         - [Specific API](#specific-api)
             - [Redirects compatibility table](#redirects-compatibility-table)
         - [Examples](#examples)
@@ -180,12 +191,137 @@ import { SpecificPlatform, GenericPlatform } from '@adguard/agtree';
 
 #### Platform expressions parser
 
-We also provide a parser for platform expressions. You can use it to parse a raw platform string into a platform flag.
+Parses a raw platform expression into a platform flag.
 
 ```ts
 import { parseRawPlatforms } from '@adguard/agtree';
 
 parseRawPlatforms('adg_os_windows|ubo_ext_chrome');
+```
+
+#### Stringify platforms bitmask to platform expression
+
+Stringifies a platform flag into a raw platform expression.
+
+```ts
+import { stringifyPlatforms } from '@adguard/agtree';
+
+stringifyPlatforms(SpecificPlatform.AdgOsWindows | GenericPlatform.UboExtChrome); // 'adg_os_windows|ubo_ext_chrome'
+```
+
+#### Platform helper functions
+
+##### Get platform ID from string
+
+Converts a platform string name into a platform flag.
+
+```ts
+import { getPlatformId } from '@adguard/agtree';
+
+getPlatformId('adg_os_windows'); // SpecificPlatform.AdgOsWindows
+getPlatformId('adg_any'); // GenericPlatform.AdgAny
+```
+
+##### Get platform string name from flag
+
+Converts a specific platform flag into its string name.
+
+```ts
+import { getSpecificPlatformName } from '@adguard/agtree';
+
+getSpecificPlatformName(SpecificPlatform.AdgOsWindows); // 'adg_os_windows'
+```
+
+##### Human-readable platform name
+
+Converts a platform flag into a human-readable platform name.
+
+```ts
+import { getHumanReadablePlatformName } from '@adguard/agtree';
+
+getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows); // 'AdGuard for Windows'
+getHumanReadablePlatformName(GenericPlatform.AdgAny); // 'AdGuard for any platform'
+```
+
+##### Check if platform is generic
+
+Checks whether a platform flag represents a generic platform (multiple specific platforms combined).
+
+```ts
+import { isGenericPlatform, SpecificPlatform, GenericPlatform } from '@adguard/agtree';
+
+isGenericPlatform(SpecificPlatform.AdgOsWindows); // false
+isGenericPlatform(GenericPlatform.AdgAny); // true
+```
+
+##### Check if platform includes multiple products
+
+Checks whether a platform flag includes multiple adblocker products.
+
+```ts
+import { hasPlatformMultipleProducts, GenericPlatform } from '@adguard/agtree';
+
+hasPlatformMultipleProducts(GenericPlatform.AdgAny); // false (only AdGuard)
+hasPlatformMultipleProducts(GenericPlatform.AdgAny | GenericPlatform.UboAny); // true (AdGuard + uBlock Origin)
+```
+
+##### Get product from platform
+
+Converts a platform flag into an array of adblocker product(s).
+
+```ts
+import { platformToAdblockProduct, SpecificPlatform, GenericPlatform, AdblockProduct } from '@adguard/agtree';
+
+platformToAdblockProduct(SpecificPlatform.AdgOsWindows); // [AdblockProduct.Adg]
+platformToAdblockProduct(GenericPlatform.AdgAny | GenericPlatform.UboAny); // [AdblockProduct.Adg, AdblockProduct.Ubo]
+```
+
+##### Split platforms by product
+
+Splits a combined platform flag into separate platforms grouped by product.
+
+```ts
+import { getPlatformsByProduct, GenericPlatform } from '@adguard/agtree';
+
+getPlatformsByProduct(GenericPlatform.AdgAny | GenericPlatform.UboAny);
+// Returns:
+// {
+//   [AdblockProduct.Adg]: [GenericPlatform.AdgAny],
+//   [AdblockProduct.Ubo]: [GenericPlatform.UboAny]
+// }
+```
+
+##### Get all generic platforms for a product
+
+Returns all generic platforms for each adblocker product, ordered from most to least specific.
+
+```ts
+import { getProductGenericPlatforms, AdblockProduct } from '@adguard/agtree';
+
+const allGenericPlatforms = getProductGenericPlatforms();
+// Returns:
+// {
+//   [AdblockProduct.Adg]: [GenericPlatform.AdgOsAny, GenericPlatform.AdgSafariAny, ...],
+//   [AdblockProduct.Ubo]: [GenericPlatform.UboExtChromium, GenericPlatform.UboExtAny, ...],
+//   [AdblockProduct.Abp]: [GenericPlatform.AbpExtChromium, GenericPlatform.AbpExtAny, ...]
+// }
+
+// Get generic platforms for a specific product
+const adgGenericPlatforms = allGenericPlatforms[AdblockProduct.Adg];
+```
+
+##### Get all specific platforms for a product
+
+Returns all specific platforms for a given adblocker product.
+
+```ts
+import { getProductSpecificPlatforms, AdblockProduct } from '@adguard/agtree';
+
+const adgSpecificPlatforms = getProductSpecificPlatforms(AdblockProduct.Adg);
+// Returns: [SpecificPlatform.AdgOsWindows, SpecificPlatform.AdgOsMac, ...]
+
+const uboSpecificPlatforms = getProductSpecificPlatforms(AdblockProduct.Ubo);
+// Returns: [SpecificPlatform.UboExtChrome, SpecificPlatform.UboExtOpera, ...]
 ```
 
 ### Specific API

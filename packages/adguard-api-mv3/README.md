@@ -14,6 +14,8 @@ AdGuard API is a filtering library that provides the following features:
 - [Required web accessible resources](#required-web-accessible-resources)
 - [Required declarativeNetRequest API assets](#required-declarativenetrequest-api-assets)
 - [Configuration](#configuration)
+- [Local Script Rules for MV3](#local-script-rules-for-mv3)
+- [Excluding Unsafe Rules for Chrome Web Store "Skip Review"](#excluding-unsafe-rules-for-chrome-web-store-skip-review)
 - [Static methods](#static-methods)
     - [`AdguardApi.create`](#adguardapicreate)
 - [Methods](#methods)
@@ -25,7 +27,7 @@ AdGuard API is a filtering library that provides the following features:
     - [`adguardApi.closeAssistant`](#adguardapicloseassistant)
     - [`adguardApi.getRulesCount`](#adguardapigetrulescount)
     - [`adguardApi.onAssistantCreateRule`](#adguardapionassistantcreaterule)
-    - [`adguardApi.onRequestBlocking`](#adguardapionrequestblocking)
+    - [`adguardApi.onRequestBlocked`](#adguardapionrequestblocked)
 - [Usage](#usage)
 - [Minimum supported browser versions](#minimum-supported-browser-versions)
 - [Development](#development)
@@ -83,8 +85,6 @@ requests to a local "resource" using the `$redirect` rule modifier. You can use
 If you are using `@adguard/dnr-rulesets` package, path to web accessible resources is
 built-in into converted rules with `$redirect` modifier and packed inside rulesets.
 
-**IMPORTANT**: AdGuard Quick Fixes filter with id 24 filter's source and converted
-ruleset **excluded** from the build of `@adguard/dnr-rulesets`, but left in metadata.
 <br>
 Because it should used via periodically updating from the remote in the runtime
 and passed as part of dynamic rules - `Configuration.rules`.
@@ -104,6 +104,7 @@ type Configuration = {
     allowlist?: string[] | undefined;
     blocklist?: string[] | undefined;
     rules?: string[] | undefined;
+    documentBlockingPageUrl?: string | undefined;
 };
 ```
 
@@ -128,6 +129,15 @@ type Configuration = {
   [article][filter-rules] describing filtering rules syntax. These custom rules
   might be created by a user via AdGuard Assistant UI.
 
+- `documentBlockingPageUrl` (optional) - Redirect URL for blocking rules with
+  `$document` modifier. If not specified, default browser page will be shown.
+  Page will receive following query parameters:
+  - `url` - blocked URL
+  - `rule` - blocking rule that triggered on this URL
+  - `filterId` - ID of the filter that contains this rule (0 for user rules)
+
+  Example: `chrome-extension://<extension_id>/blocking-page.html?url=https%3A%2F%2Fexample.net%2F&rule=example.net%24document&filterId=0`
+
 [filter-rules]: https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters
 
 **Example:**
@@ -148,6 +158,182 @@ const configuration: Configuration = {
 > testing purposes**. You have to use your own server for storing filter files.
 > You can (and actually should) use `filters.adtidy.org` for periodically
 > updating files on your side.
+
+## Local Script Rules for MV3
+
+In Manifest V3 extensions, JavaScript injection rules have strict security restrictions
+due to Chrome Web Store policies regarding remote code execution. The API enforces a
+required validation mechanism to ensure all script rules are pre-verified.
+
+### How it works
+
+**When local_script_rules.js IS provided (Recommended):**
+
+- All JS script rules are pre-verified and bundled into the extension during the build process.
+- At runtime, only script rules that match entries in `local_script_rules.js` are executed.
+- All other scripts are discarded to prevent remote code execution.
+- This ensures perfect compliance with Chrome Web Store policies.
+
+**When local_script_rules.js is NOT provided:**
+
+- All script rules (except scriptlets) will be **blocked** for security compliance.
+- The extension will not execute any custom JS rules to prevent potential remote code execution.
+- **It is highly recommended to always provide `local_script_rules.js`** during your build process.
+
+**With UserScripts API permission enabled:**
+
+- Custom JS rules can be executed directly via the browser's userScripts API, which provides secure sandboxing.
+- This requires explicit user activation via extension settings.
+
+### Why it's critical for MV3
+
+Providing `local_script_rules.js` is **essential** for MV3 extensions because:
+
+1. Chrome Web Store strictly forbids remote code execution in extensions.
+2. Pre-verification ensures only safe, approved scripts can execute.
+3. Failure to provide it results in all script rules being blocked.
+4. This prevents Chrome Web Store rejection due to potential policy violations.
+
+### Extending `local_script_rules.js`
+
+You can extend `local_script_rules.js` with custom rules during your extension's build process.
+This allows you to pre-approve specific custom scriptlets or JS injection rules before runtime.
+
+**Example implementation:**
+
+See the MV3 example extension for a complete implementation:
+
+- **Extra scripts definition**: [`packages/examples/adguard-api-mv3/extension/src/extra-scripts.ts`](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/examples/adguard-api-mv3/extension/src/extra-scripts.ts)
+- **Build script usage**: [`packages/examples/adguard-api-mv3/scripts/build/build.ts`](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/examples/adguard-api-mv3/scripts/build/build.ts)
+
+The build script uses the `AssetsLoader.extendLocalScriptRulesJs()` method to add
+extra pre-verified rules to `local_script_rules.js`:
+
+```typescript
+import { AssetsLoader, LOCAL_SCRIPT_RULES_JS_FILENAME } from '@adguard/dnr-rulesets';
+import { extraScripts } from './extra-scripts';
+
+const loader = new AssetsLoader();
+await loader.extendLocalScriptRulesJs(
+    path.join('./extension/filters', LOCAL_SCRIPT_RULES_JS_FILENAME),
+    extraScripts
+);
+```
+
+## Excluding Unsafe Rules for Chrome Web Store "Skip Review"
+
+Chrome Web Store provides a ["skip review" option](https://developer.chrome.com/docs/webstore/skip-review) for extensions that only use "safe" declarativeNetRequest rules. This allows your extension updates to be published instantly without manual review, significantly reducing update deployment time.
+
+### What are safe rules?
+
+According to Chrome's policy, only declarative rules with the following action types are considered "safe":
+- `block` - blocks network requests
+- `allow` - allows network requests
+- `allowAllRequests` - allows all requests from a domain
+- `upgradeScheme` - upgrades HTTP to HTTPS
+
+Rules with other action types (such as `redirect`, `modifyHeaders`, `removeHeaders`) are considered "unsafe" and require manual review.
+
+### Why exclude unsafe rules?
+
+To qualify for the "skip review" option in Chrome Web Store:
+1. Your extension must only contain safe declarative rules
+2. Unsafe rules must be excluded from your rulesets during the build process
+3. This allows faster extension updates and reduces review queue time
+
+### How to exclude unsafe rules in your build process
+
+The `@adguard/dnr-rulesets` package provides the `excludeUnsafeRules` function that:
+- Scans all rulesets in your filters directory
+- Identifies and removes unsafe rules
+- Stores unsafe rules in metadata for reference
+- Updates ruleset checksums automatically
+- AdGuard API will extract unsafe rules automatically and apply them via `sessionRules`
+
+#### CLI Usage
+
+Add this command to your build process after loading DNR rulesets:
+
+```bash
+dnr-rulesets exclude-unsafe-rules ./extension/filters/declarative [options]
+```
+
+**Options:**
+- `--prettify-json` (default: `true`) - Prettify JSON output
+- `--limit <number>` - Maximum number of unsafe rules allowed. Build fails if exceeded.
+
+**Example in package.json:**
+
+```json
+{
+  "scripts": {
+    "load-dnr-rulesets": "dnr-rulesets load ./extension/filters",
+    "patch-manifest": "dnr-rulesets manifest ./extension/manifest.json ./extension/filters",
+    "exclude-unsafe-rules": "dnr-rulesets exclude-unsafe-rules ./extension/filters/declarative --limit 4900",
+    "build": "npm run load-dnr-rulesets && npm run patch-manifest && npm run exclude-unsafe-rules"
+  }
+}
+```
+
+`4900` is selected intentionally since limit for `sessionRules` is `5000`.
+
+#### Programmatic API Usage
+
+You can also integrate `excludeUnsafeRules` into your build scripts:
+
+```typescript
+import { excludeUnsafeRules } from '@adguard/dnr-rulesets';
+
+async function build() {
+    // Load DNR rulesets and patch manifest first
+    // ... your existing build code ...
+
+    // Exclude unsafe rules for CWS "skip review"
+    await excludeUnsafeRules({
+        dir: './extension/filters/declarative',
+        prettifyJson: false,  // optional: minimize JSON file size
+        limit: 4900,          // optional: fail build if too many unsafe rules
+    });
+
+    console.log('Unsafe rules excluded. Extension is ready for CWS skip review.');
+}
+```
+
+**Complete build script example:**
+
+```typescript
+import { AssetsLoader, ManifestPatcher, excludeUnsafeRules } from '@adguard/dnr-rulesets';
+
+async function build() {
+    // 1. Load DNR rulesets
+    const loader = new AssetsLoader();
+    await loader.load('./extension/filters');
+
+    // 2. Patch manifest with rulesets
+    const patcher = new ManifestPatcher();
+    patcher.patch('./extension/manifest.json', './extension/filters', {
+        forceUpdate: true,
+        ids: ['2', '3'], // your filter IDs
+    });
+
+    // 3. Exclude unsafe rules for CWS "skip review"
+    await excludeUnsafeRules({
+        dir: './extension/filters/declarative',
+        prettifyJson: false,
+        limit: 4900,
+    });
+
+    // 4. Continue with your webpack/build process...
+}
+```
+
+### Important Notes
+
+- **Call order matters**: Always run `excludeUnsafeRules` **after** loading rulesets and patching manifest. Prevent double call of `excludeUnsafeRules` in your build process since
+it will override unsafe rules from first call and all unsafe rules will be just
+deleted from rulesets.
+
+For a complete working example, see the [example extension build script](../examples/adguard-api-mv3/scripts/build/build.ts).
 
 ## Static methods
 
@@ -380,7 +566,7 @@ adguardApi.onAssistantCreateRule.subscribe(applyRule);
 adguardApi.onAssistantCreateRule.unsubscribe(applyRule);
 ```
 
-### `adguardApi.onRequestBlocking`
+### `adguardApi.onRequestBlocked`
 
 API for adding and removing listeners for request blocking events.
 
@@ -433,7 +619,7 @@ type RequestBlockingEvent = {
     /**
      * Assumed Filtering rule index, which has blocked this request. May not be provided if request is blocked by DNR rule.
      */
-    assumedRuleIndex?: string;
+    assumedRuleIndex?: number;
 
     /**
      * Assumed rule's filter identifier. May not be provided if request is blocked by DNR rule.
@@ -521,26 +707,37 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
         console.log('Total rules count:', adguardApi.getRulesCount());
     };
 
-    configuration = await adguardApi.start(configuration);
-
-    console.log('Finished Adguard API initialization.');
-    console.log('Applied configuration: ', JSON.stringify(configuration));
-    logTotalCount();
+    try {
+        configuration = await adguardApi.start(configuration);
+        console.log('Finished Adguard API initialization.');
+        console.log('Applied configuration: ', JSON.stringify(configuration));
+        logTotalCount();
+    } catch (error) {
+        console.error('Failed to start AdGuard API:', error);
+        return;
+    }
 
     configuration.allowlist!.push('www.google.com');
 
-    await adguardApi.configure(configuration);
-
-    console.log('Finished Adguard API re-configuration');
-    logTotalCount();
+    try {
+        await adguardApi.configure(configuration);
+        console.log('Finished Adguard API re-configuration');
+        logTotalCount();
+    } catch (error) {
+        console.error('Failed to configure AdGuard API:', error);
+    }
 
     const onAssistantCreateRule = async (rule: string) => {
         // update config on assistant rule apply
         console.log(`Rule ${rule} was created by Adguard Assistant`);
         configuration.rules!.push(rule);
-        await adguardApi.configure(configuration);
-        console.log('Finished Adguard API re-configuration');
-        logTotalCount();
+        try {
+            await adguardApi.configure(configuration);
+            console.log('Finished Adguard API re-configuration');
+            logTotalCount();
+        } catch (error) {
+            console.error('Failed to apply assistant rule:', error);
+        }
     };
 
     adguardApi.onAssistantCreateRule.subscribe(onAssistantCreateRule);

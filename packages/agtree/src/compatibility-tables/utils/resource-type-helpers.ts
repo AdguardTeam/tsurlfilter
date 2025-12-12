@@ -1,6 +1,6 @@
 import { isNull } from '../../utils/type-guards';
 import { modifiersCompatibilityTable } from '../modifiers';
-import { type GenericPlatform, type SpecificPlatform } from '../platforms';
+import { type AnyPlatform } from '../platforms';
 import { ResourceType } from '../schemas/resource-type';
 
 /**
@@ -27,14 +27,14 @@ const RESOURCE_TYPE_MODIFIER_MAP: Readonly<Record<ResourceType, string>> = Objec
  * Gets the adblock modifier name for the given resource type.
  *
  * @param resourceType Resource type to get the modifier name for.
- * @param platform Platform to get the modifier for.
+ * @param platform Platform to get the modifier for (can be specific, generic, or combined platforms).
  *
  * @returns A string containing the adblock modifier name for the given resource type
  * or `null` if the modifier could not be found.
  */
 export const getResourceTypeModifier = (
     resourceType: ResourceType,
-    platform: SpecificPlatform | GenericPlatform,
+    platform: AnyPlatform,
 ): string | null => {
     const modifierName = RESOURCE_TYPE_MODIFIER_MAP[resourceType];
 

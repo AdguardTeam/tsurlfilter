@@ -189,6 +189,98 @@ describe('CssTokenStream', () => {
         });
     });
 
+    describe('hasAnySelectorExtendedCssNodeStrict', () => {
+        describe('should return false for native CSS', () => {
+            test.each([
+                [String.raw`div`],
+                [String.raw`div > a`],
+                [String.raw`[attr] > a:hover`],
+                [String.raw`.banner`],
+                [String.raw`input:checked`],
+            ])('%s', (input) => {
+                const stream = new CssTokenStream(input);
+                expect(stream.hasAnySelectorExtendedCssNodeStrict()).toBe(false);
+            });
+        });
+
+        describe('should return false for native-and-ext CSS (:has, :is, :not)', () => {
+            test.each([
+                [String.raw`.target:has(a)`],
+                [String.raw`div:has(> p)`],
+                [String.raw`.target:is(div, p)`],
+                [String.raw`.target:not(.excluded)`],
+                [String.raw`.target:has(.banner):is(div)`],
+                [String.raw`div:is(.css1, [style*="min-height:"]:not([class]), .css2):has(.adSlot)`],
+            ])('%s', (input) => {
+                const stream = new CssTokenStream(input);
+                expect(stream.hasAnySelectorExtendedCssNodeStrict()).toBe(false);
+            });
+        });
+
+        describe('should return true for strictly extended CSS', () => {
+            test.each([
+                [String.raw`:contains(a)`],
+                [String.raw`.target:contains(text)`],
+                [String.raw`[-ext-contains="a"]`],
+                [String.raw`[-abp-contains="a"]`],
+                [String.raw`:-abp-has(a)`],
+                [String.raw`.target:-abp-has(.ad)`],
+                [String.raw`:if-not(selector)`],
+                [String.raw`:matches-attr("a-*"="b")`],
+                [String.raw`:matches-css(color: red)`],
+                [String.raw`:matches-property(a.b)`],
+                [String.raw`:nth-ancestor(1)`],
+                [String.raw`:remove()`],
+                [String.raw`:upward(1)`],
+                [String.raw`:xpath(//div)`],
+                [String.raw`:has-text(banner)`],
+                [String.raw`[-ext-has="selector"]`],
+            ])('%s', (input) => {
+                const stream = new CssTokenStream(input);
+                expect(stream.hasAnySelectorExtendedCssNodeStrict()).toBe(true);
+            });
+        });
+    });
+
+    describe('hasNativeCssPseudoClass', () => {
+        describe('should return false for native CSS', () => {
+            test.each([
+                [String.raw`div`],
+                [String.raw`div > a`],
+                [String.raw`[attr] > a:hover`],
+                [String.raw`.banner`],
+                [String.raw`input:checked`],
+                [String.raw`.target:hover:active`],
+            ])('%s', (input) => {
+                expect(CssTokenStream.hasNativeCssPseudoClass(input)).toBe(false);
+            });
+        });
+
+        describe('should return false for strictly extended CSS', () => {
+            test.each([
+                [String.raw`:-abp-has(a)`],
+                [String.raw`:contains(a)`],
+                [String.raw`:upward(2)`],
+            ])('%s', (input) => {
+                expect(CssTokenStream.hasNativeCssPseudoClass(input)).toBe(false);
+            });
+        });
+
+        describe('should return true for native-and-ext CSS (:has, :is, :not)', () => {
+            test.each([
+                [String.raw`.target:has(a)`],
+                [String.raw`div:has(> p)`],
+                [String.raw`.target:is(div, p)`],
+                [String.raw`.target:not(.excluded)`],
+                [String.raw`.target:has(.banner):is(div)`],
+                [String.raw`.banner:not(.main, .content)`],
+                [String.raw`div:has(.ad):not(.exclude)`],
+            ])('%s', (input) => {
+                expect(CssTokenStream.hasNativeCssPseudoClass(input)).toBe(true);
+            });
+        });
+    });
+
     test('if balanced tokenizer throws, offsets should be added to the error', () => {
         const actual = 'div { display: none !important';
         const offset = 2;

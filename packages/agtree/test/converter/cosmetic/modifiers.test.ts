@@ -267,7 +267,7 @@ describe('Cosmetic rule modifiers conversion', () => {
             {
                 actual: '[$path=/\\/[a|b|,]\\/page\\.html/]example.com###test',
                 expected: [
-                    String.raw`example.com##:matches-path(/\/[a|b|):]\/page\.html/ #test`,
+                    String.raw`example.com##:matches-path(/\\/\[a|b|\,\]\\/page\\.html/) #test`,
                 ],
                 shouldConvert: true,
             },

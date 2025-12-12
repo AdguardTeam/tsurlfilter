@@ -942,6 +942,34 @@ describe('RuleParser', () => {
         });
     });
 
+    describe('parser onParseError callback', () => {
+        test('should call onParseError callback when tolerant mode is enabled and AdblockSyntaxError occurs', () => {
+            const onParseError = vi.fn();
+            const options: ParserOptions = {
+                ...defaultParserOptions,
+                tolerant: true,
+                onParseError,
+            };
+
+            const invalidRule = '##+js(scriptlet';
+            const result = RuleParser.parse(invalidRule, options);
+
+            expect(onParseError).toHaveBeenCalledTimes(1);
+
+            const calledError = onParseError.mock.calls[0][0];
+            expect(calledError).toBeInstanceOf(AdblockSyntaxError);
+            expect(calledError.message).toBe("Invalid uBO scriptlet call, no closing parentheses ')' found");
+            expect(calledError.start).toBe(5);
+            expect(calledError.end).toBe(15);
+
+            expect(result).toMatchObject({
+                type: 'InvalidRule',
+                category: RuleCategory.Invalid,
+                raw: invalidRule,
+            });
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
             const ast = RuleParser.parse(raw);
@@ -1007,6 +1035,8 @@ describe('RuleParser', () => {
         expect(parseAndGenerate('example.com,~example.net#@#.ad:-abp-has(.ad)')).toEqual(
             'example.com,~example.net#@#.ad:-abp-has(.ad)',
         );
+        expect(parseAndGenerate('##body:has(.ads)')).toEqual('##body:has(.ads)');
+        expect(parseAndGenerate('#?#body:has(.ads)')).toEqual('#?#body:has(.ads)');
 
         // CSS injections (AdGuard)
         expect(parseAndGenerate('#$#body { padding: 0; }')).toEqual('#$#body { padding: 0; }');
@@ -1042,6 +1072,7 @@ describe('RuleParser', () => {
         ).toEqual(
             'example.com,~example.net#@$#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
         );
+        expect(parseAndGenerate('#$#body:has(.ads) { padding: 0; }')).toEqual('#$#body:has(.ads) { padding: 0; }');
         expect(parseAndGenerate('#$?#body:has(.ads) { padding: 0; }')).toEqual('#$?#body:has(.ads) { padding: 0; }');
         expect(parseAndGenerate('example.com,~example.net#$?#body:has(.ads) { padding: 0; }')).toEqual(
             'example.com,~example.net#$?#body:has(.ads) { padding: 0; }',

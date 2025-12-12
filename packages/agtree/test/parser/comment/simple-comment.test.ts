@@ -44,6 +44,27 @@ describe('SimpleCommentParser', () => {
             ['#@#.selector', false],
             ["#%#//scriptlet('scriptlet')", false],
             [" #%#//scriptlet('scriptlet')", false],
+
+            // Single-letter HTML tag selectors
+            // https://github.com/AdguardTeam/tsurlfilter/issues/172
+            //   - just tags
+            ['##p', false],
+            ['##a', false],
+            ['##h1', false],
+            ['##div', false],
+            //   - tags with CSS combinators
+            ['##p > a', false],
+            ['##p a', false],
+            ['##p + a', false],
+            ['##p ~ a', false],
+            ['##a > span', false],
+            ['##p > a[href^="/test"]', false],
+            ['##p > a[href^="/AllRes/Vlog"]', false],
+
+            // Multi-letter tags with combinators
+            ['##div > span', false],
+            ['##div > a', false],
+            ['##article > p', false],
         ])('isCommentRule(%p) should return %p', (input, expected) => {
             expect(SimpleCommentParser.isSimpleComment(input)).toBe(expected);
         });
@@ -56,6 +77,12 @@ describe('SimpleCommentParser', () => {
         expect(SimpleCommentParser.parse(SPACE)).toBeNull();
         expect(SimpleCommentParser.parse('##.ad')).toBeNull();
         expect(SimpleCommentParser.parse('#@#.ad')).toBeNull();
+
+        // Single-letter HTML tag selectors should not be parsed as comments
+        expect(SimpleCommentParser.parse('##p')).toBeNull();
+        expect(SimpleCommentParser.parse('##a')).toBeNull();
+        expect(SimpleCommentParser.parse('##p > a')).toBeNull();
+        expect(SimpleCommentParser.parse('##p > a[href^="/AllRes/Vlog"]')).toBeNull();
 
         expect(SimpleCommentParser.parse('! This is just a comment')).toMatchObject({
             category: 'Comment',

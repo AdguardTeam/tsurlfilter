@@ -151,6 +151,12 @@ describe('Scriptlet conversion', () => {
                     "bokepgemoy.com#%#//scriptlet('ubo-nobab')",
                 ],
             },
+            {
+                actual: "example.org##+js(prevent-canvas, '2d')",
+                expected: [
+                    "example.org#%#//scriptlet('ubo-prevent-canvas', '2d')",
+                ],
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
         });
@@ -187,6 +193,13 @@ describe('Scriptlet conversion', () => {
                 actual: 'example.org#%#//scriptlet(\'abort-current-inline-script\', \'$\', \'popup\')',
                 expected: [
                     'example.org#%#//scriptlet(\'abort-current-inline-script\', \'$\', \'popup\')',
+                ],
+                shouldConvert: false,
+            },
+            {
+                actual: "example.org#%#//scriptlet('prevent-canvas', '2d')",
+                expected: [
+                    "example.org#%#//scriptlet('prevent-canvas', '2d')",
                 ],
                 shouldConvert: false,
             },
@@ -335,6 +348,14 @@ describe('Scriptlet conversion', () => {
                 expected: [
                     String.raw`/^example\.org$/,somesite.org,somesite2.*##+js(set-constant, form)`,
                 ],
+            },
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/260
+            {
+                actual: "aceee.org#%#//scriptlet('prevent-canvas', '2d')",
+                expected: [
+                    'aceee.org##+js(prevent-canvas, 2d)',
+                ],
+                shouldConvert: true,
             },
         ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToUbo');

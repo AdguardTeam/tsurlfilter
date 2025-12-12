@@ -48,8 +48,67 @@ export class ModifierListParser extends BaseParser {
 
             const modifierStart = offset;
 
+            // Check if this modifier has an incomplete regexp pattern
+            // Look for the `=` sign to find where the modifier value starts
+            let useSimpleSearch = false;
+            const equalsIndex = raw.indexOf('=', offset);
+            if (equalsIndex !== -1 && equalsIndex < raw.length - 1) {
+                const valueStart = equalsIndex + 1;
+                // Check if value starts with / (potential regex)
+                if (raw[valueStart] === '/' && raw[valueStart + 1] !== '/') {
+                    // Look for a closing / for the regex pattern
+                    // Search through the rest of the string for an unescaped /
+                    let firstClosingSlashIndex = -1;
+                    for (let i = valueStart + 1; i < raw.length; i += 1) {
+                        if (raw[i] === '/' && raw[i - 1] !== '\\') {
+                            firstClosingSlashIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (firstClosingSlashIndex === -1) {
+                        // No closing slash found anywhere - incomplete regex pattern
+                        // Use simple search to allow it to work when it's the last modifier
+                        useSimpleSearch = true;
+                    } else {
+                        // Found a closing slash - check if there are MORE slashes after it
+                        // If yes, this might be a complex pattern like replace=/pattern/replacement/flags
+                        // and we should use simple search to avoid breaking it
+                        let hasMoreSlashes = false;
+                        for (let i = firstClosingSlashIndex + 1; i < raw.length; i += 1) {
+                            if (raw[i] === '/' && raw[i - 1] !== '\\') {
+                                hasMoreSlashes = true;
+                                break;
+                            }
+                        }
+
+                        // Use simple search if there are more slashes (complex pattern)
+                        if (hasMoreSlashes) {
+                            useSimpleSearch = true;
+                        }
+                    }
+                }
+            }
+
             // Find the index of the first unescaped comma
-            separatorIndex = StringUtils.findNextUnescapedCharacter(raw, MODIFIERS_SEPARATOR, offset);
+            let nextSeparator;
+            if (useSimpleSearch) {
+                // Use simple search for incomplete regex patterns
+                nextSeparator = StringUtils.findNextUnescapedCharacter(
+                    raw,
+                    MODIFIERS_SEPARATOR,
+                    offset,
+                );
+            } else {
+                // Use regex-aware search to handle complete regex patterns
+                nextSeparator = StringUtils.findUnescapedNonStringNonRegexChar(
+                    raw,
+                    MODIFIERS_SEPARATOR,
+                    offset,
+                );
+            }
+
+            separatorIndex = nextSeparator;
 
             const modifierEnd = separatorIndex === -1
                 ? raw.length

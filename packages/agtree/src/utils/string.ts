@@ -202,6 +202,55 @@ export class StringUtils {
     }
 
     /**
+     * Finds the last occurrence of a character that is:
+     * - not part of any string literal ('literal' or "literal")
+     * - not part of any RegExp expression (/regexp/)
+     * - not preceded by an escape character.
+     *
+     * Searches backwards from the end of the pattern.
+     *
+     * @param pattern Source pattern.
+     * @param searchedCharacter Searched character.
+     * @param escapeCharacter Escape character, `\` by default.
+     *
+     * @returns Index of the character or -1 if the character not found.
+     */
+    public static findLastUnescapedNonStringNonRegexChar(
+        pattern: string,
+        searchedCharacter: string,
+        escapeCharacter: string = ESCAPE_CHARACTER,
+    ): number {
+        let open: string | null = null;
+
+        // Search backwards through the pattern
+        for (let i = pattern.length - 1; i >= 0; i -= 1) {
+            if (
+                (pattern[i] === SINGLE_QUOTE_MARKER
+                    || pattern[i] === DOUBLE_QUOTE_MARKER
+                    || pattern[i] === REGEX_MARKER)
+                && pattern[i - 1] !== escapeCharacter
+            ) {
+                // When searching backwards,
+                // we close when we see the marker and are already inside,
+                // and open when we see it and are not inside.
+                if (open === pattern[i]) {
+                    open = null;
+                } else if (open === null) {
+                    open = pattern[i];
+                }
+            } else if (
+                open === null
+                && pattern[i] === searchedCharacter
+                && pattern[i - 1] !== escapeCharacter
+            ) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
      * Finds the next occurrence of a character that:
      * - isn't part of any string literal ('literal' or "literal")
      * - isn't preceded by an escape character

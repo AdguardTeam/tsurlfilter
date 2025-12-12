@@ -55,7 +55,7 @@ export const configurationValidator = zod.object({
      *
      * These custom rules might be created by a user via AdGuard Assistant UI.
      *
-     * @see https://adguard.com/en/filterrules.html
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/
      */
     rules: zod.string().array().optional(),
 

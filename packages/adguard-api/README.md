@@ -125,7 +125,7 @@ type Configuration = {
   not specified, the default browser page will be shown.
 
 [filters-metadata]: https://filters.adtidy.org/extension/chromium/filters.json
-[filter-rules]: https://adguard.com/en/filterrules.html
+[filter-rules]: https://adguard.com/kb/general/ad-filtering/create-own-filters/
 
 **Example:**
 

@@ -17,3 +17,5 @@ export const CONTENT_SCRIPT = path.join(__dirname, '../extension/pages/content-s
 export const ASSISTANT_INJECT = path.join(__dirname, '../extension/pages/assistant-inject');
 
 export const POPUP_PATH = path.join(__dirname, '../extension/pages/popup');
+
+export const BLOCKING_PAGE_PATH = path.join(__dirname, '../extension/pages/blocking-page');

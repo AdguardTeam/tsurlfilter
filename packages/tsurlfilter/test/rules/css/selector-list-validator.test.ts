@@ -60,11 +60,8 @@ describe('Selector list validator', () => {
 
             // Should handle Extended CSS selectors
             ['.target:-abp-contains(a)', true],
-            ['.target:-abp-has(a)', true],
             ['.target:contains(a)', true],
-            ['.target:has(a)', true],
             ['.target:has-text(a)', true],
-            ['.target:if(a)', true],
             ['.target:if-not(a)', true],
             ['.target:matches-attr("a-*"="b")', true],
             ['.target:matches-css(before, a: /b/)', true],
@@ -83,18 +80,57 @@ describe('Selector list validator', () => {
             ['.target[-ext-matches-css-before="a: b"]', true],
             ['.target[-ext-matches-css="a: b"]', true],
 
+            // :has(), :is(), :not() are conditionally extended CSS
+            // When used alone, they should be treated as native CSS
+            ['.target:has(a)', false],
+            ['.target:has(.banner)', false],
+            ['div:has(> p)', false],
+            ['.target:is(div, p)', false],
+            ['.target:not(.excluded)', false],
+            ['div:is(.class1, .class2)', false],
+            ['div:not(.hidden, .invisible)', false],
+
+            // -abp-has is always extended CSS (ABP-specific syntax)
+            ['.target:-abp-has(a)', true],
+
+            // But when :has() or :is() or :not() are combined with extended CSS,
+            // they become extended CSS
+            ['.target:contains(a):has(a)', true],
+            ['.target:has(a):contains(b)', true],
+            ['.target:is(div):contains(text)', true],
+
             // Should handle combined Extended CSS elements
             ['.target:-abp-contains(a):-abp-has(a)', true],
-            ['.target:contains(a):has(a)', true],
-            ['.target:if(a):if-not(b)', true],
+            ['.target:contains(a):upward(b)', true],
 
             // Should handle regular CSS selector lists
             ['div, a:hover', false],
 
             // Should handle Extended CSS selector lists
             ['[a="b"], a:contains(a)', true],
-            ['[a="b"], a:has(a)', true],
             ['[a="b"], a[-ext-contains="a"]', true],
+
+            // :has() in a selector list with other extended CSS becomes extended
+            ['a:has(b), div:contains(c)', true],
+
+            // :has() alone in a selector list remains native
+            ['[a="b"], a:has(> a)', false],
+
+            // Nested :has() is not supported in native CSS,
+            // so it should be treated as extended CSS
+            // https://developer.mozilla.org/en-US/docs/Web/CSS/:has#syntax
+            ['div:has(> div:has(> a))', true],
+            ['div:has(.foo:has(.bar))', true],
+            ['section:has(div:has(p))', true],
+            ['.container:has(> .item:has(> span))', true],
+            // Triple nesting
+            ['div:has(div:has(div:has(a)))', true],
+            // Nested :has() in selector list
+            ['div:has(> div:has(> a)), span', true],
+            ['span, div:has(> div:has(> a))', true],
+
+            // selector list with few non-nested :has() should be treated as native CSS
+            ['a:has(> b), c:has(> d)', false],
         ])("should validate '%s' correctly", (selectorList, isExtendedCss) => {
             expect(validateSelectorList(selectorList)).toEqual({
                 isValid: true,
@@ -116,6 +152,11 @@ describe('Selector list validator', () => {
             ['div:foo:bar(a)', false, "Unsupported pseudo-class: ':foo'"],
             ['div:bar:foo', false, "Unsupported pseudo-class: ':bar'"],
             ['div:bar():foo', false, "Unsupported pseudo-class: ':bar'"],
+
+            // :if() is no longer supported as a synonym for :has()
+            // https://github.com/AdguardTeam/ExtendedCss#extended-css-has
+            ['.target:if(a)', false, "Unsupported pseudo-class: ':if'"],
+            ['.target:if(a):if-not(b)', false, "Unsupported pseudo-class: ':if'"],
 
             // Should detect unsupported legacy Extended CSS selectors
             ['[-ext-foo="bar"]', true, "Unsupported Extended CSS attribute selector: '-ext-foo'"],

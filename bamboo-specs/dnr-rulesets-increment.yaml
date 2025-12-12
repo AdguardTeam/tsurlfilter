@@ -31,8 +31,7 @@ Increment:
 
             # Throw error if current branch is not "master",
             # because we do not deploy changes from other branches
-            # TODO: update the stable branch name if needed
-            if [ $branch != "master" && $branch != "stable/dnr-rulesets-3.0" ]
+            if [ $branch != "master" ]
             then
               echo "increment is not supported on branch ${branch}"
               exit 1;

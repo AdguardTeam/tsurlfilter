@@ -131,6 +131,7 @@ export default [
             'coverage/',
             'test/smoke/esm',
             'test/smoke/exports',
+            'test/tasks/local-scripts/*-expected.js',
         ],
     },
 ];

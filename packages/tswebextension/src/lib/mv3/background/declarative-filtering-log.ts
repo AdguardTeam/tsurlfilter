@@ -5,6 +5,7 @@ import { logger } from '../../common/utils/logger';
 import { Mutex } from '../utils/mutex';
 
 import { requestContextStorage } from './request';
+import { SessionRulesApi } from './session-rules-api';
 
 /**
  * Declarative filtering log that can record information about the
@@ -18,9 +19,9 @@ class DeclarativeFilteringLog {
     private MAX_WAIT_TIME_MS = 30 * 1000;
 
     /**
-     * Stores list of rule sets.
+     * Stores list of rulesets to extract rule info when needed.
      */
-    private ruleSets: IRuleSet[] = [];
+    private sourceRulesets: IRuleSet[] = [];
 
     /**
      * Is there an active listener for declarativeNetRequest.onRuleMatchedDebug or not.
@@ -73,7 +74,7 @@ class DeclarativeFilteringLog {
      * @throws Error if no update is in progress.
      */
     public finishUpdate(ruleSets: IRuleSet[], enableLog: boolean): void {
-        this.ruleSets = ruleSets;
+        this.sourceRulesets = ruleSets;
         this.mutex.unlock();
 
         if (enableLog) {
@@ -85,9 +86,10 @@ class DeclarativeFilteringLog {
 
     /**
      * Returns converted declarative json rule, original text rule,
-     * filter name and id.
+     * filter name and id specifically for session rules, since they are
+     * collected from static rulesets.
      *
-     * @param ruleSetId Rule set id.
+     * @param rulesetId Ruleset id.
      * @param ruleId Rule id in this filter.
      *
      * @returns Converted declarative json rule, original txt rule
@@ -95,26 +97,83 @@ class DeclarativeFilteringLog {
      *
      * @throws Error when couldn't find ruleset or rule in ruleset.
      */
-    private getRuleInfo = async (ruleSetId: string, ruleId: number): Promise<DeclarativeRuleInfo> => {
+    private getRuleInfoForSessionRule = async (
+        rulesetId: string,
+        ruleId: number,
+    ): Promise<DeclarativeRuleInfo> => {
         if (this.mutex.isLocked()) {
             await this.mutex.waitUntilUnlocked();
         }
 
-        if (this.ruleSets.length === 0) {
+        if (rulesetId !== chrome.declarativeNetRequest.SESSION_RULESET_ID) {
+            throw new Error('getRuleInfoForSessionRule can be used only for session rules');
+        }
+
+        if (this.sourceRulesets.length === 0) {
             throw new Error('No rulesets loaded yet');
         }
 
-        const ruleSet = this.ruleSets.find((r) => r.getId() === ruleSetId);
-        if (!ruleSet) {
-            throw new Error(`Cannot find ruleset with id ${ruleSetId}`);
+        const source = SessionRulesApi.sourceMapForUnsafeRules.get(ruleId);
+        if (!source) {
+            throw new Error(`Cannot find source mapping for session rule id ${ruleId}`);
         }
 
-        const sourceRules = await ruleSet.getRulesById(ruleId);
-        const declarativeRules = await ruleSet.getDeclarativeRules();
+        const [sourceRuleSetId, sourceDnrRuleId] = source;
+
+        const ruleSet = this.sourceRulesets.find((r) => r.getId() === sourceRuleSetId);
+        if (!ruleSet) {
+            throw new Error(`Cannot find ruleset with id ${sourceRuleSetId}`);
+        }
+
+        const sourceRules = await ruleSet.getRulesById(sourceDnrRuleId);
+        const unsafeDeclarativeRules = await ruleSet.getUnsafeRules();
+        const declarativeRule = unsafeDeclarativeRules.find((r) => r.id === sourceDnrRuleId);
+
+        if (!declarativeRule) {
+            throw new Error(`Cannot find rule with id ${sourceDnrRuleId} in ruleset ${sourceRuleSetId}`);
+        }
+
+        return {
+            sourceRules,
+            declarativeRuleJson: JSON.stringify(declarativeRule),
+        };
+    };
+
+    /**
+     * Returns converted declarative json rule, original text rule,
+     * filter name and id.
+     *
+     * @param rulesetId Ruleset id.
+     * @param ruleId Rule id in this filter.
+     *
+     * @returns Converted declarative json rule, original txt rule
+     * and filter id.
+     *
+     * @throws Error when couldn't find ruleset or rule in ruleset.
+     */
+    private getRuleInfo = async (
+        rulesetId: string,
+        ruleId: number,
+    ): Promise<DeclarativeRuleInfo> => {
+        if (this.mutex.isLocked()) {
+            await this.mutex.waitUntilUnlocked();
+        }
+
+        if (this.sourceRulesets.length === 0) {
+            throw new Error('No rulesets loaded yet');
+        }
+
+        const ruleset = this.sourceRulesets.find((r) => r.getId() === rulesetId);
+        if (!ruleset) {
+            throw new Error(`Cannot find ruleset with id ${rulesetId}`);
+        }
+
+        const sourceRules = await ruleset.getRulesById(ruleId);
+        const declarativeRules = await ruleset.getDeclarativeRules();
         const declarativeRule = declarativeRules.find((r) => r.id === ruleId);
 
         if (!declarativeRule) {
-            throw new Error(`Cannot find rule with id ${ruleId} in ruleset ${ruleSetId}`);
+            throw new Error(`Cannot find rule with id ${ruleId} in ruleset ${rulesetId}`);
         }
 
         return {
@@ -147,23 +206,26 @@ class DeclarativeFilteringLog {
         }
 
         /**
-         * Session rules are used for Tracking protection (formerly stealth mode)
-         * with unsafe rules from static rulesets.
-         * Rules from Tracking protection should not be logged as they are not
-         * logged for MV2 as well.
-         *
-         * TODO: Add processing for unsafe rules from static rulesets.
-         *
-         * For more details see tswebextension/src/lib/mv3/background/services/stealth-service.ts.
+         * We do not log exact matched DNR rule from Tracking protection
+         * (formerly stealth mode), since they are generic and too wide, so
+         * they should not be logged to prevent collect garbage in the log as
+         * it is done in MV2.
+         * But we still need to log all other session rules, since we use them
+         * for all not safe rules from static rulesets.
          */
-        if (rulesetId === chrome.declarativeNetRequest.SESSION_RULESET_ID) {
+        if (rulesetId === chrome.declarativeNetRequest.SESSION_RULESET_ID
+            && ruleId <= SessionRulesApi.MIN_DECLARATIVE_RULE_ID) {
             return;
         }
 
         let declarativeRuleInfo: DeclarativeRuleInfo;
 
+        const getRuleInfoFn = rulesetId === chrome.declarativeNetRequest.SESSION_RULESET_ID
+            ? this.getRuleInfoForSessionRule
+            : this.getRuleInfo;
+
         try {
-            declarativeRuleInfo = await this.getRuleInfo(rulesetId, ruleId);
+            declarativeRuleInfo = await getRuleInfoFn(rulesetId, ruleId);
         } catch (e) {
             logger.error('[tsweb.DeclarativeFilteringLog.logMatchedRule]: cannot get rule info due to: ', e);
             return;

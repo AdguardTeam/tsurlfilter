@@ -21,3 +21,4 @@ export * from './configuration';
 export { companiesDbService } from '../../common/companies-db-service';
 export { StealthActions } from '../../common/stealth-actions';
 export { MESSAGE_HANDLER_NAME } from '../../common/message-constants';
+export { type LocalScriptRules } from './services/local-script-rules-service';
