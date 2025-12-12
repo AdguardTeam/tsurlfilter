@@ -1065,7 +1065,7 @@ export class WebRequestApi {
         if (!isOpera || frameId !== MAIN_FRAME_ID) {
             return;
         }
-        
+
         const tabContext = tabsApi.getTabContext(tabId);
         if (!tabContext) {
             return;
@@ -1084,6 +1084,5 @@ export class WebRequestApi {
         });
 
         frame.matchingResult = matchingResult;
-        
     }
 }
