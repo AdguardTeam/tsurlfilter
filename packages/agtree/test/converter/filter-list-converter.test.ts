@@ -62,7 +62,7 @@ describe('FilterListConverter', () => {
             '||delivery.tf1.fr/pub$media,redirect=noopmp3-0.1s,domain=tf1.fr',
             "example.com#%#//scriptlet('abp-snippet1', 'arg0', 'arg1')",
             "example.com#%#//scriptlet('abp-snippet2', 'arg0', 'arg1')",
-            '$$script[max-length="262144"]:contains(ad)',
+            '$$script:contains(ad)',
         ].join(NEWLINE);
 
         const filterListNode = FilterListParser.parse(filterListContent);

@@ -259,4 +259,24 @@ export class RegExpUtils {
 
         return result;
     }
+
+    /**
+     * Creates a length-matching regular expression string: /^(?=.{min,max}$).*\/s
+     * Where:
+     * - (?=.{min,max}$) is a lookahead that ensures the string length is between min and max
+     * - .* matches any character (including newlines, due to the 's' flag)
+     *
+     * @param min Minimum length or `null` for no minimum (default to `0`).
+     * @param max Maximum length or `null` for no maximum (default to no maximum).
+     *
+     * @returns Length-matching regular expression string.
+     */
+    public static getLengthRegexp(min: number | null, max: number | null): string {
+        let calculatedMin = min;
+        if (calculatedMin === null) {
+            calculatedMin = 0;
+        }
+
+        return `/^(?=.{${calculatedMin},${max ?? ''}}$).*/s`;
+    }
 }

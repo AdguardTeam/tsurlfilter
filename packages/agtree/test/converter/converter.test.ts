@@ -50,25 +50,23 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: 'example.com##^script:has-text(12313)',
-                    expected: ['example.com$$script[max-length="262144"]:contains(12313)'],
+                    expected: ['example.com$$script:contains(12313)'],
                 },
                 {
                     actual: 'example.com##^script:has-text(console.log("doubles"))',
-                    expected: ['example.com$$script[max-length="262144"]:contains(console.log("doubles"))'],
+                    expected: ['example.com$$script:contains(console.log("doubles"))'],
                 },
                 {
                     actual: 'example.com##^script[data-test]:has-text(12313)',
-                    expected: ['example.com$$script[data-test][max-length="262144"]:contains(12313)'],
+                    expected: ['example.com$$script[data-test]:contains(12313)'],
                 },
                 {
                     actual: 'example.com##^script[data-test="1"][data-test2="2"]:has-text(12313)',
-                    expected: [
-                        'example.com$$script[data-test="1"][data-test2="2"][max-length="262144"]:contains(12313)',
-                    ],
+                    expected: ['example.com$$script[data-test="1"][data-test2="2"]:contains(12313)'],
                 },
                 {
                     actual: "example.com##^script:has-text(d.createElement('script'))",
-                    expected: ["example.com$$script[max-length=\"262144\"]:contains(d.createElement('script'))"],
+                    expected: ["example.com$$script:contains(d.createElement('script'))"],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');

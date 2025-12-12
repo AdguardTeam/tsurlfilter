@@ -52,101 +52,52 @@ describe('HtmlRuleConverter', () => {
 
         describe('from uBO - valid cases (parsed)', () => {
             test.each([
-                // complex selector without special parts
+                // complex selector without special simplex selectors
                 {
                     actual: '##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
-                    // eslint-disable-next-line max-len
-                    expected: ['$$div[attr="value"][max-length="262144"] + span:nth-child(2)[max-length="262144"] > a[href^="https"]:not(.className)[max-length="262144"]'],
+                    expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
                 },
 
-                // `:min-text-length()` special pseudo-class
+                // `:min-text-length()` special pseudo-class selector (max is conversion default)
                 {
                     actual: '##^div:min-text-length(10)',
-                    expected: ['$$div[min-length="10"][max-length="262144"]'],
+                    expected: ['$$div:contains(/^(?=.{10,262144}$).*/s)'],
                 },
 
-                // `:has-text()` special pseudo-class
+                // `:min-text-length()` special pseudo-class selector (max is conversion default) - multiple usages
+                {
+                    actual: '##^div:min-text-length(10):min-text-length(20)',
+                    expected: ['$$div:contains(/^(?=.{10,262144}$).*/s):contains(/^(?=.{20,262144}$).*/s)'],
+                },
+
+                // `:has-text()` special pseudo-class selector
                 {
                     actual: '##^div:has-text(example)',
-                    expected: ['$$div[max-length="262144"]:contains(example)'],
+                    expected: ['$$div:contains(example)'],
                 },
 
-                // `:has-text()` special pseudo-class - double quotes are handled
-                {
-                    actual: '##^div:has-text("example")',
-                    expected: ['$$div[max-length="262144"]:contains("example")'],
-                },
-
-                // `:has-text()` special pseudo-class - single quotes are handled
-                {
-                    actual: "##^div:has-text('example')",
-                    expected: ["$$div[max-length=\"262144\"]:contains('example')"],
-                },
-
-                // `:has-text()` special pseudo-class - regexp are handled
-                {
-                    actual: '##^div:has-text(/ex.*ple/i)',
-                    expected: ['$$div[max-length="262144"]:contains(/ex.*ple/i)'],
-                },
-
-                // edge case - `[min-length]` (ADG attr) ignored when `:min-text-length()` is present
-                {
-                    actual: '##^div[min-length="5"]:min-text-length(10)',
-                    expected: ['$$div[min-length="10"][max-length="262144"]'],
-                },
-
-                // edge case - `[tag-content]` (ADG attr) ignored when `:has-text()` is present
-                {
-                    actual: '##^div[tag-content="a"]:has-text(b)',
-                    expected: ['$$div[max-length="262144"]:contains(b)'],
-                },
-
-                // edge case - `[tag-content]` (ADG attr) ignored when `:contains()` is present
-                {
-                    actual: '##^div[tag-content="a"]:contains(b)',
-                    expected: ['$$div[max-length="262144"]:contains(b)'],
-                },
-
-                // edge case - `[min-length]` de-duplication - latter takes precedence
-                {
-                    actual: '##^div[min-length="2000"][min-length="1000"]',
-                    expected: ['$$div[min-length="1000"][max-length="262144"]'],
-                },
-
-                // edge case - `:min-text-length()` de-duplication - latter takes precedence
-                {
-                    actual: '##^div:min-text-length(2000):min-text-length(1000)',
-                    expected: ['$$div[min-length="1000"][max-length="262144"]'],
-                },
-
-                // edge case - `[max-length]` de-duplication - latter takes precedence
-                {
-                    actual: '##^div[max-length="2000"][max-length="1000"]',
-                    expected: ['$$div[max-length="1000"]'],
-                },
-
-                // edge case - `[tag-content]` de-duplication - latter takes precedence
-                {
-                    actual: '##^div[tag-content="a"][tag-content="b"]',
-                    expected: ['$$div[max-length="262144"]:contains(b)'],
-                },
-
-                // edge case - `:has-text()` de-duplication - latter takes precedence
+                // `:has-text()` special pseudo-class selector - multiple usages
                 {
                     actual: '##^div:has-text(a):has-text(b)',
-                    expected: ['$$div[max-length="262144"]:contains(b)'],
+                    expected: ['$$div:contains(a):contains(b)'],
                 },
 
-                // edge case - `:contains()` de-duplication - latter takes precedence
+                // `:has-text()` special pseudo-class selector - double quotes are handled
                 {
-                    actual: '##^div:contains(a):contains(b)',
-                    expected: ['$$div[max-length="262144"]:contains(b)'],
+                    actual: '##^div:has-text("example")',
+                    expected: ['$$div:contains("example")'],
                 },
 
-                // edge case - `:contains()` and `:has-text()` de-duplication - latter takes precedence
+                // `:has-text()` special pseudo-class selector - single quotes are handled
                 {
-                    actual: '##^div:contains(a):has-text(b)',
-                    expected: ['$$div[max-length="262144"]:contains(b)'],
+                    actual: "##^div:has-text('example')",
+                    expected: ["$$div:contains('example')"],
+                },
+
+                // `:has-text()` special pseudo-class selector - regexp are handled
+                {
+                    actual: '##^div:has-text(/ex.*ple/i)',
+                    expected: ['$$div:contains(/ex.*ple/i)'],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(
@@ -159,7 +110,6 @@ describe('HtmlRuleConverter', () => {
 
         describe('from uBO - invalid cases (parsed)', () => {
             test.each<InvalidTestData>([
-                /* Common cases */
                 // invalid body - empty selector list
                 {
                     input: {
@@ -187,7 +137,7 @@ describe('HtmlRuleConverter', () => {
                     error: 'Invalid HTML filtering rule: Complex selector of selector list must not be empty',
                 },
 
-                // invalid selector - empty simple selectors in compound selector
+                // invalid complex selector item - empty simple selectors in compound selector
                 {
                     input: {
                         body: {
@@ -206,7 +156,7 @@ describe('HtmlRuleConverter', () => {
                     error: 'Invalid HTML filtering rule: Compound selector of complex selector item must not be empty',
                 },
 
-                // invalid selector - combinator in first complex selector item
+                // invalid complex selector item - combinator in first complex selector item
                 {
                     input: {
                         body: {
@@ -226,7 +176,7 @@ describe('HtmlRuleConverter', () => {
                     error: 'Invalid HTML filtering rule: First complex selector item cannot start with a combinator',
                 },
 
-                // invalid selector - missing combinator between complex selector items
+                // invalid complex selector item - missing combinator between complex selector items
                 {
                     input: {
                         body: {
@@ -252,36 +202,6 @@ describe('HtmlRuleConverter', () => {
                     error: 'Invalid HTML filtering rule: Missing combinator between complex selector items',
                 },
 
-                // invalid special attribute selector - value not provided
-                {
-                    input: '##^[tag-content]',
-                    error: 'Special attribute selector \'tag-content\' requires a value',
-                },
-
-                // invalid special attribute selector - invalid operator
-                {
-                    input: '##^[tag-content~="value"]',
-                    error: 'Special attribute selector \'tag-content\' has invalid operator \'~=\'',
-                },
-
-                // invalid special attribute selector - flag provided
-                {
-                    input: '##^[tag-content="value" i]',
-                    error: 'Special attribute selector \'tag-content\' does not support flags',
-                },
-
-                // invalid special attribute selector - length value not number
-                {
-                    input: '##^[min-length="abc"]',
-                    error: 'Value of special attribute selector \'min-length\' must be an integer, got \'abc\'',
-                },
-
-                // invalid special attribute selector - length value negative
-                {
-                    input: '##^[min-length="-1"]',
-                    error: 'Value of special attribute selector \'min-length\' must be a positive integer, got \'-1\'',
-                },
-
                 // invalid special pseudo-class selector - argument missing
                 {
                     input: '##^:has-text()',
@@ -295,7 +215,7 @@ describe('HtmlRuleConverter', () => {
                     error: 'Argument of special pseudo-class selector \'min-text-length\' must be an integer, got \'abc\'',
                 },
 
-                // invalid special pseudo-class selector - length value not number
+                // invalid special pseudo-class selector - length value negative
                 {
                     input: '##^:min-text-length(-1)',
                     // eslint-disable-next-line max-len
@@ -304,8 +224,20 @@ describe('HtmlRuleConverter', () => {
 
                 // invalid compound selector - only special simple selectors
                 {
-                    input: '##^[min-length="10"]:has-text("example")',
+                    input: '##^:has-text("example")',
                     error: 'Compound selector cannot contain only special simple selectors',
+                },
+
+                // invalid simple selector - mixed syntax (AdGuard special attribute selector)
+                {
+                    input: '##^div[tag-content="example"]',
+                    error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
+                },
+
+                // invalid simple selector - mixed syntax (AdGuard special pseudo-class selector)
+                {
+                    input: '##^div:contains(example)',
+                    error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
                 },
             ])('should not convert \'$input\'', ({ input, error }) => {
                 if (typeof input !== 'string') {
@@ -331,16 +263,15 @@ describe('HtmlRuleConverter', () => {
             test.each([
                 {
                     actual: '##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
-                    // eslint-disable-next-line max-len
-                    expected: ['$$div[attr="value"][max-length="262144"] + span:nth-child(2)[max-length="262144"] > a[href^="https"]:not(.className)[max-length="262144"]'],
+                    expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
                 },
                 {
                     actual: '##^div:min-text-length(10)',
-                    expected: ['$$div[min-length="10"][max-length="262144"]'],
+                    expected: ['$$div:contains(/^(?=.{10,262144}$).*/s)'],
                 },
                 {
                     actual: '##^div:has-text(example)',
-                    expected: ['$$div[max-length="262144"]:contains(example)'],
+                    expected: ['$$div:contains(example)'],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
@@ -349,14 +280,6 @@ describe('HtmlRuleConverter', () => {
 
         describe('from uBO - invalid cases (raw)', () => {
             test.each<InvalidTestData>([
-                {
-                    input: '##^[tag-content]',
-                    error: 'Special attribute selector \'tag-content\' requires a value',
-                },
-                {
-                    input: '##^[tag-content~="value"]',
-                    error: 'Special attribute selector \'tag-content\' has invalid operator \'~=\'',
-                },
                 {
                     input: '##^:has-text()',
                     error: 'Special pseudo-class selector \'has-text\' requires an argument',
@@ -412,106 +335,117 @@ describe('HtmlRuleConverter', () => {
 
         describe('from ADG - valid cases (parsed)', () => {
             test.each([
-                // complex selector without special parts
+                // complex selector without special simple selectors
                 {
                     actual: '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
                     expected: ['##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
                 },
 
-                // `[min-length]` special attribute
+                // `[min-length]` special attribute selector
                 {
                     actual: '$$div[min-length="10"]',
                     expected: ['##^div:min-text-length(10)'],
                 },
 
-                // `[max-length]` special attribute is ignored during conversion
+                // `[min-length]` special attribute selector - multiple usages
+                {
+                    actual: '$$div[min-length="10"][min-length="20"]',
+                    expected: ['##^div:min-text-length(10):min-text-length(20)'],
+                },
+
+                // `[max-length]` special attribute selector (ignored during conversion)
                 {
                     actual: '$$div[max-length="100"]',
                     expected: ['##^div'],
                 },
 
-                // `[tag-content]` special attribute
+                // `[max-length]` special attribute selector (ignored during conversion) - multiple usages
+                {
+                    actual: '$$div[max-length="100"][max-length="200"]',
+                    expected: ['##^div'],
+                },
+
+                // `[tag-content]` special attribute selector
                 {
                     actual: '$$div[tag-content="example"]',
                     expected: ['##^div:has-text(example)'],
                 },
 
-                // `:contains()` special pseudo-class
+                // `[tag-content]` special attribute selector - multiple usages
+                {
+                    actual: '$$div[tag-content="a"][tag-content="b"]',
+                    expected: ['##^div:has-text(a):has-text(b)'],
+                },
+
+                // `[wildcard]` special attribute selector
+                // FIXME: Test case needs proper glob -> regexp conversion implementation
+                {
+                    actual: '$$div[wildcard="*example*"]',
+                    expected: ['##^div:has-text(*example*)'],
+                },
+
+                // `[wildcard]` special attribute selector - multiple usages
+                // FIXME: Test case needs proper glob -> regexp conversion implementation
+                {
+                    actual: '$$div[wildcard="*example*"][wildcard="*test*"]',
+                    expected: ['##^div:has-text(*example*):has-text(*test*)'],
+                },
+
+                // `:contains()` special pseudo-class selector
                 {
                     actual: '$$div:contains(example)',
                     expected: ['##^div:has-text(example)'],
                 },
 
-                // `:contains()` special pseudo-class - double quotes are handled
+                // `:contains()` special pseudo-class selector - multiple usages
+                {
+                    actual: '$$div:contains(a):contains(b)',
+                    expected: ['##^div:has-text(a):has-text(b)'],
+                },
+
+                // `:contains()` special pseudo-class selector - double quotes are handled
                 {
                     actual: '$$div:contains("example")',
                     expected: ['##^div:has-text("example")'],
                 },
 
-                // `:contains()` special pseudo-class - single quotes are handled
+                // `:contains()` special pseudo-class selector - single quotes are handled
                 {
                     actual: "$$div:contains('example')",
                     expected: ["##^div:has-text('example')"],
                 },
 
-                // `:contains()` special pseudo-class - regexp are handled
+                // `:contains()` special pseudo-class selector - regexp are handled
                 {
                     actual: '$$div:contains(/ex.*ple/i)',
                     expected: ['##^div:has-text(/ex.*ple/i)'],
                 },
 
-                // edge case - `[min-length]` ignored when `:min-text-length()` (uBO pseudo-class) is present
+                // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
+                // FIXME: Test case needs proper glob -> regexp conversion implementation
                 {
-                    actual: '$$div[min-length="5"]:min-text-length(10)',
-                    expected: ['##^div:min-text-length(10)'],
+                    actual: '$$div[tag-content="a"][wildcard="*example*"]',
+                    expected: ['##^div:has-text(a):has-text(*example*)'],
                 },
 
-                // edge case - `[tag-content]` ignored when `:has-text()` (uBO pseudo-class) is present
-                {
-                    actual: '$$div[tag-content="a"]:has-text(b)',
-                    expected: ['##^div:has-text(b)'],
-                },
-
-                // edge case - `[tag-content]` ignored when `:contains()` (uBO pseudo-class) is present
+                // `[tag-content]` and `:contains()` special simple selectors - mixed usage
                 {
                     actual: '$$div[tag-content="a"]:contains(b)',
-                    expected: ['##^div:has-text(b)'],
+                    expected: ['##^div:has-text(a):has-text(b)'],
                 },
 
-                // edge case - `[min-length]` de-duplication - latter takes precedence
+                // `[wildcard]` and `:contains()` special simple selectors - mixed usage
+                // FIXME: Test case needs proper glob -> regexp conversion implementation
                 {
-                    actual: '$$div[min-length="2000"][min-length="1000"]',
-                    expected: ['##^div:min-text-length(1000)'],
+                    actual: '$$div[wildcard="*example*"]:contains(b)',
+                    expected: ['##^div:has-text(*example*):has-text(b)'],
                 },
 
-                // edge case - `:min-text-length()` de-duplication - latter takes precedence
+                // `[tag-content]`, `[wildcard]` and `:contains()` special simple selectors - mixed usage
+                // FIXME: Test case needs proper glob -> regexp conversion implementation
                 {
-                    actual: '$$div:min-text-length(2000):min-text-length(1000)',
-                    expected: ['##^div:min-text-length(1000)'],
-                },
-
-                // edge case - `[tag-content]` de-duplication - latter takes precedence
-                {
-                    actual: '$$div[tag-content="a"][tag-content="b"]',
-                    expected: ['##^div:has-text(b)'],
-                },
-
-                // edge case - `:has-text()` de-duplication - latter takes precedence
-                {
-                    actual: '$$div:has-text(a):has-text(b)',
-                    expected: ['##^div:has-text(b)'],
-                },
-
-                // edge case - `:contains()` de-duplication - latter takes precedence
-                {
-                    actual: '$$div:contains(a):contains(b)',
-                    expected: ['##^div:has-text(b)'],
-                },
-
-                // edge case - `:has-text()` and `:contains()` de-duplication - latter takes precedence
-                {
-                    actual: '$$div:has-text(a):contains(b)',
-                    expected: ['##^div:has-text(b)'],
+                    actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
+                    expected: ['##^div:has-text(a):has-text(*example*):has-text(b)'],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(
@@ -524,7 +458,6 @@ describe('HtmlRuleConverter', () => {
 
         describe('from ADG - invalid cases (parsed)', () => {
             test.each<InvalidTestData>([
-                /* Common cases */
                 // invalid body - empty selector list
                 {
                     input: {
@@ -552,7 +485,7 @@ describe('HtmlRuleConverter', () => {
                     error: 'Invalid HTML filtering rule: Complex selector of selector list must not be empty',
                 },
 
-                // invalid selector - empty simple selectors in compound selector
+                // invalid complex selector item - empty simple selectors in compound selector
                 {
                     input: {
                         body: {
@@ -571,7 +504,7 @@ describe('HtmlRuleConverter', () => {
                     error: 'Invalid HTML filtering rule: Compound selector of complex selector item must not be empty',
                 },
 
-                // invalid selector - combinator in first complex selector item
+                // invalid complex selector item - combinator in first complex selector item
                 {
                     input: {
                         body: {
@@ -591,7 +524,7 @@ describe('HtmlRuleConverter', () => {
                     error: 'Invalid HTML filtering rule: First complex selector item cannot start with a combinator',
                 },
 
-                // invalid selector - missing combinator between complex selector items
+                // invalid complex selector item - missing combinator between complex selector items
                 {
                     input: {
                         body: {
@@ -649,35 +582,20 @@ describe('HtmlRuleConverter', () => {
 
                 // invalid special pseudo-class selector - argument missing
                 {
-                    input: '$$:has-text()',
-                    error: 'Special pseudo-class selector \'has-text\' requires an argument',
-                },
-
-                // invalid special pseudo-class selector - length value not number
-                {
-                    input: '$$:min-text-length(abc)',
-                    // eslint-disable-next-line max-len
-                    error: 'Argument of special pseudo-class selector \'min-text-length\' must be an integer, got \'abc\'',
-                },
-
-                // invalid special pseudo-class selector - length value not number
-                {
-                    input: '$$:min-text-length(-1)',
-                    // eslint-disable-next-line max-len
-                    error: 'Argument of special pseudo-class selector \'min-text-length\' must be a positive integer, got \'-1\'',
+                    input: '$$:contains()',
+                    error: 'Special pseudo-class selector \'contains\' requires an argument',
                 },
 
                 // invalid compound selector - only special simple selectors
                 {
-                    input: '$$[min-length="10"]:has-text("example")',
+                    input: '$$[min-length="10"]',
                     error: 'Compound selector cannot contain only special simple selectors',
                 },
 
-                /* ADG -> uBO specific cases */
-                // can't convert `[wildcard]` attribute
+                // invalid simple selector - mixed syntax (uBlock special pseudo-class selector)
                 {
-                    input: '$$[wildcard="example"]',
-                    error: 'Special attribute selector \'wildcard\' is not supported in conversion',
+                    input: '$$div:has-text(example)',
+                    error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
                 },
             ])('should not convert \'$input\'', ({ input, error }) => {
                 if (typeof input !== 'string') {
@@ -739,10 +657,6 @@ describe('HtmlRuleConverter', () => {
                 {
                     input: '$$[min-length="-1"]',
                     error: 'Value of special attribute selector \'min-length\' must be a positive integer, got \'-1\'',
-                },
-                {
-                    input: '$$[wildcard="example"]',
-                    error: 'Special attribute selector \'wildcard\' is not supported in conversion',
                 },
 
                 // Parsing errors
