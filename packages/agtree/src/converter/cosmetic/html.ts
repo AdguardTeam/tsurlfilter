@@ -141,9 +141,10 @@ export const ERROR_MESSAGES = {
  * @param name Name of the special attribute selector.
  * @param value Value of the special attribute selector.
  *
- * @returns A {@link CssSimpleSelector} to add to the current compound selector, or `null` to skip it.
+ * @returns A {@link CssSimpleSelector} to add to the current compound selector,
+ * or `false` to skip it, or `true` to keep it as-is.
  */
-type OnSpecialAttributeSelectorCallback = (name: string, value: string) => CssSimpleSelector | null;
+type OnSpecialAttributeSelectorCallback = (name: string, value: string) => CssSimpleSelector | boolean;
 
 /**
  * Callback type for handling special pseudo-class selectors during selector list conversion.
@@ -151,9 +152,10 @@ type OnSpecialAttributeSelectorCallback = (name: string, value: string) => CssSi
  * @param name Name of the special pseudo-class selector.
  * @param argument Argument of the special pseudo-class selector.
  *
- * @returns A {@link CssSimpleSelector} to add to the current compound selector, or `null` to skip it.
+ * @returns A {@link CssSimpleSelector} to add to the current compound selector,
+ * or `false` to skip it, or `true` to keep it as-is.
  */
-type OnSpecialPseudoClassSelectorCallback = (name: string, argument: string) => CssSimpleSelector | null;
+type OnSpecialPseudoClassSelectorCallback = (name: string, argument: string) => CssSimpleSelector | boolean;
 
 /**
  * Union type of HTML filtering rule body parsers:
@@ -192,22 +194,29 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rule: HtmlFilteringRule): NodeConversionResult<HtmlFilteringRule> {
-        // Ignore AdGuard rules
-        if (rule.syntax === AdblockSyntax.Adg) {
-            return createNodeConversionResult([rule], false);
-        }
+        let parser: HtmlFilteringRuleParser;
+        let onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback;
+        let onSpecialPseudoClassSelector: OnSpecialPseudoClassSelectorCallback;
 
-        if (rule.syntax === AdblockSyntax.Abp) {
+        if (rule.syntax === AdblockSyntax.Adg) {
+            parser = AdgHtmlFilteringBodyParser;
+            onSpecialAttributeSelector = HtmlRuleConverter.convertSpecialAttributeSelectorAdgToAdg;
+            onSpecialPseudoClassSelector = HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToAdg;
+        } else if (rule.syntax === AdblockSyntax.Ubo) {
+            parser = UboHtmlFilteringBodyParser;
+            onSpecialAttributeSelector = HtmlRuleConverter.convertSpecialAttributeSelectorUboToAdg;
+            onSpecialPseudoClassSelector = HtmlRuleConverter.convertSpecialPseudoClassSelectorUboToAdg;
+        } else {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
         // Convert body
         const convertedBody = HtmlRuleConverter.convertBody(
             rule.body,
-            UboHtmlFilteringBodyParser,
+            parser,
             AdgHtmlFilteringBodyGenerator,
-            HtmlRuleConverter.convertSpecialAttributeSelectorUboToAdg,
-            HtmlRuleConverter.convertSpecialPseudoClassSelectorUboToAdg,
+            onSpecialAttributeSelector,
+            onSpecialPseudoClassSelector,
         );
 
         return createNodeConversionResult(
@@ -284,6 +293,112 @@ export class HtmlRuleConverter extends RuleConverterBase {
             }],
             true,
         );
+    }
+
+    /**
+     * Handles special attribute selectors during AdGuard to AdGuard conversion:
+     * - `[tag-content="content"]` -> `:contains(content)`
+     *   direct conversion, no changes to value
+     * - `[wildcard="*content*"] -> `:contains(/*.content*./)`
+     *   convert search pattern to regular expression
+     * - `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/)`
+     *   converts to a length-matching regular expression
+     * - `[max-length="max"]` -> `:contains(/^(?=.{0,max}$).*\/)`
+     *   converts to a length-matching regular expression
+     *
+     * Note: This attribute selector to pseudo-class selector conversion
+     * is needed because AdGuard special attribute selectors are going
+     * to be deprecated and removed soon.
+     *
+     * @param name Name of the special attribute selector.
+     * @param value Value of the special attribute selector.
+     *
+     * @returns A {@link CssSimpleSelector} to add to the current compound selector.
+     */
+    private static convertSpecialAttributeSelectorAdgToAdg(name: string, value: string): CssSimpleSelector {
+        switch (name) {
+            // `[tag-content="content"]` -> `:contains(content)`
+            // direct conversion, no changes to value
+            case AdgAttributeSelectors.TagContent: {
+                return HtmlRuleConverter.getPseudoClassSelectorNode(
+                    AdgPseudoClasses.Contains,
+                    value,
+                );
+            }
+
+            // `[wildcard="*content*"] -> `:contains(/*.content*./)`
+            // convert search pattern to regular expression
+            case AdgAttributeSelectors.Wildcard: {
+                return HtmlRuleConverter.getPseudoClassSelectorNode(
+                    AdgPseudoClasses.Contains,
+                    // FIXME: Implement glob -> regexp conversion properly
+                    value,
+                );
+            }
+
+            // `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/)`
+            // `[max-length="max"]` -> `:contains(/^(?=.{0,max}$).*\/)`
+            // converts to a length-matching regular expression
+            case AdgAttributeSelectors.MinLength:
+            case AdgAttributeSelectors.MaxLength: {
+                // Validate length value
+                HtmlRuleConverter.assertValidLengthValue(
+                    name,
+                    value,
+                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
+                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
+                );
+
+                // It's safe to cast to number here after validation
+                const length = Number(value);
+
+                let min: number | null = null;
+                let max: number | null = null;
+
+                if (name === AdgAttributeSelectors.MinLength) {
+                    min = length;
+                } else {
+                    max = length;
+                }
+
+                return HtmlRuleConverter.getPseudoClassSelectorNode(
+                    AdgPseudoClasses.Contains,
+                    RegExpUtils.getLengthRegexp(
+                        min,
+                        max,
+                    ),
+                );
+            }
+
+            // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
+            default: {
+                throw new RuleConversionError(sprintf(
+                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED,
+                    name,
+                ));
+            }
+        }
+    }
+
+    /**
+     * Since special pseudo-class selectors do not need conversion
+     * in AdGuard to AdGuard conversion, we simply return `true` to keep them as-is.
+     *
+     * @param name Name of the special pseudo-class selector.
+     *
+     * @returns `true` to keep the special pseudo-class selector as-is.
+     *
+     * @throws Rule conversion error for mixed syntax.
+     */
+    private static convertSpecialPseudoClassSelectorAdgToAdg(name: string): true {
+        if (SUPPORTED_UBO_PSEUDO_CLASSES.has(name)) {
+            throw new RuleConversionError(sprintf(
+                ERROR_MESSAGES.INVALID_RULE,
+                ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
+            ));
+        }
+
+        return true;
     }
 
     /**
@@ -375,9 +490,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @param name Name of the special attribute selector.
      * @param value Value of the special attribute selector.
      *
-     * @returns A {@link CssSimpleSelector} to add to the current compound selector, or `null` to skip it.
+     * @returns A {@link CssSimpleSelector} to add to the current compound selector, or `false` to skip it.
      */
-    private static convertSpecialAttributeSelectorAdgToUbo(name: string, value: string): CssSimpleSelector | null {
+    private static convertSpecialAttributeSelectorAdgToUbo(name: string, value: string): CssSimpleSelector | false {
         switch (name) {
             // `[tag-content="content"]` -> `:has-text(content)`
             // direct conversion, no changes to value
@@ -417,7 +532,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             // `[max-length]` is skipped
             case AdgAttributeSelectors.MaxLength: {
-                return null;
+                return false;
             }
 
             // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
@@ -589,13 +704,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                         const { value } = simpleSelector.value.value;
 
-                        // Invoke callback and add returned simple selector if it's not null
+                        // Invoke callback and:
+                        // - add returned simple selector if it's not boolean
+                        // - skip adding if returned value is false
+                        // - keep original simple selector if returned value is true
                         const result = onSpecialAttributeSelector(name, value);
-                        if (result !== null) {
+                        if (typeof result !== 'boolean') {
                             convertedSimpleSelectors.push(result);
+                            continue;
+                        } else if (result === false) {
+                            continue;
                         }
-
-                        continue;
                     } else if (
                         simpleSelector.type === 'CssPseudoClassSelector'
                         && (
@@ -616,13 +735,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         const name = simpleSelector.name.value;
                         const argument = simpleSelector.argument.value;
 
-                        // Invoke callback and add returned simple selector if it's not null
+                        // Invoke callback and:
+                        // - add returned simple selector if it's not boolean
+                        // - skip adding if returned value is false
+                        // - keep original simple selector if returned value is true
                         const result = onSpecialPseudoClassSelector(name, argument);
-                        if (result !== null) {
+                        if (typeof result !== 'boolean') {
                             convertedSimpleSelectors.push(result);
+                            continue;
+                        } else if (result === false) {
+                            continue;
                         }
-
-                        continue;
                     }
 
                     // clone simple selector
