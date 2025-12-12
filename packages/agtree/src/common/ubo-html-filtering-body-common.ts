@@ -33,14 +33,14 @@ export function isUboResponseHeaderRemovalRuleBody(node: HtmlFilteringRuleBody):
         return false;
     }
 
-    const { selector: compoundSelector } = complexSelectorItem;
+    const { selector } = complexSelectorItem;
 
     // Must have exactly one simple selector
-    if (compoundSelector.children.length !== 1) {
+    if (selector.children.length !== 1) {
         return false;
     }
 
-    const simpleSelector = compoundSelector.children[0];
+    const simpleSelector = selector.children[0];
 
     return (
         // Should be a pseudo-class selector

@@ -10,5 +10,6 @@ import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
  */
 export const FREQUENT_UBO_HTML_FILTERING_PSEUDO_CLASS_SERIALIZATION_MAP = new Map<string, number>([
     ['has-text', 0],
-    ['min-text-length', 1],
+    ['contains', 1],
+    ['min-text-length', 2],
 ]);
