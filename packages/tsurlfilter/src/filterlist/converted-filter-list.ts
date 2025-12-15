@@ -6,6 +6,16 @@ import { EMPTY_STRING, LF } from '../common/constants';
 import { findNextLineBreakIndex } from '../utils/string-utils';
 
 /**
+ * Schema for validating and transforming non-negative integers that may be represented as strings or numbers.
+ * Useful for handling JSON deserialization where numeric keys become strings.
+ */
+const nonNegativeIntegerSchema = zod.union([zod.string(), zod.number()])
+    .pipe(zod.coerce.number())
+    .refine((num) => Number.isInteger(num) && num >= 0, {
+        message: 'Must be a non-negative integer',
+    });
+
+/**
  * Conversion data validator.
  * With this data we can revert the conversion and get the original filter list.
  * It is designed to provide O(1) access to the original filtering rules.
@@ -22,7 +32,7 @@ export const conversionDataValidator = zod.object({
      * Keys are 0-based line start offsets in the converted content.
      * Values are 0-based indexes in the `originals` array.
      */
-    conversions: zod.record(zod.number(), zod.number()),
+    conversions: zod.record(nonNegativeIntegerSchema, zod.number()),
 });
 
 export type ConversionData = zod.infer<typeof conversionDataValidator>;
