@@ -642,7 +642,7 @@ export function getRuleParts(
     const { length: ruleLength } = rule;
 
     const realStart = findNextNonWhitespace(rule, 0, ruleLength);
-    const realEnd = findPrevNonWhitespace(rule, ruleLength - 1) + 1;
+    const realEnd = findPrevNonWhitespace(rule, ruleLength);
 
     // Ignore comments
     if (rule[realStart] === ADBLOCK_COMMENT_MARKER) {
