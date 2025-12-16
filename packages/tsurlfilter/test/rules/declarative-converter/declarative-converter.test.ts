@@ -77,6 +77,33 @@ describe('DeclarativeConverter', () => {
         });
     });
 
+    it('handles empty lines in filter list', async () => {
+        const filter = createFilter([
+            '||example.org^',
+            '',
+            '||example.com^',
+            '',
+            '',
+            '||example.net^',
+        ]);
+        const { ruleSet } = await converter.convertStaticRuleSet(filter);
+        const declarativeRules = await ruleSet.getDeclarativeRules();
+
+        expect(declarativeRules).toHaveLength(3);
+        expect(declarativeRules[0]).toMatchObject({
+            action: { type: 'block' },
+            condition: { urlFilter: '||example.org^' },
+        });
+        expect(declarativeRules[1]).toMatchObject({
+            action: { type: 'block' },
+            condition: { urlFilter: '||example.com^' },
+        });
+        expect(declarativeRules[2]).toMatchObject({
+            action: { type: 'block' },
+            condition: { urlFilter: '||example.net^' },
+        });
+    });
+
     // TODO: Add cases for domain intersections
     describe('respects badfilter rules', () => {
         it('applies $badfilter to one filter', async () => {

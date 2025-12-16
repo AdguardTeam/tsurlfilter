@@ -119,13 +119,8 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeA
         // declarative rules, that's why we ignore cosmetic and host rules.
         let networkRule: IRule | null;
         try {
-            if (ruleConvertedToAGSyntax.category === RuleCategory.Cosmetic) {
-                return null;
-            }
-
-            if (
-                ruleConvertedToAGSyntax.category === RuleCategory.Network
-                && ruleConvertedToAGSyntax.type === NetworkRuleType.HostRule
+            if (ruleConvertedToAGSyntax.category !== RuleCategory.Network
+                || ruleConvertedToAGSyntax.type === NetworkRuleType.HostRule
             ) {
                 return null;
             }

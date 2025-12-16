@@ -88,7 +88,7 @@ export class FilterScanner implements IFilterScanner {
         let ruleText = reader.readLine();
         let curNumberOfScannedNetworkRules = 0;
 
-        while (ruleText) {
+        while (ruleText !== null) {
             let indexedNetworkRulesWithHash: IndexedNetworkRuleWithHash[] = [];
 
             try {
