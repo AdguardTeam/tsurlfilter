@@ -28,7 +28,7 @@ npmjs: &npmjs
 
             ls -alt
 
-            # FIXME: Implement deploy
+            # TODO: Implement build (AG-45668)
   requirements:
     - adg-docker: 'true'
     - extension: 'true'
