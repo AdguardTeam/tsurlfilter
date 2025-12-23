@@ -1,5 +1,5 @@
 import { EMPTY_STRING } from '../../common/constants';
-import { type ConvertedFilterList } from '../../filterlist/converted-filter-list';
+import { type FilterList } from '../../filterlist/filter-list';
 
 import { UnavailableFilterSourceError } from './errors/unavailable-sources-errors';
 
@@ -10,7 +10,7 @@ type IStringSourceProvider = {
     /**
      * Returns filter content.
      */
-    getContent: () => Promise<ConvertedFilterList>;
+    getContent: () => Promise<FilterList>;
 };
 
 /**
@@ -42,7 +42,7 @@ export interface IFilter {
      *
      * @throws Error {@link UnavailableFilterSourceError} if content is not available.
      */
-    getContent(): Promise<ConvertedFilterList>;
+    getContent(): Promise<FilterList>;
 
     /**
      * Unload filter content.
@@ -71,12 +71,12 @@ export class Filter implements IFilter {
     /**
      * Content of filter (lazy loading).
      */
-    private content: ConvertedFilterList | null = null;
+    private content: FilterList | null = null;
 
     /**
      * Promise for content loading.
      */
-    private contentLoadingPromise: Promise<ConvertedFilterList> | null = null;
+    private contentLoadingPromise: Promise<FilterList> | null = null;
 
     /**
      * Provider of filter content.
@@ -111,7 +111,7 @@ export class Filter implements IFilter {
     }
 
     /** @inheritdoc */
-    public async getContent(): Promise<ConvertedFilterList> {
+    public async getContent(): Promise<FilterList> {
         // If content is already loaded, return it
         if (this.content) {
             return this.content;
@@ -123,7 +123,7 @@ export class Filter implements IFilter {
         }
 
         // Assign the promise immediately to avoid race conditions
-        this.contentLoadingPromise = (async (): Promise<ConvertedFilterList> => {
+        this.contentLoadingPromise = (async (): Promise<FilterList> => {
             try {
                 const content = await this.source.getContent();
 

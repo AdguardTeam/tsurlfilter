@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { ConvertedFilterList } from '../../src/filterlist/converted-filter-list';
+import { FilterList } from '../../src/filterlist/filter-list';
 
-describe('ConvertedFilterList', () => {
+describe('FilterList', () => {
     it('should return original filter list unchanged when no conversion needed', () => {
         const original = [
             '||example.com^',
             '||example.org^',
         ].join('\n');
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
         expect(list.getContent()).toEqual(original);
         expect(list.getOriginalContent()).toEqual(original);
@@ -20,10 +20,10 @@ describe('ConvertedFilterList', () => {
             'example.com#$#bar;baz',
         ].join('\n');
 
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
-        const converted = list.getContent();
-        expect(converted).toBe([
+        const content = list.getContent();
+        expect(content).toBe([
             "example.com#%#//scriptlet('ubo-foo')",
             "example.com#%#//scriptlet('abp-bar')",
             "example.com#%#//scriptlet('abp-baz')",
@@ -40,10 +40,10 @@ describe('ConvertedFilterList', () => {
             '',
         ].join('\n');
 
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
-        const converted = list.getContent();
-        expect(converted).toBe([
+        const content = list.getContent();
+        expect(content).toBe([
             "example.com#%#//scriptlet('ubo-foo')",
             "example.com#%#//scriptlet('abp-bar')",
             "example.com#%#//scriptlet('abp-baz')",
@@ -61,10 +61,10 @@ describe('ConvertedFilterList', () => {
             '',
         ].join('\r\n');
 
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
-        const converted = list.getContent();
-        expect(converted).toBe([
+        const content = list.getContent();
+        expect(content).toBe([
             "example.com#%#//scriptlet('ubo-foo')",
             "example.com#%#//scriptlet('abp-bar')",
             "example.com#%#//scriptlet('abp-baz')",
@@ -83,10 +83,10 @@ describe('ConvertedFilterList', () => {
             'example.com##+js(bar)\r\n',
         ].join('');
 
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
-        const converted = list.getContent();
-        expect(converted).toBe([
+        const content = list.getContent();
+        expect(content).toBe([
             "example.com#%#//scriptlet('ubo-foo')\r\n",
             "example.com#%#//scriptlet('abp-bar')\n",
             "example.com#%#//scriptlet('abp-baz')\n",
@@ -105,10 +105,10 @@ describe('ConvertedFilterList', () => {
             'example.com#$#bar;baz',
         ].join('\n');
 
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
-        const converted = list.getContent();
-        expect(converted).toBe([
+        const content = list.getContent();
+        expect(content).toBe([
             "example.com#%#//scriptlet('abp-bar')",
             "example.com#%#//scriptlet('abp-baz')",
             "example.com#%#//scriptlet('abp-bar')",
@@ -127,10 +127,10 @@ describe('ConvertedFilterList', () => {
             'example.com#$#bar;baz',
         ].join('');
 
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
-        const converted = list.getContent();
-        expect(converted).toBe([
+        const content = list.getContent();
+        expect(content).toBe([
             "example.com#%#//scriptlet('abp-bar')\n",
             "example.com#%#//scriptlet('abp-baz')\n",
             "example.com#%#//scriptlet('abp-bar')\r\n",
@@ -149,7 +149,7 @@ describe('ConvertedFilterList', () => {
             'invalid rule syntax',
             '||another.com^',
         ].join('\n');
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
         const restored = list.getOriginalContent();
         expect(restored).toEqual(original);
@@ -160,7 +160,7 @@ describe('ConvertedFilterList', () => {
             '||example.com^\r\n',
             '||example.org^',
         ].join('');
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
         expect(list.getOriginalContent()).toEqual(original);
     });
@@ -171,7 +171,7 @@ describe('ConvertedFilterList', () => {
             '||example.org^\n',
             '##+js(bar)',
         ].join('');
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
         expect(list.getOriginalRuleText(0)).toBe('||example.com^');
         expect(list.getOriginalRuleText(
@@ -181,14 +181,14 @@ describe('ConvertedFilterList', () => {
 
     it('should not return original rule if the line index is not a line start', () => {
         const original = '##+js(bar)';
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
         expect(list.getOriginalRuleText(0)).toEqual('##+js(bar)'); // not line start, fallback
     });
 
     it('should return null for out-of-bound index', () => {
         const original = '||example.com^';
-        const list = new ConvertedFilterList(original);
+        const list = new FilterList(original);
 
         expect(list.getOriginalRuleText(-1)).toBeNull();
         expect(list.getOriginalRuleText(100)).toBeNull();

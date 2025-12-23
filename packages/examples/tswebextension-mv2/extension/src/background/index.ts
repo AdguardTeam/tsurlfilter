@@ -1,7 +1,7 @@
 import browser, { Events } from 'webextension-polyfill';
 import {
     type ConfigurationMV2,
-    ConvertedFilterList,
+    FilterList,
     MESSAGE_HANDLER_NAME,
     createTsWebExtension,
 } from '@adguard/tswebextension';
@@ -27,7 +27,7 @@ const rawUserRules = [
 ];
 
 // simple in-memory storage for user rules and allowlist
-let userrules = new ConvertedFilterList(rawUserRules.join('\n'));
+let userrules = new FilterList(rawUserRules.join('\n'));
 let allowlist: string[] = [];
 
 const defaultConfig: ConfigurationMV2 = {
@@ -93,7 +93,7 @@ const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
         }
         // get current user rules and allowlist
         case MessageTypes.SET_CONFIG: {
-            userrules = new ConvertedFilterList(message.payload.userrules);
+            userrules = new FilterList(message.payload.userrules);
             allowlist = message.payload.allowlist;
             const config = {
                 ...defaultConfig,

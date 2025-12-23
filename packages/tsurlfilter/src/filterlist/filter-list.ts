@@ -18,7 +18,7 @@ const nonNegativeIntegerSchema = zod.union([zod.string(), zod.number()])
 /**
  * Conversion data validator.
  * With this data we can revert the conversion and get the original filter list.
- * It is designed to provide O(1) access to the original filtering rules.
+ * It is designed to provide `O(1)` access to the original filtering rules.
  */
 export const conversionDataValidator = zod.object({
     /**
@@ -38,10 +38,10 @@ export const conversionDataValidator = zod.object({
 export type ConversionData = zod.infer<typeof conversionDataValidator>;
 
 /**
- * ConvertedFilterList is a class that represents a converted filter list.
- * It is designed to provide O(1) access to the original filtering rules.
+ * FilterList is a class that represents a (converted) filter list.
+ * It is designed to provide `O(1)` access to the original filtering rules.
  */
-export class ConvertedFilterList {
+export class FilterList {
     /**
      * Content of the converted filter list.
      */
@@ -50,7 +50,7 @@ export class ConvertedFilterList {
     /**
      * Conversion data.
      * With this data we can revert the conversion and get the original filter list.
-     * It is designed to provide O(1) access to the original filtering rules.
+     * It is designed to provide `O(1)` access to the original filtering rules.
      */
     private data!: ConversionData;
 
@@ -60,7 +60,7 @@ export class ConvertedFilterList {
     private prepared: boolean;
 
     /**
-     * Creates a new ConvertedFilterList instance.
+     * Creates a new FilterList instance.
      *
      * @param content Filter list content.
      * @param data Optional conversion data. If not provided, the filter list will be prepared.
@@ -83,8 +83,8 @@ export class ConvertedFilterList {
      *
      * @returns Empty converted filter list.
      */
-    public static createEmpty(): ConvertedFilterList {
-        return new ConvertedFilterList(EMPTY_STRING, ConvertedFilterList.createEmptyConversionData());
+    public static createEmpty(): FilterList {
+        return new FilterList(EMPTY_STRING, FilterList.createEmptyConversionData());
     }
 
     /**

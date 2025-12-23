@@ -1,5 +1,5 @@
 import { Configuration } from '@adguard/tswebextension/mv3';
-import { ConvertedFilterList } from '@adguard/tsurlfilter';
+import { FilterList } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 
 // TODO: can be used as common for examples/tswebextension-mv2 as well
@@ -7,7 +7,7 @@ export const TESTCASES_BASE_URL = 'https://testcases.agrd.dev';
 
 export const TESTCASES_DATA_PATH = '/data.json';
 
-const userrules = ConvertedFilterList.createEmpty();
+const userrules = FilterList.createEmpty();
 
 export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     staticFiltersIds: [1, 2, 3, 4, 9, 18, 19, 20, 21, 22],

@@ -7,7 +7,7 @@ import { type IRule } from '../rules/rule';
 import { RuleFactory } from '../rules/rule-factory';
 import { logger } from '../utils/logger';
 
-import { ConvertedFilterRuleList } from './converted-filter-rule-list';
+import { FilterRuleList } from './filter-rule-list';
 import { type IRuleList } from './rule-list';
 import { type RuleScanner } from './scanner/rule-scanner';
 import { RuleStorageScanner } from './scanner/rule-storage-scanner';
@@ -101,7 +101,7 @@ export class RuleStorage {
     public retrieveOriginalRuleText(filterId: number, ruleIndex: number): string | null {
         const list = this.listsMap.get(filterId);
 
-        if (list && list instanceof ConvertedFilterRuleList) {
+        if (list && list instanceof FilterRuleList) {
             return list.retrieveOriginalRuleText(ruleIndex);
         }
 

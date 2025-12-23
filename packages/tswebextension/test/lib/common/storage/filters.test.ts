@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ConvertedFilterList } from '@adguard/tsurlfilter';
+import { FilterList } from '@adguard/tsurlfilter';
 
 import { IdbSingleton } from '../../../../src/lib/common/idb-singleton';
 import { FiltersStorage } from '../../../../src/lib/common/storage/filters';
@@ -7,11 +7,11 @@ import { FiltersStorage } from '../../../../src/lib/common/storage/filters';
 describe('FiltersStorage', () => {
     it('does not delete content if the db version increases', async () => {
         // Insert data into storage
-        const converted = new ConvertedFilterList('@@||example.com^$document');
+        const list = new FilterList('@@||example.com^$document');
         await FiltersStorage.setMultiple({
             1: {
-                rawFilterList: converted.getContent(),
-                conversionData: converted.getConversionData(),
+                rawFilterList: list.getContent(),
+                conversionData: list.getConversionData(),
                 checksum: 'foo',
             },
         });
@@ -27,16 +27,16 @@ describe('FiltersStorage', () => {
     });
 
     it('sets and gets data correctly', async () => {
-        const converted = new ConvertedFilterList('@@||example.com^$document');
+        const list = new FilterList('@@||example.com^$document');
         await FiltersStorage.setMultiple({
             1: {
-                rawFilterList: converted.getContent(),
-                conversionData: converted.getConversionData(),
+                rawFilterList: list.getContent(),
+                conversionData: list.getConversionData(),
                 checksum: 'foo',
             },
             2: {
-                rawFilterList: converted.getContent(),
-                conversionData: converted.getConversionData(),
+                rawFilterList: list.getContent(),
+                conversionData: list.getConversionData(),
                 checksum: 'bar',
             },
         });
@@ -54,8 +54,8 @@ describe('FiltersStorage', () => {
             ...data,
             checksum: 'foo',
         }).toEqual({
-            rawFilterList: converted.getContent(),
-            conversionData: converted.getConversionData(),
+            rawFilterList: list.getContent(),
+            conversionData: list.getConversionData(),
             checksum: 'foo',
         });
 

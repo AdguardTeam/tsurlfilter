@@ -21,7 +21,7 @@ import {
     type Configuration as TsWebExtensionConfiguration,
     type MessageHandler,
     LF,
-    ConvertedFilterList,
+    FilterList,
     type LocalScriptFunctionData,
 } from '@adguard/tswebextension/mv3';
 import { type Configuration, configurationValidator } from './configuration';
@@ -219,17 +219,17 @@ export class AdguardApi {
             allowlist = this.configuration.allowlist;
         }
 
-        let converted: ConvertedFilterList;
+        let list: FilterList;
 
         if (this.configuration.rules) {
-            converted = new ConvertedFilterList(this.configuration.rules.join(LF));
+            list = new FilterList(this.configuration.rules.join(LF));
         } else {
-            converted = ConvertedFilterList.createEmpty();
+            list = FilterList.createEmpty();
         }
 
         const userrules: TsWebExtensionConfiguration['userrules'] = {
-            content: converted.getContent(),
-            conversionData: converted.getConversionData(),
+            content: list.getContent(),
+            conversionData: list.getConversionData(),
         };
 
         return {

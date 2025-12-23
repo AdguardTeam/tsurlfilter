@@ -4,7 +4,7 @@ export {
     NetworkRule,
     CosmeticRule,
     NetworkRuleOption,
-    ConvertedFilterList,
+    FilterList,
     type ConversionData,
     type FilterListSourceMap,
     getRuleSourceIndex,

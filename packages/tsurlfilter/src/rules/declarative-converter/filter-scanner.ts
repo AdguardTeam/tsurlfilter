@@ -1,5 +1,5 @@
 import { StringLineReader } from '../../filterlist/reader/string-line-reader';
-import { ConvertedFilterList } from '../../filterlist/converted-filter-list';
+import { FilterList } from '../../filterlist/filter-list';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type IFilter } from './filter';
@@ -25,7 +25,7 @@ type ScannedRulesWithErrors = {
  * FilterScanner returns indexed, only network rules from IFilter's content.
  */
 export class FilterScanner implements IFilterScanner {
-    private readonly filter: ConvertedFilterList;
+    private readonly filter: FilterList;
 
     private readonly filterId: number;
 
@@ -35,9 +35,9 @@ export class FilterScanner implements IFilterScanner {
      * @param filter From which filter the rules should be scanned.
      * @param filterId Id of filter.
      */
-    constructor(filter: string | ConvertedFilterList, filterId: number) {
+    constructor(filter: string | FilterList, filterId: number) {
         if (typeof filter === 'string') {
-            this.filter = new ConvertedFilterList(filter);
+            this.filter = new FilterList(filter);
         } else {
             this.filter = filter;
         }

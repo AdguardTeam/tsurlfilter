@@ -6,7 +6,7 @@ import { IdbSingleton } from '../idb-singleton';
 /**
  * Preprocessed filter list extended with checksum.
  */
-export type ConvertedFilterListWithChecksum = {
+export type FilterListWithChecksum = {
     /**
      * Checksum.
      */
@@ -74,7 +74,7 @@ export class FiltersStorage {
      *
      * @throws Error, if transaction failed.
      */
-    public static async setMultiple(filters: Record<number, ConvertedFilterListWithChecksum>): Promise<void> {
+    public static async setMultiple(filters: Record<number, FilterListWithChecksum>): Promise<void> {
         const data: Record<string, unknown> = {};
 
         for (const [filterId, filter] of Object.entries(filters)) {
@@ -124,7 +124,7 @@ export class FiltersStorage {
      *
      * @throws Error, if DB operation failed or returned data is not valid.
      */
-    static async get(filterId: number): Promise<ConvertedFilterListWithChecksum | undefined> {
+    static async get(filterId: number): Promise<FilterListWithChecksum | undefined> {
         try {
             const data = await Promise.all([
                 FiltersStorage.getRawFilterList(filterId),

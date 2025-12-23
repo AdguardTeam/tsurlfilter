@@ -2,7 +2,7 @@ import type { ScannedFilter } from '../../../src/rules/declarative-converter/net
 import { FilterScanner } from '../../../src/rules/declarative-converter/filter-scanner';
 import { Filter, type IFilter } from '../../../src/rules/declarative-converter/filter';
 import { NetworkRule, NetworkRuleOption } from '../../../src/rules/network-rule';
-import { ConvertedFilterList } from '../../../src/filterlist/converted-filter-list';
+import { FilterList } from '../../../src/filterlist/filter-list';
 
 export const createFilter = (
     rules: string[],
@@ -10,7 +10,7 @@ export const createFilter = (
 ): IFilter => {
     return new Filter(
         filterId,
-        { getContent: async () => new ConvertedFilterList(rules.join('\n')) },
+        { getContent: async () => new FilterList(rules.join('\n')) },
         true,
     );
 };

@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 
-import { ConvertedFilterList } from '@adguard/tsurlfilter';
+import { FilterList } from '@adguard/tsurlfilter';
 import {
     Filter,
     IndexedNetworkRuleWithHash,
@@ -35,12 +35,12 @@ export async function loadRulesetAndFilter(
         rawFilterList,
     } = metadataRule.metadata;
 
-    const convertedFilterList = new ConvertedFilterList(rawFilterList, conversionData);
+    const filterList = new FilterList(rawFilterList, conversionData);
 
     const filterId = Number(id);
     const filter = new Filter(
         filterId,
-        { getContent: (): Promise<ConvertedFilterList> => Promise.resolve(convertedFilterList) },
+        { getContent: (): Promise<FilterList> => Promise.resolve(filterList) },
         true,
     );
 
@@ -49,7 +49,7 @@ export async function loadRulesetAndFilter(
     const rawData = JSON.stringify(metadata);
     const loadLazyData = async () => JSON.stringify(lazyMetadata);
     const loadDeclarativeRules = async () => JSON.stringify(parsedRuleset.slice(1));
-    const filterList = [filter];
+    const filters = [filter];
 
     // Deserialize Ruleset as in extension
     const {
@@ -66,7 +66,7 @@ export async function loadRulesetAndFilter(
         rawData,
         loadLazyData,
         loadDeclarativeRules,
-        filterList,
+        filters,
     );
 
     const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);

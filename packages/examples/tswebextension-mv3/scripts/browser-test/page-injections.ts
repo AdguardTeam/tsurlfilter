@@ -1,7 +1,7 @@
 import {
     type Configuration,
     type TsWebExtension,
-    ConvertedFilterList,
+    FilterList,
 } from '@adguard/tswebextension/mv3';
 import { LogDetails } from './logger';
 
@@ -41,10 +41,10 @@ export type SetTsWebExtensionConfigArg = [ defaultConfig: Configuration, userrul
 export const setTsWebExtensionConfig = async (arg: SetTsWebExtensionConfigArg) => {
     const [ defaultConfig, userrules ] = arg;
     const configuration: Configuration = defaultConfig;
-    const converted = new ConvertedFilterList(userrules);
+    const list = new FilterList(userrules);
     configuration.userrules = {
-        content: converted.getContent(),
-        conversionData: converted.getConversionData(),
+        content: list.getContent(),
+        conversionData: list.getConversionData(),
     };
     await self.tsWebExtension.configure(configuration);
 };

@@ -24,7 +24,7 @@ export {
 export {
     getRuleSourceIndex,
     getRuleSourceText,
-    ConvertedFilterList,
+    FilterList,
     type ConversionData,
     type NetworkRule,
     type CosmeticRule,

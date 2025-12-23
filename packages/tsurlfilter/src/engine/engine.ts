@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache';
 
-import { ConvertedFilterList } from '../filterlist/converted-filter-list';
-import { ConvertedFilterRuleList } from '../filterlist/converted-filter-rule-list';
+import { FilterList } from '../filterlist/filter-list';
+import { FilterRuleList } from '../filterlist/filter-rule-list';
 import { type IRuleList } from '../filterlist/rule-list';
 import { RuleCategory } from '../filterlist/rule-parts';
 import { RuleStorage } from '../filterlist/rule-storage';
@@ -28,9 +28,9 @@ export interface EngineFactoryFilterList {
     id: number;
 
     /**
-     * Filter list content. Can be either a string or a {@link ConvertedFilterList}.
+     * Filter list content. Can be either a string or a {@link FilterList}.
      */
-    content: string | ConvertedFilterList;
+    content: string | FilterList;
 
     /**
      * Whether to ignore cosmetic rules from this filter list.
@@ -104,23 +104,23 @@ export class Engine {
         const lists: IRuleList[] = [];
 
         for (const filter of options.filters) {
-            let converted: ConvertedFilterList;
+            let list: FilterList;
 
-            if (filter.content instanceof ConvertedFilterList) {
-                converted = filter.content;
+            if (filter.content instanceof FilterList) {
+                list = filter.content;
             } else {
-                converted = new ConvertedFilterList(filter.content);
+                list = new FilterList(filter.content);
             }
 
-            const list = new ConvertedFilterRuleList(
+            const ruleList = new FilterRuleList(
                 filter.id,
-                converted,
+                list,
                 filter.ignoreCosmetic ?? false,
                 filter.ignoreJS ?? false,
                 filter.ignoreUnsafe ?? false,
             );
 
-            lists.push(list);
+            lists.push(ruleList);
         }
 
         const storage = new RuleStorage(lists);
@@ -165,23 +165,23 @@ export class Engine {
         const lists: IRuleList[] = [];
 
         for (const filter of options.filters) {
-            let converted: ConvertedFilterList;
+            let list: FilterList;
 
-            if (filter.content instanceof ConvertedFilterList) {
-                converted = filter.content;
+            if (filter.content instanceof FilterList) {
+                list = filter.content;
             } else {
-                converted = new ConvertedFilterList(filter.content);
+                list = new FilterList(filter.content);
             }
 
-            const list = new ConvertedFilterRuleList(
+            const ruleList = new FilterRuleList(
                 filter.id,
-                converted,
+                list,
                 filter.ignoreCosmetic ?? false,
                 filter.ignoreJS ?? false,
                 filter.ignoreUnsafe ?? false,
             );
 
-            lists.push(list);
+            lists.push(ruleList);
         }
 
         const storage = new RuleStorage(lists);

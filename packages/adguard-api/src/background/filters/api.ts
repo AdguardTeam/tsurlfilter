@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
-import { ConversionData, ConvertedFilterList } from '@adguard/tswebextension';
+import { ConversionData, FilterList } from '@adguard/tswebextension';
 import { Network } from '../network';
 import { Storage } from '../storage';
 import { MetadataApi } from './metadata';
@@ -106,12 +106,12 @@ export class FiltersApi {
         }
 
         // TODO: Modify how rules are stored and just read serialized data from storage
-        const converted = new ConvertedFilterList(rules.join('\n'));
+        const list = new FilterList(rules.join('\n'));
 
         return {
             filterId,
-            content: converted.getContent(),
-            conversionData: converted.getConversionData(),
+            content: list.getContent(),
+            conversionData: list.getConversionData(),
             trusted: true,
         };
     }

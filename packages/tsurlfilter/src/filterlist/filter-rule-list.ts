@@ -1,24 +1,24 @@
-import { type ConvertedFilterList } from './converted-filter-list';
+import { type FilterList } from './filter-list';
 import { StringLineReader } from './reader/string-line-reader';
 import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list';
 import { RuleScanner } from './scanner/rule-scanner';
 import { type ScannerType } from './scanner/scanner-type';
 
 /**
- * ConvertedFilterRuleList wraps a ConvertedFilterList to provide IRuleList implementation.
+ * `FilterRuleList` wraps a {@link FilterList} to provide {@link IRuleList} implementation.
  * It allows efficient rule scanning and retrieval from pre-converted filter lists,
  * with support for ignoring cosmetic, JS, and unsafe rules.
  */
-export class ConvertedFilterRuleList implements IRuleList {
+export class FilterRuleList implements IRuleList {
     /**
      * Rule list ID.
      */
     private readonly id: number;
 
     /**
-     * Converted filter list containing pre-processed filtering rules.
+     * {@link FilterList} containing pre-processed filtering rules.
      */
-    private readonly list: ConvertedFilterList;
+    private readonly list: FilterList;
 
     /**
      * Whether to ignore cosmetic rules or not.
@@ -39,14 +39,14 @@ export class ConvertedFilterRuleList implements IRuleList {
      * Constructor.
      *
      * @param listId Rule list identifier.
-     * @param list ConvertedFilterList instance containing pre-processed rules.
+     * @param list {@link FilterList} instance containing pre-processed rules.
      * @param ignoreCosmetic (Optional) default false.
      * @param ignoreJS (Optional) default false.
      * @param ignoreUnsafe (Optional) default false.
      */
     constructor(
         listId: number,
-        list: ConvertedFilterList,
+        list: FilterList,
         ignoreCosmetic?: boolean,
         ignoreJS?: boolean,
         ignoreUnsafe?: boolean,

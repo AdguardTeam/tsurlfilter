@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Filter } from '../../../src/rules/declarative-converter';
-import { ConvertedFilterList } from '../../../src/filterlist/converted-filter-list';
+import { FilterList } from '../../../src/filterlist/filter-list';
 import { findNextLineBreakIndex } from '../../../src/utils/string-utils';
 
 describe('Filter', () => {
@@ -24,7 +24,7 @@ describe('Filter', () => {
     it('loads content from string source provider', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => new ConvertedFilterList(text) },
+            { getContent: async () => new FilterList(text) },
             true,
         );
 
@@ -36,7 +36,7 @@ describe('Filter', () => {
     it('returns original rule by index', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => new ConvertedFilterList(text) },
+            { getContent: async () => new FilterList(text) },
             true,
         );
 
@@ -63,7 +63,7 @@ describe('Filter', () => {
     it('unloads content correctly', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => new ConvertedFilterList(text) },
+            { getContent: async () => new FilterList(text) },
             true,
         );
 
@@ -80,7 +80,7 @@ describe('Filter', () => {
     it('does not return stale content after unload', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => new ConvertedFilterList(text) },
+            { getContent: async () => new FilterList(text) },
             true,
         );
 
@@ -118,7 +118,7 @@ describe('Filter', () => {
         filter.unloadContent();
 
         // Resolve content fetch
-        resolveFetch!(new ConvertedFilterList(text));
+        resolveFetch!(new FilterList(text));
 
         // Ensure content is still correctly unloaded after the fetch completes
         await contentPromise;
@@ -129,7 +129,7 @@ describe('Filter', () => {
     it('prevents memory leaks by resetting contentLoadingPromise', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => new ConvertedFilterList(text) },
+            { getContent: async () => new FilterList(text) },
             true,
         );
 
