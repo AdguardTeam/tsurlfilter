@@ -3,12 +3,14 @@ import { RequestType, NetworkRuleOption, type NetworkRule } from '@adguard/tsurl
 
 import { companiesDbService } from '../../../common/companies-db-service';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
+import { getRuleTexts } from '../../../common/utils/rule-text-provider';
 import {
     tabsApi,
     engineApi,
     redirectsService,
     documentBlockingService,
 } from '../api';
+import { RuleUtils } from '../utils/rule-utils';
 
 import { type RequestContext } from './request-context-storage';
 
@@ -88,7 +90,7 @@ export class RequestBlockingApi {
             return false;
         }
 
-        return RequestBlockingApi.isRequestBlockedByRule(result.getBasicResult());
+        return RuleUtils.isRequestBlockedByRule(result.getBasicResult());
     }
 
     /**
@@ -99,10 +101,7 @@ export class RequestBlockingApi {
      * @returns True, if rule is request blocking, else returns false.
      */
     public static isRequestBlockedByRule(requestRule: NetworkRule | null): boolean {
-        return !!requestRule
-            && !requestRule.isAllowlist()
-            && !requestRule.isOptionEnabled(NetworkRuleOption.Replace)
-            && !requestRule.isOptionEnabled(NetworkRuleOption.Redirect);
+        return RuleUtils.isRequestBlockedByRule(requestRule);
     }
 
     /**
@@ -256,6 +255,7 @@ export class RequestBlockingApi {
         }
 
         const companyCategoryName = companiesDbService.match(requestUrl);
+        const { appliedRuleText, originalRuleText } = getRuleTexts(appliedRule, engineApi);
 
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
@@ -269,6 +269,8 @@ export class RequestBlockingApi {
                 companyCategoryName,
                 filterId: appliedRule.getFilterListId(),
                 ruleIndex: appliedRule.getIndex(),
+                appliedRuleText,
+                originalRuleText,
                 isAllowlist: appliedRule.isAllowlist(),
                 isImportant: appliedRule.isOptionEnabled(NetworkRuleOption.Important),
                 isDocumentLevel: appliedRule.isDocumentLevelAllowlistRule(),

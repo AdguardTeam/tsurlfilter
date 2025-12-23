@@ -1,11 +1,11 @@
-import { RawFilterListConverter } from '@adguard/agtree';
 import { LRUCache } from 'lru-cache';
 
+import { ConvertedFilterList } from '../filterlist/converted-filter-list';
+import { ConvertedFilterRuleList } from '../filterlist/converted-filter-rule-list';
 import { type IRuleList } from '../filterlist/rule-list';
 import { RuleCategory } from '../filterlist/rule-parts';
 import { RuleStorage } from '../filterlist/rule-storage';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
-import { StringRuleList } from '../filterlist/string-rule-list';
 import { Request } from '../request';
 import { RequestType } from '../request-type';
 import { type NetworkRule } from '../rules/network-rule';
@@ -28,9 +28,9 @@ export interface EngineFactoryFilterList {
     id: number;
 
     /**
-     * Filter list text.
+     * Filter list content. Can be either a string or a {@link ConvertedFilterList}.
      */
-    text: string;
+    content: string | ConvertedFilterList;
 
     /**
      * Whether to ignore cosmetic rules from this filter list.
@@ -104,9 +104,17 @@ export class Engine {
         const lists: IRuleList[] = [];
 
         for (const filter of options.filters) {
-            const list = new StringRuleList(
+            let converted: ConvertedFilterList;
+
+            if (filter.content instanceof ConvertedFilterList) {
+                converted = filter.content;
+            } else {
+                converted = new ConvertedFilterList(filter.content);
+            }
+
+            const list = new ConvertedFilterRuleList(
                 filter.id,
-                RawFilterListConverter.convertToAdg(filter.text).result,
+                converted,
                 filter.ignoreCosmetic ?? false,
                 filter.ignoreJS ?? false,
                 filter.ignoreUnsafe ?? false,
@@ -157,9 +165,17 @@ export class Engine {
         const lists: IRuleList[] = [];
 
         for (const filter of options.filters) {
-            const list = new StringRuleList(
+            let converted: ConvertedFilterList;
+
+            if (filter.content instanceof ConvertedFilterList) {
+                converted = filter.content;
+            } else {
+                converted = new ConvertedFilterList(filter.content);
+            }
+
+            const list = new ConvertedFilterRuleList(
                 filter.id,
-                filter.text,
+                converted,
                 filter.ignoreCosmetic ?? false,
                 filter.ignoreJS ?? false,
                 filter.ignoreUnsafe ?? false,
@@ -320,5 +336,17 @@ export class Engine {
      */
     public retrieveRuleText(filterId: number, ruleIndex: number): string | null {
         return this.ruleStorage.retrieveRuleText(filterId, ruleIndex);
+    }
+
+    /**
+     * Retrieves the original rule text by its filter list identifier and rule index.
+     *
+     * @param filterId Filter list identifier.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null`.
+     */
+    public retrieveOriginalRuleText(filterId: number, ruleIndex: number): string | null {
+        return this.ruleStorage.retrieveOriginalRuleText(filterId, ruleIndex);
     }
 }

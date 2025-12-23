@@ -1,10 +1,3 @@
-import {
-    NetworkRuleType,
-    RuleCategory,
-    RuleGenerator,
-    RuleParser,
-} from '@adguard/agtree';
-import { defaultParserOptions } from '@adguard/agtree/parser';
 import { getErrorMessage } from '@adguard/logger';
 
 import { CosmeticRule } from '../rules/cosmetic-rule';
@@ -14,6 +7,7 @@ import { type IRule } from '../rules/rule';
 import { RuleFactory } from '../rules/rule-factory';
 import { logger } from '../utils/logger';
 
+import { ConvertedFilterRuleList } from './converted-filter-rule-list';
 import { type IRuleList } from './rule-list';
 import { type RuleScanner } from './scanner/rule-scanner';
 import { RuleStorageScanner } from './scanner/rule-storage-scanner';
@@ -97,6 +91,24 @@ export class RuleStorage {
     }
 
     /**
+     * Retrieves the original rule text by its filter list identifier and rule index.
+     *
+     * @param filterId Filter list identifier.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null`.
+     */
+    public retrieveOriginalRuleText(filterId: number, ruleIndex: number): string | null {
+        const list = this.listsMap.get(filterId);
+
+        if (list && list instanceof ConvertedFilterRuleList) {
+            return list.retrieveOriginalRuleText(ruleIndex);
+        }
+
+        return null;
+    }
+
+    /**
      * Creates a new instance of RuleStorageScanner.
      * It can be used to read and parse all the storage contents.
      *
@@ -155,30 +167,12 @@ export class RuleStorage {
             return null;
         }
 
-        // TODO: Consider improving API: currently we pass ignore host flag to the parser and then to the factory.
-        const node = RuleParser.parse(ruleText, {
-            ...defaultParserOptions,
-            parseHostRules: !ignoreHost,
-        });
-
-        if (ignoreHost && node.category === RuleCategory.Network && node.type === NetworkRuleType.HostRule) {
-            return null;
-        }
-
         let createdRule: IRule | null = null;
 
         try {
-            createdRule = RuleFactory.createRule(node, listId, ruleId);
+            createdRule = RuleFactory.createRule(ruleText, listId, ruleId, !ignoreHost);
         } catch (e) {
-            let msg = `"${getErrorMessage(e)}" in the rule: `;
-
-            try {
-                msg += `"${RuleGenerator.generate(node)}"`;
-            } catch (generateError) {
-                msg += `"${JSON.stringify(node)}" (generate error: ${getErrorMessage(generateError)})`;
-            }
-
-            logger.debug(`[tsurl.RuleStorage.retrieveRule]: error: ${msg}`);
+            logger.debug(`[tsurl.RuleStorage.retrieveRule]: error: "${getErrorMessage(e)}" in the rule: "${ruleText}"`);
         }
 
         if (list.ignoreUnsafe) {

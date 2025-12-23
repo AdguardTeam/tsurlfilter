@@ -12,6 +12,7 @@ import { defaultFilteringLog, FilteringEventType } from './filtering-log';
 import { ContentType } from './request-type';
 import { type BrowserDetector } from './utils/browser-detector';
 import { logger } from './utils/logger';
+import { getRuleTexts } from './utils/rule-text-provider';
 
 /**
  * Params for {@link DocumentBlockingService.getDocumentBlockingResponse}.
@@ -136,7 +137,7 @@ export abstract class DocumentBlockingServiceCommon {
      *
      * @param data Data for document request processing.
      */
-    protected static logEvent(data: GetDocumentBlockingResponseParams): void {
+    protected logEvent(data: GetDocumentBlockingResponseParams): void {
         const {
             tabId,
             eventId,
@@ -147,6 +148,8 @@ export abstract class DocumentBlockingServiceCommon {
         } = data;
 
         // public filtering log event
+        const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
             data: {
@@ -158,6 +161,8 @@ export abstract class DocumentBlockingServiceCommon {
                 frameUrl: referrerUrl,
                 filterId: rule.getFilterListId(),
                 ruleIndex: rule.getIndex(),
+                appliedRuleText,
+                originalRuleText,
                 isAllowlist: rule.isAllowlist(),
                 isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
                 isDocumentLevel: rule.isDocumentLevelAllowlistRule(),

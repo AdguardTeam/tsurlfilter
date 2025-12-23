@@ -1,56 +1,80 @@
-import { type AnyRule, NetworkRuleType, RuleCategory } from '@adguard/agtree';
+import {
+    NetworkRuleType,
+    RuleCategory,
+    RuleGenerator,
+    RuleParser,
+} from '@adguard/agtree';
+import { defaultParserOptions } from '@adguard/agtree/parser';
+import { getErrorMessage } from '@adguard/logger';
+
+import { logger } from '../utils/logger';
 
 import { createAllowlistRuleNode } from './allowlist';
 import { CosmeticRule } from './cosmetic-rule';
 import { HostRule } from './host-rule';
 import { NetworkRule } from './network-rule';
-import { type IRule, RULE_INDEX_NONE } from './rule';
+import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 
 /**
  * Rule builder class.
  */
 export class RuleFactory {
     /**
-     * Creates rule of suitable class from text string
+     * Creates rule of suitable class from text string.
      * It returns null if the line is empty or if it is a comment.
      *
-     * TODO: Pack `ignore*` parameters and `silent` into one object with flags.
+     * This method avoids double parsing by trying to create each rule type directly.
      *
-     * @param node Rule node.
+     * @param ruleText Rule text to parse.
      * @param filterListId List id.
      * @param ruleIndex Line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
+     * @param parseHostRules Whether to parse host rules. Default is true.
      *
      * @returns IRule object or null.
-     *
-     * @throws Error on rule creation error.
      */
     public static createRule(
-        node: AnyRule,
-        filterListId: number,
+        ruleText: string,
+        filterListId: number = FILTER_LIST_ID_NONE,
         ruleIndex = RULE_INDEX_NONE,
+        parseHostRules = true,
     ): IRule | null {
-        switch (node.category) {
-            case RuleCategory.Invalid:
-            case RuleCategory.Empty:
-            case RuleCategory.Comment:
-                return null;
+        try {
+            const node = RuleParser.parse(ruleText, {
+                ...defaultParserOptions,
+                parseHostRules,
+            });
 
-            case RuleCategory.Cosmetic:
-                return new CosmeticRule(node, filterListId, ruleIndex);
+            switch (node.category) {
+                case RuleCategory.Invalid:
+                case RuleCategory.Empty:
+                case RuleCategory.Comment:
+                    return null;
 
-            case RuleCategory.Network:
-                if (node.type === NetworkRuleType.HostRule) {
-                    return new HostRule(node, filterListId, ruleIndex);
-                }
+                case RuleCategory.Cosmetic:
+                    return new CosmeticRule(ruleText, filterListId, ruleIndex, node);
 
-                return new NetworkRule(node, filterListId, ruleIndex);
+                case RuleCategory.Network:
+                    if (node.type === NetworkRuleType.HostRule) {
+                        if (!parseHostRules) {
+                            return null;
+                        }
 
-            default:
-                // should not happen in normal operation
-                throw new Error('Unsupported rule category');
+                        return new HostRule(ruleText, filterListId, ruleIndex, node);
+                    }
+
+                    return new NetworkRule(ruleText, filterListId, ruleIndex, node);
+
+                default:
+                    // should not happen in normal operation
+                    return null;
+            }
+        } catch (e) {
+            logger.debug(`[tsurl.RuleFactory.createRule]: failed to create rule from text: ${ruleText}, got ${getErrorMessage(e)}`);
         }
+
+        return null;
     }
 
     /**
@@ -73,6 +97,9 @@ export class RuleFactory {
             return null;
         }
 
-        return new NetworkRule(node, filterListId, ruleIndex);
+        // Generate rule text from the node
+        const ruleText = RuleGenerator.generate(node);
+
+        return new NetworkRule(ruleText, filterListId, ruleIndex);
     }
 }

@@ -190,19 +190,20 @@ import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 
 import {
-    cosmeticFrameProcessor,
-    documentApi,
-    engineApi,
     tabsApi,
+    engineApi,
+    documentApi,
+    paramsService,
+    cspService,
+    stealthApi,
+    removeHeadersService,
+    permissionsPolicyService,
+    cookieFiltering,
+    cosmeticFrameProcessor,
+    contentFiltering,
 } from './api';
 import { CosmeticApi } from './cosmetic-api';
-import { ContentFiltering } from './services/content-filtering/content-filtering';
-import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
-import { cspService } from './services/csp-service';
-import { paramsService } from './services/params-service';
-import { permissionsPolicyService } from './services/permissions-policy-service';
 import { TrustedTypesService } from './services/trusted-types-service';
-import { removeHeadersService } from './services/remove-headers-service';
 import {
     hideRequestInitiatorElement,
     RequestEvents,
@@ -211,7 +212,6 @@ import {
     RequestBlockingApi,
 } from './request';
 import { SanitizeApi } from './sanitize-api';
-import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs';
 import { type OnBeforeRequestDetailsType } from './request/events/request-events';
 import { FrameMV2 } from './tabs/frame';
@@ -506,7 +506,7 @@ export class WebRequestApi {
                 context.cosmeticResult = frameContext.cosmeticResult;
             }
 
-            ContentFiltering.onBeforeRequest(context);
+            contentFiltering.process(context);
         }
 
         return response;

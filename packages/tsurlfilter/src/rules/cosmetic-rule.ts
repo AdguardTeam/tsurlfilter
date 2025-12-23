@@ -14,6 +14,7 @@ import {
     RegExpUtils,
 } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
+import { CosmeticRuleParser, defaultParserOptions } from '@adguard/agtree/parser';
 import { scriptlets, type Source } from '@adguard/scriptlets';
 import { isValidScriptletName } from '@adguard/scriptlets/validators';
 
@@ -27,7 +28,7 @@ import { getRelativeUrl } from '../utils/url';
 import { validateDeclarationList } from './css/declaration-list-validator';
 import { validateSelectorList } from './css/selector-list-validator';
 import { Pattern } from './pattern';
-import { type IRule, RULE_INDEX_NONE } from './rule';
+import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 import { SimpleRegex } from './simple-regex';
 
 /**
@@ -223,6 +224,11 @@ export class CosmeticRule implements IRule {
     private readonly filterListId: number;
 
     /**
+     * Rule text.
+     */
+    private readonly ruleText?: string;
+
+    /**
      * Rule content.
      */
     private readonly content: string;
@@ -305,6 +311,15 @@ export class CosmeticRule implements IRule {
      */
     public getFilterListId(): number {
         return this.filterListId;
+    }
+
+    /**
+     * Returns the rule text.
+     *
+     * @returns Rule text.
+     */
+    public getText(): string | undefined {
+        return this.ruleText;
     }
 
     /**
@@ -644,29 +659,61 @@ export class CosmeticRule implements IRule {
      * Depending on the rule type, the content might be transformed in
      * one of the helper classes, or kept as string when it's appropriate.
      *
-     * @param node AST node of the cosmetic rule.
+     * @param ruleText Rule text.
      * @param filterListId ID of the filter list this rule belongs to.
      * @param ruleIndex Line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
+     * @param node Optional pre-parsed cosmetic rule node to avoid re-parsing.
      *
-     * @throws Error if it fails to parse the rule.
+     * @throws Error if it fails to parse the rule or if the rule is not a cosmetic rule.
      */
-    constructor(node: AnyCosmeticRule, filterListId: number, ruleIndex: number = RULE_INDEX_NONE) {
+    constructor(
+        ruleText: string,
+        filterListId: number = FILTER_LIST_ID_NONE,
+        ruleIndex: number = RULE_INDEX_NONE,
+        node?: AnyCosmeticRule,
+    ) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
-        this.allowlist = CosmeticRuleSeparatorUtils.isException(node.separator.value as CosmeticRuleSeparator);
-        this.type = node.type;
-        this.isScriptlet = node.type === CosmeticRuleType.ScriptletInjectionRule;
+        // Store rule text in the instance if the rule is not indexed in FiltersStorage.
+        // When filterListId or ruleIndex is NONE, the rule text cannot be retrieved
+        // from the engine and must be available via getText().
+        if (filterListId === FILTER_LIST_ID_NONE || ruleIndex === RULE_INDEX_NONE) {
+            this.ruleText = ruleText;
+        }
 
-        this.content = CosmeticRuleBodyGenerator.generate(node);
+        // Use provided node or parse the rule text
+        let parsedNode: AnyCosmeticRule;
+        if (node) {
+            parsedNode = node;
+        } else {
+            const parsed = CosmeticRuleParser.parse(ruleText, {
+                ...defaultParserOptions,
+                parseAbpSpecificRules: false,
+                parseUboSpecificRules: false,
+            });
+
+            // CosmeticRuleParser returns null if the rule is not a valid cosmetic rule
+            if (!parsed) {
+                throw new SyntaxError(`Failed to parse as cosmetic rule: ${ruleText}`);
+            }
+
+            parsedNode = parsed;
+        }
+
+        this.allowlist = CosmeticRuleSeparatorUtils.isException(parsedNode.separator.value as CosmeticRuleSeparator);
+        this.type = parsedNode.type;
+        this.isScriptlet = parsedNode.type === CosmeticRuleType.ScriptletInjectionRule;
+
+        this.content = CosmeticRuleBodyGenerator.generate(parsedNode);
 
         // Store the scriptlet parameters. They will be used later, when we initialize the scriptlet,
         // but at this point we need to store them in order to avoid double parsing
-        if (node.type === CosmeticRuleType.ScriptletInjectionRule) {
+        if (parsedNode.type === CosmeticRuleType.ScriptletInjectionRule) {
             // Transform complex node into a simple array of strings
-            const params = node.body.children[0]?.children.map(
+            const params = parsedNode.body.children[0]?.children.map(
                 (param) => (param === null ? EMPTY_STRING : QuoteUtils.removeQuotesAndUnescape(param.value)),
             ) ?? [];
 
@@ -675,7 +722,7 @@ export class CosmeticRule implements IRule {
             this.scriptletParams = new ScriptletParams();
         }
 
-        const validationResult = CosmeticRule.validate(node);
+        const validationResult = CosmeticRule.validate(parsedNode);
 
         // We should throw an error if the validation failed for any reason
         if (!validationResult.isValid) {
@@ -684,13 +731,13 @@ export class CosmeticRule implements IRule {
 
         // Check if the rule is ExtendedCss
         const isExtendedCssSeparator = CosmeticRuleSeparatorUtils.isExtendedCssMarker(
-            node.separator.value as CosmeticRuleSeparator,
+            parsedNode.separator.value as CosmeticRuleSeparator,
         );
 
         this.extendedCss = isExtendedCssSeparator || validationResult.isExtendedCss;
 
         // Process cosmetic rule modifiers
-        const processedModifiers = CosmeticRule.processModifiers(node);
+        const processedModifiers = CosmeticRule.processModifiers(parsedNode);
 
         if (processedModifiers) {
             if (processedModifiers.domainModifier) {
@@ -707,7 +754,7 @@ export class CosmeticRule implements IRule {
         }
 
         // Process domain list, if at least one domain is specified
-        const { domains: domainListNode } = node;
+        const { domains: domainListNode } = parsedNode;
 
         if (CosmeticRule.isAnyDomainSpecified(domainListNode)) {
             this.domainModifier = new DomainModifier(domainListNode, COMMA_DOMAIN_LIST_SEPARATOR);

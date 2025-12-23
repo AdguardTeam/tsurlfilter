@@ -57,7 +57,7 @@ describe('Element hiding rules constructor', () => {
     it('works if it verifies rules properly', () => {
         expect(() => {
             createCosmeticRule('||example.org^', 0);
-        }).toThrow(new Error('Not a cosmetic rule'));
+        }).toThrow('Failed to parse as cosmetic rule: ||example.org^');
 
         expect(() => {
             createCosmeticRule('example.org## ', 0);
@@ -121,7 +121,7 @@ describe('Element hiding rules constructor', () => {
     it('throws error if marker is not supported yet', () => {
         expect(() => {
             createCosmeticRule('example.org$@@$script[data-src="banner"]', 0);
-        }).toThrow(new Error('Not a cosmetic rule'));
+        }).toThrow('Failed to parse as cosmetic rule: example.org$@@$script[data-src="banner"]');
     });
 
     it('works if it parses domain wildcard properly', () => {

@@ -122,7 +122,7 @@ export class EngineApi {
 
                 lists.push({
                     id: filter.getId(),
-                    text: content.getContent(),
+                    content,
                     ignoreCosmetic: false,
                     ignoreJS: !trusted,
                     ignoreUnsafe: !trusted,
@@ -145,7 +145,7 @@ export class EngineApi {
                 // Note: rules are already converted at the extension side
                 lists.push({
                     id: USER_FILTER_ID,
-                    text: userrules.getContent(),
+                    content: userrules,
                     ignoreCosmetic: false,
                     ignoreJS: false,
                     ignoreUnsafe: false,
@@ -169,7 +169,7 @@ export class EngineApi {
         if (allowlistRulesList) {
             lists.push({
                 id: ALLOWLIST_FILTER_ID,
-                text: allowlistRulesList,
+                content: allowlistRulesList,
                 ignoreCosmetic: true,
                 ignoreJS: false,
                 ignoreUnsafe: false,
@@ -339,6 +339,18 @@ export class EngineApi {
      */
     public retrieveRuleText(filterListId: number, ruleIndex: number): string | null {
         return this.engine?.retrieveRuleText(filterListId, ruleIndex) ?? null;
+    }
+
+    /**
+     * Retrieves the original rule text by its filter list identifier and rule index.
+     *
+     * @param filterId Filter list identifier.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null`.
+     */
+    public retrieveOriginalRuleText(filterId: number, ruleIndex: number): string | null {
+        return this.engine?.retrieveOriginalRuleText(filterId, ruleIndex) ?? null;
     }
 }
 

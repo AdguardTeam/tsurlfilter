@@ -78,7 +78,5 @@ describe('RuleScanner tests', () => {
             rule = list.retrieveRuleText(999);
             expect(rule).toBeNull();
         });
-
-        list.close();
     });
 });

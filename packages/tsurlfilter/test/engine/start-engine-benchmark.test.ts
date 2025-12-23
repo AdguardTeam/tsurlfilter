@@ -373,7 +373,7 @@ describe('Benchmarks', () => {
         const engineOptions: EngineFactoryOptions = {
             filters: [{
                 id: 1,
-                text: easyList,
+                content: easyList,
             }],
         };
 

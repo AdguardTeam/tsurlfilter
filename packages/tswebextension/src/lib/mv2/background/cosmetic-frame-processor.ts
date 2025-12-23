@@ -11,11 +11,10 @@ import {
 import { DocumentLifecycle } from '../../common/interfaces';
 import { CssCapabilities } from '../../common/utils/css-capabilities';
 
-import { documentApi } from './api';
+import { documentApi, stealthApi } from './api';
 import { appContext } from './app-context';
 import { CosmeticApi } from './cosmetic-api';
 import { type EngineApi } from './engine-api';
-import { stealthApi } from './stealth-api';
 import { type FrameMV2 } from './tabs/frame';
 import { type TabsApi } from './tabs/tabs-api';
 

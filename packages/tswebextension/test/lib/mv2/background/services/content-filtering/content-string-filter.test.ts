@@ -15,6 +15,7 @@ import {
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { defaultFilteringLog } from '../../../../../../src/lib/common/filtering-log';
 import { logger } from '../../../../../../src/lib/common/utils/logger';
+import { mockEngineApi } from '../../../../../helpers/mocks';
 
 vi.mock('../../../../../../src/lib/common/utils/logger');
 
@@ -48,7 +49,13 @@ describe('Content string filter', () => {
             createCosmeticRule('example.org$$span', 1),
         ];
 
-        const contentStringFilter = new ContentStringFilter(context, htmlRules, null, defaultFilteringLog);
+        const contentStringFilter = new ContentStringFilter(
+            context,
+            htmlRules,
+            null,
+            defaultFilteringLog,
+            mockEngineApi,
+        );
 
         const modified = contentStringFilter.applyRules(content);
 
@@ -61,7 +68,13 @@ describe('Content string filter', () => {
             createNetworkRule('||example.org^$replace=/test/b/', 1),
         ];
 
-        const contentStringFilter = new ContentStringFilter(context, null, replaceRules, defaultFilteringLog);
+        const contentStringFilter = new ContentStringFilter(
+            context,
+            null,
+            replaceRules,
+            defaultFilteringLog,
+            mockEngineApi,
+        );
 
         const modified = contentStringFilter.applyRules(content);
 
@@ -69,7 +82,13 @@ describe('Content string filter', () => {
     });
 
     it('returns original content, if rules does not exist', () => {
-        const contentStringFilter = new ContentStringFilter(context, null, null, defaultFilteringLog);
+        const contentStringFilter = new ContentStringFilter(
+            context,
+            null,
+            null,
+            defaultFilteringLog,
+            mockEngineApi,
+        );
 
         const modified = contentStringFilter.applyRules(content);
 
@@ -84,7 +103,13 @@ describe('Content string filter', () => {
             createCosmeticRule('example.org$$div:contains(foo)', 1),
         ];
 
-        const contentStringFilter = new ContentStringFilter(context, htmlRules, null, defaultFilteringLog);
+        const contentStringFilter = new ContentStringFilter(
+            context,
+            htmlRules,
+            null,
+            defaultFilteringLog,
+            mockEngineApi,
+        );
 
         const modified = contentStringFilter.applyRules(content);
 

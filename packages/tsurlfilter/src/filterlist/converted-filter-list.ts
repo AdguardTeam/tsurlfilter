@@ -189,18 +189,22 @@ export class ConvertedFilterList {
      * @returns Rule as string, or null if not found.
      */
     public getRuleText(offset: number): string | null {
+        if (offset >= this.content.length) {
+            return null;
+        }
+
         const [lineBreakStartIndex] = findNextLineBreakIndex(this.content, offset);
         return this.content.slice(offset, lineBreakStartIndex);
     }
 
     /**
      * Returns the original rule text for a given converted line number.
+     * If the rule at the offset was converted, returns the original from conversion data.
+     * If the rule was not converted, returns the rule text (which is already the original).
      *
      * @param offset Line start offset in the converted content.
      *
-     * @returns Original rule as string, or null if not found.
-     * Please note that this function also returns null for valid line numbers,
-     * if they do not have a corresponding original rule in the conversion data.
+     * @returns Original rule text, or null if offset is invalid.
      */
     public getOriginalRuleText(offset: number): string | null {
         if (offset < 0 || offset >= this.content.length) {
@@ -214,6 +218,29 @@ export class ConvertedFilterList {
         }
 
         return this.getRuleText(offset);
+    }
+
+    /**
+     * Returns the original rule text only if the rule at the given offset was actually converted.
+     * Unlike getOriginalRuleText(), this returns null for rules that were not converted.
+     *
+     * @param offset Line start offset in the converted content.
+     *
+     * @returns Original rule text if the rule was converted, or null if the rule was not converted
+     * or offset is invalid.
+     */
+    public getConvertedRuleOriginal(offset: number): string | null {
+        if (offset < 0 || offset >= this.content.length) {
+            return null;
+        }
+
+        const originalRuleIndex = this.data.conversions[offset];
+
+        if (originalRuleIndex !== undefined) {
+            return this.data.originals[originalRuleIndex];
+        }
+
+        return null;
     }
 
     /**

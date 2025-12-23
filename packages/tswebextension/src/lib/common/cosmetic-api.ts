@@ -7,6 +7,7 @@ import { type ContentType } from './request-type';
 import { CssCapabilities } from './utils/css-capabilities';
 import { getDomain } from './utils/url';
 import { nanoid } from './utils/nanoid';
+import { getRuleTexts, type RuleTextProvider } from './utils/rule-text-provider';
 
 /**
  * Information for logging js rules.
@@ -472,14 +473,16 @@ export class CosmeticApiCommon {
     }
 
     /**
-     * Logs js rules applied to a specific frame.
+     * Logs applied script rules for specified frame.
      *
      * @param params Data for js rule logging.
      * @param appliedScriptRules Script rules applied to the frame.
+     * @param engineApi Engine API for retrieving rule texts.
      */
     protected static logScriptRules(
         params: LogJsRulesParams,
         appliedScriptRules: CosmeticRule[],
+        engineApi: RuleTextProvider,
     ): void {
         const {
             tabId,
@@ -494,6 +497,8 @@ export class CosmeticApiCommon {
             }
 
             const ruleType = scriptRule.getType();
+            const { appliedRuleText, originalRuleText } = getRuleTexts(scriptRule, engineApi);
+
             defaultFilteringLog.publishEvent({
                 type: FilteringEventType.JsInject,
                 data: {
@@ -510,6 +515,8 @@ export class CosmeticApiCommon {
                     timestamp,
                     filterId: scriptRule.getFilterListId(),
                     ruleIndex: scriptRule.getIndex(),
+                    appliedRuleText,
+                    originalRuleText,
                     cssRule: ruleType === CosmeticRuleType.ElementHidingRule
                         || ruleType === CosmeticRuleType.CssInjectionRule,
                     scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule

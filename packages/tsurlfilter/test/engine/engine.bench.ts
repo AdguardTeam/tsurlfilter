@@ -31,7 +31,7 @@ describe('Build engine', () => {
         return Engine.createSync({
             filters: [{
                 id: 2,
-                text: rawFilter,
+                content: rawFilter,
                 ignoreCosmetic,
             }],
         });
@@ -58,7 +58,7 @@ describe('Build engine', () => {
         await Engine.createAsync({
             filters: [{
                 id: 2,
-                text: rawFilter,
+                content: rawFilter,
                 ignoreCosmetic,
             }],
         });

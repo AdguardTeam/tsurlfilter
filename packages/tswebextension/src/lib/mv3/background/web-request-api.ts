@@ -145,10 +145,11 @@
  *                                       └─────────────────────────────┘.
  */
 import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
-import { RequestType } from '@adguard/tsurlfilter';
+import { RequestType, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { companiesDbService } from '../../common/companies-db-service';
+import { getRuleTexts } from '../../common/utils/rule-text-provider';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
@@ -596,7 +597,6 @@ export class WebRequestApi {
             requestId,
             url,
             type,
-            parentFrameId,
             error,
         } = details;
 
@@ -631,6 +631,11 @@ export class WebRequestApi {
         }
 
         const companyCategoryName = companiesDbService.match(url);
+        const appliedRule = matchingResult.getBasicResult();
+
+        const { appliedRuleText, originalRuleText } = appliedRule
+            ? getRuleTexts(appliedRule, engineApi)
+            : { appliedRuleText: null, originalRuleText: null };
 
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
@@ -641,15 +646,17 @@ export class WebRequestApi {
                 frameUrl: referrerUrl,
                 requestId,
                 requestUrl: url,
+                filterId: appliedRule?.getFilterListId() ?? null,
+                ruleIndex: appliedRule?.getIndex() ?? null,
+                appliedRuleText,
+                originalRuleText,
+                isAllowlist: appliedRule?.isAllowlist() ?? false,
+                isImportant: appliedRule?.isOptionEnabled(NetworkRuleOption.Important) ?? false,
+                isDocumentLevel: appliedRule?.isDocumentLevelAllowlistRule() ?? false,
+                isCsp: appliedRule?.isOptionEnabled(NetworkRuleOption.Csp) ?? false,
+                isCookie: appliedRule?.isOptionEnabled(NetworkRuleOption.Cookie) ?? false,
+                advancedModifier: appliedRule?.getAdvancedModifierValue() ?? null,
                 companyCategoryName,
-                filterId: null,
-                ruleIndex: null,
-                isAllowlist: false,
-                isImportant: false,
-                isDocumentLevel: TabsApiCommon.isDocumentLevelFrame(parentFrameId),
-                isCsp: false,
-                isCookie: false,
-                advancedModifier: null,
                 isAssuredlyBlocked: true,
             },
         });

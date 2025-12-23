@@ -393,8 +393,8 @@ describe('DeclarativeConverter', () => {
         const { ruleSet } = await converter.convertStaticRuleSet(filter);
 
         const badFilterRules = ruleSet.getBadFilterRules();
-        expect(badFilterRules[0].ruleParts.rule).toMatchNetworkRule(createNetworkRule(rulesToCancel[0]));
-        expect(badFilterRules[1].ruleParts.rule).toMatchNetworkRule(createNetworkRule(rulesToCancel[1]));
+        expect(badFilterRules[0].ruleParts.text).toEqual(rulesToCancel[0]);
+        expect(badFilterRules[1].ruleParts.text).toEqual(rulesToCancel[1]);
     });
 
     describe('respects limitations for static rulesets', () => {

@@ -280,6 +280,10 @@ export class StealthService {
                     rules: Array.from(appliedAllowlistRules).map((rule) => ({
                         filterId: rule.getFilterListId(),
                         ruleIndex: rule.getIndex(),
+                        // fallback should never happen during normal operation
+                        // eslint-disable-next-line max-len
+                        appliedRuleText: rule.getText() ?? `<dynamic rule text is not specified> (${rule.getFilterListId()}:${rule.getIndex()})`,
+                        originalRuleText: null,
                         isAllowlist: rule.isAllowlist(),
                         isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
                         isDocumentLevel: rule.isDocumentLevelAllowlistRule(),

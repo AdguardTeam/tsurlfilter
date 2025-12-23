@@ -45,9 +45,4 @@ export interface IRuleList {
      * @returns Rule text or `null`.
      */
     retrieveRuleText(ruleIdx: number): string | null;
-
-    /**
-     * Closes the rules list.
-     */
-    close(): void;
 }

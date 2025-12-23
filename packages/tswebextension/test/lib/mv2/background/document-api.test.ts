@@ -11,7 +11,7 @@ import { DocumentApi } from '../../../../src/lib/mv2/background/document-api';
 import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
-import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
+import { stealthApi } from '../../../../src/lib/mv2/background/api';
 
 vi.mock('../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../src/lib/mv2/background/engine-api');

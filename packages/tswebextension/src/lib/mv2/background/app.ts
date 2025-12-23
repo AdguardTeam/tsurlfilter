@@ -489,6 +489,20 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
+     * Retrieves an original rule text by its filter list identifier and rule index.
+     *
+     * If there's no rule by that index or the rule structure is invalid, it will return null.
+     *
+     * @param filterId Filter list identifier.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null`.
+     */
+    public retrieveOriginalRuleText(filterId: number, ruleIndex: number): string | null {
+        return this.engineApi.retrieveOriginalRuleText(filterId, ruleIndex);
+    }
+
+    /**
      * Creates configuration context.
      *
      * @param configuration Configuration.

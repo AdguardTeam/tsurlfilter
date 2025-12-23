@@ -1,12 +1,13 @@
 import { type NetworkRule, type ReplaceModifier, type CosmeticRule } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { type RuleInfo } from '../../../../common/content-script/rule-info';
 import { FilteringEventType, type FilteringLog } from '../../../../common/filtering-log';
 import { nanoid } from '../../../../common/utils/nanoid';
 import { getDomain } from '../../../../common/utils/url';
+import { getRuleTexts, type RuleTextProvider } from '../../../../common/utils/rule-text-provider';
 import { type RequestContext } from '../../request';
 import { logger } from '../../../../common/utils/logger';
+import { type RuleInfo } from '../../../../common/rule-info';
 
 import { documentParser } from './doc-parser';
 import { HtmlRuleParser } from './rule/html-rule-parser';
@@ -32,6 +33,8 @@ export class ContentStringFilter implements ContentStringFilterInterface {
 
     filteringLog: FilteringLog;
 
+    engineApi: RuleTextProvider;
+
     /**
      * Creates an instance of ContentStringFilter.
      *
@@ -39,17 +42,20 @@ export class ContentStringFilter implements ContentStringFilterInterface {
      * @param htmlRules Html rules.
      * @param replaceRules Replace rules.
      * @param filteringLog Filtering log.
+     * @param ruleTextProvider Rule text provider.
      */
     constructor(
         context: RequestContext,
         htmlRules: CosmeticRule[] | null,
         replaceRules: NetworkRule[] | null,
         filteringLog: FilteringLog,
+        ruleTextProvider: RuleTextProvider,
     ) {
         this.context = context;
         this.htmlRules = htmlRules;
         this.replaceRules = replaceRules;
         this.filteringLog = filteringLog;
+        this.engineApi = ruleTextProvider;
     }
 
     /**
@@ -122,6 +128,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
                         } = this.context;
 
                         const ruleType = rule.getType();
+                        const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
 
                         this.filteringLog.publishEvent({
                             type: FilteringEventType.ApplyCosmeticRule,
@@ -132,6 +139,8 @@ export class ContentStringFilter implements ContentStringFilterInterface {
                                 frameUrl: requestUrl,
                                 filterId: rule.getFilterListId(),
                                 ruleIndex: rule.getIndex(),
+                                appliedRuleText,
+                                originalRuleText,
                                 frameDomain: getDomain(requestUrl) as string,
                                 requestType: contentType,
                                 timestamp,
@@ -179,6 +188,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
             const replaceRuleInfo: RuleInfo = {
                 filterId: replaceRule.getFilterListId(),
                 ruleIndex: replaceRule.getIndex(),
+                ...getRuleTexts(replaceRule, this.engineApi),
             };
             if (replaceRule.isAllowlist()) {
                 appliedRules.push(replaceRuleInfo);

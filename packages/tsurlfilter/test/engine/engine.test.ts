@@ -29,7 +29,7 @@ describe('Engine Tests', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -65,7 +65,7 @@ describe('Engine Tests', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -105,11 +105,11 @@ describe('Engine Tests', () => {
             filters: [
                 {
                     id: 1,
-                    text: list1,
+                    content: list1,
                 },
                 {
                     id: 2,
-                    text: list2,
+                    content: list2,
                 },
             ],
         });
@@ -151,7 +151,7 @@ describe('TestEngine - postponed load rules', () => {
             filters: [
                 {
                     id: 1,
-                    text: rules.join('\n'),
+                    content: rules.join('\n'),
                 },
             ],
         });
@@ -164,7 +164,7 @@ describe('TestEngine - postponed load rules', () => {
             filters: [
                 {
                     id: 1,
-                    text: rules.join('\r\n'),
+                    content: rules.join('\r\n'),
                 },
             ],
         });
@@ -185,7 +185,7 @@ it('TestEngine - configuration', () => {
         filters: [
             {
                 id: 1,
-                text: rules.join('\n'),
+                content: rules.join('\n'),
             },
         ],
     });
@@ -207,7 +207,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
             filters: [
                 {
                     id: 1,
-                    text: rules.join('\n'),
+                    content: rules.join('\n'),
                 },
             ],
         });
@@ -258,7 +258,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -289,7 +289,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -315,7 +315,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -345,7 +345,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -374,7 +374,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -406,7 +406,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -438,7 +438,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -476,7 +476,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -525,7 +525,7 @@ describe('TestEngineMatchRequest - document modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text: documentBlockingRuleText,
+                    content: documentBlockingRuleText,
                 },
             ],
         });
@@ -562,7 +562,7 @@ describe('TestEngineMatchRequest - document modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text: documentBlockingRuleText,
+                    content: documentBlockingRuleText,
                 },
             ],
         });
@@ -609,7 +609,7 @@ describe('TestEngineMatchRequest - all modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text: allBlockingRuleText,
+                    content: allBlockingRuleText,
                 },
             ],
         });
@@ -656,11 +656,11 @@ describe('TestEngineMatchRequest - popup modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text: blockingRuleText,
+                    content: blockingRuleText,
                 },
                 {
                     id: 2,
-                    text: popupBlockingRuleText,
+                    content: popupBlockingRuleText,
                 },
             ],
         });
@@ -720,11 +720,11 @@ describe('TestEngineMatchRequest - popup modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text: blockingAllRuleText,
+                    content: blockingAllRuleText,
                 },
                 {
                     id: 2,
-                    text: popupBlockingRuleText,
+                    content: popupBlockingRuleText,
                 },
             ],
         });
@@ -826,7 +826,7 @@ describe('TestEngineCosmeticResult - elemhide', () => {
         filters: [
             {
                 id: 1,
-                text: rules.join('\n'),
+                content: rules.join('\n'),
             },
         ],
     });
@@ -888,7 +888,7 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
         filters: [
             {
                 id: 1,
-                text: rules.join('\n'),
+                content: rules.join('\n'),
             },
         ],
     });
@@ -949,7 +949,7 @@ describe('TestEngineCosmeticResult - js', () => {
             filters: [
                 {
                     id: 1,
-                    text: rawFilterList,
+                    content: rawFilterList,
                 },
             ],
         });
@@ -978,7 +978,7 @@ describe('TestEngineCosmeticResult - js', () => {
             filters: [
                 {
                     id: 1,
-                    text: rules.join('\n'),
+                    content: rules.join('\n'),
                 },
             ],
         });
@@ -1004,7 +1004,7 @@ describe('TestEngineCosmeticResult - js', () => {
             filters: [
                 {
                     id: 1,
-                    text: rules.join('\n'),
+                    content: rules.join('\n'),
                     ignoreJS: true,
                 },
             ],
@@ -1036,7 +1036,7 @@ describe('$urlblock modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text: [important, urlblock].join('\n'),
+                    content: [important, urlblock].join('\n'),
                 },
             ],
         });
@@ -1068,7 +1068,7 @@ describe('$badfilter modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text: rules.join('\n'),
+                    content: rules.join('\n'),
                 },
             ],
         });
@@ -1095,7 +1095,7 @@ describe('$genericblock modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text: [
+                    content: [
                         networkGenericRule,
                         networkNegatedGenericRule,
                         genericblockRule,
@@ -1136,7 +1136,7 @@ describe('Match subdomains', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -1180,7 +1180,7 @@ describe('Match subdomains', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -1221,7 +1221,7 @@ describe('Match subdomains', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -1258,7 +1258,7 @@ describe('Match subdomains', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -1301,7 +1301,7 @@ describe('$specifichide modifier', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -1348,7 +1348,7 @@ describe('Stealth cookie rules', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -1366,7 +1366,7 @@ describe('Stealth cookie rules', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                 },
             ],
         });
@@ -1388,7 +1388,7 @@ describe('Unsafe rules can be ignored', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                     ignoreUnsafe: true,
                 },
             ],
@@ -1402,7 +1402,7 @@ describe('Unsafe rules can be ignored', () => {
             filters: [
                 {
                     id: 1,
-                    text,
+                    content: text,
                     ignoreUnsafe: false,
                 },
             ],
@@ -1423,7 +1423,7 @@ describe('Async engine creation', () => {
             filters: [
                 {
                     id: 1,
-                    text: '||example.org^',
+                    content: '||example.org^',
                 },
             ],
         });

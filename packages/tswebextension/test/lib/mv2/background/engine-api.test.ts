@@ -16,7 +16,7 @@ import { type MatchQuery } from '../../../../src/lib/common/interfaces';
 import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../src/lib/mv2/background/app-context';
-import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
+import { stealthApi } from '../../../../src/lib/mv2/background/api';
 
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 

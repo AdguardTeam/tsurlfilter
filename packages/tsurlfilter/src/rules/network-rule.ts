@@ -1,5 +1,6 @@
 import { type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
+import { NetworkRuleParser } from '@adguard/agtree/parser';
 
 import { EMPTY_STRING } from '../common/constants';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
@@ -34,7 +35,7 @@ import {
     OPTIONS_DELIMITER,
 } from './network-rule-options';
 import { Pattern } from './pattern';
-import { type IRule, RULE_INDEX_NONE } from './rule';
+import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 import { SimpleRegex } from './simple-regex';
 
 /**
@@ -309,6 +310,11 @@ export class NetworkRule implements IRule {
     private readonly filterListId: number;
 
     /**
+     * Rule text.
+     */
+    private readonly ruleText?: string;
+
+    /**
      * Allowlist flag.
      */
     private readonly allowlist: boolean;
@@ -562,6 +568,15 @@ export class NetworkRule implements IRule {
      */
     public getFilterListId(): number {
         return this.filterListId;
+    }
+
+    /**
+     * Returns the rule text.
+     *
+     * @returns Rule text.
+     */
+    public getText(): string | undefined {
+        return this.ruleText;
     }
 
     /**
@@ -1211,30 +1226,46 @@ export class NetworkRule implements IRule {
      * It parses this rule and extracts the rule pattern (see {@link SimpleRegex}),
      * and rule modifiers.
      *
-     * @param node AST node of the network rule.
+     * @param ruleText Rule text.
      * @param filterListId ID of the filter list this rule belongs to.
      * @param ruleIndex Line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
+     * @param node Optional pre-parsed network rule node to avoid re-parsing.
      *
-     * @throws Error if it fails to parse the rule.
+     * @throws Error if it fails to parse the rule or if the rule is not a network rule.
      */
-    constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
+    constructor(
+        ruleText: string,
+        filterListId: number = FILTER_LIST_ID_NONE,
+        ruleIndex: number = RULE_INDEX_NONE,
+        node?: NetworkRuleNode,
+    ) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
-        this.allowlist = node.exception;
 
-        const pattern = node.pattern.value;
+        // Store rule text in the instance if the rule is not indexed in FiltersStorage.
+        // When filterListId or ruleIndex is NONE, the rule text cannot be retrieved
+        // from the engine and must be available via getText().
+        if (filterListId === FILTER_LIST_ID_NONE || ruleIndex === RULE_INDEX_NONE) {
+            this.ruleText = ruleText;
+        }
+
+        // Use provided node or parse the rule text
+        const parsedNode = node ?? NetworkRuleParser.parse(ruleText);
+        this.allowlist = parsedNode.exception;
+
+        const pattern = parsedNode.pattern.value;
         if (pattern && hasSpaces(pattern)) {
             throw new SyntaxError('Rule has spaces, seems to be an host rule');
         }
 
-        if (node.modifiers?.children?.length) {
-            this.loadOptions(node.modifiers);
+        if (parsedNode.modifiers?.children?.length) {
+            this.loadOptions(parsedNode.modifiers);
         }
 
-        if (NetworkRule.isTooGeneral(node)) {
-            throw new SyntaxError(`Rule is too general: ${RuleGenerator.generate(node)}`);
+        if (NetworkRule.isTooGeneral(parsedNode)) {
+            throw new SyntaxError(`Rule is too general: ${RuleGenerator.generate(parsedNode)}`);
         }
 
         this.calculatePriorityWeight();

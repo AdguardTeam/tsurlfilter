@@ -2,16 +2,20 @@ import browser from 'webextension-polyfill';
 import { StealthOptionName, type NetworkRule, type MatchingResult } from '@adguard/tsurlfilter';
 
 import { type StealthConfig } from '../../common/configuration';
-import { defaultFilteringLog, type FilteringLogInterface } from '../../common/filtering-log';
+import { type FilteringLogInterface } from '../../common/filtering-log';
 import { StealthActions } from '../../common/stealth-actions';
 import { logger } from '../../common/utils/logger';
+import { type RuleTextProvider } from '../../common/utils/rule-text-provider';
 
-import { appContext, type AppContext } from './app-context';
+import { type AppContext } from './app-context';
 import { type RequestContext } from './request';
 import { StealthService } from './services/stealth-service';
 
 /**
  * Stealth api implementation.
+ *
+ * NOTE: The stealthApi instance is exported from api.ts, not here,
+ * to avoid circular module dependencies. Import the instance from api.ts.
  */
 export class StealthApi {
     /**
@@ -80,11 +84,16 @@ export class StealthApi {
      *
      * @param appContextInstance App context.
      * @param filteringLog Filtering log.
+     * @param ruleTextProvider Rule text provider.
      */
-    constructor(appContextInstance: AppContext, filteringLog: FilteringLogInterface) {
+    constructor(
+        appContextInstance: AppContext,
+        filteringLog: FilteringLogInterface,
+        ruleTextProvider: RuleTextProvider,
+    ) {
         this.appContext = appContextInstance;
         this.filteringLog = filteringLog;
-        this.stealthService = new StealthService(this.appContext, this.filteringLog);
+        this.stealthService = new StealthService(this.appContext, this.filteringLog, ruleTextProvider);
     }
 
     /**
@@ -263,5 +272,3 @@ export class StealthApi {
         return !!browser.privacy;
     }
 }
-
-export const stealthApi = new StealthApi(appContext, defaultFilteringLog);

@@ -4,6 +4,8 @@ import { NetworkRuleOption, CSP_HEADER_NAME, RequestType } from '@adguard/tsurlf
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { ContentType } from '../../../common/request-type';
 import { nanoid } from '../../../common/utils/nanoid';
+import { getRuleTexts } from '../../../common/utils/rule-text-provider';
+import { engineApi } from '../engine-api';
 import { RequestBlockingApi } from '../request/request-blocking-api';
 import { type RequestContext, requestContextStorage } from '../request/request-context-storage';
 import { SessionRuleId, SessionRulesApi } from '../session-rules-api';
@@ -119,6 +121,8 @@ export class CspService {
                 }
             }
 
+            const { appliedRuleText, originalRuleText } = getRuleTexts(rule, engineApi);
+
             defaultFilteringLog.publishEvent({
                 type: FilteringEventType.ApplyCspRule,
                 data: {
@@ -130,6 +134,8 @@ export class CspService {
                     requestType: ContentType.Csp,
                     filterId: rule.getFilterListId(),
                     ruleIndex: rule.getIndex(),
+                    appliedRuleText,
+                    originalRuleText,
                     timestamp: Date.now(),
                     isAllowlist: rule.isAllowlist(),
                     isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),

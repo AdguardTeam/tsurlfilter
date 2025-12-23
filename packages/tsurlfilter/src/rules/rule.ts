@@ -2,6 +2,13 @@
 import { type CosmeticRuleParts, type NetworkRuleParts, type RuleParts } from '../filterlist/rule-parts';
 
 /**
+ * Default filter list ID for source mapping.
+ *
+ * It is -1, similar to `Array.indexOf()` return value when element is not found.
+ */
+export const FILTER_LIST_ID_NONE = -1;
+
+/**
  * Default rule index for source mapping.
  *
  * It is -1, similar to `Array.indexOf()` return value when element is not found.
@@ -25,13 +32,23 @@ export interface IRule {
      */
     getFilterListId(): number;
 
-    // TODO (David): Consider adding it
-    // /**
-    //  * Returns rule text.
-    //  *
-    //  * @returns Rule text.
-    //  */
-    // getText(): string;
+    /**
+     * Returns the rule text.
+     *
+     * For indexed rules stored in the engine via FiltersStorage, the rule text is typically NOT available
+     * in the rule instance if the filter list ID is {@link FILTER_LIST_ID_NONE} or the rule index is
+     * {@link RULE_INDEX_NONE}. In most cases, you can retrieve the rule text from the engine using
+     * `Engine.retrieveRuleText()`.
+     *
+     * However, in some rare cases rules are created dynamically on the fly and not stored in FiltersStorage, such as:
+     * - Allowlist rules (e.g., `Allowlist.createAllowlistRule()`).
+     *
+     * For these dynamic rules, the rule text must be stored in the rule instance itself
+     * and made available via this method.
+     *
+     * @returns Rule text, or `undefined` if not available.
+     */
+    getText(): string | undefined;
 }
 
 /**

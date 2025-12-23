@@ -6,12 +6,12 @@ import {
     RuleParser,
 } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { getErrorMessage } from '../../common/error';
 import { fastHash, fastHash31 } from '../../utils/string-utils';
 import { NetworkRule } from '../network-rule';
 import { IndexedRule, type IRule } from '../rule';
-import { RuleFactory } from '../rule-factory';
 import { NO_LIST_ID } from '../../filterlist/rule-list';
 
 import { NetworkRuleWithNodeAndText } from './network-rule-with-node-and-text';
@@ -128,11 +128,11 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeA
             // Note: for correct throwing error it is important to use setConfiguration(),
             // because it will set compatibility type and future parsing options
             // for network rules will take it into account.
-            networkRule = RuleFactory.createRule(
-                ruleConvertedToAGSyntax,
-                filterId,
-                index,
-            );
+
+            // Generate text from the node to create the NetworkRule directly
+            // We create it directly (not via RuleFactory) so errors propagate for reporting
+            const ruleText = RuleGenerator.generate(ruleConvertedToAGSyntax);
+            networkRule = new NetworkRule(ruleText, filterId, index);
         } catch (e) {
             // eslint-disable-next-line max-len
             throw new Error(`Cannot create IRule from filter "${filterId}" and rule "${text}": ${getErrorMessage(e)}`);

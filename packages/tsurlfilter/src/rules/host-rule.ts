@@ -1,6 +1,7 @@
-import { type HostRule as HostRuleNode } from '@adguard/agtree';
+import { type HostRule as HostRuleNode, NetworkRuleType, RuleCategory } from '@adguard/agtree';
+import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
 
-import { type IRule, RULE_INDEX_NONE } from './rule';
+import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 
 /**
  * Implements a host rule.
@@ -34,6 +35,11 @@ export class HostRule implements IRule {
     private readonly filterListId: number;
 
     /**
+     * Rule text.
+     */
+    private readonly ruleText?: string;
+
+    /**
      * Hostnames.
      */
     private readonly hostnames: string[] = [];
@@ -53,24 +59,55 @@ export class HostRule implements IRule {
      *
      * Parses the rule and creates a new HostRule instance.
      *
-     * @param node Original rule text.
+     * @param ruleText Rule text.
      * @param filterListId ID of the filter list this rule belongs to.
      * @param ruleIndex Index of the rule.
+     * @param node Optional pre-parsed host rule node to avoid re-parsing.
      *
-     * @throws Error if it fails to parse the rule.
+     * @throws Error if it fails to parse the rule or if the rule is not a host rule.
      */
-    constructor(node: HostRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
+    constructor(
+        ruleText: string,
+        filterListId: number = FILTER_LIST_ID_NONE,
+        ruleIndex: number = RULE_INDEX_NONE,
+        node?: HostRuleNode,
+    ) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
-        this.ip = node.ip.value;
+        // Store rule text in the instance if the rule is not indexed in FiltersStorage.
+        // When filterListId or ruleIndex is NONE, the rule text cannot be retrieved
+        // from the engine and must be available via getText().
+        if (filterListId === FILTER_LIST_ID_NONE || ruleIndex === RULE_INDEX_NONE) {
+            this.ruleText = ruleText;
+        }
 
-        if (node.hostnames.children.length === 0) {
+        // Use provided node or parse the rule text
+        let parsedNode: HostRuleNode;
+        if (node) {
+            parsedNode = node;
+        } else {
+            const parsed = RuleParser.parse(ruleText, {
+                ...defaultParserOptions,
+                parseHostRules: true,
+            });
+
+            // Validate that we got a valid host rule
+            if (parsed.category !== RuleCategory.Network || parsed.type !== NetworkRuleType.HostRule) {
+                throw new SyntaxError(`Expected host rule but got ${parsed.category}: ${ruleText}`);
+            }
+
+            parsedNode = parsed as HostRuleNode;
+        }
+
+        this.ip = parsedNode.ip.value;
+
+        if (parsedNode.hostnames.children.length === 0) {
             this.invalid = true;
             return;
         }
 
-        this.hostnames = node.hostnames.children.map((hostname) => hostname.value);
+        this.hostnames = parsedNode.hostnames.children.map((hostname: { value: string }) => hostname.value);
     }
 
     /**
@@ -100,6 +137,15 @@ export class HostRule implements IRule {
      */
     public getIndex(): number {
         return this.ruleIndex;
+    }
+
+    /**
+     * Returns the rule text.
+     *
+     * @returns Rule text.
+     */
+    public getText(): string | undefined {
+        return this.ruleText;
     }
 
     /**

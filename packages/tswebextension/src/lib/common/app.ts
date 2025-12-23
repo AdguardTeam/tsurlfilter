@@ -90,4 +90,14 @@ export interface AppInterface<
      * @returns Rule text or `null`.
      */
     retrieveRuleText(filterId: number, ruleIndex: number): string | null;
+
+    /**
+     * Retrieves the original rule text by its filter list identifier and rule index.
+     *
+     * @param filterId Filter list identifier.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null`.
+     */
+    retrieveOriginalRuleText(filterId: number, ruleIndex: number): string | null;
 }
