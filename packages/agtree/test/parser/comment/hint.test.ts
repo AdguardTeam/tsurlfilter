@@ -4,8 +4,6 @@ import { HintCommentParser } from '../../../src/parser/comment/hint-comment-pars
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { HintCommentGenerator } from '../../../src/generator/comment/hint-comment-generator';
-import { HintCommentSerializer } from '../../../src/serializer/comment/hint-comment-serializer';
-import { HintCommentDeserializer } from '../../../src/deserializer/comment/hint-comment-deserializer';
 
 describe('HintCommentParser', () => {
     test('isHintRule', () => {
@@ -767,21 +765,5 @@ describe('HintCommentParser', () => {
         expect(parseAndGenerate('!+  NOT_OPTIMIZED  PLATFORM( windows     ,  mac  )  NOT_PLATFORM( mac )')).toEqual(
             '!+ NOT_OPTIMIZED PLATFORM(windows, mac) NOT_PLATFORM(mac)',
         );
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            '!+ NOT_OPTIMIZED',
-            '!+ NOT_OPTIMIZED PLATFORM(windows)',
-            '!+ NOT_OPTIMIZED PLATFORM(, , ,)',
-            '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac, ios)',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                HintCommentParser,
-                HintCommentGenerator,
-                HintCommentSerializer,
-                HintCommentDeserializer,
-            );
-        });
     });
 });

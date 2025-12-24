@@ -16,6 +16,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   if there are any pseudo-classes that may be considered as extended
   but also supported natively as standard CSS, i.e. `:has()`, `:is()`, `:not()`.
 
+### Removed
+
+- Serializer and Deserializer APIs.
+
 ## [3.4.1] - 2025-11-28
 
 ### Added

@@ -13,12 +13,6 @@ import { EMPTY, SPACE } from '../../../../src/utils/constants';
 import {
     AbpSnippetInjectionBodyGenerator,
 } from '../../../../src/generator/cosmetic/body/abp-snippet-injection-body-generator';
-import {
-    AbpSnippetInjectionBodySerializer,
-} from '../../../../src/serializer/cosmetic/body/abp-snippet-injection-body-serializer';
-import {
-    AbpSnippetInjectionBodyDeserializer,
-} from '../../../../src/deserializer/cosmetic/scriptlet-body/abp-snippet-injection-body-deserializer';
 import { AbpSnippetInjectionBodyCommon } from '../../../../src/common/abp-snippet-injection-body-common';
 
 describe('AbpSnippetInjectionBodyParser', () => {
@@ -697,22 +691,6 @@ describe('AbpSnippetInjectionBodyParser', () => {
             }
 
             expect(AbpSnippetInjectionBodyGenerator.generate(ruleNode)).toBe(expected);
-        });
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            'scriptlet0',
-            'scriptlet0 arg0',
-            'scriptlet0 arg0 arg1',
-            'scriptlet0 arg00 arg01; scriptlet1; scriptlet2 arg20',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                AbpSnippetInjectionBodyParser,
-                AbpSnippetInjectionBodyGenerator,
-                AbpSnippetInjectionBodySerializer,
-                AbpSnippetInjectionBodyDeserializer,
-            );
         });
     });
 });

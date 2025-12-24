@@ -15,12 +15,6 @@ import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error'
 import {
     AdgScriptletInjectionBodyGenerator,
 } from '../../../../src/generator/cosmetic/body/adg-scriptlet-injection-body-generator';
-import {
-    AdgScriptletInjectionBodySerializer,
-} from '../../../../src/serializer/cosmetic/body/adg-scriptlet-injection-body-serializer';
-import {
-    AdgScriptletInjectionBodyDeserializer,
-} from '../../../../src/deserializer/cosmetic/scriptlet-body/adg-scriptlet-injection-body-deserializer';
 
 describe('AdgScriptletInjectionBodyParser', () => {
     describe('AdgScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -494,21 +488,6 @@ describe('AdgScriptletInjectionBodyParser', () => {
             }
 
             expect(AdgScriptletInjectionBodyGenerator.generate(ruleNode)).toBe(expected);
-        });
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            '//scriptlet()',
-            '//scriptlet("scriptlet0")',
-            '//scriptlet("scriptlet0", "arg0", "arg1")',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                AdgScriptletInjectionBodyParser,
-                AdgScriptletInjectionBodyGenerator,
-                AdgScriptletInjectionBodySerializer,
-                AdgScriptletInjectionBodyDeserializer,
-            );
         });
     });
 });

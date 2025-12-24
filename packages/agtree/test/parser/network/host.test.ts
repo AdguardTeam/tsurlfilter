@@ -4,8 +4,6 @@ import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { type HostRule, NetworkRuleType, RuleCategory } from '../../../src/nodes';
 import { HostRuleParser } from '../../../src/parser/network/host-rule-parser';
 import { HostRuleGenerator } from '../../../src/generator/network';
-import { HostRuleSerializer } from '../../../src/serializer/network/host-rule-serializer';
-import { HostRuleDeserializer } from '../../../src/deserializer/network/host-rule-deserializer';
 
 describe('HostRuleParser', () => {
     describe('parse', () => {
@@ -222,24 +220,6 @@ describe('HostRuleParser', () => {
             },
         ])("should generate '$expected' for '$actual'", ({ actual, expected }) => {
             expect(HostRuleGenerator.generate(HostRuleParser.parse(actual))).toBe(expected);
-        });
-    });
-
-    describe('serialize & deserialize', () => {
-        it.each([
-            'example.com',
-            'example.com # this is a comment',
-            '127.0.0.1 example.com',
-            '127.0.0.1 example.org example.info',
-            '127.0.0.1 example.org example.info # this is a comment',
-            'ff02::1 ip6-allnodes',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                HostRuleParser,
-                HostRuleGenerator,
-                HostRuleSerializer,
-                HostRuleDeserializer,
-            );
         });
     });
 });

@@ -1,6 +1,6 @@
 {
     "name": "@adguard/agtree",
-    "version": "3.4.1",
+    "version": "4.0.0",
     "description": "Tool set for working with adblock filter lists",
     "keywords": [
         "adblock",
@@ -11,9 +11,7 @@
         "ast",
         "converter",
         "validator",
-        "generator",
-        "serialize",
-        "deserialize"
+        "generator"
     ],
     "author": "Adguard Software Ltd.",
     "license": "MIT",
@@ -43,14 +41,6 @@
         "./generator": {
             "types": "./dist/types/generator/index.d.ts",
             "import": "./dist/generator/index.js"
-        },
-        "./serializer": {
-            "types": "./dist/types/serializer/index.d.ts",
-            "import": "./dist/serializer/index.js"
-        },
-        "./deserializer": {
-            "types": "./dist/types/deserializer/index.d.ts",
-            "import": "./dist/deserializer/index.js"
         },
         "./converter": {
             "types": "./dist/types/converter/index.d.ts",
