@@ -715,7 +715,7 @@ export function getRuleParts(rule: string, ignoreCosmetics = false, ignoreHosts 
 
     // TODO (David): Handle this case in AGTree v5, this is just a temporary fix
     if (dollarCount > 1 && rule.indexOf('/', lastDollarIndex) !== -1) {
-        lastDollarIndex = NetworkRuleParser.findNetworkRuleSeparatorIndex(rule, lastDollarIndex);
+        lastDollarIndex = NetworkRuleParser.findNetworkRuleSeparatorIndex(rule);
     }
 
     const modifierListStart = lastDollarIndex + 1;
