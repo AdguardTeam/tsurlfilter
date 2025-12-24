@@ -1,3 +1,4 @@
+import { NetworkRuleParser } from '@adguard/agtree';
 import isIp from 'is-ip';
 
 import {
@@ -268,7 +269,7 @@ const COSMETIC_SEPARATOR_TYPE_SHIFT = 29; // 2 bits
 const COSMETIC_SEPARATOR_ALLOW_SHIFT = 31; // 1 bit
 
 const DOMAIN_START_SHIFT = 16;
-const DOMAIN_END_MASK = 0xFFFF;
+const DOMAIN_END_MASK = 0xffff;
 
 /**
  * Encodes the offset, length, type, and allow flag into a single number.
@@ -280,16 +281,13 @@ const DOMAIN_END_MASK = 0xFFFF;
  *
  * @returns The encoded separator value.
  */
-const encodeSeparator = (
-    offset: number,
-    length: number,
-    type: CosmeticRuleType,
-    allow: boolean,
-): number => {
-    return (offset & COSMETIC_SEPARATOR_OFFSET_MASK)
-           | ((length & 0x7) << COSMETIC_SEPARATOR_LEN_SHIFT)
-           | ((type & 0x3) << COSMETIC_SEPARATOR_TYPE_SHIFT)
-           | ((allow ? 1 : 0) << COSMETIC_SEPARATOR_ALLOW_SHIFT);
+const encodeSeparator = (offset: number, length: number, type: CosmeticRuleType, allow: boolean): number => {
+    return (
+        (offset & COSMETIC_SEPARATOR_OFFSET_MASK)
+        | ((length & 0x7) << COSMETIC_SEPARATOR_LEN_SHIFT)
+        | ((type & 0x3) << COSMETIC_SEPARATOR_TYPE_SHIFT)
+        | ((allow ? 1 : 0) << COSMETIC_SEPARATOR_ALLOW_SHIFT)
+    );
 };
 
 /**
@@ -634,11 +632,7 @@ function getHostRuleParts(rule: string, realStart: number, realEnd: number): Hos
  * @returns Returns a structured rule object with offset ranges,
  * or `null` if the rule is invalid, a comment, or filtered out.
  */
-export function getRuleParts(
-    rule: string,
-    ignoreCosmetics = false,
-    ignoreHosts = true,
-): RuleParts | null {
+export function getRuleParts(rule: string, ignoreCosmetics = false, ignoreHosts = true): RuleParts | null {
     const { length: ruleLength } = rule;
 
     const realStart = findNextNonWhitespace(rule, 0, ruleLength);
@@ -703,7 +697,7 @@ export function getRuleParts(
 
     if (dollarCount === 0) {
         if (!ignoreHosts && hasWhitespace(rule, realStart, realEnd)) {
-            // FIXME (David): domain-only host rules
+            // TODO (David): Handle domain-only host rules
             return getHostRuleParts(rule, realStart, realEnd);
         }
 
@@ -719,10 +713,10 @@ export function getRuleParts(
         };
     }
 
-    // FIXME (David): problematic case
-    // if (dollarCount > 1 && rule.indexOf('/', lastDollarIndex) !== -1) {
-    //     // check if there is / somewhere after last dollar sign
-    // }
+    // TODO (David): Handle this case in AGTree v5, this is just a temporary fix
+    if (dollarCount > 1 && rule.indexOf('/', lastDollarIndex) !== -1) {
+        lastDollarIndex = NetworkRuleParser.findNetworkRuleSeparatorIndex(rule, lastDollarIndex);
+    }
 
     const modifierListStart = lastDollarIndex + 1;
     const modifierListEnd = realEnd;
