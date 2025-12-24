@@ -91,7 +91,6 @@ export class Engine {
 
     /**
      * Creates an instance of the network engine in sync mode.
-     * Sync mode converts all rules before creating the engine.
      *
      * @param options Engine factory options.
      *
@@ -152,7 +151,6 @@ export class Engine {
 
     /**
      * Creates an instance of the network engine in async mode.
-     * Async mode does not convert rules before creating the engine.
      *
      * @param options Engine factory options.
      *

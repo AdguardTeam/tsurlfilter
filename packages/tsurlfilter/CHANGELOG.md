@@ -5,25 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased <!-- release/browser-extension-v5.3 -->
+## [4.0.0] - TBD
 
 ### Added
 
 - Support of `$header` modifier in declarative converter.
 - Support of `:has()` pseudo-class as standard CSS conditionally:
-    - if there are no other extended pseudo-classes in the selector, or
-    - if the `#?#` separator is explicitly used in the rule [AdguardBrowserExtension#2587].
+  - if there are no other extended pseudo-classes in the selector, or
+  - if the `#?#` separator is explicitly used in the rule [AdguardBrowserExtension#2587].
+- **New `FilterList` class** for managing filter lists with automatic rule conversion.
+  - Provides O(1) access to original rules via conversion data.
+  - Automatically converts rules to AdGuard format using `RawRuleConverter.convertToAdg()`.
+  - Supports bidirectional mapping between converted and original rules.
+- **Engine factory methods** `Engine.createSync()` and `Engine.createAsync()` for creating engine instances.
+- **Async engine creation** support to avoid UI blocking during rule loading.
+- New `retrieveOriginalRuleText()` method on `Engine` for retrieving unconverted rule text.
 
 ### Changed
 
-<!-- TODO: update the version later -->
-- Updated [@adguard/agtree] to `vX.X.X`.
+- Updated [@adguard/agtree] to `v4.0.0`.
+- **BREAKING: Refactored Engine API** - replaced constructor with factory methods.
+  - Use `Engine.createSync(options)` instead of `new Engine(ruleStorage)`.
+  - Use `Engine.createAsync(options)` for async initialization.
+- **BREAKING: Replaced `FilterListPreprocessor` with `FilterList`**.
+  - `FilterList` handles rule conversion automatically.
+  - Provides simpler API with `getContent()`, `getOriginalContent()`, etc.
+- **BREAKING: Replaced `BufferRuleList` with `FilterRuleList`**.
+  - `FilterRuleList` works with `FilterList` instances.
+  - Simplified internal architecture.
+- **BREAKING: Removed `allowlist-creator` module**.
+- Refactored `CosmeticEngine` and `NetworkEngine` to use factory pattern internally.
+- Improved rule storage architecture with new scanner and reader implementations.
+- Enhanced performance with optimized lookup tables and rule indexing.
+
+### Removed
+
+- **BREAKING: `FilterListPreprocessor` class** - use `FilterList` instead.
+- **BREAKING: `BufferRuleList` class** - use `FilterRuleList` with `FilterList` instead.
+- **BREAKING: Direct `Engine` constructor** - use `Engine.createSync()` or `Engine.createAsync()`.
 
 ### Fixed
 
 - Apply $document blocking rule even if specific exception rule is present [AdguardBrowserExtension#3262].
 - The extension got an unexpected error on `[::]:8000` [AdguardBrowserExtension#3360].
 
+[4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v4.0.0
 [AdguardBrowserExtension#2587]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2587
 [AdguardBrowserExtension#3262]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3262
 [AdguardBrowserExtension#3360]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3360
