@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest';
 
-import { tokenize, TokenType } from '../../src/tokenizer/tokenizer';
+import { tokenize } from '../../src/tokenizer/tokenizer';
+import { TokenType } from '../../src/tokenizer/token-types';
 
 type TokenResult = {
     type: TokenType;

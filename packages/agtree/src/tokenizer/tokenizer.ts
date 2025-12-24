@@ -1,186 +1,4 @@
-/**
- * Token types.
- */
-export const enum TokenType {
-    /**
-     * End of file (end of input).
-     */
-    Eof,
-
-    /**
-     * Whitespace.
-     */
-    Whitespace,
-
-    /**
-     * Line break (`\r\n` or just `\n`)
-     */
-    LineBreak,
-
-    /**
-     * Escaped character, e.g. `\'`, `\"`, `\\`, etc.
-     */
-    Escaped,
-
-    /**
-     * Identifier.
-     * Any character sequence that contains letters, numbers, hyphens, and underscores.
-     */
-    Ident,
-
-    /**
-     * Cosmetic rule separator, e.g. `##`.
-     */
-    CosmeticSeparator,
-
-    /**
-     * Allowlist cosmetic rule separator, e.g. `#@#`.
-     */
-    AllowlistCosmeticSeparator,
-
-    /**
-     * Raw content after cosmetic rule separator.
-     * For example, no need to tokenize CSS with this tokenizer after the `##`, `#?#`, etc. separators,
-     * so we use this token type as an optimization strategy.
-     */
-    RawContent,
-
-    /**
-     * Equals: `=`.
-     */
-    EqualsSign,
-
-    /**
-     * Slash: `/`.
-     */
-    Slash,
-
-    /**
-     * Dollar: `$`.
-     */
-    DollarSign,
-
-    /**
-     * Comma: `,`.
-     */
-    Comma,
-
-    /**
-     * Open parenthesis: `(`.
-     */
-    OpenParen,
-
-    /**
-     * Close parenthesis: `)`.
-     */
-    CloseParen,
-
-    /**
-     * Open brace: `{`.
-     */
-    OpenBrace,
-
-    /**
-     * Close brace: `}`.
-     */
-    CloseBrace,
-
-    /**
-     * Open square: `[`.
-     */
-    OpenSquare,
-
-    /**
-     * Close square: `]`.
-     */
-    CloseSquare,
-
-    /**
-     * Pipe: `|`.
-     */
-    Pipe,
-
-    /**
-     * At: `@`.
-     */
-    AtSign,
-
-    /**
-     * Asterisk: `*`.
-     */
-    Asterisk,
-
-    /**
-     * Quote: `"`.
-     */
-    Quote,
-
-    /**
-     * Apostrophe: `'`.
-     */
-    Apostrophe,
-
-    /**
-     * Exclamation: `!`.
-     */
-    ExclamationMark,
-
-    /**
-     * Hashmark: `#`.
-     */
-    HashMark,
-
-    /**
-     * Plus: `+`.
-     */
-    PlusSign,
-
-    /**
-     * And: `&`.
-     */
-    AndSign,
-
-    /**
-     * Tilde: `~`.
-     */
-    Tilde,
-
-    /**
-     * Caret: `^`.
-     */
-    Caret,
-
-    /**
-     * Dot: `.`.
-     */
-    Dot,
-
-    /**
-     * Semicolon: `;`.
-     */
-    Semicolon,
-
-    /**
-     * Any other character.
-     */
-    Symbol,
-}
-
-/**
- * Checks if a character is an identifier character.
- *
- * @param c The character code to check.
- *
- * @returns `true` if the character is an identifier character, `false` otherwise.
- */
-const isIdentChar = (c: number): boolean => {
-    return (
-        (c >= 48 && c <= 57) // 0-9
-        || (c >= 65 && c <= 90) // A-Z
-        || (c >= 97 && c <= 122) // a-z
-        || c === 45 || c === 95 // - _
-    );
-};
+import { TokenType } from './token-types';
 
 const LF_RAW = '\n';
 
@@ -255,6 +73,22 @@ export type OnTokenCallback = (
     skip: SkipFunction,
     jump: JumpFunction,
 ) => void;
+
+/**
+ * Checks if a character is an identifier character.
+ *
+ * @param c The character code to check.
+ *
+ * @returns `true` if the character is an identifier character, `false` otherwise.
+ */
+const isIdentChar = (c: number): boolean => {
+    return (
+        (c >= 48 && c <= 57) // 0-9
+        || (c >= 65 && c <= 90) // A-Z
+        || (c >= 97 && c <= 122) // a-z
+        || c === 45 || c === 95 // - _
+    );
+};
 
 /**
  * Tokenizes a string.
@@ -366,8 +200,15 @@ export const tokenize = (string: string, onToken: OnTokenCallback) => {
             }
 
             case BACKSLASH: {
-                onToken(TokenType.Escaped, i, i + 2, stop, skip, jump);
-                i += 2;
+                // Check if there's a character after the backslash
+                if (i + 1 < length) {
+                    onToken(TokenType.Escaped, i, i + 2, stop, skip, jump);
+                    i += 2;
+                } else {
+                    // Backslash at end of input - treat as symbol
+                    onToken(TokenType.Symbol, i, i + 1, stop, skip, jump);
+                    i += 1;
+                }
                 break;
             }
 
