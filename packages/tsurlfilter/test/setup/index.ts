@@ -13,6 +13,8 @@ export const loggerMocks = {
 // and we don't want to see the logs in the test output.
 vi.mock('@adguard/logger', () => {
     return {
-        Logger: vi.fn().mockImplementation(() => loggerMocks),
+        Logger: function Logger() {
+            return loggerMocks;
+        },
     };
 });

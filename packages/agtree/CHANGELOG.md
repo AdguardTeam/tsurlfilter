@@ -16,6 +16,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   if there are any pseudo-classes that may be considered as extended
   but also supported natively as standard CSS, i.e. `:has()`, `:is()`, `:not()`.
 
+## [3.4.3] - 2025-12-11
+
+### Added
+
+- Support of `googlesyndication.com/adsbygoogle.js` alias for
+  `googlesyndication-adsbygoogle` in compatibility tables.
+- Support for `prevent-innerHTML` scriptlet in compatibility tables.
+
+[3.4.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.4.3
+
 ## [3.4.1] - 2025-11-28
 
 ### Added

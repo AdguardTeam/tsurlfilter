@@ -167,6 +167,12 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
             return null;
         }
 
+        // Remove favIconUrl to prevent memory leaks
+        // Firefox stores favicons as data URLs (e.g., `data:image/x-icon;base64,...`)
+        // which can cause memory leaks. Since we don't use favIconUrl, it's safe to remove.
+        // See: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594#issuecomment-3675433849
+        delete tab.favIconUrl;
+
         /**
          * If tab context already created at this point, it means that
          * context has been created by `createTabContextIfNotExists` method.
@@ -300,7 +306,17 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
             return;
         }
 
-        // TODO: we can ignore some events (favicon url update etc.)
+        // Ignore favicon-only updates
+        if (Object.keys(changeInfo).length === 1 && 'favIconUrl' in changeInfo) {
+            return;
+        }
+
+        // Remove favIconUrl to prevent memory leaks
+        // Firefox stores favicons as data URLs (e.g., `data:image/x-icon;base64,...`)
+        // which can cause memory leaks. Since we don't use favIconUrl, it's safe to remove.
+        // See: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594#issuecomment-3675433849
+        delete tabInfo.favIconUrl;
+
         const tabContext = this.context.get(tabId);
 
         if (!tabContext) {
