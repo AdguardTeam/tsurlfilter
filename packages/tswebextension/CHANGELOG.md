@@ -55,6 +55,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3193]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3193
 [AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
 
+## [3.2.19] - 2025-12-24
+
+### Fixed
+
+- Memory leak caused by storing data URL favicons in tab contexts. [AdguardBrowserExtension#2594]
+
+[3.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.19  
+[AdguardBrowserExtension#2594]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594
+
+## [3.2.18] - 2025-12-16
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.4.3`.
+- Updated [@adguard/scriptlets] to `v2.2.14`.
+- Updated [@adguard/tsurlfilter] to `v3.5.2`.
+
+[3.2.18]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.18
+
 ## [3.2.17] - 2025-12-01
 
 ### Changed

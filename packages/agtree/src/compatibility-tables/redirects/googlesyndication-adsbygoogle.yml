@@ -6,6 +6,7 @@ adg_os_any|adg_ext_any:
     - ubo-googlesyndication_adsbygoogle.js
     - ubo-googlesyndication.com/adsbygoogle.js
     - googlesyndication_adsbygoogle.js
+    - googlesyndication.com/adsbygoogle.js
   description: Mocks Google AdSense API.
 
 ubo_any:

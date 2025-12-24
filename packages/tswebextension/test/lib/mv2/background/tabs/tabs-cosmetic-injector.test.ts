@@ -3,7 +3,6 @@ import {
     expect,
     beforeAll,
     beforeEach,
-    afterEach,
     it,
     vi,
 } from 'vitest';
@@ -38,15 +37,17 @@ describe('TabsCosmeticInjector', () => {
     });
 
     beforeEach(() => {
+        vi.clearAllMocks();
+        browser.tabs.query.reset();
+        browser.webNavigation.getAllFrames.reset();
+        // Note: appContext.cosmeticsInjectedOnStartup getter returns undefined by default
+        // after vi.clearAllMocks() (Vitest 4 automock behavior), which is falsy.
+        // Tests that need it to be truthy use vi.spyOn() to mock the getter.
         const allowlist = new Allowlist();
         engineApi = new EngineApi(allowlist, appContext, stealthApi);
         const documentApi = new DocumentApi(allowlist, engineApi);
         const tabsApi = new TabsApi(documentApi);
         tabsCosmeticInjector = new TabsCosmeticInjector(documentApi, tabsApi, engineApi);
-    });
-
-    afterEach(() => {
-        vi.resetAllMocks();
     });
 
     describe('processOpenTabs method', () => {
@@ -105,6 +106,9 @@ describe('TabsCosmeticInjector', () => {
             const tabId = 1;
             const frameId = 1;
             const frameUrl = 'about:blank';
+
+            // Vitest 4 fix: Mock the flag to prevent cosmetic application
+            vi.spyOn(appContext, 'cosmeticsInjectedOnStartup', 'get').mockReturnValue(true);
 
             browser.tabs.query.resolves([{ id: tabId }]);
             browser.webNavigation.getAllFrames.resolves([{ frameId, url: frameUrl }]);

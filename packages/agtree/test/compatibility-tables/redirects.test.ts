@@ -46,5 +46,53 @@ describe('Redirects Compatibility Table', () => {
         expect(redirectsCompatibilityTable.getMultiple('nonexistent', GenericPlatform.AdgExtAny)).toBeNull();
     });
 
+    describe('googlesyndication-adsbygoogle redirect', () => {
+        const REDIRECT_ALIAS = 'googlesyndication.com/adsbygoogle.js';
+        const REDIRECT_ALIAS_UNDERSCORE = 'googlesyndication_adsbygoogle.js';
+        const REDIRECT_ALIAS_UBO_PREFIX = 'ubo-googlesyndication.com/adsbygoogle.js';
+        const EXPECTED_ADG_NAME = 'googlesyndication-adsbygoogle';
+
+        it('should resolve googlesyndication.com/adsbygoogle.js alias for ADG platform', () => {
+            // This alias is used in uBO syntax and should be resolved to ADG redirect name
+            expect(redirectsCompatibilityTable.existsAny(REDIRECT_ALIAS)).toBeTruthy();
+            expect(
+                redirectsCompatibilityTable.exists(REDIRECT_ALIAS, GenericPlatform.AdgAny),
+            ).toBeTruthy();
+
+            const adgData = redirectsCompatibilityTable.getFirst(
+                REDIRECT_ALIAS,
+                GenericPlatform.AdgAny,
+            );
+            expect(adgData).not.toBeNull();
+            expect(adgData?.name).toBe(EXPECTED_ADG_NAME);
+        });
+
+        it('should resolve googlesyndication_adsbygoogle.js alias for ADG platform', () => {
+            expect(
+                redirectsCompatibilityTable.exists(REDIRECT_ALIAS_UNDERSCORE, GenericPlatform.AdgAny),
+            ).toBeTruthy();
+
+            const adgData = redirectsCompatibilityTable.getFirst(
+                REDIRECT_ALIAS_UNDERSCORE,
+                GenericPlatform.AdgAny,
+            );
+            expect(adgData).not.toBeNull();
+            expect(adgData?.name).toBe(EXPECTED_ADG_NAME);
+        });
+
+        it('should resolve ubo-googlesyndication.com/adsbygoogle.js alias for ADG platform', () => {
+            expect(
+                redirectsCompatibilityTable.exists(REDIRECT_ALIAS_UBO_PREFIX, GenericPlatform.AdgAny),
+            ).toBeTruthy();
+
+            const adgData = redirectsCompatibilityTable.getFirst(
+                REDIRECT_ALIAS_UBO_PREFIX,
+                GenericPlatform.AdgAny,
+            );
+            expect(adgData).not.toBeNull();
+            expect(adgData?.name).toBe(EXPECTED_ADG_NAME);
+        });
+    });
+
     // TODO: Add more tests
 });

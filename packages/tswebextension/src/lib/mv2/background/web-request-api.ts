@@ -1056,27 +1056,33 @@ export class WebRequestApi {
             url,
         } = details;
 
+        if (!isHttpOrWsRequest(url)) {
+            return;
+        }
+
         const isOpera = browserDetectorMV2.isOpera();
 
-        if (isOpera && frameId === MAIN_FRAME_ID) {
-            const tabContext = tabsApi.getTabContext(tabId);
-            if (!tabContext) {
-                return;
-            }
-
-            const frame = tabContext.frames.get(frameId);
-            if (!frame || frame.matchingResult) {
-                return;
-            }
-
-            const matchingResult = engineApi.matchRequest({
-                requestUrl: url,
-                frameUrl: url,
-                requestType: RequestType.Document,
-                frameRule: tabContext.mainFrameRule,
-            });
-
-            frame.matchingResult = matchingResult;
+        if (!isOpera || frameId !== MAIN_FRAME_ID) {
+            return;
         }
+
+        const tabContext = tabsApi.getTabContext(tabId);
+        if (!tabContext) {
+            return;
+        }
+
+        const frame = tabContext.frames.get(frameId);
+        if (!frame || frame.matchingResult) {
+            return;
+        }
+
+        const matchingResult = engineApi.matchRequest({
+            requestUrl: url,
+            frameUrl: url,
+            requestType: RequestType.Document,
+            frameRule: tabContext.mainFrameRule,
+        });
+
+        frame.matchingResult = matchingResult;
     }
 }

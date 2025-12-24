@@ -37,7 +37,7 @@ describe('Engine Api', () => {
     });
 
     afterEach(() => {
-        vi.restoreAllMocks();
+        vi.clearAllMocks();
     });
 
     afterAll(() => {
