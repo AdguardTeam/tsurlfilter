@@ -1,5 +1,5 @@
 import { type HostRule as HostRuleNode, NetworkRuleType, RuleCategory } from '@adguard/agtree';
-import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
+import { defaultParserOptions, type ParserOptions, RuleParser } from '@adguard/agtree/parser';
 
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 
@@ -24,6 +24,15 @@ import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
  * @returns True if this rule can be used on the specified hostname.
  */
 export class HostRule implements IRule {
+    /**
+     * Parser options for host rules.
+     */
+    private static readonly PARSER_OPTIONS: ParserOptions = {
+        ...defaultParserOptions,
+        parseHostRules: true,
+        isLocIncluded: false,
+    };
+
     /**
      * Rule index.
      */
@@ -87,10 +96,7 @@ export class HostRule implements IRule {
         if (node) {
             parsedNode = node;
         } else {
-            const parsed = RuleParser.parse(ruleText, {
-                ...defaultParserOptions,
-                parseHostRules: true,
-            });
+            const parsed = RuleParser.parse(ruleText, HostRule.PARSER_OPTIONS);
 
             // Validate that we got a valid host rule
             if (parsed.category !== RuleCategory.Network || parsed.type !== NetworkRuleType.HostRule) {

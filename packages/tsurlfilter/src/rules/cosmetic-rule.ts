@@ -14,7 +14,7 @@ import {
     RegExpUtils,
 } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
-import { CosmeticRuleParser, defaultParserOptions } from '@adguard/agtree/parser';
+import { CosmeticRuleParser, defaultParserOptions, type ParserOptions } from '@adguard/agtree/parser';
 import { scriptlets, type Source } from '@adguard/scriptlets';
 import { isValidScriptletName } from '@adguard/scriptlets/validators';
 
@@ -213,6 +213,16 @@ interface ProcessedModifiers {
  * `example.org$$div[id="test"]` -- HTML filtering rule
  */
 export class CosmeticRule implements IRule {
+    /**
+     * Parser options for cosmetic rules.
+     */
+    private static readonly PARSER_OPTIONS: ParserOptions = {
+        ...defaultParserOptions,
+        parseAbpSpecificRules: false,
+        parseUboSpecificRules: false,
+        isLocIncluded: false,
+    };
+
     /**
      * Rule index.
      */
@@ -689,11 +699,7 @@ export class CosmeticRule implements IRule {
         if (node) {
             parsedNode = node;
         } else {
-            const parsed = CosmeticRuleParser.parse(ruleText, {
-                ...defaultParserOptions,
-                parseAbpSpecificRules: false,
-                parseUboSpecificRules: false,
-            });
+            const parsed = CosmeticRuleParser.parse(ruleText, CosmeticRule.PARSER_OPTIONS);
 
             // CosmeticRuleParser returns null if the rule is not a valid cosmetic rule
             if (!parsed) {

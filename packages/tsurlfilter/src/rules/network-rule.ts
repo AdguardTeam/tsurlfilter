@@ -1,6 +1,6 @@
 import { type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
-import { NetworkRuleParser } from '@adguard/agtree/parser';
+import { defaultParserOptions, NetworkRuleParser, type ParserOptions } from '@adguard/agtree/parser';
 
 import { EMPTY_STRING } from '../common/constants';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
@@ -299,6 +299,14 @@ export enum NetworkRuleGroupOptions {
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
  */
 export class NetworkRule implements IRule {
+    /**
+     * Parser options for network rules.
+     */
+    private static readonly PARSER_OPTIONS: ParserOptions = {
+        ...defaultParserOptions,
+        isLocIncluded: false,
+    };
+
     /**
      * Rule index.
      */
@@ -1252,7 +1260,7 @@ export class NetworkRule implements IRule {
         }
 
         // Use provided node or parse the rule text
-        const parsedNode = node ?? NetworkRuleParser.parse(ruleText);
+        const parsedNode = node ?? NetworkRuleParser.parse(ruleText, NetworkRule.PARSER_OPTIONS);
         this.allowlist = parsedNode.exception;
 
         const pattern = parsedNode.pattern.value;
