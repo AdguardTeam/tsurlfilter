@@ -1,5 +1,5 @@
 import { type TokenBuffer } from './token-buffer';
-import { TokenType } from './token-types';
+import { getFormattedTokenName, TokenType } from './token-types';
 
 /**
  * Type for cursor state snapshot.
@@ -148,7 +148,7 @@ export class TokenCursor {
      * for (const line of lines) {
      *     buffer.reset();
      *     tokenize(line, callback);
-     *     cursor.reinit(line);
+     *     cursor.reInit(line);
      *     parseRule(cursor);
      * }
      * ```
@@ -464,7 +464,8 @@ export class TokenCursor {
             const charPos = this.start();
             const tokenText = this.text();
             throw new Error(
-                `Expected token ${type}, got ${this.current()} at tokenIndex=${this.pos} `
+                // eslint-disable-next-line max-len
+                `Expected token ${getFormattedTokenName(type)}, got ${getFormattedTokenName(this.current())} at tokenIndex=${this.pos} `
                 + `(char position ${charPos}, text: "${tokenText}")`,
             );
         }
