@@ -1036,15 +1036,25 @@ describe('RuleConverter', () => {
         });
 
         it('correctly specifies excludedResourceTypes', () => {
-            const networkRule = createNetworkRuleMock({
+            const networkRule1 = createNetworkRuleMock({
                 restrictedResourceTypes: [ResourceType.Font, ResourceType.Image],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
-            expect(condition.excludedResourceTypes).toEqual([
+            const condition1 = RuleConverter.getCondition(networkRule1);
+            expect(condition1.excludedResourceTypes).toEqual([
                 ResourceType.Font,
                 ResourceType.Image,
                 ResourceType.MainFrame,
+            ]);
+
+            const networkRule2 = createNetworkRuleMock({
+                restrictedResourceTypes: [ResourceType.MainFrame, ResourceType.Image],
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition2 = RuleConverter.getCondition(networkRule2);
+            expect(condition2.excludedResourceTypes).toEqual([
+                ResourceType.MainFrame,
+                ResourceType.Image,
             ]);
         });
 
@@ -1144,6 +1154,14 @@ describe('RuleConverter', () => {
             // @ts-expect-error Accessing private member for test purposes
             const condition2 = RuleConverter.getCondition(networkRule2);
             expect(condition2.resourceTypes).toEqual([ResourceType.Font, ResourceType.MainFrame]);
+
+            const networkRule3 = createNetworkRuleMock({
+                enabledOptions: [NetworkRuleOption.Popup],
+                permittedResourceTypes: [ResourceType.MainFrame, ResourceType.Font],
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition3 = RuleConverter.getCondition(networkRule3);
+            expect(condition3.resourceTypes).toEqual([ResourceType.MainFrame, ResourceType.Font]);
         });
 
         it('correctly specifies all resourceTypes for different options', () => {
