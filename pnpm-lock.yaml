@@ -929,7 +929,7 @@ importers:
         version: 1.2.0
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.2.10
+        version: 2.2.14
       punycode:
         specifier: 2.3.1
         version: 2.3.1
@@ -972,7 +972,7 @@ importers:
         version: 7.18.0(eslint@8.57.1)(typescript@5.8.3)
       '@vitest/coverage-v8':
         specifier: 'catalog:'
-        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
+        version: 4.0.15(vitest@4.0.15(@types/node@22.14.0)(jsdom@25.0.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
       eslint:
         specifier: 'catalog:'
         version: 8.57.1
