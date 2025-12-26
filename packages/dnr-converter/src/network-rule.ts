@@ -13,6 +13,21 @@ import { getErrorMessage } from './utils/error';
 import { fastHash, fastHash31, hasSpaces } from './utils/string';
 
 /**
+ * FIXME: Migrated from `tsurlfilter` package, should be removed with AG-47697.
+ */
+export type HttpHeaderMatcher = {
+    /**
+     * Name of the HTTP header.
+     */
+    header: string;
+
+    /**
+     * HTTP header value matcher.
+     */
+    value?: string | RegExp | null;
+};
+
+/**
  * NetworkRuleOption is the enumeration of various rule options.
  * In order to save memory, we store some options as a flag.
  *
@@ -594,6 +609,18 @@ export class NetworkRule {
      */
     // eslint-disable-next-line class-methods-use-this
     public getAdvancedModifierValue(): string | null {
+        return null;
+    }
+
+    /**
+     * Retrieves the header modifier matcher.
+     *
+     * @returns The header modifier matcher or null if none.
+     *
+     * FIXME: Replace with actual implementation (AG-47697).
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public getHeaderModifierMatcher(): HttpHeaderMatcher | null {
         return null;
     }
 

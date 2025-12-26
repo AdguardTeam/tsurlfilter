@@ -4,7 +4,7 @@
 /**
  * @file Describes how to convert one {@link NetworkRule} into one or many {@link DeclarativeRule}.
  *
- *      Heir classes                                        DeclarativeRuleConverter
+ *      Heir classes                                        RuleConverter
  *
  *                            │                                         │
  *    *override layer*        │              *protected layer*          │              *private layer*
@@ -106,6 +106,7 @@ import { CSP_HEADER_NAME, MASK_ANY_CHARACTER, PERMISSIONS_POLICY_HEADER_NAME } f
 import {
     type DeclarativeRule,
     DomainType,
+    type HeaderInfo,
     HeaderOperation,
     type ModifyHeaderInfo,
     type Redirect,
@@ -612,6 +613,24 @@ export abstract class RuleConverter {
                 ];
             } else if (shouldMatchOnlyDocument) {
                 condition.resourceTypes = [ResourceType.MainFrame, ResourceType.SubFrame];
+            }
+        }
+
+        // set response headers
+        if (rule.isOptionEnabled(NetworkRuleOption.Header)) {
+            const headerModifierMatcher = rule.getHeaderModifierMatcher();
+            if (headerModifierMatcher) {
+                const headerInfo: HeaderInfo = { header: headerModifierMatcher.header };
+
+                // Add values array if a value pattern is specified and is not a regex
+                // DNR does not support regex in the header info values field
+                // as of 14 November 2025 https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#type-HeaderInfo
+                const { value } = headerModifierMatcher;
+                if (typeof value === 'string') {
+                    headerInfo.values = [value];
+                }
+
+                condition.responseHeaders = [headerInfo];
             }
         }
 

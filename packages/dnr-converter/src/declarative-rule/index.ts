@@ -7,6 +7,8 @@
 
 export { type DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';
 
+export { type HeaderInfo } from './header-info';
+
 export { type ModifyHeaderInfo, HeaderOperation } from './modify-header-info';
 
 export { type Redirect } from './redirect';

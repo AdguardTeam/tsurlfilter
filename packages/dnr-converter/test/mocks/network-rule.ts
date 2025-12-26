@@ -1,7 +1,7 @@
 import { type NetworkRule as NetworkRuleNode, RuleGenerator } from '@adguard/agtree';
 
 import { type RequestMethod, type ResourceType } from '../../src/declarative-rule';
-import { type NetworkRule, type NetworkRuleOption } from '../../src/network-rule';
+import { type HttpHeaderMatcher, type NetworkRule, type NetworkRuleOption } from '../../src/network-rule';
 import { fastHash, fastHash31 } from '../../src/utils/string';
 
 /**
@@ -114,6 +114,11 @@ interface CreateNetworkRuleMockOptions {
     advancedModifierValue?: string | null;
 
     /**
+     * Mocks header modifier matcher for the rule. Defaults to `null`.
+     */
+    headerModifierMatcher?: HttpHeaderMatcher | null;
+
+    /**
      * Mocks response header name to remove for the rule. Defaults to `null`.
      */
     responseHeaderNameToRemove?: string | null;
@@ -183,6 +188,7 @@ export function createNetworkRuleMock(options: CreateNetworkRuleMockOptions = {}
         permittedMethods = [],
         restrictedMethods = [],
         advancedModifierValue = null,
+        headerModifierMatcher = null,
         responseHeaderNameToRemove = null,
         requestHeaderNameToRemove = null,
         getRuleTextHash = (salt?: number) => {
@@ -229,6 +235,7 @@ export function createNetworkRuleMock(options: CreateNetworkRuleMockOptions = {}
         getPermittedMethods: () => permittedMethods,
         getRestrictedMethods: () => restrictedMethods,
         getAdvancedModifierValue: () => advancedModifierValue,
+        getHeaderModifierMatcher: () => headerModifierMatcher,
         getApplicableHeaderName: (isRequestHeader: boolean) => (
             isRequestHeader
                 ? requestHeaderNameToRemove

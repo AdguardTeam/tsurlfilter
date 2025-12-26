@@ -1211,6 +1211,68 @@ describe('RuleConverter', () => {
             const condition3 = RuleConverter.getCondition(networkRule3);
             expect(condition3.resourceTypes).toBeUndefined();
         });
+
+        it('correctly specifies responseHeaders', () => {
+            const networkRule1 = createNetworkRuleMock({
+                enabledOptions: [NetworkRuleOption.Header],
+                headerModifierMatcher: {
+                    header: 'Test-Header',
+                },
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition1 = RuleConverter.getCondition(networkRule1);
+            expect(condition1.responseHeaders).toEqual([{
+                header: 'Test-Header',
+            }]);
+
+            const networkRule2 = createNetworkRuleMock({
+                enabledOptions: [NetworkRuleOption.Header],
+                headerModifierMatcher: {
+                    header: 'Test-Header',
+                    value: null,
+                },
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition2 = RuleConverter.getCondition(networkRule2);
+            expect(condition2.responseHeaders).toEqual([{
+                header: 'Test-Header',
+            }]);
+
+            const networkRule3 = createNetworkRuleMock({
+                enabledOptions: [NetworkRuleOption.Header],
+                headerModifierMatcher: {
+                    header: 'Test-Header',
+                    value: 'Header-Value',
+                },
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition3 = RuleConverter.getCondition(networkRule3);
+            expect(condition3.responseHeaders).toEqual([{
+                header: 'Test-Header',
+                values: ['Header-Value'],
+            }]);
+
+            const networkRule4 = createNetworkRuleMock({
+                enabledOptions: [NetworkRuleOption.Header],
+                headerModifierMatcher: null,
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition4 = RuleConverter.getCondition(networkRule4);
+            expect(condition4.responseHeaders).toBeUndefined();
+
+            const networkRule5 = createNetworkRuleMock({
+                enabledOptions: [NetworkRuleOption.Header],
+                headerModifierMatcher: {
+                    header: 'Test-Header',
+                    value: /regexp/,
+                },
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition5 = RuleConverter.getCondition(networkRule5);
+            expect(condition5.responseHeaders).toEqual([{
+                header: 'Test-Header',
+            }]);
+        });
     });
 
     describe('convertRule', () => {
