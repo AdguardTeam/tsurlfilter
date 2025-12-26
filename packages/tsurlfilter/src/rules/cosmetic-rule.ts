@@ -12,6 +12,7 @@ import {
     QuoteType,
     QuoteUtils,
     RegExpUtils,
+    type SelectorCombinatorValue,
 } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 import { CosmeticRuleParser, defaultParserOptions, type ParserOptions } from '@adguard/agtree/parser';
@@ -133,6 +134,71 @@ class ScriptletParams {
 }
 
 /**
+ * Represents special selector names used in HTML filtering rules.
+ *
+ * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
+ *
+ * @note Special attribute selectors (e.g. `[tag-content="content"]`) are not included here
+ * as they are deprecated and will be removed in future versions, in AGTree converter they
+ * are converted to `:contains(content)` special pseudo-class selector.
+ */
+export enum HtmlSpecialSelectorName {
+    /**
+     * `:contains(content)` special selector.
+     *
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains}
+     */
+    Contains = 'contains',
+}
+
+/**
+ * Represents processed special selector used in HTML filtering rules.
+ */
+export interface HtmlSpecialSelector {
+    /**
+     * The name of the special selector.
+     */
+    name: HtmlSpecialSelectorName;
+
+    /**
+     * The value of the special selector.
+     */
+    value: string | RegExp;
+}
+
+/**
+ * Represents HTML filtering rule selector.
+ */
+export interface HtmlSelector {
+    /**
+     * Combinator used to combine with the previous selector.
+     */
+    combinator?: SelectorCombinatorValue;
+
+    /**
+     * Native CSS selector part of the selector.
+     */
+    nativeSelector: string;
+
+    /**
+     * List of special selectors used in the selector.
+     */
+    specialSelectors: HtmlSpecialSelector[];
+}
+
+/**
+ * Represents HTML filtering rule selector list.
+ */
+export interface HtmlSelectorList {
+    /**
+     * Selectors that make up the selector list.
+     * First dimension represents different complex selectors separated by commas.
+     * Second dimension represents compound selectors within a complex selector separated by combinators.
+     */
+    selectors: HtmlSelector[][];
+}
+
+/**
  * Represents possible modifiers for cosmetic rules.
  */
 const enum CosmeticRuleModifier {
@@ -221,6 +287,7 @@ export class CosmeticRule implements IRule {
         parseAbpSpecificRules: false,
         parseUboSpecificRules: false,
         isLocIncluded: false,
+        parseHtmlFilteringRuleBodies: true,
     };
 
     /**
@@ -304,6 +371,11 @@ export class CosmeticRule implements IRule {
      * If the rule contains scriptlet content.
      */
     public isScriptlet = false;
+
+    /**
+     * HTML filtering rule selector list.
+     */
+    private htmlSelectorList: HtmlSelectorList | null = null;
 
     /**
      * Gets rule index.
@@ -415,6 +487,15 @@ export class CosmeticRule implements IRule {
             return this.domainModifier.getRestrictedDomains();
         }
         return null;
+    }
+
+    /**
+     * Returns HTML filtering rule selector list.
+     *
+     * @returns HTML filtering rule selector list or `null` if the rule is not an HTML filtering rule.
+     */
+    public getHtmlSelectorList(): HtmlSelectorList | null {
+        return this.htmlSelectorList;
     }
 
     /**
@@ -536,6 +617,151 @@ export class CosmeticRule implements IRule {
     }
 
     /**
+     * Processes HTML filtering rule selector list.
+     *
+     * @param ruleNode Cosmetic rule node to process.
+     *
+     * @returns Processed {@link HtmlSelectorList} or `null` if the rule is not an HTML filtering rule.
+     *
+     * @throws Error if the rule body is not parsed into AST nodes.
+     * @throws Error if special selector is missing a value.
+     * @throws Error if an unsupported simple selector type is encountered.
+     */
+    private static processHtmlSelectorList(ruleNode: AnyCosmeticRule): HtmlSelectorList | null {
+        // Process only HTML filtering rules
+        if (ruleNode.type !== CosmeticRuleType.HtmlFilteringRule) {
+            return null;
+        }
+
+        // Process only parsed HTML filtering rule bodies
+        // This can happen if the passed node is not parsed with `parseHtmlFilteringRuleBodies` option enabled
+        // which indicates that the rule body is not used for filtering and thus selector list isn't used
+        if (ruleNode.body.type !== 'HtmlFilteringRuleBody') {
+            return null;
+        }
+
+        const result: HtmlSelectorList = {
+            selectors: [],
+        };
+
+        // Destructure the selectors array just for convenience
+        // Note: AGTree do not tolerate empty selector lists,
+        // so we can assume that there is at least one selector in the list
+        const { children: selectors } = ruleNode.body.selectorList;
+
+        for (const selectorNode of selectors) {
+            // Destructure the simple selectors array just for convenience
+            // Note: AGTree do not tolerate empty simple selector lists,
+            // so we can assume that there is at least one simple selector in the list
+            const { children: simpleSelectors } = selectorNode;
+
+            const complexSelectors: HtmlSelector[] = [];
+
+            let previousCombinator: SelectorCombinatorValue | null = null;
+            let currentNativeSelector = '';
+            let currentSpecialSelectors: HtmlSpecialSelector[] = [];
+
+            for (let i = 0; i < simpleSelectors.length; i += 1) {
+                const simpleSelectorNode = simpleSelectors[i];
+
+                const { type } = simpleSelectorNode;
+                switch (type) {
+                    // tag selectors can be added as-is
+                    case 'TypeSelector':
+                        currentNativeSelector += simpleSelectorNode.value;
+                        break;
+
+                    // id selectors should be prefixed
+                    case 'IdSelector':
+                        currentNativeSelector += `#${simpleSelectorNode.value}`;
+                        break;
+
+                    // class selectors should be prefixed
+                    case 'ClassSelector':
+                        currentNativeSelector += `.${simpleSelectorNode.value}`;
+                        break;
+
+                    // attribute selectors should be wrapped in square brackets and quoted
+                    case 'AttributeSelector':
+                        currentNativeSelector += `[${simpleSelectorNode.name.value}`;
+                        if ('value' in simpleSelectorNode) {
+                            currentNativeSelector += simpleSelectorNode.operator.value;
+
+                            // It's safe to set double quotes here, as AGTree removes any existing quotes
+                            // from the attribute value and unescapes it, so we just need to quote it properly
+                            // again and escape any double quotes in the value
+                            currentNativeSelector += QuoteUtils.setStringQuoteType(
+                                simpleSelectorNode.value.value,
+                                QuoteType.Double,
+                            );
+
+                            if (simpleSelectorNode.flag) {
+                                currentNativeSelector += ` ${simpleSelectorNode.flag.value}`;
+                            }
+                        }
+                        currentNativeSelector += ']';
+
+                        break;
+
+                    // if it's a pseudo-class selector, we need to check if it's a special one
+                    // if yes, we add it to the special selectors list, otherwise we add it to the native selector
+                    case 'PseudoClassSelector':
+                        if (simpleSelectorNode.name.value === HtmlSpecialSelectorName.Contains) {
+                            if (!simpleSelectorNode.argument) {
+                                throw new Error(
+                                    `'${HtmlSpecialSelectorName.Contains}' pseudo-class requires an argument`,
+                                );
+                            }
+
+                            currentSpecialSelectors.push({
+                                name: HtmlSpecialSelectorName.Contains,
+                                value: SimpleRegex.fromLiteral(simpleSelectorNode.argument.value),
+                            });
+                        } else {
+                            currentNativeSelector += `:${simpleSelectorNode.name.value}`;
+                            if (simpleSelectorNode.argument) {
+                                currentNativeSelector += `(${simpleSelectorNode.argument.value})`;
+                            }
+                        }
+                        break;
+
+                    // This case is handled after the switch
+                    case 'SelectorCombinator':
+                        break;
+
+                    default:
+                        throw new Error(`Unsupported simple selector type: '${type}'`);
+                }
+
+                // If it's a combinator or the last simple selector, we should finalize the current compound selector
+                if (type === 'SelectorCombinator' || i === simpleSelectors.length - 1) {
+                    const selector: HtmlSelector = {
+                        nativeSelector: currentNativeSelector,
+                        specialSelectors: currentSpecialSelectors,
+                    };
+
+                    if (previousCombinator) {
+                        selector.combinator = previousCombinator;
+                    }
+
+                    complexSelectors.push(selector);
+
+                    // Reset current compound selector state for the next one if it was a combinator
+                    if (type === 'SelectorCombinator') {
+                        previousCombinator = simpleSelectorNode.value;
+                        currentNativeSelector = '';
+                        currentSpecialSelectors = [];
+                    }
+                }
+            }
+
+            result.selectors.push(complexSelectors);
+        }
+
+        return result;
+    }
+
+    /**
      * Validates cosmetic rule node.
      *
      * @param ruleNode Cosmetic rule node to validate.
@@ -626,7 +852,8 @@ export class CosmeticRule implements IRule {
                     break;
 
                 case CosmeticRuleType.HtmlFilteringRule:
-                    // TODO: Validate HTML filtering rules
+                    // AGTree won't allow invalid selector lists (both in parser and converter)
+                    // thus we don't need to validate them here
                     break;
 
                 case CosmeticRuleType.JsInjectionRule:
@@ -765,6 +992,9 @@ export class CosmeticRule implements IRule {
         if (CosmeticRule.isAnyDomainSpecified(domainListNode)) {
             this.domainModifier = new DomainModifier(domainListNode, COMMA_DOMAIN_LIST_SEPARATOR);
         }
+
+        // Process HTML filtering rule selector list
+        this.htmlSelectorList = CosmeticRule.processHtmlSelectorList(parsedNode);
     }
 
     /**

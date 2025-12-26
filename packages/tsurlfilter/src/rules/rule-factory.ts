@@ -31,6 +31,7 @@ export class RuleFactory {
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
      * @param parseHostRules Whether to parse host rules. Default is true.
+     * @param parseHtmlFilteringRuleBodies Whether to parse HTML filtering rule bodies. Default is false.
      *
      * @returns IRule object or null.
      */
@@ -39,11 +40,13 @@ export class RuleFactory {
         filterListId: number = FILTER_LIST_ID_NONE,
         ruleIndex = RULE_INDEX_NONE,
         parseHostRules = true,
+        parseHtmlFilteringRuleBodies = false,
     ): IRule | null {
         try {
             const node = RuleParser.parse(ruleText, {
                 ...defaultParserOptions,
                 parseHostRules,
+                parseHtmlFilteringRuleBodies,
             });
 
             switch (node.category) {

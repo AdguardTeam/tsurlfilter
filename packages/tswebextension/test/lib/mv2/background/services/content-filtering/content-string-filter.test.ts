@@ -14,7 +14,6 @@ import {
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { defaultFilteringLog } from '../../../../../../src/lib/common/filtering-log';
-import { logger } from '../../../../../../src/lib/common/utils/logger';
 import { mockEngineApi } from '../../../../../helpers/mocks';
 
 vi.mock('../../../../../../src/lib/common/utils/logger');
@@ -62,6 +61,22 @@ describe('Content string filter', () => {
         expect(modified).toBe('<html><head></head><body></body></html>');
     });
 
+    it('applies html rules to content', () => {
+        const htmlRules = [createCosmeticRule('$$:contains(test)', 1)];
+
+        const contentStringFilter = new ContentStringFilter(
+            context,
+            htmlRules,
+            null,
+            defaultFilteringLog,
+            mockEngineApi,
+        );
+
+        const modified = contentStringFilter.applyRules(content);
+
+        expect(modified).toBe('');
+    });
+
     it('applies replace rules to content', () => {
         const replaceRules = [
             createNetworkRule('||example.org^$replace=/test/a/', 1),
@@ -93,34 +108,5 @@ describe('Content string filter', () => {
         const modified = contentStringFilter.applyRules(content);
 
         expect(modified).toBe(content);
-    });
-
-    it('ignores invalid or unsupported rules', () => {
-        const htmlRules = [
-            createCosmeticRule('$$h1', 1),
-            createCosmeticRule('example.org$$[href*="http"]', 1),
-            // TODO: Add support for `:contains()` (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3150)
-            createCosmeticRule('example.org$$div:contains(foo)', 1),
-        ];
-
-        const contentStringFilter = new ContentStringFilter(
-            context,
-            htmlRules,
-            null,
-            defaultFilteringLog,
-            mockEngineApi,
-        );
-
-        const modified = contentStringFilter.applyRules(content);
-
-        expect(logger.info).toHaveBeenCalledWith(
-            '[tsweb.ContentStringFilter.applyHtmlRules]: ignoring rule with invalid HTML selector: [href*="http"]',
-        );
-
-        expect(logger.info).toHaveBeenCalledWith(
-            '[tsweb.ContentStringFilter.applyHtmlRules]: ignoring rule with invalid HTML selector: div:contains(foo)',
-        );
-
-        expect(modified).toBe('<html><head></head><body><span>test</span></body></html>');
     });
 });

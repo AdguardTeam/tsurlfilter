@@ -208,7 +208,7 @@ export class CosmeticLookupTable {
 
             const uniqueRulesIndexes = new Set(rulesIndexes);
             for (const ruleIndex of uniqueRulesIndexes) {
-                const rule = this.ruleStorage.retrieveRule(ruleIndex) as CosmeticRule;
+                const rule = this.ruleStorage.retrieveRule(ruleIndex, true, false) as CosmeticRule;
                 if (rule && !rule.isAllowlist() && rule.match(request)) {
                     result.push(rule);
                 }

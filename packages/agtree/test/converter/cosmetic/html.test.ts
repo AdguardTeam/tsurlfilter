@@ -1,562 +1,1039 @@
-import {
-    describe,
-    test,
-    expect,
-    it,
-} from 'vitest';
-import { sprintf } from 'sprintf-js';
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
+import { describe, test, expect } from 'vitest';
 
 import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
 import { type HtmlFilteringRule } from '../../../src/nodes';
 import { RuleParser } from '../../../src/parser/rule-parser';
+import { NotImplementedError } from '../../../src/errors/not-implemented-error';
+import { createNodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
+import { defaultParserOptions, type ParserOptions } from '../../../src/parser/options';
+
+/**
+ * Invalid test data interface.
+ */
+interface InvalidTestData {
+    /**
+     * Input rule.
+     */
+    input: string | HtmlFilteringRule;
+
+    /**
+     * Expected error message.
+     */
+    error: string;
+}
+
+/**
+ * Default parser options with HTML filtering rules parsing enabled.
+ */
+const parsingEnabledDefaultParserOptions: ParserOptions = {
+    ...defaultParserOptions,
+    parseHtmlFilteringRuleBodies: true,
+};
 
 describe('HtmlRuleConverter', () => {
     describe('convertToAdg', () => {
-        // should throw an error if the rule is invalid
-        test.each([
-            {
-                actual: 'example.com,~example.net##^script:has-text(aaa)div',
-                expected: sprintf(
-                    ERROR_MESSAGES.TAG_SHOULD_BE_FIRST_CHILD,
-                    getFormattedTokenName(TokenType.Ident),
-                    'div',
-                ),
-            },
-            {
-                actual: 'example.com,~example.net##^div + div',
-                expected: sprintf(
-                    ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
-                    getFormattedTokenName(TokenType.Delim),
-                    '+',
-                ),
-            },
-            // we're only support quite few pseudo classes, and we should
-            // discard any invalid ones
-            {
-                actual: 'example.com##^body > script:has-text(test)',
-                expected: sprintf(
-                    ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
-                    getFormattedTokenName(TokenType.Delim),
-                    '>',
-                ),
-            },
-            {
-                actual: 'example.com##^script:some-another-rule(test)',
-                expected: 'Unsupported pseudo class \'some-another-rule\'',
-            },
-            {
-                actual: 'example.com##^:aaa',
-                expected: "Expected '<function-token>', but got '<ident-token>'",
-            },
-            // TODO: add some support for RegExp patterns later
-            {
-                actual: 'example.com##^script:has-text(/^aaa/)',
-                expected: sprintf(
-                    ERROR_MESSAGES.REGEXP_NOT_SUPPORTED,
-                    '/^aaa/',
-                    'has-text',
-                ),
-            },
-            // syntax error in the base rule
-            {
-                actual: 'example.com##^[identifier-cannot-start-with-a-digit=2bad-identifier]',
-                expected: sprintf(
-                    ERROR_MESSAGES.INVALID_ATTRIBUTE_VALUE,
-                    getFormattedTokenName(TokenType.Dimension),
-                    '2bad-identifier',
-                ),
-            },
-            // Only '=' operator is supported
-            {
-                actual: 'example.com##^[attr*="value"]',
-                expected: "Expected '<delim-token>' with value '=', but got '*'",
-            },
-            // Flags are not supported
-            {
-                actual: 'example.com##^[attr="value"i]',
-                expected: ERROR_MESSAGES.FLAGS_NOT_SUPPORTED,
-            },
-            {
-                actual: 'example.com##^[attr="value" i]',
-                expected: ERROR_MESSAGES.FLAGS_NOT_SUPPORTED,
-            },
-        ])('should throw \'$expected\' for \'$actual\'', ({ actual, expected }) => {
-            expect(() => {
-                HtmlRuleConverter.convertToAdg(RuleParser.parse(actual) as HtmlFilteringRule);
-            }).toThrowError(expected);
+        describe('from ABP', () => {
+            test('should throw unsupported error', () => {
+                expect(() => HtmlRuleConverter.convertToAdg({
+                    syntax: 'AdblockPlus',
+                } as HtmlFilteringRule)).toThrowError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
+            });
         });
 
-        test.each([
-            // Please keep in mind that the converter is an AST → AST[] function,
-            // so the result is always an array of ASTs
+        describe('from ADG', () => {
+            describe('parsed - valid cases', () => {
+                test.each([
+                    // complex selector without special simplex selectors
+                    {
+                        actual: '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                        shouldConvert: false,
+                    },
 
-            // UBO → ADG, normal blocking rules
-            {
-                actual: 'example.com,~example.net##^div',
-                expected: [
-                    'example.com,~example.net$$div[max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net##^div[attr]',
-                expected: [
-                    'example.com,~example.net$$div[attr][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net##^div[attr="val"]',
-                expected: [
-                    'example.com,~example.net$$div[attr="val"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net##^div[attr-1][attr-2="val"]',
-                expected: [
-                    'example.com,~example.net$$div[attr-1][attr-2="val"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net##^div[attr-1][attr-2="val"][attr-3]',
-                expected: [
-                    'example.com,~example.net$$div[attr-1][attr-2="val"][attr-3][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net##^script:has-text(12313)',
-                expected: [
-                    'example.com,~example.net$$script[tag-content="12313"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net##^script:has-text(console.log("doubles"))',
-                expected: [
-                    'example.com,~example.net$$script[tag-content="console.log(""doubles"")"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net##^script[data-test]:has-text(12313)',
-                expected: [
-                    'example.com,~example.net$$script[data-test][tag-content="12313"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net##^script[data-test="1"][data-test2="2"]:has-text(12313)',
-                expected: [
-                    // eslint-disable-next-line max-len
-                    'example.com,~example.net$$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: "example.com,~example.net##^script:has-text(d.createElement('script'))",
-                expected: [
-                    'example.com,~example.net$$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: "example.com,~example.net##^script:has-text(d.createElement('script')):min-text-length(1234)",
-                expected: [
-                    // eslint-disable-next-line max-len
-                    'example.com,~example.net$$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
+                    // `[min-length]` special attribute selector
+                    {
+                        actual: '$$div[min-length="10"]',
+                        expected: ['$$div:contains(/^(?=.{10,}$).*/s)'],
+                    },
 
-            // UBO → ADG, exception rules
-            {
-                actual: 'example.com,~example.net#@#^div',
-                expected: [
-                    'example.com,~example.net$@$div[max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net#@#^div[attr]',
-                expected: [
-                    'example.com,~example.net$@$div[attr][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net#@#^div[attr="val"]',
-                expected: [
-                    'example.com,~example.net$@$div[attr="val"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net#@#^div[attr-1][attr-2="val"]',
-                expected: [
-                    'example.com,~example.net$@$div[attr-1][attr-2="val"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net#@#^div[attr-1][attr-2="val"][attr-3]',
-                expected: [
-                    'example.com,~example.net$@$div[attr-1][attr-2="val"][attr-3][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net#@#^script:has-text(12313)',
-                expected: [
-                    'example.com,~example.net$@$script[tag-content="12313"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net#@#^script:has-text(console.log("doubles"))',
-                expected: [
-                    'example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net#@#^script[data-test]:has-text(12313)',
-                expected: [
-                    'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
-                expected: [
-                    // eslint-disable-next-line max-len
-                    'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
-                expected: [
-                    'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
-                expected: [
-                    // eslint-disable-next-line max-len
-                    'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
+                    // `[min-length]` special attribute selector - multiple usages
+                    {
+                        actual: '$$div[min-length="10"][min-length="20"]',
+                        expected: ['$$div:contains(/^(?=.{10,}$).*/s):contains(/^(?=.{20,}$).*/s)'],
+                    },
 
-            // UBO → ADG, exception rules, with multiple selectors
-            {
-                actual: 'example.com,~example.net#@#^div[attr-1][attr-2="value-2"],script',
-                // we should split the selector list into individual rules
-                expected: [
-                    'example.com,~example.net$@$div[attr-1][attr-2="value-2"][max-length="262144"]',
-                    'example.com,~example.net$@$script[max-length="262144"]',
-                ],
-                shouldConvert: true,
-            },
+                    // `[max-length]` special attribute selector
+                    {
+                        actual: '$$div[max-length="100"]',
+                        expected: ['$$div:contains(/^(?=.{0,100}$).*/s)'],
+                    },
 
-            // ADG → ADG
-            {
-                actual: 'example.com,~example.net$@$div[max-length="262144"]',
-                expected: [
-                    'example.com,~example.net$@$div[max-length="262144"]',
-                ],
-                shouldConvert: false,
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: 'example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]',
-                ],
-                shouldConvert: false,
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
-                expected: [
-                    // eslint-disable-next-line max-len
-                    'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
-                ],
-                shouldConvert: false,
-            },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
+                    // `[max-length]` special attribute selector - multiple usages
+                    {
+                        actual: '$$div[max-length="100"][max-length="200"]',
+                        expected: ['$$div:contains(/^(?=.{0,100}$).*/s):contains(/^(?=.{0,200}$).*/s)'],
+                    },
+
+                    // `[tag-content]` special attribute selector
+                    {
+                        actual: '$$div[tag-content="example"]',
+                        expected: ['$$div:contains(example)'],
+                    },
+
+                    // `[tag-content]` special attribute selector - multiple usages
+                    {
+                        actual: '$$div[tag-content="a"][tag-content="b"]',
+                        expected: ['$$div:contains(a):contains(b)'],
+                    },
+
+                    // `[wildcard]` special attribute selector
+                    {
+                        actual: '$$div[wildcard="*example*"]',
+                        expected: ['$$div:contains(/^.*example.*$/s)'],
+                    },
+
+                    // `[wildcard]` special attribute selector - multiple usages
+                    {
+                        actual: '$$div[wildcard="*example*"][wildcard="*test*"]',
+                        expected: ['$$div:contains(/^.*example.*$/s):contains(/^.*test.*$/s)'],
+                    },
+
+                    // `:contains()` special pseudo-class selector (leave as-is)
+                    {
+                        actual: '$$div:contains(example)',
+                        expected: ['$$div:contains(example)'],
+                        shouldConvert: false,
+                    },
+
+                    // `:contains()` special pseudo-class selector (leave as-is) - multiple usages
+                    {
+                        actual: '$$div:contains(a):contains(b)',
+                        expected: ['$$div:contains(a):contains(b)'],
+                        shouldConvert: false,
+                    },
+
+                    // `:contains()` special pseudo-class selector (leave as-is) - double quotes are handled
+                    {
+                        actual: '$$div:contains("example")',
+                        expected: ['$$div:contains("example")'],
+                        shouldConvert: false,
+                    },
+
+                    // `:contains()` special pseudo-class selector (leave as-is) - single quotes are handled
+                    {
+                        actual: "$$div:contains('example')",
+                        expected: ["$$div:contains('example')"],
+                        shouldConvert: false,
+                    },
+
+                    // `:contains()` special pseudo-class selector (leave as-is) - regexp are handled
+                    {
+                        actual: '$$div:contains(/ex.*ple/i)',
+                        expected: ['$$div:contains(/ex.*ple/i)'],
+                        shouldConvert: false,
+                    },
+
+                    // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
+                    {
+                        actual: '$$div[tag-content="a"][wildcard="*example*"]',
+                        expected: ['$$div:contains(a):contains(/^.*example.*$/s)'],
+                    },
+
+                    // `[tag-content]` and `:contains()` special simple selectors - mixed usage
+                    {
+                        actual: '$$div[tag-content="a"]:contains(b)',
+                        expected: ['$$div:contains(a):contains(b)'],
+                    },
+
+                    // `[wildcard]` and `:contains()` special simple selectors - mixed usage
+                    {
+                        actual: '$$div[wildcard="*example*"]:contains(b)',
+                        expected: ['$$div:contains(/^.*example.*$/s):contains(b)'],
+                    },
+
+                    // `[tag-content]`, `[wildcard]` and `:contains()` special simple selectors - mixed usage
+                    {
+                        actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
+                        expected: ['$$div:contains(a):contains(/^.*example.*$/s):contains(b)'],
+                    },
+                ])("should convert '$actual' to '$expected'", (testData) => {
+                    expect(testData).toBeConvertedProperly(
+                        HtmlRuleConverter,
+                        'convertToAdg',
+                        parsingEnabledDefaultParserOptions,
+                    );
+                });
+            });
+
+            describe('parsed - invalid cases', () => {
+                test.each<InvalidTestData>([
+                    // invalid body - empty selector list
+                    {
+                        input: {
+                            syntax: 'AdGuard',
+                            body: {
+                                selectorList: {
+                                    children: [],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: 'Invalid HTML filtering rule: Selector list of HTML filtering rule must not be empty',
+                    },
+
+                    // invalid selector list - empty selectors in complex selector
+                    {
+                        input: {
+                            syntax: 'AdGuard',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        // eslint-disable-next-line max-len
+                        error: 'Invalid HTML filtering rule: Complex selector of selector list must not be empty',
+                    },
+
+                    // invalid selector list - invalid selector combinator usage - first
+                    {
+                        input: {
+                            syntax: 'AdGuard',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [{
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: "Invalid HTML filtering rule: Invalid selector combinator '>' used between selectors",
+                    },
+
+                    // invalid selector list - invalid selector combinator usage - double
+                    {
+                        input: {
+                            syntax: 'AdGuard',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [{
+                                            type: 'TypeSelector',
+                                            value: 'div',
+                                        }, {
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }, {
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }, {
+                                            type: 'TypeSelector',
+                                            value: 'span',
+                                        }],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: "Invalid HTML filtering rule: Invalid selector combinator '>' used between selectors",
+                    },
+
+                    // invalid selector list - invalid selector combinator usage - last
+                    {
+                        input: {
+                            syntax: 'AdGuard',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [{
+                                            type: 'TypeSelector',
+                                            value: 'div',
+                                        }, {
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: "Invalid HTML filtering rule: Invalid selector combinator '>' used between selectors",
+                    },
+
+                    // invalid special attribute selector - value not provided
+                    {
+                        input: '$$[tag-content]',
+                        error: "Special attribute selector 'tag-content' requires a value",
+                    },
+
+                    // invalid special attribute selector - invalid operator
+                    {
+                        input: '$$[tag-content~="value"]',
+                        error: "Special attribute selector 'tag-content' has invalid operator '~='",
+                    },
+
+                    // invalid special attribute selector - flag provided
+                    {
+                        input: '$$[tag-content="value" i]',
+                        error: "Special attribute selector 'tag-content' does not support flags",
+                    },
+
+                    // invalid special attribute selector - length value not number
+                    {
+                        input: '$$[min-length="abc"]',
+                        error: "Value of special attribute selector 'min-length' must be an integer, got 'abc'",
+                    },
+
+                    // invalid special attribute selector - length value negative
+                    {
+                        input: '$$[min-length="-1"]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
+                    },
+
+                    // invalid special pseudo-class selector - argument missing
+                    {
+                        input: '$$:contains()',
+                        error: "Special pseudo-class selector 'contains' requires an argument",
+                    },
+
+                    // invalid simple selector - mixed syntax (uBlock special pseudo-class selector)
+                    {
+                        input: '$$div:has-text(example)',
+                        error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
+                    },
+                ])("should not convert '$input'", ({ input, error }) => {
+                    if (typeof input !== 'string') {
+                        expect(() => {
+                            HtmlRuleConverter.convertToAdg(input);
+                        }).toThrowError(error);
+                    } else {
+                        expect(() => {
+                            HtmlRuleConverter.convertToAdg(
+                                RuleParser.parse(input, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                            );
+                        }).toThrowError(error);
+                    }
+                });
+            });
+
+            /**
+             * Please not that if node is provided as raw string, we parse it first before conversion,
+             * everything else is the same as in parsed tests, so we don't need to repeat many cases here.
+             * It means that if the input parsing fails, the conversion will throw `AdblockSyntaxError` error.
+             */
+            describe('raw - valid cases', () => {
+                test.each([
+                    {
+                        actual: '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                        shouldConvert: false,
+                    },
+                    {
+                        actual: '$$div[min-length="10"]',
+                        expected: ['$$div:contains(/^(?=.{10,}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[max-length="100"]',
+                        expected: ['$$div:contains(/^(?=.{0,100}$).*/s)'],
+                    },
+                    {
+                        actual: '$$div[tag-content="example"]',
+                        expected: ['$$div:contains(example)'],
+                    },
+                    {
+                        actual: '$$div:contains(example)',
+                        expected: ['$$div:contains(example)'],
+                        shouldConvert: false,
+                    },
+                ])("should convert '$actual' to '$expected'", (testData) => {
+                    expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
+                });
+            });
+
+            describe('raw - invalid cases', () => {
+                test.each<InvalidTestData>([
+                    {
+                        input: '$$[tag-content]',
+                        error: "Special attribute selector 'tag-content' requires a value",
+                    },
+                    {
+                        input: '$$[tag-content~="value"]',
+                        error: "Special attribute selector 'tag-content' has invalid operator '~='",
+                    },
+                    {
+                        input: '$$[min-length="-1"]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
+                    },
+
+                    // Parsing errors
+                    {
+                        input: '##^[attr="value"]div',
+                        error: 'Type selector must be first in the compound selector',
+                    },
+                ])("should not convert '$input'", ({ input, error }) => {
+                    if (typeof input !== 'string') {
+                        expect(() => {
+                            HtmlRuleConverter.convertToAdg(input);
+                        }).toThrowError(error);
+                    } else {
+                        expect(() => {
+                            HtmlRuleConverter.convertToAdg(RuleParser.parse(input) as HtmlFilteringRule);
+                        }).toThrowError(error);
+                    }
+                });
+            });
+        });
+
+        describe('from uBO', () => {
+            describe('parsed - valid cases', () => {
+                test.each([
+                    // complex selector without special simplex selectors
+                    {
+                        actual: '##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                    },
+
+                    // `:min-text-length()` special pseudo-class selector (max is conversion default)
+                    {
+                        actual: '##^div:min-text-length(10)',
+                        expected: ['$$div:contains(/^(?=.{10,262144}$).*/s)'],
+                    },
+
+                    // `:min-text-length()` special pseudo-class selector (max is conversion default) - multiple usages
+                    {
+                        actual: '##^div:min-text-length(10):min-text-length(20)',
+                        expected: ['$$div:contains(/^(?=.{10,262144}$).*/s):contains(/^(?=.{20,262144}$).*/s)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector
+                    {
+                        actual: '##^div:has-text(example)',
+                        expected: ['$$div:contains(example)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - multiple usages
+                    {
+                        actual: '##^div:has-text(a):has-text(b)',
+                        expected: ['$$div:contains(a):contains(b)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - double quotes are handled
+                    {
+                        actual: '##^div:has-text("example")',
+                        expected: ['$$div:contains("example")'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - single quotes are handled
+                    {
+                        actual: "##^div:has-text('example')",
+                        expected: ["$$div:contains('example')"],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - regexp are handled
+                    {
+                        actual: '##^div:has-text(/ex.*ple/i)',
+                        expected: ['$$div:contains(/ex.*ple/i)'],
+                    },
+                ])("should convert '$actual' to '$expected'", (testData) => {
+                    expect(testData).toBeConvertedProperly(
+                        HtmlRuleConverter,
+                        'convertToAdg',
+                        parsingEnabledDefaultParserOptions,
+                    );
+                });
+            });
+
+            describe('parsed - invalid cases', () => {
+                test.each<InvalidTestData>([
+                    // invalid body - empty selector list
+                    {
+                        input: {
+                            syntax: 'UblockOrigin',
+                            body: {
+                                selectorList: {
+                                    children: [],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: 'Invalid HTML filtering rule: Selector list of HTML filtering rule must not be empty',
+                    },
+
+                    // invalid selector list - empty selectors in complex selector
+                    {
+                        input: {
+                            syntax: 'UblockOrigin',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        // eslint-disable-next-line max-len
+                        error: 'Invalid HTML filtering rule: Complex selector of selector list must not be empty',
+                    },
+
+                    // invalid selector list - invalid selector combinator usage - first
+                    {
+                        input: {
+                            syntax: 'UblockOrigin',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [{
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: "Invalid HTML filtering rule: Invalid selector combinator '>' used between selectors",
+                    },
+
+                    // invalid selector list - invalid selector combinator usage - double
+                    {
+                        input: {
+                            syntax: 'UblockOrigin',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [{
+                                            type: 'TypeSelector',
+                                            value: 'div',
+                                        }, {
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }, {
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }, {
+                                            type: 'TypeSelector',
+                                            value: 'span',
+                                        }],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: "Invalid HTML filtering rule: Invalid selector combinator '>' used between selectors",
+                    },
+
+                    // invalid selector list - invalid selector combinator usage - last
+                    {
+                        input: {
+                            syntax: 'UblockOrigin',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [{
+                                            type: 'TypeSelector',
+                                            value: 'div',
+                                        }, {
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: "Invalid HTML filtering rule: Invalid selector combinator '>' used between selectors",
+                    },
+
+                    // invalid special pseudo-class selector - argument missing
+                    {
+                        input: '##^:has-text()',
+                        error: "Special pseudo-class selector 'has-text' requires an argument",
+                    },
+
+                    // invalid special pseudo-class selector - length value not number
+                    {
+                        input: '##^:min-text-length(abc)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got 'abc'",
+                    },
+
+                    // invalid special pseudo-class selector - length value negative
+                    {
+                        input: '##^:min-text-length(-1)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",
+                    },
+
+                    // invalid simple selector - mixed syntax (AdGuard special attribute selector)
+                    {
+                        input: '##^div[tag-content="example"]',
+                        error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
+                    },
+
+                    // invalid simple selector - mixed syntax (AdGuard special pseudo-class selector)
+                    {
+                        input: '##^div:contains(example)',
+                        error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
+                    },
+                ])("should not convert '$input'", ({ input, error }) => {
+                    if (typeof input !== 'string') {
+                        expect(() => {
+                            HtmlRuleConverter.convertToAdg(input);
+                        }).toThrowError(error);
+                    } else {
+                        expect(() => {
+                            HtmlRuleConverter.convertToAdg(
+                                RuleParser.parse(input, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                            );
+                        }).toThrowError(error);
+                    }
+                });
+            });
+
+            /**
+             * Please not that if node is provided as raw string, we parse it first before conversion,
+             * everything else is the same as in parsed tests, so we don't need to repeat many cases here.
+             * It means that if the input parsing fails, the conversion will throw `AdblockSyntaxError` error.
+             */
+            describe('raw - valid cases', () => {
+                test.each([
+                    {
+                        actual: '##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                    },
+                    {
+                        actual: '##^div:min-text-length(10)',
+                        expected: ['$$div:contains(/^(?=.{10,262144}$).*/s)'],
+                    },
+                    {
+                        actual: '##^div:has-text(example)',
+                        expected: ['$$div:contains(example)'],
+                    },
+                ])("should convert '$actual' to '$expected'", (testData) => {
+                    expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
+                });
+            });
+
+            describe('raw - invalid cases', () => {
+                test.each<InvalidTestData>([
+                    {
+                        input: '##^:has-text()',
+                        error: "Special pseudo-class selector 'has-text' requires an argument",
+                    },
+                    {
+                        input: '##^:min-text-length(abc)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got 'abc'",
+                    },
+                    {
+                        input: '##^:min-text-length(-1)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",
+                    },
+
+                    // Parsing errors
+                    {
+                        input: '##^[attr="value"]div',
+                        error: 'Type selector must be first in the compound selector',
+                    },
+                ])("should not convert '$input'", ({ input, error }) => {
+                    if (typeof input !== 'string') {
+                        expect(() => {
+                            HtmlRuleConverter.convertToAdg(input);
+                        }).toThrowError(error);
+                    } else {
+                        expect(() => {
+                            HtmlRuleConverter.convertToAdg(RuleParser.parse(input) as HtmlFilteringRule);
+                        }).toThrowError(error);
+                    }
+                });
+            });
         });
     });
 
     describe('convertToUbo', () => {
-        test.each([
-            // Please keep in mind that the converter is an AST → AST[] function,
-            // so the result is always an array of ASTs
-
-            // ADG → UBO, normal blocking rules
-            {
-                actual: 'example.com,~example.net$$div[max-length="262144"]',
-                expected: [
-                    'example.com,~example.net##^div',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$$div[attr][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net##^div[attr]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com$$script[tag-content="12313"][max-length="262144"]',
-                expected: [
-                    'example.com##^script:has-text(12313)',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$$div[attr-1][attr-2="val"][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net##^div[attr-1][attr-2="val"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$$div[attr-1][attr-2="val"][attr-3][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net##^div[attr-1][attr-2="val"][attr-3]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$$script[tag-content="12313"][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net##^script:has-text(12313)',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$$script[tag-content="console.log(""doubles"")"][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net##^script:has-text(console.log(""doubles""))',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$$script[data-test][tag-content="12313"][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net##^script[data-test]:has-text(12313)',
-                ],
-                shouldConvert: true,
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: 'example.com,~example.net$$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
-                expected: [
-                    // eslint-disable-next-line max-len
-                    'example.com,~example.net##^script[data-test="1"][data-test2="2"]:has-text(12313)',
-                ],
-                shouldConvert: true,
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: 'example.com,~example.net$$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
-                expected: [
-                    "example.com,~example.net##^script:has-text(d.createElement('script'))",
-                ],
-                shouldConvert: true,
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: 'example.com,~example.net$$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
-                expected: [
-                    // eslint-disable-next-line max-len
-                    "example.com,~example.net##^script:has-text(d.createElement('script')):min-text-length(1234)",
-                ],
-                shouldConvert: true,
-            },
-
-            // ADG → UBO, exception rules
-            {
-                actual: 'example.com,~example.net$@$div[max-length="262144"]',
-                expected: [
-                    'example.com,~example.net#@#^div',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$@$div[attr][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net#@#^div[attr]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$@$div[attr="val"][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net#@#^div[attr="val"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$@$div[attr-1][attr-2="val"][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net#@#^div[attr-1][attr-2="val"]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$@$div[attr-1][attr-2="val"][attr-3][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net#@#^div[attr-1][attr-2="val"][attr-3]',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$@$script[tag-content="12313"][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net#@#^script:has-text(12313)',
-                ],
-                shouldConvert: true,
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
-                expected: [
-                    'example.com,~example.net#@#^script:has-text(console.log(""doubles""))',
-                ],
-                shouldConvert: true,
-            },
-            {
-                actual: 'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net#@#^script[data-test]:has-text(12313)',
-                ],
-                shouldConvert: true,
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: 'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
-                expected: [
-                    'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
-                ],
-                shouldConvert: true,
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
-                expected: [
-                    "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
-                ],
-                shouldConvert: true,
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
-                expected: [
-                    // eslint-disable-next-line max-len
-                    "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
-                ],
-                shouldConvert: true,
-            },
-
-            // ADG → UBO, exception rules, with multiple selectors
-            {
-                actual: 'example.com,~example.net$@$div[attr-1][attr-2="value-2"][max-length="262144"]',
-                // we should split the selector list into individual rules
-                expected: [
-                    'example.com,~example.net#@#^div[attr-1][attr-2="value-2"]',
-                ],
-                shouldConvert: true,
-            },
-
-            // UBO → UBO
-            {
-                actual: 'example.com,~example.net#@#^div[attr="val"]',
-                expected: [
-                    'example.com,~example.net#@#^div[attr="val"]',
-                ],
-                shouldConvert: false,
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: 'example.com,~example.net##^script:has-text(console.log("doubles"))',
-                expected: [
-                    'example.com,~example.net##^script:has-text(console.log("doubles"))',
-                ],
-                shouldConvert: false,
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
-                expected: [
-                    // eslint-disable-next-line max-len
-                    "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
-                ],
-                shouldConvert: false,
-            },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToUbo');
+        describe('from ABP', () => {
+            test('should throw unsupported error', () => {
+                expect(() => HtmlRuleConverter.convertToUbo({
+                    syntax: 'AdblockPlus',
+                } as HtmlFilteringRule)).toThrowError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
+            });
         });
 
-        // should throw an error if the rule is invalid
-        test.each([
-            {
-                actual: 'example.com,~example.net$$div + div',
-                expected: sprintf(
-                    ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
-                    getFormattedTokenName(TokenType.Delim),
-                    '+',
-                ),
-            },
-            // we're only support quite few pseudo classes, and we should
-            // discard any invalid ones
-            {
-                actual: 'example.com$$body > script:has-text(test)',
-                expected: sprintf(
-                    ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
-                    getFormattedTokenName(TokenType.Delim),
-                    '>',
-                ),
-            },
-            // syntax error in the base rule
-            {
-                actual: 'example.com$$[identifier-cannot-start-with-a-digit=2bad-identifier]',
-                expected: sprintf(
-                    ERROR_MESSAGES.INVALID_ATTRIBUTE_VALUE,
-                    getFormattedTokenName(TokenType.Dimension),
-                    '2bad-identifier',
-                ),
-            },
-            // Only '=' operator is supported
-            {
-                actual: 'example.com$$[attr="value"i]',
-                expected: ERROR_MESSAGES.FLAGS_NOT_SUPPORTED,
-            },
-            {
-                actual: 'example.com$$[attr="value" i]',
-                expected: ERROR_MESSAGES.FLAGS_NOT_SUPPORTED,
-            },
-        ])('should throw \'$expected\' for \'$actual\'', ({ actual, expected }) => {
-            expect(() => {
-                HtmlRuleConverter.convertToUbo(RuleParser.parse(actual) as HtmlFilteringRule);
-            }).toThrowError(expected);
+        describe('from ADG', () => {
+            describe('parsed - valid cases', () => {
+                test.each([
+                    // complex selector without special simple selectors
+                    {
+                        actual: '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        expected: ['##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                    },
+
+                    // `[min-length]` special attribute selector
+                    {
+                        actual: '$$div[min-length="10"]',
+                        expected: ['##^div:min-text-length(10)'],
+                    },
+
+                    // `[min-length]` special attribute selector - multiple usages
+                    {
+                        actual: '$$div[min-length="10"][min-length="20"]',
+                        expected: ['##^div:min-text-length(10):min-text-length(20)'],
+                    },
+
+                    // `[max-length]` special attribute selector (ignored during conversion)
+                    {
+                        actual: '$$div[max-length="100"]',
+                        expected: ['##^div'],
+                    },
+
+                    // `[max-length]` special attribute selector (ignored during conversion) - multiple usages
+                    {
+                        actual: '$$div[max-length="100"][max-length="200"]',
+                        expected: ['##^div'],
+                    },
+
+                    // `[tag-content]` special attribute selector
+                    {
+                        actual: '$$div[tag-content="example"]',
+                        expected: ['##^div:has-text(example)'],
+                    },
+
+                    // `[tag-content]` special attribute selector - multiple usages
+                    {
+                        actual: '$$div[tag-content="a"][tag-content="b"]',
+                        expected: ['##^div:has-text(a):has-text(b)'],
+                    },
+
+                    // `[wildcard]` special attribute selector
+                    {
+                        actual: '$$div[wildcard="*example*"]',
+                        expected: ['##^div:has-text(/^.*example.*$/s)'],
+                    },
+
+                    // `[wildcard]` special attribute selector - multiple usages
+                    {
+                        actual: '$$div[wildcard="*example*"][wildcard="*test*"]',
+                        expected: ['##^div:has-text(/^.*example.*$/s):has-text(/^.*test.*$/s)'],
+                    },
+
+                    // `:contains()` special pseudo-class selector
+                    {
+                        actual: '$$div:contains(example)',
+                        expected: ['##^div:has-text(example)'],
+                    },
+
+                    // `:contains()` special pseudo-class selector - multiple usages
+                    {
+                        actual: '$$div:contains(a):contains(b)',
+                        expected: ['##^div:has-text(a):has-text(b)'],
+                    },
+
+                    // `:contains()` special pseudo-class selector - double quotes are handled
+                    {
+                        actual: '$$div:contains("example")',
+                        expected: ['##^div:has-text("example")'],
+                    },
+
+                    // `:contains()` special pseudo-class selector - single quotes are handled
+                    {
+                        actual: "$$div:contains('example')",
+                        expected: ["##^div:has-text('example')"],
+                    },
+
+                    // `:contains()` special pseudo-class selector - regexp are handled
+                    {
+                        actual: '$$div:contains(/ex.*ple/i)',
+                        expected: ['##^div:has-text(/ex.*ple/i)'],
+                    },
+
+                    // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
+                    {
+                        actual: '$$div[tag-content="a"][wildcard="*example*"]',
+                        expected: ['##^div:has-text(a):has-text(/^.*example.*$/s)'],
+                    },
+
+                    // `[tag-content]` and `:contains()` special simple selectors - mixed usage
+                    {
+                        actual: '$$div[tag-content="a"]:contains(b)',
+                        expected: ['##^div:has-text(a):has-text(b)'],
+                    },
+
+                    // `[wildcard]` and `:contains()` special simple selectors - mixed usage
+                    {
+                        actual: '$$div[wildcard="*example*"]:contains(b)',
+                        expected: ['##^div:has-text(/^.*example.*$/s):has-text(b)'],
+                    },
+
+                    // `[tag-content]`, `[wildcard]` and `:contains()` special simple selectors - mixed usage
+                    {
+                        actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
+                        expected: ['##^div:has-text(a):has-text(/^.*example.*$/s):has-text(b)'],
+                    },
+                ])("should convert '$actual' to '$expected'", (testData) => {
+                    expect(testData).toBeConvertedProperly(
+                        HtmlRuleConverter,
+                        'convertToUbo',
+                        parsingEnabledDefaultParserOptions,
+                    );
+                });
+            });
+
+            describe('parsed - invalid cases', () => {
+                test.each<InvalidTestData>([
+                    // invalid body - empty selector list
+                    {
+                        input: {
+                            syntax: 'AdGuard',
+                            body: {
+                                selectorList: {
+                                    children: [],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: 'Invalid HTML filtering rule: Selector list of HTML filtering rule must not be empty',
+                    },
+
+                    // invalid selector list - selectors in complex selector
+                    {
+                        input: {
+                            syntax: 'AdGuard',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        // eslint-disable-next-line max-len
+                        error: 'Invalid HTML filtering rule: Complex selector of selector list must not be empty',
+                    },
+
+                    // invalid selector list - invalid selector combinator usage - first
+                    {
+                        input: {
+                            syntax: 'AdGuard',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [{
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: "Invalid HTML filtering rule: Invalid selector combinator '>' used between selectors",
+                    },
+
+                    // invalid selector list - invalid selector combinator usage - double
+                    {
+                        input: {
+                            syntax: 'AdGuard',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [{
+                                            type: 'TypeSelector',
+                                            value: 'div',
+                                        }, {
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }, {
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }, {
+                                            type: 'TypeSelector',
+                                            value: 'span',
+                                        }],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: "Invalid HTML filtering rule: Invalid selector combinator '>' used between selectors",
+                    },
+
+                    // invalid selector list - invalid selector combinator usage - last
+                    {
+                        input: {
+                            syntax: 'AdGuard',
+                            body: {
+                                selectorList: {
+                                    children: [{
+                                        children: [{
+                                            type: 'TypeSelector',
+                                            value: 'div',
+                                        }, {
+                                            type: 'SelectorCombinator',
+                                            value: '>',
+                                        }],
+                                    }],
+                                },
+                            },
+                        } as unknown as HtmlFilteringRule,
+                        error: "Invalid HTML filtering rule: Invalid selector combinator '>' used between selectors",
+                    },
+
+                    // invalid special attribute selector - value not provided
+                    {
+                        input: '$$[tag-content]',
+                        error: "Special attribute selector 'tag-content' requires a value",
+                    },
+
+                    // invalid special attribute selector - invalid operator
+                    {
+                        input: '$$[tag-content~="value"]',
+                        error: "Special attribute selector 'tag-content' has invalid operator '~='",
+                    },
+
+                    // invalid special attribute selector - flag provided
+                    {
+                        input: '$$[tag-content="value" i]',
+                        error: "Special attribute selector 'tag-content' does not support flags",
+                    },
+
+                    // invalid special attribute selector - length value not number
+                    {
+                        input: '$$[min-length="abc"]',
+                        error: "Value of special attribute selector 'min-length' must be an integer, got 'abc'",
+                    },
+
+                    // invalid special attribute selector - length value negative
+                    {
+                        input: '$$[min-length="-1"]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
+                    },
+
+                    // invalid special pseudo-class selector - argument missing
+                    {
+                        input: '$$:contains()',
+                        error: "Special pseudo-class selector 'contains' requires an argument",
+                    },
+
+                    // invalid simple selector - mixed syntax (uBlock special pseudo-class selector)
+                    {
+                        input: '$$div:has-text(example)',
+                        error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
+                    },
+                ])("should not convert '$input'", ({ input, error }) => {
+                    if (typeof input !== 'string') {
+                        expect(() => {
+                            HtmlRuleConverter.convertToUbo(input);
+                        }).toThrowError(error);
+                    } else {
+                        expect(() => {
+                            HtmlRuleConverter.convertToUbo(
+                                RuleParser.parse(input, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                            );
+                        }).toThrowError(error);
+                    }
+                });
+            });
+
+            /**
+             * Please not that if node is provided as raw string, we parse it first before conversion,
+             * everything else is the same as in parsed tests, so we don't need to repeat many cases here.
+             * It means that if the input parsing fails, the conversion will throw `AdblockSyntaxError` error.
+             */
+            describe('raw - valid cases', () => {
+                test.each([
+                    {
+                        actual: '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        expected: ['##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                    },
+                    {
+                        actual: '$$div[min-length="10"]',
+                        expected: ['##^div:min-text-length(10)'],
+                    },
+                    {
+                        actual: '$$div[max-length="100"]',
+                        expected: ['##^div'],
+                    },
+                    {
+                        actual: '$$div[tag-content="example"]',
+                        expected: ['##^div:has-text(example)'],
+                    },
+                    {
+                        actual: '$$div:contains(example)',
+                        expected: ['##^div:has-text(example)'],
+                    },
+                ])("should convert '$actual' to '$expected'", (testData) => {
+                    expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToUbo');
+                });
+            });
+
+            describe('raw - invalid cases', () => {
+                test.each<InvalidTestData>([
+                    {
+                        input: '$$[tag-content]',
+                        error: "Special attribute selector 'tag-content' requires a value",
+                    },
+                    {
+                        input: '$$[tag-content~="value"]',
+                        error: "Special attribute selector 'tag-content' has invalid operator '~='",
+                    },
+                    {
+                        input: '$$[min-length="-1"]',
+                        // eslint-disable-next-line max-len
+                        error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
+                    },
+
+                    // Parsing errors
+                    {
+                        input: '$$[attr="value"]div',
+                        error: 'Type selector must be first in the compound selector',
+                    },
+                ])("should not convert '$input'", ({ input, error }) => {
+                    if (typeof input !== 'string') {
+                        expect(() => {
+                            HtmlRuleConverter.convertToUbo(input);
+                        }).toThrowError(error);
+                    } else {
+                        expect(() => {
+                            HtmlRuleConverter.convertToUbo(RuleParser.parse(input) as HtmlFilteringRule);
+                        }).toThrowError(error);
+                    }
+                });
+            });
+        });
+
+        describe('from uBO', () => {
+            test('should not convert and return the same rule', () => {
+                const rule = {
+                    syntax: 'UblockOrigin',
+                } as HtmlFilteringRule;
+
+                expect(HtmlRuleConverter.convertToUbo(rule)).toEqual(createNodeConversionResult([rule], false));
+            });
         });
     });
 
-    it('convertToAbp', () => {
-        // Adblock Plus currently doesn't support HTML filtering rules
-        expect(() => HtmlRuleConverter.convertToAbp(
-            RuleParser.parse('$$script') as HtmlFilteringRule,
-        )).toThrowError(
-            'Not implemented',
-        );
+    describe('convertToAbp', () => {
+        describe('from ABP', () => {
+            test('should throw not implemented error', () => {
+                expect(() => HtmlRuleConverter.convertToAbp({
+                    syntax: 'AdblockPlus',
+                } as HtmlFilteringRule)).toThrowError(NotImplementedError);
+            });
+        });
+
+        describe('from ADG', () => {
+            test('should throw not implemented error', () => {
+                expect(() => HtmlRuleConverter.convertToAbp({
+                    syntax: 'AdGuard',
+                } as HtmlFilteringRule)).toThrowError(NotImplementedError);
+            });
+        });
+
+        describe('from uBO', () => {
+            test('should throw not implemented error', () => {
+                expect(() => HtmlRuleConverter.convertToAbp({
+                    syntax: 'UblockOrigin',
+                } as HtmlFilteringRule)).toThrowError(NotImplementedError);
+            });
+        });
     });
 });

@@ -38,6 +38,8 @@ export {
     type HintCommentRule,
     type HtmlFilteringRule,
     type HtmlFilteringRuleBody,
+    type SelectorList,
+    type SelectorCombinatorValue,
     type JsInjectionRule,
     type Location,
     type LocationRange,

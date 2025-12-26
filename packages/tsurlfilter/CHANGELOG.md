@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Engine factory methods** `Engine.createSync()` and `Engine.createAsync()` for creating engine instances.
 - **Async engine creation** support to avoid UI blocking during rule loading.
 - New `retrieveOriginalRuleText()` method on `Engine` for retrieving unconverted rule text.
+- Full CSS selector syntax support in HTML filtering rules [#96].
+- `getHtmlSelectorList()` method to `CosmeticRule` class to retrieve
+  the list of CSS selectors used in HTML filtering rules.
 
 ### Changed
 
@@ -53,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2587]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2587
 [AdguardBrowserExtension#3262]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3262
 [AdguardBrowserExtension#3360]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3360
+[#96]: https://github.com/AdguardTeam/tsurlfilter/issues/96
 
 ## [3.5.2] - 2025-12-16
 

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New `RuleTextProvider` utility** for retrieving rule texts (both applied and original).
 - New `retrieveOriginalRuleText()` method on `TsWebExtension` for accessing unconverted rule text.
 - Export `FilterList` class from `@adguard/tsurlfilter` for filter list management.
+- Full CSS selector syntax support in HTML filtering rules [#96].
 
 ### Changed
 
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3116]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3116
 [AdguardBrowserExtension#3193]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3193
 [AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
+[#96]: https://github.com/AdguardTeam/tsurlfilter/issues/96
 
 ## [3.2.19] - 2025-12-24
 
@@ -61,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Memory leak caused by storing data URL favicons in tab contexts. [AdguardBrowserExtension#2594]
 
-[3.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.19  
+[3.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.19
 [AdguardBrowserExtension#2594]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594
 
 ## [3.2.18] - 2025-12-16

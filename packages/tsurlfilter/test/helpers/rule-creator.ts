@@ -80,6 +80,7 @@ export const createCosmeticRule = (
  * @param ignoreNetwork Ignore network rules (optional, default is false).
  * @param ignoreCosmetic Ignore cosmetic rules (optional, default is false).
  * @param ignoreHost Ignore host rules (optional, default is true).
+ * @param ignoreHtmlFilteringBodies Ignore HTML filtering rule bodies (optional, default is true).
  *
  * @returns Rule instance.
  *
@@ -92,11 +93,13 @@ export const createRule = (
     ignoreNetwork = false,
     ignoreCosmetic = false,
     ignoreHost = true,
+    ignoreHtmlFilteringBodies = true,
 ): IRule | null => {
     const trimmedRule = rule.trim();
     const node = RuleParser.parse(trimmedRule, {
         ...defaultParserOptions,
         parseHostRules: !ignoreHost,
+        parseHtmlFilteringRuleBodies: !ignoreCosmetic && !ignoreHtmlFilteringBodies,
     });
 
     if (ignoreNetwork && node.category === RuleCategory.Network) {
@@ -116,5 +119,6 @@ export const createRule = (
         filterListId,
         ruleIndex,
         !ignoreHost,
+        !ignoreCosmetic && !ignoreHtmlFilteringBodies,
     );
 };

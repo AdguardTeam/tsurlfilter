@@ -138,12 +138,17 @@ export class RuleStorage {
      *
      * @param storageIdx The lookup index that you can get from the rule storage scanner.
      * @param ignoreHost Whether to ignore host rules.
+     * @param ignoreHtmlFilteringBodies Whether to ignore HTML filtering body rules.
      *
      * @returns The rule or null if not found or an error occurs.
      *
      * @note It returns `null` for rules that are ignored in the rule list.
      */
-    public retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
+    public retrieveRule(
+        storageIdx: number,
+        ignoreHost = true,
+        ignoreHtmlFilteringBodies = true,
+    ): IRule | null {
         const rule = this.cache.get(storageIdx);
         if (rule) {
             return rule;
@@ -170,7 +175,13 @@ export class RuleStorage {
         let createdRule: IRule | null = null;
 
         try {
-            createdRule = RuleFactory.createRule(ruleText, listId, ruleId, !ignoreHost);
+            createdRule = RuleFactory.createRule(
+                ruleText,
+                listId,
+                ruleId,
+                !ignoreHost,
+                !ignoreHtmlFilteringBodies,
+            );
         } catch (e) {
             logger.debug(`[tsurl.RuleStorage.retrieveRule]: error: "${getErrorMessage(e)}" in the rule: "${ruleText}"`);
         }
@@ -232,7 +243,7 @@ export class RuleStorage {
      * @returns The rule or nil in any other case (not found or error).
      */
     public retrieveCosmeticRule(storageIdx: number): CosmeticRule | null {
-        const rule = this.retrieveRule(storageIdx);
+        const rule = this.retrieveRule(storageIdx, true, false);
 
         if (rule instanceof CosmeticRule) {
             return rule;

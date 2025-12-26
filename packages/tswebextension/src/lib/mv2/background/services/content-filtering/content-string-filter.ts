@@ -10,7 +10,6 @@ import { logger } from '../../../../common/utils/logger';
 import { type RuleInfo } from '../../../../common/rule-info';
 
 import { documentParser } from './doc-parser';
-import { HtmlRuleParser } from './rule/html-rule-parser';
 import { HtmlRuleSelector } from './rule/html-rule-selector';
 import { EntityHandler } from './entity-handler';
 
@@ -101,59 +100,56 @@ export class ContentStringFilter implements ContentStringFilterInterface {
             return content;
         }
 
-        const deleted = [];
+        const deleted: Set<Element> = new Set();
 
         for (let i = 0; i < this.htmlRules!.length; i += 1) {
             const rule = this.htmlRules![i];
+            const selectorList = rule.getHtmlSelectorList();
 
-            const parsed = HtmlRuleParser.parse(rule);
-
-            if (!parsed) {
+            if (!selectorList) {
                 logger.info(`[tsweb.ContentStringFilter.applyHtmlRules]: ignoring rule with invalid HTML selector: ${rule.getContent()}`);
                 continue;
             }
 
-            const elements = new HtmlRuleSelector(parsed).getMatchedElements(doc);
-            if (elements) {
-                for (let j = 0; j < elements.length; j += 1) {
-                    const element = elements[j];
-                    if (element.parentNode && deleted.indexOf(element) < 0) {
-                        element.parentNode.removeChild(element);
+            const elements = new HtmlRuleSelector(selectorList).getMatchedElements(doc);
+            for (let j = 0; j < elements.length; j += 1) {
+                const element = elements[j];
+                if (element.parentNode && !deleted.has(element)) {
+                    element.parentNode.removeChild(element);
 
-                        const {
+                    const {
+                        tabId,
+                        requestUrl,
+                        timestamp,
+                        contentType,
+                    } = this.context;
+
+                    const ruleType = rule.getType();
+                    const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
+
+                    this.filteringLog.publishEvent({
+                        type: FilteringEventType.ApplyCosmeticRule,
+                        data: {
                             tabId,
-                            requestUrl,
+                            eventId: nanoid(),
+                            element: element.innerHTML,
+                            frameUrl: requestUrl,
+                            filterId: rule.getFilterListId(),
+                            ruleIndex: rule.getIndex(),
+                            appliedRuleText,
+                            originalRuleText,
+                            frameDomain: getDomain(requestUrl) as string,
+                            requestType: contentType,
                             timestamp,
-                            contentType,
-                        } = this.context;
-
-                        const ruleType = rule.getType();
-                        const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
-
-                        this.filteringLog.publishEvent({
-                            type: FilteringEventType.ApplyCosmeticRule,
-                            data: {
-                                tabId,
-                                eventId: nanoid(),
-                                element: element.innerHTML,
-                                frameUrl: requestUrl,
-                                filterId: rule.getFilterListId(),
-                                ruleIndex: rule.getIndex(),
-                                appliedRuleText,
-                                originalRuleText,
-                                frameDomain: getDomain(requestUrl) as string,
-                                requestType: contentType,
-                                timestamp,
-                                cssRule: ruleType === CosmeticRuleType.ElementHidingRule
+                            cssRule: ruleType === CosmeticRuleType.ElementHidingRule
                                     || ruleType === CosmeticRuleType.CssInjectionRule,
-                                scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
+                            scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
                                     || ruleType === CosmeticRuleType.JsInjectionRule,
-                                contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
-                            },
-                        });
+                            contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
+                        },
+                    });
 
-                        deleted.push(element);
-                    }
+                    deleted.add(element);
                 }
             }
         }
@@ -164,8 +160,12 @@ export class ContentStringFilter implements ContentStringFilterInterface {
         // eslint-disable-next-line no-undef
         const doctype = doc.doctype ? `${new XMLSerializer().serializeToString(doc.doctype)}\r\n` : '';
 
-        if (deleted.length > 0) {
-            return doctype + EntityHandler.revertEntities(doc.documentElement.outerHTML);
+        if (deleted.size > 0) {
+            // `documentElement` might be null in case if the rule matches entire document
+            // For example: `$$:contains(test)`, this is valid case and matches CoreLibs behavior
+            const docHtml = doc.documentElement?.outerHTML || '';
+
+            return doctype + EntityHandler.revertEntities(docHtml);
         }
 
         return content;

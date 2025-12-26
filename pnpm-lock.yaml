@@ -449,6 +449,9 @@ importers:
       clone-deep:
         specifier: ^4.0.1
         version: 4.0.1
+      glob-to-regexp:
+        specifier: ^0.4.1
+        version: 0.4.1
       is-ip:
         specifier: 'catalog:'
         version: 3.1.0
@@ -492,6 +495,9 @@ importers:
       '@types/fs-extra':
         specifier: 'catalog:'
         version: 11.0.4
+      '@types/glob-to-regexp':
+        specifier: ^0.4.4
+        version: 0.4.4
       '@types/js-yaml':
         specifier: ^4.0.5
         version: 4.0.9
@@ -3439,6 +3445,9 @@ packages:
 
   '@types/fs-extra@8.1.5':
     resolution: {integrity: sha512-0dzKcwO+S8s2kuF5Z9oUWatQJj5Uq/iqphEtE3GQJVRRYm/tD1LglU2UnXi2A8jLq5umkGouOXOR9y0n613ZwQ==}
+
+  '@types/glob-to-regexp@0.4.4':
+    resolution: {integrity: sha512-nDKoaKJYbnn1MZxUY0cA1bPmmgZbg0cTq7Rh13d0KWYNOiKbqoR+2d89SnRPszGh7ROzSwZ/GOjZ4jPbmmZ6Eg==}
 
   '@types/glob@7.2.0':
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
@@ -11264,6 +11273,8 @@ snapshots:
   '@types/fs-extra@8.1.5':
     dependencies:
       '@types/node': 22.14.0
+
+  '@types/glob-to-regexp@0.4.4': {}
 
   '@types/glob@7.2.0':
     dependencies:

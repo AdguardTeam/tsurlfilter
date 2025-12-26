@@ -10,11 +10,11 @@ import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-util
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
 import {
     AdgScriptletInjectionBodyParser,
-} from '../../../../src/parser/cosmetic/body/adg-scriptlet-injection-body-parser';
+} from '../../../../src/parser/cosmetic/scriptlet-body/adg-scriptlet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import {
     AdgScriptletInjectionBodyGenerator,
-} from '../../../../src/generator/cosmetic/body/adg-scriptlet-injection-body-generator';
+} from '../../../../src/generator/cosmetic/scriptlet-body/adg-scriptlet-injection-body-generator';
 
 describe('AdgScriptletInjectionBodyParser', () => {
     describe('AdgScriptletInjectionBodyParser.parse - valid cases', () => {
