@@ -629,25 +629,25 @@ describe('RulesConverter', () => {
             );
 
             const regularConvertMock = vi.fn(async () => regularConverted);
-            MockedRegularConverter.mockImplementationOnce(() => ({
-                convert: regularConvertMock,
-            } as any));
+            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+                this.convert = regularConvertMock;
+            });
             const cspConvertMock = vi.fn(async () => cspConverted);
-            MockedCspConverter.mockImplementationOnce(() => ({
-                convert: cspConvertMock,
-            } as any));
+            MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
+                this.convert = cspConvertMock;
+            });
             const removeParamConvertMock = vi.fn(async () => createConvertedRules());
-            MockedRemoveParamConverter.mockImplementationOnce(() => ({
-                convert: removeParamConvertMock,
-            } as any));
+            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
+                this.convert = removeParamConvertMock;
+            });
             const removeHeaderConvertMock = vi.fn(async () => createConvertedRules());
-            MockedRemoveHeaderConverter.mockImplementationOnce(() => ({
-                convert: removeHeaderConvertMock,
-            } as any));
+            MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
+                this.convert = removeHeaderConvertMock;
+            });
             const badFilterConvertMock = vi.fn(async () => createConvertedRules());
-            MockedBadFilterConverter.mockImplementationOnce(() => ({
-                convert: badFilterConvertMock,
-            } as any));
+            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
+                this.convert = badFilterConvertMock;
+            });
 
             // @ts-expect-error Accessing private method for testing
             const result = await RulesConverter.convertRules(filterId, groupedRules, usedIds);
@@ -680,25 +680,25 @@ describe('RulesConverter', () => {
             // Mock all converters to return empty results
             const emptyResult = createConvertedRules();
             const regularConvertMock = vi.fn(async () => emptyResult);
-            MockedRegularConverter.mockImplementationOnce(() => ({
-                convert: regularConvertMock,
-            } as any));
+            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+                this.convert = regularConvertMock;
+            });
             const cspConvertMock = vi.fn(async () => emptyResult);
-            MockedCspConverter.mockImplementationOnce(() => ({
-                convert: cspConvertMock,
-            } as any));
+            MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
+                this.convert = cspConvertMock;
+            });
             const removeParamConvertMock = vi.fn(async () => emptyResult);
-            MockedRemoveParamConverter.mockImplementationOnce(() => ({
-                convert: removeParamConvertMock,
-            } as any));
+            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
+                this.convert = removeParamConvertMock;
+            });
             const removeHeaderConvertMock = vi.fn(async () => emptyResult);
-            MockedRemoveHeaderConverter.mockImplementationOnce(() => ({
-                convert: removeHeaderConvertMock,
-            } as any));
+            MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
+                this.convert = removeHeaderConvertMock;
+            });
             const badFilterConvertMock = vi.fn(async () => emptyResult);
-            MockedBadFilterConverter.mockImplementationOnce(() => ({
-                convert: badFilterConvertMock,
-            } as any));
+            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
+                this.convert = badFilterConvertMock;
+            });
 
             // @ts-expect-error Accessing private method for testing
             const result = await RulesConverter.convertRules(filterId, groupedRules, usedIds);
@@ -724,21 +724,21 @@ describe('RulesConverter', () => {
                 [RulesGroup.Regular]: [createNetworkRuleMock()],
             });
 
-            MockedRegularConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedCspConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedRemoveParamConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedRemoveHeaderConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedBadFilterConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
+            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
 
             // @ts-expect-error Accessing private method for testing
             await RulesConverter.convertRules(filterId, groupedRules, usedIds, options);
@@ -763,22 +763,21 @@ describe('RulesConverter', () => {
             const cspError = createConversionError(2);
             const generalError = new Error('General error');
 
-            MockedRegularConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules([], [], [regularError]),
-            } as any));
-            MockedCspConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules([], [], [cspError, generalError]),
-            } as any));
-            MockedRemoveParamConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedRemoveHeaderConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedBadFilterConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-
+            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+                this.convert = async () => createConvertedRules([], [], [regularError]);
+            });
+            MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
+                this.convert = async () => createConvertedRules([], [], [cspError, generalError]);
+            });
+            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
             // @ts-expect-error Accessing private method for testing
             const result = await RulesConverter.convertRules(filterId, groupedRules, usedIds);
 
@@ -802,22 +801,22 @@ describe('RulesConverter', () => {
                 [createSource(10, 30, filterId)],
             );
 
-            MockedRegularConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedCspConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
+            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
             const removeParamConvertMock = vi.fn(async () => createConvertedRules());
-            MockedRemoveParamConverter.mockImplementationOnce(() => ({
-                convert: removeParamConvertMock,
-            } as any));
-            MockedRemoveHeaderConverter.mockImplementationOnce(() => ({
-                convert: async () => removeParamConverted,
-            } as any));
-            MockedBadFilterConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
+            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
+                this.convert = removeParamConvertMock;
+            });
+            MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
+                this.convert = async () => removeParamConverted;
+            });
+            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
 
             // @ts-expect-error Accessing private method for testing
             const result = await RulesConverter.convertRules(filterId, groupedRules, usedIds);
@@ -836,25 +835,25 @@ describe('RulesConverter', () => {
             });
 
             const regularConvertMock = vi.fn(async () => createConvertedRules());
-            MockedRegularConverter.mockImplementationOnce(() => ({
-                convert: regularConvertMock,
-            } as any));
+            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+                this.convert = regularConvertMock;
+            });
             const cspConvertMock = vi.fn(async () => createConvertedRules());
-            MockedCspConverter.mockImplementationOnce(() => ({
-                convert: cspConvertMock,
-            } as any));
+            MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
+                this.convert = cspConvertMock;
+            });
             const removeParamConvertMock = vi.fn(async () => createConvertedRules());
-            MockedRemoveParamConverter.mockImplementationOnce(() => ({
-                convert: removeParamConvertMock,
-            } as any));
+            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
+                this.convert = removeParamConvertMock;
+            });
             const removeHeaderConvertMock = vi.fn(async () => createConvertedRules());
-            MockedRemoveHeaderConverter.mockImplementationOnce(() => ({
-                convert: removeHeaderConvertMock,
-            } as any));
+            MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
+                this.convert = removeHeaderConvertMock;
+            });
             const badFilterConvertMock = vi.fn(async () => createConvertedRules());
-            MockedBadFilterConverter.mockImplementationOnce(() => ({
-                convert: badFilterConvertMock,
-            } as any));
+            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
+                this.convert = badFilterConvertMock;
+            });
 
             // @ts-expect-error Accessing private method for testing
             await RulesConverter.convertRules(filterId, groupedRules, usedIds);
@@ -882,21 +881,21 @@ describe('RulesConverter', () => {
             const error = createConversionError(101);
             const errorResult = createConvertedRules([], [], [error]);
 
-            MockedRegularConverter.mockImplementationOnce(() => ({
-                convert: async () => successfulResult,
-            } as any));
-            MockedCspConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedRemoveParamConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedRemoveHeaderConverter.mockImplementationOnce(() => ({
-                convert: async () => errorResult,
-            } as any));
-            MockedBadFilterConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
+            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+                this.convert = async () => successfulResult;
+            });
+            MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
+                this.convert = async () => errorResult;
+            });
+            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
 
             // @ts-expect-error Accessing private method for testing
             const result = await RulesConverter.convertRules(filterId, groupedRules, usedIds);
@@ -932,25 +931,25 @@ describe('RulesConverter', () => {
             const badFilterPromise = new Promise<ConvertedRules>((resolve) => { badFilterResolve = resolve; });
 
             const regularConvertMock = vi.fn(async () => regularPromise);
-            MockedRegularConverter.mockImplementationOnce(() => ({
-                convert: regularConvertMock,
-            } as any));
+            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+                this.convert = regularConvertMock;
+            });
             const cspConvertMock = vi.fn(async () => cspPromise);
-            MockedCspConverter.mockImplementationOnce(() => ({
-                convert: cspConvertMock,
-            } as any));
+            MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
+                this.convert = cspConvertMock;
+            });
             const removeParamConvertMock = vi.fn(async () => removeParamPromise);
-            MockedRemoveParamConverter.mockImplementationOnce(() => ({
-                convert: removeParamConvertMock,
-            } as any));
+            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
+                this.convert = removeParamConvertMock;
+            });
             const removeHeaderConvertMock = vi.fn(async () => removeHeaderPromise);
-            MockedRemoveHeaderConverter.mockImplementationOnce(() => ({
-                convert: removeHeaderConvertMock,
-            } as any));
+            MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
+                this.convert = removeHeaderConvertMock;
+            });
             const badFilterConvertMock = vi.fn(async () => badFilterPromise);
-            MockedBadFilterConverter.mockImplementationOnce(() => ({
-                convert: badFilterConvertMock,
-            } as any));
+            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
+                this.convert = badFilterConvertMock;
+            });
 
             // @ts-expect-error Accessing private method for testing
             const resultPromise = RulesConverter.convertRules(filterId, groupedRules, usedIds);
@@ -984,21 +983,21 @@ describe('RulesConverter', () => {
                 [RulesGroup.Regular]: [createNetworkRuleMock()],
             });
 
-            MockedRegularConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedCspConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedRemoveParamConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedRemoveHeaderConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
-            MockedBadFilterConverter.mockImplementationOnce(() => ({
-                convert: async () => createConvertedRules(),
-            } as any));
+            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
+            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
+                this.convert = async () => createConvertedRules();
+            });
 
             // @ts-expect-error Accessing private method for testing
             await RulesConverter.convertRules(filterId, groupedRules, usedIds);

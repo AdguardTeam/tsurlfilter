@@ -22,9 +22,14 @@ describe('regexValidatorNode', () => {
     });
 
     it('should reject invalid regex', async () => {
-        RE2Spy.mockImplementationOnce(() => {
+        /**
+         * Mock RE2 constructor to throw an error.
+         */
+        function RE2Mock() {
             throw new Error('Invalid regex');
-        });
+        }
+
+        RE2Spy.mockImplementationOnce(RE2Mock);
 
         const result = regexValidatorNode('test-regex');
         expect(RE2Spy).toHaveBeenCalledWith('test-regex', 'u', expect.any(Number));

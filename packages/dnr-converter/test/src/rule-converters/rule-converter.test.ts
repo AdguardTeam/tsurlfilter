@@ -1,4 +1,5 @@
 import {
+    afterEach,
     beforeEach,
     describe,
     expect,
@@ -72,6 +73,10 @@ describe('RuleConverter', () => {
     let converter: TestConverter;
     beforeEach(() => {
         converter = new TestConverter(webAccessibleResourcesPath);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     describe('catchConversionError', () => {
