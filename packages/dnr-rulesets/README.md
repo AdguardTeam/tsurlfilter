@@ -206,6 +206,13 @@ You can also integrate functions for downloading and updating the manifest into 
 
 1. Load DNR rulesets.
 
+    This method copies prebuilt assets to the specified output directory, including:
+    - DNR rulesets in JSON format for all available filters
+    - `filters_i18n.json` - translations file with filter names and descriptions
+    - `local_script_rules.js` - local script rules file in JS module format for
+    Manifest v3 extensions where it is highly recommended to provide local script rules. If not provided during build, all script rules (except scriptlets) will not be injected to ensure compliance with Chrome Web Store policies.
+    - `local_script_rules.json` - local script rules in JSON format for Manifest v2. If not provided, all script rules are treated as allowed. Should be provided in Firefox AMO according to their policies.
+
     ```ts
     import { AssetsLoader } from '@adguard/dnr-rulesets';
 
@@ -213,7 +220,69 @@ You can also integrate functions for downloading and updating the manifest into 
     await loader.load('<path-to-output>');
     ```
 
-2. Patch extension manifest.
+2. Copy only local script rules.
+
+    **Option A: Copy JavaScript format rules**
+
+    ```ts
+    import { AssetsLoader } from '@adguard/dnr-rulesets';
+
+    const loader = new AssetsLoader();
+    await loader.copyLocalScriptRulesJs('<path-to-output>');
+    ```
+
+    This method copies only the `local_script_rules.js` file to the specified destination directory.
+
+    **Option B: Copy JSON format rules**
+
+    ```ts
+    import { AssetsLoader } from '@adguard/dnr-rulesets';
+
+    const loader = new AssetsLoader();
+    await loader.copyLocalScriptRulesJson('<path-to-output>');
+    ```
+
+    This method copies only the `local_script_rules.json` file to the specified destination directory.
+
+3. Extend local script rules with custom rules.
+
+    **Option A: Using `extendLocalScriptRulesJs`** (Manifest V3)
+
+    ```ts
+    import { AssetsLoader } from '@adguard/dnr-rulesets';
+
+    const loader = new AssetsLoader();
+    await loader.extendLocalScriptRulesJs(
+        '<path-to-local-script-rules.js>',
+        [
+            'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
+            'example.org#%#console.log("Custom script");'
+        ]
+    );
+    ```
+
+    This method parses custom filtering rules, extracts JavaScript injection rules from them, and appends them to an existing `local_script_rules.js` file. It's useful for dynamically adding custom JS rules to your extension at build time.
+
+    **Option B: Using `extendLocalScriptRulesJson`** (Manifest V2)
+
+    ```ts
+    import { AssetsLoader } from '@adguard/dnr-rulesets';
+
+    const loader = new AssetsLoader();
+    await loader.extendLocalScriptRulesJson(
+        '<path-to-local-script-rules.json>',
+        [
+            'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
+            'example.org,~sub.example.org#%#console.log("Custom script");'
+        ]
+    );
+    ```
+
+    This method parses custom filtering rules, extracts JavaScript injection rules with their domain configurations (both permitted and restricted domains), and merges them into an existing `local_script_rules.json` file. Use this method when you need to maintain domain-specific rule associations.
+
+    > **Note:** The `extendLocalScriptRulesJs` and `extendLocalScriptRulesJson` methods are only available in the programmatic API and not in the CLI. These methods require programmatic access to parse and manipulate existing local script rule files, which is more suitable for build scripts and custom automation workflows rather than command-line usage.
+
+4. Patch extension manifest.
 
     ```ts
     import { ManifestPatcher } from '@adguard/dnr-rulesets';
@@ -330,7 +399,7 @@ Example of usage: [adguard-api-mv3](../examples/adguard-api-mv3)
 
 ## Included filter lists
 
-### Ad Blocking
+### Ad blocking
 
 #### AdGuard Base filter
 
@@ -345,14 +414,6 @@ Filter for all known mobile ad networks. Useful for mobile devices.
 
 - Filter ID: **11**
 - Path: `<filters-directory>/declarative/ruleset_11/ruleset_11.json`
-
-#### AdGuard Quick Fixes filter
-
-**IMPORTANT:** This filter is not convertible (excluded from build), but it is still included in the metadata. It should be downloaded from the server on the client and applied dynamically.
-
-Filter to quickly resolve content filtering issues on popular websites without updating the extension.
-
-- Filter ID: **24**
 
 ### Privacy
 
@@ -370,7 +431,7 @@ Filter that enhances privacy by removing tracking parameters from URLs.
 - Filter ID: **17**
 - Path: `<filters-directory>/declarative/ruleset_17/ruleset_17.json`
 
-### Social Widgets
+### Social widgets
 
 #### AdGuard Social Media filter
 
@@ -445,6 +506,13 @@ Filter for risky sites, warning users of potential threats.
 
 - Filter ID: **257**
 - Path: `<filters-directory>/declarative/ruleset_257/ruleset_257.json`
+
+#### Dandelion Sprout's Anti-Malware List
+
+Blocks more malware than most other major anti-malware lists - domains and URL patterns used in malware redirection chains, IP addresses that are solely used by malware, PUP nags, and a few scammers. Already included in Dandelion Sprout's Annoyances List.
+
+- Filter ID: **259**
+- Path: `<filters-directory>/declarative/ruleset_259/ruleset_259.json`
 
 ### Other
 

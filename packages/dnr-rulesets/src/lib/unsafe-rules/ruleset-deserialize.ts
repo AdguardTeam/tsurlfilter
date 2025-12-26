@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs';
+import fs from 'node:fs/promises';
 
 import { RuleParser } from '@adguard/agtree/parser';
 import { FilterListPreprocessor, PreprocessedFilterList } from '@adguard/tsurlfilter';

@@ -19,6 +19,8 @@ export {
 } from './constants';
 export { BINARY_SCHEMA_VERSION } from './binary-schema-version';
 export { AdblockSyntax } from './adblockers';
+export { getBitCount } from './bit-count';
+export { type ReadonlyRecord } from './types';
 export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './cosmetic-rule-separator';
 export { DomainUtils } from './domain';
 export { type VariableTable, LogicalExpressionUtils } from './logical-expression';

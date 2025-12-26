@@ -1,4 +1,3 @@
-import { AdblockSyntax } from '../utils/adblockers';
 import {
     CAPITAL_LETTERS,
     CLOSE_PARENTHESIS,
@@ -7,16 +6,6 @@ import {
     SMALL_LETTERS,
     UNDERSCORE,
 } from '../utils/constants';
-
-/**
- * Prefixes for different adblockers to describe the platform-specific modifiers data
- * stored in the yaml files.
- */
-export const BLOCKER_PREFIX = {
-    [AdblockSyntax.Adg]: 'adg_',
-    [AdblockSyntax.Ubo]: 'ubo_',
-    [AdblockSyntax.Abp]: 'abp_',
-};
 
 /**
  * Set of all allowed characters for app name except the dot `.`.
@@ -202,7 +191,7 @@ export const VALIDATION_ERROR_PREFIX = {
     NOT_EXISTENT: 'Non-existent modifier',
     NOT_NEGATABLE_MODIFIER: 'Non-negatable modifier',
     NOT_NEGATABLE_VALUE: 'Values cannot be negated for the modifier',
-    NOT_SUPPORTED: 'The adblocker does not support the modifier',
+    NOT_SUPPORTED: '%s does not support the modifier',
     REMOVED: 'Removed and no longer supported modifier',
     VALUE_FORBIDDEN: 'Value is not allowed for the modifier',
     VALUE_INVALID: 'Value is invalid for the modifier',

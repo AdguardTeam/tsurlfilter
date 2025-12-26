@@ -304,6 +304,20 @@ describe('NetworkRuleConverter', () => {
                     '||cdn.cookielaw.org^$important,redirect=noopjs,script,domain=open.spotify.com',
                 ],
             },
+
+            // should convert googlesyndication.com/adsbygoogle.js to googlesyndication-adsbygoogle
+            {
+                actual: '||example.com/adsbygoogle.js^$script,redirect-rule=googlesyndication.com/adsbygoogle.js',
+                expected: [
+                    '||example.com/adsbygoogle.js^$script,redirect-rule=googlesyndication-adsbygoogle',
+                ],
+            },
+            {
+                actual: '||example.com/adsbygoogle.js$script,redirect=googlesyndication.com/adsbygoogle.js,important',
+                expected: [
+                    '||example.com/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle,important',
+                ],
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(NetworkRuleConverter, 'convertToAdg');
         });
@@ -350,6 +364,10 @@ describe('NetworkRuleConverter', () => {
             {
                 actual: '||example.com^$script,redirect=noopjs:99',
                 expected: ['||example.com^$script,redirect=noop.js'],
+            },
+            {
+                actual: '@@||example.com^$script,redirect=noopjs:-1',
+                expected: ['@@||example.com^$script,redirect=noop.js'],
             },
             {
                 actual: '||example.com^$xmlhttprequest,redirect=nooptext',

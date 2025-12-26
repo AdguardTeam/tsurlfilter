@@ -2,71 +2,64 @@
  * @file Validator for modifiers.
  */
 
-import { type Modifier } from '../nodes';
-import { AdblockSyntax } from '../utils/adblockers';
-import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
-import { BLOCKER_PREFIX, SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
-import {
-    type ValidationResult,
-    getInvalidValidationResult,
-    getValueRequiredValidationResult,
-    isValidNoopModifier,
-} from './helpers';
-import { validateValue } from './value';
-import { clone } from '../utils/clone';
-import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
-import { GenericPlatform } from '../compatibility-tables/platforms';
+import { sprintf } from 'sprintf-js';
 
-const convertSyntaxToGenericPlatform = (syntax: AdblockSyntax): GenericPlatform => {
-    switch (syntax) {
-        case AdblockSyntax.Adg:
-            return GenericPlatform.AdgAny;
-        case AdblockSyntax.Ubo:
-            return GenericPlatform.UboAny;
-        case AdblockSyntax.Abp:
-            return GenericPlatform.AbpAny;
-        default:
-            throw new Error(`Unknown syntax: ${syntax}`);
-    }
-};
+import { type Modifier } from '../nodes';
+import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
+import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
+import { type ValidationResult, getInvalidValidationResult, getValueRequiredValidationResult } from './helpers';
+import { validateValue } from './value';
+import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
+import {
+    type AnyPlatform,
+    getHumanReadablePlatformName,
+    hasPlatformMultipleProducts,
+    isGenericPlatform,
+} from '../compatibility-tables';
+import { isValidNoopModifier } from '../utils/noop-modifier';
 
 /**
- * Fully checks whether the given `modifier` valid for given blocker `syntax`:
- * is it supported by the blocker, deprecated, assignable, negatable, etc.
+ * Fully checks whether the given `modifier` is valid for a specific product platform:
+ * is it supported by the product, deprecated, assignable, negatable, etc.
  *
- * @param syntax Adblock syntax to check the modifier for.
- * 'Common' is not supported, it should be specific — 'AdGuard', 'uBlockOrigin', or 'AdblockPlus'.
+ * @param platform Platform to check the modifier for. Must be a specific platform (e.g., AdgExtChrome)
+ * or a generic platform for a single product (e.g., AdgAny, UboExtChromium).
+ * If multiple products are specified, validation is skipped and returns valid.
  * @param modifier Parsed modifier AST node.
  * @param isException Whether the modifier is used in exception rule.
  * Needed to check whether the modifier is allowed only in blocking or exception rules.
  *
  * @returns Result of modifier validation.
  */
-const validateForSpecificSyntax = (
-    syntax: AdblockSyntax,
+const validateForSpecificProduct = (
+    platform: AnyPlatform,
     modifier: Modifier,
     isException: boolean,
 ): ValidationResult => {
-    if (syntax === AdblockSyntax.Common) {
-        throw new Error(`Syntax should be specific, '${AdblockSyntax.Common}' is not supported`);
+    if (platform === 0) {
+        throw new Error('No platforms specified');
+    }
+
+    const isGeneric = isGenericPlatform(platform);
+
+    // Skip validation if multiple products are specified
+    if (isGeneric && hasPlatformMultipleProducts(platform)) {
+        return { valid: true };
     }
 
     const modifierName = modifier.name.value;
 
-    const blockerPrefix = BLOCKER_PREFIX[syntax];
-    if (!blockerPrefix) {
-        throw new Error(`Unknown syntax: ${syntax}`);
-    }
-
     // needed for validation of negation, assignment, etc.
-    const specificBlockerData = modifiersCompatibilityTable.getFirst(
-        modifierName,
-        convertSyntaxToGenericPlatform(syntax),
-    );
+    // Use getSingle for specific platforms, getFirst for generic platforms
+    const specificBlockerData = isGeneric
+        ? modifiersCompatibilityTable.getFirst(modifierName, platform)
+        : modifiersCompatibilityTable.getSingle(modifierName, platform);
 
     // if no specific blocker data is found
     if (!specificBlockerData) {
-        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.NOT_SUPPORTED}: '${modifierName}'`);
+        return getInvalidValidationResult(
+            sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(platform)),
+        );
     }
 
     // e.g. 'object-subrequest'
@@ -159,22 +152,21 @@ class ModifierValidator {
     };
 
     /**
-     * Checks whether the given `modifier` is valid for specified `syntax`.
+     * Checks whether the given `modifier` is valid for specified `platforms`.
+     * It checks whether the modifier is supported by the product, deprecated, assignable, negatable, etc.
      *
-     * For `Common` syntax it simply checks whether the modifier exists.
-     * For specific syntax the validation is more complex —
-     * deprecated, assignable, negatable and other requirements are checked.
-     *
-     * @param syntax Adblock syntax to check the modifier for.
-     * @param rawModifier Modifier AST node.
+     * @param platforms Platforms to check the modifier for. Can be a specific platform (e.g., AdgExtChrome)
+     * or a generic platform (e.g., AdgAny, UboExtChromium, or combination of multiple products).
+     * @param modifier Modifier AST node.
      * @param isException Whether the modifier is used in exception rule, default to false.
      * Needed to check whether the modifier is allowed only in blocking or exception rules.
      *
+     * @note For single product: specific platforms use exact lookup, generic platforms use first match.
+     * If multiple products are specified (e.g., AdgAny | UboAny), validation is skipped and returns valid.
+     *
      * @returns Result of modifier validation.
      */
-    public validate = (syntax: AdblockSyntax, rawModifier: Modifier, isException = false): ValidationResult => {
-        const modifier = clone(rawModifier);
-
+    public validate = (platforms: AnyPlatform, modifier: Modifier, isException = false): ValidationResult => {
         // special case: handle noop modifier which may be used as multiple underscores (not just one)
         // https://adguard.com/kb/general/ad-filtering/create-own-filters/#noop-modifier
         if (modifier.name.value.startsWith(UNDERSCORE)) {
@@ -184,19 +176,13 @@ class ModifierValidator {
                     `${VALIDATION_ERROR_PREFIX.INVALID_NOOP}: '${modifier.name.value}'`,
                 );
             }
-            // otherwise, replace the modifier value with single underscore.
-            // it is needed to check whether the modifier is supported by specific adblocker due to the syntax
-            modifier.name.value = UNDERSCORE;
         }
 
         if (!this.exists(modifier)) {
             return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.name.value}'`);
         }
-        // for 'Common' syntax we cannot check something more
-        if (syntax === AdblockSyntax.Common) {
-            return { valid: true };
-        }
-        return validateForSpecificSyntax(syntax, modifier, isException);
+
+        return validateForSpecificProduct(platforms, modifier, isException);
     };
 }
 

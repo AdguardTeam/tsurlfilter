@@ -10,6 +10,11 @@
                 "id": "ruleset_3",
                 "enabled": false,
                 "path": "filters/declarative/ruleset_3/ruleset_3.json"
+            },
+            {
+                "id": "ruleset_4",
+                "enabled": false,
+                "path": "filters/declarative/ruleset_4/ruleset_4.json"
             }
         ]
     },
@@ -30,7 +35,8 @@
         "storage",
         "unlimitedStorage",
         "scripting",
-        "cookies"
+        "cookies",
+        "userScripts"
     ],
     "host_permissions": [
         "<all_urls>"

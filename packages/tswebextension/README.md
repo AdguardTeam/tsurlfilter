@@ -593,6 +593,33 @@ Updates the configuration.
 
 Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
 
+**MV3 Error Handling:** When using Manifest V3, the `ConfigurationResult` returned by `configure()` and `start()` contains multiple fields with errors and limitations that **must be checked**:
+
+- **`staticFiltersStatus.errors`**: Array of `FailedEnableRuleSetsError` instances if `browser.declarativeNetRequest.updateEnabledRulesets` fails. The browser does not update or enable any rulesets if any single ruleset is not found.
+- **`dynamicRules.errors`**: Array of conversion errors that occurred during dynamic rules conversion (custom filters, user rules, allowlist).
+- **`dynamicRules.limitations`**: Array of limitation errors if dynamic rules were truncated due to browser limits.
+
+**These errors are not thrown** but returned in the result. **You must check these fields for critical errors and handle them appropriately** (e.g., throw, log, notify the user).
+
+```ts
+const result = await tsWebExtension.configure(configuration);
+
+// Check static filter errors
+if (result.staticFiltersStatus.errors.length > 0) {
+    console.error('Failed to enable rulesets:', result.staticFiltersStatus.errors);
+}
+
+// Check dynamic rules errors and limitations
+if (result.dynamicRules) {
+    if (result.dynamicRules.errors.length > 0) {
+        console.error('Dynamic rules conversion errors:', result.dynamicRules.errors);
+    }
+    if (result.dynamicRules.limitations.length > 0) {
+        console.warn('Dynamic rules were truncated:', result.dynamicRules.limitations);
+    }
+}
+```
+
 ##### stop()
 
 type: `() => Promise<void>`

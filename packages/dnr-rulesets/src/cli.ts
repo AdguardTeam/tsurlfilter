@@ -3,8 +3,8 @@ import path from 'node:path';
 import { program } from 'commander';
 
 import { version } from '../package.json';
-import { AssetsLoader, ManifestPatcher, type PatchManifestOptions } from './lib';
-import { AssetsLoaderOptions } from './lib/assets/loader';
+import { ManifestPatcher, type PatchManifestOptions } from './lib';
+import { AssetsLoader, AssetsLoaderOptions } from './lib/assets/loader';
 import { Watcher, WatchOptions } from './lib/manifest/watch';
 import { excludeUnsafeRules } from './lib/unsafe-rules/exclude-unsafe-rules';
 

@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.2] - 2025-12-16
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.4.3`.
+- Updated [@adguard/scriptlets] to `v2.2.14`.
+
+[3.5.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.5.2
+
+## [3.5.1] - 2025-11-26
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.3.1`.
+- Updated [@adguard/scriptlets] to `v2.2.13`.
+
+[3.5.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.5.1
+
+## [3.5.0] - 2025-11-20
+
+### Added
+
+- Support for regexp patterns in cosmetic rules.
+- Support for regexp in `domain` modifier [#105].
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.3.0`.
+
+[3.5.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.5.0
+[#105]: https://github.com/AdguardTeam/tsurlfilter/issues/105
+
+## [3.4.8] - 2025-11-12
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.5`.
+- Updated [@adguard/scriptlets] to `v2.2.12`.
+
+[3.4.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.8
+
+## [3.4.7] - 2025-10-17
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.4`.
+- Updated [@adguard/scriptlets] to `v2.2.11`.
+
+[3.4.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.7
+
 ## [3.4.6] - 2025-09-11
 
 ### Changed

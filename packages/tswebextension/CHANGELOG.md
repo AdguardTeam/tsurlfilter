@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.19] - 2025-12-24
+
+### Fixed
+
+- Memory leak caused by storing data URL favicons in tab contexts. [AdguardBrowserExtension#2594]
+
+[3.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.19  
+[AdguardBrowserExtension#2594]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594
+
+## [3.2.18] - 2025-12-16
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.4.3`.
+- Updated [@adguard/scriptlets] to `v2.2.14`.
+- Updated [@adguard/tsurlfilter] to `v3.5.2`.
+
+[3.2.18]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.18
+
+## [3.2.17] - 2025-12-01
+
+### Changed
+
+- Export `LocalScriptRules` type from MV2.
+
+[3.2.17]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.17
+
+## [3.2.16] - 2025-11-26
+
+### Changed
+
+- Updated [@adguard/assistant] to `v4.3.77`.
+- Updated [@adguard/agtree] to `v3.3.1`.
+- Updated [@adguard/scriptlets] to `v2.2.13`.
+- Updated [@adguard/tsurlfilter] to `v3.5.1`.
+
+[3.2.16]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.16
+
+## [3.2.15] - 2025-11-12
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.5`.
+- Updated [@adguard/scriptlets] to `v2.2.12`.
+- Updated [@adguard/tsurlfilter] to `v3.4.8`.
+
+[3.2.15]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.15
+
+## [3.2.14] - 2025-10-17
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.4`.
+- Updated [@adguard/scriptlets] to `v2.2.11`.
+- Updated [@adguard/tsurlfilter] to `v3.4.7`.
+
+[3.2.14]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.14
+
 ## [3.2.13] - 2025-10-15
 
 ### Fixed

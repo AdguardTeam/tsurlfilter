@@ -1,6 +1,6 @@
 {
     "name": "@adguard/api-mv3",
-    "version": "0.3.0",
+    "version": "1.0.0",
     "description": "This is a TypeScript library that implements AdGuard's extension API for MV3",
     "main": "dist/adguard-api.js",
     "files": [
@@ -56,6 +56,7 @@
         "eslint-config-airbnb-typescript": "catalog:",
         "eslint-plugin-import": "catalog:",
         "eslint-plugin-jsdoc": "catalog:",
+        "jsdom": "^25.0.1",
         "rollup": "catalog:",
         "rollup-plugin-copy": "^3.5.0",
         "tsx": "catalog:",

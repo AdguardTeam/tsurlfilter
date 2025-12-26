@@ -163,9 +163,14 @@ export class CosmeticRuleParser extends BaseParser {
             patternOffset = StringUtils.skipWS(rawPattern, patternOffset);
 
             // Modifier list ends with the last unescaped square bracket
-            // We search for the last unescaped square bracket, because some modifiers can contain square brackets,
+            // that is not inside a regex or string
+            // We search for the last such square bracket,
+            // because some modifiers can contain square brackets,
             // e.g. [$domain=/example[0-9]\.(com|org)/]##.ad
-            const modifierListEnd = StringUtils.findLastUnescapedCharacter(rawPattern, CLOSE_SQUARE_BRACKET);
+            const modifierListEnd = StringUtils.findLastUnescapedNonStringNonRegexChar(
+                rawPattern,
+                CLOSE_SQUARE_BRACKET,
+            );
 
             if (modifierListEnd === -1) {
                 throw new AdblockSyntaxError(

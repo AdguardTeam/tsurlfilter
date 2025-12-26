@@ -7,6 +7,7 @@ export { RuleParser } from './parser/rule-parser';
 export { RuleSerializer } from './serializer/rule-serializer';
 export { RuleDeserializer } from './deserializer/rule-deserializer';
 export { RuleGenerator } from './generator/rule-generator';
+export { type OnParseError, defaultParserOptions, type ParserOptions } from './parser/options';
 
 export {
     type Agent,
@@ -111,7 +112,7 @@ export {
     UBO_SCRIPTLET_MASK,
 } from './utils/constants';
 export { BINARY_SCHEMA_VERSION } from './utils/binary-schema-version';
-export { AdblockSyntax } from './utils/adblockers';
+export { AdblockSyntax, AdblockProduct, getHumanReadableProductName } from './utils/adblockers';
 export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './utils/cosmetic-rule-separator';
 export { DomainUtils } from './utils/domain';
 export { type VariableTable, LogicalExpressionUtils } from './utils/logical-expression';
@@ -155,9 +156,21 @@ export {
     isGenericPlatform,
     getPlatformId,
     getSpecificPlatformName,
+    hasPlatformMultipleProducts,
+    getProductGenericPlatforms,
+    getProductSpecificPlatforms,
+    platformToAdblockProduct,
+    getPlatformsByProduct,
+    getHumanReadablePlatformName,
+    getAllPlatformNames,
     ResourceType,
     getResourceTypeModifier,
     isValidResourceType,
+    stringifyPlatforms,
+    type PlatformsByProduct,
+    type AnyPlatform,
+    PLATFORM_NEGATION,
+    PLATFORM_SEPARATOR,
 } from './compatibility-tables';
 
 // Version

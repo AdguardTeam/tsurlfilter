@@ -7,10 +7,86 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## Unreleased
+## [3.4.3] - 2025-12-11
 
 ### Added
 
+- Support of `googlesyndication.com/adsbygoogle.js` alias for
+  `googlesyndication-adsbygoogle` in compatibility tables.
+- Support for `prevent-innerHTML` scriptlet in compatibility tables.
+
+[3.4.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.4.3
+
+## [3.4.1] - 2025-11-28
+
+### Added
+
+- Export for `getHumanReadableProductName`.
+
+### Fixed
+
+- Improved platform names.
+
+[3.4.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.4.1
+
+
+## [3.4.0] - 2025-11-28
+
+### Added
+
+- Export for `AdblockProduct`.
+- Export for `hasPlatformMultipleProducts`, `getProductGenericPlatforms`, `getProductSpecificPlatforms`,
+  `platformToAdblockProduct`, `getPlatformsByProduct`, `getHumanReadablePlatformName`, `stringifyPlatforms`,
+  `getAllPlatformNames` platform helpers.
+- Export for `PLATFORM_NEGATION`, `PLATFORM_SEPARATOR` constants.
+- Export for `PlatformsByProduct`, `AnyPlatform` types.
+
+### Changed
+
+- Modifier validator now accepts compatibility platforms mask instead of syntax.
+
+### Fixed
+
+- Type safety for `GenericPlatform` and `SpecificPlatform` by adding branded types.
+- Improved `AnyPlatform` type by adding support for numeric values.
+- Improved type safety for compatibility tables functions.
+
+[3.4.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.4.0
+
+## [3.3.1] - 2025-11-25
+
+### Fixed
+
+- Support for negative priority suffix in UBO redirects rules.
+
+[3.3.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.3.1
+
+## [3.3.0] - 2025-11-20
+
+### Added
+
+- Support for regexp in `domain` modifier [#105].
+- `stringifyPlatforms` for stringifying compatibility table platforms.
+- `getHumanReadablePlatformName` for getting a human-readable platform name.
+- `AnyPlatform` type for representing any platform.
+
+[3.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.3.0
+[#105]: https://github.com/AdguardTeam/tsurlfilter/issues/105
+
+## [3.2.5] - 2025-11-12
+
+### Fixed
+
+- Selector validation for single-letter HTML tags [#172].
+
+[3.2.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.5
+[#172]: https://github.com/AdguardTeam/tsurlfilter/issues/172
+
+## [3.2.4] - 2025-10-17
+
+### Added
+
+- Support for `onParseError` callback in the parser.
 - Support for `prevent-canvas` scriptlet in compatibility tables [FiltersCompiler#260].
 
 [FiltersCompiler#260]: https://github.com/AdguardTeam/FiltersCompiler/issues/260
