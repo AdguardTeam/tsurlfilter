@@ -161,7 +161,11 @@ import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
-import { type OnBeforeRequestDetailsType, RequestEvents } from './request/events/request-events';
+import {
+    type OnBeforeRequestDetailsType,
+    type OnErrorOccurredDetailsType,
+    RequestEvents,
+} from './request/events/request-events';
 import { RequestBlockingApi } from './request/request-blocking-api';
 import { requestContextStorage } from './request/request-context-storage';
 import { type RequestData } from './request/events/request-event';
@@ -170,6 +174,7 @@ import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { StealthService } from './services/stealth-service';
 import { documentBlockingService } from './services/document-blocking-service';
+import { DocumentLifecycle } from '../../common/interfaces';
 
 /**
  * API for applying rules from background service by handling
@@ -572,7 +577,7 @@ export class WebRequestApi {
      */
     private static onErrorOccurred({
         details,
-    }: RequestData<WebRequest.OnErrorOccurredDetailsType>): void {
+    }: RequestData<OnErrorOccurredDetailsType>): void {
         const {
             tabId,
             requestId,
@@ -580,6 +585,7 @@ export class WebRequestApi {
             type,
             parentFrameId,
             error,
+            documentLifecycle,
         } = details;
 
         /**
@@ -669,6 +675,8 @@ export class WebRequestApi {
             return;
         }
 
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+
         documentBlockingService.handleDocumentBlocking({
             eventId,
             requestUrl,
@@ -676,6 +684,7 @@ export class WebRequestApi {
             referrerUrl,
             rule,
             tabId,
+            isPrerenderRequest,
         });
     }
 
