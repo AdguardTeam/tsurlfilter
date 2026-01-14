@@ -150,6 +150,7 @@ import { CommonAssistant, type CommonAssistantDetails } from '../../common/assis
 import { companiesDbService } from '../../common/companies-db-service';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { DocumentLifecycle } from '../../common/interfaces';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
 import { TabsApiCommon } from '../../common/tabs/tabs-api';
@@ -174,7 +175,6 @@ import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { StealthService } from './services/stealth-service';
 import { documentBlockingService } from './services/document-blocking-service';
-import { DocumentLifecycle } from '../../common/interfaces';
 
 /**
  * API for applying rules from background service by handling
@@ -263,7 +263,7 @@ export class WebRequestApi {
             thirdParty,
         } = context;
 
-        const { parentFrameId } = details;
+        const { parentFrameId, documentLifecycle } = details;
 
         const isDocumentRequest = requestType === RequestType.Document;
 
@@ -373,6 +373,7 @@ export class WebRequestApi {
                 parentFrameId,
                 url: requestUrl,
                 timeStamp: timestamp,
+                documentLifecycle,
             });
         }
 
@@ -522,7 +523,10 @@ export class WebRequestApi {
             url,
             parentDocumentId,
             timeStamp,
+            documentLifecycle,
         } = details;
+
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
 
         /**
          * In some cases `onBeforeNavigate` might happen before Tabs API `onCreated`
@@ -533,8 +537,11 @@ export class WebRequestApi {
          *
          * We create tab context only for document requests (outermost frame),
          * because other types of requests can't have tab context.
+         *
+         * Skip tab context creation for prerender requests, as the tabId may not
+         * correspond to a real tab yet.
          */
-        if (TabsApiCommon.isDocumentLevelFrame(parentFrameId)) {
+        if (TabsApiCommon.isDocumentLevelFrame(parentFrameId) && !isPrerenderRequest) {
             tabsApi.createTabContextIfNotExists(tabId, url);
         }
 
@@ -564,6 +571,7 @@ export class WebRequestApi {
             url,
             timeStamp,
             parentDocumentId,
+            documentLifecycle,
         });
     }
 

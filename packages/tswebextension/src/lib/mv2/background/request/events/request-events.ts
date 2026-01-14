@@ -247,7 +247,8 @@ export class RequestEvents {
         };
 
         // Do not reload filtering log on requests that are being redirected by $removeparam
-        if (isDocumentRequest && !requestContextStorage.has(requestId)) {
+        // and do not reload for prerender requests
+        if (isDocumentRequest && !requestContextStorage.has(requestId) && !isPrerenderRequest) {
             // dispatch filtering log reload event
             defaultFilteringLog.publishEvent({
                 type: FilteringEventType.TabReload,

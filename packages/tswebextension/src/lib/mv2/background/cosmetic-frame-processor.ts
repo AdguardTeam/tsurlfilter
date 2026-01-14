@@ -160,13 +160,17 @@ export class CosmeticFrameProcessor {
             url,
             tabId,
             frameId,
+            isPrerenderRequest,
         } = props;
 
         if (!isHttpRequest(url)) {
             return;
         }
 
-        this.tabsApi.resetBlockedRequestsCount(tabId);
+        // Don't reset blocked requests count for prerender requests
+        if (!isPrerenderRequest) {
+            this.tabsApi.resetBlockedRequestsCount(tabId);
+        }
 
         const mainFrameRule = documentApi.matchFrame(url);
 
@@ -257,11 +261,14 @@ export class CosmeticFrameProcessor {
         const isMainFrame = (!parentDocumentId && documentLifecycle === DocumentLifecycle.Prerender)
             || frameId === MAIN_FRAME_ID;
 
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+
         if (isMainFrame) {
             this.handleMainFrame({
                 url,
                 tabId,
                 frameId,
+                isPrerenderRequest,
             });
         } else {
             const mainFrame = this.tabsApi.getFrameContext(tabId, MAIN_FRAME_ID);

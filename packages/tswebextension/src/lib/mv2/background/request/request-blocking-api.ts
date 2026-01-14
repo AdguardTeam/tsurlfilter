@@ -32,6 +32,10 @@ type RequestParams = Pick<
 export type GetBlockingResponseParams = RequestParams & {
     rule: NetworkRule | null;
     popupRule: NetworkRule | null;
+    /**
+     * Indicates whether the request is a prerender request.
+     */
+    isPrerenderRequest?: boolean;
 };
 
 /**
@@ -143,6 +147,7 @@ export class RequestBlockingApi {
             requestUrl,
             requestId,
             referrerUrl,
+            isPrerenderRequest,
         } = data;
 
         if (!rule) {
@@ -202,6 +207,7 @@ export class RequestBlockingApi {
                     referrerUrl,
                     rule,
                     tabId,
+                    isPrerenderRequest,
                 });
             }
 

@@ -2,6 +2,7 @@ import { type CosmeticResult, type CosmeticRule, RequestType } from '@adguard/ts
 
 import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
+import { DocumentLifecycle } from '../../common/interfaces';
 import {
     type PrecalculateCosmeticProps,
     type HandleSubFrameWithoutUrlProps,
@@ -210,13 +211,17 @@ export class CosmeticFrameProcessor {
             url,
             tabId,
             frameId,
+            isPrerenderRequest,
         } = props;
 
         if (!isHttpRequest(url)) {
             return;
         }
 
-        tabsApi.resetBlockedRequestsCount(tabId);
+        // Don't reset blocked requests count for prerender requests
+        if (!isPrerenderRequest) {
+            tabsApi.resetBlockedRequestsCount(tabId);
+        }
 
         const mainFrameRule = DocumentApi.matchFrame(url);
 
@@ -255,15 +260,18 @@ export class CosmeticFrameProcessor {
             frameId,
             url,
             parentDocumentId,
+            documentLifecycle,
         } = props;
 
         const isMainFrame = frameId === MAIN_FRAME_ID;
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
 
         if (isMainFrame) {
             CosmeticFrameProcessor.handleMainFrame({
                 url,
                 tabId,
                 frameId,
+                isPrerenderRequest,
             });
         } else {
             const mainFrame = tabsApi.getFrameContext(tabId, MAIN_FRAME_ID);

@@ -13,6 +13,7 @@ import {
     type OnBeforeRequestDetailsType,
 } from '../../../../../../src/lib/mv3/background/request/events/request-events';
 import { DocumentLifecycle } from '../../../../../../src/lib/common/interfaces';
+import { defaultFilteringLog, FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 
 describe('Request Events', () => {
     const commonRequestData: OnBeforeRequestDetailsType = {
@@ -95,5 +96,72 @@ describe('Request Events', () => {
                 thirdParty: true,
             }),
         }));
+    });
+
+    describe('TabReload filtering log event', () => {
+        it('should NOT publish TabReload for prerender document requests', () => {
+            const filteringLogSpy = vi.spyOn(defaultFilteringLog, 'publishEvent');
+
+            const prerenderRequestDetails: OnBeforeRequestDetailsType = {
+                ...commonRequestData,
+                requestId: 'prerender-tab-reload-1',
+                originUrl: undefined,
+                tabId: 2,
+                documentLifecycle: DocumentLifecycle.Prerender,
+                timeStamp: Date.now(),
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(prerenderRequestDetails);
+
+            // Verify TabReload was NOT published for prerender request
+            const tabReloadCalls = filteringLogSpy.mock.calls.filter(
+                (call: unknown[]) => (call[0] as { type?: string })?.type === FilteringEventType.TabReload,
+            );
+            expect(tabReloadCalls).toHaveLength(0);
+
+            filteringLogSpy.mockRestore();
+        });
+
+        it('should publish TabReload for active document requests', () => {
+            const filteringLogSpy = vi.spyOn(defaultFilteringLog, 'publishEvent');
+
+            const activeRequestDetails: OnBeforeRequestDetailsType = {
+                ...commonRequestData,
+                requestId: 'active-tab-reload-1',
+                documentLifecycle: DocumentLifecycle.Active,
+                timeStamp: Date.now(),
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(activeRequestDetails);
+
+            // Verify TabReload WAS published for active request
+            const tabReloadCalls = filteringLogSpy.mock.calls.filter(
+                (call: unknown[]) => (call[0] as { type?: string })?.type === FilteringEventType.TabReload,
+            );
+            expect(tabReloadCalls.length).toBeGreaterThanOrEqual(1);
+
+            filteringLogSpy.mockRestore();
+        });
+
+        it('should publish TabReload for document requests without documentLifecycle (older browsers)', () => {
+            const filteringLogSpy = vi.spyOn(defaultFilteringLog, 'publishEvent');
+
+            const requestDetails: OnBeforeRequestDetailsType = {
+                ...commonRequestData,
+                requestId: 'no-lifecycle-tab-reload-1',
+                // documentLifecycle is undefined (older browser)
+                timeStamp: Date.now(),
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(requestDetails);
+
+            // Verify TabReload WAS published (backward compatibility)
+            const tabReloadCalls = filteringLogSpy.mock.calls.filter(
+                (call: unknown[]) => (call[0] as { type?: string })?.type === FilteringEventType.TabReload,
+            );
+            expect(tabReloadCalls.length).toBeGreaterThanOrEqual(1);
+
+            filteringLogSpy.mockRestore();
+        });
     });
 });
