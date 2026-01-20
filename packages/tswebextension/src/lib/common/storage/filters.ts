@@ -1,27 +1,33 @@
-import { type ConversionData } from '@adguard/tsurlfilter';
+import zod from 'zod';
+import { conversionDataValidator, type ConversionData } from '@adguard/tsurlfilter';
 
 import { logger } from '../utils/logger';
 import { IdbSingleton } from '../idb-singleton';
 
 /**
- * Preprocessed filter list extended with checksum.
+ * Validator for filter list with checksum.
  */
-export type FilterListWithChecksum = {
+const filterListWithChecksumValidator = zod.object({
     /**
      * Checksum.
      */
-    checksum: string;
+    checksum: zod.string(),
 
     /**
      * Raw filter list converted to AdGuard syntax.
      */
-    rawFilterList: string;
+    rawFilterList: zod.string(),
 
     /**
      * Conversion data.
      */
-    conversionData: ConversionData;
-};
+    conversionData: conversionDataValidator,
+});
+
+/**
+ * Preprocessed filter list extended with checksum.
+ */
+export type FilterListWithChecksum = zod.infer<typeof filterListWithChecksumValidator>;
 
 /**
  * Provides a "synchronized storage" for filter lists.
@@ -74,11 +80,17 @@ export class FiltersStorage {
      *
      * @throws Error, if transaction failed.
      */
-    public static async setMultiple(filters: Record<number, FilterListWithChecksum>): Promise<void> {
+    public static async setMultiple(filters: Record<number, FilterListWithChecksum | unknown>): Promise<void> {
         const data: Record<string, unknown> = {};
 
         for (const [filterId, filter] of Object.entries(filters)) {
-            for (const [key, value] of Object.entries(filter)) {
+            const parseResult = filterListWithChecksumValidator.safeParse(filter);
+            if (!parseResult.success) {
+                logger.error(`[tsweb.FiltersStorage.setMultiple]: invalid filter list structure for filter id ${filterId}`, parseResult.error);
+                continue;
+            }
+
+            for (const [key, value] of Object.entries(parseResult.data)) {
                 data[FiltersStorage.getKey(key, filterId)] = value;
             }
         }
