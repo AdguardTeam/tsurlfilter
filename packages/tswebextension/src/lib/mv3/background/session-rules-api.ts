@@ -147,6 +147,21 @@ export class SessionRulesApi {
             }),
         );
 
+        // Before collect rules to enable, record which rules should be removed
+        // from browser session rules and also remove them from in-memory source
+        // map.
+        const currentSessionRules = await chrome.declarativeNetRequest.getSessionRules();
+
+        const removeRuleIds = currentSessionRules
+            .map((rule) => rule.id)
+            // Ignore removing stealth rules.
+            .filter((id) => id > SessionRulesApi.MIN_DECLARATIVE_RULE_ID);
+
+        // Clear them from in-memory source map.
+        removeRuleIds.forEach((id) => {
+            SessionRulesApi.sourceMapForUnsafeRules.delete(id);
+        });
+
         // Collect rules to enable.
         const unsafeRulesFromEnabledRulesets: DeclarativeRule[] = [];
 
@@ -200,18 +215,6 @@ export class SessionRulesApi {
 
             logger.debug(`[tsweb.SessionRulesApi.updateSessionRules]: Some session rules were ignored due to the limit of ${SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES} (current count of unsafe rules: ${unsafeRulesFromEnabledRulesets}) or limit of ${SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES} regex rules (current count of regex rules: ${regexpRulesCounter}): \n`, stringifiedIgnoredRules);
         }
-
-        const currentSessionRules = await chrome.declarativeNetRequest.getSessionRules();
-
-        const removeRuleIds = currentSessionRules
-            .map((rule) => rule.id)
-            // Ignore removing stealth rules.
-            .filter((id) => id > SessionRulesApi.MIN_DECLARATIVE_RULE_ID);
-
-        // Clear them from in-memory source map.
-        removeRuleIds.forEach((id) => {
-            SessionRulesApi.sourceMapForUnsafeRules.delete(id);
-        });
 
         // The rules with IDs listed in options.removeRuleIds are first removed,
         // and then the rules given in options.addRules are added
