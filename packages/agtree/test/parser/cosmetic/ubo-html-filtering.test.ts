@@ -6,6 +6,10 @@ import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-p
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import {
+    UboHtmlFilteringBodyParser,
+} from '../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import { defaultParserOptions } from '../../../src/parser';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid uBlock HTML filtering rules', () => {
@@ -26,11 +30,11 @@ describe('CosmeticRuleParser', () => {
                             value: '##',
                             ...context.getRangeFor('##'),
                         },
-                        body: {
-                            type: 'Value',
-                            value: '^script:has-text(adblock)',
-                            ...context.getRangeFor('^script:has-text(adblock)'),
-                        },
+                        body: UboHtmlFilteringBodyParser.parse(
+                            'script:has-text(adblock)',
+                            defaultParserOptions,
+                            '##^'.length,
+                        ),
                         ...context.getFullRange(),
                     };
                 },
@@ -50,11 +54,11 @@ describe('CosmeticRuleParser', () => {
                             value: '#@#',
                             ...context.getRangeFor('#@#'),
                         },
-                        body: {
-                            type: 'Value',
-                            value: '^script:has-text(adblock)',
-                            ...context.getRangeFor('^script:has-text(adblock)'),
-                        },
+                        body: UboHtmlFilteringBodyParser.parse(
+                            'script:has-text(adblock)',
+                            defaultParserOptions,
+                            '#@#^'.length,
+                        ),
                         ...context.getFullRange(),
                     };
                 },
@@ -76,11 +80,11 @@ describe('CosmeticRuleParser', () => {
                             value: '##',
                             ...context.getRangeFor('##'),
                         },
-                        body: {
-                            type: 'Value',
-                            value: '^script:has-text(adblock)',
-                            ...context.getRangeFor('^script:has-text(adblock)'),
-                        },
+                        body: UboHtmlFilteringBodyParser.parse(
+                            'script:has-text(adblock)',
+                            defaultParserOptions,
+                            'example.com,~example.net##^'.length,
+                        ),
                         ...context.getFullRange(),
                     };
                 },
@@ -100,11 +104,11 @@ describe('CosmeticRuleParser', () => {
                             value: '#@#',
                             ...context.getRangeFor('#@#'),
                         },
-                        body: {
-                            type: 'Value',
-                            value: '^script:has-text(adblock)',
-                            ...context.getRangeFor('^script:has-text(adblock)'),
-                        },
+                        body: UboHtmlFilteringBodyParser.parse(
+                            'script:has-text(adblock)',
+                            defaultParserOptions,
+                            'example.com,~example.net#@#^'.length,
+                        ),
                         ...context.getFullRange(),
                     };
                 },

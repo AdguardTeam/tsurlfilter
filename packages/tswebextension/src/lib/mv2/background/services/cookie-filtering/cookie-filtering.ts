@@ -6,12 +6,14 @@ import { createFrameMatchQuery } from '../../../../common/utils/create-frame-mat
 import { findHeaderByName } from '../../../../common/utils/headers';
 import { logger } from '../../../../common/utils/logger';
 import { nanoid } from '../../../../common/utils/nanoid';
+import { getRuleTexts } from '../../../../common/utils/rule-text-provider';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
-import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
+import { FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
 import { ContentType } from '../../../../common/request-type';
-import { engineApi, tabsApi } from '../../api';
-import { type RequestContext, requestContextStorage } from '../../request';
+import { type RequestContext, requestContextStorage } from '../../request/request-context-storage';
+import { type TabsApi } from '../../tabs/tabs-api';
+import { type EngineApi } from '../../engine-api';
 
 import CookieUtils from './utils';
 
@@ -43,15 +45,27 @@ import CookieUtils from './utils';
 export class CookieFiltering {
     private filteringLog: FilteringLogInterface;
 
+    /**
+     * Engine API for retrieving rule texts.
+     */
+
+    private readonly engineApi: EngineApi;
+
+    private tabsApi: TabsApi;
+
     private browserCookieApi: BrowserCookieApi = new BrowserCookieApi();
 
     /**
      * Constructor.
      *
      * @param filteringLog Filtering log.
+     * @param engineApi Engine API instance.
+     * @param tabsApi Tabs API instance.
      */
-    constructor(filteringLog: FilteringLogInterface) {
+    constructor(filteringLog: FilteringLogInterface, engineApi: EngineApi, tabsApi: TabsApi) {
         this.filteringLog = filteringLog;
+        this.engineApi = engineApi;
+        this.tabsApi = tabsApi;
     }
 
     /**
@@ -319,9 +333,8 @@ export class CookieFiltering {
      *
      * @returns List of blocking rules.
      */
-    // eslint-disable-next-line class-methods-use-this
     public getBlockingRules(frameUrl: string, tabId: number, frameId: number): NetworkRule[] {
-        const tabContext = tabsApi.getTabContext(tabId);
+        const tabContext = this.tabsApi.getTabContext(tabId);
 
         if (!tabContext?.info.url) {
             return [];
@@ -329,7 +342,7 @@ export class CookieFiltering {
 
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
-        const matchingResult = engineApi.matchRequest(matchQuery);
+        const matchingResult = this.engineApi.matchRequest(matchQuery);
 
         if (!matchingResult) {
             return [];
@@ -505,6 +518,8 @@ export class CookieFiltering {
         isModifyingCookieRule: boolean,
         requestThirdParty: boolean,
     ): void {
+        const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
+
         this.filteringLog.publishEvent({
             type: FilteringEventType.Cookie,
             data: {
@@ -515,6 +530,8 @@ export class CookieFiltering {
                 frameDomain: getDomain(requestUrl) || requestUrl,
                 filterId: rule.getFilterListId(),
                 ruleIndex: rule.getIndex(),
+                appliedRuleText,
+                originalRuleText,
                 isModifyingCookieRule,
                 requestThirdParty,
                 timestamp: Date.now(),
@@ -529,5 +546,3 @@ export class CookieFiltering {
         });
     }
 }
-
-export const cookieFiltering = new CookieFiltering(defaultFilteringLog);

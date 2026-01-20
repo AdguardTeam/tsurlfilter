@@ -1,10 +1,11 @@
 import { getDomain } from 'tldts';
 import { NetworkRuleOption, CSP_HEADER_NAME } from '@adguard/tsurlfilter';
 
-import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
+import { FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { ContentType } from '../../../common/request-type';
 import { nanoid } from '../../../common/utils/nanoid';
-import { RequestBlockingApi } from '../request/request-blocking-api';
+import { getRuleTexts, type RuleTextProvider } from '../../../common/utils/rule-text-provider';
+import { RuleUtils } from '../utils/rule-utils';
 import { type RequestContext, requestContextStorage } from '../request/request-context-storage';
 
 /**
@@ -17,12 +18,19 @@ export class CspService {
     private filteringLog: FilteringLogInterface;
 
     /**
+     * Engine API for retrieving rule texts.
+     */
+    private readonly engineApi: RuleTextProvider;
+
+    /**
      * Constructor.
      *
      * @param filteringLog Filtering log.
+     * @param ruleTextProvider Engine API for retrieving rule texts.
      */
-    constructor(filteringLog: FilteringLogInterface) {
+    constructor(filteringLog: FilteringLogInterface, ruleTextProvider: RuleTextProvider) {
         this.filteringLog = filteringLog;
+        this.engineApi = ruleTextProvider;
     }
 
     /**
@@ -61,7 +69,7 @@ export class CspService {
             }
 
             // Don't forget: getCspRules returns all $csp rules, we must directly check that the rule is blocking.
-            if (RequestBlockingApi.isRequestBlockedByRule(rule)) {
+            if (RuleUtils.isRequestBlockedByRule(rule)) {
                 const cspHeaderValue = rule.getAdvancedModifierValue();
 
                 if (cspHeaderValue) {
@@ -71,6 +79,8 @@ export class CspService {
                     });
                 }
             }
+
+            const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
 
             this.filteringLog.publishEvent({
                 type: FilteringEventType.ApplyCspRule,
@@ -83,6 +93,8 @@ export class CspService {
                     requestType: ContentType.Csp,
                     filterId: rule.getFilterListId(),
                     ruleIndex: rule.getIndex(),
+                    appliedRuleText,
+                    originalRuleText,
                     timestamp: Date.now(),
                     isAllowlist: rule.isAllowlist(),
                     isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
@@ -105,5 +117,3 @@ export class CspService {
         return false;
     }
 }
-
-export const cspService = new CspService(defaultFilteringLog);

@@ -24,7 +24,10 @@
 					999
 				]
 			},
-			"conversionMap": {},
+			"conversionData": {
+				"conversions": {},
+				"originals": []
+			},
 			"rawFilterList": "||example.com/ad1.js$redirect=noopjs\n||example.com/ad2.js$redirect=noopjs\n||example.com/ad3.js$redirect=noopjs\n||example.com/ad4.js$redirect=noopjs\n||example.com/ad5.js$redirect=noopjs"
 		}
 	},

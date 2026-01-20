@@ -1,0 +1,40 @@
+{
+  "name": "tsurlfilter-benchmark",
+  "version": "1.0.0",
+  "private": "true",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/benchmark.ts",
+    "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
+    "lint:md": "markdownlint .",
+    "lint:code": "eslint . --cache --ext .ts",
+    "lint:types": "tsc"
+  },
+  "dependencies": {
+    "@adguard/tsurlfilter": "workspace:^",
+    "consola": "catalog:",
+    "console-table-printer": "catalog:",
+    "date-fns": "catalog:",
+    "esbuild": "catalog:",
+    "lodash": "catalog:",
+    "markdown-table": "catalog:",
+    "node-fetch": "catalog:",
+    "os-name": "catalog:",
+    "playwright": "catalog:",
+    "systeminformation": "catalog:",
+    "tinybench": "^6.0.0",
+    "tsurlfilter-v3": "npm:@adguard/tsurlfilter@^3.x"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-airbnb-typescript": "catalog:",
+    "eslint-plugin-import": "catalog:",
+    "eslint-plugin-import-newlines": "catalog:",
+    "eslint-plugin-jsdoc": "catalog:",
+    "markdownlint": "catalog:",
+    "markdownlint-cli": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

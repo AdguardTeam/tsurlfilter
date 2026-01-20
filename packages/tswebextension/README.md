@@ -5,118 +5,112 @@ TypeScript library that wraps webextension api for tsurlfilter library.
 Table of content:
 
 - [TSWebExtension](#tswebextension)
-    - [Browser compatibility](#browser-compatibility)
-    - [Install](#install)
-    - [Usage](#usage)
-    - [CLI](#cli)
-    - [Side effects](#side-effects)
-    - [API](#api)
-        - [configuration](#configuration)
-            - [TSWEBEXTENSION\_VERSION](#tswebextension_version)
-            - [EXTENDED\_CSS\_VERSION](#extended_css_version)
-            - [filters (MV2 only)](#filters-mv2-only)
-                - [filterId](#filterid)
-                - [content](#content)
-                - [trusted](#trusted)
-            - [staticFiltersIds (MV3 only)](#staticfiltersids-mv3-only)
-            - [customFilters (MV3 only)](#customfilters-mv3-only)
-                - [filterId](#filterid-1)
-                - [rawFilterList](#rawfilterlist)
-                - [sourceMap](#sourcemap)
-                - [conversionMap](#conversionmap)
-                - [content](#content-1)
-            - [filtersPath (MV3 only)](#filterspath-mv3-only)
-            - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
-            - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
-            - [allowlist](#allowlist)
-            - [trustedDomains](#trusteddomains)
-            - [userrules (MV2)](#userrules-mv2)
-                - [content](#content-3)
-                - [sourceMap](#sourcemap-2)
-            - [userrules (MV3)](#userrules-mv3)
-                - [rawFilterList](#rawfilterlist-2)
-                - [sourceMap](#sourcemap-3)
-                - [conversionMap](#conversionmap-2)
-                - [content](#content-4)
-            - [verbose (deprecated)](#verbose-deprecated)
-            - [logLevel](#loglevel)
-            - [settings](#settings)
-                - [allowlistInverted](#allowlistinverted)
-                - [allowlistEnabled](#allowlistenabled)
-                - [collectStats](#collectstats)
-                - [debugScriptlets](#debugscriptlets)
-                - [stealthModeEnabled](#stealthmodeenabled)
-                - [filteringEnabled](#filteringenabled)
-                - [documentBlockingPageUrl](#documentblockingpageurl)
-                - [assistantUrl](#assistanturl)
-                - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
-                - [hideDocumentReferrerScriptUrl (MV3 only)](#hidedocumentreferrerscripturl-mv3-only)
-                - [stealthConfig](#stealthconfig)
-                    - [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
-                    - [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
-                    - [selfDestructThirdPartyCookies](#selfdestructthirdpartycookies)
-                    - [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime)
-                    - [hideReferrer](#hidereferrer)
-                    - [hideSearchQueries](#hidesearchqueries)
-                    - [blockChromeClientData](#blockchromeclientdata)
-                    - [sendDoNotTrack](#senddonottrack)
-                    - [blockWebRTC](#blockwebrtc)
-        - [TsWebExtension](#tswebextension-1)
-            - [Properties](#properties)
-                - [configuration](#configuration-1)
-                - [onFilteringLogEvent](#onfilteringlogevent)
-                - [isStarted](#isstarted)
-            - [Methods](#methods)
-                - [initStorage()](#initstorage)
-                - [start()](#start)
-                - [configure()](#configure)
-                - [stop()](#stop)
-                - [openAssistant()](#openassistant)
-                - [closeAssistant()](#closeassistant)
-                - [getRulesCount()](#getrulescount)
-                - [retrieveRuleNode](#retrieverulenode)
-                - [getMessageHandler()](#getmessagehandler)
-                - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
-                - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
-                - [setDebugScriptlets()](#setdebugscriptlets)
-                - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
-                - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
-                - [setSelfDestructThirdPartyCookies() (MV2 only)](#setselfdestructthirdpartycookies-mv2-only)
-                - [setSelfDestructFirstPartyCookiesTime() (MV2 only)](#setselfdestructfirstpartycookiestime-mv2-only)
-                - [setSelfDestructThirdPartyCookiesTime() (MV2 only)](#setselfdestructthirdpartycookiestime-mv2-only)
-                - [setHideReferrer() (MV2 only)](#sethidereferrer-mv2-only)
-                - [setHideSearchQueries() (MV2 only)](#sethidesearchqueries-mv2-only)
-                - [setBlockChromeClientData() (MV2 only)](#setblockchromeclientdata-mv2-only)
-                - [setSendDoNotTrack() (MV2 only)](#setsenddonottrack-mv2-only)
-                - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
-                - [getRawFilterList() (MV3 only)](#getrawfilterlist-mv3-only)
-                - [getPreprocessedFilterList() (MV3 only)](#getpreprocessedfilterlist-mv3-only)
-        - [utilities](#utilities)
-            - [getFilterName](#getfiltername)
-            - [isUserScriptsApiEnabled](#isuserscriptsapienabled)
-    - [Filtering Log API (MV2 only)](#filtering-log-api-mv2-only)
-        - [events](#events)
-            - [sendRequest](#sendrequest)
-            - [tabReload](#tabreload)
-            - [applyBasicRule](#applybasicrule)
-            - [applyCosmeticRule](#applycosmeticrule)
-            - [applyCspRule](#applycsprule)
-            - [receiveResponse](#receiveresponse)
-            - [cookie](#cookie)
-            - [removeHeader](#removeheader)
-            - [removeParam](#removeparam)
-            - [replaceRuleApply](#replaceruleapply)
-            - [contentFilteringStart](#contentfilteringstart)
-            - [contentFilteringFinish](#contentfilteringfinish)
-            - [stealthAction](#stealthaction)
-            - [stealthAllowlistAction](#stealthallowlistaction)
-            - [JsInject](#jsinject)
-        - [properties](#properties-1)
-            - [onLogEvent](#onlogevent)
-        - [methods](#methods-1)
-            - [addEventListener()](#addeventlistener)
-            - [publishEvent()](#publishevent)
-    - [Development](#development)
+  - [Browser compatibility](#browser-compatibility)
+  - [Install](#install)
+  - [Usage](#usage)
+  - [CLI](#cli)
+  - [Side effects](#side-effects)
+  - [API](#api)
+    - [configuration](#configuration)
+      - [TSWEBEXTENSION\_VERSION](#tswebextension_version)
+      - [EXTENDED\_CSS\_VERSION](#extended_css_version)
+      - [filters (MV2 only)](#filters-mv2-only)
+        - [filterId](#filterid)
+        - [content](#content)
+        - [trusted](#trusted)
+      - [staticFiltersIds (MV3 only)](#staticfiltersids-mv3-only)
+      - [customFilters (MV3 only)](#customfilters-mv3-only)
+        - [filterId](#filterid-1)
+        - [content](#content-1)
+        - [conversionData](#conversiondata)
+      - [filtersPath (MV3 only)](#filterspath-mv3-only)
+      - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
+      - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
+      - [allowlist](#allowlist)
+      - [trustedDomains](#trusteddomains)
+      - [userrules (MV2)](#userrules-mv2)
+        - [content](#content-2)
+        - [conversionData](#conversiondata-1)
+      - [userrules (MV3)](#userrules-mv3)
+        - [content](#content-3)
+        - [conversionData](#conversiondata-2)
+      - [verbose (deprecated)](#verbose-deprecated)
+      - [logLevel](#loglevel)
+      - [settings](#settings)
+        - [allowlistInverted](#allowlistinverted)
+        - [allowlistEnabled](#allowlistenabled)
+        - [collectStats](#collectstats)
+        - [debugScriptlets](#debugscriptlets)
+        - [stealthModeEnabled](#stealthmodeenabled)
+        - [filteringEnabled](#filteringenabled)
+        - [documentBlockingPageUrl](#documentblockingpageurl)
+        - [assistantUrl](#assistanturl)
+        - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
+        - [hideDocumentReferrerScriptUrl (MV3 only)](#hidedocumentreferrerscripturl-mv3-only)
+        - [stealthConfig](#stealthconfig)
+          - [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
+          - [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
+          - [selfDestructThirdPartyCookies](#selfdestructthirdpartycookies)
+          - [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime)
+          - [hideReferrer](#hidereferrer)
+          - [hideSearchQueries](#hidesearchqueries)
+          - [blockChromeClientData](#blockchromeclientdata)
+          - [sendDoNotTrack](#senddonottrack)
+          - [blockWebRTC](#blockwebrtc)
+    - [TsWebExtension](#tswebextension-1)
+      - [Properties](#properties)
+        - [configuration](#configuration-1)
+        - [onFilteringLogEvent](#onfilteringlogevent)
+        - [isStarted](#isstarted)
+      - [Methods](#methods)
+        - [initStorage()](#initstorage)
+        - [start()](#start)
+        - [configure()](#configure)
+        - [stop()](#stop)
+        - [openAssistant()](#openassistant)
+        - [closeAssistant()](#closeassistant)
+        - [getRulesCount()](#getrulescount)
+        - [retrieveRuleNode](#retrieverulenode)
+        - [getMessageHandler()](#getmessagehandler)
+        - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
+        - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
+        - [setDebugScriptlets()](#setdebugscriptlets)
+        - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
+        - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
+        - [setSelfDestructThirdPartyCookies() (MV2 only)](#setselfdestructthirdpartycookies-mv2-only)
+        - [setSelfDestructFirstPartyCookiesTime() (MV2 only)](#setselfdestructfirstpartycookiestime-mv2-only)
+        - [setSelfDestructThirdPartyCookiesTime() (MV2 only)](#setselfdestructthirdpartycookiestime-mv2-only)
+        - [setHideReferrer() (MV2 only)](#sethidereferrer-mv2-only)
+        - [setHideSearchQueries() (MV2 only)](#sethidesearchqueries-mv2-only)
+        - [setBlockChromeClientData() (MV2 only)](#setblockchromeclientdata-mv2-only)
+        - [setSendDoNotTrack() (MV2 only)](#setsenddonottrack-mv2-only)
+        - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
+  - [Utilities](#utilities)
+    - [getFilterName](#getfiltername)
+    - [isUserScriptsApiEnabled](#isuserscriptsapienabled)
+  - [Filtering Log API (MV2 only)](#filtering-log-api-mv2-only)
+    - [events](#events)
+      - [sendRequest](#sendrequest)
+      - [tabReload](#tabreload)
+      - [applyBasicRule](#applybasicrule)
+      - [applyCosmeticRule](#applycosmeticrule)
+      - [applyCspRule](#applycsprule)
+      - [receiveResponse](#receiveresponse)
+      - [cookie](#cookie)
+      - [removeHeader](#removeheader)
+      - [removeParam](#removeparam)
+      - [replaceRuleApply](#replaceruleapply)
+      - [contentFilteringStart](#contentfilteringstart)
+      - [contentFilteringFinish](#contentfilteringfinish)
+      - [stealthAction](#stealthaction)
+      - [stealthAllowlistAction](#stealthallowlistaction)
+      - [JsInject](#jsinject)
+    - [properties](#properties-1)
+      - [onLogEvent](#onlogevent)
+    - [methods](#methods-1)
+      - [addEventListener()](#addeventlistener)
+      - [publishEvent()](#publishevent)
+  - [Development](#development)
 
 ## Browser compatibility
 
@@ -272,29 +266,20 @@ type: `number`
 
 Filter identifier.
 
-##### rawFilterList
+##### content
 
 type: `string`
 
-Raw filter list.
+Converted filter list content (rules converted to AdGuard format).
 
-##### sourceMap
+##### conversionData
 
-type: `Record<string, number>`
+type: `ConversionData`
 
-Source map, where key is the rule start index in the byte buffer `content` and value is the line start index in the raw filter list.
+Conversion data from `FilterList.getConversionData()`, containing:
 
-##### conversionMap
-
-type: `Record<string, string>`
-
-Conversion map, where key is the line start index in the raw filter list and value is the rule text.
-
-##### content
-
-type: `Uint8Array[]`
-
-AGTree byte buffer chunks.
+- `originals`: Array of original rule texts that were converted
+- `conversions`: Map of line start offsets in converted content to indexes in the originals array
 
 #### filtersPath (MV3 only)
 
@@ -314,7 +299,6 @@ type: `boolean`
 
 Enables matching declarative rules for filtering log.
 
-
 #### allowlist
 
 type: `string[]`
@@ -331,42 +315,35 @@ List of domain names of sites, which should be temporary excluded from document 
 
 ##### content
 
-type: `Uint8Array[]`
+type: `string`
 
-AGTree byte buffer chunks.
+Converted filter list content (rules converted to AdGuard format).
 
-##### sourceMap
+##### conversionData
 
-type: `Record<string, number> | undefined`
+type: `ConversionData`
 
-Source map, where key is the rule start index in the byte buffer `content` and value is the line start index in the raw filter list.
-Optional field, can be omitted.
+Conversion data from `FilterList.getConversionData()`, containing:
+
+- `originals`: Array of original rule texts that were converted
+- `conversions`: Map of line start offsets in converted content to indexes in the originals array
 
 #### userrules (MV3)
 
-##### rawFilterList
+##### content
 
 type: `string`
 
-Raw filter list.
+Converted filter list content (rules converted to AdGuard format).
 
-##### sourceMap
+##### conversionData
 
-type: `Record<string, number>`
+type: `ConversionData`
 
-Source map, where key is the rule start index in the byte buffer `content` and value is the line start index in the raw filter list.
+Conversion data from `FilterList.getConversionData()`, containing:
 
-##### conversionMap
-
-type: `Record<string, string>`
-
-Conversion map, where key is the line start index in the raw filter list and value is the rule text.
-
-##### content
-
-type: `Uint8Array[]`
-
-AGTree byte buffer chunks.
+- `originals`: Array of original rule texts that were converted
+- `conversions`: Map of line start offsets in converted content to indexes in the originals array
 
 #### <a name="verbose"></a>verbose (deprecated)
 
@@ -729,28 +706,6 @@ Updates [blockWebRTC](#blockwebrtc) stealth config value without re-initializati
 Also updates webRTC privacy.network settings on demand.
 
 Throws error if [configuration](#configuration) is not set.
-
-##### getRawFilterList() (MV3 only)
-
-type: `async (filterId: number, ruleSetsPath: string): Promise<string>`
-
-Returns raw filter list for the specified filter id via the rule sets loader.
-
-Throws error if rule sets path is not set.
-
-##### getPreprocessedFilterList() (MV3 only)
-
-type: `async (filterId: number, ruleSetsPath: string): Promise<PreprocessedFilterList>`
-
-Returns preprocessed filter list for the specified filter id via the rule sets loader.
-
-Throws error if rule sets path is not set.
-
-> [!NOTE]
-> You can learn more about the preprocessed filter list in the
-> [tsurlfilter documentation][tsurlfilter-preprocessed-filter-list].
-
-[tsurlfilter-preprocessed-filter-list]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#preprocessedfilterlist-interface
 
 ## Utilities
 

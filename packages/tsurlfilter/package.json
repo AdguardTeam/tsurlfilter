@@ -1,6 +1,6 @@
 {
     "name": "@adguard/tsurlfilter",
-    "version": "3.5.2",
+    "version": "4.0.0",
     "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
     "main": "dist/es/index.js",
     "module": "dist/es/index.js",
@@ -137,6 +137,7 @@
         "zod-validation-error": "^3.4.0"
     },
     "devDependencies": {
+        "tsurlfilter-v3": "npm:@adguard/tsurlfilter@^3.3.3",
         "@adguard/eslint-plugin-logger-context": "^1.0.1",
         "@rollup/plugin-alias": "catalog:",
         "@rollup/plugin-commonjs": "catalog:",

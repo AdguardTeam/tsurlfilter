@@ -1,4 +1,4 @@
-import { type RuleInfo } from '../rule-info';
+import { type RuleInfoBasic } from '../../rule-info';
 
 /**
  * Utils class.
@@ -83,7 +83,7 @@ export class ElementUtils {
      *
      * @returns Rule info or null.
      */
-    public static parseInfo(content: string, attributeMarker: string): RuleInfo | null {
+    public static parseInfo(content: string, attributeMarker: string): RuleInfoBasic | null {
         if (!content || content.indexOf(attributeMarker) < 0) {
             return null;
         }
@@ -123,7 +123,7 @@ export class ElementUtils {
     public static parseExtendedStyleInfo(
         content: string,
         attributeMarker: string,
-    ): RuleInfo | null {
+    ): RuleInfoBasic | null {
         const important = '!important';
         const indexOfImportant = content.lastIndexOf(important);
         if (indexOfImportant === -1) {

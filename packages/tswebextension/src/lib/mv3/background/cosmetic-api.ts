@@ -480,7 +480,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     public static logScriptRules(params: LogJsRulesParamsMv3): void {
         const scriptRules = CosmeticApi.filterScriptRulesForLog(params);
 
-        super.logScriptRules(params, scriptRules);
+        super.logScriptRules(params, scriptRules, engineApi);
     }
 
     /**

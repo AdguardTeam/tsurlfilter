@@ -1,18 +1,13 @@
-import { CosmeticRuleType } from '@adguard/agtree';
-
+import { type CosmeticRuleParts, CosmeticRuleType } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';
-import { ScannerType } from '../../filterlist/scanner/scanner-type';
 import { type Request } from '../../request';
-import { CosmeticRule } from '../../rules/cosmetic-rule';
+import { type IndexedStorageCosmeticRuleParts } from '../../rules/rule';
+import { CHUNK_SIZE } from '../constants';
 import { CosmeticOption } from '../cosmetic-option';
 
 import { type CosmeticContentResult } from './cosmetic-content-result';
 import { CosmeticLookupTable } from './cosmetic-lookup-table';
 import { CosmeticResult } from './cosmetic-result';
-
-/**
- * @typedef {import('../engine').Engine} Engine
- */
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
@@ -51,12 +46,64 @@ export class CosmeticEngine {
     private htmlLookupTable: CosmeticLookupTable;
 
     /**
+     * Creates an instance of the network engine in sync mode.
+     *
+     * @param indexedRulesParts Array of indexed storage cosmetic rules.
+     * @param storage An object for a rules storage.
+     *
+     * @returns An instance of the network engine.
+     */
+    public static createSync(
+        indexedRulesParts: IndexedStorageCosmeticRuleParts[],
+        storage: RuleStorage,
+    ): CosmeticEngine {
+        const engine = new CosmeticEngine(storage);
+
+        for (const indexedRuleParts of indexedRulesParts) {
+            engine.addRule(indexedRuleParts.ruleParts, indexedRuleParts.index);
+        }
+
+        return engine;
+    }
+
+    /**
+     * Creates an instance of the network engine in async mode.
+     *
+     * @param indexedRulesParts Array of indexed storage cosmetic rules.
+     * @param storage An object for a rules storage.
+     *
+     * @returns An instance of the network engine.
+     */
+    public static async createAsync(
+        indexedRulesParts: IndexedStorageCosmeticRuleParts[],
+        storage: RuleStorage,
+    ): Promise<CosmeticEngine> {
+        const engine = new CosmeticEngine(storage);
+
+        let counter = 0;
+
+        for (const indexedRuleParts of indexedRulesParts) {
+            counter += 1;
+
+            if (counter >= CHUNK_SIZE) {
+                counter = 0;
+
+                // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
+                await Promise.resolve();
+            }
+
+            engine.addRule(indexedRuleParts.ruleParts, indexedRuleParts.index);
+        }
+
+        return engine;
+    }
+
+    /**
      * Builds instance of cosmetic engine.
      *
      * @param ruleStorage Rule storage.
-     * @param skipStorageScan Create an instance without storage scanning.
      */
-    constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
+    private constructor(ruleStorage: RuleStorage) {
         this.ruleStorage = ruleStorage;
         this.rulesCount = 0;
 
@@ -64,48 +111,30 @@ export class CosmeticEngine {
         this.cssLookupTable = new CosmeticLookupTable(ruleStorage);
         this.jsLookupTable = new CosmeticLookupTable(ruleStorage);
         this.htmlLookupTable = new CosmeticLookupTable(ruleStorage);
-
-        if (skipStorageScan) {
-            return;
-        }
-
-        const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.CosmeticRules);
-
-        while (scanner.scan()) {
-            const indexedRule = scanner.getRule();
-            if (indexedRule
-                && indexedRule.rule instanceof CosmeticRule) {
-                this.addRule(indexedRule.rule, indexedRule.index);
-            }
-        }
     }
 
     /**
      * Adds rules into appropriate tables.
      *
-     * @param rule Rule to add.
+     * @param ruleParts Cosmetic rule parts to add.
      * @param storageIdx Index of the rule in the storage.
      */
-    public addRule(rule: CosmeticRule, storageIdx: number): void {
-        switch (rule.getType()) {
+    private addRule(ruleParts: CosmeticRuleParts, storageIdx: number): void {
+        switch (ruleParts.type) {
             case CosmeticRuleType.ElementHidingRule: {
-                this.elementHidingLookupTable.addRule(rule, storageIdx);
+                this.elementHidingLookupTable.addRule(ruleParts, storageIdx);
                 break;
             }
             case CosmeticRuleType.CssInjectionRule: {
-                this.cssLookupTable.addRule(rule, storageIdx);
-                break;
-            }
-            case CosmeticRuleType.ScriptletInjectionRule: {
-                this.jsLookupTable.addRule(rule, storageIdx);
+                this.cssLookupTable.addRule(ruleParts, storageIdx);
                 break;
             }
             case CosmeticRuleType.JsInjectionRule: {
-                this.jsLookupTable.addRule(rule, storageIdx);
+                this.jsLookupTable.addRule(ruleParts, storageIdx);
                 break;
             }
             case CosmeticRuleType.HtmlFilteringRule: {
-                this.htmlLookupTable.addRule(rule, storageIdx);
+                this.htmlLookupTable.addRule(ruleParts, storageIdx);
                 break;
             }
             default: {
@@ -202,12 +231,15 @@ export class CosmeticEngine {
         lookupTable: CosmeticLookupTable,
         request: Request,
     ): void {
-        const hostnameRules = lookupTable.findByHostname(request);
-        if (hostnameRules.length > 0) {
-            for (const rule of hostnameRules) {
-                if (!lookupTable.isAllowlisted(request, rule)) {
-                    cosmeticResult.append(rule, request);
-                }
+        const specificRules = lookupTable.findByHostname(request);
+
+        if (specificRules.length === 0) {
+            return;
+        }
+
+        for (const rule of specificRules) {
+            if (!lookupTable.isAllowlisted(request, rule)) {
+                cosmeticResult.append(rule, request);
             }
         }
     }

@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased <!-- release/browser-extension-v5.3 -->
+## [4.0.0] - TBD
 
 ### Added
 
@@ -15,9 +15,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detection whether the `:has()`, `:not()`, and `:is()` pseudo-classes
   are supported by browser natively, and if not, apply rules with them
   as extended CSS, otherwise apply as standard CSS [AdguardBrowserExtension#2587].
+- **New `RuleTextProvider` utility** for retrieving rule texts (both applied and original).
+- New `retrieveOriginalRuleText()` method on `TsWebExtension` for accessing unconverted rule text.
+- Export `FilterList` class from `@adguard/tsurlfilter` for filter list management.
+- Full CSS selector syntax support in HTML filtering rules [#96].
+
+### Changed
+
+- **BREAKING: Replaced `FilterListPreprocessor` with `FilterList`** from `@adguard/tsurlfilter`.
+  - Use `new FilterList(content)` instead of `FilterListPreprocessor.preprocess(content)`.
+  - Use `filterList.getContent()` instead of `preprocessed.filterList`.
+  - Use `filterList.getOriginalContent()` instead of `FilterListPreprocessor.getOriginalFilterListText()`.
+- **BREAKING: Configuration structure changes**:
+  - **MV2**: Filters now use `content` and `conversionData` instead of `content` and `sourceMap`.
+  - **MV3**: Custom filters now use `content` and `conversionData` instead of `rawFilterList`, `sourceMap`, and `conversionMap`.
+- **BREAKING: Renamed configuration property** `sourceMap` to `conversionData` across all filter configurations.
+- **BREAKING: Renamed property** `conversionMap` to `conversionData` in filter metadata.
+- Moved `rule-info.ts` from `content-script` directory to `common` directory for better reusability.
+- Improved internal rule text retrieval with centralized `RuleTextProvider` implementation.
 
 ### Removed
 
+- **BREAKING: `getRawFilterList()` method** (MV3 only) - use `FilterList` directly instead.
+- **BREAKING: `getPreprocessedFilterList()` method** (MV3 only) - use `FilterList` directly instead.
+- **BREAKING: `FilterListPreprocessor` re-export** - import `FilterList` from `@adguard/tsurlfilter` instead.
 - `quickFixesRules` property from MV3 configuration.
 
 ### Fixed
@@ -29,10 +50,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tracking protection rules are applied after filtering is disabled in MV3.
 - Blocked iframes are not collapsed on Firefox [AdguardBrowserExtension#3116].
 
+[4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v4.0.0
 [AdguardBrowserExtension#2587]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2587
 [AdguardBrowserExtension#3116]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3116
 [AdguardBrowserExtension#3193]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3193
 [AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
+[#96]: https://github.com/AdguardTeam/tsurlfilter/issues/96
 
 ## [3.2.19] - 2025-12-24
 
@@ -40,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Memory leak caused by storing data URL favicons in tab contexts. [AdguardBrowserExtension#2594]
 
-[3.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.19  
+[3.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.19
 [AdguardBrowserExtension#2594]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594
 
 ## [3.2.18] - 2025-12-16

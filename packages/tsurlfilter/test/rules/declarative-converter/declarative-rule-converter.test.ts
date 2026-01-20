@@ -433,7 +433,7 @@ describe('DeclarativeRulesConverter', () => {
             declarativeRules,
         } = await DeclarativeRulesConverter.convert([filter]);
 
-        const networkRule = createNetworkRuleWithNode(regexpRuleText, filterId, 4);
+        const networkRule = createNetworkRuleWithNode(regexpRuleText, filterId, 0);
 
         expect(declarativeRules).toHaveLength(0);
         expect(errors).toHaveLength(1);
@@ -878,9 +878,9 @@ describe('DeclarativeRulesConverter', () => {
 
         expect(errors).toHaveLength(2);
         expect(errors[0].message).toEqual('Network rule with explicitly enabled $popup modifier is not supported');
-        expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(4);
+        expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(0);
         expect(errors[1].message).toEqual('Network rule with explicitly enabled $popup modifier is not supported');
-        expect((errors[1] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(44);
+        expect((errors[1] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(21);
         expect(declarativeRules).toHaveLength(0);
     });
 
@@ -1067,7 +1067,7 @@ describe('DeclarativeRulesConverter', () => {
             const {
                 declarativeRules,
                 errors,
-            } = await await DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
@@ -1089,11 +1089,11 @@ describe('DeclarativeRulesConverter', () => {
             expect(errors[0].message).toBe(
                 'Network rule with $removeheader modifier contains some of the unsupported headers',
             );
-            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(4);
+            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(0);
             expect(errors[1].message).toBe(
                 'Network rule with $removeheader modifier contains some of the unsupported headers',
             );
-            expect((errors[1] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(106);
+            expect((errors[1] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(70);
         });
 
         it('converts removeheader rules for responseHeaders and skips general allowlist rule', async () => {
@@ -1189,7 +1189,7 @@ describe('DeclarativeRulesConverter', () => {
             expect(errors[0].message).toEqual(
                 'Network rule with $removeheader modifier contains some of the unsupported headers',
             );
-            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(4);
+            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(0);
         });
 
         it('combine several $removeheader rule', async () => {
@@ -1488,15 +1488,15 @@ describe('DeclarativeRulesConverter', () => {
             expect(errors[0].message).toBe(
                 'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
             );
-            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(4);
+            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(0);
             expect(errors[1].message).toBe(
                 'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
             );
-            expect((errors[1] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(52);
+            expect((errors[1] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(26);
             expect(errors[2].message).toBe(
                 'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
             );
-            expect((errors[2] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(112);
+            expect((errors[2] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(64);
         });
     });
 
@@ -1722,7 +1722,7 @@ describe('DeclarativeRulesConverter', () => {
             expect(errors[0].message).toBe(
                 'Network rule with $method modifier containing \'trace\' method is not supported',
             );
-            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toBe(4);
+            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toBe(0);
         });
     });
 
@@ -1823,7 +1823,7 @@ describe('DeclarativeRulesConverter', () => {
             expect(errors).toHaveLength(1);
 
             expect(errors[0].message).toBe('Unsupported option "$genericblock"');
-            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toBe(4);
+            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toBe(0);
         });
     });
 });

@@ -99,7 +99,6 @@
 
 import punycode from 'punycode/punycode.js';
 import { getRedirectFilename } from '@adguard/scriptlets/redirects';
-import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
@@ -141,7 +140,7 @@ import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
 import { EmptyDomainsError } from '../errors/conversion-errors/empty-domains-error';
 import { re2Validator } from '../re2-regexp/re2-validator';
 import { getErrorMessage } from '../../../common/error';
-import { type NetworkRuleWithNode } from '../network-rule-with-node';
+import { type NetworkRuleWithNodeAndText } from '../network-rule-with-node-and-text';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -750,7 +749,7 @@ export abstract class AbstractRuleConverter {
      */
     protected async convertRule(
         id: number,
-        rule: NetworkRuleWithNode,
+        rule: NetworkRuleWithNodeAndText,
     ): Promise<DeclarativeRule[]> {
         // If the rule is not convertible - method will throw an error.
         const shouldConvert = NetworkRuleDeclarativeValidator.shouldConvertNetworkRule(rule);
@@ -803,7 +802,7 @@ export abstract class AbstractRuleConverter {
      * while the original rule has non-empty domains.
      */
     private static async checkDeclarativeRuleApplicable(
-        networkRule: NetworkRuleWithNode,
+        networkRule: NetworkRuleWithNodeAndText,
         declarativeRule: DeclarativeRule,
     ): Promise<ConversionError | null> {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
@@ -816,7 +815,7 @@ export abstract class AbstractRuleConverter {
         if (permittedDomains && permittedDomains.length > 0) {
             const { initiatorDomains } = declarativeRule.condition;
             if (!initiatorDomains || initiatorDomains.length === 0) {
-                const ruleText = RuleGenerator.generate(networkRule.node);
+                const ruleText = networkRule.text;
                 const msg = `Conversion initiatorDomains is empty, but original rule's domains not: "${ruleText}"`;
                 return new EmptyDomainsError(msg, networkRule, declarativeRule);
             }
@@ -827,7 +826,7 @@ export abstract class AbstractRuleConverter {
             try {
                 await re2Validator.isRegexSupported(regexFilter);
             } catch (e) {
-                const ruleText = RuleGenerator.generate(networkRule.node);
+                const ruleText = networkRule.text;
                 const msg = `Regex is unsupported: "${ruleText}"`;
                 return new UnsupportedRegexpError(
                     msg,

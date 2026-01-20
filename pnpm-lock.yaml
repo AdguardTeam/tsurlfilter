@@ -99,6 +99,12 @@ catalogs:
     commander:
       specifier: ^12.1.0
       version: 12.1.0
+    consola:
+      specifier: ^3.2.3
+      version: 3.4.2
+    console-table-printer:
+      specifier: ^2.12.0
+      version: 2.12.1
     copy-webpack-plugin:
       specifier: ^10.0.0
       version: 10.2.4
@@ -159,6 +165,9 @@ catalogs:
     lint-staged:
       specifier: ^13.2.2
       version: 13.2.2
+    lodash:
+      specifier: ^4.17.21
+      version: 4.17.21
     lodash-es:
       specifier: ^4.17.21
       version: 4.17.21
@@ -440,6 +449,9 @@ importers:
       clone-deep:
         specifier: ^4.0.1
         version: 4.0.1
+      glob-to-regexp:
+        specifier: ^0.4.1
+        version: 0.4.1
       is-ip:
         specifier: 'catalog:'
         version: 3.1.0
@@ -483,6 +495,9 @@ importers:
       '@types/fs-extra':
         specifier: 'catalog:'
         version: 11.0.4
+      '@types/glob-to-regexp':
+        specifier: ^0.4.4
+        version: 0.4.4
       '@types/js-yaml':
         specifier: ^4.0.5
         version: 4.0.9
@@ -668,10 +683,10 @@ importers:
         specifier: 'catalog:'
         version: 2.1.4
       consola:
-        specifier: ^3.2.3
+        specifier: 'catalog:'
         version: 3.4.2
       console-table-printer:
-        specifier: ^2.12.0
+        specifier: 'catalog:'
         version: 2.12.1
       date-fns:
         specifier: 'catalog:'
@@ -680,7 +695,7 @@ importers:
         specifier: 'catalog:'
         version: 0.19.12
       lodash:
-        specifier: 4.17.21
+        specifier: 'catalog:'
         version: 4.17.21
       markdown-table:
         specifier: 'catalog:'
@@ -810,6 +825,79 @@ importers:
       eslint-plugin-import:
         specifier: 'catalog:'
         version: 2.31.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)
+      eslint-plugin-import-newlines:
+        specifier: 'catalog:'
+        version: 1.4.0(eslint@8.57.1)
+      eslint-plugin-jsdoc:
+        specifier: 'catalog:'
+        version: 48.11.0(eslint@8.57.1)
+      markdownlint:
+        specifier: 'catalog:'
+        version: 0.37.4
+      markdownlint-cli:
+        specifier: 'catalog:'
+        version: 0.44.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.19.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+
+  packages/benchmarks/tsurlfilter-benchmark:
+    dependencies:
+      '@adguard/tsurlfilter':
+        specifier: workspace:^
+        version: link:../../tsurlfilter
+      consola:
+        specifier: 'catalog:'
+        version: 3.4.2
+      console-table-printer:
+        specifier: 'catalog:'
+        version: 2.12.1
+      date-fns:
+        specifier: 'catalog:'
+        version: 4.1.0
+      esbuild:
+        specifier: 'catalog:'
+        version: 0.19.12
+      lodash:
+        specifier: 'catalog:'
+        version: 4.17.21
+      markdown-table:
+        specifier: 'catalog:'
+        version: 3.0.4
+      node-fetch:
+        specifier: 'catalog:'
+        version: 3.3.2
+      os-name:
+        specifier: 'catalog:'
+        version: 6.0.0
+      playwright:
+        specifier: 'catalog:'
+        version: 1.52.0
+      systeminformation:
+        specifier: 'catalog:'
+        version: 5.25.11
+      tinybench:
+        specifier: ^6.0.0
+        version: 6.0.0
+      tsurlfilter-v3:
+        specifier: npm:@adguard/tsurlfilter@^3.x
+        version: '@adguard/tsurlfilter@3.5.1(@adguard/re2-wasm@1.2.0)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.14.0
+      eslint:
+        specifier: 'catalog:'
+        version: 8.57.1
+      eslint-config-airbnb-typescript:
+        specifier: 'catalog:'
+        version: 18.0.0(@typescript-eslint/eslint-plugin@8.32.1(@typescript-eslint/parser@8.32.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3))(@typescript-eslint/parser@8.32.0(eslint@8.57.1)(typescript@5.8.3))(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.32.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import:
+        specifier: 'catalog:'
+        version: 2.31.0(@typescript-eslint/parser@8.32.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)
       eslint-plugin-import-newlines:
         specifier: 'catalog:'
         version: 1.4.0(eslint@8.57.1)
@@ -1707,6 +1795,9 @@ importers:
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
+      tsurlfilter-v3:
+        specifier: npm:@adguard/tsurlfilter@^3.3.3
+        version: '@adguard/tsurlfilter@3.4.6(@adguard/re2-wasm@1.2.0)'
       tsx:
         specifier: 'catalog:'
         version: 4.19.3
@@ -1955,6 +2046,10 @@ packages:
     resolution: {integrity: sha512-efloe2ZGHaO4GK+4xQiI8B7FGIlDbMKT05X4g9XAXNfG7uWmXF0OnaaAN8312wYc1q1OXRS4SGwYwN+wocyGBw==}
     engines: {node: '>=18.13.0'}
 
+  '@adguard/logger@2.0.0':
+    resolution: {integrity: sha512-jOiL0gy+uhrezJwI5j1mzpXyta1AFOhpEgKrqRlLN6puArFmHDmLH06civQs12tFWjtUCX+uGgUd1i4x/PCU1g==}
+    engines: {node: '>=22'}
+
   '@adguard/re2-wasm@1.2.0':
     resolution: {integrity: sha512-yMtEJfThxN9rEYm2Zg3X8jUKaPYq5wByc90JbMspSWJo7MXw664gTvLD7/wijl6y79VSuAs77bXUIgBXutMp7A==}
     engines: {node: '>=10'}
@@ -1976,6 +2071,20 @@ packages:
     resolution: {integrity: sha512-DgNx6yG2fkcvAMSz6CuB1dQfUiB7mrJytA3fQWYkm335V7m89RMdsORwjL/TA2cBYtNDgV3DDDvwJsy/B+/kAQ==}
     engines: {node: '>=6.0.0'}
     hasBin: true
+
+  '@adguard/tsurlfilter@3.4.6':
+    resolution: {integrity: sha512-5v4Wu+kCW3C4jSUPIR0QT3164iGrzmJ8ZpIkag1QHyqV8QtaVpqUM7WVAcnogkXM71tKZ+ZRFF9HkUNojA6fxg==}
+    engines: {node: '>=22'}
+    hasBin: true
+    peerDependencies:
+      '@adguard/re2-wasm': 1.2.0
+
+  '@adguard/tsurlfilter@3.5.1':
+    resolution: {integrity: sha512-LjIVoo/SFadv93tUcmq5q6AxqYzRvBF/ONR+//TOlFOCYZFhvJyVUlzOhn1ZLcWiYGuHFSFSy0qz75+DTPjNMA==}
+    engines: {node: '>=22'}
+    hasBin: true
+    peerDependencies:
+      '@adguard/re2-wasm': 1.2.0
 
   '@asamuzakjp/css-color@3.2.0':
     resolution: {integrity: sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==}
@@ -3336,6 +3445,9 @@ packages:
 
   '@types/fs-extra@8.1.5':
     resolution: {integrity: sha512-0dzKcwO+S8s2kuF5Z9oUWatQJj5Uq/iqphEtE3GQJVRRYm/tD1LglU2UnXi2A8jLq5umkGouOXOR9y0n613ZwQ==}
+
+  '@types/glob-to-regexp@0.4.4':
+    resolution: {integrity: sha512-nDKoaKJYbnn1MZxUY0cA1bPmmgZbg0cTq7Rh13d0KWYNOiKbqoR+2d89SnRPszGh7ROzSwZ/GOjZ4jPbmmZ6Eg==}
 
   '@types/glob@7.2.0':
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
@@ -8895,6 +9007,10 @@ packages:
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
+  tinybench@6.0.0:
+    resolution: {integrity: sha512-BWlWpVbbZXaYjRV0twGLNQO00Zj4HA/sjLOQP2IvzQqGwRGp+2kh7UU3ijyJ3ywFRogYDRbiHDMrUOfaMnN56g==}
+    engines: {node: '>=20.0.0'}
+
   tinyexec@1.0.2:
     resolution: {integrity: sha512-W/KYk+NFhkmsYpuHq5JykngiOCnxeVL8v8dFnqxSD8qEEdRfXk1SDM6JzNqcERbcGYj9tMrDQBYV9cjgnunFIg==}
     engines: {node: '>=18'}
@@ -9723,6 +9839,8 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
+  '@adguard/logger@2.0.0': {}
+
   '@adguard/re2-wasm@1.2.0': {}
 
   '@adguard/scriptlets@1.12.1':
@@ -9764,6 +9882,40 @@ snapshots:
       punycode: 2.1.1
       tldts: 5.6.45
       zod: 3.19.1
+
+  '@adguard/tsurlfilter@3.4.6(@adguard/re2-wasm@1.2.0)':
+    dependencies:
+      '@adguard/agtree': link:packages/agtree
+      '@adguard/css-tokenizer': 1.2.0
+      '@adguard/logger': 2.0.0
+      '@adguard/re2-wasm': 1.2.0
+      '@adguard/scriptlets': 2.2.14
+      cidr-tools: 6.4.2
+      commander: 12.1.0
+      is-cidr: 4.0.2
+      is-ip: 3.1.0
+      lru-cache: 11.1.0
+      punycode: 2.3.1
+      tldts: 5.7.112
+      zod: 3.24.4
+      zod-validation-error: 3.5.2(zod@3.24.4)
+
+  '@adguard/tsurlfilter@3.5.1(@adguard/re2-wasm@1.2.0)':
+    dependencies:
+      '@adguard/agtree': link:packages/agtree
+      '@adguard/css-tokenizer': 1.2.0
+      '@adguard/logger': 2.0.0
+      '@adguard/re2-wasm': 1.2.0
+      '@adguard/scriptlets': 2.2.14
+      cidr-tools: 6.4.2
+      commander: 12.1.0
+      is-cidr: 4.0.2
+      is-ip: 3.1.0
+      lru-cache: 11.1.0
+      punycode: 2.3.1
+      tldts: 5.7.112
+      zod: 3.24.4
+      zod-validation-error: 3.5.2(zod@3.24.4)
 
   '@asamuzakjp/css-color@3.2.0':
     dependencies:
@@ -10761,7 +10913,7 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.7
       estree-walker: 2.0.2
-      picomatch: 4.0.2
+      picomatch: 4.0.3
     optionalDependencies:
       rollup: 4.53.3
 
@@ -11122,6 +11274,8 @@ snapshots:
     dependencies:
       '@types/node': 22.14.0
 
+  '@types/glob-to-regexp@0.4.4': {}
+
   '@types/glob@7.2.0':
     dependencies:
       '@types/minimatch': 5.1.2
@@ -11470,7 +11624,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 8.32.1
       '@typescript-eslint/visitor-keys': 8.32.1
-      debug: 4.4.0
+      debug: 4.4.3
       fast-glob: 3.3.3
       is-glob: 4.0.3
       minimatch: 9.0.5
@@ -14591,7 +14745,7 @@ snapshots:
   https-proxy-agent@7.0.6:
     dependencies:
       agent-base: 7.1.3
-      debug: 4.4.0
+      debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
@@ -17928,6 +18082,8 @@ snapshots:
   tiny-warning@1.0.3: {}
 
   tinybench@2.9.0: {}
+
+  tinybench@6.0.0: {}
 
   tinyexec@1.0.2: {}
 

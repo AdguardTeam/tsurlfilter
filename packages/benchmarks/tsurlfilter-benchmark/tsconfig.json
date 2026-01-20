@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "types": [
+            "node",
+        ],
+        "resolveJsonModule": true,
+        "allowJs": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "skipLibCheck": true,
+        "isolatedModules": true,
+        "rootDir": "./",
+        "noEmit": true,
+    },
+    "include": [
+        "./.eslintrc.cjs",
+        "./src/**/*.ts",
+    ],
+}
