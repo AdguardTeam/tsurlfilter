@@ -60,7 +60,6 @@ Build:
         scripts:
           - "./bamboo-specs/scripts/cleanup.sh"
   requirements:
-    - adg-docker: 'true'
     - extension: 'true'
 
 # run release build at 11:00 every Tuesday (after companiesdb update)

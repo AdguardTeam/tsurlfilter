@@ -30,7 +30,6 @@ npmjs: &npmjs
 
             # TODO: Implement build (AG-45668)
   requirements:
-    - adg-docker: 'true'
     - extension: 'true'
   notifications:
     - events:
