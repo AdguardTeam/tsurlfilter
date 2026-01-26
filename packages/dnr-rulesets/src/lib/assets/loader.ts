@@ -4,6 +4,7 @@ import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
 
+import { BrowserFilters } from '../../../common/constants';
 import { startDownload } from '../../../common/filters-downloader';
 import { LocalScriptRulesJs } from '../../common/local-script-rules-js';
 import { LocalScriptRulesJson } from '../../common/local-script-rules-json';
@@ -19,6 +20,12 @@ export type AssetsLoaderOptions = {
      * Whether to download latest text filters instead of DNR rulesets.
      */
     latestFilters?: boolean;
+
+    /**
+     * For which browser load assets for.
+     * Default value: `BrowserFilters.ChromiumMv3`.
+     */
+    browser?: BrowserFilters;
 };
 
 /**
@@ -26,9 +33,9 @@ export type AssetsLoaderOptions = {
  */
 export class AssetsLoader {
     /**
-     * Download rulesets or filters to {@link dest} path. If {@link options.rawFilters}
-     * is set to `true`, it will only download raw filters from the server,
-     * otherwise it will copy rulesets from the local directory.
+     * Download rulesets or filters to {@link dest} path based on {@link options.browser} option.
+     * If {@link options.rawFilters} is set to `true`, it will only download raw filters
+     * from the server, otherwise it will copy rulesets from the local directory.
      *
      * @param dest Path to download assets.
      * @param options Options for loading assets.
@@ -38,12 +45,18 @@ export class AssetsLoader {
     public async load(dest: string, options?: AssetsLoaderOptions): Promise<void> {
         const to = path.resolve(process.cwd(), dest);
 
+        let browser = options?.browser;
+        if (!browser) {
+            browser = BrowserFilters.ChromiumMv3;
+            console.log(`Browser option is not specified, using default browser: ${browser}`);
+        }
+
         if (options?.latestFilters) {
-            await startDownload(to);
+            await startDownload(to, browser);
             return;
         }
 
-        const src = path.resolve(__dirname, '../filters');
+        const src = path.resolve(__dirname, `../filters/${browser}`);
 
         console.log(`Copying rulesets and local script rules from ${src} to ${to}`);
 
@@ -56,12 +69,18 @@ export class AssetsLoader {
      * Copy only the local script rules JS file to the destination path.
      *
      * @param dest Path to copy the local script rules JS file to.
+     * @param browser Browser for which to copy the local script rules JS file.
      *
      * @returns Promise that resolves when the file is copied.
      */
-    public async copyLocalScriptRulesJs(dest: string): Promise<void> {
+    public async copyLocalScriptRulesJs(dest: string, browser?: BrowserFilters): Promise<void> {
+        if (!browser) {
+            browser = BrowserFilters.ChromiumMv3;
+            console.log(`Browser is not specified, using default browser: ${browser}`);
+        }
+
         const to = path.resolve(process.cwd(), dest);
-        const src = path.resolve(__dirname, '../filters', LOCAL_SCRIPT_RULES_JS_FILENAME);
+        const src = path.resolve(__dirname, `../filters/${browser}`, LOCAL_SCRIPT_RULES_JS_FILENAME);
 
         console.log(`Copying local script rules JS from ${src} to ${to}`);
 
@@ -74,12 +93,18 @@ export class AssetsLoader {
      * Copy only the local script rules JSON file to the destination path.
      *
      * @param dest Path to copy the local script rules JSON file to.
+     * @param browser Browser for which to copy the local script rules JSON file.
      *
      * @returns Promise that resolves when the file is copied.
      */
-    public async copyLocalScriptRulesJson(dest: string): Promise<void> {
+    public async copyLocalScriptRulesJson(dest: string, browser?: BrowserFilters): Promise<void> {
+        if (!browser) {
+            browser = BrowserFilters.ChromiumMv3;
+            console.log(`Browser is not specified, using default browser: ${browser}`);
+        }
+
         const to = path.resolve(process.cwd(), dest);
-        const src = path.resolve(__dirname, '../filters', LOCAL_SCRIPT_RULES_JSON_FILENAME);
+        const src = path.resolve(__dirname, `../filters/${browser}`, LOCAL_SCRIPT_RULES_JSON_FILENAME);
 
         console.log(`Copying local script rules JSON from ${src} to ${to}`);
 
