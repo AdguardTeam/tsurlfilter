@@ -97,19 +97,22 @@ async function updateFiltersList(sections: MetadataSection[]): Promise<void> {
     let desc = '';
 
     for (const section of sections) {
-        headers += indentText(`- [${section.title}](#${generateMarkdownAnchor(section.title)})\n`, 0);
-        desc += `## ${section.title}\n\n`;
+        const sectionId = generateMarkdownAnchor(section.title);
+        headers += indentText(`- [${section.title}](#${sectionId})\n`, 0);
+        desc += `## <a id="${sectionId}"></a> ${section.title}\n\n`;
         desc += `${section.description}\n\n`;
 
         for (const group of section.metadata.groups) {
-            headers += indentText(`- [${group.groupName}](#${generateMarkdownAnchor(group.groupName)})\n`, 1);
-            desc += `### ${group.groupName}\n\n`;
+            const groupId = `${sectionId}-${generateMarkdownAnchor(group.groupName)}`;
+            headers += indentText(`- [${group.groupName}](#${groupId})\n`, 1);
+            desc += `### <a id="${groupId}"></a> ${group.groupName}\n\n`;
 
             const groupFilters = section.metadata.filters.filter((f) => f.groupId === group.groupId);
 
             for (const filter of groupFilters) {
-                headers += indentText(`- [${filter.name}](#${generateMarkdownAnchor(filter.name)})\n`, 2);
-                desc += `#### ${filter.name}\n\n`;
+                const filterId = `${groupId}-${generateMarkdownAnchor(filter.name)}`;
+                headers += indentText(`- [${filter.name}](#${filterId})\n`, 2);
+                desc += `#### <a id="${filterId}"></a> ${filter.name}\n\n`;
                 desc += `${filter.description}\n\n`;
                 desc += `- Filter ID: **${filter.filterId}**\n`;
                 // eslint-disable-next-line max-len
