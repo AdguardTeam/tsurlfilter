@@ -1,3 +1,4 @@
+import { getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import fs from 'fs';
 
 import { BrowserFilters, FILTERS_MARKDOWN_PATH } from '../common/constants';
@@ -97,26 +98,29 @@ async function updateFiltersList(sections: MetadataSection[]): Promise<void> {
     let desc = '';
 
     for (const section of sections) {
+        const baseDir = `dist/filters/${section.browser}/declarative`;
         const sectionId = generateMarkdownAnchor(section.title);
-        headers += indentText(`- [${section.title}](#${sectionId})\n`, 0);
+
+        headers += `- [${section.title}](#${sectionId})\n`;
         desc += `## <a id="${sectionId}"></a> ${section.title}\n\n`;
         desc += `${section.description}\n\n`;
 
         for (const group of section.metadata.groups) {
             const groupId = `${sectionId}-${generateMarkdownAnchor(group.groupName)}`;
+            const groupFilters = section.metadata.filters.filter((f) => f.groupId === group.groupId);
+
             headers += indentText(`- [${group.groupName}](#${groupId})\n`, 1);
             desc += `### <a id="${groupId}"></a> ${group.groupName}\n\n`;
 
-            const groupFilters = section.metadata.filters.filter((f) => f.groupId === group.groupId);
-
             for (const filter of groupFilters) {
                 const filterId = `${groupId}-${generateMarkdownAnchor(filter.name)}`;
+                const filterPath = getRuleSetPath(filter.filterId, baseDir);
+
                 headers += indentText(`- [${filter.name}](#${filterId})\n`, 2);
                 desc += `#### <a id="${filterId}"></a> ${filter.name}\n\n`;
                 desc += `${filter.description}\n\n`;
                 desc += `- Filter ID: **${filter.filterId}**\n`;
-                // eslint-disable-next-line max-len
-                desc += `- Path: \`dist/filters/${section.browser}/declarative/ruleset_${filter.filterId}/ruleset_${filter.filterId}.json\`\n\n`;
+                desc += `- Path: \`${filterPath}\`\n\n`;
             }
         }
     }

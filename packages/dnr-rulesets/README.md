@@ -306,7 +306,7 @@ await excludeUnsafeRules('<path-to-rulesets-dir>', {
             |filter_i18n.json # i18n metadata (name, description, etc.) for filters
 ```
 
-Where `<browser>` is the browser for which the rulesets are built, e.g. `chromium-mv3` or `opera`.
+Where `<browser>` is the browser for which the rulesets are built, e.g. `chromium-mv3` or `opera-mv3`.
 
 ### Utils
 

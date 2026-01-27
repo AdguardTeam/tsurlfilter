@@ -194,8 +194,11 @@ const validate = async (oldData: RulesetIdsAndMetadataKeys, browser: BrowserFilt
 const validateAll = async (): Promise<void> => {
     const allOldData = await getAllOldValidatorData();
 
-    await validate(allOldData[BrowserFilters.ChromiumMv3], BrowserFilters.ChromiumMv3);
-    await validate(allOldData[BrowserFilters.OperaMv3], BrowserFilters.OperaMv3);
+    await Promise.all(
+        Object.values(BrowserFilters).map(async (browser) => {
+            await validate(allOldData[browser], browser);
+        }),
+    );
 };
 
 validateAll();
