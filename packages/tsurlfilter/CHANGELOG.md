@@ -51,11 +51,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Apply $document blocking rule even if specific exception rule is present [AdguardBrowserExtension#3262].
 - The extension got an unexpected error on `[::]:8000` [AdguardBrowserExtension#3360].
+- $badfilter incorrectly negates rules with different $denyallow values [AdguardBrowserExtension#3428].
 
 [4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v4.0.0
 [AdguardBrowserExtension#2587]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2587
 [AdguardBrowserExtension#3262]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3262
 [AdguardBrowserExtension#3360]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3360
+[AdguardBrowserExtension#3428]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3428
 [#96]: https://github.com/AdguardTeam/tsurlfilter/issues/96
 
 ## [3.5.2] - 2025-12-16
