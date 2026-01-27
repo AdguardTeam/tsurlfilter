@@ -4,7 +4,7 @@ import axios from 'axios';
 
 import {
     BrowserFilters,
-    FILTERS_BROWSER_STUB,
+    FILTERS_BROWSER_PLACEHOLDER,
     FILTERS_METADATA_I18N_URL,
     FILTERS_METADATA_URL,
 } from './constants';
@@ -62,7 +62,7 @@ export async function downloadMetadata(
     pathToSave?: string,
     browser: BrowserFilters = BrowserFilters.ChromiumMv3,
 ): Promise<Metadata> {
-    const metadataUrl = FILTERS_METADATA_URL.replace(FILTERS_BROWSER_STUB, browser);
+    const metadataUrl = FILTERS_METADATA_URL.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
 
     console.info(`Download ${metadataUrl}...`);
 
@@ -92,7 +92,7 @@ export async function downloadI18nMetadata(
     pathToSave: string,
     browser: BrowserFilters = BrowserFilters.ChromiumMv3,
 ): Promise<unknown> {
-    const i18nMetadataUrl = FILTERS_METADATA_I18N_URL.replace(FILTERS_BROWSER_STUB, browser);
+    const i18nMetadataUrl = FILTERS_METADATA_I18N_URL.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
 
     console.info(`Download ${i18nMetadataUrl}...`);
 

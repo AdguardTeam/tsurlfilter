@@ -7,15 +7,15 @@ export enum BrowserFilters {
 }
 
 /**
- * Stub string for browser name which will be replaced
+ * Placeholder string for browser name which will be replaced
  * with actual browser name during build process.
  */
-export const FILTERS_BROWSER_STUB = '%browser%';
+export const FILTERS_BROWSER_PLACEHOLDER = '%browser%';
 
 /**
  * Base URL for filters location.
  */
-const FILTERS_SERVER_URL = `https://filters.adtidy.org/extension/${FILTERS_BROWSER_STUB}`;
+const FILTERS_SERVER_URL = `https://filters.adtidy.org/extension/${FILTERS_BROWSER_PLACEHOLDER}`;
 
 /**
  * Base directory for build output.
@@ -25,7 +25,7 @@ export const BASE_DIR = './dist';
 /**
  * Base directory for filters of the browser.
  */
-export const COMMON_FILTERS_DIR = `${BASE_DIR}/filters/${FILTERS_BROWSER_STUB}`;
+export const COMMON_FILTERS_DIR = `${BASE_DIR}/filters/${FILTERS_BROWSER_PLACEHOLDER}`;
 
 /**
  * Output directory for filters of the browser.
@@ -45,7 +45,7 @@ export const RESOURCES_DIR = '/web-accessible-resources/redirects';
 /**
  * All filters URL for the browser.
  *
- * IMPORTANT: Replace {@link FILTERS_BROWSER_STUB} with actual browser name!
+ * IMPORTANT: Replace {@link FILTERS_BROWSER_PLACEHOLDER} with actual browser name!
  */
 export const FILTERS_URL = `${FILTERS_SERVER_URL}/filters`;
 

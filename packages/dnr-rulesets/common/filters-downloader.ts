@@ -6,7 +6,7 @@ import { ensureDir } from 'fs-extra';
 
 import {
     BrowserFilters,
-    FILTERS_BROWSER_STUB,
+    FILTERS_BROWSER_PLACEHOLDER,
     FILTERS_URL,
     LOCAL_I18N_METADATA_FILE_NAME,
     LOCAL_METADATA_FILE_NAME,
@@ -36,7 +36,7 @@ const getUrlsOfFiltersResources = (
 ): FilterDTO[] => {
     return metadata.filters.map(({ filterId }) => ({
         id: filterId,
-        url: `${FILTERS_URL.replace(FILTERS_BROWSER_STUB, browser)}/${filterId}.txt`,
+        url: `${FILTERS_URL.replace(FILTERS_BROWSER_PLACEHOLDER, browser)}/${filterId}.txt`,
         file: `filter_${filterId}.txt`,
     }));
 };

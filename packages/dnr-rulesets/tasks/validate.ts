@@ -3,7 +3,7 @@ import { extractRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declar
 import fs from 'fs';
 import path from 'path';
 
-import { BrowserFilters, DEST_RULESETS_DIR, FILTERS_BROWSER_STUB } from '../common/constants';
+import { BrowserFilters, DEST_RULESETS_DIR, FILTERS_BROWSER_PLACEHOLDER } from '../common/constants';
 import { version } from '../package.json';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -182,7 +182,7 @@ const validateRulesets = async (
  * @param browser Browser filter to use for validation.
  */
 const validate = async (oldData: RulesetIdsAndMetadataKeys, browser: BrowserFilters): Promise<void> => {
-    const destRulesetsDir = DEST_RULESETS_DIR.replace(FILTERS_BROWSER_STUB, browser);
+    const destRulesetsDir = DEST_RULESETS_DIR.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
     const newData = await getValidatorData(destRulesetsDir);
 
     await validateRulesets(oldData, newData, browser);

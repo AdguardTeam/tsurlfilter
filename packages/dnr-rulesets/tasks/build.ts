@@ -6,7 +6,7 @@ import {
     BASE_DIR,
     BrowserFilters,
     DEST_RULESETS_DIR,
-    FILTERS_BROWSER_STUB,
+    FILTERS_BROWSER_PLACEHOLDER,
     FILTERS_DIR,
     LOCAL_METADATA_FILE_NAME,
     RESOURCES_DIR,
@@ -80,8 +80,8 @@ const removeFiltersMetadata = async (dir: string): Promise<void> => {
  * @param browser Browser to build filters for.
  */
 const build = async (browser: BrowserFilters): Promise<void> => {
-    const filtersDir = FILTERS_DIR.replace(FILTERS_BROWSER_STUB, browser);
-    const destRulesetsDir = DEST_RULESETS_DIR.replace(FILTERS_BROWSER_STUB, browser);
+    const filtersDir = FILTERS_DIR.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
+    const destRulesetsDir = DEST_RULESETS_DIR.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
 
     await startDownload(filtersDir, browser);
 
