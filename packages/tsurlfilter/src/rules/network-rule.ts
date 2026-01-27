@@ -1428,6 +1428,10 @@ export class NetworkRule implements IRule {
             return false;
         }
 
+        if (!stringArraysEquals(this.getDenyAllowDomains(), specifiedRule.getDenyAllowDomains())) {
+            return false;
+        }
+
         return true;
     }
 
