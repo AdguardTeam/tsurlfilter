@@ -1,18 +1,18 @@
+common:
+  description: The rule applies only to ajax requests (requests sent via javascript object XMLHttpRequest).
+
 adg_any:
   name: xmlhttprequest
   aliases:
     - xhr
-  description: The rule applies only to ajax requests (requests sent via javascript object XMLHttpRequest).
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#xmlhttprequest-modifier
 
 abp_any:
   name: xmlhttprequest
-  description: The rule applies only to ajax requests (requests sent via javascript object XMLHttpRequest).
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
 
 ubo_any:
   name: xhr
   aliases:
     - xmlhttprequest
-  description: The rule applies only to ajax requests (requests sent via javascript object XMLHttpRequest).
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr

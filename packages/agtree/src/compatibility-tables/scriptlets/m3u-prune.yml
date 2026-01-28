@@ -1,5 +1,12 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: propsToRemove
+      required: false
+    - name: urlToMatch
+      required: false
+
 adg_os_any|adg_ext_any:
   name: m3u-prune
   version_added: 1.9.1
@@ -8,18 +15,8 @@ adg_os_any|adg_ext_any:
     - ubo-m3u-prune.js
     - ubo-m3u-prune
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#m3u-prune
-  parameters:
-    - name: propsToRemove
-      required: false
-    - name: urlToMatch
-      required: false
 
 ubo_any:
   name: m3u-prune.js
   version_added: 1.44.5b6
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#m3u-prunejs-
-  parameters:
-    - name: propsToRemove
-      required: false
-    - name: urlToMatch
-      required: false

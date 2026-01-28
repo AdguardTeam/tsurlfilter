@@ -1,5 +1,12 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: selector
+      required: true
+    - name: attribute
+      required: false
+
 adg_os_any|adg_ext_any:
   name: href-sanitizer
   version_added: 1.10.25
@@ -8,18 +15,8 @@ adg_os_any|adg_ext_any:
     - ubo-href-sanitizer.js
     - ubo-href-sanitizer
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#href-sanitizer
-  parameters:
-    - name: selector
-      required: true
-    - name: attribute
-      required: false
 
 ubo_any:
   name: href-sanitizer.js
   version_added: 1.47.5b4
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#href-sanitizerjs-
-  parameters:
-    - name: selector
-      required: true
-    - name: attribute
-      required: false

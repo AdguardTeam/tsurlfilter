@@ -1,5 +1,12 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: matchCallback
+      required: false
+    - name: matchDelay
+      required: false
+
 adg_os_any|adg_ext_any:
   name: prevent-setTimeout
   version_added: 1.0.4
@@ -17,11 +24,6 @@ adg_os_any|adg_ext_any:
     - ubo-std.js
     - ubo-std
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-setTimeout
-  parameters:
-    - name: matchCallback
-      required: false
-    - name: matchDelay
-      required: false
 
 ubo_any:
   name: no-setTimeout-if.js
@@ -31,8 +33,3 @@ ubo_any:
     - prevent-setTimeout.js
     - setTimeout-defuser.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setTimeout-ifjs-
-  parameters:
-    - name: matchCallback
-      required: false
-    - name: matchDelay
-      required: false

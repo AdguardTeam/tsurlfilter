@@ -5,9 +5,43 @@ represented by the file `third-party.yml`.
 
 ## File structure
 
-Each file contains an object, where the key is the
-[actual adblocker ID](../README.md#supported-adblockers-and-platforms) and the value is the object with the following
-fields:
+Each file contains an object, where the key is either:
+
+- The special `common` key for properties shared across all platforms
+- An [actual adblocker ID](../README.md#supported-adblockers-and-platforms)
+
+### The `common` key
+
+The `common` key allows you to define properties that are shared across all platforms. These properties are
+automatically merged into each platform-specific entry. This reduces duplication and improves maintainability.
+
+**Example:**
+
+```yaml
+common:
+  name: important
+  description: |-
+    The `$important` modifier applied to a rule increases its priority
+    over any other rule without `$important` modifier.
+  negatable: false
+
+adg_any:
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#important-modifier
+
+ubo_any:
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#important
+```
+
+In this example, `name`, `description`, and `negatable` are common across all platforms, while `docs` links are
+platform-specific.
+
+> [!NOTE]
+> If a field is defined in both `common` and a platform-specific entry, the platform-specific value will override
+> the common value.
+
+### Platform-specific entries
+
+Each platform-specific entry is an object with the following fields:
 
 <!-- markdownlint-disable MD013 -->
 
@@ -58,9 +92,13 @@ The value format describes the format of the modifier value. It can be one of th
     - Currently available validators:
         - list of domains separated by the vertical bar `|`:
             - `pipe_separated_apps` validates value for `$app` modifier
+                - **Does not support**: wildcards (`*`), wildcard TLD (e.g., `example.*`), or regex patterns
             - `pipe_separated_domains` validates value for `$domain` modifier
-            - `pipe_separated_denyallow_domains` validates value for `$denyallow` modifier —
-              negation and wildcard are not allowed compared to `$domain` modifier
+                - **Supports**: wildcard TLD (e.g., `example.*`), wildcard subdomain (e.g., `*.example.com`)
+                - **Does not support**: regex patterns
+            - `pipe_separated_denyallow_domains` validates value for `$denyallow` modifier
+                - **Does not support**: negation (`~`), wildcards (`*`), wildcard TLD (e.g., `example.*`),
+                  or regex patterns
             <!-- TODO: implement later -->
             <!-- - `pipe_separated_extensions` validates value for `$extension` modifier -->
             - `pipe_separated_methods` validates value for `$method` modifier

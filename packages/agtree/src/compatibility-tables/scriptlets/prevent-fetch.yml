@@ -1,5 +1,14 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: propsToMatch
+      required: false
+    - name: responseBody
+      required: false
+    - name: responseType
+      required: false
+
 adg_os_any|adg_ext_any:
   name: prevent-fetch
   version_added: 1.3.18
@@ -9,13 +18,6 @@ adg_os_any|adg_ext_any:
     - ubo-no-fetch-if.js
     - ubo-no-fetch-if
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-fetch
-  parameters:
-    - name: propsToMatch
-      required: false
-    - name: responseBody
-      required: false
-    - name: responseType
-      required: false
 
 ubo_any:
   name: prevent-fetch.js
@@ -23,10 +25,3 @@ ubo_any:
   aliases:
     - no-fetch-if.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-fetchjs-
-  parameters:
-    - name: propsToMatch
-      required: false
-    - name: responseBody
-      required: false
-    - name: responseType
-      required: false

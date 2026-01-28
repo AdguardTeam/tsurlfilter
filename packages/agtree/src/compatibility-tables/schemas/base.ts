@@ -8,6 +8,11 @@ import { platformSchema } from './platform';
 import { zodToCamelCase } from '../utils/zod-camelcase';
 
 /**
+ * Special key name for common compatibility data that will be merged with platform-specific data.
+ */
+export const COMMON_KEY = 'common';
+
+/**
  * Zod schema for boolean values. Accepts both boolean and string values.
  */
 export const booleanSchema = zod.union([
@@ -133,12 +138,34 @@ export const baseRefineLogic = (data: zod.infer<typeof baseCompatibilityDataSche
  */
 export const baseFileSchema = <T extends BaseCompatibilityDataSchema>(dataSchema: zod.ZodType<T>) => {
     return zod.record(zod.any(), zod.any()).transform((val) => {
-        const result = val;
+        const result = { ...val };
 
         // Note: js-yaml will leave `define` key in the object, but we don't need it,
         // and since we're using a strict schema, we need to remove it.
         if ('define' in result) {
             delete result.define;
+        }
+
+        // Extract common data if present
+        let commonData: Record<string, unknown> | null = null;
+        if (COMMON_KEY in result) {
+            commonData = result[COMMON_KEY];
+            delete result[COMMON_KEY];
+        }
+
+        // If common data exists, merge it with each platform-specific entry
+        // Platform-specific values override common values
+        if (commonData) {
+            const mergedResult: Record<string, unknown> = {};
+
+            for (const [platform, platformData] of Object.entries(result)) {
+                mergedResult[platform] = {
+                    ...commonData,
+                    ...platformData,
+                };
+            }
+
+            return mergedResult;
         }
 
         return result;

@@ -1,5 +1,10 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: search
+      required: false
+
 adg_os_any|adg_ext_any:
   name: abort-current-inline-script
   version_added: 1.0.4
@@ -21,8 +26,6 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: property
       required: true
-    - name: search
-      required: false
 
 ubo_any:
   name: abort-current-script.js
@@ -35,8 +38,6 @@ ubo_any:
   parameters:
     - name: property
       required: true
-    - name: search
-      required: false
 
 abp_any:
   name: abort-current-inline-script
@@ -45,5 +46,3 @@ abp_any:
   parameters:
     - name: api
       required: true
-    - name: search
-      required: false

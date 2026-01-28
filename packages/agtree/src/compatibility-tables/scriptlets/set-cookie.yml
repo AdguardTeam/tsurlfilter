@@ -1,13 +1,6 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
-  name: set-cookie
-  version_added: 1.2.3
-  aliases:
-    - set-cookie.js
-    - ubo-set-cookie.js
-    - ubo-set-cookie
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-cookie
+common:
   parameters:
     - name: name
       required: true
@@ -16,14 +9,16 @@ adg_os_any|adg_ext_any:
     - name: path
       required: false
 
+adg_os_any|adg_ext_any:
+  name: set-cookie
+  version_added: 1.2.3
+  aliases:
+    - set-cookie.js
+    - ubo-set-cookie.js
+    - ubo-set-cookie
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-cookie
+
 ubo_any:
   name: set-cookie.js
   version_added: 1.50.1b0
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookiejs-
-  parameters:
-    - name: name
-      required: true
-    - name: value
-      required: true
-    - name: path
-      required: false

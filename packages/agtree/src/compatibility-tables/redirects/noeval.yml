@@ -1,5 +1,8 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Prevents page to use eval.
+
 adg_os_any|adg_ext_any:
   name: noeval
   aliases:
@@ -9,10 +12,8 @@ adg_os_any|adg_ext_any:
     - ubo-silent-noeval.js
     - ubo-noeval
     - ubo-silent-noeval
-  description: Prevents page to use eval.
 
 ubo_any:
   name: noeval.js
-  description: Prevents page to use eval.
   resource_types:
     - script

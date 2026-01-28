@@ -1,5 +1,10 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: contextType
+      required: false
+
 adg_os_any|adg_ext_any:
   name: prevent-canvas
   version_added: 2.0.1
@@ -8,15 +13,9 @@ adg_os_any|adg_ext_any:
     - ubo-prevent-canvas.js
     - ubo-prevent-canvas
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-canvas
-  parameters:
-    - name: contextType
-      required: false
 
 ubo_any:
   name: prevent-canvas.js
   version_added: 1.52.3b2
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-canvasjs-
-  parameters:
-    - name: contextType
-      required: false
 

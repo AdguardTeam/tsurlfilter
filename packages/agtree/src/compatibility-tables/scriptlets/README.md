@@ -5,9 +5,45 @@ Each file represents a specific scriptlet. The file name is the name of the scri
 
 ## File structure
 
-Each file contains an object, where the key is the
-[actual adblocker ID](../README.md#supported-adblockers-and-platforms)
-and the value is the object with the following fields:
+Each file contains an object, where the key is either:
+
+- The special `common` key for properties shared across all platforms
+- An [actual adblocker ID](../README.md#supported-adblockers-and-platforms)
+
+### The `common` key
+
+The `common` key allows you to define properties that are shared across all platforms. These properties are
+automatically merged into each platform-specific entry. This reduces duplication and improves maintainability.
+
+**Example:**
+
+```yaml
+common:
+  parameters:
+    - name: property
+      required: true
+
+adg_os_any|adg_ext_any:
+  name: abort-on-property-read
+  version_added: 1.0.4
+  aliases:
+    - abort-on-property-read.js
+    - ubo-abort-on-property-read.js
+
+ubo_any:
+  name: abort-on-property-read.js
+```
+
+In this example, `parameters` is common across all platforms, while `name`, `aliases`, and `version_added` are
+platform-specific.
+
+> [!NOTE]
+> If a field is defined in both `common` and a platform-specific entry, the platform-specific value will override
+> the common value.
+
+### Platform-specific entries
+
+Each platform-specific entry is an object with the following fields:
 
 <!-- markdownlint-disable MD013 -->
 

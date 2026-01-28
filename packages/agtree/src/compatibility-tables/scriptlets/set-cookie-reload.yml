@@ -1,13 +1,6 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
-  name: set-cookie-reload
-  version_added: 1.3.14
-  aliases:
-    - set-cookie-reload.js
-    - ubo-set-cookie-reload.js
-    - ubo-set-cookie-reload
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-cookie-reload
+common:
   parameters:
     - name: name
       required: true
@@ -18,15 +11,15 @@ adg_os_any|adg_ext_any:
     - name: domain
       required: false
 
+adg_os_any|adg_ext_any:
+  name: set-cookie-reload
+  version_added: 1.3.14
+  aliases:
+    - set-cookie-reload.js
+    - ubo-set-cookie-reload.js
+    - ubo-set-cookie-reload
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-cookie-reload
+
 ubo_any:
   name: set-cookie-reload.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookie-reloadjs-
-  parameters:
-    - name: name
-      required: true
-    - name: value
-      required: true
-    - name: path
-      required: false
-    - name: domain
-      required: false

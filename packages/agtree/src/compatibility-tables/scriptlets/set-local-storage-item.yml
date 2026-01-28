@@ -1,5 +1,12 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: key
+      required: true
+    - name: value
+      required: true
+
 adg_os_any|adg_ext_any:
   name: set-local-storage-item
   version_added: 1.4.3
@@ -8,18 +15,8 @@ adg_os_any|adg_ext_any:
     - ubo-set-local-storage-item.js
     - ubo-set-local-storage-item
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-local-storage-item
-  parameters:
-    - name: key
-      required: true
-    - name: value
-      required: true
 
 ubo_any:
   name: set-local-storage-item.js
   version_added: 1.50.1b4
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-local-storage-itemjs-
-  parameters:
-    - name: key
-      required: true
-    - name: value
-      required: true

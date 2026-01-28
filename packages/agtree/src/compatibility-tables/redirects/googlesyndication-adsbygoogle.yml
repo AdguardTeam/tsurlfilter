@@ -1,5 +1,8 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Mocks Google AdSense API.
+
 adg_os_any|adg_ext_any:
   name: googlesyndication-adsbygoogle
   aliases:
@@ -7,12 +10,10 @@ adg_os_any|adg_ext_any:
     - ubo-googlesyndication.com/adsbygoogle.js
     - googlesyndication_adsbygoogle.js
     - googlesyndication.com/adsbygoogle.js
-  description: Mocks Google AdSense API.
 
 ubo_any:
   name: googlesyndication_adsbygoogle.js
   aliases:
     - googlesyndication.com/adsbygoogle.js
-  description: Mocks Google AdSense API.
   resource_types:
     - script

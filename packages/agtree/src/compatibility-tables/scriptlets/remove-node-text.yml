@@ -1,5 +1,12 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: nodeName
+      required: true
+    - name: textMatch
+      required: true
+
 adg_os_any|adg_ext_any:
   name: remove-node-text
   version_added: 1.9.37
@@ -11,11 +18,6 @@ adg_os_any|adg_ext_any:
     - ubo-remove-node-text
     - ubo-rmnt
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#remove-node-text
-  parameters:
-    - name: nodeName
-      required: true
-    - name: textMatch
-      required: true
 
 ubo_any:
   name: remove-node-text.js
@@ -23,8 +25,3 @@ ubo_any:
   aliases:
     - rmnt.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-node-textjs-
-  parameters:
-    - name: nodeName
-      required: true
-    - name: textMatch
-      required: true

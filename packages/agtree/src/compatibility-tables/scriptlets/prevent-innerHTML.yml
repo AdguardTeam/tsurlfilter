@@ -1,5 +1,12 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: selector
+      required: false
+    - name: pattern
+      required: false
+
 adg_os_any|adg_ext_any:
   name: prevent-innerHTML
   version_added: 2.2.14
@@ -9,11 +16,6 @@ adg_os_any|adg_ext_any:
     - ubo-no-innerHTML-if.js
     - ubo-no-innerHTML-if
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-innerHTML
-  parameters:
-    - name: selector
-      required: false
-    - name: pattern
-      required: false
 
 ubo_any:
   name: prevent-innerHTML.js
@@ -21,8 +23,3 @@ ubo_any:
   aliases:
     - no-innerHTML-if.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-innerHTMLjs-
-  parameters:
-    - name: selector
-      required: false
-    - name: pattern
-      required: false

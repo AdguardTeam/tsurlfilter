@@ -1,13 +1,14 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Prevents BlockAdblock script from detecting an ad blocker.
+
 adg_os_any|adg_ext_any:
   name: prevent-bab
   aliases:
     - nobab.js
-  description: Prevents BlockAdblock script from detecting an ad blocker.
 
 ubo_any:
   name: nobab.js
-  description: Prevents BlockAdblock script from detecting an ad blocker.
   resource_types:
     - script

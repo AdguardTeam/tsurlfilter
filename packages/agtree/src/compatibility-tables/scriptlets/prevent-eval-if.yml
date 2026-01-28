@@ -1,5 +1,10 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: search
+      required: false
+
 adg_os_any|adg_ext_any:
   name: prevent-eval-if
   version_added: 1.0.4
@@ -8,15 +13,9 @@ adg_os_any|adg_ext_any:
     - ubo-noeval-if.js
     - ubo-noeval-if
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-eval-if
-  parameters:
-    - name: search
-      required: false
 
 ubo_any:
   name: noeval-if.js
   aliases:
     - prevent-eval-if.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
-  parameters:
-    - name: search
-      required: false
