@@ -16,12 +16,12 @@ npmjs:
     image: adguard/node-ssh:22.14--0
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  # run auto-deploy only after successful build for dnr-rulesets v3.2.X
+  # run auto-deploy only after successful build for dnr-rulesets v3.3.X
   triggers:
     - build-success:
-        # git branch name `stable/dnr-rulesets-3.2`, '/' is replaced with '-'
+        # git branch name `stable/dnr-rulesets-3.3`, '/' is replaced with '-'
         # in Bamboo
-        branch: stable-dnr-rulesets-3.2
+        branch: stable-dnr-rulesets-3.3
   tasks: &tasks
     - checkout:
         force-clean-build: true
