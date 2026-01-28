@@ -1,14 +1,12 @@
-adg_any:
+common:
   name: image
   description: The rule corresponds to images requests.
+
+adg_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#image-modifier
 
 abp_any:
-  name: image
-  description: The rule corresponds to images requests.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options
 
 ubo_any:
-  name: image
-  description: The rule corresponds to images requests.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options

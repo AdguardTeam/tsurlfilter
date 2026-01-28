@@ -1,5 +1,12 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: property
+      required: true
+    - name: stack
+      required: true
+
 adg_os_any|adg_ext_any:
   name: abort-on-stack-trace
   version_added: 1.5.0
@@ -12,11 +19,6 @@ adg_os_any|adg_ext_any:
     - ubo-aost
     - abp-abort-on-stack-trace
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#abort-on-stack-trace
-  parameters:
-    - name: property
-      required: true
-    - name: stack
-      required: true
 
 ubo_any:
   name: abort-on-stack-trace.js
@@ -24,8 +26,3 @@ ubo_any:
   aliases:
     - aost.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-stack-tracejs-
-  parameters:
-    - name: property
-      required: true
-    - name: stack
-      required: true

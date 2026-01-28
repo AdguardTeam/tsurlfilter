@@ -1,15 +1,16 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Disables WebRTC by overriding `RTCPeerConnection`.
+
 adg_os_any|adg_ext_any:
   name: nowebrtc
   aliases:
     - nowebrtc.js
     - ubo-nowebrtc.js
     - ubo-nowebrtc
-  description: Disables WebRTC by overriding `RTCPeerConnection`.
 
 ubo_any:
   name: nowebrtc.js
-  description: Disables WebRTC by overriding `RTCPeerConnection`.
   resource_types:
     - other

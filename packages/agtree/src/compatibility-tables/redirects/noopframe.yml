@@ -1,18 +1,18 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Redirects to an empty HTML file.
+
 adg_os_any|adg_ext_any:
   name: noopframe
   aliases:
     - noop.html
     - blank-html
-  description: Redirects to an empty HTML file.
 
 ubo_any:
   name: noop.html
-  description: Redirects to an empty HTML file.
   resource_types:
     - sub_frame
 
 abp_any:
   name: blank-html
-  description: Redirects to an empty HTML file.

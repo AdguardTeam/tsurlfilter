@@ -1,5 +1,12 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: matchCallback
+      required: false
+    - name: matchDelay
+      required: false
+
 adg_os_any|adg_ext_any:
   name: prevent-setInterval
   version_added: 1.0.4
@@ -17,11 +24,6 @@ adg_os_any|adg_ext_any:
     - ubo-nosiif
     - ubo-sid
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-setInterval
-  parameters:
-    - name: matchCallback
-      required: false
-    - name: matchDelay
-      required: false
 
 ubo_any:
   name: no-setInterval-if.js
@@ -31,8 +33,3 @@ ubo_any:
     - prevent-setInterval.js
     - setInterval-defuser.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setInterval-ifjs-
-  parameters:
-    - name: matchCallback
-      required: false
-    - name: matchDelay
-      required: false

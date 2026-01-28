@@ -1,5 +1,10 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: search
+      required: false
+
 adg_os_any|adg_ext_any:
   name: prevent-requestAnimationFrame
   version_added: 1.1.15
@@ -11,9 +16,6 @@ adg_os_any|adg_ext_any:
     - ubo-no-requestAnimationFrame-if
     - ubo-norafif
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-requestAnimationFrame
-  parameters:
-    - name: search
-      required: false
 
 ubo_any:
   name: no-requestAnimationFrame-if.js
@@ -22,6 +24,3 @@ ubo_any:
     - norafif.js
     - prevent-requestAnimationFrame.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#no-requestAnimationFrame-ifjs-
-  parameters:
-    - name: search
-      required: false

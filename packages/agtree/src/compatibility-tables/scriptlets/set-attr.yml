@@ -1,13 +1,6 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
-  name: set-attr
-  version_added: 1.5.0
-  aliases:
-    - set-attr.js
-    - ubo-set-attr.js
-    - ubo-set-attr
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-attr
+common:
   parameters:
     - name: selector
       required: true
@@ -16,14 +9,16 @@ adg_os_any|adg_ext_any:
     - name: value
       required: false
 
+adg_os_any|adg_ext_any:
+  name: set-attr
+  version_added: 1.5.0
+  aliases:
+    - set-attr.js
+    - ubo-set-attr.js
+    - ubo-set-attr
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-attr
+
 ubo_any:
   name: set-attr.js
   version_added: 1.50.1b16
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-attrjs-
-  parameters:
-    - name: selector
-      required: true
-    - name: attr
-      required: true
-    - name: value
-      required: false

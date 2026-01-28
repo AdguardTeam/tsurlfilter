@@ -1,10 +1,15 @@
-adg_os_any:
+common:
   name: redirect-rule
   description: |-
     This is basically an alias to `$redirect`
     since it has the same "redirection" values and the logic is almost similar.
     The difference is that `$redirect-rule` is applied only in the case
     when the target request is blocked by a different basic rule.
+  inverse_conflicts: true
+  assignable: true
+  negatable: false
+
+adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
   conflicts:
     - domain
@@ -30,9 +35,6 @@ adg_os_any:
     - important
     - badfilter
     - app
-  inverse_conflicts: true
-  assignable: true
-  negatable: false
   value_optional: true
   value_format: |-
     (?x)
@@ -82,12 +84,6 @@ adg_os_any:
       )?$
 
 adg_ext_any:
-  name: redirect-rule
-  description: |-
-    This is basically an alias to `$redirect`
-    since it has the same "redirection" values and the logic is almost similar.
-    The difference is that `$redirect-rule` is applied only in the case
-    when the target request is blocked by a different basic rule.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
   conflicts:
     - domain
@@ -112,9 +108,6 @@ adg_ext_any:
     - webrtc
     - important
     - badfilter
-  inverse_conflicts: true
-  assignable: true
-  negatable: false
   value_optional: true
   value_format: |-
     (?x)
@@ -164,12 +157,6 @@ adg_ext_any:
       )?$
 
 ubo_ext_any:
-  name: redirect-rule
-  description: |-
-    This is basically an alias to `$redirect`
-    since it has the same "redirection" values and the logic is almost similar.
-    The difference is that `$redirect-rule` is applied only in the case
-    when the target request is blocked by a different basic rule.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect-rule
   conflicts:
     - domain
@@ -194,9 +181,6 @@ ubo_ext_any:
     - webrtc
     - important
     - badfilter
-  inverse_conflicts: true
-  assignable: true
-  negatable: false
   value_format: |-
     (?x)
       ^(

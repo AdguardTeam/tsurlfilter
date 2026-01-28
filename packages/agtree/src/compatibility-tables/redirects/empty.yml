@@ -1,8 +1,9 @@
 # TODO: add documentation reference
+common:
+  description: Redirects to an empty file.
+
 adg_os_any|adg_ext_any:
   name: empty
-  description: Redirects to an empty file.
 
 ubo_any:
   name: empty
-  description: Redirects to an empty file.

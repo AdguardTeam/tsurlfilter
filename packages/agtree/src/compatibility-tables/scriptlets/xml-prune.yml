@@ -1,13 +1,6 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
-  name: xml-prune
-  version_added: 1.7.3
-  aliases:
-    - xml-prune.js
-    - ubo-xml-prune.js
-    - ubo-xml-prune
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#xml-prune
+common:
   parameters:
     - name: propsToMatch
       required: false
@@ -16,14 +9,16 @@ adg_os_any|adg_ext_any:
     - name: urlToMatch
       required: false
 
+adg_os_any|adg_ext_any:
+  name: xml-prune
+  version_added: 1.7.3
+  aliases:
+    - xml-prune.js
+    - ubo-xml-prune.js
+    - ubo-xml-prune
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#xml-prune
+
 ubo_any:
   name: xml-prune.js
   version_added: 1.49.3rc6
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#xml-prunejs-
-  parameters:
-    - name: propsToMatch
-      required: false
-    - name: optionalProp
-      required: false
-    - name: urlToMatch
-      required: false

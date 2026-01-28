@@ -1,5 +1,14 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: matchCallback
+      required: false
+    - name: matchDelay
+      required: false
+    - name: boost
+      required: false
+
 adg_os_any|adg_ext_any:
   name: adjust-setInterval
   version_added: 1.0.4
@@ -14,13 +23,6 @@ adg_os_any|adg_ext_any:
     - ubo-nano-sib
     - ubo-adjust-setInterval
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#adjust-setInterval
-  parameters:
-    - name: matchCallback
-      required: false
-    - name: matchDelay
-      required: false
-    - name: boost
-      required: false
 
 ubo_any:
   name: adjust-setInterval.js
@@ -28,10 +30,3 @@ ubo_any:
     - nano-setInterval-booster.js
     - nano-sib.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#adjust-setIntervaljs-
-  parameters:
-    - name: matchCallback
-      required: false
-    - name: matchDelay
-      required: false
-    - name: boost
-      required: false

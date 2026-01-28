@@ -1,5 +1,10 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: functionName
+      required: true
+
 adg_os_any|adg_ext_any:
   name: call-nothrow
   version_added: 1.10.1
@@ -8,14 +13,8 @@ adg_os_any|adg_ext_any:
     - ubo-call-nothrow.js
     - ubo-call-nothrow
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#call-nothrow
-  parameters:
-    - name: functionName
-      required: true
 
 ubo_any:
   name: call-nothrow.js
   version_added: 1.48.1b0
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#call-nothrowjs-
-  parameters:
-    - name: functionName
-      required: true

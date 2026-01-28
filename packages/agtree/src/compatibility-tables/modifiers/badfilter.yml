@@ -1,15 +1,12 @@
-adg_any|~adg_cb_android:
+common:
   name: badfilter
   description: |-
     The rules with the `$badfilter` modifier disable other basic rules to which they refer. It means that
     the text of the disabled rule should match the text of the `$badfilter` rule (without the `$badfilter` modifier).
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
   negatable: false
 
+adg_any|~adg_cb_android:
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
+
 ubo_ext_any:
-  name: badfilter
-  description: |-
-    The rules with the `$badfilter` modifier disable other basic rules to which they refer. It means that
-    the text of the disabled rule should match the text of the `$badfilter` rule (without the `$badfilter` modifier).
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#badfilter
-  negatable: false

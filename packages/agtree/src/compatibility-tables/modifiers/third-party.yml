@@ -1,27 +1,21 @@
-adg_any:
-  name: third-party
-  aliases:
-    - 3p
+common:
   description: |-
     A restriction of third-party and own requests.
     A third-party request is a request from a different domain.
     For example, a request to `example.org` from `domain.com` is a third-party request.
+
+adg_any:
+  name: third-party
+  aliases:
+    - 3p
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#third-party-modifier
 
 ubo_any:
   name: 3p
   aliases:
     - third-party
-  description: |-
-    A restriction of third-party and own requests.
-    A third-party request is a request from a different domain.
-    For example, a request to `example.org` from `domain.com` is a third-party request.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#3p
 
 abp_any:
   name: third-party
-  description: |-
-    A restriction of third-party and own requests.
-    A third-party request is a request from a different domain.
-    For example, a request to `example.org` from `domain.com` is a third-party request.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#party-requests
