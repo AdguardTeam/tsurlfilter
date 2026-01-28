@@ -40,7 +40,6 @@ npmjs • 2.x: &npmjs
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             npm publish tswebextension.tgz $bamboo_publishArgs
   requirements:
-    - adg-docker: 'true'
     - extension: 'true'
   notifications:
     - events:

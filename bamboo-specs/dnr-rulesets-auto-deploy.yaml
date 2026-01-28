@@ -46,7 +46,6 @@ npmjs 3.X:
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             npm publish dnr-rulesets.tgz --access public
   requirements: &requirements
-    - adg-docker: 'true'
     - extension: 'true'
   notifications: &notifications
     - events:

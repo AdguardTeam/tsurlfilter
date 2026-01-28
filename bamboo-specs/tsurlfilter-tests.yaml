@@ -114,7 +114,6 @@ Test Logger:
         scripts:
           - "./bamboo-specs/scripts/cleanup.sh"
   requirements: &requirements
-    - adg-docker: 'true'
     - extension: 'true'
 
 Test CSSTokenizer:

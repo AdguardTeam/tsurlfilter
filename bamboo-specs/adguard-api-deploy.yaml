@@ -35,7 +35,6 @@ npmjs:
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             npm publish adguard-api.tgz --access public
   requirements:
-    - adg-docker: 'true'
     - extension: 'true'
   notifications:
     - events:

@@ -42,7 +42,6 @@ npmjs • 1.x: &npmjs
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             npm publish tsurlfilter.tgz $bamboo_publishArgs
   requirements:
-    - adg-docker: 'true'
     - extension: 'true'
   notifications:
     - events:

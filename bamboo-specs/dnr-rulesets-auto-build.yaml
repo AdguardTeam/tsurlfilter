@@ -58,7 +58,6 @@ DoNothing:
       shared: true
       required: true
   requirements: &requirements
-    - adg-docker: 'true'
     - extension: 'true'
 
 triggers: []
