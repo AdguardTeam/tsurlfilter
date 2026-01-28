@@ -9,9 +9,9 @@ release-naming:
   applies-to-branches: true
 
 environments:
-  - npmjs 3.3.X
+  - npmjs
 
-npmjs 3.3.X:
+npmjs:
   docker: &docker
     image: adguard/node-ssh:22.14--0
     volumes:
