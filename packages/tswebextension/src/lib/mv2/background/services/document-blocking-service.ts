@@ -91,6 +91,7 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
             tabId,
             rule,
             requestUrl,
+            isPrerenderRequest,
         } = data;
 
         // if request url is trusted, no redirect to blocking page
@@ -99,6 +100,14 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
         }
 
         this.logEvent(data);
+
+        // If the request is a prerender request, block it and wait for
+        // navigation to the prerendered page.
+        // The actual redirect to blocking page will happen when user navigates
+        // to the prerendered page.
+        if (isPrerenderRequest) {
+            return { cancel: true };
+        }
 
         // if documentBlockingPage is undefined, block request
         if (!this.documentBlockingPageUrl) {

@@ -181,7 +181,7 @@
 import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { type DocumentLifecycle } from '../../common/interfaces';
+import { DocumentLifecycle } from '../../common/interfaces';
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
@@ -340,7 +340,12 @@ export class WebRequestApi {
             requestFrameId,
         } = context;
 
-        const { parentFrameId } = details;
+        const {
+            parentFrameId,
+            documentId,
+            parentDocumentId,
+            documentLifecycle,
+        } = details;
 
         const isDocumentRequest = requestType === RequestType.Document;
 
@@ -380,8 +385,8 @@ export class WebRequestApi {
                     parentFrameId,
                     url: requestUrl,
                     timeStamp: timestamp,
-                    documentId: details.documentId,
-                    parentDocumentId: details.parentDocumentId,
+                    documentId,
+                    parentDocumentId,
                 }));
             }
         }
@@ -446,7 +451,7 @@ export class WebRequestApi {
                 tabId,
                 frameId,
                 parentFrameId,
-                documentId: details.documentId,
+                documentId,
                 url: requestUrl,
                 timeStamp: timestamp,
             });
@@ -456,6 +461,8 @@ export class WebRequestApi {
          * For a $replace rule, response will be undefined since we need to get
          * the response in order to actually apply $replace rules to it.
          */
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+
         const response = RequestBlockingApi.getBlockingResponse({
             rule: matchingResult.getBasicResult(),
             popupRule: matchingResult.getPopupRule(),
@@ -466,6 +473,7 @@ export class WebRequestApi {
             requestType,
             contentType,
             tabId,
+            isPrerenderRequest,
         });
 
         if (!response) {

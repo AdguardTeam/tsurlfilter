@@ -42,6 +42,17 @@ export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType &
     documentLifecycle?: DocumentLifecycle;
 };
 
+export type OnErrorOccurredDetailsType = WebRequest.OnErrorOccurredDetailsType & {
+    /**
+     * The document lifecycle of the frame.
+     *
+     * Available from Chrome 106+.
+     *
+     * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle
+     */
+    documentLifecycle?: DocumentLifecycle;
+};
+
 /**
  * Request events class.
  * TODO: Can it be moved to common?
@@ -73,7 +84,7 @@ export class RequestEvents {
     >();
 
     public static onErrorOccurred = new RequestEvent<
-        WebRequest.OnErrorOccurredDetailsType,
+        OnErrorOccurredDetailsType,
         WebRequest.OnErrorOccurredOptions
     >();
 
@@ -237,7 +248,7 @@ export class RequestEvents {
         // We do not check for exists request context here (as it was in MV2),
         // because in MV3 $removeparam rules are applied by browser and does not
         // require page reload after the applying.
-        if (isDocumentRequest) {
+        if (isDocumentRequest && !isPrerenderRequest) {
             // dispatch filtering log reload event
             defaultFilteringLog.publishEvent({
                 type: FilteringEventType.TabReload,

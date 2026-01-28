@@ -265,6 +265,14 @@ export class CosmeticFrameProcessor {
         const isMainFrame = (!parentDocumentId && documentLifecycle === DocumentLifecycle.Prerender)
             || frameId === MAIN_FRAME_ID;
 
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+
+        // Don't process prerender requests further, because they will be
+        // handled again when the document becomes active.
+        if (isMainFrame && isPrerenderRequest) {
+            return;
+        }
+
         if (isMainFrame) {
             this.handleMainFrame({
                 url,

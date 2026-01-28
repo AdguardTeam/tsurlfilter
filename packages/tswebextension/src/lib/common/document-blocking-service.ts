@@ -47,6 +47,11 @@ export type GetDocumentBlockingResponseParams = {
      * Rule which is applied to request.
      */
     rule: NetworkRule;
+
+    /**
+     * Indicates whether the request is a prerender request.
+     */
+    isPrerenderRequest?: boolean;
 };
 
 /**

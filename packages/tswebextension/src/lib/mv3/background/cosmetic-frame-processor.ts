@@ -2,6 +2,7 @@ import { type CosmeticResult, type CosmeticRule, RequestType } from '@adguard/ts
 
 import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
+import { DocumentLifecycle } from '../../common/interfaces';
 import {
     type PrecalculateCosmeticProps,
     type HandleSubFrameWithoutUrlProps,
@@ -262,9 +263,17 @@ export class CosmeticFrameProcessor {
             frameId,
             url,
             parentDocumentId,
+            documentLifecycle,
         } = props;
 
         const isMainFrame = frameId === MAIN_FRAME_ID;
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+
+        // Don't process prerender requests further, because they will be
+        // handled again when the document becomes active.
+        if (isMainFrame && isPrerenderRequest) {
+            return;
+        }
 
         if (isMainFrame) {
             CosmeticFrameProcessor.handleMainFrame({

@@ -152,6 +152,7 @@ import { companiesDbService } from '../../common/companies-db-service';
 import { getRuleTexts } from '../../common/utils/rule-text-provider';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { DocumentLifecycle } from '../../common/interfaces';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
 import { TabsApiCommon } from '../../common/tabs/tabs-api';
@@ -163,7 +164,11 @@ import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
-import { type OnBeforeRequestDetailsType, RequestEvents } from './request/events/request-events';
+import {
+    type OnBeforeRequestDetailsType,
+    type OnErrorOccurredDetailsType,
+    RequestEvents,
+} from './request/events/request-events';
 import { RequestBlockingApi } from './request/request-blocking-api';
 import { requestContextStorage } from './request/request-context-storage';
 import { type RequestData } from './request/events/request-event';
@@ -260,7 +265,7 @@ export class WebRequestApi {
             thirdParty,
         } = context;
 
-        const { parentFrameId } = details;
+        const { parentFrameId, documentLifecycle } = details;
 
         const isDocumentRequest = requestType === RequestType.Document;
 
@@ -373,6 +378,7 @@ export class WebRequestApi {
                 parentFrameId,
                 url: requestUrl,
                 timeStamp: timestamp,
+                documentLifecycle,
             });
         }
 
@@ -536,7 +542,10 @@ export class WebRequestApi {
             url,
             parentDocumentId,
             timeStamp,
+            documentLifecycle,
         } = details;
+
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
 
         /**
          * In some cases `onBeforeNavigate` might happen before Tabs API `onCreated`
@@ -547,8 +556,11 @@ export class WebRequestApi {
          *
          * We create tab context only for document requests (outermost frame),
          * because other types of requests can't have tab context.
+         *
+         * Skip tab context creation for prerender requests, as the tabId may not
+         * correspond to a real tab yet.
          */
-        if (TabsApiCommon.isDocumentLevelFrame(parentFrameId)) {
+        if (TabsApiCommon.isDocumentLevelFrame(parentFrameId) && !isPrerenderRequest) {
             tabsApi.createTabContextIfNotExists(tabId, url);
         }
 
@@ -578,6 +590,7 @@ export class WebRequestApi {
             url,
             timeStamp,
             parentDocumentId,
+            documentLifecycle,
         });
     }
 
@@ -591,13 +604,14 @@ export class WebRequestApi {
      */
     private static onErrorOccurred({
         details,
-    }: RequestData<WebRequest.OnErrorOccurredDetailsType>): void {
+    }: RequestData<OnErrorOccurredDetailsType>): void {
         const {
             tabId,
             requestId,
             url,
             type,
             error,
+            documentLifecycle,
         } = details;
 
         /**
@@ -694,6 +708,8 @@ export class WebRequestApi {
             return;
         }
 
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+
         documentBlockingService.handleDocumentBlocking({
             eventId,
             requestUrl,
@@ -701,6 +717,7 @@ export class WebRequestApi {
             referrerUrl,
             rule,
             tabId,
+            isPrerenderRequest,
         });
     }
 

@@ -46,9 +46,13 @@ export type PrecalculateCosmeticProps = {
     /**
      * The document lifecycle of the frame.
      *
+     * Uses template literal type to extract string values from DocumentLifecycle enum.
+     * This allows accepting both our enum values and Chrome's string literal types,
+     * ensuring compatibility with webRequest/webNavigation API types.
+     *
      * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle.
      */
-    documentLifecycle?: DocumentLifecycle;
+    documentLifecycle?: `${DocumentLifecycle}`;
 };
 
 /**
