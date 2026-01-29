@@ -14,10 +14,9 @@ stages:
       jobs:
         - DoNothing
 
-# Since auto-build is being run only for a stable branches now:
-# 'stable/dnr-rulesets-3.0' for release v5.1,
-# 'stable/dnr-rulesets-3.2' for beta v5.2.
-# TODO: Fix this comment when we will release v5.2.
+# Since auto-build is being run only for stable branches:
+# branch 'stable/dnr-rulesets-3.2' - for AdGuard browser extension v5.2.X.
+# branch 'stable/dnr-rulesets-3.3' - for AdGuard API v3.1.
 # we should skip the build stage for other branches.
 DoNothing:
   key: NOTHING
@@ -75,14 +74,14 @@ notifications: &notifications
           name: Build webhook
           url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
-# Run plan only for 'stable/dnr-rulesets-3.0' (release v5.1) OR
-# 'stable/dnr-rulesets-3.2' (beta v5.2) branches.
+# Run plan only for:
+# branch 'stable/dnr-rulesets-3.2' - for AdGuard browser extension v5.2.X.
+# branch 'stable/dnr-rulesets-3.3' - for AdGuard API v3.1.
 # Override is needed to skip the build stage for other branches,
 # because even if branches are not supposed to be run for PRs (due to 'create: manually' above),
 # build was triggered by 'cron' anyway.
 branch-overrides:
-  # TODO: Remove this override when we will release v5.2.
-  - '^stable\/dnr-rulesets-3\.[02]$':
+  - '^stable\/dnr-rulesets-3\.[23]$':
       stages:
         - Build:
             - Build
@@ -111,8 +110,8 @@ branch-overrides:
 
                   BRANCH="${bamboo.planRepository.branchName}"
 
-                  # Deploy package from "stable/dnr-rulesets-3.0" or "stable/dnr-rulesets-3.2" branches only.
-                  if [ $BRANCH != "stable/dnr-rulesets-3.0" ] && [ $BRANCH != "stable/dnr-rulesets-3.2" ];
+                  # Deploy package from "stable/dnr-rulesets-3.2" or "stable/dnr-rulesets-3.3" branches only.
+                  if [ $BRANCH != "stable/dnr-rulesets-3.2" ] && [ $BRANCH != "stable/dnr-rulesets-3.3" ];
                   then
                     echo "deployment is not supported on branch ${BRANCH}, skipping"
                     exit 0;
