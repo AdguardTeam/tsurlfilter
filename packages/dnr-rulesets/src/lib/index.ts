@@ -1,3 +1,4 @@
+export { BrowserFilters } from '../../common/constants';
 export { LocalScriptRulesJs } from '../common/local-script-rules-js';
 export { type DomainConfig, LocalScriptRulesJson } from '../common/local-script-rules-json';
 export {

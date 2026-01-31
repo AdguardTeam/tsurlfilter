@@ -26,7 +26,7 @@ describe('load', () => {
     const dest = 'dest';
     const src = 'src';
     const to = 'to';
-    const filtersRelativePath = '../filters';
+    const filtersRelativePath = '../filters/chromium-mv3';
 
     const mockResolve = vi.mocked(path.resolve);
     const mockCopy = vi.mocked(copy);

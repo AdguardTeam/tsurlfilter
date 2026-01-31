@@ -6,6 +6,7 @@
 import { convertFilters } from '@adguard/tsurlfilter/cli';
 import { ChokidarOptions, type FSWatcher, watch } from 'chokidar';
 
+import { BrowserFilters } from '../../../common/constants';
 import { startDownload } from '../../../common/filters-downloader';
 import { ManifestPatcher, PatchManifestOptions } from './patcher';
 
@@ -37,6 +38,14 @@ export type WatchOptions = PatchManifestOptions & {
      * or not. It is useful for cases when you want to debug fresh filters.
      */
     latestFilters?: boolean;
+
+    /**
+     * For which browser download latest filters for.
+     * Default value: `BrowserFilters.ChromiumMv3`.
+     *
+     * @see `latestFilters` option.
+     */
+    browser?: BrowserFilters;
 
     /**
      * Whether to enable extended logging during conversion or not.
@@ -132,7 +141,15 @@ export class Watcher {
 
         if (options?.latestFilters) {
             console.log(`Downloading filters from the server to ${filtersPath}...`);
-            await startDownload(filtersPath);
+
+            let browser = options?.browser;
+            if (!browser) {
+                browser = BrowserFilters.ChromiumMv3;
+                console.log(`Browser option is not specified, using default browser: ${browser}`);
+            }
+
+            await startDownload(filtersPath, browser);
+
             console.log(`Downloading filters from the server to ${filtersPath} is done.`);
         }
 

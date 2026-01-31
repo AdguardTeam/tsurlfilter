@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING:** Updated [@adguard/tsurlfilter] to v4.0.0 with `FilterList` API.
   - Ruleset metadata now uses `conversionData` instead of `conversionMap`.
   - `conversionData` structure: `{ originals: string[], conversions: Record<number, number> }`.
+- Build output structure for declarative rules, see [README](./README.md#output-structure) for details.
+
+### Added
+
+- Opera MV3 filters support.
+- New option `-b, --browser` for `load` command to specify for which browser to load filters.
+- New option `-b, --browser` for `watch` command to specify for which browser to download latest filters.
 
 [4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.0.0
 

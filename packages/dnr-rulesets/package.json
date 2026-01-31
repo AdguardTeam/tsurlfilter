@@ -28,7 +28,7 @@
     "scripts": {
         "build": "pnpm run clear && pnpm run build:assets && pnpm build:lib",
         "build:assets": "tsx tasks/build.ts",
-        "build:docs": "tsx tasks/update-readme.ts",
+        "build:docs": "tsx tasks/update-filters-list.ts",
         "build:lib": "rollup --config rollup.config.ts --configPlugin typescript",
         "validate:assets": "tsx tasks/validate.ts",
         "clear": "rimraf ./dist && rimraf ./rollup.cache",
