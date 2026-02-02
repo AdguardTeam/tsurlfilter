@@ -8,11 +8,12 @@ release-naming:
   next-version-name: ${bamboo.inject.version}
   applies-to-branches: true
 
-# Should specify two environments in master branch to make auto-deploy trigger
-# work for both branches from bamboo branched plans.
+# Should specify all environments in master branch to make auto-deploy trigger
+# work for all branches from bamboo branched plans.
 environments:
   - npmjs 3.2.X
   - npmjs 3.3.X
+  - npmjs 4.0.X
 
 npmjs 3.2.X:
   docker: &docker
@@ -65,6 +66,18 @@ npmjs 3.3.X:
         # git branch name `stable/dnr-rulesets-3.3`, '/' is replaced with '-'
         # in Bamboo
         branch: stable-dnr-rulesets-3.3
+  tasks: *tasks
+  requirements: *requirements
+  notifications: *notifications
+
+npmjs 4.0.X:
+  docker: *docker
+  # run auto-deploy only after successful build for dnr-rulesets v4.0.X
+  triggers:
+    - build-success:
+        # git branch name `stable/dnr-rulesets-4.0`, '/' is replaced with '-'
+        # in Bamboo
+        branch: stable-dnr-rulesets-4.0
   tasks: *tasks
   requirements: *requirements
   notifications: *notifications
