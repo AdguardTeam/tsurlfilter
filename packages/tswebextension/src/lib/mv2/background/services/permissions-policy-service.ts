@@ -6,10 +6,11 @@ import {
     RequestType,
 } from '@adguard/tsurlfilter';
 
-import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
+import { FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { ContentType } from '../../../common/request-type';
 import { nanoid } from '../../../common/utils/nanoid';
-import { requestContextStorage, type RequestContextStorage, type RequestContext } from '../request';
+import { getRuleTexts, type RuleTextProvider } from '../../../common/utils/rule-text-provider';
+import { type RequestContextStorage, type RequestContext } from '../request';
 
 /**
  * Permissions Policy service.
@@ -23,17 +24,28 @@ export class PermissionsPolicyService {
     /**
      * Request context storage.
      */
-    private contextStorage: RequestContextStorage;
+    private readonly contextStorage: RequestContextStorage;
+
+    /**
+     * Engine API for retrieving rule texts.
+     */
+    private readonly engineApi: RuleTextProvider;
 
     /**
      * Constructor.
      *
      * @param contextStorage Request context storage.
      * @param filteringLog Filtering log.
+     * @param ruleTextProvider Rule text provider.
      */
-    constructor(contextStorage: RequestContextStorage, filteringLog: FilteringLogInterface) {
+    constructor(
+        contextStorage: RequestContextStorage,
+        filteringLog: FilteringLogInterface,
+        ruleTextProvider: RuleTextProvider,
+    ) {
         this.filteringLog = filteringLog;
         this.contextStorage = contextStorage;
+        this.engineApi = ruleTextProvider;
     }
 
     /**
@@ -105,6 +117,8 @@ export class PermissionsPolicyService {
                     });
                 }
 
+                const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
+
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.ApplyPermissionsRule,
                     data: {
@@ -119,6 +133,8 @@ export class PermissionsPolicyService {
                         requestType: ContentType.PermissionsPolicy,
                         filterId: rule.getFilterListId(),
                         ruleIndex: rule.getIndex(),
+                        appliedRuleText,
+                        originalRuleText,
                         timestamp: Date.now(),
                         isAllowlist: rule.isAllowlist(),
                         isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
@@ -131,15 +147,17 @@ export class PermissionsPolicyService {
             }
         }
 
-        this.contextStorage.update(requestId, {
-            responseHeaders: responseHeaders ? [
-                ...responseHeaders,
-                ...permissionsPolicyHeaders,
-            ] : permissionsPolicyHeaders,
-        });
+        if (permissionsPolicyHeaders.length > 0) {
+            this.contextStorage.update(requestId, {
+                responseHeaders: responseHeaders ? [
+                    ...responseHeaders,
+                    ...permissionsPolicyHeaders,
+                ] : permissionsPolicyHeaders,
+            });
 
-        return true;
+            return true;
+        }
+
+        return false;
     }
 }
-
-export const permissionsPolicyService = new PermissionsPolicyService(requestContextStorage, defaultFilteringLog);

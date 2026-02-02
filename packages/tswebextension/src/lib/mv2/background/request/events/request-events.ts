@@ -6,12 +6,11 @@ import { MAIN_FRAME_ID } from '../../../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../../../common/filtering-log';
 import { getRequestType } from '../../../../common/request-type';
 import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
-import { tabsApi } from '../../api';
-import CookieUtils from '../../services/cookie-filtering/utils';
-import { type TabFrameRequestContextMV2 } from '../../tabs/tabs-api';
+import { type TabFrameRequestContextMV2, type TabsApi } from '../../tabs/tabs-api';
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { DocumentLifecycle } from '../../../../common/interfaces';
 import { browserDetectorMV2 } from '../../utils/browser-detector';
+import { splitMultilineCookies } from '../../../../common/cookie-filtering/utils';
 
 import { RequestEvent, type RequestData } from './request-event';
 
@@ -51,6 +50,8 @@ export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType &
  * Request events class.
  */
 export class RequestEvents {
+    private static tabsApi: TabsApi;
+
     public static onBeforeRequest = new RequestEvent<
         OnBeforeRequestDetailsType,
         WebRequest.OnBeforeRequestOptions
@@ -274,8 +275,8 @@ export class RequestEvents {
          */
         if (!referrerUrl) {
             // Try to get referrer from tab state during address bar navigation.
-            referrerUrl = tabsApi.getTabMainFrame(tabId)?.url
-                || tabsApi.getTabFrame(tabId, requestFrameId)?.url
+            referrerUrl = RequestEvents.tabsApi?.getTabMainFrame(tabId)?.url
+                || RequestEvents.tabsApi?.getTabFrame(tabId, requestFrameId)?.url
                 || url;
         }
 
@@ -358,7 +359,7 @@ export class RequestEvents {
          * https://bugzilla.mozilla.org/show_bug.cgi?id=1349151#c1.
          */
         if (responseHeaders && isFirefox) {
-            CookieUtils.splitMultilineCookies(responseHeaders);
+            splitMultilineCookies(responseHeaders);
         }
 
         const context = requestContextStorage.update(requestId, {

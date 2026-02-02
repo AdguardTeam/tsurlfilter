@@ -1,11 +1,4 @@
-import {
-    MODIFIER_ASSIGN_OPERATOR,
-    MODIFIERS_SEPARATOR,
-    NETWORK_RULE_EXCEPTION_MARKER,
-    NETWORK_RULE_SEPARATOR,
-    PIPE_MODIFIER_SEPARATOR,
-} from '@adguard/agtree';
-import { NETWORK_RULE_OPTIONS } from '@adguard/tsurlfilter';
+import { PIPE_MODIFIER_SEPARATOR } from '@adguard/agtree';
 
 import { type AllowlistConfiguration, Allowlist as CommonAllowlist } from '../../common/allowlist';
 import { getUpperLevelDomain } from '../../common/utils/url';
@@ -13,7 +6,7 @@ import { getUpperLevelDomain } from '../../common/utils/url';
 /**
  * The allowlist is used to exclude certain websites from filtering.
  * Blocking rules are not applied to the sites in the list.
- * The allow list can also be inverted.
+ * The allowlist can also be inverted.
  * In inverted mode, the application will unblock ads everywhere except for the
  * sites added to this list.
  */
@@ -67,16 +60,10 @@ export class AllowlistApi extends CommonAllowlist {
         }
 
         const concatenatedUniqueDomains = Array.from(new Set(domains)).join(PIPE_MODIFIER_SEPARATOR);
-        // e.g. '@@$document,to=example.com|example.org'
-        return [
-            NETWORK_RULE_EXCEPTION_MARKER,
-            NETWORK_RULE_SEPARATOR,
-            NETWORK_RULE_OPTIONS.DOCUMENT,
-            MODIFIERS_SEPARATOR,
-            NETWORK_RULE_OPTIONS.TO,
-            MODIFIER_ASSIGN_OPERATOR,
-            concatenatedUniqueDomains,
-        ].join('');
+        // Adding $important to ensure the allowlist rule takes precedence over
+        // blocking rules that use important modifiers (AG-42867)
+        // e.g. '@@$document,important,to=example.com|example.org'
+        return `@@$document,important,to=${concatenatedUniqueDomains}`;
     }
 
     /**
@@ -94,6 +81,13 @@ export class AllowlistApi extends CommonAllowlist {
      * @returns Combined rule in AG format.
      */
     public combineAllowListRulesForDNR(): string {
+        // In inverted allowlist mode with an empty list, we must not block anything anywhere.
+        // To ensure that browser DNR does not block requests, generate a global allowlist
+        // rule that applies to all documents.
+        if (this.inverted && this.domains.length === 0) {
+            return '@@$document,important';
+        }
+
         const allDomains = this.domains.map((domain) => {
             // Map subdomain masks to upper domains records, because masks itself
             // will be ignored by DNR. Transforming masks to upper domains will

@@ -181,4 +181,179 @@ describe('RegExpUtils', () => {
             expect(RegExpUtils.removeNegationFromRegexPattern(pattern)).toBe(expected);
         });
     });
+
+    describe('getLengthRegexp', () => {
+        describe('should return correct length regex', () => {
+            test.each([
+                {
+                    min: 1,
+                    max: 2,
+                    expected: '/^(?=.{1,2}$).*/s',
+                },
+                {
+                    min: 9,
+                    max: null,
+                    expected: '/^(?=.{9,}$).*/s',
+                },
+                {
+                    min: null,
+                    max: 10,
+                    expected: '/^(?=.{0,10}$).*/s',
+                },
+                {
+                    min: null,
+                    max: null,
+                    expected: '/^(?=.{0,}$).*/s',
+                },
+            ])('should return correct length regex for min: $min and max: $max', ({ min, max, expected }) => {
+                expect(RegExpUtils.getLengthRegexp(min, max)).toBe(expected);
+            });
+        });
+
+        describe('regexp should match as expected', () => {
+            test.each([
+                // basic cases
+                {
+                    min: 1,
+                    max: 2,
+                    actual: '',
+                    expected: false,
+                },
+                {
+                    min: 1,
+                    max: 2,
+                    actual: 'a',
+                    expected: true,
+                },
+                {
+                    min: 1,
+                    max: 2,
+                    actual: 'a'.repeat(2),
+                    expected: true,
+                },
+                {
+                    min: 1,
+                    max: 2,
+                    actual: 'a'.repeat(3),
+                    expected: false,
+                },
+
+                // max not specified
+                {
+                    min: 1,
+                    max: null,
+                    actual: '',
+                    expected: false,
+                },
+                {
+                    min: 1,
+                    max: null,
+                    actual: 'a',
+                    expected: true,
+                },
+                {
+                    min: 1,
+                    max: null,
+                    actual: 'a'.repeat(100),
+                    expected: true,
+                },
+
+                // min not specified
+                {
+                    min: null,
+                    max: 2,
+                    actual: '',
+                    expected: true,
+                },
+                {
+                    min: null,
+                    max: 2,
+                    actual: 'a',
+                    expected: true,
+                },
+                {
+                    min: null,
+                    max: 2,
+                    actual: 'a'.repeat(3),
+                    expected: false,
+                },
+
+                // both min and max not specified
+                {
+                    min: null,
+                    max: null,
+                    actual: '',
+                    expected: true,
+                },
+                {
+                    min: null,
+                    max: null,
+                    actual: 'a',
+                    expected: true,
+                },
+                {
+                    min: null,
+                    max: null,
+                    actual: 'a'.repeat(100),
+                    expected: true,
+                },
+
+                // matching new lines
+                {
+                    min: 2,
+                    max: 4,
+                    actual: 'a\n',
+                    expected: true,
+                },
+                {
+                    min: 2,
+                    max: 4,
+                    actual: 'a\nb',
+                    expected: true,
+                },
+                {
+                    min: 2,
+                    max: 4,
+                    actual: 'a\nb\n',
+                    expected: true,
+                },
+                {
+                    min: 2,
+                    max: 4,
+                    actual: 'a\nb\nc',
+                    expected: false,
+                },
+            ])('should return $expected for min: $min and max: $max', ({
+                min,
+                max,
+                actual,
+                expected,
+            }) => {
+                const regexp = RegExpUtils.getLengthRegexp(min, max);
+                // remove leading and trailing slashes and 's' flag
+                const withoutSlashes = regexp.substring(1, regexp.length - 2);
+
+                expect(new RegExp(withoutSlashes, 's').test(actual)).toBe(expected);
+            });
+        });
+    });
+
+    describe('globToRegExp', () => {
+        test.each([
+            {
+                actual: '*example*text*',
+                expected: '/^.*example.*text.*$/s',
+            },
+            {
+                actual: '*example*$*.com',
+                expected: '/^.*example.*\\$.*\\.com$/s',
+            },
+            {
+                actual: '*[test]*{test}*',
+                expected: '/^.*\\[test\\].*\\{test\\}.*$/s',
+            },
+        ])("should return '$expected' for glob '$actual'", ({ actual, expected }) => {
+            expect(RegExpUtils.globToRegExp(actual)).toBe(expected);
+        });
+    });
 });

@@ -12,22 +12,26 @@ import { type CosmeticContentResult } from './cosmetic-content-result';
  */
 export class CosmeticStylesResult implements CosmeticContentResult {
     /**
-     * Collection of generic rules.
+     * Collection of generic native CSS rules.
+     * These rules are not using Extended CSS.
      */
     public generic: CosmeticRule[];
 
     /**
-     * Collection of specific rules.
+     * Collection of specific native CSS rules.
+     * These rules are not using Extended CSS.
      */
     public specific: CosmeticRule[];
 
     /**
-     * Collection of generic ext-css rules.
+     * Collection of generic Extended CSS rules.
+     * These rules are using Extended CSS engine.
      */
     public genericExtCss: CosmeticRule[];
 
     /**
-     * Collection of specific ext-css rules.
+     * Collection of specific Extended CSS rules.
+     * These rules are using Extended CSS engine.
      */
     public specificExtCss: CosmeticRule[];
 

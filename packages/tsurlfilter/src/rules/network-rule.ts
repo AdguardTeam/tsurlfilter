@@ -1,5 +1,6 @@
 import { type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
+import { defaultParserOptions, NetworkRuleParser, type ParserOptions } from '@adguard/agtree/parser';
 
 import { EMPTY_STRING } from '../common/constants';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
@@ -34,7 +35,7 @@ import {
     OPTIONS_DELIMITER,
 } from './network-rule-options';
 import { Pattern } from './pattern';
-import { type IRule, RULE_INDEX_NONE } from './rule';
+import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 import { SimpleRegex } from './simple-regex';
 
 /**
@@ -299,6 +300,14 @@ export enum NetworkRuleGroupOptions {
  */
 export class NetworkRule implements IRule {
     /**
+     * Parser options for network rules.
+     */
+    private static readonly PARSER_OPTIONS: ParserOptions = {
+        ...defaultParserOptions,
+        isLocIncluded: false,
+    };
+
+    /**
      * Rule index.
      */
     private readonly ruleIndex: number;
@@ -307,6 +316,11 @@ export class NetworkRule implements IRule {
      * Filter list ID.
      */
     private readonly filterListId: number;
+
+    /**
+     * Rule text.
+     */
+    private readonly ruleText?: string;
 
     /**
      * Allowlist flag.
@@ -565,6 +579,15 @@ export class NetworkRule implements IRule {
     }
 
     /**
+     * Returns the rule text.
+     *
+     * @returns Rule text.
+     */
+    public getText(): string | undefined {
+        return this.ruleText;
+    }
+
+    /**
      * Each rule has its own priority, which is necessary when several rules
      * match the request and the filtering system needs to select one of them.
      * Priority is measured as a positive integer.
@@ -813,15 +836,15 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Retrieves the header modifier value.
+     * Retrieves the header modifier matcher.
      *
-     * @returns The header modifier value or null if none.
+     * @returns The header modifier matcher or null if none.
      */
-    public getHeaderModifierValue(): HttpHeaderMatcher | null {
+    public getHeaderModifierMatcher(): HttpHeaderMatcher | null {
         if (!this.headerModifier) {
             return null;
         }
-        return this.headerModifier.getHeaderModifierValue();
+        return this.headerModifier.getHeaderModifierMatcher();
     }
 
     /**
@@ -1156,7 +1179,7 @@ export class NetworkRule implements IRule {
             return false;
         }
 
-        const ruleData = this.getHeaderModifierValue();
+        const ruleData = this.getHeaderModifierMatcher();
 
         if (!ruleData) {
             return false;
@@ -1211,30 +1234,46 @@ export class NetworkRule implements IRule {
      * It parses this rule and extracts the rule pattern (see {@link SimpleRegex}),
      * and rule modifiers.
      *
-     * @param node AST node of the network rule.
+     * @param ruleText Rule text.
      * @param filterListId ID of the filter list this rule belongs to.
      * @param ruleIndex Line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
+     * @param node Optional pre-parsed network rule node to avoid re-parsing.
      *
-     * @throws Error if it fails to parse the rule.
+     * @throws Error if it fails to parse the rule or if the rule is not a network rule.
      */
-    constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
+    constructor(
+        ruleText: string,
+        filterListId: number = FILTER_LIST_ID_NONE,
+        ruleIndex: number = RULE_INDEX_NONE,
+        node?: NetworkRuleNode,
+    ) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
-        this.allowlist = node.exception;
 
-        const pattern = node.pattern.value;
+        // Store rule text in the instance if the rule is not indexed in FiltersStorage.
+        // When filterListId or ruleIndex is NONE, the rule text cannot be retrieved
+        // from the engine and must be available via getText().
+        if (filterListId === FILTER_LIST_ID_NONE || ruleIndex === RULE_INDEX_NONE) {
+            this.ruleText = ruleText;
+        }
+
+        // Use provided node or parse the rule text
+        const parsedNode = node ?? NetworkRuleParser.parse(ruleText, NetworkRule.PARSER_OPTIONS);
+        this.allowlist = parsedNode.exception;
+
+        const pattern = parsedNode.pattern.value;
         if (pattern && hasSpaces(pattern)) {
             throw new SyntaxError('Rule has spaces, seems to be an host rule');
         }
 
-        if (node.modifiers?.children?.length) {
-            this.loadOptions(node.modifiers);
+        if (parsedNode.modifiers?.children?.length) {
+            this.loadOptions(parsedNode.modifiers);
         }
 
-        if (NetworkRule.isTooGeneral(node)) {
-            throw new SyntaxError(`Rule is too general: ${RuleGenerator.generate(node)}`);
+        if (NetworkRule.isTooGeneral(parsedNode)) {
+            throw new SyntaxError(`Rule is too general: ${RuleGenerator.generate(parsedNode)}`);
         }
 
         this.calculatePriorityWeight();
@@ -2074,5 +2113,14 @@ export class NetworkRule implements IRule {
         if (this.toModifier) {
             throw new SyntaxError('modifier $to is not compatible with $denyallow modifier');
         }
+    }
+
+    /**
+     * Checks if the rule is unsafe.
+     *
+     * @returns True if the rule is unsafe, false otherwise.
+     */
+    public isUnsafe(): boolean {
+        return this.getAdvancedModifier() !== null;
     }
 }

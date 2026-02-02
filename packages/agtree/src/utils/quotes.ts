@@ -4,10 +4,14 @@
 
 import {
     BACKTICK_QUOTE,
+    CLOSE_PARENTHESIS,
+    CLOSE_SQUARE_BRACKET,
     COMMA,
     DOUBLE_QUOTE,
     EMPTY,
     ESCAPE_CHARACTER,
+    OPEN_PARENTHESIS,
+    OPEN_SQUARE_BRACKET,
     SINGLE_QUOTE,
     SPACE,
 } from './constants';
@@ -239,16 +243,30 @@ export class QuoteUtils {
      * @returns String without quotes
      */
     public static removeQuotesAndUnescape(string: string): string {
-        if (
-            // We should check for string length to avoid false positives
-            string.length > 1
-            && (string[0] === SINGLE_QUOTE || string[0] === DOUBLE_QUOTE || string[0] === BACKTICK_QUOTE)
-            && string[0] === string[string.length - 1]
-        ) {
-            return QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), string[0]);
-        }
+        const quoteType = QuoteUtils.getStringQuoteType(string);
 
-        return string;
+        switch (quoteType) {
+            case QuoteType.Single:
+                return QuoteUtils.unescapeSingleEscapedOccurrences(
+                    string.slice(1, -1),
+                    SINGLE_QUOTE,
+                );
+
+            case QuoteType.Double:
+                return QuoteUtils.unescapeSingleEscapedOccurrences(
+                    string.slice(1, -1),
+                    DOUBLE_QUOTE,
+                );
+
+            case QuoteType.Backtick:
+                return QuoteUtils.unescapeSingleEscapedOccurrences(
+                    string.slice(1, -1),
+                    BACKTICK_QUOTE,
+                );
+
+            default:
+                return string;
+        }
     }
 
     /**
@@ -272,5 +290,189 @@ export class QuoteUtils {
         return strings
             .map((s) => QuoteUtils.setStringQuoteType(s, quoteType))
             .join(separator);
+    }
+
+    /**
+     * Convert `""` to `\"` within strings inside of attribute selectors,
+     * because it is not compatible with the standard CSS syntax.
+     *
+     * @param selector CSS selector string.
+     *
+     * @returns Escaped CSS selector.
+     *
+     * @note In the legacy syntax, `""` is used to escape double quotes, but it cannot be used
+     * in the standard CSS syntax, so we use conversion functions to handle this.
+     * @note This function is intended to be used on whole attribute selector or whole selector strings.
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content}
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#wildcard}
+     *
+     * @example
+     * ```ts
+     * QuoteUtils.escapeAttributeDoubleQuotes('[attr="value with "" quotes"]');
+     * QuoteUtils.escapeAttributeDoubleQuotes('div[attr="value with "" quotes"] > span');
+     * ```
+     */
+    public static escapeAttributeDoubleQuotes(selector: string): string {
+        const nestingBlockPairs = new Map<string, string>([
+            [OPEN_PARENTHESIS, CLOSE_PARENTHESIS],
+            [OPEN_SQUARE_BRACKET, CLOSE_SQUARE_BRACKET],
+            [SINGLE_QUOTE, SINGLE_QUOTE],
+            [DOUBLE_QUOTE, DOUBLE_QUOTE],
+            [BACKTICK_QUOTE, BACKTICK_QUOTE],
+        ]);
+        const nestingBlockStack: string[] = [];
+        const buffer: string[] = [];
+
+        for (let i = 0; i < selector.length; i += 1) {
+            const char = selector[i];
+
+            // Check if we are inside of an attribute selector's value
+            if (
+                // nesting will be 2 levels deep if we are inside of attribute selector's value
+                nestingBlockStack.length === 2
+                // and the outer block is an attribute selector
+                && nestingBlockStack[0] === CLOSE_SQUARE_BRACKET
+                // and the inner block is a double quote
+                && nestingBlockStack[1] === DOUBLE_QUOTE
+            ) {
+                // We found `""` inside of attribute selector's value
+                if (
+                    char === DOUBLE_QUOTE
+                    && selector[i + 1] === DOUBLE_QUOTE
+                ) {
+                    // Convert `""` to `\"`
+                    buffer.push(ESCAPE_CHARACTER);
+                    buffer.push(DOUBLE_QUOTE);
+
+                    // Skip the next double quote
+                    i += 1;
+
+                    continue;
+                }
+
+                // Normal character inside of attribute selector's value
+                buffer.push(char);
+                continue;
+            }
+
+            // Handle entering nesting blocks
+            if (
+                nestingBlockPairs.has(char)
+                && selector[i - 1] !== ESCAPE_CHARACTER
+            ) {
+                nestingBlockStack.push(nestingBlockPairs.get(char)!);
+                buffer.push(char);
+                continue;
+            }
+
+            // Handle exiting nesting blocks
+            if (
+                nestingBlockStack.length > 0
+                && char === nestingBlockStack[nestingBlockStack.length - 1]
+                && selector[i - 1] !== ESCAPE_CHARACTER
+            ) {
+                nestingBlockStack.pop();
+                buffer.push(char);
+                continue;
+            }
+
+            // Normal character
+            buffer.push(char);
+        }
+
+        return buffer.join(EMPTY);
+    }
+
+    /**
+     * Convert escaped double quotes `\"` to `""` within strings inside of attribute selectors,
+     * because it is not compatible with the standard CSS syntax.
+     *
+     * @param selector CSS selector string.
+     *
+     * @returns Unescaped CSS selector.
+     *
+     * @note In the legacy syntax, `""` is used to escape double quotes, but it cannot be used
+     * in the standard CSS syntax, so we use conversion functions to handle this.
+     * @note This function is intended to be used on whole attribute selector or whole selector strings.
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content}
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#wildcard}
+     *
+     * @example
+     * ```ts
+     * QuoteUtils.unescapeAttributeDoubleQuotes('[attr="value with \\" quotes"]');
+     * QuoteUtils.unescapeAttributeDoubleQuotes('div[attr="value with \\" quotes"] > span');
+     * ```
+     */
+    public static unescapeAttributeDoubleQuotes(selector: string): string {
+        const nestingBlockPairs = new Map<string, string>([
+            [OPEN_PARENTHESIS, CLOSE_PARENTHESIS],
+            [OPEN_SQUARE_BRACKET, CLOSE_SQUARE_BRACKET],
+            [SINGLE_QUOTE, SINGLE_QUOTE],
+            [DOUBLE_QUOTE, DOUBLE_QUOTE],
+            [BACKTICK_QUOTE, BACKTICK_QUOTE],
+        ]);
+        const nestingBlockStack: string[] = [];
+        const buffer: string[] = [];
+
+        for (let i = 0; i < selector.length; i += 1) {
+            const char = selector[i];
+
+            // Check if we are inside of an attribute selector's value
+            if (
+                // nesting will be 2 levels deep if we are inside of attribute selector's value
+                nestingBlockStack.length === 2
+                // and the outer block is an attribute selector
+                && nestingBlockStack[0] === CLOSE_SQUARE_BRACKET
+                // and the inner block is a double quote
+                && nestingBlockStack[1] === DOUBLE_QUOTE
+            ) {
+                // We found `\"` inside of attribute selector's value
+                if (
+                    char === ESCAPE_CHARACTER
+                    && selector[i + 1] === DOUBLE_QUOTE
+                ) {
+                    // Convert `\"` to `""`
+                    buffer.push(DOUBLE_QUOTE);
+                    buffer.push(DOUBLE_QUOTE);
+
+                    // Skip the next double quote
+                    i += 1;
+
+                    continue;
+                }
+
+                // Normal character inside of attribute selector's value
+                buffer.push(char);
+                continue;
+            }
+
+            // Handle entering nesting blocks
+            if (
+                nestingBlockPairs.has(char)
+                && selector[i - 1] !== ESCAPE_CHARACTER
+            ) {
+                nestingBlockStack.push(nestingBlockPairs.get(char)!);
+                buffer.push(char);
+                continue;
+            }
+
+            // Handle exiting nesting blocks
+            if (
+                nestingBlockStack.length > 0
+                && char === nestingBlockStack[nestingBlockStack.length - 1]
+                && selector[i - 1] !== ESCAPE_CHARACTER
+            ) {
+                nestingBlockStack.pop();
+                buffer.push(char);
+                continue;
+            }
+
+            // Normal character
+            buffer.push(char);
+        }
+
+        return buffer.join(EMPTY);
     }
 }

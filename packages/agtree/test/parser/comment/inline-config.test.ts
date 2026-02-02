@@ -4,8 +4,6 @@ import { ConfigCommentParser } from '../../../src/parser/comment/config-comment-
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { ConfigCommentGenerator } from '../../../src/generator/comment/config-comment-generator';
-import { ConfigCommentSerializer } from '../../../src/serializer/comment/config-comment-serializer';
-import { ConfigCommentDeserializer } from '../../../src/deserializer/comment/config-comment-deserializer';
 
 describe('ConfigCommentParser', () => {
     test('isConfigComment', () => {
@@ -570,26 +568,5 @@ describe('ConfigCommentParser', () => {
         expect(parseAndGenerate('! aglint-disable rule1, rule2 -- comment')).toEqual(
             '! aglint-disable rule1, rule2 -- comment',
         );
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            '! aglint-disable-next-line',
-            '! aglint-disable-next-line -- comment',
-            '! aglint-disable-next-line rule1',
-            '! aglint-disable-next-line rule1 -- comment',
-            '! aglint-disable-next-line rule1, rule2',
-            '! aglint-disable-next-line rule1, rule2 -- comment',
-            // complex case
-            // eslint-disable-next-line max-len
-            '! aglint rule1: "off", rule2: [1, 2], rule3: ["error", { "max": 100 }] -- this is a comment -- this doesn\'t matter',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                ConfigCommentParser,
-                ConfigCommentGenerator,
-                ConfigCommentSerializer,
-                ConfigCommentDeserializer,
-            );
-        });
     });
 });

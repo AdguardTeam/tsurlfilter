@@ -3,8 +3,6 @@ import { describe, test, expect } from 'vitest';
 import { type AnyExpressionNode } from '../../../src/nodes';
 import { LogicalExpressionParser } from '../../../src/parser/misc/logical-expression-parser';
 import { LogicalExpressionGenerator } from '../../../src/generator/misc/logical-expression-generator';
-import { LogicalExpressionSerializer } from '../../../src/serializer/misc/logical-expression-serializer';
-import { LogicalExpressionDeserializer } from '../../../src/deserializer/misc/logical-expression-deserializer';
 
 describe('LogicalExpressionParser', () => {
     // TODO: Refactor to test.each
@@ -404,29 +402,5 @@ describe('LogicalExpressionParser', () => {
         expect(() => LogicalExpressionGenerator.generate(<any>{ type: 'Unknown' })).toThrowError(
             'Unexpected node type',
         );
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            // simple expressions
-            'a',
-            '(a)',
-            '!a',
-            '!!a',
-            '!(!a)',
-            'a||b',
-
-            // complex expressions
-            '((!!a) || (!(b))) && ((!!(!!c)))',
-            // eslint-disable-next-line max-len
-            '(adguard && !adguard_ext_safari) && (adguard_ext_android || (adguard_ext_chromium && (!adguard_ext_firefox)))',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                LogicalExpressionParser,
-                LogicalExpressionGenerator,
-                LogicalExpressionSerializer,
-                LogicalExpressionDeserializer,
-            );
-        });
     });
 });

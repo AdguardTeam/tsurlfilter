@@ -1,4 +1,5 @@
 /* eslint-disable prefer-regex-literals */
+import { logger } from '../utils/logger';
 import {
     findNextUnescapedIndex,
     isAlphaNumeric,
@@ -516,6 +517,49 @@ export class SimpleRegex {
         }
 
         return new RegExp(parts[0], modifiers);
+    }
+
+    /**
+     * Converts a string representation of a regular expression into a RegExp object.
+     *
+     * @param literal String representation of the regular expression.
+     *
+     * @returns A RegExp object if the input is a valid regular expression literal, otherwise the original string.
+     */
+    public static fromLiteral(literal: string): string | RegExp {
+        // Early check for regexp marker
+        if (literal.length < 2 || !literal.startsWith('/')) {
+            return literal;
+        }
+
+        let pattern = '';
+        let flags = '';
+        let inCharClass = false;
+
+        for (let i = 1; i < literal.length; i += 1) {
+            const char = literal.charAt(i);
+            if (char === '[' && literal[i - 1] !== '\\') {
+                inCharClass = true;
+            } else if (char === ']' && literal[i - 1] !== '\\') {
+                inCharClass = false;
+            } else if (literal[i] === '/' && literal[i - 1] !== '\\' && !inCharClass) {
+                pattern = literal.slice(1, i);
+                flags = literal.slice(i + 1);
+                break;
+            }
+        }
+
+        // Didn't find the ending slash
+        if (!pattern) {
+            return literal;
+        }
+
+        try {
+            return new RegExp(pattern, flags);
+        } catch (e) {
+            logger.warn(`[tsurl.SimpleRegex.fromLiteral]: Invalid regular expression literal: ${literal}:`, e);
+            return literal;
+        }
     }
 
     /**

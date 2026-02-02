@@ -4,8 +4,6 @@ import { CommentParser } from '../../../src/parser/comment/comment-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { CommentRuleGenerator } from '../../../src/generator/comment';
-import { CommentRuleSerializer } from '../../../src/serializer/comment/comment-rule-serializer';
-import { CommentRuleDeserializer } from '../../../src/deserializer/comment/comment-rule-deserializer';
 
 describe('CommentRuleParser', () => {
     test('isCommentRule', () => {
@@ -793,27 +791,5 @@ describe('CommentRuleParser', () => {
         );
 
         expect(parseAndGenerate('! This is just a comment')).toEqual('! This is just a comment');
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            '[Adblock Plus 2.0]',
-            '[Adblock Plus 2.0; AdGuard]',
-            '!+ NOT_OPTIMIZED',
-            '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac)',
-            '!#if (adguard && !adguard_ext_safari)',
-            '! Homepage: example.org',
-            '! aglint-enable rule1, rule2 -- comment',
-            '# aglint-enable rule1, rule2 -- comment',
-            '! This is just a comment',
-            '# This is just a comment',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                CommentParser,
-                CommentRuleGenerator,
-                CommentRuleSerializer,
-                CommentRuleDeserializer,
-            );
-        });
     });
 });
