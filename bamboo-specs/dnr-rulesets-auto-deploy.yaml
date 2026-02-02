@@ -8,8 +8,11 @@ release-naming:
   next-version-name: ${bamboo.inject.version}
   applies-to-branches: true
 
+# Should specify two environments in master branch to make auto-deploy trigger
+# work for both branches from bamboo branched plans.
 environments:
   - npmjs 3.2.X
+  - npmjs 3.3.X
 
 npmjs 3.2.X:
   docker: &docker
@@ -53,3 +56,15 @@ npmjs 3.2.X:
         - webhook:
             name: Deploy webhook
             url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+npmjs 3.3.X:
+  docker: *docker
+  # run auto-deploy only after successful build for dnr-rulesets v3.3.X
+  triggers:
+    - build-success:
+        # git branch name `stable/dnr-rulesets-3.3`, '/' is replaced with '-'
+        # in Bamboo
+        branch: stable-dnr-rulesets-3.3
+  tasks: *tasks
+  requirements: *requirements
+  notifications: *notifications
