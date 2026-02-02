@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING:** Updated [@adguard/tsurlfilter] to v4.0.0 with `FilterList` API.
 - **BREAKING: Replaced `FilterListPreprocessor` with `FilterList`** from `@adguard/tsurlfilter`.
   - Use `new FilterList(content)` instead of `FilterListPreprocessor.preprocess(content)`.
   - Use `filterList.getContent()` instead of `preprocessed.filterList`.
