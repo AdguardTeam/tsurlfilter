@@ -2,17 +2,17 @@ adg_os_any|adg_ext_any:
   name: trusted-replace-xhr-response
   version_added: 1.7.3
   description: Replaces response content of xhr requests if all given parameters match.
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#-%EF%B8%8F-trusted-replace-xhr-response
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-replace-xhr-response
   parameters:
     - name: pattern
       required: false
-      description: argument for matching contents of responseText that should be replaced. If set, replacement is required.
+      description: Argument for matching contents of responseText that should be replaced. If set, replacement is required.
     - name: replacement
       required: false
-      description: should be set if pattern is set. String to replace matched content with. Empty string to remove content.
+      description: Should be set if pattern is set. String to replace matched content with. Empty string to remove content.
     - name: propsToMatch
       required: false
-      description: string of space-separated properties to match for extra condition.
+      description: String of space-separated properties to match for extra condition.
 
 ubo_any:
   name: trusted-replace-xhr-response.js
@@ -22,13 +22,13 @@ ubo_any:
   parameters:
     - name: pattern
       required: true
-      description: argument for matching contents of responseText that should be replaced. Possible values: If set, replacement is required.
+      description: Argument for matching contents of responseText that should be replaced. Possible values: If set, replacement is required.
     - name: replacement
       required: false
-      description: should be set if first parameter is set. String to replace the response text content matched by pattern. Empty string to remove content. Defaults to empty string.
+      description: Should be set if first parameter is set. String to replace the response text content matched by pattern. Empty string to remove content. Defaults to empty string.
     - name: propsToMatch
       required: false
-      description: string of space-separated properties to match.
+      description: String of space-separated properties to match.
 
 abp_any:
   name: replace-xhr-response
