@@ -43,6 +43,7 @@ ubo_any:
   parameters:
     - name: property
       required: true
+      description: Property (chain of properties joined by `.`) attached to `window` object accessed inside `<script>` tag we want to break.
 
 abp_any:
   name: abort-current-inline-script
