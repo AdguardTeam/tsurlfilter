@@ -2,13 +2,13 @@ common:
   parameters:
     - name: name
       required: true
-      description: cookie name to be set
+      description: Cookie name to be set.
     - name: value
       required: true
-      description: cookie value
+      description: Cookie value.
     - name: path
       required: false
-      description: cookie path, defaults to /
+      description: Cookie path, defaults to /.
 
 adg_os_any|adg_ext_any:
   name: set-cookie-reload
@@ -18,7 +18,7 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: domain
       required: false
-      description: cookie domain, if not set origin will be set as domain, if the domain does not match the origin, the cookie will not be set.
+      description: Cookie domain, if not set origin will be set as domain, if the domain does not match the origin, the cookie will not be set.
   aliases:
     - set-cookie.js
 
