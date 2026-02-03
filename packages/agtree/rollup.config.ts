@@ -64,8 +64,6 @@ const main = {
         'src/index.ts',
         'src/parser/index.ts',
         'src/generator/index.ts',
-        'src/serializer/index.ts',
-        'src/deserializer/index.ts',
         'src/converter/index.ts',
         'src/utils/index.ts',
     ],

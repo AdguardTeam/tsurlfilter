@@ -5,8 +5,6 @@ import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/nodes';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { NetworkRuleGenerator } from '../../../src/generator/network';
-import { NetworkRuleSerializer } from '../../../src/serializer/network/network-rule-serializer';
-import { NetworkRuleDeserializer } from '../../../src/deserializer/network/network-rule-deserializer';
 
 describe('NetworkRuleParser', () => {
     test('parse', () => {
@@ -972,24 +970,5 @@ describe('NetworkRuleParser', () => {
         expect(parseAndGenerate('@@||example.org^$removeheader=header-name')).toEqual(
             '@@||example.org^$removeheader=header-name',
         );
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            'example.com',
-            '$script,redirect-rule=noopjs,domain=aternos.org',
-            '@@||example.com',
-            '@@||example.com^$script,third-party',
-            '/ads.js^$script',
-            '@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i',
-            '||example.com^', // without modificators
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                NetworkRuleParser,
-                NetworkRuleGenerator,
-                NetworkRuleSerializer,
-                NetworkRuleDeserializer,
-            );
-        });
     });
 });

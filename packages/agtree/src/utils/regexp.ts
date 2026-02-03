@@ -2,6 +2,8 @@
  * @file Regular expression utilities
  */
 
+import GlobToRegExp from 'glob-to-regexp';
+
 import {
     ASTERISK,
     CARET,
@@ -258,5 +260,35 @@ export class RegExpUtils {
         }
 
         return result;
+    }
+
+    /**
+     * Creates a length-matching regular expression string: /^(?=.{min,max}$).*\/s
+     * Where:
+     * - (?=.{min,max}$) is a lookahead that ensures the string length is between min and max
+     * - .* matches any character (including newlines, due to the 's' flag)
+     *
+     * @param min Minimum length or `null` for no minimum (default to `0`).
+     * @param max Maximum length or `null` for no maximum (default to no maximum).
+     *
+     * @returns Length-matching regular expression string.
+     */
+    public static getLengthRegexp(min: number | null, max: number | null): string {
+        return `/^(?=.{${min ?? 0},${max ?? ''}}$).*/s`;
+    }
+
+    /**
+     * Converts a glob pattern to a RegExp string with slashes and 's' flag.
+     *
+     * @param glob Glob pattern to convert.
+     *
+     * @returns RegExp string.
+     *
+     * @example
+     * // Returns '/^foo.*bar$/s'
+     * RegExpUtils.globToRegExp('foo*bar');
+     */
+    public static globToRegExp(glob: string): string {
+        return `${REGEX_MARKER + GlobToRegExp(glob).source + REGEX_MARKER}s`;
     }
 }

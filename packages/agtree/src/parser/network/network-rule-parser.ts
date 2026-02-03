@@ -137,7 +137,7 @@ export class NetworkRuleParser extends BaseParser {
      * @param rule Network rule to check
      * @returns The index of the separator character, or -1 if there is no separator
      */
-    private static findNetworkRuleSeparatorIndex(rule: string): number {
+    public static findNetworkRuleSeparatorIndex(rule: string): number {
         // As we are looking for the last separator, we start from the end of the string
         for (let i = rule.length - 1; i >= 0; i -= 1) {
             // If we find a potential separator, we should check

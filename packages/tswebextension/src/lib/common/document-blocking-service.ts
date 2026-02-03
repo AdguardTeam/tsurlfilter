@@ -1,5 +1,4 @@
 import browser from 'webextension-polyfill';
-import { RuleGenerator } from '@adguard/agtree/generator';
 import { NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { type ConfigurationMV2 } from '../mv2/background/configuration';
@@ -13,6 +12,7 @@ import { defaultFilteringLog, FilteringEventType } from './filtering-log';
 import { ContentType } from './request-type';
 import { type BrowserDetector } from './utils/browser-detector';
 import { logger } from './utils/logger';
+import { getRuleTexts } from './utils/rule-text-provider';
 
 /**
  * Params for {@link DocumentBlockingService.getDocumentBlockingResponse}.
@@ -137,7 +137,7 @@ export abstract class DocumentBlockingServiceCommon {
      *
      * @param data Data for document request processing.
      */
-    protected static logEvent(data: GetDocumentBlockingResponseParams): void {
+    protected logEvent(data: GetDocumentBlockingResponseParams): void {
         const {
             tabId,
             eventId,
@@ -148,6 +148,8 @@ export abstract class DocumentBlockingServiceCommon {
         } = data;
 
         // public filtering log event
+        const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
             data: {
@@ -159,6 +161,8 @@ export abstract class DocumentBlockingServiceCommon {
                 frameUrl: referrerUrl,
                 filterId: rule.getFilterListId(),
                 ruleIndex: rule.getIndex(),
+                appliedRuleText,
+                originalRuleText,
                 isAllowlist: rule.isAllowlist(),
                 isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
                 isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
@@ -186,25 +190,17 @@ export abstract class DocumentBlockingServiceCommon {
     }
 
     /**
-     * Returns rule text from the network rule.
-     *
-     * Note: The generated rule text is returned
-     * and it may differ slightly from the actually applied rule text.
+     * Returns rule text from the engine.
      *
      * @param rule Network rule.
      *
      * @returns Rule text or "no-rule" placeholder if rule is not found.
      */
     protected getRuleText(rule: NetworkRule): string {
-        const ruleNode = this.engineApi.retrieveRuleNode(rule.getFilterListId(), rule.getIndex());
+        const ruleText = this.engineApi.retrieveRuleText(rule.getFilterListId(), rule.getIndex());
 
-        // Generate rule text or use default text.
         // Practically, we should always have a rule text, but just in case we have a fallback.
-        const ruleText = ruleNode
-            ? RuleGenerator.generate(ruleNode)
-            : DocumentBlockingServiceCommon.UNKNOWN_RULE_TEXT;
-
-        return ruleText;
+        return ruleText ?? DocumentBlockingServiceCommon.UNKNOWN_RULE_TEXT;
     }
 
     /**

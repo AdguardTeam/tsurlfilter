@@ -5,8 +5,6 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { isNull } from '../../../src/utils/type-guards';
 import { SimpleCommentGenerator } from '../../../src/generator/comment/simple-comment-generator';
-import { SimpleCommentSerializer } from '../../../src/serializer/comment/simple-comment-serializer';
-import { SimpleCommentDeserializer } from '../../../src/deserializer/comment/simple-comment-deserializer';
 
 describe('SimpleCommentParser', () => {
     describe('isSimpleComment', () => {
@@ -210,20 +208,6 @@ describe('SimpleCommentParser', () => {
             }
 
             expect(SimpleCommentGenerator.generate(node)).toBe(expected);
-        });
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            '! This is just a comment',
-            '# This is just a comment',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                SimpleCommentParser,
-                SimpleCommentGenerator,
-                SimpleCommentSerializer,
-                SimpleCommentDeserializer,
-            );
         });
     });
 });

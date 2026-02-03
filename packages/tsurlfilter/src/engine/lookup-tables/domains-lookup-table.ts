@@ -1,3 +1,4 @@
+import { type NetworkRuleParts } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { type Request } from '../../request';
@@ -7,8 +8,10 @@ import { fastHash } from '../../utils/string-utils';
 import { type ILookupTable } from './lookup-table';
 
 /**
- * Domain lookup table. Key is the domain name hash.
+ * Domain lookup table.
  */
+// TODO: This lookup table has a lot of common code with HostnameLookupTable,
+// probably we can extract common code into a base class
 export class DomainsLookupTable implements ILookupTable {
     /**
      * Count of rules added to this lookup table.
@@ -17,6 +20,7 @@ export class DomainsLookupTable implements ILookupTable {
 
     /**
      * Domain lookup table. Key is the domain name hash.
+     * Value is an array of rule indexes in the storage.
      */
     private readonly domainsLookupTable = new Map<number, number[]>();
 
@@ -35,56 +39,53 @@ export class DomainsLookupTable implements ILookupTable {
         this.ruleStorage = storage;
     }
 
-    /**
-     * Implements the ILookupTable interface for DomainsLookupTable.
-     *
-     * @param rule Rule to add.
-     * @param storageIdx Index of the rule in the storage.
-     *
-     * @returns True if the rule was added.
-     */
-    public addRule(rule: NetworkRule, storageIdx: number): boolean {
-        const permittedDomains = rule.getPermittedDomains();
-        if (!permittedDomains || permittedDomains.length === 0) {
+    /** @inheritdoc */
+    public addRule(ruleParts: NetworkRuleParts, storageIdx: number): boolean {
+        if (ruleParts.domainsStart === undefined || ruleParts.domainsEnd === undefined) {
             return false;
         }
 
-        if (permittedDomains.some(DomainModifier.isWildcardOrRegexDomain)) {
+        const filteredDomains: string[] = [];
+
+        const domains = ruleParts.text.slice(ruleParts.domainsStart, ruleParts.domainsEnd).split('|');
+        if (domains.length === 0) {
             return false;
         }
 
-        permittedDomains.forEach((domain) => {
+        for (const domain of domains) {
+            if (DomainModifier.isWildcardOrRegexDomain(domain)) {
+                return false;
+            }
+
+            if (!domain.startsWith('~')) {
+                filteredDomains.push(domain);
+            }
+        }
+
+        if (filteredDomains.length === 0) {
+            return false;
+        }
+
+        filteredDomains.forEach((domain) => {
             const hash = fastHash(domain);
-
-            // Add the rule to the lookup table
             let rulesIndexes = this.domainsLookupTable.get(hash);
             if (!rulesIndexes) {
                 rulesIndexes = [];
+                this.domainsLookupTable.set(hash, rulesIndexes);
             }
             rulesIndexes.push(storageIdx);
-            this.domainsLookupTable.set(hash, rulesIndexes);
         });
 
         this.rulesCount += 1;
         return true;
     }
 
-    /**
-     * Implements the ILookupTable interface method.
-     *
-     * @returns The count of rules added to this lookup table.
-     */
+    /** @inheritdoc */
     public getRulesCount(): number {
         return this.rulesCount;
     }
 
-    /**
-     * Implements the ILookupTable interface method.
-     *
-     * @param request Request to check.
-     *
-     * @returns Array of matching network rules.
-     */
+    /** @inheritdoc */
     public matchAll(request: Request): NetworkRule[] {
         const result: NetworkRule[] = [];
 
@@ -100,12 +101,33 @@ export class DomainsLookupTable implements ILookupTable {
         for (let i = 0; i < domains.length; i += 1) {
             const hash = fastHash(domains[i]);
             const rulesIndexes = this.domainsLookupTable.get(hash);
-            if (rulesIndexes) {
-                for (let j = 0; j < rulesIndexes.length; j += 1) {
-                    const rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
-                    if (rule && rule.match(request)) {
-                        result.push(rule);
+            if (!rulesIndexes) {
+                continue;
+            }
+            for (let j = 0; j < rulesIndexes.length; j += 1) {
+                let rule: NetworkRule | null = null;
+                let shouldRemove: boolean = false;
+
+                try {
+                    rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
+
+                    if (!rule) {
+                        shouldRemove = true;
                     }
+                } catch (e) {
+                    shouldRemove = true;
+                }
+
+                if (shouldRemove) {
+                    // Fast tokenizing possibly allowed invalid rules
+                    // Remove the rule index from the lookup table but keep the same array reference
+                    rulesIndexes.splice(j, 1);
+                    j -= 1;
+                    continue;
+                }
+
+                if (rule && rule.match(request)) {
+                    result.push(rule);
                 }
             }
         }

@@ -16,5 +16,6 @@ vi.mock('@adguard/logger', () => {
         Logger: function Logger() {
             return loggerMocks;
         },
+        getErrorMessage: vi.fn(),
     };
 });

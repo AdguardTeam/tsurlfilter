@@ -7,6 +7,34 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [4.0.0] - TBD
+
+### Added
+
+- Export of `CssTokenStream`.
+- `CssTokenStream.hasNativeCssPseudoClass()` for checking
+  if there are any pseudo-classes that may be considered as extended
+  but also supported natively as standard CSS, i.e. `:has()`, `:is()`, `:not()`.
+- Improved HTML filtering rule syntax support which includes following ([#96]):
+- Full CSS selector syntax support in parser, generator:
+  combinators (`<space>`, `>`, `+`, `~`, `,`), pseudo-class selectors (e.g., `:nth-child(2n)`, `:first-of-type`, etc.),
+  attribute selector operators (`^=`, `$=`, `*=`, `~=`, `|=`), attribute selector flags (e.g., `i`, `s`),
+  and attribute selector value quoting (different quote styles and unquoted values).
+- [`:contains()`] pseudo-class support.
+- Conversion of [deprecated HTML filtering special attribute selectors] to [`:contains()`] pseudo-class.
+- `parseHtmlFilteringRuleBodies` option to `ParserOptions` which enables/disables
+parsing of CSS selector into AST nodes in HTML filtering rule bodies, defaults to `false`.
+
+[#96]: https://github.com/AdguardTeam/tsurlfilter/issues/96
+[`:contains()`]: https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains
+[deprecated HTML filtering special attribute selectors]: https://adguard.com/kb/ru/general/ad-filtering/create-own-filters/#html-filtering-rules--special-attributes
+
+### Removed
+
+- Serializer and Deserializer APIs.
+
+[4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-4.0.0
+
 ## [3.4.3] - 2025-12-11
 
 ### Added

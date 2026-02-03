@@ -13,45 +13,58 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
 - [Idea](#idea)
 - [Installation](#installation)
 - [API description](#api-description)
-    - [Public properties](#public-properties)
-        - [`TSURLFILTER_VERSION`](#tsurlfilter_version)
-    - [Public classes](#public-classes)
-        - [Engine](#engine)
-        - [**Constructor**](#constructor)
-        - [**matchRequest**](#matchrequest)
-        - [**matchFrame**](#matchframe)
-        - [Starting engine](#starting-engine)
-        - [Matching requests](#matching-requests)
-        - [Retrieving cosmetic data](#retrieving-cosmetic-data)
-        - [MatchingResult](#matchingresult)
-        - [**getBasicResult**](#getbasicresult)
-        - [**getDocumentBlockingResult**](#getdocumentblockingresult)
-        - [**getCosmeticOption**](#getcosmeticoption)
-        - [**Other rules**](#other-rules)
-        - [CosmeticResult](#cosmeticresult)
-        - [Applying cosmetic result - CSS](#applying-cosmetic-result---css)
-        - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
-        - [DnsEngine](#dnsengine)
-        - [**Constructor**](#constructor-1)
-        - [**match**](#match)
-        - [Matching hostname](#matching-hostname)
-        - [RuleSyntaxUtils](#rulesyntaxutils)
-        - [Public methods](#public-methods)
-        - [FilterListPreprocessor](#filterlistpreprocessor)
-        - [Understanding the data structure](#understanding-the-data-structure)
-            - [Requirements](#requirements)
-            - [`PreprocessedFilterList` interface](#preprocessedfilterlist-interface)
-            - [Example to illustrate the requirements](#example-to-illustrate-the-requirements)
-        - [Public methods](#public-methods-1)
-        - [DeclarativeFilterConverter](#declarativefilterconverter)
-        - [Public methods](#public-methods-2)
-        - [Example of use](#example-of-use)
-        - [Declarative converter documentation](#declarative-converter-documentation)
-        - [Problems](#problems)
-    - [Development](#development)
-    - [NPM scripts](#npm-scripts)
-    - [Excluding peerDependencies](#excluding-peerdependencies)
-    - [Git Hooks](#git-hooks)
+  - [Public properties](#public-properties)
+    - [`TSURLFILTER_VERSION`](#tsurlfilter_version)
+  - [Public classes](#public-classes)
+    - [Engine](#engine)
+      - [**Factory**](#factory)
+        - [**Sync mode**](#sync-mode)
+        - [**Async mode**](#async-mode)
+        - [Example](#example)
+      - [**matchRequest**](#matchrequest)
+      - [**matchFrame**](#matchframe)
+      - [Starting engine](#starting-engine)
+      - [Matching requests](#matching-requests)
+      - [Retrieving cosmetic data](#retrieving-cosmetic-data)
+    - [MatchingResult](#matchingresult)
+      - [**getBasicResult**](#getbasicresult)
+      - [**getDocumentBlockingResult**](#getdocumentblockingresult)
+      - [**getCosmeticOption**](#getcosmeticoption)
+      - [**Other rules**](#other-rules)
+    - [CosmeticResult](#cosmeticresult)
+      - [Applying cosmetic result - CSS](#applying-cosmetic-result---css)
+      - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
+    - [DnsEngine](#dnsengine)
+      - [**Constructor**](#constructor)
+      - [**match**](#match)
+      - [Matching hostname](#matching-hostname)
+    - [RuleSyntaxUtils](#rulesyntaxutils)
+      - [Public methods](#public-methods)
+    - [FilterList](#filterlist)
+      - [Key Features](#key-features)
+      - [Constructor](#constructor-1)
+      - [Conversion Data Structure](#conversion-data-structure)
+      - [Main Methods](#main-methods)
+        - [Getting Converted Content](#getting-converted-content)
+        - [Getting Rule Text](#getting-rule-text)
+        - [Getting Original Rule Text](#getting-original-rule-text)
+        - [Getting Converted Rule Original (Strict)](#getting-converted-rule-original-strict)
+        - [Restoring Original Content](#restoring-original-content)
+      - [Static Methods](#static-methods)
+      - [Usage Example](#usage-example)
+    - [DeclarativeFilterConverter](#declarativefilterconverter)
+      - [Public methods](#public-methods-1)
+      - [Example of use](#example-of-use)
+      - [Declarative converter documentation](#declarative-converter-documentation)
+      - [Problems](#problems)
+- [Converting filters to declarative rulesets](#converting-filters-to-declarative-rulesets)
+  - [API usage](#api-usage)
+  - [CLI usage](#cli-usage)
+    - [Extracting filters from rulesets](#extracting-filters-from-rulesets)
+- [Development](#development)
+  - [NPM scripts](#npm-scripts)
+  - [Excluding peerDependencies](#excluding-peerdependencies)
+  - [Git Hooks](#git-hooks)
 
 ## <a id="idea"></a>Idea
 
@@ -89,19 +102,55 @@ Version of the library.
 
 Engine is a main class of this library. It represents the filtering functionality for loaded rules
 
-##### **Constructor**
+##### **Factory**
+
+You can create engine via factories. There are two modes: sync and async.
+
+**Important**: The `content` field in `EngineFactoryOptions` accepts either a raw string or a `FilterList` instance. If you provide a string, it will be automatically wrapped in a `FilterList` and converted. If you provide a `FilterList` instance, you have full control over the conversion process by optionally providing conversion data to the `FilterList` constructor.
+
+**Note**: `tsurlfilter` only supports AdGuard filter syntax. If you need to convert rules from other syntaxes (e.g., uBlock Origin, Adblock Plus), use the `FilterList` class which automatically converts rules to AdGuard format via `RawRuleConverter.convertToAdg()`. This conversion should be done at the filter list level before the engine processes the rules.
+
+###### **Sync mode**
+
+Create engine synchronously.
 
 ```ts
 /**
- * Creates an instance of Engine
- * Parses filtering rules and creates a filtering engine of them
+ * Creates an instance of the network engine in sync mode.
  *
- * @param ruleStorage storage
- * @param configuration optional configuration
+ * @param options Engine factory options.
  *
- * @throws
+ * @returns An instance of the network engine.
  */
-constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined);
+public static createSync(options: EngineFactoryOptions): Engine;
+```
+
+###### **Async mode**
+
+Create engine asynchronously. We use this approach in AdGuard browser extension to avoid UI lags.
+
+```ts
+/**
+ * Creates an instance of the network engine in async mode.
+ *
+ * @param options Engine factory options.
+ *
+ * @returns An instance of the network engine.
+ */
+public static createAsync(options: EngineFactoryOptions): Promise<Engine>;
+```
+
+###### Example
+
+```ts
+const engine = await Engine.createAsync({
+    filters: [
+        {
+            id: 1,
+            content: '||example.com^',
+        },
+    ],
+});
 ```
 
 ##### **matchRequest**
@@ -132,13 +181,7 @@ matchFrame(frameUrl: string): NetworkRule | null;
 ##### Starting engine
 
 ```ts
-import {
-    BufferRuleList,
-    Engine,
-    FilterListPreprocessor,
-    RuleStorage,
-    setConfiguration,
-} from '@adguard/tsurlfilter';
+import { Engine, setConfiguration } from '@adguard/tsurlfilter';
 
 const rawFilter = [
   '[AdGuard]',
@@ -146,11 +189,6 @@ const rawFilter = [
   '! Description: This is just an example filter.',
   'example.com##h1',
 ].join('\n');
-
-// Practically, you can read this data from the storage
-const processedFilter = FilterListPreprocessor.preprocess(rawFilter);
-const list = new BufferRuleList(0, processedFilter.filterList, false, false, false, processedFilter.sourceMap);
-const ruleStorage = new RuleStorage([list]);
 
 const config = {
     engine: 'extension',
@@ -160,7 +198,15 @@ const config = {
 
 setConfiguration(config);
 
-const engine = new Engine(ruleStorage);
+// Create engine using the factory method
+const engine = Engine.createSync({
+    filters: [
+        {
+            id: 0,
+            content: rawFilter,
+        },
+    ],
+});
 
 console.log(`Engine loaded with ${engine.getRulesCount()} rule(s)`);
 ```
@@ -351,165 +397,164 @@ This module is not used in the engine directly, but it can be used in other libr
 /**
  * Checks if rule can be matched by domain
  *
- * @param node Rule node
+ * @param ruleText Rule text
  * @param domain Domain to check
  */
-public static isRuleForDomain(node: AnyRule, domain: string): boolean
+public static isRuleForDomain(ruleText: string, domain: string): boolean
 ```
 
 ```ts
 /**
  * Checks if rule can be matched by URL
  *
- * @param node Rule node
+ * @param ruleText Rule text
  * @param url URL to check
  */
-public static isRuleForUrl(node: AnyRule, url: string): boolean;
+public static isRuleForUrl(ruleText: string, url: string): boolean;
 ```
 
-#### <a id="filter-list-preprocessor"></a>FilterListPreprocessor
+#### <a id="filter-list"></a>FilterList
 
-Provides a utility to process filter lists before using them in the engine.
+`FilterList` is a class that represents a converted filter list with efficient access to both converted and original rule content.
 
-##### Understanding the data structure
+##### Key Features
 
-###### Requirements
+- **Automatic Rule Conversion**: Converts filter rules to AdGuard format using `RawRuleConverter.convertToAdg()`
+- **O(1) Access**: Provides constant-time access to original filtering rules via conversion data
+- **Bidirectional Mapping**: Maintains mappings between converted and original rules
+- **Content Restoration**: Can restore the original filter list from converted content
 
-The processed data structure must meet two requirements:
-
-1. Provide the data necessary for the operation of the filtering engine:
-   - Binary serialized filter list without invalid rules and comments
-2. Make it possible to display the applied rules (and their original equivalent) in the filtering log
-   (only for debugging purposes):
-   - Source map (maps the start index in the serialized buffer to the line start index in the raw filter list)
-   - Raw filter list
-   - Conversion map (maps the start index in the raw filter list to the original rule, if the rule was converted)
-
-###### `PreprocessedFilterList` interface
+##### Constructor
 
 ```ts
 /**
- * Represents a preprocessed filter list.
+ * Creates a new FilterList instance.
+ *
+ * @param content Filter list content.
+ * @param data Optional conversion data. If not provided, the filter list will be prepared.
  */
-interface PreprocessedFilterList {
-    /**
-     * Raw filter list, but rules are converted to the AdGuard format.
-     */
-    rawFilterList: string;
+constructor(content: string, data?: ConversionData)
+```
 
-    /**
-     * Serialized version of the rawFilterList.
-     */
-    filterList: Uint8Array[];
+##### Conversion Data Structure
 
-    /**
-     * Mapping between the original and converted rules.
-     * Key is the line start index in the rawFilterList, value is the converted rule.
-     */
-    conversionMap: Record<string, string>;
+The `ConversionData` interface tracks the relationship between converted and original rules:
 
+```ts
+interface ConversionData {
     /**
-     * Source map for the rawFilterList. Key is the start index in the serialized buffer, value is the line start index in the rawFilterList.
+     * Original filter list rules that were converted.
      */
-    sourceMap: Record<string, number>;
+    originals: string[];
+    
+    /**
+     * Conversion map.
+     * Maps line start offsets in the converted content to indexes in the originals array.
+     * Keys are 0-based line start offsets, values are 0-based indexes in originals array.
+     */
+    conversions: Record<number, number>;
 }
 ```
 
-###### Example to illustrate the requirements
+##### Main Methods
 
-Suppose we want to use the following filter list:
-
-```adblock
-! Title: Test filter list
-example.com##+js(set, foo, 1)
-example.com##h1
-```
-
-As you can see, the filter list contains two rules:
-
-- first is a uBO rule, and
-- the second is a common rule (which is compatible with AdGuard).
-
-Before loading this list into the engine, we have to convert its rules to AdGuard format.
-So we need such a `rawFilterList`:
-
-```adblock
-! Title: Test filter list
-example.com#%#//scriptlet('ubo-set', 'foo', '1')
-example.com##h1
-```
-
-and its binary serialized form, which will be used by the engine: `filterList`.
-
-When we initialize the engine, it scans the byte buffer `filterList` and builds the filtering engine, lookup tables, etc.
-and assigns the start indexes from the byte buffer `filterList` to the TSUrlFilter rule instances.
-
-We don't know anything about the original rules at the engine level and we don't need to know it.
-
-However, on the extension level, we know all of the properties of the preprocessed filter list.
-When a rule is applied, engine reports us the applied TSUrlFilter rule instance and its start index in the byte buffer `filterList`.
-
-So, when we want to display the applied rule in the filtering log, we can do the following:
-
-1. We will receive the byte buffer start index for the applied rule from the engine.
-1. To get the **applied rule text**, we will use the `sourceMap` property to map the byte buffer start index to the line start index in the `rawFilterList`,
-   - We can do this with the `getRuleSourceIndex` helper method:
-
-     ```ts
-     const lineStartIndex = getRuleSourceIndex(byteBufferStartIndex, sourceMap);
-     ```
-
-   - We can get rule text from the `rawFilterList` by the line start index with the `getRuleSourceText` helper function:
-
-     ```ts
-     const ruleText = getRuleSourceText(lineStartIndex, rawFilterList);
-     ```
-
-1. To get the **original rule text**, we will use the `conversionMap` property to find the original rule text from the line start index in the `rawFilterList`, if we have a key in the `conversionMap` for the start index, we will get the original rule text
-
-For example, for the first rule, the applied rule text will be `example.com#%#//scriptlet('ubo-set', 'foo', '1')`
-and the original rule text will be `example.com##+js(set, foo, 1)`.
-For the second rule, the applied rule text will be `example.com##h1` and the original rule text will be `undefined`,
-which means that the rule was not converted.
-
-##### Public methods
+###### Getting Converted Content
 
 ```ts
 /**
- * Processes the raw filter list and converts it to the AdGuard format.
- *
- * @param filterList Raw filter list to convert.
- * @param parseHosts If true, the preprocessor will parse host rules.
- * @returns A {@link PreprocessedFilterList} object which contains the converted filter list,
- * the mapping between the original and converted rules, and the source map.
+ * Returns the converted content.
  */
-public static preprocess(filterList: string, parseHosts = false): PreprocessedFilterList;
+public getContent(): string;
 ```
+
+###### Getting Rule Text
 
 ```ts
 /**
- * Gets the original filter list text from the preprocessed filter list.
+ * Returns the rule text for a given offset in the converted content.
+ * This may be a converted rule.
  *
- * @param preprocessedFilterList Preprocessed filter list.
- * @returns Original filter list text.
+ * @param offset Line start offset in the converted content.
+ * @returns Rule as string, or null if not found.
  */
-public static getOriginalFilterListText(preprocessedFilterList: RawListWithConversionMap): string;
+public getRuleText(offset: number): string | null;
 ```
+
+###### Getting Original Rule Text
 
 ```ts
 /**
- * Gets the original rules from the preprocessed filter list.
+ * Returns the original rule text for a given offset.
+ * If the rule was converted, returns the original from conversion data.
+ * If not converted, returns the rule text (which is already the original).
  *
- * @param preprocessedFilterList Preprocessed filter list.
- * @returns Array of original rules.
+ * @param offset Line start offset in the converted content.
+ * @returns Original rule text, or null if offset is invalid.
  */
-public static getOriginalRules(preprocessedFilterList: RawListWithConversionMap): string[];
+public getOriginalRuleText(offset: number): string | null;
 ```
 
-where
+###### Getting Converted Rule Original (Strict)
 
 ```ts
-type RawListWithConversionMap = Pick<PreprocessedFilterList, 'rawFilterList' | 'conversionMap'>;
+/**
+ * Returns the original rule text only if the rule was actually converted.
+ * Unlike getOriginalRuleText(), this returns null for unconverted rules.
+ *
+ * @param offset Line start offset in the converted content.
+ * @returns Original rule text if converted, or null if not converted or invalid offset.
+ */
+public getConvertedRuleOriginal(offset: number): string | null;
+```
+
+###### Restoring Original Content
+
+```ts
+/**
+ * Restores the original filter list content from the converted content.
+ *
+ * @returns Original filter list content.
+ */
+public getOriginalContent(): string;
+```
+
+##### Static Methods
+
+```ts
+/**
+ * Creates an empty converted filter list.
+ */
+public static createEmpty(): FilterList;
+
+/**
+ * Creates an empty conversion data.
+ */
+public static createEmptyConversionData(): ConversionData;
+```
+
+##### Usage Example
+
+```ts
+import { FilterList } from '@adguard/tsurlfilter';
+
+// Create a filter list (automatically converts rules)
+const filterList = new FilterList('||example.com^$third-party');
+
+// Get converted content
+const converted = filterList.getContent();
+
+// Get rule at specific offset
+const rule = filterList.getRuleText(0);
+
+// Get original rule if it was converted
+const original = filterList.getOriginalRuleText(0);
+
+// Restore full original content
+const originalContent = filterList.getOriginalContent();
+
+// Create from existing conversion data (no re-conversion)
+const data = filterList.getConversionData();
+const filterList2 = new FilterList(converted, data);
 ```
 
 #### <a id="declarative-filter-converter"></a>DeclarativeFilterConverter
@@ -574,7 +619,7 @@ convertDynamicRuleSets(
 ##### Example of use
 
 ```ts
-import { CompatibilityTypes, FilterListPreprocessor, setConfiguration } from '@adguard/tsurlfilter';
+import { CompatibilityTypes, FilterList, setConfiguration } from '@adguard/tsurlfilter';
 import { DeclarativeFilterConverter, Filter } from '@adguard/tsurlfilter/es/declarative-converter';
 
 const rawFilter1 = [
@@ -603,7 +648,7 @@ let filterId = 0;
 ;(async () => {
     const { ruleSet: staticRuleSet } = await converter.convertStaticRuleSet(
         new Filter(filterId++, {
-            getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(rawFilter1)),
+            getContent: () => Promise.resolve(new FilterList(rawFilter1)),
         }),
     );
 
@@ -613,7 +658,7 @@ let filterId = 0;
     const { declarativeRulesToCancel, ruleSet: dynamicRuleSet } = await converter.convertDynamicRuleSets(
         [
             new Filter(filterId++, {
-                getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(rawFilter2)),
+                getContent: () => Promise.resolve(new FilterList(rawFilter2)),
             }),
         ],
         [staticRuleSet],

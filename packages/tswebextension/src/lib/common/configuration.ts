@@ -1,7 +1,7 @@
 import { z as zod } from 'zod';
 import { LogLevel } from '@adguard/logger';
-import { filterListChunksValidator, filterListSourceMapValidator } from '@adguard/tsurlfilter';
 import { EXTENDED_CSS_VERSION } from '@adguard/extended-css/version';
+import { conversionDataValidator } from '@adguard/tsurlfilter';
 
 import packageJson from '../../../package.json';
 
@@ -86,18 +86,18 @@ export const stealthConfigValidator = zod.object({
 export type StealthConfig = zod.infer<typeof stealthConfigValidator>;
 
 /**
- * Filter list configuration validator for MV2.
+ * Basic filter list configuration validator.
  */
 export const basicFilterValidator = zod.object({
     /**
      * Filter list text content.
      */
-    content: filterListChunksValidator,
+    content: zod.string(),
 
     /**
-     * Source map.
+     * Conversion data.
      */
-    sourceMap: filterListSourceMapValidator.optional(),
+    conversionData: zod.optional(conversionDataValidator),
 });
 
 export type BasicFilterValidator = zod.infer<typeof basicFilterValidator>;

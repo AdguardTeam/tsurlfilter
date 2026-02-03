@@ -95,9 +95,12 @@ import { ENABLED_FILTERS_IDS } from '../../constants';
     const handleAppMessage = async (message: any) => {
         switch (message.type) {
             case 'OPEN_ASSISTANT': {
-                const active = await browser.tabs.query({ active: true });
-                if (active[0]?.id) {
-                    await adguardApi.openAssistant(active[0].id);
+                // We need the last focused window because if the assistant is opened in incognito mode,
+                // it won’t be clear where to inject the assistant. AG-42726
+                const currentWindow = await browser.windows.getLastFocused();
+                const [activeTab] = await browser.tabs.query({ active: true, windowId: currentWindow.id });
+                if (activeTab?.id) {
+                    await adguardApi.openAssistant(activeTab.id);
                 }
                 break;
             }
@@ -114,11 +117,11 @@ import { ENABLED_FILTERS_IDS } from '../../constants';
         return handleAppMessage(message);
     });
 
-    // Disable Adguard in 1 minute
+    // Disable Adguard in 2 minute, since one minute might not be enough for testing
     setTimeout(async () => {
         adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
         adguardApi.onAssistantCreateRule.unsubscribe(onAssistantCreateRule);
         await adguardApi.stop();
         console.log('Adguard API MV3 has been disabled.');
-    }, 60 * 1000);
+    }, 2 * 60 * 1000);
 })();

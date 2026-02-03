@@ -223,7 +223,15 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const cosmeticResult = engineApi.matchCosmetic(matchQuery);
 
-        data.extCssRules = CosmeticApi.getExtCssRules(cosmeticResult, areHitsStatsCollected);
+        data.extCssRules = CosmeticApi.getExtCssRules(
+            cosmeticResult,
+            {
+                areHitsStatsCollected,
+                // always true for MV3
+                // since minimum version of mv3 browser already supports :has()
+                isNativeHasSupported: true,
+            },
+        );
 
         return data;
     }
@@ -472,7 +480,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     public static logScriptRules(params: LogJsRulesParamsMv3): void {
         const scriptRules = CosmeticApi.filterScriptRulesForLog(params);
 
-        super.logScriptRules(params, scriptRules);
+        super.logScriptRules(params, scriptRules, engineApi);
     }
 
     /**

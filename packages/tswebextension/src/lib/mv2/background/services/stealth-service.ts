@@ -5,6 +5,7 @@ import { type WebRequest } from 'webextension-polyfill';
 import { findHeaderByName, removeHeader } from '../../../common/utils/headers';
 import { getHost, isThirdPartyRequest } from '../../../common/utils/url';
 import { FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
+import { getRuleTexts, type RuleTextProvider } from '../../../common/utils/rule-text-provider';
 import { type StealthConfig } from '../../../common/configuration';
 import { StealthHelper } from '../../../common/stealth-helper';
 import { StealthActions } from '../../../common/stealth-actions';
@@ -15,6 +16,11 @@ import { type RequestContext } from '../request';
  * Stealth service module.
  */
 export class StealthService {
+    /**
+     * Engine API for retrieving rule texts.
+     */
+    private readonly engineApi: RuleTextProvider;
+
     /**
      * Headers.
      */
@@ -77,10 +83,12 @@ export class StealthService {
      *
      * @param appContext App context.
      * @param filteringLog Filtering log.
+     * @param ruleTextProvider Rule text provider.
      */
-    constructor(appContext: AppContext, filteringLog: FilteringLogInterface) {
+    constructor(appContext: AppContext, filteringLog: FilteringLogInterface, ruleTextProvider: RuleTextProvider) {
         this.appContext = appContext;
         this.filteringLog = filteringLog;
+        this.engineApi = ruleTextProvider;
     }
 
     /**
@@ -196,16 +204,21 @@ export class StealthService {
                 data: {
                     tabId,
                     eventId,
-                    rules: Array.from(appliedAllowlistRules).map((rule) => ({
-                        filterId: rule.getFilterListId(),
-                        ruleIndex: rule.getIndex(),
-                        isAllowlist: rule.isAllowlist(),
-                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
-                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
-                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
-                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
-                        advancedModifier: rule.getAdvancedModifierValue(),
-                    })),
+                    rules: Array.from(appliedAllowlistRules).map((rule) => {
+                        const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
+                        return {
+                            filterId: rule.getFilterListId(),
+                            ruleIndex: rule.getIndex(),
+                            appliedRuleText,
+                            originalRuleText,
+                            isAllowlist: rule.isAllowlist(),
+                            isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                            isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                            isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                            isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                            advancedModifier: rule.getAdvancedModifierValue(),
+                        };
+                    }),
                     requestUrl,
                     frameUrl: referrerUrl,
                     requestType: contentType,

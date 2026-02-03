@@ -14,13 +14,6 @@ export const ALLOWLIST_FILTER_ID = 100;
 export const CUSTOM_FILTERS_START_ID = 1000 as const;
 
 /**
- * Filter ID for AdGuard Quick Fixes filter.
- *
- * @see {@link https://github.com/AdguardTeam/FiltersRegistry/blob/master/filters/filter_24_QuickFixes/metadata.json}
- */
-export const QUICK_FIXES_FILTER_ID = 24;
-
-/**
  * Filter ID which is used for temporarily disabled rules (as trusted)
  * for the blocking page triggered by rules.
  */

@@ -14,9 +14,11 @@ stages:
       jobs:
         - DoNothing
 
-# Since auto-build is being run only for stable branch:
-# 'stable/dnr-rulesets-3.2' for release v5.2+.
-# We should skip the build stage for other branches.
+# Since auto-build is being run only for stable branches:
+# branch 'stable/dnr-rulesets-3.2' - for AdGuard browser extension v5.2.X.
+# branch 'stable/dnr-rulesets-3.3' - for AdGuard API v3.1.
+# branch 'stable/dnr-rulesets-4.0' - for AdGuard browser extension v5.3.X.
+# we should skip the build stage for other branches.
 DoNothing:
   key: NOTHING
   other:
@@ -73,12 +75,15 @@ notifications: &notifications
           name: Build webhook
           url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
-# Run plan only for 'stable/dnr-rulesets-3.2' (release v5.2+) branch.
+# Run plan only for:
+# branch 'stable/dnr-rulesets-3.2' - for AdGuard browser extension v5.2.X.
+# branch 'stable/dnr-rulesets-3.3' - for AdGuard API v3.1.
+# branch 'stable/dnr-rulesets-4.0' - for AdGuard browser extension v5.3.X.
 # Override is needed to skip the build stage for other branches,
 # because even if branches are not supposed to be run for PRs (due to 'create: manually' above),
 # build was triggered by 'cron' anyway.
 branch-overrides:
-  - '^stable\/dnr-rulesets-3\.2$':
+  - '^stable\/dnr-rulesets-(3\.2|3\.3|4\.0)$':
       stages:
         - Build:
             - Build
@@ -107,8 +112,11 @@ branch-overrides:
 
                   BRANCH="${bamboo.planRepository.branchName}"
 
-                  # Deploy package from "stable/dnr-rulesets-3.2" branch only.
-                  if [ $BRANCH != "stable/dnr-rulesets-3.2" ];
+                  # Deploy package from:
+                  # "stable/dnr-rulesets-3.2",
+                  # "stable/dnr-rulesets-3.3"
+                  # "stable/dnr-rulesets-4.0" branches only.
+                  if [ $BRANCH != "stable/dnr-rulesets-3.2" ] && [ $BRANCH != "stable/dnr-rulesets-3.3" ] && [ $BRANCH != "stable/dnr-rulesets-4.0" ];
                   then
                     echo "deployment is not supported on branch ${BRANCH}, skipping"
                     exit 0;
@@ -143,13 +151,8 @@ branch-overrides:
           - any-task:
               plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
               configuration:
-                commitMessage: 'skipci: Automatic increment build number during auto build'
+                commitMessage: 'skipci: Automatic increment build number during auto build [v${bamboo.inject.version}]'
                 selectedRepository: defaultRepository
-          - any-task:
-              plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
-              configuration:
-                selectedRepository: defaultRepository
-                tagName: dnr-rulesets-v${bamboo.inject.version}
         final-tasks:
           - script:
               interpreter: SHELL

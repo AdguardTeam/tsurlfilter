@@ -106,7 +106,7 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
             return;
         }
 
-        DocumentBlockingService.logEvent(data);
+        this.logEvent(data);
 
         this.redirectToBlockingUrl({
             tabId,

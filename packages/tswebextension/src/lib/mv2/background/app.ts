@@ -1,6 +1,5 @@
 /* eslint-disable class-methods-use-this */
 import { LogLevel } from '@adguard/logger';
-import { type AnyRule } from '@adguard/agtree';
 
 import { type MessageHandler, type AppInterface } from '../../common/app';
 import { type FilteringLog, type FilteringLogEvent } from '../../common/filtering-log';
@@ -476,17 +475,31 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Retrieves a rule node by its filter list identifier and rule index.
+     * Retrieves a rule text by its filter list identifier and rule index.
      *
      * If there's no rule by that index or the rule structure is invalid, it will return null.
      *
      * @param filterId Filter list identifier.
      * @param ruleIndex Rule index.
      *
-     * @returns Rule node or `null`.
+     * @returns Rule text or `null`.
      */
-    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        return this.engineApi.retrieveRuleNode(filterId, ruleIndex);
+    public retrieveRuleText(filterId: number, ruleIndex: number): string | null {
+        return this.engineApi.retrieveRuleText(filterId, ruleIndex);
+    }
+
+    /**
+     * Retrieves an original rule text by its filter list identifier and rule index.
+     *
+     * If there's no rule by that index or the rule structure is invalid, it will return null.
+     *
+     * @param filterId Filter list identifier.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null`.
+     */
+    public retrieveOriginalRuleText(filterId: number, ruleIndex: number): string | null {
+        return this.engineApi.retrieveOriginalRuleText(filterId, ruleIndex);
     }
 
     /**

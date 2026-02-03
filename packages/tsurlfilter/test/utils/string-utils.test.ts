@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
     fastHash,
     fastHash31,
+    findNextNonWhitespace,
+    findNextWhitespace,
+    findPrevNonWhitespace,
     hasUnquotedSubstring,
+    hasWhitespace,
     replaceAll,
     splitByDelimiterWithEscapeCharacter,
     startsAtIndexWith,
@@ -168,5 +172,71 @@ describe('fastHash31', () => {
             expect(hash).toBeGreaterThanOrEqual(1);
             expect(hash).toBeLessThanOrEqual(0x7fffffff);
         }
+    });
+});
+
+describe('hasWhitespace', () => {
+    it('returns true when string has space', () => {
+        expect(hasWhitespace('abc def', 0, 7)).toBe(true);
+    });
+
+    it('returns true when string has tab', () => {
+        expect(hasWhitespace('abc\tdef', 0, 7)).toBe(true);
+    });
+
+    it('returns false when no whitespace is present', () => {
+        expect(hasWhitespace('abcdef', 0, 6)).toBe(false);
+    });
+
+    it('respects start and end boundaries', () => {
+        expect(hasWhitespace('ab c de', 0, 2)).toBe(false); // only "ab"
+        expect(hasWhitespace('ab c de', 2, 4)).toBe(true); // includes space
+    });
+});
+
+describe('findNextNonWhitespace', () => {
+    it('finds first non-whitespace character', () => {
+        expect(findNextNonWhitespace('    abc', 0, 7)).toBe(4);
+        expect(findNextNonWhitespace('\t\tfoo', 0, 5)).toBe(2);
+    });
+
+    it('returns start if already non-whitespace', () => {
+        expect(findNextNonWhitespace('abc', 0, 3)).toBe(0);
+    });
+
+    it('returns length if only whitespace remains', () => {
+        expect(findNextNonWhitespace('   ', 0, 3)).toBe(3);
+    });
+});
+
+describe('findPrevNonWhitespace', () => {
+    it('finds index before trailing whitespace', () => {
+        expect(findPrevNonWhitespace('abc   ', 6)).toBe(3);
+    });
+
+    it('returns same index if already clean', () => {
+        expect(findPrevNonWhitespace('abc', 3)).toBe(3);
+    });
+
+    it('returns 0 if all characters before are whitespace', () => {
+        expect(findPrevNonWhitespace('   ', 3)).toBe(0);
+    });
+});
+
+describe('findNextWhitespace', () => {
+    it('finds index of next space', () => {
+        expect(findNextWhitespace('abc def', 0)).toBe(3);
+    });
+
+    it('finds index of next tab if no space', () => {
+        expect(findNextWhitespace('abc\tdef', 0)).toBe(3);
+    });
+
+    it('returns string length if no whitespace found', () => {
+        expect(findNextWhitespace('abcdef', 0)).toBe(6);
+    });
+
+    it('starts search from the given index', () => {
+        expect(findNextWhitespace('abc def ghi', 4)).toBe(7);
     });
 });
