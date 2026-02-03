@@ -10,17 +10,19 @@ common:
       required: false
       description: Cookie path, defaults to /.
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: set-cookie-reload
   version_added: 1.3.14
   description: Sets a cookie with the specified name and value, path, and domain, and reloads the current page after the cookie setting. If reloading option is not needed, use set-cookie scriptlet.
+  aliases:
+    - set-cookie-reload.js
+    - ubo-set-cookie-reload.js
+    - ubo-set-cookie-reload
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-cookie-reload
   parameters:
     - name: domain
       required: false
       description: Cookie domain, if not set origin will be set as domain, if the domain does not match the origin, the cookie will not be set.
-  aliases:
-    - set-cookie.js
 
 ubo_any:
   name: set-cookie.js
