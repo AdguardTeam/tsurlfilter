@@ -1,5 +1,3 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
   parameters:
     - name: name
@@ -8,18 +6,21 @@ common:
       required: true
     - name: path
       required: false
-    - name: domain
-      required: false
 
 adg_os_any|adg_ext_any:
   name: set-cookie-reload
   version_added: 1.3.14
-  aliases:
-    - set-cookie-reload.js
-    - ubo-set-cookie-reload.js
-    - ubo-set-cookie-reload
+  description: Sets a cookie with the specified name and value, path, and domain, and reloads the current page after the cookie setting. If reloading option is not needed, use set-cookie scriptlet.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-cookie-reload
+  parameters:
+    - name: domain
+      required: false
+      description: cookie domain, if not set origin will be set as domain, if the domain does not match the origin, the cookie will not be set.
+  aliases:
+    - set-cookie.js
 
 ubo_any:
-  name: set-cookie-reload.js
-  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookie-reloadjs-
+  name: set-cookie.js
+  version_added: 1.50.1b0
+  description: Sets a cookie with the specified name, value, and path. Double quotes surrouding the cookie value are allowed.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookiejs-
