@@ -24,8 +24,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Conversion of [deprecated HTML filtering special attribute selectors] to [`:contains()`] pseudo-class.
 - `parseHtmlFilteringRuleBodies` option to `ParserOptions` which enables/disables
 parsing of CSS selector into AST nodes in HTML filtering rule bodies, defaults to `false`.
+- Path-in-domain syntax support for cosmetic rules [#169].
 
 [#96]: https://github.com/AdguardTeam/tsurlfilter/issues/96
+[#169]: https://github.com/AdguardTeam/tsurlfilter/issues/169
 [`:contains()`]: https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains
 [deprecated HTML filtering special attribute selectors]: https://adguard.com/kb/ru/general/ad-filtering/create-own-filters/#html-filtering-rules--special-attributes
 

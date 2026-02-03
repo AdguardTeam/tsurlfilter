@@ -157,6 +157,73 @@ describe('Converter integration tests', () => {
             });
         });
 
+        // https://github.com/AdguardTeam/tsurlfilter/issues/169
+        describe('should convert path-in-domain syntax to $path modifier', () => {
+            test.each([
+                // Basic path in domain
+                {
+                    actual: 'example.org/path##.ad',
+                    expected: ['[$path=/path]example.org##.ad'],
+                },
+                // Path with wildcards
+                {
+                    actual: 'example.org/category/*/item##.ad',
+                    expected: ['[$path=/category/*/item]example.org##.ad'],
+                },
+                // Exception rule with path
+                {
+                    actual: 'example.org/path#@#.ad',
+                    expected: ['[$path=/path]example.org#@#.ad'],
+                },
+                // Multiple domains with different paths - splits into multiple rules
+                {
+                    actual: 'example.com/foo,example.org/bar##.ad',
+                    expected: [
+                        '[$path=/foo]example.com##.ad',
+                        '[$path=/bar]example.org##.ad',
+                    ],
+                },
+                // Mixed paths (some with, some without) - splits into multiple rules
+                {
+                    actual: 'example.org/path,test.com##.ad',
+                    expected: [
+                        '[$path=/path]example.org##.ad',
+                        'test.com##.ad',
+                    ],
+                },
+                // Empty path (root only)
+                {
+                    actual: 'example.org/##.ad',
+                    expected: ['[$path=/]example.org##.ad'],
+                },
+                // Path with query string
+                {
+                    actual: 'example.org/path?query##.ad',
+                    expected: ['[$path=/path?query]example.org##.ad'],
+                },
+                // Path with fragment
+                {
+                    actual: 'example.org/path#anchor##.ad',
+                    expected: ['[$path=/path#anchor]example.org##.ad'],
+                },
+                // Exception domain with path
+                {
+                    actual: 'shop.com/product,~shop.com/product/reviews##.ad',
+                    expected: [
+                        '[$path=/product]shop.com##.ad',
+                        '[$path=/product/reviews]~shop.com##.ad',
+                    ],
+                },
+                // All domains have same path - single rule
+                {
+                    actual: 'example.com/path,example.org/path##.ad',
+                    expected: ['[$path=/path]example.com,example.org##.ad'],
+                },
+            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+            });
+        });
+
         // https://github.com/AdguardTeam/tsurlfilter/blob/7de315b85675ddafaa7457ee1b0c77ddc79f25f0/packages/tsurlfilter/test/rules/rule-converter.test.ts#L192
         describe('should convert uBO responseheader rules', () => {
             test.each([
