@@ -2,10 +2,13 @@ common:
   parameters:
     - name: name
       required: true
+      description: cookie name to be set
     - name: value
       required: true
+      description: cookie value
     - name: path
       required: false
+      description: cookie path, defaults to /
 
 adg_os_any|adg_ext_any:
   name: set-cookie-reload
