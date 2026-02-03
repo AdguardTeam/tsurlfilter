@@ -1,4 +1,4 @@
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: trusted-replace-xhr-response
   version_added: 1.7.3
   description: Replaces response content of xhr requests if all given parameters match.
