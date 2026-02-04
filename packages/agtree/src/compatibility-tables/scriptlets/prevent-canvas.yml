@@ -1,4 +1,4 @@
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-canvas
   version_added: 2.0.1
   description: Prevents calls to HTMLCanvasElement.prototype.getContext and returns null.
