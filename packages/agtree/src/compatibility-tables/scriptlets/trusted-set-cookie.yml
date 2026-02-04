@@ -1,16 +1,36 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
-  name: trusted-set-cookie
-  version_added: 1.7.3
+common:
+  description: Sets a cookie with arbitrary name and value, and with optional ability to offset cookie attribute 'expires', set path and set domain.
   parameters:
     - name: name
       required: true
+      description: Cookie name to be set.
     - name: value
       required: true
+      description: Cookie value to be set.
     - name: offsetExpiresSec
       required: false
+      description: Offset from current time in seconds, after which cookie should expire; defaults to no offset.
     - name: path
       required: false
+      description: Cookie path to be set. Default is `/`.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: trusted-set-cookie
+  version_added: 1.7.3
+  parameters:
     - name: domain
       required: false
+      description: Cookie domain, if not set origin will be set as domain, if the domain does not match the origin, the cookie will not be set.
+
+ubo_any:
+  name: trusted-set-cookie.js
+  version_added: 1.50.1b1
+  aliases:
+    - trusted-set-cookie
+  parameters:
+    - name: tokens
+      required: false
+      description: |-
+       Available tokens are: `reload` and `dontOverwrite`.
+       When `reload` is present, the scriptlet will force a reload of the webpage if the cookie being set was not already set.
+       When `dontOverwrite` is present, the scriptlet will not modify the cookie if it already exists.
