@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Prevents adding event listeners for the specified events and callbacks.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-addEventListener
   version_added: 1.0.4
   aliases:
@@ -15,20 +16,40 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: typeSearch
       required: false
+      description: String or regular expression matching the type (event name).
     - name: listenerSearch
       required: false
+      description: String or regular expression matching the listener function body.
+    - name: additionalArgName
+      required: false
+      description: String, name of the additional argument to match (e.g. "elements").
+    - name: additionalArgValue
+      required: false
+      description: Value corresponding to the additional argument name.
 
 ubo_any:
   name: addEventListener-defuser.js
   aliases:
+    - addEventListener-defuser
+    - aeld
     - aeld.js
+    - prevent-addEventListener
     - prevent-addEventListener.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#addEventListener-defuserjs-
   parameters:
-    - name: typeSearch
+    - name: type
       required: false
-    - name: listenerSearch
+      description: String/regular expression, name of the event listener to defuse.
+    - name: pattern
       required: false
+      description: String/regular expression matching in stringified handler function, narrows down defusing to specific handler.
+    - name: tokens
+      required: false
+      description: |-
+       Available tokens are: `runAt`, `elements` and 'protect'.
+       When `runAt` is present, uBO will take it into account to possibly defer defusing the event listener.
+       When `elements` is present, will be used to apply the scriptlet to only elements matching the selector.
+       When `protect` is present, it tells the scriptlet whether the prevention should be protected, i.e. not overwritten by other code.
 
 abp_any:
   name: prevent-listener
@@ -37,7 +58,10 @@ abp_any:
   parameters:
     - name: type
       required: true
+      description: Pattern that matches the type(s) of event we want to prevent.
     - name: handler
       required: false
+      description: Pattern that matches the event handler's declaration.
     - name: selector
       required: false
+      description: The CSS selector that the event target must match.
