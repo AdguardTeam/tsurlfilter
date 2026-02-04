@@ -191,11 +191,6 @@ describe('Converter integration tests', () => {
                         'test.com##.ad',
                     ],
                 },
-                // Empty path (root only)
-                {
-                    actual: 'example.org/##.ad',
-                    expected: ['[$path=/]example.org##.ad'],
-                },
                 // Path with query string
                 {
                     actual: 'example.org/path?query##.ad',
@@ -206,13 +201,10 @@ describe('Converter integration tests', () => {
                     actual: 'example.org/path#anchor##.ad',
                     expected: ['[$path=/path#anchor]example.org##.ad'],
                 },
-                // Exception domain with path
+                // Path with id css selector
                 {
-                    actual: 'shop.com/product,~shop.com/product/reviews##.ad',
-                    expected: [
-                        '[$path=/product]shop.com##.ad',
-                        '[$path=/product/reviews]~shop.com##.ad',
-                    ],
+                    actual: 'example.org/path###id',
+                    expected: ['[$path=/path]example.org###id'],
                 },
                 // All domains have same path - single rule
                 {

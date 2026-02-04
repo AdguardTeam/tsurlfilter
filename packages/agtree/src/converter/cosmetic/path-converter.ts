@@ -53,11 +53,20 @@ export function convertPathInDomainToModifier(
                 if (slashIndex !== -1) {
                     const domain = trimmedPart.substring(0, slashIndex);
                     const path = trimmedPart.substring(slashIndex);
-                    domainsWithPaths.push({
-                        domain,
-                        path,
-                        exception: domainItem.exception,
-                    });
+
+                    // Skip empty paths
+                    if (path === '/') {
+                        domainsWithoutPaths.push({
+                            domain,
+                            exception: domainItem.exception,
+                        });
+                    } else {
+                        domainsWithPaths.push({
+                            domain,
+                            path,
+                            exception: domainItem.exception,
+                        });
+                    }
                 } else {
                     domainsWithoutPaths.push({
                         domain: trimmedPart,
@@ -74,11 +83,19 @@ export function convertPathInDomainToModifier(
                 const domain = domainValue.substring(0, slashIndex);
                 const path = domainValue.substring(slashIndex); // includes leading /
 
-                domainsWithPaths.push({
-                    domain,
-                    path,
-                    exception: domainItem.exception,
-                });
+                // Skip empty paths
+                if (path === '/') {
+                    domainsWithoutPaths.push({
+                        domain,
+                        exception: domainItem.exception,
+                    });
+                } else {
+                    domainsWithPaths.push({
+                        domain,
+                        path,
+                        exception: domainItem.exception,
+                    });
+                }
             } else {
                 // Domain without path
                 domainsWithoutPaths.push({
