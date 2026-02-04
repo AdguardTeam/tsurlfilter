@@ -1,12 +1,36 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Creates a constant property and assigns it a specified value.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: trusted-set-constant
   version_added: 1.8.2
   parameters:
     - name: property
       required: true
+      description: Property (chain of properties joined by `.`) attached to `window` object.
     - name: value
       required: true
+      description: An arbitrary value to be set.
     - name: stack
       required: false
+      description: String or regular expression that must match the current function call stack trace, defaults to matching every call. If regular expression is invalid, it will be skipped.
+
+ubo_any:
+  name: trusted-set-constant.js
+  aliases:
+    - trusted-set-constant
+    - trusted-set
+    - trusted-set.js
+  parameters:
+    - name: chain
+      required: true
+      description: Property (chain of properties joined by `.`) attached to `window` object.
+    - name: rawValue
+      required: true
+      description: Any arbitrary JSON-compatible value can be set.
+    - name: tokens
+      required: false
+      description: |-
+       Available tokens are: `runAt` and `as`.
+       When `runAt` is present, uBO will take it into account to possibly defer execution of the scriptlet.
+       When `as` is present, uBO will take it into account how the values will be returned.
