@@ -1,7 +1,7 @@
 common:
   description: Prevents a `setTimeout` call if all given parameters match.
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-setTimeout
   version_added: 1.0.4
   aliases:
