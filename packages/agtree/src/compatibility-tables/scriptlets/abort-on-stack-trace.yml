@@ -1,9 +1,5 @@
 common:
   description: Aborts a script when it attempts to utilize (read or write to) the specified property and it's error stack trace contains given value.
-  parameters:
-    - name: property
-      required: true
-      description: Path to a property. The property must be attached to `window`.
 
 adg_os_any|adg_ext_any|adg_safari_any:
   name: abort-on-stack-trace
@@ -18,6 +14,9 @@ adg_os_any|adg_ext_any|adg_safari_any:
     - abp-abort-on-stack-trace
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#abort-on-stack-trace
   parameters:
+    - name: property
+      required: true
+      description: Path to a property. The property must be attached to `window`.
     - name: stack
       required: true
       description: String that must match the current function call stack trace.
@@ -31,6 +30,9 @@ ubo_any:
     - aost.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-stack-tracejs-
   parameters:
+    - name: property
+      required: true
+      description: Path to a property. The property must be attached to `window`.
     - name: stack
       required: false
       description: String/regular expression, the needle to match against the stack trace. If the empty string, only log. Prepend pattern with `!` to test for unmatched patterns in stack trace.
