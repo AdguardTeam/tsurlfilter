@@ -17,3 +17,5 @@ ubo_any:
   name: trusted-set-local-storage-item.js
   version_added: 1.50.1b4
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-set-local-storage-itemjs-
+  aliases:
+    - trusted-set-local-storage-item
