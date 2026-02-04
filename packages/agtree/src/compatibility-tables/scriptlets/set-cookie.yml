@@ -1,15 +1,5 @@
 common:
   description: Sets a cookie with the specified name, value, path, and domain.
-  parameters:
-    - name: name
-      required: true
-      description: Cookie name to be set.
-    - name: value
-      required: true
-      description: Cookie value to be set from one of the predefined values.
-    - name: path
-      required: false
-      description: Cookie path to be set. Default is `/`.
 
 adg_os_any|adg_ext_any|adg_safari_any:
   name: set-cookie
@@ -20,6 +10,15 @@ adg_os_any|adg_ext_any|adg_safari_any:
     - ubo-set-cookie
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-cookie
   parameters:
+    - name: name
+      required: true
+      description: Cookie name to be set.
+    - name: value
+      required: true
+      description: Cookie value to be set from one of the predefined values.
+    - name: path
+      required: false
+      description: Cookie path to be set. Default is `/`.
     - name: domain
       required: false
       description: Cookie domain, if not set origin will be set as domain, if the domain does not match the origin, the cookie will not be set.
@@ -31,6 +30,15 @@ ubo_any:
     - set-cookie
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookiejs-
   parameters:
+    - name: name
+      required: true
+      description: Cookie name to be set.
+    - name: value
+      required: true
+      description: Cookie value to be set from one of the predefined values.
+    - name: path
+      required: false
+      description: Cookie path to be set. Default is `/`.
     - name: tokens
       required: false
       description: |-
