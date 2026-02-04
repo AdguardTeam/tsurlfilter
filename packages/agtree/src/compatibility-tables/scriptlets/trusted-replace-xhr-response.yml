@@ -22,7 +22,8 @@ ubo_any:
   parameters:
     - name: pattern
       required: true
-      description: Argument for matching contents of responseText that should be replaced. Possible values: If set, replacement is required.
+      description: |-
+          Argument for matching contents of responseText that should be replaced. Possible values: If set, replacement is required.
     - name: replacement
       required: false
       description: Should be set if first parameter is set. String to replace the response text content matched by pattern. Empty string to remove content. Defaults to empty string.
