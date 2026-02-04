@@ -25,7 +25,7 @@ ubo_any:
     - name: pattern
       required: true
       description: |-
-          Argument for matching contents of responseText that should be replaced. Possible values: If set, replacement is required.
+        Argument for matching contents of responseText that should be replaced. Possible values: If set, replacement is required.
     - name: replacement
       required: false
       description: Should be set if first parameter is set. String to replace the response text content matched by pattern. Empty string to remove content. Defaults to empty string.
@@ -47,5 +47,6 @@ abp_any:
       description: Everything that matches the regex will be replaced with the replacement value. By default this will be an empty string, so everything that matches the regex will be removed from the XHR response.
     - name: needle
       required: false
-      description: The replacement will only happen if the needle text is present in the response. By default this is an empty string.
-                   If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
+      description: |-
+        The replacement will only happen if the needle text is present in the response. By default this is an empty string.
+        If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
