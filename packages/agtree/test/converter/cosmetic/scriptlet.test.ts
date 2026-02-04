@@ -389,6 +389,10 @@ describe('Scriptlet conversion', () => {
                 expected: 'Scriptlet "trusted-set-cookie" is not supported in uBlock Origin.',
             },
             {
+                actual: String.raw`example.com#%#//scriptlet('trusted-set-constant', 'foo', 'bar')`,
+                expected: 'Scriptlet "trusted-set-constant" is not supported in uBlock Origin.',
+            },
+            {
                 actual: "[$path=/baz]example.com#%#//scriptlet('set-constant', 'foo', 'bar')",
                 expected: 'uBlock Origin scriptlet injection rules do not support cosmetic rule modifiers.',
             },
