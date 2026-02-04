@@ -1,9 +1,5 @@
 common:
   description: Aborts an inline script when it attempts to read or write to the specified property AND when the contents of the `<script>` element contains the specified text or matches the regular expression.
-  parameters:
-    - name: search
-      required: false
-      description: String or regular expression that must match the inline script content.
 
 adg_os_any|adg_ext_any|adg_safari_any:
   name: abort-current-inline-script
@@ -27,6 +23,9 @@ adg_os_any|adg_ext_any|adg_safari_any:
     - name: property
       required: true
       description: Path to a property (joined with `.` if needed). The property must be attached to `window`.
+    - name: search
+      required: false
+      description: String or regular expression that must match the inline script content.
 
 ubo_any:
   name: abort-current-script.js
@@ -44,6 +43,9 @@ ubo_any:
     - name: property
       required: true
       description: Property (chain of properties joined by `.`) attached to `window` object accessed inside `<script>` tag we want to break.
+    - name: search
+      required: false
+      description: String or regular expression that must match the inline script content.
 
 abp_any:
   name: abort-current-inline-script
@@ -53,3 +55,6 @@ abp_any:
     - name: api
       required: true
       description: API function or property name to anchor on. It can also be the path to that property.
+    - name: search
+      required: false
+      description: String or regular expression that must match the inline script content.
