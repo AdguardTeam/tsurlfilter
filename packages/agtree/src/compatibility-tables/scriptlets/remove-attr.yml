@@ -9,7 +9,9 @@ common:
       description: CSS selector, specifies DOM nodes from which the attributes will be removed.
     - name: applying
       required: false
-      description: One or more space-separated flags that describe the way scriptlet apply.
+      description: |-
+       One or more space-separated flags that describe the way scriptlet apply.
+       Possible values: `asap`, `complete`, `stay`.
 
 adg_os_any|adg_ext_any|adg_safari_any:
   name: remove-attr
