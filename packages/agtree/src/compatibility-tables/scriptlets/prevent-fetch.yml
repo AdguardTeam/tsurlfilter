@@ -1,5 +1,5 @@
 common:
-  description: Prevents fetch calls if all given parameters match.
+  description: Prevents `fetch` calls if all given parameters match.
   parameters:
     - name: propsToMatch
       required: false
