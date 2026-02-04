@@ -385,6 +385,10 @@ describe('Scriptlet conversion', () => {
                 expected: 'Scriptlet "trusted-set-local-storage-item" is not supported in uBlock Origin.',
             },
             {
+                actual: String.raw`example.com#%#//scriptlet('trusted-set-session-storage-item', 'popupShown', '1')`,
+                expected: 'Scriptlet "trusted-set-session-storage-item" is not supported in uBlock Origin.',
+            },
+            {
                 actual: String.raw`example.com#%#//scriptlet('trusted-set-cookie', 'showCookie', 'true')`,
                 expected: 'Scriptlet "trusted-set-cookie" is not supported in uBlock Origin.',
             },
