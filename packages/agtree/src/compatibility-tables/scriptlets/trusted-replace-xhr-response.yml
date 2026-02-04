@@ -19,6 +19,8 @@ ubo_any:
   version_added: 1.51.1rc3
   description: Replaces response text content of xhr requests if all given parameters match..
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-replace-xhr-responsejs-
+  aliases:
+    - trusted-replace-xhr-response
   parameters:
     - name: pattern
       required: true
