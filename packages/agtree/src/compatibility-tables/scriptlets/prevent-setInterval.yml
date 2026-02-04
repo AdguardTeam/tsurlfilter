@@ -40,8 +40,11 @@ ubo_any:
       * are prefixed with ! and do not match the setInterval() argument.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setInterval-ifjs-
   aliases:
+    - prevent-setInterval
+    - no-setInterval-if
     - no-setInterval-if.js
     - nosiif.js
+    - setInterval-defuser
     - setInterval-defuser.js
     - sid.js
   parameters:
