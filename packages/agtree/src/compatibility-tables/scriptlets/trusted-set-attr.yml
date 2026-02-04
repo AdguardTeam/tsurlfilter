@@ -1,12 +1,24 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
-  name: trusted-set-attr
-  version_added: 1.10.1
+common:
+  description: Sets attribute with arbitrary value on the specified elements.
   parameters:
     - name: selector
       required: true
+      description: CSS selector, specifies DOM nodes to set attributes on.
     - name: attr
       required: true
+      description: The name of the attribute to be set.
     - name: value
       required: false
+      description: The value to assign to the attribute.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: trusted-set-attr
+  version_added: 1.10.1
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-set-attr
+
+ubo_any:
+  name: trusted-set-attr.js
+  version_added: 1.60.1b17
+  aliases:
+    - trusted-set-attr
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-set-attrjs-
