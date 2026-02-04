@@ -14,7 +14,9 @@ adg_os_any|adg_ext_any|adg_safari_any:
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-set-session-storage-item
 
 ubo_any:
-  name: set-session-storage-item.js
+  name: trusted-set-session-storage-item.js
   version_added: 1.50.1b4
   description: Set a local/session storage entry to a specific, allowed value. Scriptlet won't set item if storage is full. Double quotes surrouding the key value are allowed.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-session-storage-itemjs-
+  aliases:
+    - trusted-set-session-storage-item
