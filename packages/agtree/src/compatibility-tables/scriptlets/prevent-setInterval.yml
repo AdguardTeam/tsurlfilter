@@ -41,12 +41,12 @@ ubo_any:
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setInterval-ifjs-
   aliases:
     - prevent-setInterval
-    - no-setInterval-if
     - no-setInterval-if.js
+    - no-setInterval-if
     - nosiif.js
-    - setInterval-defuser
+    - nosiif
     - setInterval-defuser.js
-    - sid.js
+    - setInterval-defuser
   parameters:
     - name: needle
       required: false
