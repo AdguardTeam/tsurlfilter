@@ -4,6 +4,7 @@ adg_os_any|adg_ext_any|adg_safari_any:
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#amazon-apstag
   aliases:
     - ubo-amazon_apstag.js
+    - ubo-amazon_apstag
     - amazon_apstag.js
 
 ubo_any:
