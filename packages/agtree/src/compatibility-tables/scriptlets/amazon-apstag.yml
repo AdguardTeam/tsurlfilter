@@ -1,10 +1,10 @@
 adg_os_any|adg_ext_any|adg_safari_any:
   name: amazon-apstag
   version_added: 1.10.25
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#amazon-apstag
   aliases:
     - ubo-amazon_apstag.js
     - amazon_apstag.js
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#amazon-apstag
 
 ubo_any:
   name: amazon-apstag.js
