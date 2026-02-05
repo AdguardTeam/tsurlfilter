@@ -1,4 +1,4 @@
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: trusted-click-element
   version_added: 1.7.3
   descriptions: |-
