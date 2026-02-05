@@ -10,7 +10,7 @@ import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { MultiValueMap } from '../../utils/multi-value-map';
 import { createConversionResult, type ConversionResult } from '../base-interfaces/conversion-result';
 import { cloneModifierListNode } from '../../ast-utils/clone';
-import { GenericPlatform, modifiersCompatibilityTable, redirectsCompatibilityTable } from '../../compatibility-tables';
+import { modifiersCompatibilityTable, Platform, redirectsCompatibilityTable } from '../../compatibility-tables';
 import { isValidResourceType } from '../../compatibility-tables/utils/resource-type-helpers';
 import { isUndefined } from '../../utils/type-guards';
 
@@ -188,10 +188,10 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                     : modifierNode.name.value;
 
                 const convertedRedirectResource = redirectResource
-                    ? redirectsCompatibilityTable.getFirst(
+                    ? redirectsCompatibilityTable.query(
                         redirectResource,
-                        GenericPlatform.AdgAny,
-                    )?.name
+                        Platform.AdgAny,
+                    )[0]?.name
                     : undefined;
 
                 // Check if the modifier name or the redirect resource name is different from the original modifier.
@@ -288,7 +288,7 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
 
         modifierList.children.forEach((modifierNode, index) => {
             const originalModifierName = modifierNode.name.value;
-            const modifierData = modifiersCompatibilityTable.getFirst(originalModifierName, GenericPlatform.UboAny);
+            const modifierData = modifiersCompatibilityTable.query(originalModifierName, Platform.UboAny)[0];
 
             // Handle special case: resource redirection modifiers
             if (REDIRECT_MODIFIERS.has(originalModifierName)) {
@@ -320,10 +320,10 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                     ? REDIRECT_MODIFIER
                     : modifierNode.name.value;
 
-                const convertedRedirectResourceData = redirectsCompatibilityTable.getFirst(
+                const convertedRedirectResourceData = redirectsCompatibilityTable.query(
                     redirectResourceName,
-                    GenericPlatform.UboAny,
-                );
+                    Platform.UboAny,
+                )[0];
 
                 const convertedRedirectResourceName = convertedRedirectResourceData?.name ?? redirectResourceName;
 
@@ -333,7 +333,7 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                     // Convert the resource types to uBO modifiers
                     const uboResourceTypeModifiers = redirectsCompatibilityTable.getResourceTypeModifiers(
                         convertedRedirectResourceData,
-                        GenericPlatform.UboAny,
+                        Platform.UboAny,
                     );
 
                     // Special case: noop text resource
@@ -351,10 +351,10 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                             return false;
                         }
 
-                        const convertedModifierData = modifiersCompatibilityTable.getFirst(
+                        const convertedModifierData = modifiersCompatibilityTable.query(
                             name,
-                            GenericPlatform.UboAny,
-                        );
+                            Platform.UboAny,
+                        )[0];
 
                         return uboResourceTypeModifiers.has(convertedModifierData?.name ?? name);
                     });
