@@ -1,0 +1,53 @@
+common:
+  description: Replaces a specific argument of a native method with a constant value, JSON parsed value or a value derived from a regular expression replacement.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: trusted-replace-argument
+  version_added: 2.2.9
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-replace-argument
+  parameters:
+    - name: methodPath
+      required: true
+      description: String path to a native method (joined with `.` if needed). The property must be attached to `window`.
+    - name: argumentIndex
+      required: true
+      description: String index of the argument to replace (0-based).
+    - name: argumentValue
+      required: true
+      description: |-
+        String value to set for the argument. If it starts with `replace:`, it is treated as a replacement pattern in the format `replace:/regex/replacement/`. To replace all occurrences of a pattern, the replacement string must include the global flag `g`, otherwise only the first occurrence will be replaced. If it starts with `json:`, it is treated as a JSON string to parse and set for the argument.
+        If it does not start with `replace:` or `json:`, it is treated as a constant value to set for the argument, or as one of the predefined constants.
+    - name: pattern
+      required: false
+      description: String or regular expression pattern to match the argument against. If provided, the argument will only be replaced if it matches this pattern.
+    - name: stack
+      required: false
+      description: String or regular expression that must match the current function call stack trace.
+    - name: verbose
+      required: false
+      description: String, if set to `true`, logs the method arguments. Defaults to `false`. It may be useful for debugging but it is not allowed for prod versions of filter lists.
+
+ubo_any:
+  name: trusted-replace-argument.js
+  version_added: 1.55.1b18
+  aliases:
+    - trusted-replace-argument
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-replace-argumentjs-
+  parameters:
+    - name: propChain
+      required: true
+      description: The property chain to the function which argument must be replaced when called.
+    - name: argposRaw
+      required: true
+      description: The zero-based position of the argument in the argument list. Use a negative number for a position relative to the last argument. Use literal `this` to replace the value used in `prototype`-based methods.
+    - name: argraw
+      required: true
+      description: |-
+        The replacement value, validated using the same heuristic as with the set-constant.js scriptlet.
+        If the replacement value matches `json:...`, the value will be the json-parsed string after `json:`.
+        If the replacement value matches `repl:/.../.../`, the target argument will be replaced according the regex-replacement directive following `repl:`.
+    - name: tokens
+      required: false
+      description: |-
+        Available token:
+          `condition, pattern`: The replacement will occur only when pattern matches the target argument.

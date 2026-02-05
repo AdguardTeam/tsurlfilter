@@ -389,6 +389,11 @@ describe('Scriptlet conversion', () => {
                 expected: 'Scriptlet "trusted-set-cookie" is not supported in uBlock Origin.',
             },
             {
+                // eslint-disable-next-line max-len
+                actual: String.raw`example.org#%#//scriptlet('trusted-replace-argument', 'eval', '0', '"Replacement"', 'Foo bar')`,
+                expected: 'Scriptlet "trusted-replace-argument" is not supported in uBlock Origin.',
+            },
+            {
                 actual: "[$path=/baz]example.com#%#//scriptlet('set-constant', 'foo', 'bar')",
                 expected: 'uBlock Origin scriptlet injection rules do not support cosmetic rule modifiers.',
             },
