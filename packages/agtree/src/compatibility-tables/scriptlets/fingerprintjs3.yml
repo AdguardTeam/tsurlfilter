@@ -5,6 +5,7 @@ adg_os_any|adg_ext_any|adg_safari_any:
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#fingerprintjs3
   aliases:
     - ubo-fingerprint3.js
+    - ubo-fingerprint3
     - fingerprint3.js
 
 ubo_any:
