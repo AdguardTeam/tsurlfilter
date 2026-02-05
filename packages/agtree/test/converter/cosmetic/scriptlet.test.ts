@@ -389,6 +389,10 @@ describe('Scriptlet conversion', () => {
                 expected: 'Scriptlet "trusted-set-cookie" is not supported in uBlock Origin.',
             },
             {
+                actual: String.raw`example.org#%#//scriptlet('trusted-prune-inbound-object', 'Object.getOwnPropertyNames', 'example')`,
+                expected: 'Scriptlet "trusted-prune-inbound-object" is not supported in uBlock Origin.',
+            },
+            {
                 actual: "[$path=/baz]example.com#%#//scriptlet('set-constant', 'foo', 'bar')",
                 expected: 'uBlock Origin scriptlet injection rules do not support cosmetic rule modifiers.',
             },
