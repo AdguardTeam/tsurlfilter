@@ -1,0 +1,53 @@
+common:
+  description: Replace the text in the outbound function call.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: trusted-replace-outbound-text
+  version_added: 1.11.1
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-replace-outbound-text
+  parameters:
+    - name: methodPath
+      required: true
+      description: |-
+        The name of the function to trap, it must have an object as an argument.
+        Call with only `methodPath` as an argument will log all text content of the specified function to console, but only if function call returns a string, otherwise it will log information that content is not a string.
+    - name: textToReplace
+      required: false
+      description: String or regular expression which should be replaced. By default it's set to `''`. If it's not set to other value and `logContent` is set, it will log the original content.
+    - name: replacement
+      required: false
+      description: String which replaces the matched text. By default it's set to `''`, so matched content will be removed.
+    - name: decodeMethod
+      required: false
+      description: |-
+        String which specifies the method used to decode the content. For now supported value is `base64`. By default it's set to `''` and no decoding is performed.
+        If it's set and `logContent` is also set and `textToReplace` and `replacement` are not set, then it will log the decoded content.
+    - name: stack
+      required: false
+      description: String or regular expression that must match the current function call stack trace. If regular expression is invalid it will be skipped.
+    - name: logContent
+      required: false
+      description: If set to any value, the original and modified content will be logged. By default it's set to `''` and no content will be logged.
+
+ubo_any:
+  name: trusted-replace-outbound-text.js
+  version_added: 1.57.1b1
+  aliases:
+    - trusted-replace-outbound-text
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-replace-outbound-textjs-
+  parameters:
+    - name: propChain
+      required: true
+      description: A name of method for which the text content must be substituted.
+    - name: rawPattern
+      required: true
+      description: A string or regex to match in the outbound text as the target of substitution, if not provided or empty, the scriptlet will only log the outbound text without modifying it.
+    - name: rawReplacement
+      required: false
+      description: The replacement string for the matched part, can be omitted if the goal is to delete the text which matches the pattern.
+    - name: tokens
+      required: false
+      description: |-
+        Available tokens:
+          `condition, pattern`: is a `vararg` which tells the scriptlet to act only if `pattern` is found in the outbound text.
+          `encoding, base64`: Decode and encode outbound base64-encoded text before and after replacement.
