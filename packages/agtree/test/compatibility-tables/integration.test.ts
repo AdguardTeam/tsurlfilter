@@ -130,9 +130,9 @@ describe('Compatibility Tables - Integration', () => {
             expect(products).toContain('UblockOrigin');
             expect(products).toContain('AdblockPlus');
 
-            const adgMap = byProduct.get('AdGuard' as any);
-            const uboMap = byProduct.get('UblockOrigin' as any);
-            const abpMap = byProduct.get('AdblockPlus' as any);
+            const adgMap = byProduct.get('AdGuard');
+            const uboMap = byProduct.get('UblockOrigin');
+            const abpMap = byProduct.get('AdblockPlus');
 
             // Each product should have multiple modifiers
             expect(adgMap?.size).toBeGreaterThan(10);
@@ -155,8 +155,8 @@ describe('Compatibility Tables - Integration', () => {
             expect(products).toContain('AdblockPlus');
 
             // Each product should have redirects
-            const adgMap = byProduct.get('AdGuard' as any);
-            const uboMap = byProduct.get('UblockOrigin' as any);
+            const adgMap = byProduct.get('AdGuard');
+            const uboMap = byProduct.get('UblockOrigin');
 
             expect(adgMap?.size).toBeGreaterThan(0);
             expect(uboMap?.size).toBeGreaterThan(0);
@@ -171,8 +171,8 @@ describe('Compatibility Tables - Integration', () => {
             expect(products).toContain('AdblockPlus');
 
             // Each product should have scriptlets
-            const adgMap = byProduct.get('AdGuard' as any);
-            const uboMap = byProduct.get('UblockOrigin' as any);
+            const adgMap = byProduct.get('AdGuard');
+            const uboMap = byProduct.get('UblockOrigin');
 
             expect(adgMap?.size).toBeGreaterThan(0);
             expect(uboMap?.size).toBeGreaterThan(0);
