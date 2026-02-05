@@ -1,13 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
-  parameters:
-    - name: nodeName
-      required: true
-    - name: textMatch
-      required: true
+  description: Removes text from DOM nodes.
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: remove-node-text
   version_added: 1.9.37
   aliases:
@@ -18,10 +12,38 @@ adg_os_any|adg_ext_any:
     - ubo-remove-node-text
     - ubo-rmnt
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#remove-node-text
+  parameters:
+    - name: nodeName
+      required: true
+      description: String or RegExp, specifies DOM node name from which the text will be removed. Must target lowercased node names, e.g `div` instead of `DIV`.
+    - name: textMatch
+      required: true
+      description: String or RegExp to match against node's text content. If matched, the whole text will be removed. Case sensitive.
+    - name: parentSelector
+      required: false
+      description: String, CSS selector to match parent node.
 
 ubo_any:
   name: remove-node-text.js
   version_added: 1.49.3rc15
   aliases:
+    - remove-node-text
+    - rmnt
     - rmnt.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-node-textjs-
+  parameters:
+    - name: nodeName
+      required: true
+      description: The name of the node for which the text content must be removed.
+    - name: includes
+      required: true
+      description: A string or regex to find in the text content of the node as the target of removing.
+    - name: tokens
+      required: false
+      description: |-
+       Available tokens:
+         `includes, pattern`: A string or regex which must be found in the text content of the node in order for the removing to occur
+         `excludes, pattern`: A string or regex which must not be found in the text content of the node in order for the removing to occur
+         `sedCount, n`: This will cause the scriptlet to stop after `n` instances of removing. Since a mutation observer is used by the scriptlet, it's advised to stop it whenever it becomes pointless. Default to zero, which means the scriptlet never stops
+         `stay, 1`: Force the scriptlet to stay at work forever
+         `quitAfter, ms`: This tells the scriptlet to quit `ms` milliseconds after the page has been loaded, i.e. after the `DOMContentLoaded` event has been fired
