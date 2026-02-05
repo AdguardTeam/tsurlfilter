@@ -1,17 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
-  parameters:
-    - name: propsToRemove
-      required: false
-    - name: obligatoryProps
-      required: false
-    - name: propsToMatch
-      required: false
-    - name: stack
-      required: false
+  description: Removes specified properties from the JSON response of a `XMLHttpRequest` call.
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: json-prune-xhr-response
   version_added: 1.10.25
   aliases:
@@ -19,7 +9,39 @@ adg_os_any|adg_ext_any:
     - ubo-json-prune-xhr-response.js
     - ubo-json-prune-xhr-response
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#json-prune-xhr-response
+  parameters:
+    - name: propsToRemove
+      required: false
+      description: String of space-separated properties to remove.
+    - name: obligatoryProps
+      required: false
+      description: String of space-separated properties which must be all present for the pruning to occur.
+    - name: propsToMatch
+      required: false
+      description: |-
+        String of space-separated properties to match. Possible props:
+          String or regular expression for matching the URL passed to `XMLHttpRequest.open()` call.
+          Colon-separated pairs `name:value` where `name` is string or regular expression for matching `XMLHttpRequest` property name and `value` is string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call.
+    - name: stack
+      required: false
+      description: String or regular expression that must match the current function call stack trace; if regular expression is invalid it will be skipped.
 
 ubo_any:
   name: json-prune-xhr-response.js
+  version_added: 1.51.1rc3
+  aliases:
+    - json-prune-xhr-response
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#json-prune-xhr-responsejs-
+  parameters:
+    - name: rawPrunePaths
+      required: false
+      description: String, a list of space-separated properties to remove.
+    - name: rawNeedlePaths
+      required: false
+      description: String, a list of space-separated properties which must be all present for the pruning to occur or string/regular expression, for logging purposes, matching in stringified `JSON` payloads.
+    - name: tokens
+      required: false
+      description: |-
+        Available tokens are:
+          `propsToMatch`: String of space-separated properties to match. It can be string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call or colon-separated pairs `name:value`. Where `name` is string or regular expression for matching `XMLHttpRequest` property name and `value` is string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call.
+          `stackToMatch`: String or regular expression that must match the current function call stack trace. Prepend pattern with `!` to test for unmatched patterns in stack trace.
