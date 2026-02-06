@@ -9,4 +9,4 @@ adg_os_any|adg_ext_any|adg_safari_any:
       description: CSS selector of element in shadow-dom to remove.
     - name: baseSelector
       required: false
-      description: Selector of specific page DOM element, narrows down the part of the page DOM where shadow-dom host supposed to be, defaults to document.documentElement.
+      description: Selector of specific page DOM element, narrows down the part of the page DOM where shadow-dom host supposed to be, defaults to `document.documentElement`.
