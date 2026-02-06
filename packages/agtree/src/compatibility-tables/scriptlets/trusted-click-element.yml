@@ -15,7 +15,7 @@ adg_os_any|adg_ext_any|adg_safari_any:
       required: false
       description: |-
         Extra condition to check on a page; allows to match cookie, localStorage and specified text; can be set as name:key[=value] where value is optional.
-        If cookie/localStorage starts with ! then the element will only be clicked if specified cookie/localStorage item does not exist.
+        If cookie/localStorage starts with `!` then the element will only be clicked if specified cookie/localStorage item does not exist.
         Multiple conditions are allowed inside one extraMatch but they should be delimited by comma and each of them should match the syntax.
     - name: delay
       required: false
