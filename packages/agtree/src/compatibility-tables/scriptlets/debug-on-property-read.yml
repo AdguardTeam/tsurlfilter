@@ -6,4 +6,4 @@ adg_os_any|adg_ext_any|adg_safari_any:
   parameters:
     - name: property
       required: true
-      description: Path to a property (joined with . if needed). The property must be attached to window.
+      description: Path to a property (joined with `.` if needed). The property must be attached to window.
