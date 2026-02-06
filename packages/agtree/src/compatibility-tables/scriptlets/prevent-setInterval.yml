@@ -37,7 +37,7 @@ ubo_any:
   description: |-
       Defuses calls to setInterval() function when parameters:
       * are not prefixed with ! and match the setInterval() argument; OR
-      * are prefixed with ! and do not match the setInterval() argument.
+      * are prefixed with `!` and do not match the setInterval() argument.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setInterval-ifjs-
   aliases:
     - prevent-setInterval
