@@ -4,7 +4,7 @@
  */
 
 import zod from 'zod';
-import path from 'path';
+import path, { dirname } from 'path';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import yaml from 'js-yaml';
 import { readFileSync, readdirSync } from 'fs';
@@ -12,6 +12,7 @@ import { readFileSync, readdirSync } from 'fs';
 // in the production build, so it is safe to ignore ESLint warning here.
 // eslint-disable-next-line import/no-extraneous-dependencies
 import XRegExp from 'xregexp';
+import { fileURLToPath } from 'url';
 
 import { type CompatibilityTable, type CompatibilityTableRow } from './types';
 import {
@@ -28,7 +29,7 @@ import {
 import { deepFreeze } from '../utils/deep-freeze';
 import { EMPTY } from '../utils/constants';
 
-const localDirname = path.dirname(new URL(import.meta.url).pathname);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Gets all `.yml` files from a directory.
@@ -234,19 +235,19 @@ const getScriptletsCompatibilityTableData = (dir: string) => {
  * Compatibility table data for scriptlets.
  */
 export const scriptletsCompatibilityTableData = getScriptletsCompatibilityTableData(
-    path.resolve(localDirname, './scriptlets'),
+    path.resolve(__dirname, './scriptlets'),
 );
 
 /**
  * Compatibility table data for redirects.
  */
 export const redirectsCompatibilityTableData = getRedirectsCompatibilityTableData(
-    path.resolve(localDirname, './redirects'),
+    path.resolve(__dirname, './redirects'),
 );
 
 /**
  * Compatibility table data for modifiers.
  */
 export const modifiersCompatibilityTableData = getModifiersCompatibilityTableData(
-    path.resolve(localDirname, './modifiers'),
+    path.resolve(__dirname, './modifiers'),
 );
