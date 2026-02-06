@@ -2,7 +2,7 @@ common:
   parameters:
     - name: methodPath
       required: true
-      description: String path to a native method (joined with . if needed). The property must be attached to window.
+      description: String path to a native method (joined with "." (dot) if needed). The property must be attached to window.
     - name: signatureStr
       required: true
       description: String of |-separated argument matchers.
