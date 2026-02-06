@@ -19,13 +19,13 @@ adg_os_any|adg_ext_any|adg_safari_any:
         Multiple conditions are allowed inside one extraMatch but they should be delimited by comma and each of them should match the syntax.
     - name: delay
       required: false
-      description: Time in ms to delay scriptlet execution, defaults to instant execution. Must be a number less than observerTimeout (default 10 seconds) which can be configured.
+      description: Time in ms to delay scriptlet execution, defaults to instant execution. Must be a number less than default observerTimeout which can be configured.
     - name: reload
       required: false
       description: String with reloadAfterClick marker and optional value.
     - name: observerTimeout
       required: false
-      description: Time in seconds to use instead default 10 seconds observer timeout. Must be an integer number and more than 0.
+      description: Time in seconds to use instead default observer timeout. Must be an integer number and more than 0.
 
 ubo_any:
   name: trusted-click-element.js
