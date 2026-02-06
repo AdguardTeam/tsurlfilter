@@ -10,7 +10,7 @@ adg_os_any|adg_ext_any|adg_safari_any:
   parameters:
     - name: selectors
       required: true
-      description: String with query selectors delimited by comma. The scriptlet supports >>> combinator to select elements inside open shadow DOM. For usage, see example below.
+      description: String with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
     - name: extraMatch
       required: false
       description: |-
