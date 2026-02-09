@@ -3,9 +3,14 @@
  */
 
 import { type BaseCompatibilityDataSchema } from './schemas';
-import { Platform } from './platform';
+import {
+    Platform,
+    getValidProductCodes,
+    getValidAdblockProducts,
+    WILDCARD_ANY,
+} from './platform';
 import { type CompatibilityTable, type HybridCompatibilityTableRow } from './types';
-import { AdblockProduct } from '../utils/adblockers';
+import { type AdblockProduct } from '../utils/adblockers';
 
 /**
  * Name transformer function type.
@@ -145,13 +150,13 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
 
         // Special case: Platform.Any (global wildcard across all products)
         // Query all product paths since there's no 'any' key in the data
-        if (platform.toString() === 'any') {
+        if (platform.toString() === WILDCARD_ANY) {
             const results: T[] = [];
             const seen = new Set<T>();
 
-            // Query each product path: adg, ubo, abp
-            for (const productPath of [['adg'], ['ubo'], ['abp']]) {
-                const productResults = row.trie.query(productPath);
+            // Query each known product path
+            for (const code of getValidProductCodes()) {
+                const productResults = row.trie.query([code]);
                 for (const item of productResults) {
                     if (!seen.has(item)) {
                         seen.add(item);
@@ -245,9 +250,9 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
         const productMap = new Map<AdblockProduct, Map<string, T[]>>();
 
         // Initialize maps for each product
-        productMap.set(AdblockProduct.Adg, new Map());
-        productMap.set(AdblockProduct.Ubo, new Map());
-        productMap.set(AdblockProduct.Abp, new Map());
+        for (const product of getValidAdblockProducts()) {
+            productMap.set(product, new Map());
+        }
 
         // Track already-processed rows to avoid duplicates from aliases
         const processedRows = new Set<HybridCompatibilityTableRow<T>>();
@@ -271,16 +276,11 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
             for (const [platformStr, data] of row.flatMap.entries()) {
                 const platform = Platform.parse(platformStr);
 
-                let product: AdblockProduct;
-                if (platform.product === 'adg') {
-                    product = AdblockProduct.Adg;
-                } else if (platform.product === 'ubo') {
-                    product = AdblockProduct.Ubo;
-                } else if (platform.product === 'abp') {
-                    product = AdblockProduct.Abp;
-                } else {
-                    continue; // Skip 'any'
+                const productEnum = platform.getProductEnum();
+                if (productEnum === WILDCARD_ANY) {
+                    continue; // Skip wildcard
                 }
+                const product: AdblockProduct = productEnum;
 
                 const featureMap = productMap.get(product)!;
                 if (!featureMap.has(canonicalName)) {

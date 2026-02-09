@@ -18,12 +18,12 @@ export type PlatformType = 'os' | 'cb' | 'ext' | 'any';
 /**
  * Wildcard identifier for 'any' platform.
  */
-const WILDCARD_ANY = 'any';
+export const WILDCARD_ANY = 'any';
 
 /**
  * Separator for platform string representation.
  */
-const PLATFORM_SEPARATOR = '_';
+export const PLATFORM_SEPARATOR = '_';
 
 /**
  * Mapping from product codes to AdblockProduct enum.
@@ -34,6 +34,49 @@ const PRODUCT_CODE_TO_ENUM: Record<ProductCode, AdblockProduct | 'any'> = {
     abp: AdblockProduct.Abp,
     any: WILDCARD_ANY,
 };
+
+/**
+ * Cached valid product codes. Initialized lazily on first access.
+ */
+let validProductCodesCache: ReadonlySet<string> | null = null;
+
+/**
+ * Valid (non-wildcard) product codes. Derived from PRODUCT_CODE_TO_ENUM.
+ * Adding a new product only requires updating PRODUCT_CODE_TO_ENUM.
+ * Lazily initialized on first call.
+ *
+ * @returns Set of valid product code strings.
+ */
+export function getValidProductCodes(): ReadonlySet<string> {
+    if (validProductCodesCache === null) {
+        validProductCodesCache = new Set(
+            Object.keys(PRODUCT_CODE_TO_ENUM).filter((code) => code !== WILDCARD_ANY),
+        );
+    }
+    return validProductCodesCache;
+}
+
+/**
+ * Cached valid adblock products. Initialized lazily on first access.
+ */
+let validAdblockProductsCache: readonly AdblockProduct[] | null = null;
+
+/**
+ * Pre-computed array of AdblockProduct enum values for all valid (non-wildcard) products.
+ * Derived from PRODUCT_CODE_TO_ENUM. Useful for initializing per-product maps without
+ * repeated Platform.parse() calls.
+ * Lazily initialized on first call.
+ *
+ * @returns Array of AdblockProduct enum values.
+ */
+export function getValidAdblockProducts(): readonly AdblockProduct[] {
+    if (validAdblockProductsCache === null) {
+        validAdblockProductsCache = Object.entries(PRODUCT_CODE_TO_ENUM)
+            .filter(([, value]) => value !== WILDCARD_ANY)
+            .map(([, value]) => value as AdblockProduct);
+    }
+    return validAdblockProductsCache;
+}
 
 /**
  * Represents a hierarchical platform query.
@@ -290,7 +333,7 @@ export class Platform {
         const product = parts[0] as ProductCode;
 
         // Validate product code
-        if (product !== 'adg' && product !== 'ubo' && product !== 'abp') {
+        if (!getValidProductCodes().has(product)) {
             throw new Error(`Invalid product code: ${product}`);
         }
 
