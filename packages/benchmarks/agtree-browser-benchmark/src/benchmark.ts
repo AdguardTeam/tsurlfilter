@@ -57,8 +57,6 @@ const printResults = (results: BenchmarkResult): void => {
     const statsWithTitles = {
         'Raw filter list size (utf-8)': printBytesAsMegabytes(results.stats.rawFilterListSize),
         'Parsed filter list size': printBytesAsMegabytes(results.stats.parsedFilterListSize),
-        'Serialized size': printBytesAsMegabytes(results.stats.serializedFilterListSize),
-        'Deserialized filter list size': printBytesAsMegabytes(results.stats.deserializedFilterListSize),
     };
 
     // print stats as a table: Stat and Value

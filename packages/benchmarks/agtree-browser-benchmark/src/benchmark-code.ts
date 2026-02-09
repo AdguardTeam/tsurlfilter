@@ -97,19 +97,6 @@ interface BenchmarkStats {
      * Size of the parsed filter list AST in bytes.
      */
     parsedFilterListSize: number;
-
-    /**
-     * Size of the serialized filter list in bytes (how much space it takes in the byte buffer).
-     */
-    serializedFilterListSize: number;
-
-    /**
-     * Size of the deserialized filter list AST in bytes.
-     *
-     * @note It may be different from the parsed filter list size, because serialization may drop some data,
-     * like raws.
-     */
-    deserializedFilterListSize: number;
 }
 
 /**
@@ -169,17 +156,9 @@ export const benchmark = async ({
 
     const node = agTreeModule.FilterListParser.parse(rawFilterList, agtreeParserOptions);
 
-    const outBuffer = new agTreeModule.OutputByteBuffer();
-    agTreeModule.FilterListSerializer.serialize(node, outBuffer);
-    const inBuffer = new agTreeModule.InputByteBuffer(outBuffer.getChunks());
-    const deserializedNode = {} as AGTree.FilterList;
-    agTreeModule.FilterListDeserializer.deserialize(inBuffer, deserializedNode);
-
     const stats = {
         rawFilterListSize: new Blob([rawFilterList]).size,
         parsedFilterListSize: objectSizeofModule(node),
-        serializedFilterListSize: (outBuffer as any).offset,
-        deserializedFilterListSize: objectSizeofModule(deserializedNode),
     };
 
     const result: BenchmarkResultWithoutEnv = {
@@ -195,17 +174,6 @@ export const benchmark = async ({
 
     suite.add('Clone AST to AST with structuredClone', () => {
         structuredClone(node);
-    });
-
-    suite.add('Serialize AST to byte buffer', () => {
-        const tmpOutBuffer = new agTreeModule.OutputByteBuffer();
-        agTreeModule.FilterListSerializer.serialize(node, tmpOutBuffer);
-    });
-
-    suite.add('Deserialize byte buffer to AST', () => {
-        const tmpInBuffer = new agTreeModule.InputByteBuffer(outBuffer.getChunks());
-        const tmpDeserializedNode = {} as AGTree.FilterList;
-        agTreeModule.FilterListDeserializer.deserialize(tmpInBuffer, tmpDeserializedNode);
     });
 
     suite.on('complete', function (this: Benchmark.Suite) {
