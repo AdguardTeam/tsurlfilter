@@ -2,13 +2,14 @@
  * @file Compatibility table data loading with hybrid trie structure.
  */
 
-import path from 'path';
+import path, { dirname } from 'path';
 import { readFileSync, readdirSync } from 'fs';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import yaml from 'js-yaml';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import XRegExp from 'xregexp';
 import zod from 'zod';
+import { fileURLToPath } from 'url';
 
 import { type HybridCompatibilityTableRow, type CompatibilityTable } from './types';
 import { TrieNode } from './trie';
@@ -27,7 +28,8 @@ import {
 import { deepFreeze } from '../utils/deep-freeze';
 import { EMPTY } from '../utils/constants';
 
-const localDirname = path.dirname(new URL(import.meta.url).pathname);
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Gets all `.yml` files from a directory.
@@ -225,19 +227,19 @@ const getScriptletsCompatibilityTableData = (dir: string) => {
  * Compatibility table data for scriptlets.
  */
 export const scriptletsCompatibilityTableData = getScriptletsCompatibilityTableData(
-    path.resolve(localDirname, './scriptlets'),
+    path.resolve(__dirname, './scriptlets'),
 );
 
 /**
  * Compatibility table data for redirects.
  */
 export const redirectsCompatibilityTableData = getRedirectsCompatibilityTableData(
-    path.resolve(localDirname, './redirects'),
+    path.resolve(__dirname, './redirects'),
 );
 
 /**
  * Compatibility table data for modifiers.
  */
 export const modifiersCompatibilityTableData = getModifiersCompatibilityTableData(
-    path.resolve(localDirname, './modifiers'),
+    path.resolve(__dirname, './modifiers'),
 );
