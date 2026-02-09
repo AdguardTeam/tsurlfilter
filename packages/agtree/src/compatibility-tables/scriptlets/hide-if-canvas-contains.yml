@@ -1,7 +1,7 @@
 abp_any:
   name: hide-if-canvas-contains
   description: Hides a canvas element, or a parent element specified by the selector parameter, if the canvas contains the specified search term in it.
-  version_added: 4.7
+  version_added: 4.7.0
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
   parameters:
     - name: search
