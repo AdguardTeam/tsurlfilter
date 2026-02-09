@@ -1,7 +1,7 @@
 abp_any:
   name: hide-if-contains-visible-text
   description: Hides any HTML element matching a CSS selector if the visible text content of the element contains a given string. It can also check an unlimited amount of CSS attributes of a node to locate a specific string, even when a website employs methods to obscure or conceal the text.
-  version_added: 3.6.0
+  version_added: "3.6"
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
   parameters:
     - name: search
