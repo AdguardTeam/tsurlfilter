@@ -1,4 +1,4 @@
-# TODO: add "version_added" field once it is available in scriptlets library
+# TODO: add "version_added" field once it is available in scriptlets library (it should be added in v2.2.16 scriptlets library, ensure it later)
 adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-constructor
   description: Prevents a constructor call if the constructor name and optionally the first argument match the specified criteria.
