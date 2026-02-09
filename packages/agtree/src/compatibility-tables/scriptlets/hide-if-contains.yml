@@ -1,7 +1,7 @@
 abp_any:
   name: hide-if-contains
   description: Hides any HTML element or one of its ancestors matching a CSS selector if the text content of the element contains a given string.
-  version_added: 3.3
+  version_added: "3.3"
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
   parameters:
     - name: search
