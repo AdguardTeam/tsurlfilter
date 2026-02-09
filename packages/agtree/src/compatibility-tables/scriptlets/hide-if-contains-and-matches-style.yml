@@ -21,7 +21,7 @@ abp_any:
       description: The string that the computed style of an HTML element matching searchSelector must contain. If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
     - name: waitUntil
       required: false
-      description: Optional parameter that can be used to delay the running of the snippet until the given state is reached. Accepts: loading, interactive, complete, load or any event name.
+      description: "Optional parameter that can be used to delay the running of the snippet until the given state is reached. Accepts: loading, interactive, complete, load or any event name."
     - name: windowWidthMin
       required: false
       description: Optional parameter that can be used to disable the snippet if the window.innerWidth is smaller than the given value.	
