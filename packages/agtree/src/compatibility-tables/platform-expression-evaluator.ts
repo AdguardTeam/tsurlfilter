@@ -49,6 +49,7 @@ export class PlatformExpressionEvaluator {
      *
      * @param expression Platform expression string (e.g., 'adg_os_any|~adg_os_windows').
      * @returns Array of concrete Platform objects after expansion and filtering.
+     * @throws Error if expression is empty or contains only negations.
      */
     static evaluate(expression: string): Platform[] {
         const parts = expression
@@ -71,9 +72,15 @@ export class PlatformExpressionEvaluator {
             }
         }
 
-        // If no positive platforms, return empty array
+        // Expression must contain at least one positive platform
+        if (parts.length === 0) {
+            throw new Error('Platform expression is empty');
+        }
+
         if (positivePlatforms.length === 0) {
-            return [];
+            throw new Error(
+                `Platform expression must contain at least one positive (non-negated) platform: '${expression}'`,
+            );
         }
 
         // Expand wildcards to concrete platforms

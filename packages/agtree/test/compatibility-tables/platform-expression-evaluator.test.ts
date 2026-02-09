@@ -75,9 +75,10 @@ describe('PlatformExpressionEvaluator', () => {
             expect(resultStrings).not.toContain('adg_ext_chrome');
         });
 
-        it('should return empty array for expression with only negation', () => {
-            const result = PlatformExpressionEvaluator.evaluate('~adg_os_windows');
-            expect(result).toHaveLength(0);
+        it('should throw for expression with only negation', () => {
+            expect(() => PlatformExpressionEvaluator.evaluate('~adg_os_windows')).toThrow(
+                'must contain at least one positive',
+            );
         });
 
         it('should deduplicate platforms', () => {
@@ -148,9 +149,10 @@ describe('PlatformExpressionEvaluator', () => {
             expect(result.every((p) => !p.isWildcard)).toBe(true);
         });
 
-        it('should handle empty expression gracefully', () => {
-            const result = PlatformExpressionEvaluator.evaluate('');
-            expect(result).toHaveLength(0);
+        it('should throw for empty expression', () => {
+            expect(() => PlatformExpressionEvaluator.evaluate('')).toThrow(
+                'Platform expression is empty',
+            );
         });
 
         it('should handle whitespace in expressions', () => {
