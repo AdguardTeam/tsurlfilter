@@ -57,6 +57,8 @@ const UBO_NO_FETCH_IF_WILDCARD = '/^/';
 const UBO_REMOVE_CLASS_NAME = 'remove-class.js';
 const UBO_REMOVE_ATTR_NAME = 'remove-attr.js';
 
+const TRUSTED_SCRIPTLET_PREFIX = 'trusted-';
+
 const setConstantAdgToUboMap: Record<string, string> = {
     [ADG_SET_CONSTANT_EMPTY_STRING]: UBO_SET_CONSTANT_EMPTY_STRING,
     [ADG_SET_CONSTANT_EMPTY_ARRAY]: UBO_SET_CONSTANT_EMPTY_ARRAY,
@@ -341,6 +343,11 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             const scriptletName = QuoteUtils.setStringQuoteType(getScriptletName(scriptletClone), QuoteType.None);
 
             let uboScriptletName: string;
+
+            // Trusted scriptlets should not be converted
+            if (scriptletName.startsWith(TRUSTED_SCRIPTLET_PREFIX)) {
+                throw new RuleConversionError(`Scriptlet "${scriptletName}" is not supported in uBlock Origin.`);
+            }
 
             if (rule.syntax === AdblockSyntax.Adg && scriptletName.startsWith(UBO_SCRIPTLET_PREFIX)) {
                 // Special case: AdGuard syntax 'preserves' the original scriptlet name,
