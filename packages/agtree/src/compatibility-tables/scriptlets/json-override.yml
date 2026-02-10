@@ -1,0 +1,23 @@
+abp_any:
+  name: json-override
+  description: It's very similar to json-prune, but instead of removing a property, we override it with a value from the same list as for override-property-read.
+  version_added: 3.11.2
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
+  parameters:
+    - name: rawOverridePaths
+      required: true
+      description: |-
+        A list of space-separated properties to remove. It also accepts property chains - e.g. foo.bar.tar.
+        Can include placeholders `{}` and `[]` to iterate over nested objects and arrays respectively.
+    - name: value
+      required: true
+      description: The value to override the property with (see below for possible values)
+    - name: rawNeedlePaths
+      required: false
+      description: A list of space-separated properties which must be all present for the pruning to occur. It also accepts property chains.
+    - name: filter
+      required: false
+      description: |-
+        A string to look for in the raw string, before it's passed to JSON.parse.
+        If no match is found no further search is done on the resulting object.
+        If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
