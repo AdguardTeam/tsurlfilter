@@ -345,6 +345,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             let uboScriptletName: string;
 
             // Trusted scriptlets should not be converted
+            // https://github.com/AdguardTeam/Scriptlets/#trusted-scriptlets
             if (scriptletName.startsWith(TRUSTED_SCRIPTLET_PREFIX)) {
                 throw new RuleConversionError(`Scriptlet "${scriptletName}" is not supported in uBlock Origin.`);
             }
