@@ -1,0 +1,30 @@
+abp_any:
+  name: map-override
+  description: Overrides functions under Map.prototype to change their behaviour according to the given parameters.
+  version_added: 4.24.0
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
+  parameters:
+    - name: method
+      required: true
+      description: "The Map function to override. Possible values to override the property with: `set`, `get`, `has`"
+    - name: needle
+      required: true
+      description: |-
+        The string or regex used to determine which function calls to trap.
+        If the needle matches the parameter to the function call, the snippet will work, else the function will behave as normal.
+        If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
+        For 'set' this matches the value. For 'get' and 'has' this matches the key.
+    - name: returnValue
+      required: false
+      description: The return value for the matched function calls. For 'set' ignored. For 'get' the value to return. For 'has', true or false.
+      default: "''"
+    - name: path
+      required: false
+      description: Path to look for the needle. Only relevant for 'set' method when checking for object values.
+      default: "''"
+    - name: stack
+      required: false
+      description: |-
+        Comma separated list of strings to check in the stack trace.
+        If provided, the override will only apply when the stack trace contains at least one of these patterns.
+      default: "''"
