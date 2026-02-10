@@ -1,0 +1,24 @@
+abp_any:
+  name: hide-if-svg-contains
+  description: Hides any HTML element matching a CSS selector if it contains a SVG image with the given visible text.
+  version_added: 4.26.0
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
+  parameters:
+    - name: search
+      required: true
+      description: |-
+        The string to match against the visible text (text that isn't hidden by CSS properties or other means).
+        If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
+    - name: selector
+      required: true
+      description: The CSS selector that an HTML element must match for it to be hidden.
+    - name: searchSelector
+      required: false
+      description: The CSS selector that an HTML element containing the given string must match. Defaults to the value of the `selector` argument.
+    - name: optionalParameters
+      required: false
+      description: |-
+        The CSS attributes a computed style map of a node should have in order to consider the text inside of the image hidden.
+        You can provide any number of optional parameters by following these syntax rules:
+        `key:value`, where `value` can be a string or a regex (if it starts and ends with a /)
+        each parameter is wrapped in single quotes, for example: `'-position-threshold:500'` `'width:0px'`
