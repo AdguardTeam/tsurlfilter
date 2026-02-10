@@ -1,0 +1,9 @@
+abp_any:
+  name: abort-on-iframe-property-write
+  description: Patches a list of properties on the iframes' window object to abort execution when the property is written. No error is printed to the console.
+  version_added: 3.10.1
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  parameters:
+    - name: properties
+      required: true
+      description: The list with the properties we want to abort on.
