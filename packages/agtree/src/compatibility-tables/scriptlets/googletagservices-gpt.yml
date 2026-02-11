@@ -1,4 +1,4 @@
-common:
+Common:
   description: Mocks Google Publisher Tag API.
 
 adg_os_any|adg_ext_any|adg_safari_any:
