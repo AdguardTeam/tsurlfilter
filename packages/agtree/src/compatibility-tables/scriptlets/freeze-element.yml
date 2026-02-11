@@ -12,7 +12,7 @@ abp_any:
       description: |-
         A single parameter for snippet's options.
         A string containing all the options we want to pass, each of them separated by a plus character `+`.
-        Empty single quotes if none ('')
+        Empty single quotes if none `''`
         Available options:
         subtree (if we want to freeze all the element's children as well)
         abort (throw an error every time an child element gets added)
