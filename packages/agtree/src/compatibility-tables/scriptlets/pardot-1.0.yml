@@ -1,5 +1,5 @@
 adg_os_any|adg_ext_any|adg_safari_any:
   name: pardot-1.0
-  descriptions: Mocks the pd.js file of Salesforce.
+  descriptions: Mocks the pd.js file of Salesforce. https://pi.pardot.com/pd.js https://developer.salesforce.com/docs/marketing/pardot/overview
   version_added: 1.10.25
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#pardot-1.0
