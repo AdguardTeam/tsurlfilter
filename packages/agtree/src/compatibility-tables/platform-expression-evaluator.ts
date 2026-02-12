@@ -138,6 +138,16 @@ export class PlatformExpressionEvaluator {
     }
 
     /**
+     * Converts an array of platforms to a Set of their string representations.
+     *
+     * @param platforms Array of platforms.
+     * @returns Set of platform strings.
+     */
+    private static toPlatformStringSet(platforms: Platform[]): Set<string> {
+        return new Set(platforms.map((p) => p.toString()));
+    }
+
+    /**
      * Filters out platforms that match any of the negated patterns.
      *
      * @param platforms Platforms to filter.
@@ -225,8 +235,8 @@ export class PlatformExpressionEvaluator {
 
             // If the group contains all possible matches, use the wildcard
             if (groupPlatforms.length === allMatches.length) {
-                const groupSet = new Set(groupPlatforms.map((p) => p.toString()));
-                const allMatchSet = new Set(allMatches.map((p) => p.toString()));
+                const groupSet = this.toPlatformStringSet(groupPlatforms);
+                const allMatchSet = this.toPlatformStringSet(allMatches);
 
                 // Check if both sets are equal
                 let setsEqual = true;
@@ -299,7 +309,7 @@ export class PlatformExpressionEvaluator {
                 }
             }
 
-            const allSet = new Set(allProductPlatforms.map((p) => p.toString()));
+            const allSet = this.toPlatformStringSet(allProductPlatforms);
 
             // If current set covers all platforms for this product, use product wildcard
             if (currentSet.size === allSet.size) {
