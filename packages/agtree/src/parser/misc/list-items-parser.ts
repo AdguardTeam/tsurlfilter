@@ -1,6 +1,6 @@
 import { type ListItem, ListItemNodeType } from '../../nodes';
 import { defaultParserOptions } from '../options';
-import { COMMA, NEGATION_MARKER } from '../../utils/constants';
+import { COMMA, NEGATION_MARKER, REGEX_MARKER } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 
@@ -81,27 +81,47 @@ export class ListItemsParser {
             // Skip whitespace before the list item
             offset = StringUtils.skipWS(raw, offset);
 
-            let itemStart = offset;
+            const exception = raw[offset] === NEGATION_MARKER;
+            const itemStart = exception
+                ? offset + 1
+                : offset;
 
-            // Find the index of the first unescaped separator character
-            // Use findUnescapedNonStringNonRegexChar
-            // to properly handle separators inside regex patterns
-            const separatorStartIndex = StringUtils.findUnescapedNonStringNonRegexChar(
-                raw,
-                separator,
-                offset,
-            );
+            let separatorStartIndex = -1;
+
+            // item possibly a regex
+            if (raw[itemStart] === REGEX_MARKER) {
+                // try to find the next slash
+                const nextSlashIndex = StringUtils.findNextUnescapedCharacter(
+                    raw,
+                    REGEX_MARKER,
+                    itemStart + 1,
+                );
+
+                if (nextSlashIndex !== -1) {
+                    // next non-whitespace character after regex marker should be the separator
+                    // or it should be the end of the input string
+                    const nextNonWSCharacterIndex = StringUtils.skipWS(raw, nextSlashIndex + 1);
+
+                    if (nextNonWSCharacterIndex !== -1) {
+                        separatorStartIndex = nextNonWSCharacterIndex;
+                    } else {
+                        separatorStartIndex = raw.length;
+                    }
+                }
+            } else {
+                separatorStartIndex = StringUtils.findNextUnescapedCharacter(
+                    raw,
+                    separator,
+                    itemStart,
+                );
+            }
 
             const itemEnd = separatorStartIndex === -1
                 ? StringUtils.skipWSBack(raw) + 1
                 : StringUtils.skipWSBack(raw, separatorStartIndex - 1) + 1;
 
-            const exception = raw[itemStart] === NEGATION_MARKER;
-
             // Skip the exception marker
             if (exception) {
-                itemStart += 1;
-
                 const item = raw[itemStart];
 
                 // Exception marker cannot be followed by another exception marker
