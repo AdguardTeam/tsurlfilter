@@ -2,7 +2,7 @@
  * @file Platform expression evaluator with support for negation and wildcards.
  */
 
-import { Platform } from './platform';
+import { Platform, type SpecificProductCode, type SpecificPlatformType } from './platform';
 
 /**
  * Platform separator, e.g. 'adg_os_any|adg_safari_any' means any AdGuard OS platform and
@@ -227,8 +227,8 @@ export class PlatformExpressionEvaluator {
 
             // Get the wildcard that would match this group
             const wildcard = type
-                ? new Platform(product as 'adg' | 'ubo' | 'abp', type as 'os' | 'ext' | 'cb')
-                : new Platform(product as 'adg' | 'ubo' | 'abp');
+                ? new Platform(product as SpecificProductCode, type as SpecificPlatformType)
+                : new Platform(product as SpecificProductCode);
 
             // Get all concrete platforms that match this wildcard
             const allMatches = this.getConcreteMatches(wildcard);
@@ -290,7 +290,7 @@ export class PlatformExpressionEvaluator {
 
         for (const [product, productPlatforms] of byProduct) {
             // Get the product-level wildcard
-            const productWildcard = new Platform(product as 'adg' | 'ubo' | 'abp');
+            const productWildcard = new Platform(product as SpecificProductCode);
 
             // Get all concrete platforms for this product
             const allProductPlatforms = this.getConcreteMatches(productWildcard);

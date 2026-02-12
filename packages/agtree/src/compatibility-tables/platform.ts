@@ -8,17 +8,37 @@ import { AdblockProduct } from '../utils/adblockers';
 /**
  * Product identifiers (short codes).
  */
-export type ProductCode = 'adg' | 'ubo' | 'abp' | 'any';
+export enum ProductCode {
+    Adg = 'adg',
+    Ubo = 'ubo',
+    Abp = 'abp',
+    Any = 'any',
+}
+
+/**
+ * Specific (non-wildcard) product codes.
+ */
+export type SpecificProductCode = Exclude<ProductCode, ProductCode.Any>;
 
 /**
  * Platform type identifiers.
  */
-export type PlatformType = 'os' | 'cb' | 'ext' | 'any';
+export enum PlatformType {
+    Os = 'os',
+    Cb = 'cb',
+    Ext = 'ext',
+    Any = 'any',
+}
+
+/**
+ * Specific (non-wildcard) platform types.
+ */
+export type SpecificPlatformType = Exclude<PlatformType, PlatformType.Any>;
 
 /**
  * Wildcard identifier for 'any' platform.
  */
-export const WILDCARD_ANY = 'any';
+export const WILDCARD_ANY = ProductCode.Any as string;
 
 /**
  * Separator for platform string representation.
@@ -28,17 +48,17 @@ export const PLATFORM_SEPARATOR = '_';
 /**
  * Mapping from product codes to AdblockProduct enum.
  */
-const PRODUCT_CODE_TO_ENUM: Record<ProductCode, AdblockProduct | 'any'> = {
-    adg: AdblockProduct.Adg,
-    ubo: AdblockProduct.Ubo,
-    abp: AdblockProduct.Abp,
-    any: WILDCARD_ANY,
+const PRODUCT_CODE_TO_ENUM: Record<ProductCode, AdblockProduct | typeof WILDCARD_ANY> = {
+    [ProductCode.Adg]: AdblockProduct.Adg,
+    [ProductCode.Ubo]: AdblockProduct.Ubo,
+    [ProductCode.Abp]: AdblockProduct.Abp,
+    [ProductCode.Any]: WILDCARD_ANY,
 };
 
 /**
  * Cached valid product codes. Initialized lazily on first access.
  */
-let validProductCodesCache: ReadonlySet<string> | null = null;
+let validProductCodesCache: ReadonlySet<SpecificProductCode> | null = null;
 
 /**
  * Valid (non-wildcard) product codes. Derived from PRODUCT_CODE_TO_ENUM.
@@ -47,10 +67,11 @@ let validProductCodesCache: ReadonlySet<string> | null = null;
  *
  * @returns Set of valid product code strings.
  */
-export function getValidProductCodes(): ReadonlySet<string> {
+export function getValidProductCodes(): ReadonlySet<SpecificProductCode> {
     if (validProductCodesCache === null) {
         validProductCodesCache = new Set(
-            Object.keys(PRODUCT_CODE_TO_ENUM).filter((code) => code !== WILDCARD_ANY),
+            (Object.keys(PRODUCT_CODE_TO_ENUM) as ProductCode[])
+                .filter((code): code is SpecificProductCode => code !== ProductCode.Any),
         );
     }
     return validProductCodesCache;
@@ -131,7 +152,7 @@ export class Platform {
      *
      * @returns AdblockProduct enum or 'any'.
      */
-    getProductEnum(): AdblockProduct | 'any' {
+    getProductEnum(): AdblockProduct | typeof WILDCARD_ANY {
         return PRODUCT_CODE_TO_ENUM[this.product];
     }
 
@@ -141,7 +162,7 @@ export class Platform {
      * @returns True if this is a wildcard query.
      */
     get isWildcard(): boolean {
-        return this.product === WILDCARD_ANY || !this.type || !this.specific;
+        return this.product === ProductCode.Any || !this.type || !this.specific;
     }
 
     /**
@@ -159,12 +180,12 @@ export class Platform {
         // Compute and cache the string representation
         let result: string;
 
-        if (this.product === WILDCARD_ANY) {
+        if (this.product === ProductCode.Any) {
             result = WILDCARD_ANY;
         } else {
             const parts: string[] = [this.product];
 
-            if (this.type && this.type !== WILDCARD_ANY) {
+            if (this.type && this.type !== PlatformType.Any) {
                 parts.push(this.type);
             } else if (!this.type) {
                 result = `${this.product}${PLATFORM_SEPARATOR}${WILDCARD_ANY}`;
@@ -172,7 +193,7 @@ export class Platform {
                 return this.stringCache;
             }
 
-            if (this.specific && this.specific !== WILDCARD_ANY) {
+            if (this.specific && this.specific !== PlatformType.Any) {
                 parts.push(this.specific);
             } else if (this.type && !this.specific) {
                 result = `${this.product}${PLATFORM_SEPARATOR}${this.type}${PLATFORM_SEPARATOR}${WILDCARD_ANY}`;
@@ -202,7 +223,7 @@ export class Platform {
         // Compute and cache the path
         const path: string[] = [];
 
-        if (this.product === WILDCARD_ANY) {
+        if (this.product === ProductCode.Any) {
             path.push(WILDCARD_ANY);
         } else {
             path.push(this.product);
@@ -229,7 +250,7 @@ export class Platform {
      */
     matches(target: Platform): boolean {
         // 'any' matches everything
-        if (this.product === WILDCARD_ANY) {
+        if (this.product === ProductCode.Any) {
             return true;
         }
 
@@ -264,7 +285,7 @@ export class Platform {
      * @returns True if platform is for this product.
      */
     isProduct(product: ProductCode): boolean {
-        return this.product === product || this.product === WILDCARD_ANY;
+        return this.product === product || this.product === ProductCode.Any;
     }
 
     /**
@@ -273,16 +294,16 @@ export class Platform {
      * @returns Human-readable platform name.
      */
     toHumanReadable(): string {
-        if (this.product === WILDCARD_ANY) {
+        if (this.product === ProductCode.Any) {
             return 'Any product';
         }
 
         // Map product code to human-readable name
         const productNames: Record<ProductCode, string> = {
-            adg: 'AdGuard',
-            ubo: 'uBlock Origin',
-            abp: 'Adblock Plus',
-            any: 'Any product',
+            [ProductCode.Adg]: 'AdGuard',
+            [ProductCode.Ubo]: 'uBlock Origin',
+            [ProductCode.Abp]: 'Adblock Plus',
+            [ProductCode.Any]: 'Any product',
         };
 
         const productName = productNames[this.product];
@@ -291,11 +312,11 @@ export class Platform {
             return `Any ${productName} product`;
         }
 
-        const typeNames: Record<string, string> = {
-            os: 'System-level App',
-            cb: 'Content Blocker',
-            ext: 'Browser Extension',
-            any: 'Any platform',
+        const typeNames: Record<PlatformType, string> = {
+            [PlatformType.Os]: 'System-level App',
+            [PlatformType.Cb]: 'Content Blocker',
+            [PlatformType.Ext]: 'Browser Extension',
+            [PlatformType.Any]: 'Any platform',
         };
 
         const typeName = typeNames[this.type] || this.type;
@@ -321,7 +342,7 @@ export class Platform {
         const platformStr = str.trim();
 
         if (platformStr === WILDCARD_ANY) {
-            return new Platform(WILDCARD_ANY);
+            return new Platform(ProductCode.Any);
         }
 
         const parts = platformStr.split(PLATFORM_SEPARATOR);
@@ -330,7 +351,7 @@ export class Platform {
             throw new Error(`Invalid platform string: ${str}`);
         }
 
-        const product = parts[0] as ProductCode;
+        const product = parts[0] as SpecificProductCode;
 
         // Validate product code
         if (!getValidProductCodes().has(product)) {
@@ -346,7 +367,7 @@ export class Platform {
             return new Platform(product);
         }
 
-        const type = parts[1] as PlatformType;
+        const type = parts[1] as SpecificPlatformType;
 
         // Handle 'adg_os_any' style
         if (parts.length === 3 && parts[2] === WILDCARD_ANY) {
@@ -389,85 +410,85 @@ export class Platform {
         return Platform.concretePlatformsCache;
     }
 
-    static readonly AdgOsWindows = new Platform('adg', 'os', 'windows');
+    static readonly AdgOsWindows = new Platform(ProductCode.Adg, PlatformType.Os, 'windows');
 
-    static readonly AdgOsLinux = new Platform('adg', 'os', 'linux');
+    static readonly AdgOsLinux = new Platform(ProductCode.Adg, PlatformType.Os, 'linux');
 
-    static readonly AdgOsMac = new Platform('adg', 'os', 'mac');
+    static readonly AdgOsMac = new Platform(ProductCode.Adg, PlatformType.Os, 'mac');
 
-    static readonly AdgOsAndroid = new Platform('adg', 'os', 'android');
+    static readonly AdgOsAndroid = new Platform(ProductCode.Adg, PlatformType.Os, 'android');
 
-    static readonly AdgExtChrome = new Platform('adg', 'ext', 'chrome');
+    static readonly AdgExtChrome = new Platform(ProductCode.Adg, PlatformType.Ext, 'chrome');
 
-    static readonly AdgExtOpera = new Platform('adg', 'ext', 'opera');
+    static readonly AdgExtOpera = new Platform(ProductCode.Adg, PlatformType.Ext, 'opera');
 
-    static readonly AdgExtEdge = new Platform('adg', 'ext', 'edge');
+    static readonly AdgExtEdge = new Platform(ProductCode.Adg, PlatformType.Ext, 'edge');
 
-    static readonly AdgExtFirefox = new Platform('adg', 'ext', 'firefox');
+    static readonly AdgExtFirefox = new Platform(ProductCode.Adg, PlatformType.Ext, 'firefox');
 
-    static readonly AdgExtChromeMv3 = new Platform('adg', 'ext', 'chrome_mv3');
+    static readonly AdgExtChromeMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, 'chrome_mv3');
 
-    static readonly AdgExtOperaMv3 = new Platform('adg', 'ext', 'opera_mv3');
+    static readonly AdgExtOperaMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, 'opera_mv3');
 
-    static readonly AdgExtEdgeMv3 = new Platform('adg', 'ext', 'edge_mv3');
+    static readonly AdgExtEdgeMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, 'edge_mv3');
 
-    static readonly AdgExtFirefoxMv3 = new Platform('adg', 'ext', 'firefox_mv3');
+    static readonly AdgExtFirefoxMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, 'firefox_mv3');
 
-    static readonly AdgCbAndroid = new Platform('adg', 'cb', 'android');
+    static readonly AdgCbAndroid = new Platform(ProductCode.Adg, PlatformType.Cb, 'android');
 
-    static readonly AdgCbIos = new Platform('adg', 'cb', 'ios');
+    static readonly AdgCbIos = new Platform(ProductCode.Adg, PlatformType.Cb, 'ios');
 
-    static readonly AdgCbSafari = new Platform('adg', 'cb', 'safari');
+    static readonly AdgCbSafari = new Platform(ProductCode.Adg, PlatformType.Cb, 'safari');
 
-    static readonly UboExtChrome = new Platform('ubo', 'ext', 'chrome');
+    static readonly UboExtChrome = new Platform(ProductCode.Ubo, PlatformType.Ext, 'chrome');
 
-    static readonly UboExtOpera = new Platform('ubo', 'ext', 'opera');
+    static readonly UboExtOpera = new Platform(ProductCode.Ubo, PlatformType.Ext, 'opera');
 
-    static readonly UboExtEdge = new Platform('ubo', 'ext', 'edge');
+    static readonly UboExtEdge = new Platform(ProductCode.Ubo, PlatformType.Ext, 'edge');
 
-    static readonly UboExtFirefox = new Platform('ubo', 'ext', 'firefox');
+    static readonly UboExtFirefox = new Platform(ProductCode.Ubo, PlatformType.Ext, 'firefox');
 
-    static readonly UboExtChromeMv3 = new Platform('ubo', 'ext', 'chrome_mv3');
+    static readonly UboExtChromeMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, 'chrome_mv3');
 
-    static readonly UboExtOperaMv3 = new Platform('ubo', 'ext', 'opera_mv3');
+    static readonly UboExtOperaMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, 'opera_mv3');
 
-    static readonly UboExtEdgeMv3 = new Platform('ubo', 'ext', 'edge_mv3');
+    static readonly UboExtEdgeMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, 'edge_mv3');
 
-    static readonly UboExtFirefoxMv3 = new Platform('ubo', 'ext', 'firefox_mv3');
+    static readonly UboExtFirefoxMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, 'firefox_mv3');
 
-    static readonly AbpExtChrome = new Platform('abp', 'ext', 'chrome');
+    static readonly AbpExtChrome = new Platform(ProductCode.Abp, PlatformType.Ext, 'chrome');
 
-    static readonly AbpExtOpera = new Platform('abp', 'ext', 'opera');
+    static readonly AbpExtOpera = new Platform(ProductCode.Abp, PlatformType.Ext, 'opera');
 
-    static readonly AbpExtEdge = new Platform('abp', 'ext', 'edge');
+    static readonly AbpExtEdge = new Platform(ProductCode.Abp, PlatformType.Ext, 'edge');
 
-    static readonly AbpExtFirefox = new Platform('abp', 'ext', 'firefox');
+    static readonly AbpExtFirefox = new Platform(ProductCode.Abp, PlatformType.Ext, 'firefox');
 
-    static readonly AbpExtChromeMv3 = new Platform('abp', 'ext', 'chrome_mv3');
+    static readonly AbpExtChromeMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, 'chrome_mv3');
 
-    static readonly AbpExtOperaMv3 = new Platform('abp', 'ext', 'opera_mv3');
+    static readonly AbpExtOperaMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, 'opera_mv3');
 
-    static readonly AbpExtEdgeMv3 = new Platform('abp', 'ext', 'edge_mv3');
+    static readonly AbpExtEdgeMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, 'edge_mv3');
 
-    static readonly AbpExtFirefoxMv3 = new Platform('abp', 'ext', 'firefox_mv3');
+    static readonly AbpExtFirefoxMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, 'firefox_mv3');
 
     // ===== Generic Platforms (Wildcards) =====
 
-    static readonly AdgOsAny = new Platform('adg', 'os');
+    static readonly AdgOsAny = new Platform(ProductCode.Adg, PlatformType.Os);
 
-    static readonly AdgCbAny = new Platform('adg', 'cb');
+    static readonly AdgCbAny = new Platform(ProductCode.Adg, PlatformType.Cb);
 
-    static readonly AdgExtAny = new Platform('adg', 'ext');
+    static readonly AdgExtAny = new Platform(ProductCode.Adg, PlatformType.Ext);
 
-    static readonly AdgAny = new Platform('adg');
+    static readonly AdgAny = new Platform(ProductCode.Adg);
 
-    static readonly UboExtAny = new Platform('ubo', 'ext');
+    static readonly UboExtAny = new Platform(ProductCode.Ubo, PlatformType.Ext);
 
-    static readonly UboAny = new Platform('ubo');
+    static readonly UboAny = new Platform(ProductCode.Ubo);
 
-    static readonly AbpExtAny = new Platform('abp', 'ext');
+    static readonly AbpExtAny = new Platform(ProductCode.Abp, PlatformType.Ext);
 
-    static readonly AbpAny = new Platform('abp');
+    static readonly AbpAny = new Platform(ProductCode.Abp);
 
-    static readonly Any = new Platform('any');
+    static readonly Any = new Platform(ProductCode.Any);
 }

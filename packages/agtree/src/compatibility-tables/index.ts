@@ -9,5 +9,6 @@ export { scriptletsCompatibilityTable } from './scriptlets';
 
 // Re-export Platform class and evaluator for convenience
 export { Platform } from './platform';
-export type { ProductCode, PlatformType } from './platform';
+export { ProductCode, PlatformType } from './platform';
+export type { SpecificProductCode, SpecificPlatformType } from './platform';
 export { PlatformExpressionEvaluator } from './platform-expression-evaluator';
