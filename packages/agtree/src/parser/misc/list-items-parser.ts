@@ -1,6 +1,13 @@
 import { type ListItem, ListItemNodeType } from '../../nodes';
 import { defaultParserOptions } from '../options';
-import { COMMA, NEGATION_MARKER, REGEX_MARKER } from '../../utils/constants';
+import {
+    CLOSE_SQUARE_BRACKET,
+    COMMA,
+    ESCAPE_CHARACTER,
+    NEGATION_MARKER,
+    OPEN_SQUARE_BRACKET,
+    REGEX_MARKER,
+} from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 
@@ -91,22 +98,36 @@ export class ListItemsParser {
             // item possibly a regex
             if (raw[itemStart] === REGEX_MARKER) {
                 // try to find the next slash
-                const nextSlashIndex = StringUtils.findNextUnescapedCharacter(
-                    raw,
-                    REGEX_MARKER,
-                    itemStart + 1,
-                );
+                let i = itemStart + 1;
+                let insideCharacterClass = false;
+                let escaped = false;
 
-                if (nextSlashIndex !== -1) {
-                    // next non-whitespace character after regex marker should be the separator
-                    // or it should be the end of the input string
-                    const nextNonWSCharacterIndex = StringUtils.skipWS(raw, nextSlashIndex + 1);
-
-                    if (nextNonWSCharacterIndex !== -1) {
-                        separatorStartIndex = nextNonWSCharacterIndex;
-                    } else {
-                        separatorStartIndex = raw.length;
+                while (i < raw.length) {
+                    if (escaped) {
+                        escaped = false;
+                    } else if (raw[i] === ESCAPE_CHARACTER) {
+                        escaped = true;
+                    } else if (raw[i] === OPEN_SQUARE_BRACKET) {
+                        insideCharacterClass = true;
+                    } else if (raw[i] === CLOSE_SQUARE_BRACKET) {
+                        insideCharacterClass = false;
+                    } else if (
+                        !insideCharacterClass
+                        && raw[i] === REGEX_MARKER
+                    ) {
+                        // check if slash followed by optional space followed by the separator
+                        const j = StringUtils.skipWS(raw, i + 1);
+                        if (raw[j] === separator) {
+                            separatorStartIndex = j;
+                            break;
+                        }
                     }
+
+                    i += 1;
+                }
+
+                if (separatorStartIndex === -1) {
+                    separatorStartIndex = raw.length;
                 }
             } else {
                 separatorStartIndex = StringUtils.findNextUnescapedCharacter(
