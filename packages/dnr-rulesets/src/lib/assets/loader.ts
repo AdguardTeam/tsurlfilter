@@ -35,7 +35,7 @@ export type AssetsLoaderOptions = {
  */
 export class AssetsLoader {
     /**
-     * Download rulesets or filters to {@link dest} path. If {@link options.rawFilters}
+     * Download rulesets or filters to {@link dest} path. If {@link options.latestFilters}
      * is set to `true`, it will only download raw filters from the server,
      * otherwise it will copy rulesets from the local directory.
      *

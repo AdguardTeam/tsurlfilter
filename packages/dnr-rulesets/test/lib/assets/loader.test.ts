@@ -16,7 +16,7 @@ import {
 
 import { LocalScriptRulesJs } from '../../../src/common/local-script-rules-js';
 import { LocalScriptRulesJson } from '../../../src/common/local-script-rules-json';
-import { AssetsLoader } from '../../../src/lib/assets/loader';
+import { AssetsLoader, FILTERS_I18N_FILENAME } from '../../../src/lib/assets/loader';
 
 vi.mock('path', { spy: true });
 vi.mock('process', { spy: true });
@@ -69,12 +69,12 @@ describe('load', () => {
             filter: expect.any(Function),
         });
 
-        // Verify the filter function excludes filters_i18n.json
+        // Verify the filter function excludes filters_i18n.json by basename
         const copyOptions = mockCopy.mock.lastCall?.[2] as CopyOptions | undefined;
         expect(copyOptions).toBeDefined();
 
-        const filterFn = copyOptions!.filter as (src: string) => boolean;
-        expect(filterFn('/some/path/filters_i18n.json')).toBe(false);
+        const filterFn = copyOptions!.filter as (srcPath: string) => boolean;
+        expect(filterFn(`/some/path/${FILTERS_I18N_FILENAME}`)).toBe(false);
         expect(filterFn('/some/path/ruleset_1.json')).toBe(true);
         expect(filterFn('/some/path/declarative')).toBe(true);
         expect(filterFn('/some/path/local_script_rules.js')).toBe(true);
