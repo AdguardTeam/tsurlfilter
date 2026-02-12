@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.X] - TBD
+
+### Added
+
+- `skipTranslations` option to `AssetsLoader.load()` and `--skip-translations`
+  CLI flag for the `load` command. When enabled, the `filters_i18n.json`
+  translations file is excluded from copying, preserving Chrome Web Store
+  skip review eligibility.
+
 ## [4.0.0] - TBD
 
 ### Changed

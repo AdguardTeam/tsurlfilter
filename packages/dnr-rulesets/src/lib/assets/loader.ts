@@ -4,6 +4,7 @@ import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
 
+import { LOCAL_I18N_METADATA_FILE_NAME } from '../../../common/constants';
 import { startDownload } from '../../../common/filters-downloader';
 import { LocalScriptRulesJs } from '../../common/local-script-rules-js';
 import { LocalScriptRulesJson } from '../../common/local-script-rules-json';
@@ -13,12 +14,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Re-export constants
 export const LOCAL_SCRIPT_RULES_JS_FILENAME = LocalScriptRulesJs.FILENAME;
 export const LOCAL_SCRIPT_RULES_JSON_FILENAME = LocalScriptRulesJson.FILENAME;
+export const FILTERS_I18N_FILENAME = LOCAL_I18N_METADATA_FILE_NAME;
 
 export type AssetsLoaderOptions = {
     /**
      * Whether to download latest text filters instead of DNR rulesets.
      */
     latestFilters?: boolean;
+
+    /**
+     * Whether to skip copying the translations file (`filters_i18n.json`).
+     * Useful for Chrome Web Store extensions that rely on the skip review
+     * mechanism, which requires that only `rule_resources` files are changed.
+     */
+    skipTranslations?: boolean;
 };
 
 /**
@@ -47,7 +56,11 @@ export class AssetsLoader {
 
         console.log(`Copying rulesets and local script rules from ${src} to ${to}`);
 
-        await copy(src, to);
+        const extraOptions = options?.skipTranslations
+            ? { filter: (srcPath: string) => path.basename(srcPath) !== FILTERS_I18N_FILENAME }
+            : {};
+
+        await copy(src, to, extraOptions);
 
         console.log(`Copying rulesets and local script rules from ${src} to ${to} done.`);
     }

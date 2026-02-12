@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { parse } from 'acorn';
-import { copy } from 'fs-extra';
+import { copy, type CopyOptions } from 'fs-extra';
 import process from 'process';
 import {
     afterEach,
@@ -52,7 +52,32 @@ describe('load', () => {
         expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
         expect(mockResolve).toHaveBeenCalledWith(expect.any(String), filtersRelativePath);
         expect(mockCopy).toHaveBeenCalledTimes(1);
-        expect(mockCopy).toHaveBeenCalledWith(src, to);
+        expect(mockCopy).toHaveBeenCalledWith(src, to, {});
+    });
+
+    it('should load assets with skipTranslations filter', async () => {
+        const loader = new AssetsLoader();
+
+        await expect(loader.load(dest, { skipTranslations: true })).resolves.toBeUndefined();
+
+        expect(mockResolve).toHaveBeenCalledTimes(2);
+        expect(cwdSpy).toHaveBeenCalledTimes(1);
+        expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
+        expect(mockResolve).toHaveBeenCalledWith(expect.any(String), filtersRelativePath);
+        expect(mockCopy).toHaveBeenCalledTimes(1);
+        expect(mockCopy).toHaveBeenCalledWith(src, to, {
+            filter: expect.any(Function),
+        });
+
+        // Verify the filter function excludes filters_i18n.json
+        const copyOptions = mockCopy.mock.lastCall?.[2] as CopyOptions | undefined;
+        expect(copyOptions).toBeDefined();
+
+        const filterFn = copyOptions!.filter as (src: string) => boolean;
+        expect(filterFn('/some/path/filters_i18n.json')).toBe(false);
+        expect(filterFn('/some/path/ruleset_1.json')).toBe(true);
+        expect(filterFn('/some/path/declarative')).toBe(true);
+        expect(filterFn('/some/path/local_script_rules.js')).toBe(true);
     });
 
     it('should throw an error if assets cannot be loaded', async () => {
@@ -69,7 +94,7 @@ describe('load', () => {
         expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
         expect(mockResolve).toHaveBeenCalledWith(expect.any(String), filtersRelativePath);
         expect(mockCopy).toHaveBeenCalledTimes(1);
-        expect(mockCopy).toHaveBeenCalledWith(src, to);
+        expect(mockCopy).toHaveBeenCalledWith(src, to, {});
     });
 });
 

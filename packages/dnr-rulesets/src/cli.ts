@@ -82,6 +82,7 @@ program
     .description('Downloads rulesets for MV3 extension')
     .argument('<path-to-output>', 'rulesets download path')
     .option('-l, --latest-filters', 'download latest text filters instead of DNR rulesets', false)
+    .option('-s, --skip-translations', 'skip copying the translations file (filters_i18n.json)', false)
     .action(async (dest: string, options?: AssetsLoaderOptions) => {
         const loader = new AssetsLoader();
 

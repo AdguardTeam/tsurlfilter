@@ -220,6 +220,16 @@ You can also integrate functions for downloading and updating the manifest into 
     await loader.load('<path-to-output>');
     ```
 
+    To skip copying the translations file (`filters_i18n.json`), pass the
+    `skipTranslations` option. This is useful for Chrome Web Store extensions
+    that rely on the
+    [skip review](https://developer.chrome.com/docs/webstore/skip-review)
+    mechanism, which requires that only `rule_resources` files are changed:
+
+    ```ts
+    await loader.load('<path-to-output>', { skipTranslations: true });
+    ```
+
 2. Copy only local script rules.
 
     **Option A: Copy JavaScript format rules**
