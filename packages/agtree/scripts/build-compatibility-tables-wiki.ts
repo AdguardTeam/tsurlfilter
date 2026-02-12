@@ -70,8 +70,8 @@ const getFirstCompatibleEntity = <T extends BaseCompatibilityDataSchema>(
     featureName: string,
     platform: Platform,
 ): CompatibilityEntityData => {
-    // Use find() which supports both specific and wildcard platforms
-    const result = table.find(featureName, platform);
+    // Use query() which supports both specific and wildcard platforms
+    const result = table.query(featureName, platform);
 
     if (result) {
         return {

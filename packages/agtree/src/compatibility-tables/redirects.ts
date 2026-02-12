@@ -81,7 +81,7 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
         let redirectData: RedirectDataSchema | null = null;
 
         if (isString(redirect)) {
-            redirectData = this.find(redirect, platform);
+            redirectData = this.query(redirect, platform);
         } else {
             redirectData = redirect;
         }

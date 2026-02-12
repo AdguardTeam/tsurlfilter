@@ -95,24 +95,24 @@ describe('Scriptlets Compatibility Table', () => {
 
     it('scriptletsCompatibilityTable.getMultiple', () => {
         expect(
-            scriptletsCompatibilityTable.query('abort-current-inline-script', Platform.AdgExtAny),
+            scriptletsCompatibilityTable.queryAll('abort-current-inline-script', Platform.AdgExtAny),
         ).toMatchObject([baseAbortCurrentInlineScriptData]);
 
-        expect(scriptletsCompatibilityTable.query('nonexistent', Platform.AdgExtAny)).toEqual([]);
+        expect(scriptletsCompatibilityTable.queryAll('nonexistent', Platform.AdgExtAny)).toEqual([]);
 
         // prevent-innerHTML - AdGuard extensions
         expect(
-            scriptletsCompatibilityTable.query('prevent-innerHTML', Platform.AdgExtAny),
+            scriptletsCompatibilityTable.queryAll('prevent-innerHTML', Platform.AdgExtAny),
         ).toMatchObject([basePreventInnerHTMLAdgData]);
 
         // prevent-innerHTML - uBlock Origin extensions
         expect(
-            scriptletsCompatibilityTable.query('prevent-innerHTML.js', Platform.UboExtAny),
+            scriptletsCompatibilityTable.queryAll('prevent-innerHTML.js', Platform.UboExtAny),
         ).toMatchObject([basePreventInnerHTMLUboData]);
 
         // prevent-innerHTML - should return empty object for ABP (not supported)
         expect(
-            scriptletsCompatibilityTable.query('prevent-innerHTML', Platform.AbpExtAny),
+            scriptletsCompatibilityTable.queryAll('prevent-innerHTML', Platform.AbpExtAny),
         ).toEqual([]);
     });
 

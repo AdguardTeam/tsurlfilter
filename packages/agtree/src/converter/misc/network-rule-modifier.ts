@@ -191,7 +191,7 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                     ? redirectsCompatibilityTable.query(
                         redirectResource,
                         Platform.AdgAny,
-                    )[0]?.name
+                    )?.name
                     : undefined;
 
                 // Check if the modifier name or the redirect resource name is different from the original modifier.
@@ -288,7 +288,7 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
 
         modifierList.children.forEach((modifierNode, index) => {
             const originalModifierName = modifierNode.name.value;
-            const modifierData = modifiersCompatibilityTable.query(originalModifierName, Platform.UboAny)[0];
+            const modifierData = modifiersCompatibilityTable.query(originalModifierName, Platform.UboAny);
 
             // Handle special case: resource redirection modifiers
             if (REDIRECT_MODIFIERS.has(originalModifierName)) {
@@ -323,7 +323,7 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                 const convertedRedirectResourceData = redirectsCompatibilityTable.query(
                     redirectResourceName,
                     Platform.UboAny,
-                )[0];
+                );
 
                 const convertedRedirectResourceName = convertedRedirectResourceData?.name ?? redirectResourceName;
 
@@ -354,7 +354,7 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                         const convertedModifierData = modifiersCompatibilityTable.query(
                             name,
                             Platform.UboAny,
-                        )[0];
+                        );
 
                         return uboResourceTypeModifiers.has(convertedModifierData?.name ?? name);
                     });

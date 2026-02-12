@@ -72,7 +72,7 @@ describe('Compatibility Tables - Integration', () => {
 
             // 3. Query with optimized platforms
             for (const platform of optimized) {
-                const results = modifiersCompatibilityTable.query('domain', platform);
+                const results = modifiersCompatibilityTable.queryAll('domain', platform);
                 expect(results.length).toBeGreaterThan(0);
             }
         });
@@ -111,8 +111,8 @@ describe('Compatibility Tables - Integration', () => {
 
         it('should find scriptlets across products with aliases', () => {
             // Some scriptlets have different names across products
-            const adgResults = scriptletsCompatibilityTable.query('set-constant', Platform.AdgAny);
-            const uboResults = scriptletsCompatibilityTable.query('set-constant', Platform.UboAny);
+            const adgResults = scriptletsCompatibilityTable.queryAll('set-constant', Platform.AdgAny);
+            const uboResults = scriptletsCompatibilityTable.queryAll('set-constant', Platform.UboAny);
 
             // Both should find the scriptlet (possibly under different names/aliases)
             expect(adgResults.length).toBeGreaterThan(0);
@@ -208,7 +208,7 @@ describe('Compatibility Tables - Integration', () => {
 
     describe('Platform.Any special handling', () => {
         it('should query all products with Platform.Any', () => {
-            const results = modifiersCompatibilityTable.query('domain', Platform.Any);
+            const results = modifiersCompatibilityTable.queryAll('domain', Platform.Any);
 
             // Should return results from all products (adg, ubo, abp)
             expect(results.length).toBeGreaterThanOrEqual(3);
@@ -218,12 +218,12 @@ describe('Compatibility Tables - Integration', () => {
             expect(uniqueResults.size).toBe(results.length);
         });
 
-        it('should check Platform.Any support via query', () => {
-            // Platform.Any in query returns results if feature exists anywhere
-            const domainResults = modifiersCompatibilityTable.query('domain', Platform.Any);
+        it('should check Platform.Any support via queryAll', () => {
+            // Platform.Any in queryAll returns results if feature exists anywhere
+            const domainResults = modifiersCompatibilityTable.queryAll('domain', Platform.Any);
             expect(domainResults.length).toBeGreaterThan(0);
 
-            const nonExistentResults = modifiersCompatibilityTable.query('nonexistent-modifier', Platform.Any);
+            const nonExistentResults = modifiersCompatibilityTable.queryAll('nonexistent-modifier', Platform.Any);
             expect(nonExistentResults.length).toBe(0);
         });
     });

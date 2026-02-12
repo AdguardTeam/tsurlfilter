@@ -40,12 +40,12 @@ describe('Modifiers Compatibility Table', () => {
         );
     });
 
-    it('modifiersCompatibilityTable.query', () => {
-        const results = modifiersCompatibilityTable.query('third-party', Platform.AdgExtAny);
+    it('modifiersCompatibilityTable.queryAll', () => {
+        const results = modifiersCompatibilityTable.queryAll('third-party', Platform.AdgExtAny);
         expect(results.length).toBeGreaterThan(0);
         expect(results[0]).toMatchObject(baseThirdPartyData);
 
-        expect(modifiersCompatibilityTable.query('nonexistent', Platform.AdgExtAny)).toEqual([]);
+        expect(modifiersCompatibilityTable.queryAll('nonexistent', Platform.AdgExtAny)).toEqual([]);
     });
 
     // TODO: Add more tests

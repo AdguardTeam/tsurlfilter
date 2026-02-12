@@ -121,7 +121,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
 
         // Only works with specific platforms
         if (platform.isWildcard) {
-            throw new Error('get() requires a specific platform. Use query() for wildcards.');
+            throw new Error('get() requires a specific platform. Use queryAll() for wildcards.');
         }
 
         return row.flatMap.get(platform.toString()) || null;
@@ -136,7 +136,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
      *
      * @returns Array of matching compatibility data.
      */
-    public query(name: string, platform: Platform): T[] {
+    public queryAll(name: string, platform: Platform): T[] {
         const row = this.getRow(name);
         if (!row) {
             return [];
@@ -213,15 +213,16 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
     }
 
     /**
-     * Finds the first matching compatibility data for the platform.
+     * Queries the first matching compatibility data for the platform.
+     * Supports wildcard platforms.
      *
      * @param name Feature name.
-     * @param platform Platform query.
+     * @param platform Platform query (can be wildcard).
      *
      * @returns First matching data or null.
      */
-    public find(name: string, platform: Platform): T | null {
-        const results = this.query(name, platform);
+    public query(name: string, platform: Platform): T | null {
+        const results = this.queryAll(name, platform);
         return results.length > 0 ? results[0] : null;
     }
 

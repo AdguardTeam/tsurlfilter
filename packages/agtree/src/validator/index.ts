@@ -42,9 +42,7 @@ const validateForSpecificProduct = (
 
     // Use the first platform for validation (all are same product)
     const platform = platforms[0];
-    const queryResult = modifiersCompatibilityTable.query(modifierName, platform);
-
-    const specificBlockerData = queryResult[0];
+    const specificBlockerData = modifiersCompatibilityTable.query(modifierName, platform);
 
     // if no specific blocker data is found
     if (!specificBlockerData) {

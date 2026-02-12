@@ -147,7 +147,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                 const scriptletData = scriptletsCompatibilityTable.query(
                     scriptletName,
                     Platform.UboAny,
-                )[0];
+                );
 
                 // Some scriptlets have special values that need to be converted
                 if (
@@ -348,7 +348,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                 uboScriptletName = scriptletName.slice(UBO_SCRIPTLET_PREFIX_LENGTH);
             } else {
                 // Otherwise, try to find the corresponding uBO scriptlet name, or use the original one if not found
-                const uboScriptlet = scriptletsCompatibilityTable.query(scriptletName, Platform.UboAny)[0];
+                const uboScriptlet = scriptletsCompatibilityTable.query(scriptletName, Platform.UboAny);
                 if (!uboScriptlet) {
                     throw new RuleConversionError(`Scriptlet "${scriptletName}" is not supported in uBlock Origin.`);
                 }

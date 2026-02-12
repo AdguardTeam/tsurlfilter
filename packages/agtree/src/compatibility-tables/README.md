@@ -18,9 +18,9 @@ Table of contents:
             - [Check if a feature exists](#check-if-a-feature-exists)
             - [Check if a feature is supported by a platform](#check-if-a-feature-is-supported-by-a-platform)
             - [Get compatibility data for a specific platform](#get-compatibility-data-for-a-specific-platform)
+            - [Query first matching platform](#query-first-matching-platform)
             - [Query all matching platforms](#query-all-matching-platforms)
             - [Get all features for a platform](#get-all-features-for-a-platform)
-            - [Find first matching result](#find-first-matching-result)
             - [Get all platform variants](#get-all-platform-variants)
             - [Group features by product](#group-features-by-product)
 
@@ -238,8 +238,8 @@ All tables extend `CompatibilityTableBase` and provide the same core methods:
 | `has(name: string): boolean` | Check if feature exists for any platform |
 | `supports(name: string, platform: Platform): boolean` | Check if feature is supported on platform |
 | `get(name: string, platform: Platform): T \| null` | Get data for specific platform (no wildcards) |
-| `query(name: string, platform: Platform): T[]` | Query all matching data (handles wildcards) |
-| `find(name: string, platform: Platform): T \| null` | Find first matching data (handles wildcards) |
+| `query(name: string, platform: Platform): T \| null` | Query first matching data (handles wildcards) |
+| `queryAll(name: string, platform: Platform): T[]` | Query all matching data (handles wildcards) |
 | `getAll(platform: Platform): Map<string, T[]>` | Get all features for platform |
 | `getAllVariants(name: string): T[]` | Get all platform variants of feature |
 | `groupByProduct(): Map<AdblockProduct, Map<string, T[]>>` | Group all features by product |
@@ -325,6 +325,18 @@ This returns the compatibility data object:
 
 If the feature doesn't exist for that platform, the method returns `null`.
 
+#### Query first matching platform
+
+When querying with wildcards, you might only need the first result:
+
+```ts
+import { modifiersCompatibilityTable, Platform } from '@adguard/agtree';
+
+// Find first AdGuard extension that supports $third-party
+const first = modifiersCompatibilityTable.query('third-party', Platform.AdgExtAny);
+// Returns the first matching ModifierData or null
+```
+
 #### Query all matching platforms
 
 Get compatibility data for all AdGuard browser extensions (wildcard query):
@@ -332,7 +344,7 @@ Get compatibility data for all AdGuard browser extensions (wildcard query):
 ```ts
 import { modifiersCompatibilityTable, Platform } from '@adguard/agtree';
 
-const results = modifiersCompatibilityTable.query('third-party', Platform.AdgExtAny);
+const results = modifiersCompatibilityTable.queryAll('third-party', Platform.AdgExtAny);
 ```
 
 This returns an array of compatibility data for all matching platforms:
@@ -385,18 +397,6 @@ This also works for wildcard queries to get all features across multiple platfor
 ```ts
 // Get all modifiers for any AdGuard OS
 const osFeatures = modifiersCompatibilityTable.getAll(Platform.AdgOsAny);
-```
-
-#### Find first matching result
-
-When querying with wildcards, you might only need the first result:
-
-```ts
-import { modifiersCompatibilityTable, Platform } from '@adguard/agtree';
-
-// Find first AdGuard extension that supports $third-party
-const first = modifiersCompatibilityTable.find('third-party', Platform.AdgExtAny);
-// Returns the first matching ModifierData
 ```
 
 #### Get all platform variants

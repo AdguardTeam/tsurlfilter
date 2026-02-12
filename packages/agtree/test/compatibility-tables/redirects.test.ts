@@ -34,12 +34,12 @@ describe('Redirects Compatibility Table', () => {
         expect(redirectsCompatibilityTable.get('nonexistent', Platform.AbpExtChrome)).toBeNull();
     });
 
-    it('redirectsCompatibilityTable.query', () => {
-        const results = redirectsCompatibilityTable.query('noopjs', Platform.AdgExtAny);
+    it('redirectsCompatibilityTable.queryAll', () => {
+        const results = redirectsCompatibilityTable.queryAll('noopjs', Platform.AdgExtAny);
         expect(results.length).toBeGreaterThan(0);
         expect(results[0]).toMatchObject(baseNoopJsData);
 
-        expect(redirectsCompatibilityTable.query('nonexistent', Platform.AdgExtAny)).toEqual([]);
+        expect(redirectsCompatibilityTable.queryAll('nonexistent', Platform.AdgExtAny)).toEqual([]);
     });
 
     describe('googlesyndication-adsbygoogle redirect', () => {
@@ -55,7 +55,7 @@ describe('Redirects Compatibility Table', () => {
                 redirectsCompatibilityTable.supports(REDIRECT_ALIAS, Platform.AdgAny),
             ).toBeTruthy();
 
-            const adgData = redirectsCompatibilityTable.find(
+            const adgData = redirectsCompatibilityTable.query(
                 REDIRECT_ALIAS,
                 Platform.AdgAny,
             );
@@ -68,7 +68,7 @@ describe('Redirects Compatibility Table', () => {
                 redirectsCompatibilityTable.supports(REDIRECT_ALIAS_UNDERSCORE, Platform.AdgAny),
             ).toBeTruthy();
 
-            const adgData = redirectsCompatibilityTable.find(
+            const adgData = redirectsCompatibilityTable.query(
                 REDIRECT_ALIAS_UNDERSCORE,
                 Platform.AdgAny,
             );
@@ -81,7 +81,7 @@ describe('Redirects Compatibility Table', () => {
                 redirectsCompatibilityTable.supports(REDIRECT_ALIAS_UBO_PREFIX, Platform.AdgAny),
             ).toBeTruthy();
 
-            const adgData = redirectsCompatibilityTable.find(
+            const adgData = redirectsCompatibilityTable.query(
                 REDIRECT_ALIAS_UBO_PREFIX,
                 Platform.AdgAny,
             );
