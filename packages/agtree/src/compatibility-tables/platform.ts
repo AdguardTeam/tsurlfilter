@@ -39,7 +39,7 @@ export type SpecificPlatformType = Exclude<PlatformType, PlatformType.Any>;
 /**
  * Wildcard identifier for 'any' platform.
  */
-export const WILDCARD_ANY = ProductCode.Any as string;
+export const WILDCARD_ANY = ProductCode.Any;
 
 /**
  * Separator for platform string representation.
