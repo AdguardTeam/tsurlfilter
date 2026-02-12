@@ -33,6 +33,14 @@ describe('Platform', () => {
             expect(platform.product).toBe('any');
             expect(platform.isWildcard).toBe(true);
         });
+
+        it('should throw on invalid product code', () => {
+            expect(() => Platform.parse('xyz_os_windows')).toThrow('Invalid product code');
+        });
+
+        it('should throw on invalid platform type', () => {
+            expect(() => Platform.parse('adg_foo_bar')).toThrow('Invalid platform type');
+        });
     });
 
     describe('toString', () => {

@@ -257,10 +257,15 @@ export class PlatformExpressionEvaluator {
             result.push(...groupPlatforms);
         }
 
-        // Re-add any wildcards that were in the input
+        // Re-add any wildcards that were in the input (deduplicating against already-added ones)
+        const resultSet = this.toPlatformStringSet(result);
         for (const platform of platforms) {
             if (platform.isWildcard) {
-                result.push(platform);
+                const key = platform.toString();
+                if (!resultSet.has(key)) {
+                    resultSet.add(key);
+                    result.push(platform);
+                }
             }
         }
 

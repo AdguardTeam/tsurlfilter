@@ -27,6 +27,7 @@ export enum PlatformType {
     Os = 'os',
     Cb = 'cb',
     Ext = 'ext',
+    Safari = 'safari',
     Any = 'any',
 }
 
@@ -75,6 +76,27 @@ export function getValidProductCodes(): ReadonlySet<SpecificProductCode> {
         );
     }
     return validProductCodesCache;
+}
+
+/**
+ * Cached valid platform types. Initialized lazily on first access.
+ */
+let validPlatformTypesCache: ReadonlySet<SpecificPlatformType> | null = null;
+
+/**
+ * Valid (non-wildcard) platform types.
+ * Lazily initialized on first call.
+ *
+ * @returns Set of valid platform type strings.
+ */
+export function getValidPlatformTypes(): ReadonlySet<SpecificPlatformType> {
+    if (validPlatformTypesCache === null) {
+        validPlatformTypesCache = new Set(
+            (Object.values(PlatformType) as PlatformType[])
+                .filter((t): t is SpecificPlatformType => t !== PlatformType.Any),
+        );
+    }
+    return validPlatformTypesCache;
 }
 
 /**
@@ -316,6 +338,7 @@ export class Platform {
             [PlatformType.Os]: 'System-level App',
             [PlatformType.Cb]: 'Content Blocker',
             [PlatformType.Ext]: 'Browser Extension',
+            [PlatformType.Safari]: 'Safari Content Blocker',
             [PlatformType.Any]: 'Any platform',
         };
 
@@ -368,6 +391,11 @@ export class Platform {
         }
 
         const type = parts[1] as SpecificPlatformType;
+
+        // Validate platform type
+        if (!getValidPlatformTypes().has(type)) {
+            throw new Error(`Invalid platform type: ${type}`);
+        }
 
         // Handle 'adg_os_any' style
         if (parts.length === 3 && parts[2] === WILDCARD_ANY) {

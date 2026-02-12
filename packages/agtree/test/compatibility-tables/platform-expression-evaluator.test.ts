@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { PlatformExpressionEvaluator } from '../../src/compatibility-tables';
+import { Platform, PlatformExpressionEvaluator } from '../../src/compatibility-tables';
 
 describe('PlatformExpressionEvaluator', () => {
     describe('evaluate', () => {
@@ -362,6 +362,20 @@ describe('PlatformExpressionEvaluator', () => {
             expect(result).toHaveLength(2);
             expect(result[0].toString()).toBe('adg_os_windows');
             expect(result[1].toString()).toBe('adg_os_windows');
+        });
+
+        it('should not produce duplicate wildcards when collapsing', () => {
+            // Input: all concrete AdGuard OS platforms + the AdgOsAny wildcard
+            // Without dedupe, optimize would output AdgOsAny twice
+            const platforms = [
+                ...PlatformExpressionEvaluator.evaluate('adg_os_any'),
+                Platform.AdgOsAny,
+            ];
+            const result = PlatformExpressionEvaluator.optimize(platforms);
+            const resultStrings = result.map((p) => p.toString());
+
+            // adg_os_any should appear exactly once
+            expect(resultStrings.filter((s) => s === 'adg_os_any')).toHaveLength(1);
         });
     });
 });
