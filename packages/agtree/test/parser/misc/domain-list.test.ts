@@ -537,5 +537,32 @@ describe('DomainListParser', () => {
                 ],
             });
         });
+
+        test('with path', () => {
+            expect(DomainListParser.parse('example.com/path1,example.net/path2')).toEqual<DomainList>(
+                {
+                    type: ListNodeType.DomainList,
+                    start: 0,
+                    end: 35,
+                    separator: ',',
+                    children: [
+                        {
+                            type: ListItemNodeType.Domain,
+                            start: 0,
+                            end: 17,
+                            value: 'example.com/path1',
+                            exception: false,
+                        },
+                        {
+                            type: ListItemNodeType.Domain,
+                            start: 18,
+                            end: 35,
+                            value: 'example.net/path2',
+                            exception: false,
+                        },
+                    ],
+                },
+            );
+        });
     });
 });
