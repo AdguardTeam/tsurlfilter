@@ -1,0 +1,17 @@
+ubo_any:
+  name: trusted-create-HTML.js
+  version_added: 1.63.3b15
+  description: Element(s) from a parsed HTML string are added as child element(s) to a specific parent element in the DOM.
+  aliases:
+    - trusted-create-html
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-create-htmljs-
+  parameters:
+    - name: parent
+      required: true
+      description: A CSS selector identifying the element to which created element(s) will be added.
+    - name: html
+      required: true
+      description: An HTML string to be parsed using DOMParser, and which resulting elements are to be added as child element(s).
+    - name: duration
+      required: false
+      description: If specified, the time in ms after which the added elements will be removed. No removal will occur if not specified.
