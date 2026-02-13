@@ -12,16 +12,15 @@ const basePreventInnerHTMLAdgData = {
     name: 'prevent-innerHTML',
     aliases: [
         'prevent-innerHTML.js',
-        'no-innerHTML-if.js',
-        'ubo-no-innerHTML-if.js',
-        'ubo-no-innerHTML-if',
+        'ubo-prevent-innerHTML.js',
+        'ubo-prevent-innerHTML',
     ],
 };
 
 const basePreventInnerHTMLUboData = {
     name: 'prevent-innerHTML.js',
     aliases: [
-        'no-innerHTML-if.js',
+        'prevent-innerHTML',
     ],
 };
 

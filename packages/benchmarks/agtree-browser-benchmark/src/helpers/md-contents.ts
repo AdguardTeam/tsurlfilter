@@ -74,9 +74,6 @@ export const getMdFileContents = async (specs: SystemSpecs, filterListResults: F
                         ['Stat', 'Value'],
                         ['Raw filter list size (utf-8)', printBytesAsMegabytes(benchResult.stats.rawFilterListSize)],
                         ['Parsed filter list size', printBytesAsMegabytes(benchResult.stats.parsedFilterListSize)],
-                        ['Serialized size', printBytesAsMegabytes(benchResult.stats.serializedFilterListSize)],
-                        // eslint-disable-next-line max-len
-                        ['Deserialized filter list size', printBytesAsMegabytes(benchResult.stats.deserializedFilterListSize)],
                     ],
                 ),
             );

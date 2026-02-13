@@ -73,7 +73,8 @@
         "precommit": "pnpm lint:types && pnpm lint && pnpm test",
         "test": "vitest run --no-cache",
         "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
-        "tgz": "pnpm pack --out agtree.tgz"
+        "tgz": "pnpm pack --out agtree.tgz",
+        "verify-compat": "tsx scripts/compatibility-data-extractor/extractor.ts --scriptlets && tsx scripts/compatibility-data-extractor/validate.ts"
     },
     "dependencies": {
         "@adguard/css-tokenizer": "workspace:^",
@@ -104,6 +105,7 @@
         "@typescript-eslint/parser": "catalog:",
         "@vitest/coverage-v8": "catalog:",
         "@vitest/expect": "catalog:",
+        "comment-parser": "^1.4.5",
         "eslint": "catalog:",
         "eslint-config-airbnb-base": "catalog:",
         "eslint-config-airbnb-typescript": "catalog:",
@@ -127,6 +129,7 @@
         "tsx": "catalog:",
         "type-fest": "^4.18.0",
         "typescript": "catalog:",
+        "valibot": "^1.2.0",
         "vitest": "catalog:",
         "xregexp": "^5.1.2"
     }
