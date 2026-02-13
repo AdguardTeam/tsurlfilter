@@ -446,26 +446,27 @@ describe('DomainListParser', () => {
         });
 
         test('should parse regex domains with pipes correctly', () => {
-            // // Regex domain with pipe in alternation (comma separator)
-            // const regexWithPipes = String.raw`/(com|org|net)/`;
-            // expect(DomainListParser.parse(regexWithPipes)).toEqual<DomainList>({
-            //     type: ListNodeType.DomainList,
-            //     start: 0,
-            //     end: regexWithPipes.length,
-            //     separator: ',',
-            //     children: [
-            //         {
-            //             type: ListItemNodeType.Domain,
-            //             start: 0,
-            //             end: regexWithPipes.length,
-            //             value: regexWithPipes,
-            //             exception: false,
-            //         },
-            //     ],
-            // });
+            // Regex domain with pipe in alternation (comma separator)
+            const regexWithPipes = String.raw`/(com|org|net)/`;
+            expect(DomainListParser.parse(regexWithPipes)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: regexWithPipes.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexWithPipes.length,
+                        value: regexWithPipes,
+                        exception: false,
+                    },
+                ],
+            });
 
             // Multiple domains with pipe separator and regex containing pipe
             const mixedWithPipeSep = String.raw`/example\.(com|org)/|example.net`;
+            const regexPartPipe = String.raw`/example\.(com|org)/`;
             expect(
                 DomainListParser.parse(mixedWithPipeSep, defaultParserOptions, 0, '|'),
             ).toEqual<DomainList>({
@@ -477,13 +478,13 @@ describe('DomainListParser', () => {
                     {
                         type: ListItemNodeType.Domain,
                         start: 0,
-                        end: 20,
-                        value: String.raw`/example\.(com|org)/`,
+                        end: regexPartPipe.length,
+                        value: regexPartPipe,
                         exception: false,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        start: 21,
+                        start: regexPartPipe.length + 1,
                         end: mixedWithPipeSep.length,
                         value: 'example.net',
                         exception: false,
@@ -537,54 +538,108 @@ describe('DomainListParser', () => {
             });
         });
 
-        test('with path', () => {
-            expect(DomainListParser.parse('example.com/path1,example.net/path2')).toEqual<DomainList>(
-                {
-                    type: ListNodeType.DomainList,
-                    start: 0,
-                    end: 35,
-                    separator: ',',
-                    children: [
-                        {
-                            type: ListItemNodeType.Domain,
-                            start: 0,
-                            end: 17,
-                            value: 'example.com/path1',
-                            exception: false,
-                        },
-                        {
-                            type: ListItemNodeType.Domain,
-                            start: 18,
-                            end: 35,
-                            value: 'example.net/path2',
-                            exception: false,
-                        },
-                    ],
-                },
-            );
-        });
-
-        test('should parse regex domain with escaped forward slash in path', () => {
-            // Regex domain with escaped forward slash: /example\.org\/path/##.ad
-            // const regexWithPath = String.raw`/example\.org\/path/`;
-            expect(DomainListParser.parse(String.raw`/example\.org\/path1/, example.org/path2`)).toEqual<DomainList>({
+        test('should parse domain list with paths', () => {
+            const domain1 = 'example.com/path1';
+            const domain2 = 'example.net/path2';
+            expect(DomainListParser.parse(`${domain1},${domain2}`)).toEqual<DomainList>({
                 type: ListNodeType.DomainList,
                 start: 0,
-                end: String.raw`/example\.org\/path1/, example.org/path2`.length,
+                end: `${domain1},${domain2}`.length,
                 separator: ',',
                 children: [
                     {
                         type: ListItemNodeType.Domain,
                         start: 0,
-                        end: String.raw`/example\.org\/path1/`.length,
-                        value: String.raw`/example\.org\/path1/`,
+                        end: domain1.length,
+                        value: domain1,
                         exception: false,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        start: 23,
-                        end: 40,
-                        value: 'example.org/path2',
+                        start: domain1.length + 1,
+                        end: `${domain1},${domain2}`.length,
+                        value: domain2,
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should parse regex domain with escaped forward slash in path', () => {
+            const regexWithPath = String.raw`/example\.org\/path1/`;
+            const regularPath = 'example.org/path2';
+            expect(DomainListParser.parse(`${regexWithPath}, ${regularPath}`)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: `${regexWithPath}, ${regularPath}`.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexWithPath.length,
+                        value: regexWithPath,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: regexWithPath.length + 2,
+                        end: `${regexWithPath}, ${regularPath}`.length,
+                        value: regularPath,
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should parse regex domain with escaped forward slash in path when it is not in first position', () => {
+            const regexWithPath = String.raw`/example\.org\/path1/`;
+            const regularPath = 'example.org/path2';
+            expect(DomainListParser.parse(`${regularPath}, ${regexWithPath}`)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: `${regularPath}, ${regexWithPath}`.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regularPath.length,
+                        value: regularPath,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: regularPath.length + 2,
+                        end: `${regularPath}, ${regexWithPath}`.length,
+                        value: regexWithPath,
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should parse regex domain with unescaped forward slash', () => {
+            const regexDomain = String.raw`/[/]/`;
+            const regularPath = 'example.org/path';
+            expect(DomainListParser.parse(`${regexDomain}, ${regularPath}`)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: `${regexDomain}, ${regularPath}`.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexDomain.length,
+                        value: regexDomain,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: regexDomain.length + 2,
+                        end: `${regexDomain}, ${regularPath}`.length,
+                        value: regularPath,
                         exception: false,
                     },
                 ],
