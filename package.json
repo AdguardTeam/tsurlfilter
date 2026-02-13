@@ -31,10 +31,6 @@
         "vitest": "catalog:"
     },
     "pnpm": {
-        "neverBuiltDependencies": [],
-        "overrides": {
-            "@adguard/agtree": "workspace:^",
-            "@adguard/scriptlets>@adguard/agtree": "^4.0.0"
-        }
+        "neverBuiltDependencies": []
     }
 }
