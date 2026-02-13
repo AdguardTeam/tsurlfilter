@@ -200,11 +200,39 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
                 if (data) {
                     results.set(name, [data]);
                 }
+            } else if (platform.toString() === WILDCARD_ANY) {
+                // Special case: Platform.Any (global wildcard across all products)
+                const deduplicated: T[] = [];
+                const seen = new Set<T>();
+
+                for (const code of getValidProductCodes()) {
+                    const productResults = row.trie.query([code]);
+                    for (const item of productResults) {
+                        if (!seen.has(item)) {
+                            seen.add(item);
+                            deduplicated.push(item);
+                        }
+                    }
+                }
+
+                if (deduplicated.length > 0) {
+                    results.set(name, deduplicated);
+                }
             } else {
-                // For wildcards
+                // For other wildcards, use trie query and deduplicate
                 const matches = row.trie.query(platform.toPath());
-                if (matches.length > 0) {
-                    results.set(name, matches);
+                const seen = new Set<T>();
+                const deduplicated: T[] = [];
+
+                for (const item of matches) {
+                    if (!seen.has(item)) {
+                        seen.add(item);
+                        deduplicated.push(item);
+                    }
+                }
+
+                if (deduplicated.length > 0) {
+                    results.set(name, deduplicated);
                 }
             }
         }

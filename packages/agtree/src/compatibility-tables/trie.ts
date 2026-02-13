@@ -40,17 +40,20 @@ export class TrieNode<T> {
     insert(path: string[], data: T): void {
         let node: TrieNode<T> = this;
 
+        // Invalidate cache on root
+        node.invalidateCache();
+
         for (const segment of path) {
             if (!node.children.has(segment)) {
                 node.children.set(segment, new TrieNode<T>());
             }
             node = node.children.get(segment)!;
+
+            // Invalidate cache on each node along the path
+            node.invalidateCache();
         }
 
         node.data = data;
-
-        // Invalidate cache up the tree
-        this.invalidateCache();
     }
 
     /**
@@ -171,9 +174,6 @@ export class TrieNode<T> {
      */
     private invalidateCache(): void {
         this.subtreeCache = undefined;
-
-        // Could recursively invalidate parent caches if we tracked parents
-        // For now, we just invalidate this node's cache
     }
 
     /**

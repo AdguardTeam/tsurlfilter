@@ -33,6 +33,10 @@ const validateForSpecificProduct = (
 ): ValidationResult => {
     const modifierName = modifier.name.value;
 
+    if (platforms.length === 0) {
+        throw new Error('At least one platform must be specified for validation');
+    }
+
     // Detect if multiple products are specified
     const uniqueProducts = new Set(platforms.map((p) => p.product));
     if (uniqueProducts.size > 1) {
