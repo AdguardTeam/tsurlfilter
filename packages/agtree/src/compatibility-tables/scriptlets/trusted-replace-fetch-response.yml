@@ -1,15 +1,54 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
   is_trusted: true
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: trusted-replace-fetch-response
   version_added: 1.7.3
+  description: Replaces response text content of fetch requests if all given parameters match.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-replace-fetch-response
   parameters:
     - name: pattern
       required: false
+      description: Argument for matching contents of responseText that should be replaced. If set, replacement is required.
     - name: replacement
       required: false
+      description: Should be set if pattern is set. String to replace the response text content matched by pattern. Empty string to remove content. Defaults to empty string.
     - name: propsToMatch
       required: false
+      description: String of space-separated properties to match.
+
+ubo_any:
+  name: trusted-replace-fetch-response.js
+  version_added: 1.51.1b8
+  description: Replaces response text content of fetch requests if all given parameters match.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-replace-fetch-responsejs-
+  aliases:
+    - trusted-replace-fetch-response
+  parameters:
+    - name: pattern
+      required: true
+      description: Argument for matching contents of `responseText` that should be replaced. 
+    - name: replacement
+      required: false
+      description: Should be set if first parameter is set. String to replace the response text content matched by pattern. Empty string to remove content. Defaults to empty string.
+    - name: propsToMatch
+      required: false
+      description: String of space-separated properties to match.
+
+abp_any:
+  name: replace-fetch-response
+  version_added: 4.4.0
+  description: Replaces the response of a fetch request if the response text matches a given regular expression pattern.
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  parameters:
+    - name: search
+      required: true
+      description: String or regex pattern that will be run against the stringified fetch response. Everything that matches the regex will be replaced with the replacement value.
+    - name: replacement
+      required: false
+      description: Everything that matches the regex will be replaced with the replacement value. By default this will be an empty string, so everything that matches the regex will be removed from the fetch response.
+    - name: needle
+      required: false
+      description: |-
+        The replacement will only happen if the needle text is present in the response. By default this is an empty string.
+        If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
