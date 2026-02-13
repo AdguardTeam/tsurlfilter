@@ -1,4 +1,5 @@
 common:
+  is_trusted: true
   parameters:
     - name: name
       required: true
