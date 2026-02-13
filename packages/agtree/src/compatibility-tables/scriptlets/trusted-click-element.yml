@@ -1,5 +1,8 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  is_trusted: true
+
 adg_os_any|adg_ext_any:
   name: trusted-click-element
   version_added: 1.7.3

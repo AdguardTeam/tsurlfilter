@@ -131,5 +131,23 @@ describe('Scriptlets Compatibility Table', () => {
         ).toEqual({});
     });
 
+    it('scriptletsCompatibilityTable.getSingle - isTrusted defaults to false for regular scriptlets', () => {
+        const data = scriptletsCompatibilityTable.getSingle(
+            'abort-current-inline-script',
+            SpecificPlatform.AdgExtChrome,
+        );
+        expect(data).not.toBeNull();
+        expect(data!.isTrusted).toBe(false);
+    });
+
+    it('scriptletsCompatibilityTable.getSingle - isTrusted is true for trusted scriptlets', () => {
+        const data = scriptletsCompatibilityTable.getSingle(
+            'trusted-click-element',
+            SpecificPlatform.AdgExtChrome,
+        );
+        expect(data).not.toBeNull();
+        expect(data!.isTrusted).toBe(true);
+    });
+
     // TODO: Add more tests
 });

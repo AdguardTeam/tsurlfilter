@@ -60,6 +60,12 @@ const scriptletParametersSchema = zod.array(scriptletParameterSchema);
 export const scriptletDataSchema = zodToCamelCase(
     baseCompatibilityDataSchema.extend({
         /**
+         * Describes whether the scriptlet is a trusted scriptlet.
+         * Trusted scriptlets have elevated privileges and can only be used in trusted filter lists.
+         */
+        is_trusted: booleanSchema.default(false),
+
+        /**
          * List of parameters that the scriptlet accepts.
          * **Every** parameter should be listed here, because we check that the scriptlet is used correctly
          * (e.g. that the number of parameters is correct).
