@@ -1,0 +1,11 @@
+ubo_any:
+  name: json-edit.js
+  version_added: 1.69.1b4
+  description: Edit object generated through `JSON.parse()`. Properties can only be removed.
+  aliases:
+    - json-edit
+  docs: https://github.com/gorhill/uBlock/blob/a85fc33ce8ba8de5ae8f400cc6473243803deae6/src/js/resources/json-edit.js#L129
+  parameters:
+    - name: jsonq
+      required: true
+      description: A uBO-flavored JSONPath query.
