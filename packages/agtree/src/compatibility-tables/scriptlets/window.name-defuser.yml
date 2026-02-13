@@ -1,0 +1,6 @@
+ubo_any:
+  name: window.name-defuser.js
+  description: Clears `window.name` property which can be misused for tracking purposes.
+  aliases:
+    - window.name-defuser
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#windowname-defuser-
