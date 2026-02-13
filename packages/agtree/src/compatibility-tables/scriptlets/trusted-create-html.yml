@@ -5,6 +5,7 @@ ubo_any:
   aliases:
     - trusted-create-html
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-create-htmljs-
+  is_trusted: true
   parameters:
     - name: parent
       required: true
