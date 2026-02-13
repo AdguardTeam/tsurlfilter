@@ -508,30 +508,37 @@ function buildCosmeticRuleParts(
             i += 1;
         }
 
-        if (rule[i] === '$') {
-            // find last unescaped ] from separator
-            let j = offset - 1;
-
-            while (j >= realStart) {
-                if (rule[j] === CLOSE_SQUARE && rule[j - 1] !== ESCAPE) {
-                    break;
-                }
-                j -= 1;
-            }
-
-            if (j < realStart) {
-                return null;
-            }
-
-            const domain = extractDomainsFromModifierList(rule, i + 1, j);
-
-            if (domain !== null) {
-                domainsStart = decodeDomainsStart(domain);
-                domainsEnd = decodeDomainsEnd(domain);
-            }
-        } else {
+        if (rule[i] !== '$') {
             // invalid rule
             return null;
+        }
+
+        // find last unescaped ] from separator
+        let j = offset - 1;
+
+        while (j >= realStart) {
+            if (rule[j] === CLOSE_SQUARE && rule[j - 1] !== ESCAPE) {
+                break;
+            }
+            j -= 1;
+        }
+
+        if (j < realStart) {
+            return null;
+        }
+
+        const domain = extractDomainsFromModifierList(rule, i + 1, j);
+
+        if (domain !== null) {
+            domainsStart = decodeDomainsStart(domain);
+            domainsEnd = decodeDomainsEnd(domain);
+        } else {
+            // take the rest of the pattern as domains, skipping whitespace after ]
+            const restStart = findNextNonWhitespace(rule, j + 1, offset);
+            if (restStart < offset) {
+                domainsStart = restStart;
+                domainsEnd = offset;
+            }
         }
     } else if (realStart < offset) {
         domainsStart = realStart;

@@ -1432,3 +1432,26 @@ describe('Async engine creation', () => {
         expect(result.getBasicResult()).not.toBeNull();
     });
 });
+
+describe('$path cosmetic modifier', () => {
+    it('$generichide should not disable path modifier rules', () => {
+        const rulesLocal = [
+            '[$path=/subpage1]example.org##.ad-banner',
+            '@@||example.org^$generichide',
+        ];
+        const engine = Engine.createSync({
+            filters: [
+                {
+                    id: 1,
+                    content: rulesLocal.join('\n'),
+                },
+            ],
+        });
+
+        const result = engine.getCosmeticResult(
+            createRequest('http://example.org/subpage1'),
+            CosmeticOption.CosmeticOptionAll,
+        );
+        expect(result.elementHiding.specific.length).toEqual(1);
+    });
+});
