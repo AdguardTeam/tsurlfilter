@@ -96,6 +96,54 @@ describe('Content string filter', () => {
         expect(modified).toBe('<html><head></head><body><h1>a</h1><span>a</span></body></html>');
     });
 
+    it('does not apply html rules to non-html content types', () => {
+        const jsContext = {
+            ...context,
+            contentTypeHeader: 'application/javascript',
+        };
+
+        const jsContent = 'var banner = "test";';
+
+        const htmlRules = [
+            createCosmeticRule('$$script[tag-content="banner"]', 1),
+        ];
+
+        const contentStringFilter = new ContentStringFilter(
+            jsContext,
+            htmlRules,
+            null,
+            defaultFilteringLog,
+            mockEngineApi,
+        );
+
+        const modified = contentStringFilter.applyRules(jsContent);
+
+        expect(modified).toBe(jsContent);
+    });
+
+    it('applies html rules when content type is text/html', () => {
+        const htmlContext = {
+            ...context,
+            contentTypeHeader: 'text/html; charset=utf-8',
+        };
+
+        const htmlRules = [
+            createCosmeticRule('$$h1', 1),
+        ];
+
+        const contentStringFilter = new ContentStringFilter(
+            htmlContext,
+            htmlRules,
+            null,
+            defaultFilteringLog,
+            mockEngineApi,
+        );
+
+        const modified = contentStringFilter.applyRules(content);
+
+        expect(modified).toBe('<html><head></head><body><span>test</span></body></html>');
+    });
+
     it('returns original content, if rules does not exist', () => {
         const contentStringFilter = new ContentStringFilter(
             context,
