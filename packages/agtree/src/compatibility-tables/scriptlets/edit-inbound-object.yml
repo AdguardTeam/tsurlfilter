@@ -7,8 +7,11 @@ ubo_any:
   docs: https://github.com/gorhill/uBlock/blob/a85fc33ce8ba8de5ae8f400cc6473243803deae6/src/js/resources/json-edit.js#L242
   parameters:
     - name: propChain
+      required: true
       description: Property chain of the method to trap.
     - name: argPos
+      required: true
       description: 0-based position of the argument. Use negative integer for position relative to the end.
     - name: jsonq
+      required: true
       description: A uBO-flavored JSONPath query.
