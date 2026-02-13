@@ -5,6 +5,7 @@ ubo_any:
   aliases:
     - trusted-json-edit
   docs: https://github.com/gorhill/uBlock/blob/a85fc33ce8ba8de5ae8f400cc6473243803deae6/src/js/resources/json-edit.js#L152
+  is_trusted: true
   parameters:
     - name: jsonq
       required: true
