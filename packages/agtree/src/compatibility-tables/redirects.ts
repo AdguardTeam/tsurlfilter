@@ -15,7 +15,7 @@ import { getResourceTypeModifier } from './utils/resource-type-helpers';
 import { isNull, isString, isUndefined } from '../utils/type-guards';
 import { getHumanReadablePlatformName } from './utils/platform-helpers';
 import { type ValidationContext } from './validators/types';
-import { VALIDATION_ERROR_PREFIX } from '../validator/constants';
+import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from '../validator/constants';
 
 /**
  * Prefix for resource redirection names.
@@ -143,8 +143,7 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
         // Check if deprecated
         if (specificRedirectData.deprecated) {
             if (!specificRedirectData.deprecationMessage) {
-                ctx.addError('Deprecated redirect without deprecation message');
-                return;
+                throw new Error(`${SOURCE_DATA_ERROR_PREFIX.NO_DEPRECATION_MESSAGE}: '${redirectName}'`);
             }
             const warn = specificRedirectData.deprecationMessage.replace(NEWLINE, SPACE);
             ctx.addWarning(warn);

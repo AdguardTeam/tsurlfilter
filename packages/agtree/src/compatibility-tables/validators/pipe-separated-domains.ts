@@ -41,7 +41,8 @@ const validatePipeSeparatedDomains = (value: string, ctx: ValidationContext): vo
 
         if (RegExpUtils.isRegexPattern(item.value)) {
             try {
-                new RegExp(item.value);
+                // Strip the leading and trailing slashes before constructing the RegExp
+                new RegExp(item.value.slice(1, -1));
             } catch {
                 invalidItems.push(item.value);
             }

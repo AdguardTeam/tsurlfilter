@@ -62,7 +62,7 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
      * @param ctx Validation context to collect issues into.
      * @param platform Platform to validate against.
      * @param isExceptionRule Whether the modifier is used in an exception rule (default: false).
-     * @param ruleModifierNames Set of modifier names in the current rule (for duplicate detection).
+     * @param ruleModifierNames Set of modifier names in the current rule (for conflict detection).
      */
     public validate(
         data: Modifier | string,
