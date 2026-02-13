@@ -41,13 +41,6 @@ npmjs • 2.x: &npmjs
             npm publish tswebextension.tgz $bamboo_publishArgs
   requirements:
     - extension: 'true'
-  notifications:
-    - events:
-        - deployment-started-and-finished
-      recipients:
-        - webhook:
-            name: Deploy webhook
-            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
 npmjs • alpha:
   <<: *npmjs
