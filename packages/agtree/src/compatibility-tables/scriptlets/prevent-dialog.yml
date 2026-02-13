@@ -1,0 +1,11 @@
+ubo_any:
+  name: prevent-dialog.js
+  version_added: 1.69.1b3
+  description: Programmatically close `dialog` elements.
+  docs: https://github.com/gorhill/uBlock/commit/fd12d01928da622c87e2d046e2c8dfdf8efe4eea
+  aliases:
+    - prevent-dialog
+  parameters:
+    - name: selector
+      required: false
+      description: The dialog element must matches `dialog{selector}` for the prevention to take place.
