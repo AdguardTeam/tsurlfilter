@@ -37,6 +37,26 @@ export enum PlatformType {
 export type SpecificPlatformType = Exclude<PlatformType, PlatformType.Any>;
 
 /**
+ * Specific platform identifiers (e.g., 'windows', 'chrome', 'android').
+ */
+export enum PlatformSpecific {
+    Windows = 'windows',
+    Linux = 'linux',
+    Mac = 'mac',
+    Android = 'android',
+    Ios = 'ios',
+    Safari = 'safari',
+    Chrome = 'chrome',
+    Opera = 'opera',
+    Edge = 'edge',
+    Firefox = 'firefox',
+    ChromeMv3 = 'chrome_mv3',
+    OperaMv3 = 'opera_mv3',
+    EdgeMv3 = 'edge_mv3',
+    FirefoxMv3 = 'firefox_mv3',
+}
+
+/**
  * Wildcard identifier for 'any' platform.
  */
 export const WILDCARD_ANY = ProductCode.Any;
@@ -76,6 +96,24 @@ export function getValidProductCodes(): ReadonlySet<SpecificProductCode> {
         );
     }
     return validProductCodesCache;
+}
+
+/**
+ * Cached valid platform specifics. Initialized lazily on first access.
+ */
+let validPlatformSpecificsCache: ReadonlySet<PlatformSpecific> | null = null;
+
+/**
+ * Valid platform specific values.
+ * Lazily initialized on first call.
+ *
+ * @returns Set of valid platform specific strings.
+ */
+export function getValidPlatformSpecifics(): ReadonlySet<PlatformSpecific> {
+    if (validPlatformSpecificsCache === null) {
+        validPlatformSpecificsCache = new Set(Object.values(PlatformSpecific));
+    }
+    return validPlatformSpecificsCache;
 }
 
 /**
@@ -144,7 +182,7 @@ export class Platform {
     /**
      * Specific platform identifier (e.g., 'windows', 'chrome', or undefined for wildcard).
      */
-    public readonly specific?: string;
+    public readonly specific?: PlatformSpecific;
 
     /**
      * Cached string representation (computed lazily).
@@ -163,7 +201,7 @@ export class Platform {
      * @param type Platform type (optional for wildcard queries).
      * @param specific Specific platform (optional for wildcard queries).
      */
-    constructor(product: ProductCode, type?: PlatformType, specific?: string) {
+    constructor(product: ProductCode, type?: PlatformType, specific?: PlatformSpecific) {
         this.product = product;
         this.type = type;
         this.specific = specific;
@@ -215,7 +253,7 @@ export class Platform {
                 return this.stringCache;
             }
 
-            if (this.specific && this.specific !== PlatformType.Any) {
+            if (this.specific) {
                 parts.push(this.specific);
             } else if (this.type && !this.specific) {
                 result = `${this.product}${PLATFORM_SEPARATOR}${this.type}${PLATFORM_SEPARATOR}${WILDCARD_ANY}`;
@@ -403,7 +441,12 @@ export class Platform {
         }
 
         // Specific platform: join remaining parts (e.g., 'chrome_mv3')
-        const specific = parts.slice(2).join(PLATFORM_SEPARATOR);
+        const specific = parts.slice(2).join(PLATFORM_SEPARATOR) as PlatformSpecific;
+
+        // Validate specific platform
+        if (!getValidPlatformSpecifics().has(specific)) {
+            throw new Error(`Invalid platform specific: ${specific}`);
+        }
 
         return new Platform(product, type, specific);
     }
@@ -438,67 +481,67 @@ export class Platform {
         return Platform.concretePlatformsCache;
     }
 
-    static readonly AdgOsWindows = new Platform(ProductCode.Adg, PlatformType.Os, 'windows');
+    static readonly AdgOsWindows = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Windows);
 
-    static readonly AdgOsLinux = new Platform(ProductCode.Adg, PlatformType.Os, 'linux');
+    static readonly AdgOsLinux = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Linux);
 
-    static readonly AdgOsMac = new Platform(ProductCode.Adg, PlatformType.Os, 'mac');
+    static readonly AdgOsMac = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Mac);
 
-    static readonly AdgOsAndroid = new Platform(ProductCode.Adg, PlatformType.Os, 'android');
+    static readonly AdgOsAndroid = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Android);
 
-    static readonly AdgExtChrome = new Platform(ProductCode.Adg, PlatformType.Ext, 'chrome');
+    static readonly AdgExtChrome = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Chrome);
 
-    static readonly AdgExtOpera = new Platform(ProductCode.Adg, PlatformType.Ext, 'opera');
+    static readonly AdgExtOpera = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Opera);
 
-    static readonly AdgExtEdge = new Platform(ProductCode.Adg, PlatformType.Ext, 'edge');
+    static readonly AdgExtEdge = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Edge);
 
-    static readonly AdgExtFirefox = new Platform(ProductCode.Adg, PlatformType.Ext, 'firefox');
+    static readonly AdgExtFirefox = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Firefox);
 
-    static readonly AdgExtChromeMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, 'chrome_mv3');
+    static readonly AdgExtChromeMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.ChromeMv3);
 
-    static readonly AdgExtOperaMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, 'opera_mv3');
+    static readonly AdgExtOperaMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.OperaMv3);
 
-    static readonly AdgExtEdgeMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, 'edge_mv3');
+    static readonly AdgExtEdgeMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.EdgeMv3);
 
-    static readonly AdgExtFirefoxMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, 'firefox_mv3');
+    static readonly AdgExtFirefoxMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.FirefoxMv3);
 
-    static readonly AdgCbAndroid = new Platform(ProductCode.Adg, PlatformType.Cb, 'android');
+    static readonly AdgCbAndroid = new Platform(ProductCode.Adg, PlatformType.Cb, PlatformSpecific.Android);
 
-    static readonly AdgCbIos = new Platform(ProductCode.Adg, PlatformType.Cb, 'ios');
+    static readonly AdgCbIos = new Platform(ProductCode.Adg, PlatformType.Cb, PlatformSpecific.Ios);
 
-    static readonly AdgCbSafari = new Platform(ProductCode.Adg, PlatformType.Cb, 'safari');
+    static readonly AdgCbSafari = new Platform(ProductCode.Adg, PlatformType.Cb, PlatformSpecific.Safari);
 
-    static readonly UboExtChrome = new Platform(ProductCode.Ubo, PlatformType.Ext, 'chrome');
+    static readonly UboExtChrome = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Chrome);
 
-    static readonly UboExtOpera = new Platform(ProductCode.Ubo, PlatformType.Ext, 'opera');
+    static readonly UboExtOpera = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Opera);
 
-    static readonly UboExtEdge = new Platform(ProductCode.Ubo, PlatformType.Ext, 'edge');
+    static readonly UboExtEdge = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Edge);
 
-    static readonly UboExtFirefox = new Platform(ProductCode.Ubo, PlatformType.Ext, 'firefox');
+    static readonly UboExtFirefox = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Firefox);
 
-    static readonly UboExtChromeMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, 'chrome_mv3');
+    static readonly UboExtChromeMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.ChromeMv3);
 
-    static readonly UboExtOperaMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, 'opera_mv3');
+    static readonly UboExtOperaMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.OperaMv3);
 
-    static readonly UboExtEdgeMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, 'edge_mv3');
+    static readonly UboExtEdgeMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.EdgeMv3);
 
-    static readonly UboExtFirefoxMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, 'firefox_mv3');
+    static readonly UboExtFirefoxMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.FirefoxMv3);
 
-    static readonly AbpExtChrome = new Platform(ProductCode.Abp, PlatformType.Ext, 'chrome');
+    static readonly AbpExtChrome = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Chrome);
 
-    static readonly AbpExtOpera = new Platform(ProductCode.Abp, PlatformType.Ext, 'opera');
+    static readonly AbpExtOpera = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Opera);
 
-    static readonly AbpExtEdge = new Platform(ProductCode.Abp, PlatformType.Ext, 'edge');
+    static readonly AbpExtEdge = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Edge);
 
-    static readonly AbpExtFirefox = new Platform(ProductCode.Abp, PlatformType.Ext, 'firefox');
+    static readonly AbpExtFirefox = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Firefox);
 
-    static readonly AbpExtChromeMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, 'chrome_mv3');
+    static readonly AbpExtChromeMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.ChromeMv3);
 
-    static readonly AbpExtOperaMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, 'opera_mv3');
+    static readonly AbpExtOperaMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.OperaMv3);
 
-    static readonly AbpExtEdgeMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, 'edge_mv3');
+    static readonly AbpExtEdgeMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.EdgeMv3);
 
-    static readonly AbpExtFirefoxMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, 'firefox_mv3');
+    static readonly AbpExtFirefoxMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.FirefoxMv3);
 
     // ===== Generic Platforms (Wildcards) =====
 
