@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `Engine.createAsync` using `setTimeout` (macrotask) instead of `Promise.resolve()` (microtask) for yielding to the UI thread between rule-loading chunks.
 - Parsing cosmetic rules with `$path` modifier.
 
 ## [4.0.0] - TBD

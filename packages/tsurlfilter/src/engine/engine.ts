@@ -193,8 +193,13 @@ export class Engine {
             if (counter >= CHUNK_SIZE) {
                 counter = 0;
 
-                // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
-                await Promise.resolve();
+                // Pause rule scanning and let the browser handle pending UI
+                // updates (repaints, user input, etc.) before continuing.
+                // We use setTimeout (macrotask) instead of Promise.resolve()
+                // (microtask) because microtasks don't give the browser a
+                // chance to refresh the screen or respond to user actions.
+                // eslint-disable-next-line no-await-in-loop
+                await new Promise<void>((resolve) => { setTimeout(resolve, 0); });
             }
 
             const ruleParts = scanner.getRuleParts();
