@@ -1,6 +1,6 @@
 abp_any:
   name: json-override
-  description: It's very similar to json-prune, but instead of removing a property, we override it with a value from the same list as for override-property-read.
+  description: It's very similar to `json-prune`, but instead of removing a property, we override it with a value from the same list as for `override-property-read`.
   version_added: 3.11.2
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
   parameters:
