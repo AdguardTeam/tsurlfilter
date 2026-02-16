@@ -1,11 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
-  parameters:
-    - name: search
-      required: false
+  description: Aborts an inline script when it attempts to read or write to the specified property AND when the contents of the `<script>` element contains the specified text or matches the regular expression.
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: abort-current-inline-script
   version_added: 1.0.4
   aliases:
@@ -26,18 +22,30 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: property
       required: true
+      description: Path to a property (joined with `.` if needed). The property must be attached to `window`.
+    - name: search
+      required: false
+      description: String or regular expression that must match the inline script content.
 
 ubo_any:
   name: abort-current-script.js
   version_added: 1.37.0
   aliases:
+    - abort-current-script
+    - acs
     - acs.js
+    - abort-current-inline-script
     - abort-current-inline-script.js
+    - acis
     - acis.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-current-scriptjs-
   parameters:
     - name: property
       required: true
+      description: Property (chain of properties joined by `.`) attached to `window` object accessed inside `<script>` tag we want to break.
+    - name: search
+      required: false
+      description: String or regular expression that must match the inline script content.
 
 abp_any:
   name: abort-current-inline-script
@@ -46,3 +54,7 @@ abp_any:
   parameters:
     - name: api
       required: true
+      description: API function or property name to anchor on. It can also be the path to that property.
+    - name: search
+      required: false
+      description: String or regular expression that must match the inline script content.
