@@ -2,7 +2,7 @@ abp_any:
   name: hide-if-matches-xpath
   description: Hides a specific element through a XPath 1.0 query string.
   version_added: 3.9.0
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
   parameters:
     - name: query
       required: true
