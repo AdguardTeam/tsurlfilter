@@ -1,15 +1,79 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
   is_trusted: true
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: trusted-click-element
   version_added: 1.7.3
+  descriptions: |-
+    Clicks selected elements in a strict sequence, ordered by selectors passed, and waiting for them to render in the DOM first.
+    First matched element is clicked unless containsText is specified.
+    If containsText is specified, then it searches for all given selectors and clicks the first element containing the specified text.
+    Deactivates after all elements have been clicked or by timeout (configurable).
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-click-element
   parameters:
     - name: selectors
       required: true
+      description: String with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
     - name: extraMatch
       required: false
+      description: |-
+        Extra condition to check on a page; allows to match cookie, localStorage and specified text; can be set as name:key[=value] where value is optional.
+        If cookie/localStorage starts with `!` then the element will only be clicked if specified cookie/localStorage item does not exist.
+        Multiple conditions are allowed inside one extraMatch but they should be delimited by comma and each of them should match the syntax.
     - name: delay
       required: false
+      description: Time in ms to delay scriptlet execution, defaults to instant execution. Must be a number less than default observerTimeout which can be configured.
+    - name: reload
+      required: false
+      description: String with reloadAfterClick marker and optional value.
+    - name: observerTimeout
+      required: false
+      description: Time in seconds to use instead default observer timeout. Must be an integer number and more than 0.
+
+ubo_any:
+  name: trusted-click-element.js
+  version_added: 1.53.5rc13
+  description: Clicks elements on webpages. Can target single or multiple elements in a sequence. The scriptlet will abort after 10s timeout or after all the elements have been clicked. Also hidden elements can be targeted.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-click-elementjs-
+  aliases:
+    - trusted-click-element
+  parameters:
+    - name: selectors
+      required: true
+      description: A list of css selector(s). Multiple selectors must be quoted. Use >>> to select elements inside shadow root.
+    - name: Extramatch
+      required: false
+      description: |-
+        Conditions for the clicking to occur, cookies and localStorage are matched using the format name:key[=value] where the value is optional.
+        Multiple conditions can be separated by comma. Prefix with ! to only click if the cookie/localStorage item does not exist.
+    - name: delay
+      required: false
+      description: Delay in ms how long the scriptlet will postphone the execution.
+
+abp_any:
+  name: simulate-mouse-event
+  version_added: 3.17.0
+  description: Triggers arbitrary mouse events on elements that are matched by a CSS or Xpath selector, by calling dispatchEvent for a selector.
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  parameters:
+    - name: selectors
+      required: true
+      description: |-
+        The CSS/Xpath selector that an HTML element must match for the event to be triggered. Maximum 7 selectors are supported.
+        Take a look at the optional parameters and the examples below for the explanation of how they should be written.
+    - name: $trigger
+      required: false
+      description: |-
+        If this flag is not set, only the chosen event for the last selector will be triggered.
+        $trigger flag can be used for the other selectors to make sure the event is triggered for them as well.
+        $trigger is always true for the last selector so can be omitted for it.
+    - name: $delay
+      required: false
+      description: Determines how much time the snippet should wait before simulating the even. Note that the default is 500 ms. If you don't want to have a delay, you should explicitly state $delay=0.
+    - name: $continue
+      required: false
+      description: |-
+        If set, the event will be triggered after each delay period ends. For example, if the selected event is click and the delay is 500 ms. The click event will be triggered every 500 ms instead of just once.
+    - name: $event
+      required: false
+      description: Determines which event should be simulated for the selector.
