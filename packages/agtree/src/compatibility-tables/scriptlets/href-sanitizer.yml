@@ -1,22 +1,49 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-common:
-  parameters:
-    - name: selector
-      required: true
-    - name: attribute
-      required: false
-
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: href-sanitizer
   version_added: 1.10.25
   aliases:
     - href-sanitizer.js
     - ubo-href-sanitizer.js
     - ubo-href-sanitizer
+  description: |-
+    Set the `href` attribute to a value found in text content of the targeted `a` element, or in an attribute of the targeted `a` element, or in a URL parameter of the targeted `a` element's `href` attribute.
+    This scriptlet runs once when the page loads and after that on DOM tree changes.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#href-sanitizer
+  parameters:
+    - name: selector
+      required: true
+      description: A CSS selector to match the elements to be sanitized, which should be anchor elements (`<a>`) with `href` attribute.
+    - name: attribute
+      required: false
+      description: |-
+        Possible values:
+          `text` — use the text content of the matched element (default)
+          `[<attribute-name>]` — copy the value from attribute `attribute-name` on the same element
+          `?<parameter-name>` — copy the value from URL parameter `parameter-name` of the same element's `href` attribute
+    - name: transform
+      required: false
+      description: |-
+        Possible values:
+          `base64decode` — decode the `base64` string from specified attribute. `-base64` can be used as an alias
+          `removeHash` — remove the hash from the URL
+          `removeParam[:<parameters>]` — remove the specified parameters from the URL, where `<parameters>` is a comma-separated list of parameter names; if no parameter is specified, remove all parameters
 
 ubo_any:
   name: href-sanitizer.js
   version_added: 1.47.5b4
+  aliases:
+    - href-sanitizer
+  description: Set the `href` attribute to a value found in the DOM at, or below the targeted `a` element, and optionally with transformation steps.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#href-sanitizerjs-
+  parameters:
+    - name: selector
+      required: true
+      description: A plain CSS selector for elements which `href` property must be sanitized.
+    - name: source
+      required: false
+      description: |-
+        One or more tokens to lookup the source of the `href` property, and optionally the transformation steps to perform, otherwise the text content of the element will be used.
+        Possible tokens:
+          `[name]`: Use the value of the attribute `name` as the URL
+          `?name`: Use the value of the `href` query parameter `name`. Supports unwrapping query parameters recursively
+          Transformation steps: `&i`, `#`, `/.../`, `+https`, `-base64`, `-safebase64`, `-uricomponent`, `-blocked`
