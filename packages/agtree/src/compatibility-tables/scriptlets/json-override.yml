@@ -7,7 +7,7 @@ abp_any:
     - name: rawOverridePaths
       required: true
       description: |-
-        A list of space-separated properties to remove. It also accepts property chains - e.g. foo.bar.tar.
+        A list of space-separated properties to remove. It also accepts property chains - e.g. `foo.bar.tar`.
         Can include placeholders `{}` and `[]` to iterate over nested objects and arrays respectively.
     - name: value
       required: true
