@@ -1,27 +1,33 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
+  description: Prevents `fetch` calls if all given parameters match.
   parameters:
     - name: propsToMatch
       required: false
+      description: String of space-separated properties to match the URL or colon-separated pairs `name:value` to match the value of the option passed to `fetch` call.
     - name: responseBody
       required: false
+      description: String for defining response body value.
     - name: responseType
       required: false
+      description: String for defining response type, original response type is used if not specified.
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-fetch
   version_added: 1.3.18
   aliases:
     - prevent-fetch.js
     - no-fetch-if.js
-    - ubo-no-fetch-if.js
+    - ubo-prevent-fetch
+    - ubo-prevent-fetch.js
     - ubo-no-fetch-if
+    - ubo-no-fetch-if.js
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-fetch
 
 ubo_any:
   name: prevent-fetch.js
   version_added: 1.31.3b9
   aliases:
+    - prevent-fetch
+    - no-fetch-if
     - no-fetch-if.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-fetchjs-
