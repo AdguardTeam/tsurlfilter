@@ -12,7 +12,7 @@ abp_any:
       description: |-
         The string or regex used to determine which function calls to trap.
         If the needle matches the parameter to the function call, the snippet will work, else the function will behave as normal.
-        If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
+        If the string begins and ends with a slash `/`, the text in between is treated as a regular expression.
         For 'set' this matches the value. For 'get' and 'has' this matches the key.
     - name: returnValue
       required: false
