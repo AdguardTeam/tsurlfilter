@@ -1,6 +1,4 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: remove-cookie
   version_added: 1.0.4
   aliases:
@@ -11,27 +9,44 @@ adg_os_any|adg_ext_any:
     - ubo-remove-cookie.js
     - ubo-remove-cookie
     - abp-cookie-remover
+  description: Removes current page cookies by passed string matching with name. For current domain and subdomains. Runs on load and before unload.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#remove-cookie
   parameters:
     - name: match
       required: false
+      description: String or regex matching the cookie name. If not specified all accessible cookies will be removed.
 
 ubo_any:
   name: remove-cookie.js
-  version_added: 1.28.0
   aliases:
+    - remove-cookie
+    - cookie-remover
     - cookie-remover.js
+  description: Removes current page cookies specified by name.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-cookiejs-
   parameters:
-    - name: match
+    - name: needle
       required: false
+      description: String or regular expression, matching in the name of the cookie.
+    - name: tokens
+      required: false
+      description: |-
+        Available token value: `when`.
+        When this parameter is present, it adds ability to trigger cookie removal on specific events (with delay 500ms).
+        Possible events are:
+        `scroll`: executes when scrolling page
+        `keydown`: executes when key pressed
 
 abp_any:
   name: cookie-remover
   version_added: 3.11.2
+  description: A snippet to remove certain cookies.
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
   parameters:
     - name: cookie
       required: true
+      description: Pattern that matches the name of the cookie(s) we want to remove.
     - name: autoRemoveCookie
       required: false
+      description: |-
+        Default value: `false`. When set to `true`, this parameter enables the snippet to continuously monitor the targeted cookie, checking for its presence every 1000 ms. If the cookie is found, it will be repeatedly removed.
