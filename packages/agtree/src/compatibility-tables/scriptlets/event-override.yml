@@ -13,9 +13,9 @@ abp_any:
     - name: mode
       required: true
       description: |-
-        "The mode of the operation. Accepts: `trusted`, `disable`."
-        "trusted mode makes the event property isTrusted true."
-        "disable mode: Disables the matching event."
+        The mode of the operation. Accepts: `trusted`, `disable`.
+        trusted mode makes the event property isTrusted true.
+        disable mode: Disables the matching event.
     - name: needle
       required: false
       description: Needle to look for in the event listener function
