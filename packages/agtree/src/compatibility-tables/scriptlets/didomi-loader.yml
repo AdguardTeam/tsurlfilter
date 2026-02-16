@@ -1,6 +1,5 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: didomi-loader
+  description: Mocks Didomi's CMP loader script. https://developers.didomi.io/
   version_added: 1.10.25
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#didomi-loader
