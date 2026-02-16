@@ -20,4 +20,4 @@ abp_any:
       description: |-
         A string to look for in the raw string, before it's passed to JSON.parse.
         If no match is found no further search is done on the resulting object.
-        If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
+        If the string begins and ends with a slash `/`, the text in between is treated as a regular expression.
