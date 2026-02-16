@@ -1,6 +1,4 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: set-constant
   version_added: 1.0.4
   aliases:
@@ -10,40 +8,59 @@ adg_os_any|adg_ext_any:
     - ubo-set.js
     - ubo-set-constant
     - ubo-set
+  description: Creates a constant property and assigns it one of the values from the predefined list.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-constant
   parameters:
     - name: property
       required: true
+      description: Path to a property (joined with `.` if needed). The property must be attached to `window`.
     - name: value
       required: true
+      description: One of the predefined values.
     - name: stack
       required: false
+      description: String or regular expression that must match the current function call stack trace, defaults to matching every call. If regular expression is invalid, it will be skipped.
     - name: valueWrapper
       required: false
+      description: String to modify a value to be set.
     - name: setProxyTrap
       required: false
+      description: Boolean, if set to `true`, proxy trap will be set on the object.
 
 ubo_any:
   name: set-constant.js
   aliases:
+    - set-constant
+    - set
     - set.js
+  description: Creates property and initializes it with a value from a predefined set.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
   parameters:
     - name: chain
       required: true
+      description: Property (chain of properties joined by `.`) attached to `window` object.
     - name: rawValue
       required: true
-    - name: runAt
+      description: One of the predefined values.
+    - name: tokens
       required: false
+      description: |-
+       Available tokens are: `runAt` and `as`.
+       When `runAt` is present, uBO will take it into account to possibly defer execution of the scriptlet.
+       When `as` is present, uBO will take it into account how the values will be returned.
 
 abp_any:
   name: override-property-read
   version_added: 3.9.4
+  description: Overrides a property's value on the `window` object with a set of available properties.
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
   parameters:
     - name: property
       required: true
+      description: The name of the property or the path to that property.
     - name: value
       required: true
+      description: The value to override the property with.
     - name: setConfigurable
       required: false
+      description: Value of the configurable attribute of the descriptor of property. If this parameter is not used it defaults to true. Setting it to false will prevent the property set and get being overwritten or otherwise changed by anybody.
