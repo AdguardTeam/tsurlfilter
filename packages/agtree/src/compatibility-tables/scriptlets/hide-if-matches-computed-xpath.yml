@@ -6,7 +6,7 @@ abp_any:
   parameters:
     - name: query
       required: true
-      description: The template XPath query that targets the element to hide. Use {{}} to dynamically insert into the query.
+      description: The template XPath query that targets the element to hide. Use `{{}}` to dynamically insert into the query.
     - name: searchQuery
       required: true
       description: XPath query that searchs for an element to be used alongside searchRegex.
