@@ -12,7 +12,7 @@ abp_any:
       description: XPath query that searchs for an element to be used alongside searchRegex.
     - name: searchRegex
       required: true
-      description: The regex that is used to extract a text from the innerHTML of the element that matches searchQuery. The extracted text will be injected to the query.
+      description: The regex that is used to extract a text from the `innerHTML` of the element that matches `searchQuery`. The extracted text will be injected to the query.
     - name: waitUntil
       required: false
       description: "Optional parameter that can be used to delay the running of the snippet until the given state is reached. Accepts: loading, interactive, complete, load or any event name."
