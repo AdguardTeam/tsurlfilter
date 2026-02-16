@@ -2,7 +2,7 @@ abp_any:
   name: event-override
   description: |-
     Proxies events and event handlers to defuse events or change their attributes.
-    It works with the principle of proxying addEventHandler function and the original Event class with a CustomEvent class that we control.
+    It works with the principle of proxying `addEventHandler` function and the original `Event` class with a `CustomEvent` class that we control.
     This way we can defuse/change any arbitrary event or create new ones.
   version_added: 4.22.2
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
