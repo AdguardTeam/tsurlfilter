@@ -12,4 +12,5 @@ abp_any:
       description: XPath selector that the filter devs can use to restrict the scope of the Mutation Observer. It is important that the selector is as specific as possible to avoid to match too many nodes.
     - name: waitUntil
       required: false
-      description: "Optional parameter that can be used to delay the running of the snippet until the given state is reached. Accepts: loading, interactive, complete, load or any event name."
+      description: |-
+        Optional parameter that can be used to delay the running of the snippet until the given state is reached. Accepts: loading, interactive, complete, load or any event name.
