@@ -6,7 +6,7 @@ abp_any:
   parameters:
     - name: search
       required: true
-      description: The pattern to look for in the background images of HTML elements. This must be the hexadecimal representation of the image data for which to look. If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
+      description: The pattern to look for in the background images of HTML elements. This must be the hexadecimal representation of the image data for which to look. If the string begins and ends with a slash `/`, the text in between is treated as a regular expression.
     - name: selector
       required: true
       description: The CSS selector that an HTML element must match for it to be hidden.
