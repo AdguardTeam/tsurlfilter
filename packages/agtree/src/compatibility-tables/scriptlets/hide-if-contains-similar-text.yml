@@ -2,7 +2,7 @@ abp_any:
   name: hide-if-contains-similar-text
   description: Hides an element based on its similar text content.
   version_added: 3.14.2
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
   parameters:
     - name: search
       required: true
