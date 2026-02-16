@@ -1,6 +1,6 @@
 abp_any:
   name: blob-override
-  description: Overrides specific parts of the Blob injected in web-pages. We override the blob constructor in a way we can intercept calls and change the blob content.
+  description: Overrides specific parts of the `Blob` injected in web-pages. We override the blob constructor in a way we can intercept calls and change the blob content.
   version_added: 4.22.2
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
   parameters:
