@@ -537,5 +537,117 @@ describe('DomainListParser', () => {
                 ],
             });
         });
+
+        test('should parse domain list with paths', () => {
+            const domain1 = 'example.com/path1';
+            const domain2 = 'example.net/path2';
+            const list = [domain1, domain2].join(COMMA);
+            expect(DomainListParser.parse(list)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: list.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: domain1.length,
+                        value: domain1,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: domain1.length + 1,
+                        end: list.length,
+                        value: domain2,
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should parse regex domain with escaped forward slash in path', () => {
+            const regexWithPath = String.raw`/example\.org\/path1/`;
+            const regularPath = 'example.org/path2';
+            const list = [regexWithPath, regularPath].join(', ');
+            expect(DomainListParser.parse(list)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: list.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexWithPath.length,
+                        value: regexWithPath,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: regexWithPath.length + 2,
+                        end: list.length,
+                        value: regularPath,
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should parse regex domain with escaped forward slash in path when it is not in first position', () => {
+            const regexWithPath = String.raw`/example\.org\/path1/`;
+            const regularPath = 'example.org/path2';
+            const list = [regularPath, regexWithPath].join(', ');
+            expect(DomainListParser.parse(list)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: list.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regularPath.length,
+                        value: regularPath,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: regularPath.length + 2,
+                        end: list.length,
+                        value: regexWithPath,
+                        exception: false,
+                    },
+                ],
+            });
+        });
+
+        test('should parse regex domain with unescaped forward slash', () => {
+            const regexDomain = String.raw`/[/]/`;
+            const regularPath = 'example.org/path';
+            const list = [regexDomain, regularPath].join(', ');
+            expect(DomainListParser.parse(list)).toEqual<DomainList>({
+                type: ListNodeType.DomainList,
+                start: 0,
+                end: list.length,
+                separator: ',',
+                children: [
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: 0,
+                        end: regexDomain.length,
+                        value: regexDomain,
+                        exception: false,
+                    },
+                    {
+                        type: ListItemNodeType.Domain,
+                        start: regexDomain.length + 2,
+                        end: list.length,
+                        value: regularPath,
+                        exception: false,
+                    },
+                ],
+            });
+        });
     });
 });
