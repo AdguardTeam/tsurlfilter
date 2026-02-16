@@ -67,14 +67,6 @@ branches: &branches
   delete: never
   link-to-jira: true
 
-notifications: &notifications
-  - events:
-      - plan-status-changed
-    recipients:
-      - webhook:
-          name: Build webhook
-          url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
-
 # Run plan only for:
 # branch 'stable/dnr-rulesets-3.2' - for AdGuard browser extension v5.2.X.
 # branch 'stable/dnr-rulesets-3.3' - for AdGuard API v3.1.
@@ -167,8 +159,6 @@ branch-overrides:
             expression: 0 0 */1 * * ?
 
       branches: *branches
-
-      notifications: *notifications
 
       labels: []
 
