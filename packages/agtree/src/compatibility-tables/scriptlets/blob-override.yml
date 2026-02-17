@@ -1,0 +1,17 @@
+abp_any:
+  name: blob-override
+  description: Overrides specific parts of the `Blob` injected in web-pages. We override the blob constructor in a way we can intercept calls and change the blob content.
+  version_added: 4.22.2
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  parameters:
+    - name: search
+      required: true
+      description: The string or regex pattern to match in the blob content.
+    - name: replacement
+      required: false
+      description: The string to replace the matched pattern with.
+      default: "''"
+    - name: needle
+      required: false
+      description: An optional string or regex to check in the * blob parts before applying the replacement.
+      default: "''"
