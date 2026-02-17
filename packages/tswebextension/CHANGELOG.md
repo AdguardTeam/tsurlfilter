@@ -17,7 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RuleSetsLoaderApi` now provides lazy metadata loaders that read from IndexedDB
   on demand instead of eagerly constructing heavy objects at ruleset creation time.
 
-## [4.0.0] - TBD
+## [4.0.1] - 2026-02-17
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v4.0.1`.
+
+## [4.0.0] - 2026-01-26
 
 ### Added
 

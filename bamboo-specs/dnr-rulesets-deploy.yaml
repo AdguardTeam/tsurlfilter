@@ -40,13 +40,6 @@ npmjs: &npmjs
             npm publish dnr-rulesets.tgz $bamboo_publishArgs
   requirements:
     - extension: 'true'
-  notifications:
-    - events:
-        - deployment-started-and-finished
-      recipients:
-        - webhook:
-            name: Deploy webhook
-            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
 npmjs • alpha:
   <<: *npmjs

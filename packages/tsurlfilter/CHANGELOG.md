@@ -18,7 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RuleSet` constructor now accepts `RuleSetMetadataProvider` instead of eager `badFilterRules`
   and `rulesHashMap` parameters.
 
-## [4.0.0] - TBD
+## [4.0.1] - 2026-02-17
+
+### Fixed
+
+- `Engine.createAsync` using `setTimeout` (macrotask) instead of `Promise.resolve()` (microtask) for yielding to the UI thread between rule-loading chunks.
+- Parsing cosmetic rules with `$path` modifier.
+
+## [4.0.0] - 2026-01-26
 
 ### Added
 
