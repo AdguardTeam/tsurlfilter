@@ -14,11 +14,25 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const LOCAL_SCRIPT_RULES_JS_FILENAME = LocalScriptRulesJs.FILENAME;
 export const LOCAL_SCRIPT_RULES_JSON_FILENAME = LocalScriptRulesJson.FILENAME;
 
+/**
+ * Name of the directory containing declarative net request rulesets.
+ */
+const DECLARATIVE_DIR_NAME = 'declarative';
+
 export type AssetsLoaderOptions = {
     /**
      * Whether to download latest text filters instead of DNR rulesets.
      */
     latestFilters?: boolean;
+
+    /**
+     * Whether to copy only the `declarative/` rulesets directory, skipping all
+     * other files (`filters_i18n.json`, `local_script_rules.js`, etc.).
+     * Useful for Chrome Web Store extensions that rely on the
+     * [skip review](https://developer.chrome.com/docs/webstore/skip-review)
+     * mechanism, which requires that only `rule_resources` files are changed.
+     */
+    onlyDeclarativeRulesets?: boolean;
 };
 
 /**
@@ -26,7 +40,7 @@ export type AssetsLoaderOptions = {
  */
 export class AssetsLoader {
     /**
-     * Download rulesets or filters to {@link dest} path. If {@link options.rawFilters}
+     * Download rulesets or filters to {@link dest} path. If {@link options.latestFilters}
      * is set to `true`, it will only download raw filters from the server,
      * otherwise it will copy rulesets from the local directory.
      *
@@ -47,7 +61,20 @@ export class AssetsLoader {
 
         console.log(`Copying rulesets and local script rules from ${src} to ${to}`);
 
-        await copy(src, to);
+        const extraOptions = options?.onlyDeclarativeRulesets
+            ? {
+                    filter: (srcPath: string) => {
+                        // Allow the source root itself (required for fs-extra copy to work)
+                        if (srcPath === src) {
+                            return true;
+                        }
+                        // Allow only the declarative directory and its contents
+                        return srcPath.startsWith(path.join(src, DECLARATIVE_DIR_NAME));
+                    },
+                }
+            : {};
+
+        await copy(src, to, extraOptions);
 
         console.log(`Copying rulesets and local script rules from ${src} to ${to} done.`);
     }

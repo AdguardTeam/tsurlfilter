@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.0] - TBD
+## [4.0.2026021716XXXX] - 2026-02-17
+
+### Added
+
+- `onlyDeclarativeRulesets` option to `AssetsLoader.load()` and
+  `--only-declarative-rulesets` CLI flag for the `load` command. When enabled,
+  only the `declarative/` rulesets directory is copied, skipping all other files
+  (`filters_i18n.json`, `local_script_rules.js`, etc.). This preserves Chrome
+  Web Store skip review eligibility.
+
+[4.0.2026021716XXXX]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.0.2026021716XXXX
+
+## [4.0.0] - 2026-01-21
 
 ### Changed
 
@@ -15,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.0.0
 
-## [3.3.1] - 2025-12-XX
+## [3.3.1] - 2025-12-01
 
 ### Added
 

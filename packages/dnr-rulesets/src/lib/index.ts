@@ -2,6 +2,7 @@ export { LocalScriptRulesJs } from '../common/local-script-rules-js';
 export { type DomainConfig, LocalScriptRulesJson } from '../common/local-script-rules-json';
 export {
     AssetsLoader,
+    type AssetsLoaderOptions,
     LOCAL_SCRIPT_RULES_JS_FILENAME,
     LOCAL_SCRIPT_RULES_JSON_FILENAME,
 } from './assets/loader';
