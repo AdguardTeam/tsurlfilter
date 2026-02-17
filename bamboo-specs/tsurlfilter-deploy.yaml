@@ -9,6 +9,7 @@ release-naming: ${bamboo.inject.version}
 environments:
   - npmjs • 1.x
   - npmjs • 3.x
+  - npmjs • 4.x
   - npmjs • alpha
   - npmjs • beta
 
@@ -46,24 +47,18 @@ npmjs • 1.x: &npmjs
 
 npmjs • 3.x:
   <<: *npmjs
-  docker:
-    <<: *npmjs-docker
-    image: adguard/node-ssh:22.14--0
+
+npmjs • 4.x:
+  <<: *npmjs
 
 npmjs • alpha:
   <<: *npmjs
   variables:
     <<: *npmjs-variables
     publishArgs: --tag alpha --access public
-  docker:
-    <<: *npmjs-docker
-    image: adguard/node-ssh:22.14--0
 
 npmjs • beta:
   <<: *npmjs
   variables:
     <<: *npmjs-variables
     publishArgs: --tag beta --access public
-  docker:
-    <<: *npmjs-docker
-    image: adguard/node-ssh:22.14--0
