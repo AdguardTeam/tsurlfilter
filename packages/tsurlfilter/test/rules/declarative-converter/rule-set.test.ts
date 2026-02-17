@@ -12,6 +12,7 @@ import {
     IndexedNetworkRuleWithHash,
     RuleSet,
     type RuleSetContentProvider,
+    type RuleSetMetadataProvider,
     RulesHashMap,
     SourceMap,
 } from '../../../src/rules/declarative-converter';
@@ -61,7 +62,10 @@ describe('RuleSet', () => {
             })
             .flat();
 
-        const rulesHashMap = new RulesHashMap(listOfRulesWithHash);
+        const metadataProvider: RuleSetMetadataProvider = {
+            loadBadFilterRules: async () => badFilterRules,
+            loadRulesHashMap: async () => new RulesHashMap(listOfRulesWithHash),
+        };
 
         return new RuleSet(
             'ruleSetId',
@@ -69,8 +73,7 @@ describe('RuleSet', () => {
             0,
             declarativeRules.filter((d) => DeclarativeRulesConverter.isRegexRule(d)).length,
             ruleSetContent,
-            badFilterRules,
-            rulesHashMap,
+            metadataProvider,
         );
     };
 
@@ -85,7 +88,7 @@ describe('RuleSet', () => {
         const ruleSet = await createRuleSet(content);
 
         expect(ruleSet.getRulesCount()).toStrictEqual(2);
-        expect(ruleSet.getBadFilterRules()).toHaveLength(1);
+        expect(await ruleSet.getBadFilterRules()).toHaveLength(1);
     });
 
     it('returns original rule by declarative and declarative rule by source rule correctly', async () => {
@@ -156,17 +159,23 @@ describe('RuleSet', () => {
             [originalFilter],
         );
 
-        const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
-        const ruleSetHashMap = new RulesHashMap(sources);
-        const badFilterRules = badFilterRulesRaw
-            .map(
-                (rawString) => IndexedNetworkRuleWithHash.createFromText(
-                    filterId,
-                    badFilterRuleIndex,
-                    rawString,
-                ),
-            )
-            .flat();
+        const deserializedMetadataProvider: RuleSetMetadataProvider = {
+            loadBadFilterRules: async () => {
+                return badFilterRulesRaw
+                    .map(
+                        (rawString) => IndexedNetworkRuleWithHash.createFromText(
+                            filterId,
+                            badFilterRuleIndex,
+                            rawString,
+                        ),
+                    )
+                    .flat();
+            },
+            loadRulesHashMap: async () => {
+                const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
+                return new RulesHashMap(sources);
+            },
+        };
 
         const deserializedRuleSet = new RuleSet(
             id,
@@ -174,13 +183,12 @@ describe('RuleSet', () => {
             unsafeRulesCount,
             regexpRulesCount,
             ruleSetContentProvider,
-            badFilterRules,
-            ruleSetHashMap,
+            deserializedMetadataProvider,
         );
 
         // check $badfilter rules
-        expect(deserializedRuleSet.getBadFilterRules()).toHaveLength(ruleSet.getBadFilterRules().length);
-        expect(deserializedRuleSet.getBadFilterRules()[0]).toEqual(ruleSet.getBadFilterRules()[0]);
+        expect(await deserializedRuleSet.getBadFilterRules()).toHaveLength((await ruleSet.getBadFilterRules()).length);
+        expect((await deserializedRuleSet.getBadFilterRules())[0]).toEqual((await ruleSet.getBadFilterRules())[0]);
 
         // check declarative rules
         const d1 = await ruleSet.getDeclarativeRules();
@@ -220,6 +228,53 @@ describe('RuleSet', () => {
         expect(Object.getOwnPropertyDescriptor(ruleSet, 'sourceMap')?.value).toBeUndefined();
     });
 
+    it('unloads metadata correctly', async () => {
+        const content = [
+            '||example.com^$document',
+            '||example.net##h1',
+            '@@||example.io^',
+            '@@||evil.com^$badfilter',
+        ];
+
+        const ruleSet = await createRuleSet(content);
+
+        // Load metadata
+        await ruleSet.getBadFilterRules();
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'metadataLoaded')?.value).toBe(true);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'badFilterRules')?.value).not.toBeUndefined();
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'rulesHashMap')?.value).not.toBeUndefined();
+
+        // Unload metadata
+        ruleSet.unloadMetadata();
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'metadataLoaded')?.value).toBe(false);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'badFilterRules')?.value).toBeUndefined();
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'rulesHashMap')?.value).toBeUndefined();
+    });
+
+    it('reloads metadata after unload', async () => {
+        const content = [
+            '||example.com^$document',
+            '||example.net##h1',
+            '@@||example.io^',
+            '@@||evil.com^$badfilter',
+        ];
+
+        const ruleSet = await createRuleSet(content);
+
+        // Load metadata
+        const badFilterRulesBefore = await ruleSet.getBadFilterRules();
+        expect(badFilterRulesBefore).toHaveLength(1);
+
+        // Unload metadata
+        ruleSet.unloadMetadata();
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'metadataLoaded')?.value).toBe(false);
+
+        // Reload metadata - should work via lazy loading
+        const badFilterRulesAfter = await ruleSet.getBadFilterRules();
+        expect(badFilterRulesAfter).toHaveLength(1);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'metadataLoaded')?.value).toBe(true);
+    });
+
     it('does not return stale content after unload', async () => {
         const content = [
             '||example.com^$document',
@@ -257,14 +312,18 @@ describe('RuleSet', () => {
             loadDeclarativeRules: async () => [],
         };
 
+        const metadataProvider: RuleSetMetadataProvider = {
+            loadBadFilterRules: async () => [],
+            loadRulesHashMap: async () => new RulesHashMap([]),
+        };
+
         const ruleSet = new RuleSet(
             'testRuleSet',
             0,
             0,
             0,
             ruleSetContent,
-            [],
-            new RulesHashMap([]),
+            metadataProvider,
         );
 
         // Start loading content
