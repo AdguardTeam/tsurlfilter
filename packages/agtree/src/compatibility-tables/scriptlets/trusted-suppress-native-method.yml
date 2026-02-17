@@ -1,17 +1,36 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
   is_trusted: true
-
-adg_os_any|adg_ext_any:
-  name: trusted-suppress-native-method
-  version_added: 1.10.25
   parameters:
     - name: methodPath
       required: true
+      description: String path to a native method (joined with "." (dot) if needed). The property must be attached to window.
     - name: signatureStr
       required: true
+      description: String of |-separated argument matchers.
     - name: how
       required: false
+      description: String, one of the following.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: trusted-suppress-native-method
+  version_added: 1.10.25
+  description: Prevents a call of a given native method, matching the call by incoming arguments.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-suppress-native-method
+  parameters:
     - name: stack
       required: false
+      description: String or regular expression that must match the current function call stack trace.
+
+ubo_any:
+  name: trusted-suppress-native-method.js
+  version_added: 1.58.1rc0
+  description: |-
+    This is a first draft version with current limitations:
+    * Does not support matching arguments which are object or array.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-local-storage-itemjs-
+  aliases:
+    - trusted-suppress-native-method
+  parameters:
+    - name: stack
+      required: false
+      description: String or regular expression that must match the current function call stack trace. Prepend pattern with ! to test for unmatched patterns in stack trace.
