@@ -6,3 +6,7 @@ abp_any:
     This may be used for testing and debugging, especially to verify that the injection of snippets into the document is working without any errors.
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE7QE2TCN5HVSQWQAEHFM8H
   debug: true
+  parameters:
+  - name: args
+    required: false
+    description: The arguments to log.
