@@ -14,4 +14,4 @@ abp_any:
     - name: winners
       required: false
       description: "The amount of possible race's winners: 1 by default."
-      default: "\"1\""
+      default: "'1'"
