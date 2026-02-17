@@ -2,7 +2,7 @@ abp_any:
   name: array-override
   description: Overrides functions under `Array.prototype` to change their behaviour according to the given parameters.
   version_added: "4.8"
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
   parameters:
     - name: method
       required: true
