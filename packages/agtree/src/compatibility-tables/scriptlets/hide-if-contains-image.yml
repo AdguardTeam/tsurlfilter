@@ -2,7 +2,7 @@ abp_any:
   name: hide-if-contains-image
   description: Hides any HTML element or one of its ancestors matching a CSS selector if the background image of the element matches a given pattern.
   version_added: 3.4.2
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
   parameters:
     - name: search
       required: true
