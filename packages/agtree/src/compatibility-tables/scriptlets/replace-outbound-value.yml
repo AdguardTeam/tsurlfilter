@@ -1,0 +1,31 @@
+abp_any:
+  name: replace-outbound-value
+  version_added: 4.26.0
+  description: Overrides return values of functions or attributes according to the given parameters.
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
+  parameters:
+    - name: method
+      required: true
+      description: The method to trap. This could be any function or attribute that is accessible under window. e.g. `JSON.stringify`, `atob`, etc.
+    - name: search
+      required: true
+      description: The text or regex pattern to replace
+    - name: replacement
+      required: false
+      description: The replacement text
+      default: ''
+    - name: decodeMethod
+      required: false
+      description: The decode method. When provided the snippet can decode the encoded text before replacing it. Useful for functions like btoa. Currently only `base64` is supported.
+      default: ''
+    - name: path
+      required: false
+      description: |-
+        Dot-separated path to the property in returned objects. 
+        Can be used to override return values for functions that return objects instead of primitive strings. 
+        If left empty, only functions that return strings will be tackled. e.g. user.profile.name.
+      default: empty string
+    - name: stack
+      required: false
+      description: Comma-separated list of strings to check in the stack trace. If provided the replacement will only apply when the stack trace contains at least one of these patterns.
+      default: ''
