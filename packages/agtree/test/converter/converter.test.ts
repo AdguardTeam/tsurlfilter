@@ -157,6 +157,140 @@ describe('Converter integration tests', () => {
             });
         });
 
+        // https://github.com/AdguardTeam/tsurlfilter/issues/169
+        describe('should convert path-in-domain syntax to $path modifier', () => {
+            test.each([
+                // Basic path in domain
+                {
+                    actual: 'example.org/path##.ad',
+                    expected: ['[$path=/path]example.org##.ad'],
+                },
+                // Path with wildcards
+                {
+                    actual: 'example.org/category/*/item##.ad',
+                    expected: ['[$path=/category/*/item]example.org##.ad'],
+                },
+                // Exception rule with path
+                {
+                    actual: 'example.org/path#@#.ad',
+                    expected: ['[$path=/path]example.org#@#.ad'],
+                },
+                // Multiple domains with different paths - splits into multiple rules
+                {
+                    actual: 'example.com/foo,example.org/bar##.ad',
+                    expected: [
+                        '[$path=/foo]example.com##.ad',
+                        '[$path=/bar]example.org##.ad',
+                    ],
+                },
+                // Mixed paths (some with, some without) - splits into multiple rules
+                {
+                    actual: 'example.org/path,test.com##.ad',
+                    expected: [
+                        '[$path=/path]example.org##.ad',
+                        'test.com##.ad',
+                    ],
+                },
+                // Regex path and domain
+                {
+                    actual: String.raw`/example\.org\/api\/v\d+/##.banner`,
+                    expected: [String.raw`[$path=/\/api\/v\d+/]/example\.org/##.banner`],
+                },
+                {
+                    actual: String.raw`/site\d+\.com\/shop/##.promo`,
+                    expected: [String.raw`[$path=/\/shop/]/site\d+\.com/##.promo`],
+                },
+                {
+                    actual: String.raw`/.*\.example\.org\/path/##.ad`,
+                    expected: [String.raw`[$path=/\/path/]/.*\.example\.org/##.ad`],
+                },
+                {
+                    actual: String.raw`/example\.(org|net)\/api\/v\d+/##.banner`,
+                    expected: [String.raw`[$path=/\/api\/v\d+/]/example\.(org|net)/##.banner`],
+                },
+                // Regex and regular domains mixed
+                {
+                    actual: String.raw`example.com,/example\.org\/api\/v\d+/##h1`,
+                    expected: [
+                        String.raw`[$path=/\/api\/v\d+/]/example\.org/##h1`,
+                        'example.com##h1',
+                    ],
+                },
+                // Path with special characters
+                {
+                    actual: 'example.com/path-with_special.chars##.content',
+                    expected: ['[$path=/path-with_special.chars]example.com##.content'],
+                },
+                // Path with encoded characters
+                {
+                    actual: 'example.com/path%20encoded##.sidebar',
+                    expected: ['[$path=/path%20encoded]example.com##.sidebar'],
+                },
+                // Path with many segments
+                {
+                    actual: 'example.com/path/with/many/segments##.banner',
+                    expected: ['[$path=/path/with/many/segments]example.com##.banner'],
+                },
+                // Wildcard subdomain with path
+                {
+                    actual: '*.example.com/api##.content',
+                    expected: ['[$path=/api]*.example.com##.content'],
+                },
+                // Wildcard TLD with path
+                {
+                    actual: 'google.*/search##.sponsored',
+                    expected: ['[$path=/search]google.*##.sponsored'],
+                },
+                // Path with query string
+                {
+                    actual: 'example.org/path?query##.ad',
+                    expected: ['[$path=/path?query]example.org##.ad'],
+                },
+                // Path with fragment
+                {
+                    actual: 'example.org/path#anchor##.ad',
+                    expected: ['[$path=/path#anchor]example.org##.ad'],
+                },
+                // Path with id css selector
+                {
+                    actual: 'example.org/path###id',
+                    expected: ['[$path=/path]example.org###id'],
+                },
+                // All domains have same path - single rule
+                {
+                    actual: 'example.com/path,example.org/path##.ad',
+                    expected: ['[$path=/path]example.com,example.org##.ad'],
+                },
+            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+            });
+        });
+
+        describe('should not convert single exception domain with path', () => {
+            test.each([
+                {
+                    actual: '~example.com/path##.ad',
+                    expected: ['~example.com/path##.ad'],
+                    shouldConvert: false,
+                },
+            ])('should not convert \'$actual\'', (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+            });
+        });
+
+        describe('should throw error on domain list with exception and path-in-domain', () => {
+            test.each([
+                {
+                    actual: 'example.com/foo,~example.org##.ad',
+                    expected: 'Path-in-domain syntax cannot be used with exception domains',
+                },
+            ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
+                expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual))).toThrowError(
+                    new RuleConversionError(expected),
+                );
+            });
+        });
+
         // https://github.com/AdguardTeam/tsurlfilter/blob/7de315b85675ddafaa7457ee1b0c77ddc79f25f0/packages/tsurlfilter/test/rules/rule-converter.test.ts#L192
         describe('should convert uBO responseheader rules', () => {
             test.each([

@@ -15,6 +15,7 @@ export {
     SAFARI_CB_AFFINITY,
     UBO_SCRIPTLET_MASK,
     COMMA,
+    SLASH,
     PIPE,
 } from './constants';
 export { AdblockSyntax } from './adblockers';
