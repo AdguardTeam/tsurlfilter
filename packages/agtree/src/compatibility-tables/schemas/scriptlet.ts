@@ -41,7 +41,11 @@ const scriptletParameterSchema = zod.object({
     /**
      * Default value of the parameter (if any).
      */
-    default: nonEmptyStringSchema.nullable().default(null),
+    default: zod
+        .string()
+        .transform((val) => val.trim())
+        .nullable()
+        .default(null),
 
     /**
      * Describes whether the parameter is used only for debugging purposes.
