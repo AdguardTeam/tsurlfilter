@@ -9,7 +9,7 @@ ubo_any:
     - name: propChain
       required: false
       description: Property chain of the method to trap.
-      default: "''"
+      default: ''
     - name: jsonq
       required: false
       description: A uBO-flavored JSONPath query.
