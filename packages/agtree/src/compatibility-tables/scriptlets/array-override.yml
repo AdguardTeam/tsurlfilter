@@ -24,10 +24,10 @@ abp_any:
         Optional parameter that enables “object checking mode“ and looks for needle in that given path.
         Example: `arr.push({obj: {child: "test"}})`
         if you want to ignore this call, path would be obj.child in this case and needle would be test
-      default: "''"
+      default: ''
     - name: stack
       required: false
       description: |-
         Comma separated list of strings to check in the stack trace.
         If provided, the override will only apply when the stack trace contains at least one of these patterns.
-      default: "''"
+      default: ''

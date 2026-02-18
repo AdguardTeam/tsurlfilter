@@ -10,8 +10,8 @@ abp_any:
     - name: replacement
       required: false
       description: The string to replace the matched pattern with.
-      default: "''"
+      default: ''
     - name: needle
       required: false
       description: An optional string or regex to check in the * blob parts before applying the replacement.
-      default: "''"
+      default: ''
