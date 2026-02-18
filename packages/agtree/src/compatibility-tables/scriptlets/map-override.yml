@@ -17,14 +17,14 @@ abp_any:
     - name: returnValue
       required: false
       description: The return value for the matched function calls. For 'set' ignored. For 'get' the value to return. For 'has', true or false.
-      default: "''"
+      default: ''
     - name: path
       required: false
       description: Path to look for the needle. Only relevant for 'set' method when checking for object values.
-      default: "''"
+      default: ''
     - name: stack
       required: false
       description: |-
         Comma separated list of strings to check in the stack trace.
         If provided, the override will only apply when the stack trace contains at least one of these patterns.
-      default: "''"
+      default: ''

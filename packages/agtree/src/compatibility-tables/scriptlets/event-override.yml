@@ -19,4 +19,4 @@ abp_any:
     - name: needle
       required: false
       description: Needle to look for in the event listener function
-      default: "''"
+      default: ''
