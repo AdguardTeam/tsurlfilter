@@ -28,4 +28,4 @@ abp_any:
     - name: stack
       required: false
       description: Comma-separated list of strings to check in the stack trace. If provided the replacement will only apply when the stack trace contains at least one of these patterns.
-      default: empty string
+      default: ''
