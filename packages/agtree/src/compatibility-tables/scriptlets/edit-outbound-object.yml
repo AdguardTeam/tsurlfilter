@@ -13,4 +13,4 @@ ubo_any:
     - name: jsonq
       required: false
       description: A uBO-flavored JSONPath query.
-      default: "''"
+      default: ''
