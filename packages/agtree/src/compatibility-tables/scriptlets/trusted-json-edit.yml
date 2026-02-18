@@ -8,5 +8,6 @@ ubo_any:
   is_trusted: true
   parameters:
     - name: jsonq
-      required: true
+      required: false
       description: A uBO-flavored JSONPath query.
+      default: "''"
