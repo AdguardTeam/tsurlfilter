@@ -1,0 +1,13 @@
+ubo_any:
+  name: trusted-json-edit.js
+  version_added: 1.69.1b4
+  description: Edit object generated through `JSON.parse()`. Properties can be assigned new values.
+  aliases:
+    - trusted-json-edit
+  docs: https://github.com/gorhill/uBlock/blob/a85fc33ce8ba8de5ae8f400cc6473243803deae6/src/js/resources/json-edit.js#L152
+  is_trusted: true
+  parameters:
+    - name: jsonq
+      required: false
+      description: A uBO-flavored JSONPath query.
+      default: ''
