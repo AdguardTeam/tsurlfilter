@@ -13,11 +13,11 @@ abp_any:
     - name: replacement
       required: false
       description: The replacement text
-      default: "''"
+      default: ''
     - name: decodeMethod
       required: false
       description: The decode method. When provided the snippet can decode the encoded text before replacing it. Useful for functions like btoa. Currently only “base64” is supported.
-      default: "''"
+      default: ''
     - name: path
       required: false
       description: |-
@@ -28,4 +28,4 @@ abp_any:
     - name: stack
       required: false
       description: Comma-separated list of strings to check in the stack trace. If provided the replacement will only apply when the stack trace contains at least one of these patterns.
-      default: "''"
+      default: ''
