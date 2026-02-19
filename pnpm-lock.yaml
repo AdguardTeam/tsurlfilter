@@ -10,8 +10,8 @@ catalogs:
       specifier: ^4.3.77
       version: 4.3.77
     '@adguard/scriptlets':
-      specifier: ^2.2.14
-      version: 2.2.14
+      specifier: ^2.2.16
+      version: 2.2.16
     '@rollup/plugin-alias':
       specifier: ^5.1.1
       version: 5.1.1
@@ -1628,7 +1628,7 @@ importers:
         version: 1.2.0
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.2.14
+        version: 2.2.16
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1839,7 +1839,7 @@ importers:
         version: link:../logger
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.2.14
+        version: 2.2.16
       '@adguard/text-encoding':
         specifier: ^0.8.3
         version: 0.8.3
@@ -2059,6 +2059,9 @@ packages:
 
   '@adguard/scriptlets@2.2.14':
     resolution: {integrity: sha512-IY5iy0gaNQq0YEFpdp9yb6zNmjQXFB3Hox84rKBCFZAJWw0AP4OQsZErH6IqpaAkBrA96KVXWKHYc09WdyOxyg==}
+
+  '@adguard/scriptlets@2.2.16':
+    resolution: {integrity: sha512-CpLzFOIR3ypvGD7Zax2ZiP2Kjhb70scbtRDneQcRnBaO+cPDGwLp0hEzMdI6eBZ8Is53svWzNpqGr9gAVum4SA==}
 
   '@adguard/text-encoding@0.8.3':
     resolution: {integrity: sha512-LA0bsY+YYnQqItGaYMoVL0l55JDi/uwvUca53V6M6mvKNHtaYDTlf3yAeW2PafsTfWvoYH7gObGu8eCvPh69tg==}
@@ -9855,6 +9858,12 @@ snapshots:
       '@types/trusted-types': 2.0.7
       js-yaml: 3.14.1
 
+  '@adguard/scriptlets@2.2.16':
+    dependencies:
+      '@adguard/agtree': link:packages/agtree
+      '@types/trusted-types': 2.0.7
+      js-yaml: 3.14.1
+
   '@adguard/text-encoding@0.8.3': {}
 
   '@adguard/tsurlfilter@1.0.81':
@@ -9889,7 +9898,7 @@ snapshots:
       '@adguard/css-tokenizer': 1.2.0
       '@adguard/logger': 2.0.0
       '@adguard/re2-wasm': 1.2.0
-      '@adguard/scriptlets': 2.2.14
+      '@adguard/scriptlets': 2.2.16
       cidr-tools: 6.4.2
       commander: 12.1.0
       is-cidr: 4.0.2
