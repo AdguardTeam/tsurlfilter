@@ -5,12 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.2] - 2026-02-19
+
+### Changed
+
+- Updated [@adguard/agtree] to `v4.0.1`.
+- Updated [@adguard/scriptlets] to `v2.2.16`.
+
+[4.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v4.0.2
+
 ## [4.0.1] - 2026-02-17
 
 ### Fixed
 
-- `Engine.createAsync` using `setTimeout` (macrotask) instead of `Promise.resolve()` (microtask) for yielding to the UI thread between rule-loading chunks.
+- `Engine.createAsync` using `setTimeout` (macrotask)
+  instead of `Promise.resolve()` (microtask)
+  for yielding to the UI thread between rule-loading chunks.
 - Parsing cosmetic rules with `$path` modifier.
+
+[4.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v4.0.1
 
 ## [4.0.0] - 2026-01-26
 
@@ -18,12 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support of `$header` modifier in declarative converter.
 - Support of `:has()` pseudo-class as standard CSS conditionally:
-  - if there are no other extended pseudo-classes in the selector, or
-  - if the `#?#` separator is explicitly used in the rule [AdguardBrowserExtension#2587].
+    - if there are no other extended pseudo-classes in the selector, or
+    - if the `#?#` separator is explicitly used in the rule [AdguardBrowserExtension#2587].
 - **New `FilterList` class** for managing filter lists with automatic rule conversion.
-  - Provides O(1) access to original rules via conversion data.
-  - Automatically converts rules to AdGuard format using `RawRuleConverter.convertToAdg()`.
-  - Supports bidirectional mapping between converted and original rules.
+    - Provides O(1) access to original rules via conversion data.
+    - Automatically converts rules to AdGuard format using `RawRuleConverter.convertToAdg()`.
+    - Supports bidirectional mapping between converted and original rules.
 - **Engine factory methods** `Engine.createSync()` and `Engine.createAsync()` for creating engine instances.
 - **Async engine creation** support to avoid UI blocking during rule loading.
 - New `retrieveOriginalRuleText()` method on `Engine` for retrieving unconverted rule text.
@@ -35,14 +48,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated [@adguard/agtree] to `v4.0.0`.
 - **BREAKING: Refactored Engine API** - replaced constructor with factory methods.
-  - Use `Engine.createSync(options)` instead of `new Engine(ruleStorage)`.
-  - Use `Engine.createAsync(options)` for async initialization.
+    - Use `Engine.createSync(options)` instead of `new Engine(ruleStorage)`.
+    - Use `Engine.createAsync(options)` for async initialization.
 - **BREAKING: Replaced `FilterListPreprocessor` with `FilterList`**.
-  - `FilterList` handles rule conversion automatically.
-  - Provides simpler API with `getContent()`, `getOriginalContent()`, etc.
+    - `FilterList` handles rule conversion automatically.
+    - Provides simpler API with `getContent()`, `getOriginalContent()`, etc.
 - **BREAKING: Replaced `BufferRuleList` with `FilterRuleList`**.
-  - `FilterRuleList` works with `FilterList` instances.
-  - Simplified internal architecture.
+    - `FilterRuleList` works with `FilterList` instances.
+    - Simplified internal architecture.
 - **BREAKING: Removed `allowlist-creator` module**.
 - Refactored `CosmeticEngine` and `NetworkEngine` to use factory pattern internally.
 - Improved rule storage architecture with new scanner and reader implementations.
