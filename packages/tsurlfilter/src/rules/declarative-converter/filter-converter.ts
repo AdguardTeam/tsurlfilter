@@ -104,6 +104,7 @@ import {
     type IRuleSet,
     RuleSet,
     type RuleSetContentProvider,
+    type RuleSetMetadataProvider,
     type SourceRuleAndFilterId,
     type UpdateStaticRulesOptions,
 } from './rule-set';
@@ -303,7 +304,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             DeclarativeFilterConverter.checkConverterOptions(options);
         }
 
-        const allStaticBadFilterRules = DeclarativeFilterConverter.createBadFilterRulesHashMap(staticRuleSets);
+        const allStaticBadFilterRules = await DeclarativeFilterConverter.createBadFilterRulesHashMap(staticRuleSets);
 
         const skipNegatedRulesFn = (r: IndexedNetworkRuleWithHash): boolean => {
             const fastMatchedBadFilterRules = allStaticBadFilterRules.get(r.hash);
@@ -415,7 +416,10 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             })
             .flat();
 
-        const rulesHashMap = new RulesHashMap(listOfRulesWithHash);
+        const metadataProvider: RuleSetMetadataProvider = {
+            loadBadFilterRules: async () => badFilterRules,
+            loadRulesHashMap: async () => new RulesHashMap(listOfRulesWithHash),
+        };
 
         const unsafeRulesCount = declarativeRules.filter((r) => !isSafeRule(r)).length;
 
@@ -427,8 +431,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             unsafeRulesCount,
             regexRulesCount,
             ruleSetContent,
-            badFilterRules,
-            rulesHashMap,
+            metadataProvider,
         );
 
         return {
@@ -448,13 +451,16 @@ export class DeclarativeFilterConverter implements IFilterConverter {
      * @returns Dictionary with all $badfilter rules which are extracted from
      * rulesets.
      */
-    private static createBadFilterRulesHashMap(
+    private static async createBadFilterRulesHashMap(
         ruleSets: IRuleSet[],
-    ): Map<number, IndexedNetworkRuleWithHash[]> {
+    ): Promise<Map<number, IndexedNetworkRuleWithHash[]>> {
         const allStaticBadFilterRules: Map<number, IndexedNetworkRuleWithHash[]> = new Map();
 
-        ruleSets.forEach((ruleSet) => {
-            ruleSet.getBadFilterRules().forEach((r) => {
+        for (let i = 0; i < ruleSets.length; i += 1) {
+            const ruleSet = ruleSets[i];
+            // eslint-disable-next-line no-await-in-loop
+            const badFilterRules = await ruleSet.getBadFilterRules();
+            badFilterRules.forEach((r) => {
                 const existingValue = allStaticBadFilterRules.get(r.hash);
                 if (existingValue) {
                     existingValue.push(r);
@@ -462,7 +468,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
                     allStaticBadFilterRules.set(r.hash, [r]);
                 }
             });
-        });
+        }
 
         return allStaticBadFilterRules;
     }
@@ -570,7 +576,8 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             // (custom filter and user rules).
             for (let j = 0; j < dynamicBadFilterRules.length; j += 1) {
                 const badFilterRule = dynamicBadFilterRules[j];
-                const hashMap = staticRuleSet.getRulesHashMap();
+                // eslint-disable-next-line no-await-in-loop
+                const hashMap = await staticRuleSet.getRulesHashMap();
                 const fastMatchedRulesByHash = hashMap.findRules(badFilterRule.hash);
 
                 if (fastMatchedRulesByHash.length === 0) {

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Changed
+
+- Reduced MV3 extension memory usage by unloading heavy ruleset metadata
+  (`badFilterRules`, `rulesHashMap`) after `configure()` completes. Metadata is
+  lazy-loaded from IndexedDB on demand and freed immediately after use.
+- Ruleset content (`sourceMap`, `declarativeRules`, `filterList`) is now also
+  unloaded when the declarative filtering log is disabled.
+- `RuleSetsLoaderApi` now provides lazy metadata loaders that read from IndexedDB
+  on demand instead of eagerly constructing heavy objects at ruleset creation time.
+
 ## [4.0.1] - 2026-02-17
 
 ### Changed

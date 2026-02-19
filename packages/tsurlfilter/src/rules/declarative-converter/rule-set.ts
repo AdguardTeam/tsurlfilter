@@ -2,8 +2,8 @@ import { z as zod } from 'zod';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
-import { EMPTY_STRING } from '../../common/constants';
 import { serializeJson } from '../../utils/misc';
+import { LazyLoader } from '../../utils/lazy-loader';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';
@@ -80,16 +80,16 @@ export interface IRuleSet {
     /**
      * Returns list of network rules with `$badfilter` option.
      *
-     * @returns List of network rules with `$badfilter` option.
+     * @returns Promise with list of network rules with `$badfilter` option.
      */
-    getBadFilterRules(): IndexedNetworkRuleWithHash[];
+    getBadFilterRules(): Promise<IndexedNetworkRuleWithHash[]>;
 
     /**
      * Returns dictionary with hashes of all ruleset's source rules.
      *
-     * @returns Dictionary with hashes of all ruleset's source rules.
+     * @returns Promise with dictionary with hashes of all ruleset's source rules.
      */
-    getRulesHashMap(): IRulesHashMap;
+    getRulesHashMap(): Promise<IRulesHashMap>;
 
     /**
      * For provided source returns list of ids of converted declarative rule.
@@ -119,6 +119,13 @@ export interface IRuleSet {
      * This method can be used to free memory until the content is needed again.
      */
     unloadContent(): void;
+
+    /**
+     * Unload ruleset metadata (badFilterRules, rulesHashMap).
+     * This method can be used to free memory until the metadata is needed again.
+     * The metadata will be lazy-loaded from the provider on the next access.
+     */
+    unloadMetadata(): void;
 
     /**
      * Serializes rule set to primitives values with lazy load.
@@ -164,6 +171,16 @@ export type RuleSetContentProvider = {
     loadSourceMap: () => Promise<ISourceMap>;
     loadFilterList: () => Promise<IFilter[]>;
     loadDeclarativeRules: () => Promise<DeclarativeRule[]>;
+};
+
+/**
+ * Rule set metadata provider for lazy load of heavy metadata.
+ * This allows badFilterRules and rulesHashMap to be loaded on demand
+ * and unloaded when not needed, saving significant memory.
+ */
+export type RuleSetMetadataProvider = {
+    loadBadFilterRules: () => Promise<IndexedNetworkRuleWithHash[]>;
+    loadRulesHashMap: () => Promise<IRulesHashMap>;
 };
 
 const serializedRuleSetLazyDataValidator = zod.strictObject({
@@ -224,6 +241,23 @@ export type DeserializedRuleSet = {
 };
 
 /**
+ * Loaded content of a rule set (source map, filter list, declarative rules).
+ */
+type RuleSetContent = {
+    sourceMap: ISourceMap;
+    filterList: Map<number, IFilter>;
+    declarativeRules: DeclarativeRule[];
+};
+
+/**
+ * Loaded metadata of a rule set (bad-filter rules, rules hash map).
+ */
+type RuleSetMetadata = {
+    badFilterRules: IndexedNetworkRuleWithHash[];
+    rulesHashMap: IRulesHashMap;
+};
+
+/**
  * Keeps converted declarative rules, counters of rules and source map for them.
  */
 export class RuleSet implements IRuleSet {
@@ -231,11 +265,6 @@ export class RuleSet implements IRuleSet {
      * Id of rule set.
      */
     private readonly id: string;
-
-    /**
-     * Array of converted declarative rules.
-     */
-    private declarativeRules: DeclarativeRule[] = [];
 
     /**
      * Number of converted declarative rules.
@@ -271,44 +300,16 @@ export class RuleSet implements IRuleSet {
     private readonly regexpRulesCount: number = 0;
 
     /**
-     * Source map for declarative rules.
+     * Lazy loader for content (source map, filter list, declarative rules).
+     * Loaded on first access, can be unloaded to free memory.
      */
-    private sourceMap: ISourceMap | undefined;
+    private readonly contentLoader: LazyLoader<RuleSetContent>;
 
     /**
-     * Dictionary which helps to fast find rule by its hash.
+     * Lazy loader for metadata (badFilterRules, rulesHashMap).
+     * Loaded on first access, can be unloaded to free memory.
      */
-    private rulesHashMap: IRulesHashMap;
-
-    /**
-     * List of network rules with $badfilter option.
-     */
-    private badFilterRules: IndexedNetworkRuleWithHash[];
-
-    /**
-     * Keeps array of source filter lists
-     * TODO: ? May it leads to memory leaks,
-     * because one FilterList with its content
-     * can be in the several RuleSet's at the same time ?
-     */
-    private filterList: Map<number, IFilter> = new Map();
-
-    /**
-     * The content provider of a rule set, is needed for lazy initialization.
-     * If request the source rules from rule set, the content provider will be
-     * called to load the source map, filter list and declarative rules list.
-     */
-    private readonly ruleSetContentProvider: RuleSetContentProvider;
-
-    /**
-     * Whether the content is loaded or not.
-     */
-    private initialized: boolean = false;
-
-    /**
-     * Waiter for initialization, will be resolved when the content is loaded.
-     */
-    private initializerPromise: Promise<void> | undefined;
+    private readonly metadataLoader: LazyLoader<RuleSetMetadata>;
 
     /**
      * Constructor of RuleSet.
@@ -318,8 +319,7 @@ export class RuleSet implements IRuleSet {
      * @param unsafeRulesCount Number of unsafe rules.
      * @param regexpRulesCount Number of regexp rules.
      * @param ruleSetContentProvider Rule set content provider.
-     * @param badFilterRules List of rules with $badfilter modifier.
-     * @param rulesHashMap Dictionary with hashes for all source rules.
+     * @param metadataProvider Metadata provider for lazy loading.
      * @param unsafeRules List of unsafe DNR rules.
      */
     constructor(
@@ -328,18 +328,45 @@ export class RuleSet implements IRuleSet {
         unsafeRulesCount: number,
         regexpRulesCount: number,
         ruleSetContentProvider: RuleSetContentProvider,
-        badFilterRules: IndexedNetworkRuleWithHash[],
-        rulesHashMap: IRulesHashMap,
+        metadataProvider: RuleSetMetadataProvider,
         unsafeRules?: DeclarativeRule[],
     ) {
         this.id = id;
         this.rulesCount = rulesCount;
         this.unsafeRulesCount = unsafeRulesCount;
         this.regexpRulesCount = regexpRulesCount;
-        this.ruleSetContentProvider = ruleSetContentProvider;
-        this.badFilterRules = badFilterRules;
-        this.rulesHashMap = rulesHashMap;
         this.unsafeRules = unsafeRules;
+
+        this.contentLoader = new LazyLoader(async () => {
+            const {
+                loadSourceMap,
+                loadFilterList,
+                loadDeclarativeRules,
+            } = ruleSetContentProvider;
+
+            const sourceMap = await loadSourceMap();
+            const declarativeRules = await loadDeclarativeRules();
+            // TODO: Find a better method to load filters (AG-42364)
+            const filtersList = await loadFilterList();
+            const filterList = new Map<number, IFilter>();
+            filtersList.forEach((filter) => {
+                filterList.set(filter.getId(), filter);
+            });
+
+            return { sourceMap, filterList, declarativeRules };
+        });
+
+        this.metadataLoader = new LazyLoader(async () => {
+            const {
+                loadBadFilterRules,
+                loadRulesHashMap,
+            } = metadataProvider;
+
+            const badFilterRules = await loadBadFilterRules();
+            const rulesHashMap = await loadRulesHashMap();
+
+            return { badFilterRules, rulesHashMap };
+        });
     }
 
     /** @inheritdoc */
@@ -349,7 +376,7 @@ export class RuleSet implements IRuleSet {
 
     /** @inheritdoc */
     public getRulesCount(): number {
-        return this.rulesCount || this.declarativeRules.length;
+        return this.rulesCount;
     }
 
     /** @inheritdoc */
@@ -378,16 +405,15 @@ export class RuleSet implements IRuleSet {
      * @returns Promise with list of source rules.
      */
     private async findSourceRules(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]> {
-        if (!this.sourceMap) {
-            return [];
-        }
+        const content = await this.contentLoader.get();
+        const { sourceMap, filterList } = content;
 
-        const sourcePairs = this.sourceMap.getByDeclarativeRuleId(declarativeRuleId);
+        const sourcePairs = sourceMap.getByDeclarativeRuleId(declarativeRuleId);
         const sourceRules = sourcePairs.map(async ({
             filterId,
             sourceRuleIndex,
         }) => {
-            const filter = this.filterList.get(filterId);
+            const filter = filterList.get(filterId);
             if (!filter) {
                 throw new Error(`Not found filter list with id: ${filterId}`);
             }
@@ -403,78 +429,16 @@ export class RuleSet implements IRuleSet {
         return Promise.all(sourceRules);
     }
 
-    /**
-     * Run inner lazy deserialization from rule set content provider to load
-     * data which is not needed on the creation of rule set:
-     * the source map, filter list and declarative rules list.
-     */
-    private async loadContent(): Promise<void> {
-        if (this.initialized) {
-            return;
-        }
-
-        if (this.initializerPromise) {
-            await this.initializerPromise;
-            return;
-        }
-
-        const initialize = async (): Promise<void> => {
-            const {
-                loadSourceMap,
-                loadFilterList,
-                loadDeclarativeRules,
-            } = this.ruleSetContentProvider;
-
-            this.sourceMap = await loadSourceMap();
-            this.declarativeRules = await loadDeclarativeRules();
-            // TODO: Find a better method to load filters (AG-42364)
-            const filtersList = await loadFilterList();
-            filtersList.forEach((filter) => {
-                this.filterList.set(filter.getId(), filter);
-            });
-
-            this.initialized = true;
-        };
-
-        this.initializerPromise = initialize().then(() => {
-            this.initializerPromise = undefined;
-        });
-        await this.initializerPromise;
-    }
-
     /** @inheritdoc */
     public unloadContent(): void {
-        // If content is not initialized, there is nothing to unload
-        if (!this.initialized && !this.initializerPromise) {
-            return;
-        }
-
-        // If initialization is in progress
-        if (this.initializerPromise) {
-            this.initializerPromise.finally(() => {
-                this.unloadContent();
-            });
-            return;
-        }
-
-        // Safely unload all filters in the filter list
-        this.filterList.forEach((filter) => filter.unloadContent());
-
-        // Clear loaded resources
-        this.sourceMap = undefined;
-        this.declarativeRules = [];
-        this.filterList.clear();
-
-        // Mark the content as unloaded
-        this.initialized = false;
-        this.initializerPromise = undefined;
+        this.contentLoader.unload(({ filterList }) => {
+            filterList.forEach((filter) => filter.unloadContent());
+        });
     }
 
     /** @inheritdoc */
     public async getRulesById(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]> {
         try {
-            await this.loadContent();
-
             const originalRules = await this.findSourceRules(declarativeRuleId);
 
             return originalRules;
@@ -487,35 +451,38 @@ export class RuleSet implements IRuleSet {
     }
 
     /** @inheritdoc */
-    public getBadFilterRules(): IndexedNetworkRuleWithHash[] {
-        return this.badFilterRules;
+    public async getBadFilterRules(): Promise<IndexedNetworkRuleWithHash[]> {
+        const { badFilterRules } = await this.metadataLoader.get();
+
+        return badFilterRules;
     }
 
     /** @inheritdoc */
-    public getRulesHashMap(): IRulesHashMap {
-        return this.rulesHashMap;
+    public async getRulesHashMap(): Promise<IRulesHashMap> {
+        const { rulesHashMap } = await this.metadataLoader.get();
+
+        return rulesHashMap;
+    }
+
+    /** @inheritdoc */
+    public unloadMetadata(): void {
+        this.metadataLoader.unload();
     }
 
     /** @inheritdoc */
     public async getDeclarativeRulesIdsBySourceRuleIndex(
         source: SourceRuleIdxAndFilterId,
     ): Promise<number[]> {
-        await this.loadContent();
+        const { sourceMap } = await this.contentLoader.get();
 
-        if (!this.sourceMap) {
-            const { filterId, sourceRuleIndex } = source;
-            // eslint-disable-next-line max-len
-            throw new Error(`Cannot find declarative rules for filter id - ${filterId}, rule index - ${sourceRuleIndex} because source map is undefined in ruleset: ${this.getId()}`);
-        }
-
-        return this.sourceMap.getBySourceRuleIndex(source);
+        return sourceMap.getBySourceRuleIndex(source);
     }
 
     /** @inheritdoc */
     public async getDeclarativeRules(): Promise<DeclarativeRule[]> {
-        await this.loadContent();
+        const { declarativeRules } = await this.contentLoader.get();
 
-        return this.declarativeRules;
+        return declarativeRules;
     }
 
     /**
@@ -661,7 +628,9 @@ export class RuleSet implements IRuleSet {
      *
      * @returns Serialized rule set data.
      */
-    private getSerializedRuleSetData(unsafeRules?: DeclarativeRule[]): SerializedRuleSetData {
+    private async getSerializedRuleSetData(unsafeRules?: DeclarativeRule[]): Promise<SerializedRuleSetData> {
+        const { rulesHashMap, badFilterRules } = await this.metadataLoader.get();
+
         let { rulesCount } = this;
 
         // If unsaferRules is provided, we should not count them in
@@ -674,8 +643,8 @@ export class RuleSet implements IRuleSet {
             regexpRulesCount: this.regexpRulesCount,
             unsafeRulesCount: this.unsafeRulesCount,
             rulesCount,
-            ruleSetHashMapRaw: this.rulesHashMap.serialize(),
-            badFilterRulesRaw: this.badFilterRules.map((r) => r.ruleParts.text),
+            ruleSetHashMapRaw: rulesHashMap.serialize(),
+            badFilterRulesRaw: badFilterRules.map((r) => r.ruleParts.text),
             unsafeRules,
         };
     }
@@ -683,19 +652,23 @@ export class RuleSet implements IRuleSet {
     /**
      * Helper method to get serialized rule set lazy data.
      *
+     * @param content Loaded rule set content.
+     *
      * @returns Serialized rule set lazy data.
      */
-    private getSerializedRuleSetLazyData(): SerializedRuleSetLazyData {
+    private static getSerializedRuleSetLazyData(content: RuleSetContent): SerializedRuleSetLazyData {
         return {
-            sourceMapRaw: this.sourceMap?.serialize() || EMPTY_STRING,
-            filterIds: Array.from(this.filterList.keys()),
+            sourceMapRaw: content.sourceMap.serialize(),
+            filterIds: Array.from(content.filterList.keys()),
         };
     }
 
     /** @inheritdoc */
     public async serialize(): Promise<SerializedRuleSet> {
+        let content: RuleSetContent;
+
         try {
-            await this.loadContent();
+            content = await this.contentLoader.get();
         } catch (e) {
             const id = this.getId();
             // eslint-disable-next-line max-len
@@ -705,8 +678,8 @@ export class RuleSet implements IRuleSet {
 
         const serialized: SerializedRuleSet = {
             id: this.id,
-            data: JSON.stringify(this.getSerializedRuleSetData()),
-            lazyData: JSON.stringify(this.getSerializedRuleSetLazyData()),
+            data: JSON.stringify(await this.getSerializedRuleSetData()),
+            lazyData: JSON.stringify(RuleSet.getSerializedRuleSetLazyData(content)),
         };
 
         return serialized;
@@ -717,8 +690,10 @@ export class RuleSet implements IRuleSet {
         prettyPrint = true,
         unsafeRules?: DeclarativeRule[],
     ): Promise<string> {
+        let content: RuleSetContent;
+
         try {
-            await this.loadContent();
+            content = await this.contentLoader.get();
         } catch (e) {
             const id = this.getId();
             // eslint-disable-next-line max-len
@@ -729,7 +704,7 @@ export class RuleSet implements IRuleSet {
         // TODO: Improve this code once we introduce multiple filters within a single ruleset.
         // Also, do not forget to change metadata rule's structure to store preprocessed filter lists in an array.
         // Currently, we expect that there is only one filter within a single rule set.
-        const filter = this.filterList.values().next().value;
+        const filter = content.filterList.values().next().value;
 
         if (!filter) {
             const id = this.getId();
@@ -737,7 +712,7 @@ export class RuleSet implements IRuleSet {
             throw new UnavailableRuleSetSourceError(msg, id);
         }
 
-        const content = await filter.getContent();
+        const filterContent = await filter.getContent();
 
         // To ensure that unsafe rules are provided and their count is correct,
         // we check if the length of the provided unsafe rules array is equal to
@@ -750,13 +725,13 @@ export class RuleSet implements IRuleSet {
         }
 
         const metadataRule = createMetadataRule({
-            metadata: this.getSerializedRuleSetData(unsafeRules),
-            lazyMetadata: this.getSerializedRuleSetLazyData(),
-            rawFilterList: content.getContent(),
-            conversionData: content.getConversionData(),
+            metadata: await this.getSerializedRuleSetData(unsafeRules),
+            lazyMetadata: RuleSet.getSerializedRuleSetLazyData(content),
+            rawFilterList: filterContent.getContent(),
+            conversionData: filterContent.getConversionData(),
         });
 
-        let declarativeRules = await this.getDeclarativeRules();
+        let declarativeRules = content.declarativeRules.slice();
 
         declarativeRules.unshift(metadataRule);
 
