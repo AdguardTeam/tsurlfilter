@@ -6,6 +6,16 @@ adg_os_any|adg_ext_any:
   aliases:
     - abp-log
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#log
-  parameters:
-    - name: arguments
-      required: false
+  description: Logs all arguments to the console. Useful for debugging filter rules.
+  variadic_parameters:
+    min_count: 0
+    max_count: null
+
+abp_any:
+  name: log
+  version_added: "3.3"
+  description: Logs its arguments to the console. This may be used for testing and debugging.
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  variadic_parameters:
+    min_count: 0
+    max_count: null
