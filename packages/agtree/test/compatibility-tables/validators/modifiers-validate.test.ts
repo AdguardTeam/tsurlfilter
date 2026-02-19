@@ -8,7 +8,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { modifiersCompatibilityTable } from '../../../src/compatibility-tables/modifiers';
-import { SpecificPlatform } from '../../../src/compatibility-tables/platforms';
+import { Platform } from '../../../src/compatibility-tables';
 import { ValidationContext } from '../../../src/compatibility-tables/validators/validation-context';
 
 /**
@@ -22,7 +22,7 @@ import { ValidationContext } from '../../../src/compatibility-tables/validators/
  */
 const validateModifier = (
     raw: string,
-    platform: SpecificPlatform = SpecificPlatform.AdgOsWindows,
+    platform: Platform = Platform.AdgOsWindows,
     isExceptionRule?: boolean,
 ): ValidationContext => {
     const ctx = new ValidationContext();
@@ -126,7 +126,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                 'to=example.com|example.org',
                 'to=example.com|example.org|test-example.*',
             ])('%s is valid', (raw) => {
-                const ctx = validateModifier(raw, SpecificPlatform.UboExtFirefox);
+                const ctx = validateModifier(raw, Platform.UboExtFirefox);
                 expect(ctx.valid).toBe(true);
             });
 
@@ -139,7 +139,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                 'domain=example.org|~|example.com',
                 'domain=~ example.com',
             ])('%s produces DOMAIN_LIST_PARSE_ERROR for UBO', (raw) => {
-                const ctx = validateModifier(raw, SpecificPlatform.UboExtFirefox);
+                const ctx = validateModifier(raw, Platform.UboExtFirefox);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('DOMAIN_LIST_PARSE_ERROR');
             });
@@ -154,7 +154,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                     expectedValues: ['exam[le.org', 'example,org', 'example or'],
                 },
             ])('$raw produces INVALID_DOMAIN_LIST_VALUES for UBO', ({ raw, expectedValues }) => {
-                const ctx = validateModifier(raw, SpecificPlatform.UboExtFirefox);
+                const ctx = validateModifier(raw, Platform.UboExtFirefox);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('INVALID_DOMAIN_LIST_VALUES');
                 expect(ctx.issues?.[0]?.data?.values).toEqual(expectedValues);
@@ -371,7 +371,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                 'stealth=useragent|ip|xclientdata|dpi',
             ])('%s', (raw) => {
                 // stealth is exception-only for AdGuard
-                const ctx = validateModifier(raw, SpecificPlatform.AdgOsWindows, true);
+                const ctx = validateModifier(raw, Platform.AdgOsWindows, true);
                 expect(ctx.valid).toBe(true);
             });
         });
@@ -386,7 +386,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                 'stealth=useragent|~|dpi',
                 'stealth=~ dpi',
             ])('%s produces STEALTH_OPTION_LIST_PARSE_ERROR', (raw) => {
-                const ctx = validateModifier(raw, SpecificPlatform.AdgOsWindows, true);
+                const ctx = validateModifier(raw, Platform.AdgOsWindows, true);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('STEALTH_OPTION_LIST_PARSE_ERROR');
             });
@@ -404,7 +404,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                     expectedValues: ['PUSH'],
                 },
             ])('$raw produces INVALID_STEALTH_OPTION_LIST_VALUES', ({ raw, expectedValues }) => {
-                const ctx = validateModifier(raw, SpecificPlatform.AdgOsWindows, true);
+                const ctx = validateModifier(raw, Platform.AdgOsWindows, true);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('INVALID_STEALTH_OPTION_LIST_VALUES');
                 expect(ctx.issues?.[0]?.data?.values).toEqual(expectedValues);
@@ -422,7 +422,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                     expectedValues: ['searchqueries'],
                 },
             ])('$raw produces NEGATED_STEALTH_OPTION_VALUES', ({ raw, expectedValues }) => {
-                const ctx = validateModifier(raw, SpecificPlatform.AdgOsWindows, true);
+                const ctx = validateModifier(raw, Platform.AdgOsWindows, true);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('NEGATED_STEALTH_OPTION_VALUES');
                 expect(ctx.issues?.[0]?.data?.values).toEqual(expectedValues);
@@ -450,7 +450,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                 'csp=style-src-elem https://example.com/',
                 "csp=trusted-types foo bar 'allow-duplicates'",
             ])('%s', (raw) => {
-                const ctx = validateModifier(raw, SpecificPlatform.AdgOsWindows, true);
+                const ctx = validateModifier(raw, Platform.AdgOsWindows, true);
                 expect(ctx.valid).toBe(true);
             });
         });
@@ -458,14 +458,14 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
         describe('empty / no directives', () => {
             test('csp= ; produces EMPTY_CSP_DIRECTIVE or NO_CSP_DIRECTIVES', () => {
                 // modifier value is trimmed during parsing, so value becomes ";"
-                const ctx = validateModifier('csp= ;', SpecificPlatform.AdgOsWindows);
+                const ctx = validateModifier('csp= ;', Platform.AdgOsWindows);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('NO_CSP_DIRECTIVES');
             });
 
             test("csp=child-src 'none'; ; worker-src 'none' produces EMPTY_CSP_DIRECTIVE", () => {
                 // eslint-disable-next-line max-len
-                const ctx = validateModifier("csp=child-src 'none'; ; worker-src 'none'", SpecificPlatform.AdgOsWindows);
+                const ctx = validateModifier("csp=child-src 'none'; ; worker-src 'none'", Platform.AdgOsWindows);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('EMPTY_CSP_DIRECTIVE');
             });
@@ -486,7 +486,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                     expectedDirectives: ['frame', 'workers'],
                 },
             ])('$raw produces INVALID_CSP_DIRECTIVES', ({ raw, expectedDirectives }) => {
-                const ctx = validateModifier(raw, SpecificPlatform.AdgOsWindows);
+                const ctx = validateModifier(raw, Platform.AdgOsWindows);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('INVALID_CSP_DIRECTIVES');
                 expect(ctx.issues?.[0]?.data?.directives).toEqual(expectedDirectives);
@@ -495,7 +495,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
 
         describe('quoted CSP directive', () => {
             test("csp='child-src' 'none' produces CSP_DIRECTIVE_QUOTED", () => {
-                const ctx = validateModifier("csp='child-src' 'none'", SpecificPlatform.AdgOsWindows);
+                const ctx = validateModifier("csp='child-src' 'none'", Platform.AdgOsWindows);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('CSP_DIRECTIVE_QUOTED');
                 expect(ctx.issues?.[0]?.data?.directive).toBe('child-src');
@@ -513,7 +513,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                     expectedDirective: 'frame-src',
                 },
             ])('$raw produces CSP_DIRECTIVE_NO_VALUE', ({ raw, expectedDirective }) => {
-                const ctx = validateModifier(raw, SpecificPlatform.AdgOsWindows);
+                const ctx = validateModifier(raw, Platform.AdgOsWindows);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('CSP_DIRECTIVE_NO_VALUE');
                 expect(ctx.issues?.[0]?.data?.directive).toBe(expectedDirective);
@@ -534,7 +534,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                 'permissions=storage-access=()\\, camera=()',
                 'permissions=join-ad-interest-group=()\\, run-ad-auction=()\\, browsing-topics=()',
             ])('%s', (raw) => {
-                const ctx = validateModifier(raw, SpecificPlatform.AdgOsWindows, true);
+                const ctx = validateModifier(raw, Platform.AdgOsWindows, true);
                 expect(ctx.valid).toBe(true);
             });
         });
@@ -626,7 +626,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                     expectedMessage: 'Empty permission',
                 },
             ])('$raw produces INVALID_PERMISSIONS_VALUE', ({ raw, expectedMessage }) => {
-                const ctx = validateModifier(raw, SpecificPlatform.AdgOsWindows);
+                const ctx = validateModifier(raw, Platform.AdgOsWindows);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('INVALID_PERMISSIONS_VALUE');
                 expect(ctx.issues?.[0]?.data?.message).toBe(expectedMessage);
@@ -646,7 +646,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                 'referrerpolicy=strict-origin-when-cross-origin',
                 'referrerpolicy=unsafe-url',
             ])('%s', (raw) => {
-                const ctx = validateModifier(raw, SpecificPlatform.AdgOsWindows, true);
+                const ctx = validateModifier(raw, Platform.AdgOsWindows, true);
                 expect(ctx.valid).toBe(true);
             });
         });
@@ -658,7 +658,7 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
                 // non-latin "o" in "origin"
                 'referrerpolicy=оrigin',
             ])('%s produces INVALID_REFERRER_POLICY_DIRECTIVE', (raw) => {
-                const ctx = validateModifier(raw, SpecificPlatform.AdgOsWindows);
+                const ctx = validateModifier(raw, Platform.AdgOsWindows);
                 expect(ctx.valid).toBe(false);
                 expect(ctx.issues?.[0]?.messageId).toBe('INVALID_REFERRER_POLICY_DIRECTIVE');
             });

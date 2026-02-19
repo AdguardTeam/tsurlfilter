@@ -27,7 +27,7 @@ import {
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode, cloneModifierListNode, cloneScriptletRuleNode } from '../../ast-utils/clone';
-import { GenericPlatform, scriptletsCompatibilityTable } from '../../compatibility-tables';
+import { Platform, scriptletsCompatibilityTable } from '../../compatibility-tables';
 import { isNull, isUndefined } from '../../utils/type-guards';
 import { DomainListParser } from '../../parser';
 
@@ -144,9 +144,9 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             }
 
             if (rule.syntax === AdblockSyntax.Ubo) {
-                const scriptletData = scriptletsCompatibilityTable.getFirst(
+                const scriptletData = scriptletsCompatibilityTable.query(
                     scriptletName,
-                    GenericPlatform.UboAny,
+                    Platform.UboAny,
                 );
 
                 // Some scriptlets have special values that need to be converted
@@ -348,7 +348,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                 uboScriptletName = scriptletName.slice(UBO_SCRIPTLET_PREFIX_LENGTH);
             } else {
                 // Otherwise, try to find the corresponding uBO scriptlet name, or use the original one if not found
-                const uboScriptlet = scriptletsCompatibilityTable.getFirst(scriptletName, GenericPlatform.UboAny);
+                const uboScriptlet = scriptletsCompatibilityTable.query(scriptletName, Platform.UboAny);
                 if (!uboScriptlet) {
                     throw new RuleConversionError(`Scriptlet "${scriptletName}" is not supported in uBlock Origin.`);
                 }

@@ -1,20 +1,19 @@
-/* eslint-disable no-bitwise,@typescript-eslint/naming-convention,no-underscore-dangle */
 /**
- * @file Provides compatibility table data loading.
+ * @file Compatibility table data loading with hybrid trie structure.
  */
 
-import zod from 'zod';
 import path, { dirname } from 'path';
+import { readFileSync, readdirSync } from 'fs';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import yaml from 'js-yaml';
-import { readFileSync, readdirSync } from 'fs';
-// Note: we use XRegExp as a dev dependency, but we do not include this compatibility table data loader
-// in the production build, so it is safe to ignore ESLint warning here.
 // eslint-disable-next-line import/no-extraneous-dependencies
 import XRegExp from 'xregexp';
+import zod from 'zod';
 import { fileURLToPath } from 'url';
 
-import { type CompatibilityTable, type CompatibilityTableRow } from './types';
+import { type HybridCompatibilityTableRow, type CompatibilityTable } from './types';
+import { TrieNode } from './trie';
+import { PlatformExpressionEvaluator } from './platform-expression-evaluator';
 import {
     type BaseCompatibilityDataSchema,
     baseFileSchema,
@@ -29,6 +28,7 @@ import { KNOWN_VALIDATORS } from './validators';
 import { deepFreeze } from '../utils/deep-freeze';
 import { EMPTY } from '../utils/constants';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
@@ -47,46 +47,63 @@ const getYmlFilesFromDir = (dir: string): string[] => {
 };
 
 /**
- * Gets active bit slots from a number, i.e. positions where bits are 1.
+ * Builds a hybrid compatibility table row from parsed YAML data.
+ * Creates both a trie for wildcard queries and a flat map for O(1) specific lookups.
+ * Supports multiple platforms in a single key with negation (e.g., 'adg_os_any|~adg_os_windows').
  *
- * @param n Number to get active bit slots from.
+ * @param fileData Parsed YAML data (platform string/expression → data).
  *
- * @returns List of active bit slots.
+ * @returns Hybrid compatibility table row.
  *
- * @example
- * ```ts
- * getActiveBitSlots(0b101) // => [1, 4]
- * ```
+ * @template T Type of the compatibility data schema.
  */
-const getActiveBitSlots = (n: number): number[] => {
-    const result = [];
+const buildHybridRow = <T extends BaseCompatibilityDataSchema>(
+    fileData: Record<string, T>,
+): HybridCompatibilityTableRow<T> => {
+    const trie = new TrieNode<T>();
+    const flatMap = new Map<string, T>();
+    const shared: T[] = [];
 
-    for (let i = 0; i < 32; i += 1) {
-        const p = n & (1 << i);
-        if (p) {
-            result.push(p);
+    // Insert each platform's data into both structures
+    for (const [platformExpr, data] of Object.entries(fileData)) {
+        // Always use evaluator to expand wildcards to concrete platforms
+        // This handles: single concrete platforms, wildcards (adg_any), negation (~adg_os_windows)
+        const platforms = PlatformExpressionEvaluator.evaluate(platformExpr);
+
+        // Insert data for each concrete platform
+        for (const platform of platforms) {
+            const platformStr = platform.toString();
+            const platformPath = platform.toPath();
+
+            // Insert into trie (for wildcard queries)
+            trie.insert(platformPath, data);
+
+            // Insert into flat map (for O(1) specific lookups)
+            flatMap.set(platformStr, data);
         }
+
+        // Add to shared storage once per entry (not per platform)
+        shared.push(data);
     }
 
-    return result;
+    return {
+        trie,
+        flatMap,
+        shared,
+    };
 };
 
 /**
- * Gets compatibility table data from a directory.
+ * Gets compatibility table data from a directory using hybrid structure.
  *
  * @param dir Directory to get the compatibility table data from.
  * @param fileSchema File schema to parse the compatibility table data.
  *
- * @returns Compatibility table data.
+ * @returns Compatibility table data with hybrid structure.
  *
  * @template T Type of the compatibility data schema.
  *
  * @throws Error if the file is not found or cannot be read.
- *
- * @note We only run this when testing, before the build, compatibility tables should be pre-built
- * to `dist/compatibility-tables.json` to avoid unnecessary processing.
- *
- * @internal
  */
 const getCompatibilityTableData = <T extends BaseCompatibilityDataSchema>(
     dir: string,
@@ -94,51 +111,40 @@ const getCompatibilityTableData = <T extends BaseCompatibilityDataSchema>(
 ): CompatibilityTable<T> => {
     const rawFiles = getYmlFilesFromDir(dir);
 
-    const parsedFileContents = rawFiles.map((file) => {
+    const rows = new Map<string, HybridCompatibilityTableRow<T>>();
+
+    for (const file of rawFiles) {
         const rawFileContent = readFileSync(`${dir}/${file}`, 'utf8');
         const fileData = yaml.load(rawFileContent);
-        return fileSchema.parse(fileData);
-    });
+        const parsedData = fileSchema.parse(fileData);
 
-    const data: CompatibilityTable<T> = {
-        shared: [],
-        map: {},
-    };
+        // Extract feature name from file (remove .yml extension)
+        const featureName = file.replace(/\.yml$/, '');
 
-    parsedFileContents.forEach((file) => {
-        const aliases = new Set<string>();
+        // Build hybrid row
+        const row = buildHybridRow(parsedData);
 
-        const fileData: CompatibilityTableRow<T> = {
-            shared: [],
-            map: {},
-        };
+        // Store by feature name (filename without .yml)
+        rows.set(featureName, row);
 
-        Object.entries(file).forEach(([platforms, value]) => {
-            aliases.add(value.name);
-
-            const fileAliases = value.aliases;
-
-            if (fileAliases) {
-                fileAliases.forEach((alias: string) => aliases.add(alias));
+        // Also index by the actual name and aliases from entries
+        for (const entry of Object.values(parsedData)) {
+            // Index by name field
+            if (entry?.name && entry.name !== featureName) {
+                rows.set(entry.name, row);
             }
+            // Index by aliases
+            if (entry?.aliases) {
+                for (const alias of entry.aliases) {
+                    rows.set(alias, row);
+                }
+            }
+        }
+    }
 
-            const activeBits = getActiveBitSlots(Number(platforms));
-
-            fileData.shared.push(value as T);
-
-            activeBits.forEach((activeBit) => {
-                fileData.map[activeBit] = fileData.shared.length - 1;
-            });
-        });
-
-        aliases.forEach((alias) => {
-            data.map[alias] = data.shared.length;
-        });
-
-        data.shared.push(fileData);
+    return deepFreeze({
+        rows,
     });
-
-    return deepFreeze(data);
 };
 
 /**
@@ -164,34 +170,22 @@ const getModifiersCompatibilityTableData = (dir: string) => {
 
         const valueFormatTrimmed = valueFormat.trim();
 
-        // If it is a known validator, we don't need to validate it further
         if (!valueFormatTrimmed && KNOWN_VALIDATORS.has(valueFormatTrimmed)) {
             return data;
         }
 
-        // Create an XRegExp pattern from the value format, then convert it to a native RegExp pattern
         const xRegExpPattern = XRegExp(valueFormatTrimmed);
         const regExpPattern = new RegExp(xRegExpPattern.source, xRegExpPattern.flags);
 
-        // If any flags are present in the pattern, we need to combine them with the existing flags
-
-        // Note: we need 'value_format_flags' because RegExp constructor doesn't support flags in the pattern,
-        // they should be passed as a separate argument, and perhaps this is the most convenient way to do it
-
-        // Note: do not use 'regExpPattern.toString()' because it will include the slashes and flags and
-        // you cannot create the equivalent RegExp object from it again
         if (regExpPattern.flags) {
-            // 1. Get existing flags from 'value_format_flags'
             const flags: Set<string> = new Set();
 
             if (valueFormatFlags) {
                 valueFormatFlags.split(EMPTY).forEach((flag) => flags.add(flag));
             }
 
-            // 2. Add flags from the RegExp pattern
             regExpPattern.flags.split(EMPTY).forEach((flag) => flags.add(flag));
 
-            // 3. Update 'value_format_flags' with the combined flags
             // eslint-disable-next-line no-param-reassign
             data.value_format_flags = Array.from(flags).join(EMPTY);
         }
@@ -204,9 +198,7 @@ const getModifiersCompatibilityTableData = (dir: string) => {
 
     const combinedSchema = valueFormatPreprocessorSchema.pipe(modifierDataSchema);
 
-    const data = getCompatibilityTableData<ModifierDataSchema>(dir, baseFileSchema(combinedSchema));
-
-    return data;
+    return getCompatibilityTableData<ModifierDataSchema>(dir, baseFileSchema(combinedSchema));
 };
 
 /**

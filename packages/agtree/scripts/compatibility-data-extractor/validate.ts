@@ -27,16 +27,18 @@ interface ExtractedScriptlet {
  * @returns Scriptlet data or null if not found
  */
 function getScriptletFromTable(name: string): ScriptletDataSchema | null {
-    const tableKeys = Object.keys(scriptletsCompatibilityTableData.map);
+    // Check if name exists as a key in rows Map
+    if (scriptletsCompatibilityTableData.rows.has(name)) {
+        const row = scriptletsCompatibilityTableData.rows.get(name)!;
+        // Get first entry from the shared array
+        if (row.shared.length > 0) {
+            return row.shared[0];
+        }
+    }
 
-    for (const key of tableKeys) {
-        const rowIndex = scriptletsCompatibilityTableData.map[key];
-        const row = scriptletsCompatibilityTableData.shared[rowIndex];
-
-        const entryIndices = Object.values(row.map);
-        for (const entryIndex of entryIndices) {
-            const entry = row.shared[entryIndex];
-
+    // Otherwise, search through all rows for aliases
+    for (const [key, row] of scriptletsCompatibilityTableData.rows.entries()) {
+        for (const entry of row.shared) {
             if (key === name || entry.aliases?.includes(name)) {
                 return entry;
             }
@@ -69,9 +71,9 @@ function getCategoryName(fileName: string): string {
  */
 function getAllTableScriptletNames(): Set<string> {
     const names = new Set<string>();
-    const tableKeys = Object.keys(scriptletsCompatibilityTableData.map);
 
-    for (const key of tableKeys) {
+    // Get all keys from the rows Map
+    for (const key of scriptletsCompatibilityTableData.rows.keys()) {
         names.add(key);
     }
 

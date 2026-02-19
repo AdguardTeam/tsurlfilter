@@ -14,8 +14,7 @@ import { isValidNoopModifier } from '../utils/noop-modifier';
 import { type Modifier } from '../nodes';
 import { ModifierParser } from '../parser/misc/modifier-parser';
 import { defaultParserOptions } from '../parser/options';
-import { type SpecificPlatform } from './platforms';
-import { getHumanReadablePlatformName } from './utils/platform-helpers';
+import { type Platform } from './platform';
 import { VALIDATION_ERROR_PREFIX, SOURCE_DATA_ERROR_PREFIX } from '../validator/constants';
 import { isString } from '../utils/type-guards';
 import { getErrorMessage } from '../utils/error';
@@ -67,7 +66,7 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
     public validate(
         data: Modifier | string,
         ctx: ValidationContext,
-        platform?: SpecificPlatform,
+        platform?: Platform,
         isExceptionRule?: boolean,
         ruleModifierNames?: Set<string>,
     ): void {
@@ -92,11 +91,11 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
             ? this.nameTransformer(modifier.name.value)
             : modifier.name.value;
 
-        const specificBlockerData = this.getSingle(normalizedName, platform);
+        const specificBlockerData = this.get(normalizedName, platform);
 
         if (!specificBlockerData) {
             ctx.addErrorFromNode(
-                sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(platform)),
+                sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, platform.toHumanReadable()),
                 modifier,
             );
             return;

@@ -6,7 +6,8 @@ import { ModifierParser } from '../../src/parser/misc/modifier-parser';
 import { modifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';
 import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
-import { GenericPlatform, getHumanReadablePlatformName, SpecificPlatform } from '../../src/compatibility-tables';
+import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-items-parser';
+import { Platform } from '../../src/compatibility-tables';
 
 /**
  * Returns modifier AST node for given rawModifier.
@@ -178,7 +179,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
+                const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -190,7 +191,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
+                const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
                 expect(validationResult.valid).toBeTruthy();
                 expect(validationResult.error).toBeUndefined();
                 expect(validationResult.warn?.includes('support shall be removed in the future')).toBeTruthy();
@@ -210,7 +211,7 @@ describe('ModifierValidator', () => {
                 {
                     actual: 'popunder',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows)),
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, Platform.AdgOsWindows.toHumanReadable()),
                 },
                 {
                     actual: 'object-subrequest',
@@ -255,7 +256,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
+                const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -277,7 +278,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier, false);
+                const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier, false);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
@@ -292,7 +293,7 @@ describe('ModifierValidator', () => {
             test.each(validForBlockingModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier, false);
+                const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier, false);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -307,7 +308,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForExceptionRuleModifiers)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier, true);
+                const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier, true);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -320,8 +321,708 @@ describe('ModifierValidator', () => {
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier, true);
+                const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier, true);
                 expect(validationResult.valid).toBeTruthy();
+            });
+        });
+
+        describe('value validation', () => {
+            describe('optional value', () => {
+                const validModifiers = [
+                    'cookie',
+                    'csp',
+                    'hls',
+                    'jsonprune',
+                    'redirect',
+                    'redirect-rule',
+                    'removeheader',
+                    'removeparam',
+                ];
+                test.each(validModifiers)('%s', (rawModifier) => {
+                    const modifier = getModifier(rawModifier);
+                    const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                    expect(validationResult.valid).toBeTruthy();
+                });
+            });
+
+            describe('required value - validate by regular expression', () => {
+                describe('regexp valid', () => {
+                    test.each([
+                        'cookie=ABC',
+                        'cookie=/zmFQeXtI|JPIqApiY/',
+                        'csp=style-src *',
+                        "csp=worker-src 'none'",
+                        "csp=script-src 'self' * 'unsafe-inline'",
+                        "csp=script-src 'self' 'unsafe-inline' http: https: blob:",
+                        "csp=script-src 'self' * 'sha256-0McqMM66/wAVZmxF6zXpjNsb1UMbTl4LXBXdhqPKxws='",
+                        "csp=script-src-attr 'none'",
+                        'header=set-cookie',
+                        'header=set-cookie:foo',
+                        'header=set-cookie:/foo\\, bar\\$/',
+                        'hls=\\/video^?*&source=video_ads',
+                        'hls=/\\/video\\/?\\?.*\\&source=video_ads/i',
+                        'hls=/#UPLYNK-SEGMENT:.*\\,ad/t',
+                        'jsonprune=\\$..[one\\, "two three"]',
+                        'jsonprune=\\$.a[?(has ad_origin)]',
+                        "jsonprune=\\$.*.*[?(key-eq 'Some key' 'Some value')]",
+                        'jsonprune=\\$.elements[?(has "\\$.a.b.c")]',
+                        'jsonprune=\\$.elements[?(key-eq "\\$.a.b.c" "abc")]',
+                        'redirect=noopjs',
+                        'redirect=noopmp4-1s',
+                        'redirect=googletagmanager-gtm',
+                        'redirect-rule=noopjs',
+                        'redirect-rule=noopmp4-1s',
+                        'removeheader=link',
+                        'removeheader=request:user-agent',
+                        'removeparam=cb',
+                        'removeparam=~red',
+                        'removeparam=/^__s=[A-Za-z0-9]{6\\,}/',
+                        'replace=/("ad":{).+"(\\}\\,"(?:log|watermark)")/\\$1\\$2/',
+                        'replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/',
+                        'replace=/\\,this\\.createAdDisplayContainer\\(\\)\\,this\\.setUpIMA\\(\\)//',
+                        'replace=/fourthColumnWrapper//',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('required value - validate by pipe_separated_domains', () => {
+                describe('pipe_separated_domains valid', () => {
+                    test.each([
+                        'domain=example.com',
+                        'domain=~example.com',
+                        'domain=example.com|example.org',
+                        'domain=example.com|example.org|test-example.*',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_domains invalid', () => {
+                    test.each([
+                        {
+                            actual: 'domain=|example.com|example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
+                        },
+                        {
+                            actual: 'domain=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com| |example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com|example.org|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'domain=~~example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'domain=example.org|~|example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'domain=~ example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'domain=example.com|example..org',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'domain': 'example..org'`,
+                        },
+                        {
+                            actual: 'domain=exam[le.org|example.com|example,org|example or',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'domain': 'exam[le.org', 'example,org', 'example or'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('required value - validate by pipe_separated_denyallow_domains', () => {
+                describe('pipe_separated_denyallow_domains valid', () => {
+                    test.each([
+                        'denyallow=example.com',
+                        'denyallow=example.com|example.org',
+                        'denyallow=example.com|example.org|test-example.com',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_denyallow_domains invalid', () => {
+                    test.each([
+                        {
+                            actual: 'denyallow=|example.com|example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
+                        },
+                        {
+                            actual: 'denyallow=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'denyallow=example.com| |example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'denyallow=example.com|example.org|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'denyallow=~~example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'denyallow=example.org|~|example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'denyallow=~ example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'denyallow=example.com|example..org',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'denyallow': 'example..org'`,
+                        },
+                        {
+                            actual: 'denyallow=exam[le.org|example.com|example,org|example or',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'denyallow': 'exam[le.org', 'example,org', 'example or'`,
+                        },
+                        // due to $denyallow restrictions: no wildcard tld, no negation
+                        {
+                            actual: 'denyallow=example.*',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'denyallow': 'example.*'`,
+                        },
+                        {
+                            actual: 'denyallow=example.org|test-example.*',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'denyallow': 'test-example.*'`,
+                        },
+                        {
+                            actual: 'denyallow=~example.com',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: 'denyallow': 'example.com'`,
+                        },
+                        {
+                            actual: 'denyallow=example.com|~example.org',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: 'denyallow': 'example.org'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('required value - validate by pipe_separated_apps', () => {
+                describe('pipe_separated_apps valid', () => {
+                    test.each([
+                        'app=Example.exe',
+                        'app=Example2.exe',
+                        'app=com.test_example.app',
+                        'app=~com.test_example.app',
+                        'app=Example.exe|com.example.app',
+                        'app=Example.exe|~com.example.app|com.example.osx',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_apps invalid', () => {
+                    test.each([
+                        {
+                            actual: 'app=|Example.exe|com.example.app',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
+                        },
+                        {
+                            actual: 'app=Example.exe||com.example.app',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'app=Example.exe| |com.example.app',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'app=Example.exe|com.example.app|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'app=~~Example.exe',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'app=Example.exe|~|com.example.app',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'app=~ Example.exe',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'app=Example.exe|com.example..app',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'app': 'com.example..app'`,
+                        },
+                        {
+                            actual: 'app=Exam[le.exe|com.example.app|Example,exe|Example exe',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'app': 'Exam[le.exe', 'Example,exe', 'Example exe'`,
+                        },
+                        // due to $app restrictions: no wildcard tld
+                        {
+                            actual: 'app=Example.*',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'app': 'Example.*'`,
+                        },
+                        {
+                            actual: 'app=Example.exe|com.example.*',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'app': 'com.example.*'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('required value - validate by pipe_separated_methods', () => {
+                describe('pipe_separated_methods valid', () => {
+                    test.each([
+                        'method=get',
+                        'method=~head',
+                        'method=post|put',
+                        'method=get|post|put',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_methods invalid', () => {
+                    test.each([
+                        {
+                            actual: 'method=|get|post',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
+                        },
+                        {
+                            actual: 'method=get||post',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'method=get| |post',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'method=get|post|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'method=~~get',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'method=get|~|put',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'method=~ get',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'method=get|connect|disconnect',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'method': 'disconnect'`,
+                        },
+                        {
+                            // despite the method is matched case-insensitively, the value should be lowercased
+                            actual: 'method=GET',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'method': 'GET'`,
+                        },
+                        // due to $method restrictions: no mixed negated and not negated values
+                        {
+                            actual: 'method=get|~post',
+                            expected: `${VALIDATION_ERROR_PREFIX.MIXED_NEGATIONS}: 'method': 'post'`,
+                        },
+                        {
+                            actual: 'method=~get|post|put',
+                            expected: `${VALIDATION_ERROR_PREFIX.MIXED_NEGATIONS}: 'method': 'post', 'put'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('required value - validate by pipe_separated_stealth_options', () => {
+                describe('pipe_separated_stealth_options valid', () => {
+                    test.each([
+                        'stealth',
+                        'stealth=searchqueries',
+                        'stealth=donottrack|3p-cookie|1p-cookie|3p-cache|3p-auth',
+                        'stealth=webrtc|push|location|flash|java|referrer',
+                        'stealth=useragent|ip|xclientdata|dpi',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(
+                            [Platform.AdgOsWindows],
+                            modifier,
+                            true,
+                        );
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_stealth_options invalid', () => {
+                    test.each([
+                        {
+                            actual: 'stealth=|donottrack|ip',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
+                        },
+                        {
+                            actual: 'stealth=ip||useragent',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'stealth=ip| |useragent',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'stealth=useragent|dpi|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'stealth=~~searchqueries',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'stealth=useragent|~|dpi',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'stealth=~ dpi',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'stealth=3p-auth|mp3',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'stealth': 'mp3'`,
+                        },
+                        // due to $stealth restrictions: values should be lowercased, no negate values
+                        {
+                            actual: 'stealth=PUSH',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'stealth': 'PUSH'`,
+                        },
+                        {
+                            actual: 'stealth=~ip',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: 'stealth': 'ip'`,
+                        },
+                        {
+                            actual: 'stealth=~searchqueries|dpi',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: 'stealth': 'searchqueries'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(
+                            [Platform.AdgOsWindows],
+                            modifier,
+                            true,
+                        );
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toEqual(expected);
+                    });
+                });
+            });
+
+            describe('required value - validate by csp_value', () => {
+                describe('csp_value valid', () => {
+                    test.each([
+                        'csp',
+                        'csp=child-src *',
+                        'csp=sandbox allow-same-origin;',
+                        "csp=script-src 'self' '*' 'unsafe-inline' *.example.com *.example.org",
+                        "csp=script-src 'self' 'unsafe-inline' https://example.com *.example.com",
+                        "csp=default-src 'self' *.example.com fonts.example.org https://the-example.com https://the.example.com 'unsafe-inline' 'unsafe-eval' data: blob:",
+                        "csp=script-src 'self' * 'sha256-0McqMM16/wAVZmxF6zXpjNsb1UM6Tl4LXBxdhqPKxws='",
+                        // few directives
+                        "csp=child-src 'none'; frame-src 'self' *; worker-src 'none'",
+                        'csp=fenced-frame-src https://example.com/',
+                        'csp=referrer "none"',
+                        "csp=require-trusted-types-for 'script'",
+                        "csp=script-src-attr 'none'",
+                        'csp=script-src-elem https://example.com/',
+                        "csp=style-src-attr 'none'",
+                        'csp=style-src-elem https://example.com/',
+                        "csp=trusted-types foo bar 'allow-duplicates'",
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(
+                            [Platform.AdgOsWindows],
+                            modifier,
+                            true,
+                        );
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('csp_value invalid', () => {
+                    test.each([
+                        {
+                            actual: 'csp= ;',
+                            // no space in error message
+                            // because modifier value is trimmed during parsing into Modifier AST node
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'csp': ";"`,
+                        },
+                        {
+                            actual: 'csp=none',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: 'csp': "none"`,
+                        },
+                        {
+                            actual: 'csp=default',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: 'csp': "default"`,
+                        },
+                        {
+                            actual: "csp='child-src' 'none'",
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_CSP_DIRECTIVE_QUOTE}: 'csp': 'child-src'`,
+                        },
+                        {
+                            actual: "csp=child-src 'none'; frame src 'self' *; workers 'none'",
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: 'csp': "frame", "workers"`,
+                        },
+                        {
+                            actual: "csp=child-src 'none'; ; worker-src 'none'",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'csp': "child-src 'none'; ; worker-src 'none'"`,
+                        },
+                        {
+                            actual: 'csp=script-src',
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_CSP_VALUE}: 'csp': 'script-src'`,
+                        },
+                        {
+                            actual: "csp=child-src 'none'; frame-src; worker-src 'none'",
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_CSP_VALUE}: 'csp': 'frame-src'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toEqual(expected);
+                    });
+                });
+            });
+
+            describe('required value - validate by permissions_value', () => {
+                describe('permissions_value valid', () => {
+                    test.each([
+                        'permissions',
+                        'permissions=fullscreen=*',
+                        'permissions=autoplay=()',
+                        'permissions=geolocation=(self)',
+                        'permissions=geolocation=(self "https://example.com")',
+                        'permissions=geolocation=("https://example.com" "https://*.example.com")',
+                        'permissions=geolocation=("https://example.com"  "https://*.example.com")',
+                        // multiple permissions
+                        'permissions=storage-access=()\\, camera=()',
+                        'permissions=join-ad-interest-group=()\\, run-ad-auction=()\\, browsing-topics=()',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(
+                            [Platform.AdgOsWindows],
+                            modifier,
+                            true,
+                        );
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('permissions_value invalid', () => {
+                    test.each([
+                        {
+                            actual: 'permissions=wi-fi=()',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_DIRECTIVE}: 'permissions': 'wi-fi'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=self',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=none',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        // quotes are checked first
+                        {
+                            actual: "permissions=autoplay=('*')",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '*'`,
+                        },
+                        // so after quotes are corrected, the origin is being validated
+                        {
+                            actual: 'permissions=autoplay=("*")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': '*'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=)',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=())',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': ')'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(() "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '()'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(* "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '*'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(* self)',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '*'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(hello "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': 'hello'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=("hello" "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': 'hello'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=("hello" "world")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': 'hello', 'world'`,
+                        },
+                        {
+                            actual: 'permissions=geolocation=(https://example.com https://*.example.com)',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'geolocation': 'https://example.com'`,
+                        },
+                        {
+                            actual: "permissions=geolocation=('https://example.com' 'https://*.example.com')",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'geolocation': 'https://example.com'`,
+                        },
+                        {
+                            actual: "permissions=autoplay=()\\, geolocation=('self')",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'geolocation': 'self'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(() self))',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '()'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=("()" self)',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': '()'`,
+                        },
+                        {
+                            actual: 'permissions=geolocation=("https://example.com", "https://*.example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_UNESCAPED_PERMISSION_COMMA}: 'permissions': 'geolocation=("https://example.com", "https://*.example.com")'`,
+                        },
+                        {
+                            actual: 'permissions=storage-access=()\\, \\, camera=()',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        // TODO: implement later
+                        // {
+                        //     actual: 'permissions',
+                        //     expected: VALIDATION_ERROR_PREFIX.NO_VALUE_ONLY_FOR_EXCEPTION,
+                        // },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toEqual(expected);
+                    });
+                });
+            });
+
+            describe('required value - validate by referrerpolicy_value', () => {
+                describe('referrerpolicy_value valid', () => {
+                    test.each([
+                        'referrerpolicy=no-referrer',
+                        'referrerpolicy=no-referrer-when-downgrade',
+                        'referrerpolicy=origin',
+                        'referrerpolicy=origin-when-cross-origin',
+                        'referrerpolicy=same-origin',
+                        'referrerpolicy=strict-origin',
+                        'referrerpolicy=strict-origin-when-cross-origin',
+                        'referrerpolicy=unsafe-url',
+                        // value may be empty in unblocking rules
+                        'referrerpolicy',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(
+                            [Platform.AdgOsWindows],
+                            modifier,
+                            true,
+                        );
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('referrerpolicy_value invalid', () => {
+                    test.each([
+                        {
+                            actual: 'referrerpolicy=autoplay=self',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_REFERRER_POLICY_DIRECTIVE}: 'referrerpolicy': 'autoplay=self'`,
+                        },
+                        {
+                            actual: 'referrerpolicy=no-origin',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_REFERRER_POLICY_DIRECTIVE}: 'referrerpolicy': 'no-origin'`,
+                        },
+                        {
+                            // non-latin "o" in "origin"
+                            actual: 'referrerpolicy=оrigin',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_REFERRER_POLICY_DIRECTIVE}: 'referrerpolicy': 'оrigin'`,
+                        },
+                        {
+                            actual: '~referrerpolicy=same-origin',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER}: 'referrerpolicy'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate([Platform.AdgOsWindows], modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toEqual(expected);
+                    });
+                });
             });
         });
     });
@@ -337,7 +1038,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier);
+                const validationResult = modifierValidator.validate([Platform.UboExtFirefox], modifier);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -359,22 +1060,22 @@ describe('ModifierValidator', () => {
                 {
                     actual: 'genericblock',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, Platform.UboExtFirefox.toHumanReadable()),
                 },
                 {
                     actual: 'object-subrequest',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, Platform.UboExtFirefox.toHumanReadable()),
                 },
                 {
                     actual: 'app=com.test.app',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, Platform.UboExtFirefox.toHumanReadable()),
                 },
                 {
                     actual: 'jsinject',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, Platform.UboExtFirefox.toHumanReadable()),
                 },
                 {
                     actual: '~popup',
@@ -403,7 +1104,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier);
+                const validationResult = modifierValidator.validate([Platform.UboExtFirefox], modifier);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -419,7 +1120,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier, false);
+                const validationResult = modifierValidator.validate([Platform.UboExtFirefox], modifier, false);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
@@ -431,7 +1132,7 @@ describe('ModifierValidator', () => {
             test.each(validForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier, false);
+                const validationResult = modifierValidator.validate([Platform.UboExtFirefox], modifier, false);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -446,7 +1147,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForExceptionRuleModifiers)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier, true);
+                const validationResult = modifierValidator.validate([Platform.UboExtFirefox], modifier, true);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -458,8 +1159,72 @@ describe('ModifierValidator', () => {
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier, true);
+                const validationResult = modifierValidator.validate([Platform.UboExtFirefox], modifier, true);
                 expect(validationResult.valid).toBeTruthy();
+            });
+        });
+
+        describe('value validation', () => {
+            describe('required value - validate by pipe_separated_domains', () => {
+                describe('pipe_separated_domains valid', () => {
+                    test.each([
+                        'to=example.com',
+                        'to=~example.com',
+                        'to=example.com|example.org',
+                        'to=example.com|example.org|test-example.*',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate([Platform.UboExtFirefox], modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_domains invalid', () => {
+                    test.each([
+                        {
+                            actual: 'domain=|example.com|example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
+                        },
+                        {
+                            actual: 'domain=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com| |example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com|example.org|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'domain=~~example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'domain=example.org|~|example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'domain=~ example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'domain=example.com|example..org',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'domain': 'example..org'`,
+                        },
+                        {
+                            actual: 'domain=exam[le.org|example.com|example,org|example or',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'domain': 'exam[le.org', 'example,org', 'example or'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate([Platform.UboExtFirefox], modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
+                });
             });
         });
     });
@@ -475,7 +1240,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(SpecificPlatform.AbpExtChrome, modifier);
+                const validationResult = modifierValidator.validate([Platform.AbpExtChrome], modifier);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -493,22 +1258,22 @@ describe('ModifierValidator', () => {
                 {
                     actual: 'object-subrequest',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, Platform.AbpExtChrome.toHumanReadable()),
                 },
                 {
                     actual: 'app=com.test.app',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, Platform.AbpExtChrome.toHumanReadable()),
                 },
                 {
                     actual: 'jsinject',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, Platform.AbpExtChrome.toHumanReadable()),
                 },
                 {
                     actual: 'denyallow',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, Platform.AbpExtChrome.toHumanReadable()),
                 },
                 {
                     actual: '~popup',
@@ -529,7 +1294,7 @@ describe('ModifierValidator', () => {
                 {
                     actual: '___',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, Platform.AbpExtChrome.toHumanReadable()),
                 },
                 {
                     actual: 'rewrite',
@@ -547,7 +1312,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validate(SpecificPlatform.AbpExtChrome, modifier);
+                const validationResult = modifierValidator.validate([Platform.AbpExtChrome], modifier);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -563,7 +1328,7 @@ describe('ModifierValidator', () => {
                 const EXPECTED_ERROR = 'Only exception rules may contain the modifier';
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(SpecificPlatform.AbpExtChrome, modifier, false);
+                const validationResult = modifierValidator.validate([Platform.AbpExtChrome], modifier, false);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(EXPECTED_ERROR)).toBeTruthy();
             });
@@ -575,7 +1340,7 @@ describe('ModifierValidator', () => {
             test.each(validForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(SpecificPlatform.AbpExtChrome, modifier, false);
+                const validationResult = modifierValidator.validate([Platform.AbpExtChrome], modifier, false);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -599,7 +1364,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // Test AdgAny | UboAny combination
                 const validationResult1 = modifierValidator.validate(
-                    (GenericPlatform.AdgAny | GenericPlatform.UboAny) as GenericPlatform,
+                    [Platform.AdgAny, Platform.UboAny],
                     modifier,
                 );
                 expect(validationResult1.valid).toBeTruthy();
@@ -608,7 +1373,7 @@ describe('ModifierValidator', () => {
 
                 // Test AdgAny | AbpAny combination
                 const validationResult2 = modifierValidator.validate(
-                    (GenericPlatform.AdgAny | GenericPlatform.AbpAny) as GenericPlatform,
+                    [Platform.AdgAny, Platform.AbpAny],
                     modifier,
                 );
                 expect(validationResult2.valid).toBeTruthy();
@@ -617,7 +1382,7 @@ describe('ModifierValidator', () => {
 
                 // Test UboAny | AbpAny combination
                 const validationResult3 = modifierValidator.validate(
-                    (GenericPlatform.UboAny | GenericPlatform.AbpAny) as GenericPlatform,
+                    [Platform.UboAny, Platform.AbpAny],
                     modifier,
                 );
                 expect(validationResult3.valid).toBeTruthy();
@@ -626,7 +1391,7 @@ describe('ModifierValidator', () => {
 
                 // Test all three products combined
                 const validationResult4 = modifierValidator.validate(
-                    (GenericPlatform.AdgAny | GenericPlatform.UboAny | GenericPlatform.AbpAny) as GenericPlatform,
+                    [Platform.AdgAny, Platform.UboAny, Platform.AbpAny],
                     modifier,
                 );
                 expect(validationResult4.valid).toBeTruthy();
@@ -640,11 +1405,11 @@ describe('ModifierValidator', () => {
             const adguardSpecificModifiers = [
                 {
                     modifier: 'app=com.test.app',
-                    invalidFor: [SpecificPlatform.UboExtFirefox, SpecificPlatform.AbpExtChrome],
+                    invalidFor: [Platform.UboExtFirefox, Platform.AbpExtChrome],
                 },
                 {
                     modifier: 'jsinject',
-                    invalidFor: [SpecificPlatform.UboExtFirefox, SpecificPlatform.AbpExtChrome],
+                    invalidFor: [Platform.UboExtFirefox, Platform.AbpExtChrome],
                 },
             ];
 
@@ -653,7 +1418,7 @@ describe('ModifierValidator', () => {
                 ({ modifier: rawModifier, invalidFor }) => {
                     const modifier = getModifier(rawModifier);
                     invalidFor.forEach((platform) => {
-                        const validationResult = modifierValidator.validate(platform, modifier);
+                        const validationResult = modifierValidator.validate([platform], modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error).toBeDefined();
                     });
@@ -663,7 +1428,7 @@ describe('ModifierValidator', () => {
             const uboSpecificModifiers = [
                 {
                     modifier: 'popunder',
-                    invalidFor: [SpecificPlatform.AdgOsWindows],
+                    invalidFor: [Platform.AdgOsWindows],
                 },
             ];
 
@@ -672,7 +1437,7 @@ describe('ModifierValidator', () => {
                 ({ modifier: rawModifier, invalidFor }) => {
                     const modifier = getModifier(rawModifier);
                     invalidFor.forEach((platform) => {
-                        const validationResult = modifierValidator.validate(platform, modifier, false);
+                        const validationResult = modifierValidator.validate([platform], modifier, false);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error).toBeDefined();
                     });
@@ -684,7 +1449,7 @@ describe('ModifierValidator', () => {
             test('deprecated modifiers should pass with multiple products', () => {
                 const modifier = getModifier('empty');
                 const validationResult = modifierValidator.validate(
-                    (GenericPlatform.AdgAny | GenericPlatform.UboAny) as GenericPlatform,
+                    [Platform.AdgAny, Platform.UboAny],
                     modifier,
                 );
                 expect(validationResult.valid).toBeTruthy();
@@ -696,7 +1461,7 @@ describe('ModifierValidator', () => {
                 // Invalid domain value that would normally fail
                 const modifier = getModifier('domain=~~example.com');
                 const validationResult = modifierValidator.validate(
-                    (GenericPlatform.AdgAny | GenericPlatform.UboAny) as GenericPlatform,
+                    [Platform.AdgAny, Platform.UboAny],
                     modifier,
                 );
                 expect(validationResult.valid).toBeTruthy();
@@ -708,7 +1473,7 @@ describe('ModifierValidator', () => {
                 // Third argument is 'false' for blocking rules
                 // This would normally fail because elemhide is exception-only for AdGuard
                 const validationResult = modifierValidator.validate(
-                    (GenericPlatform.AdgAny | GenericPlatform.UboAny) as GenericPlatform,
+                    [Platform.AdgAny, Platform.UboAny],
                     modifier,
                     false,
                 );
@@ -721,7 +1486,7 @@ describe('ModifierValidator', () => {
                 // Third argument is 'true' for exception rules
                 // This would normally fail because 'all' is block-only for AdGuard
                 const validationResult = modifierValidator.validate(
-                    (GenericPlatform.AdgAny | GenericPlatform.UboAny) as GenericPlatform,
+                    [Platform.AdgAny, Platform.UboAny],
                     modifier,
                     true,
                 );

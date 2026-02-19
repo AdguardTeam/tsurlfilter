@@ -140,35 +140,11 @@ export {
 export { CssTokenStream } from './parser/css/css-token-stream';
 
 export {
-    GenericPlatform,
-    SpecificPlatform,
+    Platform,
+    PlatformExpressionEvaluator,
     modifiersCompatibilityTable,
     redirectsCompatibilityTable,
     scriptletsCompatibilityTable,
-    parseRawPlatforms,
-    type CompatibilityTable,
-    type CompatibilityTableRow,
-    type ProductRecords,
-    type RowByProduct,
-    type RowsByProduct,
-    isGenericPlatform,
-    getPlatformId,
-    getSpecificPlatformName,
-    hasPlatformMultipleProducts,
-    getProductGenericPlatforms,
-    getProductSpecificPlatforms,
-    platformToAdblockProduct,
-    getPlatformsByProduct,
-    getHumanReadablePlatformName,
-    getAllPlatformNames,
-    ResourceType,
-    getResourceTypeModifier,
-    isValidResourceType,
-    stringifyPlatforms,
-    type PlatformsByProduct,
-    type AnyPlatform,
-    PLATFORM_NEGATION,
-    PLATFORM_SEPARATOR,
 } from './compatibility-tables';
 
 // Version

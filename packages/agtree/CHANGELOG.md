@@ -7,6 +7,26 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [5.0.0] - TBD
+
+### Added
+
+- New `Platform` class replacing bitwise platform enums with hierarchical
+  `ProductCode`/`PlatformType` structure.
+- Trie-based storage for compatibility table data with wildcard query support.
+- `PlatformExpressionEvaluator` for parsing platform expressions with negation.
+- `Safari` platform type.
+
+### Changed
+
+- **BREAKING:** Replaced bitwise platform enums (`GenericPlatform`/`SpecificPlatform`)
+  with `Platform` class using `ProductCode` and `PlatformType` enums.
+- **BREAKING:** `ModifierValidator.validate()` now takes `Platform[]` instead of bitwise `AnyPlatform`.
+- **BREAKING:** Compatibility table API renamed: `find()` → `query()`, `query()` → `queryAll()`,
+  `existsAny()` → `has()`.
+- Removed `platform-helpers.ts` utilities — replaced by `Platform` class methods.
+- Simplified public exports from `compatibility-tables`.
+
 ## [4.0.0] - TBD
 
 ### Added
@@ -32,6 +52,7 @@ parsing of CSS selector into AST nodes in HTML filtering rule bodies, defaults t
 ### Removed
 
 - Serializer and Deserializer APIs.
+- Bitwise platform enums (`GenericPlatform`, `SpecificPlatform`) and related helpers.
 
 [4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-4.0.0
 
