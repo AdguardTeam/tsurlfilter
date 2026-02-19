@@ -9,17 +9,11 @@ import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-util
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
 import {
     UboScriptletInjectionBodyParser,
-} from '../../../../src/parser/cosmetic/body/ubo-scriptlet-injection-body-parser';
+} from '../../../../src/parser/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import {
     UboScriptletInjectionBodyGenerator,
-} from '../../../../src/generator/cosmetic/body/ubo-scriptlet-injection-body-generator';
-import {
-    UboScriptletInjectionBodySerializer,
-} from '../../../../src/serializer/cosmetic/body/ubo-scriptlet-injection-body-serializer';
-import {
-    UboScriptletInjectionBodyDeserializer,
-} from '../../../../src/deserializer/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-deserializer';
+} from '../../../../src/generator/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-generator';
 
 describe('UboScriptletInjectionBodyParser', () => {
     describe('UboScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -1173,22 +1167,6 @@ describe('UboScriptletInjectionBodyParser', () => {
             }
 
             expect(UboScriptletInjectionBodyGenerator.generate(ruleNode)).toBe(expected);
-        });
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            '+js()',
-            "+js('scriptlet0')",
-            "+js('scriptlet0', 'arg0', 'arg1')",
-            '+js(scriptlet0, arg0, arg1)',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                UboScriptletInjectionBodyParser,
-                UboScriptletInjectionBodyGenerator,
-                UboScriptletInjectionBodySerializer,
-                UboScriptletInjectionBodyDeserializer,
-            );
         });
     });
 });

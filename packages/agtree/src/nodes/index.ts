@@ -1044,15 +1044,205 @@ export interface ScriptletInjectionRuleBody extends Node {
 }
 
 /**
+ * Represents a type selector.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#type-selectors}
+ */
+export interface TypeSelector extends Node {
+    type: 'TypeSelector';
+
+    /**
+     * Value of the type selector.
+     */
+    value: string;
+}
+
+/**
+ * Represents a class selector.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#class-html}
+ */
+export interface ClassSelector extends Node {
+    type: 'ClassSelector';
+
+    /**
+     * Value of the class selector (without dot).
+     */
+    value: string;
+}
+
+/**
+ * Represents an ID selector.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#id-selectors}
+ */
+export interface IdSelector extends Node {
+    type: 'IdSelector';
+
+    /**
+     * Value of the ID selector (without hash).
+     */
+    value: string;
+}
+
+/**
+ * Represents an attribute selector without value.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#attribute-selectors}
+ */
+export interface AttributeSelectorWithoutValue extends Node {
+    type: 'AttributeSelector';
+
+    /**
+     * Name of the attribute selector.
+     */
+    name: Value;
+}
+
+/**
+ * Represents CSS attribute selector operator values.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#attribute-selectors}
+ */
+export type AttributeSelectorOperatorValue = '=' | '~=' | '|=' | '^=' | '$=' | '*=';
+
+/**
+ * Represents CSS attribute selector flag values.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#attribute-selectors}
+ */
+export type AttributeSelectorFlagValue = 'i' | 's';
+
+/**
+ * Represents an attribute selector with value.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#attribute-selectors}
+ */
+export interface AttributeSelectorWithValue extends Node {
+    type: 'AttributeSelector';
+
+    /**
+     * Name of the attribute selector.
+     */
+    name: Value;
+
+    /**
+     * Operator of the attribute selector.
+     */
+    operator: Value<AttributeSelectorOperatorValue>;
+
+    /**
+     * Value of the attribute selector.
+     */
+    value: Value;
+
+    /**
+     * Optional flag of the attribute selector.
+     */
+    flag?: Value<AttributeSelectorFlagValue>;
+}
+
+/**
+ * Represents an attribute selector.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#attribute-selectors}
+ */
+export type AttributeSelector =
+    | AttributeSelectorWithoutValue
+    | AttributeSelectorWithValue;
+
+/**
+ * Represents a pseudo-class selector.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#pseudo-classes}
+ */
+export interface PseudoClassSelector extends Node {
+    type: 'PseudoClassSelector';
+
+    /**
+     * Name of the pseudo-class selector.
+     */
+    name: Value;
+
+    /**
+     * Optional argument of the pseudo-class selector.
+     * If not specified, the pseudo-class is not callable (e.g., `:hover`).
+     * If specified, the pseudo-class is callable (e.g., `:nth-child(2n+1)`).
+     */
+    argument?: Value;
+}
+
+/**
+ * Represents a simple CSS selector.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#simple}
+ */
+export type SimpleSelector =
+    | TypeSelector
+    | ClassSelector
+    | IdSelector
+    | AttributeSelector
+    | PseudoClassSelector;
+
+/**
+ * Represents selector combinator values.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#combinators}
+ */
+export type SelectorCombinatorValue = ' ' | '>' | '+' | '~';
+
+/**
+ * Represents selector combinators.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#combinators}
+ */
+export interface SelectorCombinator extends Node {
+    type: 'SelectorCombinator';
+
+    /**
+     * Value of the combinator.
+     */
+    value: SelectorCombinatorValue;
+}
+
+/**
+ * Represents a complex selector.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#complex}
+ */
+export interface ComplexSelector extends Node {
+    type: 'ComplexSelector';
+
+    /**
+     * List of simple selectors and combinators that form a complex selector.
+     */
+    children: (SimpleSelector | SelectorCombinator)[];
+}
+
+/**
+ * Represents a selector list.
+ *
+ * @see {@link https://www.w3.org/TR/selectors-4/#selector-list}
+ */
+export interface SelectorList extends Node {
+    type: 'SelectorList';
+
+    /**
+     * List of complex selectors separated by commas.
+     */
+    children: ComplexSelector[];
+}
+
+/**
  * Represents an HTML filtering rule body.
  */
 export interface HtmlFilteringRuleBody extends Node {
     type: 'HtmlFilteringRuleBody';
 
     /**
-     * HTML rule selector(s).
+     * CSS selector list.
      */
-    body: Value;
+    selectorList: SelectorList;
 }
 
 /**
@@ -1207,7 +1397,7 @@ export interface ScriptletInjectionRule extends CosmeticRule {
  */
 export interface HtmlFilteringRule extends CosmeticRule {
     type: typeof CosmeticRuleType.HtmlFilteringRule;
-    body: Value;
+    body: Value | HtmlFilteringRuleBody;
 }
 
 /**

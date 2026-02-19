@@ -59,27 +59,28 @@ modifierValidator.exists(ModifierParser.parse('non-existent-modifier=value'));
  * Checks whether the given `modifier` is valid for specified `platforms`.
  * It checks whether the modifier is supported by the product, deprecated, assignable, negatable, etc.
  *
- * @param platforms Platforms to check the modifier for. Can be a specific platform (e.g., AdgExtChrome)
- * or a generic platform (e.g., AdgAny, UboExtChromium, or combination of multiple products).
+ * @param platforms Platforms to check the modifier for. Can be a specific platform
+ * (e.g., [Platform.AdgExtChrome]) or a generic platform (e.g., [Platform.AdgAny]),
+ * or combination of multiple products (e.g., [Platform.AdgAny, Platform.UboAny]).
  * @param modifier Modifier AST node.
  * @param isException Whether the modifier is used in exception rule, default to false.
  * Needed to check whether the modifier is allowed only in blocking or exception rules.
  *
- * @note For single product: specific platforms use exact lookup, generic platforms use first match.
- * If multiple products are specified (e.g., AdgAny | UboAny), validation is skipped and returns valid.
+ * @note For single product: validates using first platform's compatibility data.
+ * If multiple products are specified (e.g., [Platform.AdgAny, Platform.UboAny]),
+ * validation is skipped and returns valid.
  *
  * @returns Result of modifier validation.
  */
-validate(platforms: AnyPlatform, modifier: Modifier, isException = false): ValidationResult;
+validate(platforms: Platform[], modifier: Modifier, isException = false): ValidationResult;
 ```
 
 where
 
-- `platforms` is any compatibility table platform - can be:
-    - A specific platform (e.g., `SpecificPlatform.AdgExtChrome`)
-    - A generic platform for a single product (e.g., `GenericPlatform.AdgAny`,
-      `GenericPlatform.UboExtChromium`)
-    - A combination of multiple products (e.g., `GenericPlatform.AdgAny | GenericPlatform.UboAny`) -
+- `platforms` is an array of `Platform` objects - can be:
+    - A single specific platform (e.g., `[Platform.AdgExtChrome]`)
+    - A single generic platform for one product (e.g., `[Platform.AdgAny]`, `[Platform.UboAny]`)
+    - Multiple platforms from different products (e.g., `[Platform.AdgAny, Platform.UboAny]`) -
       in this case validation is skipped and returns `{ valid: true }`
 
 - `Modifier` is a [common parser type][parser-modifier-type]
@@ -106,7 +107,7 @@ where
 [**Examples of `validate()` usage:**](#modifier-validator-api--validate--examples)
 
 ```ts
-import { SpecificPlatform, ModifierParser, modifierValidator } from '@adguard/agtree';
+import { Platform, ModifierParser, modifierValidator } from '@adguard/agtree';
 // ModifierParser.parse() converts a string modifier into the AGTree `Modifier` type
 ```
 
@@ -114,7 +115,7 @@ import { SpecificPlatform, ModifierParser, modifierValidator } from '@adguard/ag
 
     ```ts
     modifierValidator.validate(
-        SpecificPlatform.AdgOsWindows,
+        [Platform.AdgOsWindows],
         ModifierParser.parse('webrtc'),
     );
     ```
@@ -132,7 +133,7 @@ import { SpecificPlatform, ModifierParser, modifierValidator } from '@adguard/ag
 
     ```ts
     modifierValidator.validate(
-        SpecificPlatform.UboExtFirefox,
+        [Platform.UboExtFirefox],
         ModifierParser.parse('webrtc'),
     );
     ```
@@ -149,7 +150,7 @@ import { SpecificPlatform, ModifierParser, modifierValidator } from '@adguard/ag
 
     ```ts
     modifierValidator.validate(
-        SpecificPlatform.AdgOsWindows,
+        [Platform.AdgOsWindows],
         ModifierParser.parse('stealth=dpi'),
         false,
     );
@@ -168,7 +169,7 @@ import { SpecificPlatform, ModifierParser, modifierValidator } from '@adguard/ag
 
     ```ts
     modifierValidator.validate(
-        SpecificPlatform.AdgOsWindows,
+        [Platform.AdgOsWindows],
         ModifierParser.parse('mp4'),
     );
     ```

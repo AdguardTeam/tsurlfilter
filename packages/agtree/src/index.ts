@@ -4,8 +4,6 @@
 
 // Parser
 export { RuleParser } from './parser/rule-parser';
-export { RuleSerializer } from './serializer/rule-serializer';
-export { RuleDeserializer } from './deserializer/rule-deserializer';
 export { RuleGenerator } from './generator/rule-generator';
 export { type OnParseError, defaultParserOptions, type ParserOptions } from './parser/options';
 
@@ -40,6 +38,8 @@ export {
     type HintCommentRule,
     type HtmlFilteringRule,
     type HtmlFilteringRuleBody,
+    type SelectorList,
+    type SelectorCombinatorValue,
     type JsInjectionRule,
     type Location,
     type LocationRange,
@@ -71,8 +71,6 @@ export { DomainListParser } from './parser/misc/domain-list-parser';
 export { MethodListParser } from './parser/misc/method-list-parser';
 export { StealthOptionListParser } from './parser/misc/stealth-option-list-parser';
 export { FilterListParser } from './parser/filterlist-parser';
-export { FilterListSerializer } from './serializer/filterlist-serializer';
-export { FilterListDeserializer } from './deserializer/filterlist-deserializer';
 export { HintCommentParser } from './parser/comment/hint-comment-parser';
 export { HintParser } from './parser/comment/hint-parser';
 export { LogicalExpressionParser } from './parser/misc/logical-expression-parser';
@@ -111,7 +109,6 @@ export {
     SAFARI_CB_AFFINITY,
     UBO_SCRIPTLET_MASK,
 } from './utils/constants';
-export { BINARY_SCHEMA_VERSION } from './utils/binary-schema-version';
 export { AdblockSyntax, AdblockProduct, getHumanReadableProductName } from './utils/adblockers';
 export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './utils/cosmetic-rule-separator';
 export { DomainUtils } from './utils/domain';
@@ -131,48 +128,24 @@ export {
     QuoteUtils,
 } from './utils/quotes';
 export { type Position, PositionProvider } from './utils/position-provider';
-export { OutputByteBuffer } from './utils/output-byte-buffer';
-export { InputByteBuffer } from './utils/input-byte-buffer';
-export { ByteBuffer } from './utils/byte-buffer';
-export { encodeIntoPolyfill, type TextEncoderPolyfillResult } from './utils/text-encoder-polyfill';
-export { decodeTextPolyfill } from './utils/text-decoder-polyfill';
 export { RuleCategorizer } from './utils/categorizer';
 
 // Constants
-export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/data/css';
+export {
+    NATIVE_CSS_PSEUDO_CLASSES,
+    REMOVE_PROPERTY,
+} from './converter/data/css';
+
+// CSS utilities
+export { CssTokenStream } from './parser/css/css-token-stream';
 
 export {
-    GenericPlatform,
-    SpecificPlatform,
+    Platform,
+    PlatformExpressionEvaluator,
     modifiersCompatibilityTable,
     redirectsCompatibilityTable,
     scriptletsCompatibilityTable,
-    parseRawPlatforms,
-    type CompatibilityTable,
-    type CompatibilityTableRow,
-    type ProductRecords,
-    type RowByProduct,
-    type RowsByProduct,
-    isGenericPlatform,
-    getPlatformId,
-    getSpecificPlatformName,
-    hasPlatformMultipleProducts,
-    getProductGenericPlatforms,
-    getProductSpecificPlatforms,
-    platformToAdblockProduct,
-    getPlatformsByProduct,
-    getHumanReadablePlatformName,
-    getAllPlatformNames,
-    ResourceType,
-    getResourceTypeModifier,
-    isValidResourceType,
-    stringifyPlatforms,
-    type PlatformsByProduct,
-    type AnyPlatform,
-    PLATFORM_NEGATION,
-    PLATFORM_SEPARATOR,
 } from './compatibility-tables';
 
 // Version
 export { AGTREE_VERSION } from './version';
-export { getSyntaxSerializationMap } from './marshalling-utils/syntax-serialization-map';

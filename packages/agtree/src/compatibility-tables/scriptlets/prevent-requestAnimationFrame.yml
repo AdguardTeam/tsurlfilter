@@ -1,8 +1,8 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-requestAnimationFrame
   version_added: 1.1.15
+  description: Prevents a requestAnimationFrame call if the text of the callback is matching the specified search string which does not start with !; otherwise mismatched calls should be defused.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-requestAnimationFrame
   aliases:
     - no-requestAnimationFrame-if.js
     - ubo-no-requestAnimationFrame-if.js
@@ -10,18 +10,26 @@ adg_os_any|adg_ext_any:
     - ubo-norafif.js
     - ubo-no-requestAnimationFrame-if
     - ubo-norafif
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-requestAnimationFrame
   parameters:
     - name: search
       required: false
+      description: |-
+          String or regular expression; invalid regular expression will be skipped and all callbacks will be matched.
+          If starts with !, scriptlet will not match the stringified callback but all other will be defused. If do not start with !, the stringified callback will be matched.
 
 ubo_any:
   name: no-requestAnimationFrame-if.js
   version_added: 1.27.0
-  aliases:
-    - norafif.js
-    - prevent-requestAnimationFrame.js
+  description: |-
+      Defuses calls to requestAnimationFrame() function when parameter:
+      * is not prefixed with ! and matches the stringified callback argument to requestAnimationFrame(); OR
+      * is prefixed with ! and does not match the stringified callback argument to requestAnimationFrame().
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#no-requestAnimationFrame-ifjs-
+  aliases:
+    - no-requestAnimationFrame-if.js
+    - norafif.js
+    - norafif
   parameters:
     - name: search
       required: false
+      description: String/regular expression, matching in the stringified callback argument passed to requestAnimationFrame.

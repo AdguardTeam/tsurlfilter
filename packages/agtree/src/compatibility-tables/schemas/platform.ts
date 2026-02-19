@@ -1,135 +1,39 @@
-/* eslint-disable no-bitwise */
 /**
- * @file Platform schema.
+ * @file Platform schema for parsing platform strings.
  */
 
 import zod from 'zod';
 
-import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP_REVERSE } from '../utils/platform-helpers';
-import { isUndefined } from '../../utils/type-guards';
-import { type AnyPlatform } from '../platforms';
+import { PlatformExpressionEvaluator } from '../platform-expression-evaluator';
 
 /**
- * Platform separator, e.g. 'adg_os_any|adg_safari_any' means any AdGuard OS platform and
- * any AdGuard Safari content blocker platform.
- */
-export const PLATFORM_SEPARATOR = '|';
-
-/**
- * Platform negation character, e.g. 'adg_any|~adg_safari_any' means any AdGuard product except
- * Safari content blockers.
- */
-export const PLATFORM_NEGATION = '~';
-
-/**
- * Parses a raw platform string into a platform bitmask.
+ * Parses a raw platform expression (potentially multiple platforms separated by |).
+ * Supports multiple platforms in YAML keys (e.g., 'adg_os_any|adg_ext_any').
+ * Supports negation (e.g., 'adg_any|~adg_cb_android' means all AdGuard except CB on Android).
  *
- * @param rawPlatforms Raw platform string, e.g. 'adg_safari_any|adg_os_any'.
+ * @param rawPlatforms Raw platform string, e.g. 'adg_safari_any|adg_os_any' or 'adg_any|~adg_cb_android'.
  *
- * @returns Platform bitmask (can be specific, generic, or combined platforms).
+ * @returns Platform expression string (validated, returned as-is for later expansion).
+ *
+ * @note Multiple platforms and negations in a key will be expanded during data loading.
+ * @note Negated platforms will NOT have data inserted for them (they are exclusions).
  */
-export const parseRawPlatforms = (rawPlatforms: string): AnyPlatform => {
-    // e.g. 'adg_safari_any|adg_os_any'
-    const rawPlatformList = rawPlatforms
-        .split(PLATFORM_SEPARATOR)
-        .map((rawPlatform) => rawPlatform.trim());
-
-    let result = 0;
-
-    for (let rawPlatform of rawPlatformList) {
-        // negation, e.g. 'adg_any|~adg_safari_any' means any AdGuard product except Safari content blockers
-        let negated = false;
-
-        if (rawPlatform.startsWith(PLATFORM_NEGATION)) {
-            negated = true;
-            rawPlatform = rawPlatform.slice(1).trim();
-        }
-
-        const platform = SPECIFIC_PLATFORM_MAP.get(rawPlatform) ?? GENERIC_PLATFORM_MAP.get(rawPlatform);
-
-        if (isUndefined(platform)) {
-            throw new Error(`Unknown platform: ${rawPlatform}`);
-        }
-
-        if (negated) {
-            result &= ~platform;
-        } else {
-            result |= platform;
-        }
+export const parseRawPlatforms = (rawPlatforms: string): string => {
+    // Use PlatformExpressionEvaluator for validation
+    // This centralizes all platform expression parsing logic
+    try {
+        PlatformExpressionEvaluator.evaluate(rawPlatforms);
+    } catch (error) {
+        throw new Error(`Invalid platform expression: ${rawPlatforms}`);
     }
 
-    if (result === 0) {
-        throw new Error('No platforms specified');
-    }
-
-    return result;
+    // Return the full expression for later expansion
+    return rawPlatforms;
 };
 
 /**
- * Converts a platform bitmask back to a string representation.
- * Prefers generic platforms over specific platforms where possible.
- *
- * @param bitmask Platform bitmask (can be specific, generic, or combined platforms).
- *
- * @returns Platform string, e.g. 'adg_safari_any|adg_os_any' or 'adg_os_windows|adg_ext_chrome'.
- * @throws Error if the bitmask is 0 or contains unknown platforms.
- */
-export const stringifyPlatforms = (bitmask: AnyPlatform): string => {
-    if (bitmask === 0) {
-        throw new Error('Invalid bitmask: 0');
-    }
-
-    // First, try to find an exact match in generic platforms
-    for (const [name, value] of GENERIC_PLATFORM_MAP.entries()) {
-        if (value === bitmask) {
-            return name;
-        }
-    }
-
-    // Check if the bitmask can be represented as a combination of generic platforms
-    // Try to find the largest generic platforms that fit
-    const platforms: string[] = [];
-    let remaining = bitmask;
-
-    // Sort generic platforms by value (descending) to prefer larger combinations
-    const sortedGenericPlatforms = [...GENERIC_PLATFORM_MAP.entries()].sort((a, b) => b[1] - a[1]);
-
-    for (const [name, value] of sortedGenericPlatforms) {
-        // Check if this generic platform is fully contained in the remaining bitmask
-        if ((remaining & value) === value) {
-            platforms.push(name);
-            remaining &= ~value;
-
-            if (remaining === 0) {
-                break;
-            }
-        }
-    }
-
-    // If we still have remaining bits, add specific platforms
-    if (remaining !== 0) {
-        for (const [value, name] of SPECIFIC_PLATFORM_MAP_REVERSE.entries()) {
-            if (remaining & value) {
-                platforms.push(name);
-                remaining &= ~value;
-
-                if (remaining === 0) {
-                    break;
-                }
-            }
-        }
-    }
-
-    // If there are still remaining bits, the bitmask contains unknown platforms
-    if (remaining !== 0) {
-        throw new Error(`Unknown platform bits in bitmask: ${remaining}`);
-    }
-
-    return platforms.join(PLATFORM_SEPARATOR);
-};
-
-/**
- * Platform schema.
+ * Platform schema for Zod validation.
+ * Parses and validates platform strings from YAML files.
  */
 export const platformSchema = zod
     .string()

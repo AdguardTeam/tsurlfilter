@@ -1,23 +1,15 @@
-adg_any:
+common:
   name: media
   description: |-
     A restriction of third-party and own requests.
     A third-party request is a request from a different domain.
     For example, a request to `example.org` from `domain.com` is a third-party request.
+
+adg_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#media-modifier
 
 abp_any:
-  name: media
-  description: |-
-    A restriction of third-party and own requests.
-    A third-party request is a request from a different domain.
-    For example, a request to `example.org` from `domain.com` is a third-party request.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options
 
 ubo_any:
-  name: media
-  description: |-
-    A restriction of third-party and own requests.
-    A third-party request is a request from a different domain.
-    For example, a request to `example.org` from `domain.com` is a third-party request.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options

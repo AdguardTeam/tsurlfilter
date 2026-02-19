@@ -13,6 +13,7 @@ import {
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { mockEngineApi } from '../../../../helpers/mocks';
 import {
     type RequestContext,
     RequestContextState,
@@ -40,7 +41,11 @@ describe('Permissions policy service', () => {
 
     const mockFilteringLog = new MockFilteringLog();
     const requestContextStorage = new RequestContextStorage();
-    const permissionsPolicyService = new PermissionsPolicyService(requestContextStorage, mockFilteringLog);
+    const permissionsPolicyService = new PermissionsPolicyService(
+        requestContextStorage,
+        mockFilteringLog,
+        mockEngineApi,
+    );
 
     afterEach(() => {
         mockFilteringLog.publishEvent.mockClear();
@@ -148,10 +153,9 @@ describe('Permissions policy service', () => {
         );
 
         const result = permissionsPolicyService.onHeadersReceived(context);
-        expect(result).toBeTruthy();
+        expect(result).toBe(false);
         const { responseHeaders } = requestContextStorage.get(requestId) as RequestContext;
-        expect(responseHeaders).toBeDefined();
-        expect(responseHeaders).not.toContainEqual(simpleRuleHeaderItem);
+        expect(responseHeaders).toBeUndefined();
     });
 
     it('rule not applied on document request with $subdocument modifier', () => {
@@ -162,10 +166,9 @@ describe('Permissions policy service', () => {
         );
 
         const result = permissionsPolicyService.onHeadersReceived(context);
-        expect(result).toBeTruthy();
+        expect(result).toBe(false);
         const { responseHeaders } = requestContextStorage.get(requestId) as RequestContext;
-        expect(responseHeaders).toBeDefined();
-        expect(responseHeaders).not.toContainEqual(simpleRuleHeaderItem);
+        expect(responseHeaders).toBeUndefined();
     });
 
     it('rule applied on subdocument request with $subdocument modifier', () => {

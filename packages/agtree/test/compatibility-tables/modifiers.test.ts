@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { modifiersCompatibilityTable } from '../../src/compatibility-tables/modifiers';
-import { GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms';
+import { modifiersCompatibilityTable, Platform } from '../../src/compatibility-tables';
 
 const baseThirdPartyData = {
     name: 'third-party',
@@ -10,46 +9,43 @@ const baseThirdPartyData = {
 };
 
 describe('Modifiers Compatibility Table', () => {
-    it('modifiersCompatibilityTable.existsAny', () => {
-        expect(modifiersCompatibilityTable.existsAny('_')).toBeTruthy();
-        expect(modifiersCompatibilityTable.existsAny('____')).toBeTruthy();
-        expect(modifiersCompatibilityTable.existsAny('third-party')).toBeTruthy();
+    it('modifiersCompatibilityTable.has', () => {
+        expect(modifiersCompatibilityTable.has('_')).toBeTruthy();
+        expect(modifiersCompatibilityTable.has('____')).toBeTruthy();
+        expect(modifiersCompatibilityTable.has('third-party')).toBeTruthy();
 
-        expect(modifiersCompatibilityTable.existsAny('nonexistent')).toBeFalsy();
+        expect(modifiersCompatibilityTable.has('nonexistent')).toBeFalsy();
     });
 
-    it('modifiersCompatibilityTable.exists', () => {
-        expect(modifiersCompatibilityTable.exists('_', SpecificPlatform.AdgExtChrome)).toBeTruthy();
-        expect(modifiersCompatibilityTable.exists('nonexistent', SpecificPlatform.AbpExtChrome)).toBeFalsy();
+    it('modifiersCompatibilityTable.supports', () => {
+        expect(modifiersCompatibilityTable.supports('_', Platform.AdgExtChrome)).toBeTruthy();
+        expect(modifiersCompatibilityTable.supports('nonexistent', Platform.AbpExtChrome)).toBeFalsy();
 
-        expect(modifiersCompatibilityTable.exists('_', GenericPlatform.AdgExtAny)).toBeTruthy();
-        expect(modifiersCompatibilityTable.exists('nonexistent', GenericPlatform.AbpExtAny)).toBeFalsy();
+        expect(modifiersCompatibilityTable.supports('_', Platform.AdgExtAny)).toBeTruthy();
+        expect(modifiersCompatibilityTable.supports('nonexistent', Platform.AbpExtAny)).toBeFalsy();
     });
 
-    it('modifiersCompatibilityTable.getSingle', () => {
+    it('modifiersCompatibilityTable.get', () => {
         expect(
-            modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AdgExtChrome),
+            modifiersCompatibilityTable.get('third-party', Platform.AdgExtChrome),
         ).toMatchObject(baseThirdPartyData);
 
-        expect(modifiersCompatibilityTable.getSingle('nonexistent', SpecificPlatform.AbpExtChrome)).toBeNull();
+        expect(modifiersCompatibilityTable.get('nonexistent', Platform.AbpExtChrome)).toBeNull();
 
         // docs url differs
         expect(
-            modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AdgExtChrome)?.docs,
+            modifiersCompatibilityTable.get('third-party', Platform.AdgExtChrome)?.docs,
         ).not.toEqual(
-            modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AbpExtChrome)?.docs,
+            modifiersCompatibilityTable.get('third-party', Platform.AbpExtChrome)?.docs,
         );
     });
 
-    it('modifiersCompatibilityTable.getMultiple', () => {
-        expect(modifiersCompatibilityTable.getMultiple('third-party', GenericPlatform.AdgExtAny)).toMatchObject({
-            [SpecificPlatform.AdgExtChrome]: baseThirdPartyData,
-            [SpecificPlatform.AdgExtOpera]: baseThirdPartyData,
-            [SpecificPlatform.AdgExtEdge]: baseThirdPartyData,
-            [SpecificPlatform.AdgExtFirefox]: baseThirdPartyData,
-        });
+    it('modifiersCompatibilityTable.queryAll', () => {
+        const results = modifiersCompatibilityTable.queryAll('third-party', Platform.AdgExtAny);
+        expect(results.length).toBeGreaterThan(0);
+        expect(results[0]).toMatchObject(baseThirdPartyData);
 
-        expect(modifiersCompatibilityTable.getMultiple('nonexistent', GenericPlatform.AdgExtAny)).toBeNull();
+        expect(modifiersCompatibilityTable.queryAll('nonexistent', Platform.AdgExtAny)).toEqual([]);
     });
 
     // TODO: Add more tests

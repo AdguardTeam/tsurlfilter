@@ -1,0 +1,25 @@
+common:
+  is_trusted: true
+
+ubo_any:
+  name: trusted-prune-outbound-object.js
+  version_added: 1.52.3rc3
+  description: To perform object pruning on any object returned synchronously by any given call.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-prune-outbound-objectjs-
+  aliases:
+    - trusted-prune-outbound-object
+  parameters:
+    - name: propChain
+      required: true
+      description: The name of the property to trap. Must be a function, and must exist when the scriptlet tries to install the trap.
+    - name: rawPrunePaths
+      required: true
+      description: The properties to prune (as with json-prune).
+    - name: rawNeedlePaths
+      required: false
+      description: The properties which must all be present for pruning to occur (as with json-prune).
+  ubo_tokens:
+    - name: logstack
+      description: When truthy, logs the current call stack to the uBO logger on each invocation.
+      value_format: ^1$
+      value_type: boolean

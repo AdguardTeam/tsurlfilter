@@ -1,6 +1,5 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: no-topics
   version_added: 1.6.18
+  description: Prevents using the Topics API.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#no-topics

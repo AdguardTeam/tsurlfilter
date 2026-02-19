@@ -1,11 +1,18 @@
-import { VALIDATION_ERROR_PREFIX } from './constants';
+/**
+ * @file Validation helpers for the old modifier validator API.
+ *
+ * Re-exports the canonical types from `compatibility-tables/validators/types`
+ * and provides lightweight shim functions used by `validator/index.ts`.
+ */
+
+// Re-export canonical types so existing consumers keep working.
+export { type ValidationIssue, ValidationContext } from '../compatibility-tables/validators/types';
 
 /**
- * Result of modifier validation:
- * - `{ valid: true }` for valid and _fully supported_ modifier;
- * - `{ valid: true, warn: <deprecation notice> }` for valid
- *   and _still supported but deprecated_ modifier;
- * - otherwise `{ valid: true, error: <invalidity reason> }`
+ * Simple plain-object result returned by the legacy modifier validator.
+ *
+ * New code should prefer `ValidationContext` which avoids
+ * per-call object allocations.
  */
 export type ValidationResult = {
     valid: boolean;
@@ -18,23 +25,30 @@ export type ValidationResult = {
  *
  * @param error Error message.
  *
- * @returns Validation result `{ valid: false, error }`.
+ * @returns `{ valid: false, error }`.
  */
 export const getInvalidValidationResult = (error: string): ValidationResult => {
-    return {
-        valid: false,
-        error,
-    };
+    return { valid: false, error };
 };
 
 /**
- * Returns invalid validation result which uses {@link VALIDATION_ERROR_PREFIX.VALUE_REQUIRED} as prefix
- * and specifies the given `modifierName` in the error message.
+ * Returns validation result with a warning.
+ *
+ * @param warn Warning message.
+ *
+ * @returns `{ valid: true, warn }`.
+ */
+export const getWarningValidationResult = (warn: string): ValidationResult => {
+    return { valid: true, warn };
+};
+
+/**
+ * Returns invalid validation result for value required error.
  *
  * @param modifierName Modifier name.
  *
- * @returns Validation result `{ valid: false, error }`.
+ * @returns Validation result with VALUE_REQUIRED error.
  */
 export const getValueRequiredValidationResult = (modifierName: string): ValidationResult => {
-    return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_REQUIRED}: '${modifierName}'`);
+    return getInvalidValidationResult(`Value is required for the modifier: '${modifierName}'`);
 };

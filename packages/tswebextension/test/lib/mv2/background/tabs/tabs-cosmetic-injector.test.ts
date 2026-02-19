@@ -15,7 +15,7 @@ import { extSessionStorage } from '../../../../../src/lib/mv2/background/ext-ses
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../../src/lib/mv2/background/app-context';
-import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
+import { stealthApi } from '../../../../../src/lib/mv2/background/api';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { CosmeticApi } from '../../../../../src/lib/mv2/background/cosmetic-api';
 import { ContentType } from '../../../../../src/lib/common/request-type';

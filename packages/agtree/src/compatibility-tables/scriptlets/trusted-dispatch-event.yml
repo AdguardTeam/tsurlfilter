@@ -1,9 +1,15 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  is_trusted: true
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: trusted-dispatch-event
+  version_added: 1.11.1
+  description: Dispatches a custom event on a specified target.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-dispatch-event
   parameters:
     - name: event
       required: true
+      description: Name of the event to dispatch.
     - name: target
       required: false
+      description: Target on which event will be invoked.

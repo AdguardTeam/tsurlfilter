@@ -1,14 +1,18 @@
-/* eslint-disable no-bitwise */
 /**
- * @file Provides common compatibility table methods.
+ * @file New compatibility table base class with Platform-based queries.
  */
 
 import { type BaseCompatibilityDataSchema } from './schemas';
-import { type AnyPlatform, GenericPlatform, type SpecificPlatform } from './platforms';
-import { isUndefined } from '../utils/type-guards';
-import { type CompatibilityTable, type CompatibilityTableRow } from './types';
-import { isGenericPlatform, getSpecificPlatformName } from './utils/platform-helpers';
-import { type AdblockProduct, AdblockSyntax } from '../utils/adblockers';
+import { type HybridCompatibilityTableRow, type CompatibilityTable } from './types';
+import { type AdblockProduct } from '../utils/adblockers';
+import { type Node } from '../nodes';
+import { type ValidationContext } from './validators/types';
+import {
+    getValidAdblockProducts,
+    getValidProductCodes,
+    Platform,
+    WILDCARD_ANY,
+} from './platform';
 
 /**
  * Lists all supported entity records by a product.
@@ -42,19 +46,7 @@ export type RowByProduct<T> = {
 export type RowsByProduct<T> = RowByProduct<T>[];
 
 /**
- * Single platform records type.
- *
- * Keys are platform enums values, values are compatibility data records.
- *
- * @template T Compatibility data schema.
- */
-type SinglePlatformRecords<T> = {
-    [key: string]: T;
-};
-
-/**
- * Name transformer function type. This function is used to normalize compatibility data names before processing them,
- * e.g. converting to lowercase, remove unnecessary prefixes, etc.
+ * Name transformer function type.
  *
  * @param name Compatibility data name.
  *
@@ -63,7 +55,7 @@ type SinglePlatformRecords<T> = {
 type NameTransformer = (name: string) => string;
 
 /**
- * Base compatibility table class which provides common methods to work with compatibility data.
+ * Base compatibility table class with hierarchical platform queries.
  *
  * @template T Compatibility data schema.
  */
@@ -74,16 +66,15 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
     private data: CompatibilityTable<T>;
 
     /**
-     * Optional name transformer function. If provided,
-     * it will be called in all methods before processing compatibility data names.
+     * Optional name transformer function.
      */
-    private readonly nameTransformer: NameTransformer | null;
+    protected readonly nameTransformer: NameTransformer | null;
 
     /**
-     * Creates a new instance of the common compatibility table.
+     * Creates a new compatibility table.
      *
      * @param data Compatibility table data.
-     * @param nameTransformer Optional name transformer function.
+     * @param nameTransformer Optional name transformer.
      */
     constructor(data: CompatibilityTable<T>, nameTransformer: NameTransformer | null = null) {
         this.data = data;
@@ -91,263 +82,289 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
     }
 
     /**
-     * Helper method to get a 'row' from the compatibility table data by name.
+     * Normalizes a feature name using the transformer if available.
      *
-     * @param name Compatibility data name.
-     * @returns Compatibility table row storage or `null` if not found.
+     * @param name Feature name.
+     *
+     * @returns Normalized name.
      */
-    private getRowStorage(name: string): CompatibilityTableRow<T> | null {
-        const idx = this.data.map[name];
-
-        if (isUndefined(idx)) {
-            return null;
-        }
-
-        return this.data.shared[idx];
+    private normalizeName(name: string): string {
+        return this.nameTransformer ? this.nameTransformer(name) : name;
     }
 
     /**
-     * Checks whether a compatibility data `name` exists for any platform.
+     * Gets the compatibility row for a feature name.
      *
-     * @note Technically, do the same as `exists()` method with generic platform _any_
-     * but it is faster because it does not apply complex logic.
+     * @param name Feature name.
      *
-     * @param name Compatibility data name.
-     *
-     * @returns True if the compatibility data exists, false otherwise.
+     * @returns Compatibility row or undefined.
      */
-    public existsAny(name: string): boolean {
-        const normalizedName = this.nameTransformer ? this.nameTransformer(name) : name;
-        return !isUndefined(this.data.map[normalizedName]);
+    private getRow(name: string) {
+        const normalizedName = this.normalizeName(name);
+        return this.data.rows.get(normalizedName);
     }
 
     /**
-     * Checks whether a compatibility data `name` exists for a specified platform.
+     * Checks if a feature exists for any platform.
      *
-     * @param name Compatibility data name.
-     * @param platform Specific or generic platform.
+     * @param name Feature name.
      *
-     * @returns True if the compatibility data exists, false otherwise.
+     * @returns True if feature exists.
      */
-    public exists(name: string, platform: AnyPlatform): boolean {
-        const normalizedName = this.nameTransformer ? this.nameTransformer(name) : name;
-        const data = this.getRowStorage(normalizedName);
+    public has(name: string): boolean {
+        return this.getRow(name) !== undefined;
+    }
 
-        if (!data) {
+    /**
+     * Checks if a feature is supported on the specified platform.
+     *
+     * @param name Feature name.
+     * @param platform Platform to check.
+     *
+     * @returns True if supported on this platform.
+     */
+    public supports(name: string, platform: Platform): boolean {
+        const row = this.getRow(name);
+        if (!row) {
             return false;
         }
 
-        const isMatch = (idx: number): boolean => {
-            const el = data.shared[idx];
-            return !isUndefined(el) && (el.name === normalizedName || !!el.aliases?.includes(normalizedName));
-        };
-
-        if (isGenericPlatform(platform)) {
-            // Since indexes are specific platforms in the compatibility table data,
-            // we can't index them directly if the platform is generic (union of specific platforms).
-            // In this case, we need to iterate over the keys and return true on the first match.
-            const keys = Object.keys(data.map);
-            for (let i = 0; i < keys.length; i += 1) {
-                const key = Number(keys[i]);
-                if (platform & key) {
-                    const idx = data.map[key];
-                    if (isMatch(idx)) {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
+        // For specific platforms, use flat map (O(1))
+        if (!platform.isWildcard) {
+            return row.flatMap.has(platform.toString());
         }
 
-        const idx = data.map[platform];
-        return isMatch(idx);
+        // For wildcards, use trie
+        return row.trie.has(platform.toPath());
     }
 
     /**
-     * Returns a compatibility data by name and specific platform.
+     * Gets compatibility data for a specific platform.
      *
-     * @param name The name of the compatibility data.
-     * @param platform The specific platform.
+     * @param name Feature name.
+     * @param platform Platform (must be specific, not wildcard).
      *
-     * @returns A single compatibility data or `null` if not found.
+     * @returns Compatibility data or null.
      */
-    public getSingle(name: string, platform: SpecificPlatform): T | null {
-        const normalizedName = this.nameTransformer ? this.nameTransformer(name) : name;
-        const data = this.getRowStorage(normalizedName);
-
-        if (!data) {
+    public get(name: string, platform: Platform): T | null {
+        const row = this.getRow(name);
+        if (!row) {
             return null;
         }
 
-        const idx = data.map[platform];
-        return isUndefined(idx) ? null : data.shared[idx];
+        // Only works with specific platforms
+        if (platform.isWildcard) {
+            throw new Error('get() requires a specific platform. Use queryAll() for wildcards.');
+        }
+
+        return row.flatMap.get(platform.toString()) || null;
     }
 
     /**
-     * Returns all compatibility data records for name and specified platform.
+     * Queries all compatibility data matching the platform query.
+     * Supports wildcard platforms.
      *
-     * @param name Compatibility data name.
-     * @param platform Specific or generic platform.
+     * @param name Feature name.
+     * @param platform Platform query (can be wildcard).
      *
-     * @returns Multiple records grouped by platforms.
-     * Technically, it is an object where keys are platform enums values and values are compatibility data records.
-     *
-     * @note Platform enum values can be converted to string names using {@link getSpecificPlatformName} on demand.
+     * @returns Array of matching compatibility data.
      */
-    public getMultiple(
-        name: string,
-        platform: AnyPlatform,
-    ): SinglePlatformRecords<T> | null {
-        const normalizedName = this.nameTransformer ? this.nameTransformer(name) : name;
-        const data = this.getRowStorage(normalizedName);
-
-        if (!data) {
-            return null;
-        }
-
-        if (isGenericPlatform(platform)) {
-            const result: SinglePlatformRecords<T> = {};
-            const keys = Object.keys(data.map);
-
-            for (let i = 0; i < keys.length; i += 1) {
-                const key = Number(keys[i]);
-                if (platform & key) {
-                    const idx = data.map[key];
-                    if (!isUndefined(idx)) {
-                        result[key] = data.shared[idx];
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        const idx = data.map[platform];
-        if (isUndefined(idx)) {
-            return null;
-        }
-
-        return { key: data.shared[idx] };
-    }
-
-    /**
-     * Returns all compatibility data records for the specified platform.
-     *
-     * @param platform Specific or generic platform.
-     *
-     * @returns Array of multiple records grouped by platforms.
-     */
-    public getAllMultiple(platform: AnyPlatform): SinglePlatformRecords<T>[] {
-        const result: SinglePlatformRecords<T>[] = [];
-
-        for (let i = 0; i < this.data.shared.length; i += 1) {
-            const data = this.data.shared[i];
-
-            const names = new Set(data.shared.map(({ name }) => name));
-
-            names.forEach((name) => {
-                const multipleRecords = this.getMultiple(name, platform);
-                if (multipleRecords) {
-                    result.push(multipleRecords);
-                }
-            });
-        }
-
-        return result;
-    }
-
-    /**
-     * Returns the first compatibility data record for name and specified platform.
-     *
-     * @param name Compatibility data name.
-     * @param platform Specific, generic, or combined platform.
-     *
-     * @returns First found compatibility data record or `null` if not found.
-     */
-    public getFirst(name: string, platform: AnyPlatform): T | null {
-        const normalizedName = this.nameTransformer ? this.nameTransformer(name) : name;
-        const data = this.getRowStorage(normalizedName);
-
-        if (!data) {
-            return null;
-        }
-
-        if (isGenericPlatform(platform)) {
-            const keys = Object.keys(data.map);
-
-            for (let i = 0; i < keys.length; i += 1) {
-                const key = Number(keys[i]);
-                if (platform & key) {
-                    const idx = data.map[key];
-                    if (!isUndefined(idx)) {
-                        // return the first found record
-                        return data.shared[idx];
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        const idx = data.map[platform];
-        if (isUndefined(idx)) {
-            return null;
-        }
-
-        return data.shared[idx];
-    }
-
-    /**
-     * Returns all compatibility data records for the specified name.
-     *
-     * @param name Compatibility data name.
-     *
-     * @returns Array of multiple records grouped by platforms.
-     */
-    public getRow(name: string): T[] {
-        const normalizedName = this.nameTransformer ? this.nameTransformer(name) : name;
-        const data = this.getRowStorage(normalizedName);
-
-        if (!data) {
+    public queryAll(name: string, platform: Platform): T[] {
+        const row = this.getRow(name);
+        if (!row) {
             return [];
         }
 
-        return data.shared;
-    }
+        // For specific platforms, return single result
+        if (!platform.isWildcard) {
+            const data = row.flatMap.get(platform.toString());
+            return data ? [data] : [];
+        }
 
-    /**
-     * Returns all compatibility data grouped by products.
-     *
-     * @returns Array of multiple records grouped by products.
-     */
-    public getRowsByProduct(): RowsByProduct<T> {
-        const result: RowsByProduct<T> = [];
+        // Special case: Platform.Any (global wildcard across all products)
+        // Query all product paths since there's no 'any' key in the data
+        if (platform.toString() === WILDCARD_ANY) {
+            const results: T[] = [];
+            const seen = new Set<T>();
 
-        for (let i = 0; i < this.data.shared.length; i += 1) {
-            const data = this.data.shared[i];
-            const keys = Object.keys(data.map);
-
-            const row: RowByProduct<T> = {
-                [AdblockSyntax.Adg]: {},
-                [AdblockSyntax.Ubo]: {},
-                [AdblockSyntax.Abp]: {},
-            };
-
-            for (let j = 0; j < keys.length; j += 1) {
-                const key = Number(keys[j]);
-                if (key & GenericPlatform.AdgAny) {
-                    row[AdblockSyntax.Adg][key] = data.shared[data.map[key]];
-                } else if (key & GenericPlatform.UboAny) {
-                    row[AdblockSyntax.Ubo][key] = data.shared[data.map[key]];
-                } else if (key & GenericPlatform.AbpAny) {
-                    row[AdblockSyntax.Abp][key] = data.shared[data.map[key]];
+            // Query each known product path
+            for (const code of getValidProductCodes()) {
+                const productResults = row.trie.query([code]);
+                for (const item of productResults) {
+                    if (!seen.has(item)) {
+                        seen.add(item);
+                        results.push(item);
+                    }
                 }
             }
 
-            result.push(row);
+            return results;
         }
 
-        return result;
+        // For other wildcards, use trie query and deduplicate by object identity
+        const results = row.trie.query(platform.toPath());
+        const seen = new Set<T>();
+        const deduplicated: T[] = [];
+
+        for (const item of results) {
+            if (!seen.has(item)) {
+                seen.add(item);
+                deduplicated.push(item);
+            }
+        }
+
+        return deduplicated;
     }
+
+    /**
+     * Gets all features supported by the platform.
+     *
+     * @param platform Platform query.
+     *
+     * @returns Map of feature names to their compatibility data.
+     */
+    public getAll(platform: Platform): Map<string, T[]> {
+        const results = new Map<string, T[]>();
+
+        for (const [name, row] of this.data.rows.entries()) {
+            // For specific platforms
+            if (!platform.isWildcard) {
+                const data = row.flatMap.get(platform.toString());
+                if (data) {
+                    results.set(name, [data]);
+                }
+            } else if (platform.toString() === WILDCARD_ANY) {
+                // Special case: Platform.Any (global wildcard across all products)
+                const deduplicated: T[] = [];
+                const seen = new Set<T>();
+
+                for (const code of getValidProductCodes()) {
+                    const productResults = row.trie.query([code]);
+                    for (const item of productResults) {
+                        if (!seen.has(item)) {
+                            seen.add(item);
+                            deduplicated.push(item);
+                        }
+                    }
+                }
+
+                if (deduplicated.length > 0) {
+                    results.set(name, deduplicated);
+                }
+            } else {
+                // For other wildcards, use trie query and deduplicate
+                const matches = row.trie.query(platform.toPath());
+                const seen = new Set<T>();
+                const deduplicated: T[] = [];
+
+                for (const item of matches) {
+                    if (!seen.has(item)) {
+                        seen.add(item);
+                        deduplicated.push(item);
+                    }
+                }
+
+                if (deduplicated.length > 0) {
+                    results.set(name, deduplicated);
+                }
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Queries the first matching compatibility data for the platform.
+     * Supports wildcard platforms.
+     *
+     * @param name Feature name.
+     * @param platform Platform query (can be wildcard).
+     *
+     * @returns First matching data or null.
+     */
+    public query(name: string, platform: Platform): T | null {
+        const results = this.queryAll(name, platform);
+        return results.length > 0 ? results[0] : null;
+    }
+
+    /**
+     * Gets all platform variants of a feature.
+     *
+     * @param name Feature name.
+     *
+     * @returns Array of all variants across all platforms.
+     */
+    public getAllVariants(name: string): T[] {
+        const row = this.getRow(name);
+        if (!row) {
+            return [];
+        }
+
+        return row.shared;
+    }
+
+    /**
+     * Groups all features by adblocker product.
+     *
+     * @returns Map of products to their feature maps.
+     */
+    public groupByProduct(): Map<AdblockProduct, Map<string, T[]>> {
+        const productMap = new Map<AdblockProduct, Map<string, T[]>>();
+
+        // Initialize maps for each product
+        for (const product of getValidAdblockProducts()) {
+            productMap.set(product, new Map());
+        }
+
+        // Track already-processed rows to avoid duplicates from aliases
+        const processedRows = new Set<HybridCompatibilityTableRow<T>>();
+
+        // Iterate through all features
+        for (const [, row] of this.data.rows.entries()) {
+            // Skip if we've already processed this row object (aliased entry)
+            if (processedRows.has(row)) {
+                continue;
+            }
+            processedRows.add(row);
+
+            // Get canonical feature name from first data entry
+            const firstData = row.flatMap.values().next().value;
+            if (!firstData) {
+                continue; // Empty row, skip
+            }
+            const canonicalName = firstData.name;
+
+            // Group platforms by product
+            for (const [platformStr, data] of row.flatMap.entries()) {
+                const platform = Platform.parse(platformStr);
+
+                const productEnum = platform.getProductEnum();
+                if (productEnum === WILDCARD_ANY) {
+                    continue; // Skip wildcard
+                }
+                const product: AdblockProduct = productEnum;
+
+                const featureMap = productMap.get(product)!;
+                if (!featureMap.has(canonicalName)) {
+                    featureMap.set(canonicalName, []);
+                }
+                featureMap.get(canonicalName)!.push(data);
+            }
+        }
+
+        return productMap;
+    }
+
+    /**
+     * Validates data against the compatibility table.
+     *
+     * @param data Data to validate (Node or string).
+     * @param ctx Validation context to collect issues into.
+     * @param args Additional arguments specific to the implementation.
+     */
+    public abstract validate(
+        data: Node | string,
+        ctx: ValidationContext,
+        ...args: unknown[]
+    ): void;
 }

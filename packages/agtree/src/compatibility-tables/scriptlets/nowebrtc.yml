@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Disables WebRTC by overriding `RTCPeerConnection`. The overridden function will log every attempt to create a new connection.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: nowebrtc
   version_added: 1.0.4
   aliases:
@@ -11,4 +12,6 @@ adg_os_any|adg_ext_any:
 
 ubo_any:
   name: nowebrtc.js
+  aliases:
+    - nowebrtc
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-

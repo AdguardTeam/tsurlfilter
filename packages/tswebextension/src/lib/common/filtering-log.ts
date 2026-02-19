@@ -1,8 +1,8 @@
 import { type SourceRuleAndFilterId } from '@adguard/tsurlfilter/es/declarative-converter';
 
-import { type RuleInfo, type RuleInfoOptional } from './content-script/rule-info';
 import { type ContentType } from './request-type';
 import { EventChannel, type EventChannelInterface } from './utils/channels';
+import { type RuleInfoOptional, type RuleInfo } from './rule-info';
 
 // TODO: Add 'is' prefix to cssRule, scriptRule and contentRule properties.
 
@@ -209,8 +209,6 @@ export type ApplyPermissionsRuleEvent = {
  */
 export type ApplyCosmeticRuleEventData = {
     tabId: number;
-    filterId: number;
-    ruleIndex: number;
     element: string;
     frameUrl: string;
     frameDomain: string;
@@ -219,7 +217,7 @@ export type ApplyCosmeticRuleEventData = {
     cssRule: boolean;
     scriptRule: boolean;
     contentRule: boolean;
-} & WithEventId;
+} & RuleInfo & WithEventId;
 
 /**
  * Dispatched by manifest v2 messageHandler in handleSaveCssHitsStats method and in ContentStream module on html rule
@@ -414,12 +412,10 @@ export type JsInjectEventData = {
     frameDomain: string;
     requestType: ContentType;
     timestamp: number;
-    filterId: number;
-    ruleIndex: number;
     cssRule: boolean;
     scriptRule: boolean;
     contentRule: boolean;
-} & WithEventId;
+} & RuleInfo & WithEventId;
 
 /**
  * Dispatched by manifest v2 WebRequest API injectJsScript method.

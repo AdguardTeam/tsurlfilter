@@ -1,6 +1,19 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Removes the specified attributes from DOM nodes.
+  parameters:
+    - name: attrs
+      required: true
+      description: Attribute or list of attributes joined by `|`.
+    - name: selector
+      required: false
+      description: CSS selector, specifies DOM nodes from which the attributes will be removed.
+    - name: applying
+      required: false
+      description: |-
+       One or more space-separated flags that describe the way scriptlet apply.
+       Possible values: `asap`, `complete`, `stay`.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: remove-attr
   version_added: 1.0.4
   aliases:
@@ -11,13 +24,6 @@ adg_os_any|adg_ext_any:
     - ubo-remove-attr
     - ubo-ra
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#remove-attr
-  parameters:
-    - name: attrs
-      required: true
-    - name: selector
-      required: false
-    - name: applying
-      required: false
 
 ubo_any:
   name: remove-attr.js
@@ -26,10 +32,5 @@ ubo_any:
     - ra
     - remove-attr
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
-  parameters:
-    - name: attrs
-      required: true
-    - name: selector
-      required: false
-    - name: applying
-      required: false
+  deprecated: true
+  deprecation_message: Deprecated by `:remove-attr()`.

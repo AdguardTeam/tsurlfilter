@@ -8,6 +8,7 @@ import { MatchingResult, RequestType, HTTPMethod } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { mockEngineApi } from '../../../../helpers/mocks';
 import { getNetworkRuleFields } from '../helpers/rule-fields';
 import { RemoveHeadersService } from '../../../../../src/lib/mv2/background/services/remove-headers-service';
 import {
@@ -17,9 +18,9 @@ import {
 import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 
-describe('Headers service', () => {
+describe('RemoveHeadersService', () => {
     const mockFilteringLog = new MockFilteringLog();
-    const removeHeadersService = new RemoveHeadersService(mockFilteringLog);
+    const removeHeadersService = new RemoveHeadersService(mockFilteringLog, mockEngineApi);
 
     const requestHeader = {
         name: 'req_header_name',

@@ -1,6 +1,11 @@
-adg_os_any:
+common:
   name: jsinject
   description: Forbids adding of javascript code to the page.
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+
+adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#jsinject-modifier
   conflicts:
     - domain
@@ -13,13 +18,8 @@ adg_os_any:
     - content
     - xmlhttprequest
     - badfilter
-  inverse_conflicts: true
-  negatable: false
-  exception_only: true
 
 adg_ext_any:
-  name: jsinject
-  description: Forbids adding of javascript code to the page.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#jsinject-modifier
   conflicts:
     - domain
@@ -30,13 +30,8 @@ adg_ext_any:
     - urlblock
     - xmlhttprequest
     - badfilter
-  inverse_conflicts: true
-  negatable: false
-  exception_only: true
 
 adg_cb_ios:
-  name: jsinject
-  description: Forbids adding of javascript code to the page.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#jsinject-modifier
   conflicts:
     - domain
@@ -47,13 +42,8 @@ adg_cb_ios:
     - urlblock
     - xmlhttprequest
     - badfilter
-  inverse_conflicts: true
-  negatable: false
-  exception_only: true
 
 adg_cb_safari:
-  name: jsinject
-  description: Forbids adding of javascript code to the page.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#jsinject-modifier
   conflicts:
     - domain
@@ -64,6 +54,3 @@ adg_cb_safari:
     - urlblock
     - xmlhttprequest
     - badfilter
-  inverse_conflicts: true
-  negatable: false
-  exception_only: true

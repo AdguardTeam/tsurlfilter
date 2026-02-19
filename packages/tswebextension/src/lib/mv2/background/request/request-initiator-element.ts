@@ -1,7 +1,7 @@
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { BACKGROUND_TAB_ID } from '../../../common/constants';
-import { createHidingCssRule, AttributeMatching } from '../../common/hidden-style';
+import { AttributeMatching, createHidingCssRule } from '../../common/hidden-style';
 import { CosmeticApi } from '../cosmetic-api';
 
 /**
@@ -104,21 +104,29 @@ export function hideRequestInitiatorElement(
         return;
     }
 
-    let src: string;
-    let matching: AttributeMatching;
-
-    if (isThirdParty) {
-        src = requestUrl.substring(requestUrl.indexOf('//'));
-        matching = AttributeMatching.Suffix;
-    } else {
-        src = getRelativeSrcPath(requestUrl, documentUrl);
-        matching = AttributeMatching.Strict;
-    }
+    // Generate CSS selectors to hide the blocked resource's initiator element.
+    // We use two approaches to maximize compatibility:
+    // 1. Suffix match with absolute URL (all requests): [src$="//domain/path"]
+    // 2. Strict match with relative path (first-party only): [src="/path"]
+    // This handles sites that use either relative or absolute URLs for same-domain resources.
+    // See: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3116
 
     let code = '';
+    const absoluteSrc = requestUrl.substring(requestUrl.indexOf('//'));
+    let relativeSrc: string | null = null;
 
     for (let i = 0; i < initiatorTags.length; i += 1) {
-        code += createHidingCssRule(initiatorTags[i], src, matching);
+        const tag = initiatorTags[i];
+
+        // Always use absolute URL with suffix matching
+        code += createHidingCssRule(tag, absoluteSrc, AttributeMatching.Suffix);
+
+        if (!isThirdParty) {
+            // For first-party, also try relative path with strict matching
+            // Cache the result to avoid redundant computation for multiple tags
+            relativeSrc ??= getRelativeSrcPath(requestUrl, documentUrl);
+            code += createHidingCssRule(tag, relativeSrc, AttributeMatching.Strict);
+        }
     }
 
     CosmeticApi.injectCss(tabId, requestFrameId, code);

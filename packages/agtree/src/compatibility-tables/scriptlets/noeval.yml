@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Prevents page to use `eval`.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: noeval
   version_added: 1.0.4
   aliases:
@@ -11,3 +12,9 @@ adg_os_any|adg_ext_any:
     - ubo-noeval
     - ubo-silent-noeval
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#noeval
+
+ubo_any:
+  name: noeval.js
+  aliases:
+    - noeval
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#noevaljs-

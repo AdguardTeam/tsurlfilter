@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Removes specified properties from the result of calling eval (if payloads contains Object) and returns to the caller.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: evaldata-prune
   version_added: 1.9.37
   aliases:
@@ -11,19 +12,24 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: propsToRemove
       required: false
+      description: String of space-separated properties to remove.
     - name: obligatoryProps
       required: false
+      description: String of space-separated properties which must be all present for the pruning to occur.
     - name: stack
       required: false
+      description: String or regular expression that must match the current function call stack trace; if regular expression is invalid it will be skipped.
 
 ubo_any:
   name: evaldata-prune.js
   version_added: 1.49.3rc15
+  aliases:
+    - evaldata-prune
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#evaldata-prunejs-
   parameters:
-    - name: propsToRemove
+    - name: rawPrunePaths
+      required: true
+      description: A list of space-separated properties to remove.
+    - name: rawNeedlePaths
       required: false
-    - name: obligatoryProps
-      required: false
-    - name: stack
-      required: false
+      description: A list of space-separated properties which must be all present for the pruning to occur.

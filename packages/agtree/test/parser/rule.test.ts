@@ -17,8 +17,6 @@ import { RuleParser } from '../../src/parser/rule-parser';
 import { AdblockSyntax } from '../../src/utils/adblockers';
 import { defaultParserOptions } from '../../src/parser/options';
 import { RuleGenerator } from '../../src/generator';
-import { RuleSerializer } from '../../src/serializer/rule-serializer';
-import { RuleDeserializer } from '../../src/deserializer/rule-deserializer';
 
 describe('RuleParser', () => {
     test('parse', () => {
@@ -1035,6 +1033,8 @@ describe('RuleParser', () => {
         expect(parseAndGenerate('example.com,~example.net#@#.ad:-abp-has(.ad)')).toEqual(
             'example.com,~example.net#@#.ad:-abp-has(.ad)',
         );
+        expect(parseAndGenerate('##body:has(.ads)')).toEqual('##body:has(.ads)');
+        expect(parseAndGenerate('#?#body:has(.ads)')).toEqual('#?#body:has(.ads)');
 
         // CSS injections (AdGuard)
         expect(parseAndGenerate('#$#body { padding: 0; }')).toEqual('#$#body { padding: 0; }');
@@ -1070,6 +1070,7 @@ describe('RuleParser', () => {
         ).toEqual(
             'example.com,~example.net#@$#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
         );
+        expect(parseAndGenerate('#$#body:has(.ads) { padding: 0; }')).toEqual('#$#body:has(.ads) { padding: 0; }');
         expect(parseAndGenerate('#$?#body:has(.ads) { padding: 0; }')).toEqual('#$?#body:has(.ads) { padding: 0; }');
         expect(parseAndGenerate('example.com,~example.net#$?#body:has(.ads) { padding: 0; }')).toEqual(
             'example.com,~example.net#$?#body:has(.ads) { padding: 0; }',
@@ -1279,92 +1280,5 @@ describe('RuleParser', () => {
         expect(
             parseAndGenerate('@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i'),
         ).toEqual('@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i');
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            // empty lines
-            '',
-            ' ',
-
-            // comments
-            '! This is just a comment',
-            '# This is just a comment',
-
-            // agents
-            '[Adblock Plus 2.0]',
-            '[Adblock Plus]',
-            '[AdGuard]',
-            '[AdGuard 3.0]',
-            '[uBlock Origin]',
-
-            // hints
-            '!+NOT_OPTIMIZED',
-            '!+ NOT_OPTIMIZED',
-            '!+ NOT_OPTIMIZED PLATFORM(windows, mac) NOT_PLATFORM(android, ios)',
-
-            // pre-processors
-            '!#if (adguard)',
-            '!#if (adguard && !adguard_ext_safari)',
-
-            // metadata comments
-            '! Title: My List',
-
-            // cosmetic rules
-            '##.ad',
-            'example.com,~example.org##.ad',
-            '#@#.ad',
-            'example.com,~example.org#@#.ad',
-
-            '#$#body { padding: 0; }',
-            'example.com,~example.org#$#body { padding: 0; }',
-            '#@$#body { padding: 0; }',
-            'example.com,~example.org#@$#body { padding: 0; }',
-
-            '#$?#:contains(ad) { color: red; padding: 0 !important; }',
-            'example.com,~example.org#$?#:contains(ad) { color: red; padding: 0 !important; }',
-            '#@$?#:contains(ad) { color: red; padding: 0 !important; }',
-            'example.com,~example.org#@$?#:contains(ad) { color: red; padding: 0 !important; }',
-            '#$#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
-            'example.com,~example.org#$#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
-
-            "#%#//scriptlet('foo', 'bar')",
-            "example.com,~example.org#%#//scriptlet('foo', 'bar')",
-
-            '##+js(foo, bar)',
-            'example.com,~example.org##+js(foo, bar)',
-            '#@#+js(foo, bar)',
-            'example.com,~example.org#@#+js(foo, bar)',
-
-            '#$#scriptlet0 arg0 arg1',
-            'example.com,~example.org#$#scriptlet0 arg0 arg1',
-            '#@$#scriptlet0 arg0 arg1',
-            'example.com,~example.org#@$#scriptlet0 arg0 arg1',
-
-            '##^script:has-text(ads)',
-            'example.com,~example.org##^script:has-text(ads)',
-            '#@#^script:has-text(ads)',
-            'example.com,~example.org#@#^script:has-text(ads)',
-
-            '$$script[tag-content="ads"]',
-            'example.com,~example.org$$script[tag-content="ads"]',
-            '$@$script[tag-content="ads"]',
-            'example.com,~example.org$@$script[tag-content="ads"]',
-
-            // ADG modifiers
-            '[$path=/foo/bar]##.foo',
-            '[$path=/foo/bar]example.com,~example.org##.foo',
-
-            // uBO modifiers
-            '##:matches-path(/foo/bar) .foo',
-            'example.com,~example.org##:matches-path(/foo/bar) .foo',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                RuleParser,
-                RuleGenerator,
-                RuleSerializer,
-                RuleDeserializer,
-            );
-        });
     });
 });

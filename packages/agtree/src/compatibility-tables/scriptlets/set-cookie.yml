@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Sets a cookie with the specified name, value, path, and domain.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: set-cookie
   version_added: 1.2.3
   aliases:
@@ -11,19 +12,39 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: name
       required: true
+      description: Cookie name to be set.
     - name: value
       required: true
+      description: Cookie value to be set from one of the predefined values.
     - name: path
       required: false
+      description: Cookie path to be set. Default is `/`.
+    - name: domain
+      required: false
+      description: Cookie domain, if not set origin will be set as domain, if the domain does not match the origin, the cookie will not be set.
 
 ubo_any:
   name: set-cookie.js
   version_added: 1.50.1b0
+  aliases:
+    - set-cookie
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookiejs-
   parameters:
     - name: name
       required: true
+      description: Cookie name to be set.
     - name: value
       required: true
+      description: Cookie value to be set from one of the predefined values.
     - name: path
       required: false
+      description: Cookie path to be set. Default is `/`.
+  ubo_tokens:
+    - name: reload
+      description: When truthy, forces a page reload if the cookie was not already set to the target value.
+      value_format: ^1$
+      value_type: boolean
+    - name: dontOverwrite
+      description: When truthy, skips setting the cookie if it already exists with any value.
+      value_format: ^1$
+      value_type: boolean

@@ -1,9 +1,10 @@
 import { NetworkRuleOption, type NetworkRule, type RemoveParamModifier } from '@adguard/tsurlfilter';
 
-import { requestContextStorage } from '../request';
-import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
+import { requestContextStorage } from '../request/request-context-storage';
+import { FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { nanoid } from '../../../common/utils/nanoid';
 import { getDomain } from '../../../common/utils/url';
+import { getRuleTexts, type RuleTextProvider } from '../../../common/utils/rule-text-provider';
 
 /**
  * Params filtering service module.
@@ -12,12 +13,19 @@ export class ParamsService {
     private filteringLog: FilteringLogInterface;
 
     /**
+     * Engine API for retrieving rule texts.
+     */
+    private readonly engineApi: RuleTextProvider;
+
+    /**
      * Constructor.
      *
      * @param filteringLog Filtering log.
+     * @param ruleTextProvider Engine API for retrieving rule texts.
      */
-    constructor(filteringLog: FilteringLogInterface) {
+    constructor(filteringLog: FilteringLogInterface, ruleTextProvider: RuleTextProvider) {
         this.filteringLog = filteringLog;
+        this.engineApi = ruleTextProvider;
     }
 
     private static SupportedMethods = ['GET', 'POST', 'OPTIONS', 'HEAD'];
@@ -56,6 +64,8 @@ export class ParamsService {
 
         const purgedUrl = removeParamRules.reduce((url: string, rule: NetworkRule): string => {
             if (rule.isAllowlist()) {
+                const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
+
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.RemoveParam,
                     data: {
@@ -68,6 +78,8 @@ export class ParamsService {
                         requestType: contentType,
                         filterId: rule.getFilterListId(),
                         ruleIndex: rule.getIndex(),
+                        appliedRuleText,
+                        originalRuleText,
                         timestamp,
                         isAllowlist: rule.isAllowlist(),
                         isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
@@ -87,6 +99,8 @@ export class ParamsService {
 
             if (hasUrlChanged) {
                 context.isRemoveparamRedirect = true;
+                const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
+
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.RemoveParam,
                     data: {
@@ -99,6 +113,8 @@ export class ParamsService {
                         requestType: contentType,
                         filterId: rule.getFilterListId(),
                         ruleIndex: rule.getIndex(),
+                        appliedRuleText,
+                        originalRuleText,
                         timestamp,
                         isAllowlist: rule.isAllowlist(),
                         isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
@@ -131,5 +147,3 @@ export class ParamsService {
         return ParamsService.SupportedMethods.includes(method.toUpperCase());
     }
 }
-
-export const paramsService = new ParamsService(defaultFilteringLog);

@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Prevents `window.open` calls when URL either matches or not matches the specified string/regexp. Using it without parameters prevents all `window.open` calls.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-window-open
   version_added: 1.0.4
   aliases:
@@ -17,22 +18,41 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: match
       required: false
+      description: |-
+       String or regular expression. If not set or regular expression is invalid, all `window.open` calls will be matched. If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+       If do not start with `!`, the stringified callback will be matched.
     - name: delay
       required: false
-    - name: replacement
+      description: Number of seconds. If not set, scriptlet will return `null`, otherwise valid sham `window` object as injected `iframe` will be returned for accessing its methods (`blur()`, `focus()` etc.) and will be removed after the delay.
+    - name: decoy
       required: false
+      description: |-
+        String, one of the predefined constants:
+        `obj` — for returning an `object` instead of default `iframe`; for cases when the page requires a valid `window` instance to be returned.
+        `log` — for logging window.open calls; not allowed for prod versions of filter lists.
+
 
 ubo_any:
   name: no-window-open-if.js
   aliases:
+    - no-window-open-if
+    - nowoif
     - nowoif.js
+    - prevent-window-open
     - prevent-window-open.js
+    - window.open-defuser
     - window.open-defuser.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#no-window-open-ifjs-
   parameters:
-    - name: match
+    - name: pattern
       required: false
+      description: String or regular expression, prefixed by `!` for negation, matching in all parameters passed to `window.open()`, if not provided, all calls to `window.open()` are prevented.
     - name: delay
       required: false
-    - name: replacement
+      description: Positive decimal integer, number of seconds after returned `window` object will be invalidated.
+    - name: decoy
       required: false
+      description: |-
+        String, one of the predefined constants:
+        `obj`: Use an `object` element instead of `iframe` element (default) as a decoy to be used in place of a popup window, when the page requires a valid `window` instance to be returned.
+        `blank`: Replace the `url` parameter with `about:blank`.

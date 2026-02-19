@@ -1,0 +1,16 @@
+abp_any:
+  name: hide-if-matches-xpath
+  description: Hides a specific element through a XPath 1.0 query string.
+  version_added: 3.9.0
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  parameters:
+    - name: query
+      required: true
+      description: The XPath query that targets the element to hide.
+    - name: scopeQuery
+      required: false
+      description: XPath selector that the filter devs can use to restrict the scope of the Mutation Observer. It is important that the selector is as specific as possible to avoid to match too many nodes.
+    - name: waitUntil
+      required: false
+      description: |-
+        Optional parameter that can be used to delay the running of the snippet until the given state is reached. Accepts: loading, interactive, complete, load or any event name.

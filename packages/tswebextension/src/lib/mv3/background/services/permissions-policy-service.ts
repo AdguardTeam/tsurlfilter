@@ -9,6 +9,8 @@ import {
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { ContentType } from '../../../common/request-type';
 import { nanoid } from '../../../common/utils/nanoid';
+import { getRuleTexts } from '../../../common/utils/rule-text-provider';
+import { engineApi } from '../engine-api';
 import { requestContextStorage, type RequestContext } from '../request';
 
 /**
@@ -82,6 +84,8 @@ export class PermissionsPolicyService {
                     });
                 }
 
+                const { appliedRuleText, originalRuleText } = getRuleTexts(rule, engineApi);
+
                 defaultFilteringLog.publishEvent({
                     type: FilteringEventType.ApplyPermissionsRule,
                     data: {
@@ -96,6 +100,8 @@ export class PermissionsPolicyService {
                         requestType: ContentType.PermissionsPolicy,
                         filterId: rule.getFilterListId(),
                         ruleIndex: rule.getIndex(),
+                        appliedRuleText,
+                        originalRuleText,
                         timestamp: Date.now(),
                         isAllowlist: rule.isAllowlist(),
                         isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),

@@ -1,9 +1,16 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: google-analytics-ga
   version_added: 1.10.25
+  description: Mocks old Google Analytics API.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#google-analytics-ga
   aliases:
     - ubo-google-analytics_ga.js
+    - ubo-google-analytics_ga
     - google-analytics_ga.js
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#google-analytics-ga
+    - google-analytics-ga
+
+ubo_any:
+  name: google-analytics-ga.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#google-analytics_gajs-
+  aliases:
+    - google-analytics-ga

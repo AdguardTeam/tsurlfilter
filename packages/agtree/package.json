@@ -1,6 +1,6 @@
 {
     "name": "@adguard/agtree",
-    "version": "3.4.3",
+    "version": "4.0.0",
     "description": "Tool set for working with adblock filter lists",
     "keywords": [
         "adblock",
@@ -11,9 +11,7 @@
         "ast",
         "converter",
         "validator",
-        "generator",
-        "serialize",
-        "deserialize"
+        "generator"
     ],
     "author": "Adguard Software Ltd.",
     "license": "MIT",
@@ -43,14 +41,6 @@
         "./generator": {
             "types": "./dist/types/generator/index.d.ts",
             "import": "./dist/generator/index.js"
-        },
-        "./serializer": {
-            "types": "./dist/types/serializer/index.d.ts",
-            "import": "./dist/serializer/index.js"
-        },
-        "./deserializer": {
-            "types": "./dist/types/deserializer/index.d.ts",
-            "import": "./dist/deserializer/index.js"
         },
         "./converter": {
             "types": "./dist/types/converter/index.d.ts",
@@ -83,17 +73,18 @@
         "precommit": "pnpm lint:types && pnpm lint && pnpm test",
         "test": "vitest run --no-cache",
         "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
-        "tgz": "pnpm pack --out agtree.tgz"
+        "tgz": "pnpm pack --out agtree.tgz",
+        "verify-compat": "tsx scripts/compatibility-data-extractor/extractor.ts --scriptlets && tsx scripts/compatibility-data-extractor/validate.ts"
     },
     "dependencies": {
         "@adguard/css-tokenizer": "workspace:^",
         "camelcase-keys": "^7.0.2",
         "clone-deep": "^4.0.1",
+        "glob-to-regexp": "^0.4.1",
         "is-ip": "catalog:",
         "json5": "^2.2.3",
         "sprintf-js": "^1.1.3",
         "tldts": "catalog:",
-        "xregexp": "^5.1.1",
         "zod": "catalog:"
     },
     "devDependencies": {
@@ -106,6 +97,7 @@
         "@swc/helpers": "^0.5.13",
         "@types/clone-deep": "^4.0.1",
         "@types/fs-extra": "catalog:",
+        "@types/glob-to-regexp": "^0.4.4",
         "@types/js-yaml": "^4.0.5",
         "@types/node": "catalog:",
         "@types/sprintf-js": "^1.1.4",
@@ -113,6 +105,7 @@
         "@typescript-eslint/parser": "catalog:",
         "@vitest/coverage-v8": "catalog:",
         "@vitest/expect": "catalog:",
+        "comment-parser": "^1.4.5",
         "eslint": "catalog:",
         "eslint-config-airbnb-base": "catalog:",
         "eslint-config-airbnb-typescript": "catalog:",
@@ -136,6 +129,8 @@
         "tsx": "catalog:",
         "type-fest": "^4.18.0",
         "typescript": "catalog:",
-        "vitest": "catalog:"
+        "valibot": "^1.2.0",
+        "vitest": "catalog:",
+        "xregexp": "^5.1.2"
     }
 }

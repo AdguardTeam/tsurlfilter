@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Removes specified properties from the JSON response of a `XMLHttpRequest` call.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: json-prune-xhr-response
   version_added: 1.10.25
   aliases:
@@ -11,22 +12,39 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: propsToRemove
       required: false
+      description: String of space-separated properties to remove.
     - name: obligatoryProps
       required: false
+      description: String of space-separated properties which must be all present for the pruning to occur.
     - name: propsToMatch
       required: false
+      description: |-
+        String of space-separated properties to match. Possible props:
+          String or regular expression for matching the URL passed to `XMLHttpRequest.open()` call.
+          Colon-separated pairs `name:value` where `name` is string or regular expression for matching `XMLHttpRequest` property name and `value` is string or regular expression for matching the value of the option passed to `XMLHttpRequest.open()` call.
     - name: stack
       required: false
+      description: String or regular expression that must match the current function call stack trace; if regular expression is invalid it will be skipped.
 
 ubo_any:
   name: json-prune-xhr-response.js
+  version_added: 1.51.1rc3
+  aliases:
+    - json-prune-xhr-response
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#json-prune-xhr-responsejs-
   parameters:
-    - name: propsToRemove
+    - name: rawPrunePaths
       required: false
-    - name: obligatoryProps
+      description: String, a list of space-separated properties to remove.
+    - name: rawNeedlePaths
       required: false
+      description: String, a list of space-separated properties which must be all present for the pruning to occur or string/regular expression, for logging purposes, matching in stringified `JSON` payloads.
+  ubo_tokens:
     - name: propsToMatch
-      required: false
-    - name: stack
-      required: false
+      description: Space-separated properties to match the XHR call. Can be a URL string/regex or colon-separated `name:value` pairs matching XHR property names and values.
+      value_format: null
+      value_type: string
+    - name: stackToMatch
+      description: A string or regex that must match the current call stack for pruning to occur. Prepend with `!` to negate.
+      value_format: null
+      value_type: string

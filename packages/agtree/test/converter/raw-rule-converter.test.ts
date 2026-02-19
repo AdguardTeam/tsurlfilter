@@ -25,13 +25,13 @@ describe('Raw rule converter wrapper should work correctly', () => {
             {
                 actual: 'example.com##^script:has-text(foo)',
                 expected: [
-                    'example.com$$script[tag-content="foo"][max-length="262144"]',
+                    'example.com$$script:contains(foo)',
                 ],
             },
             {
                 actual: 'example.com,~example.net##^div[custom_attr]',
                 expected: [
-                    'example.com,~example.net$$div[custom_attr][max-length="262144"]',
+                    'example.com,~example.net$$div[custom_attr]',
                 ],
             },
             // multiple rules in the result

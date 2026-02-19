@@ -62,7 +62,7 @@ describe('FilterListConverter', () => {
             '||delivery.tf1.fr/pub$media,redirect=noopmp3-0.1s,domain=tf1.fr',
             "example.com#%#//scriptlet('abp-snippet1', 'arg0', 'arg1')",
             "example.com#%#//scriptlet('abp-snippet2', 'arg0', 'arg1')",
-            '$$script[tag-content="ad"][max-length="262144"]',
+            '$$script:contains(ad)',
         ].join(NEWLINE);
 
         const filterListNode = FilterListParser.parse(filterListContent);
@@ -88,8 +88,8 @@ describe('FilterListConverter', () => {
     test('Tolerant mode should work correctly', () => {
         const filterListContent = [
             '! Title: Foo',
-            // ADG HTML filtering doesn't support CSS combinator, so this rule will be invalid
-            '##^body > script:has-text(foo)',
+            // Invalid rule because `:has-text()` provided without argument
+            '##^body:has-text()',
             // Should be converted
             '||example.com^$3p',
         ].join(NEWLINE);
@@ -97,7 +97,7 @@ describe('FilterListConverter', () => {
         // Expected tolerantly converted filter list
         const expectedFilterListContent = [
             '! Title: Foo',
-            '##^body > script:has-text(foo)', // Left as is
+            '##^body:has-text()', // Left as is
             '||example.com^$third-party', // Converted
         ].join(NEWLINE);
 

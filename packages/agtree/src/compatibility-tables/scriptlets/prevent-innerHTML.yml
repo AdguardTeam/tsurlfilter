@@ -1,28 +1,35 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-innerHTML
   version_added: 2.2.14
+  description: Conditionally prevents assignment to innerHTML property and can replace the value returned by the getter.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-innerHTML
   aliases:
     - prevent-innerHTML.js
-    - no-innerHTML-if.js
-    - ubo-no-innerHTML-if.js
-    - ubo-no-innerHTML-if
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-innerHTML
+    - ubo-prevent-innerHTML.js
+    - ubo-prevent-innerHTML
   parameters:
     - name: selector
       required: false
+      description: CSS selector to match element. If not specified, matches all elements.
     - name: pattern
       required: false
+      description: String or regular expression to match against the assigned/returned value. Prepend with ! to invert the match. If not specified, matches all values.
+    - name: replacement
+      required: false
+      description: Replacement value to return from getter when pattern matches. If not specified, the getter returns the original value unchanged (setter-only mode). If specified, enables getter manipulation mode.
+
 
 ubo_any:
   name: prevent-innerHTML.js
   version_added: 1.63.1b0
-  aliases:
-    - no-innerHTML-if.js
+  description: Conditionally prevent assignment to innerHTML property.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-innerHTMLjs-
+  aliases:
+    - prevent-innerHTML
   parameters:
     - name: selector
       required: false
+      description: The element must matches selector for the prevention to take place.
     - name: pattern
       required: false
+      description: A pattern to match against the assigned value. The pattern can be a plain string, or a regex. Prepend with ! to reverse the match condition.

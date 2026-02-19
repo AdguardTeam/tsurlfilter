@@ -10,8 +10,6 @@ import {
 import { COMMA, EMPTY } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { DomainListGenerator } from '../../../src/generator/misc/domain-list-generator';
-import { DomainListSerializer } from '../../../src/serializer/misc/domain-list-serializer';
-import { DomainListDeserializer } from '../../../src/deserializer/misc/domain-list-deserializer';
 
 describe('DomainListParser', () => {
     // invalid inputs are tested in `list-helpers.test.ts`
@@ -538,24 +536,6 @@ describe('DomainListParser', () => {
                     },
                 ],
             });
-        });
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            'example.com',
-            '~example.com',
-
-            'example.com,example.org',
-            'example.com,~example.org',
-            '~example.com,~example.org',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                DomainListParser,
-                DomainListGenerator,
-                DomainListSerializer,
-                DomainListDeserializer,
-            );
         });
     });
 });

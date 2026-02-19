@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { redirectsCompatibilityTable } from '../../src/compatibility-tables/redirects';
-import { GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms';
+import { redirectsCompatibilityTable, Platform } from '../../src/compatibility-tables';
 
 const baseNoopJsData = {
     name: 'noopjs',
@@ -10,40 +9,37 @@ const baseNoopJsData = {
 };
 
 describe('Redirects Compatibility Table', () => {
-    it('redirectsCompatibilityTable.existsAny', () => {
-        expect(redirectsCompatibilityTable.existsAny('noopjs')).toBeTruthy();
-        expect(redirectsCompatibilityTable.existsAny('noopjs:99')).toBeTruthy();
-        expect(redirectsCompatibilityTable.existsAny('noopjs:-1')).toBeTruthy();
-        expect(redirectsCompatibilityTable.existsAny('blank-js')).toBeTruthy();
+    it('redirectsCompatibilityTable.has', () => {
+        expect(redirectsCompatibilityTable.has('noopjs')).toBeTruthy();
+        expect(redirectsCompatibilityTable.has('noopjs:99')).toBeTruthy();
+        expect(redirectsCompatibilityTable.has('noopjs:-1')).toBeTruthy();
+        expect(redirectsCompatibilityTable.has('blank-js')).toBeTruthy();
 
-        expect(redirectsCompatibilityTable.existsAny('nonexistent')).toBeFalsy();
+        expect(redirectsCompatibilityTable.has('nonexistent')).toBeFalsy();
     });
 
-    it('redirectsCompatibilityTable.exists', () => {
-        expect(redirectsCompatibilityTable.exists('noopjs', SpecificPlatform.AdgExtChrome)).toBeTruthy();
-        expect(redirectsCompatibilityTable.exists('nonexistent', SpecificPlatform.AbpExtChrome)).toBeFalsy();
+    it('redirectsCompatibilityTable.supports', () => {
+        expect(redirectsCompatibilityTable.supports('noopjs', Platform.AdgExtChrome)).toBeTruthy();
+        expect(redirectsCompatibilityTable.supports('nonexistent', Platform.AbpExtChrome)).toBeFalsy();
 
-        expect(redirectsCompatibilityTable.exists('noopjs', GenericPlatform.AdgExtAny)).toBeTruthy();
-        expect(redirectsCompatibilityTable.exists('nonexistent', GenericPlatform.AbpExtAny)).toBeFalsy();
+        expect(redirectsCompatibilityTable.supports('noopjs', Platform.AdgExtAny)).toBeTruthy();
+        expect(redirectsCompatibilityTable.supports('nonexistent', Platform.AbpExtAny)).toBeFalsy();
     });
 
-    it('redirectsCompatibilityTable.getSingle', () => {
+    it('redirectsCompatibilityTable.get', () => {
         expect(
-            redirectsCompatibilityTable.getSingle('noopjs', SpecificPlatform.AdgExtChrome),
+            redirectsCompatibilityTable.get('noopjs', Platform.AdgExtChrome),
         ).toMatchObject(baseNoopJsData);
 
-        expect(redirectsCompatibilityTable.getSingle('nonexistent', SpecificPlatform.AbpExtChrome)).toBeNull();
+        expect(redirectsCompatibilityTable.get('nonexistent', Platform.AbpExtChrome)).toBeNull();
     });
 
-    it('redirectsCompatibilityTable.getMultiple', () => {
-        expect(redirectsCompatibilityTable.getMultiple('noopjs', GenericPlatform.AdgExtAny)).toMatchObject({
-            [SpecificPlatform.AdgExtChrome]: baseNoopJsData,
-            [SpecificPlatform.AdgExtOpera]: baseNoopJsData,
-            [SpecificPlatform.AdgExtEdge]: baseNoopJsData,
-            [SpecificPlatform.AdgExtFirefox]: baseNoopJsData,
-        });
+    it('redirectsCompatibilityTable.queryAll', () => {
+        const results = redirectsCompatibilityTable.queryAll('noopjs', Platform.AdgExtAny);
+        expect(results.length).toBeGreaterThan(0);
+        expect(results[0]).toMatchObject(baseNoopJsData);
 
-        expect(redirectsCompatibilityTable.getMultiple('nonexistent', GenericPlatform.AdgExtAny)).toBeNull();
+        expect(redirectsCompatibilityTable.queryAll('nonexistent', Platform.AdgExtAny)).toEqual([]);
     });
 
     describe('googlesyndication-adsbygoogle redirect', () => {
@@ -54,14 +50,14 @@ describe('Redirects Compatibility Table', () => {
 
         it('should resolve googlesyndication.com/adsbygoogle.js alias for ADG platform', () => {
             // This alias is used in uBO syntax and should be resolved to ADG redirect name
-            expect(redirectsCompatibilityTable.existsAny(REDIRECT_ALIAS)).toBeTruthy();
+            expect(redirectsCompatibilityTable.has(REDIRECT_ALIAS)).toBeTruthy();
             expect(
-                redirectsCompatibilityTable.exists(REDIRECT_ALIAS, GenericPlatform.AdgAny),
+                redirectsCompatibilityTable.supports(REDIRECT_ALIAS, Platform.AdgAny),
             ).toBeTruthy();
 
-            const adgData = redirectsCompatibilityTable.getFirst(
+            const adgData = redirectsCompatibilityTable.query(
                 REDIRECT_ALIAS,
-                GenericPlatform.AdgAny,
+                Platform.AdgAny,
             );
             expect(adgData).not.toBeNull();
             expect(adgData?.name).toBe(EXPECTED_ADG_NAME);
@@ -69,12 +65,12 @@ describe('Redirects Compatibility Table', () => {
 
         it('should resolve googlesyndication_adsbygoogle.js alias for ADG platform', () => {
             expect(
-                redirectsCompatibilityTable.exists(REDIRECT_ALIAS_UNDERSCORE, GenericPlatform.AdgAny),
+                redirectsCompatibilityTable.supports(REDIRECT_ALIAS_UNDERSCORE, Platform.AdgAny),
             ).toBeTruthy();
 
-            const adgData = redirectsCompatibilityTable.getFirst(
+            const adgData = redirectsCompatibilityTable.query(
                 REDIRECT_ALIAS_UNDERSCORE,
-                GenericPlatform.AdgAny,
+                Platform.AdgAny,
             );
             expect(adgData).not.toBeNull();
             expect(adgData?.name).toBe(EXPECTED_ADG_NAME);
@@ -82,12 +78,12 @@ describe('Redirects Compatibility Table', () => {
 
         it('should resolve ubo-googlesyndication.com/adsbygoogle.js alias for ADG platform', () => {
             expect(
-                redirectsCompatibilityTable.exists(REDIRECT_ALIAS_UBO_PREFIX, GenericPlatform.AdgAny),
+                redirectsCompatibilityTable.supports(REDIRECT_ALIAS_UBO_PREFIX, Platform.AdgAny),
             ).toBeTruthy();
 
-            const adgData = redirectsCompatibilityTable.getFirst(
+            const adgData = redirectsCompatibilityTable.query(
                 REDIRECT_ALIAS_UBO_PREFIX,
-                GenericPlatform.AdgAny,
+                Platform.AdgAny,
             );
             expect(adgData).not.toBeNull();
             expect(adgData?.name).toBe(EXPECTED_ADG_NAME);
