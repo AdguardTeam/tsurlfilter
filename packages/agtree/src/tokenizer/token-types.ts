@@ -1,254 +1,232 @@
 /**
- * Unique symbol to brand TokenType.
- */
-declare const TokenTypeBrand: unique symbol;
-
-/**
- * Branded type for token type values.
- */
-export type TokenType = number & {
-    readonly [TokenTypeBrand]: true;
-};
-
-/**
  * Token types.
  */
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const TokenType = {
+export const enum TokenType {
     /**
      * End of file (end of input).
      */
-    Eof: 0 as TokenType,
+    Eof = 0,
 
     /**
      * Whitespace.
      */
-    Whitespace: 1 as TokenType,
+    Whitespace = 1,
 
     /**
      * Line break (`\r\n` or just `\n`)
      */
-    LineBreak: 2 as TokenType,
+    LineBreak = 2,
 
     /**
      * Escaped character, e.g. `\'`, `\"`, `\\`, etc.
      */
-    Escaped: 3 as TokenType,
+    Escaped = 3,
 
     /**
      * Identifier.
      * Any character sequence that contains letters, numbers, hyphens, and underscores.
      */
-    Ident: 4 as TokenType,
-
-    /**
-     * Cosmetic rule separator, e.g. `##`.
-     */
-    CosmeticSeparator: 5 as TokenType,
-
-    /**
-     * Allowlist cosmetic rule separator, e.g. `#@#`.
-     */
-    AllowlistCosmeticSeparator: 6 as TokenType,
-
-    /**
-     * Raw content after cosmetic rule separator.
-     * For example, no need to tokenize CSS with this tokenizer after the `##`, `#?#`, etc. separators,
-     * so we use this token type as an optimization strategy.
-     */
-    RawContent: 7 as TokenType,
+    Ident = 4,
 
     /**
      * Equals: `=`.
      */
-    EqualsSign: 8 as TokenType,
+    EqualsSign = 5,
 
     /**
      * Slash: `/`.
      */
-    Slash: 9 as TokenType,
+    Slash = 6,
 
     /**
      * Dollar: `$`.
      */
-    DollarSign: 10 as TokenType,
+    DollarSign = 7,
 
     /**
      * Comma: `,`.
      */
-    Comma: 11 as TokenType,
+    Comma = 8,
 
     /**
      * Open parenthesis: `(`.
      */
-    OpenParen: 12 as TokenType,
+    OpenParen = 9,
 
     /**
      * Close parenthesis: `)`.
      */
-    CloseParen: 13 as TokenType,
+    CloseParen = 10,
 
     /**
      * Open brace: `{`.
      */
-    OpenBrace: 14 as TokenType,
+    OpenBrace = 11,
 
     /**
      * Close brace: `}`.
      */
-    CloseBrace: 15 as TokenType,
+    CloseBrace = 12,
 
     /**
      * Open square: `[`.
      */
-    OpenSquare: 16 as TokenType,
+    OpenSquare = 13,
 
     /**
      * Close square: `]`.
      */
-    CloseSquare: 17 as TokenType,
+    CloseSquare = 14,
 
     /**
      * Pipe: `|`.
      */
-    Pipe: 18 as TokenType,
+    Pipe = 15,
 
     /**
      * At: `@`.
      */
-    AtSign: 19 as TokenType,
+    AtSign = 16,
 
     /**
      * Asterisk: `*`.
      */
-    Asterisk: 20 as TokenType,
+    Asterisk = 17,
 
     /**
      * Quote: `"`.
      */
-    Quote: 21 as TokenType,
+    Quote = 18,
 
     /**
      * Apostrophe: `'`.
      */
-    Apostrophe: 22 as TokenType,
+    Apostrophe = 19,
 
     /**
      * Exclamation: `!`.
      */
-    ExclamationMark: 23 as TokenType,
+    ExclamationMark = 20,
 
     /**
      * Hashmark: `#`.
      */
-    HashMark: 24 as TokenType,
+    HashMark = 21,
 
     /**
      * Plus: `+`.
      */
-    PlusSign: 25 as TokenType,
+    PlusSign = 22,
 
     /**
      * And: `&`.
      */
-    AndSign: 26 as TokenType,
+    AndSign = 23,
 
     /**
      * Tilde: `~`.
      */
-    Tilde: 27 as TokenType,
+    Tilde = 24,
 
     /**
      * Caret: `^`.
      */
-    Caret: 28 as TokenType,
+    Caret = 25,
 
     /**
      * Dot: `.`.
      */
-    Dot: 29 as TokenType,
+    Dot = 26,
+
+    /**
+     * Colon: `:`.
+     */
+    Colon = 27,
 
     /**
      * Semicolon: `;`.
      */
-    Semicolon: 30 as TokenType,
+    Semicolon = 28,
+
+    /**
+     * Question mark: `?`.
+     */
+    QuestionMark = 29,
+
+    /**
+     * Percent: `%`.
+     */
+    Percent = 30,
+
+    /**
+     * Unicode sequence (non-ASCII characters with charCode >= 0x80).
+     * Collected as consecutive unicode characters for performance.
+     */
+    UnicodeSequence = 31,
 
     /**
      * Any other character.
      */
-    Symbol: 31 as TokenType,
-};
-
-const UNKNOWN_TOKEN_NAME = 'unknown';
+    Symbol = 32,
+}
 
 /**
- * Array of token type names indexed by token type value
+ * Token type name lookup table for base names.
  */
-const TOKEN_NAMES: readonly string[] = [
-    'eof',
-    'whitespace',
-    'line-break',
-    'escaped',
-    'ident',
-    'cosmetic-separator',
-    'allowlist-cosmetic-separator',
-    'raw-content',
-    '=',
-    '/',
-    '$',
-    ',',
-    '(',
-    ')',
-    '{',
-    '}',
-    '[',
-    ']',
-    '|',
-    '@',
-    '*',
-    '"',
-    "'",
-    '!',
-    '#',
-    '+',
-    '&',
-    '~',
-    '^',
-    '.',
-    ';',
-    'symbol',
-];
-
-/**
- * Get base token name by token type
- *
- * @param type Token type
- *
- * @returns Base token name or 'unknown' if token type is unknown
- *
- * @example
- * ```ts
- * getBaseTokenName(TokenType.Ident); // 'ident'
- * getBaseTokenName(-1); // 'unknown'
- * ```
- */
-export const getBaseTokenName = (type: TokenType): string => {
-    return TOKEN_NAMES[type] ?? UNKNOWN_TOKEN_NAME;
+const TOKEN_NAMES: Record<number, string> = {
+    [TokenType.Eof]: 'eof',
+    [TokenType.Whitespace]: 'whitespace',
+    [TokenType.LineBreak]: 'line-break',
+    [TokenType.Escaped]: 'escaped',
+    [TokenType.Ident]: 'ident',
+    [TokenType.EqualsSign]: '=',
+    [TokenType.Slash]: '/',
+    [TokenType.DollarSign]: '$',
+    [TokenType.Comma]: ',',
+    [TokenType.OpenParen]: '(',
+    [TokenType.CloseParen]: ')',
+    [TokenType.OpenBrace]: '{',
+    [TokenType.CloseBrace]: '}',
+    [TokenType.OpenSquare]: '[',
+    [TokenType.CloseSquare]: ']',
+    [TokenType.Pipe]: '|',
+    [TokenType.AtSign]: '@',
+    [TokenType.Asterisk]: '*',
+    [TokenType.Quote]: '"',
+    [TokenType.Apostrophe]: "'",
+    [TokenType.ExclamationMark]: '!',
+    [TokenType.HashMark]: '#',
+    [TokenType.PlusSign]: '+',
+    [TokenType.AndSign]: '&',
+    [TokenType.Tilde]: '~',
+    [TokenType.Caret]: '^',
+    [TokenType.Dot]: '.',
+    [TokenType.Colon]: ':',
+    [TokenType.Semicolon]: ';',
+    [TokenType.QuestionMark]: '?',
+    [TokenType.Percent]: '%',
+    [TokenType.UnicodeSequence]: 'unicode-sequence',
+    [TokenType.Symbol]: 'symbol',
 };
 
 /**
- * Get formatted token name by token type
+ * Get the base name for a token type.
  *
- * @param type Token type
- *
- * @returns Formatted token name or `'<unknown-token>'` if token type is unknown
- *
- * @example
- * ```ts
- * getFormattedTokenName(TokenType.Ident); // '<ident-token>'
- * getFormattedTokenName(-1); // '<unknown-token>'
- * ```
+ * @param type - Token type
+ * @returns Base name string (e.g., "eof", "whitespace", "=")
  */
-export const getFormattedTokenName = (type: TokenType): string => {
-    return `<${getBaseTokenName(type)}-token>`;
-};
+export function getBaseTokenName(type: TokenType): string {
+    return TOKEN_NAMES[type] ?? 'unknown';
+}
+
+/**
+ * Get the formatted name for a token type.
+ *
+ * @param type - Token type
+ * @returns Formatted name string (e.g., "<eof-token>", "<whitespace-token>")
+ */
+export function getFormattedTokenName(type: TokenType): string {
+    const baseName = getBaseTokenName(type);
+    return baseName === 'unknown' ? '<unknown-token>' : `<${baseName}-token>`;
+}
