@@ -1,0 +1,28 @@
+common:
+  is_trusted: true
+
+ubo_any:
+  name: trusted-replace-outbound-text.js
+  description: Replaces text in the outbound argument of a method call.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-replace-outbound-textjs-
+  aliases:
+    - trusted-replace-outbound-text
+  parameters:
+    - name: propChain
+      required: true
+      description: A chain of dot-separated properties leading to the method whose outbound text argument must be replaced.
+    - name: rawPattern
+      required: false
+      description: A string or regex to match in the outbound text. If empty, the full text is logged and no replacement occurs.
+    - name: rawReplacement
+      required: false
+      description: The replacement string. Prefix with `json:` to supply a JSON-parsed value.
+  ubo_tokens:
+    - name: condition
+      description: A string or regex that must match the outbound text before any replacement is attempted.
+      value_format: null
+      value_type: string
+    - name: encoding
+      description: Encoding of the outbound text. When set to `base64`, the text is decoded before matching and re-encoded after replacement.
+      value_format: ^base64$
+      value_type: string

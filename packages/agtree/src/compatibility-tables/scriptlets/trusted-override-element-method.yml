@@ -1,0 +1,28 @@
+common:
+  is_trusted: true
+
+ubo_any:
+  name: trusted-override-element-method.js
+  description: Overrides the behavior of a method on elements matching an optional CSS selector.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-override-element-methodjs-
+  aliases:
+    - trusted-override-element-method
+  parameters:
+    - name: methodPath
+      required: true
+      description: A chain of dot-separated properties leading to the method to intercept.
+    - name: selector
+      required: false
+      description: A CSS selector which the target element must match. If not specified, the override applies to all elements.
+    - name: disposition
+      required: false
+      description: |-
+        How the override is handled. If empty, the call is silently swallowed (equivalent to a no-op).
+        `throw` throws a ReferenceError.
+        `debug` triggers a debugger breakpoint (only when the uBO logger is open).
+        Any other value is validated as a safe constant and returned.
+  ubo_tokens:
+    - name: as
+      description: Wraps the `disposition` return value. `function` returns `() => value`, `callback` returns `() => () => value`, `resolved` returns `Promise.resolve(value)`, `rejected` returns `Promise.reject(value)`.
+      value_format: ^(function|callback|resolved|rejected)$
+      value_type: string

@@ -18,3 +18,8 @@ ubo_any:
     - name: rawNeedlePaths
       required: false
       description: The properties which must all be present for pruning to occur (as with json-prune).
+  ubo_tokens:
+    - name: logstack
+      description: When truthy, logs the current call stack to the uBO logger on each invocation.
+      value_format: ^1$
+      value_type: boolean

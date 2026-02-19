@@ -17,3 +17,35 @@ adg_os_any|adg_ext_any:
       required: false
     - name: domain
       required: false
+
+ubo_any:
+  name: trusted-set-cookie.js
+  aliases:
+    - trusted-set-cookie
+  is_trusted: true
+  parameters:
+    - name: name
+      required: true
+      description: Cookie name to be set.
+    - name: value
+      required: true
+      description: Cookie value to be set. Any string is accepted since this is a trusted scriptlet.
+    - name: offsetExpiresSec
+      required: false
+      description: Offset from current time in seconds after which the cookie expires. Accepts `1day` and `1year` as shorthands.
+    - name: path
+      required: false
+      description: Cookie path. Defaults to `/`. Use `none` for no path.
+  ubo_tokens:
+    - name: reload
+      description: When truthy, forces a page reload if the cookie was not already set to the target value.
+      value_format: ^1$
+      value_type: boolean
+    - name: dontOverwrite
+      description: When truthy, skips setting the cookie if it already exists with any value.
+      value_format: ^1$
+      value_type: boolean
+    - name: domain
+      description: Domain to set on the cookie. Can be a plain string or a regex (e.g. `/example\.com/`).
+      value_format: null
+      value_type: string

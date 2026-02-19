@@ -46,6 +46,11 @@ ubo_any:
     - name: search
       required: false
       description: String or regular expression that must match the inline script content.
+  ubo_tokens:
+    - name: debug
+      description: Controls when a `debugger` breakpoint is triggered. `install` breaks on scriptlet install, `match` breaks on a match, `nomatch` breaks on a non-match, `all` breaks on both.
+      value_format: ^(install|match|nomatch|all)$
+      value_type: string
 
 abp_any:
   name: abort-current-inline-script

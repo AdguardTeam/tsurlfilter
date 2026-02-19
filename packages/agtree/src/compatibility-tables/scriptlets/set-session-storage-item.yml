@@ -26,3 +26,8 @@ ubo_any:
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-session-storage-itemjs-
   aliases:
     - set-session-storage-item
+  ubo_tokens:
+    - name: reload
+      description: Number of milliseconds to wait before reloading the page after the storage item is set. The page is only reloaded if the value was actually changed.
+      value_format: ^\d+$
+      value_type: integer

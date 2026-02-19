@@ -39,9 +39,12 @@ ubo_any:
     - name: path
       required: false
       description: Cookie path to be set. Default is `/`.
-    - name: tokens
-      required: false
-      description: |-
-       Available tokens are: `reload` and `dontOverwrite`.
-       When `reload` is present, the scriptlet will force a reload of the webpage if the cookie being set was not already set.
-       When `dontOverwrite` is present, the scriptlet will not modify the cookie if it already exists.
+  ubo_tokens:
+    - name: reload
+      description: When truthy, forces a page reload if the cookie was not already set to the target value.
+      value_format: ^1$
+      value_type: boolean
+    - name: dontOverwrite
+      description: When truthy, skips setting the cookie if it already exists with any value.
+      value_format: ^1$
+      value_type: boolean

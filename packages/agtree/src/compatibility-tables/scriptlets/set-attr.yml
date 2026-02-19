@@ -36,3 +36,9 @@ ubo_any:
     - name: value
       required: true
       description: One of the predefined values to assign to the attribute.
+  ubo_tokens:
+    - name: runAt
+      description: Defers the initial attribute-setting pass to a specific document ready state. Defaults to `idle`.
+      value_format: ^(loading|interactive|complete|idle)$
+      value_type: string
+      default: idle

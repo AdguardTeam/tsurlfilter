@@ -39,7 +39,8 @@ ubo_any:
     - name: urlPattern
       required: false
       description: A URL which must be a match for the pruning to occur. If left blank, the pruning can be performed regardless.
-    - name: tokens
-      required: false
-      description: |-
-        Available token - `logdoc, 1`: Dumps the whole document being worked on to the logger.
+  ubo_tokens:
+    - name: logdoc
+      description: When truthy, dumps the entire XML document being processed to the uBO logger.
+      value_format: ^1$
+      value_type: boolean

@@ -39,9 +39,12 @@ ubo_any:
     - name: rawNeedlePaths
       required: false
       description: String, a list of space-separated properties which must be all present for the pruning to occur or string/regular expression, for logging purposes, matching in stringified `JSON` payloads.
-    - name: tokens
-      required: false
-      description: |-
-        Available tokens are:
-          `propsToMatch`: String of space-separated properties to match. It can be string or regular expression for matching the URL passed to `fetch` call or colon-separated pairs `name:value`. Where `name` is `init` option name and `value` is string or regular expression for matching the value of the option passed to `fetch` call.
-          `stackToMatch`: String or regular expression that must match the current function call stack trace. Prepend pattern with `!` to test for unmatched patterns in stack trace.
+  ubo_tokens:
+    - name: propsToMatch
+      description: Space-separated properties to match the `fetch` call. Can be a URL string/regex or colon-separated `name:value` pairs matching `init` option names and values.
+      value_format: null
+      value_type: string
+    - name: stackToMatch
+      description: A string or regex that must match the current call stack for pruning to occur. Prepend with `!` to negate.
+      value_format: null
+      value_type: string
