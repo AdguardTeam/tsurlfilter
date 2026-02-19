@@ -8,4 +8,4 @@ abp_any:
     max_count: null
     all_parameters:
       name: property
-      description: Property name to abort on when read
+      description: Property name to abort on when read.

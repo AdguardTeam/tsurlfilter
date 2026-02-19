@@ -9,3 +9,6 @@ abp_any:
   variadic_parameters:
     min_count: 0
     max_count: null
+    all_parameters:
+      name: args
+      description: Arguments to log to the console
