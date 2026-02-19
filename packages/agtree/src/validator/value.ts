@@ -1,704 +1,206 @@
-import {
-    type Modifier,
-    type AppList,
-    type DomainList,
-    type MethodList,
-    type StealthOptionList,
-    type AnyListItem,
-} from '../nodes';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
-import { AppListParser } from '../parser/misc/app-list-parser';
-import { DomainListParser } from '../parser/misc/domain-list-parser';
-import { MethodListParser } from '../parser/misc/method-list-parser';
-import { StealthOptionListParser } from '../parser/misc/stealth-option-list-parser';
-import { DomainUtils } from '../utils/domain';
-import { QuoteType, QuoteUtils } from '../utils/quotes';
-import {
-    BACKSLASH,
-    CLOSE_PARENTHESIS,
-    COMMA,
-    DOT,
-    EQUALS,
-    OPEN_PARENTHESIS,
-    PIPE,
-    SEMICOLON,
-    SPACE,
-    WILDCARD,
-} from '../utils/constants';
+import { type Modifier } from '../nodes';
 import { type ValidationResult, getInvalidValidationResult, getValueRequiredValidationResult } from './helpers';
-import {
-    ALLOWED_CSP_DIRECTIVES,
-    ALLOWED_METHODS,
-    ALLOWED_PERMISSION_DIRECTIVES,
-    ALLOWED_STEALTH_OPTIONS,
-    APP_NAME_ALLOWED_CHARS,
-    EMPTY_PERMISSIONS_ALLOWLIST,
-    PERMISSIONS_TOKEN_SELF,
-    REFERRER_POLICY_DIRECTIVES,
-    SOURCE_DATA_ERROR_PREFIX,
-    VALIDATION_ERROR_PREFIX,
-} from './constants';
-import { defaultParserOptions } from '../parser/options';
+import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
 import { isString } from '../utils/type-guards';
+import { isKnownValidator, validate } from '../compatibility-tables/validators';
+import { ValidationContext, type ValidationIssue } from '../compatibility-tables/validators/types';
 
 /**
- * Represents the possible list parsers.
- */
-type ListParser = typeof AppListParser.parse
-    | typeof DomainListParser.parse
-    | typeof MethodListParser.parse
-    | typeof StealthOptionListParser.parse;
-
-/**
- * Type of the list of items separated by pipe `|`.
- */
-type PipeSeparatedList = AppList | DomainList | MethodList | StealthOptionList;
-
-/**
- * Pre-defined available validators for modifiers with custom `value_format`.
- */
-const CustomValueFormatValidatorName = {
-    App: 'pipe_separated_apps',
-    Csp: 'csp_value',
-    // there are some differences between $domain and $denyallow
-    DenyAllow: 'pipe_separated_denyallow_domains',
-    Domain: 'pipe_separated_domains',
-    Method: 'pipe_separated_methods',
-    Permissions: 'permissions_value',
-    ReferrerPolicy: 'referrerpolicy_value',
-    StealthOption: 'pipe_separated_stealth_options',
-} as const;
-
-// intentionally naming the variable the same as the type
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-type CustomValueFormatValidatorName = typeof CustomValueFormatValidatorName[
-    keyof typeof CustomValueFormatValidatorName
-];
-
-/**
- * Checks whether the `chunk` of app name (which if splitted by dot `.`) is valid.
- * Only letters, numbers, and underscore `_` are allowed.
+ * Formats a list of values as quoted, comma-separated items: `'v1', 'v2'`.
  *
- * @param chunk Chunk of app name to check.
+ * @param values Array of string values.
  *
- * @returns True if the `chunk` is valid part of app name, false otherwise.
+ * @returns Formatted string.
  */
-const isValidAppNameChunk = (chunk: string): boolean => {
-    // e.g. 'Example..exe'
-    if (chunk.length === 0) {
-        return false;
+const formatValues = (values: unknown): string => {
+    if (!Array.isArray(values)) {
+        return '';
     }
-
-    for (let i = 0; i < chunk.length; i += 1) {
-        const char = chunk[i];
-        if (!APP_NAME_ALLOWED_CHARS.has(char)) {
-            return false;
-        }
-    }
-
-    return true;
+    return (values as string[]).map((v) => `'${v}'`).join(', ');
 };
 
 /**
- * Checks whether the given `value` is valid app name as $app modifier value.
+ * Checks if a string is enclosed in double quotes.
  *
- * @param value App name to check.
+ * @param s String to check.
  *
- * @returns True if the `value` is valid app name, false otherwise.
+ * @returns True if double-quoted.
  */
-const isValidAppModifierValue = (value: string): boolean => {
-    // $app modifier does not support wildcard tld
-    // https://adguard.app/kb/general/ad-filtering/create-own-filters/#app-modifier
-    if (value.includes(WILDCARD)) {
-        return false;
-    }
-
-    return value
-        .split(DOT)
-        .every((chunk) => isValidAppNameChunk(chunk));
-};
+const isDoubleQuoted = (s: string): boolean => s.length >= 2 && s[0] === '"' && s[s.length - 1] === '"';
 
 /**
- * Checks whether the given `value` is valid HTTP method as $method modifier value.
+ * Checks if an unquoted string is a valid URL.
  *
- * @param value Method to check.
+ * @param s String to check.
  *
- * @returns True if the `value` is valid HTTP method, false otherwise.
+ * @returns True if it parses as a URL.
  */
-const isValidMethodModifierValue = (value: string): boolean => {
-    return ALLOWED_METHODS.has(value);
-};
-
-/**
- * Checks whether the given `value` is valid option as $stealth modifier value.
- *
- * @param value Stealth option to check.
- *
- * @returns True if the `value` is valid stealth option, false otherwise.
- */
-const isValidStealthModifierValue = (value: string): boolean => {
-    return ALLOWED_STEALTH_OPTIONS.has(value);
-};
-
-/**
- * Checks whether the given `rawOrigin` is valid as Permissions Allowlist origin.
- *
- * @see {@link https://w3c.github.io/webappsec-permissions-policy/#allowlists}
- *
- * @param rawOrigin The raw origin.
- *
- * @returns True if the origin is valid, false otherwise.
- */
-const isValidPermissionsOrigin = (rawOrigin: string): boolean => {
-    // origins should be quoted by double quote
-    const actualQuoteType = QuoteUtils.getStringQuoteType(rawOrigin);
-    if (actualQuoteType !== QuoteType.Double) {
-        return false;
-    }
-
-    const origin = QuoteUtils.removeQuotes(rawOrigin);
+const isValidUrl = (s: string): boolean => {
     try {
-        // validate the origin by URL constructor
-        // https://w3c.github.io/webappsec-permissions-policy/#algo-parse-policy-directive
-        new URL(origin);
-    } catch (e) {
+        // eslint-disable-next-line no-new
+        new URL(s);
+        return true;
+    } catch {
         return false;
     }
-
-    return true;
 };
 
-/**
- * Checks whether the given `value` is valid domain as $denyallow modifier value.
- * Important: wildcard tld are not supported, compared to $domain.
- *
- * @param value Value to check.
- *
- * @returns True if the `value` is valid domain and does not contain wildcard `*`, false otherwise.
- */
-const isValidDenyAllowModifierValue = (value: string): boolean => {
-    // $denyallow modifier does not support wildcard tld
-    // https://adguard.app/kb/general/ad-filtering/create-own-filters/#denyallow-modifier
-    // but here we are simply checking whether the value contains wildcard `*`, not ends with `.*`
-    if (value.includes(WILDCARD)) {
-        return false;
-    }
-    // TODO: add cache for domains validation
-    return DomainUtils.isValidDomainOrHostname(value);
-};
+const formatPermissionsOriginError = (prefix: string, modifierName: string, modifierValue: string): string => {
+    // Split by escaped commas to get individual permissions
+    const permissions = modifierValue.split('\\,');
+    const isQuoteError = prefix === VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES;
 
-/**
- * Checks whether the given `value` is valid domain as $domain modifier value.
- *
- * @param value Value to check.
- *
- * @returns True if the `value` is valid domain, false otherwise.
- */
-const isValidDomainModifierValue = (value: string): boolean => {
-    // TODO: add cache for domains validation
-    return DomainUtils.isValidDomainOrHostname(value);
-};
-
-/**
- * Checks whether the all list items' exceptions are `false`.
- * Those items which `exception` is `true` is to be specified in the validation result error message.
- *
- * @param modifierName Modifier name.
- * @param listItems List items to check.
- *
- * @returns Validation result.
- */
-const customNoNegatedListItemsValidator = (modifierName: string, listItems: AnyListItem[]): ValidationResult => {
-    const negatedValues: string[] = [];
-
-    listItems.forEach((listItem) => {
-        if (listItem.exception) {
-            negatedValues.push(listItem.value);
+    for (const perm of permissions) {
+        const trimmed = perm.trim();
+        const eqIdx = trimmed.indexOf('=');
+        if (eqIdx === -1) {
+            continue;
         }
-    });
+        const directive = trimmed.slice(0, eqIdx);
+        const allowlist = trimmed.slice(eqIdx + 1);
 
-    if (negatedValues.length > 0) {
-        const valuesToStr = QuoteUtils.quoteAndJoinStrings(negatedValues);
-        return getInvalidValidationResult(
-            `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: '${modifierName}': ${valuesToStr}`,
-        );
-    }
-
-    return { valid: true };
-};
-
-/**
- * Checks whether the all list items' exceptions are consistent,
- * i.e. all items are either negated or not negated.
- *
- * The `exception` value of the first item is used as a reference, and all other items are checked against it.
- * Those items which `exception` is not consistent with the first item
- * is to be specified in the validation result error message.
- *
- * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#method-modifier}
- *
- * @param modifierName Modifier name.
- * @param listItems List items to check.
- *
- * @returns Validation result.
- */
-const customConsistentExceptionsValidator = (modifierName: string, listItems: AnyListItem[]): ValidationResult => {
-    const firstException = listItems[0].exception;
-
-    const nonConsistentItemValues: string[] = [];
-
-    listItems.forEach((listItem) => {
-        if (listItem.exception !== firstException) {
-            nonConsistentItemValues.push(listItem.value);
-        }
-    });
-
-    if (nonConsistentItemValues.length > 0) {
-        const valuesToStr = QuoteUtils.quoteAndJoinStrings(nonConsistentItemValues);
-        return getInvalidValidationResult(
-            `${VALIDATION_ERROR_PREFIX.MIXED_NEGATIONS}: '${modifierName}': ${valuesToStr}`,
-        );
-    }
-
-    return { valid: true };
-};
-
-/**
- * Checks whether the given `modifier` value is valid.
- * Supposed to validate the value of modifiers which values are lists separated by pipe `|` —
- * $app, $domain, $denyallow, $method.
- *
- * @param modifier Modifier AST node.
- * @param listParser Parser function for parsing modifier value
- * which is supposed to be a list separated by pipe `|`.
- * @param isValidListItem Predicate function for checking of modifier's list item validity,
- * e.g. $denyallow modifier does not support wildcard tld, but $domain does.
- * @param customListValidator Optional; custom validator for specific modifier,
- * e.g. $denyallow modifier does not support negated domains.
- *
- * @returns Result of modifier domains validation.
- */
-const validateListItemsModifier = (
-    modifier: Modifier,
-    listParser: ListParser,
-    isValidListItem: (listItem: string) => boolean,
-    customListValidator?: (modifierName: string, list: AnyListItem[]) => ValidationResult,
-): ValidationResult => {
-    const modifierName = modifier.name.value;
-    const defaultInvalidValueResult = getValueRequiredValidationResult(modifierName);
-
-    if (!modifier.value?.value) {
-        return defaultInvalidValueResult;
-    }
-
-    let theList: PipeSeparatedList;
-    try {
-        theList = listParser(modifier.value.value, defaultParserOptions, 0, PIPE);
-    } catch (e: unknown) {
-        if (e instanceof AdblockSyntaxError) {
-            return {
-                valid: false,
-                error: e.message,
-            };
-        }
-        return defaultInvalidValueResult;
-    }
-
-    const invalidListItems: string[] = [];
-    theList.children.forEach((item) => {
-        // different validators are used for $denyallow and $domain modifiers
-        // because of different requirements and restrictions
-        if (!isValidListItem(item.value)) {
-            invalidListItems.push(item.value);
-        }
-    });
-
-    if (invalidListItems.length > 0) {
-        const itemsToStr = QuoteUtils.quoteAndJoinStrings(invalidListItems);
-        return getInvalidValidationResult(
-            `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: '${modifierName}': ${itemsToStr}`,
-        );
-    }
-
-    // IMPORTANT: run custom validator after all other checks
-    // Some lists should be fully checked, not just the list items:
-    // e.g. Safari does not support allowed and disallowed domains for $domain in the same list
-    // or   domains cannot be negated for $denyallow modifier
-    if (customListValidator) {
-        return customListValidator(modifierName, theList.children);
-    }
-
-    return { valid: true };
-};
-
-/**
- * Validates 'pipe_separated_apps' custom value format.
- * Used for $app modifier.
- *
- * @param modifier Modifier AST node.
- *
- * @returns Validation result.
- */
-const validatePipeSeparatedApps = (modifier: Modifier): ValidationResult => {
-    return validateListItemsModifier(
-        modifier,
-        (raw: string) => AppListParser.parse(raw),
-        isValidAppModifierValue,
-    );
-};
-
-/**
- * Validates 'pipe_separated_denyallow_domains' custom value format.
- * Used for $denyallow modifier.
- *
- * @param modifier Modifier AST node.
- *
- * @returns Validation result.
- */
-const validatePipeSeparatedDenyAllowDomains = (modifier: Modifier): ValidationResult => {
-    return validateListItemsModifier(
-        modifier,
-        DomainListParser.parse,
-        isValidDenyAllowModifierValue,
-        customNoNegatedListItemsValidator,
-    );
-};
-
-/**
- * Validates 'pipe_separated_domains' custom value format.
- * Used for $domains modifier.
- *
- * @param modifier Modifier AST node.
- *
- * @returns Validation result.
- */
-const validatePipeSeparatedDomains = (modifier: Modifier): ValidationResult => {
-    return validateListItemsModifier(
-        modifier,
-        DomainListParser.parse,
-        isValidDomainModifierValue,
-    );
-};
-
-/**
- * Validates 'pipe_separated_methods' custom value format.
- * Used for $method modifier.
- *
- * @param modifier Modifier AST node.
- *
- * @returns Validation result.
- */
-const validatePipeSeparatedMethods = (modifier: Modifier): ValidationResult => {
-    return validateListItemsModifier(
-        modifier,
-        (raw: string) => MethodListParser.parse(raw),
-        isValidMethodModifierValue,
-        customConsistentExceptionsValidator,
-    );
-};
-
-/**
- * Validates 'pipe_separated_stealth_options' custom value format.
- * Used for $stealth modifier.
- *
- * @param modifier Modifier AST node.
- *
- * @returns Validation result.
- */
-const validatePipeSeparatedStealthOptions = (modifier: Modifier): ValidationResult => {
-    return validateListItemsModifier(
-        modifier,
-        (raw: string) => StealthOptionListParser.parse(raw),
-        isValidStealthModifierValue,
-        customNoNegatedListItemsValidator,
-    );
-};
-
-/**
- * Validates `csp_value` custom value format.
- * Used for $csp modifier.
- *
- * @param modifier Modifier AST node.
- *
- * @returns Validation result.
- */
-const validateCspValue = (modifier: Modifier): ValidationResult => {
-    const modifierName = modifier.name.value;
-    if (!modifier.value?.value) {
-        return getValueRequiredValidationResult(modifierName);
-    }
-
-    // $csp modifier value may contain multiple directives
-    // e.g. "csp=child-src 'none'; frame-src 'self' *; worker-src 'none'"
-    const policyDirectives = modifier.value.value
-        .split(SEMICOLON)
-        // rule with $csp modifier may end with semicolon
-        // e.g. "$csp=sandbox allow-same-origin;"
-        // TODO: add predicate helper for `(i) => !!i`
-        .filter((i) => !!i);
-
-    const invalidValueValidationResult = getInvalidValidationResult(
-        `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}': "${modifier.value.value}"`,
-    );
-
-    if (policyDirectives.length === 0) {
-        return invalidValueValidationResult;
-    }
-
-    const invalidDirectives: string[] = [];
-
-    for (let i = 0; i < policyDirectives.length; i += 1) {
-        const policyDirective = policyDirectives[i].trim();
-        if (!policyDirective) {
-            return invalidValueValidationResult;
-        }
-
-        const chunks = policyDirective.split(SPACE);
-        const [directive, ...valueChunks] = chunks;
-
-        // e.g. "csp=child-src 'none'; ; worker-src 'none'"
-        // validator it here          ↑
-        if (!directive) {
-            return invalidValueValidationResult;
-        }
-
-        if (!ALLOWED_CSP_DIRECTIVES.has(directive)) {
-            // e.g. "csp='child-src' 'none'"
-            if (ALLOWED_CSP_DIRECTIVES.has(QuoteUtils.removeQuotes(directive))) {
-                return getInvalidValidationResult(
-                    `${VALIDATION_ERROR_PREFIX.NO_CSP_DIRECTIVE_QUOTE}: '${modifierName}': ${directive}`,
-                );
+        const extractFailingOrigins = (inner: string): string[] => {
+            const chunks = inner.split(/\s+/).filter((s) => s.length > 0);
+            const failing: string[] = [];
+            for (const chunk of chunks) {
+                if (chunk.toLowerCase() === 'self') {
+                    continue;
+                }
+                if (isQuoteError) {
+                    // For quote errors: collect origins that are NOT double-quoted
+                    if (!isDoubleQuoted(chunk)) {
+                        failing.push(chunk.replace(/^["']|["']$/g, ''));
+                    }
+                } else {
+                    // For URL errors: collect double-quoted origins with invalid URLs
+                    const unquoted = chunk.replace(/^["']|["']$/g, '');
+                    if (!isValidUrl(unquoted)) {
+                        failing.push(unquoted);
+                    }
+                }
             }
+            return failing;
+        };
 
-            invalidDirectives.push(directive);
-            continue;
+        // Extract items from parenthesized allowlist
+        let origins: string[] = [];
+        if (allowlist.startsWith('(') && allowlist.endsWith(')')) {
+            origins = extractFailingOrigins(allowlist.slice(1, -1));
+        } else if (allowlist.startsWith('(')) {
+            origins = extractFailingOrigins(allowlist.slice(1));
         }
 
-        if (valueChunks.length === 0) {
-            return getInvalidValidationResult(
-                `${VALIDATION_ERROR_PREFIX.NO_CSP_VALUE}: '${modifierName}': '${directive}'`,
-            );
+        if (origins.length > 0) {
+            // For quote errors, only report the first problematic origin (matching old behavior)
+            const reportOrigins = isQuoteError ? origins.slice(0, 1) : origins;
+            const formatted = reportOrigins.map((o) => `'${o}'`).join(', ');
+            return `${prefix}: '${modifierName}': '${directive}': ${formatted}`;
         }
     }
-
-    if (invalidDirectives.length > 0) {
-        const directivesToStr = QuoteUtils.quoteAndJoinStrings(invalidDirectives, QuoteType.Double);
-        return getInvalidValidationResult(
-            `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: '${modifierName}': ${directivesToStr}`,
-        );
-    }
-
-    return { valid: true };
+    return `${prefix}: '${modifierName}'`;
 };
 
 /**
- * Validates permission allowlist origins in the value of $permissions modifier.
+ * Formats a permissions sub-validator error into the legacy error string.
  *
- * @see {@link https://w3c.github.io/webappsec-permissions-policy/#allowlists}
- *
- * @param allowlistChunks Array of allowlist chunks.
- * @param directive Permission directive name.
+ * @param message Internal error message from the permissions validator.
  * @param modifierName Modifier name.
+ * @param modifierValue Raw modifier value string.
  *
- * @returns Validation result.
+ * @returns Formatted error string.
  */
-const validatePermissionAllowlistOrigins = (
-    allowlistChunks: string[],
-    directive: string,
-    modifierName: string,
-): ValidationResult => {
-    const invalidOrigins: string[] = [];
-
-    for (let i = 0; i < allowlistChunks.length; i += 1) {
-        const chunk = allowlistChunks[i].trim();
-        // skip few spaces between origins (they were splitted by space)
-        // e.g. 'geolocation=("https://example.com"  "https://*.example.com")'
-        if (chunk.length === 0) {
-            continue;
-        }
-        /**
-         * 'self' should be checked case-insensitively
-         *
-         * @see {@link https://w3c.github.io/webappsec-permissions-policy/#algo-parse-policy-directive}
-         *
-         * @example 'geolocation=(self)'
-         */
-        if (chunk.toLowerCase() === PERMISSIONS_TOKEN_SELF) {
-            continue;
-        }
-        if (QuoteUtils.getStringQuoteType(chunk) !== QuoteType.Double) {
-            return getInvalidValidationResult(
-                // eslint-disable-next-line max-len
-                `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: '${modifierName}': '${directive}': '${QuoteUtils.removeQuotes(chunk)}'`,
-            );
-        }
-        if (!isValidPermissionsOrigin(chunk)) {
-            invalidOrigins.push(chunk);
-        }
+const formatPermissionsError = (message: string, modifierName: string, modifierValue: string): string => {
+    if (message === 'Invalid permission directive') {
+        // Extract the directive name from the value (before '=')
+        const directive = modifierValue.split('\\,').pop()?.trim().split('=')[0] ?? '';
+        return `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_DIRECTIVE}: '${modifierName}': '${directive}'`;
     }
-
-    if (invalidOrigins.length > 0) {
-        const originsToStr = QuoteUtils.quoteAndJoinStrings(invalidOrigins);
-        return getInvalidValidationResult(
-            // eslint-disable-next-line max-len
-            `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: '${modifierName}': '${directive}': ${originsToStr}`,
+    if (message === 'Double quotes should be used for origins') {
+        return formatPermissionsOriginError(
+            VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES,
+            modifierName,
+            modifierValue,
         );
     }
-
-    return { valid: true };
-};
-
-/**
- * Validates permission allowlist in the modifier value.
- *
- * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Permissions_Policy#allowlists}
- * @see {@link https://w3c.github.io/webappsec-permissions-policy/#allowlists}
- *
- * @param allowlist Allowlist value.
- * @param directive Permission directive name.
- * @param modifierName Modifier name.
- *
- * @returns Validation result.
- */
-const validatePermissionAllowlist = (
-    allowlist: string,
-    directive: string,
-    modifierName: string,
-): ValidationResult => {
-    // `*` is one of available permissions tokens
-    // e.g. 'fullscreen=*'
-    // https://w3c.github.io/webappsec-permissions-policy/#structured-header-serialization
-    if (allowlist === WILDCARD
-        // e.g. 'autoplay=()'
-        || allowlist === EMPTY_PERMISSIONS_ALLOWLIST) {
-        return { valid: true };
-    }
-
-    if (!(allowlist.startsWith(OPEN_PARENTHESIS) && allowlist.endsWith(CLOSE_PARENTHESIS))) {
-        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`);
-    }
-
-    const allowlistChunks = allowlist.slice(1, -1).split(SPACE);
-    return validatePermissionAllowlistOrigins(allowlistChunks, directive, modifierName);
-};
-
-/**
- * Validates single permission in the modifier value.
- *
- * @param permission Single permission value.
- * @param modifierName Modifier name.
- * @param modifierValue Modifier value.
- *
- * @returns Validation result.
- */
-const validateSinglePermission = (
-    permission: string,
-    modifierName: string,
-    modifierValue: string,
-): ValidationResult => {
-    // empty permission in the rule
-    // e.g. 'permissions=storage-access=()\\, \\, camera=()'
-    // the validator is here                 ↑
-    if (!permission) {
-        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`);
-    }
-
-    if (permission.includes(COMMA)) {
-        return getInvalidValidationResult(
-            `${VALIDATION_ERROR_PREFIX.NO_UNESCAPED_PERMISSION_COMMA}: '${modifierName}': '${modifierValue}'`,
+    if (message === 'Invalid origin URL') {
+        return formatPermissionsOriginError(
+            VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS,
+            modifierName,
+            modifierValue,
         );
     }
-
-    const [directive, allowlist] = permission.split(EQUALS);
-    if (!ALLOWED_PERMISSION_DIRECTIVES.has(directive)) {
-        return getInvalidValidationResult(
-            `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_DIRECTIVE}: '${modifierName}': '${directive}'`,
-        );
+    if (message === 'Unescaped comma in permission') {
+        // Get the failing permission chunk
+        const failingPermission = modifierValue.split('\\,').pop()?.trim() ?? modifierValue;
+        return `${VALIDATION_ERROR_PREFIX.NO_UNESCAPED_PERMISSION_COMMA}: '${modifierName}': '${failingPermission}'`;
+    }
+    if (message === 'Invalid allowlist format' || message === 'Empty permission') {
+        return `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`;
     }
 
-    return validatePermissionAllowlist(allowlist, directive, modifierName);
+    return `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`;
 };
 
 /**
- * Validates `permissions_value` custom value format.
- * Used for $permissions modifier.
+ * Converts a structured validation issue from a sub-validator
+ * into the human-readable error string expected by the legacy API.
  *
- * @param modifier Modifier AST node.
+ * @param issue Validation issue from the sub-validator.
+ * @param modifierName Modifier name for context.
+ * @param modifierValue Raw modifier value string.
  *
- * @returns Validation result.
+ * @returns Formatted error string.
  */
-const validatePermissions = (modifier: Modifier): ValidationResult => {
-    if (!modifier.value?.value) {
-        return getValueRequiredValidationResult(modifier.name.value);
+const formatIssueAsError = (issue: ValidationIssue, modifierName: string, modifierValue: string): string => {
+    const { messageId, data } = issue;
+
+    // Parse errors: the actual parser error message is in data.message
+    if (messageId.endsWith('_PARSE_ERROR') && data?.message) {
+        return String(data.message);
     }
 
-    const modifierName = modifier.name.value;
-    const modifierValue = modifier.value.value;
-
-    // multiple permissions may be separated by escaped commas
-    const permissions = modifier.value.value.split(`${BACKSLASH}${COMMA}`);
-
-    for (let i = 0; i < permissions.length; i += 1) {
-        const permission = permissions[i].trim();
-
-        const singlePermissionValidationResult = validateSinglePermission(permission, modifierName, modifierValue);
-        if (!singlePermissionValidationResult.valid) {
-            return singlePermissionValidationResult;
-        }
+    // Invalid list values: INVALID_*_VALUES with data.values
+    if (messageId.startsWith('INVALID_') && messageId.endsWith('_VALUES') && data?.values) {
+        return `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: '${modifierName}': ${formatValues(data.values)}`;
     }
 
-    return { valid: true };
-};
-
-/**
- * Validates `referrerpolicy_value` custom value format.
- * Used for $referrerpolicy modifier.
- *
- * @param modifier Modifier AST node.
- *
- * @returns Validation result.
- */
-const validateReferrerPolicy = (modifier: Modifier): ValidationResult => {
-    if (!modifier.value?.value) {
-        return getValueRequiredValidationResult(modifier.name.value);
+    // Negated values: NEGATED_*_VALUES with data.values
+    if (messageId.startsWith('NEGATED_') && messageId.endsWith('_VALUES') && data?.values) {
+        return `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: '${modifierName}': ${formatValues(data.values)}`;
     }
 
-    const modifierName = modifier.name.value;
-    const modifierValue = modifier.value.value;
-
-    if (!REFERRER_POLICY_DIRECTIVES.has(modifierValue)) {
-        // eslint-disable-next-line max-len
-        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.INVALID_REFERRER_POLICY_DIRECTIVE}: '${modifierName}': '${modifierValue}'`);
+    // Mixed method negations
+    if (messageId === 'MIXED_METHOD_NEGATIONS' && data?.values) {
+        return `${VALIDATION_ERROR_PREFIX.MIXED_NEGATIONS}: '${modifierName}': ${formatValues(data.values)}`;
     }
 
-    return { valid: true };
-};
+    // CSP-specific errors
+    if (messageId === 'INVALID_CSP_DIRECTIVES' && data?.directives) {
+        const dirs = (data.directives as string[]).map((d) => `"${d}"`).join(', ');
+        return `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: '${modifierName}': ${dirs}`;
+    }
+    if (messageId === 'CSP_DIRECTIVE_QUOTED' && data?.directive) {
+        return `${VALIDATION_ERROR_PREFIX.NO_CSP_DIRECTIVE_QUOTE}: '${modifierName}': '${data.directive}'`;
+    }
+    if (messageId === 'CSP_DIRECTIVE_NO_VALUE' && data?.directive) {
+        return `${VALIDATION_ERROR_PREFIX.NO_CSP_VALUE}: '${modifierName}': '${data.directive}'`;
+    }
+    if (messageId === 'EMPTY_CSP_VALUE' || messageId === 'EMPTY_CSP_DIRECTIVE' || messageId === 'NO_CSP_DIRECTIVES') {
+        return `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}': "${modifierValue}"`;
+    }
 
-/**
- * Map of all available pre-defined validators for modifiers with custom `value_format`.
- */
-const CUSTOM_VALUE_FORMAT_MAP = {
-    [CustomValueFormatValidatorName.App]: validatePipeSeparatedApps,
-    [CustomValueFormatValidatorName.Csp]: validateCspValue,
-    [CustomValueFormatValidatorName.DenyAllow]: validatePipeSeparatedDenyAllowDomains,
-    [CustomValueFormatValidatorName.Domain]: validatePipeSeparatedDomains,
-    [CustomValueFormatValidatorName.Method]: validatePipeSeparatedMethods,
-    [CustomValueFormatValidatorName.Permissions]: validatePermissions,
-    [CustomValueFormatValidatorName.ReferrerPolicy]: validateReferrerPolicy,
-    [CustomValueFormatValidatorName.StealthOption]: validatePipeSeparatedStealthOptions,
-};
+    // Referrer policy
+    if (messageId === 'INVALID_REFERRER_POLICY_DIRECTIVE') {
+        return `${VALIDATION_ERROR_PREFIX.INVALID_REFERRER_POLICY_DIRECTIVE}: '${modifierName}': '${modifierValue}'`;
+    }
 
-/**
- * Returns whether the given `valueFormat` is a valid custom value format validator name.
- *
- * @param valueFormat Value format for the modifier.
- *
- * @returns True if `valueFormat` is a supported pre-defined value format validator name, false otherwise.
- */
-const isCustomValueFormatValidator = (
-    valueFormat: string,
-): valueFormat is CustomValueFormatValidatorName => {
-    return Object.keys(CUSTOM_VALUE_FORMAT_MAP).includes(valueFormat);
+    // Permissions errors
+    if (messageId === 'INVALID_PERMISSIONS_VALUE' && data?.message) {
+        return formatPermissionsError(String(data.message), modifierName, modifierValue);
+    }
+
+    // Fallback: generic "value is invalid"
+    return `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`;
 };
 
 /**
@@ -715,14 +217,22 @@ export const validateValue = (
     valueFormat: string,
     valueFormatFlags?: string | null,
 ): ValidationResult => {
-    if (isCustomValueFormatValidator(valueFormat)) {
-        const validator = CUSTOM_VALUE_FORMAT_MAP[valueFormat];
-        return validator(modifier);
+    const modifierName = modifier.name.value;
+    const modifierValue = modifier.value?.value;
+
+    if (isKnownValidator(valueFormat)) {
+        const ctx = new ValidationContext();
+        validate(valueFormat, modifierValue ?? '', ctx);
+
+        if (!ctx.valid && ctx.issues) {
+            const error = formatIssueAsError(ctx.issues[0], modifierName, modifierValue ?? '');
+            return getInvalidValidationResult(error);
+        }
+
+        return { valid: true };
     }
 
-    const modifierName = modifier.name.value;
-
-    if (!modifier.value?.value) {
+    if (!modifierValue) {
         return getValueRequiredValidationResult(modifierName);
     }
 
@@ -737,7 +247,7 @@ export const validateValue = (
         throw new Error(`${SOURCE_DATA_ERROR_PREFIX.INVALID_VALUE_FORMAT_REGEXP}: '${modifierName}'`);
     }
 
-    const isValid = regExp.test(modifier.value?.value);
+    const isValid = regExp.test(modifierValue);
     if (!isValid) {
         return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`);
     }

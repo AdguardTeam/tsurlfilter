@@ -2,15 +2,20 @@
  * @file Compatibility tables for redirects.
  */
 
+import { sprintf } from 'sprintf-js';
+
 import { CompatibilityTableBase } from './base';
 import { type RedirectDataSchema } from './schemas';
 import { redirectsCompatibilityTableData } from './compatibility-table-data';
 import { type CompatibilityTable } from './types';
 import { deepFreeze } from '../utils/deep-freeze';
-import { COLON } from '../utils/constants';
-import { type AnyPlatform } from './platforms';
+import { COLON, NEWLINE, SPACE } from '../utils/constants';
+import { type AnyPlatform, type SpecificPlatform } from './platforms';
 import { getResourceTypeModifier } from './utils/resource-type-helpers';
 import { isNull, isString, isUndefined } from '../utils/type-guards';
+import { getHumanReadablePlatformName } from './utils/platform-helpers';
+import { type ValidationContext } from './validators/types';
+import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from '../validator/constants';
 
 /**
  * Prefix for resource redirection names.
@@ -103,6 +108,46 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
         }
 
         return modifierNames;
+    }
+
+    /**
+     * Validates a redirect against the compatibility table.
+     *
+     * @param data Redirect name as string.
+     * @param ctx Validation context to collect issues into.
+     * @param platform Platform to validate against.
+     */
+    public validate(data: string, ctx: ValidationContext, platform?: SpecificPlatform): void {
+        if (platform === undefined) {
+            throw new Error('Platform is required for redirect validation');
+        }
+
+        const redirectName = isString(data) ? data : '';
+
+        // Get platform-specific data
+        const specificRedirectData = this.getSingle(redirectName, platform);
+
+        if (!specificRedirectData) {
+            ctx.addError(
+                sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(platform)),
+            );
+            return;
+        }
+
+        // Check if removed
+        if (specificRedirectData.removed) {
+            ctx.addError(`${VALIDATION_ERROR_PREFIX.REMOVED}: '${redirectName}'`);
+            return;
+        }
+
+        // Check if deprecated
+        if (specificRedirectData.deprecated) {
+            if (!specificRedirectData.deprecationMessage) {
+                throw new Error(`${SOURCE_DATA_ERROR_PREFIX.NO_DEPRECATION_MESSAGE}: '${redirectName}'`);
+            }
+            const warn = specificRedirectData.deprecationMessage.replace(NEWLINE, SPACE);
+            ctx.addWarning(warn);
+        }
     }
 }
 

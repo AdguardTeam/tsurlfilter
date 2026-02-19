@@ -13,22 +13,7 @@ import {
 } from './base';
 import { getErrorMessage } from '../../utils/error';
 import { EMPTY } from '../../utils/constants';
-
-/**
- * Known validators that don't need to be validated as regex.
- */
-export const KNOWN_VALIDATORS: ReadonlySet<string> = new Set([
-    'csp_value',
-    'domain',
-    'permissions_value',
-    'pipe_separated_apps',
-    'pipe_separated_denyallow_domains',
-    'pipe_separated_domains',
-    'pipe_separated_methods',
-    'pipe_separated_stealth_options',
-    'regexp',
-    'url',
-]);
+import { KNOWN_VALIDATORS } from '../validators';
 
 /**
  * Zod schema for modifier data.

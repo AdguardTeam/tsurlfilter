@@ -24,8 +24,8 @@ import {
     type ModifierDataSchema,
     type RedirectDataSchema,
     type ScriptletDataSchema,
-    KNOWN_VALIDATORS,
 } from './schemas';
+import { KNOWN_VALIDATORS } from './validators';
 import { deepFreeze } from '../utils/deep-freeze';
 import { EMPTY } from '../utils/constants';
 

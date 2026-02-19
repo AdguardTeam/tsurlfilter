@@ -9,6 +9,8 @@ import { isUndefined } from '../utils/type-guards';
 import { type CompatibilityTable, type CompatibilityTableRow } from './types';
 import { isGenericPlatform, getSpecificPlatformName } from './utils/platform-helpers';
 import { type AdblockProduct, AdblockSyntax } from '../utils/adblockers';
+import { type Node } from '../nodes';
+import { type ValidationContext } from './validators/types';
 
 /**
  * Lists all supported entity records by a product.
@@ -77,7 +79,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
      * Optional name transformer function. If provided,
      * it will be called in all methods before processing compatibility data names.
      */
-    private readonly nameTransformer: NameTransformer | null;
+    protected readonly nameTransformer: NameTransformer | null;
 
     /**
      * Creates a new instance of the common compatibility table.
@@ -350,4 +352,17 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
 
         return result;
     }
+
+    /**
+     * Validates data against the compatibility table.
+     *
+     * @param data Data to validate (Node or string).
+     * @param ctx Validation context to collect issues into.
+     * @param args Additional arguments specific to the implementation.
+     */
+    public abstract validate(
+        data: Node | string,
+        ctx: ValidationContext,
+        ...args: unknown[]
+    ): void;
 }
