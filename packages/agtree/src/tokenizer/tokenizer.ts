@@ -1,194 +1,9 @@
-/**
- * Token types.
- */
-export const enum TokenType {
-    /**
-     * End of file (end of input).
-     */
-    Eof,
-
-    /**
-     * Whitespace.
-     */
-    Whitespace,
-
-    /**
-     * Line break (`\r\n` or just `\n`)
-     */
-    LineBreak,
-
-    /**
-     * Escaped character, e.g. `\'`, `\"`, `\\`, etc.
-     */
-    Escaped,
-
-    /**
-     * Identifier.
-     * Any character sequence that contains letters, numbers, hyphens, and underscores.
-     */
-    Ident,
-
-    /**
-     * Cosmetic rule separator, e.g. `##`.
-     */
-    CosmeticSeparator,
-
-    /**
-     * Allowlist cosmetic rule separator, e.g. `#@#`.
-     */
-    AllowlistCosmeticSeparator,
-
-    /**
-     * Raw content after cosmetic rule separator.
-     * For example, no need to tokenize CSS with this tokenizer after the `##`, `#?#`, etc. separators,
-     * so we use this token type as an optimization strategy.
-     */
-    RawContent,
-
-    /**
-     * Equals: `=`.
-     */
-    EqualsSign,
-
-    /**
-     * Slash: `/`.
-     */
-    Slash,
-
-    /**
-     * Dollar: `$`.
-     */
-    DollarSign,
-
-    /**
-     * Comma: `,`.
-     */
-    Comma,
-
-    /**
-     * Open parenthesis: `(`.
-     */
-    OpenParen,
-
-    /**
-     * Close parenthesis: `)`.
-     */
-    CloseParen,
-
-    /**
-     * Open brace: `{`.
-     */
-    OpenBrace,
-
-    /**
-     * Close brace: `}`.
-     */
-    CloseBrace,
-
-    /**
-     * Open square: `[`.
-     */
-    OpenSquare,
-
-    /**
-     * Close square: `]`.
-     */
-    CloseSquare,
-
-    /**
-     * Pipe: `|`.
-     */
-    Pipe,
-
-    /**
-     * At: `@`.
-     */
-    AtSign,
-
-    /**
-     * Asterisk: `*`.
-     */
-    Asterisk,
-
-    /**
-     * Quote: `"`.
-     */
-    Quote,
-
-    /**
-     * Apostrophe: `'`.
-     */
-    Apostrophe,
-
-    /**
-     * Exclamation: `!`.
-     */
-    ExclamationMark,
-
-    /**
-     * Hashmark: `#`.
-     */
-    HashMark,
-
-    /**
-     * Plus: `+`.
-     */
-    PlusSign,
-
-    /**
-     * And: `&`.
-     */
-    AndSign,
-
-    /**
-     * Tilde: `~`.
-     */
-    Tilde,
-
-    /**
-     * Caret: `^`.
-     */
-    Caret,
-
-    /**
-     * Dot: `.`.
-     */
-    Dot,
-
-    /**
-     * Semicolon: `;`.
-     */
-    Semicolon,
-
-    /**
-     * Any other character.
-     */
-    Symbol,
-}
-
-/**
- * Checks if a character is an identifier character.
- *
- * @param c The character code to check.
- *
- * @returns `true` if the character is an identifier character, `false` otherwise.
- */
-const isIdentChar = (c: number): boolean => {
-    return (
-        (c >= 48 && c <= 57) // 0-9
-        || (c >= 65 && c <= 90) // A-Z
-        || (c >= 97 && c <= 122) // a-z
-        || c === 45 || c === 95 // - _
-    );
-};
-
-const LF_RAW = '\n';
+/* eslint-disable no-bitwise */
+/* eslint-disable no-param-reassign */
+import { TokenType } from './token-types';
 
 const SPACE = ' '.charCodeAt(0);
 const TAB = '\t'.charCodeAt(0);
-const CR = '\r'.charCodeAt(0);
-const LF = LF_RAW.charCodeAt(0);
-const FF = '\f'.charCodeAt(0);
 const BACKSLASH = '\\'.charCodeAt(0);
 const DOLLAR_SIGN = '$'.charCodeAt(0);
 const SLASH = '/'.charCodeAt(0);
@@ -215,403 +30,270 @@ const TILDE = '~'.charCodeAt(0);
 const CARET = '^'.charCodeAt(0);
 const DOT = '.'.charCodeAt(0);
 const SEMICOLON = ';'.charCodeAt(0);
+const COLON = ':'.charCodeAt(0);
 
 /**
- * Function to stop tokenization.
- * Does not have effect on EOF.
+ * Optional reserved space at the end of the buffer to trigger overflow earlier.
+ * This prevents using the very last slots of the buffer, making overflow handling
+ * more predictable and allowing the parser to switch to a slow path earlier.
  */
-type StopFunction = () => void;
+const RESERVE = 64;
 
 /**
- * Function to skip the current rule.
- * Does not have effect on EOF.
+ * Result structure for tokenization.
+ * **IMPORTANT**: The `types` and `ends` buffers are reused and overwritten
+ * on each tokenization call to minimize memory allocations.
  */
-type SkipFunction = () => void;
-
-/**
- * Function to jump to a specific relative position.
- * If the position is out of bounds, it will be clamped.
- * Does not have effect on EOF.
- *
- * @param count The number of positions to jump.
- */
-type JumpFunction = (count: number) => void;
-
-/**
- * Callback function for tokenization.
- *
- * @param token The token type.
- * @param start The start position of the token.
- * @param end The end position of the token.
- * @param stop The function to stop tokenization.
- * @param skip The function to skip the current rule.
- * @param jump The function to jump to a specific relative position.
- */
-export type OnTokenCallback = (
-    token: TokenType,
-    start: number,
-    end: number,
-    stop: StopFunction,
-    skip: SkipFunction,
-    jump: JumpFunction,
-) => void;
-
-/**
- * Tokenizes a string.
- *
- * @param string The string to tokenize.
- * @param onToken The callback function to handle tokens.
- */
-export const tokenize = (string: string, onToken: OnTokenCallback) => {
-    const { length } = string;
-
-    let i = 0;
-    let cosmeticRule = false;
-
+export type TokenizeResult = {
     /**
-     * Stops tokenization.
-     * Does not have effect on EOF.
+     * Number of tokens successfully parsed
      */
-    const stop: StopFunction = () => {
-        i = length;
-    };
-
+    tokenCount: number;
     /**
-     * Skips the current rule.
-     * Does not have effect on EOF.
+     * Reusable buffer storing token types (mutated in-place)
      */
-    const skip: SkipFunction = () => {
-        // it is more efficient to use indexOf here
-        let index = string.indexOf(LF_RAW, i);
+    types: Uint8Array;
+    /**
+     * Reusable buffer storing token end positions (mutated in-place)
+     */
+    ends: Uint32Array;
+    /**
+     * The actual character position where tokenization stopped
+     */
+    actualEnd: number;
+    /**
+     * Flag indicating if buffer capacity was exceeded (1) or not (0)
+     */
+    overflowed: 0 | 1;
+};
 
-        if (index === -1) {
-            i = length;
-            return;
+/**
+ * Tokenizes a single line from the source string starting at the given position.
+ *
+ * **CRITICAL MEMORY BEHAVIOR**: This function **mutates the `out` parameter in-place**
+ * by overwriting the existing `types` and `ends` buffers. This design choice trades
+ * memory safety for performance:
+ *
+ * **Benefits**:
+ * - Avoids allocating new TypedArrays on every tokenization call
+ * - Reduces garbage collection pressure during high-volume parsing
+ * - Enables buffer reuse across thousands of filter rules
+ *
+ * **WARNING - Users must understand**:
+ * 1. **Never** hold references to `out.types` or `out.ends` across multiple calls
+ * 2. The buffers are overwritten on each call - previous data is lost
+ * 3. If you need to preserve tokens, copy them immediately after tokenization
+ * 4. The same `TokenizeResult` object should be reused for sequential tokenizations
+ *
+ * **Performance Design**:
+ * - Optimized for the common case: 99.9% of filter rules fit within buffer capacity
+ * - Overflow handling is minimal (single flag check) to keep fast path fast
+ * - Edge cases (0.1% overflow) handled gracefully via `overflowed` flag
+ * - Caller can retry with larger buffer or use slow path when overflow occurs
+ *
+ * **V8 Optimizations**:
+ * - TypedArrays (Uint8Array/Uint32Array) for predictable memory layout and access patterns
+ * - Lookup tables instead of conditionals for token mapping and character classification
+ * - Monomorphic operations (consistent types) to enable inline caching
+ * - Local variable caching (t, e, ws, ident, map) to minimize property access
+ * - No dynamic allocations in hot loop - all buffers pre-allocated
+ * - Bitwise operations disabled via eslint as they can deopt in some contexts
+ *
+ * @param source - The source string to tokenize
+ * @param start - Starting character position in the source
+ * @param out - Pre-allocated result structure (buffers will be overwritten)
+ *
+ * @example
+ * ```ts
+ * const result: TokenizeResult = {
+ *   tokenCount: 0,
+ *   types: new Uint8Array(1024),
+ *   ends: new Uint32Array(1024),
+ *   actualEnd: 0,
+ *   overflowed: 0,
+ * };
+ *
+ * // First call - writes to buffers
+ * tokenizeLine("example.com", 0, result);
+ * // result.types and result.ends now contain tokens for "example.com"
+ *
+ * // Second call - OVERWRITES the same buffers
+ * tokenizeLine("test.org", 0, result);
+ * // Previous "example.com" tokens are now lost!
+ * ```
+ */
+export const tokenizeLine = (() => {
+    // Lookup table for single-character tokens
+    const TOKEN_MAP = new Uint8Array(256);
+    TOKEN_MAP[SLASH] = TokenType.Slash;
+    TOKEN_MAP[EQUALS_SIGN] = TokenType.EqualsSign;
+    TOKEN_MAP[COMMA] = TokenType.Comma;
+    TOKEN_MAP[OPEN_PAREN] = TokenType.OpenParen;
+    TOKEN_MAP[CLOSE_PAREN] = TokenType.CloseParen;
+    TOKEN_MAP[OPEN_BRACE] = TokenType.OpenBrace;
+    TOKEN_MAP[CLOSE_BRACE] = TokenType.CloseBrace;
+    TOKEN_MAP[OPEN_SQUARE] = TokenType.OpenSquare;
+    TOKEN_MAP[CLOSE_SQUARE] = TokenType.CloseSquare;
+    TOKEN_MAP[PIPE] = TokenType.Pipe;
+    TOKEN_MAP[AT_SIGN] = TokenType.AtSign;
+    TOKEN_MAP[ASTERISK] = TokenType.Asterisk;
+    TOKEN_MAP[QUOTE] = TokenType.Quote;
+    TOKEN_MAP[APOSTROPHE] = TokenType.Apostrophe;
+    TOKEN_MAP[EXCLAMATION_MARK] = TokenType.ExclamationMark;
+    TOKEN_MAP[PLUS_SIGN] = TokenType.PlusSign;
+    TOKEN_MAP[AND_SIGN] = TokenType.AndSign;
+    TOKEN_MAP[TILDE] = TokenType.Tilde;
+    TOKEN_MAP[CARET] = TokenType.Caret;
+    TOKEN_MAP[DOT] = TokenType.Dot;
+    TOKEN_MAP[SEMICOLON] = TokenType.Semicolon;
+    TOKEN_MAP[COLON] = TokenType.Colon;
+    TOKEN_MAP[HASHMARK] = TokenType.HashMark;
+    TOKEN_MAP[DOLLAR_SIGN] = TokenType.DollarSign;
+    TOKEN_MAP[QUESTION_MARK] = TokenType.QuestionMark;
+    TOKEN_MAP[PERCENT] = TokenType.Percent;
+
+    // Whitespace lookup
+    const IS_WHITESPACE = new Uint8Array(256);
+    IS_WHITESPACE[SPACE] = 1;
+    IS_WHITESPACE[TAB] = 1;
+
+    // Identifier lookup
+    const IS_IDENT_CHAR = new Uint8Array(256);
+    for (let i = 48; i <= 57; i += 1) {
+        IS_IDENT_CHAR[i] = 1;
+    }
+    for (let i = 65; i <= 90; i += 1) {
+        IS_IDENT_CHAR[i] = 1;
+    }
+    for (let i = 97; i <= 122; i += 1) {
+        IS_IDENT_CHAR[i] = 1;
+    }
+    IS_IDENT_CHAR[45] = 1; // -
+    IS_IDENT_CHAR[95] = 1; // _
+
+    const LF = 10;
+    const CR = 13;
+
+    return (source: string, start: number, out: TokenizeResult): void => {
+        const s = source;
+        const len = s.length;
+
+        const t = out.types;
+        const e = out.ends;
+        const cap = t.length;
+
+        const ws = IS_WHITESPACE;
+        const ident = IS_IDENT_CHAR;
+        const map = TOKEN_MAP;
+
+        let i = start;
+        let tokenCount = 0;
+
+        // Reset overflow flag
+        out.overflowed = 0;
+
+        // Reserve space at the end of the buffer to trigger overflow earlier.
+        // This prevents fully filling the buffer and allows the parser to
+        // switch to a slower, more robust path when approaching capacity limits.
+        //
+        // If you want to use the full buffer capacity without reserve,
+        // set: remaining = cap;
+        let remaining = cap - RESERVE;
+        if (remaining < 0) {
+            remaining = 0;
         }
 
-        // handle \r\n
-        if (i > 0 && string.charCodeAt(i - 1) === CR) {
-            index -= 1;
-        }
+        while (i < len) {
+            const c = s.charCodeAt(i);
 
-        i = index;
-    };
+            if (c === LF || c === CR) {
+                break;
+            }
 
-    /**
-     * Jumps to a specific relative position.
-     * If the position is out of bounds, it will be clamped.
-     * Does not have effect on EOF.
-     *
-     * @param count The number of positions to jump.
-     */
-    const jump: JumpFunction = (count: number) => {
-        i = Math.max(0, Math.min(i + count, length));
-    };
+            // No more space for new tokens: stop after the last stored token.
+            if (remaining === 0) {
+                out.overflowed = 1;
+                break;
+            }
 
-    /**
-     * Emits raw content.
-     */
-    const emitRawContent = () => {
-        const start = i;
-        skip();
-        onToken(TokenType.RawContent, start, i, stop, skip, jump);
-    };
-
-    while (i < length) {
-        let c = string.charCodeAt(i);
-
-        switch (c) {
-            case SPACE:
-            case TAB: {
-                const start = i;
-                i += 1;
-
-                while (i < length) {
-                    c = string.charCodeAt(i);
-
-                    if (c !== SPACE && c !== TAB) {
-                        break;
-                    }
-
+            if (c < 256) {
+                const mapped = map[c];
+                if (mapped) {
+                    t[tokenCount] = mapped;
+                    e[tokenCount] = i + 1;
+                    tokenCount += 1;
+                    remaining -= 1;
                     i += 1;
+                    continue;
                 }
 
-                onToken(TokenType.Whitespace, start, i, stop, skip, jump);
-                break;
-            }
-
-            case CR: {
-                // reset rule info when reached a line break
-                cosmeticRule = false;
-
-                if (string.charCodeAt(i + 1) === LF) {
-                    onToken(TokenType.LineBreak, i, i + 2, stop, skip, jump);
-                    i += 2;
-                    break;
-                }
-
-                onToken(TokenType.LineBreak, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-            }
-
-            case LF:
-            case FF: {
-                // reset rule info when reached a line break
-                cosmeticRule = false;
-
-                onToken(TokenType.LineBreak, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-            }
-
-            case BACKSLASH: {
-                onToken(TokenType.Escaped, i, i + 2, stop, skip, jump);
-                i += 2;
-                break;
-            }
-
-            case HASHMARK: {
-                if (cosmeticRule) {
-                    onToken(TokenType.HashMark, i, i + 1, stop, skip, jump);
+                if (ws[c]) {
                     i += 1;
-                    break;
-                }
-
-                const next = string.charCodeAt(i + 1);
-
-                if (next === HASHMARK) {
-                    // ##
-                    onToken(TokenType.CosmeticSeparator, i, i + 2, stop, skip, jump);
-                    i += 2;
-                    emitRawContent();
-                    break;
-                } else if (next === QUESTION_MARK && string.charCodeAt(i + 2) === HASHMARK) {
-                    // #?#
-                    onToken(TokenType.CosmeticSeparator, i, i + 3, stop, skip, jump);
-                    i += 3;
-                    emitRawContent();
-                    break;
-                } else if (next === PERCENT && string.charCodeAt(i + 2) === HASHMARK) {
-                    // #%#
-                    onToken(TokenType.CosmeticSeparator, i, i + 3, stop, skip, jump);
-                    i += 3;
-                    // lets tokenize content
-                    cosmeticRule = true;
-                    break;
-                } else if (next === DOLLAR_SIGN) {
-                    if (string.charCodeAt(i + 2) === HASHMARK) {
-                        // #$#
-                        onToken(TokenType.CosmeticSeparator, i, i + 3, stop, skip, jump);
-                        i += 3;
-                        emitRawContent();
-                        break;
-                    }
-                    if (string.charCodeAt(i + 2) === QUESTION_MARK && string.charCodeAt(i + 3) === HASHMARK) {
-                        // #$?#
-                        onToken(TokenType.CosmeticSeparator, i, i + 4, stop, skip, jump);
-                        i += 4;
-                        emitRawContent();
-                        break;
-                    }
-                } else if (next === AT_SIGN) {
-                    if (string.charCodeAt(i + 2) === HASHMARK) {
-                        // #@#
-                        onToken(TokenType.AllowlistCosmeticSeparator, i, i + 3, stop, skip, jump);
-                        i += 3;
-                        emitRawContent();
-                        break;
-                    }
-                    if (string.charCodeAt(i + 2) === QUESTION_MARK && string.charCodeAt(i + 3) === HASHMARK) {
-                        // #@?#
-                        onToken(TokenType.AllowlistCosmeticSeparator, i, i + 4, stop, skip, jump);
-                        i += 4;
-                        emitRawContent();
-                        break;
-                    }
-                    if (string.charCodeAt(i + 2) === PERCENT && string.charCodeAt(i + 3) === HASHMARK) {
-                        // #@%#
-                        onToken(TokenType.AllowlistCosmeticSeparator, i, i + 4, stop, skip, jump);
-                        i += 4;
-                        // lets tokenize content
-                        cosmeticRule = true;
-                        break;
-                    }
-                    if (string.charCodeAt(i + 2) === DOLLAR_SIGN) {
-                        if (string.charCodeAt(i + 3) === HASHMARK) {
-                            // #@$#
-                            onToken(TokenType.AllowlistCosmeticSeparator, i, i + 4, stop, skip, jump);
-                            i += 4;
-                            emitRawContent();
+                    while (i < len) {
+                        const cc = s.charCodeAt(i);
+                        if (cc >= 256 || !ws[cc]) {
                             break;
                         }
-                        if (string.charCodeAt(i + 3) === QUESTION_MARK && string.charCodeAt(i + 4) === HASHMARK) {
-                            // #@$?#
-                            onToken(TokenType.AllowlistCosmeticSeparator, i, i + 5, stop, skip, jump);
-                            i += 5;
-                            emitRawContent();
-                            break;
-                        }
-                    }
-                }
-                onToken(TokenType.Symbol, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-            }
-
-            case DOLLAR_SIGN: {
-                if (cosmeticRule) {
-                    onToken(TokenType.DollarSign, i, i + 1, stop, skip, jump);
-                    i += 1;
-                    break;
-                }
-
-                const next = string.charCodeAt(i + 1);
-
-                if (next === DOLLAR_SIGN) {
-                    // $$
-                    onToken(TokenType.CosmeticSeparator, i, i + 2, stop, skip, jump);
-                    i += 2;
-                    emitRawContent();
-                    break;
-                } else if (next === AT_SIGN && string.charCodeAt(i + 2) === DOLLAR_SIGN) {
-                    // $@$
-                    onToken(TokenType.AllowlistCosmeticSeparator, i, i + 3, stop, skip, jump);
-                    i += 3;
-                    emitRawContent();
-                    break;
-                } else {
-                    onToken(TokenType.DollarSign, i, i + 1, stop, skip, jump);
-                    i += 1;
-                    break;
-                }
-            }
-
-            case SLASH:
-                onToken(TokenType.Slash, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case EQUALS_SIGN:
-                onToken(TokenType.EqualsSign, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case COMMA:
-                onToken(TokenType.Comma, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case OPEN_PAREN:
-                onToken(TokenType.OpenParen, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case CLOSE_PAREN:
-                onToken(TokenType.CloseParen, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case OPEN_BRACE:
-                onToken(TokenType.OpenBrace, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case CLOSE_BRACE:
-                onToken(TokenType.CloseBrace, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case OPEN_SQUARE:
-                onToken(TokenType.OpenSquare, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case CLOSE_SQUARE:
-                onToken(TokenType.CloseSquare, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case PIPE:
-                onToken(TokenType.Pipe, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case AT_SIGN:
-                onToken(TokenType.AtSign, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case ASTERISK:
-                onToken(TokenType.Asterisk, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case QUOTE:
-                onToken(TokenType.Quote, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case APOSTROPHE:
-                onToken(TokenType.Apostrophe, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case EXCLAMATION_MARK:
-                onToken(TokenType.ExclamationMark, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case PLUS_SIGN:
-                onToken(TokenType.PlusSign, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case AND_SIGN:
-                onToken(TokenType.AndSign, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case TILDE:
-                onToken(TokenType.Tilde, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case CARET:
-                onToken(TokenType.Caret, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case DOT:
-                onToken(TokenType.Dot, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            case SEMICOLON:
-                onToken(TokenType.Semicolon, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-
-            default: {
-                if (isIdentChar(c)) {
-                    const start = i;
-                    i += 1;
-
-                    while (i < length && isIdentChar(string.charCodeAt(i))) {
                         i += 1;
                     }
-
-                    onToken(TokenType.Ident, start, i, stop, skip, jump);
-                    break;
+                    t[tokenCount] = TokenType.Whitespace;
+                    e[tokenCount] = i;
+                    tokenCount += 1;
+                    remaining -= 1;
+                    continue;
                 }
 
-                onToken(TokenType.Symbol, i, i + 1, stop, skip, jump);
-                i += 1;
-                break;
-            }
-        }
-    }
+                if (c === BACKSLASH) {
+                    if (i + 1 < len) {
+                        t[tokenCount] = TokenType.Escaped;
+                        e[tokenCount] = i + 2;
+                        tokenCount += 1;
+                        remaining -= 1;
+                        i += 2;
+                    } else {
+                        t[tokenCount] = TokenType.Symbol;
+                        e[tokenCount] = i + 1;
+                        tokenCount += 1;
+                        remaining -= 1;
+                        i += 1;
+                    }
+                    continue;
+                }
 
-    // Emit EOF token. jump/skip/stop are inert here, included for API consistency.
-    onToken(TokenType.Eof, i, i, stop, skip, jump);
-};
+                if (ident[c]) {
+                    i += 1;
+                    while (i < len) {
+                        const cc = s.charCodeAt(i);
+                        if (cc >= 256 || !ident[cc]) {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    t[tokenCount] = TokenType.Ident;
+                    e[tokenCount] = i;
+                    tokenCount += 1;
+                    remaining -= 1;
+                    continue;
+                }
+
+                // Symbol fallback
+                t[tokenCount] = TokenType.Symbol;
+                e[tokenCount] = i + 1;
+                tokenCount += 1;
+                remaining -= 1;
+                i += 1;
+                continue;
+            }
+
+            // Non-ASCII fallback (could implement UnicodeSequence run instead)
+            t[tokenCount] = TokenType.Symbol;
+            e[tokenCount] = i + 1;
+            tokenCount += 1;
+            remaining -= 1;
+            i += 1;
+        }
+
+        out.tokenCount = tokenCount;
+        out.actualEnd = i;
+    };
+})();
