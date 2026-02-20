@@ -24,7 +24,7 @@ abp_any:
         Dot-separated path to the property in returned objects. 
         Can be used to override return values for functions that return objects instead of primitive strings. 
         If left empty, only functions that return strings will be tackled. e.g. user.profile.name.
-      default: empty string
+      default: ''
     - name: stack
       required: false
       description: Comma-separated list of strings to check in the stack trace. If provided the replacement will only apply when the stack trace contains at least one of these patterns.
