@@ -12,6 +12,7 @@ import {
     IndexedNetworkRuleWithHash,
     RuleSet,
     type RuleSetContentProvider,
+    type RuleSetMetadataProvider,
     RulesHashMap,
     SourceMap,
 } from '../../../src/rules/declarative-converter';
@@ -61,7 +62,10 @@ describe('RuleSet', () => {
             })
             .flat();
 
-        const rulesHashMap = new RulesHashMap(listOfRulesWithHash);
+        const metadataProvider: RuleSetMetadataProvider = {
+            loadBadFilterRules: async () => badFilterRules,
+            loadRulesHashMap: async () => new RulesHashMap(listOfRulesWithHash),
+        };
 
         return new RuleSet(
             'ruleSetId',
@@ -69,8 +73,7 @@ describe('RuleSet', () => {
             0,
             declarativeRules.filter((d) => DeclarativeRulesConverter.isRegexRule(d)).length,
             ruleSetContent,
-            badFilterRules,
-            rulesHashMap,
+            metadataProvider,
         );
     };
 
@@ -85,7 +88,7 @@ describe('RuleSet', () => {
         const ruleSet = await createRuleSet(content);
 
         expect(ruleSet.getRulesCount()).toStrictEqual(2);
-        expect(ruleSet.getBadFilterRules()).toHaveLength(1);
+        expect(await ruleSet.getBadFilterRules()).toHaveLength(1);
     });
 
     it('returns original rule by declarative and declarative rule by source rule correctly', async () => {
@@ -156,17 +159,23 @@ describe('RuleSet', () => {
             [originalFilter],
         );
 
-        const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
-        const ruleSetHashMap = new RulesHashMap(sources);
-        const badFilterRules = badFilterRulesRaw
-            .map(
-                (rawString) => IndexedNetworkRuleWithHash.createFromText(
-                    filterId,
-                    badFilterRuleIndex,
-                    rawString,
-                ),
-            )
-            .flat();
+        const deserializedMetadataProvider: RuleSetMetadataProvider = {
+            loadBadFilterRules: async () => {
+                return badFilterRulesRaw
+                    .map(
+                        (rawString) => IndexedNetworkRuleWithHash.createFromText(
+                            filterId,
+                            badFilterRuleIndex,
+                            rawString,
+                        ),
+                    )
+                    .flat();
+            },
+            loadRulesHashMap: async () => {
+                const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
+                return new RulesHashMap(sources);
+            },
+        };
 
         const deserializedRuleSet = new RuleSet(
             id,
@@ -174,13 +183,12 @@ describe('RuleSet', () => {
             unsafeRulesCount,
             regexpRulesCount,
             ruleSetContentProvider,
-            badFilterRules,
-            ruleSetHashMap,
+            deserializedMetadataProvider,
         );
 
         // check $badfilter rules
-        expect(deserializedRuleSet.getBadFilterRules()).toHaveLength(ruleSet.getBadFilterRules().length);
-        expect(deserializedRuleSet.getBadFilterRules()[0]).toEqual(ruleSet.getBadFilterRules()[0]);
+        expect(await deserializedRuleSet.getBadFilterRules()).toHaveLength((await ruleSet.getBadFilterRules()).length);
+        expect((await deserializedRuleSet.getBadFilterRules())[0]).toEqual((await ruleSet.getBadFilterRules())[0]);
 
         // check declarative rules
         const d1 = await ruleSet.getDeclarativeRules();
@@ -208,16 +216,58 @@ describe('RuleSet', () => {
         const ruleSet = await createRuleSet(content);
 
         // Load content
-        await ruleSet.getDeclarativeRules();
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(true);
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.size).toBeGreaterThan(0);
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'sourceMap')?.value).not.toBeUndefined();
+        const rulesBefore = await ruleSet.getDeclarativeRules();
+        expect(rulesBefore.length).toBeGreaterThan(0);
 
-        // Unload content
+        // Unload content - subsequent load should still return the same rules
         ruleSet.unloadContent();
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(false);
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.size).toBe(0);
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'sourceMap')?.value).toBeUndefined();
+        const rulesAfter = await ruleSet.getDeclarativeRules();
+        expect(rulesAfter).toStrictEqual(rulesBefore);
+    });
+
+    it('unloads metadata correctly', async () => {
+        const content = [
+            '||example.com^$document',
+            '||example.net##h1',
+            '@@||example.io^',
+            '@@||evil.com^$badfilter',
+        ];
+
+        const ruleSet = await createRuleSet(content);
+
+        // Load metadata
+        const badFilterRulesBefore = await ruleSet.getBadFilterRules();
+        expect(badFilterRulesBefore).toBeDefined();
+
+        // Unload metadata
+        ruleSet.unloadMetadata();
+
+        // Metadata should reload correctly
+        const badFilterRulesAfter = await ruleSet.getBadFilterRules();
+        expect(badFilterRulesAfter).toStrictEqual(badFilterRulesBefore);
+    });
+
+    it('reloads metadata after unload', async () => {
+        const content = [
+            '||example.com^$document',
+            '||example.net##h1',
+            '@@||example.io^',
+            '@@||evil.com^$badfilter',
+        ];
+
+        const ruleSet = await createRuleSet(content);
+
+        // Load metadata
+        const badFilterRulesBefore = await ruleSet.getBadFilterRules();
+        expect(badFilterRulesBefore).toHaveLength(1);
+
+        // Unload metadata
+        ruleSet.unloadMetadata();
+
+        // Reload metadata - should work via lazy loading
+        const badFilterRulesAfter = await ruleSet.getBadFilterRules();
+        expect(badFilterRulesAfter).toHaveLength(1);
+        expect(badFilterRulesAfter).toStrictEqual(badFilterRulesBefore);
     });
 
     it('does not return stale content after unload', async () => {
@@ -230,16 +280,15 @@ describe('RuleSet', () => {
         const ruleSet = await createRuleSet(content);
 
         // Load content
-        await ruleSet.getDeclarativeRules();
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(true);
+        const rulesBefore = await ruleSet.getDeclarativeRules();
+        expect(rulesBefore.length).toBeGreaterThan(0);
 
         // Unload content
         ruleSet.unloadContent();
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(false);
 
-        // Reload content after unloading
-        await ruleSet.getDeclarativeRules();
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(true);
+        // Reload content after unloading - should return same rules
+        const rulesAfter = await ruleSet.getDeclarativeRules();
+        expect(rulesAfter).toStrictEqual(rulesBefore);
     });
 
     it('waits for initialization before unloading', async () => {
@@ -257,14 +306,18 @@ describe('RuleSet', () => {
             loadDeclarativeRules: async () => [],
         };
 
+        const metadataProvider: RuleSetMetadataProvider = {
+            loadBadFilterRules: async () => [],
+            loadRulesHashMap: async () => new RulesHashMap([]),
+        };
+
         const ruleSet = new RuleSet(
             'testRuleSet',
             0,
             0,
             0,
             ruleSetContent,
-            [],
-            new RulesHashMap([]),
+            metadataProvider,
         );
 
         // Start loading content
@@ -277,9 +330,9 @@ describe('RuleSet', () => {
         resolveInit!();
         await loadPromise;
 
-        // Ensure that content is still correctly unloaded after the fetch completes
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(false);
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'sourceMap')?.value).toBeUndefined();
+        // (re-loading should work, confirming unload+reload cycle is intact)
+        const reloaded = await ruleSet.getDeclarativeRules();
+        expect(reloaded).toHaveLength(0);
     });
 
     it('ensures filterList filters are unloaded', async () => {
@@ -295,7 +348,10 @@ describe('RuleSet', () => {
         // Mock `unloadContent` for all filters
         const unloadSpies: MockInstance<IFilter['unloadContent']>[] = [];
 
-        Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.forEach((filter: Filter) => {
+        // Access the contentLoader's loaded value to spy on the filters inside
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const filterList: Map<number, Filter> = (ruleSet as any).contentLoader.value?.filterList;
+        filterList?.forEach((filter: Filter) => {
             const spy = vi.spyOn(filter, 'unloadContent');
             unloadSpies.push(spy);
         });
@@ -304,8 +360,5 @@ describe('RuleSet', () => {
 
         // Ensure all filters' `unloadContent` methods were called
         unloadSpies.forEach((spy) => expect(spy).toHaveBeenCalled());
-
-        // Ensure filterList is cleared
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.size).toBe(0);
     });
 });

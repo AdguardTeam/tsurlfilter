@@ -487,6 +487,22 @@ export class TsWebExtension implements AppInterface<
             // Update rulesets in declarative filtering log.
             declarativeFilteringLog.finishUpdate(ruleSets, configuration.declarativeLogEnabled);
 
+            // Free heavy metadata (badFilterRules, rulesHashMap) from all
+            // rulesets (both static and dynamic) since they are only needed
+            // during conversion above. They will be lazy-loaded from IDB if needed again.
+            for (const ruleSet of ruleSets) {
+                ruleSet.unloadMetadata();
+            }
+
+            // If declarative log is disabled, also unload content
+            // (sourceMap, declarativeRules, filterList) from all rulesets
+            // since it is only needed for the filtering log.
+            if (!configuration.declarativeLogEnabled) {
+                for (const ruleSet of ruleSets) {
+                    ruleSet.unloadContent();
+                }
+            }
+
             res.staticFilters = staticRuleSets;
         } else {
             await TsWebExtension.removeAllFilteringRules();

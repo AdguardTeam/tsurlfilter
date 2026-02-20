@@ -392,7 +392,7 @@ describe('DeclarativeConverter', () => {
         const filter = createFilter(rules);
         const { ruleSet } = await converter.convertStaticRuleSet(filter);
 
-        const badFilterRules = ruleSet.getBadFilterRules();
+        const badFilterRules = await ruleSet.getBadFilterRules();
         expect(badFilterRules[0].ruleParts.text).toEqual(rulesToCancel[0]);
         expect(badFilterRules[1].ruleParts.text).toEqual(rulesToCancel[1]);
     });
