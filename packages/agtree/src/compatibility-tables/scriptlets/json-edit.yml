@@ -8,5 +8,5 @@ ubo_any:
   parameters:
     - name: jsonq
       required: false
-      description: A uBO-flavored JSONPath query.
+      description: A JSONPath query string written in the format understood by uBlock Origin.
       default: ''
