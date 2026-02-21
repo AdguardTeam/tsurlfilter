@@ -51,6 +51,8 @@ type FiltersUpdateInfo = {
     filtersIdsToDisable: number[];
 };
 
+const PROCESS_OPEN_TABS_TIMEOUT_MS = 10_000;
+
 // Reexport types
 export type {
     ConfigurationResult,
@@ -171,8 +173,27 @@ export class TsWebExtension implements AppInterface<
             // Compute and save matching result for tabs, opened before app initialization.
             const openTabsProcessingStartedAt = Date.now();
             logger.info('[tsweb.TsWebExtension.innerStart]: processOpenTabs begin');
-            await TabsCosmeticInjector.processOpenTabs();
-            logger.info(`[tsweb.TsWebExtension.innerStart]: processOpenTabs done in ${Date.now() - openTabsProcessingStartedAt}ms`);
+            const processOpenTabsResult = await new Promise<'done' | 'timeout'>((resolve, reject) => {
+                const timeoutId = setTimeout(() => {
+                    resolve('timeout');
+                }, PROCESS_OPEN_TABS_TIMEOUT_MS);
+
+                TabsCosmeticInjector.processOpenTabs()
+                    .then(() => {
+                        clearTimeout(timeoutId);
+                        resolve('done');
+                    })
+                    .catch((error) => {
+                        clearTimeout(timeoutId);
+                        reject(error);
+                    });
+            });
+
+            if (processOpenTabsResult === 'timeout') {
+                logger.error(`[tsweb.TsWebExtension.innerStart]: processOpenTabs timeout after ${PROCESS_OPEN_TABS_TIMEOUT_MS}ms, continue startup in fail-open mode`);
+            } else {
+                logger.info(`[tsweb.TsWebExtension.innerStart]: processOpenTabs done in ${Date.now() - openTabsProcessingStartedAt}ms`);
+            }
 
             documentBlockingService.configure(config);
 
