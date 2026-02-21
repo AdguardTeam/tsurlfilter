@@ -141,13 +141,18 @@ export class TsWebExtension implements AppInterface<
      */
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
         logger.trace('[tsweb.TsWebExtension.innerStart]: start');
+        const startupStartedAt = Date.now();
 
         if (!appContext.startTimeMs) {
             appContext.startTimeMs = Date.now();
         }
 
         try {
+            logger.info('[tsweb.TsWebExtension.innerStart]: startup pipeline begin');
+
+            const configureStartedAt = Date.now();
             const res = await this.configure(config);
+            logger.info(`[tsweb.TsWebExtension.innerStart]: configure done in ${Date.now() - configureStartedAt}ms`);
 
             // Start listening for request events.
             RequestEvents.init();
@@ -159,10 +164,15 @@ export class TsWebExtension implements AppInterface<
             declarativeFilteringLog.start();
 
             // Add tabs listeners
+            const tabsApiStartedAt = Date.now();
             await tabsApi.start();
+            logger.info(`[tsweb.TsWebExtension.innerStart]: tabsApi.start done in ${Date.now() - tabsApiStartedAt}ms`);
 
             // Compute and save matching result for tabs, opened before app initialization.
+            const openTabsProcessingStartedAt = Date.now();
+            logger.info('[tsweb.TsWebExtension.innerStart]: processOpenTabs begin');
             await TabsCosmeticInjector.processOpenTabs();
+            logger.info(`[tsweb.TsWebExtension.innerStart]: processOpenTabs done in ${Date.now() - openTabsProcessingStartedAt}ms`);
 
             documentBlockingService.configure(config);
 
@@ -174,13 +184,14 @@ export class TsWebExtension implements AppInterface<
             this.isStarted = true;
             this.startPromise = undefined;
 
+            logger.info(`[tsweb.TsWebExtension.innerStart]: startup pipeline done in ${Date.now() - startupStartedAt}ms`);
             logger.trace('[tsweb.TsWebExtension.innerStart]: started');
 
             return res;
         } catch (e) {
             this.startPromise = undefined;
 
-            logger.error('[tsweb.TsWebExtension.innerStart]: failed: ', e);
+            logger.error(`[tsweb.TsWebExtension.innerStart]: failed after ${Date.now() - startupStartedAt}ms: `, e);
 
             throw new Error('Cannot be started: ', { cause: e as Error });
         }

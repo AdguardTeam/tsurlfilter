@@ -3,6 +3,7 @@ import { type Source } from '@adguard/scriptlets';
 
 import { appContext } from './app-context';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
+import { logger } from '../../common/utils/logger';
 
 /**
  * Parameters for applying CSS rules.
@@ -90,11 +91,13 @@ export class ScriptingApi {
         frameId,
         cssText,
     }: InsertCSSParams): Promise<void> {
+        logger.info(`[tsweb.ScriptingApi.insertCSS]: start tabId=${tabId}, frameId=${frameId}, cssLength=${cssText.length}`);
         await chrome.scripting.insertCSS({
             css: cssText,
             origin: 'USER',
             target: { tabId, frameIds: [frameId] },
         });
+        logger.info(`[tsweb.ScriptingApi.insertCSS]: done tabId=${tabId}, frameId=${frameId}`);
     }
 
     /**
@@ -114,6 +117,7 @@ export class ScriptingApi {
         scriptletData,
         domainName,
     }: ExecuteScriptletParams): Promise<void> {
+        logger.info(`[tsweb.ScriptingApi.executeScriptlet]: start tabId=${tabId}, frameId=${frameId}`);
         const params: Source = {
             ...scriptletData.params,
             uniqueId: String(appContext.startTimeMs),
@@ -176,6 +180,7 @@ export class ScriptingApi {
             world: 'MAIN',
             args: [params, scriptletData.params.args],
         });
+        logger.info(`[tsweb.ScriptingApi.executeScriptlet]: done tabId=${tabId}, frameId=${frameId}`);
     }
 
     /**
@@ -193,6 +198,7 @@ export class ScriptingApi {
         frameId,
         scriptFunction,
     }: ExecuteScriptFuncParams): Promise<void> {
+        logger.info(`[tsweb.ScriptingApi.executeScriptFunc]: start tabId=${tabId}, frameId=${frameId}`);
         /**
          * This is STEP 4.2: Apply JS functions from pre-built filters — via chrome.scripting API.
          *
@@ -247,5 +253,6 @@ export class ScriptingApi {
             injectImmediately: true,
             world: 'MAIN',
         });
+        logger.info(`[tsweb.ScriptingApi.executeScriptFunc]: done tabId=${tabId}, frameId=${frameId}`);
     }
 }

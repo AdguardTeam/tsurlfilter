@@ -20,7 +20,9 @@ export class TabsCosmeticInjector {
      * applies cosmetic rules for each frame.
      */
     public static async processOpenTabs(): Promise<void> {
+        const processOpenTabsStartedAt = Date.now();
         const currentTabs = await browser.tabs.query({});
+        logger.info(`[tsweb.TabsCosmeticInjector.processOpenTabs]: start, tabs=${currentTabs.length}`);
 
         const tasks = currentTabs.map((tab) => TabsCosmeticInjector.processOpenTab(tab));
 
@@ -34,6 +36,7 @@ export class TabsCosmeticInjector {
         });
 
         appContext.cosmeticsInjectedOnStartup = true;
+        logger.info(`[tsweb.TabsCosmeticInjector.processOpenTabs]: done in ${Date.now() - processOpenTabsStartedAt}ms, tabs=${currentTabs.length}`);
     }
 
     /**
@@ -47,18 +50,23 @@ export class TabsCosmeticInjector {
             return;
         }
 
+        const processOpenTabStartedAt = Date.now();
         const tabContext = new TabContext(tab);
         const tabId = tab.id;
         tabsApi.context.set(tabId, tabContext);
         tabsApi.updateTabMainFrameRule(tabId);
 
+        logger.info(`[tsweb.TabsCosmeticInjector.processOpenTab]: getAllFrames start for tabId=${tabId}`);
         const frames = await chrome.webNavigation.getAllFrames({ tabId });
+        logger.info(`[tsweb.TabsCosmeticInjector.processOpenTab]: getAllFrames done for tabId=${tabId}, frames=${frames?.length || 0}`);
 
         if (!frames) {
+            logger.info(`[tsweb.TabsCosmeticInjector.processOpenTab]: no frames for tabId=${tabId}`);
             return;
         }
 
         const currentTime = Date.now();
+        logger.info(`[tsweb.TabsCosmeticInjector.processOpenTab]: cosmetics injection start for tabId=${tabId}, frames=${frames.length}`);
 
         const tasks = frames.map(async (frameDetails) => {
             const {
@@ -129,5 +137,6 @@ export class TabsCosmeticInjector {
         });
 
         await Promise.allSettled(tasks);
+        logger.info(`[tsweb.TabsCosmeticInjector.processOpenTab]: done in ${Date.now() - processOpenTabStartedAt}ms for tabId=${tabId}`);
     }
 }
