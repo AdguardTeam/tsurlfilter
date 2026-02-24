@@ -1,0 +1,12 @@
+abp_any:
+  name: hide-if-shadow-contains
+  description: Hides any HTML element or one of its ancestors matching a CSS selector if the text content of the element's shadow contains a given string.
+  version_added: "3.3"
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  parameters:
+    - name: search
+      required: true
+      description: The string to look for in every HTML element's shadow. If the string begins and ends with a slash `/`, the text in between is treated as a regular expression.
+    - name: selector
+      required: true
+      description: The CSS selector that an HTML element must match for it to be hidden.

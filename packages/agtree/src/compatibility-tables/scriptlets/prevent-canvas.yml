@@ -1,21 +1,25 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-common:
-  parameters:
-    - name: contextType
-      required: false
-
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-canvas
   version_added: 2.0.1
+  description: Prevents calls to HTMLCanvasElement.prototype.getContext and returns null.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-canvas
   aliases:
     - prevent-canvas.js
     - ubo-prevent-canvas.js
     - ubo-prevent-canvas
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-canvas
+  parameters:
+    - name: contextType
+      required: false
+      description: String matching the context type (e.g., '2d', 'webgl'); by default it matches all context types. It can be a string pattern or a regular expression pattern. If the pattern starts with !, it will be negated.
 
 ubo_any:
   name: prevent-canvas.js
   version_added: 1.52.3b2
+  description: Prevent usage of specific or all (default) canvas APIs.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-canvasjs-
-
+  aliases:
+    - prevent-canvas
+  parameters:
+    - name: contextType
+      required: false
+      description: A specific type of canvas API to prevent (default to all APIs). Can be a string or regex which will be matched against the type used in getContext() call. Prepend with ! to test for no-match.

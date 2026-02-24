@@ -1,11 +1,12 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: debug-current-inline-script
   version_added: 1.0.4
+  description: This scriptlet is basically the same as abort-current-inline-script, but instead of aborting it starts the debugger.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#debug-current-inline-script
   parameters:
     - name: property
       required: true
+      description: Path to a property (joined with `.` if needed). The property must be attached to `window`.
     - name: search
       required: false
+      description: String or regular expression that must match the inline script content.

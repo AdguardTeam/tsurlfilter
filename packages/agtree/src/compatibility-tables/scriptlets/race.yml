@@ -1,0 +1,17 @@
+abp_any:
+  name: race
+  description: |-
+    It executes using the Performance API. 
+    It marks specific points (the beginning and the end in the main logic of every snippet) and measures the time taken between these points (duration).
+    The duration is expressed in ms. It logs an object with the performance data of the monitored snippet.
+  version_added: "4.8"
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE7QE2TCN5HVSQWQAEHFM8H
+  debug: true
+  parameters:
+    - name: action
+      required: true
+      description: Either `start` or `stop` the race.
+    - name: winners
+      required: false
+      description: "The amount of possible race's winners: 1 by default."
+      default: "'1'"

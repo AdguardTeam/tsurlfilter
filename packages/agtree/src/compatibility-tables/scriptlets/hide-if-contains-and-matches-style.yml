@@ -1,0 +1,30 @@
+abp_any:
+  name: hide-if-contains-and-matches-style
+  description: Hides any HTML element or one of its ancestors matching a CSS selector if the text content of the element contains a given string and, optionally, if the element's computed style contains a given string.
+  version_added: 3.3.2
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  parameters:
+    - name: search
+      required: true
+      description: The string to look for in HTML elements. If the string begins and ends with a slash `/`, the text in between is treated as a regular expression.
+    - name: selector
+      required: true
+      description: The CSS selector that an HTML element must match for it to be hidden.
+    - name: searchSelector
+      required: false
+      description: The CSS selector that an HTML element containing the given string must match. Defaults to the value of the selector argument.
+    - name: style
+      required: false
+      description: The string that the computed style of an HTML element matching selector must contain. If the string begins and ends with a slash `/`, the text in between is treated as a regular expression.
+    - name: searchStyle
+      required: false
+      description: The string that the computed style of an HTML element matching searchSelector must contain. If the string begins and ends with a slash `/`, the text in between is treated as a regular expression.
+    - name: waitUntil
+      required: false
+      description: "Optional parameter that can be used to delay the running of the snippet until the given state is reached. Accepts: loading, interactive, complete, load or any event name."
+    - name: windowWidthMin
+      required: false
+      description: Optional parameter that can be used to disable the snippet if the window.innerWidth is smaller than the given value.	
+    - name: windowWidthMax
+      required: false
+      description: Optional parameter that can be used to disable the snippet if the window.innerWidth is greater than the given value.

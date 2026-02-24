@@ -1,0 +1,17 @@
+abp_any:
+  name: skip-video
+  version_added: "3.21"
+  description: Makes the video skip to its end or fast forwards it with the given amount. It does it by setting the currentTime attribute of the video object.
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
+  parameters:
+    - name: playerSelector
+      required: true
+      description: The CSS or the XPath selector to the <video> element in the page.
+    - name: xpathCondition
+      required: true
+      description: The XPath selector that will be used to know when to trigger the skipping logic.
+    - name: optionalParameters
+      required: false
+      description: |-
+        Optional parameters to configure the snippet. Any number of the supported parameters from the table below can be added to this in any order.
+        Separate the optional parameters with space as if they are different arguments to the filter.

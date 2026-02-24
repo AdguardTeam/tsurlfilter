@@ -89,35 +89,8 @@ The value format describes the format of the modifier value. It can be one of th
           It matches for `$modifier=1` (valid), but not for `$modifier=abc` (invalid).
 - Pre-defined validator name:
     - Validating the value is done by using the pre-defined validator. The value is valid if it matches the validator.
-    - Currently available validators:
-        - list of domains separated by the vertical bar `|`:
-            - `pipe_separated_apps` validates value for `$app` modifier
-                - **Does not support**: wildcards (`*`), wildcard TLD (e.g., `example.*`), or regex patterns
-            - `pipe_separated_domains` validates value for `$domain` modifier
-                - **Supports**: wildcard TLD (e.g., `example.*`), wildcard subdomain (e.g., `*.example.com`)
-                - **Does not support**: regex patterns
-            - `pipe_separated_denyallow_domains` validates value for `$denyallow` modifier
-                - **Does not support**: negation (`~`), wildcards (`*`), wildcard TLD (e.g., `example.*`),
-                  or regex patterns
-            <!-- TODO: implement later -->
-            <!-- - `pipe_separated_extensions` validates value for `$extension` modifier -->
-            - `pipe_separated_methods` validates value for `$method` modifier
-            - `pipe_separated_stealth_options` validates value for `$stealth` modifier
-            - `csp_value` validates value for `$csp` modifier
-            - `permissions_value` validates value for `$permissions` modifier
-            - `referrerpolicy_value` validates value for `$referrerpolicy` modifier
-        - `url` validates that the value is a valid URL.
-        - `regexp` validates that the value is a valid regular expression.
-            > :warning: **This is not the same as when you assign a regular expression to value_format!**
-            >
-            > - If you specify `value_format: /^[0-9]+$/`,
-            >   then the value is valid if it matches the regular expression
-            >   (it is numeric, for example: `$modifier=1`, but not `$modifier=a`).
-            > - If you specify `value_format: regexp`, then the value is valid if it's a valid regular expression,
-            >   for example: `$modifier=/^valid_regex_value$/`.
-            >
-        - Example:
-        - For validating `domain` modifier, you can use `value_format: pipe_separated_domains`.
+    - For a complete list of available validators and their usage, see the [validators README](../validators/README.md).
+    - Example: For validating `domain` modifier, you can use `value_format: pipe_separated_domains`.
 
 > [!NOTE]
 > In YAML files, you can use XRegExp syntax for regular expressions.
