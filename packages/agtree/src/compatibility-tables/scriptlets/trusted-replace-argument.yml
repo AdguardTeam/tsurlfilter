@@ -1,0 +1,32 @@
+common:
+  is_trusted: true
+
+ubo_any:
+  name: trusted-replace-argument.js
+  description: Replaces an argument passed to a method call.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-replace-argumentjs-
+  aliases:
+    - trusted-replace-argument
+  parameters:
+    - name: propChain
+      required: true
+      description: A chain of dot-separated properties leading to the method whose argument must be replaced.
+    - name: argposRaw
+      required: true
+      description: Zero-based position of the argument to replace. Use a negative number for a position relative to the last argument. Use literal `this` to replace the value used in prototype-based methods.
+    - name: argraw
+      required: true
+      description: |-
+        The replacement value, validated as a safe constant.
+        Prefix with `json:` to supply a JSON-parsed value.
+        Prefix with `repl:/pattern/replacement/` to apply a regex replacement to the original argument.
+        Prefix with `add:number` to add a number to the original argument.
+  ubo_tokens:
+    - name: condition
+      description: A string or regex that must match the original argument value before the replacement is applied.
+      value_format: null
+      value_type: string
+    - name: as
+      description: Wraps the replacement value. `function` returns `() => value`, `callback` returns `() => () => value`, `resolved` returns `Promise.resolve(value)`, `rejected` returns `Promise.reject(value)`.
+      value_format: ^(function|callback|resolved|rejected)$
+      value_type: string

@@ -1,11 +1,12 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: hide-in-shadow-dom
   version_added: 1.3.0
+  description: Hides elements inside open shadow DOM elements.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#hide-in-shadow-dom
   parameters:
     - name: selector
       required: true
+      description: CSS selector of element in shadow-dom to hide.
     - name: baseSelector
       required: false
+      description: Selector of specific page DOM element, narrows down the part of the page DOM where shadow-dom host supposed to be, defaults to document.documentElement.

@@ -300,8 +300,8 @@ describe('Scriptlet conversion', () => {
                 expected: ['example.com##+js(spoof-css, .adsbygoogle\\, #ads\\, .adTest, visibility, visible)'],
             },
             {
-                actual: "example.com#%#//scriptlet('set-cookie-reload', 'consent', 'true')",
-                expected: ['example.com##+js(set-cookie-reload, consent, true)'],
+                actual: "example.com#%#//scriptlet('set-cookie', 'consent', 'true')",
+                expected: ['example.com##+js(set-cookie, consent, true)'],
             },
             // https://github.com/AdguardTeam/Scriptlets/issues/404
             {
@@ -324,9 +324,9 @@ describe('Scriptlet conversion', () => {
                 shouldConvert: false,
             },
             {
-                actual: String.raw`example.net,example.com#$#set-cookie-reload Hello\ no\ quotes true`,
+                actual: String.raw`example.net,example.com#$#set-cookie Hello\ no\ quotes true`,
                 expected: [
-                    String.raw`example.net,example.com##+js(set-cookie-reload, Hello no quotes, true)`,
+                    String.raw`example.net,example.com##+js(set-cookie, Hello no quotes, true)`,
                 ],
             },
             {
@@ -381,12 +381,8 @@ describe('Scriptlet conversion', () => {
                 expected: 'Scriptlet "hide-in-shadow-dom" is not supported in uBlock Origin.',
             },
             {
-                actual: String.raw`example.com#%#//scriptlet('trusted-set-local-storage-item', 'popupShow', '1')`,
-                expected: 'Scriptlet "trusted-set-local-storage-item" is not supported in uBlock Origin.',
-            },
-            {
-                actual: String.raw`example.com#%#//scriptlet('trusted-set-cookie', 'showCookie', 'true')`,
-                expected: 'Scriptlet "trusted-set-cookie" is not supported in uBlock Origin.',
+                actual: String.raw`example.org#%#//scriptlet('trusted-dispatch-event', 'submit', '.test')`,
+                expected: 'Scriptlet "trusted-dispatch-event" is not supported in uBlock Origin.',
             },
             {
                 actual: "[$path=/baz]example.com#%#//scriptlet('set-constant', 'foo', 'bar')",

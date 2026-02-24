@@ -1,17 +1,20 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Prevents BlockAdblock script from detecting an ad blocker.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-bab
   aliases:
+    - nobab
     - nobab.js
-    - ubo-nobab.js
+    - bab-defuser
     - bab-defuser.js
-    - ubo-bab-defuser.js
     - ubo-nobab
-    - ubo-bab-defuser
+    - ubo-nobab.js
   version_added: 1.0.4
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-bab
 
 ubo_any:
-  name: nobab
+  name: nobab.js
+  aliases:
+    - nobab
   docs: https://github.com/gorhill/ublock/wiki/Resources-Library#nobabjs-

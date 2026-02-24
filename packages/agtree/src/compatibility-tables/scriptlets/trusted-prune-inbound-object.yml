@@ -1,14 +1,55 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  is_trusted: true
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: trusted-prune-inbound-object
   version_added: 1.9.91
+  description: Removes listed properties from the result of calling specific function (if payload contains Object) and returns to the caller.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-prune-inbound-object
   parameters:
     - name: functionName
       required: true
+      description: The name of the function to trap, it must have an object as an argument.
     - name: propsToRemove
       required: false
+      description: String of space-separated properties to remove.
     - name: obligatoryProps
       required: false
+      description: String of space-separated properties which must be all present for the pruning to occur.
     - name: stack
       required: false
+      description: String or regular expression that must match the current function call stack trace; if regular expression is invalid it will be skipped.
+
+ubo_any:
+  name: trusted-prune-inbound-object.js
+  version_added: 1.52.3rc0
+  description: To perform object pruning for any given call which has an object as argument (hence "inbound").
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-prune-inbound-objectjs-
+  aliases:
+    - trusted-prune-inbound-object
+  parameters:
+    - name: entryPoint
+      required: true
+      description: The name of the property to trap. Must be a function, and must exist when the scriptlet tries to install the trap.
+    - name: argPos
+      required: true
+      description: The position of the object to prune in the argument list when the trapped function is called. The position is 1-based and must be an integer greater than 0.
+    - name: rawPrunePaths
+      required: true
+      description: The properties to prune (as with json-prune).
+    - name: rawNeedlePaths
+      required: false
+      description: The properties which must all be present for pruning to occur (as with json-prune).
+  ubo_tokens:
+    - name: stackToMatch
+      description: A string or regex that must match the current call stack for pruning to occur.
+      value_format: null
+      value_type: string
+    - name: dontOverwrite
+      description: When truthy, the pruning is applied to a deep copy of the argument so the original object passed to the function is not mutated.
+      value_format: ^1$
+      value_type: boolean
+    - name: logstack
+      description: When truthy, logs the current call stack to the uBO logger on each invocation.
+      value_format: ^1$
+      value_type: boolean

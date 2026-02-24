@@ -1,9 +1,16 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: fingerprintjs3
   version_added: 1.10.25
+  description: Mocks FingerprintJS v3 https://github.com/fingerprintjs.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#fingerprintjs3
   aliases:
     - ubo-fingerprint3.js
+    - ubo-fingerprint3
     - fingerprint3.js
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#fingerprintjs3
+
+ubo_any:
+  name: fingerprintjs3.js
+  description: FingerprintJS v3 shim.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#fingerprint3js-
+  aliases:
+    - fingerprintjs3

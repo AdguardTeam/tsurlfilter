@@ -1,6 +1,5 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: metrika-yandex-tag
+  description: Mocks Yandex Metrika API. https://yandex.ru/support/metrica/objects/method-reference.html
   version_added: 1.10.25
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#metrika-yandex-tag

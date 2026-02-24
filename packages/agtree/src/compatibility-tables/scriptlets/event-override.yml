@@ -1,0 +1,22 @@
+abp_any:
+  name: event-override
+  description: |-
+    Proxies events and event handlers to defuse events or change their attributes.
+    It works with the principle of proxying `addEventHandler` function and the original `Event` class with a `CustomEvent` class that we control.
+    This way we can defuse/change any arbitrary event or create new ones.
+  version_added: 4.22.2
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
+  parameters:
+    - name: eventType
+      required: true
+      description: "The type of the event to target. Examples: click, mouseover, someCustomEvent."
+    - name: mode
+      required: true
+      description: |-
+        The mode of the operation. Accepts: `trusted`, `disable`.
+        trusted mode makes the event property isTrusted true.
+        disable mode: Disables the matching event.
+    - name: needle
+      required: false
+      description: Needle to look for in the event listener function
+      default: ''

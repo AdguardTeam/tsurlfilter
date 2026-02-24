@@ -1,0 +1,18 @@
+abp_any:
+  name: hide-if-contains-visible-text
+  description: Hides any HTML element matching a CSS selector if the visible text content of the element contains a given string. It can also check an unlimited amount of CSS attributes of a node to locate a specific string, even when a website employs methods to obscure or conceal the text.
+  version_added: "3.6"
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  parameters:
+    - name: search
+      required: true
+      description: The string to match against the visible text (text that isn't hidden by CSS properties or other means). If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
+    - name: selector
+      required: true
+      description: The CSS selector that an HTML element must match for it to be hidden.
+    - name: searchSelector
+      required: false
+      description: The CSS selector that an HTML element containing the given string must match. Defaults to the value of the selector argument.
+    - name: optionalParameters
+      required: false
+      description: The CSS attributes a computed style map of a node should have in order to consider that node hidden.
