@@ -59,6 +59,116 @@ const scriptletParameterSchema = zod.object({
 const scriptletParametersSchema = zod.array(scriptletParameterSchema);
 
 /**
+ * Zod schema for a single variadic parameter validator.
+ * This is the same as scriptletParameterSchema but without the 'required' field,
+ * since variadic parameters are validated individually, not as required/optional.
+ */
+const variadicParameterValidatorSchema = scriptletParameterSchema.omit({ required: true });
+
+/**
+ * Schema for variadic parameters configuration.
+ *
+ * Variadic parameters allow a scriptlet to accept an arbitrary number of arguments
+ * after the fixed positional parameters (similar to JavaScript's ...args).
+ *
+ * You can:
+ * - Validate ALL variadic parameters with the same rules using `all_parameters`
+ * - Validate SPECIFIC positions using `parameters` (0-indexed)
+ * - Combine both: `all_parameters` as default, `parameters` for position-specific overrides
+ * - Set no validation to accept any arguments
+ * - Enforce count limits with `min_count` and `max_count`
+ *
+ * @example
+ * ```yaml
+ * # Accept any number of any arguments (like the 'log' scriptlet)
+ * variadic_parameters:
+ *   min_count: 0
+ *   max_count: null
+ * ```
+ *
+ * @example
+ * ```yaml
+ * # All variadic args must match the same pattern
+ * variadic_parameters:
+ *   min_count: 1
+ *   all_parameters:
+ *     name: message_part
+ *     pattern: ^[a-zA-Z0-9\s]+$
+ * ```
+ *
+ * @example
+ * ```yaml
+ * # Validate only the 3rd argument (index 2)
+ * variadic_parameters:
+ *   min_count: 3
+ *   parameters:
+ *     "2":
+ *       name: timeout
+ *       pattern: ^\d+$
+ * ```
+ *
+ * @example
+ * ```yaml
+ * # Default validation + position-specific overrides
+ * variadic_parameters:
+ *   all_parameters:
+ *     name: arg
+ *     pattern: ^[a-z]+$
+ *   parameters:
+ *     "0":
+ *       name: type
+ *       pattern: ^(log|warn|error)$
+ * ```
+ */
+const variadicParametersSchema = zod.object({
+    /**
+     * Validation applied to ALL variadic parameters (if specified).
+     * Acts as a default/fallback validator for any position not specified in `parameters`.
+     *
+     * If omitted, positions not defined in `parameters` accept any value.
+     */
+    all_parameters: variadicParameterValidatorSchema.optional(),
+
+    /**
+     * Position-specific validation (0-indexed).
+     * Keys are numeric strings (e.g., "0", "1", "2").
+     * Overrides `all_parameters` for the specified positions.
+     *
+     * Use this to validate only specific argument positions without requiring validation
+     * for all positions.
+     *
+     * @example
+     * ```yaml
+     * parameters:
+     *   "0":
+     *     name: first_arg
+     *     pattern: ^url$
+     *   "2":
+     *     name: third_arg
+     *     pattern: ^\d+$
+     * ```
+     */
+    parameters: zod.record(
+        zod.string().regex(/^\d+$/, 'Parameter index must be a non-negative integer string'),
+        variadicParameterValidatorSchema,
+    ).optional(),
+
+    /**
+     * Minimum number of variadic parameters required.
+     * Defaults to 0 (variadic parameters are optional).
+     */
+    min_count: zod.number().int().min(0).default(0),
+
+    /**
+     * Maximum number of variadic parameters allowed.
+     * If `null`, unlimited variadic parameters are accepted.
+     * Defaults to `null` (unlimited).
+     */
+    max_count: zod.number().int().min(0).nullable()
+        .default(null),
+}).optional();
+
+/**
  * Schema for a uBlock Origin scriptlet token parameter.
  *
  * Tokens are optional key-value pairs that come after the required and optional
@@ -176,6 +286,12 @@ export const scriptletDataSchema = zodToCamelCase(
          * List of tokens that the scriptlet accepts.
          */
         ubo_tokens: uboScriptletTokensSchema.optional(),
+
+        /**
+         * Configuration for variadic parameters.
+         * Variadic parameters accept an arbitrary number of arguments after fixed positional parameters.
+         */
+        variadic_parameters: variadicParametersSchema,
     }).superRefine((data, ctx) => {
         // TODO: find something better, for now we can't add refine logic to the base schema:
         // https://github.com/colinhacks/zod/issues/454#issuecomment-848370721
