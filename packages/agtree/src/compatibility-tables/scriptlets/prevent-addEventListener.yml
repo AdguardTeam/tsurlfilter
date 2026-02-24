@@ -43,13 +43,19 @@ ubo_any:
     - name: pattern
       required: false
       description: String/regular expression matching in stringified handler function, narrows down defusing to specific handler.
-    - name: tokens
-      required: false
-      description: |-
-       Available tokens are: `runAt`, `elements` and 'protect'.
-       When `runAt` is present, uBO will take it into account to possibly defer defusing the event listener.
-       When `elements` is present, will be used to apply the scriptlet to only elements matching the selector.
-       When `protect` is present, it tells the scriptlet whether the prevention should be protected, i.e. not overwritten by other code.
+  ubo_tokens:
+    - name: runAt
+      description: Defers the prevention to a specific document ready state. Values correspond to `readyState`.
+      value_format: ^(loading|interactive|complete)$
+      value_type: string
+    - name: elements
+      description: CSS selector; limits prevention to event listeners added on elements matching this selector.
+      value_format: null
+      value_type: string
+    - name: protect
+      description: When truthy, protects the patched `addEventListener` from being overwritten by other code.
+      value_format: ^1$
+      value_type: boolean
 
 abp_any:
   name: prevent-listener

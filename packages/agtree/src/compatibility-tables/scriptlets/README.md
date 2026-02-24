@@ -68,7 +68,45 @@ Each platform-specific entry is an object with the following fields:
 | `parameters[].pattern`     | Regular expression that matches the value of the parameter. If it's value is `null`, then the parameter value is not checked.                                                                            | `string\|null`   | `null`               |
 | `parameters[].default`     | Default value of the parameter (if any)                                                                                                                                                                  | `string\|null`   | `null`               |
 | `parameters[].debug`       | Describes whether the parameter is used only for debugging purposes.                                                                                                                                     | `boolean`        | `false`              |
+| `ubo_tokens`               | List of uBlock Origin token parameters the scriptlet accepts. Tokens are optional key-value pairs that come after the positional parameters and are parsed by `getExtraArgs()`.                          | `UboToken[]`     | `[]` (no tokens)     |
+| `ubo_tokens[].name`\*      | Name of the token (the key in the key-value pair).                                                                                                                                                       | `string`         |                      |
+| `ubo_tokens[].description` | Short description of what this token controls or configures. If not specified or its value is `null`, then the description is not available.                                                             | `string\|null`   | `null`               |
+| `ubo_tokens[].value_format` | Regular expression pattern that matches valid values for this token. Defines the syntax/format of acceptable values. If `null`, format validation is not available.                                     | `string\|null`   | `null`               |
+| `ubo_tokens[].value_type`  | Semantic type indicating how the token value is used in code: `string` (used as-is), `integer` (auto-converted to number), or `boolean` (checked for truthiness). If `null`, type is unknown.          | `'string'\|'integer'\|'boolean'\|null` | `null` |
+| `ubo_tokens[].default`     | Default/fallback value used in scriptlet code when the token is absent or falsy. Represents documented fallback patterns in the implementation (e.g. `extraArgs.quitAfter \|\| 0`). If `null`, no default is documented. | `string\|null` | `null` |
 
 <!-- markdownlint-enable MD013 -->
 
 \*: The field is required.
+
+### uBO tokens
+
+Tokens are a uBlock Origin-specific concept. They are optional key-value pairs appended after the positional
+parameters in a scriptlet call and parsed by the `getExtraArgs()` function in uBO's scriptlet runtime.
+
+**Example:**
+
+```adblock
+example.com##+js(aeld, click, popMagic, runAt, idle)
+!                ↑     ↑      ↑         ↑      ↑
+!                │     │      │         │      │
+!                │     │      │         │      └── Token value (they always have values)
+!                │     │      │         └── Tokens came after optional parameters
+!                │     │      └── Second optional parameter value
+!                │     └── First optional parameter value
+!                └── Scriptlet name
+```
+
+Results in
+
+```js
+{ runAt: 'idle' }
+```
+
+being passed to the scriptlet as extra args.
+
+The `value_type` and `value_format` fields are complementary:
+
+- `value_format` describes **what is valid** (syntax) — a regex pattern for the raw string value
+- `value_type` describes **how it is interpreted** (semantics) — whether the value is used as a string,
+  converted to an integer, or treated as a boolean flag

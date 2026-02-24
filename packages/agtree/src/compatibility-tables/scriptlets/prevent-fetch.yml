@@ -31,3 +31,8 @@ ubo_any:
     - no-fetch-if
     - no-fetch-if.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-fetchjs-
+  ubo_tokens:
+    - name: throttle
+      description: Number of milliseconds to wait before resolving the dummy response. Useful to simulate slow network responses.
+      value_format: ^\d+$
+      value_type: integer

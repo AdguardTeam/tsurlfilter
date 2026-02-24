@@ -34,6 +34,11 @@ ubo_any:
     - name: propsToMatch
       required: false
       description: String of space-separated properties to match.
+  ubo_tokens:
+    - name: includes
+      description: A string or regex that must match the full response body before any replacement is attempted.
+      value_format: null
+      value_type: string
 
 abp_any:
   name: replace-fetch-response

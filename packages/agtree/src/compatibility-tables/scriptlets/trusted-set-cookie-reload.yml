@@ -31,3 +31,16 @@ ubo_any:
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-set-cookiejs-
   aliases:
     - trusted-set-cookie
+  ubo_tokens:
+    - name: reload
+      description: When truthy, forces a page reload if the cookie was not already set to the target value.
+      value_format: ^1$
+      value_type: boolean
+    - name: dontOverwrite
+      description: When truthy, skips setting the cookie if it already exists with any value.
+      value_format: ^1$
+      value_type: boolean
+    - name: domain
+      description: Domain to set on the cookie. Can be a plain string or a regex (e.g. `/example\.com/`).
+      value_format: null
+      value_type: string

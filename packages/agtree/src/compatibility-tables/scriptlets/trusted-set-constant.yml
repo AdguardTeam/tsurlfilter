@@ -13,3 +13,27 @@ adg_os_any|adg_ext_any:
       required: true
     - name: stack
       required: false
+
+ubo_any:
+  name: trusted-set-constant.js
+  aliases:
+    - trusted-set
+    - trusted-set.js
+    - trusted-set-constant
+  is_trusted: true
+  parameters:
+    - name: chain
+      required: true
+      description: Property (chain of properties joined by `.`) attached to `window` object.
+    - name: rawValue
+      required: true
+      description: The value to set. Any value is accepted since this is a trusted scriptlet.
+  ubo_tokens:
+    - name: runAt
+      description: Defers the constant installation to a specific document ready state. Values correspond to `readyState`.
+      value_format: ^(loading|interactive|complete)$
+      value_type: string
+    - name: as
+      description: Wraps the constant value. `function` returns `() => value`, `callback` returns `() => () => value`, `resolved` returns `Promise.resolve(value)`, `rejected` returns `Promise.reject(value)`.
+      value_format: ^(function|callback|resolved|rejected)$
+      value_type: string

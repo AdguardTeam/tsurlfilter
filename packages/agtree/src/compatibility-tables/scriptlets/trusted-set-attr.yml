@@ -13,3 +13,25 @@ adg_os_any|adg_ext_any:
       required: true
     - name: value
       required: false
+
+ubo_any:
+  name: trusted-set-attr.js
+  aliases:
+    - trusted-set-attr
+  is_trusted: true
+  parameters:
+    - name: selector
+      required: true
+      description: CSS selector, specifies DOM nodes to set attributes on.
+    - name: attr
+      required: true
+      description: The name of the attribute to be set.
+    - name: value
+      required: true
+      description: The value to assign to the attribute. Any string is accepted since this is a trusted scriptlet.
+  ubo_tokens:
+    - name: runAt
+      description: Defers the initial attribute-setting pass to a specific document ready state. Defaults to `idle`.
+      value_format: ^(loading|interactive|complete|idle)$
+      value_type: string
+      default: idle

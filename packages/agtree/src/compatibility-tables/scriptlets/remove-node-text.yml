@@ -38,12 +38,25 @@ ubo_any:
     - name: includes
       required: true
       description: A string or regex to find in the text content of the node as the target of removing.
-    - name: tokens
-      required: false
-      description: |-
-       Available tokens:
-         `includes, pattern`: A string or regex which must be found in the text content of the node in order for the removing to occur
-         `excludes, pattern`: A string or regex which must not be found in the text content of the node in order for the removing to occur
-         `sedCount, n`: This will cause the scriptlet to stop after `n` instances of removing. Since a mutation observer is used by the scriptlet, it's advised to stop it whenever it becomes pointless. Default to zero, which means the scriptlet never stops
-         `stay, 1`: Force the scriptlet to stay at work forever
-         `quitAfter, ms`: This tells the scriptlet to quit `ms` milliseconds after the page has been loaded, i.e. after the `DOMContentLoaded` event has been fired
+  ubo_tokens:
+    - name: includes
+      description: A string or regex which must be found in the text content of the node for the removal to occur. Alias for `condition`.
+      value_format: null
+      value_type: string
+    - name: excludes
+      description: A string or regex which must NOT be found in the text content of the node for the removal to occur.
+      value_format: null
+      value_type: string
+    - name: sedCount
+      description: Stop after this many removal operations. Defaults to `0` (never stop).
+      value_format: ^\d+$
+      value_type: integer
+      default: "0"
+    - name: stay
+      description: When truthy, forces the scriptlet to keep the mutation observer running indefinitely (overrides `quitAfter`).
+      value_format: ^1$
+      value_type: boolean
+    - name: quitAfter
+      description: Quit the scriptlet this many milliseconds after `DOMContentLoaded` fires.
+      value_format: ^\d+$
+      value_type: integer

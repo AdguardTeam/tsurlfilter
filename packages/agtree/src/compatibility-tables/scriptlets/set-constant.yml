@@ -42,12 +42,15 @@ ubo_any:
     - name: rawValue
       required: true
       description: One of the predefined values.
-    - name: tokens
-      required: false
-      description: |-
-       Available tokens are: `runAt` and `as`.
-       When `runAt` is present, uBO will take it into account to possibly defer execution of the scriptlet.
-       When `as` is present, uBO will take it into account how the values will be returned.
+  ubo_tokens:
+    - name: runAt
+      description: Defers the constant installation to a specific document ready state. Values correspond to `readyState`.
+      value_format: ^(loading|interactive|complete)$
+      value_type: string
+    - name: as
+      description: Wraps the constant value. `function` returns `() => value`, `callback` returns `() => () => value`, `resolved` returns `Promise.resolve(value)`, `rejected` returns `Promise.reject(value)`.
+      value_format: ^(function|callback|resolved|rejected)$
+      value_type: string
 
 abp_any:
   name: override-property-read

@@ -28,14 +28,15 @@ ubo_any:
     - name: needle
       required: false
       description: String or regular expression, matching in the name of the cookie.
-    - name: tokens
-      required: false
-      description: |-
-        Available token value: `when`.
-        When this parameter is present, it adds ability to trigger cookie removal on specific events (with delay 500ms).
-        Possible events are:
-        `scroll`: executes when scrolling page
-        `keydown`: executes when key pressed
+  ubo_tokens:
+    - name: when
+      description: Space-separated list of DOM event types that trigger additional cookie removal (with 500 ms debounce). Supported values are `scroll` and `keydown`.
+      value_format: ^(scroll|keydown)(\s+(scroll|keydown))*$
+      value_type: string
+    - name: domain
+      description: Restricts removal to cookies whose domain matches this value. Can be a plain string or a regex (e.g. `/example\.com/`).
+      value_format: null
+      value_type: string
 
 abp_any:
   name: cookie-remover

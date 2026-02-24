@@ -16,3 +16,14 @@ ubo_any:
     - name: duration
       required: false
       description: If specified, the time in ms after which the added elements will be removed. No removal will occur if not specified.
+  ubo_tokens:
+    - name: runAt
+      description: Defers the initial DOM insertion to a specific document ready state. Defaults to `loading`.
+      value_format: ^(loading|interactive|complete)$
+      value_type: string
+      default: loading
+    - name: limit
+      description: Maximum number of matching parent elements to append into. Defaults to `1`.
+      value_format: ^\d+$
+      value_type: integer
+      default: "1"
