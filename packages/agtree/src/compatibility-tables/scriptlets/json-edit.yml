@@ -8,5 +8,5 @@ ubo_any:
   parameters:
     - name: jsonq
       required: false
-      description: A JSONPath query string written in the format understood by uBlock Origin.
+      description: "A JSONPath query string that selects which properties to act on within the object. Uses dot-separated paths (e.g. `foo.bar`), `[]` for array items, and a `!` prefix on a path segment to delete it. Note: this is uBO's own JSONPath dialect, not the standard spec."
       default: ''
