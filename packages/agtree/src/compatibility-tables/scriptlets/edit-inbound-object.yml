@@ -9,12 +9,12 @@ ubo_any:
     - name: propChain
       required: false
       description: Property chain of the method to trap.
-      default: "''"
+      default: ''
     - name: argPos
       required: false
       description: 0-based position of the argument. Use negative integer for position relative to the end.
-      default: "''"
+      default: ''
     - name: jsonq
       required: false
-      description: A uBO-flavored JSONPath query.
-      default: "''"
+      description: "A JSONPath query string that selects which properties to act on within the object. Uses dot-separated paths (e.g. `foo.bar`), `[]` for array items, and a `!` prefix on a path segment to delete it. Note: this is uBO's own JSONPath dialect, not the standard spec."
+      default: ''
