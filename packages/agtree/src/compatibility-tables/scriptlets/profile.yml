@@ -7,17 +7,3 @@ abp_any:
   version_added: "4.8"
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
   debug: true
-  parameters:
-    - name: debugMode
-      required: false
-      description: Activates `debug` mode for the `abort-on-property-read` snippet
-      debug: true
-    - name: snippetName
-      required: true
-      description: The name of the snippet being tested.
-  variadic_parameters:
-    min_count: 0
-    max_count: null
-    all_parameters:
-      name: args
-      description: Parameters for the snippet being tested.
