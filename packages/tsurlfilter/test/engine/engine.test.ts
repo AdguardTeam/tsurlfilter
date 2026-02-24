@@ -160,7 +160,7 @@ describe('TestEngine - postponed load rules', () => {
     });
 
     it('works rules are loaded async', async () => {
-        const engine = Engine.createSync({
+        const engine = await Engine.createAsync({
             filters: [
                 {
                     id: 1,
@@ -1418,17 +1418,111 @@ describe('Unsafe rules can be ignored', () => {
 });
 
 describe('Async engine creation', () => {
-    it('should create engine', async () => {
-        const engine = await Engine.createAsync({
+    it('should create engine and match rules same as sync', async () => {
+        const rules = [
+            '||example.org^$third-party',
+            'example.org##banner',
+        ];
+        const options = {
+            filters: [{ id: 1, content: rules.join('\n') }],
+        };
+
+        const syncEngine = Engine.createSync(options);
+        const asyncEngine = await Engine.createAsync(options);
+
+        expect(asyncEngine.getRulesCount()).toBe(syncEngine.getRulesCount());
+
+        const request = new Request('http://example.org', 'http://other.org', RequestType.Document);
+        const syncResult = syncEngine.matchRequest(request);
+        const asyncResult = asyncEngine.matchRequest(request);
+
+        expect(asyncResult.getBasicResult()).not.toBeNull();
+        expect(
+            asyncEngine.retrieveRuleText(
+                asyncResult.getBasicResult()!.getFilterListId(),
+                asyncResult.getBasicResult()!.getIndex(),
+            ),
+        ).toBe(
+            syncEngine.retrieveRuleText(
+                syncResult.getBasicResult()!.getFilterListId(),
+                syncResult.getBasicResult()!.getIndex(),
+            ),
+        );
+    });
+
+    it('should yield to the event loop via macrotasks when rule count exceeds CHUNK_SIZE', async () => {
+        // Generate enough rules to trigger at least one yield (CHUNK_SIZE = 5000).
+        const ruleCount = 5500;
+        const rules: string[] = [];
+        for (let i = 0; i < ruleCount; i += 1) {
+            rules.push(`||example${i}.org^`);
+        }
+
+        // Schedule a macrotask that sets a flag.
+        // If createAsync correctly yields via setTimeout, this macrotask
+        // will run during engine creation, before createAsync resolves.
+        let macrotaskRanDuringCreation = false;
+        const asyncEnginePromise = Engine.createAsync({
+            filters: [{ id: 1, content: rules.join('\n') }],
+        });
+
+        // This setTimeout callback is a macrotask. It will only execute
+        // between other macrotasks — i.e. only if createAsync actually
+        // yields to the event loop via setTimeout.
+        setTimeout(() => {
+            macrotaskRanDuringCreation = true;
+        }, 0);
+
+        const engine = await asyncEnginePromise;
+
+        expect(engine.getRulesCount()).toBe(ruleCount);
+        expect(macrotaskRanDuringCreation).toBe(true);
+    });
+
+    it('should not yield when rule count is below CHUNK_SIZE', async () => {
+        const ruleCount = 100;
+        const rules: string[] = [];
+        for (let i = 0; i < ruleCount; i += 1) {
+            rules.push(`||small${i}.org^`);
+        }
+
+        let macrotaskRanDuringCreation = false;
+        const asyncEnginePromise = Engine.createAsync({
+            filters: [{ id: 1, content: rules.join('\n') }],
+        });
+
+        setTimeout(() => {
+            macrotaskRanDuringCreation = true;
+        }, 0);
+
+        const engine = await asyncEnginePromise;
+
+        expect(engine.getRulesCount()).toBe(ruleCount);
+        // With fewer rules than CHUNK_SIZE, no setTimeout-based yield occurs
+        // during the scanning loop, so the macrotask should not have run yet.
+        expect(macrotaskRanDuringCreation).toBe(false);
+    });
+});
+
+describe('$path cosmetic modifier', () => {
+    it('$generichide should not disable path modifier rules', () => {
+        const rulesLocal = [
+            '[$path=/subpage1]example.org##.ad-banner',
+            '@@||example.org^$generichide',
+        ];
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
-                    content: '||example.org^',
+                    content: rulesLocal.join('\n'),
                 },
             ],
         });
-        const request = new Request('http://example.org', '', RequestType.Document);
-        const result = engine.matchRequest(request);
-        expect(result.getBasicResult()).not.toBeNull();
+
+        const result = engine.getCosmeticResult(
+            createRequest('http://example.org/subpage1'),
+            CosmeticOption.CosmeticOptionAll,
+        );
+        expect(result.elementHiding.specific.length).toEqual(1);
     });
 });

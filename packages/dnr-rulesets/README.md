@@ -220,6 +220,17 @@ You can also integrate functions for downloading and updating the manifest into 
     await loader.load('<path-to-output>');
     ```
 
+    To copy only the `declarative/` rulesets directory (skipping
+    `filters_i18n.json`, `local_script_rules.js`, etc.), pass the
+    `onlyDeclarativeRulesets` option. This is useful for Chrome Web Store
+    extensions that rely on the
+    [skip review](https://developer.chrome.com/docs/webstore/skip-review)
+    mechanism, which requires that only `rule_resources` files are changed:
+
+    ```ts
+    await loader.load('<path-to-output>', { onlyDeclarativeRulesets: true });
+    ```
+
 2. Copy only local script rules.
 
     **Option A: Copy JavaScript format rules**

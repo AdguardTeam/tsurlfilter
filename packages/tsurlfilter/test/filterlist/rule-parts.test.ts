@@ -56,6 +56,19 @@ describe('getRuleParts', () => {
         expect(rule.slice(parts!.domainsStart, parts!.domainsEnd)).toBe('example.com');
     });
 
+    test('parses cosmetic rule with modifiers 2', () => {
+        const rule = '[$path=/AdguardTeam]github.com##body';
+        const parts = getRuleParts(rule) as CosmeticRuleParts;
+
+        expect(parts).not.toBeNull();
+        expect(parts!.category).toBe(RuleCategory.Cosmetic);
+        expect(parts!.allowlist).toBeFalsy();
+        expect(parts!.type).toBe(CosmeticRuleType.ElementHidingRule);
+        expect(rule.slice(parts!.contentStart, parts!.contentEnd)).toBe('body');
+        expect(rule.slice(parts!.separatorStart, parts!.separatorEnd)).toBe('##');
+        expect(rule.slice(parts!.domainsStart, parts!.domainsEnd)).toBe('github.com');
+    });
+
     test('parses HTML cosmetic rule', () => {
         const rule = 'example.com$$.ad';
         const parts = getRuleParts(rule) as CosmeticRuleParts;

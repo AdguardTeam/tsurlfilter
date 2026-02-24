@@ -50,13 +50,6 @@ npmjs 3.2.X:
             npm publish dnr-rulesets.tgz --access public
   requirements: &requirements
     - extension: 'true'
-  notifications: &notifications
-    - events:
-        - deployment-started-and-finished
-      recipients:
-        - webhook:
-            name: Deploy webhook
-            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
 npmjs 3.3.X:
   docker: *docker
@@ -68,7 +61,6 @@ npmjs 3.3.X:
         branch: stable-dnr-rulesets-3.3
   tasks: *tasks
   requirements: *requirements
-  notifications: *notifications
 
 npmjs 4.0.X:
   docker: *docker
@@ -80,4 +72,3 @@ npmjs 4.0.X:
         branch: stable-dnr-rulesets-4.0
   tasks: *tasks
   requirements: *requirements
-  notifications: *notifications
