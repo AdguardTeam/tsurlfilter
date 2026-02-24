@@ -82,6 +82,7 @@ program
     .description('Downloads rulesets for MV3 extension')
     .argument('<path-to-output>', 'rulesets download path')
     .option('-l, --latest-filters', 'download latest text filters instead of DNR rulesets', false)
+    .option('-r, --only-declarative-rulesets', 'copy only declarative rulesets, skipping other files', false)
     .action(async (dest: string, options?: AssetsLoaderOptions) => {
         const loader = new AssetsLoader();
 

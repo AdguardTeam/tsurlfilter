@@ -68,7 +68,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
      * @returns Modified content string.
      */
     public applyRules(content: string): string {
-        if (this.htmlRules && this.htmlRules.length > 0) {
+        if (this.htmlRules && this.htmlRules.length > 0 && this.isHtmlContentType()) {
             content = this.applyHtmlRules(content);
         }
 
@@ -82,6 +82,27 @@ export class ContentStringFilter implements ContentStringFilterInterface {
         }
 
         return content;
+    }
+
+    /**
+     * Checks if the response content type is HTML-like.
+     *
+     * HTML filtering rules should only be applied to HTML documents,
+     * not to other content types like JavaScript or CSS that may be
+     * loaded as top-level Document requests (e.g. navigating directly
+     * to a .js file in the browser).
+     *
+     * @returns True if the content type is HTML or if no content type header is present.
+     */
+    private isHtmlContentType(): boolean {
+        const { contentTypeHeader } = this.context;
+
+        if (!contentTypeHeader) {
+            return true;
+        }
+
+        return contentTypeHeader.startsWith('text/html')
+            || contentTypeHeader.startsWith('application/xhtml+xml');
     }
 
     /**

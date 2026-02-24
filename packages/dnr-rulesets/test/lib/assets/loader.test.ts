@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { parse } from 'acorn';
-import { copy } from 'fs-extra';
+import { copy, type CopyOptions } from 'fs-extra';
 import process from 'process';
 import {
     afterEach,
@@ -52,7 +52,37 @@ describe('load', () => {
         expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
         expect(mockResolve).toHaveBeenCalledWith(expect.any(String), filtersRelativePath);
         expect(mockCopy).toHaveBeenCalledTimes(1);
-        expect(mockCopy).toHaveBeenCalledWith(src, to);
+        expect(mockCopy).toHaveBeenCalledWith(src, to, {});
+    });
+
+    it('should copy only declarative rulesets when onlyDeclarativeRulesets is true', async () => {
+        const loader = new AssetsLoader();
+
+        await expect(loader.load(dest, { onlyDeclarativeRulesets: true })).resolves.toBeUndefined();
+
+        expect(mockResolve).toHaveBeenCalledTimes(2);
+        expect(cwdSpy).toHaveBeenCalledTimes(1);
+        expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
+        expect(mockResolve).toHaveBeenCalledWith(expect.any(String), filtersRelativePath);
+        expect(mockCopy).toHaveBeenCalledTimes(1);
+        expect(mockCopy).toHaveBeenCalledWith(src, to, {
+            filter: expect.any(Function),
+        });
+
+        // Verify the filter function allows only src root and declarative/ contents
+        const copyOptions = mockCopy.mock.lastCall?.[2] as CopyOptions | undefined;
+        expect(copyOptions).toBeDefined();
+
+        const filterFn = copyOptions!.filter as (srcPath: string) => boolean;
+        // Source root must be allowed (fs-extra requirement)
+        expect(filterFn(src)).toBe(true);
+        // Declarative directory and its contents must be allowed
+        expect(filterFn(path.join(src, 'declarative'))).toBe(true);
+        expect(filterFn(path.join(src, 'declarative', 'ruleset_1.json'))).toBe(true);
+        // Everything else must be rejected
+        expect(filterFn(path.join(src, 'filters_i18n.json'))).toBe(false);
+        expect(filterFn(path.join(src, 'local_script_rules.js'))).toBe(false);
+        expect(filterFn(path.join(src, 'local_script_rules.json'))).toBe(false);
     });
 
     it('should throw an error if assets cannot be loaded', async () => {
@@ -69,7 +99,7 @@ describe('load', () => {
         expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
         expect(mockResolve).toHaveBeenCalledWith(expect.any(String), filtersRelativePath);
         expect(mockCopy).toHaveBeenCalledTimes(1);
-        expect(mockCopy).toHaveBeenCalledWith(src, to);
+        expect(mockCopy).toHaveBeenCalledWith(src, to, {});
     });
 });
 

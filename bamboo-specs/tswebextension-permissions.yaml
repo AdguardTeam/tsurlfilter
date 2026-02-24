@@ -14,6 +14,8 @@ environment-permissions:
         permissions:
           - view
           - deploy
+  - npmjs • 4.x:
+      - <<: *npmjs-permissions
   - npmjs • alpha:
       - <<: *npmjs-permissions
   - npmjs • beta:
