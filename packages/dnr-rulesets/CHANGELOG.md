@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+- Build output structure for declarative rules, see [README](./README.md#output-structure) for details.
+
 ### Added
 
 - `onlyDeclarativeRulesets` option to `AssetsLoader.load()` and
@@ -14,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only the `declarative/` rulesets directory is copied, skipping all other files
   (`filters_i18n.json`, `local_script_rules.js`, etc.). This preserves Chrome
   Web Store skip review eligibility.
+- Opera MV3 filters support.
+- New option `-b, --browser` for `load` command to specify for which browser to load filters.
+- New option `-b, --browser` for `watch` command to specify for which browser to download latest filters.
 
 ## [4.0.0] - 2026-01-21
 
@@ -25,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.0.0
 
-## [3.3.1] - 2025-12-01
+## [3.3.1] - 2025-12-XX
 
 ### Added
 

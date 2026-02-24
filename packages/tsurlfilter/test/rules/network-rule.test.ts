@@ -607,6 +607,24 @@ describe('NetworkRule constructor', () => {
         assertBadfilterNegates('*$image,domain=example.org|example.com', '*$image,domain=example.org,badfilter', true);
         assertBadfilterNegates('*$image,domain=example.com', '*$image,domain=example.org,badfilter', false);
         assertBadfilterNegates('*$image,domain=example.org|~example.com', '*$image,domain=example.org,badfilter', false);
+
+        // denyallow modifier must be compared exactly
+        // https://github.com/AguardTeam/AdguardBrowserExtension/issues/3428
+        assertBadfilterNegates(
+            '*$script,third-party,denyallow=a.com|b.com,domain=example.org',
+            '*$script,third-party,denyallow=a.com|b.com,domain=example.org,badfilter',
+            true,
+        );
+        assertBadfilterNegates(
+            '*$script,third-party,denyallow=a.com|b.com|c.com,domain=example.org',
+            '*$script,third-party,denyallow=a.com|b.com,domain=example.org,badfilter',
+            false,
+        );
+        assertBadfilterNegates(
+            '$script,third-party,denyallow=a.com|b.com|c.com,domain=example.org',
+            '$script,third-party,denyallow=a.com|b.com,domain=example.org,badfilter',
+            false,
+        );
     });
 
     it('works if noop modifier works properly', () => {
