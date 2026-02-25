@@ -1,33 +1,23 @@
-adg_os_any:
-  name: empty
-  description: |-
-    This modifier is deprecated in favor of the $redirect modifier.
-    Rules with `$empty` are still supported and being converted into `$redirect=nooptext` now
-    but the support shall be removed in the future.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#empty-modifier
-  deprecated: true
-  deprecation_message: |-
-    Rules with `$empty` are still supported and being converted into `$redirect=nooptext` now
-    but the support shall be removed in the future.
-  negatable: false
-
-adg_ext_any:
-  name: empty
-  description: |-
-    This modifier is deprecated in favor of the $redirect modifier.
-    Rules with `$empty` are still supported and being converted into `$redirect=nooptext` now
-    but the support shall be removed in the future.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#empty-modifier
-  deprecated: true
-  deprecation_message: |-
-    Rules with `$empty` are still supported and being converted into `$redirect=nooptext` now
-    but the support shall be removed in the future.
-  negatable: false
-
-ubo_ext_any:
+common:
   name: empty
   description: |-
     This modifier is deprecated in favor of the $redirect modifier.
     Rules with `$empty` are supported and being converted into `$redirect=nooptext`.
-  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#empty
   negatable: false
+
+adg_os_any:
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#empty-modifier
+  deprecated: true
+  deprecation_message: |-
+    Rules with `$empty` are still supported and being converted into `$redirect=nooptext` now
+    but the support shall be removed in the future.
+
+adg_ext_any:
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#empty-modifier
+  deprecated: true
+  deprecation_message: |-
+    Rules with `$empty` are still supported and being converted into `$redirect=nooptext` now
+    but the support shall be removed in the future.
+
+ubo_ext_any:
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#empty

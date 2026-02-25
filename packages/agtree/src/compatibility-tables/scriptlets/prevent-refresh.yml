@@ -1,5 +1,10 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  parameters:
+    - name: delay
+      required: false
+
 adg_os_any|adg_ext_any:
   name: prevent-refresh
   version_added: 1.6.2
@@ -12,9 +17,6 @@ adg_os_any|adg_ext_any:
     - ubo-refresh-defuser.js
     - ubo-refresh-defuser
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-refresh
-  parameters:
-    - name: delay
-      required: false
 
 ubo_any:
   name: prevent-refresh.js
@@ -22,6 +24,3 @@ ubo_any:
   aliases:
     - refresh-defuser.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-refreshjs-
-  parameters:
-    - name: delay
-      required: false

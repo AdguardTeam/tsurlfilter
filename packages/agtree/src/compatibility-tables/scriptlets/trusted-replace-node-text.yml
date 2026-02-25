@@ -1,5 +1,8 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
+common:
+  is_trusted: true
+
 adg_os_any|adg_ext_any:
   name: trusted-replace-node-text
   version_added: 1.9.37
@@ -12,3 +15,45 @@ adg_os_any|adg_ext_any:
       required: true
     - name: replacement
       required: true
+
+ubo_any:
+  name: trusted-replace-node-text.js
+  aliases:
+    - trusted-rpnt
+    - trusted-rpnt.js
+    - replace-node-text
+    - replace-node-text.js
+    - rpnt
+    - rpnt.js
+  parameters:
+    - name: nodeName
+      required: true
+      description: The name of the node for which the text content must be replaced.
+    - name: pattern
+      required: true
+      description: A string or regex to match in the text content of the node.
+    - name: replacement
+      required: true
+      description: The string to replace the matched text with.
+  ubo_tokens:
+    - name: includes
+      description: A string or regex which must be found in the node text for the replacement to occur. Alias for `condition`.
+      value_format: null
+      value_type: string
+    - name: excludes
+      description: A string or regex which must NOT be found in the node text for the replacement to occur.
+      value_format: null
+      value_type: string
+    - name: sedCount
+      description: Stop after this many replacement operations. Defaults to `0` (never stop).
+      value_format: ^\d+$
+      value_type: integer
+      default: "0"
+    - name: stay
+      description: When truthy, forces the scriptlet to keep the mutation observer running indefinitely.
+      value_format: ^1$
+      value_type: boolean
+    - name: quitAfter
+      description: Quit the scriptlet this many milliseconds after `DOMContentLoaded` fires.
+      value_format: ^\d+$
+      value_type: integer

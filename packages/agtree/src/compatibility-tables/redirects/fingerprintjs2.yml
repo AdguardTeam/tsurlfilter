@@ -1,14 +1,15 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Mocks FingerprintJS2 script.
+
 adg_os_any|adg_ext_any:
   name: fingerprintjs2
   aliases:
     - fingerprint2.js
-  description: Mocks FingerprintJS2 script.
 
 ubo_any:
   name: fingerprint2.js
-  description: Mocks FingerprintJS2 script.
   resource_types:
     - script
 

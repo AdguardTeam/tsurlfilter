@@ -1,8 +1,11 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-setInterval
   version_added: 1.0.4
+  description: |-
+      Prevents a setInterval call if:
+      1. The text of the callback is matching the specified matchCallback string/regexp which does not start with `!`; otherwise mismatched calls should be defused.
+      2. The delay is matching the specified matchDelay; otherwise mismatched calls should be defused.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-setInterval
   aliases:
     - no-setInterval-if.js
     - ubo-no-setInterval-if.js
@@ -16,23 +19,38 @@ adg_os_any|adg_ext_any:
     - ubo-setInterval-defuser
     - ubo-nosiif
     - ubo-sid
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-setInterval
   parameters:
     - name: matchCallback
       required: false
+      description: |-
+          String or regular expression; invalid regular expression will be skipped and all callbacks will be matched. If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
+          If do not start with `!`, the stringified callback will be matched. If not set, prevents all setInterval calls due to specified matchDelay.
     - name: matchDelay
       required: false
+      description: |-
+          Must be an integer. If starts with !, scriptlet will not match the delay but all other will be defused.
+          If do not start with !, the delay passed to the setInterval call will be matched. Decimal delay values will be rounded down, e.g 10.95 will be matched by matchDelay with value 10.
 
 ubo_any:
-  name: no-setInterval-if.js
+  name: prevent-setInterval.js
   version_added: 1.23.0
-  aliases:
-    - nosiif.js
-    - prevent-setInterval.js
-    - setInterval-defuser.js
+  description: |-
+      Defuses calls to setInterval() function when parameters:
+      * are not prefixed with `!` and match the setInterval() argument; OR
+      * are prefixed with `!` and do not match the setInterval() argument.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setInterval-ifjs-
+  aliases:
+    - prevent-setInterval
+    - no-setInterval-if.js
+    - no-setInterval-if
+    - nosiif.js
+    - nosiif
+    - setInterval-defuser.js
+    - setInterval-defuser
   parameters:
-    - name: matchCallback
+    - name: needle
       required: false
-    - name: matchDelay
+      description: String/regular expression, matching in stringified callback function.
+    - name: delay
       required: false
+      description: A value to match against the delay. Can be a single value for exact match, or a range.

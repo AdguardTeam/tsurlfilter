@@ -1,14 +1,14 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Redirects resource and replaces supposed content by decoy frame with button for original content recovering.
+  is_blocking: true
+
 adg_os_any|adg_ext_any:
   name: click2load.html
   aliases:
     - click2load.html
     - ubo-click2load.html
-  description: Redirects resource and replaces supposed content by decoy frame with button for original content recovering.
-  is_blocking: true
 
 ubo_any:
   name: click2load.html
-  description: Redirects resource and replaces supposed content by decoy frame with button for original content recovering.
-  is_blocking: true

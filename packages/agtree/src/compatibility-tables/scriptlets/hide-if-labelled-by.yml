@@ -1,0 +1,15 @@
+abp_any:
+  name: hide-if-labelled-by
+  description: Hides any HTML element that uses an `aria-labelledby`, or one of its ancestors, if the related aria element contains the searched text.
+  version_added: "3.9"
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  parameters:
+    - name: search
+      required: true
+      description: The string to look for in HTML elements. If the string begins and ends with a slash `/`, the text in between is treated as a regular expression.
+    - name: selector
+      required: true
+      description: The CSS selector of an HTML element that uses as aria-labelledby attribute.
+    - name: searchSelector
+      required: false
+      description: The CSS selector of an ancestor of the HTML element that uses as aria-labelledby attribute. Defaults to the value of the selector argument.

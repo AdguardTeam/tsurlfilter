@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Aborts a script when it attempts to utilize (read or write to) the specified property and it's error stack trace contains given value.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: abort-on-stack-trace
   version_added: 1.5.0
   aliases:
@@ -15,17 +16,23 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: property
       required: true
+      description: Path to a property. The property must be attached to `window`.
     - name: stack
       required: true
+      description: String that must match the current function call stack trace.
 
 ubo_any:
   name: abort-on-stack-trace.js
   version_added: 1.29.3rc9
   aliases:
+    - abort-on-stack-trace
+    - aost
     - aost.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-stack-tracejs-
   parameters:
     - name: property
       required: true
+      description: Path to a property. The property must be attached to `window`.
     - name: stack
-      required: true
+      required: false
+      description: String/regular expression, the needle to match against the stack trace. If the empty string, only log. Prepend pattern with `!` to test for unmatched patterns in stack trace.

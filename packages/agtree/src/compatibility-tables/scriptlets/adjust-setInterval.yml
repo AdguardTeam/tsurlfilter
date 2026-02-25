@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Adjusts delay for specified `setInterval()` callbacks.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: adjust-setInterval
   version_added: 1.0.4
   aliases:
@@ -17,21 +18,30 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: matchCallback
       required: false
+      description: String or regular expression for stringified callback matching; defaults to match all callbacks.
     - name: matchDelay
       required: false
+      description: Defaults to `1000`, matching `setInterval` delay; decimal integer OR `*` for any delay.
     - name: boost
       required: false
+      description: Defaults to `0.05`, float, capped at `1000` times for up and `50` for down (0.001...50), `setInterval` delay multiplier.
 
 ubo_any:
   name: adjust-setInterval.js
   aliases:
+    - adjust-setInterval
+    - nano-setInterval-booster
     - nano-setInterval-booster.js
+    - nano-sib
     - nano-sib.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#adjust-setIntervaljs-
   parameters:
-    - name: matchCallback
+    - name: needleArg
       required: false
-    - name: matchDelay
+      description: String or regular expression, matching in stringified callback function.
+    - name: delayArg
       required: false
-    - name: boost
+      description: Defaults to `1000`, decimal integer, matching interval, `*` will match any interval.
+    - name: boostArg
       required: false
+      description: Defaults to `0.05` (20x faster), float, capped at `50` times for up and down, interval multiplier.

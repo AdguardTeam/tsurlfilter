@@ -1,0 +1,27 @@
+common:
+  parameters:
+    - name: key
+      required: true
+      description: Key name to be set.
+    - name: value
+      required: true
+      description: Key value.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: trusted-set-session-storage-item
+  version_added: 1.11.16
+  description: Adds item with arbitrary key and value to sessionStorage object, or updates the value of the key if it already exists. Scriptlet won't set item if storage is full.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-set-session-storage-item
+
+ubo_any:
+  name: trusted-set-session-storage-item.js
+  version_added: 1.50.1b4
+  description: Set a local/session storage entry to a specific, allowed value. Scriptlet won't set item if storage is full. Double quotes surrouding the key value are allowed.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-session-storage-itemjs-
+  aliases:
+    - trusted-set-session-storage-item
+  ubo_tokens:
+    - name: reload
+      description: Number of milliseconds to wait before reloading the page after the storage item is set. The page is only reloaded if the value was actually changed.
+      value_format: ^\d+$
+      value_type: integer

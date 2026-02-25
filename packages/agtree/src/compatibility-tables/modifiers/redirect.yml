@@ -1,9 +1,11 @@
-adg_os_any:
+common:
   name: redirect
   description: Used to redirect web requests to a local "resource".
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#redirect-modifier
   assignable: true
   negatable: false
+
+adg_os_any:
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#redirect-modifier
   value_optional: true
   # TODO: Add a custom validator, like `adg_redirect_resource` that based on the
   # compatibility table from the ADG Scriptlets repo.
@@ -56,11 +58,7 @@ adg_os_any:
       )?$
 
 adg_ext_any:
-  name: redirect
-  description: Used to redirect web requests to a local "resource".
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#redirect-modifier
-  assignable: true
-  negatable: false
   value_optional: true
   # TODO: Add a custom validator, like `adg_redirect_resource` that based on the
   # compatibility table from the ADG Scriptlets repo.
@@ -113,11 +111,7 @@ adg_ext_any:
       )?$
 
 ubo_ext_any:
-  name: redirect
-  description: Used to redirect web requests to a local "resource".
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
-  assignable: true
-  negatable: false
   value_optional: true
   # TODO: Add a custom validator, like `ubo_redirect_resource` that based on the
   # compatibility table from the ADG Scriptlets repo.

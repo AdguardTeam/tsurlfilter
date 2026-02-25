@@ -1,20 +1,20 @@
 # Note: content blocking products do not support redirects
+common:
+  description: Redirects to a 32x32 transparent PNG.
+
 adg_os_any|adg_ext_any:
   name: 32x32-transparent.png
   aliases:
     - 32x32.png
     - 32x32-transparent-png
-  description: Redirects to a 32x32 transparent PNG.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-redirects.md#32x32-transparent.png
 
 ubo_any:
   name: 32x32.png
-  description: Redirects to a 32x32 transparent PNG.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#available-empty-redirect-resources
   resource_types:
     - image
 
 abp_any:
   name: 32x32-transparent-png
-  description: Redirects to a 32x32 transparent PNG.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#rewrite

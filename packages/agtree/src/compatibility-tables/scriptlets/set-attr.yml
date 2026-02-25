@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Sets attribute with permitted value on the specified elements.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: set-attr
   version_added: 1.5.0
   aliases:
@@ -11,19 +12,33 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: selector
       required: true
+      description: CSS selector, specifies DOM nodes to set attributes on.
     - name: attr
       required: true
+      description: The name of the attribute to be set.
     - name: value
       required: false
+      description: One of the predefined values to assign to the attribute, defaults to `''`.
 
 ubo_any:
   name: set-attr.js
   version_added: 1.50.1b16
+  aliases:
+    - set-attr
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-attrjs-
   parameters:
     - name: selector
       required: true
+      description: CSS selector, specifies DOM nodes to set attributes on.
     - name: attr
       required: true
+      description: The name of the attribute to be set.
     - name: value
-      required: false
+      required: true
+      description: One of the predefined values to assign to the attribute.
+  ubo_tokens:
+    - name: runAt
+      description: Defers the initial attribute-setting pass to a specific document ready state. Defaults to `idle`.
+      value_format: ^(loading|interactive|complete|idle)$
+      value_type: string
+      default: idle

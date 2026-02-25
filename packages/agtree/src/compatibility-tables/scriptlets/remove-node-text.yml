@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Removes text from DOM nodes.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: remove-node-text
   version_added: 1.9.37
   aliases:
@@ -14,17 +15,48 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: nodeName
       required: true
+      description: String or RegExp, specifies DOM node name from which the text will be removed. Must target lowercased node names, e.g `div` instead of `DIV`.
     - name: textMatch
       required: true
+      description: String or RegExp to match against node's text content. If matched, the whole text will be removed. Case sensitive.
+    - name: parentSelector
+      required: false
+      description: String, CSS selector to match parent node.
 
 ubo_any:
   name: remove-node-text.js
   version_added: 1.49.3rc15
   aliases:
+    - remove-node-text
+    - rmnt
     - rmnt.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-node-textjs-
   parameters:
     - name: nodeName
       required: true
-    - name: textMatch
+      description: The name of the node for which the text content must be removed.
+    - name: includes
       required: true
+      description: A string or regex to find in the text content of the node as the target of removing.
+  ubo_tokens:
+    - name: includes
+      description: A string or regex which must be found in the text content of the node for the removal to occur. Alias for `condition`.
+      value_format: null
+      value_type: string
+    - name: excludes
+      description: A string or regex which must NOT be found in the text content of the node for the removal to occur.
+      value_format: null
+      value_type: string
+    - name: sedCount
+      description: Stop after this many removal operations. Defaults to `0` (never stop).
+      value_format: ^\d+$
+      value_type: integer
+      default: "0"
+    - name: stay
+      description: When truthy, forces the scriptlet to keep the mutation observer running indefinitely (overrides `quitAfter`).
+      value_format: ^1$
+      value_type: boolean
+    - name: quitAfter
+      description: Quit the scriptlet this many milliseconds after `DOMContentLoaded` fires.
+      value_format: ^\d+$
+      value_type: integer

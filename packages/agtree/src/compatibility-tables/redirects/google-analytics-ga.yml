@@ -1,14 +1,15 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Mocks old Google Analytics API.
+
 adg_os_any|adg_ext_any:
   name: google-analytics-ga
   aliases:
     - ubo-google-analytics_ga.js
     - google-analytics_ga.js
-  description: Mocks old Google Analytics API.
 
 ubo_any:
   name: google-analytics_ga.js
-  description: Mocks old Google Analytics API.
   resource_types:
     - script

@@ -36,6 +36,34 @@ Here is a guide on how to set up the development environment and how to submit y
 
 We would be happy to review your pull request and merge it if it is suitable for the project.
 
+### Verifying Compatibility Data
+
+The project includes compatibility tables for scriptlets, modifiers, and redirects. If you make changes to the
+compatibility data files (YAML files in `src/compatibility-tables/`), you should verify that your changes are
+consistent:
+
+```bash
+pnpm verify-compat
+```
+
+This command performs two steps:
+
+1. **Extraction**: Extracts scriptlet metadata from various sources related to AdGuard, uBlock Origin, and Adblock Plus
+2. **Validation**: Compares the extracted data with the compatibility table data to ensure they match
+
+The tool helps catch common issues such as:
+
+- Missing scriptlets in compatibility tables
+- Incorrect parameter definitions
+- Mismatched aliases or documentation links
+- Data inconsistencies between the library and compatibility tables
+
+If the validation fails, the tool will output detailed information about the discrepancies that need to be fixed.
+
+**Note**: This tool is not perfect and likely cannot be made perfect due to the complexity of scriptlet metadata
+extraction and the evolving nature of the libraries. However, it significantly reduces the scope of work during
+compatibility table updates and helps identify potential issues that might otherwise be missed in manual reviews.
+
 ### Available commands
 
 During development, you can use the following commands (listed in `package.json`):
@@ -57,6 +85,7 @@ During development, you can use the following commands (listed in `package.json`
 - `pnpm lint:md` - lint the markdown files with [markdownlint][markdownlint].
 - `pnpm precommit` - run all checks before committing.
 - `pnpm test` - run tests with [Vitest][vitest].
+- `pnpm verify-compat` - extract and validate compatibility data for scriptlets to ensure data consistency.
 
 [contribute]: https://adguard.com/contribute.html
 [eslint]: https://eslint.org/

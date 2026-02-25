@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Prevents `xhr` calls if all given parameters match.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-xhr
   version_added: 1.5.0
   aliases:
@@ -11,17 +12,23 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: propsToMatch
       required: false
+      description: String of space-separated properties to match.
     - name: randomize
       required: false
+      description: Argument to randomize `responseText` and `response` of matched XMLHttpRequest's response.
 
 ubo_any:
   name: no-xhr-if.js
   version_added: 1.38.0
   aliases:
+    - no-xhr-if
+    - prevent-xhr
     - prevent-xhr.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
   parameters:
     - name: propsToMatch
       required: false
-    - name: randomize
+      description: String of space-separated properties to match.
+    - name: responseBody
       required: false
+      description: Argument to define the response body.

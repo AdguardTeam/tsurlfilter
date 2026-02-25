@@ -1,11 +1,12 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-element-src-loading
   version_added: 1.6.2
+  description: Prevents target element source loading without triggering 'onerror' listeners and not breaking 'onload' ones.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-element-src-loading
   parameters:
     - name: tagName
       required: true
+      description: Case-insensitive target element tagName which src property resource loading will be silently prevented.
     - name: match
       required: true
+      description: String or regular expression for matching the element's URL.

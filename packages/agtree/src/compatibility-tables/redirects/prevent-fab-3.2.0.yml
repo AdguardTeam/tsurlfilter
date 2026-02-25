@@ -1,16 +1,17 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Mocks FAB script v3.2.0.
+
 adg_os_any|adg_ext_any:
   name: prevent-fab-3.2.0
   aliases:
     - nofab.js
-  description: Mocks FAB script v3.2.0.
 
 ubo_any:
   name: nofab.js
   aliases:
     - fuckadblock.js-3.2.0
     - fuckadblock.js-3.2.0.js
-  description: Mocks FAB script v3.2.0.
   resource_types:
     - script

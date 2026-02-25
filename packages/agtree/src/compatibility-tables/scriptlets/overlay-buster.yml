@@ -1,0 +1,6 @@
+ubo_any:
+  name: overlay-buster.js
+  description: Experimental, gets rid of overlay dialogs, works for ~30s after page load. Preferred way to handle overlays is to use standard cosmetic filters and optionally style injection.
+  aliases:
+    - overlay-buster
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#overlay-busterjs-

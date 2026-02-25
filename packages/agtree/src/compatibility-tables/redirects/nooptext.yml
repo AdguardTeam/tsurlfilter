@@ -1,15 +1,16 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Redirects to an empty text file.
+
 adg_os_any|adg_ext_any:
   name: nooptext
   aliases:
     - noop.txt
     - blank-text
-  description: Redirects to an empty text file.
 
 ubo_any:
   name: noop.txt
-  description: Redirects to an empty text file.
   resource_types:
     - image
     - media
@@ -21,4 +22,3 @@ ubo_any:
 
 abp_any:
   name: blank-text
-  description: Redirects to an empty text file.

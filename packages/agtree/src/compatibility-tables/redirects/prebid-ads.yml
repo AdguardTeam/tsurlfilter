@@ -1,13 +1,14 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Mocks prebid-ads.js script.
+
 adg_os_any|adg_ext_any:
   name: prebid-ads
   aliases:
     - prebid-ads.js
-  description: Mocks prebid-ads.js script.
 
 ubo_any:
   name: prebid-ads.js
-  description: Mocks prebid-ads.js script.
   resource_types:
     - script

@@ -1,0 +1,6 @@
+ubo_any:
+  name: alert-buster.js
+  description: Disables `alert()` dialog boxes by redirecting messages to console.
+  aliases:
+    - alert-buster
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#alert-busterjs-

@@ -1,40 +1,14 @@
 /**
- * @file Compatibility tables variables and types reexport.
+ * @file Compatibility table exports.
  */
 
+// Re-export compatibility table instances with proper name normalizers
 export { modifiersCompatibilityTable } from './modifiers';
 export { redirectsCompatibilityTable } from './redirects';
 export { scriptletsCompatibilityTable } from './scriptlets';
-export * from './types';
-export * from './platforms';
-export type {
-    ProductRecords,
-    RowByProduct,
-    RowsByProduct,
-} from './base';
-export {
-    parseRawPlatforms,
-    stringifyPlatforms,
-    PLATFORM_NEGATION,
-    PLATFORM_SEPARATOR,
-} from './schemas';
-export {
-    isGenericPlatform,
-    hasPlatformMultipleProducts,
-    getProductGenericPlatforms,
-    getProductSpecificPlatforms,
-    platformToAdblockProduct,
-    getPlatformsByProduct,
-    getPlatformId,
-    getSpecificPlatformName,
-    getHumanReadablePlatformName,
-    getAllPlatformNames,
-} from './utils/platform-helpers';
-export type { PlatformsByProduct } from './utils/platform-helpers';
-export {
-    ResourceType,
-} from './schemas/resource-type';
-export {
-    getResourceTypeModifier,
-    isValidResourceType,
-} from './utils/resource-type-helpers';
+
+// Re-export Platform class and evaluator for convenience
+export { Platform } from './platform';
+export { ProductCode, PlatformType, PlatformSpecific } from './platform';
+export type { SpecificProductCode, SpecificPlatformType } from './platform';
+export { PlatformExpressionEvaluator } from './platform-expression-evaluator';

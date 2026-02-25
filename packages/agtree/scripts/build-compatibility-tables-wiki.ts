@@ -12,10 +12,9 @@ import { redirectsCompatibilityTable } from '../src/compatibility-tables/redirec
 import { type BaseCompatibilityDataSchema } from '../src/compatibility-tables/schemas';
 import { modifiersCompatibilityTable } from '../src/compatibility-tables/modifiers';
 import { scriptletsCompatibilityTable } from '../src/compatibility-tables/scriptlets';
-import { type ProductRecords, type RowByProduct, type CompatibilityTableBase } from '../src/compatibility-tables/base';
+import { type CompatibilityTableBase } from '../src/compatibility-tables/base';
 import { EMPTY, NEWLINE } from '../src/utils/constants';
-import { AdblockSyntax } from '../src/utils/adblockers';
-import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../src/compatibility-tables/platforms';
+import { Platform } from '../src/compatibility-tables/platform';
 
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -58,29 +57,28 @@ const getNameWithAliases = (
 };
 
 /**
- * Helper function to get the first compatible entity from the row.
+ * Helper function to get the first compatible entity for a platform.
  *
- * @param row Row to get the first compatible entity from.
- * @param syntax Adblock syntax to get the entity from.
- * @param compatibility Compatibility flags to check.
+ * @param table Compatibility table to query.
+ * @param featureName Name of the feature to query.
+ * @param platform Platform to check compatibility for.
  *
- * @returns First compatible entity from the row.
+ * @returns First compatible entity data or empty.
  */
-const getFirstCompatibleEntityFromRow = <T extends BaseCompatibilityDataSchema>(
-    row: RowByProduct<T>,
-    syntax: typeof AdblockSyntax.Adg | typeof AdblockSyntax.Ubo | typeof AdblockSyntax.Abp,
-    compatibility: AnyPlatform,
+const getFirstCompatibleEntity = <T extends BaseCompatibilityDataSchema>(
+    table: CompatibilityTableBase<T>,
+    featureName: string,
+    platform: Platform,
 ): CompatibilityEntityData => {
-    const productRow: ProductRecords<T> = row[syntax];
-    for (const [key, value] of Object.entries(productRow)) {
-        // eslint-disable-next-line no-bitwise
-        if (Number(key) & compatibility) {
-            return ({
-                name: value.name,
-                aliases: value.aliases,
-                docs: value.docs,
-            });
-        }
+    // Use query() which supports both specific and wildcard platforms
+    const result = table.query(featureName, platform);
+
+    if (result) {
+        return {
+            name: result.name,
+            aliases: result.aliases,
+            docs: result.docs,
+        };
     }
 
     return { name: EMPTY, aliases: null, docs: null };
@@ -114,7 +112,7 @@ const sortFn = (a: CompatibilityEntityData[], b: CompatibilityEntityData[]) => {
 /**
  * Helper function to get the rows by product.
  *
- * @param data Compatibility data to get the rows by product from.
+ * @param table Compatibility table to get the rows from.
  * @param extended Whether to include extended compatibility information.
  *
  * @returns Rows by product.
@@ -122,28 +120,57 @@ const sortFn = (a: CompatibilityEntityData[], b: CompatibilityEntityData[]) => {
  * @template T Type of the compatibility data.
  */
 const getRowsByProduct = <T extends CompatibilityTableBase<BaseCompatibilityDataSchema>>(
-    data: T,
+    table: T,
     extended = false,
 ): string[][] => {
-    const result: CompatibilityEntityData[][] = extended
-        ? data.getRowsByProduct().map((row) => [
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgOsAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgExtChromium),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, SpecificPlatform.AdgExtFirefox),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgSafariAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, SpecificPlatform.AdgCbAndroid),
+    // Get all unique feature names across all products
+    const grouped = table.groupByProduct();
 
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, GenericPlatform.UboExtChromium),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, SpecificPlatform.UboExtFirefox),
+    // Collect all unique features across all products
+    // Use a Map to deduplicate by the actual data content (same feature, different names across products)
+    const seenFeatures = new Map<string, Set<string>>();
+    const allFeatureNames = new Set<string>();
 
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, GenericPlatform.AbpExtChromium),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, SpecificPlatform.AbpExtFirefox),
-        ])
-        : data.getRowsByProduct().map((row) => [
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, GenericPlatform.UboAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, GenericPlatform.AbpAny),
-        ]);
+    for (const [, featureMap] of grouped.entries()) {
+        for (const [featureName, dataArray] of featureMap.entries()) {
+            if (dataArray.length > 0) {
+                const canonicalName = dataArray[0].name;
+
+                // Track which feature names map to this canonical name
+                if (!seenFeatures.has(canonicalName)) {
+                    seenFeatures.set(canonicalName, new Set());
+                    allFeatureNames.add(featureName); // Use first encountered name
+                }
+                seenFeatures.get(canonicalName)!.add(featureName);
+            }
+        }
+    }
+
+    const result: CompatibilityEntityData[][] = [];
+
+    for (const featureName of allFeatureNames) {
+        if (extended) {
+            result.push([
+                getFirstCompatibleEntity(table, featureName, Platform.AdgOsAny),
+                getFirstCompatibleEntity(table, featureName, Platform.AdgExtChrome),
+                getFirstCompatibleEntity(table, featureName, Platform.AdgExtFirefox),
+                getFirstCompatibleEntity(table, featureName, Platform.AdgCbIos),
+                getFirstCompatibleEntity(table, featureName, Platform.AdgCbAndroid),
+
+                getFirstCompatibleEntity(table, featureName, Platform.UboExtChrome),
+                getFirstCompatibleEntity(table, featureName, Platform.UboExtFirefox),
+
+                getFirstCompatibleEntity(table, featureName, Platform.AbpExtChrome),
+                getFirstCompatibleEntity(table, featureName, Platform.AbpExtFirefox),
+            ]);
+        } else {
+            result.push([
+                getFirstCompatibleEntity(table, featureName, Platform.AdgAny),
+                getFirstCompatibleEntity(table, featureName, Platform.UboAny),
+                getFirstCompatibleEntity(table, featureName, Platform.AbpAny),
+            ]);
+        }
+    }
 
     return result.sort(sortFn).map((row) => row.map((cell) => getNameWithAliases(cell, extended)));
 };

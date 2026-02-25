@@ -1,0 +1,33 @@
+abp_any:
+  name: array-override
+  description: Overrides functions under `Array.prototype` to change their behaviour according to the given parameters.
+  version_added: "4.8"
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  parameters:
+    - name: method
+      required: true
+      description: "The Array function to override. Possible values to override the property with: `push`, `includes`, `forEach`"
+    - name: needle
+      required: true
+      description: |-
+        The string or regex used to determine which function calls to trap. If the needle matches the parameter to the function call, the snippet will work, else the function will behave as normal.
+        If the string begins and ends with a slash `/`, the text in between is treated as a regular expression.
+    - name: returnValue
+      required: false
+      description: |-
+        Optional parameter that is only relevant for includes. This parameter determines what to return when the parameter matches the needle.
+        Accepts: `true` or `false`. Default is `false`.
+      default: "false"
+    - name: path
+      required: false
+      description: |-
+        Optional parameter that enables “object checking mode“ and looks for needle in that given path.
+        Example: `arr.push({obj: {child: "test"}})`
+        if you want to ignore this call, path would be obj.child in this case and needle would be test
+      default: ''
+    - name: stack
+      required: false
+      description: |-
+        Comma separated list of strings to check in the stack trace.
+        If provided, the override will only apply when the stack trace contains at least one of these patterns.
+      default: ''

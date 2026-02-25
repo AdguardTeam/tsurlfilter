@@ -1,14 +1,15 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Mocks the IMA SDK of Google.
+
 adg_os_any|adg_ext_any:
   name: google-ima3
   aliases:
     - ubo-google-ima.js
     - google-ima.js
-  description: Mocks the IMA SDK of Google.
 
 ubo_any:
   name: google-ima.js
-  description: Mocks the IMA SDK of Google.
   resource_types:
     - script

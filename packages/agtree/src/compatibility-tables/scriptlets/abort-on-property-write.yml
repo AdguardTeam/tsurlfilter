@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Aborts a script when it attempts to write the specified property.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: abort-on-property-write
   version_added: 1.0.4
   aliases:
@@ -15,15 +16,19 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: property
       required: true
+      description: Path to a property (joined with `.` if needed). The property must be attached to `window`.
 
 ubo_any:
   name: abort-on-property-write.js
   aliases:
+    - abort-on-property-write
+    - aopw
     - aopw.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-writejs-
   parameters:
     - name: property
       required: true
+      description: Path to a property (joined with `.` if needed). The property must be attached to `window`.
 
 abp_any:
   name: abort-on-property-write
@@ -32,5 +37,7 @@ abp_any:
   parameters:
     - name: property
       required: true
+      description: Path to a property (joined with `.` if needed). The property must be attached to `window`.
     - name: setConfigurable
       required: false
+      description: Value of the configurable attribute of the descriptor of property. If this parameter is not used it defaults to true. Setting it to false will prevent the property set and get being overwritten or otherwise changed by anybody.

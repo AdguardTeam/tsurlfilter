@@ -1,18 +1,18 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Redirects to an empty CSS file.
+
 adg_os_any|adg_ext_any:
   name: noopcss
   aliases:
     - noop.css
     - blank-css
-  description: Redirects to an empty CSS file.
 
 ubo_any:
   name: noop.css
-  description: Redirects to an empty CSS file.
   resource_types:
     - stylesheet
 
 abp_any:
   name: blank-css
-  description: Redirects to an empty CSS file.

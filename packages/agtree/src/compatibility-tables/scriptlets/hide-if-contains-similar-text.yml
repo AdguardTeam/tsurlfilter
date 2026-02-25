@@ -1,0 +1,15 @@
+abp_any:
+  name: hide-if-contains-similar-text
+  description: Hides an element based on its similar text content.
+  version_added: 3.14.2
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  parameters:
+    - name: search
+      required: true
+      description: The string to match to the similar text. Is considered similar text that isn't hidden by CSS properties or other means. If the string begins and ends with a slash (/), the text in between is treated as a regular expression.
+    - name: selector
+      required: true
+      description: The CSS selector that an HTML element must match for it to be hidden.
+    - name: searchSelector
+      required: false
+      description: The CSS selector that an HTML element containing the given string must match. Defaults to the value of the selector argument.
