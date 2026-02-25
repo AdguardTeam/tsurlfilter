@@ -11,21 +11,22 @@ release-naming:
 # Should specify all environments in master branch to make auto-deploy trigger
 # work for all branches from bamboo branched plans.
 environments:
-  - npmjs 3.2.X
   - npmjs 3.3.X
   - npmjs 4.0.X
+  - npmjs 4.1.X
 
-npmjs 3.2.X:
+# for AdGuard API v3.1
+npmjs 3.3.X:
   docker: &docker
     image: adguard/node-ssh:22.14--0
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  # run auto-deploy only after successful build for dnr-rulesets v3.2.X
+  # run auto-deploy only after successful build for dnr-rulesets v3.3.X
   triggers:
     - build-success:
-        # git branch name `stable/dnr-rulesets-3.2`, '/' is replaced with '-'
+        # git branch name `stable/dnr-rulesets-3.3`, '/' is replaced with '-'
         # in Bamboo
-        branch: stable-dnr-rulesets-3.2
+        branch: stable-dnr-rulesets-3.3
   tasks: &tasks
     - checkout:
         force-clean-build: true
@@ -51,17 +52,7 @@ npmjs 3.2.X:
   requirements: &requirements
     - extension: 'true'
 
-npmjs 3.3.X:
-  docker: *docker
-  # run auto-deploy only after successful build for dnr-rulesets v3.3.X
-  triggers:
-    - build-success:
-        # git branch name `stable/dnr-rulesets-3.3`, '/' is replaced with '-'
-        # in Bamboo
-        branch: stable-dnr-rulesets-3.3
-  tasks: *tasks
-  requirements: *requirements
-
+# for AdGuard browser extension v5.3.0.X
 npmjs 4.0.X:
   docker: *docker
   # run auto-deploy only after successful build for dnr-rulesets v4.0.X
@@ -70,5 +61,17 @@ npmjs 4.0.X:
         # git branch name `stable/dnr-rulesets-4.0`, '/' is replaced with '-'
         # in Bamboo
         branch: stable-dnr-rulesets-4.0
+  tasks: *tasks
+  requirements: *requirements
+
+# for AdGuard browser extension v5.3.1.X
+npmjs 4.1.X:
+  docker: *docker
+  # run auto-deploy only after successful build for dnr-rulesets v4.1.X
+  triggers:
+    - build-success:
+        # git branch name `stable/dnr-rulesets-4.1`, '/' is replaced with '-'
+        # in Bamboo
+        branch: stable-dnr-rulesets-4.1
   tasks: *tasks
   requirements: *requirements
