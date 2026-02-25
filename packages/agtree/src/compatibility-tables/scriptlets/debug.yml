@@ -1,0 +1,6 @@
+abp_any:
+  name: debug
+  description: Enables the debug mode for all the snippets that come after the debug snippet in the filter's snippets chain.
+  version_added: "3.8"
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE7QE2TCN5HVSQWQAEHFM8H
+  debug: true
