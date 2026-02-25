@@ -1,0 +1,8 @@
+common:
+  description: Enables debug mode for snippets. Used for debugging and troubleshooting.
+  debug: true
+
+abp_any:
+  name: debug
+  version_added: "3.8"
+  docs: https://developers.eyeo.com/snippets/debugging-snippets/debug

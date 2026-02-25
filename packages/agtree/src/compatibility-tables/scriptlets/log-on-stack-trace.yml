@@ -1,9 +1,12 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
-  name: log-on-stack-trace
-  version_added: 1.5.0
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#log-on-stack-trace
+common:
+  description: This scriptlet is basically the same as abort-on-stack-trace, but instead of aborting it logs function and source script names pairs that access the given property, was that get or set attempt, and script being injected or inline.
+  debug: true
   parameters:
     - name: property
       required: true
+      description: Path to a property. The property must be attached to window.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: log-on-stack-trace
+  version_added: 1.5.0
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#log-on-stack-trace

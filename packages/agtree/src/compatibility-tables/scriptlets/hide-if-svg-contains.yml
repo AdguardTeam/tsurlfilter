@@ -2,7 +2,7 @@ abp_any:
   name: hide-if-svg-contains
   description: Hides any HTML element matching a CSS selector if it contains a SVG image with the given visible text.
   version_added: 4.26.0
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
+  docs: https://developers.eyeo.com/snippets/conditional-hiding-snippets/hide-if-svg-contains#h_01HBE84DVVYVB7M85VSS91KNN9
   parameters:
     - name: search
       required: true

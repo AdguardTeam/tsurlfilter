@@ -44,7 +44,7 @@ abp_any:
   name: replace-fetch-response
   version_added: 4.4.0
   description: Replaces the response of a fetch request if the response text matches a given regular expression pattern.
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  docs: https://developers.eyeo.com/snippets/behavioral-snippets/replace-fetch-response
   parameters:
     - name: search
       required: true

@@ -39,6 +39,6 @@ ubo_any:
   ubo_tokens:
     - name: runAt
       description: Defers the initial attribute-setting pass to a specific document ready state. Defaults to `idle`.
-      value_format: ^(loading|interactive|complete|idle)$
+      value_format: ^(loading|asap|interactive|end|2|complete|idle|3)$
       value_type: string
       default: idle

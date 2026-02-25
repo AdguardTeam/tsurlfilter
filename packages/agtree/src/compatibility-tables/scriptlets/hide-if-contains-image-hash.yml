@@ -1,0 +1,23 @@
+common:
+  description: Hides any HTML element or one of its ancestors matching a CSS selector if the perceptual hash of the image src or background image of the element matches the given perceptual hash.
+  parameters:
+    - name: hashes
+      required: true
+      description: List of comma separated perceptual hashes of the images that should be blocked.
+    - name: selector
+      required: false
+      description: The CSS selector that an HTML element containing the given pattern must match. If empty or omitted, defaults to the image element itself.
+    - name: maxDistance
+      required: false
+      description: The maximum hamming distance between hash and the perceptual hash of the image to be considered a match. Defaults to 0.
+    - name: blockBits
+      required: false
+      description: The block width used to generate the perceptual image hash, a number of 4 will split the image into 16 blocks (width/4 * height/4). Defaults to 8. The maximum value allowed is 64.
+    - name: selection
+      required: false
+      description: A string with image coordinates in the format XxYxWIDTHxHEIGHT for which a perceptual hash should be computed. If omitted the entire image will be hashed. The X and Y values can be negative, in this case they will be relative to the right/bottom corner.
+
+abp_any:
+  name: hide-if-contains-image-hash
+  version_added: "3.6.2"
+  docs: https://developers.eyeo.com/snippets/conditional-hiding-snippets/hide-if-contains-image-hash

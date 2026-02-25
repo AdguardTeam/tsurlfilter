@@ -36,3 +36,4 @@ ubo_any:
       description: Number of milliseconds to wait before resolving the dummy response. Useful to simulate slow network responses.
       value_format: ^\d+$
       value_type: integer
+      default: "0"

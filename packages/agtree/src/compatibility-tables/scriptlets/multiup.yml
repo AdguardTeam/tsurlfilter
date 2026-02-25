@@ -1,0 +1,6 @@
+common:
+  description: Handles click events on buttons with link attribute in multiup.org forms.
+
+ubo_any:
+  name: multiup.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#multiupjs-

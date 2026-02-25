@@ -1,0 +1,11 @@
+common:
+  description: Prevents navigation to URL matching the specified pattern by intercepting the navigate event.
+  parameters:
+    - name: urlPattern
+      required: false
+      description: String, regular expression or location.href keyword to match URL. Usage with no arguments will log navigation attempts to browser console.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: prevent-navigation
+  version_added: 2.2.16
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-navigation

@@ -2,7 +2,7 @@ abp_any:
   name: replace-outbound-value
   version_added: 4.26.0
   description: Overrides return values of functions or attributes according to the given parameters.
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
+  docs: https://developers.eyeo.com/snippets/behavioral-snippets/replace-outbound-value
   parameters:
     - name: method
       required: true

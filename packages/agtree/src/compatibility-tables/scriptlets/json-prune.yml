@@ -41,7 +41,7 @@ abp_any:
   name: json-prune
   version_added: 3.9.0
   description: Traps calls to `JSON.parse`, and if the result of the parsing is an `Object`, it will remove specified properties from the result before returning to the caller.
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  docs: https://developers.eyeo.com/snippets/behavioral-snippets/json-prune
   parameters:
     - name: rawPrunePaths
       required: true

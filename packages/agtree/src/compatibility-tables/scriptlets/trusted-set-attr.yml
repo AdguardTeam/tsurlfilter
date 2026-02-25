@@ -1,18 +1,20 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
+  description: Sets attribute with arbitrary value on the specified elements. This scriptlet runs once when the page loads and after that on DOM tree changes.
   is_trusted: true
-
-adg_os_any|adg_ext_any:
-  name: trusted-set-attr
-  version_added: 1.10.1
   parameters:
     - name: selector
       required: true
+      description: CSS selector, specifies DOM nodes to set attributes on.
     - name: attr
       required: true
+      description: Attribute to be set.
     - name: value
       required: false
+      description: The value to assign to the attribute, defaults to empty string.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: trusted-set-attr
+  version_added: 1.10.1
 
 ubo_any:
   name: trusted-set-attr.js
@@ -32,6 +34,6 @@ ubo_any:
   ubo_tokens:
     - name: runAt
       description: Defers the initial attribute-setting pass to a specific document ready state. Defaults to `idle`.
-      value_format: ^(loading|interactive|complete|idle)$
+      value_format: ^(loading|asap|interactive|end|2|complete|idle|3)$
       value_type: string
       default: idle

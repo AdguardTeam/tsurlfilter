@@ -42,7 +42,7 @@ abp_any:
   name: cookie-remover
   version_added: 3.11.2
   description: A snippet to remove certain cookies.
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  docs: https://developers.eyeo.com/snippets/behavioral-snippets/cookie-remover#snippets-ref
   parameters:
     - name: cookie
       required: true

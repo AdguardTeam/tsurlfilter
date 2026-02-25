@@ -25,3 +25,4 @@ ubo_any:
       description: Number of milliseconds to wait before reloading the page after the storage item is set. The page is only reloaded if the value was actually changed.
       value_format: ^\d+$
       value_type: integer
+      default: "0"

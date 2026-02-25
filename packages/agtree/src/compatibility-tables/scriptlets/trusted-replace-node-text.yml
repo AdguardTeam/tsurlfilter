@@ -1,20 +1,23 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
+  description: Replaces text in text content of matched DOM nodes.
   is_trusted: true
-
-adg_os_any|adg_ext_any:
-  name: trusted-replace-node-text
-  version_added: 1.9.37
   parameters:
     - name: nodeName
       required: true
+      description: String or RegExp, specifies DOM node name from which the text will be removed. Must target lowercased node names, e.g div instead of DIV.
     - name: textMatch
       required: true
+      description: String or RegExp to match against node's text content. If matched, the pattern will be replaced by the replacement. Case sensitive.
     - name: pattern
       required: true
+      description: String or regexp for matching contents of node.textContent that should be replaced. By default only first occurrence is replaced. To replace all occurrences use g flag in RegExp.
     - name: replacement
       required: true
+      description: String to replace text content matched by pattern.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: trusted-replace-node-text
+  version_added: 1.9.37
 
 ubo_any:
   name: trusted-replace-node-text.js
@@ -57,3 +60,4 @@ ubo_any:
       description: Quit the scriptlet this many milliseconds after `DOMContentLoaded` fires.
       value_format: ^\d+$
       value_type: integer
+      default: "0"

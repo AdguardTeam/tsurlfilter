@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Prevents anti-adblock scripts on adfly short links.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-adfly
   version_added: 1.0.4
   aliases:

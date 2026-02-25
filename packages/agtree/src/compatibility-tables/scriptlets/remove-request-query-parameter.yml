@@ -1,0 +1,26 @@
+common:
+  description: Removes a specified query parameter from matched outgoing requests.
+  parameters:
+    - name: parametersToRemove
+      required: true
+      description: Either a single regular expression (starting with /) or a list of literal query parameter names separated by comma. Mixing regular expressions and literal strings is not allowed.
+    - name: urlPattern
+      required: false
+      description: String or regular expression to match request URLs.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: remove-request-query-parameter
+  version_added: 2.2.16
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#remove-request-query-parameter
+
+abp_any:
+  name: strip-fetch-query-parameter
+  version_added: "3.5.1"
+  docs: https://developers.eyeo.com/snippets/behavioral-snippets/strip-fetch-query-parameter
+  parameters:
+    - name: name
+      required: true
+      description: The name of the parameter.
+    - name: urlPattern
+      required: false
+      description: An optional pattern that the URL must match.

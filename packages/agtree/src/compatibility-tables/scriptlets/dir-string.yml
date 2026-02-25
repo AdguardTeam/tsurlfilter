@@ -1,9 +1,11 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
-  name: dir-string
-  version_added: 1.0.4
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#dir-string
+common:
+  description: Wraps the console.dir API to call the toString method of the argument. There are several adblock circumvention systems that detect browser devtools and hide themselves. Therefore, if we force them to think that devtools are open (using this scriptlet), it will automatically disable the adblock circumvention script.
   parameters:
     - name: times
       required: false
+      description: The number of times to call the toString method of the argument to console.dir.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: dir-string
+  version_added: 1.0.4
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#dir-string

@@ -33,7 +33,7 @@ ubo_any:
 abp_any:
   name: abort-on-property-read
   version_added: 3.4.1
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  docs: https://developers.eyeo.com/snippets/behavioral-snippets/abort-on-property-read
   parameters:
     - name: property
       required: true

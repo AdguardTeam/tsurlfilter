@@ -1,19 +1,23 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
+  description: Creates an element with specified attributes and text content, and appends it to the specified parent element.
   is_trusted: true
-
-adg_os_any|adg_ext_any:
-  name: trusted-create-element
-  version_added: 1.10.1
   parameters:
     - name: parentSelector
       required: true
+      description: CSS selector of the parent element to append the created element to.
     - name: tagName
       required: true
+      description: Tag name of the created element.
     - name: attributePairs
       required: false
+      description: Space-separated list of attribute name and value pairs separated by =. Value can be omitted. If value is set, it should be wrapped in quotes. Defaults to no attributes.
     - name: textContent
       required: false
+      description: Text content of the created element. Defaults to empty string.
     - name: cleanupDelayMs
       required: false
+      description: Delay in milliseconds before the created element is removed from the DOM. Defaults to no cleanup.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: trusted-create-element
+  version_added: 1.10.1

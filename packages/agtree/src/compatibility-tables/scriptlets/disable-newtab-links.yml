@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Prevents opening new tabs and windows if there is target attribute in element.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: disable-newtab-links
   version_added: 1.0.4
   aliases:
@@ -11,4 +12,6 @@ adg_os_any|adg_ext_any:
 
 ubo_any:
   name: disable-newtab-links.js
+  aliases:
+    - disable-newtab-links
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-

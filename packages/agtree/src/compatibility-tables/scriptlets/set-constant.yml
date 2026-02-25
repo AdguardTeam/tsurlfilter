@@ -45,7 +45,7 @@ ubo_any:
   ubo_tokens:
     - name: runAt
       description: Defers the constant installation to a specific document ready state. Values correspond to `readyState`.
-      value_format: ^(loading|interactive|complete)$
+      value_format: ^(loading|asap|interactive|end|2|complete|idle|3)$
       value_type: string
     - name: as
       description: Wraps the constant value. `function` returns `() => value`, `callback` returns `() => () => value`, `resolved` returns `Promise.resolve(value)`, `rejected` returns `Promise.reject(value)`.
@@ -56,7 +56,7 @@ abp_any:
   name: override-property-read
   version_added: 3.9.4
   description: Overrides a property's value on the `window` object with a set of available properties.
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  docs: https://developers.eyeo.com/snippets/behavioral-snippets/override-property-read
   parameters:
     - name: property
       required: true

@@ -1,22 +1,26 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
+  description: Sets a cookie with arbitrary name and value, and with optional ability to offset cookie attribute expires, set path and set domain.
   is_trusted: true
-
-adg_os_any|adg_ext_any:
-  name: trusted-set-cookie
-  version_added: 1.7.3
   parameters:
     - name: name
       required: true
+      description: Cookie name to be set.
     - name: value
       required: true
+      description: Cookie value. Possible values include arbitrary value, empty string for no value, $now$ keyword for current time in ms, $currentDate$ keyword for current time as string, $currentISODate$ keyword for current date in ISO format.
     - name: offsetExpiresSec
       required: false
+      description: Offset from current time in seconds, after which cookie should expire; defaults to no offset. Possible values include positive integer in seconds, 1year keyword, 1day keyword.
     - name: path
       required: false
+      description: Argument for setting cookie path, defaults to /. Possible values include / for root path, none to set no path at all.
     - name: domain
       required: false
+      description: Cookie domain, if not set origin will be set as domain. If the domain does not match the origin, the cookie will not be set.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: trusted-set-cookie
+  version_added: 1.7.3
 
 ubo_any:
   name: trusted-set-cookie.js

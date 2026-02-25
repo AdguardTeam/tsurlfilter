@@ -1,0 +1,14 @@
+common:
+  description: Prevents DOM bypass attempts by intercepting method calls and ensuring contentWindow properties are properly set.
+  is_trusted: true
+  parameters:
+    - name: methodPath
+      required: true
+      description: The method which calls must be intercepted.
+    - name: targetProp
+      required: false
+      description: Target property to synchronize between parent and iframe contentWindow.
+
+ubo_any:
+  name: trusted-prevent-dom-bypass.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-prevent-dom-bypassjs-

@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Sets static properties PopAds and popns.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: set-popads-dummy
   version_added: 1.0.4
   aliases:

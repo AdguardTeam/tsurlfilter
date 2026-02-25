@@ -1,11 +1,11 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
+  description: Prevents reloading of a document through a meta "refresh" tag.
   parameters:
     - name: delay
       required: false
+      description: Number of seconds for delay that indicates when scriptlet should run. If not set, source tag value will be applied.
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-refresh
   version_added: 1.6.2
   aliases:
@@ -23,4 +23,6 @@ ubo_any:
   version_added: 1.38.7b3
   aliases:
     - refresh-defuser.js
+    - prevent-refresh
+    - refresh-defuser
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-refreshjs-

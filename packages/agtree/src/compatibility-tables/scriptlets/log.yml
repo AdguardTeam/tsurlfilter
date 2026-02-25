@@ -17,4 +17,4 @@ adg_os_any|adg_ext_any:
 
 abp_any:
   version_added: "3.3"
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  docs: https://developers.eyeo.com/snippets/debugging-snippets/log

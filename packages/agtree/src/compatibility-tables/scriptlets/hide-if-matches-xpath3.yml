@@ -1,0 +1,14 @@
+common:
+  description: Hide a specific element through a XPath 3.1 query string.
+  parameters:
+    - name: query
+      required: true
+      description: The XPath query that targets the element to hide.
+    - name: scopeQuery
+      required: false
+      description: CSS or XPath selector that the filter devs can use to restrict the scope of the MutationObserver. It is important that the selector is as specific as possible to avoid matching too many nodes.
+
+abp_any:
+  name: hide-if-matches-xpath3
+  version_added: "3.19"
+  docs: https://developers.eyeo.com/snippets/conditional-hiding-snippets/hide-if-matches-xpath3

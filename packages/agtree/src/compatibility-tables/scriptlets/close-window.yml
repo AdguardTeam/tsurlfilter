@@ -1,11 +1,11 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
+  description: Closes the browser tab immediately.
   parameters:
     - name: path
       required: false
+      description: String or regular expression matching the current location's path (window.location.pathname + window.location.search). Defaults to execute on every page.
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: close-window
   version_added: 1.5.0
   aliases:
@@ -22,4 +22,6 @@ ubo_any:
   version_added: 1.39.3b10
   aliases:
     - window-close-if.js
+    - close-window
+    - window-close-if
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#close-windowjs-

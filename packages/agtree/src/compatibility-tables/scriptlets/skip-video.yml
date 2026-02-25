@@ -2,7 +2,7 @@ abp_any:
   name: skip-video
   version_added: "3.21"
   description: Makes the video skip to its end or fast forwards it with the given amount. It does it by setting the currentTime attribute of the video object.
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
+  docs: https://developers.eyeo.com/snippets/behavioral-snippets/skip-video
   parameters:
     - name: playerSelector
       required: true

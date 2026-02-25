@@ -2,7 +2,7 @@ abp_any:
   name: hide-if-canvas-contains
   description: Hides a canvas element, or a parent element specified by the selector parameter, if the canvas contains the specified search term in it.
   version_added: "4.7"
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  docs: https://developers.eyeo.com/snippets/conditional-hiding-snippets/hide-if-canvas-contains
   parameters:
     - name: search
       required: true

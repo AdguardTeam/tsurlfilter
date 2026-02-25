@@ -46,7 +46,7 @@ ubo_any:
   ubo_tokens:
     - name: runAt
       description: Defers the prevention to a specific document ready state. Values correspond to `readyState`.
-      value_format: ^(loading|interactive|complete)$
+      value_format: ^(loading|asap|interactive|end|2|complete|idle|3)$
       value_type: string
     - name: elements
       description: CSS selector; limits prevention to event listeners added on elements matching this selector.
@@ -60,7 +60,7 @@ ubo_any:
 abp_any:
   name: prevent-listener
   version_added: 3.11.2
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  docs: https://developers.eyeo.com/snippets/behavioral-snippets/prevent-listener
   parameters:
     - name: type
       required: true

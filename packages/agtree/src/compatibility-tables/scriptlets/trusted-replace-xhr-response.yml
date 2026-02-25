@@ -45,7 +45,7 @@ abp_any:
   name: replace-xhr-response
   version_added: 4.4.0
   description: Replaces the response of a XHR request if the response text matches a given regular expression pattern.
-  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  docs: https://developers.eyeo.com/snippets/behavioral-snippets/replace-xhr-response
   parameters:
     - name: search
       required: true

@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Aborts on property write (PopAds, popns), throws reference error with random id.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-popads-net
   version_added: 1.0.4
   aliases:

@@ -60,3 +60,4 @@ ubo_any:
       description: Quit the scriptlet this many milliseconds after `DOMContentLoaded` fires.
       value_format: ^\d+$
       value_type: integer
+      default: "0"

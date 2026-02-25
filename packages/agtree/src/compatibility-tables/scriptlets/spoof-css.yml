@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Spoof CSS property value when getComputedStyle() or getBoundingClientRect() methods is called.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: spoof-css
   version_added: 1.10.1
   aliases:
@@ -11,20 +12,26 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: selectors
       required: true
+      description: String of comma-separated selectors to match.
     - name: cssPropertyName
       required: true
+      description: CSS property name.
     - name: cssPropertyValue
       required: true
+      description: CSS property value.
 
 ubo_any:
   name: spoof-css.js
+  aliases:
+    - spoof-css
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#spoof-cssjs-
   parameters:
-    - name: selectors
+    - name: selector
       required: true
-    - name: cssPropertyName
-      required: true
-    - name: cssPropertyValue
-      required: true
-    - name: arguments
-      required: false
+      description: A CSS selector for the element(s) to target.
+  variadic_parameters:
+    min_count: 2
+    max_count: null
+    all_parameters:
+      name: property-value pairs
+      description: A list of property-value pairs of the style properties to spoof to the specified values.

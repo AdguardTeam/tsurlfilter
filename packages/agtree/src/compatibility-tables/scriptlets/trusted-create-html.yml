@@ -19,7 +19,7 @@ ubo_any:
   ubo_tokens:
     - name: runAt
       description: Defers the initial DOM insertion to a specific document ready state. Defaults to `loading`.
-      value_format: ^(loading|interactive|complete)$
+      value_format: ^(loading|asap|interactive|end|2|complete|idle|3)$
       value_type: string
       default: loading
     - name: limit
