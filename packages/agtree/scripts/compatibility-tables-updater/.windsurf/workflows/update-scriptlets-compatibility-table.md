@@ -1,14 +1,38 @@
-# Update Scriptlets Compatibility Tables
+# Step 4: Update Scriptlets Compatibility Tables
+
+**This is Step 4 of 4.** Steps 1 (ABP), 2 (uBO), and 3 (AdGuard) research MUST be completed first.
+
+## STOP - Verify Research Files Exist
+
+Before doing anything else, check that all three research files are present:
+
+- `.current/abp-scriptlets.md`
+- `.current/ubo-scriptlets.md`
+- `.current/adg-scriptlets.md`
+
+**If any file is missing, STOP immediately.** Do not proceed. Tell the user to run the
+missing research step first:
+
+- Missing ABP data → run `/research-abp-scriptlets` (Step 1)
+- Missing uBO data → run `/research-ubo-scriptlets` (Step 2)
+- Missing AdGuard data → run `/research-adg-scriptlets` (Step 3)
+
+---
 
 ## Prerequisites - READ THESE FIRST
 
 **You MUST read these files completely before starting:**
 
-1. **Schema and structure documentation:**
+1. **Research files from previous steps:**
+   - `.current/abp-scriptlets.md` - Pre-researched ABP scriptlet data (from Step 1)
+   - `.current/ubo-scriptlets.md` - Pre-researched uBO scriptlet data (from Step 2)
+   - `.current/adg-scriptlets.md` - Pre-researched AdGuard scriptlet data (from Step 3)
+
+2. **Schema and structure documentation:**
    - `src/compatibility-tables/scriptlets/README.md` - Complete field reference, examples, and patterns
    - `src/compatibility-tables/schemas/scriptlet.ts` - Schema definitions and validation rules
 
-2. **Existing YAML examples:**
+3. **Existing YAML examples:**
    - `src/compatibility-tables/scriptlets/abort-on-property-read.yml` - Simple scriptlet
    - `src/compatibility-tables/scriptlets/prevent-addEventListener.yml` - Complex with uBO tokens
    - `src/compatibility-tables/scriptlets/set-constant.yml` - Another token example
@@ -20,8 +44,12 @@
 
 ## Goal
 
-Update YAML files in `src/compatibility-tables/scriptlets/` based on the latest scriptlet implementations
-from the downloaded repositories.
+Update YAML files in `src/compatibility-tables/scriptlets/` based on:
+
+- Pre-researched ABP data in `.current/abp-scriptlets.md`
+- Pre-researched uBO data in `.current/ubo-scriptlets.md`
+- Pre-researched AdGuard data in `.current/adg-scriptlets.md`
+    (AdGuard is the naming reference and backbone for cross-referencing)
 
 **WORK IN TWO PHASES:**
 
@@ -36,10 +64,8 @@ from the downloaded repositories.
 
 ### Phase 2: Create New YAML Files
 
-- After Phase 1 is complete, scan all repositories for new scriptlets
-- Create a comprehensive inventory of all scriptlets found in repos
-- Compare against existing YAML files
-- Create new YAML files only for scriptlets not yet covered
+- After Phase 1 is complete, identify all scriptlets not yet covered by a YAML file
+- Create new YAML files for uncovered scriptlets
 
 ---
 
@@ -51,154 +77,48 @@ from the downloaded repositories.
 
 ---
 
-## Repository Locations and Structure
+## Data Sources
 
-The downloaded repositories are in `downloads/` directory. **Note:** Repository structures may change
-over time, so verify paths if files are not found where expected.
+### ABP Data (`.current/abp-scriptlets.md`)
 
-### uBlock Origin (`downloads/ubo/`)
+Use this file as the sole source for ABP scriptlet details. It contains:
 
-**Primary source:** `downloads/ubo/src/js/resources/scriptlets.js`
+- Scriptlet names (hyphenated, no `.js`, no aliases)
+- Parameters (exact names, required/optional, types, descriptions, defaults, patterns)
+- `version_added` (from `@since` tags)
+- Docs URLs
 
-- This is the entry point that imports individual scriptlet files
-- Some special scriptlets are in a separate file (e.g., `prevent-addeventlistener.js`, `json-edit.js`),
-    but most of them could be found in the `scriptlets.js` file
-- Follow the imports to find the actual scriptlet implementation
+**Do NOT re-read** `.current/abp-scriptlets/` source files directly — use the research dump.
 
-**Important patterns:**
+### uBO Data (`.current/ubo-scriptlets.md`)
 
-- **Dual naming:** Every uBO scriptlet has TWO valid names:
-    - Canonical name WITH `.js` suffix (e.g., `set-constant.js`) - use this as the `name` field
-    - Alias WITHOUT `.js` suffix (e.g., `set-constant`) - include in `aliases` array
-    - This applies to ALL aliases: if there's an alias `aeld`, also include `aeld.js`
+Use this file as the sole source for uBO scriptlet details. It contains:
 
-- **Ignore `.fn` files:** Files ending in `.fn` (e.g., `abort-current-script.fn`) are helper functions,
-  NOT scriptlets. Skip them entirely.
+- Canonical name (WITH `.js` suffix) and all aliases
+- Positional parameters (names, descriptions, defaults, patterns)
+- Tokens from `getExtraArgs()` (name, value_type, value_format, description, default)
+- `is_trusted` flag
 
-- **JSDoc availability:** Most uBO scriptlets have minimal or no JSDoc. When JSDoc is absent:
-    - Analyze the function signature for parameter names and defaults
-    - Examine how parameters are used in the code
-    - Check the uBO wiki at
-      <https://github.com/gorhill/uBlock/wiki/Resources-Library#available-general-purpose-scriptlets>
-        - **Warning:** The wiki is sometimes outdated, always verify against source code
-    - Look for comments above the function explaining parameters
-    - Infer descriptions from variable names and validation logic
+**Do NOT re-read** `.current/ubo/` source files directly — use the research dump.
 
-- **getExtraArgs() and uBO Tokens:**
+**Key uBO rules to remember when writing YAML:**
 
-  uBO scriptlets can accept optional **token** parameters AFTER the positional parameters.
-  These are key-value pairs parsed by the `getExtraArgs()` function.
+- Canonical `name` field uses `.js` suffix (e.g., `set-constant.js`)
+- Aliases include BOTH `.js` and non-`.js` forms for every alias
+- Tokens go in `ubo_tokens` array, NOT in `parameters`
+- Each token needs: `name`, `description`, `value_format`, `value_type`
 
-  **How getExtraArgs() works** (from `downloads/ubo/src/js/resources/safe-self.js`):
+### AdGuard Data (`.current/adg-scriptlets.md`)
 
-  ```javascript
-  getExtraArgs(args, offset = 0) {
-      const entries = args.slice(offset).reduce((out, v, i, a) => {
-          if ( (i & 1) === 0 ) {           // Even indices (0,2,4...) are KEYS
-              const rawValue = a[i+1];     // Odd indices (1,3,5...) are VALUES
-              const value = /^\d+$/.test(rawValue)
-                  ? parseInt(rawValue, 10)  // Convert all-digit strings to integers
-                  : rawValue;               // Keep non-digit strings as-is
-              out.push([ a[i], value ]);
-          }
-          return out;
-      }, []);
-      return this.Object_fromEntries(entries);  // Returns object like {runAt: 'idle', protect: 1}
-  }
-  ```
+Use this file as the sole source for AdGuard scriptlet details. It contains:
 
-  **Example usage in scriptlet:**
+- Canonical scriptlet names (AdGuard naming is used as YAML filenames)
+- Parameters (exact names, required/optional, descriptions, defaults, patterns)
+- `version_added` and `is_trusted` flags
+- `related_ubo` and `related_abp` cross-references for mapping equivalents
+- Docs URLs
 
-  ```javascript
-  function preventAddEventListener(type = '', pattern = '') {
-      const safe = safeSelf();
-      const extraArgs = safe.getExtraArgs(Array.from(arguments), 2);  // Skip first 2 args
-      // ...
-      const targetSelector = extraArgs.elements || undefined;  // Access 'elements' token
-      if ( extraArgs.protect ) { /* ... */ }                   // Access 'protect' token
-      runAt(() => { /* ... */ }, extraArgs.runAt);             // Access 'runAt' token
-  }
-  ```
-
-  **Example filter rule:**
-
-  ```text
-  example.com##+js(aeld, click, popMagic, runAt, idle, protect, 1)
-  !                     ^      ^         ^      ^     ^        ^
-  !                     |      |         |      |     |        |
-  !                     |      |         |      |     |        └─ Token value (converted to integer)
-  !                     |      |         |      |     └─ Token name
-  !                     |      |         |      └─ Token value
-  !                     |      |         └─ Token name (tokens start after positional params)
-  !                     |      └─ Second positional parameter
-  !                     └─ First positional parameter
-  ```
-
-  Result: `extraArgs = {runAt: 'idle', protect: 1}`
-
-  **In YAML files:**
-
-    - Tokens go in the `ubo_tokens` array, NOT in `parameters`
-    - Each token needs:
-        - `name`: Token key (e.g., "runAt", "elements", "protect")
-        - `description`: What the token controls/configures
-        - `value_format`: Regex pattern for valid values (use `null` if any value accepted)
-        - `value_type`: How it's used in code: `'string'`, `'integer'`, or `'boolean'`
-        - `default`: Fallback value in code (e.g., if code has `extraArgs.quitAfter || 0`,
-            default is `"0"`)
-
-  **Finding tokens in source code:**
-
-  1. Look for `getExtraArgs()` call - the offset parameter tells you how many positional params exist
-  2. Search for `extraArgs.` in the code to find all token accesses
-  3. Check how each token is used to determine `value_type`:
-      - Used in conditions like `if (extraArgs.stay)` → `'boolean'`
-      - Passed to `setTimeout()` or arithmetic → `'integer'`
-      - Used for string matching/operations → `'string'`
-
-### Adblock Plus (`downloads/abp-scriptlets/`)
-
-**Primary source:** `downloads/abp-scriptlets/source/`
-
-**Folder structure:**
-
-- `behavioral/` - Behavior-modifying scriptlets (abort, prevent, override, etc.)
-- `conditional-hiding/` - Element hiding scriptlets
-- `introspection/` - Debugging/logging scriptlets
-- `utils/` - Helper utilities (**IGNORE** - these are not scriptlets)
-
-**JSDoc quality:** ABP has excellent JSDoc documentation. Use these for:
-
-- Parameter names and descriptions
-- Parameter types
-- Version information
-- Usage examples
-
-**Naming:** ABP uses hyphenated names without `.js` suffix
-(e.g., `abort-on-property-read`, `prevent-listener`) and they don't have aliases.
-
-**Documentation:** https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
-
-### AdGuard (`downloads/adg-scriptlets/`)
-
-**Primary source:** `downloads/adg-scriptlets/wiki/about-scriptlets.md`
-
-- Most comprehensive documentation for each scriptlet
-- Includes syntax, parameters, examples, version info
-- Contains cross-references to equivalent uBO and ABP scriptlets
-
-**Fallback source:** `downloads/adg-scriptlets/src/scriptlets/` for implementation details when
-wiki lacks information
-
-**Wiki structure for each scriptlet:**
-
-- Version added (e.g., "Added in v1.0.4")
-- Syntax section with parameter descriptions
-- Example usage
-- "Related UBO scriptlet:" links
-- "Related ABP source:" links
-
-**JSDoc quality:** AdGuard has comprehensive JSDoc similar to ABP
+**Do NOT re-read** `.current/adg-scriptlets/` source files directly — use the research dump.
 
 ---
 
@@ -215,13 +135,13 @@ Before researching, check if a YAML file already exists in `src/compatibility-ta
 - Example: `abort-on-property-read.yml`, `set-constant.yml`, `prevent-addEventListener.yml`
 - If it exists, you're UPDATING, not creating from scratch
 
-### Step 2: Use AdGuard Wiki Cross-References
+### Step 2: Use AdGuard Cross-References from `.current/adg-scriptlets.md`
 
-In `downloads/adg-scriptlets/wiki/about-scriptlets.md`, each scriptlet section includes:
+Each entry in `.current/adg-scriptlets.md` includes:
 
-- "Related UBO scriptlet:" with link to uBO documentation
-- "Related ABP source:" with link to ABP source file
-- These are usually reliable mappings
+- `related_ubo` — the equivalent uBO scriptlet name
+- `related_abp` — the equivalent ABP scriptlet name
+- These are usually reliable mappings; use them as the primary cross-reference
 
 ### Step 3: Match by Functionality, Not Just Name
 
@@ -257,7 +177,7 @@ Parameters often have different names across platforms but serve the same purpos
 
 Some scriptlets accept unlimited arguments (e.g., `log` scriptlet):
 
-- Check if the scriptlet function uses rest parameters (`...args`) or processes all remaining arguments
+- Check the `variadic` flag in the relevant `.current/` research file
 - In YAML, use `variadic_parameters` field (see `log.yml` example)
 - Define `min_count`, `max_count`, and validation rules
 
@@ -403,31 +323,34 @@ abp_any:
 
 ## Workflow Steps
 
-### 1. Create Scriptlet Inventory File
+### 1. Verify and Read Research Files
 
-**CRITICAL:** To ensure no scriptlets are missed, create a temporary inventory file:
+Confirm all three files exist and read them completely:
 
-```bash
-# Create inventory file
-touch scriptlets-inventory.md
-```
+- `.current/abp-scriptlets.md`
+- `.current/ubo-scriptlets.md`
+- `.current/adg-scriptlets.md`
 
-Structure:
+If any is missing, **STOP** (see top of this document).
+
+### 2. Build Scriptlet Inventory
+
+Create `.current/scriptlets-inventory.md` to track progress. Populate it from your sources:
 
 ```markdown
 # Scriptlets Inventory
 
-## uBlock Origin Scriptlets
-- [ ] scriptlet-name-1.js
-- [ ] scriptlet-name-2.js
-...
-
-## Adblock Plus Scriptlets
+## AdGuard Scriptlets (from .current/adg-scriptlets.md)
 - [ ] scriptlet-name-1
 - [ ] scriptlet-name-2
 ...
 
-## AdGuard Scriptlets
+## uBO Scriptlets (from .current/ubo-scriptlets.md)
+- [ ] scriptlet-name-1.js
+- [ ] scriptlet-name-2.js
+...
+
+## ABP Scriptlets (from .current/abp-scriptlets.md)
 - [ ] scriptlet-name-1
 - [ ] scriptlet-name-2
 ...
@@ -438,83 +361,38 @@ Structure:
 ...
 ```
 
-Check off items as you process them to track progress.
+To populate:
 
-### 2. Review Downloaded Repositories
+1. Copy scriptlet names from `.current/adg-scriptlets.md` → AdGuard list
+2. Copy scriptlet names from `.current/ubo-scriptlets.md` → uBO list
+3. Copy scriptlet names from `.current/abp-scriptlets.md` → ABP list
+4. List every `.yml` file in `src/compatibility-tables/scriptlets/` → Existing YAML list
 
-Verify that `downloads/` contains:
+Check off items as you process them.
 
-- `downloads/ubo/` - uBlock Origin repository
-- `downloads/abp-scriptlets/` - Adblock Plus snippets repository
-- `downloads/adg-scriptlets/` - AdGuard Scriptlets repository
-
-### 3. PHASE 1: Scan All Scriptlets and Build Inventory
-
-**Before updating any files, scan ALL repositories and build a complete inventory.**
-
-#### Scan uBlock Origin
-
-1. Start at `downloads/ubo/src/js/resources/scriptlets.js`
-2. List ALL scriptlet files (follow imports)
-3. Skip any `.fn` files (helpers, not scriptlets)
-4. **Add every scriptlet to inventory file** under "uBlock Origin Scriptlets"
-5. For each scriptlet, record:
-    - Primary name (with `.js` suffix)
-    - All aliases (from `registerScriptlet()` call)
-    - Number of parameters
-    - Whether it uses tokens (`getExtraArgs()`)
-
-#### Scan Adblock Plus
-
-1. Navigate to `downloads/abp-scriptlets/source/`
-2. **Scan ALL folders:** `behavioral/`, `conditional-hiding/`, `introspection/`
-3. Ignore `utils/` folder
-4. **List EVERY `.js` file** - these are the scriptlets
-5. **Add every scriptlet to inventory file** under "Adblock Plus Scriptlets"
-6. For each scriptlet, record:
-    - Name (from filename without `.js`)
-    - Number of parameters (from JSDoc or function signature)
-    - Whether it's new (not in existing YAML files)
-
-#### Scan AdGuard
-
-1. Open `downloads/adg-scriptlets/wiki/about-scriptlets.md`
-2. **List EVERY scriptlet section** (they start with `###` headings)
-3. **Add every scriptlet to inventory file** under "AdGuard Scriptlets"
-4. For each scriptlet, record:
-    - Name (from heading)
-    - Syntax
-    - Related uBO/ABP scriptlets (for cross-referencing)
-5. Also scan `downloads/adg-scriptlets/src/scriptlets/` to ensure no scriptlets are in source but not in wiki
-
-### 4. List All Existing YAML Files
-
-**Add to inventory:** List every `.yml` file in `src/compatibility-tables/scriptlets/` under "Existing YAML Files".
-
-### 5. PHASE 2: Update Existing YAML Files
+### 3. PHASE 1: Update Existing YAML Files
 
 **Work through each existing YAML file one by one:**
 
 For each YAML file:
 
-1. **Check scriptlet still exists** in repositories
+1. **Check scriptlet still exists** in one of the three `.current/` research files
 2. **CRITICAL - Version Fields:**
     - **NEVER REMOVE `version_added`, `version_removed`, or version-related fields**
     - These are often manually researched and cannot be extracted from source
     - Only ADD version info if you find it in docs/source
     - If unsure, KEEP the existing value
 3. Verify all platform sections are accurate
-4. Add missing platforms if found in new repos
-5. Add new parameters discovered in source code
-    - **CRITICAL:** Use EXACT parameter names from source code/docs
+4. Add missing platforms if found in the data sources
+5. Add new parameters discovered in the research files
+    - **CRITICAL:** Use EXACT parameter names as recorded in `.current/` files
     - Do NOT invent or imagine parameter names
-    - Copy names character-by-character from function signatures or JSDoc
-6. **ONLY add `pattern` field** if validation regex found in source (omit if null)
-7. **ONLY add `default` field** if default value found in source (omit if null)
-8. Add new aliases found in repos
-    - **CRITICAL:** Use EXACT alias names from source
-    - Copy from `registerScriptlet()` calls or documentation
-9. Update descriptions if source has better/clearer description
+    - The `.current/` files already have exact names extracted from source
+6. **ONLY add `pattern` field** if a non-`(none)` pattern is recorded in `.current/` files
+7. **ONLY add `default` field** if a non-`(none)` default is recorded in `.current/` files
+8. Add new aliases found in `.current/ubo-scriptlets.md`
+    - **CRITICAL:** Use EXACT alias names as recorded
+9. Update descriptions if research files have better/clearer description
 10. Add `deprecated: true` or `removed: true` if scriptlet is deprecated/removed
 11. **Do NOT delete platform sections** - mark as removed instead
 12. Check off in inventory file when done
@@ -526,15 +404,15 @@ For each YAML file:
 - Add `removal_message: "explanation"` if reason documented
 - **Keep the platform section** - don't delete it
 
-### 6. PHASE 3: Create New YAML Files
+### 4. PHASE 2: Create New YAML Files
 
-**Only after Phase 2 is complete:**
+**Only after Phase 1 is complete:**
 
-1. Review inventory file to find scriptlets not covered by existing YAML files
+1. Review inventory to find scriptlets not covered by existing YAML files
 2. For each new scriptlet:
-    - Analyze source code thoroughly
-    - Extract parameters, defaults, validation patterns
-    - Find equivalent scriptlets across platforms
+    - Look up its data in `.current/adg-scriptlets.md`, `.current/abp-scriptlets.md`,
+        and `.current/ubo-scriptlets.md`
+    - Find equivalent scriptlets using `related_ubo` / `related_abp` fields in `.current/adg-scriptlets.md`
     - Create new YAML file
 3. **Naming convention:**
     - Use AdGuard name as filename (or most common name if no AdGuard version)
@@ -544,21 +422,21 @@ For each YAML file:
     - Add platform-specific sections for each blocker that supports it
     - Include all aliases from all platforms
 5. **Field guidelines:**
-    - Omit `pattern` if null (no validation)
-    - Omit `default` if null (no default)
-    - Only include version fields if found in docs/source
+    - Omit `pattern` if `(none)` in research files
+    - Omit `default` if `(none)` in research files
+    - Only include version fields if found in research files or AdGuard wiki
 
-### 7. Cross-Reference and Map Equivalents
+### 5. Cross-Reference and Map Equivalents
 
 Use this priority order:
 
 1. Check AdGuard wiki's "Related UBO/ABP" links first
 2. Match by functionality and description
-3. Compare parameter purposes (names may differ)
+3. Compare parameter purposes (names may differ across platforms)
 4. Verify by checking existing YAML files for similar scriptlets
 5. When in doubt, create separate YAML files rather than incorrectly merging unrelated scriptlets
 
-### 8. Handle Special Cases
+### 6. Handle Special Cases
 
 **uBO dual naming:**
 
@@ -586,7 +464,7 @@ common:
 ```
 
 Some scriptlets, like
-`packages/agtree/scripts/compatibility-tables-updater/downloads/abp-scriptlets/source/behavioral/abort-on-iframe-property-read.js`
+`.current/abp-scriptlets/source/behavioral/abort-on-iframe-property-read.js`
 accepts variadic parameters, and technically accepts zero parameters (and in this case they function like
 a no-op), but it does not make any sense, so in that cases, we should require at least one parameter.
 
@@ -662,63 +540,27 @@ For similar scriptlets, match the style and completeness:
 
 ### Analyzing Parameters for `pattern` Field
 
-The `pattern` field should contain a regex that validates parameter values. Analyze source code to find:
+The `pattern` field should contain a regex that validates parameter values. The `.current/` research
+files already extracted these. Use values recorded there; only look at source directly if unsure.
 
-1. **Explicit regex validation** in the code:
+**Common patterns for reference:**
 
-   ```javascript
-   if (!/^\d+$/.test(delay)) { return; }  // pattern: '^\\d+$' for integers
-   ```
+- CSS selectors: Usually no pattern needed (too complex)
+- Numbers: `^\d+$` or `^-?\d+(\.\d+)?$`
+- Booleans: `^(true|false|1|0)$`
+- Enums: `^(option1|option2|option3)$`
 
-2. **Enum-like checks**:
-
-   ```javascript
-   if (!['immediate', 'interactive', 'complete'].includes(when)) { return; }
-   // pattern: '^(immediate|interactive|complete)$'
-   ```
-
-3. **Type or format constraints**:
-
-   ```javascript
-   const isBoolean = value === 'true' || value === 'false';
-   // pattern: '^(true|false)$'
-   ```
-
-4. **Common patterns**:
-   - CSS selectors: Usually no pattern needed (too complex)
-   - Numbers: `^\d+$` or `^-?\d+(\.\d+)?$`
-   - Booleans: `^(true|false|1|0)$`
-   - Enums: `^(option1|option2|option3)$`
-
-**IMPORTANT:** If no validation is found, **omit the `pattern` field entirely**. Do NOT add `pattern: null`.
+**IMPORTANT:** If the research file records `(none)`, **omit the `pattern` field entirely**.
+Do NOT add `pattern: null`.
 
 ### Extracting Default Values
 
-The `default` field should contain the default value from the source code:
-
-1. **Function signature defaults**:
-
-   ```javascript
-   function scriptlet(selector = '', attr = '', value = '') {
-   // defaults: '', '', ''
-   ```
-
-2. **Fallback operators**:
-
-   ```javascript
-   const delay = args[0] || 1000;  // default: "1000"
-   const enabled = args[1] || 'true';  // default: "true"
-   ```
-
-3. **Conditional defaults**:
-
-   ```javascript
-   const mode = args[0] ? args[0] : 'block';  // default: "block"
-   ```
+The `.current/` research files already recorded defaults. Use values recorded there.
 
 Always use string representation in YAML: `"1000"`, `"true"`, `"block"`.
 
-**IMPORTANT:** If no default is found, **omit the `default` field entirely**. Do NOT add `default: null`.
+**IMPORTANT:** If the research file records `(none)`, **omit the `default` field entirely**.
+Do NOT add `default: null`.
 
 ---
 
@@ -726,51 +568,42 @@ Always use string representation in YAML: `"1000"`, `"true"`, `"block"`.
 
 1. **NEVER invent or imagine field names**
 
-    - **CRITICAL:** Always copy parameter names EXACTLY from source code or documentation
+    - **CRITICAL:** Always use parameter names EXACTLY as recorded in `.current/` files
     - Do NOT create parameter names based on what you think they should be called
     - Do NOT rename parameters to make them "clearer" or "more consistent"
-    - If the source says `typeSearch`, use `typeSearch` (not `type`, not `searchType`)
-    - If the source says `selector`, use `selector` (not `cssSelector`, not `element`)
-    - Copy character-by-character from:
-        - Function signatures: `function scriptlet(param1, param2)`
-        - JSDoc: `@param {string} actualParamName`
-        - Documentation: parameter names as written in docs
+    - If `.current/abp-scriptlets.md` says `typeSearch`, use `typeSearch`
     - This applies to ALL fields: parameters, aliases, token names, etc.
 
 2. **Don't confuse uBO tokens with parameters**
-   - Tokens parsed by `getExtraArgs()` → use `ubo_tokens` field
-   - Positional arguments → use `parameters` field
+   - Tokens from `getExtraArgs()` → use `ubo_tokens` field (listed under `tokens` in `.current/ubo-scriptlets.md`)
+   - Positional arguments → use `parameters` field (listed under `parameters` in `.current/ubo-scriptlets.md`)
 
-3. **Don't ignore `.fn` helpers in uBO**
-   - Files ending in `.fn` are utilities, not scriptlets
-   - Skip them entirely
-
-4. **Don't forget dual naming for uBO**
+3. **Don't forget dual naming for uBO**
    - Always include both `.js` and non-`.js` versions in aliases
    - Canonical `name` field uses `.js` suffix
 
-5. **Don't duplicate common parameters**
+4. **Don't duplicate common parameters**
    - If parameter is in `common` section, don't repeat in platform sections
    - Only repeat if you need to override the common value
 
-6. **Don't use camelCase**
+5. **Don't use camelCase**
    - YAML field names are `snake_case`: `version_added`, `is_trusted`
    - NOT `versionAdded`, `isTrusted`
 
-7. **Don't skip build validation**
+6. **Don't skip build validation**
    - Always run `pnpm build` to verify changes
    - Fix all errors before considering the update complete
 
-8. **Don't create fields not in README.md**
+7. **Don't create fields not in README.md**
    - Only use documented fields from the README
    - No custom or undocumented fields allowed
 
-9. **Don't use wrong platform identifiers**
+8. **Don't use wrong platform identifiers**
    - AdGuard: `adg_os_any|adg_ext_any|adg_safari_any` (all three together)
    - uBO: `ubo_any`
    - ABP: `abp_any`
 
-10. **NEVER remove version fields**
+9. **NEVER remove version fields**
 
     - `version_added`, `version_removed`, and related version fields are often manually researched
     - **NEVER REMOVE THESE** even if you cannot find them in source/docs
@@ -778,19 +611,17 @@ Always use string representation in YAML: `"1000"`, `"true"`, `"block"`.
     - When in doubt, PRESERVE the existing value
     - This is CRITICAL - do not ignore this rule
 
-11. **Don't add null values unnecessarily**
+10. **Don't add null values unnecessarily**
 
     - **DO NOT** add `pattern: null` - omit the field if no validation exists
     - **DO NOT** add `default: null` - omit the field if no default exists
     - Null is the default value for these optional fields
     - Only add these fields when they have actual non-null values
 
-12. **Don't skip scriptlets - use inventory file**
+11. **Don't skip scriptlets - use inventory file**
 
-    - Scan ALL scriptlets in ALL repositories
     - Use the inventory file to track progress
     - Ensure every scriptlet is either in an existing YAML or needs a new YAML
-    - Check all folders in ABP (`behavioral/`, `conditional-hiding/`, `introspection/`)
 
 ---
 
@@ -798,25 +629,24 @@ Always use string representation in YAML: `"1000"`, `"true"`, `"block"`.
 
 Before completing the update:
 
+- [ ] `.current/abp-scriptlets.md` exists and was read
+- [ ] `.current/ubo-scriptlets.md` exists and was read
+- [ ] `.current/adg-scriptlets.md` exists and was read
 - [ ] Read README.md and schema.ts completely
 - [ ] Reviewed existing YAML files for patterns
-- [ ] Checked all three repositories (uBO, ABP, AdGuard)
-- [ ] Found equivalent scriptlets using cross-references
-- [ ] Used correct platform identifiers
-- [ ] Created scriptlets-inventory.md file and populated it with all scriptlets from all repos
+- [ ] Created `.current/scriptlets-inventory.md` with all scriptlets from all sources
 - [ ] Listed all existing YAML files in inventory
-- [ ] PHASE 2: Updated all existing YAML files
+- [ ] PHASE 1: Updated all existing YAML files
 - [ ] **VERIFIED: No `version_added` or `version_removed` fields were removed**
 - [ ] **VERIFIED: No `pattern: null` or `default: null` added unnecessarily**
-- [ ] PHASE 3: Created new YAML files for new scriptlets
+- [ ] PHASE 2: Created new YAML files for new scriptlets
 - [ ] Handled uBO tokens properly (in `ubo_tokens`, not `parameters`)
 - [ ] Included dual naming for uBO scriptlets
 - [ ] Used only fields documented in README.md
-- [ ] ONLY added `pattern` field when validation regex found (omitted if null)
-- [ ] ONLY added `default` field when default value found (omitted if null)
-- [ ] **VERIFIED: All parameter names copied EXACTLY from source (not invented)**
-- [ ] **VERIFIED: All alias names copied EXACTLY from source (not invented)**
-- [ ] Scanned ALL scriptlet folders (including ABP's `behavioral/`, `conditional-hiding/`, `introspection/`)
+- [ ] ONLY added `pattern` field when a non-`(none)` value was in research files
+- [ ] ONLY added `default` field when a non-`(none)` value was in research files
+- [ ] **VERIFIED: All parameter names taken EXACTLY from `.current/` files (not invented)**
+- [ ] **VERIFIED: All alias names taken EXACTLY from `.current/` files (not invented)**
 - [ ] Checked inventory file - all scriptlets processed
 - [ ] Build passes: `pnpm build` succeeds
 - [ ] No schema validation errors
