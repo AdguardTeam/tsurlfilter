@@ -36,6 +36,13 @@ export {
     createNetworkRulePreparseResult,
 } from './types';
 
+export {
+    CosmeticSepKind,
+    cosmeticSepKind,
+    cosmeticSepIndex,
+    findCosmeticSeparator,
+} from './cosmetic-separator';
+export { RuleClassifier, RuleKind } from './classifier';
 export { NetworkRulePreparser } from './network-rule';
 export { ModifierListPreparser } from './modifier-list';
 export { ModifierPreparser } from './modifier';
