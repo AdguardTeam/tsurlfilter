@@ -47,28 +47,3 @@ export { ModifierListParser } from '../parser-new/modifier-list';
 export { ModifierParser } from '../parser-new/modifier';
 export { ValueParser } from '../parser-new/value';
 export { NetworkRuleParser } from '../parser-new/network-rule-parser';
-
-export {
-    isException,
-    hasSeparator,
-    getPatternStartIndex,
-    getPatternEndIndex,
-    getSeparatorIndex,
-    patternEquals,
-    getPattern,
-} from './utils/network-rule';
-
-export {
-    getModifierCount,
-    findModifierIndex,
-    hasModifierNamed,
-} from './utils/modifier-list';
-
-export {
-    isModifierNegated,
-    hasModifierValue,
-    modifierNameEquals,
-    getModifierName,
-    getModifierValue,
-    getModifierBounds,
-} from './utils/modifier';

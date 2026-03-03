@@ -9,6 +9,7 @@
 
 import { TokenType } from '../tokenizer/token-types';
 import type { PreparserContext } from './context';
+import { NR_MODIFIER_COUNT } from './types';
 import { ModifierPreparser } from './modifier';
 
 /**
@@ -17,6 +18,48 @@ import { ModifierPreparser } from './modifier';
  * Delegates individual modifier parsing to {@link ModifierPreparser}.
  */
 export class ModifierListPreparser {
+    /**
+     * Returns the number of modifiers in the preparsed rule.
+     *
+     * @param data Preparsed data buffer.
+     * @returns Modifier count.
+     */
+    public static getCount(data: Int32Array): number {
+        return data[NR_MODIFIER_COUNT];
+    }
+
+    /**
+     * Searches for a modifier by name (zero allocation).
+     *
+     * @param source Original source string.
+     * @param data Preparsed data buffer.
+     * @param name Modifier name to search for.
+     * @returns Modifier index (0-based) or -1 if not found.
+     */
+    public static findIndex(source: string, data: Int32Array, name: string): number {
+        const count = data[NR_MODIFIER_COUNT];
+
+        for (let i = 0; i < count; i += 1) {
+            if (ModifierPreparser.nameEquals(source, data, i, name)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Returns `true` if the rule has a modifier with the given name (zero allocation).
+     *
+     * @param source Original source string.
+     * @param data Preparsed data buffer.
+     * @param name Modifier name to search for.
+     * @returns `true` if found.
+     */
+    public static hasNamed(source: string, data: Int32Array, name: string): boolean {
+        return ModifierListPreparser.findIndex(source, data, name) !== -1;
+    }
+
     /**
      * Preparse a comma-separated modifier list starting at token `startTi`.
      * Writes modifier records to `ctx.data` and returns the total count.

@@ -31,6 +31,79 @@ import { ModifierListPreparser } from './modifier-list';
  */
 export class NetworkRulePreparser {
     /**
+     * Returns `true` if the preparsed rule is an exception rule (`@@`).
+     *
+     * @param data Preparsed data buffer.
+     * @returns Whether the rule is an exception.
+     */
+    public static isException(data: Int32Array): boolean {
+        return (data[NR_FLAGS] & FLAG_EXCEPTION) !== 0;
+    }
+
+    /**
+     * Returns `true` if the preparsed rule has a modifier separator `$`.
+     *
+     * @param data Preparsed data buffer.
+     * @returns Whether a separator was found.
+     */
+    public static hasSeparator(data: Int32Array): boolean {
+        return data[NR_SEPARATOR_INDEX] !== NO_VALUE;
+    }
+
+    /**
+     * Returns the source index where the pattern starts.
+     *
+     * @param data Preparsed data buffer.
+     * @returns Source start index.
+     */
+    public static getPatternStart(data: Int32Array): number {
+        return data[NR_PATTERN_START];
+    }
+
+    /**
+     * Returns the source index where the pattern ends (exclusive).
+     *
+     * @param data Preparsed data buffer.
+     * @returns Source end index (exclusive).
+     */
+    public static getPatternEnd(data: Int32Array): number {
+        return data[NR_PATTERN_END];
+    }
+
+    /**
+     * Returns the source index of the `$` separator, or `NO_VALUE` if none.
+     *
+     * @param data Preparsed data buffer.
+     * @returns Separator source index or `NO_VALUE`.
+     */
+    public static getSeparatorIndex(data: Int32Array): number {
+        return data[NR_SEPARATOR_INDEX];
+    }
+
+    /**
+     * Checks whether the pattern equals a given string, without allocation.
+     *
+     * @param source Original source string.
+     * @param data Preparsed data buffer.
+     * @param target String to compare against.
+     * @returns `true` if the pattern matches the target exactly.
+     */
+    public static patternEquals(source: string, data: Int32Array, target: string): boolean {
+        return NetworkRulePreparser.regionEquals(source, data[NR_PATTERN_START], data[NR_PATTERN_END], target);
+    }
+
+    /**
+     * Extracts the pattern as a string from the source.
+     *
+     * @param source Original source string.
+     * @param data Preparsed data buffer.
+     * @returns Pattern substring.
+     */
+    public static getPattern(source: string, data: Int32Array): string {
+        return source.slice(data[NR_PATTERN_START], data[NR_PATTERN_END]);
+    }
+
+    /**
      * Preparses a network rule from tokenizer output.
      *
      * Fills `ctx.data` (Int32Array) with structural indices into the source
@@ -117,5 +190,21 @@ export class NetworkRulePreparser {
         }
 
         return -1;
+    }
+
+    private static regionEquals(source: string, start: number, end: number, target: string): boolean {
+        const len = end - start;
+
+        if (len !== target.length) {
+            return false;
+        }
+
+        for (let i = 0; i < len; i += 1) {
+            if (source.charCodeAt(start + i) !== target.charCodeAt(i)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

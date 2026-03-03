@@ -6,19 +6,8 @@ import {
     createPreparserContext,
     initPreparserContext,
     NetworkRulePreparser,
-    isException,
-    hasSeparator,
-    getModifierCount,
-    getPattern,
-    getModifierName,
-    getModifierValue,
-    hasModifierNamed,
-    findModifierIndex,
-    isModifierNegated,
-    hasModifierValue,
-    patternEquals,
-    modifierNameEquals,
-    getSeparatorIndex,
+    ModifierListPreparser,
+    ModifierPreparser,
 } from '../../src/preparser';
 import { NetworkRuleAstParser } from '../../src/parser-new';
 
@@ -51,28 +40,28 @@ describe('preparseNetworkRule', () => {
             const source = '||example.org^';
             const d = preparse(source);
 
-            expect(isException(d)).toBe(false);
-            expect(hasSeparator(d)).toBe(false);
-            expect(getModifierCount(d)).toBe(0);
-            expect(getPattern(source, d)).toBe('||example.org^');
-            expect(patternEquals(source, d, '||example.org^')).toBe(true);
+            expect(NetworkRulePreparser.isException(d)).toBe(false);
+            expect(NetworkRulePreparser.hasSeparator(d)).toBe(false);
+            expect(ModifierListPreparser.getCount(d)).toBe(0);
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('||example.org^');
+            expect(NetworkRulePreparser.patternEquals(source, d, '||example.org^')).toBe(true);
         });
 
         test('simple URL pattern', () => {
             const source = '/ads/banner.js';
             const d = preparse(source);
 
-            expect(isException(d)).toBe(false);
-            expect(hasSeparator(d)).toBe(false);
-            expect(getPattern(source, d)).toBe('/ads/banner.js');
+            expect(NetworkRulePreparser.isException(d)).toBe(false);
+            expect(NetworkRulePreparser.hasSeparator(d)).toBe(false);
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('/ads/banner.js');
         });
 
         test('wildcard pattern', () => {
             const source = '*example*';
             const d = preparse(source);
 
-            expect(getPattern(source, d)).toBe('*example*');
-            expect(getModifierCount(d)).toBe(0);
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('*example*');
+            expect(ModifierListPreparser.getCount(d)).toBe(0);
         });
     });
 
@@ -81,21 +70,21 @@ describe('preparseNetworkRule', () => {
             const source = '@@||example.org^';
             const d = preparse(source);
 
-            expect(isException(d)).toBe(true);
-            expect(hasSeparator(d)).toBe(false);
-            expect(getPattern(source, d)).toBe('||example.org^');
+            expect(NetworkRulePreparser.isException(d)).toBe(true);
+            expect(NetworkRulePreparser.hasSeparator(d)).toBe(false);
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('||example.org^');
         });
 
         test('exception rule with modifiers', () => {
             const source = '@@||example.org^$third-party,script';
             const d = preparse(source);
 
-            expect(isException(d)).toBe(true);
-            expect(hasSeparator(d)).toBe(true);
-            expect(getPattern(source, d)).toBe('||example.org^');
-            expect(getModifierCount(d)).toBe(2);
-            expect(getModifierName(source, d, 0)).toBe('third-party');
-            expect(getModifierName(source, d, 1)).toBe('script');
+            expect(NetworkRulePreparser.isException(d)).toBe(true);
+            expect(NetworkRulePreparser.hasSeparator(d)).toBe(true);
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('||example.org^');
+            expect(ModifierListPreparser.getCount(d)).toBe(2);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('third-party');
+            expect(ModifierPreparser.getName(source, d, 1)).toBe('script');
         });
     });
 
@@ -104,11 +93,11 @@ describe('preparseNetworkRule', () => {
             const source = '||example.org^$third-party';
             const d = preparse(source);
 
-            expect(hasSeparator(d)).toBe(true);
-            expect(getSeparatorIndex(d)).toBe(14);
-            expect(getPattern(source, d)).toBe('||example.org^');
-            expect(getModifierCount(d)).toBe(1);
-            expect(getModifierName(source, d, 0)).toBe('third-party');
+            expect(NetworkRulePreparser.hasSeparator(d)).toBe(true);
+            expect(NetworkRulePreparser.getSeparatorIndex(d)).toBe(14);
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('||example.org^');
+            expect(ModifierListPreparser.getCount(d)).toBe(1);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('third-party');
         });
 
         test('$ inside regex pattern is not a separator', () => {
@@ -116,19 +105,19 @@ describe('preparseNetworkRule', () => {
             const d = preparse(source);
 
             // The $ is followed by / (Slash), not a modifier start
-            expect(hasSeparator(d)).toBe(false);
-            expect(getPattern(source, d)).toBe('/regex$/');
+            expect(NetworkRulePreparser.hasSeparator(d)).toBe(false);
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('/regex$/');
         });
 
         test('$ separator with regex modifier value', () => {
             const source = '||example.org^$removeparam=/regex$/';
             const d = preparse(source);
 
-            expect(hasSeparator(d)).toBe(true);
-            expect(getPattern(source, d)).toBe('||example.org^');
-            expect(getModifierCount(d)).toBe(1);
-            expect(getModifierName(source, d, 0)).toBe('removeparam');
-            expect(getModifierValue(source, d, 0)).toBe('/regex$/');
+            expect(NetworkRulePreparser.hasSeparator(d)).toBe(true);
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('||example.org^');
+            expect(ModifierListPreparser.getCount(d)).toBe(1);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierPreparser.getValue(source, d, 0)).toBe('/regex$/');
         });
 
         test('pattern-only rule with $', () => {
@@ -136,9 +125,9 @@ describe('preparseNetworkRule', () => {
             const d = preparse(source);
 
             // $value looks like a modifier: Ident followed by EOF
-            expect(hasSeparator(d)).toBe(true);
-            expect(getPattern(source, d)).toBe('||example.org/path');
-            expect(getModifierName(source, d, 0)).toBe('value');
+            expect(NetworkRulePreparser.hasSeparator(d)).toBe(true);
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('||example.org/path');
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('value');
         });
     });
 
@@ -147,91 +136,91 @@ describe('preparseNetworkRule', () => {
             const source = '||example.org^$script';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(1);
-            expect(getModifierName(source, d, 0)).toBe('script');
-            expect(hasModifierValue(d, 0)).toBe(false);
-            expect(getModifierValue(source, d, 0)).toBeNull();
-            expect(isModifierNegated(d, 0)).toBe(false);
+            expect(ModifierListPreparser.getCount(d)).toBe(1);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('script');
+            expect(ModifierPreparser.hasValue(d, 0)).toBe(false);
+            expect(ModifierPreparser.getValue(source, d, 0)).toBeNull();
+            expect(ModifierPreparser.isNegated(d, 0)).toBe(false);
         });
 
         test('multiple modifiers without values', () => {
             const source = '||example.org^$third-party,script,image';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(3);
-            expect(getModifierName(source, d, 0)).toBe('third-party');
-            expect(getModifierName(source, d, 1)).toBe('script');
-            expect(getModifierName(source, d, 2)).toBe('image');
+            expect(ModifierListPreparser.getCount(d)).toBe(3);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('third-party');
+            expect(ModifierPreparser.getName(source, d, 1)).toBe('script');
+            expect(ModifierPreparser.getName(source, d, 2)).toBe('image');
         });
 
         test('modifier with value', () => {
             const source = '||example.org^$domain=example.com';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(1);
-            expect(getModifierName(source, d, 0)).toBe('domain');
-            expect(hasModifierValue(d, 0)).toBe(true);
-            expect(getModifierValue(source, d, 0)).toBe('example.com');
+            expect(ModifierListPreparser.getCount(d)).toBe(1);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('domain');
+            expect(ModifierPreparser.hasValue(d, 0)).toBe(true);
+            expect(ModifierPreparser.getValue(source, d, 0)).toBe('example.com');
         });
 
         test('mixed modifiers with and without values', () => {
             const source = '||example.org^$third-party,domain=example.com,script';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(3);
+            expect(ModifierListPreparser.getCount(d)).toBe(3);
 
-            expect(getModifierName(source, d, 0)).toBe('third-party');
-            expect(hasModifierValue(d, 0)).toBe(false);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('third-party');
+            expect(ModifierPreparser.hasValue(d, 0)).toBe(false);
 
-            expect(getModifierName(source, d, 1)).toBe('domain');
-            expect(getModifierValue(source, d, 1)).toBe('example.com');
+            expect(ModifierPreparser.getName(source, d, 1)).toBe('domain');
+            expect(ModifierPreparser.getValue(source, d, 1)).toBe('example.com');
 
-            expect(getModifierName(source, d, 2)).toBe('script');
-            expect(hasModifierValue(d, 2)).toBe(false);
+            expect(ModifierPreparser.getName(source, d, 2)).toBe('script');
+            expect(ModifierPreparser.hasValue(d, 2)).toBe(false);
         });
 
         test('negated modifier', () => {
             const source = '||example.org^$~third-party';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(1);
-            expect(getModifierName(source, d, 0)).toBe('third-party');
-            expect(isModifierNegated(d, 0)).toBe(true);
+            expect(ModifierListPreparser.getCount(d)).toBe(1);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('third-party');
+            expect(ModifierPreparser.isNegated(d, 0)).toBe(true);
         });
 
         test('mixed negated and non-negated modifiers', () => {
             const source = '||example.org^$~third-party,script,~image';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(3);
+            expect(ModifierListPreparser.getCount(d)).toBe(3);
 
-            expect(getModifierName(source, d, 0)).toBe('third-party');
-            expect(isModifierNegated(d, 0)).toBe(true);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('third-party');
+            expect(ModifierPreparser.isNegated(d, 0)).toBe(true);
 
-            expect(getModifierName(source, d, 1)).toBe('script');
-            expect(isModifierNegated(d, 1)).toBe(false);
+            expect(ModifierPreparser.getName(source, d, 1)).toBe('script');
+            expect(ModifierPreparser.isNegated(d, 1)).toBe(false);
 
-            expect(getModifierName(source, d, 2)).toBe('image');
-            expect(isModifierNegated(d, 2)).toBe(true);
+            expect(ModifierPreparser.getName(source, d, 2)).toBe('image');
+            expect(ModifierPreparser.isNegated(d, 2)).toBe(true);
         });
 
         test('modifier value with pipes (domain list)', () => {
             const source = '||example.org^$domain=example.com|~example.org';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(1);
-            expect(getModifierName(source, d, 0)).toBe('domain');
-            expect(getModifierValue(source, d, 0)).toBe('example.com|~example.org');
+            expect(ModifierListPreparser.getCount(d)).toBe(1);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('domain');
+            expect(ModifierPreparser.getValue(source, d, 0)).toBe('example.com|~example.org');
         });
 
         test('comma inside regex modifier value is not a separator', () => {
             const source = '||example.org^$removeparam=/test,value/,script';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(2);
-            expect(getModifierName(source, d, 0)).toBe('removeparam');
-            expect(getModifierValue(source, d, 0)).toBe('/test,value/');
-            expect(getModifierName(source, d, 1)).toBe('script');
+            expect(ModifierListPreparser.getCount(d)).toBe(2);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierPreparser.getValue(source, d, 0)).toBe('/test,value/');
+            expect(ModifierPreparser.getName(source, d, 1)).toBe('script');
         });
     });
 
@@ -240,47 +229,47 @@ describe('preparseNetworkRule', () => {
             const source = '||example.org^$replace=/foo/bar/i';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(1);
-            expect(getModifierName(source, d, 0)).toBe('replace');
-            expect(getModifierValue(source, d, 0)).toBe('/foo/bar/i');
+            expect(ModifierListPreparser.getCount(d)).toBe(1);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierPreparser.getValue(source, d, 0)).toBe('/foo/bar/i');
         });
 
         test('replace with regex value followed by another modifier', () => {
             const source = '||example.org^$replace=/foo/bar/i,script';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(2);
-            expect(getModifierName(source, d, 0)).toBe('replace');
-            expect(getModifierValue(source, d, 0)).toBe('/foo/bar/i');
-            expect(getModifierName(source, d, 1)).toBe('script');
+            expect(ModifierListPreparser.getCount(d)).toBe(2);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierPreparser.getValue(source, d, 0)).toBe('/foo/bar/i');
+            expect(ModifierPreparser.getName(source, d, 1)).toBe('script');
         });
 
         test('replace with apostrophe-quoted value', () => {
             const source = "||example.org^$replace='text',script";
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(2);
-            expect(getModifierName(source, d, 0)).toBe('replace');
-            expect(getModifierValue(source, d, 0)).toBe("'text'");
-            expect(getModifierName(source, d, 1)).toBe('script');
+            expect(ModifierListPreparser.getCount(d)).toBe(2);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierPreparser.getValue(source, d, 0)).toBe("'text'");
+            expect(ModifierPreparser.getName(source, d, 1)).toBe('script');
         });
 
         test('replace with bracket character class in regex', () => {
             const source = '||example.org^$replace=/[/]//';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(1);
-            expect(getModifierName(source, d, 0)).toBe('replace');
-            expect(getModifierValue(source, d, 0)).toBe('/[/]//');
+            expect(ModifierListPreparser.getCount(d)).toBe(1);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierPreparser.getValue(source, d, 0)).toBe('/[/]//');
         });
 
         test('replace with empty replacement', () => {
             const source = '||example.org^$replace=/foo//';
             const d = preparse(source);
 
-            expect(getModifierCount(d)).toBe(1);
-            expect(getModifierName(source, d, 0)).toBe('replace');
-            expect(getModifierValue(source, d, 0)).toBe('/foo//');
+            expect(ModifierListPreparser.getCount(d)).toBe(1);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('replace');
+            expect(ModifierPreparser.getValue(source, d, 0)).toBe('/foo//');
         });
     });
 
@@ -289,35 +278,35 @@ describe('preparseNetworkRule', () => {
             const source = '||example.org^$third-party,script';
             const d = preparse(source);
 
-            expect(hasModifierNamed(source, d, 'third-party')).toBe(true);
-            expect(hasModifierNamed(source, d, 'script')).toBe(true);
-            expect(hasModifierNamed(source, d, 'image')).toBe(false);
+            expect(ModifierListPreparser.hasNamed(source, d, 'third-party')).toBe(true);
+            expect(ModifierListPreparser.hasNamed(source, d, 'script')).toBe(true);
+            expect(ModifierListPreparser.hasNamed(source, d, 'image')).toBe(false);
         });
 
         test('findModifierIndex', () => {
             const source = '||example.org^$third-party,domain=example.com,script';
             const d = preparse(source);
 
-            expect(findModifierIndex(source, d, 'third-party')).toBe(0);
-            expect(findModifierIndex(source, d, 'domain')).toBe(1);
-            expect(findModifierIndex(source, d, 'script')).toBe(2);
-            expect(findModifierIndex(source, d, 'image')).toBe(-1);
+            expect(ModifierListPreparser.findIndex(source, d, 'third-party')).toBe(0);
+            expect(ModifierListPreparser.findIndex(source, d, 'domain')).toBe(1);
+            expect(ModifierListPreparser.findIndex(source, d, 'script')).toBe(2);
+            expect(ModifierListPreparser.findIndex(source, d, 'image')).toBe(-1);
         });
 
         test('modifierNameEquals', () => {
             const source = '||example.org^$script';
             const d = preparse(source);
 
-            expect(modifierNameEquals(source, d, 0, 'script')).toBe(true);
-            expect(modifierNameEquals(source, d, 0, 'image')).toBe(false);
+            expect(ModifierPreparser.nameEquals(source, d, 0, 'script')).toBe(true);
+            expect(ModifierPreparser.nameEquals(source, d, 0, 'image')).toBe(false);
         });
 
         test('patternEquals', () => {
             const source = '||example.org^$script';
             const d = preparse(source);
 
-            expect(patternEquals(source, d, '||example.org^')).toBe(true);
-            expect(patternEquals(source, d, '||example.com^')).toBe(false);
+            expect(NetworkRulePreparser.patternEquals(source, d, '||example.org^')).toBe(true);
+            expect(NetworkRulePreparser.patternEquals(source, d, '||example.com^')).toBe(false);
         });
     });
 
@@ -326,48 +315,48 @@ describe('preparseNetworkRule', () => {
             const source = '$script,image';
             const d = preparse(source);
 
-            expect(hasSeparator(d)).toBe(true);
-            expect(getPattern(source, d)).toBe('');
-            expect(getModifierCount(d)).toBe(2);
-            expect(getModifierName(source, d, 0)).toBe('script');
-            expect(getModifierName(source, d, 1)).toBe('image');
+            expect(NetworkRulePreparser.hasSeparator(d)).toBe(true);
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('');
+            expect(ModifierListPreparser.getCount(d)).toBe(2);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('script');
+            expect(ModifierPreparser.getName(source, d, 1)).toBe('image');
         });
 
         test('exception with modifiers only', () => {
             const source = '@@$script';
             const d = preparse(source);
 
-            expect(isException(d)).toBe(true);
-            expect(getPattern(source, d)).toBe('');
-            expect(getModifierCount(d)).toBe(1);
-            expect(getModifierName(source, d, 0)).toBe('script');
+            expect(NetworkRulePreparser.isException(d)).toBe(true);
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('');
+            expect(ModifierListPreparser.getCount(d)).toBe(1);
+            expect(ModifierPreparser.getName(source, d, 0)).toBe('script');
         });
 
         test('leading whitespace is trimmed', () => {
             const source = '  ||example.org^';
             const d = preparse(source);
 
-            expect(getPattern(source, d)).toBe('||example.org^');
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('||example.org^');
         });
 
         test('trailing whitespace is preserved (raw preparser)', () => {
             const source = '||example.org^  ';
             const d = preparse(source);
 
-            expect(getPattern(source, d)).toBe('||example.org^  ');
+            expect(NetworkRulePreparser.getPattern(source, d)).toBe('||example.org^  ');
         });
 
         test('buffer reuse across calls', () => {
             const source1 = '||first.org^$script';
             preparse(source1);
-            expect(getPattern(source1, ctx.data)).toBe('||first.org^');
-            expect(getModifierName(source1, ctx.data, 0)).toBe('script');
+            expect(NetworkRulePreparser.getPattern(source1, ctx.data)).toBe('||first.org^');
+            expect(ModifierPreparser.getName(source1, ctx.data, 0)).toBe('script');
 
             const source2 = '@@||second.org^$image';
             preparse(source2);
-            expect(isException(ctx.data)).toBe(true);
-            expect(getPattern(source2, ctx.data)).toBe('||second.org^');
-            expect(getModifierName(source2, ctx.data, 0)).toBe('image');
+            expect(NetworkRulePreparser.isException(ctx.data)).toBe(true);
+            expect(NetworkRulePreparser.getPattern(source2, ctx.data)).toBe('||second.org^');
+            expect(ModifierPreparser.getName(source2, ctx.data, 0)).toBe('image');
         });
     });
 
