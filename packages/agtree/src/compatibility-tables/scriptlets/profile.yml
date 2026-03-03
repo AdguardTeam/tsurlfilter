@@ -1,8 +1,9 @@
-common:
-  description: Enables profile mode to log performance metrics for snippets. Used for debugging and performance analysis.
-  debug: true
-
 abp_any:
   name: profile
-  version_added: "3.9"
-  docs: https://developers.eyeo.com/snippets/debugging-snippets/profile
+  description: |-
+    It executes using the Performance API. 
+    It marks specific points (the beginning and the end in the main logic of every snippet) and measures the time taken between these points (duration).
+    The duration is expressed in ms. It logs an object with the performance data of the monitored snippet.
+  version_added: "4.8"
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  debug: true
