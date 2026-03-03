@@ -10,7 +10,8 @@
  *   1. Leading `!`                         → Comment
  *   2. Cosmetic separator in token stream  → Cosmetic
  *   3. Leading `#` (no cosmetic sep)       → Comment (host-style)
- *   4. Otherwise                           → Network
+ *   4. `[…]` with no cosmetic sep          → Comment (agent)
+ *   5. Otherwise                           → Network
  */
 
 import { TokenType } from '../tokenizer/token-types';
@@ -81,7 +82,21 @@ export class RuleClassifier {
             return RuleClassifier.pack(RuleKind.Comment, 0, 0);
         }
 
-        // 4. Network (default)
+        // 4. Agent comment: `[…]` — starts with `[`, last significant token is `]`
+        //    Rules like `[$adg-modifier]##selector` are caught by the cosmetic check above.
+        if (ti < tokenCount && types[ti] === TokenType.OpenSquare) {
+            let last = tokenCount - 1;
+
+            while (last > ti && types[last] === TokenType.Whitespace) {
+                last -= 1;
+            }
+
+            if (types[last] === TokenType.CloseSquare) {
+                return RuleClassifier.pack(RuleKind.Comment, 0, 0);
+            }
+        }
+
+        // 5. Network (default)
         return RuleClassifier.pack(RuleKind.Network, 0, 0);
     }
 

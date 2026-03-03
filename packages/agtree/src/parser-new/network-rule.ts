@@ -58,16 +58,16 @@ export class NetworkRuleAstParser {
         data: Int32Array,
         options: PreparserParseOptions = {},
     ): NetworkRule {
-        const { isLocIncluded = false, includeRaws = false } = options;
         const flags = data[NR_FLAGS];
         const patternStart = data[NR_PATTERN_START];
         const patternEnd = data[NR_PATTERN_END];
+        const isLoc = options.isLocIncluded ?? false;
 
         // Build pattern Value node
-        const pattern = ValueParser.parse(source, patternStart, patternEnd, isLocIncluded);
+        const pattern = ValueParser.parse(source, patternStart, patternEnd, isLoc);
 
         // Build modifier list (chains to modifier → value parsers)
-        const modifiers = ModifierListParser.parse(source, data, isLocIncluded);
+        const modifiers = ModifierListParser.parse(source, data, isLoc);
 
         // Build the NetworkRule node
         const result: NetworkRule = {
@@ -79,13 +79,13 @@ export class NetworkRuleAstParser {
             modifiers,
         };
 
-        if (includeRaws) {
+        if (options.includeRaws) {
             result.raws = {
                 text: source,
             };
         }
 
-        if (isLocIncluded) {
+        if (options.isLocIncluded) {
             result.start = 0;
             result.end = source.length;
         }

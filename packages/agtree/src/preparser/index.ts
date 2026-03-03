@@ -43,6 +43,8 @@ export {
     findCosmeticSeparator,
 } from './cosmetic-separator';
 export { RuleClassifier, RuleKind } from './classifier';
+export { RulePreparser } from './rule';
+export * from './comment';
 export { NetworkRulePreparser } from './network-rule';
 export { ModifierListPreparser } from './modifier-list';
 export { ModifierPreparser } from './modifier';

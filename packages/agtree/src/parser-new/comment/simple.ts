@@ -1,0 +1,52 @@
+/**
+ * @file Simple comment AST parser.
+ *
+ * Builds {@link CommentRule} nodes from preparsed data.
+ */
+
+import { AdblockSyntax } from '../../utils/adblockers';
+import { type CommentRule, CommentRuleType, RuleCategory } from '../../nodes';
+import { CM_SIMPLE_MARKER, CM_SIMPLE_TEXT_END, CM_SIMPLE_TEXT_START } from '../../preparser/comment/types';
+import type { PreparserParseOptions } from '../network-rule';
+import { ValueParser } from '../value';
+
+/**
+ * Builds {@link CommentRule} AST nodes from preparsed data.
+ */
+export class SimpleCommentAstParser {
+    /**
+     * Builds a {@link CommentRule} node from preparsed buffer data.
+     *
+     * @param source Original source string.
+     * @param data Buffer written by `SimpleCommentPreparser.preparse`.
+     * @param options Parse options.
+     * @returns CommentRule AST node.
+     */
+    static parse(source: string, data: Int32Array, options: PreparserParseOptions = {}): CommentRule {
+        const markerStart = data[CM_SIMPLE_MARKER];
+        const textStart = data[CM_SIMPLE_TEXT_START];
+        const textEnd = data[CM_SIMPLE_TEXT_END];
+
+        const marker = ValueParser.parse(source, markerStart, markerStart + 1, options.isLocIncluded ?? false);
+        const text = ValueParser.parse(source, textStart, textEnd, options.isLocIncluded ?? false);
+
+        const result: CommentRule = {
+            type: CommentRuleType.CommentRule,
+            category: RuleCategory.Comment,
+            syntax: AdblockSyntax.Common,
+            marker,
+            text,
+        };
+
+        if (options.includeRaws) {
+            result.raws = { text: source };
+        }
+
+        if (options.isLocIncluded) {
+            result.start = 0;
+            result.end = source.length;
+        }
+
+        return result;
+    }
+}
