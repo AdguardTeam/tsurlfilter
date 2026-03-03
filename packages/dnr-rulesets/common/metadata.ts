@@ -2,7 +2,12 @@ import fs from 'node:fs';
 
 import axios from 'axios';
 
-import { FILTERS_METADATA_I18N_URL, FILTERS_METADATA_URL } from './constants';
+import {
+    BrowserFilters,
+    FILTERS_BROWSER_PLACEHOLDER,
+    FILTERS_METADATA_I18N_URL,
+    FILTERS_METADATA_URL,
+} from './constants';
 
 /**
  * Filter metadata.
@@ -49,13 +54,19 @@ export type Metadata = {
  * Download metadata from {@link FILTERS_METADATA_URL}.
  *
  * @param pathToSave Path to save metadata file.
+ * @param browser Browser to download filters metadata for. Defaults to `BrowserFilters.ChromiumMv3`.
  *
  * @returns Filter metadata.
  */
-export async function downloadMetadata(pathToSave?: string): Promise<Metadata> {
-    console.info(`Download ${FILTERS_METADATA_URL}...`);
+export async function downloadMetadata(
+    pathToSave?: string,
+    browser: BrowserFilters = BrowserFilters.ChromiumMv3,
+): Promise<Metadata> {
+    const metadataUrl = FILTERS_METADATA_URL.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
 
-    const { data } = await axios.get<Metadata>(FILTERS_METADATA_URL, { responseType: 'json' });
+    console.info(`Download ${metadataUrl}...`);
+
+    const { data } = await axios.get<Metadata>(metadataUrl, { responseType: 'json' });
 
     if (pathToSave) {
         await fs.promises.writeFile(
@@ -63,7 +74,7 @@ export async function downloadMetadata(pathToSave?: string): Promise<Metadata> {
             JSON.stringify(data, null, '\t'),
         );
 
-        console.info(`Download ${FILTERS_METADATA_URL} done, saved to ${pathToSave}`);
+        console.info(`Download ${metadataUrl} done, saved to ${pathToSave}`);
     }
 
     return data;
@@ -73,20 +84,26 @@ export async function downloadMetadata(pathToSave?: string): Promise<Metadata> {
  * Download i18n metadata from {@link FILTERS_METADATA_I18N_URL}.
  *
  * @param pathToSave Path to save i18n metadata file.
+ * @param browser Browser to download filters I18n metadata for. Defaults to `BrowserFilters.ChromiumMv3`.
  *
  * @returns I18n Filter metadata.
  */
-export async function downloadI18nMetadata(pathToSave: string): Promise<unknown> {
-    console.info(`Download ${FILTERS_METADATA_I18N_URL}...`);
+export async function downloadI18nMetadata(
+    pathToSave: string,
+    browser: BrowserFilters = BrowserFilters.ChromiumMv3,
+): Promise<unknown> {
+    const i18nMetadataUrl = FILTERS_METADATA_I18N_URL.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
 
-    const { data } = await axios.get(FILTERS_METADATA_I18N_URL);
+    console.info(`Download ${i18nMetadataUrl}...`);
+
+    const { data } = await axios.get(i18nMetadataUrl);
 
     await fs.promises.writeFile(
         pathToSave,
         JSON.stringify(data, null, '\t'),
     );
 
-    console.info(`Download ${FILTERS_METADATA_I18N_URL} done, saved to ${pathToSave}`);
+    console.info(`Download ${i18nMetadataUrl} done, saved to ${pathToSave}`);
 
     return data;
 }

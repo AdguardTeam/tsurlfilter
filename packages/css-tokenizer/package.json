@@ -57,6 +57,7 @@
     "@typescript-eslint/parser": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
+    "eslint-config-airbnb-base": "catalog:",
     "eslint-config-airbnb-typescript": "catalog:",
     "eslint-plugin-import": "catalog:",
     "eslint-plugin-import-newlines": "catalog:",
