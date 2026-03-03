@@ -50,9 +50,3 @@ export { ModifierListPreparser } from './modifier-list';
 export { ModifierPreparser } from './modifier';
 export { ValuePreparser } from './value';
 export { isPotentialNetModifier } from './shared';
-
-export { NetworkRuleAstParser, type PreparserParseOptions } from '../parser-new/network-rule';
-export { ModifierListParser } from '../parser-new/modifier-list';
-export { ModifierParser } from '../parser-new/modifier';
-export { ValueParser } from '../parser-new/value';
-export { NetworkRuleParser } from '../parser-new/network-rule-parser';
