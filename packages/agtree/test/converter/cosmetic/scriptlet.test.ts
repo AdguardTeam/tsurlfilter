@@ -381,8 +381,25 @@ describe('Scriptlet conversion', () => {
                 expected: 'Scriptlet "hide-in-shadow-dom" is not supported in uBlock Origin.',
             },
             {
+                actual: String.raw`example.com#%#//scriptlet('trusted-set-local-storage-item', 'popupShow', '1')`,
+                expected: 'Scriptlet "trusted-set-local-storage-item" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('trusted-set-cookie', 'showCookie', 'true')`,
+                expected: 'Scriptlet "trusted-set-cookie" is not supported in uBlock Origin.',
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: String.raw`example.org#%#//scriptlet('trusted-suppress-native-method', 'Object.prototype.hasOwnProperty', '"test"')`,
+                expected: 'Scriptlet "trusted-suppress-native-method" is not supported in uBlock Origin.',
+            },
+            {
                 actual: String.raw`example.org#%#//scriptlet('trusted-dispatch-event', 'submit', '.test')`,
                 expected: 'Scriptlet "trusted-dispatch-event" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.org#%#//scriptlet('trusted-replace-outbound-text', 'atob', 'foo', 'bar')`,
+                expected: 'Scriptlet "trusted-replace-outbound-text" is not supported in uBlock Origin.',
             },
             {
                 actual: "[$path=/baz]example.com#%#//scriptlet('set-constant', 'foo', 'bar')",
