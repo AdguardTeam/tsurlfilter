@@ -79,5 +79,6 @@ export { ContentType } from '../../common/request-type';
 export type { RequestData } from './request/events/request-event';
 export type { MessageHandler } from '../../common/app';
 export type { LocalScriptFunctionData } from './services/local-script-rules-service';
+export type { RuleInfo } from '../../common/rule-info';
 
 export { TSWEBEXTENSION_VERSION, EXTENDED_CSS_VERSION } from '../../common/configuration';
