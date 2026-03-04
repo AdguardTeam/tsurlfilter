@@ -1,23 +1,31 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
+  description: Replaces text in text content of matched DOM nodes.
   is_trusted: true
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: trusted-replace-node-text
   version_added: 1.9.37
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-replace-node-text
   parameters:
     - name: nodeName
       required: true
+      description: String or RegExp, specifies DOM node name from which the text will be removed. Must target lowercased node names, e.g `div` instead of `DIV`.
     - name: textMatch
       required: true
+      description: String or RegExp to match against node's text content. If matched, the `pattern` will be replaced by the `replacement`. Case sensitive.
     - name: pattern
       required: true
+      description: String or regexp for matching contents of `node.textContent` that should be replaced. By default only first occurrence is replaced. To replace all occurrences use `g` flag in RegExp - `/pattern/g`.
     - name: replacement
       required: true
+      description: String to replace text content matched by `pattern`.
+    - name: extraArgs
+      required: false
+      description: String, if includes `verbose` will log original and modified text content.
 
 ubo_any:
   name: trusted-replace-node-text.js
+  version_added: 1.49.3b16
   aliases:
     - trusted-rpnt
     - trusted-rpnt.js
@@ -25,6 +33,7 @@ ubo_any:
     - replace-node-text.js
     - rpnt
     - rpnt.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-replace-node-textjs-
   parameters:
     - name: nodeName
       required: true
@@ -33,7 +42,7 @@ ubo_any:
       required: true
       description: A string or regex to match in the text content of the node.
     - name: replacement
-      required: true
+      required: false
       description: The string to replace the matched text with.
   ubo_tokens:
     - name: includes
