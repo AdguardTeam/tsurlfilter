@@ -1,18 +1,21 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 common:
+  description: Creates a constant property and assigns it a specified value.
   is_trusted: true
 
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: trusted-set-constant
   version_added: 1.8.2
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-set-constant
   parameters:
     - name: property
       required: true
+      description: Property (chain of properties joined by `.`) attached to `window` object.
     - name: value
       required: true
+      description: An arbitrary value to be set.
     - name: stack
       required: false
+      description: String or regular expression that must match the current function call stack trace, defaults to matching every call. If regular expression is invalid, it will be skipped.
 
 ubo_any:
   name: trusted-set-constant.js
@@ -20,7 +23,7 @@ ubo_any:
     - trusted-set
     - trusted-set.js
     - trusted-set-constant
-  is_trusted: true
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-set-constantjs-
   parameters:
     - name: chain
       required: true
