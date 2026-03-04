@@ -390,6 +390,11 @@ describe('Scriptlet conversion', () => {
             },
             {
                 // eslint-disable-next-line max-len
+                actual: String.raw`example.org#%#//scriptlet('trusted-replace-argument', 'eval', '0', '"Replacement"', 'Foo bar')`,
+                expected: 'Scriptlet "trusted-replace-argument" is not supported in uBlock Origin.',
+            },
+            {
+                // eslint-disable-next-line max-len
                 actual: String.raw`example.org#%#//scriptlet('trusted-replace-node-text', 'div', 'some', 'text', 'other text')`,
                 expected: 'Scriptlet "trusted-replace-node-text" is not supported in uBlock Origin.',
             },
