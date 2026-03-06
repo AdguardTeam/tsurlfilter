@@ -98,6 +98,20 @@ export class CommentClassifier {
             }
         }
 
+        // Metadata: `# Header: value`
+        if (t0 === TokenType.HashMark) {
+            const textTi = skipWs(ctx, ti + 1);
+
+            if (textTi < tokenCount) {
+                const textOff = tokenStart(ctx, textTi);
+
+                if (matchMetadataHeader(ctx.source, textOff) !== null) {
+                    MetadataCommentPreparser.preparse(ctx);
+                    return;
+                }
+            }
+        }
+
         // Default: simple comment (`! text` or `# text`)
         SimpleCommentPreparser.preparse(ctx);
     }
