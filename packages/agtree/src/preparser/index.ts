@@ -50,3 +50,22 @@ export { ModifierListPreparser } from './misc/modifier-list';
 export { ModifierPreparser } from './misc/modifier';
 export { ValuePreparser } from './misc/value';
 export { isPotentialNetModifier } from './misc/shared';
+export {
+    LogicalExpressionPreparser,
+    LE_ROOT,
+    LE_COUNT,
+    LE_HEADER,
+    LE_STRIDE,
+    LE_KIND,
+    LE_SRC_START,
+    LE_SRC_END,
+    LE_LEFT,
+    LE_RIGHT,
+    LE_MAX_NODES,
+    LE_BUFFER_SIZE,
+    LE_KIND_VAR,
+    LE_KIND_NOT,
+    LE_KIND_AND,
+    LE_KIND_OR,
+    LE_KIND_PAR,
+} from './misc/logical-expression';

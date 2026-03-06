@@ -9,3 +9,4 @@ export { NetworkRuleAstParser, type PreparserParseOptions } from './network/netw
 export { NetworkRuleParser } from './network/network-rule-parser';
 export * from './comment';
 export { RuleParser, type AnyParsedRule } from './rule-parser';
+export { LogicalExpressionAstParser } from './misc/logical-expression';
