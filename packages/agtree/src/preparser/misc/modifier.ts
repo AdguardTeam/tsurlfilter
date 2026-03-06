@@ -11,7 +11,12 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
-import { tokenStart, skipWs, skipUntil } from '../context';
+import {
+    regionEquals,
+    skipUntil,
+    skipWs,
+    tokenStart,
+} from '../context';
 import {
     NR_HEADER_SIZE,
     MOD_STRIDE,
@@ -69,7 +74,7 @@ export class ModifierPreparser {
      */
     public static nameEquals(source: string, data: Int32Array, idx: number, name: string): boolean {
         const base = NR_HEADER_SIZE + idx * MOD_STRIDE;
-        return ModifierPreparser.regionEquals(source, data[base + MOD_NAME_START], data[base + MOD_NAME_END], name);
+        return regionEquals(source, data[base + MOD_NAME_START], data[base + MOD_NAME_END], name);
     }
 
     /**
@@ -200,21 +205,5 @@ export class ModifierPreparser {
         ctx.data[modBase + MOD_VALUE_END] = valEnd;
 
         return ti;
-    }
-
-    private static regionEquals(source: string, start: number, end: number, target: string): boolean {
-        const len = end - start;
-
-        if (len !== target.length) {
-            return false;
-        }
-
-        for (let i = 0; i < len; i += 1) {
-            if (source.charCodeAt(start + i) !== target.charCodeAt(i)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 }

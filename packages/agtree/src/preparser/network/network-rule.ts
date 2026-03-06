@@ -10,7 +10,7 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
-import { tokenStart, skipWs } from '../context';
+import { regionEquals, tokenStart, skipWs } from '../context';
 import {
     NR_FLAGS,
     NR_PATTERN_START,
@@ -89,7 +89,7 @@ export class NetworkRulePreparser {
      * @returns `true` if the pattern matches the target exactly.
      */
     public static patternEquals(source: string, data: Int32Array, target: string): boolean {
-        return NetworkRulePreparser.regionEquals(source, data[NR_PATTERN_START], data[NR_PATTERN_END], target);
+        return regionEquals(source, data[NR_PATTERN_START], data[NR_PATTERN_END], target);
     }
 
     /**
@@ -190,21 +190,5 @@ export class NetworkRulePreparser {
         }
 
         return -1;
-    }
-
-    private static regionEquals(source: string, start: number, end: number, target: string): boolean {
-        const len = end - start;
-
-        if (len !== target.length) {
-            return false;
-        }
-
-        for (let i = 0; i < len; i += 1) {
-            if (source.charCodeAt(start + i) !== target.charCodeAt(i)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 }

@@ -9,15 +9,24 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
-import { lastNonWs, skipWs, tokenStart } from '../context';
+import {
+    lastNonWs,
+    regionEquals,
+    skipWs,
+    tokenStart,
+} from '../context';
+import { LogicalExpressionPreparser } from '../misc/logical-expression';
 import {
     CM_KIND,
+    CM_PREP_LE_OFFSET,
     CM_PREP_NAME_END,
     CM_PREP_NAME_START,
     CM_PREP_PARAMS_END,
     CM_PREP_PARAMS_START,
     CommentKind,
 } from './types';
+
+const IF_DIRECTIVE = 'if';
 
 /**
  * Preparser for preprocessor comment rules (`!#directive[ params]`).
@@ -27,6 +36,10 @@ export class PreprocessorCommentPreparser {
      * Fills `ctx.data` with preprocessor structural indices.
      *
      * Assumes the caller has verified the rule starts with `!#`.
+     *
+     * When the directive is `if`, also writes the flat logical-expression node
+     * tree into `ctx.data` starting at {@link CM_PREP_LE_OFFSET} via
+     * {@link LogicalExpressionPreparser.preparse}.
      *
      * @param ctx Preparser context (tokenizer output must be loaded).
      */
@@ -65,6 +78,13 @@ export class PreprocessorCommentPreparser {
             paramsStart = tokenStart(ctx, ti);
             const lastTi = lastNonWs(ctx, ti, ctx.tokenCount);
             paramsEnd = lastTi >= 0 ? ctx.ends[lastTi] : paramsStart;
+
+            // For `!#if` directives, also preparse the logical expression
+            // into ctx.data starting at CM_PREP_LE_OFFSET (no extra parameter needed).
+            if (regionEquals(ctx.source, nameStart, nameEnd, IF_DIRECTIVE)) {
+                const paramEndTi = lastTi >= 0 ? lastTi + 1 : ti;
+                LogicalExpressionPreparser.preparse(ctx, ti, paramEndTi, ctx.data.subarray(CM_PREP_LE_OFFSET));
+            }
         }
 
         data[CM_KIND] = CommentKind.Preprocessor;

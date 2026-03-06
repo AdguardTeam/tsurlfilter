@@ -12,6 +12,10 @@ import { TokenType } from '../tokenizer/token-types';
 import type { TokenizeResult } from '../tokenizer/tokenizer';
 import { NR_HEADER_SIZE, MOD_STRIDE } from './network/types';
 
+// Minimum ctx.data slots needed to embed the LE node tree for !#if directives:
+//   CM_PREP_LE_OFFSET(5) + LE_BUFFER_SIZE(LE_HEADER(2) + LE_MAX_NODES(32) * LE_STRIDE(5)) = 167
+const CM_PREP_MIN_DATA_SLOTS = 167;
+
 /**
  * Shared preparser context.
  *
@@ -78,7 +82,7 @@ export function createPreparserContext(
         types: new Uint8Array(tokenCapacity),
         ends: new Uint32Array(tokenCapacity),
         tokenCount: 0,
-        data: new Int32Array(NR_HEADER_SIZE + modifierCapacity * MOD_STRIDE),
+        data: new Int32Array(Math.max(NR_HEADER_SIZE + modifierCapacity * MOD_STRIDE, CM_PREP_MIN_DATA_SLOTS)),
         maxMods: modifierCapacity,
         status: 0,
     };
@@ -163,4 +167,30 @@ export function skipUntil(ctx: PreparserContext, ti: number, end: number, tokenT
         ti += 1;
     }
     return ti;
+}
+
+/**
+ * Returns `true` when the source substring `[start, end)` equals `target`,
+ * without allocating a slice.
+ *
+ * @param source Source string.
+ * @param start  Start index (inclusive).
+ * @param end    End index (exclusive).
+ * @param target String to compare against.
+ * @returns Whether the region exactly equals `target`.
+ */
+export function regionEquals(source: string, start: number, end: number, target: string): boolean {
+    const len = end - start;
+
+    if (len !== target.length) {
+        return false;
+    }
+
+    for (let i = 0; i < len; i += 1) {
+        if (source.charCodeAt(start + i) !== target.charCodeAt(i)) {
+            return false;
+        }
+    }
+
+    return true;
 }

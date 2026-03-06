@@ -11,6 +11,7 @@ export {
     type PreparserContext,
     createPreparserContext,
     initPreparserContext,
+    regionEquals,
     tokenStart,
     skipWs,
     skipUntil,

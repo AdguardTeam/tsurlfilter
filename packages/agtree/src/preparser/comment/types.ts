@@ -24,13 +24,21 @@ export const CM_SIMPLE_TEXT_START = 2;
 export const CM_SIMPLE_TEXT_END = 3;
 
 // ── Preprocessor ──────────────────────────────────────────────────────────────
-// data: [ KIND, NAME_START, NAME_END, PARAMS_START, PARAMS_END ]
+// data: [ KIND, NAME_START, NAME_END, PARAMS_START, PARAMS_END,
+//         <LE_BUFFER_SIZE slots for the logical-expression node tree> ]
 // PARAMS_START / PARAMS_END are -1 when the directive has no parameters.
+// The LE node tree is only valid when the directive name is 'if'.
 
 export const CM_PREP_NAME_START = 1;
 export const CM_PREP_NAME_END = 2;
 export const CM_PREP_PARAMS_START = 3;
 export const CM_PREP_PARAMS_END = 4;
+
+/**
+ * Offset within `ctx.data` where the embedded logical-expression buffer
+ * begins for `!#if` directives (right after the 5 header fields).
+ */
+export const CM_PREP_LE_OFFSET = 5;
 
 // ── Hint ──────────────────────────────────────────────────────────────────────
 // data: [ KIND, COUNT, <COUNT * CM_HINT_STRIDE slots> ]
