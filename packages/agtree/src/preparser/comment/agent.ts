@@ -7,7 +7,7 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
-import { skipWs, tokenStart } from '../context';
+import { lastNonWs, skipWs, tokenStart } from '../context';
 import {
     CM_AGENT_COUNT,
     CM_AGENT_END,
@@ -30,7 +30,7 @@ export class AgentCommentPreparser {
      * @param ctx Preparser context (tokenizer output must be loaded).
      */
     public static preparse(ctx: PreparserContext): void {
-        const { data, source, tokenCount } = ctx;
+        const { data, tokenCount } = ctx;
 
         // Skip leading whitespace, then `[`
         let ti = skipWs(ctx, 0);
@@ -53,6 +53,7 @@ export class AgentCommentPreparser {
                 break;
             }
 
+            const agentTi = ti;
             const agentStart = tokenStart(ctx, ti);
 
             // Consume until `;` or closing `]` boundary
@@ -60,15 +61,9 @@ export class AgentCommentPreparser {
                 ti += 1;
             }
 
-            // Raw end is either the `;` position or the `]` position
-            const rawEnd = tokenStart(ctx, ti);
-
-            // Trim trailing whitespace from agent name
-            let agentEnd = rawEnd;
-
-            while (agentEnd > agentStart && (source[agentEnd - 1] === ' ' || source[agentEnd - 1] === '\t')) {
-                agentEnd -= 1;
-            }
+            // Trim trailing whitespace using the last non-whitespace token
+            const lastTi = lastNonWs(ctx, agentTi, ti);
+            const agentEnd = lastTi >= 0 ? ctx.ends[lastTi] : agentStart;
 
             // Record the agent if non-empty
             if (agentEnd > agentStart) {

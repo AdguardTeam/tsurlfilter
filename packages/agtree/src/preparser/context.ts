@@ -132,6 +132,23 @@ export function skipWs(ctx: PreparserContext, ti: number): number {
 }
 
 /**
+ * Returns the index of the last token in `[startTi, endTi)` that is not Whitespace.
+ * Returns `-1` if there are no non-whitespace tokens in the range.
+ *
+ * @param ctx - Preparser context.
+ * @param startTi - Start of range (inclusive).
+ * @param endTi - End of range (exclusive).
+ * @returns Index of last non-whitespace token, or `-1`.
+ */
+export function lastNonWs(ctx: PreparserContext, startTi: number, endTi: number): number {
+    let ti = endTi - 1;
+    while (ti >= startTi && ctx.types[ti] === TokenType.Whitespace) {
+        ti -= 1;
+    }
+    return ti >= startTi ? ti : -1;
+}
+
+/**
  * Advance to the next occurrence of `tokenType`, or to `end`.
  *
  * @param ctx - Preparser context.

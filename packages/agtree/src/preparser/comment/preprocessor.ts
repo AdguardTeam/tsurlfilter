@@ -9,7 +9,7 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
-import { skipWs, tokenStart } from '../context';
+import { lastNonWs, skipWs, tokenStart } from '../context';
 import {
     CM_KIND,
     CM_PREP_NAME_END,
@@ -31,7 +31,7 @@ export class PreprocessorCommentPreparser {
      * @param ctx Preparser context (tokenizer output must be loaded).
      */
     public static preparse(ctx: PreparserContext): void {
-        const { data, source } = ctx;
+        const { data } = ctx;
 
         // Skip leading whitespace, then `!` (ExclamationMark), then `#` (HashMark)
         let ti = skipWs(ctx, 0);
@@ -63,12 +63,8 @@ export class PreprocessorCommentPreparser {
 
         if (ti < ctx.tokenCount) {
             paramsStart = tokenStart(ctx, ti);
-
-            paramsEnd = source.length;
-
-            while (paramsEnd > paramsStart && (source[paramsEnd - 1] === ' ' || source[paramsEnd - 1] === '\t')) {
-                paramsEnd -= 1;
-            }
+            const lastTi = lastNonWs(ctx, ti, ctx.tokenCount);
+            paramsEnd = lastTi >= 0 ? ctx.ends[lastTi] : paramsStart;
         }
 
         data[CM_KIND] = CommentKind.Preprocessor;

@@ -6,7 +6,7 @@
  */
 
 import type { PreparserContext } from '../context';
-import { skipWs, tokenStart } from '../context';
+import { lastNonWs, skipWs, tokenStart } from '../context';
 import {
     CM_KIND,
     CM_SIMPLE_MARKER,
@@ -25,7 +25,7 @@ export class SimpleCommentPreparser {
      * @param ctx Preparser context (tokenizer output must be loaded).
      */
     public static preparse(ctx: PreparserContext): void {
-        const { data, source } = ctx;
+        const { data } = ctx;
 
         let ti = skipWs(ctx, 0);
 
@@ -41,12 +41,9 @@ export class SimpleCommentPreparser {
             ? tokenStart(ctx, ti)
             : ctx.ends[ctx.tokenCount - 1]; // empty text: point past the marker
 
-        // Text end: trim trailing whitespace from the source string
-        let textEnd = source.length;
-
-        while (textEnd > textStart && (source[textEnd - 1] === ' ' || source[textEnd - 1] === '\t')) {
-            textEnd -= 1;
-        }
+        // Text end: last non-whitespace token's end position
+        const lastTi = lastNonWs(ctx, ti, ctx.tokenCount);
+        const textEnd = lastTi >= 0 ? ctx.ends[lastTi] : textStart;
 
         data[CM_KIND] = CommentKind.Simple;
         data[CM_SIMPLE_MARKER] = markerStart;

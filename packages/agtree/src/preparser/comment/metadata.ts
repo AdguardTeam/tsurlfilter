@@ -9,7 +9,7 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
-import { skipWs, tokenStart } from '../context';
+import { lastNonWs, skipWs, tokenStart } from '../context';
 import {
     CM_KIND,
     CM_META_HEADER_END,
@@ -161,14 +161,12 @@ export class MetadataCommentPreparser {
         // Skip whitespace before value
         ti = skipWs(ctx, ti);
 
+        const valueTi = ti;
         const valueStart = tokenStart(ctx, ti);
 
-        // Value runs to the trimmed end of the source
-        let valueEnd = source.length;
-
-        while (valueEnd > valueStart && (source[valueEnd - 1] === ' ' || source[valueEnd - 1] === '\t')) {
-            valueEnd -= 1;
-        }
+        // Value end: last non-whitespace token's end position
+        const lastTi = lastNonWs(ctx, valueTi, ctx.tokenCount);
+        const valueEnd = lastTi >= 0 ? ctx.ends[lastTi] : valueStart;
 
         data[CM_KIND] = CommentKind.Metadata;
         data[CM_META_MARKER] = markerStart;
