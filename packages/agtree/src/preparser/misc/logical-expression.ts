@@ -14,7 +14,7 @@
  * no character inspection is performed here. All token-range navigation
  * helpers come from `../context`.
  *
- * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
+ * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#conditions-directive}
  */
 
 import { TokenType } from '../../tokenizer/token-types';
