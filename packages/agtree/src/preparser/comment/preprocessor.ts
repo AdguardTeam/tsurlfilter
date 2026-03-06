@@ -16,6 +16,7 @@ import {
     tokenStart,
 } from '../context';
 import { LogicalExpressionPreparser } from '../misc/logical-expression';
+import { ParameterListPreparser } from '../misc/parameter-list';
 import {
     CM_KIND,
     CM_PREP_LE_OFFSET,
@@ -23,10 +24,12 @@ import {
     CM_PREP_NAME_START,
     CM_PREP_PARAMS_END,
     CM_PREP_PARAMS_START,
+    CM_PREP_PL_OFFSET,
     CommentKind,
 } from './types';
 
 const IF_DIRECTIVE = 'if';
+const SAFARI_CB_AFFINITY_DIRECTIVE = 'safari_cb_affinity';
 
 /**
  * Preparser for preprocessor comment rules (`!#directive[ params]`).
@@ -79,11 +82,27 @@ export class PreprocessorCommentPreparser {
             const lastTi = lastNonWs(ctx, ti, ctx.tokenCount);
             paramsEnd = lastTi >= 0 ? ctx.ends[lastTi] : paramsStart;
 
-            // For `!#if` directives, also preparse the logical expression
-            // into ctx.data starting at CM_PREP_LE_OFFSET (no extra parameter needed).
+            const paramEndTi = lastTi >= 0 ? lastTi + 1 : ti;
+
             if (regionEquals(ctx.source, nameStart, nameEnd, IF_DIRECTIVE)) {
-                const paramEndTi = lastTi >= 0 ? lastTi + 1 : ti;
                 LogicalExpressionPreparser.preparse(ctx, ti, paramEndTi, ctx.data.subarray(CM_PREP_LE_OFFSET));
+            } else if (regionEquals(ctx.source, nameStart, nameEnd, SAFARI_CB_AFFINITY_DIRECTIVE)) {
+                if (ctx.types[ti] === TokenType.OpenParen) {
+                    const listStart = ctx.ends[ti]; // source position right after `(`
+                    let closeTi = ti + 1;
+                    while (closeTi < paramEndTi && ctx.types[closeTi] !== TokenType.CloseParen) {
+                        closeTi += 1;
+                    }
+                    const listEnd = closeTi < paramEndTi ? tokenStart(ctx, closeTi) : listStart;
+                    ParameterListPreparser.preparse(
+                        ctx,
+                        ti + 1,
+                        closeTi,
+                        listStart,
+                        listEnd,
+                        ctx.data.subarray(CM_PREP_PL_OFFSET),
+                    );
+                }
             }
         }
 

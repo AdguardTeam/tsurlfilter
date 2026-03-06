@@ -12,13 +12,16 @@ import {
     CM_PREP_NAME_START,
     CM_PREP_PARAMS_END,
     CM_PREP_PARAMS_START,
+    CM_PREP_PL_OFFSET,
 } from '../../preparser/comment/types';
 import type { PreparserParseOptions } from '../network/network-rule';
 import { ValueParser } from '../misc/value';
 import { LogicalExpressionAstParser } from '../misc/logical-expression';
+import { ParameterListAstParser } from '../misc/parameter-list';
 import { regionEquals } from '../../preparser/context';
 
 const IF_DIRECTIVE = 'if';
+const SAFARI_CB_AFFINITY_DIRECTIVE = 'safari_cb_affinity';
 
 /**
  * Builds {@link PreProcessorCommentRule} AST nodes from preparsed data.
@@ -26,7 +29,8 @@ const IF_DIRECTIVE = 'if';
  * For `!#if` directives the `params` field is an `AnyExpressionNode` built
  * from the logical-expression node tree embedded in `data` at
  * {@link CM_PREP_LE_OFFSET} by `PreprocessorCommentPreparser.preparse`.
- * Parameter-list parsing for `!#safari_cb_affinity` is not yet integrated.
+ * For `!#safari_cb_affinity` the `params` field is a `ParameterList` built
+ * from the parameter-list buffer embedded at {@link CM_PREP_PL_OFFSET}.
  */
 export class PreprocessorCommentAstParser {
     /**
@@ -63,6 +67,18 @@ export class PreprocessorCommentAstParser {
                     data.subarray(CM_PREP_LE_OFFSET),
                     options.isLocIncluded ?? false,
                 );
+            } else if (regionEquals(source, nameStart, nameEnd, SAFARI_CB_AFFINITY_DIRECTIVE)) {
+                const plBuf = data.subarray(CM_PREP_PL_OFFSET);
+
+                if (plBuf[0] >= 0 || plBuf[1] !== -1) {
+                    result.params = ParameterListAstParser.parse(
+                        source,
+                        plBuf,
+                        options.isLocIncluded ?? false,
+                    );
+                } else {
+                    result.params = ValueParser.parse(source, paramsStart, paramsEnd, options.isLocIncluded ?? false);
+                }
             } else {
                 result.params = ValueParser.parse(source, paramsStart, paramsEnd, options.isLocIncluded ?? false);
             }
