@@ -2,7 +2,7 @@
  * @file Value parser — creates Value AST nodes from source indices.
  */
 
-import { type Value } from '../nodes';
+import { type Value } from '../../nodes';
 
 /**
  * Parser for Value AST nodes.

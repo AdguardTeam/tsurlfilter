@@ -7,9 +7,9 @@
  * individual modifier to {@link ModifierPreparser}.
  */
 
-import { TokenType } from '../tokenizer/token-types';
-import type { PreparserContext } from './context';
-import { NR_MODIFIER_COUNT } from './types';
+import { TokenType } from '../../tokenizer/token-types';
+import type { PreparserContext } from '../context';
+import { NR_MODIFIER_COUNT } from '../network/types';
 import { ModifierPreparser } from './modifier';
 
 /**

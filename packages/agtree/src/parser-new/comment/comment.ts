@@ -8,7 +8,7 @@
 
 import type { AnyCommentRule } from '../../nodes';
 import { CommentKind } from '../../preparser/comment/types';
-import type { PreparserParseOptions } from '../network-rule';
+import type { PreparserParseOptions } from '../network/network-rule';
 import { AgentCommentAstParser } from './agent';
 import { HintCommentAstParser } from './hint';
 import { MetadataCommentAstParser } from './metadata';

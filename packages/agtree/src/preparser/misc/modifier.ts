@@ -9,9 +9,9 @@
  * Delegates value parsing to {@link ValuePreparser}.
  */
 
-import { TokenType } from '../tokenizer/token-types';
-import type { PreparserContext } from './context';
-import { tokenStart, skipWs, skipUntil } from './context';
+import { TokenType } from '../../tokenizer/token-types';
+import type { PreparserContext } from '../context';
+import { tokenStart, skipWs, skipUntil } from '../context';
 import {
     NR_HEADER_SIZE,
     MOD_STRIDE,
@@ -22,7 +22,7 @@ import {
     MOD_VALUE_END,
     MOD_FLAG_NEGATED,
     NO_VALUE,
-} from './types';
+} from '../network/types';
 import { ValuePreparser } from './value';
 
 type ModifierBounds = { nameStart: number; nameEnd: number; valueStart: number; valueEnd: number };

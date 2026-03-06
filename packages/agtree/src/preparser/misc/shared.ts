@@ -2,8 +2,8 @@
  * @file Shared preparser heuristics.
  */
 
-import { TokenType } from '../tokenizer/token-types';
-import type { PreparserContext } from './context';
+import { TokenType } from '../../tokenizer/token-types';
+import type { PreparserContext } from '../context';
 
 /**
  * Checks whether the token sequence at `offset` is a potential network modifier.

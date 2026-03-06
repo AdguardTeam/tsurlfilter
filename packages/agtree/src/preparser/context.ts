@@ -10,7 +10,7 @@
 
 import { TokenType } from '../tokenizer/token-types';
 import type { TokenizeResult } from '../tokenizer/tokenizer';
-import { NR_HEADER_SIZE, MOD_STRIDE } from './types';
+import { NR_HEADER_SIZE, MOD_STRIDE } from './network/types';
 
 /**
  * Shared preparser context.

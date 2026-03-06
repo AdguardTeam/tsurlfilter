@@ -4,7 +4,7 @@
  * Delegates individual modifier parsing to {@link ModifierParser}.
  */
 
-import type { Modifier, ModifierList } from '../nodes';
+import type { Modifier, ModifierList } from '../../nodes';
 import {
     NR_MODIFIER_COUNT,
     NR_HEADER_SIZE,
@@ -14,7 +14,7 @@ import {
     MOD_VALUE_END,
     MOD_NAME_END,
     NO_VALUE,
-} from '../preparser/types';
+} from '../../preparser/network/types';
 import { ModifierParser } from './modifier';
 
 /**

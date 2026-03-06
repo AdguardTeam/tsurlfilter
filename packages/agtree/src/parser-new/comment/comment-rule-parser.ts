@@ -12,7 +12,7 @@ import { createPreparserContext, initPreparserContext } from '../../preparser/co
 import type { PreparserContext } from '../../preparser/context';
 import { CommentClassifier } from '../../preparser/comment/classifier';
 import { CommentAstParser } from './comment';
-import type { PreparserParseOptions } from '../network-rule';
+import type { PreparserParseOptions } from '../network/network-rule';
 
 /**
  * High-level parser for comment rules.

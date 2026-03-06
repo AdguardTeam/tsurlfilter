@@ -22,8 +22,8 @@ import {
 } from '../../preparser/comment/types';
 import { COMMA } from '../../utils/constants';
 import { ParameterListParser } from '../../parser/misc/parameter-list-parser';
-import type { PreparserParseOptions } from '../network-rule';
-import { ValueParser } from '../value';
+import type { PreparserParseOptions } from '../network/network-rule';
+import { ValueParser } from '../misc/value';
 
 /**
  * Builds {@link HintCommentRule} AST nodes from preparsed data.

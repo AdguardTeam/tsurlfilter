@@ -8,9 +8,9 @@
  * and delegates modifier list parsing to {@link ModifierListPreparser}.
  */
 
-import { TokenType } from '../tokenizer/token-types';
-import type { PreparserContext } from './context';
-import { tokenStart, skipWs } from './context';
+import { TokenType } from '../../tokenizer/token-types';
+import type { PreparserContext } from '../context';
+import { tokenStart, skipWs } from '../context';
 import {
     NR_FLAGS,
     NR_PATTERN_START,
@@ -20,8 +20,8 @@ import {
     FLAG_EXCEPTION,
     NO_VALUE,
 } from './types';
-import { isPotentialNetModifier } from './shared';
-import { ModifierListPreparser } from './modifier-list';
+import { isPotentialNetModifier } from '../misc/shared';
+import { ModifierListPreparser } from '../misc/modifier-list';
 
 /**
  * Preparser for network rules.

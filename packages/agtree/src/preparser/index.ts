@@ -34,7 +34,7 @@ export {
     NO_VALUE,
     type NetworkRulePreparseResult,
     createNetworkRulePreparseResult,
-} from './types';
+} from './network/types';
 
 export {
     CosmeticSepKind,
@@ -45,8 +45,8 @@ export {
 export { RuleClassifier, RuleKind } from './classifier';
 export { RulePreparser } from './rule';
 export * from './comment';
-export { NetworkRulePreparser } from './network-rule';
-export { ModifierListPreparser } from './modifier-list';
-export { ModifierPreparser } from './modifier';
-export { ValuePreparser } from './value';
-export { isPotentialNetModifier } from './shared';
+export { NetworkRulePreparser } from './network/network-rule';
+export { ModifierListPreparser } from './misc/modifier-list';
+export { ModifierPreparser } from './misc/modifier';
+export { ValuePreparser } from './misc/value';
+export { isPotentialNetModifier } from './misc/shared';

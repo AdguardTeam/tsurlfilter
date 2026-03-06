@@ -20,8 +20,8 @@ import {
 } from '../../preparser/comment/types';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { getAdblockSyntax } from '../../common/agent-common';
-import type { PreparserParseOptions } from '../network-rule';
-import { ValueParser } from '../value';
+import type { PreparserParseOptions } from '../network/network-rule';
+import { ValueParser } from '../misc/value';
 
 /**
  * Regex that matches a version token (e.g. `2.0`, `1.16.4`).

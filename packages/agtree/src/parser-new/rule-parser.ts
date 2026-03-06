@@ -18,8 +18,8 @@ import { createPreparserContext, initPreparserContext } from '../preparser/conte
 import type { PreparserContext } from '../preparser/context';
 import { RulePreparser, RuleKind } from '../preparser/rule';
 import { CommentAstParser } from './comment/comment';
-import { NetworkRuleAstParser } from './network-rule';
-import type { PreparserParseOptions } from './network-rule';
+import { NetworkRuleAstParser } from './network/network-rule';
+import type { PreparserParseOptions } from './network/network-rule';
 
 /**
  * The set of rule types that this parser currently produces.

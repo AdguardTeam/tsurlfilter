@@ -7,9 +7,9 @@
  * determine value boundaries without allocating strings.
  */
 
-import { TokenType } from '../tokenizer/token-types';
-import type { PreparserContext } from './context';
-import { skipUntil } from './context';
+import { TokenType } from '../../tokenizer/token-types';
+import type { PreparserContext } from '../context';
+import { skipUntil } from '../context';
 import { isPotentialNetModifier } from './shared';
 
 const CHAR_R = 114;

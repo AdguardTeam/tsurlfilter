@@ -13,8 +13,8 @@ import {
     CM_META_VALUE_END,
     CM_META_VALUE_START,
 } from '../../preparser/comment/types';
-import type { PreparserParseOptions } from '../network-rule';
-import { ValueParser } from '../value';
+import type { PreparserParseOptions } from '../network/network-rule';
+import { ValueParser } from '../misc/value';
 
 /**
  * Builds {@link MetadataCommentRule} AST nodes from preparsed data.

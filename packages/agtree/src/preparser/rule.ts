@@ -9,7 +9,7 @@
 import type { PreparserContext } from './context';
 import { RuleClassifier, RuleKind } from './classifier';
 import { CommentClassifier } from './comment/classifier';
-import { NetworkRulePreparser } from './network-rule';
+import { NetworkRulePreparser } from './network/network-rule';
 
 export { RuleKind } from './classifier';
 

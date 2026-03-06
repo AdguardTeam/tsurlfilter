@@ -7,8 +7,8 @@
 import { AdblockSyntax } from '../../utils/adblockers';
 import { type CommentRule, CommentRuleType, RuleCategory } from '../../nodes';
 import { CM_SIMPLE_MARKER, CM_SIMPLE_TEXT_END, CM_SIMPLE_TEXT_START } from '../../preparser/comment/types';
-import type { PreparserParseOptions } from '../network-rule';
-import { ValueParser } from '../value';
+import type { PreparserParseOptions } from '../network/network-rule';
+import { ValueParser } from '../misc/value';
 
 /**
  * Builds {@link CommentRule} AST nodes from preparsed data.

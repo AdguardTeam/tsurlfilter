@@ -6,7 +6,7 @@
  * Delegates value node creation to {@link ValueParser}.
  */
 
-import type { Modifier } from '../nodes';
+import type { Modifier } from '../../nodes';
 import {
     NR_HEADER_SIZE,
     MOD_STRIDE,
@@ -17,7 +17,7 @@ import {
     MOD_VALUE_END,
     MOD_FLAG_NEGATED,
     NO_VALUE,
-} from '../preparser/types';
+} from '../../preparser/network/types';
 import { ValueParser } from './value';
 
 /**

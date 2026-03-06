@@ -5,12 +5,12 @@
  * calls for optimal performance.
  */
 
-import { tokenizeLine } from '../tokenizer/tokenizer';
-import type { TokenizeResult } from '../tokenizer/tokenizer';
-import type { NetworkRule } from '../nodes';
-import { createPreparserContext, initPreparserContext } from '../preparser/context';
-import type { PreparserContext } from '../preparser/context';
-import { NetworkRulePreparser } from '../preparser/network-rule';
+import { tokenizeLine } from '../../tokenizer/tokenizer';
+import type { TokenizeResult } from '../../tokenizer/tokenizer';
+import type { NetworkRule } from '../../nodes';
+import { createPreparserContext, initPreparserContext } from '../../preparser/context';
+import type { PreparserContext } from '../../preparser/context';
+import { NetworkRulePreparser } from '../../preparser/network/network-rule';
 import { NetworkRuleAstParser } from './network-rule';
 import type { PreparserParseOptions } from './network-rule';
 

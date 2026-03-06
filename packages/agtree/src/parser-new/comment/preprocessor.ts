@@ -12,8 +12,8 @@ import {
     CM_PREP_PARAMS_END,
     CM_PREP_PARAMS_START,
 } from '../../preparser/comment/types';
-import type { PreparserParseOptions } from '../network-rule';
-import { ValueParser } from '../value';
+import type { PreparserParseOptions } from '../network/network-rule';
+import { ValueParser } from '../misc/value';
 
 /**
  * Builds {@link PreProcessorCommentRule} AST nodes from preparsed data.

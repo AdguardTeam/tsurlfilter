@@ -7,17 +7,17 @@
  * {@link ModifierListParser} → {@link ModifierParser} → {@link ValueParser}.
  */
 
-import { AdblockSyntax } from '../utils/adblockers';
-import type { NetworkRule } from '../nodes';
-import { NetworkRuleType, RuleCategory } from '../nodes';
+import { AdblockSyntax } from '../../utils/adblockers';
+import type { NetworkRule } from '../../nodes';
+import { NetworkRuleType, RuleCategory } from '../../nodes';
 import {
     NR_FLAGS,
     NR_PATTERN_START,
     NR_PATTERN_END,
     FLAG_EXCEPTION,
-} from '../preparser/types';
-import { ValueParser } from './value';
-import { ModifierListParser } from './modifier-list';
+} from '../../preparser/network/types';
+import { ValueParser } from '../misc/value';
+import { ModifierListParser } from '../misc/modifier-list';
 
 /**
  * Options for the AST parser.
