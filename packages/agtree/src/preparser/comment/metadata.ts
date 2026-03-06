@@ -100,7 +100,8 @@ export class MetadataCommentPreparser {
 
         const markerStart = tokenStart(ctx, ti);
 
-        ti += 1; // skip `!` or `#`
+        // skip `!` or `#`
+        ti += 1;
 
         // Skip whitespace after marker
         ti = skipWs(ctx, ti);
@@ -121,7 +122,8 @@ export class MetadataCommentPreparser {
             // Peek ahead: if the combined text so far + space + next word matches a
             // known header, consume the space and next word too.
             const spaceIdx = ti;
-            ti += 1; // skip whitespace
+            // skip whitespace
+            ti += 1;
 
             if (ti < ctx.tokenCount && ctx.types[ti] !== TokenType.Colon) {
                 const candidateEnd = ctx.ends[ti]; // end of the next word token
@@ -140,12 +142,15 @@ export class MetadataCommentPreparser {
                 }
 
                 if (isMultiWord) {
-                    ti += 1; // consume the second word token
+                    // consume the second word token
+                    ti += 1;
                 } else {
-                    ti = spaceIdx; // backtrack: header ends before the space
+                    // backtrack: header ends before the space
+                    ti = spaceIdx;
                 }
             } else {
-                ti = spaceIdx; // backtrack
+                // backtrack
+                ti = spaceIdx;
             }
         }
 
@@ -155,7 +160,8 @@ export class MetadataCommentPreparser {
         ti = skipWs(ctx, ti);
 
         if (ti < ctx.tokenCount && ctx.types[ti] === TokenType.Colon) {
-            ti += 1; // skip `:`
+            // skip `:`
+            ti += 1;
         }
 
         // Skip whitespace before value

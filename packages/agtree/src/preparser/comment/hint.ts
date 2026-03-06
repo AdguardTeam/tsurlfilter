@@ -38,7 +38,9 @@ export class HintCommentPreparser {
 
         // Skip leading whitespace, then `!` and `+`
         let ti = skipWs(ctx, 0);
-        ti += 2; // skip ! and +
+
+        // skip ! and +
+        ti += 2;
 
         let count = 0;
 
@@ -72,7 +74,8 @@ export class HintCommentPreparser {
                 // Include the opening paren in the params range
                 paramsStart = tokenStart(ctx, ti);
 
-                ti += 1; // skip OpenParen
+                // skip OpenParen
+                ti += 1;
 
                 // Scan until matching CloseParen (no nesting allowed)
                 while (ti < tokenCount && ctx.types[ti] !== TokenType.CloseParen) {
@@ -81,7 +84,8 @@ export class HintCommentPreparser {
 
                 // Include closing paren
                 if (ti < tokenCount) {
-                    ti += 1; // skip CloseParen
+                    // skip CloseParen
+                    ti += 1;
                 }
 
                 paramsEnd = ti > 0 ? ends[ti - 1] : paramsStart;

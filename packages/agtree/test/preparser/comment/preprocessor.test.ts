@@ -22,6 +22,9 @@ const ctx = createPreparserContext();
 
 /**
  * Tokenize + preparse a comment rule in one step for convenience.
+ *
+ * @param source - Source string to preparse.
+ * @returns Preparsed data buffer.
  */
 function preparse(source: string): Int32Array {
     tokenizeLine(source, 0, tokenResult);

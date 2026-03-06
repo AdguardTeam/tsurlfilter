@@ -24,14 +24,14 @@ import type { PreparserParseOptions } from '../network/network-rule';
 import { ValueParser } from '../misc/value';
 
 /**
- * Regex that matches a version token (e.g. `2.0`, `1.16.4`).
- */
-const VERSION_RE = /\b\d+\.\d+(\.\d+)?\b/;
-
-/**
  * Builds {@link AgentCommentRule} AST nodes from preparsed data.
  */
 export class AgentCommentAstParser {
+    /**
+     * Regex that matches a version token (e.g. `2.0`, `1.16.4`).
+     */
+    private static readonly VERSION_RE = /\b\d+\.\d+(\.\d+)?\b/;
+
     /**
      * Parses the agent span `source[start..end]` into an {@link Agent} node.
      *
@@ -63,7 +63,7 @@ export class AgentCommentAstParser {
                 wordEnd += 1;
             }
 
-            if (VERSION_RE.test(source.slice(offset, wordEnd))) {
+            if (AgentCommentAstParser.VERSION_RE.test(source.slice(offset, wordEnd))) {
                 versionStart = offset;
                 versionEnd = wordEnd;
             } else {

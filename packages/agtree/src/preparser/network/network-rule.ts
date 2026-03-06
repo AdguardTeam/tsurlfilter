@@ -27,7 +27,7 @@ import { ModifierListPreparser } from '../misc/modifier-list';
  * Preparser for network rules.
  *
  * Top of the preparser chain. Delegates to
- * {@link ModifierListPreparser} → {@link ModifierPreparser} → {@link ValuePreparser}.
+ * {@link ModifierListPreparser} → modifier preparser → value preparser.
  */
 export class NetworkRulePreparser {
     /**

@@ -2,7 +2,7 @@
  * @file Parameter list AST parser.
  *
  * Converts the flat {@link Int32Array} buffer produced by
- * {@link ParameterListPreparser} into a {@link ParameterList} AST node.
+ * the parameter list preparser into a {@link ParameterList} AST node.
  */
 
 import { type ParameterList, type Value } from '../../nodes';
@@ -19,7 +19,7 @@ import {
 /**
  * AST parser for parameter list nodes.
  *
- * Reads the flat buffer written by {@link ParameterListPreparser.preparse}
+ * Reads the flat buffer written by the parameter list preparser
  * and constructs a {@link ParameterList} node with optional source locations.
  */
 export class ParameterListAstParser {
@@ -27,7 +27,7 @@ export class ParameterListAstParser {
      * Builds a {@link ParameterList} node from a preparsed buffer.
      *
      * @param source        Original source string.
-     * @param buf           Buffer written by {@link ParameterListPreparser.preparse}.
+     * @param buf           Buffer written by the parameter list preparser.
      * @param isLocIncluded Whether to attach source locations to nodes.
      * @returns ParameterList AST node.
      */

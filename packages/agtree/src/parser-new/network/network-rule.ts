@@ -4,7 +4,7 @@
  * @file Network rule AST parser — creates NetworkRule nodes from preparsed data.
  *
  * Top of the parser chain. Delegates to
- * {@link ModifierListParser} → {@link ModifierParser} → {@link ValueParser}.
+ * {@link ModifierListParser} → modifier parser → {@link ValueParser}.
  */
 
 import { AdblockSyntax } from '../../utils/adblockers';
@@ -42,7 +42,7 @@ export interface PreparserParseOptions {
  * you actually need an AST — for query-only use cases, use the
  * utility functions instead.
  *
- * Delegates to {@link ModifierListParser} → {@link ModifierParser} → {@link ValueParser}.
+ * Delegates to {@link ModifierListParser} → modifier parser → {@link ValueParser}.
  */
 export class NetworkRuleAstParser {
     /**

@@ -51,7 +51,9 @@ export class PreprocessorCommentPreparser {
 
         // Skip leading whitespace, then `!` (ExclamationMark), then `#` (HashMark)
         let ti = skipWs(ctx, 0);
-        ti += 2; // skip ! and #
+
+        // skip ! and #
+        ti += 2;
 
         // Skip optional whitespace after `!#` (tolerant parsing)
         ti = skipWs(ctx, ti);

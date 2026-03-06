@@ -34,7 +34,9 @@ export class AgentCommentPreparser {
 
         // Skip leading whitespace, then `[`
         let ti = skipWs(ctx, 0);
-        ti += 1; // skip OpenSquare
+
+        // skip OpenSquare
+        ti += 1;
 
         // Find the closing bracket token index
         let closeTi = tokenCount - 1;

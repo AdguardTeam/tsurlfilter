@@ -50,7 +50,10 @@ export class HintCommentAstParser {
 
             const name = ValueParser.parse(source, nameStart, nameEnd, options.isLocIncluded ?? false);
 
-            const hint: Hint = { type: 'Hint', name };
+            const hint: Hint = {
+                type: 'Hint',
+                name,
+            };
 
             if (paramsStart !== -1) {
                 // paramsStart/paramsEnd include the `(` and `)` characters;

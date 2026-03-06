@@ -11,8 +11,6 @@ import {
 } from '../../src/preparser';
 import { NetworkRuleAstParser } from '../../src/parser-new';
 
-// ── Helpers ──────────────────────────────────────────────
-
 const createTokenResult = (capacity = 1024): TokenizeResult => ({
     tokenCount: 0,
     types: new Uint8Array(capacity),
@@ -26,6 +24,9 @@ const ctx = createPreparserContext();
 
 /**
  * Tokenize + preparse in one step for convenience.
+ *
+ * @param source - Source string to preparse.
+ * @returns Preparsed data buffer.
  */
 function preparse(source: string): Int32Array {
     tokenizeLine(source, 0, tokenResult);

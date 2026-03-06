@@ -25,6 +25,7 @@ import type { PreparserParseOptions } from './network/network-rule';
  * The set of rule types that this parser currently produces.
  * Cosmetic rules are not yet supported and will throw at parse time.
  */
+// TODO: Use AnyRule from nodes.ts
 export type AnyParsedRule = EmptyRule | AnyCommentRule | NetworkRule;
 
 /**
