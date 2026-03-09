@@ -52,13 +52,6 @@ module.exports = {
         'no-param-reassign': 'off',
         'import/no-cycle': 'off',
         'import/export': 'off',
-        'import-newlines/enforce': [
-            'error',
-            {
-                items: 3,
-                'max-len': MAX_LINE_LENGTH,
-            },
-        ],
         'import/order': [
             'error',
             {

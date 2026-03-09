@@ -45,7 +45,6 @@ module.exports = {
         '@typescript-eslint/member-delimiter-style': 'error',
         'jsdoc/multiline-blocks': ['error', { noSingleLineBlocks: true }],
         'import/prefer-default-export': 'off',
-        'import-newlines/enforce': ['error', { items: 3, 'max-len': MAX_LINE_LENGTH }],
         // Split external and internal imports with an empty line
         'import/order': [
             'error',

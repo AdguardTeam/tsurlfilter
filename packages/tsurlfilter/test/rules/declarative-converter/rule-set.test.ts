@@ -9,7 +9,6 @@ import {
     RulesHashMap,
     SourceMap,
 } from '../../../src/rules/declarative-converter';
-// eslint-disable-next-line import-newlines/enforce, max-len
 import {
     NetworkRulesScanner,
     type ScannedFilter,

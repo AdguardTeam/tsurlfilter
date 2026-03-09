@@ -61,7 +61,7 @@ please refer to the following resources:
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard: _Extended CSS capabilities_][adg-ext-css]
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock Origin logo" width="14px"> [uBlock Origin: _Procedural cosmetic filters_][ubo-procedural]
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus: _Extended CSS selectors_][abp-ext-css]
-      <!--markdownlint-enable MD013-->
+  <!--markdownlint-enable MD013-->
 
 ### Why do we need a custom tokenizer?
 

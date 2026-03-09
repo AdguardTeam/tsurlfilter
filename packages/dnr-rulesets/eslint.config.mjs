@@ -112,13 +112,6 @@ export default [
             '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
             '@stylistic/arrow-parens': ['error', 'always'],
             '@stylistic/member-delimiter-style': 'error',
-            'import-newlines/enforce': [
-                'error',
-                {
-                    items: 3,
-                    'max-len': MAX_LINE_LENGTH,
-                },
-            ],
         },
     },
     {

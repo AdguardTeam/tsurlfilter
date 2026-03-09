@@ -94,7 +94,6 @@ const TYPESCRIPT_ESLINT_RULES = {
 const IMPORT_PLUGIN_RULES = {
     'import/prefer-default-export': 'off',
 
-    'import-newlines/enforce': ['error', 3, MAX_LINE_LENGTH],
     'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
     // Split external and internal imports with an empty line
     'import/order': [

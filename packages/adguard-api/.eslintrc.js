@@ -25,7 +25,6 @@ module.exports = {
         'no-bitwise': 'off',
         'no-new': 'off',
         'max-len': ['error', { code: 120, ignoreUrls: true }],
-        'import-newlines/enforce': ['error', 3, 120],
         'import/prefer-default-export': 'off',
         'jsdoc/require-param-type': 'off',
         'jsdoc/require-returns-type': 'off',
