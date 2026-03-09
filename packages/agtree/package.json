@@ -117,7 +117,7 @@
         "markdown-table": "catalog:",
         "markdownlint": "catalog:",
         "markdownlint-cli": "catalog:",
-        "prettier": "^3.3.2",
+        "prettier": "catalog:",
         "rimraf": "catalog:",
         "rollup": "catalog:",
         "rollup-plugin-node-externals": "catalog:",

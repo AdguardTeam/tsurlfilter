@@ -17,6 +17,7 @@
     "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
     "scripts": {
         "lint": "lerna run lint",
+        "format": "prettier --write .",
         "clean": "node scripts/cleanup.mjs",
         "prepare": "node .husky/install.mjs",
         "increment": "node scripts/increment.mjs",
@@ -27,6 +28,7 @@
     "devDependencies": {
         "husky": "catalog:",
         "lerna": "8.1.8",
+        "prettier": "catalog:",
         "semver": "^7.7.2",
         "vitest": "catalog:"
     },
