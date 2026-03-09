@@ -22,6 +22,7 @@ module.exports = {
         'airbnb-base',
         'airbnb-typescript/base',
         'plugin:jsdoc/recommended',
+        '@adguard/eslint-config-internal',
     ],
     ignorePatterns: ['dist', 'coverage'],
     rules: {

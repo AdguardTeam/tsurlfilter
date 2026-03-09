@@ -1,44 +1,45 @@
 {
-  "name": "css-tokenizer-benchmark",
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "start": "tsx src/index.ts",
-    "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-    "lint:code": "eslint . --cache --ext .ts",
-    "lint:types": "tsc",
-    "lint:md": "markdownlint ."
-  },
-  "dependencies": {
-    "@adguard/css-tokenizer": "workspace:^",
-    "@csstools/css-tokenizer": "^3.0.3",
-    "@csstools/tokenizer": "^3.1.1",
-    "benchmark": "catalog:",
-    "css-tree": "^3.1.0",
-    "csslex": "^1.0.4",
-    "date-fns": "catalog:",
-    "deep-object-diff": "^1.1.9",
-    "markdown-table": "catalog:",
-    "node-fetch": "catalog:",
-    "parse-css": "^0.1.0",
-    "systeminformation": "catalog:",
-    "terser": "catalog:"
-  },
-  "devDependencies": {
-    "@types/benchmark": "catalog:",
-    "@types/css-tree": "^2.3.10",
-    "@types/node": "catalog:",
-    "@types/node-fetch": "^2.6.12",
-    "@typescript-eslint/eslint-plugin": "catalog:",
-    "@typescript-eslint/parser": "catalog:",
-    "eslint": "catalog:",
-    "eslint-config-airbnb-typescript": "catalog:",
-    "eslint-plugin-import": "catalog:",
-    "eslint-plugin-import-newlines": "catalog:",
-    "eslint-plugin-jsdoc": "catalog:",
-    "markdownlint": "catalog:",
-    "markdownlint-cli": "catalog:",
-    "tsx": "catalog:",
-    "typescript": "catalog:"
-  }
+    "name": "css-tokenizer-benchmark",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "start": "tsx src/index.ts",
+        "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
+        "lint:code": "eslint . --cache --ext .ts",
+        "lint:types": "tsc",
+        "lint:md": "markdownlint ."
+    },
+    "dependencies": {
+        "@adguard/css-tokenizer": "workspace:^",
+        "@csstools/css-tokenizer": "^3.0.3",
+        "@csstools/tokenizer": "^3.1.1",
+        "benchmark": "catalog:",
+        "css-tree": "^3.1.0",
+        "csslex": "^1.0.4",
+        "date-fns": "catalog:",
+        "deep-object-diff": "^1.1.9",
+        "markdown-table": "catalog:",
+        "node-fetch": "catalog:",
+        "parse-css": "^0.1.0",
+        "systeminformation": "catalog:",
+        "terser": "catalog:"
+    },
+    "devDependencies": {
+        "@adguard/eslint-config-internal": "workspace:^",
+        "@types/benchmark": "catalog:",
+        "@types/css-tree": "^2.3.10",
+        "@types/node": "catalog:",
+        "@types/node-fetch": "^2.6.12",
+        "@typescript-eslint/eslint-plugin": "catalog:",
+        "@typescript-eslint/parser": "catalog:",
+        "eslint": "catalog:",
+        "eslint-config-airbnb-typescript": "catalog:",
+        "eslint-plugin-import": "catalog:",
+        "eslint-plugin-import-newlines": "catalog:",
+        "eslint-plugin-jsdoc": "catalog:",
+        "markdownlint": "catalog:",
+        "markdownlint-cli": "catalog:",
+        "tsx": "catalog:",
+        "typescript": "catalog:"
+    }
 }

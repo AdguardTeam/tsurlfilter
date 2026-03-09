@@ -1,0 +1,11 @@
+{
+    "name": "@adguard/eslint-config-internal",
+    "version": "1.0.0",
+    "private": true,
+    "main": "./index.cjs",
+    "license": "MIT",
+    "author": "Adguard Software Ltd.",
+    "devDependencies": {
+        "eslint-config-prettier": "^10.1.8"
+    }
+}

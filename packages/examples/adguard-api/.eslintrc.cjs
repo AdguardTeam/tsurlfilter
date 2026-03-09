@@ -19,6 +19,7 @@ module.exports = {
         'airbnb-typescript/base',
         'plugin:jsdoc/recommended',
         'plugin:@typescript-eslint/eslint-recommended',
+        '@adguard/eslint-config-internal',
     ],
     rules: {
         indent: 'off',

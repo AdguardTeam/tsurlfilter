@@ -4,6 +4,7 @@ module.exports = {
     ],
     extends: [
         'plugin:jsdoc/recommended',
+        '@adguard/eslint-config-internal',
     ],
     rules: {
         'import/order': [

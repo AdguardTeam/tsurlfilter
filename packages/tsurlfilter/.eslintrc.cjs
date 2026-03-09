@@ -295,6 +295,7 @@ module.exports = {
         'plugin:jsdoc/recommended',
         'plugin:jsdoc/recommended-typescript',
         'plugin:n/recommended',
+        '@adguard/eslint-config-internal',
     ],
     ignorePatterns: [
         'dist',

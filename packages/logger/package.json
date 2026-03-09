@@ -46,6 +46,7 @@
         "logger"
     ],
     "devDependencies": {
+        "@adguard/eslint-config-internal": "workspace:^",
         "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-node-resolve": "catalog:",
         "@rollup/plugin-typescript": "catalog:",

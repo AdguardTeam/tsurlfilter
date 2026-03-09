@@ -11,15 +11,13 @@ module.exports = {
     env: {
         browser: true,
     },
-    plugins: [
-        'import',
-        'import-newlines',
-    ],
+    plugins: ['import', 'import-newlines'],
     extends: [
         'airbnb-base',
         'airbnb-typescript/base',
         'plugin:jsdoc/recommended',
         'plugin:@typescript-eslint/eslint-recommended',
+        '@adguard/eslint-config-internal',
     ],
     rules: {
         indent: 'off',

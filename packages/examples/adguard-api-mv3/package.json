@@ -15,6 +15,7 @@
     },
     "devDependencies": {
         "@adguard/dnr-rulesets": "workspace:^",
+        "@adguard/eslint-config-internal": "workspace:^",
         "@adguard/tswebextension": "workspace:^",
         "@types/archiver": "catalog:",
         "@types/chrome": "catalog:",

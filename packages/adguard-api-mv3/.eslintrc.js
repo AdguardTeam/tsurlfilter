@@ -16,14 +16,19 @@ module.exports = {
         'airbnb-base',
         'airbnb-typescript/base',
         'plugin:jsdoc/recommended',
+        '@adguard/eslint-config-internal',
     ],
     ignorePatterns: ['dist', 'coverage'],
     rules: {
         indent: 'off',
-        '@typescript-eslint/indent': ['error', 4, {
-            SwitchCase: 1,
-            ignoredNodes: ['TSTypeParameterInstantiation'],
-        }],
+        '@typescript-eslint/indent': [
+            'error',
+            4,
+            {
+                SwitchCase: 1,
+                ignoredNodes: ['TSTypeParameterInstantiation'],
+            },
+        ],
         'no-bitwise': 'off',
         'no-new': 'off',
         'max-len': ['error', { code: 120, ignoreUrls: true }],
@@ -61,29 +66,22 @@ module.exports = {
         'jsdoc/require-returns-type': 'off',
         'jsdoc/tag-lines': 'off',
         'jsdoc/require-throws': 'error',
-        'jsdoc/check-tag-names': ['error', {
-            definedTags: ['note'],
-        }],
+        'jsdoc/check-tag-names': [
+            'error',
+            {
+                definedTags: ['note'],
+            },
+        ],
         'jsdoc/require-jsdoc': [
             'error',
             {
-                contexts: [
-                    'ClassDeclaration',
-                    'ClassProperty',
-                    'FunctionDeclaration',
-                    'MethodDefinition',
-                ],
+                contexts: ['ClassDeclaration', 'ClassProperty', 'FunctionDeclaration', 'MethodDefinition'],
             },
         ],
         'jsdoc/require-description': [
             'error',
             {
-                contexts: [
-                    'ClassDeclaration',
-                    'ClassProperty',
-                    'FunctionDeclaration',
-                    'MethodDefinition',
-                ],
+                contexts: ['ClassDeclaration', 'ClassProperty', 'FunctionDeclaration', 'MethodDefinition'],
             },
         ],
         'jsdoc/require-description-complete-sentence': ['error'],

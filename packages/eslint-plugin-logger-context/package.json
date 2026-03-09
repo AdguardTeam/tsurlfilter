@@ -44,6 +44,7 @@
     },
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/eslint-plugin-logger-context#readme",
     "devDependencies": {
+        "@adguard/eslint-config-internal": "workspace:^",
         "@adguard/logger": "workspace:^",
         "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-json": "catalog:",

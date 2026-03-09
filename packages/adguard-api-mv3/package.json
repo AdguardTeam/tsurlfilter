@@ -40,6 +40,7 @@
         "zod": "catalog:"
     },
     "devDependencies": {
+        "@adguard/eslint-config-internal": "workspace:^",
         "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-json": "catalog:",
         "@rollup/plugin-node-resolve": "catalog:",

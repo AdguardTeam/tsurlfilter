@@ -16,6 +16,7 @@ module.exports = {
         'plugin:@typescript-eslint/eslint-recommended',
         'plugin:@typescript-eslint/recommended',
         'airbnb-typescript/base',
+        '@adguard/eslint-config-internal',
     ],
     settings: {
         'import/resolver': {

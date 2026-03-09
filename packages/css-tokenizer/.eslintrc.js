@@ -15,6 +15,7 @@ module.exports = {
         'airbnb-base',
         'airbnb-typescript/base',
         'plugin:jsdoc/recommended',
+        '@adguard/eslint-config-internal',
     ],
     parser: '@typescript-eslint/parser',
     parserOptions: {
@@ -49,9 +50,7 @@ module.exports = {
         'import/order': [
             'error',
             {
-                groups: [
-                    ['builtin', 'external'],
-                ],
+                groups: [['builtin', 'external']],
                 'newlines-between': 'always',
             },
         ],
@@ -78,18 +77,21 @@ module.exports = {
                 definedTags: ['note'],
             },
         ],
-        'jsdoc/sort-tags': ['error', {
-            linesBetween: 1,
-            tagSequence: [
-                { tags: ['file'] },
-                { tags: ['template'] },
-                { tags: ['see'] },
-                { tags: ['param'] },
-                { tags: ['returns'] },
-                { tags: ['throws'] },
-                { tags: ['example'] },
-            ],
-        }],
+        'jsdoc/sort-tags': [
+            'error',
+            {
+                linesBetween: 1,
+                tagSequence: [
+                    { tags: ['file'] },
+                    { tags: ['template'] },
+                    { tags: ['see'] },
+                    { tags: ['param'] },
+                    { tags: ['returns'] },
+                    { tags: ['throws'] },
+                    { tags: ['example'] },
+                ],
+            },
+        ],
         'arrow-body-style': 'off',
         'no-await-in-loop': 'off',
         // Force proper import and export of types

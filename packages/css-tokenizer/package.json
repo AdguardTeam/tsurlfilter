@@ -1,75 +1,76 @@
 {
-  "name": "@adguard/css-tokenizer",
-  "version": "1.2.0",
-  "description": "CSS / Extended CSS tokenizer",
-  "keywords": [
-    "css",
-    "tokenizer"
-  ],
-  "author": "Adguard Software Ltd.",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
-    "directory": "packages/css-tokenizer"
-  },
-  "bugs": {
-    "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
-  },
-  "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer#readme",
-  "main": "dist/csstokenizer.js",
-  "module": "dist/csstokenizer.mjs",
-  "types": "dist/csstokenizer.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/csstokenizer.d.ts",
-      "import": "./dist/csstokenizer.mjs",
-      "require": "./dist/csstokenizer.js"
+    "name": "@adguard/css-tokenizer",
+    "version": "1.2.0",
+    "description": "CSS / Extended CSS tokenizer",
+    "keywords": [
+        "css",
+        "tokenizer"
+    ],
+    "author": "Adguard Software Ltd.",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "directory": "packages/css-tokenizer"
+    },
+    "bugs": {
+        "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
+    },
+    "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer#readme",
+    "main": "dist/csstokenizer.js",
+    "module": "dist/csstokenizer.mjs",
+    "types": "dist/csstokenizer.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/csstokenizer.d.ts",
+            "import": "./dist/csstokenizer.mjs",
+            "require": "./dist/csstokenizer.js"
+        }
+    },
+    "files": [
+        "dist/csstokenizer.d.ts",
+        "dist/csstokenizer.js",
+        "dist/csstokenizer.mjs"
+    ],
+    "scripts": {
+        "build": "pnpm clean && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && rimraf dist/types",
+        "build-txt": "tsx scripts/build-txt.ts",
+        "clean": "rimraf dist",
+        "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
+        "lint:code": "eslint . --cache --ext .ts",
+        "lint:types": "tsc",
+        "lint:md": "markdownlint .",
+        "test": "vitest run",
+        "test:coverage": "vitest run --coverage",
+        "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/cjs && pnpm test) && (cd test/smoke/typescript && pnpm test)",
+        "tgz": "pnpm pack --out css-tokenizer.tgz"
+    },
+    "devDependencies": {
+        "@adguard/eslint-config-internal": "workspace:^",
+        "@rollup/plugin-alias": "catalog:",
+        "@rollup/plugin-commonjs": "catalog:",
+        "@rollup/plugin-json": "catalog:",
+        "@rollup/plugin-node-resolve": "catalog:",
+        "@rollup/plugin-terser": "catalog:",
+        "@rollup/plugin-typescript": "catalog:",
+        "@types/node": "catalog:",
+        "@typescript-eslint/eslint-plugin": "catalog:",
+        "@typescript-eslint/parser": "catalog:",
+        "@vitest/coverage-v8": "catalog:",
+        "eslint": "catalog:",
+        "eslint-config-airbnb-typescript": "catalog:",
+        "eslint-plugin-import": "catalog:",
+        "eslint-plugin-import-newlines": "catalog:",
+        "eslint-plugin-jsdoc": "catalog:",
+        "husky": "catalog:",
+        "markdownlint": "catalog:",
+        "markdownlint-cli": "catalog:",
+        "rimraf": "catalog:",
+        "rollup": "catalog:",
+        "rollup-plugin-dts": "catalog:",
+        "rollup-plugin-node-externals": "catalog:",
+        "tsx": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:"
     }
-  },
-  "files": [
-    "dist/csstokenizer.d.ts",
-    "dist/csstokenizer.js",
-    "dist/csstokenizer.mjs"
-  ],
-  "scripts": {
-    "build": "pnpm clean && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && rimraf dist/types",
-    "build-txt": "tsx scripts/build-txt.ts",
-    "clean": "rimraf dist",
-    "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
-    "lint:code": "eslint . --cache --ext .ts",
-    "lint:types": "tsc",
-    "lint:md": "markdownlint .",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/cjs && pnpm test) && (cd test/smoke/typescript && pnpm test)",
-    "tgz": "pnpm pack --out css-tokenizer.tgz"
-  },
-  "devDependencies": {
-    "@rollup/plugin-alias": "catalog:",
-    "@rollup/plugin-commonjs": "catalog:",
-    "@rollup/plugin-json": "catalog:",
-    "@rollup/plugin-node-resolve": "catalog:",
-    "@rollup/plugin-terser": "catalog:",
-    "@rollup/plugin-typescript": "catalog:",
-    "@types/node": "catalog:",
-    "@typescript-eslint/eslint-plugin": "catalog:",
-    "@typescript-eslint/parser": "catalog:",
-    "@vitest/coverage-v8": "catalog:",
-    "eslint": "catalog:",
-    "eslint-config-airbnb-typescript": "catalog:",
-    "eslint-plugin-import": "catalog:",
-    "eslint-plugin-import-newlines": "catalog:",
-    "eslint-plugin-jsdoc": "catalog:",
-    "husky": "catalog:",
-    "markdownlint": "catalog:",
-    "markdownlint-cli": "catalog:",
-    "rimraf": "catalog:",
-    "rollup": "catalog:",
-    "rollup-plugin-dts": "catalog:",
-    "rollup-plugin-node-externals": "catalog:",
-    "tsx": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
-  }
 }

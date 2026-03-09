@@ -26,6 +26,7 @@
         "webextension-polyfill": "catalog:"
     },
     "devDependencies": {
+        "@adguard/eslint-config-internal": "workspace:^",
         "@adguard/tsurlfilter": "workspace:^",
         "@swc-node/register": "catalog:",
         "@swc/core": "catalog:",
