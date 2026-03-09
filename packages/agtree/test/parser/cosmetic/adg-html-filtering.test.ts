@@ -6,9 +6,7 @@ import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-p
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
-import {
-    AdgHtmlFilteringBodyParser,
-} from '../../../src/parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
+import { AdgHtmlFilteringBodyParser } from '../../../src/parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
 import { defaultParserOptions } from '../../../src/parser';
 
 describe('CosmeticRuleParser', () => {
@@ -54,11 +52,7 @@ describe('CosmeticRuleParser', () => {
                             value: '$$',
                             ...context.getRangeFor('$$'),
                         },
-                        body: AdgHtmlFilteringBodyParser.parse(
-                            'div[custom_attr]',
-                            defaultParserOptions,
-                            '$$'.length,
-                        ),
+                        body: AdgHtmlFilteringBodyParser.parse('div[custom_attr]', defaultParserOptions, '$$'.length),
                         ...context.getFullRange(),
                     };
                 },

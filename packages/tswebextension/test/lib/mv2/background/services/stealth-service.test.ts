@@ -1,17 +1,6 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    it,
-} from 'vitest';
+import { describe, expect, beforeEach, it } from 'vitest';
 import { type WebRequest } from 'webextension-polyfill';
-import {
-    type NetworkRule,
-    HTTPMethod,
-    MatchingResult,
-    RequestType,
-    StealthOptionName,
-} from '@adguard/tsurlfilter';
+import { type NetworkRule, HTTPMethod, MatchingResult, RequestType, StealthOptionName } from '@adguard/tsurlfilter';
 import { minify } from 'terser';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
@@ -145,40 +134,70 @@ describe('Stealth service', () => {
             appContext.configuration.settings.stealth.hideReferrer = true;
             const service = new StealthService(appContext, filteringLog, mockEngineApi);
 
-            expect(service.processRequestHeaders(getContextWithHeaders([{
-                name: 'Referer',
-                value: 'http://example.org',
-            }]))).toBe(0);
+            expect(
+                service.processRequestHeaders(
+                    getContextWithHeaders([
+                        {
+                            name: 'Referer',
+                            value: 'http://example.org',
+                        },
+                    ]),
+                ),
+            ).toBe(0);
 
-            expect(service.processRequestHeaders(getContextWithHeaders([{
-                name: 'Referer',
-                value: 'http://other.org',
-            }]))).toBe(StealthActions.HideReferrer);
+            expect(
+                service.processRequestHeaders(
+                    getContextWithHeaders([
+                        {
+                            name: 'Referer',
+                            value: 'http://other.org',
+                        },
+                    ]),
+                ),
+            ).toBe(StealthActions.HideReferrer);
         });
 
         it('checks hide search query', () => {
             appContext.configuration.settings.stealth.hideSearchQueries = true;
             const service = new StealthService(appContext, filteringLog, mockEngineApi);
 
-            expect(service.processRequestHeaders(getContextWithHeaders([{
-                name: 'Referer',
-                value: 'http://other.org',
-            }]))).toBe(0);
+            expect(
+                service.processRequestHeaders(
+                    getContextWithHeaders([
+                        {
+                            name: 'Referer',
+                            value: 'http://other.org',
+                        },
+                    ]),
+                ),
+            ).toBe(0);
 
-            expect(service.processRequestHeaders(getContextWithHeaders([{
-                name: 'Referer',
-                value: 'http://www.google.com',
-            }]))).toBe(StealthActions.HideSearchQueries);
+            expect(
+                service.processRequestHeaders(
+                    getContextWithHeaders([
+                        {
+                            name: 'Referer',
+                            value: 'http://www.google.com',
+                        },
+                    ]),
+                ),
+            ).toBe(StealthActions.HideSearchQueries);
         });
 
         it('checks block chrome client data', () => {
             appContext.configuration.settings.stealth.blockChromeClientData = true;
             const service = new StealthService(appContext, filteringLog, mockEngineApi);
 
-            expect(service.processRequestHeaders(getContextWithHeaders([{
-                name: 'X-Client-Data',
-                value: 'some data',
-            }]))).toBe(StealthActions.BlockChromeClientData);
+            expect(
+                service.processRequestHeaders(
+                    getContextWithHeaders([
+                        {
+                            name: 'X-Client-Data',
+                            value: 'some data',
+                        },
+                    ]),
+                ),
+            ).toBe(StealthActions.BlockChromeClientData);
         });
 
         it('checks send-do-not-track', () => {
@@ -222,9 +241,7 @@ describe('Stealth service', () => {
                 expect(stealthActions & StealthActions.HideReferrer).toBeTruthy();
                 expect(stealthActions & StealthActions.BlockChromeClientData).toBeTruthy();
 
-                context = getContextWithHeaders([referrerHeader], [
-                    createNetworkRule('@@||example.org$stealth', 0),
-                ]);
+                context = getContextWithHeaders([referrerHeader], [createNetworkRule('@@||example.org$stealth', 0)]);
                 expect(service.processRequestHeaders(context)).toBe(StealthActions.None);
             });
 

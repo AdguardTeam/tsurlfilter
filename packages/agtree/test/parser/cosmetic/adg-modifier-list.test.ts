@@ -1,9 +1,4 @@
-import {
-    describe,
-    test,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { sprintf } from 'sprintf-js';
 
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';

@@ -31,8 +31,10 @@ export class PermissionsModifier implements IAdvancedModifier {
      * @param isAllowlist Indicates if the permission policy is for an allowlist.
      */
     constructor(permissionPolicyStr: string, isAllowlist: boolean) {
-        this.permissionPolicyDirective = permissionPolicyStr
-            .replace(PermissionsModifier.RE_SEPARATOR_REPLACE, COMMA_SEPARATOR);
+        this.permissionPolicyDirective = permissionPolicyStr.replace(
+            PermissionsModifier.RE_SEPARATOR_REPLACE,
+            COMMA_SEPARATOR,
+        );
 
         PermissionsModifier.validatePermissionPolicyDirective(this.permissionPolicyDirective, isAllowlist);
     }

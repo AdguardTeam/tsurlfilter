@@ -1,8 +1,5 @@
 {
-    "include": [
-        "src",
-        ".eslintrc.cjs"
-    ],
+    "include": ["src", ".eslintrc.cjs"],
     "compilerOptions": {
         "target": "ESNext",
         "module": "NodeNext",

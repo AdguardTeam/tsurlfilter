@@ -3,10 +3,7 @@
         "target": "ESNext",
         "module": "ESNext",
         "moduleResolution": "bundler",
-        "types": [
-            "./typings/vitest-custom.d.ts",
-            "node",
-        ],
+        "types": ["./typings/vitest-custom.d.ts", "node"],
         "resolveJsonModule": true,
         "allowJs": true,
         "esModuleInterop": true,
@@ -15,5 +12,5 @@
         "skipLibCheck": true,
         "isolatedModules": true,
         "rootDir": "./"
-    },
+    }
 }

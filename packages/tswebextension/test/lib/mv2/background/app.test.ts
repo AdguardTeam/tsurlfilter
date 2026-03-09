@@ -1,11 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    afterEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, afterEach, it, vi } from 'vitest';
 import { type Runtime } from 'webextension-polyfill';
 
 import {

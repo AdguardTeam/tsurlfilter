@@ -1,10 +1,4 @@
-import {
-    describe,
-    expect,
-    it,
-    type MockInstance,
-    vi,
-} from 'vitest';
+import { describe, expect, it, type MockInstance, vi } from 'vitest';
 
 import {
     type Filter,
@@ -16,7 +10,10 @@ import {
     SourceMap,
 } from '../../../src/rules/declarative-converter';
 // eslint-disable-next-line import-newlines/enforce, max-len
-import { NetworkRulesScanner, type ScannedFilter } from '../../../src/rules/declarative-converter/network-rules-scanner';
+import {
+    NetworkRulesScanner,
+    type ScannedFilter,
+} from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
 
 import { createFilter } from './helpers';
@@ -38,10 +35,7 @@ describe('RuleSet', () => {
         const [scannedStaticFilter] = filters;
         const { badFilterRules } = scannedStaticFilter;
 
-        const {
-            sourceMapValues,
-            declarativeRules,
-        } = await DeclarativeRulesConverter.convert(filters);
+        const { sourceMapValues, declarativeRules } = await DeclarativeRulesConverter.convert(filters);
 
         const ruleSetContent: RuleSetContentProvider = {
             loadSourceMap: async () => new SourceMap(sourceMapValues),
@@ -75,12 +69,7 @@ describe('RuleSet', () => {
     };
 
     it('returns counters correctly', async () => {
-        const content = [
-            '||example.com^$document',
-            '||example.net##h1',
-            '@@||example.io^',
-            '@@||evil.com^$badfilter',
-        ];
+        const content = ['||example.com^$document', '||example.net##h1', '@@||example.io^', '@@||evil.com^$badfilter'];
 
         const ruleSet = await createRuleSet(content);
 
@@ -89,11 +78,7 @@ describe('RuleSet', () => {
     });
 
     it('returns original rule by declarative and declarative rule by source rule correctly', async () => {
-        const content = [
-            '||example.com##h1',
-            '||example.net##h2',
-            '@@||example.io^',
-        ];
+        const content = ['||example.com##h1', '||example.net##h2', '@@||example.io^'];
 
         const sourceRuleIndex = 2;
         const filterId = 99;
@@ -116,12 +101,7 @@ describe('RuleSet', () => {
     });
 
     it('serializes and deserializes', async () => {
-        const content = [
-            '||example.com^$document',
-            '||example.net##h2',
-            '@@||example.io^',
-            '@@||evil.com^$badfilter',
-        ];
+        const content = ['||example.com^$document', '||example.net##h2', '@@||example.io^', '@@||evil.com^$badfilter'];
         const filterId = 99;
 
         const originalFilter = createFilter(content, filterId);
@@ -131,22 +111,12 @@ describe('RuleSet', () => {
 
         const ruleSet = await createRuleSet(content, filterId);
 
-        const {
-            id,
-            data,
-            lazyData,
-        } = await ruleSet.serialize();
+        const { id, data, lazyData } = await ruleSet.serialize();
 
         const declarativeRules = await ruleSet.getDeclarativeRules();
 
         const {
-            data: {
-                regexpRulesCount,
-                unsafeRulesCount,
-                rulesCount,
-                ruleSetHashMapRaw,
-                badFilterRulesRaw,
-            },
+            data: { regexpRulesCount, unsafeRulesCount, rulesCount, ruleSetHashMapRaw, badFilterRulesRaw },
             ruleSetContentProvider,
         } = await RuleSet.deserialize(
             id,
@@ -159,13 +129,7 @@ describe('RuleSet', () => {
         const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
         const ruleSetHashMap = new RulesHashMap(sources);
         const badFilterRules = badFilterRulesRaw
-            .map(
-                (rawString) => IndexedNetworkRuleWithHash.createFromText(
-                    filterId,
-                    badFilterRuleIndex,
-                    rawString,
-                ),
-            )
+            .map((rawString) => IndexedNetworkRuleWithHash.createFromText(filterId, badFilterRuleIndex, rawString))
             .flat();
 
         const deserializedRuleSet = new RuleSet(
@@ -199,11 +163,7 @@ describe('RuleSet', () => {
     });
 
     it('unloads content correctly', async () => {
-        const content = [
-            '||example.com^$document',
-            '||example.net##h1',
-            '@@||example.io^',
-        ];
+        const content = ['||example.com^$document', '||example.net##h1', '@@||example.io^'];
 
         const ruleSet = await createRuleSet(content);
 
@@ -221,11 +181,7 @@ describe('RuleSet', () => {
     });
 
     it('does not return stale content after unload', async () => {
-        const content = [
-            '||example.com^$document',
-            '||example.net##h1',
-            '@@||example.io^',
-        ];
+        const content = ['||example.com^$document', '||example.net##h1', '@@||example.io^'];
 
         const ruleSet = await createRuleSet(content);
 
@@ -257,15 +213,7 @@ describe('RuleSet', () => {
             loadDeclarativeRules: async () => [],
         };
 
-        const ruleSet = new RuleSet(
-            'testRuleSet',
-            0,
-            0,
-            0,
-            ruleSetContent,
-            [],
-            new RulesHashMap([]),
-        );
+        const ruleSet = new RuleSet('testRuleSet', 0, 0, 0, ruleSetContent, [], new RulesHashMap([]));
 
         // Start loading content
         const loadPromise = ruleSet.getDeclarativeRules();
@@ -283,11 +231,7 @@ describe('RuleSet', () => {
     });
 
     it('ensures filterList filters are unloaded', async () => {
-        const content = [
-            '||example.com^$document',
-            '||example.net##h1',
-            '@@||example.io^',
-        ];
+        const content = ['||example.com^$document', '||example.net##h1', '@@||example.io^'];
 
         const ruleSet = await createRuleSet(content);
         await ruleSet.getDeclarativeRules();

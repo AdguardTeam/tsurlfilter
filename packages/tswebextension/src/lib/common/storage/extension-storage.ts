@@ -5,10 +5,7 @@ import type { ExtendedStorageInterface } from './core/storage-interface';
  * API for storing persistent key-value data with debounced sync using a specified storage key.
  * Storage synchronization is described in the {@link PersistentValueContainer} class.
  */
-export class ExtensionStorage<
-    Data extends Record<string, unknown>,
-    Key extends string = string,
-> {
+export class ExtensionStorage<Data extends Record<string, unknown>, Key extends string = string> {
     /**
      * API for storing persistent value with debounced sync using the specified storage key.
      */

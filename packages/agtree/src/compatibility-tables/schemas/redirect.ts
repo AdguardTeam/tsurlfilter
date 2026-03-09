@@ -11,19 +11,23 @@ import { resourceTypeSchema } from './resource-type';
 /**
  * Zod schema for redirect data.
  */
-export const redirectDataSchema = zodToCamelCase(baseCompatibilityDataSchema.extend({
-    /**
-     * Whether the redirect is blocking.
-     */
-    is_blocking: booleanSchema.default(false),
+export const redirectDataSchema = zodToCamelCase(
+    baseCompatibilityDataSchema
+        .extend({
+            /**
+             * Whether the redirect is blocking.
+             */
+            is_blocking: booleanSchema.default(false),
 
-    /**
-     * Resource type(s) belonging to the redirect.
-     *
-     * @see {@link https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ResourceType}
-     */
-    resource_types: zod.array(resourceTypeSchema).default([]),
-}).superRefine(baseRefineLogic));
+            /**
+             * Resource type(s) belonging to the redirect.
+             *
+             * @see {@link https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ResourceType}
+             */
+            resource_types: zod.array(resourceTypeSchema).default([]),
+        })
+        .superRefine(baseRefineLogic),
+);
 
 /**
  * Type of the redirect data schema.

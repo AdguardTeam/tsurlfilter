@@ -78,7 +78,6 @@ Report generated on: Wed, 03 Dec 2025 18:14:02 GMT
 | Rules count (tsurlfilter v4) | 77119 |
 | Rules count (tsurlfilter v3) | 77112 |
 
-
 ## AdGuard Base List
 
 ### Node.js v22.20.0
@@ -144,4 +143,3 @@ Report generated on: Wed, 03 Dec 2025 18:14:02 GMT
 | ---------------------------- | ------ |
 | Rules count (tsurlfilter v4) | 132977 |
 | Rules count (tsurlfilter v3) | 132960 |
-

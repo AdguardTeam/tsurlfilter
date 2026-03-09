@@ -1,9 +1,4 @@
-import {
-    describe,
-    test,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { sprintf } from 'sprintf-js';
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 
@@ -254,10 +249,7 @@ describe('AdgCssInjectionParser', () => {
                 //            ~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        sprintf(
-                            CSS_TOKEN_STREAM_ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT,
-                            END_OF_INPUT,
-                        ),
+                        sprintf(CSS_TOKEN_STREAM_ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT, END_OF_INPUT),
                         ...context.toTuple(context.getRangeFor('a')),
                     );
                 },
@@ -267,10 +259,7 @@ describe('AdgCssInjectionParser', () => {
                 //             ~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        sprintf(
-                            CSS_TOKEN_STREAM_ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT,
-                            END_OF_INPUT,
-                        ),
+                        sprintf(CSS_TOKEN_STREAM_ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT, END_OF_INPUT),
                         ...context.toTuple(context.getRangeFor(' ')),
                     );
                 },
@@ -380,9 +369,10 @@ describe('AdgCssInjectionParser', () => {
                 // eslint-disable-next-line max-len
                 actual: '@media ((min-width: 400px) and (max-width: 700px)) { div:has(> section[advert]) { padding-top: 0 !important; padding-bottom: 0 !important; } }',
                 // eslint-disable-next-line max-len
-                expected: '@media ((min-width: 400px) and (max-width: 700px)) { div:has(> section[advert]) { padding-top: 0 !important; padding-bottom: 0 !important; } }',
+                expected:
+                    '@media ((min-width: 400px) and (max-width: 700px)) { div:has(> section[advert]) { padding-top: 0 !important; padding-bottom: 0 !important; } }',
             },
-        ])('should generate input: \'$actual\'', ({ actual, expected }) => {
+        ])("should generate input: '$actual'", ({ actual, expected }) => {
             expect(AdgCssInjectionGenerator.generate(AdgCssInjectionParser.parse(actual))).toBe(expected);
         });
     });

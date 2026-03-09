@@ -73,8 +73,6 @@ export const tokenizeExtended: TokenizerFunction = (
         onError,
         // Register custom function handlers for Extended CSS's pseudo-classes, but do not call mergeMaps if there are
         // no custom function handlers are provided
-        functionHandlers.size > 0
-            ? mergeMaps(EXT_CSS_PSEUDO_HANDLERS, functionHandlers)
-            : EXT_CSS_PSEUDO_HANDLERS,
+        functionHandlers.size > 0 ? mergeMaps(EXT_CSS_PSEUDO_HANDLERS, functionHandlers) : EXT_CSS_PSEUDO_HANDLERS,
     );
 };

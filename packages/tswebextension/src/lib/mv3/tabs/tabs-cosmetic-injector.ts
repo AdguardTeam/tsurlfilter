@@ -45,7 +45,9 @@ export class TabsCosmeticInjector {
         });
 
         if (result === 'timeout') {
-            logger.debug(`[tsweb.TabsCosmeticInjector.processOpenTabs]: timeout after ${TabsCosmeticInjector.PROCESS_OPEN_TABS_TIMEOUT_MS}ms, continue startup in fail-open mode`);
+            logger.debug(
+                `[tsweb.TabsCosmeticInjector.processOpenTabs]: timeout after ${TabsCosmeticInjector.PROCESS_OPEN_TABS_TIMEOUT_MS}ms, continue startup in fail-open mode`,
+            );
         }
     }
 
@@ -62,7 +64,10 @@ export class TabsCosmeticInjector {
         // Handles errors
         promises.forEach((promise) => {
             if (promise.status === 'rejected') {
-                logger.error('[tsweb.TabsCosmeticInjector.doProcessOpenTabs]: cannot inject cosmetic to open tab: ', promise.reason);
+                logger.error(
+                    '[tsweb.TabsCosmeticInjector.doProcessOpenTabs]: cannot inject cosmetic to open tab: ',
+                    promise.reason,
+                );
             }
         });
 
@@ -94,23 +99,21 @@ export class TabsCosmeticInjector {
         const currentTime = Date.now();
 
         const tasks = frames.map(async (frameDetails) => {
-            const {
-                url,
-                frameId,
-                parentFrameId,
-                parentDocumentId,
-                documentId,
-            } = frameDetails;
+            const { url, frameId, parentFrameId, parentDocumentId, documentId } = frameDetails;
 
-            tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+            tabsApi.setFrameContext(
                 tabId,
                 frameId,
-                parentFrameId,
-                url,
-                timeStamp: currentTime,
-                parentDocumentId,
-                documentId,
-            }));
+                new FrameMV3({
+                    tabId,
+                    frameId,
+                    parentFrameId,
+                    url,
+                    timeStamp: currentTime,
+                    parentDocumentId,
+                    documentId,
+                }),
+            );
 
             CosmeticFrameProcessor.handleFrame({
                 tabId,
@@ -135,19 +138,26 @@ export class TabsCosmeticInjector {
             }
 
             if (!CosmeticApi.shouldApplyCosmetics(tabId, url)) {
-                logger.debug(`[tsweb.TabsCosmeticInjector.processOpenTab]: skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${url}`);
+                logger.debug(
+                    `[tsweb.TabsCosmeticInjector.processOpenTab]: skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${url}`,
+                );
                 return;
             }
 
             try {
                 await CosmeticApi.applyCosmeticRules(tabId, frameId, true);
             } catch (e) {
-                logger.error(`[tsweb.TabsCosmeticInjector.processOpenTab]: error applying cosmetic rules for tabId ${tabId} and frameId ${frameId}`, e);
+                logger.error(
+                    `[tsweb.TabsCosmeticInjector.processOpenTab]: error applying cosmetic rules for tabId ${tabId} and frameId ${frameId}`,
+                    e,
+                );
             }
 
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
             if (!frameContext?.preparedCosmeticResult) {
-                logger.debug(`[tsweb.TabsCosmeticInjector.processOpenTab]: cannot log script rules due to not having prepared cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                logger.debug(
+                    `[tsweb.TabsCosmeticInjector.processOpenTab]: cannot log script rules due to not having prepared cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`,
+                );
                 return;
             }
 

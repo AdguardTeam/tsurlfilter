@@ -15,7 +15,6 @@ export interface CookieEventOptions {
  * Filtering log interface.
  */
 export interface FilteringLog {
-
     /**
      * Add cookie rule event.
      *
@@ -31,10 +30,5 @@ export interface FilteringLog {
      * @param headerName
      * @param rule
      */
-    addRemoveHeaderEvent(
-        tabId: number,
-        frameUrl: string,
-        headerName: string,
-        rule: NetworkRule,
-    ): void;
+    addRemoveHeaderEvent(tabId: number, frameUrl: string, headerName: string, rule: NetworkRule): void;
 }

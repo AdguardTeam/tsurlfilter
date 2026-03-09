@@ -85,9 +85,11 @@ export function isDigit(code: number | undefined): boolean {
 export function isHexDigit(code: number | undefined): boolean {
     // A digit, or a code point between U+0041 LATIN CAPITAL LETTER A (A) and U+0046 LATIN CAPITAL LETTER F (F)
     // inclusive, or a code point between U+0061 LATIN SMALL LETTER A (a) and U+0066 LATIN SMALL LETTER F (f) inclusive.
-    return isDigit(code) // 0-9
-        || isBetween(code, CodePoint.LatinCapitalLetterA, CodePoint.LatinCapitalLetterF) // A-F
-        || isBetween(code, CodePoint.LatinSmallLetterA, CodePoint.LatinSmallLetterF); // a-f
+    return (
+        isDigit(code) || // 0-9
+        isBetween(code, CodePoint.LatinCapitalLetterA, CodePoint.LatinCapitalLetterF) || // A-F
+        isBetween(code, CodePoint.LatinSmallLetterA, CodePoint.LatinSmallLetterF)
+    ); // a-f
 }
 
 /**
@@ -186,10 +188,12 @@ export function isIdentCodePoint(code: number | undefined): boolean {
 export function isNonPrintableCodePoint(code: number | undefined): boolean {
     // A code point between U+0000 NULL and U+0008 BACKSPACE inclusive, or U+000B LINE TABULATION, or a code point
     // between U+000E SHIFT OUT and U+001F INFORMATION SEPARATOR ONE inclusive, or U+007F DELETE.
-    return isBetween(code, CodePoint.Null, CodePoint.Backspace)
-        || code === CodePoint.LineTabulation
-        || isBetween(code, CodePoint.ShiftOut, CodePoint.InformationSeparatorOne)
-        || code === CodePoint.Delete;
+    return (
+        isBetween(code, CodePoint.Null, CodePoint.Backspace) ||
+        code === CodePoint.LineTabulation ||
+        isBetween(code, CodePoint.ShiftOut, CodePoint.InformationSeparatorOne) ||
+        code === CodePoint.Delete
+    );
 }
 
 /**

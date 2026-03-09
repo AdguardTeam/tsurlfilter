@@ -2,13 +2,7 @@
  * @file Cosmetic rule modifier converter from ADG to uBO
  */
 
-import {
-    ListItemNodeType,
-    ListNodeType,
-    type DomainList,
-    type Modifier,
-    type ModifierList,
-} from '../../../nodes';
+import { ListItemNodeType, ListNodeType, type DomainList, type Modifier, type ModifierList } from '../../../nodes';
 import { createModifierNode } from '../../../ast-utils/modifiers';
 import { RegExpUtils } from '../../../utils/regexp';
 import {
@@ -148,14 +142,7 @@ export class UboCosmeticRuleModifierConverter {
                             : modifier.value.value;
                     }
 
-                    conversionMap.add(
-                        index,
-                        createModifierNode(
-                            UBO_MATCHES_PATH_OPERATOR,
-                            value,
-                            exception,
-                        ),
-                    );
+                    conversionMap.add(index, createModifierNode(UBO_MATCHES_PATH_OPERATOR, value, exception));
                     break;
                 default:
                     break;

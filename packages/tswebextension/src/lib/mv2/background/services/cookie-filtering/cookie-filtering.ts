@@ -100,10 +100,9 @@ export class CookieFiltering {
         // IMPORTANT: This method reads cookies from context, so it should be
         // called before method that change headers, since that method will
         // remove or change headers in context.
-        this.applyRules(context)
-            .catch((e) => {
-                logger.error('[tsweb.CookieFiltering.onBeforeSendHeaders]: cannot apply rules due to: ', e);
-            });
+        this.applyRules(context).catch((e) => {
+            logger.error('[tsweb.CookieFiltering.onBeforeSendHeaders]: cannot apply rules due to: ', e);
+        });
 
         // Removes cookie from headers and updates context.
         // Note: this method won't work in the extension build with manifest v3.
@@ -122,22 +121,9 @@ export class CookieFiltering {
     private applyRulesToRequestCookieHeaders(context: RequestContext): boolean {
         let headersModified = false;
 
-        const {
-            requestHeaders,
-            cookies,
-            matchingResult,
-            requestUrl,
-            thirdParty,
-            tabId,
-            requestId,
-        } = context;
+        const { requestHeaders, cookies, matchingResult, requestUrl, thirdParty, tabId, requestId } = context;
 
-        if (!requestHeaders
-            || !matchingResult
-            || !requestUrl
-            || typeof thirdParty !== 'boolean'
-            || !cookies
-        ) {
+        if (!requestHeaders || !matchingResult || !requestUrl || typeof thirdParty !== 'boolean' || !cookies) {
             return headersModified;
         }
 
@@ -206,20 +192,9 @@ export class CookieFiltering {
     private applyRulesToResponseCookieHeaders(context: RequestContext): boolean {
         let headersModified = false;
 
-        const {
-            responseHeaders,
-            matchingResult,
-            requestUrl,
-            thirdParty,
-            tabId,
-            requestId,
-        } = context;
+        const { responseHeaders, matchingResult, requestUrl, thirdParty, tabId, requestId } = context;
 
-        if (!responseHeaders
-            || !matchingResult
-            || !requestUrl
-            || typeof thirdParty !== 'boolean'
-        ) {
+        if (!responseHeaders || !matchingResult || !requestUrl || typeof thirdParty !== 'boolean') {
             return headersModified;
         }
 
@@ -279,12 +254,7 @@ export class CookieFiltering {
      * @returns True if headers were modified.
      */
     public onHeadersReceived(context: RequestContext): boolean {
-        const {
-            responseHeaders,
-            requestUrl,
-            thirdParty,
-            requestId,
-        } = context;
+        const { responseHeaders, requestUrl, thirdParty, requestId } = context;
 
         /**
          * Full context can be created in onBeforeRequest, partial context can
@@ -309,10 +279,9 @@ export class CookieFiltering {
         // IMPORTANT: This method reads cookies from context, so it should be
         // called before method that change headers, since that method will
         // remove or change headers in context.
-        this.applyRules(context)
-            .catch((e) => {
-                logger.error('[tsweb.CookieFiltering.onHeadersReceived]: cannot apply rules due to: ', e);
-            });
+        this.applyRules(context).catch((e) => {
+            logger.error('[tsweb.CookieFiltering.onHeadersReceived]: cannot apply rules due to: ', e);
+        });
 
         // Remove cookie headers.
         // This method won't work in the extension build with manifest v3.
@@ -359,9 +328,7 @@ export class CookieFiltering {
      * @param context Request context.
      */
     private async applyRules(context: RequestContext): Promise<void> {
-        const {
-            matchingResult, cookies, requestUrl, tabId,
-        } = context;
+        const { matchingResult, cookies, requestUrl, tabId } = context;
 
         if (!matchingResult || !cookies) {
             return;
@@ -430,7 +397,7 @@ export class CookieFiltering {
 
         const bRule = CookieRulesFinder.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
         if (bRule) {
-            if (bRule.isAllowlist() || await this.browserCookieApi.removeCookie(cookie.name, cookie.url)) {
+            if (bRule.isAllowlist() || (await this.browserCookieApi.removeCookie(cookie.name, cookie.url))) {
                 this.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, isThirdPartyCookie);
             }
 

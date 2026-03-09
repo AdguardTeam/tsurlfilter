@@ -19,11 +19,7 @@ import {
 /**
  * Set of all possible quote characters supported by the library
  */
-export const QUOTE_SET = new Set([
-    SINGLE_QUOTE,
-    DOUBLE_QUOTE,
-    BACKTICK_QUOTE,
-]);
+export const QUOTE_SET = new Set([SINGLE_QUOTE, DOUBLE_QUOTE, BACKTICK_QUOTE]);
 
 /**
  * Possible quote types for scriptlet parameters
@@ -52,7 +48,7 @@ export const QuoteType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type QuoteType = typeof QuoteType[keyof typeof QuoteType];
+export type QuoteType = (typeof QuoteType)[keyof typeof QuoteType];
 
 /**
  * Utility functions for working with quotes
@@ -91,9 +87,9 @@ export class QuoteUtils {
 
         for (let i = 0; i < string.length; i += 1) {
             if (
-                string[i] === char
-                && string[i - 1] === ESCAPE_CHARACTER
-                && (i === 1 || string[i - 2] !== ESCAPE_CHARACTER)
+                string[i] === char &&
+                string[i - 1] === ESCAPE_CHARACTER &&
+                (i === 1 || string[i - 2] !== ESCAPE_CHARACTER)
             ) {
                 result = result.slice(0, -1);
             }
@@ -161,19 +157,25 @@ export class QuoteUtils {
                 }
 
                 if (actualQuoteType === QuoteType.Double) {
-                    return SINGLE_QUOTE
-                        + QuoteUtils.escapeUnescapedOccurrences(
+                    return (
+                        SINGLE_QUOTE +
+                        QuoteUtils.escapeUnescapedOccurrences(
                             QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), DOUBLE_QUOTE),
                             SINGLE_QUOTE,
-                        ) + SINGLE_QUOTE;
+                        ) +
+                        SINGLE_QUOTE
+                    );
                 }
 
                 if (actualQuoteType === QuoteType.Backtick) {
-                    return SINGLE_QUOTE
-                        + QuoteUtils.escapeUnescapedOccurrences(
+                    return (
+                        SINGLE_QUOTE +
+                        QuoteUtils.escapeUnescapedOccurrences(
                             QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), BACKTICK_QUOTE),
                             SINGLE_QUOTE,
-                        ) + SINGLE_QUOTE;
+                        ) +
+                        SINGLE_QUOTE
+                    );
                 }
 
                 return string;
@@ -184,12 +186,15 @@ export class QuoteUtils {
                 }
 
                 if (actualQuoteType !== QuoteType.Double) {
-                // eslint-disable-next-line max-len
-                    return DOUBLE_QUOTE
-                        + QuoteUtils.escapeUnescapedOccurrences(
+                    // eslint-disable-next-line max-len
+                    return (
+                        DOUBLE_QUOTE +
+                        QuoteUtils.escapeUnescapedOccurrences(
                             QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), SINGLE_QUOTE),
                             DOUBLE_QUOTE,
-                        ) + DOUBLE_QUOTE;
+                        ) +
+                        DOUBLE_QUOTE
+                    );
                 }
 
                 return string;
@@ -197,16 +202,21 @@ export class QuoteUtils {
             case QuoteType.Backtick:
                 if (actualQuoteType === QuoteType.None) {
                     // eslint-disable-next-line max-len
-                    return BACKTICK_QUOTE + QuoteUtils.escapeUnescapedOccurrences(string, BACKTICK_QUOTE) + BACKTICK_QUOTE;
+                    return (
+                        BACKTICK_QUOTE + QuoteUtils.escapeUnescapedOccurrences(string, BACKTICK_QUOTE) + BACKTICK_QUOTE
+                    );
                 }
 
                 if (actualQuoteType !== QuoteType.Backtick) {
-                // eslint-disable-next-line max-len
-                    return BACKTICK_QUOTE
-                        + QuoteUtils.escapeUnescapedOccurrences(
+                    // eslint-disable-next-line max-len
+                    return (
+                        BACKTICK_QUOTE +
+                        QuoteUtils.escapeUnescapedOccurrences(
                             QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), SINGLE_QUOTE),
                             BACKTICK_QUOTE,
-                        ) + BACKTICK_QUOTE;
+                        ) +
+                        BACKTICK_QUOTE
+                    );
                 }
 
                 return string;
@@ -225,9 +235,9 @@ export class QuoteUtils {
     public static removeQuotes(string: string): string {
         if (
             // We should check for string length to avoid false positives
-            string.length > 1
-            && (string[0] === SINGLE_QUOTE || string[0] === DOUBLE_QUOTE || string[0] === BACKTICK_QUOTE)
-            && string[0] === string[string.length - 1]
+            string.length > 1 &&
+            (string[0] === SINGLE_QUOTE || string[0] === DOUBLE_QUOTE || string[0] === BACKTICK_QUOTE) &&
+            string[0] === string[string.length - 1]
         ) {
             return string.slice(1, -1);
         }
@@ -247,22 +257,13 @@ export class QuoteUtils {
 
         switch (quoteType) {
             case QuoteType.Single:
-                return QuoteUtils.unescapeSingleEscapedOccurrences(
-                    string.slice(1, -1),
-                    SINGLE_QUOTE,
-                );
+                return QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), SINGLE_QUOTE);
 
             case QuoteType.Double:
-                return QuoteUtils.unescapeSingleEscapedOccurrences(
-                    string.slice(1, -1),
-                    DOUBLE_QUOTE,
-                );
+                return QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), DOUBLE_QUOTE);
 
             case QuoteType.Backtick:
-                return QuoteUtils.unescapeSingleEscapedOccurrences(
-                    string.slice(1, -1),
-                    BACKTICK_QUOTE,
-                );
+                return QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), BACKTICK_QUOTE);
 
             default:
                 return string;
@@ -287,9 +288,7 @@ export class QuoteUtils {
         quoteType: QuoteType = QuoteType.Single,
         separator = `${COMMA}${SPACE}`,
     ): string {
-        return strings
-            .map((s) => QuoteUtils.setStringQuoteType(s, quoteType))
-            .join(separator);
+        return strings.map((s) => QuoteUtils.setStringQuoteType(s, quoteType)).join(separator);
     }
 
     /**
@@ -330,17 +329,14 @@ export class QuoteUtils {
             // Check if we are inside of an attribute selector's value
             if (
                 // nesting will be 2 levels deep if we are inside of attribute selector's value
-                nestingBlockStack.length === 2
+                nestingBlockStack.length === 2 &&
                 // and the outer block is an attribute selector
-                && nestingBlockStack[0] === CLOSE_SQUARE_BRACKET
+                nestingBlockStack[0] === CLOSE_SQUARE_BRACKET &&
                 // and the inner block is a double quote
-                && nestingBlockStack[1] === DOUBLE_QUOTE
+                nestingBlockStack[1] === DOUBLE_QUOTE
             ) {
                 // We found `""` inside of attribute selector's value
-                if (
-                    char === DOUBLE_QUOTE
-                    && selector[i + 1] === DOUBLE_QUOTE
-                ) {
+                if (char === DOUBLE_QUOTE && selector[i + 1] === DOUBLE_QUOTE) {
                     // Convert `""` to `\"`
                     buffer.push(ESCAPE_CHARACTER);
                     buffer.push(DOUBLE_QUOTE);
@@ -357,10 +353,7 @@ export class QuoteUtils {
             }
 
             // Handle entering nesting blocks
-            if (
-                nestingBlockPairs.has(char)
-                && selector[i - 1] !== ESCAPE_CHARACTER
-            ) {
+            if (nestingBlockPairs.has(char) && selector[i - 1] !== ESCAPE_CHARACTER) {
                 nestingBlockStack.push(nestingBlockPairs.get(char)!);
                 buffer.push(char);
                 continue;
@@ -368,9 +361,9 @@ export class QuoteUtils {
 
             // Handle exiting nesting blocks
             if (
-                nestingBlockStack.length > 0
-                && char === nestingBlockStack[nestingBlockStack.length - 1]
-                && selector[i - 1] !== ESCAPE_CHARACTER
+                nestingBlockStack.length > 0 &&
+                char === nestingBlockStack[nestingBlockStack.length - 1] &&
+                selector[i - 1] !== ESCAPE_CHARACTER
             ) {
                 nestingBlockStack.pop();
                 buffer.push(char);
@@ -422,17 +415,14 @@ export class QuoteUtils {
             // Check if we are inside of an attribute selector's value
             if (
                 // nesting will be 2 levels deep if we are inside of attribute selector's value
-                nestingBlockStack.length === 2
+                nestingBlockStack.length === 2 &&
                 // and the outer block is an attribute selector
-                && nestingBlockStack[0] === CLOSE_SQUARE_BRACKET
+                nestingBlockStack[0] === CLOSE_SQUARE_BRACKET &&
                 // and the inner block is a double quote
-                && nestingBlockStack[1] === DOUBLE_QUOTE
+                nestingBlockStack[1] === DOUBLE_QUOTE
             ) {
                 // We found `\"` inside of attribute selector's value
-                if (
-                    char === ESCAPE_CHARACTER
-                    && selector[i + 1] === DOUBLE_QUOTE
-                ) {
+                if (char === ESCAPE_CHARACTER && selector[i + 1] === DOUBLE_QUOTE) {
                     // Convert `\"` to `""`
                     buffer.push(DOUBLE_QUOTE);
                     buffer.push(DOUBLE_QUOTE);
@@ -449,10 +439,7 @@ export class QuoteUtils {
             }
 
             // Handle entering nesting blocks
-            if (
-                nestingBlockPairs.has(char)
-                && selector[i - 1] !== ESCAPE_CHARACTER
-            ) {
+            if (nestingBlockPairs.has(char) && selector[i - 1] !== ESCAPE_CHARACTER) {
                 nestingBlockStack.push(nestingBlockPairs.get(char)!);
                 buffer.push(char);
                 continue;
@@ -460,9 +447,9 @@ export class QuoteUtils {
 
             // Handle exiting nesting blocks
             if (
-                nestingBlockStack.length > 0
-                && char === nestingBlockStack[nestingBlockStack.length - 1]
-                && selector[i - 1] !== ESCAPE_CHARACTER
+                nestingBlockStack.length > 0 &&
+                char === nestingBlockStack[nestingBlockStack.length - 1] &&
+                selector[i - 1] !== ESCAPE_CHARACTER
             ) {
                 nestingBlockStack.pop();
                 buffer.push(char);

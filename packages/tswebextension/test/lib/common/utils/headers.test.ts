@@ -1,62 +1,69 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-    findHeaderByName,
-    hasHeaderByName,
-    hasHeader,
-    removeHeader,
-} from '../../../../src/lib/common/utils/headers';
+import { findHeaderByName, hasHeaderByName, hasHeader, removeHeader } from '../../../../src/lib/common/utils/headers';
 
 describe('Headers utils', () => {
     it('finds header by name', () => {
         let result = findHeaderByName([], 'test_name');
         expect(result).toBeNull();
 
-        result = findHeaderByName([
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], 'test_name');
+        result = findHeaderByName(
+            [
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
+            'test_name',
+        );
         expect(result).toBeNull();
 
-        result = findHeaderByName([
-            {
-                name: 'test_name',
-                value: 'test_value',
-            },
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], 'test_name');
+        result = findHeaderByName(
+            [
+                {
+                    name: 'test_name',
+                    value: 'test_value',
+                },
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
+            'test_name',
+        );
         expect(result).not.toBeNull();
         expect(result!.name).toBe('test_name');
 
         // case-insensitive
-        result = findHeaderByName([
-            {
-                name: 'test_name',
-                value: 'test_value',
-            },
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], 'TEST_name');
+        result = findHeaderByName(
+            [
+                {
+                    name: 'test_name',
+                    value: 'test_value',
+                },
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
+            'TEST_name',
+        );
         expect(result).not.toBeNull();
         expect(result!.name).toBe('test_name');
 
-        result = findHeaderByName([
-            {
-                name: 'test_NAME',
-                value: 'test_value',
-            },
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], 'TEST_name');
+        result = findHeaderByName(
+            [
+                {
+                    name: 'test_NAME',
+                    value: 'test_value',
+                },
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
+            'TEST_name',
+        );
         expect(result).not.toBeNull();
         expect(result!.name).toBe('test_NAME');
     });
@@ -65,37 +72,46 @@ describe('Headers utils', () => {
         let result = hasHeaderByName([], 'test_name');
         expect(result).toBe(false);
 
-        result = hasHeaderByName([
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], 'test_name');
+        result = hasHeaderByName(
+            [
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
+            'test_name',
+        );
         expect(result).toBe(false);
 
-        result = hasHeaderByName([
-            {
-                name: 'test_name',
-                value: 'test_value',
-            },
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], 'test_name');
+        result = hasHeaderByName(
+            [
+                {
+                    name: 'test_name',
+                    value: 'test_value',
+                },
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
+            'test_name',
+        );
         expect(result).toBe(true);
 
         // case-insensitive
-        result = hasHeaderByName([
-            {
-                name: 'test_name',
-                value: 'test_value',
-            },
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], 'AN_other_NAME');
+        result = hasHeaderByName(
+            [
+                {
+                    name: 'test_name',
+                    value: 'test_value',
+                },
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
+            'AN_other_NAME',
+        );
         expect(result).toBe(true);
     });
 
@@ -106,88 +122,108 @@ describe('Headers utils', () => {
         });
         expect(result).toBe(false);
 
-        result = hasHeader([
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], {
-            name: 'test_name',
-            value: 'test_value',
-        });
-        expect(result).toBe(false);
-
-        result = hasHeader([
+        result = hasHeader(
+            [
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
             {
                 name: 'test_name',
                 value: 'test_value',
             },
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], {
-            name: 'test_name',
-            value: 'an_other_value',
-        });
+        );
         expect(result).toBe(false);
 
-        result = hasHeader([
+        result = hasHeader(
+            [
+                {
+                    name: 'test_name',
+                    value: 'test_value',
+                },
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
+            {
+                name: 'test_name',
+                value: 'an_other_value',
+            },
+        );
+        expect(result).toBe(false);
+
+        result = hasHeader(
+            [
+                {
+                    name: 'test_name',
+                    value: 'test_value',
+                },
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
             {
                 name: 'test_name',
                 value: 'test_value',
             },
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], {
-            name: 'test_name',
-            value: 'test_value',
-        });
+        );
         expect(result).toBe(true);
 
         // case-insensitive (only header name)
-        result = hasHeader([
+        result = hasHeader(
+            [
+                {
+                    name: 'test_name',
+                    value: 'test_value',
+                },
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
             {
-                name: 'test_name',
+                name: 'TEST_nAme',
                 value: 'test_value',
             },
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], {
-            name: 'TEST_nAme',
-            value: 'test_value',
-        });
+        );
         expect(result).toBe(true);
 
-        result = hasHeader([
+        result = hasHeader(
+            [
+                {
+                    name: 'test_name',
+                    value: 'test_value',
+                },
+                {
+                    name: 'an_other_name',
+                    value: 'an_other_value',
+                },
+            ],
             {
-                name: 'test_name',
-                value: 'test_value',
+                name: 'TEST_nAme',
+                value: 'Test_Value',
             },
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], {
-            name: 'TEST_nAme',
-            value: 'Test_Value',
-        });
+        );
         expect(result).toBe(false);
     });
 
     it('removes header by name', () => {
         expect(removeHeader([], 'test_name')).toBeFalsy();
 
-        expect(removeHeader([
-            {
-                name: 'an_other_name',
-                value: 'an_other_value',
-            },
-        ], 'test_name')).toBeFalsy();
+        expect(
+            removeHeader(
+                [
+                    {
+                        name: 'an_other_name',
+                        value: 'an_other_value',
+                    },
+                ],
+                'test_name',
+            ),
+        ).toBeFalsy();
 
         const headers1 = [
             {

@@ -22,10 +22,7 @@ export const enum InitiatorTag {
  *
  * @returns Relative path of resource `src` attribute for css selector.
  */
-function getRelativeSrcPath(
-    requestUrl: string,
-    documentUrl: string,
-): string {
+function getRelativeSrcPath(requestUrl: string, documentUrl: string): string {
     const requestUrlData = new URL(requestUrl);
     const documentUrlData = new URL(documentUrl);
 

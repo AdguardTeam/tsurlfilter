@@ -1,11 +1,6 @@
 /* eslint-disable no-console */
 import browser from 'webextension-polyfill';
-import {
-    AdguardApi,
-    type Configuration,
-    MESSAGE_HANDLER_NAME,
-    type RequestBlockingEvent,
-} from '@adguard/api-mv3';
+import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME, type RequestBlockingEvent } from '@adguard/api-mv3';
 
 // Import pre-built local script rules (copied during build)
 // @ts-expect-error Importing local script rules from js file without declaration file
@@ -118,10 +113,13 @@ import { ENABLED_FILTERS_IDS } from '../../constants';
     });
 
     // Disable Adguard in 2 minute, since one minute might not be enough for testing
-    setTimeout(async () => {
-        adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
-        adguardApi.onAssistantCreateRule.unsubscribe(onAssistantCreateRule);
-        await adguardApi.stop();
-        console.log('Adguard API MV3 has been disabled.');
-    }, 2 * 60 * 1000);
+    setTimeout(
+        async () => {
+            adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
+            adguardApi.onAssistantCreateRule.unsubscribe(onAssistantCreateRule);
+            await adguardApi.stop();
+            console.log('Adguard API MV3 has been disabled.');
+        },
+        2 * 60 * 1000,
+    );
 })();

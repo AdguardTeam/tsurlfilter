@@ -17,9 +17,9 @@ stages:
 Increment:
   key: INCR
   docker:
-    image: "${bamboo.dockerContainer}"
+    image: '${bamboo.dockerContainer}'
     volumes:
-       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      ${system.PNPM_DIR}: '${bamboo.cachePnpm}'
   tasks:
     - checkout:
         force-clean-build: true
@@ -44,7 +44,7 @@ branches:
   delete: never
   link-to-jira: true
 
-labels: [ ]
+labels: []
 
 other:
   concurrent-build-plugin: system-default

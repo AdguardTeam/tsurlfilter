@@ -78,7 +78,9 @@ describe('CosmeticRuleParser', () => {
                                 ...context.getRangeFor('padding: 0;'),
                             },
                             // eslint-disable-next-line max-len
-                            ...context.getRangeFor('@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }'),
+                            ...context.getRangeFor(
+                                '@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+                            ),
                         },
                         ...context.getFullRange(),
                     };
@@ -188,7 +190,9 @@ describe('CosmeticRuleParser', () => {
                                 ...context.getRangeFor('padding: 0;'),
                             },
                             // eslint-disable-next-line max-len
-                            ...context.getRangeFor('@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }'),
+                            ...context.getRangeFor(
+                                '@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+                            ),
                         },
                         ...context.getFullRange(),
                     };
@@ -274,13 +278,15 @@ describe('CosmeticRuleParser', () => {
                 // eslint-disable-next-line max-len
                 actual: 'example.com,~example.net#$?#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
                 // eslint-disable-next-line max-len
-                expected: 'example.com,~example.net#$?#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+                expected:
+                    'example.com,~example.net#$?#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
             },
             {
                 // eslint-disable-next-line max-len
                 actual: 'example.com,~example.net#@$?#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
                 // eslint-disable-next-line max-len
-                expected: 'example.com,~example.net#@$?#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+                expected:
+                    'example.com,~example.net#@$?#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = CosmeticRuleParser.parse(actual);

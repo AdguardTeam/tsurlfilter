@@ -25,8 +25,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
     - [`:contains()`] pseudo-class support.
     - Conversion of [deprecated HTML filtering special attribute selectors] to [`:contains()`] pseudo-class.
     - `parseHtmlFilteringRuleBodies` option to `ParserOptions` which enables/disables
-    parsing of CSS selector into AST nodes in HTML filtering rule bodies, defaults to `false`.
-
+      parsing of CSS selector into AST nodes in HTML filtering rule bodies, defaults to `false`.
 
 ### Removed
 
@@ -58,7 +57,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Improved platform names.
 
 [3.4.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.4.1
-
 
 ## [3.4.0] - 2025-11-28
 
@@ -131,7 +129,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
-- UBO alias `ubo-nobab` for AdGuard *scriptlet* `prevent-bab`.
+- UBO alias `ubo-nobab` for AdGuard _scriptlet_ `prevent-bab`.
 
 ### Fixed
 
@@ -163,7 +161,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
-- UBO alias `nofab.js` for AdGuard *scriptlet* `prevent-fab-3.2.0`.
+- UBO alias `nofab.js` for AdGuard _scriptlet_ `prevent-fab-3.2.0`.
 
 [3.1.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.5
 

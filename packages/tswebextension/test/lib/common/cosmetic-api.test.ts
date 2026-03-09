@@ -37,11 +37,7 @@ const getCssCosmeticResult = (rules: string[]): CosmeticResult => {
 describe('CosmeticApiCommon', () => {
     describe('buildStyleSheets()', () => {
         test('groups elemhide selectors when groupElemhideSelectors is true', () => {
-            const rules = [
-                'example.com##h1',
-                'example.com##h2',
-                'example.com##h3',
-            ];
+            const rules = ['example.com##h1', 'example.com##h2', 'example.com##h3'];
             const cosmeticResult = getElemhideCosmeticResult(rules);
             const styles = CosmeticApiCommon.buildStyleSheets(
                 cosmeticResult.elementHiding.generic.concat(cosmeticResult.elementHiding.specific),
@@ -53,10 +49,7 @@ describe('CosmeticApiCommon', () => {
         });
 
         test('does not group elemhide selectors when groupElemhideSelectors is false', () => {
-            const rules = [
-                'example.com##h1',
-                'example.com##h2',
-            ];
+            const rules = ['example.com##h1', 'example.com##h2'];
             const cosmeticResult = getElemhideCosmeticResult(rules);
             const styles = CosmeticApiCommon.buildStyleSheets(
                 cosmeticResult.elementHiding.generic.concat(cosmeticResult.elementHiding.specific),
@@ -64,16 +57,11 @@ describe('CosmeticApiCommon', () => {
                 false,
             );
 
-            expect(styles).toEqual([
-                'h1 { display: none !important; }',
-                'h2 { display: none !important; }',
-            ]);
+            expect(styles).toEqual(['h1 { display: none !important; }', 'h2 { display: none !important; }']);
         });
 
         test('handles inject rules separately', () => {
-            const injectRules = [
-                'example.com#$#h1 { color: red !important; }',
-            ];
+            const injectRules = ['example.com#$#h1 { color: red !important; }'];
             const cosmeticResult = getCssCosmeticResult(injectRules);
             const styles = CosmeticApiCommon.buildStyleSheets(
                 [],
@@ -197,8 +185,8 @@ describe('CosmeticApiCommon', () => {
                         isNativeHasSupported: true,
                     });
 
-                    const expected = '.simple { color: red !important; }\r\n'
-                        + 'div:has(> a) { color: blue !important; }';
+                    const expected =
+                        '.simple { color: red !important; }\r\n' + 'div:has(> a) { color: blue !important; }';
                     expect(cssText).toBe(expected);
                 });
             });
@@ -232,8 +220,9 @@ describe('CosmeticApiCommon', () => {
                         isNativeHasSupported: true,
                     });
 
-                    const expected = '.simple, div:has(> a), :is(h1, h2), span:not(.keep), '
-                        + '.another-simple { display: none !important; }';
+                    const expected =
+                        '.simple, div:has(> a), :is(h1, h2), span:not(.keep), ' +
+                        '.another-simple { display: none !important; }';
                     expect(cssText).toBe(expected);
                 });
             });
@@ -249,9 +238,7 @@ describe('CosmeticApiCommon', () => {
                         isNativeHasSupported: false,
                     });
 
-                    expect(extCssRules).toEqual([
-                        'div:has(> a) { display: none !important; }',
-                    ]);
+                    expect(extCssRules).toEqual(['div:has(> a) { display: none !important; }']);
                 });
 
                 test('isNativeHasSupported = true: :has rules are NOT in extended CSS', () => {
@@ -291,9 +278,7 @@ describe('CosmeticApiCommon', () => {
                     });
 
                     // Only the originally extended rule
-                    expect(extCssRules).toEqual([
-                        'div:contains(text) { display: none !important; }',
-                    ]);
+                    expect(extCssRules).toEqual(['div:contains(text) { display: none !important; }']);
                 });
             });
 
@@ -337,9 +322,7 @@ describe('CosmeticApiCommon', () => {
                         isNativeHasSupported: false,
                     });
 
-                    expect(extCssRules).toEqual([
-                        'div:has(> a) { color: blue !important; }',
-                    ]);
+                    expect(extCssRules).toEqual(['div:has(> a) { color: blue !important; }']);
                 });
 
                 test('isNativeHasSupported = true: :has CSS rules are NOT in extended CSS', () => {
@@ -361,9 +344,7 @@ describe('CosmeticApiCommon', () => {
                     const cosmeticResult = new CosmeticResult();
 
                     // Element hiding rules
-                    cosmeticResult.elementHiding.append(
-                        createCosmeticRule('example.com##div:has(> a)', 0, 0),
-                    );
+                    cosmeticResult.elementHiding.append(createCosmeticRule('example.com##div:has(> a)', 0, 0));
 
                     // CSS injection rules
                     cosmeticResult.CSS.append(
@@ -384,9 +365,7 @@ describe('CosmeticApiCommon', () => {
                     const cosmeticResult = new CosmeticResult();
 
                     // Element hiding rules
-                    cosmeticResult.elementHiding.append(
-                        createCosmeticRule('example.com##div:has(> a)', 0, 0),
-                    );
+                    cosmeticResult.elementHiding.append(createCosmeticRule('example.com##div:has(> a)', 0, 0));
 
                     // CSS injection rules
                     cosmeticResult.CSS.append(
@@ -420,9 +399,7 @@ describe('CosmeticApiCommon', () => {
                 expect(cssText).toBe('.simple, .another-simple { display: none !important; }');
 
                 // Extended CSS should have :has selector
-                expect(extCssRules).toEqual([
-                    'div:has(> a) { display: none !important; }',
-                ]);
+                expect(extCssRules).toEqual(['div:has(> a) { display: none !important; }']);
             });
 
             test('isNativeHasSupported = true: all rules remain in native, extended is empty', () => {
@@ -462,11 +439,11 @@ describe('CosmeticApiCommon', () => {
                 });
 
                 // Native CSS with hit marker
-                expect(cssText).toBe('.simple { display: none !important; content: \'adguard0%3B0\' !important; }');
+                expect(cssText).toBe(".simple { display: none !important; content: 'adguard0%3B0' !important; }");
 
                 // Extended CSS with hit marker
                 expect(extCssRules).toEqual([
-                    'div:has(> a) { display: none !important; content: \'adguard0%3B1\' !important; }',
+                    "div:has(> a) { display: none !important; content: 'adguard0%3B1' !important; }",
                 ]);
             });
 
@@ -485,8 +462,9 @@ describe('CosmeticApiCommon', () => {
                 });
 
                 // Both selectors in native CSS with hit markers
-                const expectedCss = '.simple { display: none !important; content: \'adguard0%3B0\' !important; }\r\n'
-                    + 'div:has(> a) { display: none !important; content: \'adguard0%3B1\' !important; }';
+                const expectedCss =
+                    ".simple { display: none !important; content: 'adguard0%3B0' !important; }\r\n" +
+                    "div:has(> a) { display: none !important; content: 'adguard0%3B1' !important; }";
                 expect(cssText).toBe(expectedCss);
 
                 // Extended CSS should be null

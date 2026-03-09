@@ -1,11 +1,5 @@
 import fs from 'fs';
-import {
-    afterEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ManifestLoader } from '../../../src/lib/manifest/loader';
 
@@ -16,7 +10,7 @@ describe('ManifestLoader', () => {
     const manifest = { manifest_version: 3 };
     const stringifiedManifest = JSON.stringify(manifest);
 
-    const mockReadFileSync = vi.mocked(fs.readFileSync).mockReturnValue(stringifiedManifest); ;
+    const mockReadFileSync = vi.mocked(fs.readFileSync).mockReturnValue(stringifiedManifest);
     const mockParse = vi.fn().mockReturnValue(manifest);
 
     afterEach(() => {

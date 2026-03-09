@@ -1,20 +1,11 @@
-import {
-    describe,
-    test,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { sprintf } from 'sprintf-js';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
-import {
-    AdgScriptletInjectionBodyParser,
-} from '../../../../src/parser/cosmetic/scriptlet-body/adg-scriptlet-injection-body-parser';
+import { AdgScriptletInjectionBodyParser } from '../../../../src/parser/cosmetic/scriptlet-body/adg-scriptlet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
-import {
-    AdgScriptletInjectionBodyGenerator,
-} from '../../../../src/generator/cosmetic/scriptlet-body/adg-scriptlet-injection-body-generator';
+import { AdgScriptletInjectionBodyGenerator } from '../../../../src/generator/cosmetic/scriptlet-body/adg-scriptlet-injection-body-generator';
 
 describe('AdgScriptletInjectionBodyParser', () => {
     describe('AdgScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -245,7 +236,9 @@ describe('AdgScriptletInjectionBodyParser', () => {
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
             // eslint-disable-next-line max-len
-            expect(AdgScriptletInjectionBodyParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
+            expect(AdgScriptletInjectionBodyParser.parse(actual)).toMatchObject(
+                expectedFn(new NodeExpectContext(actual)),
+            );
         });
     });
 

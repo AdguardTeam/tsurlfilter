@@ -96,6 +96,7 @@ export type ConfigurationMV3 = zod.infer<typeof configurationMV3Validator>;
  * This type is {@link ConfigurationMV3} with an omitted array of rule and domain strings loaded in the filter engine.
  * It is used to reduce memory consumption when storing configuration data in memory.
  */
-export type ConfigurationMV3Context =
-    & Omit<ConfigurationMV3, 'customFilters' | 'allowlist' | 'userrules' | 'trustedDomains'>
-    & { customFilters: number[] };
+export type ConfigurationMV3Context = Omit<
+    ConfigurationMV3,
+    'customFilters' | 'allowlist' | 'userrules' | 'trustedDomains'
+> & { customFilters: number[] };

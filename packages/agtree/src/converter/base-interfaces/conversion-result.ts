@@ -37,7 +37,10 @@ export type NodeConversionResult<T extends Node> = ConversionResult<T, T[]>;
  * @returns Generic conversion result
  */
 // eslint-disable-next-line max-len
-export function createConversionResult<T, U extends T | T[] = T>(result: U, isConverted: boolean): ConversionResult<T, U> {
+export function createConversionResult<T, U extends T | T[] = T>(
+    result: U,
+    isConverted: boolean,
+): ConversionResult<T, U> {
     return {
         result,
         isConverted,

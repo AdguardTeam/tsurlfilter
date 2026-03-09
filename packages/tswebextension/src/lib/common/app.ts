@@ -4,16 +4,9 @@ import { type FilteringLogEvent } from './filtering-log';
 import { type EventChannelInterface } from './utils/channels';
 import { type Message } from './message';
 
-export type MessageHandler = (
-    message: Message,
-    sender: Runtime.MessageSender,
-) => Promise<unknown>;
+export type MessageHandler = (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
 
-export interface AppInterface<
-    TConfiguration,
-    TConfigurationContext,
-    TConfigurationResult,
-> {
+export interface AppInterface<TConfiguration, TConfigurationContext, TConfigurationResult> {
     /**
      * Configuration context.
      */

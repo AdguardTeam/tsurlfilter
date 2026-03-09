@@ -1,13 +1,6 @@
 import { BaseGenerator } from '../base-generator';
 import { type AnyCosmeticRule, CosmeticRuleType } from '../../nodes';
-import {
-    CLOSE_PARENTHESIS,
-    COLON,
-    EMPTY,
-    OPEN_PARENTHESIS,
-    SPACE,
-    UBO_HTML_MASK,
-} from '../../utils/constants';
+import { CLOSE_PARENTHESIS, COLON, EMPTY, OPEN_PARENTHESIS, SPACE, UBO_HTML_MASK } from '../../utils/constants';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AdgScriptletInjectionBodyGenerator } from './scriptlet-body/adg-scriptlet-injection-body-generator';
 import { AdgCssInjectionGenerator } from '../css/adg-css-injection-generator';

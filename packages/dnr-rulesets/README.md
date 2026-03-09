@@ -3,6 +3,7 @@
 Utility to load prebuilt AdGuard DNR rulesets for mv3 extensions.
 
 The list of available filters can be found by `filters` in the metadata of:
+
 - [Chromium MV3 filters](https://filters.adtidy.org/extension/chromium-mv3/filters.json),
 - [Opera MV3 filters](https://filters.adtidy.org/extension/opera-mv3/filters.json).
 
@@ -53,6 +54,7 @@ Available commands:
 #### `load` command
 
 Downloads and saves DNR rulesets to the specified directory.
+
 ```bash
 dnr-rulesets load <path-to-output>
 ```
@@ -65,6 +67,7 @@ dnr-rulesets load <path-to-output>
 #### `manifest` command
 
 Patches the extension manifest to include DNR rulesets.
+
 ```bash
 dnr-rulesets manifest <path-to-manifest> <path-to-filters> [options]
 ```
@@ -74,8 +77,8 @@ dnr-rulesets manifest <path-to-manifest> <path-to-filters> [options]
 - `-f, --force-update` - force update rulesets with existing id (default: false)
 - `-i, --ids <ids...>` - filters ids to append, others will be ignored (default: [] - append all)
 - `-e, --enable <ids...>` - enable filters by default (default: [])
-- `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
-- `-m, --filters-match <match>` - filters files match glob pattern (default: "filter_+([0-9]).txt")
+- `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset\_")
+- `-m, --filters-match <match>` - filters files match glob pattern (default: "filter\_+([0-9]).txt")
 
 **Note about array options**: For options that accept multiple values (`ids` and `enable`), use please following syntax:
 
@@ -86,11 +89,13 @@ dnr-rulesets manifest <path-to-manifest> <path-to-filters> [options]
 #### `watch` command
 
 Watches for changes in the filter files and rebuilds DNR rulesets.
+
 ```bash
 dnr-rulesets watch <path-to-manifest> <path-to-resources> [options]
 ```
 
 **Arguments:**
+
 - `<path-to-manifest>` - path to the manifest.json file
 - `<path-to-resources>` - folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)
 
@@ -101,8 +106,8 @@ dnr-rulesets watch <path-to-manifest> <path-to-resources> [options]
 - `-f, --force-update` - force update rulesets with existing id (default: true)
 - `-i, --ids <ids...>` - filters ids to process, others will be ignored (default: [] - process all filters matched via `--filters-match`)
 - `-e, --enable <ids...>` - enable filters by default in manifest.json (default: [])
-- `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
-- `-m, --filters-match <match>` - filters files match glob pattern (default: "filter_+([0-9]).txt")
+- `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset\_")
+- `-m, --filters-match <match>` - filters files match glob pattern (default: "filter\_+([0-9]).txt")
 - `-l, --latest-filters` - download latest text filters on first start before watch (default: false)
 - `-b, --browser <browser>` - specify browser to download latest filters for (default: "chromium-mv3"). See `--latest-filters` option. Available browsers: `chromium-mv3`, `opera-mv3`.
 - `-d, --debug` - enable extended logging during conversion (default: false)
@@ -118,17 +123,19 @@ dnr-rulesets exclude-unsafe-rules <dir> [options]
 ```
 
 **Arguments:**
+
 - `<dir>`: Path to the folder containing rulesets to process.
 
 **Options:**
+
 - `-j, --prettify-json <bool>`: Prettify JSON output (`true` or `false`, default: `true`)
 - `-l, --limit <number>`: Limit the number of unsafe rules to exclude. If the number of unsafe rules exceeds this limit, the command will throw an error.
 
 **Example:**
+
 ```bash
 dnr-rulesets exclude-unsafe-rules ./filters/declarative --prettify-json false --limit 100
 ```
-
 
 **Note about array options**: For options that accept multiple values (`ids` and `enable`), use please following syntax:
 
@@ -155,10 +162,11 @@ You can also integrate functions for downloading and updating the manifest into 
 1. Load DNR rulesets.
 
     This method copies prebuilt assets to the specified output directory, including:
+
     - DNR rulesets in JSON format for all available filters
     - `filters_i18n.json` - translations file with filter names and descriptions
     - `local_script_rules.js` - local script rules file in JS module format for
-    Manifest v3 extensions where it is highly recommended to provide local script rules. If not provided during build, all script rules (except scriptlets) will not be injected to ensure compliance with Chrome Web Store policies.
+      Manifest v3 extensions where it is highly recommended to provide local script rules. If not provided during build, all script rules (except scriptlets) will not be injected to ensure compliance with Chrome Web Store policies.
     - `local_script_rules.json` - local script rules in JSON format for Manifest v2. If not provided, all script rules are treated as allowed. Should be provided in Firefox AMO according to their policies.
 
     ```ts
@@ -174,13 +182,13 @@ You can also integrate functions for downloading and updating the manifest into 
     export type AssetsLoaderOptions = {
         /**
          * Whether to download latest text filters instead of DNR rulesets.
-        */
+         */
         latestFilters?: boolean;
 
         /**
          * For which browser load assets for.
-        * Default value: `BrowserFilters.ChromiumMV3`.
-        */
+         * Default value: `BrowserFilters.ChromiumMV3`.
+         */
         browser?: BrowserFilters;
     };
     ```
@@ -239,13 +247,10 @@ You can also integrate functions for downloading and updating the manifest into 
     import { AssetsLoader } from '@adguard/dnr-rulesets';
 
     const loader = new AssetsLoader();
-    await loader.extendLocalScriptRulesJs(
-        '<path-to-local-script-rules.js>',
-        [
-            'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
-            'example.org#%#console.log("Custom script");'
-        ]
-    );
+    await loader.extendLocalScriptRulesJs('<path-to-local-script-rules.js>', [
+        'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
+        'example.org#%#console.log("Custom script");',
+    ]);
     ```
 
     This method parses custom filtering rules, extracts JavaScript injection rules from them, and appends them to an existing `local_script_rules.js` file. It's useful for dynamically adding custom JS rules to your extension at build time.
@@ -256,13 +261,10 @@ You can also integrate functions for downloading and updating the manifest into 
     import { AssetsLoader } from '@adguard/dnr-rulesets';
 
     const loader = new AssetsLoader();
-    await loader.extendLocalScriptRulesJson(
-        '<path-to-local-script-rules.json>',
-        [
-            'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
-            'example.org,~sub.example.org#%#console.log("Custom script");'
-        ]
-    );
+    await loader.extendLocalScriptRulesJson('<path-to-local-script-rules.json>', [
+        'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
+        'example.org,~sub.example.org#%#console.log("Custom script");',
+    ]);
     ```
 
     This method parses custom filtering rules, extracts JavaScript injection rules with their domain configurations (both permitted and restricted domains), and merges them into an existing `local_script_rules.json` file. Use this method when you need to maintain domain-specific rule associations.
@@ -276,22 +278,18 @@ You can also integrate functions for downloading and updating the manifest into 
 
     const patcher = new ManifestPatcher();
 
-    patcher.patch(
-        '<path-to-manifest>',
-        '<path-to-filters>',
-        {
-            // Optional: specify filter IDs to include
-            ids: ['2', '3'],
-            // Optional: specify enabled filter IDs
-            enabled: ['2'],
-            // Optional: set to true to overwrite existing rulesets
-            forceUpdate: true,
-            // Optional: set prefix for ruleset paths
-            rulesetPrefix: 'ruleset_',
-            // Optional: specify filter files matching glob pattern
-            filtersMatch: 'filter_+([0-9]).txt',
-        },
-    )
+    patcher.patch('<path-to-manifest>', '<path-to-filters>', {
+        // Optional: specify filter IDs to include
+        ids: ['2', '3'],
+        // Optional: specify enabled filter IDs
+        enabled: ['2'],
+        // Optional: set to true to overwrite existing rulesets
+        forceUpdate: true,
+        // Optional: set prefix for ruleset paths
+        rulesetPrefix: 'ruleset_',
+        // Optional: specify filter files matching glob pattern
+        filtersMatch: 'filter_+([0-9]).txt',
+    });
     ```
 
 Also you can call to `excludeUnsafeRules` in your custom build flows or automation scripts.
@@ -301,10 +299,9 @@ import { excludeUnsafeRules } from '@adguard/dnr-rulesets';
 
 await excludeUnsafeRules('<path-to-rulesets-dir>', {
     prettifyJson: true, // optional
-    limit: 100,         // optional
+    limit: 100, // optional
 });
 ```
-
 
 ### Output structure
 
@@ -371,21 +368,16 @@ const manifest = {
     // Your manifest data
 };
 
-const ManifestWithRulesets = injector.applyRulesets(
-    (id) => `<path to rulesets>/${id}.json`,
-    manifest,
-    ['2', '3'],
-    {
-        // Optional: specify filter IDs to include
-        ids: ['2', '3'],
-        // Optional: specify enabled filter IDs
-        enabled: ['2'],
-        // Optional: set to true to overwrite existing rulesets
-        forceUpdate: true,
-        // Optional: set prefix for ruleset paths
-        rulesetPrefix: 'ruleset_',
-    },
-);
+const ManifestWithRulesets = injector.applyRulesets((id) => `<path to rulesets>/${id}.json`, manifest, ['2', '3'], {
+    // Optional: specify filter IDs to include
+    ids: ['2', '3'],
+    // Optional: specify enabled filter IDs
+    enabled: ['2'],
+    // Optional: set to true to overwrite existing rulesets
+    forceUpdate: true,
+    // Optional: set prefix for ruleset paths
+    rulesetPrefix: 'ruleset_',
+});
 ```
 
 ## Example
@@ -439,6 +431,7 @@ pnpm build
 ```
 
 ### `watch`
+
 Watches for changes in the `dist/filters` folder and rebuilds DNR rulesets.
 
 ```bash

@@ -7,12 +7,7 @@ const cssHitsCounterConfig = {
         dir: 'dist',
         format: 'cjs',
     },
-    plugins: [
-        typescript(),
-        resolve(),
-    ],
+    plugins: [typescript(), resolve()],
 };
 
-export default [
-    cssHitsCounterConfig,
-];
+export default [cssHitsCounterConfig];

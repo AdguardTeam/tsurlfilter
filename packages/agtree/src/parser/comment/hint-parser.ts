@@ -4,14 +4,7 @@
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
  */
 
-import {
-    CLOSE_PARENTHESIS,
-    COMMA,
-    EMPTY,
-    OPEN_PARENTHESIS,
-    SPACE,
-    UNDERSCORE,
-} from '../../utils/constants';
+import { CLOSE_PARENTHESIS, COMMA, EMPTY, OPEN_PARENTHESIS, SPACE, UNDERSCORE } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { type Hint } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';

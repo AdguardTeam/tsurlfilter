@@ -52,10 +52,7 @@ export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType &
 export class RequestEvents {
     private static tabsApi: TabsApi;
 
-    public static onBeforeRequest = new RequestEvent<
-        OnBeforeRequestDetailsType,
-        WebRequest.OnBeforeRequestOptions
-    >();
+    public static onBeforeRequest = new RequestEvent<OnBeforeRequestDetailsType, WebRequest.OnBeforeRequestOptions>();
 
     public static onBeforeSendHeaders = new RequestEvent<
         WebRequest.OnBeforeSendHeadersDetailsType,
@@ -87,10 +84,7 @@ export class RequestEvents {
         WebRequest.OnResponseStartedOptions
     >();
 
-    public static onCompleted = new RequestEvent<
-        WebRequest.OnCompletedDetailsType,
-        WebRequest.OnCompletedOptions
-    >();
+    public static onCompleted = new RequestEvent<WebRequest.OnCompletedDetailsType, WebRequest.OnCompletedOptions>();
 
     public static onErrorOccurred = new RequestEvent<
         WebRequest.OnErrorOccurredDetailsType,
@@ -112,8 +106,10 @@ export class RequestEvents {
 
         const onBeforeSendHeadersOptionTypes = (browser as ChromiumBrowser).webRequest.OnBeforeSendHeadersOptions;
 
-        if (typeof onBeforeSendHeadersOptionTypes !== 'undefined'
-            && Object.prototype.hasOwnProperty.call(onBeforeSendHeadersOptionTypes, 'EXTRA_HEADERS')) {
+        if (
+            typeof onBeforeSendHeadersOptionTypes !== 'undefined' &&
+            Object.prototype.hasOwnProperty.call(onBeforeSendHeadersOptionTypes, 'EXTRA_HEADERS')
+        ) {
             onBeforeSendHeadersOptions.push('extraHeaders');
         }
 
@@ -124,18 +120,18 @@ export class RequestEvents {
             onBeforeSendHeadersOptions,
         );
 
-        RequestEvents.onSendHeaders.init(
-            browser.webRequest.onSendHeaders,
-            RequestEvents.handleSendHeaders,
-            { urls: ['<all_urls>'] },
-        );
+        RequestEvents.onSendHeaders.init(browser.webRequest.onSendHeaders, RequestEvents.handleSendHeaders, {
+            urls: ['<all_urls>'],
+        });
 
         const onHeadersReceivedOptions: WebRequest.OnHeadersReceivedOptions[] = ['responseHeaders', 'blocking'];
 
         const onHeadersReceivedOptionTypes = (browser as ChromiumBrowser).webRequest.OnHeadersReceivedOptions;
 
-        if (typeof onHeadersReceivedOptionTypes !== 'undefined'
-            && Object.prototype.hasOwnProperty.call(onBeforeSendHeadersOptionTypes, 'EXTRA_HEADERS')) {
+        if (
+            typeof onHeadersReceivedOptionTypes !== 'undefined' &&
+            Object.prototype.hasOwnProperty.call(onBeforeSendHeadersOptionTypes, 'EXTRA_HEADERS')
+        ) {
             onHeadersReceivedOptions.push('extraHeaders');
         }
 
@@ -146,17 +142,13 @@ export class RequestEvents {
             onHeadersReceivedOptions,
         );
 
-        RequestEvents.onAuthRequired.init(
-            browser.webRequest.onAuthRequired,
-            RequestEvents.handleOnAuthRequired,
-            { urls: ['<all_urls>'] },
-        );
+        RequestEvents.onAuthRequired.init(browser.webRequest.onAuthRequired, RequestEvents.handleOnAuthRequired, {
+            urls: ['<all_urls>'],
+        });
 
-        RequestEvents.onBeforeRedirect.init(
-            browser.webRequest.onBeforeRedirect,
-            RequestEvents.handleOnBeforeRedirect,
-            { urls: ['<all_urls>'] },
-        );
+        RequestEvents.onBeforeRedirect.init(browser.webRequest.onBeforeRedirect, RequestEvents.handleOnBeforeRedirect, {
+            urls: ['<all_urls>'],
+        });
 
         RequestEvents.onResponseStarted.init(
             browser.webRequest.onResponseStarted,
@@ -171,11 +163,9 @@ export class RequestEvents {
             ['responseHeaders'],
         );
 
-        RequestEvents.onErrorOccurred.init(
-            browser.webRequest.onErrorOccurred,
-            RequestEvents.handleOnErrorOccurred,
-            { urls: ['<all_urls>'] },
-        );
+        RequestEvents.onErrorOccurred.init(browser.webRequest.onErrorOccurred, RequestEvents.handleOnErrorOccurred, {
+            urls: ['<all_urls>'],
+        });
     }
 
     /**
@@ -185,20 +175,9 @@ export class RequestEvents {
      *
      * @returns Request data.
      */
-    private static handleOnBeforeRequest(
-        details: OnBeforeRequestDetailsType,
-    ): RequestData<OnBeforeRequestDetailsType> {
-        const {
-            requestId,
-            type,
-            tabId,
-            parentFrameId,
-            originUrl,
-            initiator,
-            method,
-            timeStamp,
-            documentLifecycle,
-        } = details;
+    private static handleOnBeforeRequest(details: OnBeforeRequestDetailsType): RequestData<OnBeforeRequestDetailsType> {
+        const { requestId, type, tabId, parentFrameId, originUrl, initiator, method, timeStamp, documentLifecycle } =
+            details;
 
         let { url, frameId } = details;
 
@@ -257,9 +236,7 @@ export class RequestEvents {
         }
 
         // We rely on browser-provided values as the source of truth
-        let referrerUrl = originUrl
-            || initiator
-            || '';
+        let referrerUrl = originUrl || initiator || '';
 
         /**
          * For prerender document requests, use the request URL itself, because
@@ -275,9 +252,10 @@ export class RequestEvents {
          */
         if (!referrerUrl) {
             // Try to get referrer from tab state during address bar navigation.
-            referrerUrl = RequestEvents.tabsApi?.getTabMainFrame(tabId)?.url
-                || RequestEvents.tabsApi?.getTabFrame(tabId, requestFrameId)?.url
-                || url;
+            referrerUrl =
+                RequestEvents.tabsApi?.getTabMainFrame(tabId)?.url ||
+                RequestEvents.tabsApi?.getTabFrame(tabId, requestFrameId)?.url ||
+                url;
         }
 
         // Retrieve the rest part of the request context for record all fields.
@@ -346,11 +324,7 @@ export class RequestEvents {
     private static handleOnHeadersReceived(
         details: WebRequest.OnHeadersReceivedDetailsType,
     ): RequestData<WebRequest.OnHeadersReceivedDetailsType> {
-        const {
-            requestId,
-            responseHeaders,
-            statusCode,
-        } = details;
+        const { requestId, responseHeaders, statusCode } = details;
 
         const isFirefox = browserDetectorMV2.isFirefox();
 

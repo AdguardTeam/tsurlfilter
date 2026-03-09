@@ -40,7 +40,7 @@ Additionally, you can customize your logging solution by providing your own log 
 import { Logger, LogLevel } from './Logger';
 
 const writeToFile = (...args: any[]) => {
-// Implement file writing logic here
+    // Implement file writing logic here
 };
 const writer = {
     log: (...args: any[]): void => {
@@ -66,6 +66,7 @@ This mode is designed solely for development and debugging purposes, providing c
 When the logger is set to `LogLevel.Verbose`, every log method except `error()` will print with a call stack trace. This helps track the flow of execution and diagnose complex issues. The stack trace is shown as a collapsed group in the console if the writer supports `groupCollapsed` and `groupEnd`, making logs more readable; otherwise, traces are printed expanded.
 
 To enable this behavior, the following conditions must be met:
+
 - Logging level must be set to `LogLevel.Verbose`.
 - The log method must not be `error()` (since `error()` already includes a stack trace).
 

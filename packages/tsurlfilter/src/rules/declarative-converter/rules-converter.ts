@@ -189,12 +189,7 @@ export class DeclarativeRulesConverter {
                 declarativeRules,
                 errors,
                 // eslint-disable-next-line no-await-in-loop
-            } = await this.convertRules(
-                filterId,
-                groupedRules,
-                uniqueIds,
-                options,
-            );
+            } = await this.convertRules(filterId, groupedRules, uniqueIds, options);
 
             converted.sourceMapValues = converted.sourceMapValues.concat(sourceMapValues);
             converted.declarativeRules = converted.declarativeRules.concat(declarativeRules);
@@ -245,22 +240,20 @@ export class DeclarativeRulesConverter {
 
         // Map because RulesGroup values are numbers
         const groups = Object.keys(groupsRules).map(Number);
-        await Promise.all(groups.map(async (key: RulesGroup) => {
-            const converter = new DeclarativeRulesConverter.converters[key](options?.resourcesPath);
-            const {
-                sourceMapValues,
-                declarativeRules,
-                errors,
-            } = await converter.convert(
-                filterId,
-                groupsRules[key],
-                usedIds,
-            );
+        await Promise.all(
+            groups.map(async (key: RulesGroup) => {
+                const converter = new DeclarativeRulesConverter.converters[key](options?.resourcesPath);
+                const { sourceMapValues, declarativeRules, errors } = await converter.convert(
+                    filterId,
+                    groupsRules[key],
+                    usedIds,
+                );
 
-            converted.sourceMapValues = converted.sourceMapValues.concat(sourceMapValues);
-            converted.declarativeRules = converted.declarativeRules.concat(declarativeRules);
-            converted.errors = converted.errors.concat(errors);
-        }));
+                converted.sourceMapValues = converted.sourceMapValues.concat(sourceMapValues);
+                converted.declarativeRules = converted.declarativeRules.concat(declarativeRules);
+                converted.errors = converted.errors.concat(errors);
+            }),
+        );
 
         return converted;
     }
@@ -368,9 +361,7 @@ export class DeclarativeRulesConverter {
         // We apply restrictions only to transformed rules, so we need to filter
         // rule conversion errors if we remove the transformed rule associated
         // with those errors
-        let {
-            declarativeRules, sourceMapValues, errors,
-        } = converted;
+        let { declarativeRules, sourceMapValues, errors } = converted;
 
         const convertedRulesErrors: InvalidDeclarativeRuleError[] = [];
         const otherErrors: Error[] = [];
@@ -392,9 +383,7 @@ export class DeclarativeRulesConverter {
         convertedRulesErrors.forEach((e) => {
             // Checks only errors of converted declarative rules
             const errorsList = convertedRulesErrorsIndex.get(e.declarativeRule.id);
-            const newValue = errorsList
-                ? errorsList.concat(e)
-                : [e];
+            const newValue = errorsList ? errorsList.concat(e) : [e];
 
             convertedRulesErrorsIndex.set(e.declarativeRule.id, newValue);
         });
@@ -404,9 +393,7 @@ export class DeclarativeRulesConverter {
         const sourcesIndex = new Map<number, Source[]>();
         sourceMapValues.forEach((source) => {
             const sources = sourcesIndex.get(source.declarativeRuleId);
-            const newValue = sources
-                ? sources.concat(source)
-                : [source];
+            const newValue = sources ? sources.concat(source) : [source];
 
             sourcesIndex.set(source.declarativeRuleId, newValue);
         });
@@ -449,13 +436,11 @@ export class DeclarativeRulesConverter {
                 );
             }
 
-            if (
-                maxNumberOfUnsafeRules
-                && unsafeRulesCounter > maxNumberOfUnsafeRules
-            ) {
-                const msg = 'After conversion, too many unsafe rules remain: '
-                    + `${unsafeRulesCounter} exceeds `
-                    + `the limit provided - ${maxNumberOfUnsafeRules}`;
+            if (maxNumberOfUnsafeRules && unsafeRulesCounter > maxNumberOfUnsafeRules) {
+                const msg =
+                    'After conversion, too many unsafe rules remain: ' +
+                    `${unsafeRulesCounter} exceeds ` +
+                    `the limit provided - ${maxNumberOfUnsafeRules}`;
                 const err = new TooManyUnsafeRulesError(
                     msg,
                     excludedRulesIds,
@@ -466,9 +451,10 @@ export class DeclarativeRulesConverter {
             }
 
             if (declarativeRules.length > maxNumberOfRules) {
-                const msg = 'After conversion, too many declarative rules remain: '
-                    + `${declarativeRules.length} exceeds `
-                    + `the limit provided - ${maxNumberOfRules}`;
+                const msg =
+                    'After conversion, too many declarative rules remain: ' +
+                    `${declarativeRules.length} exceeds ` +
+                    `the limit provided - ${maxNumberOfRules}`;
                 const err = new TooManyRulesError(
                     msg,
                     excludedRulesIds,
@@ -510,9 +496,10 @@ export class DeclarativeRulesConverter {
             }
 
             if (regexpRulesCounter > maxNumberOfRegexpRules) {
-                const msg = 'After conversion, too many regexp rules remain: '
-                    + `${regexpRulesCounter} exceeds `
-                    + `the limit provided - ${maxNumberOfRegexpRules}`;
+                const msg =
+                    'After conversion, too many regexp rules remain: ' +
+                    `${regexpRulesCounter} exceeds ` +
+                    `the limit provided - ${maxNumberOfRegexpRules}`;
                 const err = new TooManyRegexpRulesError(
                     msg,
                     excludedRulesIds,
@@ -555,14 +542,13 @@ export class DeclarativeRulesConverter {
         let allBadFilterRules: IndexedNetworkRuleWithHash[] = [];
 
         // Group rules
-        const filterIdsWithGroupedRules = filtersWithRules
-            .map(({ id, rules }) => {
-                const rulesToProcess = DeclarativeRulesGrouper.splitRulesByGroups(rules);
-                allBadFilterRules = allBadFilterRules.concat(rulesToProcess[RulesGroup.BadFilter]);
-                const tuple: [number, GroupedRules] = [id, rulesToProcess];
+        const filterIdsWithGroupedRules = filtersWithRules.map(({ id, rules }) => {
+            const rulesToProcess = DeclarativeRulesGrouper.splitRulesByGroups(rules);
+            allBadFilterRules = allBadFilterRules.concat(rulesToProcess[RulesGroup.BadFilter]);
+            const tuple: [number, GroupedRules] = [id, rulesToProcess];
 
-                return tuple;
-            });
+            return tuple;
+        });
 
         // Define filter function
         const filterByBadFilterFn = (ruleToTest: IndexedNetworkRuleWithHash): boolean => {

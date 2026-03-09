@@ -1,15 +1,5 @@
-import {
-    describe,
-    expect,
-    afterEach,
-    it,
-} from 'vitest';
-import {
-    MatchingResult,
-    RequestType,
-    PERMISSIONS_POLICY_HEADER_NAME,
-    HTTPMethod,
-} from '@adguard/tsurlfilter';
+import { describe, expect, afterEach, it } from 'vitest';
+import { MatchingResult, RequestType, PERMISSIONS_POLICY_HEADER_NAME, HTTPMethod } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
@@ -70,7 +60,10 @@ describe('Permissions policy service', () => {
             requestFrameId: 0,
             timestamp: Date.now(),
             thirdParty: false,
-            matchingResult: new MatchingResult(rulesText.map(((ruleText) => createNetworkRule(ruleText, 1))), null),
+            matchingResult: new MatchingResult(
+                rulesText.map((ruleText) => createNetworkRule(ruleText, 1)),
+                null,
+            ),
             contentType: ContentType.Document,
         });
 
@@ -85,34 +78,35 @@ describe('Permissions policy service', () => {
     });
 
     it('returns false on global allowlist rule', () => {
-        const context = getContext(testUrl, [
-            simpleRule,
-            complexRule,
-            globalAllowlistRule,
-        ]);
+        const context = getContext(testUrl, [simpleRule, complexRule, globalAllowlistRule]);
 
         const result = permissionsPolicyService.onHeadersReceived(context);
         expect(result).toBe(false);
     });
 
     it('applies headers from all rules', () => {
-        const context = getContext(testUrl, [
-            simpleRule,
-            complexRule,
-        ]);
+        const context = getContext(testUrl, [simpleRule, complexRule]);
 
         const result = permissionsPolicyService.onHeadersReceived(context);
         expect(result).toBe(true);
         const { responseHeaders } = requestContextStorage.get(requestId) as RequestContext;
         expect(responseHeaders).toBeDefined();
-        expect(responseHeaders?.find((headerItem) => {
-            return headerItem.name === PERMISSIONS_POLICY_HEADER_NAME
-                && headerItem.value === simpleRuleHeaderItem.value;
-        }));
-        expect(responseHeaders?.find((headerItem) => {
-            return headerItem.name === PERMISSIONS_POLICY_HEADER_NAME
-                && headerItem.value === complexRuleHeaderItem.value;
-        }));
+        expect(
+            responseHeaders?.find((headerItem) => {
+                return (
+                    headerItem.name === PERMISSIONS_POLICY_HEADER_NAME &&
+                    headerItem.value === simpleRuleHeaderItem.value
+                );
+            }),
+        );
+        expect(
+            responseHeaders?.find((headerItem) => {
+                return (
+                    headerItem.name === PERMISSIONS_POLICY_HEADER_NAME &&
+                    headerItem.value === complexRuleHeaderItem.value
+                );
+            }),
+        );
     });
 
     it('allowlist rule should be ignored properly', () => {
@@ -139,18 +133,16 @@ describe('Permissions policy service', () => {
         const result = permissionsPolicyService.onHeadersReceived(context);
         expect(result).toBe(true);
         const { responseHeaders } = requestContextStorage.get(requestId) as RequestContext;
-        expect(responseHeaders).toStrictEqual([{
-            name: PERMISSIONS_POLICY_HEADER_NAME,
-            value: 'autoplay=()',
-        }]);
+        expect(responseHeaders).toStrictEqual([
+            {
+                name: PERMISSIONS_POLICY_HEADER_NAME,
+                value: 'autoplay=()',
+            },
+        ]);
     });
 
     it('rule not applied on subdocument request without $subdocument modifier', () => {
-        const context = getContext(
-            testUrl,
-            [simpleRule],
-            RequestType.SubDocument,
-        );
+        const context = getContext(testUrl, [simpleRule], RequestType.SubDocument);
 
         const result = permissionsPolicyService.onHeadersReceived(context);
         expect(result).toBe(false);
@@ -159,11 +151,7 @@ describe('Permissions policy service', () => {
     });
 
     it('rule not applied on document request with $subdocument modifier', () => {
-        const context = getContext(
-            testUrl,
-            [`${simpleRule},subdocument`],
-            RequestType.Document,
-        );
+        const context = getContext(testUrl, [`${simpleRule},subdocument`], RequestType.Document);
 
         const result = permissionsPolicyService.onHeadersReceived(context);
         expect(result).toBe(false);
@@ -172,11 +160,7 @@ describe('Permissions policy service', () => {
     });
 
     it('rule applied on subdocument request with $subdocument modifier', () => {
-        const context = getContext(
-            testUrl,
-            [`${simpleRule},subdocument`],
-            RequestType.SubDocument,
-        );
+        const context = getContext(testUrl, [`${simpleRule},subdocument`], RequestType.SubDocument);
 
         const result = permissionsPolicyService.onHeadersReceived(context);
         expect(result).toBeTruthy();

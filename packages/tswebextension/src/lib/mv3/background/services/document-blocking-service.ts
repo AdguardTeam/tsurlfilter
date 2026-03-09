@@ -39,15 +39,8 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
      * @param tabsApiInstance Wrapper around browser.tabs API.
      * @param engineApiInstance Engine API.
      */
-    constructor(
-        tabsApiInstance: TabsApi,
-        engineApiInstance: EngineApi,
-    ) {
-        super(
-            tabsApiInstance,
-            engineApiInstance,
-            browserDetectorMV3,
-        );
+    constructor(tabsApiInstance: TabsApi, engineApiInstance: EngineApi) {
+        super(tabsApiInstance, engineApiInstance, browserDetectorMV3);
     }
 
     /**
@@ -79,15 +72,13 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
      * @param data Data for document request processing.
      */
     public handleDocumentBlocking(data: GetDocumentBlockingResponseParams): WebRequest.BlockingResponse | void {
-        const {
-            tabId,
-            rule,
-            requestUrl,
-        } = data;
+        const { tabId, rule, requestUrl } = data;
 
         // if documentBlockingPage is undefined, block request
         if (!this.documentBlockingPageUrl) {
-            logger.warn(`[tsweb.DocumentBlockingService.handleDocumentBlocking]: documentBlockingPageUrl is not set while handling request ${requestUrl}`);
+            logger.warn(
+                `[tsweb.DocumentBlockingService.handleDocumentBlocking]: documentBlockingPageUrl is not set while handling request ${requestUrl}`,
+            );
             return;
         }
 

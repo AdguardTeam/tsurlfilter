@@ -13,10 +13,7 @@ export const sendMessage = async (
     return response;
 };
 
-export const sendInnerMessage = (
-    type: MessageType,
-    handlerName = 'tsWebExtension',
-) => {
+export const sendInnerMessage = (type: MessageType, handlerName = 'tsWebExtension') => {
     const response = browser.runtime.sendMessage({ type, handlerName });
     console.log(`Response for '${type}':`, response);
     return response;

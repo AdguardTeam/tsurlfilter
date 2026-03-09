@@ -40,15 +40,9 @@ export abstract class Allowlist {
      * @param configuration App configuration.
      */
     public configure(configuration: AllowlistConfiguration): void {
-        const {
-            allowlist,
-            settings,
-        } = configuration;
+        const { allowlist, settings } = configuration;
 
-        const {
-            allowlistEnabled,
-            allowlistInverted,
-        } = settings;
+        const { allowlistEnabled, allowlistInverted } = settings;
 
         this.enabled = allowlistEnabled;
         this.inverted = allowlistInverted;

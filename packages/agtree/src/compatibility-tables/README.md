@@ -63,10 +63,11 @@ modifiers or CSS selectors are used by all adblockers, but with different functi
 Currently we support the following adblockers:
 
 <!-- markdownlint-disable MD013 -->
+
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> AdGuard (`adg`)
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> uBlock Origin (`ubo`)
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> AdBlock / Adblock Plus (`abp`)
-<!-- markdownlint-enable MD013 -->
+      <!-- markdownlint-enable MD013 -->
 
 However, there may also be compatibility differences within a brand due to the specificities and limitations of each
 platform. For example:
@@ -155,9 +156,9 @@ We export the following compatibility table instances:
 
 ```ts
 import {
-  redirectsCompatibilityTable,
-  scriptletsCompatibilityTable,
-  modifiersCompatibilityTable,
+    redirectsCompatibilityTable,
+    scriptletsCompatibilityTable,
+    modifiersCompatibilityTable,
 } from '@adguard/agtree';
 ```
 
@@ -165,16 +166,16 @@ All of them provides the following methods for their respective compatibility da
 
 <!-- markdownlint-disable MD013 -->
 
-| Method name | Description |
-| --- | --- |
-| `existsAny(name: string): boolean` | Checks whether a compatibility data `name` exists for any platform. |
-| `exists(name: string, platform: SpecificPlatform \| GenericPlatform): boolean` | Checks whether a compatibility data `name` exists for a specified platform. |
-| `getSingle(name: string, platform: SpecificPlatform): T \| null` | Returns a compatibility data by name and specific platform. |
-| `getMultiple(name: string, platform: SpecificPlatform \| GenericPlatform): SinglePlatformRecords<T> \| null` | Returns all compatibility data records for name and specified platform. |
-| `getAllMultiple(platform: SpecificPlatform \| GenericPlatform): SinglePlatformRecords<T>[]` | Returns all compatibility data records for the specified platform. |
-| `getFirst(name: string, platform: SpecificPlatform \| GenericPlatform): T \| null` | Returns the first compatibility data record for name and specified platform. |
-| `getRow(name: string): T[]` | Returns all compatibility data records for the specified name. |
-| `getRowsByProduct(): RowsByProduct<T>` | Returns all compatibility data records grouped by product. |
+| Method name                                                                                                  | Description                                                                  |
+| ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `existsAny(name: string): boolean`                                                                           | Checks whether a compatibility data `name` exists for any platform.          |
+| `exists(name: string, platform: SpecificPlatform \| GenericPlatform): boolean`                               | Checks whether a compatibility data `name` exists for a specified platform.  |
+| `getSingle(name: string, platform: SpecificPlatform): T \| null`                                             | Returns a compatibility data by name and specific platform.                  |
+| `getMultiple(name: string, platform: SpecificPlatform \| GenericPlatform): SinglePlatformRecords<T> \| null` | Returns all compatibility data records for name and specified platform.      |
+| `getAllMultiple(platform: SpecificPlatform \| GenericPlatform): SinglePlatformRecords<T>[]`                  | Returns all compatibility data records for the specified platform.           |
+| `getFirst(name: string, platform: SpecificPlatform \| GenericPlatform): T \| null`                           | Returns the first compatibility data record for name and specified platform. |
+| `getRow(name: string): T[]`                                                                                  | Returns all compatibility data records for the specified name.               |
+| `getRowsByProduct(): RowsByProduct<T>`                                                                       | Returns all compatibility data records grouped by product.                   |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -330,8 +331,8 @@ const uboSpecificPlatforms = getProductSpecificPlatforms(AdblockProduct.Ubo);
 
 <!-- markdownlint-disable MD013 -->
 
-| Method name | Description |
-| --- | --- |
+| Method name                                                                                                      | Description                                                        |
+| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | `getResourceTypeModifiers(redirect: string \| RedirectDataSchema platform: SpecificPlatform \| GenericPlatform)` | Get all supported resource type modifiers for a specific redirect. |
 
 <!-- markdownlint-enable MD013 -->
@@ -498,25 +499,25 @@ this will returns all compatibility data for the `$third-party` modifier:
 
 ```js
 [
-  {
-    name: 'third-party',
-    aliases: [ '3p' ],
-    docs: 'https://adguard.app/kb/general/ad-filtering/create-own-filters/#third-party-modifier',
-    // ...
-  },
-  {
-    name: '3p',
-    aliases: [ 'third-party' ],
-    docs: 'https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#3p',
-    // ...
-  },
-  {
-    name: 'third-party',
-    aliases: null,
-    docs: 'https://help.adblockplus.org/hc/en-us/articles/360062733293#party-requests',
-    // ...
-  }
-]
+    {
+        name: 'third-party',
+        aliases: ['3p'],
+        docs: 'https://adguard.app/kb/general/ad-filtering/create-own-filters/#third-party-modifier',
+        // ...
+    },
+    {
+        name: '3p',
+        aliases: ['third-party'],
+        docs: 'https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#3p',
+        // ...
+    },
+    {
+        name: 'third-party',
+        aliases: null,
+        docs: 'https://help.adblockplus.org/hc/en-us/articles/360062733293#party-requests',
+        // ...
+    },
+];
 ```
 
 As you can see, `aliases` and `docs` fields are different for each platform.
@@ -535,25 +536,25 @@ This will returns an array where each element is an object that represents compa
 
 ```js
 [
-  {
-    AdGuard: {
-      // key are platform flags
-      '1': [Object],
-      '2': [Object],
-      // ...
+    {
+        AdGuard: {
+            // key are platform flags
+            1: [Object],
+            2: [Object],
+            // ...
+        },
+        UblockOrigin: {
+            // key are platform flags
+            1024: [Object],
+            2048: [Object],
+            4096: [Object],
+            8192: [Object],
+        },
+        // seems its not compatible with AdblockPlus
+        AdblockPlus: {},
     },
-    UblockOrigin: {
-      // key are platform flags
-      '1024': [Object],
-      '2048': [Object],
-      '4096': [Object],
-      '8192': [Object]
-    },
-    // seems its not compatible with AdblockPlus
-    AdblockPlus: {}
-  },
-  // ...
-]
+    // ...
+];
 ```
 
 Practically, we use this function to generate compatibility tables in the WIKI.

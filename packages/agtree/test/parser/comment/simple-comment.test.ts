@@ -186,9 +186,9 @@ describe('SimpleCommentParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(
-                SimpleCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
-            ).toEqual(expected);
+            expect(SimpleCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false })).toEqual(
+                expected,
+            );
         });
     });
 

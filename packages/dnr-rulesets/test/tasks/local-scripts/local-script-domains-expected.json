@@ -3,39 +3,27 @@
     "rules": {
         "console.log('multi domain')": [
             {
-                "permittedDomains": [
-                    "example.com",
-                    "test.com"
-                ],
+                "permittedDomains": ["example.com", "test.com"],
                 "restrictedDomains": []
             }
         ],
         "alert('single domain')": [
             {
-                "permittedDomains": [
-                    "example.org"
-                ],
+                "permittedDomains": ["example.org"],
                 "restrictedDomains": []
             }
         ],
         "console.log('restricted domain')": [
             {
                 "permittedDomains": [],
-                "restrictedDomains": [
-                    "blocked.com"
-                ]
+                "restrictedDomains": ["blocked.com"]
             }
         ],
         "document.title = 'mixed'": [
             {
-                "permittedDomains": [
-                    "example.net"
-                ],
-                "restrictedDomains": [
-                    "excluded.net"
-                ]
+                "permittedDomains": ["example.net"],
+                "restrictedDomains": ["excluded.net"]
             }
         ]
     }
 }
-

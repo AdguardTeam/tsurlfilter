@@ -148,9 +148,7 @@ export type BenchmarkResultWithoutEnv = Omit<BenchmarkResult, 'environment' | 'e
  * @param root0.rawFilterList Raw filter list contents to benchmark.
  * @returns Benchmark results.
  */
-export const benchmark = async ({
-    rawFilterList,
-}: BenchmarkArgs): Promise<BenchmarkResultWithoutEnv> => {
+export const benchmark = async ({ rawFilterList }: BenchmarkArgs): Promise<BenchmarkResultWithoutEnv> => {
     const ignoreCosmetic = false;
 
     let tinybenchModule: typeof Tinybench;
@@ -178,11 +176,13 @@ export const benchmark = async ({
 
     // Create engines once to get stats
     const tsurlfilterEngine = await tsUrlFilterModule.Engine.createAsync({
-        filters: [{
-            id: 2,
-            text: rawFilterList,
-            ignoreCosmetic,
-        }],
+        filters: [
+            {
+                id: 2,
+                text: rawFilterList,
+                ignoreCosmetic,
+            },
+        ],
     });
 
     const v3List = new tsUrlFilterV3Module.BufferRuleList(
@@ -207,11 +207,13 @@ export const benchmark = async ({
     // Inline task logic to avoid closure serialization issues in browser
     bench.add('Create tsurlfilter v4 engine', async () => {
         const engine = await tsUrlFilterModule.Engine.createAsync({
-            filters: [{
-                id: 2,
-                text: rawFilterList,
-                ignoreCosmetic,
-            }],
+            filters: [
+                {
+                    id: 2,
+                    text: rawFilterList,
+                    ignoreCosmetic,
+                },
+            ],
         });
         return engine;
     });

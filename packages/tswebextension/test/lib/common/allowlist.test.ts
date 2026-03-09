@@ -1,9 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    it,
-} from 'vitest';
+import { describe, expect, beforeEach, it } from 'vitest';
 
 import { createNetworkRule } from '../../helpers/rule-creator';
 import { getConfigurationMv2Fixture } from '../mv2/background/fixtures/configuration';
@@ -76,11 +71,7 @@ describe('Allowlist Api', () => {
             },
         ];
 
-        it.each(cases)('$title', ({
-            enabled,
-            inverted,
-            expected,
-        }) => {
+        it.each(cases)('$title', ({ enabled, inverted, expected }) => {
             const config = getConfigurationMv2Fixture();
 
             config.allowlist = ['example.com'];

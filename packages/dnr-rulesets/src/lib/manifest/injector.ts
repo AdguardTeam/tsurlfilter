@@ -59,7 +59,7 @@ export interface RulesetsInjectorInterface {
         generateRulesetPath: RulesetPathGenerator,
         manifest: T,
         filterNames: string[],
-        options?: Partial<ApplyRulesetsOptions>
+        options?: Partial<ApplyRulesetsOptions>,
     ): T;
 }
 
@@ -100,17 +100,16 @@ export class RulesetsInjector implements RulesetsInjectorInterface {
 
             const matchedRulesetId = rulesetIdMatch[0];
 
-            if (Array.isArray(options?.ids)
-                && options.ids.length > 0
-                && !options.ids.includes(matchedRulesetId)) {
+            if (Array.isArray(options?.ids) && options.ids.length > 0 && !options.ids.includes(matchedRulesetId)) {
                 continue;
             }
 
             const rulesetId = `${options?.rulesetPrefix ?? RulesetsInjector.DEFAULT_RULESET_PREFIX}${matchedRulesetId}`;
 
-            const isEnabled = Array.isArray(options?.enable)
-                && options.enable.length > 0
-                && options.enable.includes(matchedRulesetId);
+            const isEnabled =
+                Array.isArray(options?.enable) &&
+                options.enable.length > 0 &&
+                options.enable.includes(matchedRulesetId);
 
             const ruleset = {
                 id: rulesetId,

@@ -77,9 +77,7 @@ const tswebextensionConfig: RollupOptions = {
          */
         moduleSideEffects: false,
     },
-    plugins: [
-        ...commonPlugins,
-    ],
+    plugins: [...commonPlugins],
 };
 
 const typesConfig: RollupOptions = {
@@ -92,10 +90,7 @@ const typesConfig: RollupOptions = {
         preserveModules: true,
         preserveModulesRoot: 'src',
     },
-    plugins: [
-        externals(),
-        dts(),
-    ],
+    plugins: [externals(), dts()],
 };
 
 // TODO: Remove index files from 'src/lib', 'src/lib/mv2', 'src/lib/mv3' because

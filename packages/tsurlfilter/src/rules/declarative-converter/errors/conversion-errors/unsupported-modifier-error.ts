@@ -22,10 +22,7 @@ export class UnsupportedModifierError extends Error {
      * @param message Message of error.
      * @param networkRule {@link NetworkRule}.
      */
-    constructor(
-        message: string,
-        networkRule: NetworkRule,
-    ) {
+    constructor(message: string, networkRule: NetworkRule) {
         super(message);
 
         this.name = this.constructor.name;

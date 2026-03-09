@@ -172,9 +172,7 @@ export class CookieController {
      *
      * @param rules Rules to apply.
      */
-    private applyRules(
-        rules: CookieRule[],
-    ): void {
+    private applyRules(rules: CookieRule[]): void {
         document.cookie.split(';').forEach((cookieStr) => {
             const pos = cookieStr.indexOf('=');
             if (pos === -1) {
@@ -220,11 +218,7 @@ export class CookieController {
      * @param cookieName Cookie name.
      * @param cookieValue Cookie value.
      */
-    private applyRule(
-        rule: CookieRule,
-        cookieName: string,
-        cookieValue: string,
-    ): void {
+    private applyRule(rule: CookieRule, cookieName: string, cookieValue: string): void {
         if (!rule.isAllowlist) {
             const hostParts = document.location.hostname.split('.');
             for (let i = 0; i <= hostParts.length - 1; i += 1) {

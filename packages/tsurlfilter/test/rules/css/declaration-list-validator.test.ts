@@ -30,21 +30,33 @@ describe('Declaration list validator', () => {
             // should detect forbidden functions
             ['{ background: url(http://example.org/image.png) }', false, "Using 'url()' is not allowed"],
             ['{ url(http://example.com) }', false, "Using 'url()' is not allowed"],
-            ['{ url(\'http://example.com\') }', false, "Using 'url()' is not allowed"],
+            ["{ url('http://example.com') }", false, "Using 'url()' is not allowed"],
             ['{ url("http://example.com") }', false, "Using 'url()' is not allowed"],
 
             ['{ image-set(url(http://example.com) 1x) }', false, "Using 'image-set()' is not allowed"],
-            ['{ image-set(url(\'http://example.com\') 1x) }', false, "Using 'image-set()' is not allowed"],
+            ["{ image-set(url('http://example.com') 1x) }", false, "Using 'image-set()' is not allowed"],
             ['{ image-set(url("http://example.com") 1x) }', false, "Using 'image-set()' is not allowed"],
 
             ['{ image(url(http://example.com)) }', false, "Using 'image()' is not allowed"],
-            ['{ image(url(\'http://example.com\')) }', false, "Using 'image()' is not allowed"],
+            ["{ image(url('http://example.com')) }", false, "Using 'image()' is not allowed"],
             ['{ image(url("http://example.com")) }', false, "Using 'image()' is not allowed"],
 
             // note: it detects the first forbidden function and stops
-            ['{ cross-fade(url(http://example.com), url(http://example.com), 50%) }', false, "Using 'cross-fade()' is not allowed"],
-            ['{ cross-fade(url(\'http://example.com\'), url(\'http://example.com\'), 50%) }', false, "Using 'cross-fade()' is not allowed"],
-            ['{ cross-fade(url("http://example.com"), url("http://example.com"), 50%) }', false, "Using 'cross-fade()' is not allowed"],
+            [
+                '{ cross-fade(url(http://example.com), url(http://example.com), 50%) }',
+                false,
+                "Using 'cross-fade()' is not allowed",
+            ],
+            [
+                "{ cross-fade(url('http://example.com'), url('http://example.com'), 50%) }",
+                false,
+                "Using 'cross-fade()' is not allowed",
+            ],
+            [
+                '{ cross-fade(url("http://example.com"), url("http://example.com"), 50%) }',
+                false,
+                "Using 'cross-fade()' is not allowed",
+            ],
 
             // should detect escaped hex characters
             ['{ \\75rl(http://example.com) }', false, "Using 'url()' is not allowed"],
@@ -52,8 +64,16 @@ describe('Declaration list validator', () => {
             ['{ \\00075\\00072\\0006C(http://example.com) }', false, "Using 'url()' is not allowed"],
 
             // complicated cases
-            ['{ color: red; height: calc(1px + 2px); background-image: url(http://example.net) }', false, "Using 'url()' is not allowed"],
-            ['{ color: var(--test); height: calc(1px + 2px); background-image: -webkit-\\63ross-fade(url(http://example.net), url(http://example.net), 50%) }', false, "Using '-webkit-cross-fade()' is not allowed"],
+            [
+                '{ color: red; height: calc(1px + 2px); background-image: url(http://example.net) }',
+                false,
+                "Using 'url()' is not allowed",
+            ],
+            [
+                '{ color: var(--test); height: calc(1px + 2px); background-image: -webkit-\\63ross-fade(url(http://example.net), url(http://example.net), 50%) }',
+                false,
+                "Using '-webkit-cross-fade()' is not allowed",
+            ],
         ])("should validate '%s' correctly", (declarationList, isExtendedCss, errorMessage) => {
             expect(validateDeclarationList(declarationList)).toEqual({
                 isValid: false,

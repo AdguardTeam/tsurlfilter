@@ -1,11 +1,6 @@
 import { type AttributeSelector } from '../../../nodes';
 import { QuoteType, QuoteUtils } from '../../../utils/quotes';
-import {
-    CLOSE_SQUARE_BRACKET,
-    EMPTY,
-    OPEN_SQUARE_BRACKET,
-    SPACE,
-} from '../../../utils/constants';
+import { CLOSE_SQUARE_BRACKET, EMPTY, OPEN_SQUARE_BRACKET, SPACE } from '../../../utils/constants';
 import { BaseGenerator } from '../../base-generator';
 import { ValueGenerator } from '../../misc/value-generator';
 

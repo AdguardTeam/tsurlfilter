@@ -30,12 +30,7 @@ describe('Trie Lookup Table Tests', () => {
     });
 
     it('matches rules from lookup table', () => {
-        const rules = [
-            'path/one',
-            'path/two',
-            'path/three',
-            'path/three/one',
-        ];
+        const rules = ['path/one', 'path/two', 'path/three', 'path/three/one'];
 
         const ruleStorage = createRuleStorage(rules);
         const table = new TrieLookupTable(ruleStorage);
@@ -49,8 +44,8 @@ describe('Trie Lookup Table Tests', () => {
         expect(table.matchAll(new Request('http://example.com/path/one', '', RequestType.Document))).toHaveLength(1);
         expect(table.matchAll(new Request('http://example.com/path/two', '', RequestType.Document))).toHaveLength(1);
         expect(table.matchAll(new Request('http://example.com/path/three', '', RequestType.Document))).toHaveLength(1);
-        expect(
-            table.matchAll(new Request('http://example.com/path/three/one', '', RequestType.Document)),
-        ).toHaveLength(2);
+        expect(table.matchAll(new Request('http://example.com/path/three/one', '', RequestType.Document))).toHaveLength(
+            2,
+        );
     });
 });

@@ -163,10 +163,7 @@ export class CosmeticApiCommon {
      *
      * @returns Array of styles.
      */
-    private static buildElemhideStyles(
-        elemhideRules: CosmeticRule[],
-        groupElemhideSelectors: boolean,
-    ): string[] {
+    private static buildElemhideStyles(elemhideRules: CosmeticRule[], groupElemhideSelectors: boolean): string[] {
         // TODO: refactor constants as ELEMHIDE_CSS_STYLE and ELEMHIDE_HIT_START are duplicates partly
         const ELEMHIDE_CSS_STYLE = ' { display: none !important; }';
 
@@ -187,9 +184,7 @@ export class CosmeticApiCommon {
         // otherwise selectors should be grouped into selector lists
         const elemhideStyles = [];
         for (let i = 0; i < elemhideSelectors.length; i += CosmeticApiCommon.CSS_SELECTORS_PER_LINE) {
-            const selectorList = elemhideSelectors
-                .slice(i, i + CosmeticApiCommon.CSS_SELECTORS_PER_LINE)
-                .join(', ');
+            const selectorList = elemhideSelectors.slice(i, i + CosmeticApiCommon.CSS_SELECTORS_PER_LINE).join(', ');
             elemhideStyles.push(`${selectorList}${ELEMHIDE_CSS_STYLE}`);
         }
         return elemhideStyles;
@@ -257,10 +252,7 @@ export class CosmeticApiCommon {
      *
      * @returns List of stylesheet expressions.
      */
-    private static buildStyleSheetsWithHits(
-        elemhideRules: CosmeticRule[],
-        injectRules: CosmeticRule[],
-    ): string[] {
+    private static buildStyleSheetsWithHits(elemhideRules: CosmeticRule[], injectRules: CosmeticRule[]): string[] {
         const elemhideStyles = elemhideRules.map((x) => CosmeticApiCommon.addMarkerToElemhideRule(x));
         const injectStyles = injectRules.map((x) => CosmeticApiCommon.addMarkerToInjectRule(x));
 
@@ -323,16 +315,10 @@ export class CosmeticApiCommon {
      *
      * @returns Array of extended css rules or null.
      */
-    public static getExtCssRules(
-        cosmeticResult: CosmeticResult,
-        options: CosmeticOptions = {},
-    ): string[] | null {
+    public static getExtCssRules(cosmeticResult: CosmeticResult, options: CosmeticOptions = {}): string[] | null {
         const { elementHiding, CSS } = cosmeticResult;
 
-        const {
-            isNativeHasSupported = false,
-            areHitsStatsCollected = false,
-        } = options;
+        const { isNativeHasSupported = false, areHitsStatsCollected = false } = options;
 
         // Reclassify element hiding rules if needed
         const elemhideReclassified = CosmeticApiCommon.reclassifyNativeAndExtCssRules(
@@ -363,9 +349,7 @@ export class CosmeticApiCommon {
             );
         }
 
-        return extCssRules.length > 0
-            ? extCssRules
-            : null;
+        return extCssRules.length > 0 ? extCssRules : null;
     }
 
     /**
@@ -376,16 +360,10 @@ export class CosmeticApiCommon {
      *
      * @returns Css styles as string, or `undefined` if no styles found.
      */
-    public static getCssText(
-        cosmeticResult: CosmeticResult,
-        options: CosmeticOptions = {},
-    ): string | undefined {
+    public static getCssText(cosmeticResult: CosmeticResult, options: CosmeticOptions = {}): string | undefined {
         const { elementHiding, CSS } = cosmeticResult;
 
-        const {
-            areHitsStatsCollected = false,
-            isNativeHasSupported = false,
-        } = options;
+        const { areHitsStatsCollected = false, isNativeHasSupported = false } = options;
 
         // Reclassify rules - only native CSS rules should be included in getCssText
         const elemhideReclassified = CosmeticApiCommon.reclassifyNativeAndExtCssRules(
@@ -403,16 +381,9 @@ export class CosmeticApiCommon {
         let styles: string[];
 
         if (areHitsStatsCollected) {
-            styles = CosmeticApiCommon.buildStyleSheetsWithHits(
-                elemhideReclassified.native,
-                cssReclassified.native,
-            );
+            styles = CosmeticApiCommon.buildStyleSheetsWithHits(elemhideReclassified.native, cssReclassified.native);
         } else {
-            styles = CosmeticApiCommon.buildStyleSheets(
-                elemhideReclassified.native,
-                cssReclassified.native,
-                true,
-            );
+            styles = CosmeticApiCommon.buildStyleSheets(elemhideReclassified.native, cssReclassified.native, true);
         }
 
         if (styles.length > 0) {
@@ -464,9 +435,7 @@ export class CosmeticApiCommon {
         uniqueScriptStrings.forEach((rawScriptStr) => {
             const script = rawScriptStr.trim();
 
-            scriptText += script.endsWith(SEMICOLON)
-                ? `${script}${LF}`
-                : `${script}${SEMICOLON}${LF}`;
+            scriptText += script.endsWith(SEMICOLON) ? `${script}${LF}` : `${script}${SEMICOLON}${LF}`;
         });
 
         return scriptText;
@@ -484,12 +453,7 @@ export class CosmeticApiCommon {
         appliedScriptRules: CosmeticRule[],
         engineApi: RuleTextProvider,
     ): void {
-        const {
-            tabId,
-            url,
-            contentType,
-            timestamp,
-        } = params;
+        const { tabId, url, contentType, timestamp } = params;
 
         for (const scriptRule of appliedScriptRules) {
             if (scriptRule.isGeneric()) {
@@ -517,10 +481,12 @@ export class CosmeticApiCommon {
                     ruleIndex: scriptRule.getIndex(),
                     appliedRuleText,
                     originalRuleText,
-                    cssRule: ruleType === CosmeticRuleType.ElementHidingRule
-                        || ruleType === CosmeticRuleType.CssInjectionRule,
-                    scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
-                        || ruleType === CosmeticRuleType.JsInjectionRule,
+                    cssRule:
+                        ruleType === CosmeticRuleType.ElementHidingRule ||
+                        ruleType === CosmeticRuleType.CssInjectionRule,
+                    scriptRule:
+                        ruleType === CosmeticRuleType.ScriptletInjectionRule ||
+                        ruleType === CosmeticRuleType.JsInjectionRule,
                     contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
                 },
             });

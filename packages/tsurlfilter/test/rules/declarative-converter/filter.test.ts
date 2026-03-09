@@ -22,11 +22,7 @@ describe('Filter', () => {
     const text = rules.join('\r\n');
 
     it('loads content from string source provider', async () => {
-        const filter = new Filter(
-            1,
-            { getContent: async () => new FilterList(text) },
-            true,
-        );
+        const filter = new Filter(1, { getContent: async () => new FilterList(text) }, true);
 
         const loadedContent = await filter.getContent();
 
@@ -34,11 +30,7 @@ describe('Filter', () => {
     });
 
     it('returns original rule by index', async () => {
-        const filter = new Filter(
-            1,
-            { getContent: async () => new FilterList(text) },
-            true,
-        );
+        const filter = new Filter(1, { getContent: async () => new FilterList(text) }, true);
 
         const convertedFilter = await filter.getContent();
         const content = convertedFilter.getContent();
@@ -61,11 +53,7 @@ describe('Filter', () => {
     });
 
     it('unloads content correctly', async () => {
-        const filter = new Filter(
-            1,
-            { getContent: async () => new FilterList(text) },
-            true,
-        );
+        const filter = new Filter(1, { getContent: async () => new FilterList(text) }, true);
 
         // Load content
         await filter.getContent();
@@ -78,11 +66,7 @@ describe('Filter', () => {
     });
 
     it('does not return stale content after unload', async () => {
-        const filter = new Filter(
-            1,
-            { getContent: async () => new FilterList(text) },
-            true,
-        );
+        const filter = new Filter(1, { getContent: async () => new FilterList(text) }, true);
 
         // Load content
         await filter.getContent();
@@ -105,11 +89,7 @@ describe('Filter', () => {
             resolveFetch = resolve;
         });
 
-        const filter = new Filter(
-            1,
-            { getContent: async () => fetchPromise as any },
-            true,
-        );
+        const filter = new Filter(1, { getContent: async () => fetchPromise as any }, true);
 
         // Start loading content
         const contentPromise = filter.getContent();
@@ -127,11 +107,7 @@ describe('Filter', () => {
     });
 
     it('prevents memory leaks by resetting contentLoadingPromise', async () => {
-        const filter = new Filter(
-            1,
-            { getContent: async () => new FilterList(text) },
-            true,
-        );
+        const filter = new Filter(1, { getContent: async () => new FilterList(text) }, true);
 
         await filter.getContent();
 

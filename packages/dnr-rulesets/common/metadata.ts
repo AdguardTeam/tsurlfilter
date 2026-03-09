@@ -69,10 +69,7 @@ export async function downloadMetadata(
     const { data } = await axios.get<Metadata>(metadataUrl, { responseType: 'json' });
 
     if (pathToSave) {
-        await fs.promises.writeFile(
-            pathToSave,
-            JSON.stringify(data, null, '\t'),
-        );
+        await fs.promises.writeFile(pathToSave, JSON.stringify(data, null, '\t'));
 
         console.info(`Download ${metadataUrl} done, saved to ${pathToSave}`);
     }
@@ -98,10 +95,7 @@ export async function downloadI18nMetadata(
 
     const { data } = await axios.get(i18nMetadataUrl);
 
-    await fs.promises.writeFile(
-        pathToSave,
-        JSON.stringify(data, null, '\t'),
-    );
+    await fs.promises.writeFile(pathToSave, JSON.stringify(data, null, '\t'));
 
     console.info(`Download ${i18nMetadataUrl} done, saved to ${pathToSave}`);
 

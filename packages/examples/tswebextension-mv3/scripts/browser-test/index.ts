@@ -1,12 +1,7 @@
 import { chromium } from 'playwright';
 
-import {
-    DEFAULT_EXTENSION_CONFIG,
-    TESTCASES_BASE_URL,
-} from '../constants';
-import {
-    EXTENSION_INITIALIZED_EVENT,
-} from '../../extension/src/common/constants';
+import { DEFAULT_EXTENSION_CONFIG, TESTCASES_BASE_URL } from '../constants';
+import { EXTENSION_INITIALIZED_EVENT } from '../../extension/src/common/constants';
 import {
     addQunitListeners,
     setTsWebExtensionConfig,
@@ -27,10 +22,7 @@ const CSP_TEST_ID = 12;
     // Launch browser with installed extension
     const browserContext = await chromium.launchPersistentContext(USER_DATA_PATH, {
         headless: false,
-        args: [
-            `--disable-extensions-except=${BUILD_PATH}`,
-            `--load-extension=${BUILD_PATH}`,
-        ],
+        args: [`--disable-extensions-except=${BUILD_PATH}`, `--load-extension=${BUILD_PATH}`],
     });
 
     let [backgroundPage] = browserContext.serviceWorkers();
@@ -38,10 +30,7 @@ const CSP_TEST_ID = 12;
         backgroundPage = await browserContext.waitForEvent('serviceworker');
     }
 
-    await backgroundPage.evaluate<void, string>(
-        waitUntilExtensionInitialized,
-        EXTENSION_INITIALIZED_EVENT,
-    );
+    await backgroundPage.evaluate<void, string>(waitUntilExtensionInitialized, EXTENSION_INITIALIZED_EVENT);
 
     const page = await browserContext.newPage();
 
@@ -59,7 +48,6 @@ const CSP_TEST_ID = 12;
 
     // run testcases
     for (const testcase of compatibleTestcases) {
-
         // TODO: implement separate e2e test for popups
         // ignore popup tests
         if (!testcase.rulesUrl) {
@@ -70,28 +58,26 @@ const CSP_TEST_ID = 12;
         const userrules = await getRuleText(testcase.rulesUrl);
 
         // update tsWebExtension config
-        await backgroundPage.evaluate<void, SetTsWebExtensionConfigArg>(
-            setTsWebExtensionConfig,
-            [DEFAULT_EXTENSION_CONFIG, userrules],
-        );
+        await backgroundPage.evaluate<void, SetTsWebExtensionConfigArg>(setTsWebExtensionConfig, [
+            DEFAULT_EXTENSION_CONFIG,
+            userrules,
+        ]);
 
-        const openPageAndWaitForTests = testcase.id === CSP_TEST_ID
-            ? page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`, { waitUntil: 'networkidle' })
-            // The function with tests check works only if there is no CSP
-            : Promise.all([
-                // run test page
-                page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`),
-                // wait until all tests are completed with disabled timeout
-                // eslint-disable-next-line @typescript-eslint/no-loop-func, @typescript-eslint/no-explicit-any
-                page.waitForFunction(() => (<any>window).testsCompleted, undefined, { timeout: 0 }),
-            ]);
+        const openPageAndWaitForTests =
+            testcase.id === CSP_TEST_ID
+                ? page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`, { waitUntil: 'networkidle' })
+                : // The function with tests check works only if there is no CSP
+                  Promise.all([
+                      // run test page
+                      page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`),
+                      // wait until all tests are completed with disabled timeout
+                      // eslint-disable-next-line @typescript-eslint/no-loop-func, @typescript-eslint/no-explicit-any
+                      page.waitForFunction(() => (<any>window).testsCompleted, undefined, { timeout: 0 }),
+                  ]);
 
         const timeoutForTests = page.waitForTimeout(TESTS_TIMEOUT_MS).then(() => TESTS_TIMEOUT_CODE);
 
-        const res = await Promise.race([
-            timeoutForTests,
-            openPageAndWaitForTests,
-        ]);
+        const res = await Promise.race([timeoutForTests, openPageAndWaitForTests]);
 
         if (res === TESTS_TIMEOUT_CODE) {
             logTestTimeout(testcase.title, TESTS_TIMEOUT_MS);

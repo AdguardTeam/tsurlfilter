@@ -1,15 +1,10 @@
 {
-  "npmClient": "pnpm",
-  "version": "independent",
-  "concurrency": 1,
-  "command": {
-    "bootstrap": {
-      "npmClientArgs": [
-        "--silent",
-        "--ignore-engines",
-        "--ignore-platform",
-        "--ignore-scripts"
-      ]
+    "npmClient": "pnpm",
+    "version": "independent",
+    "concurrency": 1,
+    "command": {
+        "bootstrap": {
+            "npmClientArgs": ["--silent", "--ignore-engines", "--ignore-platform", "--ignore-scripts"]
+        }
     }
-  }
 }

@@ -3,12 +3,7 @@ import { getHostname, getDomain } from 'tldts';
 import isIp from 'is-ip';
 
 import { StringUtils } from '../../utils/string';
-import {
-    type HostRule,
-    NetworkRuleType,
-    RuleCategory,
-    type Value,
-} from '../../nodes';
+import { type HostRule, NetworkRuleType, RuleCategory, type Value } from '../../nodes';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
 import { AdblockSyntax } from '../../utils/adblockers';

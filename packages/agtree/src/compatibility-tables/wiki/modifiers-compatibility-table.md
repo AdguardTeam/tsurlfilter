@@ -1,11 +1,12 @@
 <!-- markdownlint-disable MD013 MD033 -->
+
 # Modifiers Compatibility Table
 
 This table is generated from the compatibility data.
 
 | AdGuard                                                                                                                | uBlock Origin                                                                                              | Adblock Plus / AdBlock                                                                                            |
 | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [_](https://adguard.app/kb/general/ad-filtering/create-own-filters/#noop-modifier)                                     | [_](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#_-aka-noop)                                |                                                                                                                   |
+| [\_](https://adguard.app/kb/general/ad-filtering/create-own-filters/#noop-modifier)                                    | [\_](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#_-aka-noop)                               |                                                                                                                   |
 | [all](https://adguard.app/kb/general/ad-filtering/create-own-filters/#all-modifier)                                    | [all](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#all)                                     |                                                                                                                   |
 | [app](https://adguard.app/kb/general/ad-filtering/create-own-filters/#app-modifier)                                    |                                                                                                            |                                                                                                                   |
 | [badfilter](https://adguard.app/kb/general/ad-filtering/create-own-filters/#badfilter-modifier)                        | [badfilter](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#badfilter)                         |                                                                                                                   |

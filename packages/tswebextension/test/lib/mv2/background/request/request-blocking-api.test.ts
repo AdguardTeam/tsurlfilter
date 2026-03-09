@@ -1,11 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    afterEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, afterEach, it, vi } from 'vitest';
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
@@ -75,49 +68,54 @@ describe('Request Blocking Api - shouldCollapseElement', () => {
     it('element Should be collapsed', () => {
         mockMatchingResult('||example.org^');
 
-        expect(
-            RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
-        ).toBe(true);
+        expect(RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document)).toBe(
+            true,
+        );
     });
 
     it('iframe should not be collapsed by popup rule', () => {
         mockMatchingResult('$popup,third-party,domain=example.org');
 
         expect(
-            RequestBlockingApi.shouldCollapseElement(1, 'https://example.com', 'https://example.org', RequestType.SubDocument),
+            RequestBlockingApi.shouldCollapseElement(
+                1,
+                'https://example.com',
+                'https://example.org',
+                RequestType.SubDocument,
+            ),
         ).toBe(false);
     });
 
     it('element without rule match shouldn`t be collapsed', () => {
         mockMatchingResult();
 
-        expect(
-            RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
-        ).toBe(false);
+        expect(RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document)).toBe(
+            false,
+        );
     });
 
     it('element with allowlist rule match shouldn`t be collapsed', () => {
         mockMatchingResult('@@||example.org^');
 
-        expect(
-            RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
-        ).toBe(false);
+        expect(RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document)).toBe(
+            false,
+        );
     });
 
     it('element with redirect rule match shouldn`t be collapsed', () => {
         mockMatchingResult('||example.org/script.js$script,redirect=noopjs');
 
-        expect(
-            RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
-        ).toBe(false);
+        expect(RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document)).toBe(
+            false,
+        );
     });
 
     it('element with replace rule match shouldn`t be collapsed', () => {
         mockMatchingResult('||example.org^$replace=/X/Y/');
 
-        expect(
-            RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
-        ).toBe(false);
+        expect(RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document)).toBe(
+            false,
+        );
     });
 });
 
@@ -129,8 +127,7 @@ describe('Request Blocking Api - getBlockingResponse', () => {
     };
 
     beforeEach(() => {
-        vi.spyOn(documentBlockingService, 'getDocumentBlockingResponse')
-            .mockReturnValue(mockedBlockingPageResponse);
+        vi.spyOn(documentBlockingService, 'getDocumentBlockingResponse').mockReturnValue(mockedBlockingPageResponse);
     });
 
     afterEach(() => {
@@ -147,10 +144,7 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('the popup modifier, document request - close tab', () => {
-            const rules = [
-                '||example.com^',
-                '||example.com^$popup',
-            ];
+            const rules = ['||example.com^', '||example.com^$popup'];
             const data = getGetBlockingResponseParamsData(
                 rules,
                 'http://example.com',
@@ -162,10 +156,7 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('explicit modifiers popup and document, document request - close tab', () => {
-            const rules = [
-                '||example.com^$popup,document',
-                '||example.com^',
-            ];
+            const rules = ['||example.com^$popup,document', '||example.com^'];
 
             const data = getGetBlockingResponseParamsData(
                 rules,
@@ -193,10 +184,7 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('the all modifier and popup modifier document request - close tab', () => {
-            const rules = [
-                '||example.com^$all',
-                '||example.com^$popup',
-            ];
+            const rules = ['||example.com^$all', '||example.com^$popup'];
             const data = getGetBlockingResponseParamsData(
                 rules,
                 'http://example.com',
@@ -330,10 +318,7 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('the all modifier and popup modifier, document request - blocking page', () => {
-            const rules = [
-                '||example.com^$all',
-                '||example.com^$popup',
-            ];
+            const rules = ['||example.com^$all', '||example.com^$popup'];
             const data = getGetBlockingResponseParamsData(
                 rules,
                 'http://example.com',
@@ -345,10 +330,7 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('the all modifier and popup modifier with document, document request - blocking page', () => {
-            const rules = [
-                '||example.com^$all',
-                '||example.com^$popup,document',
-            ];
+            const rules = ['||example.com^$all', '||example.com^$popup,document'];
             const data = getGetBlockingResponseParamsData(
                 rules,
                 'http://example.com',
@@ -372,10 +354,7 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('basic rule and explicit popup with document, document request - blocking page', () => {
-            const rules = [
-                '||example.com^',
-                '||example.com^$popup,document',
-            ];
+            const rules = ['||example.com^', '||example.com^$popup,document'];
             const data = getGetBlockingResponseParamsData(
                 rules,
                 'http://example.com',

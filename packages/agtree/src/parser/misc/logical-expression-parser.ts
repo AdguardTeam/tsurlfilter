@@ -28,7 +28,7 @@ const TokenType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-type TokenType = typeof TokenType[keyof typeof TokenType];
+type TokenType = (typeof TokenType)[keyof typeof TokenType];
 
 /**
  * Possible node types in the logical expression.
@@ -41,7 +41,7 @@ export const NodeType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type NodeType = typeof NodeType[keyof typeof NodeType];
+export type NodeType = (typeof NodeType)[keyof typeof NodeType];
 
 /**
  * Precedence of the operators, larger number means higher precedence.
@@ -110,8 +110,8 @@ export class LogicalExpressionParser extends BaseParser {
                 // Variable name shouldn't start with a number or underscore,
                 // but can contain them
                 while (
-                    offset + 1 < raw.length
-                    && (StringUtils.isAlphaNumeric(raw[offset + 1]) || raw[offset + 1] === UNDERSCORE)
+                    offset + 1 < raw.length &&
+                    (StringUtils.isAlphaNumeric(raw[offset + 1]) || raw[offset + 1] === UNDERSCORE)
                 ) {
                     offset += 1;
                 }

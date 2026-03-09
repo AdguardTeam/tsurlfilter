@@ -15,13 +15,7 @@ export class TypeSelectorHandler {
      * @throws If the type selector is syntactically incorrect.
      */
     public static handle(context: SelectorListParserContext): void {
-        const {
-            options,
-            baseOffset,
-            stream,
-            complexSelector,
-            isTypeSelectorSet,
-        } = context;
+        const { options, baseOffset, stream, complexSelector, isTypeSelectorSet } = context;
 
         // Get type selector token
         const token = stream.getOrFail();
@@ -38,9 +32,9 @@ export class TypeSelectorHandler {
         // Throw error if type selector isn't first in the given compound selector
         if (
             // It should be first on current complex selector
-            complexSelector.children.length !== 0
+            complexSelector.children.length !== 0 &&
             // Or should be first on current compound selector (after combinator)
-            && complexSelector.children[complexSelector.children.length - 1].type !== 'SelectorCombinator'
+            complexSelector.children[complexSelector.children.length - 1].type !== 'SelectorCombinator'
         ) {
             throw new AdblockSyntaxError(
                 'Type selector must be first in the compound selector',

@@ -44,7 +44,8 @@ import { isString } from '../utils/type-guards';
 /**
  * Represents the possible list parsers.
  */
-type ListParser = typeof AppListParser.parse
+type ListParser =
+    | typeof AppListParser.parse
     | typeof DomainListParser.parse
     | typeof MethodListParser.parse
     | typeof StealthOptionListParser.parse;
@@ -71,9 +72,8 @@ const CustomValueFormatValidatorName = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-type CustomValueFormatValidatorName = typeof CustomValueFormatValidatorName[
-    keyof typeof CustomValueFormatValidatorName
-];
+type CustomValueFormatValidatorName =
+    (typeof CustomValueFormatValidatorName)[keyof typeof CustomValueFormatValidatorName];
 
 /**
  * Checks whether the `chunk` of app name (which if splitted by dot `.`) is valid.
@@ -113,9 +113,7 @@ const isValidAppModifierValue = (value: string): boolean => {
         return false;
     }
 
-    return value
-        .split(DOT)
-        .every((chunk) => isValidAppNameChunk(chunk));
+    return value.split(DOT).every((chunk) => isValidAppNameChunk(chunk));
 };
 
 /**
@@ -340,11 +338,7 @@ const validateListItemsModifier = (
  * @returns Validation result.
  */
 const validatePipeSeparatedApps = (modifier: Modifier): ValidationResult => {
-    return validateListItemsModifier(
-        modifier,
-        (raw: string) => AppListParser.parse(raw),
-        isValidAppModifierValue,
-    );
+    return validateListItemsModifier(modifier, (raw: string) => AppListParser.parse(raw), isValidAppModifierValue);
 };
 
 /**
@@ -373,11 +367,7 @@ const validatePipeSeparatedDenyAllowDomains = (modifier: Modifier): ValidationRe
  * @returns Validation result.
  */
 const validatePipeSeparatedDomains = (modifier: Modifier): ValidationResult => {
-    return validateListItemsModifier(
-        modifier,
-        DomainListParser.parse,
-        isValidDomainModifierValue,
-    );
+    return validateListItemsModifier(modifier, DomainListParser.parse, isValidDomainModifierValue);
 };
 
 /**
@@ -560,17 +550,15 @@ const validatePermissionAllowlistOrigins = (
  *
  * @returns Validation result.
  */
-const validatePermissionAllowlist = (
-    allowlist: string,
-    directive: string,
-    modifierName: string,
-): ValidationResult => {
+const validatePermissionAllowlist = (allowlist: string, directive: string, modifierName: string): ValidationResult => {
     // `*` is one of available permissions tokens
     // e.g. 'fullscreen=*'
     // https://w3c.github.io/webappsec-permissions-policy/#structured-header-serialization
-    if (allowlist === WILDCARD
+    if (
+        allowlist === WILDCARD ||
         // e.g. 'autoplay=()'
-        || allowlist === EMPTY_PERMISSIONS_ALLOWLIST) {
+        allowlist === EMPTY_PERMISSIONS_ALLOWLIST
+    ) {
         return { valid: true };
     }
 
@@ -668,7 +656,9 @@ const validateReferrerPolicy = (modifier: Modifier): ValidationResult => {
 
     if (!REFERRER_POLICY_DIRECTIVES.has(modifierValue)) {
         // eslint-disable-next-line max-len
-        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.INVALID_REFERRER_POLICY_DIRECTIVE}: '${modifierName}': '${modifierValue}'`);
+        return getInvalidValidationResult(
+            `${VALIDATION_ERROR_PREFIX.INVALID_REFERRER_POLICY_DIRECTIVE}: '${modifierName}': '${modifierValue}'`,
+        );
     }
 
     return { valid: true };
@@ -695,9 +685,7 @@ const CUSTOM_VALUE_FORMAT_MAP = {
  *
  * @returns True if `valueFormat` is a supported pre-defined value format validator name, false otherwise.
  */
-const isCustomValueFormatValidator = (
-    valueFormat: string,
-): valueFormat is CustomValueFormatValidatorName => {
+const isCustomValueFormatValidator = (valueFormat: string): valueFormat is CustomValueFormatValidatorName => {
     return Object.keys(CUSTOM_VALUE_FORMAT_MAP).includes(valueFormat);
 };
 

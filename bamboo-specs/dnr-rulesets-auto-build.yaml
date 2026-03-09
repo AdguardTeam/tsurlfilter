@@ -25,9 +25,9 @@ DoNothing:
   other:
     clean-working-dir: true
   docker:
-    image: "${bamboo.dockerContainer}"
+    image: '${bamboo.dockerContainer}'
     volumes:
-      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      ${system.PNPM_DIR}: '${bamboo.cachePnpm}'
   tasks:
     - checkout:
         force-clean-build: true
@@ -50,7 +50,7 @@ DoNothing:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/cleanup.sh packages/dnr-rulesets/dnr-rulesets.tgz"
+          - './bamboo-specs/scripts/cleanup.sh packages/dnr-rulesets/dnr-rulesets.tgz'
   # Since the artifact is being published from a non-master branch, it should still be available in the master branch
   artifacts: &artifacts
     - name: dnr-rulesets.tgz
@@ -85,9 +85,9 @@ branch-overrides:
         other:
           clean-working-dir: true
         docker:
-          image: "${bamboo.dockerContainer}"
+          image: '${bamboo.dockerContainer}'
           volumes:
-            ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+            ${system.PNPM_DIR}: '${bamboo.cachePnpm}'
         tasks:
           - checkout:
               force-clean-build: true
@@ -152,7 +152,7 @@ branch-overrides:
           - script:
               interpreter: SHELL
               scripts:
-                - "./bamboo-specs/scripts/cleanup.sh packages/dnr-rulesets/dnr-rulesets.tgz"
+                - './bamboo-specs/scripts/cleanup.sh packages/dnr-rulesets/dnr-rulesets.tgz'
         artifacts: *artifacts
         requirements: *requirements
 

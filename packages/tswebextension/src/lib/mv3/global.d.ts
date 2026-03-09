@@ -1,8 +1,5 @@
 declare namespace chrome.userScripts {
-    export function execute(
-        injection: chrome.userScripts.UserScriptInjection,
-        callback?: function,
-    );
+    export function execute(injection: chrome.userScripts.UserScriptInjection, callback?: function);
 
     export interface UserScriptInjection {
         injectImmediately?: boolean;

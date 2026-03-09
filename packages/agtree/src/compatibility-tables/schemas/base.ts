@@ -132,19 +132,20 @@ export const baseRefineLogic = (data: zod.infer<typeof baseCompatibilityDataSche
  * @returns Base file schema.
  */
 export const baseFileSchema = <T extends BaseCompatibilityDataSchema>(dataSchema: zod.ZodType<T>) => {
-    return zod.record(zod.any(), zod.any()).transform((val) => {
-        const result = val;
+    return zod
+        .record(zod.any(), zod.any())
+        .transform((val) => {
+            const result = val;
 
-        // Note: js-yaml will leave `define` key in the object, but we don't need it,
-        // and since we're using a strict schema, we need to remove it.
-        if ('define' in result) {
-            delete result.define;
-        }
+            // Note: js-yaml will leave `define` key in the object, but we don't need it,
+            // and since we're using a strict schema, we need to remove it.
+            if ('define' in result) {
+                delete result.define;
+            }
 
-        return result;
-    }).pipe(
-        zod.record(platformSchema, dataSchema),
-    );
+            return result;
+        })
+        .pipe(zod.record(platformSchema, dataSchema));
 };
 
 /**

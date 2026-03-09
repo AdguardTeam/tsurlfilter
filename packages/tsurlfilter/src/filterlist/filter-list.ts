@@ -9,7 +9,8 @@ import { findNextLineBreakIndex } from '../utils/string-utils';
  * Schema for validating and transforming non-negative integers that may be represented as strings or numbers.
  * Useful for handling JSON deserialization where numeric keys become strings.
  */
-const nonNegativeIntegerSchema = zod.union([zod.string(), zod.number()])
+const nonNegativeIntegerSchema = zod
+    .union([zod.string(), zod.number()])
     .pipe(zod.coerce.number())
     .refine((num) => Number.isInteger(num) && num >= 0, {
         message: 'Must be a non-negative integer',

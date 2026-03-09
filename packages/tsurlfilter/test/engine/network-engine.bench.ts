@@ -32,13 +32,7 @@ describe('Build engine', () => {
     };
 
     const createNewEngine = () => {
-        const list = new StringRuleList(
-            2,
-            rawFilter,
-            ignoreCosmetic,
-            false,
-            false,
-        );
+        const list = new StringRuleList(2, rawFilter, ignoreCosmetic, false, false);
         const storage = new RuleStorage([list]);
         const scanner = list.newScanner(ScannerType.NetworkRules);
         const rulesParts: IndexedStorageNetworkRuleParts[] = [];

@@ -44,14 +44,17 @@ export class TabContext extends TabContextCommon<FrameMV3> {
         if (url && isHttpOrWsRequest(url)) {
             tabContext.mainFrameRule = DocumentApi.matchFrame(url);
 
-            tabContext.frames.set(MAIN_FRAME_ID, new FrameMV3({
-                tabId: tab.id,
-                frameId: MAIN_FRAME_ID,
-                parentFrameId: NO_PARENT_FRAME_ID,
-                url,
-                // timestamp is 0, so that it will be recalculated in the next event
-                timeStamp: 0,
-            }));
+            tabContext.frames.set(
+                MAIN_FRAME_ID,
+                new FrameMV3({
+                    tabId: tab.id,
+                    frameId: MAIN_FRAME_ID,
+                    parentFrameId: NO_PARENT_FRAME_ID,
+                    url,
+                    // timestamp is 0, so that it will be recalculated in the next event
+                    timeStamp: 0,
+                }),
+            );
         }
 
         return tabContext;

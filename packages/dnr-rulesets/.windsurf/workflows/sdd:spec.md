@@ -19,44 +19,47 @@ by the user). If no description is provided, stop and report:
 ### Phase 1: Context Gathering
 
 1. **Read the repository README**
-   - Understand what the product does and its purpose
-   - Identify the target audience
-   - Note existing capabilities and concepts
-   - This context informs how the new feature fits into the product
+
+    - Understand what the product does and its purpose
+    - Identify the target audience
+    - Note existing capabilities and concepts
+    - This context informs how the new feature fits into the product
 
 2. **Extract key concepts from the feature description**
    Identify and list:
-   - **Actors**: Who interacts with this feature?
-   - **Actions**: What do they do?
-   - **Data**: What information is involved?
-   - **Constraints**: What limitations or rules apply?
+
+    - **Actors**: Who interacts with this feature?
+    - **Actions**: What do they do?
+    - **Data**: What information is involved?
+    - **Constraints**: What limitations or rules apply?
 
 3. **Handle ambiguity**
    For unclear aspects:
-   - Make informed guesses based on context and industry standards
-   - Only mark with `[NEEDS CLARIFICATION: specific question]` if:
-     - The choice significantly impacts feature scope or user experience
-     - Multiple reasonable interpretations exist with different implications
-     - No reasonable default exists
-   - Prioritize clarifications by impact: **scope > security/privacy > UX > technical details**
+    - Make informed guesses based on context and industry standards
+    - Only mark with `[NEEDS CLARIFICATION: specific question]` if:
+        - The choice significantly impacts feature scope or user experience
+        - Multiple reasonable interpretations exist with different implications
+        - No reasonable default exists
+    - Prioritize clarifications by impact: **scope > security/privacy > UX > technical details**
 
 ### Phase 2: User Scenarios
 
 1. **Define user stories as prioritized journeys**
-   - Order stories by importance (P1, P2, P3, etc.)
-   - Each story must be **independently testable** — implementing just one
-     should deliver a viable MVP slice
-   - Include for each story:
-     - Brief title and priority
-     - Plain language description of the journey
-     - Why this priority (value explanation)
-     - How it can be tested independently
-     - Acceptance scenarios in Given/When/Then format
+
+    - Order stories by importance (P1, P2, P3, etc.)
+    - Each story must be **independently testable** — implementing just one
+      should deliver a viable MVP slice
+    - Include for each story:
+        - Brief title and priority
+        - Plain language description of the journey
+        - Why this priority (value explanation)
+        - How it can be tested independently
+        - Acceptance scenarios in Given/When/Then format
 
 2. **Identify edge cases**
-   - Boundary conditions
-   - Error scenarios
-   - Unusual but valid inputs
+    - Boundary conditions
+    - Error scenarios
+    - Unusual but valid inputs
 
 If no clear user flow can be determined, stop and report:
 **ERROR: Cannot determine user scenarios from the provided description.**
@@ -64,40 +67,42 @@ If no clear user flow can be determined, stop and report:
 ### Phase 3: Requirements
 
 1. **Generate functional requirements**
-   - Each requirement must be testable
-   - Use MUST/SHOULD/MAY language for clarity
-   - Use reasonable defaults for unspecified details
-   - Document assumptions separately
-   - Mark truly ambiguous requirements with `[NEEDS CLARIFICATION: ...]`
+
+    - Each requirement must be testable
+    - Use MUST/SHOULD/MAY language for clarity
+    - Use reasonable defaults for unspecified details
+    - Document assumptions separately
+    - Mark truly ambiguous requirements with `[NEEDS CLARIFICATION: ...]`
 
 2. **Identify key entities** (if the feature involves data)
-   - What entities are involved?
-   - What are their key attributes (without implementation details)?
-   - How do they relate to each other?
+    - What entities are involved?
+    - What are their key attributes (without implementation details)?
+    - How do they relate to each other?
 
 ### Phase 4: Success Criteria
 
 1. **Define measurable outcomes**
-   - Technology-agnostic and verifiable
-   - Include both:
-     - **Quantitative metrics**: time, performance, volume
-     - **Qualitative measures**: user satisfaction, task completion
-   - Each criterion must be verifiable without implementation details
+    - Technology-agnostic and verifiable
+    - Include both:
+        - **Quantitative metrics**: time, performance, volume
+        - **Qualitative measures**: user satisfaction, task completion
+    - Each criterion must be verifiable without implementation details
 
 ### Phase 5: Write Specification
 
 1. **Create the specification file**
-   - Write to `specs/.current/spec.md`
-   - Create the `specs/.current/` directory if it doesn't exist
-   - Use the template structure below
-   - Replace all placeholders with concrete details
-   - Preserve section order and headings
+
+    - Write to `specs/.current/spec.md`
+    - Create the `specs/.current/` directory if it doesn't exist
+    - Use the template structure below
+    - Replace all placeholders with concrete details
+    - Preserve section order and headings
 
 2. **Review the specification**
-   - Verify all mandatory sections are filled
-   - Check that requirements are testable
-   - Ensure success criteria are measurable
-   - Confirm user stories are independently valuable
+    - Verify all mandatory sections are filled
+    - Check that requirements are testable
+    - Ensure success criteria are measurable
+    - Confirm user stories are independently valuable
 
 ## Specification Template
 

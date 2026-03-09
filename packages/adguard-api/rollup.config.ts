@@ -40,16 +40,8 @@ const backgroundConfig = {
     watch: {
         include: 'src/background/**',
     },
-    external: [
-        '@adguard/tswebextension',
-        '@adguard/filters-downloader/browser',
-        'webextension-polyfill',
-        'zod',
-    ],
-    plugins: [
-        json(),
-        ...plugins,
-    ],
+    external: ['@adguard/tswebextension', '@adguard/filters-downloader/browser', 'webextension-polyfill', 'zod'],
+    plugins: [json(), ...plugins],
 };
 
 const contentScriptConfig = {

@@ -1,12 +1,7 @@
 import { AdblockSyntax } from '../../utils/adblockers';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { StringUtils } from '../../utils/string';
-import {
-    CommentMarker,
-    type CommentRule,
-    CommentRuleType,
-    RuleCategory,
-} from '../../nodes';
+import { CommentMarker, type CommentRule, CommentRuleType, RuleCategory } from '../../nodes';
 import { BaseParser } from '../base-parser';
 import { ValueParser } from '../misc/value-parser';
 import { defaultParserOptions } from '../options';
@@ -55,12 +50,9 @@ export class SimpleCommentParser extends BaseParser {
 
             // No valid selector
             if (
-                !trimmed[end]
-                || StringUtils.isWhitespace(trimmed[end])
-                || (
-                    trimmed[end] === CommentMarker.Hashmark
-                    && trimmed[end + 1] === CommentMarker.Hashmark
-                )
+                !trimmed[end] ||
+                StringUtils.isWhitespace(trimmed[end]) ||
+                (trimmed[end] === CommentMarker.Hashmark && trimmed[end + 1] === CommentMarker.Hashmark)
             ) {
                 return true;
             }

@@ -1,10 +1,5 @@
 import { type PseudoClassSelector } from '../../../nodes';
-import {
-    CLOSE_PARENTHESIS,
-    COLON,
-    EMPTY,
-    OPEN_PARENTHESIS,
-} from '../../../utils/constants';
+import { CLOSE_PARENTHESIS, COLON, EMPTY, OPEN_PARENTHESIS } from '../../../utils/constants';
 import { BaseGenerator } from '../../base-generator';
 import { ValueGenerator } from '../../misc/value-generator';
 

@@ -6,9 +6,7 @@ import { testTokenization } from '../helpers/test-utils';
 import { createTests, type PseudoValues } from './helpers/test-creator';
 import { generateDelimStream } from './helpers/delim-generator';
 
-const PSEUDO_NAMES = [
-    ExtendedCssPseudo.MatchesCss,
-];
+const PSEUDO_NAMES = [ExtendedCssPseudo.MatchesCss];
 
 const PSEUDO_VALUES: PseudoValues = {
     ...generateDelimStream([
@@ -21,7 +19,7 @@ const PSEUDO_VALUES: PseudoValues = {
 };
 
 describe(`Extended CSS's :${PSEUDO_NAMES.join(', :')}`, () => {
-    test.each(
-        createTests(PSEUDO_NAMES, PSEUDO_VALUES),
-    )("should tokenize '$actual' as $as", (testData) => testTokenization(testData, tokenizeExtended));
+    test.each(createTests(PSEUDO_NAMES, PSEUDO_VALUES))("should tokenize '$actual' as $as", (testData) =>
+        testTokenization(testData, tokenizeExtended),
+    );
 });

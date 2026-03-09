@@ -16,12 +16,7 @@ export class ClassSelectorHandler {
      * @throws If the class selector is syntactically incorrect.
      */
     public static handle(context: SelectorListParserContext): void {
-        const {
-            options,
-            baseOffset,
-            stream,
-            complexSelector,
-        } = context;
+        const { options, baseOffset, stream, complexSelector } = context;
 
         // Get class selector dot token
         const token = stream.getOrFail();

@@ -1,9 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    it,
-} from 'vitest';
+import { describe, expect, beforeEach, it } from 'vitest';
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
@@ -30,10 +25,12 @@ describe('Content Security Policy service', () => {
             timestamp: Date.now(),
             thirdParty: false,
             matchingResult: new MatchingResult([], null),
-            responseHeaders: [{
-                name: 'test_name',
-                value: 'test_value',
-            }],
+            responseHeaders: [
+                {
+                    name: 'test_name',
+                    value: 'test_value',
+                },
+            ],
         } as RequestContext;
     };
 
@@ -49,9 +46,10 @@ describe('Content Security Policy service', () => {
     });
 
     it('correctly applies matching header modifier rules', () => {
-        context.matchingResult = new MatchingResult([
-            createNetworkRule(String.raw`||example.org^$header=test_name:test_value,csp=frame-src 'none'`, 0),
-        ], null);
+        context.matchingResult = new MatchingResult(
+            [createNetworkRule(String.raw`||example.org^$header=test_name:test_value,csp=frame-src 'none'`, 0)],
+            null,
+        );
         const headersModified = runOnHeadersReceived();
         expect(headersModified).toBeTruthy();
         expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
@@ -60,9 +58,10 @@ describe('Content Security Policy service', () => {
     });
 
     it('does not apply non-matching header modifier rules', () => {
-        context.matchingResult = new MatchingResult([
-            createNetworkRule(String.raw`||example.org^$header=NOT_test_name:test_value,csp=frame-src 'none'`, 0),
-        ], null);
+        context.matchingResult = new MatchingResult(
+            [createNetworkRule(String.raw`||example.org^$header=NOT_test_name:test_value,csp=frame-src 'none'`, 0)],
+            null,
+        );
         const headersModified = runOnHeadersReceived();
         expect(headersModified).toBeFalsy();
         expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
@@ -71,10 +70,13 @@ describe('Content Security Policy service', () => {
     });
 
     it('allowlists rules', () => {
-        context.matchingResult = new MatchingResult([
-            createNetworkRule('||example.com$csp=style-src *', 0),
-            createNetworkRule('@@||example.com$csp=style-src *', 0),
-        ], null);
+        context.matchingResult = new MatchingResult(
+            [
+                createNetworkRule('||example.com$csp=style-src *', 0),
+                createNetworkRule('@@||example.com$csp=style-src *', 0),
+            ],
+            null,
+        );
         const hasModified = cspService.onHeadersReceived(context);
 
         expect(hasModified).toBeFalsy();

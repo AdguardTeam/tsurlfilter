@@ -19,9 +19,9 @@ fields:
 | `docs`                | Link to the documentation. If not specified or it's value is `null`, then the documentation is not available.                                                                                                                                                                            | `string\|null`   | `null`                |
 | `version_added`       | The version of the adblocker when the modifier was added.                                                                                                                                                                                                                                | `string\|null`   | `null`                |
 | `version_removed`     | The version of the adblocker when the modifier was removed.                                                                                                                                                                                                                              | `string\|null`   | `null`                |
-| `deprecated`          | Describes whether the modifier is deprecated; for *soon-to-be removed* features.                                                                                                                                                                                                         | `boolean`        | `false`               |
+| `deprecated`          | Describes whether the modifier is deprecated; for _soon-to-be removed_ features.                                                                                                                                                                                                         | `boolean`        | `false`               |
 | `deprecation_message` | Message that describes why the modifier is deprecated. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the modifier is not marked as deprecated.                                                                                   | `string\|null`   | `null`                |
-| `removed`             | Describes whether the modifier is removed; for *already removed* features.                                                                                                                                                                                                               | `boolean`        | `false`               |
+| `removed`             | Describes whether the modifier is removed; for _already removed_ features.                                                                                                                                                                                                               | `boolean`        | `false`               |
 | `removal_message`     | Message that describes why the modifier is removed. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the modifier is not marked as deprecated.                                                                                      | `string\|null`   | `null`                |
 | `conflicts`           | List of modifiers that are incompatible with the actual one.                                                                                                                                                                                                                             | `string[]\|null` | `null` (no conflicts) |
 | `inverse_conflicts`   | The actual modifier is incompatible with all other modifiers, except the ones listed in `conflicts`.                                                                                                                                                                                     | `boolean`        | `false`               |
@@ -29,7 +29,7 @@ fields:
 | `negatable`           | Describes whether the actual modifier can be negated. For example, `$third-party` is negatable, so it can be used like this: `$~third-party`.                                                                                                                                            | `boolean`        | `true`                |
 | `block_only`          | The actual modifier can only be used in blocking rules, it cannot be used in exceptions. If it's value is `true`, then the modifier can be used only in blocking rules. `exception_only` and `block_only` cannot be used together (they are mutually exclusive).                         | `boolean`        | `false`               |
 | `exception_only`      | The actual modifier can only be used in exceptions, it cannot be used in blocking rules. If it's value is `true`, then the modifier can be used only in exceptions. `exception_only` and `block_only` cannot be used together (they are mutually exclusive).                             | `boolean`        | `false`               |
-| `value_optional`      | Describes whether the *assignable* modifier value is required. For example, `$cookie` is assignable but it can be used without a value in exception rules: `@@\|\|example.com^$cookie`. If `false`, the `value_format` is required, e.g. the value of `$app` should always be specified. | `boolean`        | `false`               |
+| `value_optional`      | Describes whether the _assignable_ modifier value is required. For example, `$cookie` is assignable but it can be used without a value in exception rules: `@@\|\|example.com^$cookie`. If `false`, the `value_format` is required, e.g. the value of `$app` should always be specified. | `boolean`        | `false`               |
 | `value_format`        | Describes the format of the value. See [Value format](#value-format) for more details.                                                                                                                                                                                                   | `string\|null`   | `null`                |
 | `value_format_flags`  | [RegExp flags][regexp-flags] for the `value_format` field. It can be used only if the `value_format` is provided and it's a regular expression. Thanks to XRegExp syntax, you can also use flags in the beginning of the regular expression, e.g. `(?i)pattern`.                         | `string\|null`   | `null`                |
 
@@ -61,8 +61,8 @@ The value format describes the format of the modifier value. It can be one of th
             - `pipe_separated_domains` validates value for `$domain` modifier
             - `pipe_separated_denyallow_domains` validates value for `$denyallow` modifier —
               negation and wildcard are not allowed compared to `$domain` modifier
-            <!-- TODO: implement later -->
-            <!-- - `pipe_separated_extensions` validates value for `$extension` modifier -->
+              <!-- TODO: implement later -->
+              <!-- - `pipe_separated_extensions` validates value for `$extension` modifier -->
             - `pipe_separated_methods` validates value for `$method` modifier
             - `pipe_separated_stealth_options` validates value for `$stealth` modifier
             - `csp_value` validates value for `$csp` modifier
@@ -77,7 +77,6 @@ The value format describes the format of the modifier value. It can be one of th
             >   (it is numeric, for example: `$modifier=1`, but not `$modifier=a`).
             > - If you specify `value_format: regexp`, then the value is valid if it's a valid regular expression,
             >   for example: `$modifier=/^valid_regex_value$/`.
-            >
         - Example:
         - For validating `domain` modifier, you can use `value_format: pipe_separated_domains`.
 
@@ -88,16 +87,16 @@ The value format describes the format of the modifier value. It can be one of th
 > or named captures `(?<name>...)`.
 > During build, YAML files are processed and we extract native regular expressions from XRegExp instances.
 
-* * *
+---
 
 ### <a name="footnote-asterisk-1"></a>
 
 > `*`: The field is required.
 
-[*]: #footnote-asterisk-1 "The field is required"
+[*]: #footnote-asterisk-1 'The field is required'
 
 ### <a name="footnote-asterisk-2"></a>
 
 > `**`: Default value may not be specified in .yml files.
 
-[**]: #footnote-asterisk-2 "Default value may not be specified in .yml files."
+[**]: #footnote-asterisk-2 'Default value may not be specified in .yml files.'

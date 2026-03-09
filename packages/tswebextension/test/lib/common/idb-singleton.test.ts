@@ -1,11 +1,4 @@
-import {
-    describe,
-    it,
-    expect,
-    beforeEach,
-    afterEach,
-    vi,
-} from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as idb from 'idb';
 
 import { logger } from '../../../src/lib/common/utils/logger';
@@ -99,8 +92,7 @@ describe('IdbSingleton', () => {
 
         vi.spyOn(logger, 'error').mockImplementation(() => {});
 
-        await expect(IdbSingleton.getOpenedDb('flaky'))
-            .rejects.toThrow('opening failed');
+        await expect(IdbSingleton.getOpenedDb('flaky')).rejects.toThrow('opening failed');
 
         stub.mockRestore(); // restore the real implementation
 

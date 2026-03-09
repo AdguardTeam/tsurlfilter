@@ -19,9 +19,9 @@ Build:
   other:
     clean-working-dir: true
   docker:
-    image: "${bamboo.dockerContainer}"
+    image: '${bamboo.dockerContainer}'
     volumes:
-      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      ${system.PNPM_DIR}: '${bamboo.cachePnpm}'
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -62,7 +62,7 @@ Build:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/cleanup.sh packages/eslint-plugin-logger-context/eslint-plugin-logger-context.tgz"
+          - './bamboo-specs/scripts/cleanup.sh packages/eslint-plugin-logger-context/eslint-plugin-logger-context.tgz'
   artifacts:
     - name: eslint-plugin-logger-context.tgz
       location: packages/eslint-plugin-logger-context/

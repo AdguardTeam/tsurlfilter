@@ -11,40 +11,30 @@ describe('HeaderRemovalRuleConverter', () => {
             // Leave non-header removal rules as is
             {
                 actual: '##+js(foo)',
-                expected: [
-                    '##+js(foo)',
-                ],
+                expected: ['##+js(foo)'],
                 shouldConvert: false,
             },
 
             // No domain
             {
                 actual: '##^responseheader(header-name)',
-                expected: [
-                    '$removeheader=header-name',
-                ],
+                expected: ['$removeheader=header-name'],
             },
             {
                 actual: '#@#^responseheader(header-name)',
-                expected: [
-                    '@@$removeheader=header-name',
-                ],
+                expected: ['@@$removeheader=header-name'],
             },
 
             // Single domain
             {
                 actual: 'example.com##^responseheader(header-name)',
-                expected: [
-                    '||example.com^$removeheader=header-name',
-                ],
+                expected: ['||example.com^$removeheader=header-name'],
             },
             {
                 actual: 'example.com#@#^responseheader(header-name)',
-                expected: [
-                    '@@||example.com^$removeheader=header-name',
-                ],
+                expected: ['@@||example.com^$removeheader=header-name'],
             },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+        ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(HeaderRemovalRuleConverter, 'convertToAdg');
         });
 
@@ -62,9 +52,7 @@ describe('HeaderRemovalRuleConverter', () => {
             },
         ])("should throw '$expected' error when converting '$actual'", ({ actual, expected }) => {
             expect(() => {
-                HeaderRemovalRuleConverter.convertToAdg(
-                    RuleParser.parse(actual),
-                );
+                HeaderRemovalRuleConverter.convertToAdg(RuleParser.parse(actual));
             }).toThrowError(new RuleConversionError(expected));
         });
     });

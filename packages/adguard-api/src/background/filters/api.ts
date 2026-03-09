@@ -73,12 +73,14 @@ export class FiltersApi {
      * @param filterIds - list of filter ids
      * @returns filters data for {@link TsWebExtension} configuration
      */
-    public async getFilters(filterIds: number[]): Promise<{
-        content: string;
-        conversionData: ConversionData;
-        filterId: number;
-        trusted: boolean;
-    }[]> {
+    public async getFilters(filterIds: number[]): Promise<
+        {
+            content: string;
+            conversionData: ConversionData;
+            filterId: number;
+            trusted: boolean;
+        }[]
+    > {
         const tasks = filterIds.map((id) => this.getFilter(id));
 
         return Promise.all(tasks);

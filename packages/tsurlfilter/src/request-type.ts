@@ -77,4 +77,4 @@ export const RequestType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type RequestType = typeof RequestType[keyof typeof RequestType];
+export type RequestType = (typeof RequestType)[keyof typeof RequestType];

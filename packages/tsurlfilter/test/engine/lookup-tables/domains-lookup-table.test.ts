@@ -67,9 +67,7 @@ describe('Domains Lookup Table Tests', () => {
     });
 
     it('returns only unique rule', () => {
-        const rules = [
-            'path$domain=base.com|a.base.com|b.base.com',
-        ];
+        const rules = ['path$domain=base.com|a.base.com|b.base.com'];
 
         const ruleStorage = createRuleStorage(rules);
         const table = new DomainsLookupTable(ruleStorage);

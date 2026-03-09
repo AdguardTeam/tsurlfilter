@@ -73,8 +73,9 @@ You MUST follow the following rules for EVERY task that you perform:
 
 - You MUST verify your changes pass all static analysis checks before completing
   a task:
-  - `pnpm lint:types` to check for TypeScript errors
-  - `pnpm lint:code` to run ESLint
+
+    - `pnpm lint:types` to check for TypeScript errors
+    - `pnpm lint:code` to run ESLint
 
 - You MUST update or add unit tests for any changed code.
 
@@ -105,31 +106,32 @@ You MUST follow the following rules for EVERY task that you perform:
 
 1. **Three entry points.** The package exposes three separate entry points
    bundled by Rollup:
-   - `lib` (`src/lib/index.ts`) — public programmatic API (`AssetsLoader`,
-     `ManifestPatcher`, `RulesetsInjector`, `excludeUnsafeRules`).
-   - `utils` (`src/utils/index.ts`) — lightweight utility functions
-     (`getVersion`, `getVersionTimestampMs`).
-   - CLI (`src/cli.ts`) — `commander`-based CLI binary shipped as CJS.
 
-   New public API MUST be exported through the appropriate barrel file. New CLI
-   commands MUST be added in `src/cli.ts`.
+    - `lib` (`src/lib/index.ts`) — public programmatic API (`AssetsLoader`,
+      `ManifestPatcher`, `RulesetsInjector`, `excludeUnsafeRules`).
+    - `utils` (`src/utils/index.ts`) — lightweight utility functions
+      (`getVersion`, `getVersionTimestampMs`).
+    - CLI (`src/cli.ts`) — `commander`-based CLI binary shipped as CJS.
 
-   **Rationale**: Keeps the public surface explicit and allows tree-shaking for
-   consumers who only need a subset.
+    New public API MUST be exported through the appropriate barrel file. New CLI
+    commands MUST be added in `src/cli.ts`.
+
+    **Rationale**: Keeps the public surface explicit and allows tree-shaking for
+    consumers who only need a subset.
 
 2. **Shared code lives in `src/common/`.** Code used by both `lib` and `tasks`
    (or by multiple modules within `lib`) SHOULD be placed in `src/common/`.
    Build-time-only constants and helpers live in the top-level `common/`
    directory (outside `src/`).
 
-   **Rationale**: Prevents circular dependencies and clarifies which code ships
-   in the published package vs. what is build-only.
+    **Rationale**: Prevents circular dependencies and clarifies which code ships
+    in the published package vs. what is build-only.
 
 3. **Tasks are standalone scripts.** Files under `tasks/` are executed via `tsx`
    and MUST NOT be imported by `src/` code. They may import from the top-level
    `common/` directory.
 
-   **Rationale**: Keeps the published library free of build-time dependencies.
+    **Rationale**: Keeps the published library free of build-time dependencies.
 
 ### II. Code Quality Standards
 
@@ -137,47 +139,47 @@ You MUST follow the following rules for EVERY task that you perform:
    and method definition. Descriptions MUST be complete sentences. Use `@param`,
    `@returns`, and `@throws` tags as appropriate.
 
-   **Rationale**: Enforced by `eslint-plugin-jsdoc` rules in
-   `eslint.config.mjs`.
+    **Rationale**: Enforced by `eslint-plugin-jsdoc` rules in
+    `eslint.config.mjs`.
 
 2. **Max line length is 120 characters.** URLs are exempt.
 
-   **Rationale**: Configured in the ESLint `max-len` rule.
+    **Rationale**: Configured in the ESLint `max-len` rule.
 
 3. **Imports MUST be sorted** using `simple-import-sort`. Group Node built-ins
    first, then external packages, then internal paths.
 
-   **Rationale**: Enforced by `simple-import-sort/imports` ESLint rule.
+    **Rationale**: Enforced by `simple-import-sort/imports` ESLint rule.
 
 4. **Use 4-space indentation**, single quotes, semicolons, and `1tbs` brace
    style with arrow parens always present.
 
-   **Rationale**: Enforced by `@stylistic/eslint-plugin` configuration.
+    **Rationale**: Enforced by `@stylistic/eslint-plugin` configuration.
 
 5. **Strict TypeScript options are enabled**: `noUnusedLocals`,
    `noUnusedParameters`, `noImplicitReturns`, `noFallthroughCasesInSwitch`.
    All code MUST compile cleanly under `pnpm lint:types`.
 
-   **Rationale**: Prevents common bugs at compile time.
+    **Rationale**: Prevents common bugs at compile time.
 
 ### III. Testing Discipline
 
 1. **Test files mirror `src/` structure** under `test/`. For example, tests for
    `src/lib/manifest/patcher.ts` live in `test/lib/manifest/`.
 
-   **Rationale**: Makes it easy to locate tests for any source file.
+    **Rationale**: Makes it easy to locate tests for any source file.
 
 2. **100 % coverage thresholds** are configured in `vitest.config.ts` for
    branches, functions, lines, and statements. They are checked when running
    `pnpm test:coverage`. New code SHOULD be covered by tests.
 
-   **Rationale**: Catches regressions in test coverage before publishing.
+    **Rationale**: Catches regressions in test coverage before publishing.
 
 3. **Smoke tests** validate that the published package can be imported as ESM
    and that all declared exports resolve correctly (via `tsd`). Located in
    `test/smoke/`.
 
-   **Rationale**: Catches packaging regressions before publishing.
+    **Rationale**: Catches packaging regressions before publishing.
 
 ### IV. Other
 
@@ -186,11 +188,11 @@ You MUST follow the following rules for EVERY task that you perform:
    output is ESM. Do NOT change the CLI format without verifying WASM loading
    still works.
 
-   **Rationale**: Documented in `rollup.config.ts` comments.
+    **Rationale**: Documented in `rollup.config.ts` comments.
 
 2. **All AdGuard workspace packages are bundled into the CLI.** The Rollup CLI
    config excludes most externals but bundles `@adguard/agtree`,
    `@adguard/logger`, and `@adguard/tsurlfilter` because they are ESM-only and
    the CLI output is CJS.
 
-   **Rationale**: Avoids `import.meta.url` issues in CJS context.
+    **Rationale**: Avoids `import.meta.url` issues in CJS context.

@@ -21,15 +21,12 @@ export const hasToken = (
 ): boolean => {
     let found = false;
 
-    tokenizer(
-        raw,
-        (type, start, end, props, stop) => {
-            if (tokens.has(type)) {
-                found = true;
-                stop();
-            }
-        },
-    );
+    tokenizer(raw, (type, start, end, props, stop) => {
+        if (tokens.has(type)) {
+            found = true;
+            stop();
+        }
+    });
 
     return found;
 };

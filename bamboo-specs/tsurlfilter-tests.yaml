@@ -73,9 +73,9 @@ stages:
 Test Logger:
   key: TESTLOGGER
   docker: &docker
-    image: "${bamboo.dockerContainer}"
+    image: '${bamboo.dockerContainer}'
     volumes:
-       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      ${system.PNPM_DIR}: '${bamboo.cachePnpm}'
   tasks:
     - checkout:
         force-clean-build: true
@@ -95,14 +95,14 @@ Test Logger:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/logger-tests.sh"
+          - './bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/logger-tests.sh'
   # IMPORTANT: run clean after each stage
   # since each stage is run in a separate directory and we want to clean up after each stage
   final-tasks:
     - script: &cleanup-script
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/cleanup.sh"
+          - './bamboo-specs/scripts/cleanup.sh'
   requirements: &requirements
     - extension: 'true'
 
@@ -116,12 +116,12 @@ Test CSSTokenizer:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/css-tokenizer-tests.sh"
+          - './bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/css-tokenizer-tests.sh'
   final-tasks:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/cleanup.sh"
+          - './bamboo-specs/scripts/cleanup.sh'
   requirements: *requirements
 
 Test AGTree:
@@ -134,7 +134,7 @@ Test AGTree:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/agtree-tests.sh"
+          - './bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/agtree-tests.sh'
   final-tasks:
     - script: *cleanup-script
   requirements: *requirements
@@ -148,7 +148,7 @@ Test TSUrlFilter:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-tests.sh"
+          - './bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-tests.sh'
   final-tasks:
     - script: *cleanup-script
   requirements: *requirements
@@ -163,7 +163,7 @@ Test TSWebExtension:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tswebextension-tests.sh"
+          - './bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tswebextension-tests.sh'
   final-tasks:
     - script: *cleanup-script
   requirements: *requirements
@@ -178,7 +178,7 @@ Test DNR-Rulesets:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
+          - './bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh'
   final-tasks:
     - script: *cleanup-script
   requirements: *requirements
@@ -193,24 +193,24 @@ Test Examples - APIs and TSWebExtensions:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh"
+          - './bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh'
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh"
+          - './bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh'
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
+          - './bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-tests.sh'
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
+          - './bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh'
   final-tasks:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/cleanup.sh packages/examples/adguard-api/build/extension.zip,packages/examples/adguard-api-mv3/build/extension.zip"
+          - './bamboo-specs/scripts/cleanup.sh packages/examples/adguard-api/build/extension.zip,packages/examples/adguard-api-mv3/build/extension.zip'
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
@@ -231,7 +231,7 @@ branches:
     after-inactive-days: '5'
   link-to-jira: true
 
-labels: [ ]
+labels: []
 
 other:
   concurrent-build-plugin: system-default

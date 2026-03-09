@@ -73,10 +73,7 @@ const getValidatorData = async (destDir: string): Promise<RulesetIdsAndMetadataK
     const ruleSetPath = getRuleSetPath(rulesetIds[0], destDir);
 
     try {
-        const rawRuleSetContent = await fs.promises.readFile(
-            ruleSetPath,
-            { encoding: 'utf-8' },
-        );
+        const rawRuleSetContent = await fs.promises.readFile(ruleSetPath, { encoding: 'utf-8' });
 
         const ruleSetContent = JSON.parse(rawRuleSetContent);
         const metadataRule = ruleSetContent[0];
@@ -107,10 +104,9 @@ const getAllOldValidatorData = async (): Promise<AllRulesetIdsAndMetadataKeys> =
     let oldData: AllRulesetIdsAndMetadataKeys;
 
     try {
-        const oldDataContent = await fs.promises.readFile(
-            path.join(__dirname, OLD_VALIDATOR_DATA_FILE_NAME),
-            { encoding: 'utf-8' },
-        );
+        const oldDataContent = await fs.promises.readFile(path.join(__dirname, OLD_VALIDATOR_DATA_FILE_NAME), {
+            encoding: 'utf-8',
+        });
         oldData = JSON.parse(oldDataContent);
     } catch (e: unknown) {
         throw new Error(`Error parsing old rulesets data due to ${e}`);
@@ -150,7 +146,9 @@ const validateRulesets = async (
         }
 
         // eslint-disable-next-line max-len
-        messageParts.push(`Consider updating changelog ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build of ${browser} rulesets`);
+        messageParts.push(
+            `Consider updating changelog ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build of ${browser} rulesets`,
+        );
 
         throw new Error(messageParts.join('\n'));
     }
@@ -169,7 +167,9 @@ const validateRulesets = async (
         }
 
         // eslint-disable-next-line max-len
-        messageParts.push(`Consider bumping package version, updating changelog and ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build of ${browser} rulesets`);
+        messageParts.push(
+            `Consider bumping package version, updating changelog and ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build of ${browser} rulesets`,
+        );
 
         throw new Error(messageParts.join('\n'));
     }

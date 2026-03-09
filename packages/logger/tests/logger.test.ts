@@ -1,10 +1,4 @@
-import {
-    describe,
-    afterEach,
-    it,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, afterEach, it, expect, vi } from 'vitest';
 
 import { Logger, LogLevel } from '../src';
 import { type Writer } from '../src/Logger';

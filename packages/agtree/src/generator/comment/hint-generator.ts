@@ -1,10 +1,5 @@
 import type { Hint } from '../../nodes';
-import {
-    CLOSE_PARENTHESIS,
-    COMMA,
-    EMPTY,
-    OPEN_PARENTHESIS,
-} from '../../utils/constants';
+import { CLOSE_PARENTHESIS, COMMA, EMPTY, OPEN_PARENTHESIS } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
 import { ParameterListGenerator } from '../misc/parameter-list-generator';
 

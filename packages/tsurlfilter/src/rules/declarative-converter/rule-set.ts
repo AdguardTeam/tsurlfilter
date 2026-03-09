@@ -98,9 +98,7 @@ export interface IRuleSet {
      *
      * @returns List of ids of converted declarative rule.
      */
-    getDeclarativeRulesIdsBySourceRuleIndex(
-        source: SourceRuleIdxAndFilterId,
-    ): Promise<number[]>;
+    getDeclarativeRulesIdsBySourceRuleIndex(source: SourceRuleIdxAndFilterId): Promise<number[]>;
 
     /**
      * Returns list of ruleset's declarative rules.
@@ -151,10 +149,7 @@ export interface IRuleSet {
      * @throws Error if counter of unsafe rules is not equal to the length of
      * the provided `unsafeRules` array.
      */
-    serializeCompact(
-        prettyPrint?: boolean,
-        unsafeRules?: DeclarativeRule[],
-    ): Promise<string>;
+    serializeCompact(prettyPrint?: boolean, unsafeRules?: DeclarativeRule[]): Promise<string>;
 }
 
 /**
@@ -383,10 +378,7 @@ export class RuleSet implements IRuleSet {
         }
 
         const sourcePairs = this.sourceMap.getByDeclarativeRuleId(declarativeRuleId);
-        const sourceRules = sourcePairs.map(async ({
-            filterId,
-            sourceRuleIndex,
-        }) => {
+        const sourceRules = sourcePairs.map(async ({ filterId, sourceRuleIndex }) => {
             const filter = this.filterList.get(filterId);
             if (!filter) {
                 throw new Error(`Not found filter list with id: ${filterId}`);
@@ -419,11 +411,7 @@ export class RuleSet implements IRuleSet {
         }
 
         const initialize = async (): Promise<void> => {
-            const {
-                loadSourceMap,
-                loadFilterList,
-                loadDeclarativeRules,
-            } = this.ruleSetContentProvider;
+            const { loadSourceMap, loadFilterList, loadDeclarativeRules } = this.ruleSetContentProvider;
 
             this.sourceMap = await loadSourceMap();
             this.declarativeRules = await loadDeclarativeRules();
@@ -497,15 +485,15 @@ export class RuleSet implements IRuleSet {
     }
 
     /** @inheritdoc */
-    public async getDeclarativeRulesIdsBySourceRuleIndex(
-        source: SourceRuleIdxAndFilterId,
-    ): Promise<number[]> {
+    public async getDeclarativeRulesIdsBySourceRuleIndex(source: SourceRuleIdxAndFilterId): Promise<number[]> {
         await this.loadContent();
 
         if (!this.sourceMap) {
             const { filterId, sourceRuleIndex } = source;
             // eslint-disable-next-line max-len
-            throw new Error(`Cannot find declarative rules for filter id - ${filterId}, rule index - ${sourceRuleIndex} because source map is undefined in ruleset: ${this.getId()}`);
+            throw new Error(
+                `Cannot find declarative rules for filter id - ${filterId}, rule index - ${sourceRuleIndex} because source map is undefined in ruleset: ${this.getId()}`,
+            );
         }
 
         return this.sourceMap.getBySourceRuleIndex(source);
@@ -529,9 +517,7 @@ export class RuleSet implements IRuleSet {
      *
      * @returns List of {@link NetworkRule | network rules}.
      */
-    public static getNetworkRuleBySourceRule(
-        source: SourceRuleAndFilterId,
-    ): NetworkRule[] {
+    public static getNetworkRuleBySourceRule(source: SourceRuleAndFilterId): NetworkRule[] {
         const { sourceRule, filterId } = source;
 
         let networkIndexedRulesWithHash: IndexedNetworkRuleWithHash[] = [];
@@ -641,9 +627,7 @@ export class RuleSet implements IRuleSet {
 
                     const objectFromString = JSON.parse(rawFileContent);
 
-                    const declarativeRules = DeclarativeRuleValidator
-                        .array()
-                        .parse(objectFromString);
+                    const declarativeRules = DeclarativeRuleValidator.array().parse(objectFromString);
 
                     return declarativeRules;
                 },
@@ -713,10 +697,7 @@ export class RuleSet implements IRuleSet {
     }
 
     /** @inheritdoc */
-    public async serializeCompact(
-        prettyPrint = true,
-        unsafeRules?: DeclarativeRule[],
-    ): Promise<string> {
+    public async serializeCompact(prettyPrint = true, unsafeRules?: DeclarativeRule[]): Promise<string> {
         try {
             await this.loadContent();
         } catch (e) {

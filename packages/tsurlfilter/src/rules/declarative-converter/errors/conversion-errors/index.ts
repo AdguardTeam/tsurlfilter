@@ -3,9 +3,7 @@ import { InvalidDeclarativeRuleError } from './invalid-declarative-rule-error';
 import { UnsupportedModifierError } from './unsupported-modifier-error';
 import { UnsupportedRegexpError } from './unsupported-regexp-error';
 
-type ConversionError = UnsupportedModifierError
-| EmptyResourcesError
-| UnsupportedRegexpError;
+type ConversionError = UnsupportedModifierError | EmptyResourcesError | UnsupportedRegexpError;
 
 export {
     type ConversionError,

@@ -12,7 +12,9 @@ import { access } from 'fs/promises';
  * @returns True if the path exists, false otherwise.
  */
 export const pathExists = async (path: string): Promise<boolean> => {
-    return Promise.resolve(access(path)
-        .then(() => true)
-        .catch(() => false));
+    return Promise.resolve(
+        access(path)
+            .then(() => true)
+            .catch(() => false),
+    );
 };

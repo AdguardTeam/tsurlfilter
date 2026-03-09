@@ -30,12 +30,7 @@ import { Network } from './network';
 import { Storage } from './storage';
 import { FiltersApi, FiltersUpdateService, LocaleDetectService } from './filters';
 import { Configuration, configurationValidator } from './schemas';
-import {
-    DeleteFiltersEvent,
-    DetectFiltersEvent,
-    notifier,
-    NotifierEventType,
-} from './notifier';
+import { DeleteFiltersEvent, DetectFiltersEvent, notifier, NotifierEventType } from './notifier';
 import { RequestBlockingLogger } from './request-blocking-logger';
 import { Logger } from './logger';
 

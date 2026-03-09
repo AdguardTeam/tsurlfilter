@@ -19,9 +19,9 @@ Build:
   other:
     clean-working-dir: true
   docker:
-    image: "${bamboo.dockerContainer}"
+    image: '${bamboo.dockerContainer}'
     volumes:
-       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      ${system.PNPM_DIR}: '${bamboo.cachePnpm}'
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -60,7 +60,7 @@ Build:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/cleanup.sh packages/agtree/agtree.tgz"
+          - './bamboo-specs/scripts/cleanup.sh packages/agtree/agtree.tgz'
   # Store the AGTree package tarball as an artifact
   artifacts:
     - name: agtree.tgz

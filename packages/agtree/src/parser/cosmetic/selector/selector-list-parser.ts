@@ -3,14 +3,7 @@ import { sprintf } from 'sprintf-js';
 
 import { type SelectorList } from '../../../nodes';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import {
-    ASTERISK,
-    DOT,
-    GREATER_THAN,
-    PLUS,
-    SPACE,
-    TILDE,
-} from '../../../utils/constants';
+import { ASTERISK, DOT, GREATER_THAN, PLUS, SPACE, TILDE } from '../../../utils/constants';
 import { BaseParser } from '../../base-parser';
 import { CssTokenStream } from '../../css/css-token-stream';
 import { defaultParserOptions } from '../../options';
@@ -58,11 +51,7 @@ export class SelectorListParser extends BaseParser {
      * div[attr1="value1"] > h1[attr2="value2"], span[attr3="value3"]
      * ```
      */
-    public static parse(
-        raw: string,
-        options = defaultParserOptions,
-        baseOffset = 0,
-    ): SelectorList {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): SelectorList {
         // Construct the stream
         const stream = new CssTokenStream(raw, baseOffset);
 

@@ -11,11 +11,7 @@ export class UnavailableFilterSourceError extends Error {
      * @param filterId Filter id, the source of which is not available.
      * @param cause Basic error, describes why the source is unavailable.
      */
-    constructor(
-        message: string,
-        filterId: number,
-        cause?: Error,
-    ) {
+    constructor(message: string, filterId: number, cause?: Error) {
         super(message, { cause });
 
         this.name = this.constructor.name;

@@ -1,4 +1,5 @@
 <!-- omit in toc -->
+
 # TSUrlFilter
 
 [![npm-badge]][npm-url] [![license-badge]][license-url]
@@ -13,58 +14,58 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
 - [Idea](#idea)
 - [Installation](#installation)
 - [API description](#api-description)
-  - [Public properties](#public-properties)
-    - [`TSURLFILTER_VERSION`](#tsurlfilter_version)
-  - [Public classes](#public-classes)
-    - [Engine](#engine)
-      - [**Factory**](#factory)
-        - [**Sync mode**](#sync-mode)
-        - [**Async mode**](#async-mode)
-        - [Example](#example)
-      - [**matchRequest**](#matchrequest)
-      - [**matchFrame**](#matchframe)
-      - [Starting engine](#starting-engine)
-      - [Matching requests](#matching-requests)
-      - [Retrieving cosmetic data](#retrieving-cosmetic-data)
-    - [MatchingResult](#matchingresult)
-      - [**getBasicResult**](#getbasicresult)
-      - [**getDocumentBlockingResult**](#getdocumentblockingresult)
-      - [**getCosmeticOption**](#getcosmeticoption)
-      - [**Other rules**](#other-rules)
-    - [CosmeticResult](#cosmeticresult)
-      - [Applying cosmetic result - CSS](#applying-cosmetic-result---css)
-      - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
-    - [DnsEngine](#dnsengine)
-      - [**Constructor**](#constructor)
-      - [**match**](#match)
-      - [Matching hostname](#matching-hostname)
-    - [RuleSyntaxUtils](#rulesyntaxutils)
-      - [Public methods](#public-methods)
-    - [FilterList](#filterlist)
-      - [Key Features](#key-features)
-      - [Constructor](#constructor-1)
-      - [Conversion Data Structure](#conversion-data-structure)
-      - [Main Methods](#main-methods)
-        - [Getting Converted Content](#getting-converted-content)
-        - [Getting Rule Text](#getting-rule-text)
-        - [Getting Original Rule Text](#getting-original-rule-text)
-        - [Getting Converted Rule Original (Strict)](#getting-converted-rule-original-strict)
-        - [Restoring Original Content](#restoring-original-content)
-      - [Static Methods](#static-methods)
-      - [Usage Example](#usage-example)
-    - [DeclarativeFilterConverter](#declarativefilterconverter)
-      - [Public methods](#public-methods-1)
-      - [Example of use](#example-of-use)
-      - [Declarative converter documentation](#declarative-converter-documentation)
-      - [Problems](#problems)
+    - [Public properties](#public-properties)
+        - [`TSURLFILTER_VERSION`](#tsurlfilter_version)
+    - [Public classes](#public-classes)
+        - [Engine](#engine)
+            - [**Factory**](#factory)
+                - [**Sync mode**](#sync-mode)
+                - [**Async mode**](#async-mode)
+                - [Example](#example)
+            - [**matchRequest**](#matchrequest)
+            - [**matchFrame**](#matchframe)
+            - [Starting engine](#starting-engine)
+            - [Matching requests](#matching-requests)
+            - [Retrieving cosmetic data](#retrieving-cosmetic-data)
+        - [MatchingResult](#matchingresult)
+            - [**getBasicResult**](#getbasicresult)
+            - [**getDocumentBlockingResult**](#getdocumentblockingresult)
+            - [**getCosmeticOption**](#getcosmeticoption)
+            - [**Other rules**](#other-rules)
+        - [CosmeticResult](#cosmeticresult)
+            - [Applying cosmetic result - CSS](#applying-cosmetic-result---css)
+            - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
+        - [DnsEngine](#dnsengine)
+            - [**Constructor**](#constructor)
+            - [**match**](#match)
+            - [Matching hostname](#matching-hostname)
+        - [RuleSyntaxUtils](#rulesyntaxutils)
+            - [Public methods](#public-methods)
+        - [FilterList](#filterlist)
+            - [Key Features](#key-features)
+            - [Constructor](#constructor-1)
+            - [Conversion Data Structure](#conversion-data-structure)
+            - [Main Methods](#main-methods)
+                - [Getting Converted Content](#getting-converted-content)
+                - [Getting Rule Text](#getting-rule-text)
+                - [Getting Original Rule Text](#getting-original-rule-text)
+                - [Getting Converted Rule Original (Strict)](#getting-converted-rule-original-strict)
+                - [Restoring Original Content](#restoring-original-content)
+            - [Static Methods](#static-methods)
+            - [Usage Example](#usage-example)
+        - [DeclarativeFilterConverter](#declarativefilterconverter)
+            - [Public methods](#public-methods-1)
+            - [Example of use](#example-of-use)
+            - [Declarative converter documentation](#declarative-converter-documentation)
+            - [Problems](#problems)
 - [Converting filters to declarative rulesets](#converting-filters-to-declarative-rulesets)
-  - [API usage](#api-usage)
-  - [CLI usage](#cli-usage)
-    - [Extracting filters from rulesets](#extracting-filters-from-rulesets)
+    - [API usage](#api-usage)
+    - [CLI usage](#cli-usage)
+        - [Extracting filters from rulesets](#extracting-filters-from-rulesets)
 - [Development](#development)
-  - [NPM scripts](#npm-scripts)
-  - [Excluding peerDependencies](#excluding-peerdependencies)
-  - [Git Hooks](#git-hooks)
+    - [NPM scripts](#npm-scripts)
+    - [Excluding peerDependencies](#excluding-peerdependencies)
+    - [Git Hooks](#git-hooks)
 
 ## <a id="idea"></a>Idea
 
@@ -184,10 +185,10 @@ matchFrame(frameUrl: string): NetworkRule | null;
 import { Engine, setConfiguration } from '@adguard/tsurlfilter';
 
 const rawFilter = [
-  '[AdGuard]',
-  '! Title: Example filter',
-  '! Description: This is just an example filter.',
-  'example.com##h1',
+    '[AdGuard]',
+    '! Title: Example filter',
+    '! Description: This is just an example filter.',
+    'example.com##h1',
 ].join('\n');
 
 const config = {
@@ -321,8 +322,9 @@ public getScriptRules(): CosmeticRule[];
 ##### Applying cosmetic result - CSS
 
 ```ts
-const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
-        .map((rule) => `${rule.getContent()} { display: none!important; }`);
+const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific].map(
+    (rule) => `${rule.getContent()} { display: none!important; }`,
+);
 
 const styleText = css.join('\n');
 const injectDetails = {
@@ -446,7 +448,7 @@ interface ConversionData {
      * Original filter list rules that were converted.
      */
     originals: string[];
-    
+
     /**
      * Conversion map.
      * Maps line start offsets in the converted content to indexes in the originals array.
@@ -622,10 +624,7 @@ convertDynamicRuleSets(
 import { CompatibilityTypes, FilterList, setConfiguration } from '@adguard/tsurlfilter';
 import { DeclarativeFilterConverter, Filter } from '@adguard/tsurlfilter/es/declarative-converter';
 
-const rawFilter1 = [
-    '||example.com^$document',
-    '/ads.js^$script,third-party,domain=example.com|example.net',
-].join('\n');
+const rawFilter1 = ['||example.com^$document', '/ads.js^$script,third-party,domain=example.com|example.net'].join('\n');
 
 const rawFilter2 = [
     '||example.com^$document',
@@ -645,7 +644,7 @@ const converter = new DeclarativeFilterConverter();
 
 let filterId = 0;
 
-;(async () => {
+(async () => {
     const { ruleSet: staticRuleSet } = await converter.convertStaticRuleSet(
         new Filter(filterId++, {
             getContent: () => Promise.resolve(new FilterList(rawFilter1)),
@@ -709,19 +708,19 @@ import { convertFilters } from '@adguard/tsurlfilter/cli/convertFilters';
 
 // Example usage:
 await convertFilters(
-  './filters',           // Path to directory containing filter files and metadata (e.g., filters.json)
-  './resources',         // Path to web-accessible resources (can be obtained via `@adguard/tswebextension` CLI's `war` command)
-  './build/rulesets',    // Destination directory for generated rulesets
-  {
-    debug: true,         // (optional) Print additional debug information
-    prettifyJson: true,  // (optional) Prettify JSON output (default: true)
-    additionalProperties: {
-      // (optional) Additional properties to include in metadata ruleset
-      // This field is not validated, but it must be JSON serializable.
-      // Validation should be performed by users.
-      version: '1.2.3',
+    './filters', // Path to directory containing filter files and metadata (e.g., filters.json)
+    './resources', // Path to web-accessible resources (can be obtained via `@adguard/tswebextension` CLI's `war` command)
+    './build/rulesets', // Destination directory for generated rulesets
+    {
+        debug: true, // (optional) Print additional debug information
+        prettifyJson: true, // (optional) Prettify JSON output (default: true)
+        additionalProperties: {
+            // (optional) Additional properties to include in metadata ruleset
+            // This field is not validated, but it must be JSON serializable.
+            // Validation should be performed by users.
+            version: '1.2.3',
+        },
     },
-  }
 );
 ```
 
@@ -751,8 +750,8 @@ npx tsurlfilter convert <filtersAndMetadataDir> <resourcesDir> [destRulesetsDir]
 
 **Options:**
 
-- `--debug`           Enable debug mode (default: false)
-- `--prettify-json`   Prettify JSON output (default: true)
+- `--debug` Enable debug mode (default: false)
+- `--prettify-json` Prettify JSON output (default: true)
 
 **Example:**
 

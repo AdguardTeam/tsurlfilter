@@ -1,10 +1,5 @@
 import { getDomain } from 'tldts';
-import {
-    type NetworkRule,
-    NetworkRuleOption,
-    PERMISSIONS_POLICY_HEADER_NAME,
-    RequestType,
-} from '@adguard/tsurlfilter';
+import { type NetworkRule, NetworkRuleOption, PERMISSIONS_POLICY_HEADER_NAME, RequestType } from '@adguard/tsurlfilter';
 
 import { FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { ContentType } from '../../../common/request-type';
@@ -67,15 +62,7 @@ export class PermissionsPolicyService {
      * @returns True if policies were set successfully.
      */
     public onHeadersReceived(context: RequestContext): boolean {
-        const {
-            matchingResult,
-            responseHeaders,
-            requestId,
-            requestType,
-            tabId,
-            requestUrl,
-            referrerUrl,
-        } = context;
+        const { matchingResult, responseHeaders, requestId, requestType, tabId, requestUrl, referrerUrl } = context;
 
         if (!matchingResult) {
             return false;
@@ -91,9 +78,10 @@ export class PermissionsPolicyService {
         // Check if a global allowlist rule is present.
         if (
             permissionsPolicyRules.some(
-                (rule) => rule.isAllowlist()
-                    && !rule.getAdvancedModifierValue()
-                    && !PermissionsPolicyService.isSubDocumentRule(rule),
+                (rule) =>
+                    rule.isAllowlist() &&
+                    !rule.getAdvancedModifierValue() &&
+                    !PermissionsPolicyService.isSubDocumentRule(rule),
             )
         ) {
             return false;
@@ -149,10 +137,9 @@ export class PermissionsPolicyService {
 
         if (permissionsPolicyHeaders.length > 0) {
             this.contextStorage.update(requestId, {
-                responseHeaders: responseHeaders ? [
-                    ...responseHeaders,
-                    ...permissionsPolicyHeaders,
-                ] : permissionsPolicyHeaders,
+                responseHeaders: responseHeaders
+                    ? [...responseHeaders, ...permissionsPolicyHeaders]
+                    : permissionsPolicyHeaders,
             });
 
             return true;

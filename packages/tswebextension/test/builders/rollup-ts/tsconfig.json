@@ -1,9 +1,5 @@
 {
-    "include": [
-        "src",
-        ".eslintrc.cjs",
-        "rollup.config.js"
-    ],
+    "include": ["src", ".eslintrc.cjs", "rollup.config.js"],
     "compilerOptions": {
         "target": "ESNext",
         "module": "NodeNext",

@@ -130,15 +130,7 @@ export abstract class FrameCommon {
      * @param props Frame constructor properties.
      */
     constructor(props: FrameConstructorProps) {
-        const {
-            url,
-            tabId,
-            parentFrameId,
-            frameId,
-            timeStamp,
-            parentDocumentId,
-            documentId,
-        } = props;
+        const { url, tabId, parentFrameId, frameId, timeStamp, parentDocumentId, documentId } = props;
 
         this.url = url;
         this.tabId = tabId;

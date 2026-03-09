@@ -560,11 +560,7 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
          * This prevents count 'leaks' when moving between main frames due to async nature of
          * {@link browser.webRequest.onBeforeRequest} and {@link browser.tabs.onUpdated} events.
          */
-        if (
-            !tabUrl
-            || !referrerUrl
-            || getDomain(tabUrl) !== getDomain(referrerUrl)
-        ) {
+        if (!tabUrl || !referrerUrl || getDomain(tabUrl) !== getDomain(referrerUrl)) {
             return;
         }
 
@@ -660,15 +656,13 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      *
      * @throws Error if the tab context is not found, as this should not occur at this point.
      */
-    public setFrameContext(
-        tabId: number,
-        frameId: number,
-        frameContext: F,
-    ): void {
+    public setFrameContext(tabId: number, frameId: number, frameContext: F): void {
         const tabContext = this.getTabContext(tabId);
         if (!tabContext) {
             if (TabsApiCommon.checkIfTabContextExpectedToExist(tabId, frameContext.url)) {
-                logger.debug(`[tsweb.TabsApiCommon.setFrameContext]: at this point tab#${tabId} context should already exist`);
+                logger.debug(
+                    `[tsweb.TabsApiCommon.setFrameContext]: at this point tab#${tabId} context should already exist`,
+                );
             }
             return;
         }
@@ -698,16 +692,14 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      *
      * @throws Error if the tab context or frame context is not found, as this should not occur at this point.
      */
-    public updateFrameContext(
-        tabId: number,
-        frameId: number,
-        partialFrameContext: Partial<F>,
-    ): void {
+    public updateFrameContext(tabId: number, frameId: number, partialFrameContext: Partial<F>): void {
         const tabContext = this.getTabContext(tabId);
 
         if (!tabContext) {
             if (TabsApiCommon.checkIfTabContextExpectedToExist(tabId, partialFrameContext.url)) {
-                logger.debug(`[tsweb.TabsApiCommon.updateFrameContext]: at this point tab#${tabId} context should already exist`);
+                logger.debug(
+                    `[tsweb.TabsApiCommon.updateFrameContext]: at this point tab#${tabId} context should already exist`,
+                );
             }
             return;
         }
@@ -715,7 +707,9 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
         const frameContext = tabContext?.getFrameContext(frameId);
 
         if (!frameContext) {
-            logger.debug(`[tsweb.TabsApiCommon.updateFrameContext]: at this point frame#${frameId} context should already exist`);
+            logger.debug(
+                `[tsweb.TabsApiCommon.updateFrameContext]: at this point frame#${frameId} context should already exist`,
+            );
             return;
         }
 
@@ -763,11 +757,7 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * @param frameId Frame ID.
      * @param frameRule Frame rule.
      */
-    public setMainFrameRule(
-        tabId: number,
-        frameId: number,
-        frameRule: NetworkRule | null,
-    ): void {
+    public setMainFrameRule(tabId: number, frameId: number, frameRule: NetworkRule | null): void {
         const tabContext = this.getTabContext(tabId);
 
         if (tabContext && frameId === MAIN_FRAME_ID) {

@@ -22,10 +22,7 @@ import { createLocalScriptRulesJs, createLocalScriptRulesJson } from './local-sc
  * @returns Promise that resolves when build.txt is created.
  */
 const createVersionTxt = async (): Promise<void> => {
-    return fs.promises.writeFile(
-        path.join(BASE_DIR, 'build.txt'),
-        `version=${version}`,
-    );
+    return fs.promises.writeFile(path.join(BASE_DIR, 'build.txt'), `version=${version}`);
 };
 
 /**
@@ -40,9 +37,7 @@ const removeTxtFiles = async (dir: string): Promise<void> => {
     const files = await fs.promises.readdir(dir);
     const txtFiles = files.filter((file) => file.endsWith('.txt'));
 
-    await Promise.all(
-        txtFiles.map((file) => fs.promises.unlink(path.join(dir, file))),
-    );
+    await Promise.all(txtFiles.map((file) => fs.promises.unlink(path.join(dir, file))));
 };
 
 /**
@@ -85,19 +80,14 @@ const build = async (browser: BrowserFilters): Promise<void> => {
 
     await startDownload(filtersDir, browser);
 
-    await convertFilters(
-        filtersDir,
-        RESOURCES_DIR,
-        destRulesetsDir,
-        {
-            debug: true,
-            prettifyJson: false,
-            additionalProperties: {
-                version: getVersion(),
-                versionTimestampMs: getVersionTimestampMs(),
-            },
+    await convertFilters(filtersDir, RESOURCES_DIR, destRulesetsDir, {
+        debug: true,
+        prettifyJson: false,
+        additionalProperties: {
+            version: getVersion(),
+            versionTimestampMs: getVersionTimestampMs(),
         },
-    );
+    });
 
     await createLocalScriptRulesJs(filtersDir);
     await createLocalScriptRulesJson(filtersDir);

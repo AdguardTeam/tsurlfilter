@@ -3,12 +3,7 @@
  * @todo Maybe move them to parser classes as 'clone' methods
  */
 
-import {
-    type ParameterList,
-    type DomainList,
-    type Modifier,
-    type ModifierList,
-} from '../nodes';
+import { type ParameterList, type DomainList, type Modifier, type ModifierList } from '../nodes';
 import { isNull } from '../utils/type-guards';
 
 /**

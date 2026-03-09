@@ -44,16 +44,14 @@ export class CspRulesConverter extends AbstractRuleConverter {
             }
 
             // Try to find CSP header in the rule to merge - if not found, do not take any action.
-            const cspHeaderToMerge = ruleToMerge.action.responseHeaders
-                .find((h) => h.header === CSP_HEADER_NAME);
+            const cspHeaderToMerge = ruleToMerge.action.responseHeaders.find((h) => h.header === CSP_HEADER_NAME);
             if (!cspHeaderToMerge) {
                 return resultRule;
             }
 
             // Combine the CSP header from the rule to merge with a copy of the source rule.
             if (resultRule.action.responseHeaders && resultRule.action.responseHeaders.length > 0) {
-                const idx = resultRule.action.responseHeaders
-                    .findIndex((h) => h.header === CSP_HEADER_NAME);
+                const idx = resultRule.action.responseHeaders.findIndex((h) => h.header === CSP_HEADER_NAME);
                 if (idx === -1) {
                     return resultRule;
                 }
@@ -73,11 +71,7 @@ export class CspRulesConverter extends AbstractRuleConverter {
 
         const converted = await this.convertRules(filterId, rules, usedIds);
 
-        const result = this.groupConvertedRules(
-            converted,
-            createRuleTemplate,
-            combineRulePair,
-        );
+        const result = this.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
 
         return result;
     }

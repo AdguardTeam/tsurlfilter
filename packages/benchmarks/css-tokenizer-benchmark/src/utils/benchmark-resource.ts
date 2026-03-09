@@ -39,13 +39,10 @@ export const benchmarkResource = (resource: Resource, tokenizerConfigs: Tokenize
 
     for (const [name, config] of Object.entries(tokenizerConfigs)) {
         // https://benchmarkjs.com/docs/#Suite_prototype_add
-        suite.add(
-            name,
-            function (this: Benchmark) {
-                // Add tokens count to the benchmark stats, this is binded to the benchmark
-                this.stats.tokens = config.tokenize(resource.content);
-            },
-        );
+        suite.add(name, function (this: Benchmark) {
+            // Add tokens count to the benchmark stats, this is binded to the benchmark
+            this.stats.tokens = config.tokenize(resource.content);
+        });
     }
 
     // TODO: Add a progress bar, if possible and doesn't affect the performance
@@ -66,7 +63,7 @@ export const benchmarkResource = (resource: Resource, tokenizerConfigs: Tokenize
                 // https://github.com/bestiejs/benchmark.js/blob/42f3b732bac3640eddb3ae5f50e445f3141016fd/benchmark.js#L1525
                 const name = bench.name || (Number.isNaN(bench.id) ? NAN : `benchmark #${bench.id}`);
 
-                return ({
+                return {
                     tokenizerName: name,
                     // eslint-disable-next-line max-len
                     opsPerSecond: `${bench.hz.toFixed(bench.hz < 100 ? 2 : 0)} (${PLUS_MINUS}${bench.stats.rme.toFixed(2)}${PERCENT})`,
@@ -75,7 +72,7 @@ export const benchmarkResource = (resource: Resource, tokenizerConfigs: Tokenize
                     averageRuntime: `${(bench.stats.mean * 1000).toFixed(10)} ${MS}`,
                     tokens: bench.stats.tokens || N_A,
                     status: bench.error ? 'failed' : 'no errors',
-                } as TokenizerBenchResult);
+                } as TokenizerBenchResult;
             }),
         );
     });

@@ -50,11 +50,11 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
         // Configure the #save method to decide dynamically between debounce or direct call
         this.#save = PersistentValueContainer.#IS_BACKGROUND_PERSISTENT
             ? (): void => {
-                this.#storage.set(this.#key, this.#value); // Save directly
-            }
+                  this.#storage.set(this.#key, this.#value); // Save directly
+              }
             : debounce(() => {
-                this.#storage.set(this.#key, this.#value); // Save using debounce
-            }, debounceMs);
+                  this.#storage.set(this.#key, this.#value); // Save using debounce
+              }, debounceMs);
     }
 
     /**
@@ -137,7 +137,8 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
         }
 
         const background = manifest.background as
-            (Manifest.WebExtensionManifestBackgroundC2Type | Manifest.WebExtensionManifestBackgroundC1Type);
+            | Manifest.WebExtensionManifestBackgroundC2Type
+            | Manifest.WebExtensionManifestBackgroundC1Type;
 
         return background.persistent ?? true;
     }

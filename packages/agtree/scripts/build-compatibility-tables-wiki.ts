@@ -38,16 +38,11 @@ type CompatibilityEntityData = Pick<BaseCompatibilityDataSchema, 'name' | 'alias
  *
  * @returns Name with aliases.
  */
-const getNameWithAliases = (
-    data: CompatibilityEntityData,
-    html = false,
-): string => {
+const getNameWithAliases = (data: CompatibilityEntityData, html = false): string => {
     let { name } = data;
 
     if (data.docs) {
-        name = html
-            ? `<a href="${data.docs}">${name}</a>`
-            : `[${name}](${data.docs})`;
+        name = html ? `<a href="${data.docs}">${name}</a>` : `[${name}](${data.docs})`;
     }
 
     if (data.aliases) {
@@ -75,11 +70,11 @@ const getFirstCompatibleEntityFromRow = <T extends BaseCompatibilityDataSchema>(
     for (const [key, value] of Object.entries(productRow)) {
         // eslint-disable-next-line no-bitwise
         if (Number(key) & compatibility) {
-            return ({
+            return {
                 name: value.name,
                 aliases: value.aliases,
                 docs: value.docs,
-            });
+            };
         }
     }
 
@@ -126,24 +121,28 @@ const getRowsByProduct = <T extends CompatibilityTableBase<BaseCompatibilityData
     extended = false,
 ): string[][] => {
     const result: CompatibilityEntityData[][] = extended
-        ? data.getRowsByProduct().map((row) => [
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgOsAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgExtChromium),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, SpecificPlatform.AdgExtFirefox),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgSafariAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, SpecificPlatform.AdgCbAndroid),
+        ? data
+              .getRowsByProduct()
+              .map((row) => [
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgOsAny),
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgExtChromium),
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, SpecificPlatform.AdgExtFirefox),
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgSafariAny),
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, SpecificPlatform.AdgCbAndroid),
 
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, GenericPlatform.UboExtChromium),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, SpecificPlatform.UboExtFirefox),
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, GenericPlatform.UboExtChromium),
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, SpecificPlatform.UboExtFirefox),
 
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, GenericPlatform.AbpExtChromium),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, SpecificPlatform.AbpExtFirefox),
-        ])
-        : data.getRowsByProduct().map((row) => [
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, GenericPlatform.UboAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, GenericPlatform.AbpAny),
-        ]);
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, GenericPlatform.AbpExtChromium),
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, SpecificPlatform.AbpExtFirefox),
+              ])
+        : data
+              .getRowsByProduct()
+              .map((row) => [
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgAny),
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, GenericPlatform.UboAny),
+                  getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, GenericPlatform.AbpAny),
+              ]);
 
     return result.sort(sortFn).map((row) => row.map((cell) => getNameWithAliases(cell, extended)));
 };
@@ -185,15 +184,13 @@ const getTableContent = async (bodyData: string[][], extended = false): Promise<
                 <tr>
                     ${Object.entries(LABELS)
                         .map(([mainLabel, subLabels]) => `<th colspan="${subLabels.length}">${mainLabel}</th>`)
-                        .join(EMPTY)
-                    }
+                        .join(EMPTY)}
                 </tr>
                 <tr>
                     ${Object.entries(LABELS)
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         .map(([_, subLabels]) => subLabels.map((subLabel) => `<th>${subLabel}</th>`).join(EMPTY))
-                        .join(EMPTY)
-                    }
+                        .join(EMPTY)}
                 </tr>
             </thead>
         `;
@@ -210,10 +207,7 @@ const getTableContent = async (bodyData: string[][], extended = false): Promise<
         });
     }
 
-    return markdownTable([
-        Object.keys(LABELS),
-        ...bodyData,
-    ]);
+    return markdownTable([Object.keys(LABELS), ...bodyData]);
 };
 
 /**

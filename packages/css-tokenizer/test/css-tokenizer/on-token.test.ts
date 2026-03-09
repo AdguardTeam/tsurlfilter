@@ -1,11 +1,4 @@
-import {
-    describe,
-    expect,
-    it,
-    type MockedFunction,
-    test,
-    vi,
-} from 'vitest';
+import { describe, expect, it, type MockedFunction, test, vi } from 'vitest';
 
 import { hasToken } from '../../src/utils/has-token';
 import { tokenizeExtended } from '../../src/extended-css-tokenizer';
@@ -46,11 +39,7 @@ describe('OnTokenCallback', () => {
 
         const tokenTypes = mockCallback.mock.calls.map((callArgs) => callArgs[0]);
 
-        expect(tokenTypes).toEqual([
-            TokenType.OpenCurlyBracket,
-            TokenType.Whitespace,
-            TokenType.Ident,
-        ]);
+        expect(tokenTypes).toEqual([TokenType.OpenCurlyBracket, TokenType.Whitespace, TokenType.Ident]);
     });
 });
 

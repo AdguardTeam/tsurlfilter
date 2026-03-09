@@ -128,9 +128,9 @@ export class StringUtils {
         for (let i = start; i < pattern.length; i += 1) {
             // The searched character cannot be preceded by an escape
             if (
-                pattern[i] === searchedCharacter
-                && pattern[i + 1] !== notFollowedBy
-                && pattern[i - 1] !== escapeCharacter
+                pattern[i] === searchedCharacter &&
+                pattern[i + 1] !== notFollowedBy &&
+                pattern[i - 1] !== escapeCharacter
             ) {
                 return i;
             }
@@ -158,9 +158,9 @@ export class StringUtils {
         for (let i = pattern.length - 1; i >= 0; i -= 1) {
             // The searched character cannot be preceded by an escape
             if (
-                pattern[i] === searchedCharacter
-                && pattern[i + 1] !== notFollowedBy
-                && pattern[i - 1] !== escapeCharacter
+                pattern[i] === searchedCharacter &&
+                pattern[i + 1] !== notFollowedBy &&
+                pattern[i - 1] !== escapeCharacter
             ) {
                 return i;
             }
@@ -183,10 +183,10 @@ export class StringUtils {
 
         for (let i = start; i < pattern.length; i += 1) {
             if (
-                (pattern[i] === SINGLE_QUOTE_MARKER
-                    || pattern[i] === DOUBLE_QUOTE_MARKER
-                    || pattern[i] === REGEX_MARKER)
-                && pattern[i - 1] !== ESCAPE_CHARACTER
+                (pattern[i] === SINGLE_QUOTE_MARKER ||
+                    pattern[i] === DOUBLE_QUOTE_MARKER ||
+                    pattern[i] === REGEX_MARKER) &&
+                pattern[i - 1] !== ESCAPE_CHARACTER
             ) {
                 if (open === pattern[i]) {
                     open = null;
@@ -225,10 +225,10 @@ export class StringUtils {
         // Search backwards through the pattern
         for (let i = pattern.length - 1; i >= 0; i -= 1) {
             if (
-                (pattern[i] === SINGLE_QUOTE_MARKER
-                    || pattern[i] === DOUBLE_QUOTE_MARKER
-                    || pattern[i] === REGEX_MARKER)
-                && pattern[i - 1] !== escapeCharacter
+                (pattern[i] === SINGLE_QUOTE_MARKER ||
+                    pattern[i] === DOUBLE_QUOTE_MARKER ||
+                    pattern[i] === REGEX_MARKER) &&
+                pattern[i - 1] !== escapeCharacter
             ) {
                 // When searching backwards,
                 // we close when we see the marker and are already inside,
@@ -238,11 +238,7 @@ export class StringUtils {
                 } else if (open === null) {
                     open = pattern[i];
                 }
-            } else if (
-                open === null
-                && pattern[i] === searchedCharacter
-                && pattern[i - 1] !== escapeCharacter
-            ) {
+            } else if (open === null && pattern[i] === searchedCharacter && pattern[i - 1] !== escapeCharacter) {
                 return i;
             }
         }
@@ -272,8 +268,8 @@ export class StringUtils {
         for (let i = start; i < pattern.length; i += 1) {
             // Unescaped ' or "
             if (
-                (pattern[i] === SINGLE_QUOTE_MARKER || pattern[i] === DOUBLE_QUOTE_MARKER)
-                && pattern[i - 1] !== escapeCharacter
+                (pattern[i] === SINGLE_QUOTE_MARKER || pattern[i] === DOUBLE_QUOTE_MARKER) &&
+                pattern[i - 1] !== escapeCharacter
             ) {
                 if (!openQuote) openQuote = pattern[i];
                 else if (openQuote === pattern[i]) openQuote = null;

@@ -32,8 +32,7 @@ export class RuleSyntaxUtils {
 
         const permittedDomains = rule.getPermittedDomains();
 
-        return !!permittedDomains
-            && DomainModifier.isDomainOrSubdomainOfAny(domain, permittedDomains);
+        return !!permittedDomains && DomainModifier.isDomainOrSubdomainOfAny(domain, permittedDomains);
     }
 
     /**

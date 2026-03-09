@@ -46,7 +46,7 @@ export class ReplaceModifier implements IAdvancedModifier {
 
         const parts = splitByDelimiterWithEscapeCharacter(option, '/', '\\', true);
 
-        let modifiers = (parts[2] || '');
+        let modifiers = parts[2] || '';
         if (modifiers.indexOf('g') < 0) {
             modifiers += 'g';
         }

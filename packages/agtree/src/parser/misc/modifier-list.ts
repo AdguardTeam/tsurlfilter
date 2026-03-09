@@ -99,25 +99,16 @@ export class ModifierListParser extends BaseParser {
             let nextSeparator;
             if (useSimpleSearch) {
                 // Use simple search for incomplete regex patterns
-                nextSeparator = StringUtils.findNextUnescapedCharacter(
-                    raw,
-                    MODIFIERS_SEPARATOR,
-                    offset,
-                );
+                nextSeparator = StringUtils.findNextUnescapedCharacter(raw, MODIFIERS_SEPARATOR, offset);
             } else {
                 // Use regex-aware search to handle complete regex patterns
-                nextSeparator = StringUtils.findUnescapedNonStringNonRegexChar(
-                    raw,
-                    MODIFIERS_SEPARATOR,
-                    offset,
-                );
+                nextSeparator = StringUtils.findUnescapedNonStringNonRegexChar(raw, MODIFIERS_SEPARATOR, offset);
             }
 
             separatorIndex = nextSeparator;
 
-            const modifierEnd = separatorIndex === -1
-                ? raw.length
-                : StringUtils.skipWSBack(raw, separatorIndex - 1) + 1;
+            const modifierEnd =
+                separatorIndex === -1 ? raw.length : StringUtils.skipWSBack(raw, separatorIndex - 1) + 1;
 
             // Parse the modifier
             const modifier = ModifierParser.parse(
@@ -137,11 +128,7 @@ export class ModifierListParser extends BaseParser {
             const modifierStart = StringUtils.skipWS(raw, separatorIndex + 1);
 
             result.children.push(
-                ModifierParser.parse(
-                    raw.slice(modifierStart, raw.length),
-                    options,
-                    baseOffset + modifierStart,
-                ),
+                ModifierParser.parse(raw.slice(modifierStart, raw.length), options, baseOffset + modifierStart),
             );
         }
 

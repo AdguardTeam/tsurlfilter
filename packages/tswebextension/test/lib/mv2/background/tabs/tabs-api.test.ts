@@ -1,11 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    afterEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, afterEach, it, vi } from 'vitest';
 import browser from 'sinon-chrome';
 import { type ExtensionTypes } from 'webextension-polyfill';
 import { type NetworkRule } from '@adguard/tsurlfilter';
@@ -237,7 +230,11 @@ describe('TabsApi', () => {
 
     describe('isNewPopupTab method', () => {
         const cases = [
-            { url: 'https://example.com', createdAtMs: Date.now() - Math.round(TabsApi.POPUP_TAB_TIMEOUT_MS * 1.5), expected: false },
+            {
+                url: 'https://example.com',
+                createdAtMs: Date.now() - Math.round(TabsApi.POPUP_TAB_TIMEOUT_MS * 1.5),
+                expected: false,
+            },
             { url: 'https://example.com', createdAtMs: Date.now(), expected: true },
         ];
         it.each(cases)('should return $expected if tab has url $url', ({ url, createdAtMs, expected }) => {

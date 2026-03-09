@@ -32,10 +32,7 @@ export class ComplexSelectorGenerator extends BaseGenerator {
             const { type } = selector;
 
             // Validate that compound selectors are not empty
-            if (
-                (i === 0 || node.children[i - 1].type === 'SelectorCombinator')
-                && type === 'SelectorCombinator'
-            ) {
+            if ((i === 0 || node.children[i - 1].type === 'SelectorCombinator') && type === 'SelectorCombinator') {
                 throw new Error('Empty compound selector found');
             }
 

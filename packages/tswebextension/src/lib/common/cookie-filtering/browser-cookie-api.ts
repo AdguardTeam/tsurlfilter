@@ -26,7 +26,10 @@ export class BrowserCookieApi {
             await browser.cookies.remove({ name, url });
             return true;
         } catch (e) {
-            logger.error('[tsweb.BrowserCookieApi.removeCookie]: error on removing cookie via browser.cookies.remove: ', e);
+            logger.error(
+                '[tsweb.BrowserCookieApi.removeCookie]: error on removing cookie via browser.cookies.remove: ',
+                e,
+            );
         }
 
         return false;
@@ -48,13 +51,21 @@ export class BrowserCookieApi {
         } catch (e) {
             // If `domain` contains the `path` part, the cookie cannot be saved,
             // since `domain` can only contain hostname.
-            if (cookie.domain?.includes('/')
+            if (
+                cookie.domain?.includes('/') ||
                 // if url is not matched with domain, cookie cannot be set
                 // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2683
-                || (cookie.domain && !BrowserCookieApi.doesDomainMatchUrl(cookie.domain, cookie.url))) {
-                logger.info('[tsweb.BrowserCookieApi.modifyCookie]: error on modifying cookie via browser.cookies.set: ', e);
+                (cookie.domain && !BrowserCookieApi.doesDomainMatchUrl(cookie.domain, cookie.url))
+            ) {
+                logger.info(
+                    '[tsweb.BrowserCookieApi.modifyCookie]: error on modifying cookie via browser.cookies.set: ',
+                    e,
+                );
             } else {
-                logger.error('[tsweb.BrowserCookieApi.modifyCookie]: error on modifying cookie via browser.cookies.set: ', e);
+                logger.error(
+                    '[tsweb.BrowserCookieApi.modifyCookie]: error on modifying cookie via browser.cookies.set: ',
+                    e,
+                );
             }
         }
 
@@ -74,7 +85,10 @@ export class BrowserCookieApi {
 
             return found;
         } catch (e) {
-            logger.error('[tsweb.BrowserCookieApi.findCookies]: error on finding cookies via browser.cookies.getAll: ', e);
+            logger.error(
+                '[tsweb.BrowserCookieApi.findCookies]: error on finding cookies via browser.cookies.getAll: ',
+                e,
+            );
         }
 
         return [];
@@ -151,9 +165,7 @@ export class BrowserCookieApi {
              * The expiration date of the cookie as the number of seconds since the UNIX epoch.
              * If omitted, the cookie becomes a session cookie.
              */
-            expirationDate: cookie.expires
-                ? Math.floor(cookie.expires.getTime() / 1000)
-                : undefined,
+            expirationDate: cookie.expires ? Math.floor(cookie.expires.getTime() / 1000) : undefined,
 
             /**
              * The path of the cookie. Defaults to the path portion of the url parameter.

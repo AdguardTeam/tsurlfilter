@@ -7,9 +7,7 @@ import { testTokenization } from '../helpers/test-utils';
 import { createTests, type PseudoValues } from './helpers/test-creator';
 import { generateDelimStream } from './helpers/delim-generator';
 
-const PSEUDO_NAMES = [
-    ExtendedCssPseudo.Xpath,
-];
+const PSEUDO_NAMES = [ExtendedCssPseudo.Xpath];
 
 const COMPLEX_XPATH = String.raw`//*[contains(text(),"()(cc")]`;
 const COMPLEX_XPATH_ESCAPED_QUOTE = String.raw`//*[contains(text(),\"()(cc\")]`;
@@ -25,12 +23,8 @@ const PSEUDO_VALUES: PseudoValues = {
     ]),
 
     // simple XPath as string parameter
-    [String.raw`'//test'`]: [
-        [TokenType.String, 0, 8],
-    ],
-    [String.raw`"//test"`]: [
-        [TokenType.String, 0, 8],
-    ],
+    [String.raw`'//test'`]: [[TokenType.String, 0, 8]],
+    [String.raw`"//test"`]: [[TokenType.String, 0, 8]],
 
     // simple XPath as string parameter preceded by single space
     [String.raw` '//test'`]: [
@@ -73,17 +67,11 @@ const PSEUDO_VALUES: PseudoValues = {
     ],
 
     // complex XPath
-    ...generateDelimStream([
-        COMPLEX_XPATH,
-    ]),
+    ...generateDelimStream([COMPLEX_XPATH]),
 
     // complex XPath as string parameter
-    [`'${COMPLEX_XPATH}'`]: [
-        [TokenType.String, 0, 2 + COMPLEX_XPATH.length],
-    ],
-    [`"${COMPLEX_XPATH_ESCAPED_QUOTE}"`]: [
-        [TokenType.String, 0, 2 + COMPLEX_XPATH_ESCAPED_QUOTE.length],
-    ],
+    [`'${COMPLEX_XPATH}'`]: [[TokenType.String, 0, 2 + COMPLEX_XPATH.length]],
+    [`"${COMPLEX_XPATH_ESCAPED_QUOTE}"`]: [[TokenType.String, 0, 2 + COMPLEX_XPATH_ESCAPED_QUOTE.length]],
 
     // multiple spaces + string
     [String.raw`  'a'`]: [
@@ -105,7 +93,7 @@ const PSEUDO_VALUES: PseudoValues = {
 };
 
 describe(`Extended CSS's :${PSEUDO_NAMES.join(', :')}`, () => {
-    test.each(
-        createTests(PSEUDO_NAMES, PSEUDO_VALUES),
-    )("should tokenize '$actual' as $as", (testData) => testTokenization(testData, tokenizeExtended));
+    test.each(createTests(PSEUDO_NAMES, PSEUDO_VALUES))("should tokenize '$actual' as $as", (testData) =>
+        testTokenization(testData, tokenizeExtended),
+    );
 });

@@ -1,4 +1,5 @@
 <!-- markdownlint-disable MD013 MD033 -->
+
 # Modifiers Compatibility Table
 
 This table is generated from the compatibility data.
@@ -2307,4 +2308,3 @@ This table is generated from the compatibility data.
     </tr>
   </tbody>
 </table>
-

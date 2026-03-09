@@ -21,12 +21,13 @@ with the following fields:
 | `version_removed`     | The version of the adblocker when the redirect was removed.                                                                                                                                            | `string\|null`   | `null`              |
 | `deprecated`          | Describes whether the redirect is deprecated.                                                                                                                                                          | `boolean`        | `false`             |
 | `deprecation_message` | Message that describes why the redirect is deprecated. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the redirect is not marked as deprecated. | `string\|null`   | `null`              |
-| `removed`             | Describes whether the redirect is removed; for *already removed* features.                                                                                                                             | `boolean`        | `false`             |
+| `removed`             | Describes whether the redirect is removed; for _already removed_ features.                                                                                                                             | `boolean`        | `false`             |
 | `removal_message`     | Message that describes why the redirect is removed. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the redirect is not marked as deprecated.    | `string\|null`   | `null`              |
 | `is_blocking`         | Whether the redirect is blocking.                                                                                                                                                                      | `boolean`        | `false`             |
-| `resource_types`      | List of [resource types][resource-types] that the redirect can be applied to. Only the values ​​listed in the documentation can be used!                                                                 | `string[]`       | `[]`                |
+| `resource_types`      | List of [resource types][resource-types] that the redirect can be applied to. Only the values ​​listed in the documentation can be used!                                                               | `string[]`       | `[]`                |
 
 <!-- markdownlint-enable MD013 -->
 
 [resource-types]: https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ResourceType
+
 \*: The field is required.

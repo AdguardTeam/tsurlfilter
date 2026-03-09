@@ -141,7 +141,8 @@ export class CookieModifier implements IAdvancedModifier {
 
         if (this.regex) {
             return this.regex.test(name);
-        } if (this.cookieName) {
+        }
+        if (this.cookieName) {
             return this.cookieName === name;
         }
 

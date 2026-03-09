@@ -38,21 +38,13 @@ export class HtmlFilteringBodyParser extends BaseParser {
      * div:has-text(Example)
      * ```
      */
-    public static parse(
-        raw: string,
-        options = defaultParserOptions,
-        baseOffset = 0,
-    ): Value | HtmlFilteringRuleBody {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): Value | HtmlFilteringRuleBody {
         // If HTML filtering rules parsing is disabled, return raw value node
         let result: Value | HtmlFilteringRuleBody;
         if (options.parseHtmlFilteringRuleBodies) {
             result = {
                 type: 'HtmlFilteringRuleBody',
-                selectorList: SelectorListParser.parse(
-                    raw,
-                    options,
-                    baseOffset,
-                ),
+                selectorList: SelectorListParser.parse(raw, options, baseOffset),
             };
         } else {
             result = {

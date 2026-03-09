@@ -4,13 +4,7 @@
         // With this tsconfig, we don't need to emit any files,
         // we just want to check the types
         "noEmit": true,
-        "baseUrl": ".",
+        "baseUrl": "."
     },
-    "include": [
-        "src/**/*.ts",
-        "tasks/**/*.ts",
-        "constants.ts",
-        "rollup.config.ts",
-        ".eslintrc.js"
-    ],
+    "include": ["src/**/*.ts", "tasks/**/*.ts", "constants.ts", "rollup.config.ts", ".eslintrc.js"]
 }

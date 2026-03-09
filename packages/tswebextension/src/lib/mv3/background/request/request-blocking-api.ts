@@ -14,13 +14,7 @@ import { type RequestContext } from './request-context-storage';
  */
 type RequestParams = Pick<
     RequestContext,
-    'tabId' |
-    'eventId' |
-    'referrerUrl' |
-    'requestId' |
-    'requestUrl' |
-    'requestType' |
-    'contentType'
+    'tabId' | 'eventId' | 'referrerUrl' | 'requestId' | 'requestUrl' | 'requestType' | 'contentType'
 >;
 
 /**
@@ -50,10 +44,12 @@ export class RequestBlockingApi {
      * @returns True, if rule is request blocking, else returns false.
      */
     public static isRequestBlockedByRule(requestRule: NetworkRule | null): boolean {
-        return !!requestRule
-            && !requestRule.isAllowlist()
-            && !requestRule.isOptionEnabled(NetworkRuleOption.Replace)
-            && !requestRule.isOptionEnabled(NetworkRuleOption.Redirect);
+        return (
+            !!requestRule &&
+            !requestRule.isAllowlist() &&
+            !requestRule.isOptionEnabled(NetworkRuleOption.Replace) &&
+            !requestRule.isOptionEnabled(NetworkRuleOption.Redirect)
+        );
     }
 
     /**
@@ -67,10 +63,7 @@ export class RequestBlockingApi {
      *
      * @returns Response for {@link RequestApi.onBeforeRequest} listener.
      */
-    private static closeTab(
-        data: RequestParams,
-        appliedRule: NetworkRule | null,
-    ): WebRequest.BlockingResponse {
+    private static closeTab(data: RequestParams, appliedRule: NetworkRule | null): WebRequest.BlockingResponse {
         RequestBlockingApi.logRuleApplying(data, appliedRule);
         browser.tabs.remove(data.tabId);
 
@@ -85,17 +78,7 @@ export class RequestBlockingApi {
      * @returns Response for {@link WebRequestApi.onBeforeRequest} listener.
      */
     public static getBlockingResponse(data: GetBlockingResponseParams): WebRequest.BlockingResponse | void {
-        const {
-            rule,
-            popupRule,
-            requestType,
-            tabId,
-            eventId,
-            requestId,
-            requestUrl,
-            contentType,
-            referrerUrl,
-        } = data;
+        const { rule, popupRule, requestType, tabId, eventId, requestId, requestUrl, contentType, referrerUrl } = data;
 
         if (!rule) {
             return undefined;
@@ -184,12 +167,7 @@ export class RequestBlockingApi {
      * @param context Request context.
      */
     public static logHeaderRuleIfAny(context: RequestContext): void {
-        const {
-            matchingResult,
-            responseHeaders,
-            tabId,
-            referrerUrl,
-        } = context;
+        const { matchingResult, responseHeaders, tabId, referrerUrl } = context;
 
         if (!matchingResult || !responseHeaders) {
             return;
@@ -209,19 +187,8 @@ export class RequestBlockingApi {
      * @param data Data for request processing.
      * @param appliedRule Network rule which was applied to request.
      */
-    private static logRuleApplying(
-        data: RequestParams,
-        appliedRule: NetworkRule | null,
-    ): void {
-        const {
-            tabId,
-            eventId,
-            referrerUrl,
-            requestId,
-            requestUrl,
-            requestType,
-            contentType,
-        } = data;
+    private static logRuleApplying(data: RequestParams, appliedRule: NetworkRule | null): void {
+        const { tabId, eventId, referrerUrl, requestId, requestUrl, requestType, contentType } = data;
 
         if (!appliedRule || requestType === 0) {
             return;

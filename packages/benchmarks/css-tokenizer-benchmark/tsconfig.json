@@ -3,9 +3,7 @@
         "target": "ESNext",
         "module": "ESNext",
         "moduleResolution": "node",
-        "types": [
-            "node",
-        ],
+        "types": ["node"],
         "resolveJsonModule": true,
         "allowJs": true,
         "declaration": true,
@@ -15,10 +13,7 @@
         "strict": true,
         "skipLibCheck": true,
         "rootDir": "./",
-        "noEmit": true,
+        "noEmit": true
     },
-    "include": [
-        "./.eslintrc.cjs",
-        "./src/**/*.ts",
-    ]
+    "include": ["./.eslintrc.cjs", "./src/**/*.ts"]
 }

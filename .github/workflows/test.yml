@@ -82,15 +82,14 @@ jobs:
     needs: test
     # Run this job only if the previous job failed and the event was triggered by the 'AdguardTeam/tsurlfilter' repository
     # Note: 'always()' is needed to run the notify job even if the test job was failed
-    if:
-      ${{
-        always() &&
-        needs.test.result == 'failure' &&
-        github.repository == 'AdguardTeam/tsurlfilter' &&
-        (
-          github.event_name == 'push' ||
-          github.event.pull_request.head.repo.full_name == github.repository
-        )
+    if: ${{
+      always() &&
+      needs.test.result == 'failure' &&
+      github.repository == 'AdguardTeam/tsurlfilter' &&
+      (
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+      )
       }}
     runs-on: ubuntu-latest
     steps:

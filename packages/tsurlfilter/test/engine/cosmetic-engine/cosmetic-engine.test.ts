@@ -57,12 +57,7 @@ describe('Test cosmetic engine', () => {
     const genericDisabledRule = `##${genericDisabledRuleContent}`;
     const specificDisablingRule = `example.org#@#${genericDisabledRuleContent}`;
 
-    const rules = [
-        specificRule,
-        specificDisablingRule,
-        genericRule,
-        genericDisabledRule,
-    ];
+    const rules = [specificRule, specificDisablingRule, genericRule, genericDisabledRule];
 
     const rawFilter = rules.join('\n');
     const filter = new StringRuleList(1, rawFilter);
@@ -115,24 +110,20 @@ describe('Test cosmetic engine', () => {
 
     it('excludes all css rules if necessary, even if generic argument is true', () => {
         const cosmeticEngine = createCosmeticEngine([filter]);
-        const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionGenericCSS);
+        const result = cosmeticEngine.match(
+            createRequest('https://example.org'),
+            CosmeticOption.CosmeticOptionGenericCSS,
+        );
         expect(result).toBeDefined();
 
         expect(result.elementHiding.specific.length).toBe(0);
-        expect(
-            result.elementHiding.generic[0].getIndex(),
-        ).toBe(
-            getRawRuleIndex(rawFilter, genericRule),
-        );
+        expect(result.elementHiding.generic[0].getIndex()).toBe(getRawRuleIndex(rawFilter, genericRule));
     });
 
     it('excludes rules with generic allowlist rule', () => {
         const elemhideRule = 'example.org##body';
         const allowlistGenericRule = '#@#body';
-        const rulesLocal = [
-            elemhideRule,
-            allowlistGenericRule,
-        ];
+        const rulesLocal = [elemhideRule, allowlistGenericRule];
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
 
         const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
@@ -145,12 +136,7 @@ describe('Test cosmetic engine', () => {
         const extCssSpecificRule = `example.org##${extCssSpecificRuleText}`;
         const extCssGenericRuleText = '.ext_css_generic:contains(es)';
         const extCssGenericRule = `##${extCssGenericRuleText}`;
-        const rulesLocal = [
-            specificRule,
-            genericRule,
-            extCssGenericRule,
-            extCssSpecificRule,
-        ];
+        const rulesLocal = [specificRule, genericRule, extCssGenericRule, extCssSpecificRule];
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
         const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
         expect(result.elementHiding.genericExtCss).toHaveLength(1);
@@ -166,12 +152,7 @@ describe('Test cosmetic engine', () => {
         const extCssCssRuleText = ':upward(.ext-css-cosmetic) { visibility: hidden; }';
         const extCssSpecificCssRule = `example.org#$#${extCssCssRuleText}`;
         const extCssGenericCssRule = `#$#${extCssCssRuleText}`;
-        const rulesLocal = [
-            specificCssRule,
-            genericCssRule,
-            extCssSpecificCssRule,
-            extCssGenericCssRule,
-        ];
+        const rulesLocal = [specificCssRule, genericCssRule, extCssSpecificCssRule, extCssGenericCssRule];
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
 
         const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
@@ -201,7 +182,10 @@ describe('Test cosmetic engine', () => {
         expect(result.elementHiding.generic.length).toEqual(1);
         expect(result.elementHiding.specific.length).toEqual(1);
 
-        const negativeResult = cosmeticEngine.match(createRequest('https://test.org'), CosmeticOption.CosmeticOptionAll);
+        const negativeResult = cosmeticEngine.match(
+            createRequest('https://test.org'),
+            CosmeticOption.CosmeticOptionAll,
+        );
         expect(negativeResult).toBeDefined();
 
         expect(negativeResult.elementHiding.generic.length).toEqual(2);
@@ -209,9 +193,7 @@ describe('Test cosmetic engine', () => {
     });
 
     it('finds wildcard domain rules', () => {
-        const rulesLocal = [
-            `*##${genericRuleContent}`,
-        ];
+        const rulesLocal = [`*##${genericRuleContent}`];
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
 
         const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
@@ -222,9 +204,7 @@ describe('Test cosmetic engine', () => {
     });
 
     it('removes duplicates in result domain rules', () => {
-        const rulesLocal = [
-            `base.com, a.base.com, b.base.com##${specificRuleContent}`,
-        ];
+        const rulesLocal = [`base.com, a.base.com, b.base.com##${specificRuleContent}`];
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
 
         const result = cosmeticEngine.match(createRequest('https://base.com'), CosmeticOption.CosmeticOptionAll);
@@ -235,9 +215,7 @@ describe('Test cosmetic engine', () => {
     });
 
     it('finds empty domain rules', () => {
-        const rulesLocal = [
-            `##${genericRuleContent}`,
-        ];
+        const rulesLocal = [`##${genericRuleContent}`];
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
 
         const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
@@ -278,10 +256,7 @@ describe('Test cosmetic engine - JS rules', () => {
         const jsRuleText = 'window.__gaq = undefined;';
         const specificJsRule = `example.org#%#${jsRuleText}`;
         const genericJsRule = `#%#${jsRuleText}`;
-        const rulesLocal = [
-            specificJsRule,
-            genericJsRule,
-        ];
+        const rulesLocal = [specificJsRule, genericJsRule];
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
 
         const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
@@ -301,12 +276,12 @@ describe('Test cosmetic engine - JS rules', () => {
     it('checks cosmetic JS exceptions', () => {
         const jsRule = 'testcases.adguard.com,surge.sh#%#window.__testCase2 = true;';
         const jsExceptionRule = 'testcases.adguard.com,surge.sh#@%#window.__testCase2 = true;';
-        const rulesLocal = [
-            jsRule,
-            jsExceptionRule,
-        ];
+        const rulesLocal = [jsRule, jsExceptionRule];
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
-        const result = cosmeticEngine.match(createRequest('https://testcases.adguard.com'), CosmeticOption.CosmeticOptionAll);
+        const result = cosmeticEngine.match(
+            createRequest('https://testcases.adguard.com'),
+            CosmeticOption.CosmeticOptionAll,
+        );
         expect(result.JS.specific.length).toBe(0);
         expect(result.JS.generic.length).toBe(0);
     });
@@ -315,10 +290,7 @@ describe('Test cosmetic engine - JS rules', () => {
         const ruleContent = "//scriptlet('abort-on-property-read', 'I10C')";
         const specificJsRule = `example.org#%#${ruleContent}`;
         const genericJsRule = `#%#${ruleContent}`;
-        const rulesLocal = [
-            specificJsRule,
-            genericJsRule,
-        ];
+        const rulesLocal = [specificJsRule, genericJsRule];
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
 
         const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
@@ -332,9 +304,7 @@ describe('Test cosmetic engine - JS rules', () => {
     it('returns function and params for scriptlets', () => {
         const ruleContent = "//scriptlet('log')";
         const genericScriptletRule = `#%#${ruleContent}`;
-        const rulesLocal = [
-            genericScriptletRule,
-        ];
+        const rulesLocal = [genericScriptletRule];
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
 
         const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
@@ -355,10 +325,7 @@ describe('Test cosmetic engine - JS rules', () => {
             const ruleContent = "//scriptlet('abort-on-property-read', 'I10C')";
             const jsRule = `testcases.adguard.com,surge.sh#%#${ruleContent}`;
             const jsExceptionRule = `testcases.adguard.com,surge.sh#@%#${ruleContent}`;
-            const rulesLocal = [
-                jsRule,
-                jsExceptionRule,
-            ];
+            const rulesLocal = [jsRule, jsExceptionRule];
             const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
 
             const result = cosmeticEngine.match(
@@ -419,11 +386,7 @@ describe('Test cosmetic engine - JS rules', () => {
             const allowlistScriptletRule = '#@%#//scriptlet()';
             const specificScriptletRule = "example.org#%#//scriptlet('set-cookie', 'adcook2', '2')";
             const genericScriptletRule = "#%#//scriptlet('set-local-storage-item', 'aditem1', '1')";
-            const rulesLocal = [
-                allowlistScriptletRule,
-                specificScriptletRule,
-                genericScriptletRule,
-            ];
+            const rulesLocal = [allowlistScriptletRule, specificScriptletRule, genericScriptletRule];
             const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
 
             const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
@@ -450,18 +413,17 @@ describe('Test cosmetic engine - JS rules', () => {
             expect(result.JS.specific.length).toBe(0);
             expect(result.JS.generic.length).toBe(0);
 
-            const result2 = cosmeticEngine.match(createRequest('https://example.com'), CosmeticOption.CosmeticOptionAll);
+            const result2 = cosmeticEngine.match(
+                createRequest('https://example.com'),
+                CosmeticOption.CosmeticOptionAll,
+            );
             expect(result2.JS.specific.length).toBe(1);
             expect(result2.JS.specific[0]!.getIndex()).toBe(
                 getRawRuleIndex(rawFilterListLocal, specificScriptletRule2),
             );
 
             expect(result2.JS.generic.length).toBe(1);
-            expect(
-                result2.JS.generic[0]!.getIndex(),
-            ).toBe(
-                getRawRuleIndex(rawFilterListLocal, genericScriptletRule),
-            );
+            expect(result2.JS.generic[0]!.getIndex()).toBe(getRawRuleIndex(rawFilterListLocal, genericScriptletRule));
         });
 
         it('allowlists scriptlets with the same name', () => {
@@ -481,16 +443,12 @@ describe('Test cosmetic engine - JS rules', () => {
             const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rawFilterListLocal)]);
             const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
             expect(result.JS.specific.length).toBe(1);
-            expect(
-                result.JS.specific[0]!.getIndex(),
-            ).toBe(
+            expect(result.JS.specific[0]!.getIndex()).toBe(
                 getRawRuleIndex(rawFilterListLocal, specificSetStorageScriptletRule),
             );
 
             expect(result.JS.generic.length).toBe(1);
-            expect(
-                result.JS.generic[0]!.getIndex(),
-            ).toBe(
+            expect(result.JS.generic[0]!.getIndex()).toBe(
                 getRawRuleIndex(rawFilterListLocal, genericSetStorageScriptletRule),
             );
         });
@@ -502,10 +460,7 @@ describe('Test cosmetic engine - HTML filtering rules', () => {
         const contentPart = 'div[id="ad_text"]';
         const specificRule = `example.org$$${contentPart}`;
         const genericRule = `$$${contentPart}`;
-        const rulesLocal = [
-            specificRule,
-            genericRule,
-        ];
+        const rulesLocal = [specificRule, genericRule];
         const rawFilterListLocal = rulesLocal.join('\n');
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rawFilterListLocal)]);
 
@@ -522,10 +477,7 @@ describe('Test cosmetic engine - HTML filtering rules', () => {
         const specificRule = `example.org$$${contentPart}`;
         const genericRule = `$$${contentPart}`;
 
-        const rulesLocal = [
-            specificRule,
-            genericRule,
-        ];
+        const rulesLocal = [specificRule, genericRule];
         const rawFilterListLocal = rulesLocal.join('\n');
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rawFilterListLocal)]);
 
@@ -539,10 +491,7 @@ describe('Test cosmetic engine - HTML filtering rules', () => {
     it('checks cosmetic HTML exceptions', () => {
         const rule = 'example.org$$div[id="ad_text"]';
         const exceptionRule = 'example.org$@$div[id="ad_text"]';
-        const rulesLocal = [
-            rule,
-            exceptionRule,
-        ];
+        const rulesLocal = [rule, exceptionRule];
         const rawFilterListLocal = rulesLocal.join('\n');
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rawFilterListLocal)]);
         const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
@@ -553,10 +502,7 @@ describe('Test cosmetic engine - HTML filtering rules', () => {
     it('checks cosmetic HTML content exceptions', () => {
         const rule = 'example.org$$div[id="ad_text_1"]';
         const exceptionRule = 'example.org$@$div[id="ad_text_2"]';
-        const rulesLocal = [
-            rule,
-            exceptionRule,
-        ];
+        const rulesLocal = [rule, exceptionRule];
         const rawFilterListLocal = rulesLocal.join('\n');
         const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rawFilterListLocal)]);
         const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);

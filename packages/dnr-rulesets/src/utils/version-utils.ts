@@ -1,11 +1,5 @@
 import { version } from '../../package.json';
-import {
-    COLON,
-    DASH,
-    DOT,
-    SPACE,
-    UTC_PLUS_0,
-} from '../common/constants';
+import { COLON, DASH, DOT, SPACE, UTC_PLUS_0 } from '../common/constants';
 
 /**
  * Length of the generated patch version.

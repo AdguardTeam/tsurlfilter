@@ -7,37 +7,27 @@ describe('LogicalExpressionUtils', () => {
     test('getVariables', () => {
         // Invalid input
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        expect(() => LogicalExpressionUtils.getVariables(<any>{
-            type: 'Invalid',
-        })).toThrowError('Unexpected node type');
+        expect(() =>
+            LogicalExpressionUtils.getVariables(<any>{
+                type: 'Invalid',
+            }),
+        ).toThrowError('Unexpected node type');
 
-        expect(
-            LogicalExpressionUtils.getVariables(
-                LogicalExpressionParser.parse('a'),
-            ),
-        ).toMatchObject([
+        expect(LogicalExpressionUtils.getVariables(LogicalExpressionParser.parse('a'))).toMatchObject([
             {
                 type: 'Variable',
                 name: 'a',
             },
         ]);
 
-        expect(
-            LogicalExpressionUtils.getVariables(
-                LogicalExpressionParser.parse('!!!!a'),
-            ),
-        ).toMatchObject([
+        expect(LogicalExpressionUtils.getVariables(LogicalExpressionParser.parse('!!!!a'))).toMatchObject([
             {
                 type: 'Variable',
                 name: 'a',
             },
         ]);
 
-        expect(
-            LogicalExpressionUtils.getVariables(
-                LogicalExpressionParser.parse('a || b && c'),
-            ),
-        ).toMatchObject([
+        expect(LogicalExpressionUtils.getVariables(LogicalExpressionParser.parse('a || b && c'))).toMatchObject([
             {
                 type: 'Variable',
                 name: 'a',
@@ -200,168 +190,113 @@ describe('LogicalExpressionUtils', () => {
 
     test('evaluate', () => {
         // Invalid AST
-        expect(() => LogicalExpressionUtils.evaluate(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            <any>{
-                type: 'Invalid',
-            },
-            {},
-        )).toThrowError("Unexpected node type 'Invalid'");
+        expect(() =>
+            LogicalExpressionUtils.evaluate(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                <any>{
+                    type: 'Invalid',
+                },
+                {},
+            ),
+        ).toThrowError("Unexpected node type 'Invalid'");
 
         // Invalid right operand
-        expect(() => LogicalExpressionUtils.evaluate(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            <any>{
-                type: 'Operator',
-                operator: '&&',
-            },
-            {},
-        )).toThrowError("Unexpected operator '&&'");
+        expect(() =>
+            LogicalExpressionUtils.evaluate(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                <any>{
+                    type: 'Operator',
+                    operator: '&&',
+                },
+                {},
+            ),
+        ).toThrowError("Unexpected operator '&&'");
 
-        expect(() => LogicalExpressionUtils.evaluate(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            <any>{
-                type: 'Operator',
-                operator: '||',
-            },
-            {},
-        )).toThrowError("Unexpected operator '||'");
+        expect(() =>
+            LogicalExpressionUtils.evaluate(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                <any>{
+                    type: 'Operator',
+                    operator: '||',
+                },
+                {},
+            ),
+        ).toThrowError("Unexpected operator '||'");
 
         // Variable itself
-        expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('a'),
-                { a: true },
-            ),
-        ).toBeTruthy();
+        expect(LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('a'), { a: true })).toBeTruthy();
 
-        expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('a'),
-                { a: false },
-            ),
-        ).toBeFalsy();
+        expect(LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('a'), { a: false })).toBeFalsy();
 
         // Not operator
-        expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('!a'),
-                { a: false },
-            ),
-        ).toBeTruthy();
+        expect(LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('!a'), { a: false })).toBeTruthy();
 
-        expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('!a'),
-                { a: true },
-            ),
-        ).toBeFalsy();
+        expect(LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('!a'), { a: true })).toBeFalsy();
 
-        expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('!!a'),
-                { a: true },
-            ),
-        ).toBeTruthy();
+        expect(LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('!!a'), { a: true })).toBeTruthy();
 
-        expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('!!a'),
-                { a: false },
-            ),
-        ).toBeFalsy();
+        expect(LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('!!a'), { a: false })).toBeFalsy();
 
-        expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('!!!a'),
-                { a: false },
-            ),
-        ).toBeTruthy();
+        expect(LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('!!!a'), { a: false })).toBeTruthy();
 
-        expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('!!!!a'),
-                { a: false },
-            ),
-        ).toBeFalsy();
+        expect(LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('!!!!a'), { a: false })).toBeFalsy();
 
         // And operator
         expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('a && b'),
-                { a: false, b: true },
-            ),
+            LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('a && b'), { a: false, b: true }),
         ).toBeFalsy();
 
         expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('a && b'),
-                { a: true, b: false },
-            ),
+            LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('a && b'), { a: true, b: false }),
         ).toBeFalsy();
 
         expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('a && b'),
-                { a: true, b: true },
-            ),
+            LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('a && b'), { a: true, b: true }),
         ).toBeTruthy();
 
         expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('(a) && (b)'),
-                { a: true, b: true },
-            ),
+            LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('(a) && (b)'), { a: true, b: true }),
         ).toBeTruthy();
 
         expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('a && b && !c'),
-                { a: true, b: true, c: false },
-            ),
+            LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('a && b && !c'), {
+                a: true,
+                b: true,
+                c: false,
+            }),
         ).toBeTruthy();
 
         expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('((a && (b))) && !!(!(c))'),
-                { a: true, b: true, c: false },
-            ),
+            LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('((a && (b))) && !!(!(c))'), {
+                a: true,
+                b: true,
+                c: false,
+            }),
         ).toBeTruthy();
 
         // Or operator
         expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('a || b'),
-                { a: false, b: true },
-            ),
+            LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('a || b'), { a: false, b: true }),
         ).toBeTruthy();
 
         expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('a || b'),
-                { a: true, b: false },
-            ),
+            LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('a || b'), { a: true, b: false }),
         ).toBeTruthy();
 
         expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('a || b'),
-                { a: true, b: true },
-            ),
+            LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('a || b'), { a: true, b: true }),
         ).toBeTruthy();
 
         expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('(a) || (b)'),
-                { a: true, b: true },
-            ),
+            LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('(a) || (b)'), { a: true, b: true }),
         ).toBeTruthy();
 
         expect(
-            LogicalExpressionUtils.evaluate(
-                LogicalExpressionParser.parse('a || b || !c'),
-                { a: false, b: false, c: false },
-            ),
+            LogicalExpressionUtils.evaluate(LogicalExpressionParser.parse('a || b || !c'), {
+                a: false,
+                b: false,
+                c: false,
+            }),
         ).toBeTruthy();
 
         // Complex expression
@@ -372,7 +307,11 @@ describe('LogicalExpressionUtils', () => {
                     '(a && !b) && (c || (d && (!e)))',
                 ),
                 {
-                    a: true, b: false, c: true, d: true, e: false,
+                    a: true,
+                    b: false,
+                    c: true,
+                    d: true,
+                    e: false,
                 },
             ),
         ).toBeTruthy();

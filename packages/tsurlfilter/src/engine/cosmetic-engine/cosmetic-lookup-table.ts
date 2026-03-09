@@ -82,9 +82,11 @@ export class CosmeticLookupTable {
      * @returns True if the rule is a scriptlet rule.
      */
     private static isScriptletRule(ruleParts: CosmeticRuleParts): boolean {
-        return ruleParts.type === CosmeticRuleType.JsInjectionRule
-            && ruleParts.text.startsWith(`${ADG_SCRIPTLET_MASK}(`, ruleParts.contentStart)
-            && ruleParts.text.endsWith(')', ruleParts.contentEnd);
+        return (
+            ruleParts.type === CosmeticRuleType.JsInjectionRule &&
+            ruleParts.text.startsWith(`${ADG_SCRIPTLET_MASK}(`, ruleParts.contentStart) &&
+            ruleParts.text.endsWith(')', ruleParts.contentEnd)
+        );
     }
 
     /**
@@ -278,17 +280,21 @@ export class CosmeticLookupTable {
 
             // If scriptlet allowlisted by name
             // e.g. #@%#//scriptlet('set-cookie'); example.org#@%#//scriptlet('set-cookie');
-            if (rule.scriptletParams.name !== undefined
-                && this.isScriptletAllowlisted(rule.scriptletParams.name, request)) {
+            if (
+                rule.scriptletParams.name !== undefined &&
+                this.isScriptletAllowlisted(rule.scriptletParams.name, request)
+            ) {
                 return true;
             }
 
             // If scriptlet allowlisted with args, using normalized scriptlet content for better matching
             // on different quote types (see https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2947)
             // e.g. #@%#//scriptlet("set-cookie", "arg1"); example.org#@%#//scriptlet('set-cookie', 'arg1');
-            if (rule.scriptletParams.name !== undefined
-                && rule.scriptletParams.args.length > 0
-                && this.isScriptletAllowlisted(rule.scriptletParams.toString(), request)) {
+            if (
+                rule.scriptletParams.name !== undefined &&
+                rule.scriptletParams.args.length > 0 &&
+                this.isScriptletAllowlisted(rule.scriptletParams.toString(), request)
+            ) {
                 return true;
             }
         }

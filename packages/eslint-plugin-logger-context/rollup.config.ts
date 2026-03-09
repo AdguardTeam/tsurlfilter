@@ -9,15 +9,17 @@ import json from '@rollup/plugin-json';
 // another linter we can remove this format.
 export default {
     input: 'src/index.ts',
-    output: [{
-        dir: 'dist',
-        format: 'cjs',
-    },
-    {
-        dir: 'dist/es',
-        format: 'es',
-        entryFileNames: '[name].mjs',
-    }],
+    output: [
+        {
+            dir: 'dist',
+            format: 'cjs',
+        },
+        {
+            dir: 'dist/es',
+            format: 'es',
+            entryFileNames: '[name].mjs',
+        },
+    ],
     plugins: [
         externals(),
         // To resolve export version and name from package.json

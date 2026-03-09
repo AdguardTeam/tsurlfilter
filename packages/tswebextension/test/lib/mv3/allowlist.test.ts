@@ -1,9 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    it,
-} from 'vitest';
+import { describe, expect, beforeEach, it } from 'vitest';
 
 import { AllowlistApi } from '../../../src/lib/mv3/background/allowlist-api';
 

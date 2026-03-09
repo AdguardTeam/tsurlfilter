@@ -68,11 +68,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * - app start time is not defined yet.
      */
     public static async injectScript(tabId: number, frameId: number, scriptText: string): Promise<void> {
-        return TabsApi.injectScript(
-            tabId,
-            frameId,
-            buildScriptText(scriptText, appContext.startTimeMs),
-        );
+        return TabsApi.injectScript(tabId, frameId, buildScriptText(scriptText, appContext.startTimeMs));
     }
 
     /**
@@ -163,11 +159,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @returns Content script data for applying cosmetic.
      */
-    public static getContentScriptData(
-        frameUrl: string,
-        tabId: number,
-        frameId: number,
-    ): ContentScriptCosmeticData {
+    public static getContentScriptData(frameUrl: string, tabId: number, frameId: number): ContentScriptCosmeticData {
         const { isStorageInitialized } = appContext;
 
         const data: ContentScriptCosmeticData = {
@@ -209,13 +201,10 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const isNativeHasSupported = CssCapabilities.isNativeHasPseudoClassSupported();
 
-        data.extCssRules = CosmeticApi.getExtCssRules(
-            cosmeticResult,
-            {
-                areHitsStatsCollected,
-                isNativeHasSupported,
-            },
-        );
+        data.extCssRules = CosmeticApi.getExtCssRules(cosmeticResult, {
+            areHitsStatsCollected,
+            isNativeHasSupported,
+        });
 
         return data;
     }
@@ -249,10 +238,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     public static injectCosmetic(tabId: number, frameId: number): void {
         // Note: this is an async function, but we will not await it
         // because events (where it is used) do not support async listeners.
-        Promise.all([
-            CosmeticApi.applyJs(tabId, frameId),
-            CosmeticApi.applyCss(tabId, frameId),
-        ]).catch((e) => {
+        Promise.all([CosmeticApi.applyJs(tabId, frameId), CosmeticApi.applyCss(tabId, frameId)]).catch((e) => {
             logger.error('[tsweb.CosmeticApi.injectCosmetic]: error occurred during injection: ', e);
         });
     }

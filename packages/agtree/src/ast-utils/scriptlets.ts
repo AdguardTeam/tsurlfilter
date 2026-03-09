@@ -74,10 +74,7 @@ export function transformNthScriptletArgument(
  * @param scriptletNode Scriptlet node to transform arguments of
  * @param transform Function to transform the arguments
  */
-export function transformAllScriptletArguments(
-    scriptletNode: ParameterList,
-    transform: ParamTransformer,
-): void {
+export function transformAllScriptletArguments(scriptletNode: ParameterList, transform: ParamTransformer): void {
     for (let i = 0; i < scriptletNode.children.length; i += 1) {
         transformNthScriptletArgument(scriptletNode, i, transform);
     }

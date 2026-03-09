@@ -17,9 +17,9 @@ stages:
 Build:
   key: TSWEBEXTUPDCOMPANIESDB
   docker:
-    image: "${bamboo.dockerContainer}"
+    image: '${bamboo.dockerContainer}'
     volumes:
-       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      ${system.PNPM_DIR}: '${bamboo.cachePnpm}'
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -58,7 +58,7 @@ Build:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/cleanup.sh"
+          - './bamboo-specs/scripts/cleanup.sh'
   requirements:
     - extension: 'true'
 
@@ -72,7 +72,7 @@ branches:
   delete: never
   link-to-jira: 'true'
 
-labels: [ ]
+labels: []
 
 other:
   concurrent-build-plugin: system-default

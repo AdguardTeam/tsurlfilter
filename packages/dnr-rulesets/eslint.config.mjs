@@ -24,20 +24,24 @@ export default [
             'import-newlines': importNewlines,
         },
         rules: {
-            'max-len': ['error', {
-                code: MAX_LINE_LENGTH,
-                comments: MAX_LINE_LENGTH,
-                tabWidth: 4,
-                ignoreUrls: true,
-                ignoreTrailingComments: false,
-                ignoreComments: false,
-            }],
-            'jsdoc/multiline-blocks': ['error', {
-                noSingleLineBlocks: true,
-                singleLineTags: [
-                    'inheritdoc',
-                ],
-            }],
+            'max-len': [
+                'error',
+                {
+                    code: MAX_LINE_LENGTH,
+                    comments: MAX_LINE_LENGTH,
+                    tabWidth: 4,
+                    ignoreUrls: true,
+                    ignoreTrailingComments: false,
+                    ignoreComments: false,
+                },
+            ],
+            'jsdoc/multiline-blocks': [
+                'error',
+                {
+                    noSingleLineBlocks: true,
+                    singleLineTags: ['inheritdoc'],
+                },
+            ],
             'jsdoc/require-param-type': 'off',
             'jsdoc/require-returns-type': 'off',
             'jsdoc/require-returns': ['error'],
@@ -59,69 +63,62 @@ export default [
             'jsdoc/require-jsdoc': [
                 'error',
                 {
-                    contexts: [
-                        'ClassDeclaration',
-                        'ClassProperty',
-                        'FunctionDeclaration',
-                        'MethodDefinition',
-                    ],
+                    contexts: ['ClassDeclaration', 'ClassProperty', 'FunctionDeclaration', 'MethodDefinition'],
                 },
             ],
             'jsdoc/require-description': [
                 'error',
                 {
-                    contexts: [
-                        'ClassDeclaration',
-                        'ClassProperty',
-                        'FunctionDeclaration',
-                        'MethodDefinition',
-                    ],
+                    contexts: ['ClassDeclaration', 'ClassProperty', 'FunctionDeclaration', 'MethodDefinition'],
                 },
             ],
             'jsdoc/require-description-complete-sentence': [
                 'error',
                 {
-                    abbreviations: [
-                        'e.g.',
-                        'i.e.',
+                    abbreviations: ['e.g.', 'i.e.'],
+                },
+            ],
+            'jsdoc/sort-tags': [
+                'error',
+                {
+                    linesBetween: 1,
+                    tagSequence: [
+                        {
+                            tags: ['file'],
+                        },
+                        {
+                            tags: ['template'],
+                        },
+                        {
+                            tags: ['see'],
+                        },
+                        {
+                            tags: ['param'],
+                        },
+                        {
+                            tags: ['returns'],
+                        },
+                        {
+                            tags: ['throws'],
+                        },
+                        {
+                            tags: ['example'],
+                        },
                     ],
                 },
             ],
-            'jsdoc/sort-tags': ['error', {
-                linesBetween: 1,
-                tagSequence: [
-                    {
-                        tags: ['file'],
-                    },
-                    {
-                        tags: ['template'],
-                    },
-                    {
-                        tags: ['see'],
-                    },
-                    {
-                        tags: ['param'],
-                    },
-                    {
-                        tags: ['returns'],
-                    },
-                    {
-                        tags: ['throws'],
-                    },
-                    {
-                        tags: ['example'],
-                    },
-                ],
-            }],
             'simple-import-sort/imports': 'error',
             'simple-import-sort/exports': 'error',
             '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
             '@stylistic/arrow-parens': ['error', 'always'],
             '@stylistic/member-delimiter-style': 'error',
-            'import-newlines/enforce': ['error', {
-                'items': 3,
-                'max-len': MAX_LINE_LENGTH,
-            }],
+            'import-newlines/enforce': [
+                'error',
+                {
+                    items: 3,
+                    'max-len': MAX_LINE_LENGTH,
+                },
+            ],
         },
     },
     {

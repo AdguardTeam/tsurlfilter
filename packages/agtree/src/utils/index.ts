@@ -33,9 +33,6 @@ export {
     SPECIAL_REGEX_SYMBOLS,
     RegExpUtils,
 } from './regexp';
-export {
-    QuoteType,
-    QuoteUtils,
-} from './quotes';
+export { QuoteType, QuoteUtils } from './quotes';
 export { type Position, PositionProvider } from './position-provider';
 export { RuleCategorizer } from './categorizer';

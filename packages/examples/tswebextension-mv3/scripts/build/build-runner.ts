@@ -6,9 +6,7 @@ type CompilerCallback = (err?: Error | null, stats?: Stats) => void;
 export const buildRunner = (webpackConfig: Configuration, watch = false): Promise<void> => {
     const compiler = webpack(webpackConfig);
 
-    const run = watch
-        ? (cb: CompilerCallback) => compiler.watch({}, cb)
-        : (cb: CompilerCallback) => compiler.run(cb);
+    const run = watch ? (cb: CompilerCallback) => compiler.watch({}, cb) : (cb: CompilerCallback) => compiler.run(cb);
 
     return new Promise((resolve, reject) => {
         run((err?: Error | null, stats?: Stats) => {
@@ -22,21 +20,25 @@ export const buildRunner = (webpackConfig: Configuration, watch = false): Promis
                 return;
             }
             if (stats.hasErrors()) {
-                console.log(stats.toString({
-                    colors: true,
-                    all: false,
-                    errors: true,
-                    moduleTrace: true,
-                    logging: 'error',
-                }));
+                console.log(
+                    stats.toString({
+                        colors: true,
+                        all: false,
+                        errors: true,
+                        moduleTrace: true,
+                        logging: 'error',
+                    }),
+                );
                 reject();
                 return;
             }
 
-            console.log(stats.toString({
-                chunks: false, // Makes the build much quieter
-                colors: true, // Shows colors in the console
-            }));
+            console.log(
+                stats.toString({
+                    chunks: false, // Makes the build much quieter
+                    colors: true, // Shows colors in the console
+                }),
+            );
             resolve();
         });
     });

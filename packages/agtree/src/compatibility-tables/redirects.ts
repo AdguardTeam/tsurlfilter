@@ -74,10 +74,7 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
      *
      * @returns Set of resource type modifiers or an empty set if the redirect is not found or has no resource types.
      */
-    public getResourceTypeModifiers(
-        redirect: string | RedirectDataSchema,
-        platform: AnyPlatform,
-    ): Set<string> {
+    public getResourceTypeModifiers(redirect: string | RedirectDataSchema, platform: AnyPlatform): Set<string> {
         let redirectData: RedirectDataSchema | null = null;
 
         if (isString(redirect)) {

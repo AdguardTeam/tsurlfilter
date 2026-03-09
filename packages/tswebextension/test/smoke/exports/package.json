@@ -1,13 +1,13 @@
 {
-  "main": "index.js",
-  "license": "MIT",
-  "author": "Adguard Software Ltd.",
-  "type": "module",
-  "scripts": {
-    "start": "tsc --noEmit && tsx root-exports.ts && tsx specific-exports.ts && tsd",
-    "test": "./test.sh"
-  },
-  "devDependencies": {
-    "tsx": "catalog:"
-  }
+    "main": "index.js",
+    "license": "MIT",
+    "author": "Adguard Software Ltd.",
+    "type": "module",
+    "scripts": {
+        "start": "tsc --noEmit && tsx root-exports.ts && tsx specific-exports.ts && tsd",
+        "test": "./test.sh"
+    },
+    "devDependencies": {
+        "tsx": "catalog:"
+    }
 }

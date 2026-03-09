@@ -1,22 +1,11 @@
 module.exports = {
-    plugins: [
-        'import',
-    ],
-    extends: [
-        'plugin:jsdoc/recommended',
-        '@adguard/eslint-config-internal',
-    ],
+    plugins: ['import'],
+    extends: ['plugin:jsdoc/recommended', '@adguard/eslint-config-internal'],
     rules: {
         'import/order': [
             'error',
             {
-                groups: [
-                    'builtin',
-                    'external',
-                    'internal',
-                    'parent',
-                    'index',
-                ],
+                groups: ['builtin', 'external', 'internal', 'parent', 'index'],
                 'newlines-between': 'always',
                 warnOnUnassignedImports: false,
             },
@@ -25,24 +14,14 @@ module.exports = {
         'jsdoc/require-jsdoc': [
             'error',
             {
-                contexts: [
-                    'ClassDeclaration',
-                    'ClassProperty',
-                    'FunctionDeclaration',
-                    'MethodDefinition',
-                ],
+                contexts: ['ClassDeclaration', 'ClassProperty', 'FunctionDeclaration', 'MethodDefinition'],
             },
         ],
         'jsdoc/require-throws': 'error',
         'jsdoc/require-description': [
             'error',
             {
-                contexts: [
-                    'ClassDeclaration',
-                    'ClassProperty',
-                    'FunctionDeclaration',
-                    'MethodDefinition',
-                ],
+                contexts: ['ClassDeclaration', 'ClassProperty', 'FunctionDeclaration', 'MethodDefinition'],
             },
         ],
         'jsdoc/require-description-complete-sentence': [

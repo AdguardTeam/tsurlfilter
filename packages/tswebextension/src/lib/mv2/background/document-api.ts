@@ -18,7 +18,7 @@ export class DocumentApi {
     constructor(
         private readonly allowlist: Allowlist,
         private readonly engineApi: EngineApi,
-    ) { }
+    ) {}
 
     /**
      * Match frame rule based on allowlist state.

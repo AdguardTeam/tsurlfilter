@@ -1,9 +1,4 @@
-import {
-    describe,
-    test,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 
 import { COMMA } from '../../../src/utils/constants';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';

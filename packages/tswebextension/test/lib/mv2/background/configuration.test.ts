@@ -46,15 +46,21 @@ describe('configuration validator', () => {
                 ...validConfiguration,
                 settings: undefined,
             });
-        }).toThrow(JSON.stringify([{
-            code: 'invalid_type',
-            expected: 'object',
-            received: 'undefined',
-            path: [
-                'settings',
-            ],
-            message: 'Required',
-        }], null, 2));
+        }).toThrow(
+            JSON.stringify(
+                [
+                    {
+                        code: 'invalid_type',
+                        expected: 'object',
+                        received: 'undefined',
+                        path: ['settings'],
+                        message: 'Required',
+                    },
+                ],
+                null,
+                2,
+            ),
+        );
     });
 
     it('tests that content is a string', () => {
@@ -68,30 +74,28 @@ describe('configuration validator', () => {
 
         expect(() => {
             configurationMV2Validator.parse(configuration);
-        }).toThrow(JSON.stringify([
-            {
-                code: 'invalid_type',
-                expected: 'string',
-                received: 'boolean',
-                path: [
-                    'filters',
-                    0,
-                    'content',
+        }).toThrow(
+            JSON.stringify(
+                [
+                    {
+                        code: 'invalid_type',
+                        expected: 'string',
+                        received: 'boolean',
+                        path: ['filters', 0, 'content'],
+                        message: 'Expected string, received boolean',
+                    },
+                    {
+                        code: 'invalid_type',
+                        expected: 'string',
+                        received: 'array',
+                        path: ['filters', 1, 'content'],
+                        message: 'Expected string, received array',
+                    },
                 ],
-                message: 'Expected string, received boolean',
-            },
-            {
-                code: 'invalid_type',
-                expected: 'string',
-                received: 'array',
-                path: [
-                    'filters',
-                    1,
-                    'content',
-                ],
-                message: 'Expected string, received array',
-            },
-        ], null, 2));
+                null,
+                2,
+            ),
+        );
     });
 
     it('throws error on unrecognized key detection', () => {
@@ -102,13 +106,19 @@ describe('configuration validator', () => {
 
         expect(() => {
             configurationMV2Validator.parse(configuration);
-        }).toThrow(JSON.stringify([{
-            code: 'unrecognized_keys',
-            keys: [
-                'beep',
-            ],
-            path: [],
-            message: "Unrecognized key(s) in object: 'beep'",
-        }], null, 2));
+        }).toThrow(
+            JSON.stringify(
+                [
+                    {
+                        code: 'unrecognized_keys',
+                        keys: ['beep'],
+                        path: [],
+                        message: "Unrecognized key(s) in object: 'beep'",
+                    },
+                ],
+                null,
+                2,
+            ),
+        );
     });
 });

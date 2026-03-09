@@ -20,11 +20,7 @@ describe('RuleScanner tests', () => {
         };
 
         // TODO: Add array of raw rules, and re-use them in tests
-        const rules = [
-            '||example.org',
-            '! test',
-            '##banner',
-        ];
+        const rules = ['||example.org', '! test', '##banner'];
         const text = rules.join('\n');
         const list = new StringRuleList(1, text, false, false, false);
 

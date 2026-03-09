@@ -973,7 +973,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [2.0.0-alpha.49]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.0.0-alpha.49
 
-## [2.0.0-alpha.47]  - 2023-01-20
+## [2.0.0-alpha.47] - 2023-01-20
 
 ### Changed
 
@@ -1095,7 +1095,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [1.0.63]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.63
 
-## [1.0.62] -  2022-12-12
+## [1.0.62] - 2022-12-12
 
 ### Changed
 
@@ -1123,10 +1123,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `:if()` and `:if-not()` pseudo-classes
 
 [1.0.57]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.57
-
 [@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/agtree]: ../agtree/CHANGELOG.md
 [@adguard/css-tokenizer]: ../css-tokenizer/CHANGELOG.md
-
 [@adguard/extended-css]: https://github.com/AdguardTeam/ExtendedCss/blob/master/CHANGELOG.md
 [@adguard/scriptlets]: https://github.com/AdguardTeam/Scriptlets/blob/master/CHANGELOG.md

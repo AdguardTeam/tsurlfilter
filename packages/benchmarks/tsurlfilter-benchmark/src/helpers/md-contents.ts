@@ -47,38 +47,36 @@ export const getMdFileContents = async (specs: SystemSpecs, filterListResults: F
 
             // Print benchmark results as a markdown table with tinybench properties
             result.push(
-                markdownTable(
+                markdownTable([
                     [
-                        [
-                            'Task',
-                            'Hz (ops/s)',
-                            'Mean (ms)',
-                            'Min (ms)',
-                            'Max (ms)',
-                            'P75 (ms)',
-                            'P99 (ms)',
-                            'P995 (ms)',
-                            'P999 (ms)',
-                            'RME (%)',
-                            'Samples',
-                            'Status',
-                        ],
-                        ...benchResult.benchmarkJsResults.map((benchmarkResult) => [
-                            benchmarkResult.name,
-                            benchmarkResult.hz.toFixed(2),
-                            benchmarkResult.mean.toFixed(4),
-                            benchmarkResult.min.toFixed(4),
-                            benchmarkResult.max.toFixed(4),
-                            benchmarkResult.p75.toFixed(4),
-                            benchmarkResult.p99.toFixed(4),
-                            benchmarkResult.p995.toFixed(4),
-                            benchmarkResult.p999.toFixed(4),
-                            benchmarkResult.rme.toFixed(2),
-                            String(benchmarkResult.samples),
-                            benchmarkResult.status,
-                        ]),
+                        'Task',
+                        'Hz (ops/s)',
+                        'Mean (ms)',
+                        'Min (ms)',
+                        'Max (ms)',
+                        'P75 (ms)',
+                        'P99 (ms)',
+                        'P995 (ms)',
+                        'P999 (ms)',
+                        'RME (%)',
+                        'Samples',
+                        'Status',
                     ],
-                ),
+                    ...benchResult.benchmarkJsResults.map((benchmarkResult) => [
+                        benchmarkResult.name,
+                        benchmarkResult.hz.toFixed(2),
+                        benchmarkResult.mean.toFixed(4),
+                        benchmarkResult.min.toFixed(4),
+                        benchmarkResult.max.toFixed(4),
+                        benchmarkResult.p75.toFixed(4),
+                        benchmarkResult.p99.toFixed(4),
+                        benchmarkResult.p995.toFixed(4),
+                        benchmarkResult.p999.toFixed(4),
+                        benchmarkResult.rme.toFixed(2),
+                        String(benchmarkResult.samples),
+                        benchmarkResult.status,
+                    ]),
+                ]),
             );
 
             result.push(EMPTY);
@@ -88,13 +86,11 @@ export const getMdFileContents = async (specs: SystemSpecs, filterListResults: F
 
             // Print stats as a markdown table
             result.push(
-                markdownTable(
-                    [
-                        ['Stat', 'Value'],
-                        ['Rules count (tsurlfilter v4)', String(benchResult.stats.rulesCount)],
-                        ['Rules count (tsurlfilter v3)', String(benchResult.stats.rulesCountV3)],
-                    ],
-                ),
+                markdownTable([
+                    ['Stat', 'Value'],
+                    ['Rules count (tsurlfilter v4)', String(benchResult.stats.rulesCount)],
+                    ['Rules count (tsurlfilter v3)', String(benchResult.stats.rulesCountV3)],
+                ]),
             );
 
             result.push(EMPTY);

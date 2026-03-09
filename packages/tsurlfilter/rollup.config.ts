@@ -46,12 +46,7 @@ const commonConfig = {
 };
 
 const esmConfig = {
-    input: [
-        'src/index.ts',
-        'src/request-type.ts',
-        'src/rules/simple-regex.ts',
-        'src/rules/network-rule-options.ts',
-    ],
+    input: ['src/index.ts', 'src/request-type.ts', 'src/rules/simple-regex.ts', 'src/rules/network-rule-options.ts'],
     output: [
         {
             dir: `${OUTPUT_PATH}/es`,
@@ -127,9 +122,4 @@ const cliConfig = {
     },
 };
 
-export default [
-    esmConfig,
-    esmDeclarativeConverterConfig,
-    esmDeclarativeConverterUtilsConfig,
-    cliConfig,
-];
+export default [esmConfig, esmDeclarativeConverterConfig, esmDeclarativeConverterUtilsConfig, cliConfig];

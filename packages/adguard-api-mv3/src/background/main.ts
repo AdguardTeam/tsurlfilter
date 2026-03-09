@@ -280,9 +280,6 @@ export class AdguardApi {
     public static async create(params?: AdguardApiParams): Promise<AdguardApi> {
         const tswebextension = new TsWebExtension(AdguardApi.WEB_ACCESSIBLE_RESOURCES_PATH);
         await tswebextension.initStorage();
-        return new AdguardApi(
-            tswebextension,
-            params,
-        );
+        return new AdguardApi(tswebextension, params);
     }
 }

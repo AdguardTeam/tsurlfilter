@@ -128,11 +128,7 @@ export class CosmeticRuleParser extends BaseParser {
 
         // Note we use '<=' instead of '===' because we have bidirectional trim
         if (bodyEnd <= bodyStart) {
-            throw new AdblockSyntaxError(
-                ERROR_MESSAGES.EMPTY_RULE_BODY,
-                baseOffset,
-                baseOffset + raw.length,
-            );
+            throw new AdblockSyntaxError(ERROR_MESSAGES.EMPTY_RULE_BODY, baseOffset, baseOffset + raw.length);
         }
 
         // Step 1. Parse the pattern: it can be a domain list or a domain list with modifiers (AdGuard)
@@ -206,11 +202,7 @@ export class CosmeticRuleParser extends BaseParser {
         patternOffset = StringUtils.skipWS(rawPattern, patternOffset);
 
         // Parse domains
-        const domains = DomainListParser.parse(
-            rawPattern.slice(patternOffset),
-            options,
-            baseOffset + patternOffset,
-        );
+        const domains = DomainListParser.parse(rawPattern.slice(patternOffset), options, baseOffset + patternOffset);
 
         // Step 2. Parse the separator
         const separator: Value<CosmeticRuleSeparator> = {

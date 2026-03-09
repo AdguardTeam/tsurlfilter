@@ -120,10 +120,7 @@ export class ElementUtils {
      *
      * @returns Rule info or null.
      */
-    public static parseExtendedStyleInfo(
-        content: string,
-        attributeMarker: string,
-    ): RuleInfoBasic | null {
+    public static parseExtendedStyleInfo(content: string, attributeMarker: string): RuleInfoBasic | null {
         const important = '!important';
         const indexOfImportant = content.lastIndexOf(important);
         if (indexOfImportant === -1) {
@@ -142,9 +139,11 @@ export class ElementUtils {
      * @returns Unquoted value.
      */
     private static removeQuotes(value: string): string {
-        if (value.length > 1
-            && ((value[0] === '"' && value[value.length - 1] === '"')
-                || (value[0] === '\'' && value[value.length - 1] === '\''))) {
+        if (
+            value.length > 1 &&
+            ((value[0] === '"' && value[value.length - 1] === '"') ||
+                (value[0] === "'" && value[value.length - 1] === "'"))
+        ) {
             // Remove double-quotes or single-quotes
             return value.substring(1, value.length - 1);
         }

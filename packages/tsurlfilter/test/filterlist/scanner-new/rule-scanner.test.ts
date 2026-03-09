@@ -1,11 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import {
-    beforeEach,
-    describe,
-    expect,
-    it,
-} from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { type ILineReader } from '../../../src/filterlist/reader/line-reader';
 import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
@@ -17,11 +12,7 @@ const __dirname = new URL('.', import.meta.url).pathname;
 
 describe('TestRuleScannerOfBufferReader', () => {
     it('works if scanner is fine with string reader', () => {
-        const rules = [
-            '||example.org',
-            '! test',
-            '##banner',
-        ];
+        const rules = ['||example.org', '! test', '##banner'];
         const text = rules.join('\n');
         const reader = new StringLineReader(text);
         const scanner = new RuleScanner(reader, 1, {

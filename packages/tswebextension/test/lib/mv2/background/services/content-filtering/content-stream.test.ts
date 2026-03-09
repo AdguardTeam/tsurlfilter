@@ -1,9 +1,4 @@
-import {
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { TextEncoder, TextDecoder } from '@adguard/text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
 
@@ -13,9 +8,7 @@ import {
     WIN_1251,
     WIN_1252,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/charsets';
-import {
-    type ContentStringFilterInterface,
-} from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
+import { type ContentStringFilterInterface } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
 import {
     type RequestContext,
     RequestContextState,
@@ -56,15 +49,11 @@ describe('Content stream', () => {
     } as RequestContext;
 
     // Helper function to create stream instance and mock filter
-    const createStreamInstance = (requestContext: RequestContext = context):
-    { stream: ContentStream; mockFilter: MockStreamFilter } => {
+    const createStreamInstance = (
+        requestContext: RequestContext = context,
+    ): { stream: ContentStream; mockFilter: MockStreamFilter } => {
         const mockFilter = new MockStreamFilter();
-        const stream = new ContentStream(
-            requestContext,
-            contentStringFilter,
-            () => mockFilter,
-            new MockFilteringLog(),
-        );
+        const stream = new ContentStream(requestContext, contentStringFilter, () => mockFilter, new MockFilteringLog());
         stream.init();
         return { stream, mockFilter };
     };
@@ -255,7 +244,7 @@ describe('Content stream', () => {
 
     it('should write raw chunks back if decoding results in replacement characters', () => {
         // Create invalid UTF-8 data, 0xFF and 0xFE are invalid UTF-8 bytes
-        const invalidData = Uint8Array.from([0xFF, 0xFE]).buffer;
+        const invalidData = Uint8Array.from([0xff, 0xfe]).buffer;
 
         const { stream, mockFilter } = createStreamInstance();
 

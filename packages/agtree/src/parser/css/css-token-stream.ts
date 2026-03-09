@@ -176,10 +176,7 @@ export class CssTokenStream {
 
         if (!token) {
             throw new AdblockSyntaxError(
-                sprintf(
-                    ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT,
-                    END_OF_INPUT,
-                ),
+                sprintf(ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT, END_OF_INPUT),
                 this.baseOffset + this.source.length - 1,
                 this.baseOffset + this.source.length,
             );
@@ -308,8 +305,8 @@ export class CssTokenStream {
         let skipped = 0;
 
         while (
-            !this.isEof()
-            && (this.get()?.type !== type || (balance !== undefined && this.get()?.balance !== balance))
+            !this.isEof() &&
+            (this.get()?.type !== type || (balance !== undefined && this.get()?.balance !== balance))
         ) {
             this.index += 1;
             skipped += 1;
@@ -387,11 +384,7 @@ export class CssTokenStream {
 
         if (!token) {
             throw new AdblockSyntaxError(
-                sprintf(
-                    ERROR_MESSAGES.EXPECTED_TOKEN_BUT_GOT,
-                    getFormattedTokenName(type),
-                    END_OF_INPUT,
-                ),
+                sprintf(ERROR_MESSAGES.EXPECTED_TOKEN_BUT_GOT, getFormattedTokenName(type), END_OF_INPUT),
                 this.baseOffset + this.source.length - 1,
                 this.baseOffset + this.source.length,
             );

@@ -7,20 +7,18 @@ import { addAsProp, testTokenization } from '../helpers/test-utils';
 describe('delim-token', () => {
     // Tokenize any unknown character as <delim-token>
     describe('should tokenize any unknown character as <delim-token>', () => {
-        test.each(addAsProp([
-            {
-                actual: '$',
-                expected: [
-                    [TokenType.Delim, 0, 1],
-                ],
-            },
-            {
-                actual: '^',
-                expected: [
-                    [TokenType.Delim, 0, 1],
-                ],
-            },
-        ] as TokenTest[]))("should tokenize '$actual' as $as", (testCase) => {
+        test.each(
+            addAsProp([
+                {
+                    actual: '$',
+                    expected: [[TokenType.Delim, 0, 1]],
+                },
+                {
+                    actual: '^',
+                    expected: [[TokenType.Delim, 0, 1]],
+                },
+            ] as TokenTest[]),
+        )("should tokenize '$actual' as $as", (testCase) => {
             testTokenization(testCase);
         });
     });
@@ -29,9 +27,7 @@ describe('delim-token', () => {
         test.each([
             {
                 actual: String.raw`#`,
-                expected: [
-                    [TokenType.Delim, 0, 1],
-                ],
+                expected: [[TokenType.Delim, 0, 1]],
             },
             {
                 actual: String.raw`# `,
@@ -57,9 +53,7 @@ describe('delim-token', () => {
         test.each([
             {
                 actual: String.raw`+`,
-                expected: [
-                    [TokenType.Delim, 0, 1],
-                ],
+                expected: [[TokenType.Delim, 0, 1]],
             },
             {
                 actual: String.raw`+ `,
@@ -85,9 +79,7 @@ describe('delim-token', () => {
         test.each([
             {
                 actual: String.raw`-`,
-                expected: [
-                    [TokenType.Delim, 0, 1],
-                ],
+                expected: [[TokenType.Delim, 0, 1]],
             },
             {
                 actual: String.raw`- `,
@@ -121,9 +113,7 @@ describe('delim-token', () => {
         test.each([
             {
                 actual: String.raw`.`,
-                expected: [
-                    [TokenType.Delim, 0, 1],
-                ],
+                expected: [[TokenType.Delim, 0, 1]],
             },
             {
                 actual: String.raw`. `,
@@ -149,9 +139,7 @@ describe('delim-token', () => {
         test.each([
             {
                 actual: String.raw`<`,
-                expected: [
-                    [TokenType.Delim, 0, 1],
-                ],
+                expected: [[TokenType.Delim, 0, 1]],
             },
             {
                 actual: String.raw`< `,
@@ -178,9 +166,7 @@ describe('delim-token', () => {
         test.each([
             {
                 actual: String.raw`@`,
-                expected: [
-                    [TokenType.Delim, 0, 1],
-                ],
+                expected: [[TokenType.Delim, 0, 1]],
             },
             {
                 actual: String.raw`@ `,
@@ -206,9 +192,7 @@ describe('delim-token', () => {
         test.each([
             {
                 actual: String.raw`/`,
-                expected: [
-                    [TokenType.Delim, 0, 1],
-                ],
+                expected: [[TokenType.Delim, 0, 1]],
             },
             {
                 actual: String.raw`/ `,

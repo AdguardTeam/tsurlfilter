@@ -64,7 +64,7 @@ export const config: Configuration = {
         'pages/popup': POPUP_PATH,
         'content-script': CONTENT_SCRIPT,
         'assistant-inject': ASSISTANT_INJECT,
-        'gpc': GPC_SCRIPT,
+        gpc: GPC_SCRIPT,
         'hide-document-referrer': HIDE_DOCUMENT_REFERRER_SCRIPT,
     },
     output: {

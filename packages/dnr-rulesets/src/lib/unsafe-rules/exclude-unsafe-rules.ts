@@ -51,10 +51,7 @@ interface ExcludeUnsafeRulesOptions {
 async function scanFolder(dirPath: string): Promise<IRuleSet[]> {
     await ensureDir(dirPath);
 
-    const rulesetsPaths = await findFiles(
-        dirPath,
-        (filePath: string) => filePath.endsWith(RULESET_FILE_EXT),
-    );
+    const rulesetsPaths = await findFiles(dirPath, (filePath: string) => filePath.endsWith(RULESET_FILE_EXT));
 
     const loadTasks = rulesetsPaths
         .map((rulesetPath) => {
@@ -96,10 +93,7 @@ async function updateMetadataRuleset(
 ) {
     console.log('Path to metadata ruleset:', metadataRuleSetPath);
 
-    const rawMetadataRuleset = await fs.readFile(
-        metadataRuleSetPath,
-        { encoding: 'utf-8' },
-    );
+    const rawMetadataRuleset = await fs.readFile(metadataRuleSetPath, { encoding: 'utf-8' });
 
     const metadataRuleset = MetadataRuleSet.deserialize(rawMetadataRuleset);
 
@@ -109,10 +103,7 @@ async function updateMetadataRuleset(
         metadataRuleset.setChecksum(ruleSetId, checksum);
     });
 
-    await fs.writeFile(
-        metadataRuleSetPath,
-        metadataRuleset.serialize(prettifyJson),
-    );
+    await fs.writeFile(metadataRuleSetPath, metadataRuleset.serialize(prettifyJson));
 
     console.log(`Metadata ruleset updated and saved to ${metadataRuleSetPath}`);
 }
@@ -127,11 +118,7 @@ async function updateMetadataRuleset(
  * @param params.prettifyJson Whether to prettify the JSON output.
  */
 export async function excludeUnsafeRules(params: ExcludeUnsafeRulesOptions): Promise<void> {
-    const {
-        dir,
-        limit,
-        prettifyJson = false,
-    } = params;
+    const { dir, limit, prettifyJson = false } = params;
 
     const rulesets = await scanFolder(dir);
 
@@ -160,15 +147,9 @@ export async function excludeUnsafeRules(params: ExcludeUnsafeRulesOptions): Pro
             return !isSafeRule(rule);
         });
 
-        const processedRuleset = await ruleset.serializeCompact(
-            prettifyJson,
-            unsafeDeclarativeRules,
-        );
+        const processedRuleset = await ruleset.serializeCompact(prettifyJson, unsafeDeclarativeRules);
 
-        const ruleSetPath = getRuleSetPath(
-            ruleset.getId(),
-            dir,
-        );
+        const ruleSetPath = getRuleSetPath(ruleset.getId(), dir);
 
         await ensureDir(path.dirname(ruleSetPath));
         await fs.writeFile(ruleSetPath, processedRuleset);
@@ -184,11 +165,7 @@ export async function excludeUnsafeRules(params: ExcludeUnsafeRulesOptions): Pro
 
     await Promise.all(tasks);
 
-    await updateMetadataRuleset(
-        getRuleSetPath(METADATA_RULESET_ID, dir),
-        checksums,
-        prettifyJson,
-    );
+    await updateMetadataRuleset(getRuleSetPath(METADATA_RULESET_ID, dir), checksums, prettifyJson);
 
     console.log('Total excluded unsafe rules:', totalUnsafeRulesCount);
     console.log('All rulesets processed and their metadata updated.');

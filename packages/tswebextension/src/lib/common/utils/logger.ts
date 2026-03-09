@@ -14,9 +14,5 @@ export const logger = new Logger(console);
  * @returns Stringified object without excludedKeys (checking nested keys too).
  */
 export const stringifyObjectWithoutKeys = (obj: any, excludedKeys: string[]): string => {
-    return JSON.stringify(
-        obj,
-        (key, value) => (excludedKeys.includes(key) ? undefined : value),
-        2,
-    );
+    return JSON.stringify(obj, (key, value) => (excludedKeys.includes(key) ? undefined : value), 2);
 };

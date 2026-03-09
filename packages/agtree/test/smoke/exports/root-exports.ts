@@ -1,9 +1,4 @@
-import {
-    RuleParser,
-    RuleGenerator,
-    modifiersCompatibilityTable,
-    SpecificPlatform,
-} from '@adguard/agtree';
+import { RuleParser, RuleGenerator, modifiersCompatibilityTable, SpecificPlatform } from '@adguard/agtree';
 import { ok } from 'assert';
 
 const ruleText = '||example.com^';

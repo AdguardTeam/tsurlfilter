@@ -29,11 +29,14 @@ const fetchFile = async (url: string) => {
  * the original file.
  */
 const filterResourceContent = (content: string) => {
-    return content.split(RE_NL_SPLIT).filter(
-        // Remove comments
-        (line) => line.trim()[0] !== EXCLAMATION_MARK,
-        // TODO: Add more filters, if needed
-    ).join(LINE_FEED);
+    return content
+        .split(RE_NL_SPLIT)
+        .filter(
+            // Remove comments
+            (line) => line.trim()[0] !== EXCLAMATION_MARK,
+            // TODO: Add more filters, if needed
+        )
+        .join(LINE_FEED);
 };
 
 /**

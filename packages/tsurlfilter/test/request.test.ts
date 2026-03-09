@@ -63,27 +63,30 @@ describe('Creating request', () => {
 
     it('parses subdomains', () => {
         const request = new Request('http://sub.sub.example.org/part', 'http://sub.example.org', RequestType.Other);
-        expect(request.subdomains.sort()).toEqual([
-            'sub.sub.example.org',
-            'sub.example.org',
-            'example.org',
-            'org'].sort());
+        expect(request.subdomains.sort()).toEqual(
+            ['sub.sub.example.org', 'sub.example.org', 'example.org', 'org'].sort(),
+        );
         expect(request.sourceSubdomains.sort()).toEqual(['sub.example.org', 'example.org', 'org'].sort());
     });
 
     it('parses subdomains with complex tld', () => {
         const request = new Request('http://sub.sub.example.org.uk/part', 'http://sub.example.org', RequestType.Other);
-        expect(request.subdomains.sort())
-            .toEqual(['sub.sub.example.org.uk', 'sub.example.org.uk', 'example.org.uk', 'org.uk', 'uk'].sort());
-        expect(request.sourceSubdomains.sort())
-            .toEqual(['sub.example.org', 'example.org', 'org'].sort());
+        expect(request.subdomains.sort()).toEqual(
+            ['sub.sub.example.org.uk', 'sub.example.org.uk', 'example.org.uk', 'org.uk', 'uk'].sort(),
+        );
+        expect(request.sourceSubdomains.sort()).toEqual(['sub.example.org', 'example.org', 'org'].sort());
     });
 
     it('parses domains with complex public suffixes', () => {
         // eslint-disable-next-line max-len
-        const request = new Request('https://www.city.toyota.aichi.jp/part', 'https://www.city.toyota.aichi.jp/', RequestType.Other);
-        expect(request.subdomains.sort())
-            .toEqual(['www.city.toyota.aichi.jp', 'city.toyota.aichi.jp', 'toyota.aichi.jp', 'aichi.jp', 'jp'].sort());
+        const request = new Request(
+            'https://www.city.toyota.aichi.jp/part',
+            'https://www.city.toyota.aichi.jp/',
+            RequestType.Other,
+        );
+        expect(request.subdomains.sort()).toEqual(
+            ['www.city.toyota.aichi.jp', 'city.toyota.aichi.jp', 'toyota.aichi.jp', 'aichi.jp', 'jp'].sort(),
+        );
     });
 
     it('parses subdomains for localhost', () => {
@@ -102,11 +105,12 @@ describe('Creating request', () => {
         expect(f).toThrow(TypeError);
         expect(f).toThrow(/Invalid request url:/);
 
-        f = () => new Request(
-            'view-source:resource://devtools/shared/ThreadSafeDevToolsUtils.js',
-            'example.com',
-            RequestType.Document,
-        );
+        f = () =>
+            new Request(
+                'view-source:resource://devtools/shared/ThreadSafeDevToolsUtils.js',
+                'example.com',
+                RequestType.Document,
+            );
         expect(f).toThrow(TypeError);
         expect(f).toThrow(/Invalid request url:/);
     });
@@ -137,11 +141,7 @@ describe('Creating request', () => {
         // Test that sourceUrl fallback also works for IPv6
         // Note: thirdParty detection may be null for edge-case IPv6 addresses
         // that tldts doesn't recognize as IPs (like [::])
-        const request1 = new Request(
-            'http://example.org/',
-            'http://[::]:8000/',
-            RequestType.Other,
-        );
+        const request1 = new Request('http://example.org/', 'http://[::]:8000/', RequestType.Other);
         expect(request1.hostname).toEqual('example.org');
         expect(request1.sourceHostname).toEqual('[::]');
         expect(request1.sourceUrl).toEqual('http://[::]:8000/');
@@ -149,21 +149,13 @@ describe('Creating request', () => {
         expect(request1.thirdParty).toBeNull();
 
         // IPv6 loopback is recognized by tldts as IP, so third-party detection works
-        const request2 = new Request(
-            'http://[::1]:8000/',
-            'http://[::1]:8000/',
-            RequestType.Other,
-        );
+        const request2 = new Request('http://[::1]:8000/', 'http://[::1]:8000/', RequestType.Other);
         expect(request2.hostname).toEqual('::1');
         expect(request2.sourceHostname).toEqual('::1');
         expect(request2.thirdParty).toEqual(false);
 
         // Different IPv6 addresses - both recognized as IPs
-        const request3 = new Request(
-            'http://[::1]:8000/',
-            'http://[2001:db8::1]:8000/',
-            RequestType.Other,
-        );
+        const request3 = new Request('http://[::1]:8000/', 'http://[2001:db8::1]:8000/', RequestType.Other);
         expect(request3.hostname).toEqual('::1');
         expect(request3.sourceHostname).toEqual('2001:db8::1');
         expect(request3.thirdParty).toEqual(true);

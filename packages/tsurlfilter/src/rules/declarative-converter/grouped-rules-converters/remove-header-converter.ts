@@ -63,11 +63,7 @@ export class RemoveHeaderRulesConverter extends AbstractRuleConverter {
 
         const converted = await this.convertRules(filterId, rules, usedIds);
 
-        const result = this.groupConvertedRules(
-            converted,
-            createRuleTemplate,
-            combineRulePair,
-        );
+        const result = this.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
 
         return result;
     }

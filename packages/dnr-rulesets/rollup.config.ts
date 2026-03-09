@@ -22,8 +22,7 @@ const entryPoints = {
 // TODO: Remove when terser will update their code
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onwarn = (warning: any, warn: any) => {
-    const isTerserWarning = warning.id?.includes('terser')
-        || warning.ids?.some((id: string) => id.includes('terser'));
+    const isTerserWarning = warning.id?.includes('terser') || warning.ids?.some((id: string) => id.includes('terser'));
     const isCircularDependency = warning.code === 'CIRCULAR_DEPENDENCY';
     const isInvalidAnnotation = warning.code === 'INVALID_ANNOTATION';
 
@@ -37,11 +36,13 @@ const onwarn = (warning: any, warn: any) => {
 
 const mainConfig = {
     input: entryPoints,
-    output: [{
-        dir: DIST_DIR,
-        format: 'esm',
-        exports: 'named',
-    }],
+    output: [
+        {
+            dir: DIST_DIR,
+            format: 'esm',
+            exports: 'named',
+        },
+    ],
     onwarn,
     plugins: [
         nodeExternals(),
@@ -55,14 +56,16 @@ const mainConfig = {
 
 const cliConfig = {
     input: 'src/cli.ts',
-    output: [{
-        file: `${DIST_DIR}/cli.cjs`,
-        // Not ESM, because re2-wasm package in ESM format uses raw `__dirname`
-        // without `import.meta.url` wrapper.
-        format: 'cjs',
-        exports: 'named',
-        banner: '#!/usr/bin/env node',
-    }],
+    output: [
+        {
+            file: `${DIST_DIR}/cli.cjs`,
+            // Not ESM, because re2-wasm package in ESM format uses raw `__dirname`
+            // without `import.meta.url` wrapper.
+            format: 'cjs',
+            exports: 'named',
+            banner: '#!/usr/bin/env node',
+        },
+    ],
     onwarn,
     plugins: [
         resolve({ extensions: ['.ts', '.js'] }),
@@ -94,13 +97,7 @@ const typesConfig = {
         preserveModules: true,
         preserveModulesRoot: 'src',
     },
-    plugins: [
-        dts({ tsconfig: 'tsconfig.build.json' }),
-    ],
+    plugins: [dts({ tsconfig: 'tsconfig.build.json' })],
 };
 
-export default [
-    mainConfig,
-    cliConfig,
-    typesConfig,
-];
+export default [mainConfig, cliConfig, typesConfig];

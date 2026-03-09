@@ -5,11 +5,11 @@ export interface Testcase {
     link: string;
     rulesUrl?: string;
     readmeUrl?: string;
-    compatibility:  Product[];
+    compatibility: Product[];
 }
 
 export const filterCompatibleTestcases = (testcases: Testcase[], productType: Product) => {
-    return testcases.filter(testcase => {
+    return testcases.filter((testcase) => {
         return testcase.compatibility.includes(productType);
     });
 };

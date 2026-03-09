@@ -1,9 +1,4 @@
-import {
-    existsSync,
-    mkdirSync,
-    readFileSync,
-    writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

@@ -1,8 +1,4 @@
-import {
-    type Configuration,
-    type TsWebExtension,
-    FilterList,
-} from '@adguard/tswebextension/mv3';
+import { type Configuration, type TsWebExtension, FilterList } from '@adguard/tswebextension/mv3';
 import { LogDetails } from './logger';
 
 declare global {
@@ -36,10 +32,10 @@ export const addQunitListeners = (logResultFnName: string) => {
     });
 };
 
-export type SetTsWebExtensionConfigArg = [ defaultConfig: Configuration, userrules: string ];
+export type SetTsWebExtensionConfigArg = [defaultConfig: Configuration, userrules: string];
 
 export const setTsWebExtensionConfig = async (arg: SetTsWebExtensionConfigArg) => {
-    const [ defaultConfig, userrules ] = arg;
+    const [defaultConfig, userrules] = arg;
     const configuration: Configuration = defaultConfig;
     const list = new FilterList(userrules);
     configuration.userrules = {

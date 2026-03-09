@@ -17,12 +17,7 @@ type TokenData = [TokenType, number, number, object | undefined, number];
 describe('CSS balancing', () => {
     describe('tokenizeBalanced', () => {
         // invalid cases
-        test.each([
-            '(',
-            '()(',
-            '())',
-            '({)}',
-        ])('should throw on unbalanced input: %s', (input) => {
+        test.each(['(', '()(', '())', '({)}'])('should throw on unbalanced input: %s', (input) => {
             expect(() => tokenizeBalanced(input, () => {})).toThrow(/^Expected/);
         });
 
@@ -153,11 +148,7 @@ describe('CSS balancing', () => {
 
     describe('tokenizeFnBalanced', () => {
         // invalid cases
-        test.each([
-            'func(',
-            'func(()func((',
-            'func())',
-        ])('should throw on unbalanced input: %s', (input) => {
+        test.each(['func(', 'func(()func((', 'func())'])('should throw on unbalanced input: %s', (input) => {
             expect(() => tokenizeBalanced(input, () => {})).toThrow();
         });
 

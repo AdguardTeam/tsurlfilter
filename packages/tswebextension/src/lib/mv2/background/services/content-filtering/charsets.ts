@@ -47,13 +47,19 @@ export function parseCharsetFromHtml(text: string): string | null {
     }
 
     // eslint-disable-next-line max-len
-    match = /<meta\s*http-equiv\s*=\s*['"]?content-type['"]?\s*content\s*=\s*[\\]?['"]text\/html;\s*charset=(.*?)[\\]?['"]/.exec(text.toLowerCase());
+    match =
+        /<meta\s*http-equiv\s*=\s*['"]?content-type['"]?\s*content\s*=\s*[\\]?['"]text\/html;\s*charset=(.*?)[\\]?['"]/.exec(
+            text.toLowerCase(),
+        );
     if (match && match.length > 1) {
         return match[1].trim().toLowerCase();
     }
 
     // eslint-disable-next-line max-len
-    match = /<meta\s*content\s*=\s*[\\]?['"]text\/html;\s*charset=(.*?)[\\]?['"]\s*http-equiv\s*=\s*['"]?content-type['"]?/.exec(text.toLowerCase());
+    match =
+        /<meta\s*content\s*=\s*[\\]?['"]text\/html;\s*charset=(.*?)[\\]?['"]\s*http-equiv\s*=\s*['"]?content-type['"]?/.exec(
+            text.toLowerCase(),
+        );
     if (match && match.length > 1) {
         return match[1].trim().toLowerCase();
     }

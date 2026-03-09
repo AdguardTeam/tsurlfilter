@@ -1,9 +1,4 @@
-import {
-    describe,
-    expect,
-    it,
-    test,
-} from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 
 import { SimpleRegex } from '../../src/rules/simple-regex';
 
@@ -211,10 +206,9 @@ describe('SimpleRegex.escapeRegexSpecials', () => {
     it('escapes specials in strings', () => {
         expect(SimpleRegex.escapeRegexSpecials('*entries*')).toBe('\\*entries\\*');
         expect(SimpleRegex.escapeRegexSpecials('[test]')).toBe('\\[test\\]');
-        expect(SimpleRegex.escapeRegexSpecials(
-            '[*test*]',
-            SimpleRegex.reModifierPatternSpecialCharacters,
-        )).toBe('\\[*test*\\]');
+        expect(SimpleRegex.escapeRegexSpecials('[*test*]', SimpleRegex.reModifierPatternSpecialCharacters)).toBe(
+            '\\[*test*\\]',
+        );
     });
 });
 
@@ -222,10 +216,12 @@ describe('SimpleRegex.unescapeRegexSpecials', () => {
     it('unescapes specials in strings', () => {
         expect(SimpleRegex.unescapeRegexSpecials('\\*entries\\*')).toBe('*entries*');
         expect(SimpleRegex.unescapeRegexSpecials('\\[test\\]')).toBe('[test]');
-        expect(SimpleRegex.unescapeRegexSpecials(
-            '\\[\\*test\\*\\]',
-            SimpleRegex.reModifierPatternEscapedSpecialCharacters,
-        )).toBe('[\\*test\\*]');
+        expect(
+            SimpleRegex.unescapeRegexSpecials(
+                '\\[\\*test\\*\\]',
+                SimpleRegex.reModifierPatternEscapedSpecialCharacters,
+            ),
+        ).toBe('[\\*test\\*]');
     });
 });
 

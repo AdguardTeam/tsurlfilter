@@ -14,9 +14,7 @@ export class ModifierListGenerator extends BaseGenerator {
      * @returns Raw string
      */
     public static generate(ast: ModifierList): string {
-        const result = ast.children
-            .map(ModifierGenerator.generate)
-            .join(MODIFIERS_SEPARATOR);
+        const result = ast.children.map(ModifierGenerator.generate).join(MODIFIERS_SEPARATOR);
 
         return result;
     }

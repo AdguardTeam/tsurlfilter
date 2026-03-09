@@ -10,19 +10,12 @@ const baseAbortCurrentInlineScriptData = {
 
 const basePreventInnerHTMLAdgData = {
     name: 'prevent-innerHTML',
-    aliases: [
-        'prevent-innerHTML.js',
-        'no-innerHTML-if.js',
-        'ubo-no-innerHTML-if.js',
-        'ubo-no-innerHTML-if',
-    ],
+    aliases: ['prevent-innerHTML.js', 'no-innerHTML-if.js', 'ubo-no-innerHTML-if.js', 'ubo-no-innerHTML-if'],
 };
 
 const basePreventInnerHTMLUboData = {
     name: 'prevent-innerHTML.js',
-    aliases: [
-        'no-innerHTML-if.js',
-    ],
+    aliases: ['no-innerHTML-if.js'],
 };
 
 describe('Scriptlets Compatibility Table', () => {
@@ -41,34 +34,22 @@ describe('Scriptlets Compatibility Table', () => {
         expect(
             scriptletsCompatibilityTable.exists('abort-current-inline-script', SpecificPlatform.AdgExtChrome),
         ).toBeTruthy();
-        expect(
-            scriptletsCompatibilityTable.exists('nonexistent', SpecificPlatform.AbpExtChrome),
-        ).toBeFalsy();
+        expect(scriptletsCompatibilityTable.exists('nonexistent', SpecificPlatform.AbpExtChrome)).toBeFalsy();
 
         expect(
             scriptletsCompatibilityTable.exists('abort-current-inline-script', GenericPlatform.AdgExtAny),
         ).toBeTruthy();
-        expect(
-            scriptletsCompatibilityTable.exists('nonexistent', GenericPlatform.AbpExtAny),
-        ).toBeFalsy();
+        expect(scriptletsCompatibilityTable.exists('nonexistent', GenericPlatform.AbpExtAny)).toBeFalsy();
 
         // prevent-innerHTML - AdGuard platforms
-        expect(
-            scriptletsCompatibilityTable.exists('prevent-innerHTML', GenericPlatform.AdgExtAny),
-        ).toBeTruthy();
-        expect(
-            scriptletsCompatibilityTable.exists('prevent-innerHTML', GenericPlatform.AdgOsAny),
-        ).toBeTruthy();
+        expect(scriptletsCompatibilityTable.exists('prevent-innerHTML', GenericPlatform.AdgExtAny)).toBeTruthy();
+        expect(scriptletsCompatibilityTable.exists('prevent-innerHTML', GenericPlatform.AdgOsAny)).toBeTruthy();
 
         // prevent-innerHTML - uBlock Origin platforms
-        expect(
-            scriptletsCompatibilityTable.exists('prevent-innerHTML.js', GenericPlatform.UboExtAny),
-        ).toBeTruthy();
+        expect(scriptletsCompatibilityTable.exists('prevent-innerHTML.js', GenericPlatform.UboExtAny)).toBeTruthy();
 
         // prevent-innerHTML - should not exist on ABP
-        expect(
-            scriptletsCompatibilityTable.exists('prevent-innerHTML', SpecificPlatform.AbpExtChrome),
-        ).toBeFalsy();
+        expect(scriptletsCompatibilityTable.exists('prevent-innerHTML', SpecificPlatform.AbpExtChrome)).toBeFalsy();
     });
 
     it('scriptletsCompatibilityTable.getSingle', () => {
@@ -89,9 +70,7 @@ describe('Scriptlets Compatibility Table', () => {
         ).toMatchObject(basePreventInnerHTMLUboData);
 
         // prevent-innerHTML - should return null for ABP
-        expect(
-            scriptletsCompatibilityTable.getSingle('prevent-innerHTML', SpecificPlatform.AbpExtChrome),
-        ).toBeNull();
+        expect(scriptletsCompatibilityTable.getSingle('prevent-innerHTML', SpecificPlatform.AbpExtChrome)).toBeNull();
     });
 
     it('scriptletsCompatibilityTable.getMultiple', () => {
@@ -107,9 +86,7 @@ describe('Scriptlets Compatibility Table', () => {
         expect(scriptletsCompatibilityTable.getMultiple('nonexistent', GenericPlatform.AdgExtAny)).toBeNull();
 
         // prevent-innerHTML - AdGuard extensions
-        expect(
-            scriptletsCompatibilityTable.getMultiple('prevent-innerHTML', GenericPlatform.AdgExtAny),
-        ).toMatchObject({
+        expect(scriptletsCompatibilityTable.getMultiple('prevent-innerHTML', GenericPlatform.AdgExtAny)).toMatchObject({
             [SpecificPlatform.AdgExtChrome]: basePreventInnerHTMLAdgData,
             [SpecificPlatform.AdgExtOpera]: basePreventInnerHTMLAdgData,
             [SpecificPlatform.AdgExtEdge]: basePreventInnerHTMLAdgData,
@@ -127,9 +104,7 @@ describe('Scriptlets Compatibility Table', () => {
         });
 
         // prevent-innerHTML - should return empty object for ABP (not supported)
-        expect(
-            scriptletsCompatibilityTable.getMultiple('prevent-innerHTML', GenericPlatform.AbpExtAny),
-        ).toEqual({});
+        expect(scriptletsCompatibilityTable.getMultiple('prevent-innerHTML', GenericPlatform.AbpExtAny)).toEqual({});
     });
 
     // TODO: Add more tests

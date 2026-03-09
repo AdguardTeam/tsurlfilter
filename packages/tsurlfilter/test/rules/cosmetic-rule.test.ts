@@ -1,12 +1,7 @@
 /* eslint-disable max-len */
 import { AdblockSyntaxError, CosmeticRuleType } from '@adguard/agtree';
 import { type Source } from '@adguard/scriptlets';
-import {
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
@@ -82,9 +77,13 @@ describe('Element hiding rules constructor', () => {
         checkRuleIsValid('example.org##img[title|="{"]');
         checkRuleIsValid('vsetor.org##body > a[rel="nofollow"][target="_blank"]');
         checkRuleIsValid("example.org##a[title='{']");
-        checkRuleIsValid('123movies.domains##.jw-logo-top-left[style^="background-image: url(\\"https://123movies.domains/addons/img/"]');
+        checkRuleIsValid(
+            '123movies.domains##.jw-logo-top-left[style^="background-image: url(\\"https://123movies.domains/addons/img/"]',
+        );
         checkRuleIsValid('testcases.adguard.com,surge.sh###case9.banner:contains(/[aа]{20,}/)');
-        checkRuleIsValid('parenting.pl##:xpath(//div[count(*)=1][*[count(*)=1]/*[count(*)=1]/*[count(*)=1]/*[count(*)=0]])');
+        checkRuleIsValid(
+            'parenting.pl##:xpath(//div[count(*)=1][*[count(*)=1]/*[count(*)=1]/*[count(*)=1]/*[count(*)=0]])',
+        );
         checkRuleIsValid('example.org##:contains(@import)');
         checkRuleIsValid('example.org##:contains(@font-face)');
         checkRuleIsValid('example.org##:contains(@color-profile)');
@@ -94,8 +93,12 @@ describe('Element hiding rules constructor', () => {
         checkRuleIsValid(String.raw`/example\d+\.com/##div[class="ad"]`);
         checkRuleIsValid(String.raw`/^example[0-9]+\.com$/##.advertisement`);
         checkRuleIsValid(String.raw`/example\d{1,}\.(com|org)/##.ad`);
-        checkRuleIsValid(String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/#$?#*:contains(/(test1|test2)77/i) { scrollbar-width: thin!important; }`);
-        checkRuleIsValid(String.raw`[$path=/id]/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/#?#body:contains(/(test1|test2)77/i) div:matches-css(position: fixed):has(> img)`);
+        checkRuleIsValid(
+            String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/#$?#*:contains(/(test1|test2)77/i) { scrollbar-width: thin!important; }`,
+        );
+        checkRuleIsValid(
+            String.raw`[$path=/id]/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/#?#body:contains(/(test1|test2)77/i) div:matches-css(position: fixed):has(> img)`,
+        );
         checkRuleIsValid(String.raw`[$domain=/example\d{1,}\.(com|org)/]##.ad`);
         // Incomplete regex patterns (like /foo without closing /) are allowed when last in modifier list
         checkRuleIsValid(String.raw`[$domain=/example.(com|org)/,path=/foo]##.ad`);
@@ -104,18 +107,28 @@ describe('Element hiding rules constructor', () => {
         checkRuleIsInvalid('example.org##body { background: red!important; }');
         checkRuleIsInvalid('example.org#@#body { background: red!important; }');
         checkRuleIsInvalid('example.org##a[title="\\""]{background:url()}');
-        checkRuleIsInvalid('example.org##body\\{\\}, body { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }');
-        checkRuleIsInvalid('example.org##body /*({})*/ { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }');
-        checkRuleIsInvalid('example.org##body /*({*/ { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }');
-        checkRuleIsInvalid('example.org##\\\\/*[*/, body { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; } ,\\/*]');
-        checkRuleIsInvalid('example.org##body:not(blabla/*[*/) { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; } /*]*\\/');
+        checkRuleIsInvalid(
+            'example.org##body\\{\\}, body { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }',
+        );
+        checkRuleIsInvalid(
+            'example.org##body /*({})*/ { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }',
+        );
+        checkRuleIsInvalid(
+            'example.org##body /*({*/ { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }',
+        );
+        checkRuleIsInvalid(
+            'example.org##\\\\/*[*/, body { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; } ,\\/*]',
+        );
+        checkRuleIsInvalid(
+            'example.org##body:not(blabla/*[*/) { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; } /*]*\\/',
+        );
         checkRuleIsInvalid('example.org##.generic1 /*comment*/');
         // TODO: Consider more CSS validation
         // checkRuleIsInvalid('example.org##a //');
         checkRuleIsInvalid('example.org##input,input/*');
-        checkRuleIsInvalid('example.org#$#@import \'https://evil.org/nefarious.css\'; {}');
-        checkRuleIsInvalid('example.org#$#@font-face \'https://evil.org/nefarious.ttf\'; {}');
-        checkRuleIsInvalid('example.org#$#@color-profile \'https://evil.org/nefarious.icc\'; {}');
+        checkRuleIsInvalid("example.org#$#@import 'https://evil.org/nefarious.css'; {}");
+        checkRuleIsInvalid("example.org#$#@font-face 'https://evil.org/nefarious.ttf'; {}");
+        checkRuleIsInvalid("example.org#$#@color-profile 'https://evil.org/nefarious.icc'; {}");
     });
 
     it('throws error if marker is not supported yet', () => {
@@ -197,10 +210,15 @@ describe('Element hiding rules constructor', () => {
         expect(rule.getPermittedDomains()).toEqual([String.raw`/example\d+\.(com|net|org)/`]);
 
         // Test complex regex with anchors, character classes, and quantifiers
-        rule = createCosmeticRule(String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/##.ad`, 0);
+        rule = createCosmeticRule(
+            String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/##.ad`,
+            0,
+        );
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHidingRule);
         expect(rule.getContent()).toEqual('.ad');
-        expect(rule.getPermittedDomains()).toEqual([String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/`]);
+        expect(rule.getPermittedDomains()).toEqual([
+            String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/`,
+        ]);
 
         // Test regex in $domain modifier with commas and pipes
         rule = createCosmeticRule(String.raw`[$domain=/example\d{1,}\.(com|org)/]##.ad`, 0);
@@ -323,7 +341,10 @@ describe('CosmeticRule match', () => {
 
     it('matches by $domain modifier with mixed type values', () => {
         let request: Request;
-        const rule = createCosmeticRule(String.raw`[$domain=/\.(io\|com)/|evil.*|ads.net|~/jwt\.io/|~evil.gov]##banner`, 0);
+        const rule = createCosmeticRule(
+            String.raw`[$domain=/\.(io\|com)/|evil.*|ads.net|~/jwt\.io/|~evil.gov]##banner`,
+            0,
+        );
         expect(rule.getPermittedDomains()).toHaveLength(3);
         expect(rule.getRestrictedDomains()).toHaveLength(2);
 
@@ -433,7 +454,7 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest(url))).toEqual(false);
     });
 
-    it('works if it matches path modifier with \'|\' special character included in the rule', () => {
+    it("works if it matches path modifier with '|' special character included in the rule", () => {
         let rule = createCosmeticRule('[$path=|/page.html]##.textad', 0);
 
         expect(rule.match(createRequest('https://example.org/page.html'))).toEqual(true);
@@ -525,14 +546,18 @@ describe('CosmeticRule.CSS', () => {
         expect(extendedRule.getType()).toBe(CosmeticRuleType.CssInjectionRule);
 
         // eslint-disable-next-line max-len
-        const extendedAllowlistRule = createCosmeticRule('example.com#@$?#h3:contains(cookies) { display: none!important; }', 0);
+        const extendedAllowlistRule = createCosmeticRule(
+            'example.com#@$?#h3:contains(cookies) { display: none!important; }',
+            0,
+        );
         expect(extendedAllowlistRule.isAllowlist()).toBeTruthy();
         expect(extendedAllowlistRule.getType()).toBe(CosmeticRuleType.CssInjectionRule);
     });
 
     it('accepts VALID pseudo classes', () => {
         // eslint-disable-next-line max-len
-        let selector = '#main > table.w3-table-all.notranslate:first-child > tbody > tr:nth-child(17) > td.notranslate:nth-child(2)';
+        let selector =
+            '#main > table.w3-table-all.notranslate:first-child > tbody > tr:nth-child(17) > td.notranslate:nth-child(2)';
         let ruleText = `example.org##${selector}`;
         let cssRule = createCosmeticRule(ruleText, 0);
         expect(cssRule).toBeDefined();
@@ -544,13 +569,13 @@ describe('CosmeticRule.CSS', () => {
         expect(cssRule).toBeDefined();
         expect(cssRule.getContent()).toBe(selector);
 
-        selector = '#body div[attr=\'test\']:first-child  div';
+        selector = "#body div[attr='test']:first-child  div";
         ruleText = `example.org##${selector}`;
         cssRule = createCosmeticRule(ruleText, 0);
         expect(cssRule).toBeDefined();
         expect(cssRule.getContent()).toBe(selector);
 
-        selector = '#body div[attr=\'test\']:first-child';
+        selector = "#body div[attr='test']:first-child";
         ruleText = `example.org##${selector}`;
         cssRule = createCosmeticRule(ruleText, 0);
         expect(cssRule).toBeDefined();
@@ -614,7 +639,7 @@ describe('CosmeticRule.CSS', () => {
     });
 
     it('respects escaped colons when validates pseudo classes', () => {
-        const selector = '#body div[attr=\'\\:matches(text)\']';
+        const selector = "#body div[attr='\\:matches(text)']";
         const ruleText = `example.org##${selector}`;
         const cssRule = createCosmeticRule(ruleText, 0);
         expect(cssRule).toBeDefined();
@@ -648,37 +673,27 @@ describe('CosmeticRule.CSS', () => {
     });
 
     it('throws error when cosmetic rule contains url', () => {
-        expect(
-            () => createCosmeticRule('example.com#$#body { background: url(http://example.org/empty.gif) }', 0),
-        ).toThrowError(
-            "Using 'url()' is not allowed",
-        );
+        expect(() =>
+            createCosmeticRule('example.com#$#body { background: url(http://example.org/empty.gif) }', 0),
+        ).toThrowError("Using 'url()' is not allowed");
 
-        expect(
-            () => createCosmeticRule('example.org#$#body { background:url("http://example.org/image.png"); }', 0),
-        ).toThrowError(
-            "Using 'url()' is not allowed",
-        );
+        expect(() =>
+            createCosmeticRule('example.org#$#body { background:url("http://example.org/image.png"); }', 0),
+        ).toThrowError("Using 'url()' is not allowed");
     });
 
     it('throws error when cosmetic rule contains unsafe styles', () => {
-        expect(
-            () => createCosmeticRule('*#$#* { background:image-set(\'https://hackvertor.co.uk/images/logo.gif\' 1x) }', 0),
-        ).toThrowError(
-            "Using 'image-set()' is not allowed",
-        );
+        expect(() =>
+            createCosmeticRule("*#$#* { background:image-set('https://hackvertor.co.uk/images/logo.gif' 1x) }", 0),
+        ).toThrowError("Using 'image-set()' is not allowed");
 
-        expect(
-            () => createCosmeticRule('*#$#* { background:image(\'https://hackvertor.co.uk/images/logo.gif\' 1x) }', 0),
-        ).toThrowError(
-            "Using 'image()' is not allowed",
-        );
+        expect(() =>
+            createCosmeticRule("*#$#* { background:image('https://hackvertor.co.uk/images/logo.gif' 1x) }", 0),
+        ).toThrowError("Using 'image()' is not allowed");
 
-        expect(
-            () => createCosmeticRule('*#$#* { background:cross-fade(\'https://hackvertor.co.uk/images/logo.gif\' 1x) }', 0),
-        ).toThrowError(
-            "Using 'cross-fade()' is not allowed",
-        );
+        expect(() =>
+            createCosmeticRule("*#$#* { background:cross-fade('https://hackvertor.co.uk/images/logo.gif' 1x) }", 0),
+        ).toThrowError("Using 'cross-fade()' is not allowed");
     });
 
     it('doesnt throw error if cosmetic rule contains url in selector', () => {
@@ -691,10 +706,16 @@ describe('CosmeticRule.CSS', () => {
         const backslashInElemhideRules = createCosmeticRule('example.org###Meebo\\:AdElement\\.Root', 0);
         expect(backslashInElemhideRules).toBeDefined();
 
-        const backslashInCssRulesSelector = createCosmeticRule('example.org#$?#div:matches-css(width: /\\d+/) { background-color: red!important; }', 0);
+        const backslashInCssRulesSelector = createCosmeticRule(
+            'example.org#$?#div:matches-css(width: /\\d+/) { background-color: red!important; }',
+            0,
+        );
         expect(backslashInCssRulesSelector).toBeDefined();
 
-        const backslashInCssRulesSelector2 = createCosmeticRule('example.org#$?##p:has-text(/[\\w\\W]{337}/):has-text(/Dołącz \\./) { font-size: 0 !important; }', 0);
+        const backslashInCssRulesSelector2 = createCosmeticRule(
+            'example.org#$?##p:has-text(/[\\w\\W]{337}/):has-text(/Dołącz \\./) { font-size: 0 !important; }',
+            0,
+        );
         expect(backslashInCssRulesSelector2).toBeDefined();
 
         const checkRuleIsInvalid = (ruleText: string): void => {
@@ -816,7 +837,8 @@ describe('Extended css rule', () => {
 
     it('does not confuses extended css rules with script rules', () => {
         // eslint-disable-next-line max-len
-        ruleText = '#%#var AG_defineProperty=function(){return a={get:function(){var a=i.f;a&&a.beforeGet&&a.beforeGet.call(this,i.a.b);e:if(a=i.g)a=A(a)?a.value:a.get?a.get.call(this):void 0;else{if(a=i.a.b,i.i in a&&null!==(a=B(a))){var t=C.call(a,i.i);a=t?t.call(this):a[i.i];break e}a=void 0}return(this===i.a.b||D.call(i.a.b,this))&&E(e,a,i.c),a}},d&&J(d,a,K),a;var e,i,a}();';
+        ruleText =
+            '#%#var AG_defineProperty=function(){return a={get:function(){var a=i.f;a&&a.beforeGet&&a.beforeGet.call(this,i.a.b);e:if(a=i.g)a=A(a)?a.value:a.get?a.get.call(this):void 0;else{if(a=i.a.b,i.i in a&&null!==(a=B(a))){var t=C.call(a,i.i);a=t?t.call(this):a[i.i];break e}a=void 0}return(this===i.a.b||D.call(i.a.b,this))&&E(e,a,i.c),a}},d&&J(d,a,K),a;var e,i,a}();';
         rule = createCosmeticRule(ruleText, 0);
         expect(rule.isExtendedCss()).toBeFalsy();
     });
@@ -866,7 +888,8 @@ describe('Javascript rules', () => {
     });
 
     it('validate js scriptlet and regexp param', () => {
-        const jsRuleContent = '//scriptlet("prevent-setTimeout", "/location\\.href=\\"https:\\/\\/www\\.example\\.com\\//")';
+        const jsRuleContent =
+            '//scriptlet("prevent-setTimeout", "/location\\.href=\\"https:\\/\\/www\\.example\\.com\\//")';
         const jsRule = `example.org#%#${jsRuleContent}`;
         const rule = createCosmeticRule(jsRule, 0);
 
@@ -880,7 +903,7 @@ describe('Javascript rules', () => {
     });
 
     it('returns script for js rule', () => {
-        const jsRuleContent = 'console.log(\'test\')';
+        const jsRuleContent = "console.log('test')";
         const jsRule = `example.org#%#${jsRuleContent}`;
         const rule = createCosmeticRule(jsRule, 0);
 
@@ -1001,7 +1024,7 @@ describe('Javascript rules', () => {
 
     it('returns scriptlet name', () => {
         const getScriptletName = (ruleText: string): string | null => {
-            return (createCosmeticRule(ruleText, 0)).scriptletParams?.name || null;
+            return createCosmeticRule(ruleText, 0).scriptletParams?.name || null;
         };
         expect(getScriptletName("example.org#%#//scriptlet('log', 'arg')")).toBe('log');
         expect(getScriptletName("#%#//scriptlet('log', 'arg')")).toBe('log');
@@ -1014,7 +1037,7 @@ describe('Javascript rules', () => {
 
     it('normalizes scriptlet rule content', () => {
         const getScriptletContent = (ruleText: string): string | null => {
-            return (createCosmeticRule(ruleText, 0)).scriptletParams.toString();
+            return createCosmeticRule(ruleText, 0).scriptletParams.toString();
         };
         expect(getScriptletContent("example.org#%#//scriptlet('log', 'arg')")).toBe("//scriptlet('log', 'arg')");
         expect(getScriptletContent('example.org#@%#//scriptlet()')).toBe('//scriptlet()');
@@ -1022,13 +1045,19 @@ describe('Javascript rules', () => {
         expect(getScriptletContent('example.org#@%#//scriptlet("set-cookie")')).toBe("//scriptlet('set-cookie')");
 
         // single quotes are escaped
-        expect(getScriptletContent(String.raw`example.org#@%#//scriptlet("set-cookie", "some'escaped")`)).toBe(String.raw`//scriptlet('set-cookie', 'some\'escaped')`);
+        expect(getScriptletContent(String.raw`example.org#@%#//scriptlet("set-cookie", "some'escaped")`)).toBe(
+            String.raw`//scriptlet('set-cookie', 'some\'escaped')`,
+        );
 
         // no need to have escaped double quotes in the arguments
-        expect(getScriptletContent(String.raw`example.org#@%#//scriptlet("set-cookie", "some\"escaped")`)).toBe(String.raw`//scriptlet('set-cookie', 'some"escaped')`);
+        expect(getScriptletContent(String.raw`example.org#@%#//scriptlet("set-cookie", "some\"escaped")`)).toBe(
+            String.raw`//scriptlet('set-cookie', 'some"escaped')`,
+        );
 
         // no need to escape single quotes if they were already escaped
-        expect(getScriptletContent(String.raw`example.org#@%#//scriptlet('set-cookie', 'some\'escaped')`)).toBe(String.raw`//scriptlet('set-cookie', 'some\'escaped')`);
+        expect(getScriptletContent(String.raw`example.org#@%#//scriptlet('set-cookie', 'some\'escaped')`)).toBe(
+            String.raw`//scriptlet('set-cookie', 'some\'escaped')`,
+        );
     });
 });
 
@@ -1046,10 +1075,14 @@ describe('HTML filtering rules (content rules)', () => {
         expect(rule.getPermittedDomains()).toHaveLength(1);
         expect(rule.getPermittedDomains()![0]).toBe(domainPart);
         expect(rule.getHtmlSelectorList()).toEqual({
-            selectors: [[{
-                nativeSelector: 'div[id="ad_text"]',
-                specialSelectors: [],
-            }]],
+            selectors: [
+                [
+                    {
+                        nativeSelector: 'div[id="ad_text"]',
+                        specialSelectors: [],
+                    },
+                ],
+            ],
         });
 
         const allowlistRuleText = `${domainPart}$@$${contentPart}`;
@@ -1061,10 +1094,14 @@ describe('HTML filtering rules (content rules)', () => {
         expect(allowlistRule.getPermittedDomains()).toHaveLength(1);
         expect(allowlistRule.getPermittedDomains()![0]).toBe(domainPart);
         expect(allowlistRule.getHtmlSelectorList()).toEqual({
-            selectors: [[{
-                nativeSelector: 'div[id="ad_text"]',
-                specialSelectors: [],
-            }]],
+            selectors: [
+                [
+                    {
+                        nativeSelector: 'div[id="ad_text"]',
+                        specialSelectors: [],
+                    },
+                ],
+            ],
         });
     });
 
@@ -1080,13 +1117,19 @@ describe('HTML filtering rules (content rules)', () => {
         expect(rule.getPermittedDomains()).toHaveLength(1);
         expect(rule.getPermittedDomains()![0]).toBe(domainPart);
         expect(rule.getHtmlSelectorList()).toEqual({
-            selectors: [[{
-                nativeSelector: 'div[id="ad_text"]',
-                specialSelectors: [{
-                    name: 'contains',
-                    value: 'some text',
-                }],
-            }]],
+            selectors: [
+                [
+                    {
+                        nativeSelector: 'div[id="ad_text"]',
+                        specialSelectors: [
+                            {
+                                name: 'contains',
+                                value: 'some text',
+                            },
+                        ],
+                    },
+                ],
+            ],
         });
     });
 
@@ -1103,10 +1146,14 @@ describe('HTML filtering rules (content rules)', () => {
         expect(rule.getPermittedDomains()).toHaveLength(1);
         expect(rule.getPermittedDomains()![0]).toBe(domainPart);
         expect(rule.getHtmlSelectorList()).toEqual({
-            selectors: [[{
-                nativeSelector: 'div[attr1="value1"][attr2*="value" i][attr3]',
-                specialSelectors: [],
-            }]],
+            selectors: [
+                [
+                    {
+                        nativeSelector: 'div[attr1="value1"][attr2*="value" i][attr3]',
+                        specialSelectors: [],
+                    },
+                ],
+            ],
         });
     });
 
@@ -1134,13 +1181,16 @@ describe('HTML filtering rules (content rules)', () => {
                     {
                         combinator: '+',
                         nativeSelector: 'h1#id',
-                        specialSelectors: [{
-                            name: 'contains',
-                            value: 'some text',
-                        }, {
-                            name: 'contains',
-                            value: 'other text',
-                        }],
+                        specialSelectors: [
+                            {
+                                name: 'contains',
+                                value: 'some text',
+                            },
+                            {
+                                name: 'contains',
+                                value: 'other text',
+                            },
+                        ],
                     },
                 ],
             ],

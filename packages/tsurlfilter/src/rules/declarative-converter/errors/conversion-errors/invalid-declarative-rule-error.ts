@@ -21,11 +21,7 @@ export abstract class InvalidDeclarativeRuleError extends Error {
      * @param networkRule {@link NetworkRuleWithNodeAndText}.
      * @param declarativeRule {@link DeclarativeRule}.
      */
-    constructor(
-        message: string,
-        networkRule: NetworkRuleWithNodeAndText,
-        declarativeRule: DeclarativeRule,
-    ) {
+    constructor(message: string, networkRule: NetworkRuleWithNodeAndText, declarativeRule: DeclarativeRule) {
         super(message);
 
         this.name = this.constructor.name;

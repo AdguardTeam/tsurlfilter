@@ -10,7 +10,7 @@ import { deepFreeze } from '../utils/deep-freeze';
 /**
  * Compatibility table for scriptlets.
  */
-class ScriptletsCompatibilityTable extends CompatibilityTableBase<ScriptletDataSchema> { }
+class ScriptletsCompatibilityTable extends CompatibilityTableBase<ScriptletDataSchema> {}
 
 /**
  * Deep freeze the compatibility table data to avoid accidental modifications.

@@ -1,11 +1,11 @@
 {
-  "name": "typescript-exports",
-  "version": "1.0.0",
-  "license": "MIT",
-  "author": "Adguard Software Ltd.",
-  "type": "module",
-  "scripts": {
-    "start": "tsc --noEmit && tsx root-exports.ts && tsx specific-exports.ts && tsd",
-    "test": "./test.sh"
-  }
+    "name": "typescript-exports",
+    "version": "1.0.0",
+    "license": "MIT",
+    "author": "Adguard Software Ltd.",
+    "type": "module",
+    "scripts": {
+        "start": "tsc --noEmit && tsx root-exports.ts && tsx specific-exports.ts && tsd",
+        "test": "./test.sh"
+    }
 }

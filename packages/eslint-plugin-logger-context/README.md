@@ -14,21 +14,23 @@ Add to your `.eslintrc.js`:
 
 ```js
 module.exports = {
-  plugins: [
-    '@adguard/logger-context',
-  ],
-  rules: {
-    '@adguard/logger-context/require-logger-context': ['error', {
-      // optional
-      contextModuleName: 'module',
-      // optional
-      loggerVariableName: 'logger',
-    }],
-  },
+    plugins: ['@adguard/logger-context'],
+    rules: {
+        '@adguard/logger-context/require-logger-context': [
+            'error',
+            {
+                // optional
+                contextModuleName: 'module',
+                // optional
+                loggerVariableName: 'logger',
+            },
+        ],
+    },
 };
 ```
 
 **Example of correct usage:**
+
 ```js
 logger.info('[module.page-handler]: some message');
 ```

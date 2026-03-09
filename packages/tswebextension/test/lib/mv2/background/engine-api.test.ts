@@ -1,14 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeAll,
-    beforeEach,
-    afterAll,
-    afterEach,
-    it,
-    vi,
-    type MockInstance,
-} from 'vitest';
+import { describe, expect, beforeAll, beforeEach, afterAll, afterEach, it, vi, type MockInstance } from 'vitest';
 import browser from 'sinon-chrome';
 import { type CosmeticOption, Engine, CosmeticResult } from '@adguard/tsurlfilter';
 
@@ -86,20 +76,24 @@ describe('Engine Api', () => {
             await startEngine();
             setFilteringEnabled(false);
 
-            expect(engineApi.matchRequest({
-                requestUrl: 'https://example.com',
-                frameUrl: 'https://example.com',
-            } as MatchQuery)).toBeNull();
+            expect(
+                engineApi.matchRequest({
+                    requestUrl: 'https://example.com',
+                    frameUrl: 'https://example.com',
+                } as MatchQuery),
+            ).toBeNull();
             expect(Engine.prototype.matchRequest).not.toHaveBeenCalled();
         });
 
         it('should return null when engine is not started', () => {
             vi.spyOn(Engine.prototype, 'matchRequest');
 
-            expect(engineApi.matchRequest({
-                requestUrl: 'https://example.com',
-                frameUrl: 'https://example.com',
-            } as MatchQuery)).toBeNull();
+            expect(
+                engineApi.matchRequest({
+                    requestUrl: 'https://example.com',
+                    frameUrl: 'https://example.com',
+                } as MatchQuery),
+            ).toBeNull();
             expect(Engine.prototype.matchRequest).not.toHaveBeenCalled();
         });
     });
@@ -162,12 +156,16 @@ describe('Engine Api', () => {
             await startEngine();
             setFilteringEnabled(false);
 
-            expect(engineApi.getCosmeticResult('https://example.com', {} as CosmeticOption)).toBeInstanceOf(CosmeticResult);
+            expect(engineApi.getCosmeticResult('https://example.com', {} as CosmeticOption)).toBeInstanceOf(
+                CosmeticResult,
+            );
             expect(Engine.prototype.getCosmeticResult).not.toHaveBeenCalled();
         });
 
         it('should return default CosmeticResult when engine is not started', () => {
-            expect(engineApi.getCosmeticResult('https://example.com', {} as CosmeticOption)).toBeInstanceOf(CosmeticResult);
+            expect(engineApi.getCosmeticResult('https://example.com', {} as CosmeticOption)).toBeInstanceOf(
+                CosmeticResult,
+            );
             expect(Engine.prototype.getCosmeticResult).not.toHaveBeenCalled();
         });
     });

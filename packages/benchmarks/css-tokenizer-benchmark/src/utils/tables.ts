@@ -175,14 +175,16 @@ export const printResourceResults = ({ resourceName, tokenizerBenchResults }: Re
     /* eslint-disable no-console */
     console.group(`Results for ${resourceName}:`);
 
-    console.table(tokenizerBenchResults.map((result) => ({
-        [HEADERS.TOKENIZER]: result.tokenizerName,
-        [HEADERS.OPT_PER_SECOND]: result.opsPerSecond,
-        [HEADERS.RUNS_SAMPLED]: result.runsSampled,
-        [HEADERS.AVERAGE_RUNTIME]: result.averageRuntime,
-        [HEADERS.TOKENS]: result.tokens,
-        [HEADERS.STATUS]: result.status,
-    })));
+    console.table(
+        tokenizerBenchResults.map((result) => ({
+            [HEADERS.TOKENIZER]: result.tokenizerName,
+            [HEADERS.OPT_PER_SECOND]: result.opsPerSecond,
+            [HEADERS.RUNS_SAMPLED]: result.runsSampled,
+            [HEADERS.AVERAGE_RUNTIME]: result.averageRuntime,
+            [HEADERS.TOKENS]: result.tokens,
+            [HEADERS.STATUS]: result.status,
+        })),
+    );
 
     console.groupEnd();
     /* eslint-enable no-console */

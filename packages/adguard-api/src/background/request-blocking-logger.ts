@@ -97,16 +97,7 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
      * @param event - {@link ApplyBasicRuleEvent}
      */
     private onBasicRuleApply(event: ApplyBasicRuleEvent): void {
-        const {
-            tabId,
-            requestId,
-            requestUrl,
-            requestType,
-            frameUrl,
-            filterId,
-            ruleIndex,
-            isAllowlist,
-        } = event.data;
+        const { tabId, requestId, requestUrl, requestType, frameUrl, filterId, ruleIndex, isAllowlist } = event.data;
 
         // exclude allowlist rules
         if (isAllowlist) {

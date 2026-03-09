@@ -1,116 +1,78 @@
 ---
 !include 'tsurlfilter-tests.yaml'
-
 ---
 !include 'tsurlfilter-build.yaml'
-
 ---
 !include 'tsurlfilter-deploy.yaml'
-
 ---
 !include 'tsurlfilter-permissions.yaml'
-
 ---
 !include 'tswebextension-build.yaml'
-
 ---
 !include 'tswebextension-deploy.yaml'
-
 ---
 !include 'tswebextension-permissions.yaml'
-
 ---
 !include 'tswebextension-increment.yaml'
-
 ---
 !include 'tswebextension-update-companiesdb.yaml'
-
 ---
 !include 'adguard-api-build.yaml'
-
 ---
 !include 'adguard-api-deploy.yaml'
-
 ---
 !include 'adguard-api-permissions.yaml'
-
 ---
 !include 'agtree-build.yaml'
-
 ---
 !include 'agtree-deploy.yaml'
-
 ---
 !include 'agtree-increment.yaml'
-
 ---
 !include 'agtree-permissions.yaml'
-
 ---
 !include 'css-tokenizer-build.yaml'
-
 ---
 !include 'css-tokenizer-deploy.yaml'
-
 ---
 !include 'css-tokenizer-permissions.yaml'
-
 ---
 !include 'logger-build.yaml'
-
 ---
 !include 'logger-deploy.yaml'
-
 ---
 !include 'logger-permissions.yaml'
-
 ---
 !include 'eslint-plugin-logger-context-build.yaml'
-
 ---
 !include 'eslint-plugin-logger-context-deploy.yaml'
-
 ---
 !include 'eslint-plugin-logger-context-permissions.yaml'
-
 ---
 !include 'adguard-api-mv3-build.yaml'
-
 ---
 !include 'adguard-api-mv3-deploy.yaml'
-
 ---
 !include 'adguard-api-mv3-permissions.yaml'
-
 ---
 !include 'dnr-converter-build.yaml'
-
 ---
 !include 'dnr-converter-deploy.yaml'
-
 ---
 !include 'dnr-converter-increment.yaml'
-
 ---
 !include 'dnr-converter-permissions.yaml'
-
 ---
 !include 'dnr-rulesets-build.yaml'
-
 ---
 !include 'dnr-rulesets-deploy.yaml'
-
 ---
 !include 'dnr-rulesets-increment.yaml'
-
 ---
 !include 'dnr-rulesets-permissions.yaml'
-
 ---
 !include 'dnr-rulesets-auto-build.yaml'
-
 ---
 !include 'dnr-rulesets-auto-deploy.yaml'
-
 ---
 !include 'dnr-rulesets-auto-deploy-permissions.yaml'

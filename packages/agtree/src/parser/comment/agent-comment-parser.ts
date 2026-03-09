@@ -75,11 +75,7 @@ export class AgentCommentParser extends BaseParser {
         const closingBracketIndex = StringUtils.skipWSBack(raw, raw.length - 1);
 
         if (closingBracketIndex === -1 || raw[closingBracketIndex] !== CLOSE_SQUARE_BRACKET) {
-            throw new AdblockSyntaxError(
-                'Missing closing bracket',
-                offset,
-                offset + raw.length,
-            );
+            throw new AdblockSyntaxError('Missing closing bracket', offset, offset + raw.length);
         }
 
         // Initialize the agent list
@@ -116,25 +112,18 @@ export class AgentCommentParser extends BaseParser {
             // [AdGuard  ; Adblock Plus 2.0]
             //        ^
             // (if we have spaces between the agent name and the separator)
-            const agentEndIndex = StringUtils.findLastNonWhitespaceCharacter(
-                raw.slice(offset, separatorIndex),
-            ) + offset + 1;
+            const agentEndIndex =
+                StringUtils.findLastNonWhitespaceCharacter(raw.slice(offset, separatorIndex)) + offset + 1;
 
             // Collect the agent
-            result.children.push(
-                AgentParser.parse(raw.slice(offset, agentEndIndex), options, baseOffset + offset),
-            );
+            result.children.push(AgentParser.parse(raw.slice(offset, agentEndIndex), options, baseOffset + offset));
 
             // Set the offset to the next agent or the end of the rule
             offset = separatorIndex + 1;
         }
 
         if (result.children.length === 0) {
-            throw new AdblockSyntaxError(
-                'Empty agent list',
-                baseOffset,
-                baseOffset + raw.length,
-            );
+            throw new AdblockSyntaxError('Empty agent list', baseOffset, baseOffset + raw.length);
         }
 
         return result;

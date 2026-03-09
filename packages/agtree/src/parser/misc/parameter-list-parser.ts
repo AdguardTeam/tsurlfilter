@@ -61,16 +61,11 @@ export class ParameterListParser extends BaseParser {
                 const nextSeparator = StringUtils.findUnescapedNonStringNonRegexChar(raw, separator, offset);
 
                 // Get parameter end position
-                const paramEnd = nextSeparator !== -1
-                    ? StringUtils.skipWSBack(raw, nextSeparator - 1)
-                    : StringUtils.skipWSBack(raw);
+                const paramEnd =
+                    nextSeparator !== -1 ? StringUtils.skipWSBack(raw, nextSeparator - 1) : StringUtils.skipWSBack(raw);
 
                 // Add parameter to the list
-                const param = ValueParser.parse(
-                    raw.slice(paramStart, paramEnd + 1),
-                    options,
-                    baseOffset + paramStart,
-                );
+                const param = ValueParser.parse(raw.slice(paramStart, paramEnd + 1), options, baseOffset + paramStart);
 
                 params.children.push(param);
 

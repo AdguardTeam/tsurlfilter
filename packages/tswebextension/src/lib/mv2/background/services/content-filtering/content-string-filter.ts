@@ -72,11 +72,12 @@ export class ContentStringFilter implements ContentStringFilterInterface {
             content = this.applyHtmlRules(content);
         }
 
-        if (this.replaceRules
-            && this.replaceRules.length > 0
+        if (
+            this.replaceRules &&
+            this.replaceRules.length > 0 &&
             // response content is over 10MB, ignore it
             // AG-41962
-            && content.length <= 10 * 1024 * 1024
+            content.length <= 10 * 1024 * 1024
         ) {
             content = this.applyReplaceRules(content);
         }
@@ -101,8 +102,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
             return true;
         }
 
-        return contentTypeHeader.startsWith('text/html')
-            || contentTypeHeader.startsWith('application/xhtml+xml');
+        return contentTypeHeader.startsWith('text/html') || contentTypeHeader.startsWith('application/xhtml+xml');
     }
 
     /**
@@ -128,7 +128,9 @@ export class ContentStringFilter implements ContentStringFilterInterface {
             const selectorList = rule.getHtmlSelectorList();
 
             if (!selectorList) {
-                logger.info(`[tsweb.ContentStringFilter.applyHtmlRules]: ignoring rule with invalid HTML selector: ${rule.getContent()}`);
+                logger.info(
+                    `[tsweb.ContentStringFilter.applyHtmlRules]: ignoring rule with invalid HTML selector: ${rule.getContent()}`,
+                );
                 continue;
             }
 
@@ -138,12 +140,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
                 if (element.parentNode && !deleted.has(element)) {
                     element.parentNode.removeChild(element);
 
-                    const {
-                        tabId,
-                        requestUrl,
-                        timestamp,
-                        contentType,
-                    } = this.context;
+                    const { tabId, requestUrl, timestamp, contentType } = this.context;
 
                     const ruleType = rule.getType();
                     const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
@@ -162,10 +159,12 @@ export class ContentStringFilter implements ContentStringFilterInterface {
                             frameDomain: getDomain(requestUrl) as string,
                             requestType: contentType,
                             timestamp,
-                            cssRule: ruleType === CosmeticRuleType.ElementHidingRule
-                                    || ruleType === CosmeticRuleType.CssInjectionRule,
-                            scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
-                                    || ruleType === CosmeticRuleType.JsInjectionRule,
+                            cssRule:
+                                ruleType === CosmeticRuleType.ElementHidingRule ||
+                                ruleType === CosmeticRuleType.CssInjectionRule,
+                            scriptRule:
+                                ruleType === CosmeticRuleType.ScriptletInjectionRule ||
+                                ruleType === CosmeticRuleType.JsInjectionRule,
                             contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
                         },
                     });

@@ -1,10 +1,4 @@
-import {
-    CR,
-    FF,
-    LF,
-    SPACE,
-    TAB,
-} from '../common/constants';
+import { CR, FF, LF, SPACE, TAB } from '../common/constants';
 
 /**
  * Splits the string by the delimiter, ignoring escaped delimiters
@@ -57,7 +51,7 @@ export function splitByDelimiterWithEscapeCharacter(
 
     for (let i = 0; i < string.length; i += 1) {
         const char = string.charAt(i);
-        const isLastChar = i === (string.length - 1);
+        const isLastChar = i === string.length - 1;
         if (char === delimiter) {
             const isEscapedChar = i > 0 && string[i - 1] === escapeCharacter;
             if (isEscapedChar) {
@@ -139,8 +133,7 @@ export function hasUnquotedSubstring(str: string, substr: string): boolean {
             }
         }
 
-        if (quotes.indexOf(cursor) >= 0
-            && (i === 0 || str[i - 1] !== '\\')) {
+        if (quotes.indexOf(cursor) >= 0 && (i === 0 || str[i - 1] !== '\\')) {
             const last = stack.pop();
             if (!last) {
                 stack.push(cursor);
@@ -175,7 +168,7 @@ export function fastHash(str: string): number {
     let hash = 5381;
 
     for (let i = 0; i < str.length; i += 1) {
-        hash = hash * 33 ^ str.charCodeAt(i);
+        hash = (hash * 33) ^ str.charCodeAt(i);
     }
     return hash >>> 0;
 }

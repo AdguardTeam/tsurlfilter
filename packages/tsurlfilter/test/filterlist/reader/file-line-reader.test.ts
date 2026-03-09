@@ -1,11 +1,5 @@
 import * as fs from 'node:fs';
-import {
-    beforeEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FileLineReader } from '../../../src/filterlist/reader/file-line-reader';
 

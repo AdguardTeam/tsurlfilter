@@ -231,7 +231,8 @@ export class RuleSetsLoaderApi {
                         browser.runtime.getURL(metadataRulesetPath),
                     );
                     // eslint-disable-next-line max-len
-                    RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath] = MetadataRuleSet.deserialize(rawMetadataRuleset);
+                    RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath] =
+                        MetadataRuleSet.deserialize(rawMetadataRuleset);
                 }
 
                 this.isInitialized = true;
@@ -271,7 +272,9 @@ export class RuleSetsLoaderApi {
 
                 const checksum = await this.getChecksum(ruleSetId);
                 if (!checksum) {
-                    logger.error(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Failed to get checksum for rule set: ${ruleSetId}`);
+                    logger.error(
+                        `[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Failed to get checksum for rule set: ${ruleSetId}`,
+                    );
                     return;
                 }
 
@@ -302,7 +305,9 @@ export class RuleSetsLoaderApi {
                     throw new Error(`Invalid rule set id: ${ruleSetId}`);
                 }
 
-                logger.info(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Syncing rule set with IDB: ${ruleSetId} (previous checksum: ${idbChecksum}, current checksum: ${checksum})`);
+                logger.info(
+                    `[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Syncing rule set with IDB: ${ruleSetId} (previous checksum: ${idbChecksum}, current checksum: ${checksum})`,
+                );
 
                 const ruleSetPath = getRuleSetPath(ruleSetId, this.ruleSetsPath);
                 const rawRuleSet = await fetchExtensionResourceText(browser.runtime.getURL(ruleSetPath));
@@ -315,10 +320,7 @@ export class RuleSetsLoaderApi {
                 const store = tx.objectStore(RuleSetsLoaderApi.DB_STORE_NAME);
 
                 const puts = [
-                    store.put(
-                        checksum,
-                        RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_CHECKSUM, ruleSetId),
-                    ),
+                    store.put(checksum, RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_CHECKSUM, ruleSetId)),
                     store.put(
                         JSON.stringify(metadata.metadata),
                         RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_METADATA, ruleSetId),
@@ -353,9 +355,14 @@ export class RuleSetsLoaderApi {
                 // Invalidate the ruleset cache since the data has changed
                 RuleSetsLoaderApi.ruleSetsCache.delete(ruleSetId);
 
-                logger.info(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Synced rule set with IDB: ${ruleSetId}, checksum: ${checksum}`);
+                logger.info(
+                    `[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Synced rule set with IDB: ${ruleSetId}, checksum: ${checksum}`,
+                );
             } catch (err) {
-                logger.error(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Failed to sync rule set ${ruleSetId}:`, err);
+                logger.error(
+                    `[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Failed to sync rule set ${ruleSetId}:`,
+                    err,
+                );
                 throw err;
             } finally {
                 RuleSetsLoaderApi.syncLocks.delete(ruleSetId);
@@ -379,10 +386,7 @@ export class RuleSetsLoaderApi {
      *
      * @throws If initialization fails or the rule set with the provided ID is not found or invalid.
      */
-    public async createRuleSet(
-        ruleSetId: string,
-        filterList: IFilter[],
-    ): Promise<IRuleSet> {
+    public async createRuleSet(ruleSetId: string, filterList: IFilter[]): Promise<IRuleSet> {
         const ruleSetIdNumber = extractRuleSetId(ruleSetId);
 
         if (ruleSetIdNumber === null) {
@@ -404,31 +408,20 @@ export class RuleSetsLoaderApi {
             RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_METADATA, ruleSetId),
         );
 
-        const loadLazyData = async (): Promise<string> => RuleSetsLoaderApi.getValueFromIdb(
-            RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_LAZY_METADATA, ruleSetId),
-        );
+        const loadLazyData = async (): Promise<string> =>
+            RuleSetsLoaderApi.getValueFromIdb(
+                RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_LAZY_METADATA, ruleSetId),
+            );
 
-        const loadDeclarativeRules = (): Promise<string> => RuleSetsLoaderApi.getValueFromIdb(
-            RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_DECLARATIVE_RULES, ruleSetId),
-        );
+        const loadDeclarativeRules = (): Promise<string> =>
+            RuleSetsLoaderApi.getValueFromIdb(
+                RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_DECLARATIVE_RULES, ruleSetId),
+            );
 
         const {
-            data: {
-                regexpRulesCount,
-                unsafeRulesCount,
-                rulesCount,
-                unsafeRules,
-                ruleSetHashMapRaw,
-                badFilterRulesRaw,
-            },
+            data: { regexpRulesCount, unsafeRulesCount, rulesCount, unsafeRules, ruleSetHashMapRaw, badFilterRulesRaw },
             ruleSetContentProvider,
-        } = await RuleSet.deserialize(
-            ruleSetId,
-            rawData,
-            loadLazyData,
-            loadDeclarativeRules,
-            filterList,
-        );
+        } = await RuleSet.deserialize(ruleSetId, rawData, loadLazyData, loadDeclarativeRules, filterList);
 
         const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
         const ruleSetHashMap = new RulesHashMap(sources);

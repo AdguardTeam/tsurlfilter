@@ -2,7 +2,8 @@
  * Css, injected to broken element for hiding.
  */
 // eslint-disable-next-line max-len
-export const HIDING_STYLE = '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
+export const HIDING_STYLE =
+    '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
 
 /**
  * Type of attribute matching supported by {@link createHidingCssRule}.
@@ -25,10 +26,6 @@ export const enum AttributeMatching {
  *
  * @returns Css rule text.
  */
-export function createHidingCssRule(
-    tag: string,
-    src: string,
-    matching = AttributeMatching.Strict,
-): string {
+export function createHidingCssRule(tag: string, src: string, matching = AttributeMatching.Strict): string {
     return `${tag}[src${matching}"${src}"] ${HIDING_STYLE}\n`;
 }

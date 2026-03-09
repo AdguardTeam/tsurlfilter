@@ -53,31 +53,23 @@ export const SpecificPlatform = {
     AbpExtFirefox: (1 << 17) as SpecificPlatform,
 };
 
-const AdgOsAny = SpecificPlatform.AdgOsWindows
-    | SpecificPlatform.AdgOsMac
-    | SpecificPlatform.AdgOsAndroid;
+const AdgOsAny = SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgOsMac | SpecificPlatform.AdgOsAndroid;
 
 const AdgSafariAny = SpecificPlatform.AdgCbSafari | SpecificPlatform.AdgCbIos;
 
-const AdgExtChromium = SpecificPlatform.AdgExtChrome
-    | SpecificPlatform.AdgExtOpera
-    | SpecificPlatform.AdgExtEdge;
+const AdgExtChromium = SpecificPlatform.AdgExtChrome | SpecificPlatform.AdgExtOpera | SpecificPlatform.AdgExtEdge;
 
 const AdgExtAny = AdgExtChromium | SpecificPlatform.AdgExtFirefox;
 
 const AdgAny = AdgExtAny | AdgOsAny | AdgSafariAny | SpecificPlatform.AdgCbAndroid;
 
-const UboExtChromium = SpecificPlatform.UboExtChrome
-    | SpecificPlatform.UboExtOpera
-    | SpecificPlatform.UboExtEdge;
+const UboExtChromium = SpecificPlatform.UboExtChrome | SpecificPlatform.UboExtOpera | SpecificPlatform.UboExtEdge;
 
 const UboExtAny = UboExtChromium | SpecificPlatform.UboExtFirefox;
 
 const UboAny = UboExtAny;
 
-const AbpExtChromium = SpecificPlatform.AbpExtChrome
-    | SpecificPlatform.AbpExtOpera
-    | SpecificPlatform.AbpExtEdge;
+const AbpExtChromium = SpecificPlatform.AbpExtChrome | SpecificPlatform.AbpExtOpera | SpecificPlatform.AbpExtEdge;
 
 const AbpExtAny = AbpExtChromium | SpecificPlatform.AbpExtFirefox;
 

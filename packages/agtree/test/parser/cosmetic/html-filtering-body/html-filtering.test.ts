@@ -1,18 +1,9 @@
-import {
-    describe,
-    expect,
-    test,
-    vi,
-} from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 import { AdblockSyntaxError, type Value, type HtmlFilteringRuleBody } from '../../../../src';
-import {
-    HtmlFilteringBodyParser,
-} from '../../../../src/parser/cosmetic/html-filtering-body/html-filtering-body-parser';
-import {
-    HtmlFilteringBodyGenerator,
-} from '../../../../src/generator/cosmetic/html-filtering-body/html-filtering-body-generator';
+import { HtmlFilteringBodyParser } from '../../../../src/parser/cosmetic/html-filtering-body/html-filtering-body-parser';
+import { HtmlFilteringBodyGenerator } from '../../../../src/generator/cosmetic/html-filtering-body/html-filtering-body-generator';
 import { SelectorListParser } from '../../../../src/parser/cosmetic/selector/selector-list-parser';
 import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
 
@@ -74,33 +65,37 @@ describe('HtmlFilteringBodyParser', () => {
         test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
             {
                 actual: 'div[attr="value"]span',
-                expected: (context) => (new AdblockSyntaxError(
-                    'Type selector is already set for the compound selector',
-                    ...context.toTuple(context.getRangeFor('span')),
-                )),
+                expected: (context) =>
+                    new AdblockSyntaxError(
+                        'Type selector is already set for the compound selector',
+                        ...context.toTuple(context.getRangeFor('span')),
+                    ),
             },
             {
                 actual: '[attr="value"',
-                expected: (context) => (new AdblockSyntaxError(
-                    "Expected '<]-token>', but got 'end of input'",
-                    context.getFullRange().end - 1,
-                    context.getFullRange().end,
-                )),
+                expected: (context) =>
+                    new AdblockSyntaxError(
+                        "Expected '<]-token>', but got 'end of input'",
+                        context.getFullRange().end - 1,
+                        context.getFullRange().end,
+                    ),
             },
             {
                 actual: ':pseudo(arg',
-                expected: (context) => (new AdblockSyntaxError(
-                    "Expected '<)-token>', but got 'end of input'",
-                    context.getFullRange().end - 1,
-                    context.getFullRange().end,
-                )),
+                expected: (context) =>
+                    new AdblockSyntaxError(
+                        "Expected '<)-token>', but got 'end of input'",
+                        context.getFullRange().end - 1,
+                        context.getFullRange().end,
+                    ),
             },
             {
                 actual: 'div > + span',
-                expected: (context) => (new AdblockSyntaxError(
-                    "Unexpected token '<delim-token>' with value '+'",
-                    ...context.toTuple(context.getRangeFor('+')),
-                )),
+                expected: (context) =>
+                    new AdblockSyntaxError(
+                        "Unexpected token '<delim-token>' with value '+'",
+                        ...context.toTuple(context.getRangeFor('+')),
+                    ),
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
             const fn = vi.fn(() => HtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions));
@@ -190,9 +185,7 @@ describe('HtmlFilteringBodyParser', () => {
                 }),
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(HtmlFilteringBodyParser.parse(actual)).toMatchObject(
-                expectedFn(new NodeExpectContext(actual)),
-            );
+            expect(HtmlFilteringBodyParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
         });
     });
 

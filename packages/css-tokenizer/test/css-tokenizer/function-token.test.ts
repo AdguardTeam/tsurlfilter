@@ -1,9 +1,4 @@
-import {
-    describe,
-    expect,
-    test,
-    vi,
-} from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { TokenType } from '../../src/common/enums/token-types';
 import { tokenize } from '../../src/css-tokenizer';

@@ -16,13 +16,8 @@
     "content_scripts": [
         {
             "all_frames": true,
-            "js": [
-                "content-script.js"
-            ],
-            "matches": [
-                "http://*/*",
-                "https://*/*"
-            ],
+            "js": ["content-script.js"],
+            "matches": ["http://*/*", "https://*/*"],
             "match_about_blank": true,
             "run_at": "document_start"
         }
@@ -39,12 +34,7 @@
         "contextMenus",
         "cookies"
     ],
-    "optional_permissions": [
-        "privacy"
-    ],
+    "optional_permissions": ["privacy"],
     "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
-    "web_accessible_resources": [
-        "/adguard/*"
-    ]
+    "web_accessible_resources": ["/adguard/*"]
 }
-

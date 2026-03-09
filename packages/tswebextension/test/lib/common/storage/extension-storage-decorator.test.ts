@@ -1,10 +1,5 @@
 /* eslint-disable jsdoc/require-jsdoc */
-import {
-    describe,
-    expect,
-    beforeAll,
-    it,
-} from 'vitest';
+import { describe, expect, beforeAll, it } from 'vitest';
 import browser from 'webextension-polyfill';
 
 import { BrowserStorage } from '../../../../src/lib/common/storage/core';
@@ -29,9 +24,7 @@ describe('createExtensionStorageDecorator', () => {
     it('should throw an error if decorator is already registered for the storage field', () => {
         const decorator = createExtensionStorageDecorator(storage);
         decorator('foo');
-        expect(() => decorator('foo')).toThrow(
-            'Decorator for foo field is already registered',
-        );
+        expect(() => decorator('foo')).toThrow('Decorator for foo field is already registered');
     });
 
     it('should throw an error if decorator is applied to non-auto accessor', () => {
@@ -39,9 +32,7 @@ describe('createExtensionStorageDecorator', () => {
 
         // Required for test runtime errors
         // @ts-ignore
-        expect(() => fieldDecorator({}, { kind: 'method' })).toThrow(
-            'Class member is not an accessor',
-        );
+        expect(() => fieldDecorator({}, { kind: 'method' })).toThrow('Class member is not an accessor');
     });
 
     it('should get and set the value of the specified field', () => {
@@ -49,7 +40,7 @@ describe('createExtensionStorageDecorator', () => {
 
         class TestClass {
             @decorator('foo')
-            accessor foo!: string
+            accessor foo!: string;
         }
 
         const instance = new TestClass();

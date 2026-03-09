@@ -1,12 +1,7 @@
 import { describe, test, expect } from 'vitest';
 
 import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
-import {
-    type DomainList,
-    type DomainListSeparator,
-    ListNodeType,
-    ListItemNodeType,
-} from '../../../src/nodes';
+import { type DomainList, type DomainListSeparator, ListNodeType, ListItemNodeType } from '../../../src/nodes';
 import { COMMA, EMPTY } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { DomainListGenerator } from '../../../src/generator/misc/domain-list-generator';
@@ -16,251 +11,233 @@ describe('DomainListParser', () => {
 
     test('parse should work as expected on valid input', () => {
         // Empty
-        expect(DomainListParser.parse(EMPTY)).toEqual<DomainList>(
-            {
-                type: ListNodeType.DomainList,
-                start: 0,
-                end: 0,
-                separator: ',',
-                children: [],
-            },
-        );
+        expect(DomainListParser.parse(EMPTY)).toEqual<DomainList>({
+            type: ListNodeType.DomainList,
+            start: 0,
+            end: 0,
+            separator: ',',
+            children: [],
+        });
 
         // Single domain
-        expect(DomainListParser.parse('example.com')).toEqual<DomainList>(
-            {
-                type: ListNodeType.DomainList,
-                start: 0,
-                end: 11,
-                separator: ',',
-                children: [
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 0,
-                        end: 11,
-                        value: 'example.com',
-                        exception: false,
-                    },
-                ],
-            },
-        );
+        expect(DomainListParser.parse('example.com')).toEqual<DomainList>({
+            type: ListNodeType.DomainList,
+            start: 0,
+            end: 11,
+            separator: ',',
+            children: [
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 0,
+                    end: 11,
+                    value: 'example.com',
+                    exception: false,
+                },
+            ],
+        });
 
         // Multiple domains
-        expect(DomainListParser.parse('example.com,example.net')).toEqual<DomainList>(
-            {
-                type: ListNodeType.DomainList,
-                start: 0,
-                end: 23,
-                separator: ',',
-                children: [
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 0,
-                        end: 11,
-                        value: 'example.com',
-                        exception: false,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 12,
-                        end: 23,
-                        value: 'example.net',
-                        exception: false,
-                    },
-                ],
-            },
-        );
+        expect(DomainListParser.parse('example.com,example.net')).toEqual<DomainList>({
+            type: ListNodeType.DomainList,
+            start: 0,
+            end: 23,
+            separator: ',',
+            children: [
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 0,
+                    end: 11,
+                    value: 'example.com',
+                    exception: false,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 12,
+                    end: 23,
+                    value: 'example.net',
+                    exception: false,
+                },
+            ],
+        });
 
-        expect(DomainListParser.parse('example.com,example.net,example.org')).toEqual<DomainList>(
-            {
-                type: ListNodeType.DomainList,
-                start: 0,
-                end: 35,
-                separator: ',',
-                children: [
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 0,
-                        end: 11,
-                        value: 'example.com',
-                        exception: false,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 12,
-                        end: 23,
-                        value: 'example.net',
-                        exception: false,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 24,
-                        end: 35,
-                        value: 'example.org',
-                        exception: false,
-                    },
-                ],
-            },
-        );
+        expect(DomainListParser.parse('example.com,example.net,example.org')).toEqual<DomainList>({
+            type: ListNodeType.DomainList,
+            start: 0,
+            end: 35,
+            separator: ',',
+            children: [
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 0,
+                    end: 11,
+                    value: 'example.com',
+                    exception: false,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 12,
+                    end: 23,
+                    value: 'example.net',
+                    exception: false,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 24,
+                    end: 35,
+                    value: 'example.org',
+                    exception: false,
+                },
+            ],
+        });
 
         // Exception - single domain
-        expect(DomainListParser.parse('~example.com')).toEqual<DomainList>(
-            {
-                type: ListNodeType.DomainList,
-                start: 0,
-                end: 12,
-                separator: ',',
-                children: [
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 1,
-                        end: 12,
-                        value: 'example.com',
-                        exception: true,
-                    },
-                ],
-            },
-        );
+        expect(DomainListParser.parse('~example.com')).toEqual<DomainList>({
+            type: ListNodeType.DomainList,
+            start: 0,
+            end: 12,
+            separator: ',',
+            children: [
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 1,
+                    end: 12,
+                    value: 'example.com',
+                    exception: true,
+                },
+            ],
+        });
 
         // Exception - multiple domains
-        expect(DomainListParser.parse('~example.com,~example.net')).toEqual<DomainList>(
-            {
-                type: ListNodeType.DomainList,
-                start: 0,
-                end: 25,
-                separator: ',',
-                children: [
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 1,
-                        end: 12,
-                        value: 'example.com',
-                        exception: true,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 14,
-                        end: 25,
-                        value: 'example.net',
-                        exception: true,
-                    },
-                ],
-            },
-        );
+        expect(DomainListParser.parse('~example.com,~example.net')).toEqual<DomainList>({
+            type: ListNodeType.DomainList,
+            start: 0,
+            end: 25,
+            separator: ',',
+            children: [
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 1,
+                    end: 12,
+                    value: 'example.com',
+                    exception: true,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 14,
+                    end: 25,
+                    value: 'example.net',
+                    exception: true,
+                },
+            ],
+        });
 
-        expect(DomainListParser.parse('~example.com,~example.net,~example.org')).toEqual<DomainList>(
-            {
-                type: ListNodeType.DomainList,
-                start: 0,
-                end: 38,
-                separator: ',',
-                children: [
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 1,
-                        end: 12,
-                        value: 'example.com',
-                        exception: true,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 14,
-                        end: 25,
-                        value: 'example.net',
-                        exception: true,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 27,
-                        end: 38,
-                        value: 'example.org',
-                        exception: true,
-                    },
-                ],
-            },
-        );
+        expect(DomainListParser.parse('~example.com,~example.net,~example.org')).toEqual<DomainList>({
+            type: ListNodeType.DomainList,
+            start: 0,
+            end: 38,
+            separator: ',',
+            children: [
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 1,
+                    end: 12,
+                    value: 'example.com',
+                    exception: true,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 14,
+                    end: 25,
+                    value: 'example.net',
+                    exception: true,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 27,
+                    end: 38,
+                    value: 'example.org',
+                    exception: true,
+                },
+            ],
+        });
 
         // Mixed - multiple domains
-        expect(DomainListParser.parse('~example.com,~example.net,example.eu,~example.org')).toEqual<DomainList>(
-            {
-                type: ListNodeType.DomainList,
-                start: 0,
-                end: 49,
-                separator: ',',
-                children: [
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 1,
-                        end: 12,
-                        value: 'example.com',
-                        exception: true,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 14,
-                        end: 25,
-                        value: 'example.net',
-                        exception: true,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 26,
-                        end: 36,
-                        value: 'example.eu',
-                        exception: false,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 38,
-                        end: 49,
-                        value: 'example.org',
-                        exception: true,
-                    },
-                ],
-            },
-        );
+        expect(DomainListParser.parse('~example.com,~example.net,example.eu,~example.org')).toEqual<DomainList>({
+            type: ListNodeType.DomainList,
+            start: 0,
+            end: 49,
+            separator: ',',
+            children: [
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 1,
+                    end: 12,
+                    value: 'example.com',
+                    exception: true,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 14,
+                    end: 25,
+                    value: 'example.net',
+                    exception: true,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 26,
+                    end: 36,
+                    value: 'example.eu',
+                    exception: false,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 38,
+                    end: 49,
+                    value: 'example.org',
+                    exception: true,
+                },
+            ],
+        });
 
         // Mixed - spaces (trim)
         expect(
             DomainListParser.parse('~example.com,  example.net    ,   example.eu ,        ~example.org'),
-        ).toEqual<DomainList>(
-            {
-                type: ListNodeType.DomainList,
-                start: 0,
-                end: 66,
-                separator: ',',
-                children: [
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 1,
-                        end: 12,
-                        value: 'example.com',
-                        exception: true,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 15,
-                        end: 26,
-                        value: 'example.net',
-                        exception: false,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 34,
-                        end: 44,
-                        value: 'example.eu',
-                        exception: false,
-                    },
-                    {
-                        type: ListItemNodeType.Domain,
-                        start: 55,
-                        end: 66,
-                        value: 'example.org',
-                        exception: true,
-                    },
-                ],
-            },
-        );
+        ).toEqual<DomainList>({
+            type: ListNodeType.DomainList,
+            start: 0,
+            end: 66,
+            separator: ',',
+            children: [
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 1,
+                    end: 12,
+                    value: 'example.com',
+                    exception: true,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 15,
+                    end: 26,
+                    value: 'example.net',
+                    exception: false,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 34,
+                    end: 44,
+                    value: 'example.eu',
+                    exception: false,
+                },
+                {
+                    type: ListItemNodeType.Domain,
+                    start: 55,
+                    end: 66,
+                    value: 'example.org',
+                    exception: true,
+                },
+            ],
+        });
 
         expect(
             DomainListParser.parse(
@@ -467,9 +444,7 @@ describe('DomainListParser', () => {
             // Multiple domains with pipe separator and regex containing pipe
             const mixedWithPipeSep = String.raw`/example\.(com|org)/|example.net`;
             const regexPartPipe = String.raw`/example\.(com|org)/`;
-            expect(
-                DomainListParser.parse(mixedWithPipeSep, defaultParserOptions, 0, '|'),
-            ).toEqual<DomainList>({
+            expect(DomainListParser.parse(mixedWithPipeSep, defaultParserOptions, 0, '|')).toEqual<DomainList>({
                 type: ListNodeType.DomainList,
                 start: 0,
                 end: mixedWithPipeSep.length,

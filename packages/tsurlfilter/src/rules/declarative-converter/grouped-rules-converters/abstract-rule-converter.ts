@@ -179,10 +179,12 @@ export abstract class AbstractRuleConverter {
      * @returns List of resource types.
      */
     private static getResourceTypes(requestTypes: RequestType): ResourceType[] {
-        return Object.entries(DECLARATIVE_RESOURCE_TYPES_MAP)
-            // Skips the first element
-            .filter(([, requestType]) => (requestTypes & requestType) === requestType)
-            .map(([resourceTypeKey]) => resourceTypeKey) as ResourceType[];
+        return (
+            Object.entries(DECLARATIVE_RESOURCE_TYPES_MAP)
+                // Skips the first element
+                .filter(([, requestType]) => (requestTypes & requestType) === requestType)
+                .map(([resourceTypeKey]) => resourceTypeKey) as ResourceType[]
+        );
     }
 
     /**
@@ -194,11 +196,13 @@ export abstract class AbstractRuleConverter {
      * @returns List of {@link RequestMethod|methods}.
      */
     private static mapHttpMethodToDeclarativeHttpMethod(methods: HTTPMethod[]): RequestMethod[] {
-        return methods
-            // Filters unsupported `trace` method
-            .filter((m): m is SupportedHttpMethod => m !== HTTPMethod.TRACE)
-            // Map tsurlfilter http method to supported declarative http method
-            .map((m) => DECLARATIVE_REQUEST_METHOD_MAP[m]);
+        return (
+            methods
+                // Filters unsupported `trace` method
+                .filter((m): m is SupportedHttpMethod => m !== HTTPMethod.TRACE)
+                // Map tsurlfilter http method to supported declarative http method
+                .map((m) => DECLARATIVE_REQUEST_METHOD_MAP[m])
+        );
     }
 
     /**
@@ -374,20 +378,24 @@ export abstract class AbstractRuleConverter {
         const removeRequestHeader = removeHeaderModifier.getApplicableHeaderName(true);
         if (removeRequestHeader) {
             return {
-                requestHeaders: [{
-                    header: removeRequestHeader,
-                    operation: HeaderOperation.Remove,
-                }],
+                requestHeaders: [
+                    {
+                        header: removeRequestHeader,
+                        operation: HeaderOperation.Remove,
+                    },
+                ],
             };
         }
 
         const removeResponseHeader = removeHeaderModifier.getApplicableHeaderName(false);
         if (removeResponseHeader) {
             return {
-                responseHeaders: [{
-                    header: removeResponseHeader,
-                    operation: HeaderOperation.Remove,
-                }],
+                responseHeaders: [
+                    {
+                        header: removeResponseHeader,
+                        operation: HeaderOperation.Remove,
+                    },
+                ],
             };
         }
 
@@ -409,14 +417,18 @@ export abstract class AbstractRuleConverter {
         }
 
         return {
-            responseHeaders: [{
-                operation: HeaderOperation.Remove,
-                header: 'Set-Cookie',
-            }],
-            requestHeaders: [{
-                operation: HeaderOperation.Remove,
-                header: 'Cookie',
-            }],
+            responseHeaders: [
+                {
+                    operation: HeaderOperation.Remove,
+                    header: 'Set-Cookie',
+                },
+            ],
+            requestHeaders: [
+                {
+                    operation: HeaderOperation.Remove,
+                    header: 'Cookie',
+                },
+            ],
         };
     }
 
@@ -488,8 +500,7 @@ export abstract class AbstractRuleConverter {
             return { type: RuleActionType.ALLOW };
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.Redirect)
-            || rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+        if (rule.isOptionEnabled(NetworkRuleOption.Redirect) || rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
             return {
                 type: RuleActionType.REDIRECT,
                 redirect: this.getRedirectAction(rule),
@@ -569,9 +580,7 @@ export abstract class AbstractRuleConverter {
                 condition.regexFilter = AbstractRuleConverter.prepareASCII(regexFilter);
             } else {
                 // A pattern beginning with ||* is not allowed. Use * instead.
-                const patternWithoutVerticals = pattern.startsWith('||*')
-                    ? pattern.substring(2)
-                    : pattern;
+                const patternWithoutVerticals = pattern.startsWith('||*') ? pattern.substring(2) : pattern;
                 condition.urlFilter = AbstractRuleConverter.prepareASCII(patternWithoutVerticals);
             }
         }
@@ -672,19 +681,21 @@ export abstract class AbstractRuleConverter {
              * other types, so that it works not only for document requests, but
              * also for all other types of requests.
              */
-            const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
-                || rule.isOptionEnabled(NetworkRuleOption.Csp)
-                || rule.isOptionEnabled(NetworkRuleOption.Cookie)
-                || rule.isOptionEnabled(NetworkRuleOption.To)
-                || rule.isOptionEnabled(NetworkRuleOption.Method);
+            const shouldMatchAllResourcesTypes =
+                rule.isOptionEnabled(NetworkRuleOption.RemoveHeader) ||
+                rule.isOptionEnabled(NetworkRuleOption.Csp) ||
+                rule.isOptionEnabled(NetworkRuleOption.Cookie) ||
+                rule.isOptionEnabled(NetworkRuleOption.To) ||
+                rule.isOptionEnabled(NetworkRuleOption.Method);
 
             /**
              * $permissions and $removeparam modifiers must be applied only
              * to `document` content-type ('main_frame' and 'sub_frame')
              * if they don't have resource types.
              */
-            const shouldMatchOnlyDocument = rule.isOptionEnabled(NetworkRuleOption.RemoveParam)
-                || rule.isOptionEnabled(NetworkRuleOption.Permissions);
+            const shouldMatchOnlyDocument =
+                rule.isOptionEnabled(NetworkRuleOption.RemoveParam) ||
+                rule.isOptionEnabled(NetworkRuleOption.Permissions);
 
             if (shouldMatchAllResourcesTypes) {
                 condition.resourceTypes = [
@@ -747,10 +758,7 @@ export abstract class AbstractRuleConverter {
      *
      * @returns A list of declarative rules.
      */
-    protected async convertRule(
-        id: number,
-        rule: NetworkRuleWithNodeAndText,
-    ): Promise<DeclarativeRule[]> {
+    protected async convertRule(id: number, rule: NetworkRuleWithNodeAndText): Promise<DeclarativeRule[]> {
         // If the rule is not convertible - method will throw an error.
         const shouldConvert = NetworkRuleDeclarativeValidator.shouldConvertNetworkRule(rule);
 
@@ -770,10 +778,7 @@ export abstract class AbstractRuleConverter {
             declarativeRule.priority = priority;
         }
 
-        const conversionErr = await AbstractRuleConverter.checkDeclarativeRuleApplicable(
-            rule,
-            declarativeRule,
-        );
+        const conversionErr = await AbstractRuleConverter.checkDeclarativeRuleApplicable(rule, declarativeRule);
         if (conversionErr) {
             throw conversionErr;
         }
@@ -828,12 +833,7 @@ export abstract class AbstractRuleConverter {
             } catch (e) {
                 const ruleText = networkRule.text;
                 const msg = `Regex is unsupported: "${ruleText}"`;
-                return new UnsupportedRegexpError(
-                    msg,
-                    networkRule,
-                    declarativeRule,
-                    getErrorMessage(e),
-                );
+                return new UnsupportedRegexpError(msg, networkRule, declarativeRule, getErrorMessage(e));
             }
         }
 
@@ -852,24 +852,18 @@ export abstract class AbstractRuleConverter {
      *
      * @returns Initial error or new packaged error.
      */
-    private static catchErrorDuringConversion(
-        rule: IRule,
-        index: number,
-        id: number,
-        e: unknown,
-    ): Error {
-        if (e instanceof EmptyResourcesError
-            || e instanceof UnsupportedModifierError
-            || e instanceof UnsupportedRegexpError
-            || e instanceof EmptyDomainsError
+    private static catchErrorDuringConversion(rule: IRule, index: number, id: number, e: unknown): Error {
+        if (
+            e instanceof EmptyResourcesError ||
+            e instanceof UnsupportedModifierError ||
+            e instanceof UnsupportedRegexpError ||
+            e instanceof EmptyDomainsError
         ) {
             return e;
         }
 
         const msg = `Non-categorized error during a conversion rule (index - ${index}, id - ${id})`;
-        return e instanceof Error
-            ? new Error(msg, { cause: e })
-            : new Error(msg);
+        return e instanceof Error ? new Error(msg, { cause: e }) : new Error(msg);
     }
 
     /**
@@ -898,34 +892,33 @@ export abstract class AbstractRuleConverter {
             sourceMapValues: [],
         };
 
-        await Promise.all(rules.map(async (r: IndexedNetworkRuleWithHash) => {
-            const { rule, index } = r;
+        await Promise.all(
+            rules.map(async (r: IndexedNetworkRuleWithHash) => {
+                const { rule, index } = r;
 
-            const id = AbstractRuleConverter.generateUniqueId(r, usedIds);
+                const id = AbstractRuleConverter.generateUniqueId(r, usedIds);
 
-            let converted: DeclarativeRule[] = [];
+                let converted: DeclarativeRule[] = [];
 
-            try {
-                converted = await this.convertRule(
-                    id,
-                    rule,
-                );
-            } catch (e) {
-                const err = AbstractRuleConverter.catchErrorDuringConversion(rule.rule, index, id, e);
-                res.errors.push(err);
-                return;
-            }
+                try {
+                    converted = await this.convertRule(id, rule);
+                } catch (e) {
+                    const err = AbstractRuleConverter.catchErrorDuringConversion(rule.rule, index, id, e);
+                    res.errors.push(err);
+                    return;
+                }
 
-            // For each converted declarative rule save it's source.
-            converted.forEach((dRule) => {
-                res.sourceMapValues.push({
-                    declarativeRuleId: dRule.id,
-                    sourceRuleIndex: index,
-                    filterId,
+                // For each converted declarative rule save it's source.
+                converted.forEach((dRule) => {
+                    res.sourceMapValues.push({
+                        declarativeRuleId: dRule.id,
+                        sourceRuleIndex: index,
+                        filterId,
+                    });
+                    res.declarativeRules.push(dRule);
                 });
-                res.declarativeRules.push(dRule);
-            });
-        }));
+            }),
+        );
 
         return res;
     }

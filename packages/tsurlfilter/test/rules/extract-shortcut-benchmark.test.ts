@@ -65,7 +65,7 @@ function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
     heapUsed -= base.heapUsed;
     heapTotal -= base.heapTotal;
 
-    return ({ heapUsed, heapTotal });
+    return { heapUsed, heapTotal };
 }
 
 /**
@@ -76,10 +76,7 @@ function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
  *
  * @throws Error if extracted shortcuts are not equal to reference.
  */
-const validateExtraction = async (
-    patterns: string[],
-    referencePath: string,
-): Promise<void> => {
+const validateExtraction = async (patterns: string[], referencePath: string): Promise<void> => {
     const shortcuts = patterns.map((pattern) => SimpleRegex.extractShortcut(pattern));
 
     const reference = await fs.promises
@@ -98,7 +95,7 @@ const validateExtraction = async (
             continue;
         }
         console.log(`Validation failed at line ${i + 1}`);
-        console.log(`Expected: ${reference[i] || '\'\''}`);
+        console.log(`Expected: ${reference[i] || "''"}`);
         console.log(`Actual: ${shortcuts[i]}`);
 
         throw new Error('Result is not equal to reference.');
@@ -111,10 +108,7 @@ const validateExtraction = async (
  * @param title Title to print before benchmark results.
  * @param patterns List of patterns to extract shortcuts from.
  */
-const runBench = async (
-    title: string,
-    patterns: string[],
-) => {
+const runBench = async (title: string, patterns: string[]) => {
     const initMemory = memoryUsage();
     const start = Date.now();
 
@@ -141,9 +135,7 @@ describe('Benchmarks', () => {
     it('runs SimpleRegex.extractRegexpShortcut', async () => {
         const patterns = await getPatterns(FilePath.AdguardRegexpPatternNetworkRules);
 
-        await expect(
-            validateExtraction(patterns, FilePath.RegexpShortcutsReference),
-        ).resolves.not.toThrow();
+        await expect(validateExtraction(patterns, FilePath.RegexpShortcutsReference)).resolves.not.toThrow();
 
         await runBench('SimpleRegex.extractRegexpShortcut:', patterns);
     });
@@ -151,9 +143,7 @@ describe('Benchmarks', () => {
     it('runs SimpleRegex.extractShortcut', async () => {
         const patterns = await getPatterns(FilePath.EasylistBaseRules);
 
-        await expect(
-            validateExtraction(patterns, FilePath.BasicShortcutsReference),
-        ).resolves.not.toThrow();
+        await expect(validateExtraction(patterns, FilePath.BasicShortcutsReference)).resolves.not.toThrow();
 
         await runBench('SimpleRegex.extractRegexpShortcut:', patterns);
     });

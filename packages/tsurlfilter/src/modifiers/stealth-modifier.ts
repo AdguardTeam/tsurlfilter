@@ -119,7 +119,9 @@ export class StealthModifier {
 
             if (this.options & option) {
                 // TODO: Change log level to 'warn' after AG-42379
-                logger.trace(`[tsurl.StealthModifier.constructor]: duplicate $stealth modifier value "${optionName}" in "${optionsStr}"`);
+                logger.trace(
+                    `[tsurl.StealthModifier.constructor]: duplicate $stealth modifier value "${optionName}" in "${optionsStr}"`,
+                );
             }
 
             this.options |= option;
@@ -127,7 +129,9 @@ export class StealthModifier {
 
         if (this.options === StealthOption.NotSet) {
             // TODO: Change log level to 'warn' after AG-42379
-            logger.trace(`[tsurl.StealthModifier.constructor]: $stealth modifier does not contain any options supported by browser extension: "${optionsStr}"`);
+            logger.trace(
+                `[tsurl.StealthModifier.constructor]: $stealth modifier does not contain any options supported by browser extension: "${optionsStr}"`,
+            );
         }
     }
 
@@ -138,9 +142,8 @@ export class StealthModifier {
      *
      * @returns True if the given string is a valid $stealth option.
      */
-    private static isSupportedStealthOption = (
-        option: string,
-    ): option is StealthOptionName => StealthModifierOptions.has(option as StealthOptionName);
+    private static isSupportedStealthOption = (option: string): option is StealthOptionName =>
+        StealthModifierOptions.has(option as StealthOptionName);
 
     /**
      * Checks if the given string is a valid $stealth option.
@@ -149,9 +152,8 @@ export class StealthModifier {
      *
      * @returns True if the given string is a valid $stealth option.
      */
-    private static isValidStealthOption = (
-        option: string,
-    ): option is UniversalStealthOption => UniversalStealthOptions.has(option as UniversalStealthOption);
+    private static isValidStealthOption = (option: string): option is UniversalStealthOption =>
+        UniversalStealthOptions.has(option as UniversalStealthOption);
 
     /**
      * Checks if this stealth modifier has values.

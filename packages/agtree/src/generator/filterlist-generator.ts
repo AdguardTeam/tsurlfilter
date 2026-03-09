@@ -1,11 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { type FilterList } from '../nodes';
-import {
-    CR,
-    CRLF,
-    EMPTY,
-    LF,
-} from '../utils/constants';
+import { CR, CRLF, EMPTY, LF } from '../utils/constants';
 import { RuleGenerator } from './rule-generator';
 import { BaseGenerator } from './base-generator';
 

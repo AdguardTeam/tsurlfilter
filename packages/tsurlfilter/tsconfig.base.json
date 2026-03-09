@@ -3,20 +3,13 @@
         "moduleResolution": "bundler",
         "target": "ESNext",
         "module": "ESNext",
-        "lib": [
-            "esnext",
-            "dom"
-        ],
+        "lib": ["esnext", "dom"],
         "strict": true,
         "allowSyntheticDefaultImports": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "resolveJsonModule": true,
         "esModuleInterop": true,
-        "typeRoots": [
-            "./types",
-            "node_modules/@types",
-            "../../node_modules/@types"
-        ]
+        "typeRoots": ["./types", "node_modules/@types", "../../node_modules/@types"]
     }
 }

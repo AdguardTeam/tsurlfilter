@@ -1,12 +1,5 @@
 import browser from 'webextension-polyfill';
-import {
-    afterEach,
-    beforeEach,
-    describe,
-    expect,
-    test,
-    vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { BrowserStorage } from '../../../../../src/lib/common/storage/core/browser-storage';
 
@@ -94,9 +87,9 @@ describe('BrowserStorage', () => {
         }
 
         // Simulate an error in browser.storage.local.set
-        const mock = vi.spyOn(descriptor.value, 'set').mockRejectedValueOnce(
-            new Error('Error while setting multiple keys in the storage'),
-        );
+        const mock = vi
+            .spyOn(descriptor.value, 'set')
+            .mockRejectedValueOnce(new Error('Error while setting multiple keys in the storage'));
 
         const data = { key1: 'value1', errorKey: 'value2' };
         const result = await storage.setMultiple(data);

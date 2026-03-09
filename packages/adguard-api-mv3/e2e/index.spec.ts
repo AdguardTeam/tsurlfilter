@@ -1,8 +1,4 @@
-import {
-    describe,
-    it,
-    expect,
-} from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('Adguard API MV3', () => {
     /**

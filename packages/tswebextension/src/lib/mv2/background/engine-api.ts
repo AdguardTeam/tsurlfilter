@@ -56,7 +56,7 @@ export class EngineApi {
         private readonly allowlist: Allowlist,
         private readonly appContext: AppContext,
         private readonly stealthApi: StealthApi,
-    ) { }
+    ) {}
 
     /**
      * Starts engine.
@@ -64,23 +64,14 @@ export class EngineApi {
      * @param configuration Engine configuration.
      */
     public async startEngine(configuration: ConfigurationMV2): Promise<void> {
-        const {
-            filters,
-            userrules,
-            verbose,
-        } = configuration;
+        const { filters, userrules, verbose } = configuration;
 
         this.allowlist.configure(configuration);
 
         const lists: EngineFactoryFilterList[] = [];
 
         for (let i = 0; i < filters.length; i += 1) {
-            const {
-                filterId,
-                content,
-                conversionData,
-                trusted,
-            } = filters[i];
+            const { filterId, content, conversionData, trusted } = filters[i];
 
             lists.push({
                 id: filterId,
@@ -144,7 +135,7 @@ export class EngineApi {
          * that's why we create filter rules using chunks of the specified length
          * Request filter creation is rather slow operation so we should
          * use setTimeout calls to give UI thread some time.
-        */
+         */
         const engine = await Engine.createAsync({
             filters: lists,
         });
@@ -164,21 +155,11 @@ export class EngineApi {
             return null;
         }
 
-        const {
-            requestUrl,
-            frameUrl,
-            requestType,
-            method,
-        } = matchQuery;
+        const { requestUrl, frameUrl, requestType, method } = matchQuery;
 
         let { frameRule } = matchQuery;
 
-        const request = new Request(
-            requestUrl,
-            frameUrl,
-            requestType,
-            method,
-        );
+        const request = new Request(requestUrl, frameUrl, requestType, method);
 
         if (!frameRule) {
             frameRule = null;

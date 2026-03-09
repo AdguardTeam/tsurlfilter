@@ -2,12 +2,7 @@
  * @file Network rule converter
  */
 
-import {
-    RuleCategory,
-    type NetworkRule,
-    NetworkRuleType,
-    type AnyNetworkRule,
-} from '../../nodes';
+import { RuleCategory, type NetworkRule, NetworkRuleType, type AnyNetworkRule } from '../../nodes';
 import { NetworkRuleModifierListConverter } from '../misc/network-rule-modifier';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
@@ -40,17 +35,19 @@ export class NetworkRuleConverter extends RuleConverterBase {
             // In this case, we should clone the entire rule and replace the modifiers with the converted ones
             if (modifiers.isConverted) {
                 return {
-                    result: [{
-                        category: RuleCategory.Network,
-                        type: NetworkRuleType.NetworkRule,
-                        syntax: rule.syntax,
-                        exception: rule.exception,
-                        pattern: {
-                            type: 'Value',
-                            value: rule.pattern.value,
+                    result: [
+                        {
+                            category: RuleCategory.Network,
+                            type: NetworkRuleType.NetworkRule,
+                            syntax: rule.syntax,
+                            exception: rule.exception,
+                            pattern: {
+                                type: 'Value',
+                                value: rule.pattern.value,
+                            },
+                            modifiers: modifiers.result,
                         },
-                        modifiers: modifiers.result,
-                    }],
+                    ],
                     isConverted: true,
                 };
             }
@@ -82,17 +79,19 @@ export class NetworkRuleConverter extends RuleConverterBase {
             // In this case, we should clone the entire rule and replace the modifiers with the converted ones
             if (modifiers.isConverted) {
                 return {
-                    result: [{
-                        category: RuleCategory.Network,
-                        type: NetworkRuleType.NetworkRule,
-                        syntax: rule.syntax,
-                        exception: rule.exception,
-                        pattern: {
-                            type: 'Value',
-                            value: rule.pattern.value,
+                    result: [
+                        {
+                            category: RuleCategory.Network,
+                            type: NetworkRuleType.NetworkRule,
+                            syntax: rule.syntax,
+                            exception: rule.exception,
+                            pattern: {
+                                type: 'Value',
+                                value: rule.pattern.value,
+                            },
+                            modifiers: modifiers.result,
                         },
-                        modifiers: modifiers.result,
-                    }],
+                    ],
                     isConverted: true,
                 };
             }

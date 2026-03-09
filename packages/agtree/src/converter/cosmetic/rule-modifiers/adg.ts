@@ -24,12 +24,7 @@ const ADG_PATH_MODIFIER = 'path';
 /**
  * Special characters in modifier regexps that should be escaped
  */
-const SPECIAL_MODIFIER_REGEX_CHARS = new Set([
-    OPEN_SQUARE_BRACKET,
-    CLOSE_SQUARE_BRACKET,
-    COMMA,
-    ESCAPE_CHARACTER,
-]);
+const SPECIAL_MODIFIER_REGEX_CHARS = new Set([OPEN_SQUARE_BRACKET, CLOSE_SQUARE_BRACKET, COMMA, ESCAPE_CHARACTER]);
 
 /**
  * Helper class for converting cosmetic rule modifiers from uBO to ADG
@@ -66,8 +61,8 @@ export class AdgCosmeticRuleModifierConverter {
                         ADG_PATH_MODIFIER,
                         // We should negate the regexp if the modifier is an exception
                         modifier.exception
-                            // eslint-disable-next-line max-len
-                            ? `${REGEX_MARKER}${RegExpUtils.negateRegexPattern(RegExpUtils.patternToRegexp(value))}${REGEX_MARKER}`
+                            ? // eslint-disable-next-line max-len
+                              `${REGEX_MARKER}${RegExpUtils.negateRegexPattern(RegExpUtils.patternToRegexp(value))}${REGEX_MARKER}`
                             : value,
                     ),
                 );
@@ -79,11 +74,13 @@ export class AdgCosmeticRuleModifierConverter {
             const modifierListClone = clone(modifierList);
 
             // Replace the original modifiers with the converted ones
-            modifierListClone.children = modifierListClone.children.map((modifier, index) => {
-                const convertedModifier = conversionMap.get(index);
+            modifierListClone.children = modifierListClone.children
+                .map((modifier, index) => {
+                    const convertedModifier = conversionMap.get(index);
 
-                return convertedModifier ?? modifier;
-            }).flat();
+                    return convertedModifier ?? modifier;
+                })
+                .flat();
 
             return createConversionResult(modifierListClone, true);
         }

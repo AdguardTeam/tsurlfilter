@@ -27,10 +27,10 @@ vi.mock('webextension-polyfill', () => {
             runtime: {
                 ...browser.runtime,
                 getManifest: vi.fn(() => {
-                    return ({
+                    return {
                         version: '5.0.176',
                         manifest_version: MANIFEST_ENV as any,
-                    });
+                    };
                 }),
             },
             // TODO: Move to separate mock file
@@ -61,13 +61,16 @@ vi.mock('webextension-polyfill', () => {
                         }
 
                         if (Array.isArray(keys)) {
-                            return keys.reduce((result, key) => {
-                                const data = storageData[key];
-                                if (data !== undefined) {
-                                    result[key] = JSON.parse(data);
-                                }
-                                return result;
-                            }, {} as Record<string, any>);
+                            return keys.reduce(
+                                (result, key) => {
+                                    const data = storageData[key];
+                                    if (data !== undefined) {
+                                        result[key] = JSON.parse(data);
+                                    }
+                                    return result;
+                                },
+                                {} as Record<string, any>,
+                            );
                         }
 
                         return {};

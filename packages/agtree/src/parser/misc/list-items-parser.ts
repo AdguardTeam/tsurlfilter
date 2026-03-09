@@ -86,15 +86,12 @@ export class ListItemsParser {
             // Find the index of the first unescaped separator character
             // Use findUnescapedNonStringNonRegexChar
             // to properly handle separators inside regex patterns
-            const separatorStartIndex = StringUtils.findUnescapedNonStringNonRegexChar(
-                raw,
-                separator,
-                offset,
-            );
+            const separatorStartIndex = StringUtils.findUnescapedNonStringNonRegexChar(raw, separator, offset);
 
-            const itemEnd = separatorStartIndex === -1
-                ? StringUtils.skipWSBack(raw) + 1
-                : StringUtils.skipWSBack(raw, separatorStartIndex - 1) + 1;
+            const itemEnd =
+                separatorStartIndex === -1
+                    ? StringUtils.skipWSBack(raw) + 1
+                    : StringUtils.skipWSBack(raw, separatorStartIndex - 1) + 1;
 
             const exception = raw[itemStart] === NEGATION_MARKER;
 

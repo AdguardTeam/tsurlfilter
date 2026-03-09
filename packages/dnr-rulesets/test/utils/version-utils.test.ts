@@ -1,10 +1,4 @@
-import {
-    describe,
-    expect,
-    it,
-    test,
-    vitest,
-} from 'vitest';
+import { describe, expect, it, test, vitest } from 'vitest';
 
 import { generatePatchVersion, generateTimestampFromVersion } from '../../src/utils/version-utils';
 

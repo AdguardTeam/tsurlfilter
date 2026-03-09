@@ -30,7 +30,7 @@ export const AdblockProduct = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type AdblockProduct = typeof AdblockProduct[keyof typeof AdblockProduct];
+export type AdblockProduct = (typeof AdblockProduct)[keyof typeof AdblockProduct];
 
 /**
  * Possible adblock syntaxes (supported by this library)
@@ -83,7 +83,7 @@ export const AdblockSyntax = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type AdblockSyntax = typeof AdblockSyntax[keyof typeof AdblockSyntax];
+export type AdblockSyntax = (typeof AdblockSyntax)[keyof typeof AdblockSyntax];
 
 /**
  * @deprecated Use AdblockProduct instead.

@@ -1,13 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeAll,
-    beforeEach,
-    afterEach,
-    it,
-    vi,
-    afterAll,
-} from 'vitest';
+import { describe, expect, beforeAll, beforeEach, afterEach, it, vi, afterAll } from 'vitest';
 import chrome from 'sinon-chrome';
 import { CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
@@ -39,8 +30,8 @@ const testScriptletFn = (): void => {
 };
 
 const getLocalScriptRulesFixture = (): LocalScriptFunctionData => ({
-    'console.log(\'script test from locale source\');': testScriptFn,
-    '//scriptlet(\'log\', \'scriptlet test from locale source\')': testScriptletFn,
+    "console.log('script test from locale source');": testScriptFn,
+    "//scriptlet('log', 'scriptlet test from locale source')": testScriptletFn,
 });
 
 const setupMocks = (
@@ -117,10 +108,12 @@ describe('TabsCosmeticInjector', () => {
             const customFilterId = CUSTOM_FILTERS_START_ID;
             const userFilterId = USER_FILTER_ID;
 
-            chrome.tabs.query.resolves([{
-                id: tabId,
-                url,
-            }]);
+            chrome.tabs.query.resolves([
+                {
+                    id: tabId,
+                    url,
+                },
+            ]);
 
             chrome.webNavigation.getAllFrames.resolves([{ frameId, url }]);
 

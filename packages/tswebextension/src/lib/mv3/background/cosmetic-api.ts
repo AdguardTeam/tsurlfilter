@@ -185,11 +185,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @returns Content script data for applying cosmetic.
      */
-    public static getContentScriptData(
-        frameUrl: string,
-        tabId: number,
-        frameId: number,
-    ): ContentScriptCosmeticData {
+    public static getContentScriptData(frameUrl: string, tabId: number, frameId: number): ContentScriptCosmeticData {
         const data: ContentScriptCosmeticData = {
             isAppStarted: false,
             areHitsStatsCollected: false,
@@ -214,8 +210,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         // Do not collect hits stats if website is allowlisted
-        const isDocumentAllowlisted = !!tabContext.mainFrameRule
-            && tabContext.mainFrameRule.isFilteringDisabled();
+        const isDocumentAllowlisted = !!tabContext.mainFrameRule && tabContext.mainFrameRule.isFilteringDisabled();
 
         data.areHitsStatsCollected = data.areHitsStatsCollected && !isDocumentAllowlisted;
 
@@ -223,15 +218,12 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const cosmeticResult = engineApi.matchCosmetic(matchQuery);
 
-        data.extCssRules = CosmeticApi.getExtCssRules(
-            cosmeticResult,
-            {
-                areHitsStatsCollected,
-                // always true for MV3
-                // since minimum version of mv3 browser already supports :has()
-                isNativeHasSupported: true,
-            },
-        );
+        data.extCssRules = CosmeticApi.getExtCssRules(cosmeticResult, {
+            areHitsStatsCollected,
+            // always true for MV3
+            // since minimum version of mv3 browser already supports :has()
+            isNativeHasSupported: true,
+        });
 
         return data;
     }
@@ -245,11 +237,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @returns A promise that resolves when the JS is injected.
      */
-    private static async applyJsFuncs(
-        tabId: number,
-        frameId: number,
-        scriptTexts: string[] = [],
-    ): Promise<void> {
+    private static async applyJsFuncs(tabId: number, frameId: number, scriptTexts: string[] = []): Promise<void> {
         if (scriptTexts.length === 0) {
             return;
         }
@@ -326,7 +314,10 @@ export class CosmeticApi extends CosmeticApiCommon {
                     scriptFunction: localScriptFunction,
                 });
             } catch (e) {
-                logger.info(`[tsweb.CosmeticApi.applyJsFuncs]: error occurred during injection into tabId ${tabId} and frameId ${frameId}: `, e);
+                logger.info(
+                    `[tsweb.CosmeticApi.applyJsFuncs]: error occurred during injection into tabId ${tabId} and frameId ${frameId}: `,
+                    e,
+                );
             }
         });
 
@@ -355,18 +346,22 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         // allSettled is used to ensure that all scriptlets will injected
         // even if some of them fail.
-        await Promise.allSettled(scriptletDataList.map(async (scriptletData) => {
-            try {
-                await ScriptingApi.executeScriptlet({
-                    tabId,
-                    frameId,
-                    scriptletData,
-                    domainName: getDomain(frameContextUrl),
-                });
-            } catch (e) {
-                logger.info(`[tsweb.CosmeticApi.applyScriptlets]: error occurred during injection to tabId ${tabId} and frameId ${frameId}: ${e}`);
-            }
-        }));
+        await Promise.allSettled(
+            scriptletDataList.map(async (scriptletData) => {
+                try {
+                    await ScriptingApi.executeScriptlet({
+                        tabId,
+                        frameId,
+                        scriptletData,
+                        domainName: getDomain(frameContextUrl),
+                    });
+                } catch (e) {
+                    logger.info(
+                        `[tsweb.CosmeticApi.applyScriptlets]: error occurred during injection to tabId ${tabId} and frameId ${frameId}: ${e}`,
+                    );
+                }
+            }),
+        );
     }
 
     /**
@@ -396,11 +391,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @returns A promise that resolves when the CSS is injected.
      */
-    private static async applyCss(
-        tabId: number,
-        frameId: number,
-        cssText: string | undefined,
-    ): Promise<void> {
+    private static async applyCss(tabId: number, frameId: number, cssText: string | undefined): Promise<void> {
         if (!cssText) {
             return;
         }
@@ -412,7 +403,10 @@ export class CosmeticApi extends CosmeticApiCommon {
                 frameId,
             });
         } catch (e) {
-            logger.info(`[tsweb.CosmeticApi.applyCss]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
+            logger.info(
+                `[tsweb.CosmeticApi.applyCss]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `,
+                e,
+            );
         }
     }
 
@@ -424,7 +418,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @returns Script rules which expected to be applied and logged.
      */
     private static filterScriptRulesForLog(params: LogJsRulesParamsMv3): CosmeticRule[] {
-        const { preparedCosmeticResult: { localRules, remoteRules } } = params;
+        const {
+            preparedCosmeticResult: { localRules, remoteRules },
+        } = params;
 
         // If User scripts API is enabled, we apply all script rules
         if (UserScriptsApi.isEnabled) {
@@ -502,7 +498,9 @@ export class CosmeticApi extends CosmeticApiCommon {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         if (!frameContext || !frameContext.preparedCosmeticResult) {
-            logger.debug(`[tsweb.CosmeticApi.applyCosmeticRules]: no prepared cosmetic result for tabId ${tabId} and frameId ${frameId}`);
+            logger.debug(
+                `[tsweb.CosmeticApi.applyCosmeticRules]: no prepared cosmetic result for tabId ${tabId} and frameId ${frameId}`,
+            );
             return [];
         }
 
@@ -513,17 +511,11 @@ export class CosmeticApi extends CosmeticApiCommon {
                 frameContext.preparedCosmeticResult.localRules,
                 frameContext.url,
             ),
-            CosmeticApi.applyRemoteCosmeticRules(
-                tabId,
-                frameId,
-                frameContext.preparedCosmeticResult.remoteRules,
-            ),
+            CosmeticApi.applyRemoteCosmeticRules(tabId, frameId, frameContext.preparedCosmeticResult.remoteRules),
         ];
 
         if (shouldApplyCss) {
-            tasks.push(
-                CosmeticApi.applyCss(tabId, frameId, frameContext.preparedCosmeticResult.cssText),
-            );
+            tasks.push(CosmeticApi.applyCss(tabId, frameId, frameContext.preparedCosmeticResult.cssText));
         }
 
         return Promise.allSettled(tasks);

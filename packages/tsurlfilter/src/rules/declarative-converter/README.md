@@ -1,4 +1,5 @@
 # Table of contents
+
 1. [Description](#description)
 1. [MV3 specific limitations](#mv3_specific_limitations)
     1. [$badfilter](#mv3_specific_limitations__$badfilter)
@@ -57,14 +58,11 @@
     1. [noop](#advanced_capabilities__noop)
     1. [$empty](#advanced_capabilities__$empty)
     1. [$mp4](#advanced_capabilities__$mp4)
-1. [Not supported in extension](#not_supported_in_extension)
-    1. [$hls (not supported in extension)](#not_supported_in_extension__$hls_(not_supported_in_extension))
-    1. [$jsonprune (not supported in extension)](#not_supported_in_extension__$jsonprune_(not_supported_in_extension))
-    1. [$network (not supported in extension)](#not_supported_in_extension__$network_(not_supported_in_extension))
-    1. [$app (not supported in extension)](#not_supported_in_extension__$app_(not_supported_in_extension))
-    1. [$extension (not supported in extension)](#not_supported_in_extension__$extension_(not_supported_in_extension))
-<a name="description"></a>
+1. [Not supported in extension](#not_supported_in_extension) 1. [$hls (not supported in extension)](<#not_supported_in_extension__$hls_(not_supported_in_extension)>) 1. [$jsonprune (not supported in extension)](<#not_supported_in_extension__$jsonprune_(not_supported_in_extension)>) 1. [$network (not supported in extension)](<#not_supported_in_extension__$network_(not_supported_in_extension)>) 1. [$app (not supported in extension)](<#not_supported_in_extension__$app_(not_supported_in_extension)>) 1. [$extension (not supported in extension)](<#not_supported_in_extension__$extension_(not_supported_in_extension)>)
+   <a name="description"></a>
+
 # Description
+
 This file contains examples of converting filter rules to new MV3 declarative
 rules and describes some MV3-specific limitations of the converted rules.
 For a full description of each modifier, see the knowledgebase https://adguard.com/kb/general/ad-filtering/create-own-filters.
@@ -72,15 +70,21 @@ For a full description of each modifier, see the knowledgebase https://adguard.c
 <br />
 
 <a name="mv3_specific_limitations"></a>
+
 # MV3 specific limitations
+
 <a name="mv3_specific_limitations__$badfilter"></a>
+
 ## $badfilter
+
 In current implementation rules with `$badfilter` works across all filters.
 From these three filters:
+
 ```adblock
 !filter 1
 ||example.org^
 ```
+
 ```adblock
 !filter 2
 ||example.com^
@@ -88,21 +92,23 @@ From these three filters:
 ||example.org^$badfilter
 ||persistent.com^
 ```
+
 ```adblock
 !filter3
 ||example.org^$badfilter
 ```
 
 Output result will contain only one rule:
+
 ```json
 {
-  "id": "<ruleId>",
-  "action": {"type": "block"},
-  "condition": {
-    "urlFilter": "||persistent.com^",
-    "isUrlFilterCaseSensitive": "false"
-  },
-  "priority": "1"
+    "id": "<ruleId>",
+    "action": { "type": "block" },
+    "condition": {
+        "urlFilter": "||persistent.com^",
+        "isUrlFilterCaseSensitive": "false"
+    },
+    "priority": "1"
 }
 ```
 
@@ -111,61 +117,78 @@ Output result will contain only one rule:
 display this in the declarative filtering log, as declarative rules are canceled.
 
 <a name="mv3_specific_limitations__$badfilter__problem_1"></a>
+
 ### Problem 1
+
 But current algorithm not covers rules with `$domain` instersections, for example,
 for these two rules:
+
 ```adblock
 /some$domain=example.com|example.org
 /some$domain=example.com,badfilter
 ```
+
 rule with `$badfilter` will fully negated first rule and output array of
 declarative rules will be empty.
 
 <a name="mv3_specific_limitations__$badfilter__problem_2"></a>
+
 ### Problem 2
+
 Also, sometimes, several raw rules combined into one declarative rules, for example:
+
 ```adblock
 ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
 ||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
 ```
+
 ↓↓↓↓ converted to ↓↓↓↓
+
 ```json
 {
-  "id": 1,
-  "action": {
-    "type": "redirect",
-    "redirect": {
-      "transform": {"queryTransform": {"removeParams": ["p1case1", "p2case1"]}}
-    }
-  },
-  "condition": {
-    "urlFilter": "||testcases.adguard.com",
-    "resourceTypes": ["xmlhttprequest"],
-    "isUrlFilterCaseSensitive": false
-  },
-  "priority": 101
+    "id": 1,
+    "action": {
+        "type": "redirect",
+        "redirect": {
+            "transform": { "queryTransform": { "removeParams": ["p1case1", "p2case1"] } }
+        }
+    },
+    "condition": {
+        "urlFilter": "||testcases.adguard.com",
+        "resourceTypes": ["xmlhttprequest"],
+        "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
 }
 ```
+
 If we add rule `||testcases.adguard.com$xmlhttprequest,removeparam=p2case1,badfilter`
 it will cancel not only one raw rule and regerate declarative, but cancel full
 (combined from two raw rules) declarative rule:
+
 ```adblock
 !filter 1
 ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
 ||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
 ```
+
 ```adblock
 !filter 2
 ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1,badfilter
 ```
+
 ↓↓↓↓ converted to ↓↓↓↓
+
 ```json
-{ }
+{}
 ```
 
 <a name="mv3_specific_limitations__allowrules"></a>
+
 ## allowrules
+
 Allowrules currently are not supported for these modifiers:
+
 1. some specific exceptions: `$genericblock`, `$jsinject`, `$urlblock`, `$content`, `$stealth`.
 1. `$redirect`
 1. `$removeparam`
@@ -173,9 +196,12 @@ Allowrules currently are not supported for these modifiers:
 1. `$csp`
 
 <a name="mv3_specific_limitations__$document"></a>
+
 ## $document
+
 During convertion process exception with $document modificator is expanded
 into `$elemhide,content,urlblock,jsinject` of which:
+
 - `$content` - not supported in the MV3,
 - `$elemhide` - supported,
 - `$jsinject` - not implemented yet,
@@ -185,19 +211,25 @@ So we still convert rules with `$document`, but only part with `$elemhide`
 will be applied.
 
 <a name="mv3_specific_limitations__$removeparam__$removeheader__$csp"></a>
+
 ## $removeparam, $removeheader, $csp
+
 Rules with `$removeparam` or `$removeheader` or `$csp` which contains the same
 conditions are combined into one rule only within one filter but not across
 different filters. Because of that, rules from different filter can conflict.
 
 <a name="mv3_specific_limitations__$redirect-rule"></a>
+
 ## $redirect-rule
+
 Not supported. Awaiting implementation: https://github.com/w3c/webextensions/issues/493.
 <br />
 <br />
 
 <a name="basic_examples"></a>
+
 # Basic examples
+
 Blocking by domain name
 
 ```adblock
@@ -208,19 +240,19 @@ Blocking by domain name
 
 ```json
 [
-  {
-    "id": 1164887431,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^"
-    },
-    "priority": 1
-  }
+    {
+        "id": 1164887431,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^"
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 Blocking exact address
 
 ```adblock
@@ -231,19 +263,19 @@ Blocking exact address
 
 ```json
 [
-  {
-    "id": 235727752,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "|http://example.org/"
-    },
-    "priority": 1
-  }
+    {
+        "id": 235727752,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "|http://example.org/"
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 Basic rule modifiers
 
 ```adblock
@@ -254,26 +286,22 @@ Basic rule modifiers
 
 ```json
 [
-  {
-    "id": 1713517238,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "domainType": "thirdParty",
-      "initiatorDomains": [
-        "example.com"
-      ],
-      "resourceTypes": [
-        "script"
-      ]
-    },
-    "priority": 302
-  }
+    {
+        "id": 1713517238,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "domainType": "thirdParty",
+            "initiatorDomains": ["example.com"],
+            "resourceTypes": ["script"]
+        },
+        "priority": 302
+    }
 ]
-
 ```
+
 Unblocking an address
 
 ```adblock
@@ -284,19 +312,19 @@ Unblocking an address
 
 ```json
 [
-  {
-    "id": 392632258,
-    "action": {
-      "type": "allow"
-    },
-    "condition": {
-      "urlFilter": "||example.org/banner"
-    },
-    "priority": 100001
-  }
+    {
+        "id": 392632258,
+        "action": {
+            "type": "allow"
+        },
+        "condition": {
+            "urlFilter": "||example.org/banner"
+        },
+        "priority": 100001
+    }
 ]
-
 ```
+
 Unblocking everything on a website
 
 ```adblock
@@ -307,22 +335,20 @@ Unblocking everything on a website
 
 ```json
 [
-  {
-    "id": 1371086540,
-    "action": {
-      "type": "allowAllRequests"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame"
-      ]
-    },
-    "priority": 140101
-  }
+    {
+        "id": 1371086540,
+        "action": {
+            "type": "allowAllRequests"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["main_frame"]
+        },
+        "priority": 140101
+    }
 ]
-
 ```
+
 Cosmetic rule will be ignored
 
 ```adblock
@@ -333,15 +359,19 @@ example.org##.banner
 
 ```json
 []
-
 ```
+
 <br />
 <br />
 
 <a name="basic_modifiers"></a>
+
 # Basic modifiers
+
 <a name="basic_modifiers__$denyallow"></a>
+
 ## $denyallow
+
 <b>Status</b>: supported
 <br/>
 <b>Examples:</b>
@@ -355,32 +385,26 @@ example.org##.banner
 
 ```json
 [
-  {
-    "id": 784875753,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "*",
-      "initiatorDomains": [
-        "a.com",
-        "b.com"
-      ],
-      "excludedRequestDomains": [
-        "x.com",
-        "y.com"
-      ],
-      "resourceTypes": [
-        "script"
-      ]
-    },
-    "priority": 252
-  }
+    {
+        "id": 784875753,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "*",
+            "initiatorDomains": ["a.com", "b.com"],
+            "excludedRequestDomains": ["x.com", "y.com"],
+            "resourceTypes": ["script"]
+        },
+        "priority": 252
+    }
 ]
-
 ```
+
 <a name="basic_modifiers__$domain"></a>
+
 ## $domain
+
 <b>Status</b>: partial supported
 <br/>
 <b>MV3 limitations:</b>
@@ -399,22 +423,20 @@ example 1
 
 ```json
 [
-  {
-    "id": 84369718,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||baddomain.com^",
-      "initiatorDomains": [
-        "example.org"
-      ]
-    },
-    "priority": 201
-  }
+    {
+        "id": 84369718,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||baddomain.com^",
+            "initiatorDomains": ["example.org"]
+        },
+        "priority": 201
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -425,23 +447,20 @@ example 2
 
 ```json
 [
-  {
-    "id": 1472686061,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||baddomain.com^",
-      "initiatorDomains": [
-        "example.org",
-        "example.com"
-      ]
-    },
-    "priority": 151
-  }
+    {
+        "id": 1472686061,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||baddomain.com^",
+            "initiatorDomains": ["example.org", "example.com"]
+        },
+        "priority": 151
+    }
 ]
-
 ```
+
 example 3
 
 ```adblock
@@ -452,22 +471,20 @@ example 3
 
 ```json
 [
-  {
-    "id": 1028264072,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||baddomain.com^",
-      "excludedInitiatorDomains": [
-        "example.org"
-      ]
-    },
-    "priority": 2
-  }
+    {
+        "id": 1028264072,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||baddomain.com^",
+            "excludedInitiatorDomains": ["example.org"]
+        },
+        "priority": 2
+    }
 ]
-
 ```
+
 example 4
 
 ```adblock
@@ -478,25 +495,21 @@ example 4
 
 ```json
 [
-  {
-    "id": 1726519168,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||baddomain.com^",
-      "initiatorDomains": [
-        "example.org"
-      ],
-      "excludedInitiatorDomains": [
-        "foo.example.org"
-      ]
-    },
-    "priority": 202
-  }
+    {
+        "id": 1726519168,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||baddomain.com^",
+            "initiatorDomains": ["example.org"],
+            "excludedInitiatorDomains": ["foo.example.org"]
+        },
+        "priority": 202
+    }
 ]
-
 ```
+
 example 5
 
 ```adblock
@@ -507,8 +520,8 @@ example 5
 
 ```json
 []
-
 ```
+
 example 6
 
 ```adblock
@@ -519,24 +532,20 @@ example 6
 
 ```json
 [
-  {
-    "id": 2005983163,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||baddomain.com^",
-      "excludedInitiatorDomains": [
-        "a.com",
-        "b.*",
-        "/(^\\|.+\\\\.)c\\\\.(com\\\\|org)\\\\$/"
-      ]
-    },
-    "priority": 2
-  }
+    {
+        "id": 2005983163,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||baddomain.com^",
+            "excludedInitiatorDomains": ["a.com", "b.*", "/(^\\|.+\\\\.)c\\\\.(com\\\\|org)\\\\$/"]
+        },
+        "priority": 2
+    }
 ]
-
 ```
+
 example 7
 
 ```adblock
@@ -547,49 +556,46 @@ example 7
 
 ```json
 [
-  {
-    "id": 1907909817,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "operation": "remove",
-          "header": "Set-Cookie"
-        }
-      ],
-      "requestHeaders": [
-        {
-          "operation": "remove",
-          "header": "Cookie"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "*",
-      "initiatorDomains": [
-        "example.org",
-        "example.com"
-      ],
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 151
-  }
+    {
+        "id": 1907909817,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "operation": "remove",
+                    "header": "Set-Cookie"
+                }
+            ],
+            "requestHeaders": [
+                {
+                    "operation": "remove",
+                    "header": "Cookie"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "*",
+            "initiatorDomains": ["example.org", "example.com"],
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 151
+    }
 ]
-
 ```
+
 example 8
 
 ```adblock
@@ -600,26 +606,21 @@ example 8
 
 ```json
 [
-  {
-    "id": 501213106,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "*",
-      "initiatorDomains": [
-        "example.org",
-        "example.com"
-      ],
-      "resourceTypes": [
-        "main_frame"
-      ]
-    },
-    "priority": 251
-  }
+    {
+        "id": 501213106,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "*",
+            "initiatorDomains": ["example.org", "example.com"],
+            "resourceTypes": ["main_frame"]
+        },
+        "priority": 251
+    }
 ]
-
 ```
+
 example 9
 
 ```adblock
@@ -630,22 +631,20 @@ page$domain=example.org
 
 ```json
 [
-  {
-    "id": 333660819,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "page",
-      "initiatorDomains": [
-        "example.org"
-      ]
-    },
-    "priority": 201
-  }
+    {
+        "id": 333660819,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "page",
+            "initiatorDomains": ["example.org"]
+        },
+        "priority": 201
+    }
 ]
-
 ```
+
 example 10
 
 ```adblock
@@ -656,22 +655,20 @@ page$domain=targetdomain.com
 
 ```json
 [
-  {
-    "id": 1796222577,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "page",
-      "initiatorDomains": [
-        "targetdomain.com"
-      ]
-    },
-    "priority": 201
-  }
+    {
+        "id": 1796222577,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "page",
+            "initiatorDomains": ["targetdomain.com"]
+        },
+        "priority": 201
+    }
 ]
-
 ```
+
 example 11
 
 ```adblock
@@ -682,22 +679,20 @@ example 11
 
 ```json
 [
-  {
-    "id": 174286971,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "*page",
-      "initiatorDomains": [
-        "targetdomain.com"
-      ]
-    },
-    "priority": 201
-  }
+    {
+        "id": 174286971,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "*page",
+            "initiatorDomains": ["targetdomain.com"]
+        },
+        "priority": 201
+    }
 ]
-
 ```
+
 example 12
 
 ```adblock
@@ -708,48 +703,46 @@ example 12
 
 ```json
 [
-  {
-    "id": 2074667603,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "operation": "remove",
-          "header": "Set-Cookie"
-        }
-      ],
-      "requestHeaders": [
-        {
-          "operation": "remove",
-          "header": "Cookie"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "*page",
-      "initiatorDomains": [
-        "targetdomain.com"
-      ],
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 201
-  }
+    {
+        "id": 2074667603,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "operation": "remove",
+                    "header": "Set-Cookie"
+                }
+            ],
+            "requestHeaders": [
+                {
+                    "operation": "remove",
+                    "header": "Cookie"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "*page",
+            "initiatorDomains": ["targetdomain.com"],
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 201
+    }
 ]
-
 ```
+
 example 13
 
 ```adblock
@@ -760,8 +753,8 @@ example 13
 
 ```json
 []
-
 ```
+
 example 14
 
 ```adblock
@@ -772,27 +765,25 @@ page$domain=targetdomain.com|~example.org
 
 ```json
 [
-  {
-    "id": 1227814031,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "page",
-      "initiatorDomains": [
-        "targetdomain.com"
-      ],
-      "excludedInitiatorDomains": [
-        "example.org"
-      ]
-    },
-    "priority": 202
-  }
+    {
+        "id": 1227814031,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "page",
+            "initiatorDomains": ["targetdomain.com"],
+            "excludedInitiatorDomains": ["example.org"]
+        },
+        "priority": 202
+    }
 ]
-
 ```
+
 <a name="basic_modifiers__$header"></a>
+
 ## $header
+
 <b>Status</b>: supported
 <br/>
 <b>MV3 limitations:</b>
@@ -811,27 +802,25 @@ example 1
 
 ```json
 [
-  {
-    "id": 421081933,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.com^",
-      "responseHeaders": [
-        {
-          "header": "set-cookie",
-          "values": [
-            "foo"
-          ]
-        }
-      ]
-    },
-    "priority": 51
-  }
+    {
+        "id": 421081933,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.com^",
+            "responseHeaders": [
+                {
+                    "header": "set-cookie",
+                    "values": ["foo"]
+                }
+            ]
+        },
+        "priority": 51
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -842,24 +831,24 @@ example 2
 
 ```json
 [
-  {
-    "id": 1208366321,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.com^",
-      "responseHeaders": [
-        {
-          "header": "set-cookie"
-        }
-      ]
-    },
-    "priority": 51
-  }
+    {
+        "id": 1208366321,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.com^",
+            "responseHeaders": [
+                {
+                    "header": "set-cookie"
+                }
+            ]
+        },
+        "priority": 51
+    }
 ]
-
 ```
+
 example 3
 
 ```adblock
@@ -870,8 +859,8 @@ example 3
 
 ```json
 []
-
 ```
+
 example 4
 
 ```adblock
@@ -882,26 +871,28 @@ example 4
 
 ```json
 [
-  {
-    "id": 1089880753,
-    "action": {
-      "type": "allow"
-    },
-    "condition": {
-      "urlFilter": "||example.com^",
-      "responseHeaders": [
-        {
-          "header": "set-cookie"
-        }
-      ]
-    },
-    "priority": 100051
-  }
+    {
+        "id": 1089880753,
+        "action": {
+            "type": "allow"
+        },
+        "condition": {
+            "urlFilter": "||example.com^",
+            "responseHeaders": [
+                {
+                    "header": "set-cookie"
+                }
+            ]
+        },
+        "priority": 100051
+    }
 ]
-
 ```
+
 <a name="basic_modifiers__$important"></a>
+
 ## $important
+
 <b>Status</b>: supported
 <br/>
 <b>Examples:</b>
@@ -919,29 +910,29 @@ blocking rule will block all requests despite of the exception rule
 
 ```json
 [
-  {
-    "id": 511809861,
-    "action": {
-      "type": "block"
+    {
+        "id": 511809861,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^"
+        },
+        "priority": 1000001
     },
-    "condition": {
-      "urlFilter": "||example.org^"
-    },
-    "priority": 1000001
-  },
-  {
-    "id": 72917959,
-    "action": {
-      "type": "allow"
-    },
-    "condition": {
-      "urlFilter": "||example.org^"
-    },
-    "priority": 100001
-  }
+    {
+        "id": 72917959,
+        "action": {
+            "type": "allow"
+        },
+        "condition": {
+            "urlFilter": "||example.org^"
+        },
+        "priority": 100001
+    }
 ]
-
 ```
+
 example 2.
 <br/>
 if the exception rule also has `$important` modifier it will prevail,
@@ -956,29 +947,29 @@ so no requests will not be blocked
 
 ```json
 [
-  {
-    "id": 511809861,
-    "action": {
-      "type": "block"
+    {
+        "id": 511809861,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^"
+        },
+        "priority": 1000001
     },
-    "condition": {
-      "urlFilter": "||example.org^"
-    },
-    "priority": 1000001
-  },
-  {
-    "id": 230819845,
-    "action": {
-      "type": "allow"
-    },
-    "condition": {
-      "urlFilter": "||example.org^"
-    },
-    "priority": 1100001
-  }
+    {
+        "id": 230819845,
+        "action": {
+            "type": "allow"
+        },
+        "condition": {
+            "urlFilter": "||example.org^"
+        },
+        "priority": 1100001
+    }
 ]
-
 ```
+
 example 3.
 <br/>
 if a document-level exception rule is applied to the document,
@@ -995,34 +986,34 @@ the blocking rule will not be applied despite it has the `$important` modifier
 
 ```json
 [
-  {
-    "id": 511809861,
-    "action": {
-      "type": "block"
+    {
+        "id": 511809861,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^"
+        },
+        "priority": 1000001
     },
-    "condition": {
-      "urlFilter": "||example.org^"
-    },
-    "priority": 1000001
-  },
-  {
-    "id": 919249042,
-    "action": {
-      "type": "allowAllRequests"
-    },
-    "condition": {
-      "urlFilter": "||test.org^",
-      "resourceTypes": [
-        "main_frame"
-      ]
-    },
-    "priority": 140101
-  }
+    {
+        "id": 919249042,
+        "action": {
+            "type": "allowAllRequests"
+        },
+        "condition": {
+            "urlFilter": "||test.org^",
+            "resourceTypes": ["main_frame"]
+        },
+        "priority": 140101
+    }
 ]
-
 ```
+
 <a name="basic_modifiers__$match-case"></a>
+
 ## $match-case
+
 <b>Status</b>: supported
 <br/>
 <b>Examples:</b>
@@ -1036,22 +1027,24 @@ the blocking rule will not be applied despite it has the `$important` modifier
 
 ```json
 [
-  {
-    "id": 1110597017,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "*/BannerAd.gif",
-      "isUrlFilterCaseSensitive": true
-    },
-    "priority": 2
-  }
+    {
+        "id": 1110597017,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "*/BannerAd.gif",
+            "isUrlFilterCaseSensitive": true
+        },
+        "priority": 2
+    }
 ]
-
 ```
+
 <a name="basic_modifiers__$method"></a>
+
 ## $method
+
 <b>Status</b>: supported
 <br/>
 <b>Examples:</b>
@@ -1066,37 +1059,34 @@ example 1
 
 ```json
 [
-  {
-    "id": 1114350918,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||evil.com^",
-      "requestMethods": [
-        "get",
-        "head"
-      ],
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 76
-  }
+    {
+        "id": 1114350918,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||evil.com^",
+            "requestMethods": ["get", "head"],
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 76
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -1107,37 +1097,34 @@ example 2
 
 ```json
 [
-  {
-    "id": 1258462993,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||evil.com^",
-      "excludedRequestMethods": [
-        "post",
-        "put"
-      ],
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 2
-  }
+    {
+        "id": 1258462993,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||evil.com^",
+            "excludedRequestMethods": ["post", "put"],
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 2
+    }
 ]
-
 ```
+
 example 3
 
 ```adblock
@@ -1148,36 +1135,34 @@ example 3
 
 ```json
 [
-  {
-    "id": 2062111308,
-    "action": {
-      "type": "allow"
-    },
-    "condition": {
-      "urlFilter": "||evil.com",
-      "requestMethods": [
-        "get"
-      ],
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 100101
-  }
+    {
+        "id": 2062111308,
+        "action": {
+            "type": "allow"
+        },
+        "condition": {
+            "urlFilter": "||evil.com",
+            "requestMethods": ["get"],
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 100101
+    }
 ]
-
 ```
+
 example 4
 
 ```adblock
@@ -1188,38 +1173,38 @@ example 4
 
 ```json
 [
-  {
-    "id": 1492162332,
-    "action": {
-      "type": "allow"
-    },
-    "condition": {
-      "urlFilter": "||evil.com",
-      "excludedRequestMethods": [
-        "post"
-      ],
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 100002
-  }
+    {
+        "id": 1492162332,
+        "action": {
+            "type": "allow"
+        },
+        "condition": {
+            "urlFilter": "||evil.com",
+            "excludedRequestMethods": ["post"],
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 100002
+    }
 ]
-
 ```
+
 <a name="basic_modifiers__$popup"></a>
+
 ## $popup
+
 <b>Status</b>: not implemented yet
 <br/>
 <b>MV3 limitations:</b>
@@ -1238,10 +1223,12 @@ the content-script side
 
 ```json
 []
-
 ```
+
 <a name="basic_modifiers__$third-party"></a>
+
 ## $third-party
+
 <b>Status</b>: supported
 <br/>
 <b>Examples:</b>
@@ -1256,20 +1243,20 @@ example 1
 
 ```json
 [
-  {
-    "id": 1436362672,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||domain.com^",
-      "domainType": "thirdParty"
-    },
-    "priority": 2
-  }
+    {
+        "id": 1436362672,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||domain.com^",
+            "domainType": "thirdParty"
+        },
+        "priority": 2
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -1280,22 +1267,24 @@ example 2
 
 ```json
 [
-  {
-    "id": 1913648592,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||domain.com",
-      "domainType": "firstParty"
-    },
-    "priority": 2
-  }
+    {
+        "id": 1913648592,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||domain.com",
+            "domainType": "firstParty"
+        },
+        "priority": 2
+    }
 ]
-
 ```
+
 <a name="basic_modifiers__$to"></a>
+
 ## $to
+
 <b>Status</b>: supported
 <br/>
 <b>Examples:</b>
@@ -1310,37 +1299,34 @@ example 1
 
 ```json
 [
-  {
-    "id": 620704825,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "/ads",
-      "requestDomains": [
-        "evil.com",
-        "evil.org"
-      ],
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 2
-  }
+    {
+        "id": 620704825,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "/ads",
+            "requestDomains": ["evil.com", "evil.org"],
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 2
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -1351,39 +1337,35 @@ example 2
 
 ```json
 [
-  {
-    "id": 204054023,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "/ads",
-      "requestDomains": [
-        "evil.com"
-      ],
-      "excludedRequestDomains": [
-        "not.evil.com"
-      ],
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 2
-  }
+    {
+        "id": 204054023,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "/ads",
+            "requestDomains": ["evil.com"],
+            "excludedRequestDomains": ["not.evil.com"],
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 2
+    }
 ]
-
 ```
+
 example 3
 
 ```adblock
@@ -1394,42 +1376,41 @@ example 3
 
 ```json
 [
-  {
-    "id": 894146649,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "/ads",
-      "excludedRequestDomains": [
-        "good.com",
-        "good.org"
-      ],
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 2
-  }
+    {
+        "id": 894146649,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "/ads",
+            "excludedRequestDomains": ["good.com", "good.org"],
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 2
+    }
 ]
-
 ```
+
 <br />
 <br />
 
 <a name="content_type_modifiers"></a>
+
 # Content type modifiers
+
 <b>Status</b>: all content type modifiers supported, except deprecated $webrtc and $object-subrequest.
 <br/>
 <b>Examples:</b>
@@ -1444,22 +1425,20 @@ example 1
 
 ```json
 [
-  {
-    "id": 2006907332,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "image"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 2006907332,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["image"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -1470,23 +1449,20 @@ example 2
 
 ```json
 [
-  {
-    "id": 729333272,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "stylesheet",
-        "script"
-      ]
-    },
-    "priority": 76
-  }
+    {
+        "id": 729333272,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["stylesheet", "script"]
+        },
+        "priority": 76
+    }
 ]
-
 ```
+
 example 3
 
 ```adblock
@@ -1497,27 +1473,24 @@ example 3
 
 ```json
 [
-  {
-    "id": 2054755245,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "excludedResourceTypes": [
-        "stylesheet",
-        "script",
-        "image",
-        "main_frame"
-      ]
-    },
-    "priority": 2
-  }
+    {
+        "id": 2054755245,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "excludedResourceTypes": ["stylesheet", "script", "image", "main_frame"]
+        },
+        "priority": 2
+    }
 ]
-
 ```
+
 <a name="content_type_modifiers__$document"></a>
+
 ## $document
+
 example 1
 
 ```adblock
@@ -1528,22 +1501,20 @@ example 1
 
 ```json
 [
-  {
-    "id": 1493888951,
-    "action": {
-      "type": "allowAllRequests"
-    },
-    "condition": {
-      "urlFilter": "||example.com^",
-      "resourceTypes": [
-        "main_frame"
-      ]
-    },
-    "priority": 140101
-  }
+    {
+        "id": 1493888951,
+        "action": {
+            "type": "allowAllRequests"
+        },
+        "condition": {
+            "urlFilter": "||example.com^",
+            "resourceTypes": ["main_frame"]
+        },
+        "priority": 140101
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -1554,8 +1525,8 @@ example 2
 
 ```json
 []
-
 ```
+
 example 3
 
 ```adblock
@@ -1566,22 +1537,20 @@ example 3
 
 ```json
 [
-  {
-    "id": 1562061175,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.com^",
-      "resourceTypes": [
-        "main_frame"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 1562061175,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.com^",
+            "resourceTypes": ["main_frame"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 example 4
 
 ```adblock
@@ -1592,25 +1561,23 @@ example 4
 
 ```json
 [
-  {
-    "id": 216615167,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/noopframe.html"
-      }
-    },
-    "condition": {
-      "urlFilter": "||example.com^",
-      "resourceTypes": [
-        "main_frame"
-      ]
-    },
-    "priority": 1101
-  }
+    {
+        "id": 216615167,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/noopframe.html"
+            }
+        },
+        "condition": {
+            "urlFilter": "||example.com^",
+            "resourceTypes": ["main_frame"]
+        },
+        "priority": 1101
+    }
 ]
-
 ```
+
 example 5
 
 ```adblock
@@ -1621,31 +1588,27 @@ example 5
 
 ```json
 [
-  {
-    "id": 588584217,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "transform": {
-          "queryTransform": {
-            "removeParams": [
-              "test"
-            ]
-          }
-        }
-      }
-    },
-    "condition": {
-      "urlFilter": "||example.com^",
-      "resourceTypes": [
-        "main_frame"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 588584217,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "transform": {
+                    "queryTransform": {
+                        "removeParams": ["test"]
+                    }
+                }
+            }
+        },
+        "condition": {
+            "urlFilter": "||example.com^",
+            "resourceTypes": ["main_frame"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 example 6
 
 ```adblock
@@ -1656,9 +1619,10 @@ example 6
 
 ```json
 []
-
 ```
+
 <a name="content_type_modifiers__$image"></a>
+
 ## $image
 
 ```adblock
@@ -1669,23 +1633,22 @@ example 6
 
 ```json
 [
-  {
-    "id": 2006907332,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "image"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 2006907332,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["image"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 <a name="content_type_modifiers__$stylesheet"></a>
+
 ## $stylesheet
 
 ```adblock
@@ -1696,23 +1659,22 @@ example 6
 
 ```json
 [
-  {
-    "id": 991157915,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "stylesheet"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 991157915,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["stylesheet"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 <a name="content_type_modifiers__$script"></a>
+
 ## $script
 
 ```adblock
@@ -1723,23 +1685,22 @@ example 6
 
 ```json
 [
-  {
-    "id": 1897769964,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "script"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 1897769964,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["script"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 <a name="content_type_modifiers__$object"></a>
+
 ## $object
 
 ```adblock
@@ -1750,23 +1711,22 @@ example 6
 
 ```json
 [
-  {
-    "id": 1733424982,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "object"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 1733424982,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["object"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 <a name="content_type_modifiers__$font"></a>
+
 ## $font
 
 ```adblock
@@ -1777,23 +1737,22 @@ example 6
 
 ```json
 [
-  {
-    "id": 450886864,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "font"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 450886864,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["font"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 <a name="content_type_modifiers__$media"></a>
+
 ## $media
 
 ```adblock
@@ -1804,24 +1763,24 @@ example 6
 
 ```json
 [
-  {
-    "id": 2011662663,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "media"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 2011662663,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["media"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 <a name="content_type_modifiers__$subdocument"></a>
+
 ## $subdocument
+
 example 1
 
 ```adblock
@@ -1832,22 +1791,20 @@ example 1
 
 ```json
 [
-  {
-    "id": 542689075,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.com^",
-      "resourceTypes": [
-        "sub_frame"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 542689075,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.com^",
+            "resourceTypes": ["sub_frame"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -1858,26 +1815,23 @@ example 2
 
 ```json
 [
-  {
-    "id": 1411625229,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.com^",
-      "initiatorDomains": [
-        "domain.com"
-      ],
-      "resourceTypes": [
-        "sub_frame"
-      ]
-    },
-    "priority": 301
-  }
+    {
+        "id": 1411625229,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.com^",
+            "initiatorDomains": ["domain.com"],
+            "resourceTypes": ["sub_frame"]
+        },
+        "priority": 301
+    }
 ]
-
 ```
+
 <a name="content_type_modifiers__$ping"></a>
+
 ## $ping
 
 ```adblock
@@ -1888,23 +1842,22 @@ example 2
 
 ```json
 [
-  {
-    "id": 451535635,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "ping"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 451535635,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["ping"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 <a name="content_type_modifiers__$xmlhttprequest"></a>
+
 ## $xmlhttprequest
 
 ```adblock
@@ -1915,23 +1868,22 @@ example 2
 
 ```json
 [
-  {
-    "id": 11366835,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "xmlhttprequest"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 11366835,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["xmlhttprequest"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 <a name="content_type_modifiers__$websocket"></a>
+
 ## $websocket
 
 ```adblock
@@ -1942,24 +1894,24 @@ example 2
 
 ```json
 [
-  {
-    "id": 670909846,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "websocket"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 670909846,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["websocket"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 <a name="content_type_modifiers__$webrtc"></a>
+
 ## $webrtc
+
 <b>Status</b>: not supported
 <br/>
 example 1
@@ -1972,8 +1924,8 @@ example 1
 
 ```json
 []
-
 ```
+
 example 2
 
 ```adblock
@@ -1984,9 +1936,10 @@ example 2
 
 ```json
 []
-
 ```
+
 <a name="content_type_modifiers__$other"></a>
+
 ## $other
 
 ```adblock
@@ -1997,29 +1950,31 @@ example 2
 
 ```json
 [
-  {
-    "id": 2005282727,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "other"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 2005282727,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["other"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 <br />
 <br />
 
 <a name="exception_rules_modifiers"></a>
+
 # Exception rules modifiers
+
 <a name="exception_rules_modifiers__$content"></a>
+
 ## $content
+
 <b>Status</b>: not supported in MV3
 <br/>
 <b>Examples:</b>
@@ -2033,10 +1988,12 @@ example 2
 
 ```json
 []
-
 ```
+
 <a name="exception_rules_modifiers__$elemhide"></a>
+
 ## $elemhide
+
 <b>Status</b>: supported but not converted.
 <br/>
 <b>MV3 limitations:</b>
@@ -2054,10 +2011,12 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 
 ```json
 []
-
 ```
+
 <a name="exception_rules_modifiers__$jsinject"></a>
+
 ## $jsinject
+
 <b>Status</b>: not implemented yet
 <br/>
 <b>Examples:</b>
@@ -2071,10 +2030,12 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 
 ```json
 []
-
 ```
+
 <a name="exception_rules_modifiers__$stealth"></a>
+
 ## $stealth
+
 <b>Status</b>: not implemented yet
 <br/>
 <b>Examples:</b>
@@ -2089,8 +2050,8 @@ example 1
 
 ```json
 []
-
 ```
+
 example 2
 
 ```adblock
@@ -2101,10 +2062,12 @@ example 2
 
 ```json
 []
-
 ```
+
 <a name="exception_rules_modifiers__$urlblock"></a>
+
 ## $urlblock
+
 <b>Status</b>: not implemented yet
 <br/>
 <b>Examples:</b>
@@ -2118,10 +2081,12 @@ example 2
 
 ```json
 []
-
 ```
+
 <a name="exception_rules_modifiers__$genericblock"></a>
+
 ## $genericblock
+
 <b>Status</b>: not implemented yet
 <br/>
 <b>Examples:</b>
@@ -2135,10 +2100,12 @@ example 2
 
 ```json
 []
-
 ```
+
 <a name="exception_rules_modifiers__$generichide"></a>
+
 ## $generichide
+
 <b>Status</b>: supported but not converted.
 <br/>
 <b>MV3 limitations:</b>
@@ -2156,10 +2123,12 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 
 ```json
 []
-
 ```
+
 <a name="exception_rules_modifiers__$specifichide"></a>
+
 ## $specifichide
+
 <b>Status</b>: supported but not converted.
 <br/>
 <b>MV3 limitations:</b>
@@ -2177,15 +2146,19 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 
 ```json
 []
-
 ```
+
 <br />
 <br />
 
 <a name="advanced_capabilities"></a>
+
 # Advanced capabilities
+
 <a name="advanced_capabilities__$all"></a>
+
 ## $all
+
 <b>Status</b>: supported
 <br/>
 <b>Examples:</b>
@@ -2199,35 +2172,37 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 
 ```json
 [
-  {
-    "id": 1119946050,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 55
-  }
+    {
+        "id": 1119946050,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 55
+    }
 ]
-
 ```
+
 <a name="advanced_capabilities__$badfilter"></a>
+
 ## $badfilter
+
 <b>Status</b>: partial support
 <br/>
 <b>MV3 limitations:</b>
@@ -2248,8 +2223,8 @@ example 1
 
 ```json
 []
-
 ```
+
 example 2
 
 ```adblock
@@ -2261,19 +2236,19 @@ example 2
 
 ```json
 [
-  {
-    "id": 1679924937,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.com,image"
-    },
-    "priority": 1
-  }
+    {
+        "id": 1679924937,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.com,image"
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 example 3
 
 ```adblock
@@ -2285,8 +2260,8 @@ example 3
 
 ```json
 []
-
 ```
+
 example 4
 
 ```adblock
@@ -2298,8 +2273,8 @@ example 4
 
 ```json
 []
-
 ```
+
 example 5
 
 ```adblock
@@ -2311,8 +2286,8 @@ example 5
 
 ```json
 []
-
 ```
+
 example 6
 
 ```adblock
@@ -2324,8 +2299,8 @@ example 6
 
 ```json
 []
-
 ```
+
 example 7
 
 ```adblock
@@ -2337,8 +2312,8 @@ example 7
 
 ```json
 []
-
 ```
+
 example 8
 
 ```adblock
@@ -2350,24 +2325,20 @@ example 8
 
 ```json
 [
-  {
-    "id": 1019790748,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "/some",
-      "initiatorDomains": [
-        "example.com",
-        "example.org",
-        "example.io"
-      ]
-    },
-    "priority": 135
-  }
+    {
+        "id": 1019790748,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "/some",
+            "initiatorDomains": ["example.com", "example.org", "example.io"]
+        },
+        "priority": 135
+    }
 ]
-
 ```
+
 example 9
 
 ```adblock
@@ -2379,8 +2350,8 @@ example 9
 
 ```json
 []
-
 ```
+
 example 10
 
 ```adblock
@@ -2392,26 +2363,24 @@ example 10
 
 ```json
 [
-  {
-    "id": 1019790748,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "/some",
-      "initiatorDomains": [
-        "example.com",
-        "example.org",
-        "example.io"
-      ]
-    },
-    "priority": 135
-  }
+    {
+        "id": 1019790748,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "/some",
+            "initiatorDomains": ["example.com", "example.org", "example.io"]
+        },
+        "priority": 135
+    }
 ]
-
 ```
+
 <a name="advanced_capabilities__$cookie"></a>
+
 ## $cookie
+
 <b>Status</b>: supported
 <br/>
 <b>MV3 limitations:</b>
@@ -2430,8 +2399,8 @@ example 1
 
 ```json
 []
-
 ```
+
 example 2
 
 ```adblock
@@ -2442,45 +2411,45 @@ example 2
 
 ```json
 [
-  {
-    "id": 1285736871,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "operation": "remove",
-          "header": "Set-Cookie"
-        }
-      ],
-      "requestHeaders": [
-        {
-          "operation": "remove",
-          "header": "Cookie"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 1
-  }
+    {
+        "id": 1285736871,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "operation": "remove",
+                    "header": "Set-Cookie"
+                }
+            ],
+            "requestHeaders": [
+                {
+                    "operation": "remove",
+                    "header": "Cookie"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 example 3
 
 ```adblock
@@ -2491,8 +2460,8 @@ example 3
 
 ```json
 []
-
 ```
+
 example 4
 
 ```adblock
@@ -2503,8 +2472,8 @@ example 4
 
 ```json
 []
-
 ```
+
 example 5
 
 ```adblock
@@ -2515,8 +2484,8 @@ example 5
 
 ```json
 []
-
 ```
+
 example 6
 
 ```adblock
@@ -2527,8 +2496,8 @@ example 6
 
 ```json
 []
-
 ```
+
 example 7
 
 ```adblock
@@ -2539,8 +2508,8 @@ example 7
 
 ```json
 []
-
 ```
+
 example 8
 
 ```adblock
@@ -2551,8 +2520,8 @@ $cookie=__cfduid
 
 ```json
 []
-
 ```
+
 example 9
 
 ```adblock
@@ -2563,8 +2532,8 @@ $cookie=/__utm[a-z]/
 
 ```json
 []
-
 ```
+
 example 10
 
 ```adblock
@@ -2575,10 +2544,12 @@ example 10
 
 ```json
 []
-
 ```
+
 <a name="advanced_capabilities__$csp"></a>
+
 ## $csp
+
 <b>Status</b>: supported
 <br/>
 <b>MV3 limitations:</b>
@@ -2601,40 +2572,40 @@ example 1
 
 ```json
 [
-  {
-    "id": 1383463238,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "operation": "append",
-          "header": "Content-Security-Policy",
-          "value": "frame-src 'none'"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 1
-  }
+    {
+        "id": 1383463238,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "operation": "append",
+                    "header": "Content-Security-Policy",
+                    "value": "frame-src 'none'"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -2645,8 +2616,8 @@ example 2
 
 ```json
 []
-
 ```
+
 example 3
 
 ```adblock
@@ -2657,8 +2628,8 @@ example 3
 
 ```json
 []
-
 ```
+
 example 4
 
 ```adblock
@@ -2669,40 +2640,40 @@ example 4
 
 ```json
 [
-  {
-    "id": 1615117704,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "operation": "append",
-          "header": "Content-Security-Policy",
-          "value": "script-src 'self' 'unsafe-eval' http: https:"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 1
-  }
+    {
+        "id": 1615117704,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "operation": "append",
+                    "header": "Content-Security-Policy",
+                    "value": "script-src 'self' 'unsafe-eval' http: https:"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 example 5
 
 ```adblock
@@ -2714,55 +2685,55 @@ example 5
 
 ```json
 [
-  {
-    "id": 1371086540,
-    "action": {
-      "type": "allowAllRequests"
+    {
+        "id": 1371086540,
+        "action": {
+            "type": "allowAllRequests"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["main_frame"]
+        },
+        "priority": 140101
     },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame"
-      ]
-    },
-    "priority": 140101
-  },
-  {
-    "id": 1615117704,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "operation": "append",
-          "header": "Content-Security-Policy",
-          "value": "script-src 'self' 'unsafe-eval' http: https:"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 1
-  }
+    {
+        "id": 1615117704,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "operation": "append",
+                    "header": "Content-Security-Policy",
+                    "value": "script-src 'self' 'unsafe-eval' http: https:"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 <a name="advanced_capabilities__$permissions"></a>
+
 ## $permissions
+
 <b>Status</b>: supported
 <br/>
 <b>MV3 limitations:</b>
@@ -2781,30 +2752,27 @@ example 1
 
 ```json
 [
-  {
-    "id": 1329901298,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "operation": "append",
-          "header": "Permissions-Policy",
-          "value": "sync-xhr=()"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame"
-      ]
-    },
-    "priority": 1
-  }
+    {
+        "id": 1329901298,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "operation": "append",
+                    "header": "Permissions-Policy",
+                    "value": "sync-xhr=()"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["main_frame", "sub_frame"]
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -2815,23 +2783,20 @@ example 2
 
 ```json
 [
-  {
-    "id": 1263119637,
-    "action": {
-      "type": "allow"
-    },
-    "condition": {
-      "urlFilter": "||example.org/page/*",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame"
-      ]
-    },
-    "priority": 100001
-  }
+    {
+        "id": 1263119637,
+        "action": {
+            "type": "allow"
+        },
+        "condition": {
+            "urlFilter": "||example.org/page/*",
+            "resourceTypes": ["main_frame", "sub_frame"]
+        },
+        "priority": 100001
+    }
 ]
-
 ```
+
 example 3
 
 ```adblock
@@ -2842,23 +2807,20 @@ example 3
 
 ```json
 [
-  {
-    "id": 1255367548,
-    "action": {
-      "type": "allow"
-    },
-    "condition": {
-      "urlFilter": "||example.org/page/*",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame"
-      ]
-    },
-    "priority": 100001
-  }
+    {
+        "id": 1255367548,
+        "action": {
+            "type": "allow"
+        },
+        "condition": {
+            "urlFilter": "||example.org/page/*",
+            "resourceTypes": ["main_frame", "sub_frame"]
+        },
+        "priority": 100001
+    }
 ]
-
 ```
+
 example 4
 
 ```adblock
@@ -2869,33 +2831,27 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
 
 ```json
 [
-  {
-    "id": 728168398,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "operation": "append",
-          "header": "Permissions-Policy",
-          "value": "oversized-images=(), sync-script=(), unsized-media=()"
-        }
-      ]
-    },
-    "condition": {
-      "initiatorDomains": [
-        "example.org",
-        "example.com"
-      ],
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame"
-      ]
-    },
-    "priority": 151
-  }
+    {
+        "id": 728168398,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "operation": "append",
+                    "header": "Permissions-Policy",
+                    "value": "oversized-images=(), sync-script=(), unsized-media=()"
+                }
+            ]
+        },
+        "condition": {
+            "initiatorDomains": ["example.org", "example.com"],
+            "resourceTypes": ["main_frame", "sub_frame"]
+        },
+        "priority": 151
+    }
 ]
-
 ```
+
 example 5
 
 ```adblock
@@ -2907,45 +2863,42 @@ example 5
 
 ```json
 [
-  {
-    "id": 1329901298,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "operation": "append",
-          "header": "Permissions-Policy",
-          "value": "sync-xhr=()"
-        }
-      ]
+    {
+        "id": 1329901298,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "operation": "append",
+                    "header": "Permissions-Policy",
+                    "value": "sync-xhr=()"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["main_frame", "sub_frame"]
+        },
+        "priority": 1
     },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame"
-      ]
-    },
-    "priority": 1
-  },
-  {
-    "id": 1371086540,
-    "action": {
-      "type": "allowAllRequests"
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame"
-      ]
-    },
-    "priority": 140101
-  }
+    {
+        "id": 1371086540,
+        "action": {
+            "type": "allowAllRequests"
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["main_frame"]
+        },
+        "priority": 140101
+    }
 ]
-
 ```
+
 <a name="advanced_capabilities__$redirect"></a>
+
 ## $redirect
+
 <b>Status</b>: partial support
 <br/>
 <b>MV3 limitations:</b>
@@ -2964,25 +2917,23 @@ example 1
 
 ```json
 [
-  {
-    "id": 1977140553,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/noopjs.js"
-      }
-    },
-    "condition": {
-      "urlFilter": "||example.org/script.js",
-      "resourceTypes": [
-        "script"
-      ]
-    },
-    "priority": 1101
-  }
+    {
+        "id": 1977140553,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/noopjs.js"
+            }
+        },
+        "condition": {
+            "urlFilter": "||example.org/script.js",
+            "resourceTypes": ["script"]
+        },
+        "priority": 1101
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -2993,25 +2944,23 @@ example 2
 
 ```json
 [
-  {
-    "id": 639704980,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/noopmp4.mp4"
-      }
-    },
-    "condition": {
-      "urlFilter": "||example.org/test.mp4",
-      "resourceTypes": [
-        "media"
-      ]
-    },
-    "priority": 1101
-  }
+    {
+        "id": 639704980,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/noopmp4.mp4"
+            }
+        },
+        "condition": {
+            "urlFilter": "||example.org/test.mp4",
+            "resourceTypes": ["media"]
+        },
+        "priority": 1101
+    }
 ]
-
 ```
+
 example 3
 
 ```adblock
@@ -3022,8 +2971,8 @@ example 3
 
 ```json
 []
-
 ```
+
 example 4
 
 ```adblock
@@ -3034,8 +2983,8 @@ example 4
 
 ```json
 []
-
 ```
+
 example 5
 
 ```adblock
@@ -3046,22 +2995,22 @@ example 5
 
 ```json
 [
-  {
-    "id": 547549362,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/noopcss.css"
-      }
-    },
-    "condition": {
-      "urlFilter": "*/redirect-test.css"
-    },
-    "priority": 1001
-  }
+    {
+        "id": 547549362,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/noopcss.css"
+            }
+        },
+        "condition": {
+            "urlFilter": "*/redirect-test.css"
+        },
+        "priority": 1001
+    }
 ]
-
 ```
+
 example 6
 
 ```adblock
@@ -3072,22 +3021,22 @@ example 6
 
 ```json
 [
-  {
-    "id": 921320818,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/noopjs.js"
-      }
-    },
-    "condition": {
-      "urlFilter": "*/redirect-test.js"
-    },
-    "priority": 1001
-  }
+    {
+        "id": 921320818,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/noopjs.js"
+            }
+        },
+        "condition": {
+            "urlFilter": "*/redirect-test.js"
+        },
+        "priority": 1001
+    }
 ]
-
 ```
+
 example 7
 
 ```adblock
@@ -3098,22 +3047,22 @@ example 7
 
 ```json
 [
-  {
-    "id": 1904749937,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/2x2-transparent.png"
-      }
-    },
-    "condition": {
-      "urlFilter": "*/redirect-test.png"
-    },
-    "priority": 1001
-  }
+    {
+        "id": 1904749937,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/2x2-transparent.png"
+            }
+        },
+        "condition": {
+            "urlFilter": "*/redirect-test.png"
+        },
+        "priority": 1001
+    }
 ]
-
 ```
+
 example 8
 
 ```adblock
@@ -3124,22 +3073,22 @@ example 8
 
 ```json
 [
-  {
-    "id": 1481297074,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/noopframe.html"
-      }
-    },
-    "condition": {
-      "urlFilter": "*/redirect-test.html"
-    },
-    "priority": 1001
-  }
+    {
+        "id": 1481297074,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/noopframe.html"
+            }
+        },
+        "condition": {
+            "urlFilter": "*/redirect-test.html"
+        },
+        "priority": 1001
+    }
 ]
-
 ```
+
 example 9
 
 ```adblock
@@ -3150,22 +3099,22 @@ example 9
 
 ```json
 [
-  {
-    "id": 397468727,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/nooptext.js"
-      }
-    },
-    "condition": {
-      "urlFilter": "*/redirect-test.txt"
-    },
-    "priority": 1001
-  }
+    {
+        "id": 397468727,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/nooptext.js"
+            }
+        },
+        "condition": {
+            "urlFilter": "*/redirect-test.txt"
+        },
+        "priority": 1001
+    }
 ]
-
 ```
+
 example 10
 
 ```adblock
@@ -3177,32 +3126,32 @@ example 10
 
 ```json
 [
-  {
-    "id": 1940385416,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/noopjs.js"
-      }
+    {
+        "id": 1940385416,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/noopjs.js"
+            }
+        },
+        "condition": {
+            "urlFilter": "*/redirect-exception-test.js"
+        },
+        "priority": 1001
     },
-    "condition": {
-      "urlFilter": "*/redirect-exception-test.js"
-    },
-    "priority": 1001
-  },
-  {
-    "id": 1682308684,
-    "action": {
-      "type": "allow"
-    },
-    "condition": {
-      "urlFilter": "*/redirect-exception-test.js"
-    },
-    "priority": 100001
-  }
+    {
+        "id": 1682308684,
+        "action": {
+            "type": "allow"
+        },
+        "condition": {
+            "urlFilter": "*/redirect-exception-test.js"
+        },
+        "priority": 100001
+    }
 ]
-
 ```
+
 example 11
 
 ```adblock
@@ -3214,55 +3163,57 @@ example 11
 
 ```json
 [
-  {
-    "id": 909168493,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/noopjs.js"
-      }
+    {
+        "id": 909168493,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/noopjs.js"
+            }
+        },
+        "condition": {
+            "urlFilter": "*/redirect-priority-test.js"
+        },
+        "priority": 1001
     },
-    "condition": {
-      "urlFilter": "*/redirect-priority-test.js"
-    },
-    "priority": 1001
-  },
-  {
-    "id": 1816110182,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "operation": "append",
-          "header": "Content-Security-Policy",
-          "value": "script-src 'self'"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "*/redirect-priority-test.js",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 1000001
-  }
+    {
+        "id": 1816110182,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "operation": "append",
+                    "header": "Content-Security-Policy",
+                    "value": "script-src 'self'"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "*/redirect-priority-test.js",
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 1000001
+    }
 ]
-
 ```
+
 <a name="advanced_capabilities__$redirect-rule"></a>
+
 ## $redirect-rule
+
 <b>Status</b>: not supported
 Awaiting implementation: https://github.com/w3c/webextensions/issues/493.
 <br/>
@@ -3278,21 +3229,23 @@ Awaiting implementation: https://github.com/w3c/webextensions/issues/493.
 
 ```json
 [
-  {
-    "id": 1511559822,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.org/script.js"
-    },
-    "priority": 1
-  }
+    {
+        "id": 1511559822,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.org/script.js"
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 <a name="advanced_capabilities__$referrerpolicy"></a>
+
 ## $referrerpolicy
+
 <b>Status</b>: not implemented yet
 <br/>
 <b>Examples:</b>
@@ -3307,8 +3260,8 @@ example 1
 
 ```json
 []
-
 ```
+
 example 2
 
 ```adblock
@@ -3319,8 +3272,8 @@ example 2
 
 ```json
 []
-
 ```
+
 example 3
 
 ```adblock
@@ -3331,10 +3284,12 @@ example 3
 
 ```json
 []
-
 ```
+
 <a name="advanced_capabilities__$removeheader"></a>
+
 ## $removeheader
+
 <b>Status</b>: supported
 <br/>
 <b>MV3 limitations:</b>
@@ -3357,39 +3312,39 @@ example 1
 
 ```json
 [
-  {
-    "id": 156699538,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "header": "header-name",
-          "operation": "remove"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 1
-  }
+    {
+        "id": 156699538,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "header": "header-name",
+                    "operation": "remove"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -3400,39 +3355,39 @@ example 2
 
 ```json
 [
-  {
-    "id": 1145446713,
-    "action": {
-      "type": "modifyHeaders",
-      "requestHeaders": [
-        {
-          "header": "header-name",
-          "operation": "remove"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 1
-  }
+    {
+        "id": 1145446713,
+        "action": {
+            "type": "modifyHeaders",
+            "requestHeaders": [
+                {
+                    "header": "header-name",
+                    "operation": "remove"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 example 3
 
 ```adblock
@@ -3443,8 +3398,8 @@ example 3
 
 ```json
 []
-
 ```
+
 example 4 (with limitations)
 
 ```adblock
@@ -3455,8 +3410,8 @@ example 4 (with limitations)
 
 ```json
 []
-
 ```
+
 example 5
 
 ```adblock
@@ -3467,39 +3422,39 @@ example 5
 
 ```json
 [
-  {
-    "id": 1625113114,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "header": "refresh",
-          "operation": "remove"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 1
-  }
+    {
+        "id": 1625113114,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "header": "refresh",
+                    "operation": "remove"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 example 6
 
 ```adblock
@@ -3510,39 +3465,39 @@ example 6
 
 ```json
 [
-  {
-    "id": 747526909,
-    "action": {
-      "type": "modifyHeaders",
-      "requestHeaders": [
-        {
-          "header": "x-client-data",
-          "operation": "remove"
-        }
-      ]
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 1
-  }
+    {
+        "id": 747526909,
+        "action": {
+            "type": "modifyHeaders",
+            "requestHeaders": [
+                {
+                    "header": "x-client-data",
+                    "operation": "remove"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 example 8
 
 ```adblock
@@ -3553,43 +3508,43 @@ $removeheader=location,domain=example.com
 
 ```json
 [
-  {
-    "id": 1145064334,
-    "action": {
-      "type": "modifyHeaders",
-      "responseHeaders": [
-        {
-          "header": "location",
-          "operation": "remove"
-        }
-      ]
-    },
-    "condition": {
-      "initiatorDomains": [
-        "example.com"
-      ],
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
-      ]
-    },
-    "priority": 201
-  }
+    {
+        "id": 1145064334,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                {
+                    "header": "location",
+                    "operation": "remove"
+                }
+            ]
+        },
+        "condition": {
+            "initiatorDomains": ["example.com"],
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "stylesheet",
+                "script",
+                "image",
+                "font",
+                "object",
+                "xmlhttprequest",
+                "ping",
+                "media",
+                "websocket",
+                "other"
+            ]
+        },
+        "priority": 201
+    }
 ]
-
 ```
+
 <a name="advanced_capabilities__$removeparam"></a>
+
 ## $removeparam
+
 <b>Status</b>: partial supported
 <br/>
 <b>MV3 limitations:</b>
@@ -3615,28 +3570,25 @@ skip rules with a negation, or regexp or the rule is a allowlist
 
 ```json
 [
-  {
-    "id": 2131736874,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "transform": {
-          "query": ""
-        }
-      }
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame"
-      ]
-    },
-    "priority": 1
-  }
+    {
+        "id": 2131736874,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "transform": {
+                    "query": ""
+                }
+            }
+        },
+        "condition": {
+            "urlFilter": "||example.org^",
+            "resourceTypes": ["main_frame", "sub_frame"]
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 example 2
 
 ```adblock
@@ -3647,8 +3599,8 @@ $removeparam=~param
 
 ```json
 []
-
 ```
+
 example 3
 
 ```adblock
@@ -3659,31 +3611,26 @@ $removeparam=utm_source
 
 ```json
 [
-  {
-    "id": 1143364123,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "transform": {
-          "queryTransform": {
-            "removeParams": [
-              "utm_source"
-            ]
-          }
-        }
-      }
-    },
-    "condition": {
-      "resourceTypes": [
-        "main_frame",
-        "sub_frame"
-      ]
-    },
-    "priority": 1
-  }
+    {
+        "id": 1143364123,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "transform": {
+                    "queryTransform": {
+                        "removeParams": ["utm_source"]
+                    }
+                }
+            }
+        },
+        "condition": {
+            "resourceTypes": ["main_frame", "sub_frame"]
+        },
+        "priority": 1
+    }
 ]
-
 ```
+
 example 4
 
 ```adblock
@@ -3694,8 +3641,8 @@ $removeparam=~/regexp/
 
 ```json
 []
-
 ```
+
 example 5
 
 ```adblock
@@ -3706,8 +3653,8 @@ example 5
 
 ```json
 []
-
 ```
+
 example 6
 
 ```adblock
@@ -3718,8 +3665,8 @@ example 6
 
 ```json
 []
-
 ```
+
 example 7
 
 ```adblock
@@ -3730,8 +3677,8 @@ example 7
 
 ```json
 []
-
 ```
+
 example 8
 
 ```adblock
@@ -3742,8 +3689,8 @@ $removeparam=/^(utm_source|utm_medium|utm_term)=/
 
 ```json
 []
-
 ```
+
 example 9
 
 ```adblock
@@ -3754,8 +3701,8 @@ $removeparam=/^(utm_content|utm_campaign|utm_referrer)=/
 
 ```json
 []
-
 ```
+
 example 10
 <br/>
 Group of similar remove param rules will be combined into one
@@ -3771,56 +3718,48 @@ $xmlhttprequest,removeparam=p1case2
 
 ```json
 [
-  {
-    "id": 2009110781,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "transform": {
-          "queryTransform": {
-            "removeParams": [
-              "p1case1",
-              "p2case1",
-              "P3Case1"
-            ]
-          }
-        }
-      }
+    {
+        "id": 2009110781,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "transform": {
+                    "queryTransform": {
+                        "removeParams": ["p1case1", "p2case1", "P3Case1"]
+                    }
+                }
+            }
+        },
+        "condition": {
+            "urlFilter": "||testcases.adguard.com",
+            "resourceTypes": ["xmlhttprequest"]
+        },
+        "priority": 101
     },
-    "condition": {
-      "urlFilter": "||testcases.adguard.com",
-      "resourceTypes": [
-        "xmlhttprequest"
-      ]
-    },
-    "priority": 101
-  },
-  {
-    "id": 1784990990,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "transform": {
-          "queryTransform": {
-            "removeParams": [
-              "p1case2"
-            ]
-          }
-        }
-      }
-    },
-    "condition": {
-      "resourceTypes": [
-        "xmlhttprequest"
-      ]
-    },
-    "priority": 101
-  }
+    {
+        "id": 1784990990,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "transform": {
+                    "queryTransform": {
+                        "removeParams": ["p1case2"]
+                    }
+                }
+            }
+        },
+        "condition": {
+            "resourceTypes": ["xmlhttprequest"]
+        },
+        "priority": 101
+    }
 ]
-
 ```
+
 <a name="advanced_capabilities__$replace"></a>
+
 ## $replace
+
 <b>Status</b>: not supported
 <br/>
 <b>Examples:</b>
@@ -3835,8 +3774,8 @@ example 1
 
 ```json
 []
-
 ```
+
 example 2
 
 ```adblock
@@ -3847,8 +3786,8 @@ example 2
 
 ```json
 []
-
 ```
+
 example 3
 
 ```adblock
@@ -3859,8 +3798,8 @@ example 3
 
 ```json
 []
-
 ```
+
 example 4
 
 ```adblock
@@ -3871,10 +3810,12 @@ example 4
 
 ```json
 []
-
 ```
+
 <a name="advanced_capabilities__noop"></a>
+
 ## noop
+
 <b>Status</b>: supported
 <br/>
 <b>Examples:</b>
@@ -3889,25 +3830,25 @@ example 4
 
 ```json
 [
-  {
-    "id": 1961107654,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.com",
-      "domainType": "firstParty",
-      "initiatorDomains": [
-        "example.org"
-      ]
-    },
-    "priority": 202
-  }
+    {
+        "id": 1961107654,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "||example.com",
+            "domainType": "firstParty",
+            "initiatorDomains": ["example.org"]
+        },
+        "priority": 202
+    }
 ]
-
 ```
+
 <a name="advanced_capabilities__$empty"></a>
+
 ## $empty
+
 <b>Status</b>: supported
 <br/>
 <b>Examples:</b>
@@ -3922,24 +3863,26 @@ example 1.
 
 ```json
 [
-  {
-    "id": 594281287,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/nooptext.js"
-      }
-    },
-    "condition": {
-      "urlFilter": "||example.org^"
-    },
-    "priority": 1001
-  }
+    {
+        "id": 594281287,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/nooptext.js"
+            }
+        },
+        "condition": {
+            "urlFilter": "||example.org^"
+        },
+        "priority": 1001
+    }
 ]
-
 ```
+
 <a name="advanced_capabilities__$mp4"></a>
+
 ## $mp4
+
 <b>Status</b>: supported, deprecated
 <br/>
 <b>Examples:</b>
@@ -3954,34 +3897,43 @@ example 1.
 
 ```json
 [
-  {
-    "id": 351327571,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/noopmp4.mp4"
-      }
-    },
-    "condition": {
-      "urlFilter": "||example.com/videos/",
-      "resourceTypes": [
-        "media"
-      ]
-    },
-    "priority": 1101
-  }
+    {
+        "id": 351327571,
+        "action": {
+            "type": "redirect",
+            "redirect": {
+                "extensionPath": "/path/to/resources/noopmp4.mp4"
+            }
+        },
+        "condition": {
+            "urlFilter": "||example.com/videos/",
+            "resourceTypes": ["media"]
+        },
+        "priority": 1101
+    }
 ]
-
 ```
+
 <a name="not_supported_in_extension"></a>
+
 # Not supported in extension
+
 <a name="not_supported_in_extension__$hls_(not_supported_in_extension)"></a>
+
 ## $hls (not supported in extension)
+
 <a name="not_supported_in_extension__$jsonprune_(not_supported_in_extension)"></a>
+
 ## $jsonprune (not supported in extension)
+
 <a name="not_supported_in_extension__$network_(not_supported_in_extension)"></a>
+
 ## $network (not supported in extension)
+
 <a name="not_supported_in_extension__$app_(not_supported_in_extension)"></a>
+
 ## $app (not supported in extension)
+
 <a name="not_supported_in_extension__$extension_(not_supported_in_extension)"></a>
+
 ## $extension (not supported in extension)

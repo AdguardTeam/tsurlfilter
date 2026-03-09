@@ -1,11 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    afterEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, afterEach, it, vi } from 'vitest';
 
 import { DocumentApi } from '../../../../src/lib/mv2/background/document-api';
 import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
@@ -79,11 +72,7 @@ describe('Document Api', () => {
             },
         ];
 
-        it.each(cases)('$title', ({
-            inverted,
-            url,
-            domains,
-        }) => {
+        it.each(cases)('$title', ({ inverted, url, domains }) => {
             allowlist.inverted = inverted;
             allowlist.domains = domains;
 

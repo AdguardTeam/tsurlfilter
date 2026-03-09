@@ -104,59 +104,55 @@ describe('AgentCommentParser', () => {
             ],
         });
 
-        expect(AgentCommentParser.parse('[uBlock Origin]')).toMatchObject(
-            {
-                type: 'AgentCommentRule',
-                start: 0,
-                end: 15,
-                syntax: 'Common',
-                category: 'Comment',
-                children: [
-                    {
-                        type: 'Agent',
+        expect(AgentCommentParser.parse('[uBlock Origin]')).toMatchObject({
+            type: 'AgentCommentRule',
+            start: 0,
+            end: 15,
+            syntax: 'Common',
+            category: 'Comment',
+            children: [
+                {
+                    type: 'Agent',
+                    start: 1,
+                    end: 14,
+                    adblock: {
+                        type: 'Value',
                         start: 1,
                         end: 14,
-                        adblock: {
-                            type: 'Value',
-                            start: 1,
-                            end: 14,
-                            value: 'uBlock Origin',
-                        },
-                        syntax: AdblockSyntax.Ubo,
+                        value: 'uBlock Origin',
                     },
-                ],
-            },
-        );
+                    syntax: AdblockSyntax.Ubo,
+                },
+            ],
+        });
 
-        expect(AgentCommentParser.parse('[Adblock Plus 2.0]')).toMatchObject(
-            {
-                type: 'AgentCommentRule',
-                start: 0,
-                end: 18,
-                syntax: 'Common',
-                category: 'Comment',
-                children: [
-                    {
-                        type: 'Agent',
+        expect(AgentCommentParser.parse('[Adblock Plus 2.0]')).toMatchObject({
+            type: 'AgentCommentRule',
+            start: 0,
+            end: 18,
+            syntax: 'Common',
+            category: 'Comment',
+            children: [
+                {
+                    type: 'Agent',
+                    start: 1,
+                    end: 17,
+                    adblock: {
+                        type: 'Value',
                         start: 1,
-                        end: 17,
-                        adblock: {
-                            type: 'Value',
-                            start: 1,
-                            end: 13,
-                            value: 'Adblock Plus',
-                        },
-                        version: {
-                            type: 'Value',
-                            start: 14,
-                            end: 17,
-                            value: '2.0',
-                        },
-                        syntax: AdblockSyntax.Abp,
+                        end: 13,
+                        value: 'Adblock Plus',
                     },
-                ],
-            },
-        );
+                    version: {
+                        type: 'Value',
+                        start: 14,
+                        end: 17,
+                        value: '2.0',
+                    },
+                    syntax: AdblockSyntax.Abp,
+                },
+            ],
+        });
 
         expect(AgentCommentParser.parse('[uBlock Origin 1.0.0]')).toMatchObject({
             type: 'AgentCommentRule',
@@ -226,57 +222,53 @@ describe('AgentCommentParser', () => {
             ],
         });
 
-        expect(AgentCommentParser.parse('[Adblock Plus 2.0; AdGuard 1.0.1.10]')).toMatchObject(
-            {
-                type: 'AgentCommentRule',
-                start: 0,
-                end: 36,
-                syntax: 'Common',
-                category: 'Comment',
-                children: [
-                    {
-                        type: 'Agent',
+        expect(AgentCommentParser.parse('[Adblock Plus 2.0; AdGuard 1.0.1.10]')).toMatchObject({
+            type: 'AgentCommentRule',
+            start: 0,
+            end: 36,
+            syntax: 'Common',
+            category: 'Comment',
+            children: [
+                {
+                    type: 'Agent',
+                    start: 1,
+                    end: 17,
+                    adblock: {
+                        type: 'Value',
                         start: 1,
+                        end: 13,
+                        value: 'Adblock Plus',
+                    },
+                    version: {
+                        type: 'Value',
+                        start: 14,
                         end: 17,
-                        adblock: {
-                            type: 'Value',
-                            start: 1,
-                            end: 13,
-                            value: 'Adblock Plus',
-                        },
-                        version: {
-                            type: 'Value',
-                            start: 14,
-                            end: 17,
-                            value: '2.0',
-                        },
-                        syntax: AdblockSyntax.Abp,
+                        value: '2.0',
                     },
-                    {
-                        type: 'Agent',
+                    syntax: AdblockSyntax.Abp,
+                },
+                {
+                    type: 'Agent',
+                    start: 19,
+                    end: 35,
+                    adblock: {
+                        type: 'Value',
                         start: 19,
-                        end: 35,
-                        adblock: {
-                            type: 'Value',
-                            start: 19,
-                            end: 26,
-                            value: 'AdGuard',
-                        },
-                        version: {
-                            type: 'Value',
-                            start: 27,
-                            end: 35,
-                            value: '1.0.1.10',
-                        },
-                        syntax: AdblockSyntax.Adg,
+                        end: 26,
+                        value: 'AdGuard',
                     },
-                ],
-            },
-        );
+                    version: {
+                        type: 'Value',
+                        start: 27,
+                        end: 35,
+                        value: '1.0.1.10',
+                    },
+                    syntax: AdblockSyntax.Adg,
+                },
+            ],
+        });
 
-        expect(
-            AgentCommentParser.parse('[Adblock Plus 3.1; AdGuard 1.4; uBlock Origin 1.0.15.0]'),
-        ).toMatchObject({
+        expect(AgentCommentParser.parse('[Adblock Plus 3.1; AdGuard 1.4; uBlock Origin 1.0.15.0]')).toMatchObject({
             type: 'AgentCommentRule',
             start: 0,
             end: 55,
@@ -460,9 +452,9 @@ describe('AgentCommentParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(
-                AgentCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
-            ).toEqual(expected);
+            expect(AgentCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false })).toEqual(
+                expected,
+            );
         });
     });
 

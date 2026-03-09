@@ -1,13 +1,6 @@
 // @vitest-environment node
 
-import {
-    afterEach,
-    beforeEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TAB } from '../../src/common/constants';
 import { base64ToUint8Array, serializeJson, uint8ArrayToBase64 } from '../../src/utils/misc';

@@ -23,7 +23,7 @@ export function getCodePointsArrayHash(arr: Int32Array, start: number, end: numb
     let hash = 5381;
 
     for (let i = start; i < end; i += 1) {
-        hash = hash * 33 ^ (arr[i] | 0x20);
+        hash = (hash * 33) ^ (arr[i] | 0x20);
     }
 
     return hash >>> 0;
@@ -42,7 +42,7 @@ export function getStringHash(str: string): number {
     let hash = 5381;
 
     for (let i = 0; i < str.length; i += 1) {
-        hash = hash * 33 ^ (str.charCodeAt(i) | 0x20);
+        hash = (hash * 33) ^ (str.charCodeAt(i) | 0x20);
     }
 
     return hash >>> 0;

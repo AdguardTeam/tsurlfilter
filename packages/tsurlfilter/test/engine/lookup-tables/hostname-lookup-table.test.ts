@@ -32,12 +32,7 @@ describe('Hostname Lookup Table Tests', () => {
     });
 
     it('matches rules from lookup table', () => {
-        const rules = [
-            'path',
-            '||*example.net^',
-            '||example.org^',
-            '||example.com/path',
-        ];
+        const rules = ['path', '||*example.net^', '||example.org^', '||example.com/path'];
 
         const ruleStorage = createRuleStorage(rules);
         const table = new HostnameLookupTable(ruleStorage);

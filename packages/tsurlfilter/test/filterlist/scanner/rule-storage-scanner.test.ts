@@ -14,11 +14,7 @@ describe('Empty Scanners Test', () => {
 });
 
 it('scanning', () => {
-    const rules1 = [
-        '||example.org',
-        '! test',
-        '##banner',
-    ];
+    const rules1 = ['||example.org', '! test', '##banner'];
     const text1 = rules1.join('\n');
     const reader1 = new StringLineReader(text1);
     const scanner1 = new RuleScanner(reader1, 1, {
@@ -26,11 +22,7 @@ it('scanning', () => {
         ignoreCosmetic: false,
     });
 
-    const rules2 = [
-        '||example.com',
-        '! test',
-        '##advert',
-    ];
+    const rules2 = ['||example.com', '! test', '##advert'];
     const text2 = rules2.join('\n');
     const reader2 = new StringLineReader(text2);
     const scanner2 = new RuleScanner(reader2, 2, {

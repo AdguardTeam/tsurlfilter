@@ -89,9 +89,7 @@ export class SessionRulesApi {
      *
      * @returns Resolved promise when the rule is set.
      */
-    public static async setSessionRule(
-        rule: chrome.declarativeNetRequest.Rule,
-    ): Promise<void> {
+    public static async setSessionRule(rule: chrome.declarativeNetRequest.Rule): Promise<void> {
         // The rules with IDs listed in options.removeRuleIds are first removed,
         // and then the rules given in options.addRules are added
         return chrome.declarativeNetRequest.updateSessionRules({
@@ -167,9 +165,7 @@ export class SessionRulesApi {
 
         // TODO: Add separated counters for these in ruleset.
         let regexpRulesCounter = 0;
-        const ignoredRules = new Map<string, number[]>(
-            enabledStaticRuleSets.map((r) => [r.getId(), []]),
-        );
+        const ignoredRules = new Map<string, number[]>(enabledStaticRuleSets.map((r) => [r.getId(), []]));
 
         let availableId = SessionRulesApi.MIN_DECLARATIVE_RULE_ID + 1;
 
@@ -193,10 +189,7 @@ export class SessionRulesApi {
                     }
                 }
 
-                SessionRulesApi.sourceMapForUnsafeRules.set(
-                    availableId,
-                    [rulesetId, rule.id],
-                );
+                SessionRulesApi.sourceMapForUnsafeRules.set(availableId, [rulesetId, rule.id]);
 
                 // Add the rule to the session rules.
                 unsafeRulesFromEnabledRulesets.push({ ...rule, id: availableId });
@@ -213,7 +206,10 @@ export class SessionRulesApi {
                 })
                 .join(';\n');
 
-            logger.debug(`[tsweb.SessionRulesApi.updateSessionRules]: Some session rules were ignored due to the limit of ${SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES} (current count of unsafe rules: ${unsafeRulesFromEnabledRulesets}) or limit of ${SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES} regex rules (current count of regex rules: ${regexpRulesCounter}): \n`, stringifiedIgnoredRules);
+            logger.debug(
+                `[tsweb.SessionRulesApi.updateSessionRules]: Some session rules were ignored due to the limit of ${SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES} (current count of unsafe rules: ${unsafeRulesFromEnabledRulesets}) or limit of ${SessionRulesApi.MAX_NUMBER_OF_REGEX_RULES} regex rules (current count of regex rules: ${regexpRulesCounter}): \n`,
+                stringifiedIgnoredRules,
+            );
         }
 
         // The rules with IDs listed in options.removeRuleIds are first removed,

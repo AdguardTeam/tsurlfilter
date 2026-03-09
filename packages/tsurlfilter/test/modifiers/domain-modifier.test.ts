@@ -1,11 +1,4 @@
-import {
-    afterAll,
-    afterEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DomainModifier } from '../../src/modifiers/domain-modifier';
 import { loggerMocks } from '../setup';
@@ -223,10 +216,7 @@ describe('Domain modifier', () => {
         it('works in wildcard cases', () => {
             expect(isDomainOrSubdomainOfAny('example.org', ['example.*', 'test.com'])).toBeTruthy();
             expect(isDomainOrSubdomainOfAny('sub.example.org', ['example.*', 'test.com'])).toBeTruthy();
-            expect(isDomainOrSubdomainOfAny(
-                'example.org',
-                ['one.*', 'example.*', 'test.com'],
-            )).toBeTruthy();
+            expect(isDomainOrSubdomainOfAny('example.org', ['one.*', 'example.*', 'test.com'])).toBeTruthy();
             expect(isDomainOrSubdomainOfAny('www.chrono24.ch', ['chrono24.*'])).toBeTruthy();
 
             expect(isDomainOrSubdomainOfAny('example.com', ['test.*'])).toBeFalsy();
@@ -238,7 +228,8 @@ describe('Domain modifier', () => {
 
         it('logs debug message on invalid regexp pattern', () => {
             // eslint-disable-next-line max-len
-            const msg = '[tsurl.DomainModifier.isDomainOrSubdomainOfAny]: invalid regular expression as domain pattern: "/example[org/"';
+            const msg =
+                '[tsurl.DomainModifier.isDomainOrSubdomainOfAny]: invalid regular expression as domain pattern: "/example[org/"';
 
             isDomainOrSubdomainOfAny('example.org', ['/example[org/']);
 

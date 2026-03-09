@@ -233,9 +233,9 @@ describe('common parseListItems', () => {
                 ],
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(
-                ListItemsParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }, 0, PIPE),
-            ).toEqual(expected);
+            expect(ListItemsParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }, 0, PIPE)).toEqual(
+                expected,
+            );
         });
     });
 });

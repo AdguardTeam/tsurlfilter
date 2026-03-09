@@ -53,11 +53,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
      * responseheader(header-name)
      * ```
      */
-    public static parse(
-        raw: string,
-        options = defaultParserOptions,
-        baseOffset = 0,
-    ): Value | HtmlFilteringRuleBody {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): Value | HtmlFilteringRuleBody {
         // First, check if it's a response header removal rule and return if so
         const responseHeaderBody = UboHtmlFilteringBodyParser.parseResponseHeaderRule(raw, options, baseOffset);
         if (responseHeaderBody !== null) {
@@ -169,10 +165,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         if (!stream.isEof()) {
             token = stream.getOrFail();
             throw new AdblockSyntaxError(
-                sprintf(
-                    "Expected end of rule, but got '%s'",
-                    getFormattedTokenName(token.type),
-                ),
+                sprintf("Expected end of rule, but got '%s'", getFormattedTokenName(token.type)),
                 token.start + baseOffset,
                 token.end + baseOffset,
             );
@@ -181,16 +174,8 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         // Construct pseudo-class selector node
         const pseudoClassSelectorNode: PseudoClassSelector = {
             type: 'PseudoClassSelector',
-            name: ValueParser.parse(
-                functionNameRaw,
-                options,
-                start + baseOffset,
-            ),
-            argument: ValueParser.parse(
-                argumentRaw,
-                options,
-                argumentStart + baseOffset,
-            ),
+            name: ValueParser.parse(functionNameRaw, options, start + baseOffset),
+            argument: ValueParser.parse(argumentRaw, options, argumentStart + baseOffset),
         };
 
         // Construct complex selector node

@@ -122,7 +122,8 @@ const toBeConvertedProperly = (
         return {
             pass: false,
             // eslint-disable-next-line max-len
-            message: () => `Conversion failed, "isConverted" is ${conversionResult.isConverted} instead of ${receivedParsed.shouldConvert}`,
+            message: () =>
+                `Conversion failed, "isConverted" is ${conversionResult.isConverted} instead of ${receivedParsed.shouldConvert}`,
         };
     }
 
@@ -144,7 +145,8 @@ const toBeConvertedProperly = (
         return {
             pass: false,
             // eslint-disable-next-line max-len
-            message: () => `Conversion failed, "result" array has wrong length: ${conversionResult.result.length} instead of ${receivedParsed.expected.length}`,
+            message: () =>
+                `Conversion failed, "result" array has wrong length: ${conversionResult.result.length} instead of ${receivedParsed.expected.length}`,
         };
     }
 
@@ -153,7 +155,7 @@ const toBeConvertedProperly = (
         if (!everyRefsAreDifferent(ruleNode, ...conversionResult.result)) {
             return {
                 pass: false,
-                message: () => 'Conversion failed, converted rule hasn\'t been cloned properly',
+                message: () => "Conversion failed, converted rule hasn't been cloned properly",
             };
         }
     } else {
@@ -163,7 +165,8 @@ const toBeConvertedProperly = (
             return {
                 pass: false,
                 // eslint-disable-next-line max-len
-                message: () => `Conversion failed, "result" array has wrong length: ${conversionResult.result.length} instead of 1`,
+                message: () =>
+                    `Conversion failed, "result" array has wrong length: ${conversionResult.result.length} instead of 1`,
             };
         }
 

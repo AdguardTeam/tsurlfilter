@@ -138,14 +138,7 @@ export abstract class DocumentBlockingServiceCommon {
      * @param data Data for document request processing.
      */
     protected logEvent(data: GetDocumentBlockingResponseParams): void {
-        const {
-            tabId,
-            eventId,
-            requestId,
-            requestUrl,
-            referrerUrl,
-            rule,
-        } = data;
+        const { tabId, eventId, requestId, requestUrl, referrerUrl, rule } = data;
 
         // public filtering log event
         const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
@@ -236,34 +229,27 @@ export abstract class DocumentBlockingServiceCommon {
      * @param redirectData Data for redirecting to document blocking page.
      */
     protected redirectToBlockingUrl(redirectData: BlockingPageRedirectData): void {
-        const {
-            tabId,
-            documentBlockingPageUrl,
-            requestUrl,
-            rule,
-        } = redirectData;
+        const { tabId, documentBlockingPageUrl, requestUrl, rule } = redirectData;
 
         // get document blocking url with required params
-        const blockingUrl = this.createBlockingUrl(
-            documentBlockingPageUrl,
-            requestUrl,
-            rule,
-            rule.getFilterListId(),
-        );
+        const blockingUrl = this.createBlockingUrl(documentBlockingPageUrl, requestUrl, rule, rule.getFilterListId());
 
         const isChrome = this.browserDetector.isChrome();
         const isChromium = this.browserDetector.isChromium();
 
         // Chrome does not allow to show extension pages in incognito mode
-        if ((isChrome || isChromium)
-            && this.tabsApi.canShowExtensionPageInTab(tabId)) {
+        if ((isChrome || isChromium) && this.tabsApi.canShowExtensionPageInTab(tabId)) {
             // Closing tab before opening a new one may lead to browser crash (Chromium)
-            browser.tabs.create({ url: blockingUrl })
+            browser.tabs
+                .create({ url: blockingUrl })
                 .then(() => {
                     browser.tabs.remove(tabId);
                 })
                 .catch((e: unknown) => {
-                    logger.warn('[tsweb.DocumentBlockingServiceCommon.redirectToBlockingUrl]: cannot open info page about blocked domain: ', e);
+                    logger.warn(
+                        '[tsweb.DocumentBlockingServiceCommon.redirectToBlockingUrl]: cannot open info page about blocked domain: ',
+                        e,
+                    );
                 });
         } else {
             // Browser doesn't allow redirects to extension pages which are not listed in web

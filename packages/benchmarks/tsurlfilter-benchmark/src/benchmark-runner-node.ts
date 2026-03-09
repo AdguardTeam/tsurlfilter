@@ -11,9 +11,7 @@ import { benchmark, type BenchmarkArgs, type BenchmarkResult } from './benchmark
  * @param filterList Filter list resource to benchmark.
  * @returns Benchmark results or null if an error occurred.
  */
-export const runBenchmarkNode = async (
-    filterList: DownloadedFilterListResource,
-): Promise<BenchmarkResult | Error> => {
+export const runBenchmarkNode = async (filterList: DownloadedFilterListResource): Promise<BenchmarkResult | Error> => {
     try {
         // Evaluate the benchmark in the browser
         const baseResult = await benchmark({

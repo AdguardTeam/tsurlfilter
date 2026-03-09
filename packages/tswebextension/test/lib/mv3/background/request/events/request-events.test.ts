@@ -1,10 +1,5 @@
 import browser from 'sinon-chrome';
-import {
-    describe,
-    it,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { type WebRequest } from 'webextension-polyfill';
 import { HTTPMethod } from '@adguard/tsurlfilter';
 
@@ -62,19 +57,22 @@ describe('Request Events', () => {
         /**
          * Verify prerender request handling.
          */
-        expect(listener).toHaveBeenNthCalledWith(1, expect.objectContaining({
-            details: expect.objectContaining({
-                tabId: 2,
-                url: 'https://example.com/',
-                documentLifecycle: 'prerender',
+        expect(listener).toHaveBeenNthCalledWith(
+            1,
+            expect.objectContaining({
+                details: expect.objectContaining({
+                    tabId: 2,
+                    url: 'https://example.com/',
+                    documentLifecycle: 'prerender',
+                }),
+                context: expect.objectContaining({
+                    tabId: 2,
+                    requestUrl: 'https://example.com/',
+                    referrerUrl: 'https://example.com/',
+                    thirdParty: false,
+                }),
             }),
-            context: expect.objectContaining({
-                tabId: 2,
-                requestUrl: 'https://example.com/',
-                referrerUrl: 'https://example.com/',
-                thirdParty: false,
-            }),
-        }));
+        );
 
         /**
          * Verify active navigation request handling:
@@ -83,17 +81,20 @@ describe('Request Events', () => {
          * 3. Correctly identifies third-party status based on domains
          *    (example.com vs testcases.adguard.com).
          */
-        expect(listener).toHaveBeenNthCalledWith(2, expect.objectContaining({
-            details: expect.objectContaining({
-                originUrl: 'https://testcases.adguard.com',
-                url: 'https://example.com/',
-                tabId: 1,
+        expect(listener).toHaveBeenNthCalledWith(
+            2,
+            expect.objectContaining({
+                details: expect.objectContaining({
+                    originUrl: 'https://testcases.adguard.com',
+                    url: 'https://example.com/',
+                    tabId: 1,
+                }),
+                context: expect.objectContaining({
+                    requestUrl: 'https://example.com/',
+                    referrerUrl: 'https://testcases.adguard.com',
+                    thirdParty: true,
+                }),
             }),
-            context: expect.objectContaining({
-                requestUrl: 'https://example.com/',
-                referrerUrl: 'https://testcases.adguard.com',
-                thirdParty: true,
-            }),
-        }));
+        );
     });
 });

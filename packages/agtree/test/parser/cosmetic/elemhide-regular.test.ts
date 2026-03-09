@@ -200,7 +200,9 @@ describe('CosmeticRuleParser', () => {
                         exception: false,
                         modifiers: undefined,
                         // eslint-disable-next-line max-len
-                        domains: DomainListParser.parse(String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/`),
+                        domains: DomainListParser.parse(
+                            String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/`,
+                        ),
                         separator: {
                             type: 'Value',
                             value: '##',

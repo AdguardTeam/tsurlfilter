@@ -2,14 +2,7 @@
 import { sprintf } from 'sprintf-js';
 
 import { AdblockSyntax } from '../../utils/adblockers';
-import {
-    CLOSE_PARENTHESIS,
-    COLON,
-    CSS_NOT_PSEUDO,
-    EMPTY,
-    OPEN_PARENTHESIS,
-    SPACE,
-} from '../../utils/constants';
+import { CLOSE_PARENTHESIS, COLON, CSS_NOT_PSEUDO, EMPTY, OPEN_PARENTHESIS, SPACE } from '../../utils/constants';
 import { type AnyCosmeticRule } from '../../nodes';
 import { BaseGenerator } from '../base-generator';
 import { CosmeticRulePatternGenerator } from './cosmetic-rule-pattern-generator';

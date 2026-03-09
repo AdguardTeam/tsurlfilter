@@ -4,21 +4,8 @@
     "compilerOptions": {
         // With this tsconfig, we don't need to emit any files,
         // we just want to check the types
-        "noEmit": true,
+        "noEmit": true
     },
-    "include": [
-        "./src",
-        "./test",
-        ".eslint.config.mjs",
-        "rollup.config.ts",
-        "vitest.config.ts",
-        "./tasks",
-        "./common"
-    ],
-    "exclude": [
-        "node_modules",
-        "dist",
-        "test/smoke/esm",
-        "test/smoke/exports"
-    ]
+    "include": ["./src", "./test", ".eslint.config.mjs", "rollup.config.ts", "vitest.config.ts", "./tasks", "./common"],
+    "exclude": ["node_modules", "dist", "test/smoke/esm", "test/smoke/exports"]
 }

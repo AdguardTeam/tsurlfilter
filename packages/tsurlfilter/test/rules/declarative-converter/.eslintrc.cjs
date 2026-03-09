@@ -1,18 +1,10 @@
 module.exports = {
-    plugins: [
-        'import',
-    ],
+    plugins: ['import'],
     rules: {
         'import/order': [
             'error',
             {
-                groups: [
-                    'builtin',
-                    'external',
-                    'internal',
-                    'parent',
-                    'index',
-                ],
+                groups: ['builtin', 'external', 'internal', 'parent', 'index'],
                 'newlines-between': 'always',
                 warnOnUnassignedImports: false,
             },

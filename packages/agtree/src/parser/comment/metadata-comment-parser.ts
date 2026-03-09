@@ -5,12 +5,7 @@
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { COLON } from '../../utils/constants';
-import {
-    CommentMarker,
-    CommentRuleType,
-    type MetadataCommentRule,
-    RuleCategory,
-} from '../../nodes';
+import { CommentMarker, CommentRuleType, type MetadataCommentRule, RuleCategory } from '../../nodes';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
 import { ValueParser } from '../misc/value-parser';

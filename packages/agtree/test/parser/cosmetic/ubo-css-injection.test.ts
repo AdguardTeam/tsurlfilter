@@ -98,7 +98,9 @@ describe('CosmeticRuleParser', () => {
                                 type: 'Value',
                                 value: 'body > .container:has-text(/ad/)',
                                 // eslint-disable-next-line max-len
-                                ...context.getRangeFor('body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)'),
+                                ...context.getRangeFor(
+                                    'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+                                ),
                             },
                             mediaQueryList: {
                                 type: 'Value',
@@ -111,7 +113,9 @@ describe('CosmeticRuleParser', () => {
                                 ...context.getRangeFor('padding: 0 !important;'),
                             },
                             // eslint-disable-next-line max-len
-                            ...context.getRangeFor('body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)'),
+                            ...context.getRangeFor(
+                                'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+                            ),
                         },
                         ...context.getFullRange(),
                     };
@@ -191,7 +195,9 @@ describe('CosmeticRuleParser', () => {
                                 type: 'Value',
                                 value: 'body > .container:has-text(/ad/)',
                                 // eslint-disable-next-line max-len
-                                ...context.getRangeFor(':matches-path(/something) body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)'),
+                                ...context.getRangeFor(
+                                    ':matches-path(/something) body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+                                ),
                             },
                             mediaQueryList: {
                                 type: 'Value',
@@ -204,7 +210,9 @@ describe('CosmeticRuleParser', () => {
                                 ...context.getRangeFor('padding: 0 !important;'),
                             },
                             // eslint-disable-next-line max-len
-                            ...context.getRangeFor(':matches-path(/something) body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)'),
+                            ...context.getRangeFor(
+                                ':matches-path(/something) body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+                            ),
                         },
                         ...context.getFullRange(),
                     };
@@ -233,7 +241,8 @@ describe('CosmeticRuleParser', () => {
                 actual: '##body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
                 // Note: matches-media() moved to the beginning
                 // eslint-disable-next-line max-len
-                expected: '##:matches-media((min-width: 1024px) and (max-width: 1920px)) body > .container:has-text(/ad/):style(padding: 0 !important;)',
+                expected:
+                    '##:matches-media((min-width: 1024px) and (max-width: 1920px)) body > .container:has-text(/ad/):style(padding: 0 !important;)',
             },
 
             // complicated case
@@ -242,7 +251,8 @@ describe('CosmeticRuleParser', () => {
                 actual: 'example.com,~example.net#@#:matches-path(/something) body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
                 // Note: matches-media() moved to the beginning
                 // eslint-disable-next-line max-len
-                expected: 'example.com,~example.net#@#:matches-path(/something) :matches-media((min-width: 1024px) and (max-width: 1920px)) body > .container:has-text(/ad/):style(padding: 0 !important;)',
+                expected:
+                    'example.com,~example.net#@#:matches-path(/something) :matches-media((min-width: 1024px) and (max-width: 1920px)) body > .container:has-text(/ad/):style(padding: 0 !important;)',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = CosmeticRuleParser.parse(actual);

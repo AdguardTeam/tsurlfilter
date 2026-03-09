@@ -1,20 +1,8 @@
 import { NetworkRuleParser } from '@adguard/agtree';
 import isIp from 'is-ip';
 
-import {
-    CLOSE_SQUARE,
-    COMMA,
-    ESCAPE,
-    OPEN_SQUARE,
-    SPACE,
-    TAB,
-} from '../common/constants';
-import {
-    findNextNonWhitespace,
-    findNextWhitespace,
-    findPrevNonWhitespace,
-    hasWhitespace,
-} from '../utils/string-utils';
+import { CLOSE_SQUARE, COMMA, ESCAPE, OPEN_SQUARE, SPACE, TAB } from '../common/constants';
+import { findNextNonWhitespace, findNextWhitespace, findPrevNonWhitespace, hasWhitespace } from '../utils/string-utils';
 
 /**
  * Rule category.
@@ -283,10 +271,10 @@ const DOMAIN_END_MASK = 0xffff;
  */
 const encodeSeparator = (offset: number, length: number, type: CosmeticRuleType, allow: boolean): number => {
     return (
-        (offset & COSMETIC_SEPARATOR_OFFSET_MASK)
-        | ((length & 0x7) << COSMETIC_SEPARATOR_LEN_SHIFT)
-        | ((type & 0x3) << COSMETIC_SEPARATOR_TYPE_SHIFT)
-        | ((allow ? 1 : 0) << COSMETIC_SEPARATOR_ALLOW_SHIFT)
+        (offset & COSMETIC_SEPARATOR_OFFSET_MASK) |
+        ((length & 0x7) << COSMETIC_SEPARATOR_LEN_SHIFT) |
+        ((type & 0x3) << COSMETIC_SEPARATOR_TYPE_SHIFT) |
+        ((allow ? 1 : 0) << COSMETIC_SEPARATOR_ALLOW_SHIFT)
     );
 };
 

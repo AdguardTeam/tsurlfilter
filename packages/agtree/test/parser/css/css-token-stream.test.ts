@@ -1,9 +1,4 @@
-import {
-    describe,
-    test,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
@@ -82,12 +77,7 @@ describe('CssTokenStream', () => {
     test('getOrFail', () => {
         const stream = new CssTokenStream('ident');
         stream.advance(); // eat ident
-        expect(() => stream.getOrFail()).toThrow(
-            sprintf(
-                ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT,
-                END_OF_INPUT,
-            ),
-        );
+        expect(() => stream.getOrFail()).toThrow(sprintf(ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT, END_OF_INPUT));
     });
 
     test('skipUntilBalanced', () => {
@@ -141,12 +131,7 @@ describe('CssTokenStream', () => {
 
         // Invalid balance
         expect(() => stream.expect(TokenType.Ident, { balance: 1, value: 'ident' })).toThrow(
-            sprintf(
-                ERROR_MESSAGES.EXPECTED_TOKEN_WITH_BALANCE_BUT_GOT,
-                getFormattedTokenName(TokenType.Ident),
-                1,
-                0,
-            ),
+            sprintf(ERROR_MESSAGES.EXPECTED_TOKEN_WITH_BALANCE_BUT_GOT, getFormattedTokenName(TokenType.Ident), 1, 0),
         );
 
         // Invalid value
@@ -257,13 +242,12 @@ describe('CssTokenStream', () => {
         });
 
         describe('should return false for strictly extended CSS', () => {
-            test.each([
-                [String.raw`:-abp-has(a)`],
-                [String.raw`:contains(a)`],
-                [String.raw`:upward(2)`],
-            ])('%s', (input) => {
-                expect(CssTokenStream.hasNativeCssPseudoClass(input)).toBe(false);
-            });
+            test.each([[String.raw`:-abp-has(a)`], [String.raw`:contains(a)`], [String.raw`:upward(2)`]])(
+                '%s',
+                (input) => {
+                    expect(CssTokenStream.hasNativeCssPseudoClass(input)).toBe(false);
+                },
+            );
         });
 
         describe('should return true for native-and-ext CSS (:has, :is, :not)', () => {

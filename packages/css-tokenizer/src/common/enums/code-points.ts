@@ -29,7 +29,7 @@ export const enum CodePoint {
     /**
      * U+000B LINE TABULATION
      */
-    LineTabulation = 0x0B,
+    LineTabulation = 0x0b,
 
     /**
      * U+0020 SPACE
@@ -39,17 +39,17 @@ export const enum CodePoint {
     /**
      * U+000A LINE FEED (LF)
      */
-    LineFeed = 0x0A,
+    LineFeed = 0x0a,
 
     /**
      * U+000C FORM FEED (FF)
      */
-    FormFeed = 0x0C,
+    FormFeed = 0x0c,
 
     /**
      * U+000D CARRIAGE RETURN (CR)
      */
-    CarriageReturn = 0x0D,
+    CarriageReturn = 0x0d,
 
     /**
      * U+0028 LEFT PARENTHESIS: `(`
@@ -64,22 +64,22 @@ export const enum CodePoint {
     /**
      * U+005B LEFT SQUARE BRACKET: `[`
      */
-    LeftSquareBracket = 0x5B,
+    LeftSquareBracket = 0x5b,
 
     /**
      * U+005D RIGHT SQUARE BRACKET: `]`
      */
-    RightSquareBracket = 0x5D,
+    RightSquareBracket = 0x5d,
 
     /**
      * U+007B LEFT CURLY BRACKET: `{`
      */
-    LeftCurlyBracket = 0x7B,
+    LeftCurlyBracket = 0x7b,
 
     /**
      * U+007D RIGHT CURLY BRACKET: `}`
      */
-    RightCurlyBracket = 0x7D,
+    RightCurlyBracket = 0x7d,
 
     /**
      * U+0027 APOSTROPHE: `'`
@@ -94,52 +94,52 @@ export const enum CodePoint {
     /**
      * U+002A ASTERISK: `*`
      */
-    Asterisk = 0x2A,
+    Asterisk = 0x2a,
 
     /**
      * U+002B PLUS SIGN: `+`
      */
-    PlusSign = 0x2B,
+    PlusSign = 0x2b,
 
     /**
      * U+002C COMMA: `,`
      */
-    Comma = 0x2C,
+    Comma = 0x2c,
 
     /**
      * U+002D HYPHEN-MINUS: `-`
      */
-    HyphenMinus = 0x2D,
+    HyphenMinus = 0x2d,
 
     /**
      * U+002E FULL STOP: `.`
      */
-    FullStop = 0x2E,
+    FullStop = 0x2e,
 
     /**
      * U+002F SOLIDUS: `/`
      */
-    Solidus = 0x2F,
+    Solidus = 0x2f,
 
     /**
      * U+003A COLON: `:`
      */
-    Colon = 0x3A,
+    Colon = 0x3a,
 
     /**
      * U+003B SEMICOLON: `;`
      */
-    SemiColon = 0x3B,
+    SemiColon = 0x3b,
 
     /**
      * U+003C LESS-THAN SIGN: `<`
      */
-    LessThanSign = 0x3C,
+    LessThanSign = 0x3c,
 
     /**
      * U+003E GREATER-THAN SIGN: `>`
      */
-    GreaterThanSign = 0x3E,
+    GreaterThanSign = 0x3e,
 
     /**
      * U+0040 COMMERCIAL AT: `@`
@@ -149,7 +149,7 @@ export const enum CodePoint {
     /**
      * U+005C REVERSE SOLIDUS: `\`
      */
-    ReverseSolidus = 0x5C,
+    ReverseSolidus = 0x5c,
 
     /**
      * U+0023 NUMBER SIGN: `#`
@@ -164,7 +164,7 @@ export const enum CodePoint {
     /**
      * U+005F LOW LINE: `_`
      */
-    LowLine = 0x5F,
+    LowLine = 0x5f,
 
     /**
      * U+0030 DIGIT ZERO: `0`
@@ -234,7 +234,7 @@ export const enum CodePoint {
     /**
      * U+005A LATIN CAPITAL LETTER Z: `Z`
      */
-    LatinCapitalLetterZ = 0x5A,
+    LatinCapitalLetterZ = 0x5a,
 
     /**
      * U+0061 LATIN SMALL LETTER A: `a`
@@ -254,7 +254,7 @@ export const enum CodePoint {
     /**
      * U+007A LATIN SMALL LETTER Z: `z`
      */
-    LatinSmallLetterZ = 0x7A,
+    LatinSmallLetterZ = 0x7a,
 
     /**
      * U+0025 PERCENT SIGN: `%`
@@ -269,37 +269,37 @@ export const enum CodePoint {
     /**
      * U+000E SHIFT OUT
      */
-    ShiftOut = 0x0E,
+    ShiftOut = 0x0e,
 
     /**
      * U+001F INFORMATION SEPARATOR ONE
      */
-    InformationSeparatorOne = 0x1F,
+    InformationSeparatorOne = 0x1f,
 
     /**
      * U+007F DELETE
      */
-    Delete = 0x7F,
+    Delete = 0x7f,
 
     /**
      * U+FFFE UTF-16LE BOM
      */
-    Utf16LeBom = 0xFFFE,
+    Utf16LeBom = 0xfffe,
 
     /**
      * U+FEFF UTF-16BE BOM
      */
-    Utf16BeBom = 0xFEFF,
+    Utf16BeBom = 0xfeff,
 
     /**
      * U+FFFD REPLACEMENT CHARACTER
      */
-    ReplacementCharacter = 0xFFFD,
+    ReplacementCharacter = 0xfffd,
 
     /**
      * U+10FFFF Maximum valid code point
      */
-    MaxCodePoint = 0x10FFFF,
+    MaxCodePoint = 0x10ffff,
 
     /**
      * U+0080 <control> Start of a control character range
@@ -309,20 +309,20 @@ export const enum CodePoint {
     /**
      * U+D800 <surrogate> Start of a surrogate pair
      */
-    LeadingSurrogateStart = 0xD800,
+    LeadingSurrogateStart = 0xd800,
 
     /**
      * U+DBFF <surrogate> End of a surrogate pair
      */
-    LeadingSurrogateEnd = 0xDBFF,
+    LeadingSurrogateEnd = 0xdbff,
 
     /**
      * U+DC00 <surrogate> Start of a surrogate pair
      */
-    TrailingSurrogateStart = 0xDC00,
+    TrailingSurrogateStart = 0xdc00,
 
     /**
      * U+DFFF <surrogate> End of a surrogate pair
      */
-    TrailingSurrogateEnd = 0xDFFF,
+    TrailingSurrogateEnd = 0xdfff,
 }

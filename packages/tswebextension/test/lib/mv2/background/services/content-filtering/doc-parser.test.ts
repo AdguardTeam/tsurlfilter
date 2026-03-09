@@ -15,7 +15,9 @@ describe('Document parser wrapper', () => {
     it('checks document parser - namespace', () => {
         const parser = new DocumentParser();
         // eslint-disable-next-line max-len
-        const doc = parser.parse('<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><body></body></html>');
+        const doc = parser.parse(
+            '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><body></body></html>',
+        );
         expect(doc).not.toBeNull();
     });
 });

@@ -35,14 +35,11 @@ export class RawFilterListConverter extends BaseConverter {
      */
     public static convertToAdg(rawFilterList: string, tolerant = true): ConversionResult<string> {
         const conversionResult = FilterListConverter.convertToAdg(
-            FilterListParser.parse(
-                rawFilterList,
-                {
-                    ...defaultParserOptions,
-                    isLocIncluded: false,
-                    tolerant,
-                },
-            ),
+            FilterListParser.parse(rawFilterList, {
+                ...defaultParserOptions,
+                isLocIncluded: false,
+                tolerant,
+            }),
             tolerant,
         );
 

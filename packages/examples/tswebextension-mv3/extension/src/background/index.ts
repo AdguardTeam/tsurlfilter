@@ -65,10 +65,7 @@ const messageHandler = async (message: IMessage) => {
             const res: ConfigResponse = {
                 status: isStarted || false,
                 filters: config.staticFiltersIds,
-                rules: new FilterList(
-                    config.userrules.content,
-                    config.userrules.conversionData,
-                ).getOriginalContent(),
+                rules: new FilterList(config.userrules.content, config.userrules.conversionData).getOriginalContent(),
             };
 
             return res;
@@ -163,7 +160,6 @@ const startIfNeed = async () => {
     if (isStarted) {
         await tsWebExtension.start(config);
     }
-
 };
 
 const waitForInitAndClean = async () => {
@@ -201,10 +197,7 @@ const initExtension = async (messageId: string) => {
     }
 };
 
-const proxyHandler = async (
-    message: IMessage | IMessageInner,
-    sender: browser.Runtime.MessageSender,
-) => {
+const proxyHandler = async (message: IMessage | IMessageInner, sender: browser.Runtime.MessageSender) => {
     const id = 'id_' + Math.random().toString(16).slice(2);
     console.debug('[PROXY HANDLER]: start check config', id, message);
 
@@ -262,8 +255,7 @@ const isMessage = (message: unknown): message is IMessage => {
  * false otherwise.
  */
 const isMessageInner = (message: unknown): message is IMessageInner => {
-    return (message as IMessageInner).handlerName !== undefined
-        || (message as IMessageInner).type !== undefined;
+    return (message as IMessageInner).handlerName !== undefined || (message as IMessageInner).type !== undefined;
 };
 
 // TODO: Add same logic for update event
@@ -277,19 +269,14 @@ browser.runtime.onInstalled.addListener(async () => {
     console.debug('[ON INSTALLED]: done');
 });
 
-browser.runtime.onMessage
-    .addListener((
-        message: unknown,
-        sender: browser.Runtime.MessageSender,
-        sendResponse,
-    ) => {
-        console.debug('browser.runtime.onMessage: ', message);
+browser.runtime.onMessage.addListener((message: unknown, sender: browser.Runtime.MessageSender, sendResponse) => {
+    console.debug('browser.runtime.onMessage: ', message);
 
-        if (isMessageInner(message) || isMessage(message)) {
-            proxyHandler(message, sender).then(sendResponse);
-        } else {
-            console.error('Received message with invalid type:', message);
-        }
+    if (isMessageInner(message) || isMessage(message)) {
+        proxyHandler(message, sender).then(sendResponse);
+    } else {
+        console.error('Received message with invalid type:', message);
+    }
 
-        return true;
-    });
+    return true;
+});

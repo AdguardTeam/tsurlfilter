@@ -35,11 +35,7 @@ export class AdgHtmlFilteringBodyParser extends BaseParser {
      * div[some_attribute="some_value"]
      * ```
      */
-    public static parse(
-        raw: string,
-        options = defaultParserOptions,
-        baseOffset = 0,
-    ): Value | HtmlFilteringRuleBody {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): Value | HtmlFilteringRuleBody {
         const escapedRaw = QuoteUtils.escapeAttributeDoubleQuotes(raw);
         return HtmlFilteringBodyParser.parse(escapedRaw, options, baseOffset);
     }

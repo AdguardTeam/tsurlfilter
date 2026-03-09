@@ -41,15 +41,8 @@ const backgroundConfig = {
     watch: {
         include: 'src/background/**',
     },
-    external: [
-        '@adguard/tswebextension/mv3',
-        'zod',
-    ],
-    plugins: [
-        json(),
-        commonjs(),
-        ...plugins,
-    ],
+    external: ['@adguard/tswebextension/mv3', 'zod'],
+    plugins: [json(), commonjs(), ...plugins],
 };
 
 const contentScriptConfig = {

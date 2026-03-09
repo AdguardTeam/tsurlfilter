@@ -23,19 +23,13 @@ type HashWithSource = {
  * Contains the 'coordinates' of a rule: the source filter ID
  * and the rule index within this filter.
  */
-type SerializedSource = [
-    SourceRuleIdxAndFilterId['filterId'],
-    SourceRuleIdxAndFilterId['sourceRuleIndex'],
-];
+type SerializedSource = [SourceRuleIdxAndFilterId['filterId'], SourceRuleIdxAndFilterId['sourceRuleIndex']];
 
 /**
  * Describes {@link RulesHashMap} which is serialized to primitive values for
  * possible saving and loading.
  */
-type SerializedHashWithSource = [
-    RuleHash,
-    SerializedSource[],
-];
+type SerializedHashWithSource = [RuleHash, SerializedSource[]];
 
 export interface IRulesHashMap {
     /**
@@ -120,14 +114,13 @@ export class RulesHashMap implements IRulesHashMap {
     public serialize(): string {
         const arr = Array.from(this.map);
 
-        const serializedValues: SerializedHashWithSource[] = arr
-            .map(([hash, source]) => {
-                const sources: SerializedSource[] = source.map((s) => {
-                    return [s.filterId, s.sourceRuleIndex];
-                });
-
-                return [hash, sources];
+        const serializedValues: SerializedHashWithSource[] = arr.map(([hash, source]) => {
+            const sources: SerializedSource[] = source.map((s) => {
+                return [s.filterId, s.sourceRuleIndex];
             });
+
+            return [hash, sources];
+        });
 
         return JSON.stringify(serializedValues);
     }

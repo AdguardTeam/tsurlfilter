@@ -42,10 +42,7 @@ export class IdbSingleton {
     ): Promise<IDBPDatabase> {
         // Wait for any pending operations to complete first (single await for atomicity)
         if (IdbSingleton.upgradePromise || IdbSingleton.getterPromise) {
-            const locks = [
-                IdbSingleton.upgradePromise,
-                IdbSingleton.getterPromise,
-            ].filter((lock) => lock !== null);
+            const locks = [IdbSingleton.upgradePromise, IdbSingleton.getterPromise].filter((lock) => lock !== null);
 
             await Promise.all(locks);
         }
@@ -87,7 +84,12 @@ export class IdbSingleton {
                 undefined,
                 {
                     upgrade(_database, oldVersion, newVersion) {
-                        logger.debug('[tsweb.IdbSingleton.openDatabase]: Upgrade IDB version from', oldVersion, 'to', newVersion);
+                        logger.debug(
+                            '[tsweb.IdbSingleton.openDatabase]: Upgrade IDB version from',
+                            oldVersion,
+                            'to',
+                            newVersion,
+                        );
                     },
                     // In normal situation we expected that this will not happen
                     // since we have mutex promise for upgrade.
@@ -181,29 +183,32 @@ export class IdbSingleton {
         store: string,
         onUpgrade?: (oldVersion: number, newVersion: number | null) => void,
     ): Promise<IDBPDatabase> {
-        return openDB(
-            IdbSingleton.DB_NAME,
-            newVersion,
-            {
-                upgrade(database, oldVersion, upgradeNewVersion) {
-                    logger.debug('[tsweb.IdbSingleton.executeUpgradeTask]: Upgrade IDB version from', oldVersion, 'to', upgradeNewVersion);
+        return openDB(IdbSingleton.DB_NAME, newVersion, {
+            upgrade(database, oldVersion, upgradeNewVersion) {
+                logger.debug(
+                    '[tsweb.IdbSingleton.executeUpgradeTask]: Upgrade IDB version from',
+                    oldVersion,
+                    'to',
+                    upgradeNewVersion,
+                );
 
-                    // Create the missing store without affecting existing stores
-                    if (!database.objectStoreNames.contains(store)) {
-                        database.createObjectStore(store);
-                    }
+                // Create the missing store without affecting existing stores
+                if (!database.objectStoreNames.contains(store)) {
+                    database.createObjectStore(store);
+                }
 
-                    // Call upgrade callback after database upgrade.
-                    if (onUpgrade) {
-                        onUpgrade(currentVersion, newVersion);
-                    }
-                },
-                blocked() {
-                    // In normal situation we expected that this will not happen
-                    // since we have mutex promise for upgrade.
-                    logger.warn('[tsweb.IdbSingleton.executeUpgradeTask]: IDB upgrade blocked - another upgrade in progress');
-                },
+                // Call upgrade callback after database upgrade.
+                if (onUpgrade) {
+                    onUpgrade(currentVersion, newVersion);
+                }
             },
-        );
+            blocked() {
+                // In normal situation we expected that this will not happen
+                // since we have mutex promise for upgrade.
+                logger.warn(
+                    '[tsweb.IdbSingleton.executeUpgradeTask]: IDB upgrade blocked - another upgrade in progress',
+                );
+            },
+        });
     }
 }

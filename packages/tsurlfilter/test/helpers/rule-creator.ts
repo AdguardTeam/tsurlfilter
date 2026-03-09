@@ -18,11 +18,7 @@ import { RuleFactory } from '../../src/rules/rule-factory';
  *
  * @throws Error if the rule is not a valid network rule.
  */
-export const createNetworkRule = (
-    rule: string,
-    filterListId = 0,
-    ruleIndex = RULE_INDEX_NONE,
-): NetworkRule => {
+export const createNetworkRule = (rule: string, filterListId = 0, ruleIndex = RULE_INDEX_NONE): NetworkRule => {
     return new NetworkRule(rule.trim(), filterListId, ruleIndex);
 };
 
@@ -45,11 +41,7 @@ export const createNetworkRuleWithNode = (
     const trimmedText = text.trim();
     const node = NetworkRuleParser.parse(trimmedText);
 
-    return new NetworkRuleWithNodeAndText(
-        new NetworkRule(trimmedText, filterListId, ruleIndex),
-        node,
-        trimmedText,
-    );
+    return new NetworkRuleWithNodeAndText(new NetworkRule(trimmedText, filterListId, ruleIndex), node, trimmedText);
 };
 
 /**
@@ -63,11 +55,7 @@ export const createNetworkRuleWithNode = (
  *
  * @throws Error if the rule is not a valid cosmetic rule.
  */
-export const createCosmeticRule = (
-    rule: string,
-    filterListId = 0,
-    ruleIndex = RULE_INDEX_NONE,
-): CosmeticRule => {
+export const createCosmeticRule = (rule: string, filterListId = 0, ruleIndex = RULE_INDEX_NONE): CosmeticRule => {
     return new CosmeticRule(rule.trim(), filterListId, ruleIndex);
 };
 

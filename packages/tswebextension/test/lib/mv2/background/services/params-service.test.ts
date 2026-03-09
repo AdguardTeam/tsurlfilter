@@ -1,9 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    it,
-} from 'vitest';
+import { describe, expect, beforeEach, it } from 'vitest';
 import { HTTPMethod, MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
@@ -26,11 +21,7 @@ describe('Params service', () => {
         requestContextStorage.clear();
     });
 
-    const testUrlPurge = (
-        url: string,
-        method: HTTPMethod,
-        rulesText: string[],
-    ): string | null => {
+    const testUrlPurge = (url: string, method: HTTPMethod, rulesText: string[]): string | null => {
         const requestId = '12345';
 
         requestContextStorage.set(requestId, {
@@ -46,7 +37,10 @@ describe('Params service', () => {
             requestFrameId: 0,
             timestamp: Date.now(),
             thirdParty: false,
-            matchingResult: new MatchingResult(rulesText.map(((ruleText) => createNetworkRule(ruleText, 1))), null),
+            matchingResult: new MatchingResult(
+                rulesText.map((ruleText) => createNetworkRule(ruleText, 1)),
+                null,
+            ),
             contentType: ContentType.Document,
         });
 
@@ -60,21 +54,13 @@ describe('Params service', () => {
     });
 
     it('returns null if removeparam rules is not exist', () => {
-        const purgedUrl = testUrlPurge(
-            'https://example.org?param=1',
-            HTTPMethod.GET,
-            [],
-        );
+        const purgedUrl = testUrlPurge('https://example.org?param=1', HTTPMethod.GET, []);
 
         expect(purgedUrl).toBe(null);
     });
 
     it('removes GET request params', () => {
-        const purgedUrl = testUrlPurge(
-            'https://example.org?param=1',
-            HTTPMethod.GET,
-            ['||example.org^$removeparam'],
-        );
+        const purgedUrl = testUrlPurge('https://example.org?param=1', HTTPMethod.GET, ['||example.org^$removeparam']);
 
         expect(purgedUrl).toBe('https://example.org');
         expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
@@ -83,11 +69,7 @@ describe('Params service', () => {
     });
 
     it('removes POST request params', () => {
-        const purgedUrl = testUrlPurge(
-            'https://example.org?param=1',
-            HTTPMethod.POST,
-            ['||example.org^$removeparam'],
-        );
+        const purgedUrl = testUrlPurge('https://example.org?param=1', HTTPMethod.POST, ['||example.org^$removeparam']);
 
         expect(purgedUrl).toBe('https://example.org');
         expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
@@ -96,11 +78,10 @@ describe('Params service', () => {
     });
 
     it('correctly processes allowlist rule', () => {
-        const purgedUrl = testUrlPurge(
-            'https://example.org?param=1',
-            HTTPMethod.GET,
-            ['||example.org^$removeparam=param', '@@||example.org^$removeparam=param'],
-        );
+        const purgedUrl = testUrlPurge('https://example.org?param=1', HTTPMethod.GET, [
+            '||example.org^$removeparam=param',
+            '@@||example.org^$removeparam=param',
+        ]);
 
         expect(purgedUrl).toBe(null);
         expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
@@ -109,11 +90,9 @@ describe('Params service', () => {
     });
 
     it('removes only specific param', () => {
-        const purgedUrl = testUrlPurge(
-            'https://example.org?param=1&test=1',
-            HTTPMethod.GET,
-            ['||example.org^$removeparam=param'],
-        );
+        const purgedUrl = testUrlPurge('https://example.org?param=1&test=1', HTTPMethod.GET, [
+            '||example.org^$removeparam=param',
+        ]);
 
         expect(purgedUrl).toBe('https://example.org?test=1');
         expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
@@ -121,12 +100,10 @@ describe('Params service', () => {
         );
     });
 
-    it('doesn\'t remove unspecific param', () => {
-        const purgedUrl = testUrlPurge(
-            'https://example.org?test=1',
-            HTTPMethod.GET,
-            ['||example.org^$removeparam=param'],
-        );
+    it("doesn't remove unspecific param", () => {
+        const purgedUrl = testUrlPurge('https://example.org?test=1', HTTPMethod.GET, [
+            '||example.org^$removeparam=param',
+        ]);
 
         expect(purgedUrl).toBe(null);
         expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(

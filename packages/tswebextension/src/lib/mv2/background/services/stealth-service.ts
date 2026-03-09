@@ -251,11 +251,7 @@ export class StealthService {
      */
     private static removeReferrer(requestHeaders: WebRequest.HttpHeaders, requestUrl: string): boolean {
         const refHeader = findHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER);
-        if (
-            refHeader
-            && refHeader.value
-            && isThirdPartyRequest(requestUrl, refHeader.value)
-        ) {
+        if (refHeader && refHeader.value && isThirdPartyRequest(requestUrl, refHeader.value)) {
             refHeader.value = StealthService.createMockRefHeaderUrl(requestUrl);
             return true;
         }
@@ -273,10 +269,10 @@ export class StealthService {
     private static hideSearchQueries(requestHeaders: WebRequest.HttpHeaders, requestUrl: string): boolean {
         const refHeader = findHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER);
         if (
-            refHeader
-            && refHeader.value
-            && StealthService.isSearchEngine(refHeader.value)
-            && isThirdPartyRequest(requestUrl, refHeader.value)
+            refHeader &&
+            refHeader.value &&
+            StealthService.isSearchEngine(refHeader.value) &&
+            isThirdPartyRequest(requestUrl, refHeader.value)
         ) {
             refHeader.value = StealthService.createMockRefHeaderUrl(requestUrl);
             return true;

@@ -160,13 +160,7 @@ describe('fastHash31', () => {
     });
 
     it('hash is always in [1, 2^31-1] for valuable strings', () => {
-        const samples = [
-            'a',
-            'test',
-            'example.com',
-            'anotherstring',
-            'verylongstringverylongstringverylongstring',
-        ];
+        const samples = ['a', 'test', 'example.com', 'anotherstring', 'verylongstringverylongstringverylongstring'];
         for (const s of samples) {
             const hash = fastHash31(s);
             expect(hash).toBeGreaterThanOrEqual(1);

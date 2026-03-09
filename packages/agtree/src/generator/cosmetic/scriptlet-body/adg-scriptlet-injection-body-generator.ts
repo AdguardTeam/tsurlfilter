@@ -1,10 +1,5 @@
 import type { ScriptletInjectionRuleBody } from '../../../nodes';
-import {
-    ADG_SCRIPTLET_MASK,
-    CLOSE_PARENTHESIS,
-    EMPTY,
-    OPEN_PARENTHESIS,
-} from '../../../utils/constants';
+import { ADG_SCRIPTLET_MASK, CLOSE_PARENTHESIS, EMPTY, OPEN_PARENTHESIS } from '../../../utils/constants';
 import { ParameterListGenerator } from '../../misc/parameter-list-generator';
 import { BaseGenerator } from '../../base-generator';
 

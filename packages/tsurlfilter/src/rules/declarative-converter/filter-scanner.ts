@@ -101,11 +101,13 @@ export class FilterScanner implements IFilterScanner {
                 if (e instanceof Error) {
                     result.errors.push(e);
                 } else {
-                    const err = new Error([
-                        'Unknown error during creating indexed rule with hash from raw string:',
-                        `filter id - ${this.filterId}, rule index - ${ruleIndex}`,
-                        `rule text - ${ruleText}`,
-                    ].join(' '));
+                    const err = new Error(
+                        [
+                            'Unknown error during creating indexed rule with hash from raw string:',
+                            `filter id - ${this.filterId}, rule index - ${ruleIndex}`,
+                            `rule text - ${ruleText}`,
+                        ].join(' '),
+                    );
                     result.errors.push(err);
                 }
                 continue;
@@ -114,17 +116,15 @@ export class FilterScanner implements IFilterScanner {
                 ruleText = reader.readLine();
             }
 
-            const filteredRules = filterFn
-                ? indexedNetworkRulesWithHash.filter(filterFn)
-                : indexedNetworkRulesWithHash;
+            const filteredRules = filterFn ? indexedNetworkRulesWithHash.filter(filterFn) : indexedNetworkRulesWithHash;
 
             result.rules.push(...filteredRules);
 
             curNumberOfScannedNetworkRules += filteredRules.length;
 
             if (
-                maxNumberOfScannedNetworkRules !== undefined
-                && curNumberOfScannedNetworkRules >= maxNumberOfScannedNetworkRules
+                maxNumberOfScannedNetworkRules !== undefined &&
+                curNumberOfScannedNetworkRules >= maxNumberOfScannedNetworkRules
             ) {
                 const lastScannedRule = indexedNetworkRulesWithHash[indexedNetworkRulesWithHash.length - 1];
                 const lineIndex = lastScannedRule.index;

@@ -71,11 +71,7 @@ export default class CookieRulesFinder {
      *
      * @returns Modifying rules.
      */
-    static lookupModifyingRules(
-        cookieName: string,
-        rules: NetworkRule[],
-        isThirdPartyCookie: boolean,
-    ): NetworkRule[] {
+    static lookupModifyingRules(cookieName: string, rules: NetworkRule[], isThirdPartyCookie: boolean): NetworkRule[] {
         const result: NetworkRule[] = [];
         const allowlistRules: NetworkRule[] = [];
 
@@ -135,7 +131,9 @@ export default class CookieRulesFinder {
      */
     private static isModifyingRule(rule: NetworkRule): boolean {
         const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
-        return cookieModifier.getSameSite() !== null
-            || (cookieModifier.getMaxAge() !== null && cookieModifier.getMaxAge()! > 0);
+        return (
+            cookieModifier.getSameSite() !== null ||
+            (cookieModifier.getMaxAge() !== null && cookieModifier.getMaxAge()! > 0)
+        );
     }
 }

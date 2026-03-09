@@ -48,9 +48,9 @@ export class CssInjectionRuleConverter extends RuleConverterBase {
 
         // Check if the rule needs to be converted
         if (
-            !(rule.syntax === AdblockSyntax.Common || rule.syntax === AdblockSyntax.Adg)
-            || separator !== convertedSeparator
-            || convertedSelectorList.isConverted
+            !(rule.syntax === AdblockSyntax.Common || rule.syntax === AdblockSyntax.Adg) ||
+            separator !== convertedSeparator ||
+            convertedSelectorList.isConverted
         ) {
             // TODO: Replace with custom clone method
             const ruleClone = clone(rule);

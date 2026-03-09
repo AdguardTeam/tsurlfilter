@@ -2,12 +2,7 @@ import fs from 'node:fs/promises';
 
 import * as acorn from 'acorn';
 import path from 'path';
-import {
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 // Mock crypto module to return predictable MD5 hashes
 vi.mock('node:crypto', () => ({
@@ -68,10 +63,10 @@ describe('local-scripts', () => {
     describe('should handle js rules', () => {
         it('should extract js rule', async () => {
             const filterText = await fs.readFile(path.join(__dirname, 'filter-single-rule.txt'), 'utf-8');
-            const expectedJsRulesStr = await fs.readFile(path.join(
-                __dirname,
-                'local-script-single-expected.js',
-            ), 'utf-8');
+            const expectedJsRulesStr = await fs.readFile(
+                path.join(__dirname, 'local-script-single-expected.js'),
+                'utf-8',
+            );
             const rules = LocalScriptRulesJs.parse([filterText]);
             const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
 
@@ -82,10 +77,10 @@ describe('local-scripts', () => {
 
         it('should extract multiple js rules', async () => {
             const filterText = await fs.readFile(path.join(__dirname, 'filter-multiple-rules.txt'), 'utf-8');
-            const expectedJsRulesStr = await fs.readFile(path.join(
-                __dirname,
-                'local-script-multiple-expected.js',
-            ), 'utf-8');
+            const expectedJsRulesStr = await fs.readFile(
+                path.join(__dirname, 'local-script-multiple-expected.js'),
+                'utf-8',
+            );
             const rules = LocalScriptRulesJs.parse([filterText]);
             const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
 
@@ -96,10 +91,10 @@ describe('local-scripts', () => {
 
         it('should skip invalid js rules and only include valid ones', async () => {
             const filterText = await fs.readFile(path.join(__dirname, 'filter-invalid-rules.txt'), 'utf-8');
-            const expectedJsRulesStr = await fs.readFile(path.join(
-                __dirname,
-                'local-script-invalid-expected.js',
-            ), 'utf-8');
+            const expectedJsRulesStr = await fs.readFile(
+                path.join(__dirname, 'local-script-invalid-expected.js'),
+                'utf-8',
+            );
             const rules = LocalScriptRulesJs.parse([filterText]);
             const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
             expect(jsRulesStr).toBe(expectedJsRulesStr);
@@ -114,10 +109,10 @@ describe('local-scripts', () => {
 
         it('should exclude scriptlets and only extract JS injection rules', async () => {
             const filterText = await fs.readFile(path.join(__dirname, 'filter-with-scriptlet.txt'), 'utf-8');
-            const expectedJsRulesStr = await fs.readFile(path.join(
-                __dirname,
-                'local-script-scriptlet-expected.js',
-            ), 'utf-8');
+            const expectedJsRulesStr = await fs.readFile(
+                path.join(__dirname, 'local-script-scriptlet-expected.js'),
+                'utf-8',
+            );
             const rules = LocalScriptRulesJs.parse([filterText]);
             const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
 
@@ -130,10 +125,10 @@ describe('local-scripts', () => {
     describe('should handle js rules with domains', () => {
         it('should extract js rules with domain information', async () => {
             const filterText = await fs.readFile(path.join(__dirname, 'filter-with-domains.txt'), 'utf-8');
-            const expectedJsonStr = await fs.readFile(path.join(
-                __dirname,
-                'local-script-domains-expected.json',
-            ), 'utf-8');
+            const expectedJsonStr = await fs.readFile(
+                path.join(__dirname, 'local-script-domains-expected.json'),
+                'utf-8',
+            );
 
             // Extract rules with domains
             const rulesMap = LocalScriptRulesJson.parse([filterText]);

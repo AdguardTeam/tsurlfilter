@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **BREAKING:** Updated [@adguard/tswebextension] to v4.0.0 with `FilterList` API.
-  - User rules now use `FilterList` for automatic rule conversion.
-  - Configuration structure changed: `content` and `conversionData` replace previous format.
+    - User rules now use `FilterList` for automatic rule conversion.
+    - Configuration structure changed: `content` and `conversionData` replace previous format.
 
 [2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v2.0.0
 
@@ -75,7 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2975]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2975
 [AdguardBrowserExtension#2977]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2977
 [AdguardBrowserExtension#2980]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2980
-
 [0.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.2.1
 
 ## [0.2.0] - 2024-10-02
@@ -96,7 +95,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Logging of `adguardApi.onRequestBlocking` events which are falsely considered as blocked requests.
 
 [#137]: https://github.com/AdguardTeam/tsurlfilter/issues/137
-
 [0.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.2.0
 
 ## [0.1.7] - 2024-08-30

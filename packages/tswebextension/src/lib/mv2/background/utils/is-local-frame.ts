@@ -14,9 +14,11 @@ import { isEmptySrcFrame } from '../../../common/utils/is-empty-src-frame';
  * @returns True if frame without src, else returns false.
  */
 export function isLocalFrame(frameUrl: string, frameId: number, mainFrameUrl: string): boolean {
-    return frameId !== MAIN_FRAME_ID
-        && (frameUrl === mainFrameUrl
-            || isEmptySrcFrame(frameUrl)
+    return (
+        frameId !== MAIN_FRAME_ID &&
+        (frameUrl === mainFrameUrl ||
+            isEmptySrcFrame(frameUrl) ||
             // eslint-disable-next-line no-script-url
-            || frameUrl.indexOf('javascript:') > -1);
+            frameUrl.indexOf('javascript:') > -1)
+    );
 }

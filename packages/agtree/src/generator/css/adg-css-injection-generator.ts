@@ -1,11 +1,5 @@
 import type { CssInjectionRuleBody } from '../../nodes';
-import {
-    CLOSE_CURLY_BRACKET,
-    CSS_MEDIA_MARKER,
-    EMPTY,
-    OPEN_CURLY_BRACKET,
-    SPACE,
-} from '../../utils/constants';
+import { CLOSE_CURLY_BRACKET, CSS_MEDIA_MARKER, EMPTY, OPEN_CURLY_BRACKET, SPACE } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
 
 /**

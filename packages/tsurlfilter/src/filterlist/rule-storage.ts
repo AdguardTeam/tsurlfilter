@@ -144,11 +144,7 @@ export class RuleStorage {
      *
      * @note It returns `null` for rules that are ignored in the rule list.
      */
-    public retrieveRule(
-        storageIdx: number,
-        ignoreHost = true,
-        ignoreHtmlFilteringBodies = true,
-    ): IRule | null {
+    public retrieveRule(storageIdx: number, ignoreHost = true, ignoreHtmlFilteringBodies = true): IRule | null {
         const rule = this.cache.get(storageIdx);
         if (rule) {
             return rule;
@@ -159,7 +155,9 @@ export class RuleStorage {
         const list = this.listsMap.get(listId);
 
         if (!list) {
-            logger.warn(`[tsurl.RuleStorage.retrieveRule]: Failed to retrieve list ${listId}, should not happen in normal operation`);
+            logger.warn(
+                `[tsurl.RuleStorage.retrieveRule]: Failed to retrieve list ${listId}, should not happen in normal operation`,
+            );
 
             return null;
         }
@@ -167,7 +165,9 @@ export class RuleStorage {
         const ruleText = list.retrieveRuleText(ruleId);
 
         if (!ruleText) {
-            logger.warn(`[tsurl.RuleStorage.retrieveRule]: Failed to retrieve rule ${ruleId}, should not happen in normal operation`);
+            logger.warn(
+                `[tsurl.RuleStorage.retrieveRule]: Failed to retrieve rule ${ruleId}, should not happen in normal operation`,
+            );
 
             return null;
         }
@@ -175,13 +175,7 @@ export class RuleStorage {
         let createdRule: IRule | null = null;
 
         try {
-            createdRule = RuleFactory.createRule(
-                ruleText,
-                listId,
-                ruleId,
-                !ignoreHost,
-                !ignoreHtmlFilteringBodies,
-            );
+            createdRule = RuleFactory.createRule(ruleText, listId, ruleId, !ignoreHost, !ignoreHtmlFilteringBodies);
         } catch (e) {
             logger.debug(`[tsurl.RuleStorage.retrieveRule]: error: "${getErrorMessage(e)}" in the rule: "${ruleText}"`);
         }

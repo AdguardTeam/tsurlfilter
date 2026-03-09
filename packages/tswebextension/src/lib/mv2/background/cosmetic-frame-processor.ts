@@ -56,12 +56,7 @@ export class CosmeticFrameProcessor {
      *
      * @returns True if recalculation should be skipped.
      */
-    public shouldSkipRecalculation(
-        tabId: number,
-        frameId: number,
-        url: string,
-        timeStamp: number,
-    ): boolean {
+    public shouldSkipRecalculation(tabId: number, frameId: number, url: string, timeStamp: number): boolean {
         const frameContext = this.tabsApi.getFrameContext(tabId, frameId);
         if (!frameContext) {
             return false;
@@ -83,12 +78,7 @@ export class CosmeticFrameProcessor {
      * @param props Handle sub frame without url props.
      */
     private handleSubFrameWithoutUrl(props: HandleSubFrameWithoutUrlProps): void {
-        const {
-            tabId,
-            frameId,
-            mainFrameUrl,
-            parentDocumentId,
-        } = props;
+        const { tabId, frameId, mainFrameUrl, parentDocumentId } = props;
 
         let parentFrame: FrameMV2 | undefined;
         let tempParentDocumentId = parentDocumentId;
@@ -114,13 +104,7 @@ export class CosmeticFrameProcessor {
      * @param props Handle sub frame with url props.
      */
     private handleSubFrameWithUrl(props: HandleSubFrameWithUrlProps): void {
-        const {
-            url,
-            tabId,
-            frameId,
-            mainFrameUrl,
-            mainFrameRule,
-        } = props;
+        const { url, tabId, frameId, mainFrameUrl, mainFrameRule } = props;
 
         const result = this.engineApi.matchRequest({
             requestUrl: url,
@@ -133,14 +117,7 @@ export class CosmeticFrameProcessor {
             return;
         }
 
-        const {
-            cosmeticResult,
-            preparedCosmeticResult,
-        } = this.extractCosmeticRules(
-            url,
-            mainFrameRule,
-            result,
-        );
+        const { cosmeticResult, preparedCosmeticResult } = this.extractCosmeticRules(url, mainFrameRule, result);
 
         this.tabsApi.updateFrameContext(tabId, frameId, {
             mainFrameUrl,
@@ -156,11 +133,7 @@ export class CosmeticFrameProcessor {
      * @param props Handle main frame props.
      */
     private handleMainFrame(props: HandleMainFrameProps): void {
-        const {
-            url,
-            tabId,
-            frameId,
-        } = props;
+        const { url, tabId, frameId } = props;
 
         if (!isHttpRequest(url)) {
             return;
@@ -183,14 +156,7 @@ export class CosmeticFrameProcessor {
             return;
         }
 
-        const {
-            cosmeticResult,
-            preparedCosmeticResult,
-        } = this.extractCosmeticRules(
-            url,
-            mainFrameRule,
-            result,
-        );
+        const { cosmeticResult, preparedCosmeticResult } = this.extractCosmeticRules(url, mainFrameRule, result);
 
         this.tabsApi.updateFrameContext(tabId, frameId, {
             matchingResult: result,
@@ -220,13 +186,10 @@ export class CosmeticFrameProcessor {
 
         const isNativeHasSupported = CssCapabilities.isNativeHasPseudoClassSupported();
 
-        const cssText = CosmeticApi.getCssText(
-            cosmeticResult,
-            {
-                areHitsStatsCollected,
-                isNativeHasSupported,
-            },
-        );
+        const cssText = CosmeticApi.getCssText(cosmeticResult, {
+            areHitsStatsCollected,
+            isNativeHasSupported,
+        });
 
         const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
         const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, matchingResult);
@@ -253,17 +216,11 @@ export class CosmeticFrameProcessor {
      * @param props Precalculate cosmetic props.
      */
     public handleFrame(props: PrecalculateCosmeticProps): void {
-        const {
-            tabId,
-            frameId,
-            url,
-            parentDocumentId,
-            documentLifecycle,
-        } = props;
+        const { tabId, frameId, url, parentDocumentId, documentLifecycle } = props;
 
         // Prerender main frame request can have other that 0 id.
-        const isMainFrame = (!parentDocumentId && documentLifecycle === DocumentLifecycle.Prerender)
-            || frameId === MAIN_FRAME_ID;
+        const isMainFrame =
+            (!parentDocumentId && documentLifecycle === DocumentLifecycle.Prerender) || frameId === MAIN_FRAME_ID;
 
         if (isMainFrame) {
             this.handleMainFrame({

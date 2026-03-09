@@ -26,12 +26,7 @@ const pkg = JSON.parse(readFileSync(pkgFileLocation, 'utf-8'));
 
 // Check if the package.json file has all required fields
 // (we need them for the banner)
-const REQUIRED_PKG_FIELDS = [
-    'author',
-    'homepage',
-    'license',
-    'version',
-];
+const REQUIRED_PKG_FIELDS = ['author', 'homepage', 'license', 'version'];
 
 for (const field of REQUIRED_PKG_FIELDS) {
     if (!(field in pkg)) {
@@ -77,13 +72,8 @@ const main = {
             banner,
         },
     ],
-    plugins: [
-        ...commonPlugins,
-        compatibilityTablePlugin(),
-    ],
+    plugins: [...commonPlugins, compatibilityTablePlugin()],
 };
 
 // Export build configs for Rollup
-export default [
-    main,
-];
+export default [main];

@@ -13,7 +13,7 @@ on:
 
 # Workflow need write access to the repository to create a release
 permissions:
-    contents: write
+  contents: write
 
 jobs:
   create_release:
@@ -82,11 +82,10 @@ jobs:
     name: Send Slack notification
     needs: create_release
     # Note: 'always()' is needed to run the notify job even if the test job was failed
-    if:
-      ${{
-        always() &&
-        github.repository == 'AdguardTeam/tsurlfilter' &&
-        github.event_name == 'push'
+    if: ${{
+      always() &&
+      github.repository == 'AdguardTeam/tsurlfilter' &&
+      github.event_name == 'push'
       }}
     runs-on: ubuntu-latest
     steps:

@@ -41,6 +41,7 @@ export type ConfigurationMV2 = z.infer<typeof configurationMV2Validator>;
  * This type is {@link ConfigurationMV2} with an omitted array of rule and domain strings loaded in the filter engine.
  * It is used to reduce memory consumption when storing configuration data in memory.
  */
-export type ConfigurationMV2Context =
-    & Omit<ConfigurationMV2, 'filters' | 'allowlist' | 'userrules' | 'trustedDomains'>
-    & { filters: number[] };
+export type ConfigurationMV2Context = Omit<
+    ConfigurationMV2,
+    'filters' | 'allowlist' | 'userrules' | 'trustedDomains'
+> & { filters: number[] };

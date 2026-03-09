@@ -1,19 +1,10 @@
-import {
-    describe,
-    test,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
-import {
-    UboScriptletInjectionBodyParser,
-} from '../../../../src/parser/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-parser';
+import { UboScriptletInjectionBodyParser } from '../../../../src/parser/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
-import {
-    UboScriptletInjectionBodyGenerator,
-} from '../../../../src/generator/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-generator';
+import { UboScriptletInjectionBodyGenerator } from '../../../../src/generator/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-generator';
 
 describe('UboScriptletInjectionBodyParser', () => {
     describe('UboScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -953,7 +944,9 @@ describe('UboScriptletInjectionBodyParser', () => {
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
             // eslint-disable-next-line max-len
-            expect(UboScriptletInjectionBodyParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
+            expect(UboScriptletInjectionBodyParser.parse(actual)).toMatchObject(
+                expectedFn(new NodeExpectContext(actual)),
+            );
         });
     });
 

@@ -1,17 +1,6 @@
-import {
-    BACKSLASH,
-    CLOSE_PARENTHESIS,
-    HINT_MARKER,
-    HINT_MARKER_LEN,
-    OPEN_PARENTHESIS,
-} from '../../utils/constants';
+import { BACKSLASH, CLOSE_PARENTHESIS, HINT_MARKER, HINT_MARKER_LEN, OPEN_PARENTHESIS } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import {
-    CommentRuleType,
-    type Hint,
-    type HintCommentRule,
-    RuleCategory,
-} from '../../nodes';
+import { CommentRuleType, type Hint, type HintCommentRule, RuleCategory } from '../../nodes';
 import { HintParser } from './hint-parser';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
@@ -121,11 +110,7 @@ export class HintCommentParser extends BaseParser {
 
         // Throw error if no hints were found
         if (hints.length === 0) {
-            throw new AdblockSyntaxError(
-                'Empty hint rule',
-                baseOffset,
-                baseOffset + offset,
-            );
+            throw new AdblockSyntaxError('Empty hint rule', baseOffset, baseOffset + offset);
         }
 
         const result: HintCommentRule = {

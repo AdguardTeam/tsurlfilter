@@ -8,16 +8,8 @@ module.exports = {
         tsconfigRootDir: path.join(__dirname),
         project: 'tsconfig.json',
     },
-    plugins: [
-        'import',
-        '@typescript-eslint',
-    ],
-    extends: [
-        'airbnb-base',
-        'airbnb-typescript/base',
-        'plugin:jsdoc/recommended',
-        '@adguard/eslint-config-internal',
-    ],
+    plugins: ['import', '@typescript-eslint'],
+    extends: ['airbnb-base', 'airbnb-typescript/base', 'plugin:jsdoc/recommended', '@adguard/eslint-config-internal'],
     ignorePatterns: ['dist', 'coverage'],
     rules: {
         indent: 'off',

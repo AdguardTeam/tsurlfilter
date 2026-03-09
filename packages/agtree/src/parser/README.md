@@ -1,15 +1,17 @@
 <!-- omit in toc -->
+
 # Adblock rule parser
 
 This directory contains adblock rule parser. It supports all syntaxes
 currently in use:
 
 <!--markdownlint-disable MD013-->
+
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard][adg-url]
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock Origin logo" width="14px"> [uBlock Origin][ubo-url]
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus][abp-url]
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/ab_logo.svg" alt="AdBlock logo" width="14px"> [AdBlock][ab-url]
-<!--markdownlint-enable MD013-->
+    <!--markdownlint-enable MD013-->
 
 Table of contents:
 
@@ -36,7 +38,7 @@ The parser API is available in the `@adguard/agtree/parser` entrypoint. You can 
 import { RuleParser, FilterListParser } from '@adguard/agtree/parser';
 ```
 
-The idea is quite simple, we provide two *main* parser classes:
+The idea is quite simple, we provide two _main_ parser classes:
 
 - `RuleParser`: parses a single adblock filtering rule, you can pass any rule to it, it will automatically determine the
   rule type
@@ -93,8 +95,7 @@ Here is an example of how to pass options to the `RuleParser`:
 ```typescript
 import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
 
-
-const ruleNode = RuleParser.parse("/ads.js^$script", {
+const ruleNode = RuleParser.parse('/ads.js^$script', {
     ...defaultParserOptions,
     isLocIncluded: true,
 });
@@ -109,10 +110,10 @@ In this section we will show some examples of using the parser API.
 Here is an example of parsing a single adblock rule with `RuleParser`:
 
 ```typescript
-import { RuleParser } from "@adguard/agtree";
+import { RuleParser } from '@adguard/agtree';
 
 // RuleParser automatically determines the rule type, no need to specify it
-const ast = RuleParser.parse("/ads.js^$script");
+const ast = RuleParser.parse('/ads.js^$script');
 ```
 
 After running this script, basically you will get the following AST:
@@ -234,17 +235,15 @@ You can also parse complete filter lists using the `FilterListParser` class. It 
 class. Here is an example of parsing [EasyList](https://easylist.to/easylist/easylist.txt) and generating it back:
 
 ```typescript
-import { FilterListParser } from "@adguard/agtree/parser";
-import { FilterListGenerator } from "@adguard/agtree/generator";
-import { writeFile } from "fs/promises";
+import { FilterListParser } from '@adguard/agtree/parser';
+import { FilterListGenerator } from '@adguard/agtree/generator';
+import { writeFile } from 'fs/promises';
 // Requires installing "node-fetch" package
 // npm install node-fetch
-import fetch from "node-fetch";
+import fetch from 'node-fetch';
 
 // Download EasyList
-const easyList = await (
-    await fetch("https://easylist.to/easylist/easylist.txt")
-).text();
+const easyList = await (await fetch('https://easylist.to/easylist/easylist.txt')).text();
 
 // Or read it from file
 // const easyList = await readFile('easylist.txt', 'utf-8');
@@ -260,5 +259,5 @@ const ast = FilterListParser.parse(easyList);
 const easyListGenerated = FilterListGenerator.generate(ast);
 
 // Write generated filter list to file
-await writeFile("easylist-generated.txt", easyListGenerated);
+await writeFile('easylist-generated.txt', easyListGenerated);
 ```

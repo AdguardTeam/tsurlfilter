@@ -1,9 +1,4 @@
-import {
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { type WebNavigation } from 'webextension-polyfill';
 
 import { WebRequestApi } from '../../../../src/lib/mv2/background/web-request-api';

@@ -3,11 +3,7 @@
  */
 
 // Common interfaces
-export type {
-    OnTokenCallback,
-    OnErrorCallback,
-    TokenizerContextFunction,
-} from './common/types/function-prototypes';
+export type { OnTokenCallback, OnErrorCallback, TokenizerContextFunction } from './common/types/function-prototypes';
 export { TokenizerContext } from './common/context';
 export { TokenType } from './common/enums/token-types';
 export { getBaseTokenName, getFormattedTokenName } from './utils/token-names';

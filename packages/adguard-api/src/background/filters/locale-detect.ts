@@ -168,9 +168,9 @@ export class LocaleDetectService {
      */
     private async detectTabLanguage(tab: Tabs.Tab): Promise<void> {
         if (
-            !tab.url
+            !tab.url ||
             // Check language only for http://... tabs
-            || !isHttpRequest(tab.url)
+            !isHttpRequest(tab.url)
         ) {
             return;
         }

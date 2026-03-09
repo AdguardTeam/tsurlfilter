@@ -78,10 +78,13 @@ export class MemoryStorage<Data = unknown> implements ExtendedStorageInterface<s
             // Set each key-value pair into the store using Object.assign
             Object.assign(
                 this.store,
-                Object.entries(clonedData).reduce((acc, [key, value]) => {
-                    acc[key] = value as Data;
-                    return acc;
-                }, {} as Record<string, Data>),
+                Object.entries(clonedData).reduce(
+                    (acc, [key, value]) => {
+                        acc[key] = value as Data;
+                        return acc;
+                    },
+                    {} as Record<string, Data>,
+                ),
             );
 
             return await Promise.resolve(true);

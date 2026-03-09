@@ -2,14 +2,7 @@
  * @vitest-environment jsdom
  */
 
-import {
-    describe,
-    expect,
-    beforeEach,
-    afterEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, afterEach, it, vi } from 'vitest';
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule } from '../../../helpers/rule-creator';
@@ -48,12 +41,9 @@ const getElemhideCosmeticResult = (rules: string[]): CosmeticResult => {
  */
 const getCosmeticData = (rules: string[], areHitsStatsCollected: boolean): ContentScriptCosmeticData => {
     const cosmeticResult = getElemhideCosmeticResult(rules);
-    const extCssRules = CosmeticApi.getExtCssRules(
-        cosmeticResult,
-        {
-            areHitsStatsCollected,
-        },
-    );
+    const extCssRules = CosmeticApi.getExtCssRules(cosmeticResult, {
+        areHitsStatsCollected,
+    });
     return {
         isAppStarted: true,
         areHitsStatsCollected,
@@ -77,10 +67,7 @@ describe('some extended css rules are invalid', () => {
     });
 
     it('no hits counter', async () => {
-        const rules = [
-            '#?##bannerOff:remove()',
-            '#?#.ad_header:contains(text)',
-        ];
+        const rules = ['#?##bannerOff:remove()', '#?#.ad_header:contains(text)'];
 
         // Mocking the sendAppMessage function
         vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(getCosmeticData(rules, false));
@@ -105,10 +92,7 @@ describe('some extended css rules are invalid', () => {
     });
 
     it('hits counter enabled', async () => {
-        const rules = [
-            '#?##bannerOn:remove()',
-            '#?#.ad_header:contains(text)',
-        ];
+        const rules = ['#?##bannerOn:remove()', '#?#.ad_header:contains(text)'];
 
         // Mocking the sendAppMessage function
         vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(getCosmeticData(rules, true));

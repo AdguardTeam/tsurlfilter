@@ -1,17 +1,7 @@
-import {
-    describe,
-    test,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 
 import { AdblockSyntaxError } from '../../src/errors/adblock-syntax-error';
-import {
-    type AnyRule,
-    CommentRuleType,
-    CosmeticRuleType,
-    RuleCategory,
-} from '../../src/nodes';
+import { type AnyRule, CommentRuleType, CosmeticRuleType, RuleCategory } from '../../src/nodes';
 import { type ParserOptions } from '../../src/parser/options';
 import { RuleParser } from '../../src/parser/rule-parser';
 import { AdblockSyntax } from '../../src/utils/adblockers';
@@ -901,11 +891,7 @@ describe('RuleParser', () => {
                 },
                 // missing closing parenthesis - the rule is invalid
                 actual: '##+js(scriptlet',
-                expected: new AdblockSyntaxError(
-                    "Invalid uBO scriptlet call, no closing parentheses ')' found",
-                    5,
-                    15,
-                ),
+                expected: new AdblockSyntaxError("Invalid uBO scriptlet call, no closing parentheses ')' found", 5, 15),
             },
             {
                 options: {
@@ -915,11 +901,7 @@ describe('RuleParser', () => {
                 },
                 // missing closing parenthesis - the rule is invalid
                 actual: '||example.com^$',
-                expected: new AdblockSyntaxError(
-                    'Empty modifiers are not allowed',
-                    14,
-                    15,
-                ),
+                expected: new AdblockSyntaxError('Empty modifiers are not allowed', 14, 15),
             },
         ])('parser options should work for $actual', ({ options, actual, expected }) => {
             const fn = vi.fn(() => RuleParser.parse(actual, options));

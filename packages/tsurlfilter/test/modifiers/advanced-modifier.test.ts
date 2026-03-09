@@ -12,7 +12,7 @@ import { createNetworkRule } from '../helpers/rule-creator';
 
 describe('NetworkRule - csp rules', () => {
     it('works if csp modifier is correctly parsed', () => {
-        const directive = 'frame-src \'none\'';
+        const directive = "frame-src 'none'";
         const rule = createNetworkRule(`||example.org^$csp=${directive}`, 0);
         expect(rule).toBeTruthy();
         expect(rule.getAdvancedModifier()).toBeInstanceOf(CspModifier);
@@ -20,7 +20,7 @@ describe('NetworkRule - csp rules', () => {
     });
 
     it('works if csp modifier is correctly parsed', () => {
-        const directive = 'frame-src \'none\'';
+        const directive = "frame-src 'none'";
         const rule = createNetworkRule(`||example.org^$csp=${directive},subdocument`, 0);
         expect(rule).toBeTruthy();
         expect(rule.getAdvancedModifier()).toBeInstanceOf(CspModifier);
@@ -118,43 +118,43 @@ describe('NetworkRule - replace rules apply', () => {
     });
 
     it('checks replace apply for vast text', () => {
-        const input = '<?xml version="1.0" encoding="utf-8"?>\n'
-                + '<VAST version="2.0">\n'
-                + '    <Ad id="VPAID">\n'
-                + '        <InLine>\n'
-                + '            <AdSystem version="3.1">LiveRail</AdSystem>\n'
-                + '            <AdTitle>VPAID Ad Manager</AdTitle>\n'
-                + '            <Impression></Impression>\n'
-                + '            <Creatives>\n'
-                + '                <Creative sequence="1">\n'
-                + '                    <Linear>\n'
-                + '                        <Duration>00:00:15</Duration>\n'
-                + '                        <MediaFiles>\n'
-                + '                            <MediaFile delivery="progressive" width="640" height="480" scalable="1" type="application/javascript" apiFramework="VPAID"><![CDATA[http://cdn-static.liverail.com/js/LiveRail.AdManager-1.0.js?LR_PUBLISHER_ID=1331&LR_AUTOPLAY=0&LR_CONTENT=1&LR_TITLE=Foo&LR_VIDEO_ID=1234&LR_VERTICALS=international_news&LR_FORMAT=application/javascript]]></MediaFile>\n'
-                + '                        </MediaFiles>\n'
-                + '                    </Linear>\n'
-                + '                </Creative>\n'
-                + '\n'
-                + '                <Creative sequence="1">\n'
-                + '                    <CompanionAds>\n'
-                + '                        <Companion width="300" height="250">\n'
-                + '                            <HTMLResource><![CDATA[<div id="lr_comp_300x250" style=" width: 300px; height: 250px; display: none;"></div>]]></HTMLResource>\n'
-                + '                        </Companion>\n'
-                + '                        <Companion width="300" height="60">\n'
-                + '                            <HTMLResource><![CDATA[<div id="lr_comp_300x60" style=" width: 300px; height: 60px; display: none;"></div>]]></HTMLResource>\n'
-                + '                        </Companion>\n'
-                + '                        <Companion width="728" height="90">\n'
-                + '                            <HTMLResource><![CDATA[<div id="lr_comp_728x90" style=" width: 728px; height: 90px; display: none;"></div>]]></HTMLResource>\n'
-                + '                        </Companion>\n'
-                + '                    </CompanionAds>\n'
-                + '                </Creative>\n'
-                + '            </Creatives>\n'
-                + '        </InLine>\n'
-                + '    </Ad>\n'
-                + '</VAST>';
+        const input =
+            '<?xml version="1.0" encoding="utf-8"?>\n' +
+            '<VAST version="2.0">\n' +
+            '    <Ad id="VPAID">\n' +
+            '        <InLine>\n' +
+            '            <AdSystem version="3.1">LiveRail</AdSystem>\n' +
+            '            <AdTitle>VPAID Ad Manager</AdTitle>\n' +
+            '            <Impression></Impression>\n' +
+            '            <Creatives>\n' +
+            '                <Creative sequence="1">\n' +
+            '                    <Linear>\n' +
+            '                        <Duration>00:00:15</Duration>\n' +
+            '                        <MediaFiles>\n' +
+            '                            <MediaFile delivery="progressive" width="640" height="480" scalable="1" type="application/javascript" apiFramework="VPAID"><![CDATA[http://cdn-static.liverail.com/js/LiveRail.AdManager-1.0.js?LR_PUBLISHER_ID=1331&LR_AUTOPLAY=0&LR_CONTENT=1&LR_TITLE=Foo&LR_VIDEO_ID=1234&LR_VERTICALS=international_news&LR_FORMAT=application/javascript]]></MediaFile>\n' +
+            '                        </MediaFiles>\n' +
+            '                    </Linear>\n' +
+            '                </Creative>\n' +
+            '\n' +
+            '                <Creative sequence="1">\n' +
+            '                    <CompanionAds>\n' +
+            '                        <Companion width="300" height="250">\n' +
+            '                            <HTMLResource><![CDATA[<div id="lr_comp_300x250" style=" width: 300px; height: 250px; display: none;"></div>]]></HTMLResource>\n' +
+            '                        </Companion>\n' +
+            '                        <Companion width="300" height="60">\n' +
+            '                            <HTMLResource><![CDATA[<div id="lr_comp_300x60" style=" width: 300px; height: 60px; display: none;"></div>]]></HTMLResource>\n' +
+            '                        </Companion>\n' +
+            '                        <Companion width="728" height="90">\n' +
+            '                            <HTMLResource><![CDATA[<div id="lr_comp_728x90" style=" width: 728px; height: 90px; display: none;"></div>]]></HTMLResource>\n' +
+            '                        </Companion>\n' +
+            '                    </CompanionAds>\n' +
+            '                </Creative>\n' +
+            '            </Creatives>\n' +
+            '        </InLine>\n' +
+            '    </Ad>\n' +
+            '</VAST>';
 
-        const expected = '<?xml version="1.0" encoding="utf-8"?>\n'
-                + '<VAST version="2.0"></VAST>';
+        const expected = '<?xml version="1.0" encoding="utf-8"?>\n' + '<VAST version="2.0"></VAST>';
 
         const modifier = new ReplaceModifier('/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/$1<\\/VAST>/');
         expect(modifier).toBeTruthy();
@@ -402,7 +402,9 @@ describe('NetworkRule - removeparam rules', () => {
         expect(modifier.removeParameters(`${comPage}?p0=0`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p01=0&p1=1&p2=2&p3=3`)).toBe(`${comPage}?p01=0`);
-        expect(modifier.removeParameters(`${comPage}?p0=0&p1=2&p2=2&p3=3&%24p4=0&$p4=0&p4=0`)).toBe(`${comPage}?p0=0&%24p4=0&$p4=0`);
+        expect(modifier.removeParameters(`${comPage}?p0=0&p1=2&p2=2&p3=3&%24p4=0&$p4=0&p4=0`)).toBe(
+            `${comPage}?p0=0&%24p4=0&$p4=0`,
+        );
     });
 
     it('does not remove unmatched parameters', () => {
@@ -487,8 +489,9 @@ describe('NetworkRule - removeparam rules', () => {
 
         // Should only remove top-level utm_campaign
         const mixedUrl = `https://redirect.com/path?utm_campaign=remove&url=${encodeURIComponent('https://example.com?utm_campaign=keep')}`;
-        expect(modifier.removeParameters(mixedUrl))
-            .toBe(`https://redirect.com/path?url=${encodeURIComponent('https://example.com?utm_campaign=keep')}`);
+        expect(modifier.removeParameters(mixedUrl)).toBe(
+            `https://redirect.com/path?url=${encodeURIComponent('https://example.com?utm_campaign=keep')}`,
+        );
     });
 });
 

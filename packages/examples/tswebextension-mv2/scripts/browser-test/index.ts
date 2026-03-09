@@ -1,11 +1,6 @@
 import { chromium } from 'playwright';
 
-import {
-    TESTCASES_BASE_URL,
-    BUILD_PATH,
-    USER_DATA_PATH,
-    DEFAULT_EXTENSION_CONFIG,
-} from '../constants';
+import { TESTCASES_BASE_URL, BUILD_PATH, USER_DATA_PATH, DEFAULT_EXTENSION_CONFIG } from '../constants';
 
 import { getTestcases, getRuleText } from './requests';
 import {
@@ -27,10 +22,7 @@ const CSP_TEST_ID = 12;
     // Launch browser with the installed extension
     const browserContext = await chromium.launchPersistentContext(USER_DATA_PATH, {
         headless: false,
-        args: [
-            `--disable-extensions-except=${BUILD_PATH}`,
-            `--load-extension=${BUILD_PATH}`,
-        ],
+        args: [`--disable-extensions-except=${BUILD_PATH}`, `--load-extension=${BUILD_PATH}`],
     });
 
     let [backgroundPage] = browserContext.backgroundPages();
@@ -57,7 +49,6 @@ const CSP_TEST_ID = 12;
 
     // run testcases
     for (const testcase of compatibleTestcases) {
-
         // TODO: implement separate e2e test for popups
         // ignore popup tests
         if (!testcase.rulesUrl) {
@@ -68,27 +59,25 @@ const CSP_TEST_ID = 12;
         const rulesText = await getRuleText(testcase.rulesUrl);
 
         // update tsWebExtension config
-        await backgroundPage.evaluate<void, SetTsWebExtensionConfigArg>(
-            setTsWebExtensionConfig,
-            [DEFAULT_EXTENSION_CONFIG, rulesText],
-        );
+        await backgroundPage.evaluate<void, SetTsWebExtensionConfigArg>(setTsWebExtensionConfig, [
+            DEFAULT_EXTENSION_CONFIG,
+            rulesText,
+        ]);
 
-        const openPageAndWaitForTests = testcase.id === CSP_TEST_ID
-            ? page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`, { waitUntil: 'networkidle' })
-            // The function with tests check works only if there is no CSP
-            : Promise.all([
-                // run test page
-                page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`),
-                // wait until all tests are completed with disabled timeout
-                page.waitForFunction(waitUntilTestsCompleted),
-            ]);
+        const openPageAndWaitForTests =
+            testcase.id === CSP_TEST_ID
+                ? page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`, { waitUntil: 'networkidle' })
+                : // The function with tests check works only if there is no CSP
+                  Promise.all([
+                      // run test page
+                      page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`),
+                      // wait until all tests are completed with disabled timeout
+                      page.waitForFunction(waitUntilTestsCompleted),
+                  ]);
 
         const timeoutForTests = page.waitForTimeout(TESTS_TIMEOUT_MS).then(() => TESTS_TIMEOUT_CODE);
 
-        const res = await Promise.race([
-            timeoutForTests,
-            openPageAndWaitForTests,
-        ]);
+        const res = await Promise.race([timeoutForTests, openPageAndWaitForTests]);
 
         if (res === TESTS_TIMEOUT_CODE) {
             logTestTimeout(testcase.title, TESTS_TIMEOUT_MS);

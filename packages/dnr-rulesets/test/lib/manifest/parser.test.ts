@@ -12,11 +12,13 @@ describe('ManifestParser', () => {
                 service_worker: 'pages/background.js',
             },
             declarative_net_request: {
-                rule_resources: [{
-                    id: '1',
-                    enabled: true,
-                    path: 'ruleset.json',
-                }],
+                rule_resources: [
+                    {
+                        id: '1',
+                        enabled: true,
+                        path: 'ruleset.json',
+                    },
+                ],
             },
         };
         const parsed = parser.parse(JSON.stringify(manifest));

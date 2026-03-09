@@ -54,11 +54,7 @@ export class ModifierParser extends BaseParser {
 
         // Modifier name can't be empty
         if (modifierNameStart === modifierEnd) {
-            throw new AdblockSyntaxError(
-                'Modifier name cannot be empty',
-                baseOffset,
-                baseOffset + raw.length,
-            );
+            throw new AdblockSyntaxError('Modifier name cannot be empty', baseOffset, baseOffset + raw.length);
         }
 
         let modifier: Value;
@@ -85,21 +81,13 @@ export class ModifierParser extends BaseParser {
 
             // Value can't be empty
             if (assignmentIndex + 1 === modifierEnd) {
-                throw new AdblockSyntaxError(
-                    'Modifier value cannot be empty',
-                    baseOffset,
-                    baseOffset + raw.length,
-                );
+                throw new AdblockSyntaxError('Modifier value cannot be empty', baseOffset, baseOffset + raw.length);
             }
 
             // Skip whitespace after the assignment operator
             const valueStart = StringUtils.skipWS(raw, assignmentIndex + MODIFIER_ASSIGN_OPERATOR.length);
 
-            value = ValueParser.parse(
-                raw.slice(valueStart, modifierEnd),
-                options,
-                baseOffset + valueStart,
-            );
+            value = ValueParser.parse(raw.slice(valueStart, modifierEnd), options, baseOffset + valueStart);
         }
 
         const result: Modifier = {

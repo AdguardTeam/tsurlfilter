@@ -3,13 +3,7 @@ import { getFormattedTokenName } from '@adguard/css-tokenizer';
 
 import { type SelectorCombinator, type SelectorCombinatorValue } from '../../../../nodes';
 import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
-import {
-    COMMA,
-    GREATER_THAN,
-    PLUS,
-    SPACE,
-    TILDE,
-} from '../../../../utils/constants';
+import { COMMA, GREATER_THAN, PLUS, SPACE, TILDE } from '../../../../utils/constants';
 import { type SelectorListParserContext } from '../context';
 
 /**
@@ -47,14 +41,7 @@ export class CompoundSelectorHandler {
      * @throws If the current compound selector has no simple selectors.
      */
     public static handle(context: SelectorListParserContext, combinator?: SelectorCombinatorValue): void {
-        const {
-            raw,
-            options,
-            baseOffset,
-            stream,
-            token,
-            complexSelector,
-        } = context;
+        const { raw, options, baseOffset, stream, token, complexSelector } = context;
 
         // Get current compound selector end token
         const currentEndToken = stream.lookbehindForNonWs();
@@ -62,10 +49,10 @@ export class CompoundSelectorHandler {
         // Throw error if current compound selector has no simple selectors (empty)
         if (
             // Combinator shouldn't be the first token in the complex selector
-            !currentEndToken
-            || complexSelector.children.length === 0
+            !currentEndToken ||
+            complexSelector.children.length === 0 ||
             // And the last token in the complex selector shouldn't be a combinator
-            || complexSelector.children[complexSelector.children.length - 1].type === 'SelectorCombinator'
+            complexSelector.children[complexSelector.children.length - 1].type === 'SelectorCombinator'
         ) {
             throw new AdblockSyntaxError(
                 sprintf(

@@ -49,9 +49,7 @@ module.exports = {
         'import/order': [
             'error',
             {
-                groups: [
-                    ['builtin', 'external'],
-                ],
+                groups: [['builtin', 'external']],
                 'newlines-between': 'always',
             },
         ],

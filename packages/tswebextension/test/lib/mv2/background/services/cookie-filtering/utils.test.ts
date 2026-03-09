@@ -1,10 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, it, vi } from 'vitest';
 
 import { getResponseHeaders } from '../../fixtures/response-headers';
 import CookieUtils from '../../../../../../src/lib/mv2/background/services/cookie-filtering/utils';
@@ -19,36 +13,48 @@ describe('Cookie utils - Set-Cookie headers parsing', () => {
         let cookies: ParsedCookie[] = CookieUtils.parseSetCookieHeaders([], TEST_URL);
         expect(cookies).toHaveLength(0);
 
-        cookies = CookieUtils.parseSetCookieHeaders([
-            {
-                name: 'set-cookie',
-                value: 'ok',
-            },
-        ], TEST_URL);
+        cookies = CookieUtils.parseSetCookieHeaders(
+            [
+                {
+                    name: 'set-cookie',
+                    value: 'ok',
+                },
+            ],
+            TEST_URL,
+        );
         expect(cookies).toHaveLength(1);
 
-        cookies = CookieUtils.parseSetCookieHeaders([
-            {
-                name: 'invalid',
-                value: 'invalid',
-            },
-        ], TEST_URL);
+        cookies = CookieUtils.parseSetCookieHeaders(
+            [
+                {
+                    name: 'invalid',
+                    value: 'invalid',
+                },
+            ],
+            TEST_URL,
+        );
         expect(cookies).toHaveLength(0);
 
-        cookies = CookieUtils.parseSetCookieHeaders([
-            {
-                name: 'set-cookie',
-                value: undefined,
-            },
-        ], TEST_URL);
+        cookies = CookieUtils.parseSetCookieHeaders(
+            [
+                {
+                    name: 'set-cookie',
+                    value: undefined,
+                },
+            ],
+            TEST_URL,
+        );
         expect(cookies).toHaveLength(0);
 
-        cookies = CookieUtils.parseSetCookieHeaders([
-            {
-                name: 'set-cookie',
-                value: '',
-            },
-        ], TEST_URL);
+        cookies = CookieUtils.parseSetCookieHeaders(
+            [
+                {
+                    name: 'set-cookie',
+                    value: '',
+                },
+            ],
+            TEST_URL,
+        );
         expect(cookies).toHaveLength(0);
     });
 
@@ -57,10 +63,15 @@ describe('Cookie utils - Set-Cookie headers parsing', () => {
         const PATH = '/';
         const THREE_LEVEL_DOMAIN = `https://${HOSTNAME}${PATH}`;
 
-        const cookies = CookieUtils.parseSetCookieHeaders([{
-            name: 'set-cookie',
-            value: 'visitCount=3; Max-Age=2592000; Secure; HttpOnly; SameSite=Lax',
-        }], THREE_LEVEL_DOMAIN);
+        const cookies = CookieUtils.parseSetCookieHeaders(
+            [
+                {
+                    name: 'set-cookie',
+                    value: 'visitCount=3; Max-Age=2592000; Secure; HttpOnly; SameSite=Lax',
+                },
+            ],
+            THREE_LEVEL_DOMAIN,
+        );
 
         expect(cookies).toHaveLength(1);
         expect(cookies[0].name).toBe('visitCount');
@@ -83,7 +94,10 @@ describe('Cookie utils - Set-Cookie parsing', () => {
 
     it('checks parse complicated', () => {
         // eslint-disable-next-line max-len
-        const cookie = CookieUtils.parseSetCookie('user_session=wBDJ5-apskjfjkas124192--e5; path=/; expires=Tue, 06 Nov 2018 12:57:11 -0000; secure; HttpOnly; SameSite=Lax; Max-Age=100', TEST_URL);
+        const cookie = CookieUtils.parseSetCookie(
+            'user_session=wBDJ5-apskjfjkas124192--e5; path=/; expires=Tue, 06 Nov 2018 12:57:11 -0000; secure; HttpOnly; SameSite=Lax; Max-Age=100',
+            TEST_URL,
+        );
         expect(cookie).not.toBeNull();
         expect(cookie!.name).toBe('user_session');
         expect(cookie!.value).toBe('wBDJ5-apskjfjkas124192--e5');
@@ -103,18 +117,12 @@ describe('Cookie utils - Set-Cookie parsing', () => {
     });
 
     it('parses cookie with path', () => {
-        const cookie = CookieUtils.parseSetCookie(
-            'sample-key=sample-value; path=/',
-            TEST_URL,
-        );
+        const cookie = CookieUtils.parseSetCookie('sample-key=sample-value; path=/', TEST_URL);
         expect(cookie!.name).toBe('sample-key');
         expect(cookie!.value).toBe('sample-value');
         expect(cookie!.path).toBe('/');
 
-        const cookie2 = CookieUtils.parseSetCookie(
-            'sample-key=sample-value; path=/login',
-            TEST_URL,
-        );
+        const cookie2 = CookieUtils.parseSetCookie('sample-key=sample-value; path=/login', TEST_URL);
         expect(cookie2!.name).toBe('sample-key');
         expect(cookie2!.value).toBe('sample-value');
         expect(cookie2!.path).toBe('/login');
@@ -143,7 +151,10 @@ describe('Cookie utils - parsing cookies', () => {
 
     it('checks parse secure', () => {
         // eslint-disable-next-line max-len
-        const cookies = CookieUtils.parseCookies('__Secure-first_name=first_value;skip;__Host-second_name=second_value;', TEST_URL);
+        const cookies = CookieUtils.parseCookies(
+            '__Secure-first_name=first_value;skip;__Host-second_name=second_value;',
+            TEST_URL,
+        );
         expect(cookies).toHaveLength(2);
         expect(cookies[0].name).toBe('__Secure-first_name');
         expect(cookies[0]!.value).toBe('first_value');
@@ -248,8 +259,9 @@ describe('Cookie utils - serialize cookie', () => {
         };
 
         const setCookieValue = CookieUtils.serializeCookieToResponseHeader(cookie as ParsedCookie);
-        expect(setCookieValue)
-            .toBe('_octo=GH1.1.635223982.1507661197; Path=/; Expires=Tue, 23 Oct 2018 13:40:11 GMT; HttpOnly; Secure');
+        expect(setCookieValue).toBe(
+            '_octo=GH1.1.635223982.1507661197; Path=/; Expires=Tue, 23 Oct 2018 13:40:11 GMT; HttpOnly; Secure',
+        );
     });
 });
 
@@ -276,13 +288,17 @@ describe('Cookie utils - splitMultilineCookies', () => {
         // One set-cookie header should be converted into multiple
         expect(responseHeaders.length).toBe(initialLength + MULTILINE_COOKIES_COUNT - 1);
         // Resulting cookies are parsable
-        expect(CookieUtils.parseSetCookieHeaders(responseHeaders, 'https://example.org')).toHaveLength(MULTILINE_COOKIES_COUNT);
+        expect(CookieUtils.parseSetCookieHeaders(responseHeaders, 'https://example.org')).toHaveLength(
+            MULTILINE_COOKIES_COUNT,
+        );
 
         // Change `set-cookie` header placement
         responseHeaders = [MULTILINE_COOKIE_HEADER, ...getResponseHeaders()];
         CookieUtils.splitMultilineCookies(responseHeaders);
         expect(responseHeaders.length).toBe(initialLength + MULTILINE_COOKIES_COUNT - 1);
-        expect(CookieUtils.parseSetCookieHeaders(responseHeaders, 'https://example.org')).toHaveLength(MULTILINE_COOKIES_COUNT);
+        expect(CookieUtils.parseSetCookieHeaders(responseHeaders, 'https://example.org')).toHaveLength(
+            MULTILINE_COOKIES_COUNT,
+        );
     });
 
     it('does nothing for a single line `set-cookie` headers or any other', () => {

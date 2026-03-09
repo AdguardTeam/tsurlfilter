@@ -27,6 +27,5 @@ export const parseFilterList = (filterStr: string, includeRaws: boolean = false)
  * @returns True if the rule node is a JS injection rule, false otherwise.
  */
 export const isJsInjectionRule = (ruleNode: AnyRule): boolean => {
-    return ruleNode.category === RuleCategory.Cosmetic
-        && ruleNode.type === CosmeticRuleType.JsInjectionRule;
+    return ruleNode.category === RuleCategory.Cosmetic && ruleNode.type === CosmeticRuleType.JsInjectionRule;
 };

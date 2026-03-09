@@ -54,6 +54,6 @@ const increment = () => {
     const strategy = semver.prerelease(version) ? 'prerelease' : 'patch';
 
     execSync(`pnpm version ${strategy}`, { stdio: 'inherit', cwd: packagePath });
-}
+};
 
 increment();

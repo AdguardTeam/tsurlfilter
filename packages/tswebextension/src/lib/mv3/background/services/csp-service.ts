@@ -51,12 +51,7 @@ export class CspService {
      * @param context Request context.
      */
     public static onBeforeRequest(context: RequestContext): void {
-        const {
-            requestType,
-            thirdParty,
-            tabId,
-            referrerUrl,
-        } = context;
+        const { requestType, thirdParty, tabId, referrerUrl } = context;
 
         if (requestType !== RequestType.CspReport) {
             return;
@@ -83,14 +78,7 @@ export class CspService {
      * @param context Request context.
      */
     public static onHeadersReceived(context: RequestContext): void {
-        const {
-            matchingResult,
-            responseHeaders,
-            requestId,
-            tabId,
-            requestUrl,
-            referrerUrl,
-        } = context;
+        const { matchingResult, responseHeaders, requestId, tabId, requestUrl, referrerUrl } = context;
 
         if (!matchingResult) {
             return;

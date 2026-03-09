@@ -141,9 +141,7 @@ describe('MetadataCommentRuleParser', () => {
             },
         });
 
-        expect(
-            MetadataCommentParser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
-        ).toMatchObject({
+        expect(MetadataCommentParser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki')).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
             end: 57,
@@ -197,9 +195,9 @@ describe('MetadataCommentRuleParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(
-                MetadataCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
-            ).toEqual(expected);
+            expect(MetadataCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false })).toEqual(
+                expected,
+            );
         });
     });
 

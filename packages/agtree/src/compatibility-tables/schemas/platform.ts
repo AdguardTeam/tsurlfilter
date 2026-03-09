@@ -30,9 +30,7 @@ export const PLATFORM_NEGATION = '~';
  */
 export const parseRawPlatforms = (rawPlatforms: string): AnyPlatform => {
     // e.g. 'adg_safari_any|adg_os_any'
-    const rawPlatformList = rawPlatforms
-        .split(PLATFORM_SEPARATOR)
-        .map((rawPlatform) => rawPlatform.trim());
+    const rawPlatformList = rawPlatforms.split(PLATFORM_SEPARATOR).map((rawPlatform) => rawPlatform.trim());
 
     let result = 0;
 

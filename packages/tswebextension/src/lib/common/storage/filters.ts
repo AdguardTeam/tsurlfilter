@@ -86,7 +86,10 @@ export class FiltersStorage {
         for (const [filterId, filter] of Object.entries(filters)) {
             const parseResult = filterListWithChecksumValidator.safeParse(filter);
             if (!parseResult.success) {
-                logger.error(`[tsweb.FiltersStorage.setMultiple]: invalid filter list structure for filter id ${filterId}`, parseResult.error);
+                logger.error(
+                    `[tsweb.FiltersStorage.setMultiple]: invalid filter list structure for filter id ${filterId}`,
+                    parseResult.error,
+                );
                 continue;
             }
 
@@ -122,9 +125,7 @@ export class FiltersStorage {
         const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         const keys = await db.getAllKeys(FiltersStorage.DB_STORE_NAME);
         const searchedKey = FiltersStorage.getKey(FiltersStorage.KEY_CHECKSUM, filterId);
-        return keys
-            .map(String)
-            .some((key) => key === searchedKey);
+        return keys.map(String).some((key) => key === searchedKey);
     }
 
     /**
@@ -166,7 +167,10 @@ export class FiltersStorage {
                 checksum,
             };
         } catch (e) {
-            logger.error(`[tsweb.FiltersStorage.get]: failed to get filter data for filter id ${filterId}, got error:`, e);
+            logger.error(
+                `[tsweb.FiltersStorage.get]: failed to get filter data for filter id ${filterId}, got error:`,
+                e,
+            );
             throw e;
         }
     }
@@ -179,13 +183,15 @@ export class FiltersStorage {
      * @throws Error, if transaction failed.
      */
     public static async removeMultiple(filterIds: number[]): Promise<void> {
-        const keys = filterIds.map((filterId) => {
-            return [
-                FiltersStorage.getKey(FiltersStorage.KEY_RAW_FILTER_LIST, filterId),
-                FiltersStorage.getKey(FiltersStorage.KEY_CONVERSION_DATA, filterId),
-                FiltersStorage.getKey(FiltersStorage.KEY_CHECKSUM, filterId),
-            ];
-        }).flat();
+        const keys = filterIds
+            .map((filterId) => {
+                return [
+                    FiltersStorage.getKey(FiltersStorage.KEY_RAW_FILTER_LIST, filterId),
+                    FiltersStorage.getKey(FiltersStorage.KEY_CONVERSION_DATA, filterId),
+                    FiltersStorage.getKey(FiltersStorage.KEY_CHECKSUM, filterId),
+                ];
+            })
+            .flat();
 
         const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         const tx = db.transaction(FiltersStorage.DB_STORE_NAME, 'readwrite');
@@ -194,7 +200,10 @@ export class FiltersStorage {
             await Promise.all(keys.map((key) => tx.store.delete(key)));
             await tx.done;
         } catch (e) {
-            logger.error('[tsweb.FiltersStorage.removeMultiple]: failed to remove multiple filter data, got error: ', e);
+            logger.error(
+                '[tsweb.FiltersStorage.removeMultiple]: failed to remove multiple filter data, got error: ',
+                e,
+            );
             tx.abort();
             throw e;
         }
@@ -207,9 +216,7 @@ export class FiltersStorage {
      *
      * @returns Raw filter list or `undefined` if the filter list does not exist.
      */
-    public static async getRawFilterList(
-        filterId: number,
-    ): Promise<string | undefined> {
+    public static async getRawFilterList(filterId: number): Promise<string | undefined> {
         const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         return db.get(
             FiltersStorage.DB_STORE_NAME,
@@ -224,9 +231,7 @@ export class FiltersStorage {
      *
      * @returns Conversion map or `undefined` if the filter list does not exist.
      */
-    public static async getConversionData(
-        filterId: number,
-    ): Promise<ConversionData | undefined> {
+    public static async getConversionData(filterId: number): Promise<ConversionData | undefined> {
         const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         return db.get(
             FiltersStorage.DB_STORE_NAME,

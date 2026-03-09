@@ -7,16 +7,9 @@ const backgroundConfig = {
     input: 'src/background.ts',
     output: {
         dir: 'dist',
-        format: 'cjs'
+        format: 'cjs',
     },
-    plugins: [
-        json(),
-        typescript(),
-        resolve(),
-        commonjs(),
-    ],
+    plugins: [json(), typescript(), resolve(), commonjs()],
 };
 
-export default [
-    backgroundConfig,
-];
+export default [backgroundConfig];

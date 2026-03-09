@@ -94,13 +94,7 @@ export class EngineApi {
      * custom), custom rules, quick fixes rules and the verbose flag.
      */
     async startEngine(config: EngineConfig): Promise<void> {
-        const {
-            localFilters,
-            remoteFilters,
-            userRulesFilter,
-            allowlistRulesList,
-            verbose,
-        } = config;
+        const { localFilters, remoteFilters, userRulesFilter, allowlistRulesList, verbose } = config;
 
         const lists: EngineFactoryFilterList[] = [];
 
@@ -109,9 +103,7 @@ export class EngineApi {
          * not allowed to be executed, because they are from remote source.
          * Rules from built-in filters are always applied.
          */
-        const filters = UserScriptsApi.isEnabled
-            ? localFilters.concat(remoteFilters)
-            : localFilters;
+        const filters = UserScriptsApi.isEnabled ? localFilters.concat(remoteFilters) : localFilters;
 
         for (let i = 0; i < filters.length; i += 1) {
             try {
@@ -129,7 +121,10 @@ export class EngineApi {
                 });
             } catch (e) {
                 const filterId = filters[i].getId();
-                logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
+                logger.error(
+                    `[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `,
+                    e,
+                );
             }
         }
 
@@ -156,13 +151,18 @@ export class EngineApi {
 
             // This dirty hack is needed since Filter check inside itself
             // for empty loaded content.
-            if (e instanceof UnavailableFilterSourceError
-                && e.cause instanceof Error
-                && e.cause.message.includes('Loaded empty content')) {
+            if (
+                e instanceof UnavailableFilterSourceError &&
+                e.cause instanceof Error &&
+                e.cause.message.includes('Loaded empty content')
+            ) {
                 // User rules can be empty, so just log a trace message and continue.
                 logger.trace(`[tsweb.EngineApi.startEngine]: user rules filter ${filterId} is empty: `, e);
             } else {
-                logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for user rules filter ${filterId} due to: `, e);
+                logger.error(
+                    `[tsweb.EngineApi.startEngine]: cannot create IRuleList for user rules filter ${filterId} due to: `,
+                    e,
+                );
             }
         }
 
@@ -182,7 +182,7 @@ export class EngineApi {
          * the specified length.
          * Request filter creation is rather slow operation so we should
          * use setTimeout calls to give UI thread some time.
-        */
+         */
         this.engine = await Engine.createAsync({
             filters: lists,
         });
@@ -290,18 +290,9 @@ export class EngineApi {
             return null;
         }
 
-        const {
-            requestUrl,
-            frameUrl,
-            requestType,
-            frameRule,
-        } = matchQuery;
+        const { requestUrl, frameUrl, requestType, frameRule } = matchQuery;
 
-        const request = new Request(
-            requestUrl,
-            frameUrl,
-            requestType,
-        );
+        const request = new Request(requestUrl, frameUrl, requestType);
 
         return this.engine.matchRequest(request, frameRule);
     }

@@ -53,9 +53,7 @@ export class PositionProvider {
             // Handle different types of line breaks: LF, FF, and CR
             if (sourceCode[i] === LF || sourceCode[i] === FF || sourceCode[i] === CR) {
                 currentLine += 1;
-                this.lineStartOffsets[currentLine] = (sourceCode[i] === CR && sourceCode[i + 1] === LF)
-                    ? i + 2
-                    : i + 1;
+                this.lineStartOffsets[currentLine] = sourceCode[i] === CR && sourceCode[i + 1] === LF ? i + 2 : i + 1;
 
                 if (sourceCode[i] === CR && sourceCode[i + 1] === LF) {
                     // Skip the '\n' in a '\r\n' sequence

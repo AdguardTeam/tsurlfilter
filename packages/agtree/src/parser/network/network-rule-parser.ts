@@ -8,12 +8,7 @@ import {
     NETWORK_RULE_SEPARATOR,
     REGEX_MARKER,
 } from '../../utils/constants';
-import {
-    type ModifierList,
-    type NetworkRule,
-    RuleCategory,
-    NetworkRuleType,
-} from '../../nodes';
+import { type ModifierList, type NetworkRule, RuleCategory, NetworkRuleType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
@@ -62,16 +57,13 @@ export class NetworkRuleParser extends BaseParser {
         const separatorIndex = NetworkRuleParser.findNetworkRuleSeparatorIndex(raw);
 
         // Save the end of the pattern
-        const patternEnd = separatorIndex === -1
-            ? StringUtils.skipWSBack(raw) + 1
-            : StringUtils.skipWSBack(raw, separatorIndex - 1) + 1;
+        const patternEnd =
+            separatorIndex === -1
+                ? StringUtils.skipWSBack(raw) + 1
+                : StringUtils.skipWSBack(raw, separatorIndex - 1) + 1;
 
         // Parse pattern
-        const pattern = ValueParser.parse(
-            raw.slice(patternStart, patternEnd),
-            options,
-            baseOffset + patternStart,
-        );
+        const pattern = ValueParser.parse(raw.slice(patternStart, patternEnd), options, baseOffset + patternStart);
 
         // Parse modifiers (if any)
         let modifiers: ModifierList | undefined;
@@ -144,7 +136,11 @@ export class NetworkRuleParser extends BaseParser {
             // - if it's not escaped
             // - if it's not followed by a regex marker, for example: `example.org^$removeparam=/regex$/`
             // eslint-disable-next-line max-len
-            if (rule[i] === NETWORK_RULE_SEPARATOR && rule[i + 1] !== REGEX_MARKER && rule[i - 1] !== ESCAPE_CHARACTER) {
+            if (
+                rule[i] === NETWORK_RULE_SEPARATOR &&
+                rule[i + 1] !== REGEX_MARKER &&
+                rule[i - 1] !== ESCAPE_CHARACTER
+            ) {
                 return i;
             }
         }

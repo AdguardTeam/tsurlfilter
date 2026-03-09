@@ -44,9 +44,11 @@ const metadataValidator = z.object({
  *
  * @note We use `passthrough` method to allow additional fields in the object.
  */
-const metadataRuleValidator = z.object({
-    metadata: metadataValidator,
-}).passthrough();
+const metadataRuleValidator = z
+    .object({
+        metadata: metadataValidator,
+    })
+    .passthrough();
 
 /**
  * Metadata type.
@@ -81,10 +83,7 @@ export class MetadataRuleSet {
      * with deserialized checksums and additional properties via constructor,
      * and get them stronger types.
      */
-    constructor(
-        checksums: ChecksumMap = {},
-        additionalProperties: Record<string, unknown> | undefined = {},
-    ) {
+    constructor(checksums: ChecksumMap = {}, additionalProperties: Record<string, unknown> | undefined = {}) {
         this.metadataRule = createMetadataRule({
             byteRangeMapsCollection: {},
             checksums,
@@ -202,10 +201,7 @@ export class MetadataRuleSet {
         }
 
         const {
-            metadata: {
-                checksums,
-                additionalProperties,
-            },
+            metadata: { checksums, additionalProperties },
         } = metadataRuleValidator.parse(parsed[0]);
 
         const ruleSet = new MetadataRuleSet(checksums, additionalProperties);

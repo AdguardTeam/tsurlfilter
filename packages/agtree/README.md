@@ -1,5 +1,7 @@
 <!-- markdownlint-disable -->
+
 &nbsp;
+
 <p align="center">
     <picture>
         <source media="(prefers-color-scheme: dark)" srcset="https://cdn.adtidy.org/website/github.com/AGTree/agtree_darkmode.svg" />
@@ -64,21 +66,22 @@ Here are some useful links to help you write adblock rules. This list is not exh
 resources, please let us know.
 
 <!--markdownlint-disable MD013-->
+
 - Syntax documentation:
-    - <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px" alt="AdGuard logo"> [AdGuard: *How to create your own ad filters*][adg-filters]
-    - <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" width="14px" alt="uBlock Origin logo"> [uBlock Origin: *Static filter syntax*][ubo-filters]
-    - <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px" alt="Adblock Plus logo"> [Adblock Plus: *How to write filters*][abp-filters]
+    - <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px" alt="AdGuard logo"> [AdGuard: _How to create your own ad filters_][adg-filters]
+    - <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" width="14px" alt="uBlock Origin logo"> [uBlock Origin: _Static filter syntax_][ubo-filters]
+    - <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px" alt="Adblock Plus logo"> [Adblock Plus: _How to write filters_][abp-filters]
 - Extended CSS documentation:
-    - [MDN: *CSS selectors*][mdn-css-selectors]
-    - <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px" alt="AdGuard logo"> [AdGuard: *Extended CSS capabilities*][adg-ext-css]
-    - <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" width="14px" alt="uBlock Origin logo"> [uBlock Origin: *Procedural cosmetic filters*][ubo-procedural]
-    - <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px" alt="Adblock Plus logo"> [Adblock Plus: *Extended CSS selectors*][abp-ext-css]
+    - [MDN: _CSS selectors_][mdn-css-selectors]
+    - <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px" alt="AdGuard logo"> [AdGuard: _Extended CSS capabilities_][adg-ext-css]
+    - <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" width="14px" alt="uBlock Origin logo"> [uBlock Origin: _Procedural cosmetic filters_][ubo-procedural]
+    - <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px" alt="Adblock Plus logo"> [Adblock Plus: _Extended CSS selectors_][abp-ext-css]
 - Scriptlets:
     - <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px" alt="AdGuard logo"> [AdGuard scriptlets][adg-scriptlets]
     - <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" width="14px" alt="uBlock Origin logo"> [uBlock Origin scriptlets][ubo-scriptlets]
     - <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px" alt="Adblock Plus logo"> [Adblock Plus snippets][abp-snippets]
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px" alt="AdGuard logo"> [AdGuard's compatibility table][adg-compatibility-table]
-<!--markdownlint-enable MD013-->
+      <!--markdownlint-enable MD013-->
 
 [abp-ext-css]: https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide-emulation
 [abp-filters]: https://help.eyeo.com/adblockplus/how-to-write-filters

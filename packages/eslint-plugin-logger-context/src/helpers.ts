@@ -33,10 +33,10 @@ export const getEnclosingNames = (
             methodName = name;
         }
         if (
-            !functionName
-            && (parent.type === 'FunctionDeclaration' || parent.type === 'FunctionExpression')
-            && parent.id
-            && parent.id.type === 'Identifier'
+            !functionName &&
+            (parent.type === 'FunctionDeclaration' || parent.type === 'FunctionExpression') &&
+            parent.id &&
+            parent.id.type === 'Identifier'
         ) {
             const { name } = parent.id;
             functionName = name;
@@ -141,9 +141,7 @@ export const createFix = (
             for (let i = 0; i < firstArg.expressions.length; i += 1) {
                 const expr = firstArg.expressions[i];
                 const exprSource = sourceCode.getText(expr);
-                const quasi = firstArg.quasis[i + 1]
-                    ? firstArg.quasis[i + 1].value.raw
-                    : '';
+                const quasi = firstArg.quasis[i + 1] ? firstArg.quasis[i + 1].value.raw : '';
                 rebuilt += `\${${exprSource}}${quasi}`;
             }
             rebuilt += '`';

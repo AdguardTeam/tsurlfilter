@@ -61,7 +61,6 @@ export class MessagesApi {
         private readonly tsWebExtension: TsWebExtension,
         private readonly tabsApi: TabsApi,
         private readonly filteringLog: FilteringLog,
-
     ) {
         this.handleMessage = this.handleMessage.bind(this);
     }
@@ -74,10 +73,7 @@ export class MessagesApi {
      *
      * @returns Data according to the received message.
      */
-    public async handleMessage(
-        message: Message,
-        sender: browser.Runtime.MessageSender,
-    ): Promise<unknown> {
+    public async handleMessage(message: Message, sender: browser.Runtime.MessageSender): Promise<unknown> {
         logger.trace('[tsweb.MessagesApi.handleMessage]: received: ', message);
 
         try {
@@ -94,22 +90,13 @@ export class MessagesApi {
                 return this.handleGetCosmeticData(sender, message.payload);
             }
             case MessageType.AssistantCreateRule: {
-                return this.handleAssistantCreateRuleMessage(
-                    sender,
-                    message.payload,
-                );
+                return this.handleAssistantCreateRuleMessage(sender, message.payload);
             }
             case MessageType.GetCookieRules: {
-                return this.getCookieRules(
-                    sender,
-                    message.payload,
-                );
+                return this.getCookieRules(sender, message.payload);
             }
             case MessageType.SaveCookieLogEvent: {
-                return MessagesApi.handleSaveCookieLogEvent(
-                    sender,
-                    message.payload,
-                );
+                return MessagesApi.handleSaveCookieLogEvent(sender, message.payload);
             }
             case MessageType.SaveCssHitsStats: {
                 return this.handleSaveCssHitsStats(sender, message.payload);
@@ -171,10 +158,7 @@ export class MessagesApi {
      * or true for successful processing.
      */
     // eslint-disable-next-line class-methods-use-this
-    private handleAssistantCreateRuleMessage(
-        sender: browser.Runtime.MessageSender,
-        payload?: unknown,
-    ): boolean {
+    private handleAssistantCreateRuleMessage(sender: browser.Runtime.MessageSender, payload?: unknown): boolean {
         if (!payload || !sender?.tab?.id) {
             return false;
         }
@@ -296,11 +280,7 @@ export class MessagesApi {
             const stat = payload[i];
 
             // Retrieve rule texts for content script cosmetic events
-            const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(
-                stat.filterId,
-                stat.ruleIndex,
-                engineApi,
-            );
+            const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(stat.filterId, stat.ruleIndex, engineApi);
 
             this.filteringLog.publishEvent({
                 type: FilteringEventType.ApplyCosmeticRule,
@@ -335,10 +315,7 @@ export class MessagesApi {
      *
      * @returns True if event was published to filtering log.
      */
-    private static handleSaveCookieLogEvent(
-        sender: browser.Runtime.MessageSender,
-        payload?: unknown,
-    ): boolean {
+    private static handleSaveCookieLogEvent(sender: browser.Runtime.MessageSender, payload?: unknown): boolean {
         if (!payload || !sender?.tab?.id) {
             return false;
         }
@@ -351,11 +328,7 @@ export class MessagesApi {
         const { data } = res;
 
         // For content script events, retrieve rule texts from engine if rule has valid index
-        const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(
-            data.filterId,
-            data.ruleIndex,
-            engineApi,
-        );
+        const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(data.filterId, data.ruleIndex, engineApi);
 
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.Cookie,

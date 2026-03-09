@@ -44,7 +44,9 @@ export class HtmlRuleSelector {
 
             // It should not happen, but just in case check for combinators in the first selector
             if (complexSelector[0].combinator) {
-                logger.warn('[tsweb.HtmlRuleSelector.getMatchedElements]: Combinator in the first selector encountered');
+                logger.warn(
+                    '[tsweb.HtmlRuleSelector.getMatchedElements]: Combinator in the first selector encountered',
+                );
                 continue;
             }
 
@@ -57,9 +59,9 @@ export class HtmlRuleSelector {
                 const nextContainers: Set<Element> = new Set();
 
                 for (const container of currentContainers) {
-                    const matchedElements = HtmlRuleSelector
-                        .queryContainer(container, selector)
-                        .filter((element) => HtmlRuleSelector.matchesSelector(element, selector));
+                    const matchedElements = HtmlRuleSelector.queryContainer(container, selector).filter((element) =>
+                        HtmlRuleSelector.matchesSelector(element, selector),
+                    );
                     matchedElements.forEach((element) => nextContainers.add(element));
                 }
 
@@ -81,10 +83,7 @@ export class HtmlRuleSelector {
      *
      * @returns Array of matched elements.
      */
-    private static queryContainer(
-        container: Element,
-        selector: HtmlSelector,
-    ): Element[] {
+    private static queryContainer(container: Element, selector: HtmlSelector): Element[] {
         // Special case: If we are in the first selector and nativeSelector is empty,
         // we should leave check to special selectors, we are sure that special selectors exist
         // because AGTree wouldn't allow creation of empty selectors.
@@ -164,19 +163,16 @@ export class HtmlRuleSelector {
      *
      * @returns True if the element is filtered, false otherwise.
      */
-    private static matchesSelector(
-        element: Element,
-        selector: HtmlSelector,
-    ): boolean {
+    private static matchesSelector(element: Element, selector: HtmlSelector): boolean {
         // If there are no special selectors, the element matches
         if (selector.specialSelectors.length === 0) {
             return true;
         }
 
         // It should match all special selectors
-        return selector.specialSelectors.every((specialSelector) => (
-            HtmlRuleSelector.matchesSpecialSelector(element, specialSelector)
-        ));
+        return selector.specialSelectors.every((specialSelector) =>
+            HtmlRuleSelector.matchesSpecialSelector(element, specialSelector),
+        );
     }
 
     /**
@@ -187,10 +183,7 @@ export class HtmlRuleSelector {
      *
      * @returns True if the element matches, false otherwise.
      */
-    private static matchesSpecialSelector(
-        element: Element,
-        specialSelector: HtmlSpecialSelector,
-    ): boolean {
+    private static matchesSpecialSelector(element: Element, specialSelector: HtmlSpecialSelector): boolean {
         const { name, value } = specialSelector;
 
         if (name === HtmlSpecialSelectorName.Contains) {
@@ -199,9 +192,7 @@ export class HtmlRuleSelector {
                 return false;
             }
 
-            return typeof value === 'string'
-                ? content.includes(value)
-                : value.test(content);
+            return typeof value === 'string' ? content.includes(value) : value.test(content);
         }
 
         // Unknown special selector

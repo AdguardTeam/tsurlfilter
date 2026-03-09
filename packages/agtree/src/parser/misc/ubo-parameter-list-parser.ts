@@ -162,11 +162,9 @@ export class UboParameterListParser extends ParameterListParser {
             }
 
             if (paramStart < paramEnd) {
-                params.children.push(ValueParser.parse(
-                    raw.slice(paramStart, paramEnd),
-                    options,
-                    baseOffset + paramStart,
-                ));
+                params.children.push(
+                    ValueParser.parse(raw.slice(paramStart, paramEnd), options, baseOffset + paramStart),
+                );
             } else {
                 params.children.push(null);
             }

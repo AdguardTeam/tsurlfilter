@@ -1,11 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    afterEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, afterEach, it, vi } from 'vitest';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { getConfigurationMv2Fixture } from '../fixtures/configuration';

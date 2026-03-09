@@ -1,19 +1,9 @@
-import {
-    describe,
-    test,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { sprintf } from 'sprintf-js';
 import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import {
-    CosmeticRuleType,
-    RuleCategory,
-    type CssInjectionRule,
-    type ElementHidingRule,
-} from '../../../src/nodes';
+import { CosmeticRuleType, RuleCategory, type CssInjectionRule, type ElementHidingRule } from '../../../src/nodes';
 import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-generator';
 import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
@@ -557,7 +547,7 @@ describe('CosmeticRuleParser', () => {
             const error = fn.mock.results[0].value;
             expect(error).toBeInstanceOf(AdblockSyntaxError);
             expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('start', (expected.start));
+            expect(error).toHaveProperty('start', expected.start);
             expect(error).toHaveProperty('end', expected.end);
         });
     });

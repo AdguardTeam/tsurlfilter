@@ -237,7 +237,8 @@ describe('CssSelectorConverter', () => {
             {
                 /* eslint-disable max-len */
                 actual: 'div[style="text-align: center"] > b[-ext-contains="Ads:"]+a[href^="http://example.com/test.html?id="]+br',
-                expected: 'div[style="text-align: center"] > b:contains(Ads:)+a[href^="http://example.com/test.html?id="]+br',
+                expected:
+                    'div[style="text-align: center"] > b:contains(Ads:)+a[href^="http://example.com/test.html?id="]+br',
                 /* eslint-enable max-len */
                 shouldConvert: true,
             },
@@ -296,25 +297,26 @@ describe('CssSelectorConverter', () => {
                 shouldConvert: true,
             },
             {
-                actual: '*[-ext-contains=\'/\\s[a-t]{8}$/\'] + *:contains(/^[^\\"\\\'"]{30}quickly/)',
+                actual: "*[-ext-contains='/\\s[a-t]{8}$/'] + *:contains(/^[^\\\"\\'\"]{30}quickly/)",
                 expected: '*:contains(/\\s[a-t]{8}$/) + *:contains(/^[^\\"\\\'"]{30}quickly/)',
                 shouldConvert: true,
             },
             {
-                actual: '[-ext-matches-css-before=\'content:  /^[A-Z][a-z]{2}\\s/  \']',
+                actual: "[-ext-matches-css-before='content:  /^[A-Z][a-z]{2}\\s/  ']",
                 expected: ':matches-css(before,content:  /^[A-Z][a-z]{2}\\s/  )',
                 shouldConvert: true,
             },
             {
                 // eslint-disable-next-line max-len
-                actual: '[-ext-has=\'+:matches-css-after( content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/)\']',
+                actual: "[-ext-has='+:matches-css-after( content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/)']",
                 expected: ':has(+:matches-css(after, content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/))',
                 shouldConvert: true,
             },
             {
                 /* eslint-disable max-len */
-                actual: ':matches-css(    background-image: /^url\\((.)[a-z]{4}:[a-z]{2}\\1nk\\)$/    ) + [-ext-matches-css-before=\'content:  /^[A-Z][a-z]{2}\\s/  \'][-ext-has=\'+:matches-css-after( content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/)\']',
-                expected: ':matches-css(    background-image: /^url\\((.)[a-z]{4}:[a-z]{2}\\1nk\\)$/    ) + :matches-css(before,content:  /^[A-Z][a-z]{2}\\s/  ):has(+:matches-css(after, content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/))',
+                actual: ":matches-css(    background-image: /^url\\((.)[a-z]{4}:[a-z]{2}\\1nk\\)$/    ) + [-ext-matches-css-before='content:  /^[A-Z][a-z]{2}\\s/  '][-ext-has='+:matches-css-after( content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/)']",
+                expected:
+                    ':matches-css(    background-image: /^url\\((.)[a-z]{4}:[a-z]{2}\\1nk\\)$/    ) + :matches-css(before,content:  /^[A-Z][a-z]{2}\\s/  ):has(+:matches-css(after, content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/))',
                 /* eslint-enable max-len */
                 shouldConvert: true,
             },
@@ -330,7 +332,7 @@ describe('CssSelectorConverter', () => {
                 expected: 'div:contains(test):has(div) + div:matches-css(before,content: *find me*)::after',
                 shouldConvert: true,
             },
-        ])('should convert \'$actual\' to \'$expected\'', ({ actual, expected, shouldConvert }) => {
+        ])("should convert '$actual' to '$expected'", ({ actual, expected, shouldConvert }) => {
             // Convert the selector list with the converter API
             const conversionResult = CssSelectorConverter.convertToAdg(actual);
 

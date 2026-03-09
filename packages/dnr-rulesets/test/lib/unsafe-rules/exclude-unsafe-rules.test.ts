@@ -3,13 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { generateMD5Hash } from '@adguard/tsurlfilter/cli';
-import {
-    afterAll,
-    afterEach,
-    describe,
-    expect,
-    it,
-} from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 
 import { excludeUnsafeRules } from '../../../src/lib/unsafe-rules/exclude-unsafe-rules';
 
@@ -48,21 +42,12 @@ async function copyFolder(src: string, dest: string): Promise<void> {
  * @returns A promise that resolves to the path of the temporary directory
  * containing the copied ruleset file with metadata ruleset file.
  */
-async function copyToTemp(
-    dirPath: string,
-): Promise<string> {
+async function copyToTemp(dirPath: string): Promise<string> {
     tempCounter += 1;
 
-    const tempDir = path.join(
-        os.tmpdir(),
-        'exclude-unsafe-test-' + tempCounter,
-        dirPath,
-    );
+    const tempDir = path.join(os.tmpdir(), 'exclude-unsafe-test-' + tempCounter, dirPath);
 
-    await copyFolder(
-        path.join(__dirname, dirPath),
-        tempDir,
-    );
+    await copyFolder(path.join(__dirname, dirPath), tempDir);
 
     return tempDir;
 }

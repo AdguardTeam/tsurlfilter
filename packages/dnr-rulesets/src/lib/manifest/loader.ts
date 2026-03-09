@@ -17,7 +17,7 @@ export interface ManifestLoaderInterface {
      * @throws Error If manifest data is invalid.
      */
     load(path: string): Manifest;
-};
+}
 
 /**
  * Api for loading manifest.

@@ -27,12 +27,7 @@ const pkgFileLocation = path.join(ROOT_DIR, PKG_FILE_NAME);
 const pkg = JSON.parse(readFileSync(pkgFileLocation, 'utf-8'));
 
 // Check if the package.json file has all required fields (we need them for the banner)
-const REQUIRED_PKG_FIELDS = [
-    'author',
-    'homepage',
-    'license',
-    'version',
-];
+const REQUIRED_PKG_FIELDS = ['author', 'homepage', 'license', 'version'];
 
 for (const field of REQUIRED_PKG_FIELDS) {
     if (!(field in pkg)) {
@@ -98,9 +93,7 @@ const dts: RollupOptions = {
             banner,
         },
     ],
-    plugins: [
-        dtsPlugin(),
-    ],
+    plugins: [dtsPlugin()],
 };
 
 // Export build configs for Rollup

@@ -77,7 +77,9 @@ describe('Engine Tests', () => {
 
         expect(result.basicRule).not.toBeNull();
         // eslint-disable-next-line max-len
-        expect(engine.retrieveRuleText(result.basicRule!.getFilterListId(), result.basicRule!.getIndex())).toBe(ruleText);
+        expect(engine.retrieveRuleText(result.basicRule!.getFilterListId(), result.basicRule!.getIndex())).toBe(
+            ruleText,
+        );
         expect(result.documentRule).toBeNull();
 
         let frameRule = engine.matchFrame('https://example.org');
@@ -89,16 +91,10 @@ describe('Engine Tests', () => {
     });
 
     it('retrieveRuleText', () => {
-        const rules1 = [
-            '||example.org^$third-party',
-            '##banner',
-        ];
+        const rules1 = ['||example.org^$third-party', '##banner'];
         const list1 = rules1.join('\n');
 
-        const rules2 = [
-            "#%#//scriptlet('set-constant', 'foo', 'bar')",
-            '#@#.yay',
-        ];
+        const rules2 = ["#%#//scriptlet('set-constant', 'foo', 'bar')", '#@#.yay'];
         const list2 = rules2.join('\n');
 
         const engine = Engine.createSync({
@@ -197,7 +193,7 @@ it('TestEngine - configuration', () => {
 
 describe('TestEngineMatchRequest - advanced modifiers', () => {
     it('works if advanced modifier rules are found', () => {
-        const cspRule = '||example.org^$csp=frame-src \'none\'';
+        const cspRule = "||example.org^$csp=frame-src 'none'";
         const replaceRule = '||example.org^$replace=/text-to-be-replaced/new-text/i';
         const cookieRule = '||example.org^$cookie';
         const removeParamRule = '||example.org^$removeparam=p1';
@@ -224,9 +220,9 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         ).toBe(replaceRule);
         expect(result.cspRules).not.toBeNull();
         expect(result.cspRules).toHaveLength(1);
-        expect(
-            engine.retrieveRuleText(result.cspRules![0].getFilterListId(), result.cspRules![0].getIndex()),
-        ).toBe(cspRule);
+        expect(engine.retrieveRuleText(result.cspRules![0].getFilterListId(), result.cspRules![0].getIndex())).toBe(
+            cspRule,
+        );
         expect(result.cookieRules).not.toBeNull();
         expect(result.cookieRules).toHaveLength(1);
         expect(
@@ -236,7 +232,10 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         expect(result.removeParamRules).toHaveLength(1);
         expect(
             // eslint-disable-next-line max-len
-            engine.retrieveRuleText(result.removeParamRules![0].getFilterListId(), result.removeParamRules![0].getIndex()),
+            engine.retrieveRuleText(
+                result.removeParamRules![0].getFilterListId(),
+                result.removeParamRules![0].getIndex(),
+            ),
         ).toBe(removeParamRule);
         expect(result.stealthRules).toBeNull();
     });
@@ -247,12 +246,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         const allowlistBadfilterRule = '@@/fuckadblock.min.js$domain=example.org,badfilter';
         const badfilterRule = '/fuckadblock.min.js$badfilter';
 
-        const text = [
-            redirectRule,
-            allowlistRule,
-            badfilterRule,
-            allowlistBadfilterRule,
-        ].join('\n');
+        const text = [redirectRule, allowlistRule, badfilterRule, allowlistBadfilterRule].join('\n');
 
         const engine = Engine.createSync({
             filters: [
@@ -294,11 +288,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             ],
         });
 
-        const request = new Request(
-            'http://ya.ru/',
-            null,
-            RequestType.Image,
-        );
+        const request = new Request('http://ya.ru/', null, RequestType.Image);
         const result = engine.matchRequest(request);
 
         expect(result.getBasicResult()).toBeNull();
@@ -306,10 +296,9 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
     });
 
     it('checks if with allowlist redirect modifier resource type is not ignored', () => {
-        const text = [
-            '||ya.ru$redirect=1x1-transparent.gif',
-            '@@||ya.ru$redirect=1x1-transparent.gif,image',
-        ].join('\n');
+        const text = ['||ya.ru$redirect=1x1-transparent.gif', '@@||ya.ru$redirect=1x1-transparent.gif,image'].join(
+            '\n',
+        );
 
         const engine = Engine.createSync({
             filters: [
@@ -320,26 +309,15 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             ],
         });
 
-        let request = new Request(
-            'http://ya.ru/',
-            null,
-            RequestType.Image,
-        );
+        let request = new Request('http://ya.ru/', null, RequestType.Image);
         expect(engine.matchRequest(request).getBasicResult()).toBeNull();
 
-        request = new Request(
-            'http://ya.ru/',
-            null,
-            RequestType.Media,
-        );
+        request = new Request('http://ya.ru/', null, RequestType.Media);
         expect(engine.matchRequest(request).getBasicResult()).not.toBeNull();
     });
 
     it('checks that unrelated exception does not exclude other blocking rules', () => {
-        const text = [
-            '||ya.ru$redirect=1x1-transparent.gif',
-            '@@||ya.ru$redirect=2x2-transparent.png',
-        ].join('\n');
+        const text = ['||ya.ru$redirect=1x1-transparent.gif', '@@||ya.ru$redirect=2x2-transparent.png'].join('\n');
 
         const engine = Engine.createSync({
             filters: [
@@ -350,16 +328,12 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             ],
         });
 
-        const request = new Request(
-            'http://ya.ru/',
-            null,
-            RequestType.Image,
-        );
+        const request = new Request('http://ya.ru/', null, RequestType.Image);
         const basicResult = engine.matchRequest(request).getBasicResult();
         expect(basicResult).not.toBeNull();
-        expect(
-            engine.retrieveRuleText(basicResult!.getFilterListId(), basicResult!.getIndex()),
-        ).toBe('||ya.ru$redirect=1x1-transparent.gif');
+        expect(engine.retrieveRuleText(basicResult!.getFilterListId(), basicResult!.getIndex())).toBe(
+            '||ya.ru$redirect=1x1-transparent.gif',
+        );
     });
 
     it('checks that it is possible to exclude all redirects with `@@$redirect` rule', () => {
@@ -379,18 +353,10 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             ],
         });
 
-        let request = new Request(
-            'http://ya.ru/',
-            null,
-            RequestType.Image,
-        );
+        let request = new Request('http://ya.ru/', null, RequestType.Image);
         expect(engine.matchRequest(request).getBasicResult()).toBeNull();
 
-        request = new Request(
-            'http://ya.ru/',
-            null,
-            RequestType.Media,
-        );
+        request = new Request('http://ya.ru/', null, RequestType.Media);
         expect(engine.matchRequest(request).getBasicResult()).toBeNull();
     });
 
@@ -411,28 +377,17 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             ],
         });
 
-        let request = new Request(
-            'http://ya.ru/',
-            null,
-            RequestType.Image,
-        );
+        let request = new Request('http://ya.ru/', null, RequestType.Image);
         expect(engine.matchRequest(request).getBasicResult()).toBeNull();
 
-        request = new Request(
-            'http://ya.ru/',
-            null,
-            RequestType.Media,
-        );
+        request = new Request('http://ya.ru/', null, RequestType.Media);
         expect(engine.matchRequest(request).getBasicResult()).not.toBeNull();
     });
 });
 
 describe('TestEngineMatchRequest - redirect-rule modifier', () => {
     it('checks if redirect-rule is found for blocked requests only', () => {
-        const text = [
-            '||example.org/script.js',
-            '||example.org^$redirect-rule=noopjs',
-        ].join('\n');
+        const text = ['||example.org/script.js', '||example.org^$redirect-rule=noopjs'].join('\n');
 
         const engine = Engine.createSync({
             filters: [
@@ -443,22 +398,14 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
             ],
         });
 
-        let request = new Request(
-            'https://example.org/script.js',
-            null,
-            RequestType.Script,
-        );
+        let request = new Request('https://example.org/script.js', null, RequestType.Script);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(
             engine.retrieveRuleText(result.getBasicResult()!.getFilterListId(), result.getBasicResult()!.getIndex()),
         ).toBe('||example.org^$redirect-rule=noopjs');
 
-        request = new Request(
-            'https://example.org/index.js',
-            null,
-            RequestType.Script,
-        );
+        request = new Request('https://example.org/index.js', null, RequestType.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
     });
@@ -481,39 +428,19 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
             ],
         });
 
-        let request = new Request(
-            'https://example.org/script.js',
-            null,
-            RequestType.Script,
-        );
+        let request = new Request('https://example.org/script.js', null, RequestType.Script);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(
-            getRawRuleIndex(text, rules[1]),
-        ).toBe(
-            result.getBasicResult()!.getIndex(),
-        );
+        expect(getRawRuleIndex(text, rules[1])).toBe(result.getBasicResult()!.getIndex());
 
-        request = new Request(
-            'https://example.org/index.js',
-            null,
-            RequestType.Script,
-        );
+        request = new Request('https://example.org/index.js', null, RequestType.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
 
-        request = new Request(
-            'https://example.org/script.js?unblock',
-            null,
-            RequestType.Script,
-        );
+        request = new Request('https://example.org/script.js?unblock', null, RequestType.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(
-            getRawRuleIndex(text, rules[0]),
-        ).toBe(
-            result.getBasicResult()!.getIndex(),
-        );
+        expect(getRawRuleIndex(text, rules[0])).toBe(result.getBasicResult()!.getIndex());
     });
 });
 
@@ -832,7 +759,10 @@ describe('TestEngineCosmeticResult - elemhide', () => {
     });
 
     it('works if returns correct cosmetic elemhide result', () => {
-        let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+        let result = engine.getCosmeticResult(
+            createRequest('https://an-other-domain.org'),
+            CosmeticOption.CosmeticOptionAll,
+        );
 
         expect(result.elementHiding.generic.length).toEqual(2);
         expect(result.elementHiding.specific.length).toEqual(0);
@@ -858,8 +788,7 @@ describe('TestEngineCosmeticResult - elemhide', () => {
 
         result = engine.getCosmeticResult(
             createRequest('http://example.org'),
-            CosmeticOption.CosmeticOptionGenericCSS
-            | CosmeticOption.CosmeticOptionSpecificCSS,
+            CosmeticOption.CosmeticOptionGenericCSS | CosmeticOption.CosmeticOptionSpecificCSS,
         );
 
         expect(result.elementHiding.generic.length).toEqual(1);
@@ -877,12 +806,7 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
     const extCssSpecificCssRule = `example.org#$#${extCssCssRuleText}`;
     const extCssGenericCssRule = `#$#${extCssCssRuleText}`;
 
-    const rules = [
-        specificCssRule,
-        genericCssRule,
-        extCssSpecificCssRule,
-        extCssGenericCssRule,
-    ];
+    const rules = [specificCssRule, genericCssRule, extCssSpecificCssRule, extCssGenericCssRule];
 
     const engine = Engine.createSync({
         filters: [
@@ -894,7 +818,10 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
     });
 
     it('works if returns correct cosmetic css result', () => {
-        let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+        let result = engine.getCosmeticResult(
+            createRequest('https://an-other-domain.org'),
+            CosmeticOption.CosmeticOptionAll,
+        );
 
         expect(result.CSS.generic.length).toEqual(1);
         expect(result.CSS.specific.length).toEqual(0);
@@ -935,10 +862,7 @@ describe('TestEngineCosmeticResult - js', () => {
     const specificJsRule = `example.org#%#${jsRuleText}`;
     const genericJsRule = `#%#${jsRuleText}`;
 
-    const rules = [
-        specificJsRule,
-        genericJsRule,
-    ];
+    const rules = [specificJsRule, genericJsRule];
 
     // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2650
     it('matches wildcard cosmetic rules with private domains (com.ru)', () => {
@@ -959,18 +883,10 @@ describe('TestEngineCosmeticResult - js', () => {
         );
 
         expect(result.JS.specific.length).toEqual(1);
-        expect(
-            getRawRuleIndex(rawFilterList, jsRule),
-        ).toBe(
-            result.JS.specific[0].getIndex(),
-        );
+        expect(getRawRuleIndex(rawFilterList, jsRule)).toBe(result.JS.specific[0].getIndex());
 
         expect(result.elementHiding.specific.length).toEqual(1);
-        expect(
-            getRawRuleIndex(rawFilterList, hidingRule),
-        ).toBe(
-            result.elementHiding.specific[0].getIndex(),
-        );
+        expect(getRawRuleIndex(rawFilterList, hidingRule)).toBe(result.elementHiding.specific[0].getIndex());
     });
 
     it('works if returns correct cosmetic js result', () => {
@@ -983,7 +899,10 @@ describe('TestEngineCosmeticResult - js', () => {
             ],
         });
 
-        let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+        let result = engine.getCosmeticResult(
+            createRequest('https://an-other-domain.org'),
+            CosmeticOption.CosmeticOptionAll,
+        );
 
         expect(result.JS.generic.length).toEqual(1);
         expect(result.JS.specific.length).toEqual(0);
@@ -1010,7 +929,10 @@ describe('TestEngineCosmeticResult - js', () => {
             ],
         });
 
-        let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+        let result = engine.getCosmeticResult(
+            createRequest('https://an-other-domain.org'),
+            CosmeticOption.CosmeticOptionAll,
+        );
 
         expect(result.JS.generic.length).toEqual(0);
         expect(result.JS.specific.length).toEqual(0);
@@ -1043,27 +965,20 @@ describe('$urlblock modifier', () => {
 
         const frameRule = engine.matchFrame('http://example.org');
         expect(frameRule).not.toBeNull();
-        expect(
-            engine.retrieveRuleText(frameRule!.getFilterListId(), frameRule!.getIndex()),
-        ).toBe(urlblock);
+        expect(engine.retrieveRuleText(frameRule!.getFilterListId(), frameRule!.getIndex())).toBe(urlblock);
 
         const request = new Request('http://example.com/image.png', 'http://example.org', RequestType.Image);
         const result = engine.matchRequest(request, frameRule);
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
-        expect(
-            engine.retrieveRuleText(basicResult!.getFilterListId(), basicResult!.getIndex()),
-        ).toEqual(important);
+        expect(engine.retrieveRuleText(basicResult!.getFilterListId(), basicResult!.getIndex())).toEqual(important);
         expect(result.getDocumentBlockingResult()).toBeNull();
     });
 });
 
 describe('$badfilter modifier', () => {
     it('checks badfilter rule negates network rule', () => {
-        const rules = [
-            '$script,domain=example.com|example.org',
-            '$script,domain=example.com,badfilter',
-        ];
+        const rules = ['$script,domain=example.com|example.org', '$script,domain=example.com,badfilter'];
         const engine = Engine.createSync({
             filters: [
                 {
@@ -1095,31 +1010,24 @@ describe('$genericblock modifier', () => {
             filters: [
                 {
                     id: 1,
-                    content: [
-                        networkGenericRule,
-                        networkNegatedGenericRule,
-                        genericblockRule,
-                    ].join('\n'),
+                    content: [networkGenericRule, networkNegatedGenericRule, genericblockRule].join('\n'),
                 },
             ],
         });
 
         const frameRule = engine.matchFrame('https://domain.com');
         expect(frameRule).not.toBeNull();
-        expect(
-            engine.retrieveRuleText(frameRule!.getFilterListId(), frameRule!.getIndex()),
-        ).toBe(genericblockRule);
+        expect(engine.retrieveRuleText(frameRule!.getFilterListId(), frameRule!.getIndex())).toBe(genericblockRule);
 
-        const result = engine.matchRequest(new Request(
-            'https://example.org',
-            'https://domain.com',
-            RequestType.Script,
-        ), frameRule);
+        const result = engine.matchRequest(
+            new Request('https://example.org', 'https://domain.com', RequestType.Script),
+            frameRule,
+        );
 
         expect(result.basicRule).toBeNull();
-        expect(
-            engine.retrieveRuleText(result.documentRule!.getFilterListId(), result.documentRule!.getIndex()),
-        ).toBe(genericblockRule);
+        expect(engine.retrieveRuleText(result.documentRule!.getFilterListId(), result.documentRule!.getIndex())).toBe(
+            genericblockRule,
+        );
     });
 });
 
@@ -1127,10 +1035,7 @@ describe('Match subdomains', () => {
     it('should find css rules for subdomains', () => {
         const specificHidingRule = 'example.org##div';
         const specificHidingRuleSubdomain = 'sub.example.org##h1';
-        const rules = [
-            specificHidingRule,
-            specificHidingRuleSubdomain,
-        ];
+        const rules = [specificHidingRule, specificHidingRuleSubdomain];
         const text = rules.join('\n');
         const engine = Engine.createSync({
             filters: [
@@ -1145,25 +1050,17 @@ describe('Match subdomains', () => {
         expect(res).toBeDefined();
 
         expect(res.elementHiding.specific).toHaveLength(1);
-        expect(
-            getRawRuleIndex(text, specificHidingRule),
-        ).toBe(
-            res.elementHiding.specific[0].getIndex(),
-        );
+        expect(getRawRuleIndex(text, specificHidingRule)).toBe(res.elementHiding.specific[0].getIndex());
 
         res = engine.getCosmeticResult(createRequest('https://sub.example.org'), CosmeticOption.CosmeticOptionAll);
         expect(res).toBeDefined();
         expect(res.elementHiding.specific).toHaveLength(2);
 
-        expect(
-            res.elementHiding.specific.map((rule) => rule.getIndex()),
-        ).toContain(
+        expect(res.elementHiding.specific.map((rule) => rule.getIndex())).toContain(
             getRawRuleIndex(text, specificHidingRule),
         );
 
-        expect(
-            res.elementHiding.specific.map((rule) => rule.getIndex()),
-        ).toContain(
+        expect(res.elementHiding.specific.map((rule) => rule.getIndex())).toContain(
             getRawRuleIndex(text, specificHidingRuleSubdomain),
         );
     });
@@ -1171,10 +1068,7 @@ describe('Match subdomains', () => {
     it('should find css rules with www only for domains with www', () => {
         const specificHidingRuleWithWww = 'www.i.ua###Premium';
         const specificHidingRuleWithoutWww = 'i.ua###Premium';
-        const rules = [
-            specificHidingRuleWithWww,
-            specificHidingRuleWithoutWww,
-        ];
+        const rules = [specificHidingRuleWithWww, specificHidingRuleWithoutWww];
         const text = rules.join('\n');
         const engine = Engine.createSync({
             filters: [
@@ -1187,19 +1081,11 @@ describe('Match subdomains', () => {
 
         let res = engine.getCosmeticResult(createRequest('https://i.ua'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific).toHaveLength(1);
-        expect(
-            getRawRuleIndex(text, specificHidingRuleWithoutWww),
-        ).toBe(
-            res.elementHiding.specific[0].getIndex(),
-        );
+        expect(getRawRuleIndex(text, specificHidingRuleWithoutWww)).toBe(res.elementHiding.specific[0].getIndex());
 
         res = engine.getCosmeticResult(createRequest('https://mail.i.ua'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific).toHaveLength(1);
-        expect(
-            getRawRuleIndex(text, specificHidingRuleWithoutWww),
-        ).toBe(
-            res.elementHiding.specific[0].getIndex(),
-        );
+        expect(getRawRuleIndex(text, specificHidingRuleWithoutWww)).toBe(res.elementHiding.specific[0].getIndex());
 
         // both rules match
         res = engine.getCosmeticResult(createRequest('https://www.i.ua'), CosmeticOption.CosmeticOptionAll);
@@ -1211,11 +1097,7 @@ describe('Match subdomains', () => {
         const subDomainScriptletRule = 'sub.example.org#%#//scriptlet("abort-on-property-read", "alert")';
         const otherSubDomainScriptletRule = 'other-sub.example.org#%#//scriptlet("abort-on-property-read", "alert")';
 
-        const rules = [
-            scriptletRule,
-            subDomainScriptletRule,
-            otherSubDomainScriptletRule,
-        ];
+        const rules = [scriptletRule, subDomainScriptletRule, otherSubDomainScriptletRule];
         const text = rules.join('\n');
         const engine = Engine.createSync({
             filters: [
@@ -1232,11 +1114,7 @@ describe('Match subdomains', () => {
         );
         expect(resOne).toBeDefined();
         expect(resOne.JS.specific).toHaveLength(1);
-        expect(
-            getRawRuleIndex(text, scriptletRule),
-        ).toBe(
-            resOne.JS.specific[0].getIndex(),
-        );
+        expect(getRawRuleIndex(text, scriptletRule)).toBe(resOne.JS.specific[0].getIndex());
 
         const resTwo = engine.getCosmeticResult(
             createRequest('https://sub.example.org/test'),
@@ -1265,19 +1143,11 @@ describe('Match subdomains', () => {
 
         let res = engine.getCosmeticResult(createRequest('http://example.org'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific).toHaveLength(1);
-        expect(
-            getRawRuleIndex(text, hidingRule),
-        ).toBe(
-            res.elementHiding.specific[0].getIndex(),
-        );
+        expect(getRawRuleIndex(text, hidingRule)).toBe(res.elementHiding.specific[0].getIndex());
 
         res = engine.getCosmeticResult(createRequest('https://www.example.org/'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific).toHaveLength(1);
-        expect(
-            getRawRuleIndex(text, hidingRule),
-        ).toBe(
-            res.elementHiding.specific[0].getIndex(),
-        );
+        expect(getRawRuleIndex(text, hidingRule)).toBe(res.elementHiding.specific[0].getIndex());
     });
 });
 
@@ -1307,35 +1177,26 @@ describe('$specifichide modifier', () => {
         });
         const request = new Request('http://example.org', '', RequestType.Document);
         const result = engine.matchRequest(request);
-        const cosmeticResult = engine.getCosmeticResult(createRequest('http://example.org'), result.getCosmeticOption());
+        const cosmeticResult = engine.getCosmeticResult(
+            createRequest('http://example.org'),
+            result.getCosmeticOption(),
+        );
         expect(cosmeticResult).toBeTruthy();
         expect(cosmeticResult.elementHiding.specific).toHaveLength(0);
         expect(cosmeticResult.elementHiding.generic).toHaveLength(1);
         // expect(cosmeticResult.elementHiding.generic[0].getText()).toBe(genericElemhideRule);
         expect(cosmeticResult.elementHiding.generic).toHaveLength(1);
-        expect(
-            getRawRuleIndex(text, genericElemhideRule),
-        ).toBe(
-            cosmeticResult.elementHiding.generic[0].getIndex(),
-        );
+        expect(getRawRuleIndex(text, genericElemhideRule)).toBe(cosmeticResult.elementHiding.generic[0].getIndex());
         expect(cosmeticResult.CSS.specific).toHaveLength(0);
         expect(cosmeticResult.CSS.generic).toHaveLength(2);
 
         const cssGenericRules = cosmeticResult.CSS.generic;
 
         const genericCssRuleWithExclusionIndex = getRawRuleIndex(text, genericCssRuleWithExclusion);
-        expect(
-            cssGenericRules.some(
-                (rule) => rule.getIndex() === genericCssRuleWithExclusionIndex,
-            ),
-        ).toBeTruthy();
+        expect(cssGenericRules.some((rule) => rule.getIndex() === genericCssRuleWithExclusionIndex)).toBeTruthy();
 
         const genericCosmeticRuleIndex = getRawRuleIndex(text, genericCosmeticRule);
-        expect(
-            cssGenericRules.some(
-                (rule) => rule.getIndex() === genericCosmeticRuleIndex,
-            ),
-        ).toBeTruthy();
+        expect(cssGenericRules.some((rule) => rule.getIndex() === genericCosmeticRuleIndex)).toBeTruthy();
     });
 });
 
@@ -1355,9 +1216,9 @@ describe('Stealth cookie rules', () => {
         let request = new Request('http://example.org', '', RequestType.Document);
         let result = engine.matchRequest(request);
         let cookieRules = result.getCookieRules();
-        expect(
-            engine.retrieveRuleText(cookieRules[0].getFilterListId(), cookieRules[0].getIndex()),
-        ).toBe(stealthCookieRule);
+        expect(engine.retrieveRuleText(cookieRules[0].getFilterListId(), cookieRules[0].getIndex())).toBe(
+            stealthCookieRule,
+        );
 
         const allowlistRule = '@@||example.org^$stealth,removeparam,cookie';
         rules = [stealthCookieRule, allowlistRule];
@@ -1373,9 +1234,9 @@ describe('Stealth cookie rules', () => {
         request = new Request('http://example.org', '', RequestType.Document);
         result = engine.matchRequest(request);
         cookieRules = result.getCookieRules();
-        expect(
-            engine.retrieveRuleText(cookieRules[0].getFilterListId(), cookieRules[0].getIndex()),
-        ).toBe(allowlistRule);
+        expect(engine.retrieveRuleText(cookieRules[0].getFilterListId(), cookieRules[0].getIndex())).toBe(
+            allowlistRule,
+        );
     });
 });
 
@@ -1411,18 +1272,15 @@ describe('Unsafe rules can be ignored', () => {
         result = engine.matchRequest(request);
         removeParamRules = result.getRemoveParamRules();
         expect(removeParamRules).toHaveLength(1);
-        expect(
-            engine.retrieveRuleText(removeParamRules[0].getFilterListId(), removeParamRules[0].getIndex()),
-        ).toEqual(rule);
+        expect(engine.retrieveRuleText(removeParamRules[0].getFilterListId(), removeParamRules[0].getIndex())).toEqual(
+            rule,
+        );
     });
 });
 
 describe('Async engine creation', () => {
     it('should create engine and match rules same as sync', async () => {
-        const rules = [
-            '||example.org^$third-party',
-            'example.org##banner',
-        ];
+        const rules = ['||example.org^$third-party', 'example.org##banner'];
         const options = {
             filters: [{ id: 1, content: rules.join('\n') }],
         };
@@ -1506,10 +1364,7 @@ describe('Async engine creation', () => {
 
 describe('$path cosmetic modifier', () => {
     it('$generichide should not disable path modifier rules', () => {
-        const rulesLocal = [
-            '[$path=/subpage1]example.org##.ad-banner',
-            '@@||example.org^$generichide',
-        ];
+        const rulesLocal = ['[$path=/subpage1]example.org##.ad-banner', '@@||example.org^$generichide'];
         const engine = Engine.createSync({
             filters: [
                 {

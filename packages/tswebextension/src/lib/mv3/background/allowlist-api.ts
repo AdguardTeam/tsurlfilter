@@ -94,9 +94,7 @@ export class AllowlistApi extends CommonAllowlist {
             // match all subdomains by default in DNR.
             // We added them for consistency between DNR engine and
             // our tsurlfilter (for cosmetic in MV3).
-            const d = domain.startsWith('*.')
-                ? getUpperLevelDomain(domain)
-                : domain;
+            const d = domain.startsWith('*.') ? getUpperLevelDomain(domain) : domain;
 
             return this.inverted ? `~${d}` : d;
         });

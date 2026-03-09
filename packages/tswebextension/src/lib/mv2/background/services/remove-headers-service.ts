@@ -45,13 +45,7 @@ export class RemoveHeadersService {
         isRequestHeaders: boolean,
         headersToModify?: WebRequest.HttpHeaders,
     ): boolean {
-        const {
-            matchingResult,
-            tabId,
-            requestUrl,
-            contentType,
-            timestamp,
-        } = context;
+        const { matchingResult, tabId, requestUrl, contentType, timestamp } = context;
 
         if (!headersToModify || !matchingResult) {
             return false;
@@ -68,8 +62,11 @@ export class RemoveHeadersService {
             let isAppliedRule = false;
             if (rule.isAllowlist()) {
                 // Allowlist rules must be applicable by header name to be logged
-                isAppliedRule = RemoveHeadersService
-                    .isApplicableRemoveHeaderRule(headersToModify, rule, isRequestHeaders);
+                isAppliedRule = RemoveHeadersService.isApplicableRemoveHeaderRule(
+                    headersToModify,
+                    rule,
+                    isRequestHeaders,
+                );
             } else {
                 isAppliedRule = RemoveHeadersService.applyRule(headersToModify, rule, isRequestHeaders);
                 if (!isModified && isAppliedRule) {
@@ -206,10 +203,7 @@ export class RemoveHeadersService {
      *
      * @returns Header name or null if rule is not applicable.
      */
-    private static getApplicableHeaderName(
-        rule: NetworkRule,
-        isRequestHeaders: boolean,
-    ): string | null {
+    private static getApplicableHeaderName(rule: NetworkRule, isRequestHeaders: boolean): string | null {
         const modifier = rule.getAdvancedModifier() as RemoveHeaderModifier;
         if (!modifier) {
             return null;

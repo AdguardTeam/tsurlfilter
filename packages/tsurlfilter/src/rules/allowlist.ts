@@ -33,7 +33,7 @@ export const createAllowlistRuleNode = (domain: string): null | NetworkRule => {
             // transform wildcard to regexp equivalent
             if (char === '*') {
                 regexp += '.*';
-            // escape domain separator
+                // escape domain separator
             } else if (char === '.') {
                 regexp += String.raw`\.`;
             } else {

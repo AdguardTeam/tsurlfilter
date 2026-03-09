@@ -1,13 +1,6 @@
 /* eslint-disable max-len */
 import { AdblockSyntaxError } from '@adguard/agtree';
-import {
-    afterAll,
-    afterEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 
 import { HTTPMethod } from '../../src/modifiers/method-modifier';
 import { StealthOptionName } from '../../src/modifiers/stealth-modifier';
@@ -268,7 +261,10 @@ describe('NetworkRule constructor', () => {
 
     it('throws error if $permissions modifier value is invalid', () => {
         expect(() => {
-            createNetworkRule(String.raw`||example.org$permissions=permissions=oversized-images=()\,clipboard-read=(self)`, 0);
+            createNetworkRule(
+                String.raw`||example.org$permissions=permissions=oversized-images=()\,clipboard-read=(self)`,
+                0,
+            );
         }).not.toThrow();
 
         expect(() => {
@@ -294,7 +290,10 @@ describe('NetworkRule constructor', () => {
     });
 
     it('allows and converts pipe separator in $permissions modifier values', () => {
-        const rule = createNetworkRule('||example.org$permissions=permissions=oversized-images=()|clipboard-read=(self)', 0);
+        const rule = createNetworkRule(
+            '||example.org$permissions=permissions=oversized-images=()|clipboard-read=(self)',
+            0,
+        );
         const expectedValue = 'permissions=oversized-images=(),clipboard-read=(self)';
         expect(rule.getAdvancedModifierValue()).toBe(expectedValue);
     });
@@ -348,7 +347,10 @@ describe('NetworkRule constructor', () => {
         let correct = createNetworkRule('||example.org^$removeheader=header-name', 0);
         expect(correct).toBeTruthy();
 
-        correct = createNetworkRule('||example.org^$removeheader=header-name,domain=test.com,third-party,important,match-case', 0);
+        correct = createNetworkRule(
+            '||example.org^$removeheader=header-name,domain=test.com,third-party,important,match-case',
+            0,
+        );
         expect(correct).toBeTruthy();
 
         correct = createNetworkRule('@@||example.org^$removeheader', 0);
@@ -564,10 +566,9 @@ describe('NetworkRule constructor', () => {
         checkRequestType('~document', RequestType.Document, false);
 
         const rule = createNetworkRule('||example.org^$all', 0);
-        const allRequestTypes = Object.values(RequestType)
-            .reduce((prevValue: number, curValue: number) => {
-                return prevValue | curValue;
-            }, RequestType.Document);
+        const allRequestTypes = Object.values(RequestType).reduce((prevValue: number, curValue: number) => {
+            return prevValue | curValue;
+        }, RequestType.Document);
         expect(rule.getPermittedRequestTypes()).toEqual(allRequestTypes);
         expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.NotSet);
     });
@@ -600,13 +601,25 @@ describe('NetworkRule constructor', () => {
 
         assertBadfilterNegates('@@path$image,domain=~example.org', '@@path$image,domain=~example.org,badfilter', true);
         assertBadfilterNegates('@@path$image,domain=~example.org', '@@path$image,domain=~example.com,badfilter', false);
-        assertBadfilterNegates('@@path$image,domain=~example.org', '@@an-other-path$image,domain=~example.org,badfilter', false);
-        assertBadfilterNegates('@@path$image,domain=~example.org|~example.com', '@@path$image,domain=~example.org,badfilter', false);
+        assertBadfilterNegates(
+            '@@path$image,domain=~example.org',
+            '@@an-other-path$image,domain=~example.org,badfilter',
+            false,
+        );
+        assertBadfilterNegates(
+            '@@path$image,domain=~example.org|~example.com',
+            '@@path$image,domain=~example.org,badfilter',
+            false,
+        );
 
         assertBadfilterNegates('*$~image,domain=example.org', '*$~script,domain=example.org,badfilter', false);
         assertBadfilterNegates('*$image,domain=example.org|example.com', '*$image,domain=example.org,badfilter', true);
         assertBadfilterNegates('*$image,domain=example.com', '*$image,domain=example.org,badfilter', false);
-        assertBadfilterNegates('*$image,domain=example.org|~example.com', '*$image,domain=example.org,badfilter', false);
+        assertBadfilterNegates(
+            '*$image,domain=example.org|~example.com',
+            '*$image,domain=example.org,badfilter',
+            false,
+        );
 
         // denyallow modifier must be compared exactly
         // https://github.com/AguardTeam/AdguardBrowserExtension/issues/3428
@@ -693,10 +706,9 @@ describe('NetworkRule constructor', () => {
         const rule = createNetworkRule('||example.org^$all', -1);
         expect(rule).toBeTruthy();
         expect(rule.isOptionEnabled(NetworkRuleOption.Popup));
-        const allRequestTypes = Object.values(RequestType)
-            .reduce((prevValue: number, curValue: number) => {
-                return prevValue | curValue;
-            }, RequestType.Document);
+        const allRequestTypes = Object.values(RequestType).reduce((prevValue: number, curValue: number) => {
+            return prevValue | curValue;
+        }, RequestType.Document);
         expect(rule.getPermittedRequestTypes()).toEqual(allRequestTypes);
     });
 
@@ -1125,7 +1137,10 @@ describe('NetworkRule.match', () => {
     it('matches by $domain modifier with mixed type values', () => {
         let request: Request;
         const requestType: RequestType = RequestType.Script;
-        const rule = createNetworkRule(String.raw`||test.ru^$domain=/\.(io\|com)/|evil.*|ads.net|~/jwt\.io/|~evil.gov`, 0);
+        const rule = createNetworkRule(
+            String.raw`||test.ru^$domain=/\.(io\|com)/|evil.*|ads.net|~/jwt\.io/|~evil.gov`,
+            0,
+        );
         expect(rule.getPermittedDomains()).toHaveLength(3);
         expect(rule.getRestrictedDomains()).toHaveLength(2);
 
@@ -1524,8 +1539,16 @@ describe('NetworkRule.isHigherPriority', () => {
                 ['||example.org$domain=example.org', '||example.org$domain=example.*|adguard.*', true],
                 ['||example.org$domain=example.org', '||example.org$domain=example.com|example.org', true],
                 // 2 domains -> 3 domains
-                ['||example.org$domain=domain=example.*|adguard.*', '||example.org$domain=example.com|example.org|example.net', true],
-                ['||example.org$domain=example.com|example.org', '||example.org$domain=example.com|example.org|example.net', true],
+                [
+                    '||example.org$domain=domain=example.*|adguard.*',
+                    '||example.org$domain=example.com|example.org|example.net',
+                    true,
+                ],
+                [
+                    '||example.org$domain=example.com|example.org',
+                    '||example.org$domain=example.com|example.org|example.net',
+                    true,
+                ],
                 ['||example.org$script,domain=a.com,denyallow=x.com|y.com', '||example.org$script,domain=a.com', true],
             ],
         },
@@ -1564,9 +1587,17 @@ describe('NetworkRule.isHigherPriority', () => {
         {
             key: 'importantRules',
             cases: [
-                ['||example.org^$document,redirect=nooptext,important', '||example.org^$document,redirect=nooptext', true],
+                [
+                    '||example.org^$document,redirect=nooptext,important',
+                    '||example.org^$document,redirect=nooptext',
+                    true,
+                ],
                 ['||example.org$domain=example.com,important', '||example.org^$document,important', true],
-                ['@@||example.org$domain=example.com,important', '@@||example.org$domain=example.com|example.net,important', true],
+                [
+                    '@@||example.org$domain=example.com,important',
+                    '@@||example.org$domain=example.com|example.net,important',
+                    true,
+                ],
             ],
         },
     ];
@@ -1574,9 +1605,7 @@ describe('NetworkRule.isHigherPriority', () => {
     priorityCases.forEach((casesGroup, currentIndex) => {
         describe(`respects group of ${casesGroup.key}`, () => {
             const lowerPriorityGroups = priorityCases.slice(0, currentIndex);
-            const lowerPriorityCases = lowerPriorityGroups
-                .map(({ cases }) => cases)
-                .flat(1);
+            const lowerPriorityCases = lowerPriorityGroups.map(({ cases }) => cases).flat(1);
 
             const cases: PriorityTestCase['cases'] = [];
             casesGroup.cases.forEach((item) => {
@@ -1607,7 +1636,7 @@ describe('NetworkRule.isFilteringDisabled', () => {
     ];
 
     it.each(cases)('should return $expected for rule $rule', ({ rule, expected }) => {
-        expect((createNetworkRule(rule, 0)).isFilteringDisabled()).toBe(expected);
+        expect(createNetworkRule(rule, 0).isFilteringDisabled()).toBe(expected);
     });
 });
 
@@ -1630,7 +1659,7 @@ describe('NetworkRule.isUnsafe', () => {
     ];
 
     it.each(cases)('should return $expected for rule $rule', ({ rule, expected }) => {
-        expect((createNetworkRule(rule, 0)).isUnsafe()).toBe(expected);
+        expect(createNetworkRule(rule, 0).isUnsafe()).toBe(expected);
     });
 });
 

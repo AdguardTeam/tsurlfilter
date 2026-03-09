@@ -1,21 +1,19 @@
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "dummy.rule.adguard.com",
-			"resourceTypes": [
-				"xmlhttprequest"
-			]
-		},
-		"metadata": {
-			"byteRangeMapsCollection": {},
-			"checksums": {
-				"ruleset_999": "3fbc1c0f925f162cc7a76c4b05b52da7"
-			},
-			"additionalProperties": {}
-		}
-	}
+    {
+        "id": 1,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "dummy.rule.adguard.com",
+            "resourceTypes": ["xmlhttprequest"]
+        },
+        "metadata": {
+            "byteRangeMapsCollection": {},
+            "checksums": {
+                "ruleset_999": "3fbc1c0f925f162cc7a76c4b05b52da7"
+            },
+            "additionalProperties": {}
+        }
+    }
 ]

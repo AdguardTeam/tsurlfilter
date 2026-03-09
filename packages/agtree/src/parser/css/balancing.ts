@@ -24,8 +24,10 @@ import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type Last<T extends unknown[]> = T extends [...infer _I, infer L]
     ? L
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    : T extends [...infer _I, (infer L)?] ? L | undefined : never;
+    : // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      T extends [...infer _I, (infer L)?]
+      ? L | undefined
+      : never;
 
 /**
  * Utility type to remove the last element from a tuple, handling optional last elements correctly.
@@ -36,11 +38,11 @@ type Last<T extends unknown[]> = T extends [...infer _I, infer L]
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type OmitLast<T extends unknown[]> = T extends [...infer Rest, infer _Last]
     ? Rest
-    // Handles cases where the last element is optional
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    : T extends [...infer Rest, (infer _Last)?]
-        ? Rest
-        : never;
+    : // Handles cases where the last element is optional
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      T extends [...infer Rest, (infer _Last)?]
+      ? Rest
+      : never;
 
 /**
  * Extracts the parameters of `OnTokenCallback` as a tuple.

@@ -1,11 +1,6 @@
 import { BaseGenerator } from '../../base-generator';
 import type { ScriptletInjectionRuleBody } from '../../../nodes';
-import {
-    CLOSE_PARENTHESIS,
-    EMPTY,
-    OPEN_PARENTHESIS,
-    UBO_SCRIPTLET_MASK,
-} from '../../../utils/constants';
+import { CLOSE_PARENTHESIS, EMPTY, OPEN_PARENTHESIS, UBO_SCRIPTLET_MASK } from '../../../utils/constants';
 import { ParameterListGenerator } from '../../misc/parameter-list-generator';
 
 /**

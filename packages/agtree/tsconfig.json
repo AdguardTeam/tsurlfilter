@@ -1,7 +1,7 @@
 {
     "extends": "./tsconfig.base.json",
     "compilerOptions": {
-        "noEmit": true,
+        "noEmit": true
     },
     "include": [
         ".eslintrc.cjs",
@@ -13,11 +13,7 @@
         "src/**/*.ts",
         "test/**/*.ts",
         "rollup.plugins.ts",
-        "rollup.config.ts",
+        "rollup.config.ts"
     ],
-    "exclude": [
-        "./node_modules",
-        "./dist",
-        "./test/smoke"
-    ],
+    "exclude": ["./node_modules", "./dist", "./test/smoke"]
 }

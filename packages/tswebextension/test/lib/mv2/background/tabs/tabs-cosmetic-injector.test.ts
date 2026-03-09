@@ -1,11 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeAll,
-    beforeEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeAll, beforeEach, it, vi } from 'vitest';
 import browser from 'sinon-chrome';
 import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
@@ -57,10 +50,12 @@ describe('TabsCosmeticInjector', () => {
             const url = 'https://example.com';
             const timestamp = 123;
 
-            browser.tabs.query.resolves([{
-                id: tabId,
-                url,
-            }]);
+            browser.tabs.query.resolves([
+                {
+                    id: tabId,
+                    url,
+                },
+            ]);
 
             browser.webNavigation.getAllFrames.resolves([{ frameId, url }]);
 

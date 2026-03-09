@@ -10,12 +10,7 @@ import {
 /**
  * Set of all allowed characters for app name except the dot `.`.
  */
-export const APP_NAME_ALLOWED_CHARS = new Set([
-    ...CAPITAL_LETTERS,
-    ...SMALL_LETTERS,
-    ...NUMBERS,
-    UNDERSCORE,
-]);
+export const APP_NAME_ALLOWED_CHARS = new Set([...CAPITAL_LETTERS, ...SMALL_LETTERS, ...NUMBERS, UNDERSCORE]);
 
 /**
  * Allowed methods for $method modifier.

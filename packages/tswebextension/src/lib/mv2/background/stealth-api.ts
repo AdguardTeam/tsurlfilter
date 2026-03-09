@@ -112,7 +112,10 @@ export class StealthApi {
                 await this.handleBlockWebRTC();
             }
         } catch (e) {
-            logger.error('[tsweb.StealthApi.updateWebRtcPrivacyPermissions]: error updating privacy.network settings: ', e);
+            logger.error(
+                '[tsweb.StealthApi.updateWebRtcPrivacyPermissions]: error updating privacy.network settings: ',
+                e,
+            );
         }
     }
 
@@ -200,9 +203,7 @@ export class StealthApi {
      * @returns Dom signal script.
      */
     public getSetDomSignalScript(): string {
-        return this.isStealthAllowed
-            ? this.stealthService.getSetDomSignalScript()
-            : '';
+        return this.isStealthAllowed ? this.stealthService.getSetDomSignalScript() : '';
     }
 
     /**
@@ -211,9 +212,7 @@ export class StealthApi {
      * @returns Hide referrer script.
      */
     public getHideDocumentReferrerScript(): string {
-        return this.isStealthAllowed
-            ? this.stealthService.getHideDocumentReferrerScript()
-            : '';
+        return this.isStealthAllowed ? this.stealthService.getHideDocumentReferrerScript() : '';
     }
 
     /**

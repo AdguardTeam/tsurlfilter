@@ -33,7 +33,7 @@ export class ManifestPatcher {
     constructor(
         private loader: ManifestLoaderInterface = new ManifestLoader(),
         private injector: RulesetsInjectorInterface = new RulesetsInjector(),
-    ) { }
+    ) {}
 
     /**
      * Append rulesets into manifest `declarative_net_request` property.
@@ -46,11 +46,7 @@ export class ManifestPatcher {
      * @throws Error if manifest already contains ruleset with the specified ids
      * and {@link options.forceUpdate} is disabled or if manifest file or filters directory are not found.
      */
-    public patch(
-        manifestPath: string,
-        filtersPath: string,
-        options?: Partial<PatchManifestOptions>,
-    ): void {
+    public patch(manifestPath: string, filtersPath: string, options?: Partial<PatchManifestOptions>): void {
         const absoluteManifestPath = ManifestPatcher.getAbsolutePath(manifestPath);
         const absoluteFiltersPath = ManifestPatcher.getAbsolutePath(filtersPath);
 
@@ -58,11 +54,8 @@ export class ManifestPatcher {
 
         const manifestDirPath = path.dirname(absoluteManifestPath);
 
-        const getPath = (rulesetId: string) => ManifestPatcher.getRelativeRulesetPath(
-            absoluteFiltersPath,
-            manifestDirPath,
-            rulesetId,
-        );
+        const getPath = (rulesetId: string) =>
+            ManifestPatcher.getRelativeRulesetPath(absoluteFiltersPath, manifestDirPath, rulesetId);
 
         const filtersMatchGlob = options?.filtersMatch ?? ManifestPatcher.DEFAULT_FILTERS_MATCH_GLOB;
 
@@ -71,12 +64,7 @@ export class ManifestPatcher {
             cwd: absoluteFiltersPath,
         });
 
-        const patchedManifest = this.injector.applyRulesets(
-            getPath,
-            manifest,
-            filterNames,
-            options,
-        );
+        const patchedManifest = this.injector.applyRulesets(getPath, manifest, filterNames, options);
 
         fs.writeFileSync(absoluteManifestPath, JSON.stringify(patchedManifest, null, 4));
     }
@@ -90,15 +78,8 @@ export class ManifestPatcher {
      *
      * @returns Relative path to specified ruleset config.
      */
-    private static getRelativeRulesetPath(
-        filtersDirPath: string,
-        manifestDirPath: string,
-        rulesetName: string,
-    ) {
-        return path.relative(
-            manifestDirPath,
-            `${filtersDirPath}/declarative/${rulesetName}/${rulesetName}.json`,
-        );
+    private static getRelativeRulesetPath(filtersDirPath: string, manifestDirPath: string, rulesetName: string) {
+        return path.relative(manifestDirPath, `${filtersDirPath}/declarative/${rulesetName}/${rulesetName}.json`);
     }
 
     /**
@@ -111,9 +92,7 @@ export class ManifestPatcher {
      * @throws Error if file is not found.
      */
     private static getAbsolutePath(filePath: string) {
-        const absoluteFilePath = !path.isAbsolute(filePath)
-            ? path.resolve(process.cwd(), filePath)
-            : filePath;
+        const absoluteFilePath = !path.isAbsolute(filePath) ? path.resolve(process.cwd(), filePath) : filePath;
 
         if (!fs.existsSync(absoluteFilePath)) {
             throw new Error('File is not found!');

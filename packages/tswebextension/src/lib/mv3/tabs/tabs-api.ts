@@ -77,9 +77,7 @@ export class TabsApi extends TabsApiCommon<FrameMV3, TabContext> {
 
         const url = tab.info?.url;
 
-        return url === undefined
-            || url === ''
-            || url === 'about:blank';
+        return url === undefined || url === '' || url === 'about:blank';
     }
 }
 

@@ -65,10 +65,7 @@ const startDownload = async () => {
     const urls = getUrlsOfFiltersResources();
     await Promise.all(urls.map((url: UrlType) => downloadFilter(url, FILTERS_DIR)));
 
-    await downloadFiltersMetadata(
-        FILTERS_METADATA_URL,
-        FILTERS_DIR,
-    );
+    await downloadFiltersMetadata(FILTERS_METADATA_URL, FILTERS_DIR);
 };
 
 /**
@@ -88,15 +85,10 @@ const startDownload = async () => {
 const precompileRules = async () => {
     await startDownload();
 
-    await convertFilters(
-        FILTERS_DIR,
-        RESOURCES_DIR,
-        DEST_RULE_SETS_DIR,
-        {
-            debug: true,
-            prettifyJson: true,
-        },
-    );
+    await convertFilters(FILTERS_DIR, RESOURCES_DIR, DEST_RULE_SETS_DIR, {
+        debug: true,
+        prettifyJson: true,
+    });
 };
 
 precompileRules();

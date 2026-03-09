@@ -1,28 +1,13 @@
 /**
  * @vitest-environment jsdom
  */
-import {
-    describe,
-    expect,
-    beforeEach,
-    afterEach,
-    it,
-    vi,
-} from 'vitest';
-import {
-    MatchingResult,
-    RequestType,
-    CosmeticResult,
-    HTTPMethod,
-    type NetworkRule,
-} from '@adguard/tsurlfilter';
+import { describe, expect, beforeEach, afterEach, it, vi } from 'vitest';
+import { MatchingResult, RequestType, CosmeticResult, HTTPMethod, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
 import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
 import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
-import {
-    ContentFiltering,
-} from '../../../../../../src/lib/mv2/background/services/content-filtering/content-filtering';
+import { ContentFiltering } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-filtering';
 import { contentFiltering } from '../../../../../../src/lib/mv2/background/api';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 

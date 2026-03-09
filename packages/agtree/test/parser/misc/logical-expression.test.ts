@@ -381,18 +381,22 @@ describe('LogicalExpressionParser', () => {
         expect(parseAndGenerate('((a) || (!(b))) && c')).toEqual('((a) || (!(b))) && c');
         expect(parseAndGenerate('((!!a) || (!(b))) && ((!!(!!c)))')).toEqual('((!!a) || (!(b))) && ((!!(!!c)))');
 
-        expect(parseAndGenerate(
-            // eslint-disable-next-line max-len
-            '(adguard && !adguard_ext_safari) && (adguard_ext_android || (adguard_ext_chromium && (!adguard_ext_firefox)))',
-        )).toEqual(
+        expect(
+            parseAndGenerate(
+                // eslint-disable-next-line max-len
+                '(adguard && !adguard_ext_safari) && (adguard_ext_android || (adguard_ext_chromium && (!adguard_ext_firefox)))',
+            ),
+        ).toEqual(
             // eslint-disable-next-line max-len
             '(adguard && !adguard_ext_safari) && (adguard_ext_android || (adguard_ext_chromium && (!adguard_ext_firefox)))',
         );
 
-        expect(parseAndGenerate(
-            // eslint-disable-next-line max-len
-            '(((adguard)) && !adguard_ext_safari) && ((adguard_ext_android) || (adguard_ext_chromium && (!adguard_ext_firefox)))',
-        )).toEqual(
+        expect(
+            parseAndGenerate(
+                // eslint-disable-next-line max-len
+                '(((adguard)) && !adguard_ext_safari) && ((adguard_ext_android) || (adguard_ext_chromium && (!adguard_ext_firefox)))',
+            ),
+        ).toEqual(
             // eslint-disable-next-line max-len
             '(((adguard)) && !adguard_ext_safari) && ((adguard_ext_android) || (adguard_ext_chromium && (!adguard_ext_firefox)))',
         );

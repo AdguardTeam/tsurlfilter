@@ -185,10 +185,7 @@ describe('ModifierValidator', () => {
         });
 
         describe('deprecated but still supported', () => {
-            const supportedModifiers = [
-                'empty',
-                'mp4',
-            ];
+            const supportedModifiers = ['empty', 'mp4'];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
@@ -211,7 +208,10 @@ describe('ModifierValidator', () => {
                 {
                     actual: 'popunder',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows)),
+                    expected: sprintf(
+                        VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                        getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows),
+                    ),
                 },
                 {
                     actual: 'object-subrequest',
@@ -313,11 +313,7 @@ describe('ModifierValidator', () => {
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
 
-            const validForExceptionRuleModifiers = [
-                'important',
-                'jsinject',
-                'stealth',
-            ];
+            const validForExceptionRuleModifiers = ['important', 'jsinject', 'stealth'];
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
@@ -604,16 +600,17 @@ describe('ModifierValidator', () => {
 
             describe('required value - validate by pipe_separated_methods', () => {
                 describe('pipe_separated_methods valid', () => {
-                    test.each([
-                        'method=get',
-                        'method=~head',
-                        'method=post|put',
-                        'method=get|post|put',
-                    ])('%s', (rawModifier) => {
-                        const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
-                        expect(validationResult.valid).toBeTruthy();
-                    });
+                    test.each(['method=get', 'method=~head', 'method=post|put', 'method=get|post|put'])(
+                        '%s',
+                        (rawModifier) => {
+                            const modifier = getModifier(rawModifier);
+                            const validationResult = modifierValidator.validate(
+                                SpecificPlatform.AdgOsWindows,
+                                modifier,
+                            );
+                            expect(validationResult.valid).toBeTruthy();
+                        },
+                    );
                 });
 
                 describe('pipe_separated_methods invalid', () => {
@@ -1029,13 +1026,7 @@ describe('ModifierValidator', () => {
 
     describe('validate for UblockOrigin', () => {
         describe('valid', () => {
-            const supportedModifiers = [
-                'all',
-                '~third-party',
-                'badfilter',
-                'popunder',
-                '____',
-            ];
+            const supportedModifiers = ['all', '~third-party', 'badfilter', 'popunder', '____'];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier);
@@ -1060,22 +1051,34 @@ describe('ModifierValidator', () => {
                 {
                     actual: 'genericblock',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
+                    expected: sprintf(
+                        VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                        getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox),
+                    ),
                 },
                 {
                     actual: 'object-subrequest',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
+                    expected: sprintf(
+                        VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                        getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox),
+                    ),
                 },
                 {
                     actual: 'app=com.test.app',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
+                    expected: sprintf(
+                        VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                        getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox),
+                    ),
                 },
                 {
                     actual: 'jsinject',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
+                    expected: sprintf(
+                        VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                        getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox),
+                    ),
                 },
                 {
                     actual: '~popup',
@@ -1111,12 +1114,7 @@ describe('ModifierValidator', () => {
         });
 
         describe('only for blocking rules', () => {
-            const invalidForBlockingRuleModifiers = [
-                'cname',
-                'ehide',
-                'generichide',
-                'specifichide',
-            ];
+            const invalidForBlockingRuleModifiers = ['cname', 'ehide', 'generichide', 'specifichide'];
             test.each(invalidForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
@@ -1152,10 +1150,7 @@ describe('ModifierValidator', () => {
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
 
-            const validForExceptionRuleModifiers = [
-                'important',
-                'elemhide',
-            ];
+            const validForExceptionRuleModifiers = ['important', 'elemhide'];
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
@@ -1258,22 +1253,34 @@ describe('ModifierValidator', () => {
                 {
                     actual: 'object-subrequest',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
+                    expected: sprintf(
+                        VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                        getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome),
+                    ),
                 },
                 {
                     actual: 'app=com.test.app',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
+                    expected: sprintf(
+                        VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                        getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome),
+                    ),
                 },
                 {
                     actual: 'jsinject',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
+                    expected: sprintf(
+                        VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                        getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome),
+                    ),
                 },
                 {
                     actual: 'denyallow',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
+                    expected: sprintf(
+                        VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                        getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome),
+                    ),
                 },
                 {
                     actual: '~popup',
@@ -1294,7 +1301,10 @@ describe('ModifierValidator', () => {
                 {
                     actual: '___',
                     // eslint-disable-next-line max-len
-                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
+                    expected: sprintf(
+                        VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                        getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome),
+                    ),
                 },
                 {
                     actual: 'rewrite',
@@ -1319,11 +1329,7 @@ describe('ModifierValidator', () => {
         });
 
         describe('only for blocking rules', () => {
-            const invalidForBlockingRuleModifiers = [
-                'elemhide',
-                'genericblock',
-                'generichide',
-            ];
+            const invalidForBlockingRuleModifiers = ['elemhide', 'genericblock', 'generichide'];
             test.each(invalidForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const EXPECTED_ERROR = 'Only exception rules may contain the modifier';
                 const modifier = getModifier(rawModifier);

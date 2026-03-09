@@ -10,12 +10,7 @@
         "maximum": 2
     },
     "no-inline-html": {
-        "allowed_elements": [
-            "a",
-            "details",
-            "summary",
-            "img"
-        ]
+        "allowed_elements": ["a", "details", "summary", "img"]
     },
     "no-duplicate-heading": {
         "siblings_only": true

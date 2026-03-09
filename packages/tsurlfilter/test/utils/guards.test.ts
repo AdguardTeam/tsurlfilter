@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-    isArray,
-    isNonEmptyArray,
-    isNull,
-    isUndefined,
-} from '../../src/utils/guards';
+import { isArray, isNonEmptyArray, isNull, isUndefined } from '../../src/utils/guards';
 
 describe('Type Guards', () => {
     describe('isUndefined', () => {

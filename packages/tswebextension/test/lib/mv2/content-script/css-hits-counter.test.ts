@@ -2,12 +2,7 @@
  * @vitest-environment jsdom
  */
 
-import {
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { CssHitsCounter } from '../../../../src/lib';
 
@@ -40,13 +35,14 @@ describe('CssHitsCounter', () => {
 
             expect(stats[0].filterId).toBe(1);
             expect(stats[0].ruleIndex).toBe(1);
-            expect(stats[0].element)
-                .toBe('<div id="hiddenDiv1" style="display: none; content:\'adguard1;1\';">');
+            expect(stats[0].element).toBe('<div id="hiddenDiv1" style="display: none; content:\'adguard1;1\';">');
 
             expect(stats[1].filterId).toBe(2);
             expect(stats[1].ruleIndex).toBe(2);
             // eslint-disable-next-line max-len
-            expect(stats[1].element).toBe('<div id="hiddenDiv2" style="display: none !important; content:\'adguard2;2\' !important;">');
+            expect(stats[1].element).toBe(
+                '<div id="hiddenDiv2" style="display: none !important; content:\'adguard2;2\' !important;">',
+            );
         });
 
         const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
@@ -135,11 +131,13 @@ describe('CssHitsCounter', () => {
         mutationObserverRef!.trigger([mutationRecord]);
 
         expect(onCssHitsFound).toHaveBeenCalledTimes(2);
-        expect(onCssHitsFound).toHaveBeenLastCalledWith([{
-            filterId: 3,
-            ruleIndex: 3,
-            element: '<div id="mutationDiv" style="display: none !important; content:\'adguard3;3\';">',
-        }]);
+        expect(onCssHitsFound).toHaveBeenLastCalledWith([
+            {
+                filterId: 3,
+                ruleIndex: 3,
+                element: '<div id="mutationDiv" style="display: none !important; content:\'adguard3;3\';">',
+            },
+        ]);
 
         cssHitsCounter.stop();
     });
@@ -166,11 +164,13 @@ describe('CssHitsCounter', () => {
         expect(affectedElement).toBe(elementToCount);
 
         expect(onCssHitsFound).toHaveBeenCalledTimes(3);
-        expect(onCssHitsFound).toHaveBeenLastCalledWith([{
-            filterId: 4,
-            ruleIndex: 4,
-            element: '<div id="testDiv">',
-        }]);
+        expect(onCssHitsFound).toHaveBeenLastCalledWith([
+            {
+                filterId: 4,
+                ruleIndex: 4,
+                element: '<div id="testDiv">',
+            },
+        ]);
 
         cssHitsCounter.stop();
     });

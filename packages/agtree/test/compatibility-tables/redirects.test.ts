@@ -28,9 +28,9 @@ describe('Redirects Compatibility Table', () => {
     });
 
     it('redirectsCompatibilityTable.getSingle', () => {
-        expect(
-            redirectsCompatibilityTable.getSingle('noopjs', SpecificPlatform.AdgExtChrome),
-        ).toMatchObject(baseNoopJsData);
+        expect(redirectsCompatibilityTable.getSingle('noopjs', SpecificPlatform.AdgExtChrome)).toMatchObject(
+            baseNoopJsData,
+        );
 
         expect(redirectsCompatibilityTable.getSingle('nonexistent', SpecificPlatform.AbpExtChrome)).toBeNull();
     });
@@ -55,40 +55,25 @@ describe('Redirects Compatibility Table', () => {
         it('should resolve googlesyndication.com/adsbygoogle.js alias for ADG platform', () => {
             // This alias is used in uBO syntax and should be resolved to ADG redirect name
             expect(redirectsCompatibilityTable.existsAny(REDIRECT_ALIAS)).toBeTruthy();
-            expect(
-                redirectsCompatibilityTable.exists(REDIRECT_ALIAS, GenericPlatform.AdgAny),
-            ).toBeTruthy();
+            expect(redirectsCompatibilityTable.exists(REDIRECT_ALIAS, GenericPlatform.AdgAny)).toBeTruthy();
 
-            const adgData = redirectsCompatibilityTable.getFirst(
-                REDIRECT_ALIAS,
-                GenericPlatform.AdgAny,
-            );
+            const adgData = redirectsCompatibilityTable.getFirst(REDIRECT_ALIAS, GenericPlatform.AdgAny);
             expect(adgData).not.toBeNull();
             expect(adgData?.name).toBe(EXPECTED_ADG_NAME);
         });
 
         it('should resolve googlesyndication_adsbygoogle.js alias for ADG platform', () => {
-            expect(
-                redirectsCompatibilityTable.exists(REDIRECT_ALIAS_UNDERSCORE, GenericPlatform.AdgAny),
-            ).toBeTruthy();
+            expect(redirectsCompatibilityTable.exists(REDIRECT_ALIAS_UNDERSCORE, GenericPlatform.AdgAny)).toBeTruthy();
 
-            const adgData = redirectsCompatibilityTable.getFirst(
-                REDIRECT_ALIAS_UNDERSCORE,
-                GenericPlatform.AdgAny,
-            );
+            const adgData = redirectsCompatibilityTable.getFirst(REDIRECT_ALIAS_UNDERSCORE, GenericPlatform.AdgAny);
             expect(adgData).not.toBeNull();
             expect(adgData?.name).toBe(EXPECTED_ADG_NAME);
         });
 
         it('should resolve ubo-googlesyndication.com/adsbygoogle.js alias for ADG platform', () => {
-            expect(
-                redirectsCompatibilityTable.exists(REDIRECT_ALIAS_UBO_PREFIX, GenericPlatform.AdgAny),
-            ).toBeTruthy();
+            expect(redirectsCompatibilityTable.exists(REDIRECT_ALIAS_UBO_PREFIX, GenericPlatform.AdgAny)).toBeTruthy();
 
-            const adgData = redirectsCompatibilityTable.getFirst(
-                REDIRECT_ALIAS_UBO_PREFIX,
-                GenericPlatform.AdgAny,
-            );
+            const adgData = redirectsCompatibilityTable.getFirst(REDIRECT_ALIAS_UBO_PREFIX, GenericPlatform.AdgAny);
             expect(adgData).not.toBeNull();
             expect(adgData?.name).toBe(EXPECTED_ADG_NAME);
         });

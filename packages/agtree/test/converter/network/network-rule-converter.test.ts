@@ -164,26 +164,34 @@ describe('NetworkRuleConverter', () => {
             {
                 actual: 'example.com$inline-script',
                 // eslint-disable-next-line max-len
-                expected: ['example.com$csp=script-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:'],
+                expected: [
+                    "example.com$csp=script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:",
+                ],
             },
             {
                 actual: 'example.com$inline-script,important',
                 // Note: $important precedes $csp because $csp handled at the end of the conversion
                 // eslint-disable-next-line max-len
-                expected: ['example.com$important,csp=script-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:'],
+                expected: [
+                    "example.com$important,csp=script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:",
+                ],
             },
 
             // inline-font
             {
                 actual: 'example.com$inline-font',
                 // eslint-disable-next-line max-len
-                expected: ['example.com$csp=font-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:'],
+                expected: [
+                    "example.com$csp=font-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:",
+                ],
             },
             {
                 actual: 'example.com$inline-font,important',
                 // Note: $important precedes $csp because $csp handled at the end of the conversion
                 // eslint-disable-next-line max-len
-                expected: ['example.com$important,csp=font-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:'],
+                expected: [
+                    "example.com$important,csp=font-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:",
+                ],
             },
 
             // Combine multiple $csp
@@ -191,7 +199,9 @@ describe('NetworkRuleConverter', () => {
                 actual: 'example.com$inline-font,inline-script,important',
                 // Note: $important precedes $csp because $csp handled at the end of the conversion
                 // eslint-disable-next-line max-len
-                expected: ['example.com$important,csp=font-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:; script-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:'],
+                expected: [
+                    "example.com$important,csp=font-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:; script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:",
+                ],
             },
 
             // Should convert redirect resources
@@ -199,126 +209,94 @@ describe('NetworkRuleConverter', () => {
             // Leave unknown redirect names unchanged
             {
                 actual: '||example.com/resource$redirect=this-redirect-name-does-not-exist',
-                expected: [
-                    '||example.com/resource$redirect=this-redirect-name-does-not-exist',
-                ],
+                expected: ['||example.com/resource$redirect=this-redirect-name-does-not-exist'],
                 shouldConvert: false,
             },
 
             // Convert modifier but leave redirect name unchanged because it is unknown
             {
                 actual: '||example.com/resource$rewrite=abp-resource:this-redirect-name-does-not-exist',
-                expected: [
-                    '||example.com/resource$redirect=abp-resource:this-redirect-name-does-not-exist',
-                ],
+                expected: ['||example.com/resource$redirect=abp-resource:this-redirect-name-does-not-exist'],
             },
 
             // Should return the original redirect name if its already an ADG redirect name
             // (i.e. leave ADG redirect names unchanged)
             {
                 actual: '||example.com/resource$redirect=1x1-transparent.gif',
-                expected: [
-                    '||example.com/resource$redirect=1x1-transparent.gif',
-                ],
+                expected: ['||example.com/resource$redirect=1x1-transparent.gif'],
                 shouldConvert: false,
             },
             {
                 actual: '||example.com/resource$image,redirect=1x1-transparent.gif',
-                expected: [
-                    '||example.com/resource$image,redirect=1x1-transparent.gif',
-                ],
+                expected: ['||example.com/resource$image,redirect=1x1-transparent.gif'],
                 shouldConvert: false,
             },
 
             // Should handle $redirect-rule
             {
                 actual: '||example.com/resource$redirect-rule=1x1-transparent.gif',
-                expected: [
-                    '||example.com/resource$redirect-rule=1x1-transparent.gif',
-                ],
+                expected: ['||example.com/resource$redirect-rule=1x1-transparent.gif'],
                 shouldConvert: false,
             },
 
             // Should convert uBO redirect names to ADG redirect names
             {
                 actual: '||example.com/resource$redirect=1x1.gif',
-                expected: [
-                    '||example.com/resource$redirect=1x1-transparent.gif',
-                ],
+                expected: ['||example.com/resource$redirect=1x1-transparent.gif'],
             },
             {
                 actual: '||example.com/resource$image,redirect=1x1.gif',
-                expected: [
-                    '||example.com/resource$image,redirect=1x1-transparent.gif',
-                ],
+                expected: ['||example.com/resource$image,redirect=1x1-transparent.gif'],
             },
             {
                 actual: '||example.com/resource$script,redirect=nobab.js',
-                expected: [
-                    '||example.com/resource$script,redirect=prevent-bab',
-                ],
+                expected: ['||example.com/resource$script,redirect=prevent-bab'],
             },
 
             // Just leave valid uBO redirect names unchanged if they aren't supported by ADG
             {
                 actual: '||example.com/resource$script,redirect=outbrain-widget.js',
-                expected: [
-                    '||example.com/resource$script,redirect=outbrain-widget.js',
-                ],
+                expected: ['||example.com/resource$script,redirect=outbrain-widget.js'],
                 shouldConvert: false,
             },
 
             // Should convert ABP -> ADG
             {
                 actual: '||example.com/resource$rewrite=1x1-transparent-gif',
-                expected: [
-                    '||example.com/resource$redirect=1x1-transparent.gif',
-                ],
+                expected: ['||example.com/resource$redirect=1x1-transparent.gif'],
             },
             {
                 actual: '||example.com/resource$stylesheet,rewrite=blank-css',
-                expected: [
-                    '||example.com/resource$stylesheet,redirect=noopcss',
-                ],
+                expected: ['||example.com/resource$stylesheet,redirect=noopcss'],
             },
 
             // Should handle the case where the redirect name starts with 'abp-resource:'
             {
                 actual: '||example.com/resource$script,rewrite=abp-resource:blank-js',
-                expected: [
-                    '||example.com/resource$script,redirect=noopjs',
-                ],
+                expected: ['||example.com/resource$script,redirect=noopjs'],
             },
 
             // remove suffix from noop.js
             // https://github.com/AdguardTeam/tsurlfilter/issues/59#issuecomment-1673064170
             {
                 actual: '||cdn.cookielaw.org^$important,redirect=noop.js:99,script,domain=open.spotify.com',
-                expected: [
-                    '||cdn.cookielaw.org^$important,redirect=noopjs,script,domain=open.spotify.com',
-                ],
+                expected: ['||cdn.cookielaw.org^$important,redirect=noopjs,script,domain=open.spotify.com'],
             },
             {
                 actual: '||cdn.cookielaw.org^$important,redirect=noop.js:100,script,domain=open.spotify.com',
-                expected: [
-                    '||cdn.cookielaw.org^$important,redirect=noopjs,script,domain=open.spotify.com',
-                ],
+                expected: ['||cdn.cookielaw.org^$important,redirect=noopjs,script,domain=open.spotify.com'],
             },
 
             // should convert googlesyndication.com/adsbygoogle.js to googlesyndication-adsbygoogle
             {
                 actual: '||example.com/adsbygoogle.js^$script,redirect-rule=googlesyndication.com/adsbygoogle.js',
-                expected: [
-                    '||example.com/adsbygoogle.js^$script,redirect-rule=googlesyndication-adsbygoogle',
-                ],
+                expected: ['||example.com/adsbygoogle.js^$script,redirect-rule=googlesyndication-adsbygoogle'],
             },
             {
                 actual: '||example.com/adsbygoogle.js$script,redirect=googlesyndication.com/adsbygoogle.js,important',
-                expected: [
-                    '||example.com/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle,important',
-                ],
+                expected: ['||example.com/adsbygoogle.js$script,redirect=googlesyndication-adsbygoogle,important'],
             },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+        ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(NetworkRuleConverter, 'convertToAdg');
         });
 
@@ -327,15 +305,15 @@ describe('NetworkRuleConverter', () => {
             // Redirect modifiers should have a value
             {
                 actual: '||example.com/resource$redirect',
-                expected: 'No redirect resource specified for \'redirect\' modifier',
+                expected: "No redirect resource specified for 'redirect' modifier",
             },
             {
                 actual: '||example.com/resource$redirect-rule',
-                expected: 'No redirect resource specified for \'redirect-rule\' modifier',
+                expected: "No redirect resource specified for 'redirect-rule' modifier",
             },
             {
                 actual: '||example.com/resource$rewrite',
-                expected: 'No redirect resource specified for \'rewrite\' modifier',
+                expected: "No redirect resource specified for 'rewrite' modifier",
             },
 
             // Redirect modifiers can't be negated
@@ -386,7 +364,9 @@ describe('NetworkRuleConverter', () => {
                 // eslint-disable-next-line max-len
                 actual: '||example.com/images/*.png$image,important,redirect=1x1-transparent.gif,domain=example.com|example.org',
                 // eslint-disable-next-line max-len
-                expected: ['||example.com/images/*.png$image,important,redirect=1x1.gif,domain=example.com|example.org'],
+                expected: [
+                    '||example.com/images/*.png$image,important,redirect=1x1.gif,domain=example.com|example.org',
+                ],
             },
             {
                 actual: '||example.com/vast/$important,redirect=empty,~third-party',
@@ -397,7 +377,9 @@ describe('NetworkRuleConverter', () => {
                 // eslint-disable-next-line max-len
                 actual: '||example.com/images/*.png$redirect=1x1-transparent.gif,domain=example.com|example.org,important',
                 // eslint-disable-next-line max-len
-                expected: ['||example.com/images/*.png$redirect=1x1.gif,domain=example.com|example.org,important,image'],
+                expected: [
+                    '||example.com/images/*.png$redirect=1x1.gif,domain=example.com|example.org,important,image',
+                ],
             },
             {
                 actual: '||example.com/*.mp4$important,redirect=noopmp4-1s,~third-party',
@@ -410,13 +392,17 @@ describe('NetworkRuleConverter', () => {
             {
                 actual: '||ad.example.com^$redirect=nooptext,important',
                 // eslint-disable-next-line max-len
-                expected: ['||ad.example.com^$redirect=noop.txt,important,image,media,subdocument,stylesheet,script,xhr,other'],
+                expected: [
+                    '||ad.example.com^$redirect=noop.txt,important,image,media,subdocument,stylesheet,script,xhr,other',
+                ],
             },
             {
                 // eslint-disable-next-line max-len
                 actual: '||imasdk.googleapis.com/js/sdkloader/ima3.js$script,important,redirect=google-ima3,domain=example.org',
                 // eslint-disable-next-line max-len
-                expected: ['||imasdk.googleapis.com/js/sdkloader/ima3.js$script,important,redirect=google-ima.js,domain=example.org'],
+                expected: [
+                    '||imasdk.googleapis.com/js/sdkloader/ima3.js$script,important,redirect=google-ima.js,domain=example.org',
+                ],
             },
             // $redirect-rule
             {
@@ -432,7 +418,9 @@ describe('NetworkRuleConverter', () => {
                 // eslint-disable-next-line max-len
                 actual: '||example.com/images/*.png$image,important,redirect-rule=1x1-transparent.gif,domain=example.com|example.org',
                 // eslint-disable-next-line max-len
-                expected: ['||example.com/images/*.png$image,important,redirect-rule=1x1.gif,domain=example.com|example.org'],
+                expected: [
+                    '||example.com/images/*.png$image,important,redirect-rule=1x1.gif,domain=example.com|example.org',
+                ],
             },
             {
                 actual: '||example.com/vast/$important,redirect-rule=empty,~third-party',
@@ -443,7 +431,9 @@ describe('NetworkRuleConverter', () => {
                 // eslint-disable-next-line max-len
                 actual: '||example.com/images/*.png$redirect-rule=1x1-transparent.gif,domain=example.com|example.org,important',
                 // eslint-disable-next-line max-len
-                expected: ['||example.com/images/*.png$redirect-rule=1x1.gif,domain=example.com|example.org,important,image'],
+                expected: [
+                    '||example.com/images/*.png$redirect-rule=1x1.gif,domain=example.com|example.org,important,image',
+                ],
             },
             {
                 actual: '||example.com/*.mp4$important,redirect-rule=noopmp4-1s,~third-party',
@@ -452,9 +442,11 @@ describe('NetworkRuleConverter', () => {
             {
                 actual: '||ad.example.com^$redirect-rule=nooptext,important',
                 // eslint-disable-next-line max-len
-                expected: ['||ad.example.com^$redirect-rule=noop.txt,important,image,media,subdocument,stylesheet,script,xhr,other'],
+                expected: [
+                    '||ad.example.com^$redirect-rule=noop.txt,important,image,media,subdocument,stylesheet,script,xhr,other',
+                ],
             },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+        ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(NetworkRuleConverter, 'convertToUbo');
         });
     });

@@ -1,11 +1,7 @@
 /**
  * Common storage interface with basic operations.
  */
-export interface StorageInterface<
-    K extends PropertyKey = string,
-    V = unknown,
-    Mode extends 'sync' | 'async' = 'sync',
-> {
+export interface StorageInterface<K extends PropertyKey = string, V = unknown, Mode extends 'sync' | 'async' = 'sync'> {
     set(key: K, value: V): Mode extends 'async' ? Promise<void> : void;
 
     get(key: K): Mode extends 'async' ? Promise<V | undefined> : V | undefined;

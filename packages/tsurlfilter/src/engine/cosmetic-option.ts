@@ -40,10 +40,7 @@ export enum CosmeticOption {
     /**
      * Everything is enabled.
      */
-    CosmeticOptionAll = CosmeticOptionGenericCSS
-        | CosmeticOptionSpecificCSS
-        | CosmeticOptionJS
-        | CosmeticOptionHtml,
+    CosmeticOptionAll = CosmeticOptionGenericCSS | CosmeticOptionSpecificCSS | CosmeticOptionJS | CosmeticOptionHtml,
 
     /**
      * Everything is disabled.

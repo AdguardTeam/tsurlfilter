@@ -164,9 +164,10 @@ export class MatchingResult {
                  *
                  * Cosmetic options rules that don't contain such modifiers should only affect cosmetic engine.
                  */
-                if (!rule.isOptionEnabled(NetworkRuleOption.Urlblock)
-                    && !rule.isOptionEnabled(NetworkRuleOption.Genericblock)
-                    && !rule.isOptionEnabled(NetworkRuleOption.Content)
+                if (
+                    !rule.isOptionEnabled(NetworkRuleOption.Urlblock) &&
+                    !rule.isOptionEnabled(NetworkRuleOption.Genericblock) &&
+                    !rule.isOptionEnabled(NetworkRuleOption.Content)
                 ) {
                     continue;
                 }
@@ -209,9 +210,11 @@ export class MatchingResult {
                 (this.headerRules ??= []).push(rule);
                 continue;
             }
-            if (rule.isOptionEnabled(NetworkRuleOption.Popup)
+            if (
+                rule.isOptionEnabled(NetworkRuleOption.Popup) &&
                 // This check needed to split $all rules from $popup rules
-                && !MatchingResult.isDocumentRule(rule)) {
+                !MatchingResult.isDocumentRule(rule)
+            ) {
                 this.popupRule = rule;
                 continue;
             }
@@ -280,8 +283,8 @@ export class MatchingResult {
         // So if a request corresponds to two different rules one of which has the $replace modifier,
         // this rule will be applied.
         if (this.replaceRules) {
-            const isReplaceOrContent = basic?.isOptionEnabled(NetworkRuleOption.Replace)
-                || basic?.isOptionEnabled(NetworkRuleOption.Content);
+            const isReplaceOrContent =
+                basic?.isOptionEnabled(NetworkRuleOption.Replace) || basic?.isOptionEnabled(NetworkRuleOption.Content);
             // If basic rule is an exception with $replace or $content modifier,
             // then basic rule will disable $replace rules.
             if (basic?.isAllowlist() && isReplaceOrContent) {
@@ -340,19 +343,21 @@ export class MatchingResult {
             return null;
         }
 
-        return this.stealthRules.find((r: NetworkRule) => {
-            const stealthModifier = r.getStealthModifier();
-            if (!stealthModifier) {
-                logger.debug(`[tsurl.MatchingResult.getStealthRule]: stealth rule without stealth modifier: ${r}`);
-                return false;
-            }
-            if (stealthOption) {
-                return stealthModifier.hasStealthOption(stealthOption);
-            }
+        return (
+            this.stealthRules.find((r: NetworkRule) => {
+                const stealthModifier = r.getStealthModifier();
+                if (!stealthModifier) {
+                    logger.debug(`[tsurl.MatchingResult.getStealthRule]: stealth rule without stealth modifier: ${r}`);
+                    return false;
+                }
+                if (stealthOption) {
+                    return stealthModifier.hasStealthOption(stealthOption);
+                }
 
-            // $stealth rules without values are globally disabling stealth mode
-            return !stealthModifier.hasValues();
-        }) ?? null;
+                // $stealth rules without values are globally disabling stealth mode
+                return !stealthModifier.hasValues();
+            }) ?? null
+        );
     }
 
     /**
@@ -394,15 +399,14 @@ export class MatchingResult {
 
         // Handle allowlist rules with $header modifier,
         // filtering out blocking rules which are allowlisted
-        const rules = MatchingResult.filterAdvancedModifierRules(
-            headerRules,
-            (bRule) => ((aRule): boolean => {
-                const bHeaderData = bRule.getHeaderModifierMatcher();
-                const aHeaderData = aRule.getHeaderModifierMatcher();
-                return bHeaderData?.header === aHeaderData?.header
-                    && bHeaderData?.value?.toString() === aHeaderData?.value?.toString();
-            }),
-        );
+        const rules = MatchingResult.filterAdvancedModifierRules(headerRules, (bRule) => (aRule): boolean => {
+            const bHeaderData = bRule.getHeaderModifierMatcher();
+            const aHeaderData = aRule.getHeaderModifierMatcher();
+            return (
+                bHeaderData?.header === aHeaderData?.header &&
+                bHeaderData?.value?.toString() === aHeaderData?.value?.toString()
+            );
+        });
 
         return MatchingResult.getHighestPriorityRule(rules);
     }
@@ -467,7 +471,9 @@ export class MatchingResult {
 
         return MatchingResult.filterAdvancedModifierRules(
             this.replaceRules,
-            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()),
+            (rule) =>
+                (x): boolean =>
+                    x.getAdvancedModifierValue() === rule.getAdvancedModifierValue(),
         );
     }
 
@@ -484,7 +490,7 @@ export class MatchingResult {
      */
     private static filterAdvancedModifierRules(
         rules: NetworkRule[],
-        allowlistPredicate: (r: NetworkRule) => ((x: NetworkRule) => boolean),
+        allowlistPredicate: (r: NetworkRule) => (x: NetworkRule) => boolean,
     ): NetworkRule[] {
         const blockingRules: NetworkRule[] = [];
         const allowlistRules: NetworkRule[] = [];
@@ -506,13 +512,13 @@ export class MatchingResult {
         }
 
         if (allowlistRules.length > 0) {
-            const allowlistRuleWithEmptyOption = allowlistRules
-                .find((allowlistRule) => allowlistRule.getAdvancedModifierValue() === '');
+            const allowlistRuleWithEmptyOption = allowlistRules.find(
+                (allowlistRule) => allowlistRule.getAdvancedModifierValue() === '',
+            );
 
             const result: NetworkRule[] = [];
             blockingRules.forEach((blockRule) => {
-                if (allowlistRuleWithEmptyOption
-                    && !blockRule.isHigherPriority(allowlistRuleWithEmptyOption)) {
+                if (allowlistRuleWithEmptyOption && !blockRule.isHigherPriority(allowlistRuleWithEmptyOption)) {
                     result.push(allowlistRuleWithEmptyOption);
                     return;
                 }
@@ -549,7 +555,8 @@ export class MatchingResult {
 
         for (const rule of this.cspRules) {
             if (rule.isAllowlist()) {
-                if (!rule.getAdvancedModifierValue()) { // Global allowlist rule
+                if (!rule.getAdvancedModifierValue()) {
+                    // Global allowlist rule
                     return [rule];
                 }
 
@@ -646,8 +653,10 @@ export class MatchingResult {
             }
 
             const allowlistRule = allowlistRules.find(
-                (a) => !rule.isHigherPriority(a) && rule.getAdvancedModifierValue() === a.getAdvancedModifierValue()
-                && MatchingResult.isSubDocumentRule(a) === MatchingResult.isSubDocumentRule(rule),
+                (a) =>
+                    !rule.isHigherPriority(a) &&
+                    rule.getAdvancedModifierValue() === a.getAdvancedModifierValue() &&
+                    MatchingResult.isSubDocumentRule(a) === MatchingResult.isSubDocumentRule(rule),
             );
 
             if (allowlistRule) {
@@ -675,7 +684,9 @@ export class MatchingResult {
         // Apply allowlist $redirect rules.
         let result = MatchingResult.filterAdvancedModifierRules(
             this.redirectRules,
-            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()),
+            (rule) =>
+                (x): boolean =>
+                    x.getAdvancedModifierValue() === rule.getAdvancedModifierValue(),
         );
 
         // Filters only not allowlist rules.
@@ -719,7 +730,8 @@ export class MatchingResult {
             return [];
         }
 
-        const allowlistPredicate = (rule: NetworkRule) => (
+        const allowlistPredicate =
+            (rule: NetworkRule) =>
             (allowlistRule: NetworkRule): boolean => {
                 const allowlistRuleCookieModifier = allowlistRule.getAdvancedModifier() as CookieModifier;
                 const ruleCookieModifier = rule.getAdvancedModifier() as CookieModifier;
@@ -734,8 +746,7 @@ export class MatchingResult {
                 }
 
                 return false;
-            }
-        );
+            };
 
         let filtered = MatchingResult.filterAdvancedModifierRules(this.cookieRules, allowlistPredicate);
 
@@ -769,9 +780,10 @@ export class MatchingResult {
         return MatchingResult.filterAdvancedModifierRules(
             this.removeParamRules,
             // eslint-disable-next-line arrow-body-style
-            (rule) => ((x): boolean => {
-                return x.isHigherPriority(rule) && x.getAdvancedModifierValue() === rule.getAdvancedModifierValue();
-            }),
+            (rule) =>
+                (x): boolean => {
+                    return x.isHigherPriority(rule) && x.getAdvancedModifierValue() === rule.getAdvancedModifierValue();
+                },
         );
     }
 
@@ -785,15 +797,19 @@ export class MatchingResult {
             return [];
         }
 
-        if (this.basicRule
-            && this.basicRule.isAllowlist()
-            && this.basicRule.isOptionEnabled(NetworkRuleOption.Urlblock)) {
+        if (
+            this.basicRule &&
+            this.basicRule.isAllowlist() &&
+            this.basicRule.isOptionEnabled(NetworkRuleOption.Urlblock)
+        ) {
             return [];
         }
 
         return MatchingResult.filterAdvancedModifierRules(
             this.removeHeaderRules,
-            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()),
+            (rule) =>
+                (x): boolean =>
+                    x.getAdvancedModifierValue() === rule.getAdvancedModifierValue(),
         );
     }
 
@@ -806,7 +822,11 @@ export class MatchingResult {
      * @param map Rules mapped by csp directive.
      */
     // eslint-disable-next-line max-len
-    private static putWithPriority(rule: NetworkRule, allowlistRule: NetworkRule | undefined, map: Map<string, NetworkRule>): void {
+    private static putWithPriority(
+        rule: NetworkRule,
+        allowlistRule: NetworkRule | undefined,
+        map: Map<string, NetworkRule>,
+    ): void {
         const cspDirective = rule.getAdvancedModifierValue();
         const currentRule = cspDirective ? map.get(cspDirective) : null;
 

@@ -143,14 +143,18 @@ export class CookieUtils {
         const parts = setCookieValue.split(';').filter((s) => !!s);
         const nameValuePart = parts.shift();
         if (!nameValuePart) {
-            logger.debug(`[tsweb.CookieUtils.parseSetCookie]: cannot shift first name-value pair from Set-Cookie header '${setCookieValue}'.`);
+            logger.debug(
+                `[tsweb.CookieUtils.parseSetCookie]: cannot shift first name-value pair from Set-Cookie header '${setCookieValue}'.`,
+            );
             return null;
         }
 
         const nameValue = nameValuePart.split('=');
         const name = nameValue.shift();
         if (!name) {
-            logger.debug(`[tsweb.CookieUtils.parseSetCookie]: cannot extract name from first name-value pair from Set-Cookie header '${setCookieValue}'.`);
+            logger.debug(
+                `[tsweb.CookieUtils.parseSetCookie]: cannot extract name from first name-value pair from Set-Cookie header '${setCookieValue}'.`,
+            );
             return null;
         }
         // Everything after the first =, joined by a "=" if there was more
@@ -160,10 +164,7 @@ export class CookieUtils {
 
         parts.forEach((part) => {
             const sides = part.split('=');
-            const key = sides
-                .shift()!
-                .trimStart()
-                .toLowerCase();
+            const key = sides.shift()!.trimStart().toLowerCase();
             const optionValue = sides.join('=');
             if (key === 'expires') {
                 cookie.expires = new Date(optionValue);
@@ -303,8 +304,6 @@ export class CookieUtils {
      * @returns Cookie string or null if it failed to serialize object.
      */
     static serializeCookieToRequestHeader(cookies: ParsedCookie[]): string {
-        return cookies
-            .map((cookie) => `${cookie.name}=${cookie.value}`)
-            .join('; ');
+        return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
     }
 }

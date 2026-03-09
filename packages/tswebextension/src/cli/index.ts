@@ -16,10 +16,7 @@ const CLI_NAME = 'tswebextension';
  * Main entrypoint.
  */
 async function main(): Promise<void> {
-    program
-        .name(CLI_NAME)
-        .description('CLI to some development utils')
-        .version(version);
+    program.name(CLI_NAME).description('CLI to some development utils').version(version);
 
     program
         .command('war')

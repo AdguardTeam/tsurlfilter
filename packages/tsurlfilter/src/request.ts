@@ -223,12 +223,7 @@ export class Request {
      * @returns Array of subdomains.
      */
     private static getSubdomains(tldResult: IResult): string[] {
-        const {
-            domain,
-            hostname,
-            subdomain,
-            publicSuffix,
-        } = tldResult;
+        const { domain, hostname, subdomain, publicSuffix } = tldResult;
 
         const subdomainsResult = [];
 

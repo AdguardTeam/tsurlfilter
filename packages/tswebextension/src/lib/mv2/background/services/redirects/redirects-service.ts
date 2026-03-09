@@ -17,9 +17,7 @@ export class RedirectsService {
      *
      * @param resourcesService Prevent web pages to identify extension through its web accessible resources.
      */
-    constructor(
-        private readonly resourcesService: ResourcesService,
-    ) {}
+    constructor(private readonly resourcesService: ResourcesService) {}
 
     /**
      * Starts redirects service.
@@ -54,7 +52,9 @@ export class RedirectsService {
         const redirectSource = this.redirects.getRedirect(title);
 
         if (!redirectSource) {
-            logger.warn(`[tsweb.RedirectsService.createRedirectUrl]: there is no redirect source with title: "${title}"`);
+            logger.warn(
+                `[tsweb.RedirectsService.createRedirectUrl]: there is no redirect source with title: "${title}"`,
+            );
             return null;
         }
 
@@ -104,8 +104,7 @@ export class RedirectsService {
             cleanRequestUrl = `${url.origin}${url.pathname}?${params.toString()}`;
             redirectsCache.add(cleanRequestUrl);
         }
-        return !redirectsCache.hasUrl(cleanRequestUrl)
-            || !redirectsTokensCache.hasToken(unblockToken);
+        return !redirectsCache.hasUrl(cleanRequestUrl) || !redirectsTokensCache.hasToken(unblockToken);
     };
 
     /**

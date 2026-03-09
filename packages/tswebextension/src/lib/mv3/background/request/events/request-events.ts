@@ -47,10 +47,7 @@ export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType &
  * TODO: Can it be moved to common?
  */
 export class RequestEvents {
-    public static onBeforeRequest = new RequestEvent<
-        OnBeforeRequestDetailsType,
-        WebRequest.OnBeforeRequestOptions
-    >();
+    public static onBeforeRequest = new RequestEvent<OnBeforeRequestDetailsType, WebRequest.OnBeforeRequestOptions>();
 
     public static onResponseStarted = new RequestEvent<
         WebRequest.OnResponseStartedDetailsType,
@@ -67,10 +64,7 @@ export class RequestEvents {
         WebRequest.OnHeadersReceivedOptions
     >();
 
-    public static onCompleted = new RequestEvent<
-        WebRequest.OnCompletedDetailsType,
-        WebRequest.OnCompletedOptions
-    >();
+    public static onCompleted = new RequestEvent<WebRequest.OnCompletedDetailsType, WebRequest.OnCompletedOptions>();
 
     public static onErrorOccurred = new RequestEvent<
         WebRequest.OnErrorOccurredDetailsType,
@@ -82,18 +76,18 @@ export class RequestEvents {
      */
     public static init(): void {
         // TODO: Maybe remove RequestEvents and RequestEvent layers?
-        RequestEvents.onBeforeRequest.init(
-            browser.webRequest.onBeforeRequest,
-            RequestEvents.handleOnBeforeRequest,
-            { urls: ['<all_urls>'] },
-        );
+        RequestEvents.onBeforeRequest.init(browser.webRequest.onBeforeRequest, RequestEvents.handleOnBeforeRequest, {
+            urls: ['<all_urls>'],
+        });
 
         const onBeforeSendHeadersOptions: WebRequest.OnBeforeSendHeadersOptions[] = ['requestHeaders'];
 
         const onBeforeSendHeadersOptionTypes = (browser as ChromiumBrowser).webRequest.OnBeforeSendHeadersOptions;
 
-        if (typeof onBeforeSendHeadersOptionTypes !== 'undefined'
-            && Object.prototype.hasOwnProperty.call(onBeforeSendHeadersOptionTypes, 'EXTRA_HEADERS')) {
+        if (
+            typeof onBeforeSendHeadersOptionTypes !== 'undefined' &&
+            Object.prototype.hasOwnProperty.call(onBeforeSendHeadersOptionTypes, 'EXTRA_HEADERS')
+        ) {
             onBeforeSendHeadersOptions.push('extraHeaders');
         }
 
@@ -116,8 +110,10 @@ export class RequestEvents {
 
         const onHeadersReceivedOptionTypes = (browser as ChromiumBrowser).webRequest.OnHeadersReceivedOptions;
 
-        if (typeof onHeadersReceivedOptionTypes !== 'undefined'
-            && Object.prototype.hasOwnProperty.call(onBeforeSendHeadersOptionTypes, 'EXTRA_HEADERS')) {
+        if (
+            typeof onHeadersReceivedOptionTypes !== 'undefined' &&
+            Object.prototype.hasOwnProperty.call(onBeforeSendHeadersOptionTypes, 'EXTRA_HEADERS')
+        ) {
             onHeadersReceivedOptions.push('extraHeaders');
         }
 
@@ -135,11 +131,9 @@ export class RequestEvents {
             ['responseHeaders'],
         );
 
-        RequestEvents.onErrorOccurred.init(
-            browser.webRequest.onErrorOccurred,
-            RequestEvents.handleOnErrorOccurred,
-            { urls: ['<all_urls>'] },
-        );
+        RequestEvents.onErrorOccurred.init(browser.webRequest.onErrorOccurred, RequestEvents.handleOnErrorOccurred, {
+            urls: ['<all_urls>'],
+        });
     }
 
     /**
@@ -169,20 +163,9 @@ export class RequestEvents {
      *
      * @returns Request data.
      */
-    private static handleOnBeforeRequest(
-        details: OnBeforeRequestDetailsType,
-    ): RequestData<OnBeforeRequestDetailsType> {
-        const {
-            requestId,
-            type,
-            tabId,
-            parentFrameId,
-            originUrl,
-            initiator,
-            method,
-            timeStamp,
-            documentLifecycle,
-        } = details;
+    private static handleOnBeforeRequest(details: OnBeforeRequestDetailsType): RequestData<OnBeforeRequestDetailsType> {
+        const { requestId, type, tabId, parentFrameId, originUrl, initiator, method, timeStamp, documentLifecycle } =
+            details;
 
         let { url, frameId } = details;
 
@@ -246,9 +229,7 @@ export class RequestEvents {
         }
 
         // We rely on browser-provided values as the source of truth
-        let referrerUrl = originUrl
-            || initiator
-            || '';
+        let referrerUrl = originUrl || initiator || '';
 
         /**
          * For prerender document requests, use the request URL itself, because
@@ -264,9 +245,7 @@ export class RequestEvents {
          */
         if (!referrerUrl) {
             // Try to get referrer from tab state during address bar navigation.
-            referrerUrl = tabsApi.getTabMainFrame(tabId)?.url
-                || tabsApi.getTabFrame(tabId, requestFrameId)?.url
-                || url;
+            referrerUrl = tabsApi.getTabMainFrame(tabId)?.url || tabsApi.getTabFrame(tabId, requestFrameId)?.url || url;
         }
 
         // Retrieve the rest part of the request context for record all fields.
@@ -317,10 +296,7 @@ export class RequestEvents {
     private static handleOnHeadersReceived(
         details: WebRequest.OnHeadersReceivedDetailsType,
     ): RequestData<WebRequest.OnHeadersReceivedDetailsType> {
-        const {
-            requestId,
-            responseHeaders,
-        } = details;
+        const { requestId, responseHeaders } = details;
 
         const context = requestContextStorage.update(requestId, {
             state: RequestContextState.HeadersReceived,

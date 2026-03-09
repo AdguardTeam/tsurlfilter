@@ -24,15 +24,7 @@ export class ComplexSelectorHandler {
      * @throws If the current compound / complex selector has no simple selectors / compound selectors.
      */
     public static handle(context: SelectorListParserContext, isEof = true): void {
-        const {
-            raw,
-            options,
-            baseOffset,
-            stream,
-            token,
-            result,
-            complexSelector,
-        } = context;
+        const { raw, options, baseOffset, stream, token, result, complexSelector } = context;
 
         // Get current complex selector end token
         const currentEndToken = stream.lookbehindForNonWs();

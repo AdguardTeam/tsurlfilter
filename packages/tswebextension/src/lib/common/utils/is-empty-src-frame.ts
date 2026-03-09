@@ -6,6 +6,5 @@
  * @returns True if frame URL is about:blank or about:srcdoc, otherwise false.
  */
 export const isEmptySrcFrame = (frameUrl: string): boolean => {
-    return frameUrl === 'about:blank'
-        || frameUrl === 'about:srcdoc';
+    return frameUrl === 'about:blank' || frameUrl === 'about:srcdoc';
 };

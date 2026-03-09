@@ -24,11 +24,7 @@ import { WebRequestApi } from './web-request-api';
 /**
  * App implementation for MV2.
  */
-export class TsWebExtension implements AppInterface<
-    ConfigurationMV2,
-    ConfigurationMV2Context,
-    void
-> {
+export class TsWebExtension implements AppInterface<ConfigurationMV2, ConfigurationMV2Context, void> {
     /**
      * Fires on filtering log event.
      */
@@ -510,12 +506,7 @@ export class TsWebExtension implements AppInterface<
      * @returns Configuration context.
      */
     private static createConfigurationMV2Context(configuration: ConfigurationMV2): ConfigurationMV2Context {
-        const {
-            filters,
-            verbose,
-            logLevel,
-            settings,
-        } = configuration;
+        const { filters, verbose, logLevel, settings } = configuration;
 
         return {
             filters: filters.map(({ filterId }) => filterId),
@@ -532,7 +523,7 @@ export class TsWebExtension implements AppInterface<
      */
     private static updateLogLevel(logLevel: ConfigurationMV2['logLevel']): void {
         try {
-            logger.currentLevel = logLevel as LogLevel || LogLevel.Info;
+            logger.currentLevel = (logLevel as LogLevel) || LogLevel.Info;
         } catch (e) {
             logger.currentLevel = LogLevel.Info;
         }

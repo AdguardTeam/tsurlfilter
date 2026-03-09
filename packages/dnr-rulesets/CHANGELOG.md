@@ -34,8 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **BREAKING:** Updated [@adguard/tsurlfilter] to v4.0.0 with `FilterList` API.
-  - Ruleset metadata now uses `conversionData` instead of `conversionMap`.
-  - `conversionData` structure: `{ originals: string[], conversions: Record<number, number> }`.
+    - Ruleset metadata now uses `conversionData` instead of `conversionMap`.
+    - `conversionData` structure: `{ originals: string[], conversions: Record<number, number> }`.
 
 [4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.0.0
 
@@ -202,8 +202,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - New library `RulesetsInjector` class for applying rulesets to the manifest object in the JS/TS code.
-It will be useful for customizing the manifest object before saving it to the file.
-For example, while bundling the manifest with the extension.
+  It will be useful for customizing the manifest object before saving it to the file.
+  For example, while bundling the manifest with the extension.
 - Two new options for `manifest` CLI command:
     - `enable` option for specifying rulesets enabled by default
     - `ruleset-prefix` option for specifying the prefix for ruleset IDs.

@@ -80,11 +80,7 @@ export const contentFiltering = new ContentFiltering(engineApi);
 export function createTsWebExtension(webAccessibleResourcesPath: string): TsWebExtension {
     resourcesService.init(webAccessibleResourcesPath);
 
-    const tabCosmeticInjector = new TabsCosmeticInjector(
-        documentApi,
-        tabsApi,
-        engineApi,
-    );
+    const tabCosmeticInjector = new TabsCosmeticInjector(documentApi, tabsApi, engineApi);
 
     return new TsWebExtension(
         appContext,

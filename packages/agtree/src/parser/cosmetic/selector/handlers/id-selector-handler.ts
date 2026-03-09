@@ -14,13 +14,7 @@ export class IdSelectorHandler {
      * @throws If the ID selector is syntactically incorrect.
      */
     public static handle(context: SelectorListParserContext): void {
-        const {
-            raw,
-            options,
-            baseOffset,
-            stream,
-            complexSelector,
-        } = context;
+        const { raw, options, baseOffset, stream, complexSelector } = context;
 
         // Get ID selector token
         const token = stream.getOrFail();

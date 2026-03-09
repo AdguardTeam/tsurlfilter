@@ -2,21 +2,11 @@
  * @file Scriptlet injection rule converter
  */
 
-import {
-    CosmeticRuleSeparator,
-    type DomainList,
-    type ParameterList,
-    type ScriptletInjectionRule,
-} from '../../nodes';
+import { CosmeticRuleSeparator, type DomainList, type ParameterList, type ScriptletInjectionRule } from '../../nodes';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { QuoteType, QuoteUtils } from '../../utils/quotes';
-import {
-    ADG_DOMAINS_MODIFIER,
-    EMPTY,
-    PIPE_MODIFIER_SEPARATOR,
-    SPACE,
-} from '../../utils/constants';
+import { ADG_DOMAINS_MODIFIER, EMPTY, PIPE_MODIFIER_SEPARATOR, SPACE } from '../../utils/constants';
 import {
     getScriptletName,
     setScriptletName,
@@ -45,7 +35,7 @@ const ADG_SET_CONSTANT_NAME = 'set-constant';
 const ADG_SET_CONSTANT_EMPTY_STRING = '';
 const ADG_SET_CONSTANT_EMPTY_ARRAY = 'emptyArr';
 const ADG_SET_CONSTANT_EMPTY_OBJECT = 'emptyObj';
-const UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
+const UBO_SET_CONSTANT_EMPTY_STRING = "''";
 const UBO_SET_CONSTANT_EMPTY_ARRAY = '[]';
 const UBO_SET_CONSTANT_EMPTY_OBJECT = '{}';
 
@@ -63,11 +53,7 @@ const setConstantAdgToUboMap: Record<string, string> = {
     [ADG_SET_CONSTANT_EMPTY_OBJECT]: UBO_SET_CONSTANT_EMPTY_OBJECT,
 };
 
-const REMOVE_ATTR_CLASS_APPLYING = new Set<string>([
-    'asap',
-    'stay',
-    'complete',
-]);
+const REMOVE_ATTR_CLASS_APPLYING = new Set<string>(['asap', 'stay', 'complete']);
 
 /**
  * Scriptlet injection rule converter class
@@ -144,19 +130,13 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             }
 
             if (rule.syntax === AdblockSyntax.Ubo) {
-                const scriptletData = scriptletsCompatibilityTable.getFirst(
-                    scriptletName,
-                    GenericPlatform.UboAny,
-                );
+                const scriptletData = scriptletsCompatibilityTable.getFirst(scriptletName, GenericPlatform.UboAny);
 
                 // Some scriptlets have special values that need to be converted
                 if (
-                    scriptletData
-                    && (
-                        scriptletData.name === UBO_REMOVE_CLASS_NAME
-                        || scriptletData.name === UBO_REMOVE_ATTR_NAME
-                    )
-                    && scriptletClone.children.length > 2
+                    scriptletData &&
+                    (scriptletData.name === UBO_REMOVE_CLASS_NAME || scriptletData.name === UBO_REMOVE_ATTR_NAME) &&
+                    scriptletClone.children.length > 2
                 ) {
                     const selectors: string[] = [];
 
@@ -291,11 +271,10 @@ export class ScriptletRuleConverter extends RuleConverterBase {
 
             // Check for single domain modifier
             const [domainModifier] = modifiers.children;
-            const hasSingleDomainModifier = (
-                modifiers.children.length === 1
-                && domainModifier.name?.value === ADG_DOMAINS_MODIFIER
-                && domainModifier.value?.value
-            );
+            const hasSingleDomainModifier =
+                modifiers.children.length === 1 &&
+                domainModifier.name?.value === ADG_DOMAINS_MODIFIER &&
+                domainModifier.value?.value;
 
             if (!hasSingleDomainModifier) {
                 throw new RuleConversionError(

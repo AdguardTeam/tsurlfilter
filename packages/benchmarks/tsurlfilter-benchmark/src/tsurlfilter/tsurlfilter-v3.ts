@@ -1,11 +1,3 @@
-import {
-    Engine,
-    BufferRuleList,
-    RuleStorage,
-    FilterListPreprocessor,
-    logger,
-} from 'tsurlfilter-v3';
+import { Engine, BufferRuleList, RuleStorage, FilterListPreprocessor, logger } from 'tsurlfilter-v3';
 
-export {
-    Engine, BufferRuleList, RuleStorage, FilterListPreprocessor, logger,
-};
+export { Engine, BufferRuleList, RuleStorage, FilterListPreprocessor, logger };

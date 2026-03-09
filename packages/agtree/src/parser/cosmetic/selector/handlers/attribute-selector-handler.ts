@@ -9,14 +9,7 @@ import {
     type Value,
 } from '../../../../nodes';
 import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
-import {
-    ASTERISK,
-    CARET,
-    DOLLAR_SIGN,
-    EQUALS,
-    PIPE,
-    TILDE,
-} from '../../../../utils/constants';
+import { ASTERISK, CARET, DOLLAR_SIGN, EQUALS, PIPE, TILDE } from '../../../../utils/constants';
 import { QuoteUtils } from '../../../../utils/quotes';
 import { ValueParser } from '../../../misc/value-parser';
 import { type SelectorListParserContext } from '../context';
@@ -52,10 +45,7 @@ export class AttributeSelectorHandler {
      *
      * @see {@link AttributeSelectorFlagValue}
      */
-    private static readonly ALLOWED_ATTRIBUTE_FLAGS: ReadonlySet<AttributeSelectorFlagValue> = new Set([
-        'i',
-        's',
-    ]);
+    private static readonly ALLOWED_ATTRIBUTE_FLAGS: ReadonlySet<AttributeSelectorFlagValue> = new Set(['i', 's']);
 
     /**
      * Handles attribute selector parsing by creating an attribute selector node
@@ -66,12 +56,7 @@ export class AttributeSelectorHandler {
      * @throws If the attribute selector is syntactically incorrect.
      */
     public static handle(context: SelectorListParserContext): void {
-        const {
-            options,
-            baseOffset,
-            stream,
-            complexSelector,
-        } = context;
+        const { options, baseOffset, stream, complexSelector } = context;
 
         // Get open square bracket token
         let token = stream.getOrFail();
@@ -97,11 +82,7 @@ export class AttributeSelectorHandler {
         // Construct attribute selector node and attribute selector name node
         const result: AttributeSelector = {
             type: 'AttributeSelector',
-            name: ValueParser.parse(
-                nameRaw,
-                options,
-                baseOffset + token.start,
-            ),
+            name: ValueParser.parse(nameRaw, options, baseOffset + token.start),
         };
 
         // Include attribute selector node start location if needed
@@ -139,10 +120,7 @@ export class AttributeSelectorHandler {
             } else if (operatorRaw !== EQUALS) {
                 // Throw error if it's not equal sign either
                 throw new AdblockSyntaxError(
-                    sprintf(
-                        "Invalid attribute selector operator '%s'",
-                        operatorRaw,
-                    ),
+                    sprintf("Invalid attribute selector operator '%s'", operatorRaw),
                     baseOffset + token.start,
                     baseOffset + token.end,
                 );
@@ -232,11 +210,7 @@ export class AttributeSelectorHandler {
                 // Validate attribute selector value flag
                 if (!AttributeSelectorHandler.isValidFlag(flagRaw)) {
                     throw new AdblockSyntaxError(
-                        sprintf(
-                            "Unexpected token '%s' with value '%s'",
-                            getFormattedTokenName(token.type),
-                            flagRaw,
-                        ),
+                        sprintf("Unexpected token '%s' with value '%s'", getFormattedTokenName(token.type), flagRaw),
                         baseOffset + token.start,
                         baseOffset + token.end,
                     );
@@ -294,8 +268,6 @@ export class AttributeSelectorHandler {
      * @returns `true` if the flag is valid, otherwise `false`.
      */
     private static isValidFlag(flag: string): flag is AttributeSelectorFlagValue {
-        return AttributeSelectorHandler.ALLOWED_ATTRIBUTE_FLAGS.has(
-            flag as AttributeSelectorFlagValue,
-        );
+        return AttributeSelectorHandler.ALLOWED_ATTRIBUTE_FLAGS.has(flag as AttributeSelectorFlagValue);
     }
 }

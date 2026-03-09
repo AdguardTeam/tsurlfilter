@@ -1,11 +1,4 @@
-import {
-    afterAll,
-    afterEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 
 import { StealthModifier, StealthOptionName } from '../../src/modifiers/stealth-modifier';
 import { loggerMocks } from '../setup';

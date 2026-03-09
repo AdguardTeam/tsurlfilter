@@ -100,8 +100,7 @@ export class CssHitsCounter {
 
         this.onCssHitsFoundCallback = callback;
 
-        if (document.readyState === 'complete'
-            || document.readyState === 'interactive') {
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
             this.countCssHits();
         } else {
             document.addEventListener('readystatechange', this.startCounter.bind(this));
@@ -167,8 +166,7 @@ export class CssHitsCounter {
      * Starts counting process.
      */
     private startCounter(): void {
-        if (document.readyState === 'interactive'
-            || document.readyState === 'complete') {
+        if (document.readyState === 'interactive' || document.readyState === 'complete') {
             this.countCssHits();
 
             document.removeEventListener('readystatechange', this.startCounter);
@@ -312,7 +310,7 @@ export class CssHitsCounter {
          */
         const probesWeakSet = new WeakSet();
         let timeoutId: number | null = null;
-        this.observer = new MutationObserver(((mutationRecords) => {
+        this.observer = new MutationObserver((mutationRecords) => {
             // Collect probe elements, count them, then remove from their targets
             const probeElements: Element[] = [];
             const childrenOfProbeElements: Element[] = [];
@@ -364,8 +362,10 @@ export class CssHitsCounter {
 
             // If the list of potential probe elements is relatively small,
             // we can count CSS hits immediately
-            if (potentialProbeElements.length > 0
-                && potentialProbeElements.length <= CssHitsCounter.CSS_HITS_BATCH_SIZE) {
+            if (
+                potentialProbeElements.length > 0 &&
+                potentialProbeElements.length <= CssHitsCounter.CSS_HITS_BATCH_SIZE
+            ) {
                 const result = this.countCssHitsForElements(potentialProbeElements, 0, null);
                 if (result.length > 0) {
                     this.onCssHitsFoundCallback(result);
@@ -398,7 +398,7 @@ export class CssHitsCounter {
                 this.countAllCssHits();
                 window.clearTimeout(timeoutId!);
             }, CssHitsCounter.COUNT_ALL_CSS_HITS_TIMEOUT_MS);
-        }));
+        });
 
         this.startObserver();
     }

@@ -16,9 +16,7 @@ export class NotImplementedError extends Error {
      */
     constructor(message: string | undefined = undefined) {
         // Prepare the full error message
-        const fullMessage = message
-            ? `${BASE_MESSAGE}: ${message}`
-            : BASE_MESSAGE;
+        const fullMessage = message ? `${BASE_MESSAGE}: ${message}` : BASE_MESSAGE;
 
         super(fullMessage);
 

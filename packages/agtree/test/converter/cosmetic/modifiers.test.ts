@@ -9,48 +9,36 @@ describe('Cosmetic rule modifiers conversion', () => {
             // Basic cases
             {
                 actual: 'example.com##.foo:matches-path(/bar)',
-                expected: [
-                    '[$path=/bar]example.com##.foo',
-                ],
+                expected: ['[$path=/bar]example.com##.foo'],
                 shouldConvert: true,
             },
             {
                 actual: 'example.com##:matches-path(/bar).foo',
-                expected: [
-                    '[$path=/bar]example.com##.foo',
-                ],
+                expected: ['[$path=/bar]example.com##.foo'],
                 shouldConvert: true,
             },
             // Extra space
             {
                 actual: 'example.com##:matches-path(/bar) .foo',
-                expected: [
-                    '[$path=/bar]example.com##.foo',
-                ],
+                expected: ['[$path=/bar]example.com##.foo'],
                 shouldConvert: true,
             },
             // Exception rule
             {
                 actual: 'example.com#@#.foo:matches-path(/bar)',
-                expected: [
-                    '[$path=/bar]example.com#@#.foo',
-                ],
+                expected: ['[$path=/bar]example.com#@#.foo'],
                 shouldConvert: true,
             },
 
             // Basic negation cases
             {
                 actual: 'example.com##.foo:not(:matches-path(/a/))',
-                expected: [
-                    '[$path=/^((?!a).)*$/]example.com##.foo',
-                ],
+                expected: ['[$path=/^((?!a).)*$/]example.com##.foo'],
                 shouldConvert: true,
             },
             {
                 actual: 'example.com##.foo:not(:matches-path(/page))',
-                expected: [
-                    '[$path=/^((?!\\/page).)*$/]example.com##.foo',
-                ],
+                expected: ['[$path=/^((?!\\/page).)*$/]example.com##.foo'],
                 shouldConvert: true,
             },
 
@@ -58,51 +46,37 @@ describe('Cosmetic rule modifiers conversion', () => {
             // https://github.com/AdguardTeam/tsurlfilter/blob/9b26e0b4a0e30b87690bc60f7cf377d112c3085c/packages/tsurlfilter/test/rules/rule-converter.test.ts
             {
                 actual: 'ya.ru##:matches-path(/page)p',
-                expected: [
-                    '[$path=/page]ya.ru##p',
-                ],
+                expected: ['[$path=/page]ya.ru##p'],
                 shouldConvert: true,
             },
             {
                 actual: 'ya.ru#@#:matches-path(/page)p',
-                expected: [
-                    '[$path=/page]ya.ru#@#p',
-                ],
+                expected: ['[$path=/page]ya.ru#@#p'],
                 shouldConvert: true,
             },
             {
                 actual: 'ya.ru#@#p:matches-path(/page)',
-                expected: [
-                    '[$path=/page]ya.ru#@#p',
-                ],
+                expected: ['[$path=/page]ya.ru#@#p'],
                 shouldConvert: true,
             },
             {
                 actual: String.raw`ya.ru##:matches-path(/\/(sub1|sub2)\/page\.html/)p`,
-                expected: [
-                    String.raw`[$path=/\\/(sub1|sub2)\\/page\\.html/]ya.ru##p`,
-                ],
+                expected: [String.raw`[$path=/\\/(sub1|sub2)\\/page\\.html/]ya.ru##p`],
                 shouldConvert: true,
             },
             {
                 actual: String.raw`ya.ru##:not(:matches-path(/\/(sub1|sub2)\/page\.html/))p`,
-                expected: [
-                    String.raw`[$path=/^((?!\\/(sub1|sub2)\\/page\\.html).)*$/]ya.ru##p`,
-                ],
+                expected: [String.raw`[$path=/^((?!\\/(sub1|sub2)\\/page\\.html).)*$/]ya.ru##p`],
                 shouldConvert: true,
             },
             {
                 actual: 'ya.ru##:not(:matches-path(/page))p',
-                expected: [
-                    String.raw`[$path=/^((?!\/page).)*$/]ya.ru##p`,
-                ],
+                expected: [String.raw`[$path=/^((?!\/page).)*$/]ya.ru##p`],
                 shouldConvert: true,
             },
             {
                 actual: 'ya.ru##p:not(:matches-path(/page))',
-                expected: [
-                    String.raw`[$path=/^((?!\/page).)*$/]ya.ru##p`,
-                ],
+                expected: [String.raw`[$path=/^((?!\/page).)*$/]ya.ru##p`],
                 shouldConvert: true,
             },
             {
@@ -114,16 +88,12 @@ describe('Cosmetic rule modifiers conversion', () => {
             },
             {
                 actual: String.raw`www.google.*##:not(:matches-path(/\/search\?q=.*?tbm=shop/)) #test`,
-                expected: [
-                    String.raw`[$path=/^((?!\\/search\\?q=.*?tbm=shop).)*$/]www.google.*###test`,
-                ],
+                expected: [String.raw`[$path=/^((?!\\/search\\?q=.*?tbm=shop).)*$/]www.google.*###test`],
                 shouldConvert: true,
             },
             {
                 actual: String.raw`exapmle.com##:matches-path(/\/[a|b|,]\/page\.html/) #test`,
-                expected: [
-                    String.raw`[$path=/\\/\[a|b|\,\]\\/page\\.html/]exapmle.com###test`,
-                ],
+                expected: [String.raw`[$path=/\\/\[a|b|\,\]\\/page\\.html/]exapmle.com###test`],
                 shouldConvert: true,
             },
             {
@@ -143,23 +113,17 @@ describe('Cosmetic rule modifiers conversion', () => {
             // :style
             {
                 actual: 'example.com##body[style="opacity: 0;"]:style(opacity: 1 !important;)',
-                expected: [
-                    String.raw`example.com#$#body[style="opacity: 0;"] { opacity: 1 !important; }`,
-                ],
+                expected: [String.raw`example.com#$#body[style="opacity: 0;"] { opacity: 1 !important; }`],
                 shouldConvert: true,
             },
             {
                 actual: 'example.com##*::selection:style(color:white!important;background:#0078d7!important;)',
-                expected: [
-                    'example.com#$#*::selection { color:white!important;background:#0078d7!important; }',
-                ],
+                expected: ['example.com#$#*::selection { color:white!important;background:#0078d7!important; }'],
                 shouldConvert: true,
             },
             {
                 actual: 'example.com##.social::first-line:style(color: #0000 !important;)',
-                expected: [
-                    'example.com#$#.social::first-line { color: #0000 !important; }',
-                ],
+                expected: ['example.com#$#.social::first-line { color: #0000 !important; }'],
                 shouldConvert: true,
             },
             {
@@ -169,7 +133,7 @@ describe('Cosmetic rule modifiers conversion', () => {
                 ],
                 shouldConvert: true,
             },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+        ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(CosmeticRuleConverter, 'convertToAdg');
         });
     });
@@ -179,75 +143,55 @@ describe('Cosmetic rule modifiers conversion', () => {
             // No value
             {
                 actual: '[$path]example.com##.foo',
-                expected: [
-                    'example.com##:matches-path(/^/$/) .foo',
-                ],
+                expected: ['example.com##:matches-path(/^/$/) .foo'],
                 shouldConvert: true,
             },
             // Basic cases
             {
                 actual: '[$path=/bar]example.com##.foo',
-                expected: [
-                    'example.com##:matches-path(/bar) .foo',
-                ],
+                expected: ['example.com##:matches-path(/bar) .foo'],
                 shouldConvert: true,
             },
             // Exception rule
             {
                 actual: '[$path=/bar]example.com#@#.foo',
-                expected: [
-                    'example.com#@#:matches-path(/bar) .foo',
-                ],
+                expected: ['example.com#@#:matches-path(/bar) .foo'],
                 shouldConvert: true,
             },
             // Basic negation cases
             {
                 actual: '[$path=/^((?!a).)*$/]example.com##.foo',
-                expected: [
-                    'example.com##:not(:matches-path(/a/)) .foo',
-                ],
+                expected: ['example.com##:not(:matches-path(/a/)) .foo'],
                 shouldConvert: true,
             },
             {
                 actual: '[$path=/^((?!\\/page).)*$/]example.com##.foo',
-                expected: [
-                    String.raw`example.com##:not(:matches-path(/\\/page/)) .foo`,
-                ],
+                expected: [String.raw`example.com##:not(:matches-path(/\\/page/)) .foo`],
                 shouldConvert: true,
             },
             {
                 actual: '[$path=/page]ya.ru##p',
-                expected: [
-                    'ya.ru##:matches-path(/page) p',
-                ],
+                expected: ['ya.ru##:matches-path(/page) p'],
                 shouldConvert: true,
             },
             {
                 actual: '[$path=/page]ya.ru#@#p',
-                expected: [
-                    'ya.ru#@#:matches-path(/page) p',
-                ],
+                expected: ['ya.ru#@#:matches-path(/page) p'],
                 shouldConvert: true,
             },
             {
                 actual: '[$path=/\\/(sub1|sub2)\\/page\\.html/]ya.ru##p',
-                expected: [
-                    String.raw`ya.ru##:matches-path(/\\/(sub1|sub2)\\/page\\.html/) p`,
-                ],
+                expected: [String.raw`ya.ru##:matches-path(/\\/(sub1|sub2)\\/page\\.html/) p`],
                 shouldConvert: true,
             },
             {
                 actual: '[$path=/^((?!\\/(sub1|sub2)\\/page\\.html).)*$/]ya.ru##p',
-                expected: [
-                    String.raw`ya.ru##:not(:matches-path(/\\/(sub1|sub2)\\/page\\.html/)) p`,
-                ],
+                expected: [String.raw`ya.ru##:not(:matches-path(/\\/(sub1|sub2)\\/page\\.html/)) p`],
                 shouldConvert: true,
             },
             {
                 actual: '[$path=/^((?!\\/page).)*$/]ya.ru##p',
-                expected: [
-                    String.raw`ya.ru##:not(:matches-path(/\\/page/)) p`,
-                ],
+                expected: [String.raw`ya.ru##:not(:matches-path(/\\/page/)) p`],
                 shouldConvert: true,
             },
             {
@@ -259,16 +203,12 @@ describe('Cosmetic rule modifiers conversion', () => {
             },
             {
                 actual: '[$path=/^((?!\\/search\\?q=.*?tbm=shop).)*$/]www.google.*###test',
-                expected: [
-                    String.raw`www.google.*##:not(:matches-path(/\\/search\\?q=.*?tbm=shop/)) #test`,
-                ],
+                expected: [String.raw`www.google.*##:not(:matches-path(/\\/search\\?q=.*?tbm=shop/)) #test`],
                 shouldConvert: true,
             },
             {
                 actual: '[$path=/\\/[a|b|,]\\/page\\.html/]example.com###test',
-                expected: [
-                    String.raw`example.com##:matches-path(/\\/\[a|b|\,\]\\/page\\.html/) #test`,
-                ],
+                expected: [String.raw`example.com##:matches-path(/\\/\[a|b|\,\]\\/page\\.html/) #test`],
                 shouldConvert: true,
             },
             {
@@ -295,60 +235,44 @@ describe('Cosmetic rule modifiers conversion', () => {
             // [$domain=....] modifier
             {
                 actual: '[$domain=example.com]##.textad',
-                expected: [
-                    'example.com##.textad',
-                ],
+                expected: ['example.com##.textad'],
                 shouldConvert: true,
             },
             {
                 actual: '[$domain=example.com]#@#.textad',
-                expected: [
-                    'example.com#@#.textad',
-                ],
+                expected: ['example.com#@#.textad'],
                 shouldConvert: true,
             },
             {
                 actual: '[$domain=example.com|example.org]###adblock',
-                expected: [
-                    'example.com,example.org###adblock',
-                ],
+                expected: ['example.com,example.org###adblock'],
                 shouldConvert: true,
             },
             {
                 actual: '[$domain=example.com|example.org]#@##adblock',
-                expected: [
-                    'example.com,example.org#@##adblock',
-                ],
+                expected: ['example.com,example.org#@##adblock'],
                 shouldConvert: true,
             },
             // PIPE separator escaped for now because of issue with parser
             // https://github.com/AdguardTeam/tsurlfilter/issues/121
             {
                 actual: '[$domain=/example.(com\\|org)/]##.banner',
-                expected: [
-                    '/example.(com\\|org)/##.banner',
-                ],
+                expected: ['/example.(com\\|org)/##.banner'],
                 shouldConvert: true,
             },
             {
                 actual: '[$domain=/example.(com\\|org)/]##.banner',
-                expected: [
-                    '/example.(com\\|org)/##.banner',
-                ],
+                expected: ['/example.(com\\|org)/##.banner'],
                 shouldConvert: true,
             },
             {
                 actual: '[$domain=/example.(com\\|org)/|foo.com]##.banner',
-                expected: [
-                    '/example.(com\\|org)/,foo.com##.banner',
-                ],
+                expected: ['/example.(com\\|org)/,foo.com##.banner'],
                 shouldConvert: true,
             },
             {
                 actual: '[$domain=/example.(com\\|org)/|foo.com]#@#.banner',
-                expected: [
-                    '/example.(com\\|org)/,foo.com#@#.banner',
-                ],
+                expected: ['/example.(com\\|org)/,foo.com#@#.banner'],
                 shouldConvert: true,
             },
             {
@@ -368,33 +292,25 @@ describe('Cosmetic rule modifiers conversion', () => {
             // [$url=....] modifier
             {
                 actual: '[$url=||example.com/content/*]##div.textad',
-                expected: [
-                    '/^(http|https|ws|wss)://([a-z0-9-_.]+\\.)?example\\.com\\/content\\/.*/##div.textad',
-                ],
+                expected: ['/^(http|https|ws|wss)://([a-z0-9-_.]+\\.)?example\\.com\\/content\\/.*/##div.textad'],
                 shouldConvert: true,
             },
             {
                 actual: '[$url=|example.org]#@#h1',
-                expected: [
-                    '/^example\\.org/#@#h1',
-                ],
+                expected: ['/^example\\.org/#@#h1'],
                 shouldConvert: true,
             },
             {
                 actual: '[$url=|example.org]#@#h1',
-                expected: [
-                    '/^example\\.org/#@#h1',
-                ],
+                expected: ['/^example\\.org/#@#h1'],
                 shouldConvert: true,
             },
             {
                 actual: '[$url=|example.org|]#@#h1',
-                expected: [
-                    '/^example\\.org$/#@#h1',
-                ],
+                expected: ['/^example\\.org$/#@#h1'],
                 shouldConvert: true,
             },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+        ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(CosmeticRuleConverter, 'convertToUbo');
         });
     });

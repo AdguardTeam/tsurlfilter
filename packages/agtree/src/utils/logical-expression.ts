@@ -31,11 +31,13 @@ export class LogicalExpressionUtils {
     public static getVariables(node: AnyExpressionNode): ExpressionVariableNode[] {
         if (node.type === NodeType.Variable) {
             return [node];
-        } if (node.type === NodeType.Operator) {
+        }
+        if (node.type === NodeType.Operator) {
             const leftVars = LogicalExpressionUtils.getVariables(node.left);
             const rightVars = node.right ? LogicalExpressionUtils.getVariables(node.right) : [];
             return [...leftVars, ...rightVars];
-        } if (node.type === NodeType.Parenthesis) {
+        }
+        if (node.type === NodeType.Parenthesis) {
             return LogicalExpressionUtils.getVariables(node.expression);
         }
 
@@ -64,17 +66,25 @@ export class LogicalExpressionUtils {
     public static evaluate(node: AnyExpressionNode, table: VariableTable): boolean {
         if (node.type === NodeType.Variable) {
             return !!table[node.name];
-        } if (node.type === NodeType.Operator) {
+        }
+        if (node.type === NodeType.Operator) {
             if (node.operator === OperatorValue.And || node.operator === OperatorValue.Or) {
                 if (!node.right) {
                     throw new Error(`${ERROR_PREFIX.UNEXPECTED_OPERATOR} '${node.operator}'`);
                 }
                 if (node.operator === OperatorValue.And) {
                     // eslint-disable-next-line max-len
-                    return LogicalExpressionUtils.evaluate(node.left, table) && LogicalExpressionUtils.evaluate(node.right, table);
-                } if (node.operator === OperatorValue.Or) {
+                    return (
+                        LogicalExpressionUtils.evaluate(node.left, table) &&
+                        LogicalExpressionUtils.evaluate(node.right, table)
+                    );
+                }
+                if (node.operator === OperatorValue.Or) {
                     // eslint-disable-next-line max-len
-                    return LogicalExpressionUtils.evaluate(node.left, table) || LogicalExpressionUtils.evaluate(node.right, table);
+                    return (
+                        LogicalExpressionUtils.evaluate(node.left, table) ||
+                        LogicalExpressionUtils.evaluate(node.right, table)
+                    );
                 }
             } else if (node.operator === OperatorValue.Not) {
                 return !LogicalExpressionUtils.evaluate(node.left, table);

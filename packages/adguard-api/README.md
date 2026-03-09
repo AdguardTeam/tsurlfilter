@@ -3,7 +3,7 @@
 AdGuard API is a filtering library that provides the following features:
 
 - Request and content filtering, using
-[@adguard/tswebextension][tswebextensionreadme].
+  [@adguard/tswebextension][tswebextensionreadme].
 - Filtering rules list management (downloading, caching, and auto updates).
 - Content blocking via AdGuard Assistant UI.
 - Auto-detecting language filters.
@@ -36,33 +36,33 @@ AdGuard API is a filtering library that provides the following features:
 
 1. Install the `@adguard/api` module via `npm` or `pnpm`
 
-  ```shell
-  npm install @adguard/api
-  ```
+```shell
+npm install @adguard/api
+```
 
-  or
+or
 
-  ```shell
-  pnpm add @adguard/api
-  ```
+```shell
+pnpm add @adguard/api
+```
 
 1. Import the `AdguardApi` class to the background script
 
-  ```ts
-  import { AdguardApi } from "@adguard/api";
-  ```
+```ts
+import { AdguardApi } from '@adguard/api';
+```
 
 1. Import `adguard-contents` at the top of your content script entry
 
-  ```ts
-  import '@adguard/api/content-script';
-  ```
+```ts
+import '@adguard/api/content-script';
+```
 
 1. Import `adguard-assistant` at the top of your assistant script entry
 
-  ```ts
-  import '@adguard/api/assistant';
-  ```
+```ts
+import '@adguard/api/assistant';
+```
 
 ## Required web accessible resources
 
@@ -81,14 +81,14 @@ requests to a local "resource" using the `$redirect` rule modifier. You can use
 
 ```typescript
 type Configuration = {
-    filters: number[],
-    filteringEnabled: boolean,
-    allowlist?: string[],
-    blocklist?: string[],
-    rules?: string[],
-    filtersMetadataUrl: string,
-    filterRulesUrl: string,
-    documentBlockingPageUrl?: string,
+    filters: number[];
+    filteringEnabled: boolean;
+    allowlist?: string[];
+    blocklist?: string[];
+    rules?: string[];
+    filtersMetadataUrl: string;
+    filterRulesUrl: string;
+    documentBlockingPageUrl?: string;
 };
 ```
 
@@ -136,12 +136,11 @@ const configuration: Configuration = {
     blocklist: [],
     rules: [],
     filtersMetadataUrl: 'https://filters.adtidy.org/extension/chromium/filters.json',
-    filterRulesUrl: 'https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt'
+    filterRulesUrl: 'https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt',
 };
 ```
 
-> ![!WARNING]
-> **Please note, that we do not allow using `filters.adtidy.org` other than for
+> ![!WARNING] > **Please note, that we do not allow using `filters.adtidy.org` other than for
 > testing purposes**. You have to use your own server for storing filter files.
 > You can (and actually should) use `filters.adtidy.org` for periodically
 > updating files on your side.
@@ -186,15 +185,15 @@ public getMessageHandler(): MessageHandlerMV2
 const handleApiMessage = adguardApi.getMessageHandler();
 
 const handleAppMessage = async (message: Message) => {
-  // handle your app messages here
+    // handle your app messages here
 };
 
 // route message depending on handler name
 browser.runtime.onMessage.addListener(async (message, sender) => {
-  if (message?.handlerName === MESSAGE_HANDLER_NAME) {
-    return Promise.resolve(handleApiMessage(message, sender));
-  }
-  return handleAppMessage(message);
+    if (message?.handlerName === MESSAGE_HANDLER_NAME) {
+        return Promise.resolve(handleApiMessage(message, sender));
+    }
+    return handleAppMessage(message);
 });
 ```
 
@@ -385,12 +384,11 @@ public onAssistantCreateRule: EventChannel<string>;
 **Example:**
 
 ```ts
-
 // update config on Assistant rule apply
 const applyRule = async (rule): Promise<void> => {
-  console.log(`Rule ${rule} was created by Adguard Assistant`);
-  configuration.rules!.push(rule);
-  await adguardApi.configure(configuration);
+    console.log(`Rule ${rule} was created by Adguard Assistant`);
+    configuration.rules!.push(rule);
+    await adguardApi.configure(configuration);
 };
 
 // add listener
@@ -414,13 +412,12 @@ public onFiltersDeletion: EventChannel<number[]>;
 **Example:**
 
 ```typescript
-
 // update config on filter deletion
 const removeObsoletedFilterId = async (filterIds: number[]): Promise<void> => {
-  console.log(`Filters with ids ${filterIds} deleted because they became obsoleted.`);
-  configuration.filters = configuration.filters.filter((id) => !filterIds.includes(id));
+    console.log(`Filters with ids ${filterIds} deleted because they became obsoleted.`);
+    configuration.filters = configuration.filters.filter((id) => !filterIds.includes(id));
 
-  await adguardApi.configure(configuration);
+    await adguardApi.configure(configuration);
 };
 
 // add listener
@@ -448,12 +445,12 @@ export interface RequestBlockingLoggerInterface {
 ```typescript
 // Registers an event listener
 adguardApi.onRequestBlocked.addListener(
-  callback // function, mandatory
-)
+    callback, // function, mandatory
+);
 // Removes specified event listener
 adguardApi.onRequestBlocked.removeListener(
-  callback // function, mandatory
-)
+    callback, // function, mandatory
+);
 ```
 
 **Callback parameter properties:**
@@ -486,7 +483,7 @@ adguardApi.onRequestBlocked.removeListener(
 See full sample app project in [examples/adguard-api](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/examples/adguard-api)
 
 ```ts
-import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
+import { AdguardApi, Configuration, RequestBlockingEvent } from '@adguard/api';
 
 (async (): Promise<void> => {
     // create new AdguardApi instance
@@ -494,10 +491,10 @@ import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
 
     const configuration: Configuration = {
         filters: [2],
-        allowlist: ["www.example.com"],
-        rules: ["example.org##h1"],
-        filterRulesUrl: "https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt",
-        filtersMetadataUrl: "https://filters.adtidy.org/extension/chromium/filters.json",
+        allowlist: ['www.example.com'],
+        rules: ['example.org##h1'],
+        filterRulesUrl: 'https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt',
+        filtersMetadataUrl: 'https://filters.adtidy.org/extension/chromium/filters.json',
     };
 
     // console log event on request blocking
@@ -507,21 +504,21 @@ import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
 
     // console log current rules count, loaded in engine
     const logTotalCount = (): void => {
-        console.log("Total rules count:", adguardApi.getRulesCount());
+        console.log('Total rules count:', adguardApi.getRulesCount());
     };
 
     adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
     await adguardApi.start(configuration);
 
-    console.log("Finished Adguard API initialization.");
+    console.log('Finished Adguard API initialization.');
     logTotalCount();
 
-    configuration.allowlist!.push("www.google.com");
+    configuration.allowlist!.push('www.google.com');
 
     await adguardApi.configure(configuration);
 
-    console.log("Finished Adguard API re-configuration");
+    console.log('Finished Adguard API re-configuration');
     logTotalCount();
 
     // update config on Assistant rule apply
@@ -529,13 +526,13 @@ import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
         console.log(`Rule ${rule} was created by Adguard Assistant`);
         configuration.rules!.push(rule);
         await adguardApi.configure(configuration);
-        console.log("Finished Adguard API re-configuration");
+        console.log('Finished Adguard API re-configuration');
         logTotalCount();
     });
 
     chrome.runtime.onMessage.addListener(async (message) => {
         switch (message.type) {
-            case "OPEN_ASSISTANT": {
+            case 'OPEN_ASSISTANT': {
                 chrome.tabs.query({ active: true }, async (res) => {
                     if (res[0]?.id) {
                         await adguardApi.openAssistant(res[0].id);
@@ -552,17 +549,18 @@ import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
     setTimeout(async () => {
         adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
         await adguardApi.stop();
-        console.log("Adguard API has been disabled.");
+        console.log('Adguard API has been disabled.');
     }, 60 * 1000);
 })();
 ```
 
 <!-- TODO: check minimum supported version later -->
+
 ## Minimum supported browser versions
 
-| Browser                  | Version   |
-|------------------------- |:---------:|
-| Chromium Based Browsers  |  79       |
-| Firefox                  |  78       |
-| Opera                    |  66       |
-| Edge                     |  79       |
+| Browser                 | Version |
+| ----------------------- | :-----: |
+| Chromium Based Browsers |   79    |
+| Firefox                 |   78    |
+| Opera                   |   66    |
+| Edge                    |   79    |

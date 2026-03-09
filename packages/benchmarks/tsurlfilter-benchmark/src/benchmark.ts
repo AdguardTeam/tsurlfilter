@@ -86,7 +86,7 @@ const printSystemSpecs = async (specs: SystemSpecs) => {
 /**
  * Main IIFE to run the benchmark.
  */
-((async () => {
+(async () => {
     const start = Date.now();
     consola.info('Starting the benchmark...');
 
@@ -96,7 +96,9 @@ const printSystemSpecs = async (specs: SystemSpecs) => {
     consola.info('Downloading filter lists...');
     const downloadedFilterLists = await downloadFilterLists(benchmarkConfig.filterLists);
     // eslint-disable-next-line max-len
-    consola.success(`Downloaded ${downloadedFilterLists.length} filter list${downloadedFilterLists.length > 1 ? 's' : ''}`);
+    consola.success(
+        `Downloaded ${downloadedFilterLists.length} filter list${downloadedFilterLists.length > 1 ? 's' : ''}`,
+    );
 
     consola.info('Building TSUrlFilter IIFE (just in-memory)...');
     const tsurlfilterIife = buildSync({
@@ -161,9 +163,7 @@ const printSystemSpecs = async (specs: SystemSpecs) => {
         };
 
         // run in Node.js
-        const nodeResult = await runBenchmarkNode(
-            filterList,
-        );
+        const nodeResult = await runBenchmarkNode(filterList);
 
         if (nodeResult instanceof Error) {
             consola.error(nodeResult);
@@ -203,4 +203,4 @@ const printSystemSpecs = async (specs: SystemSpecs) => {
 
     const end = Date.now();
     consola.success(`Benchmark completed in ${(end - start) / 1000} seconds`);
-})());
+})();

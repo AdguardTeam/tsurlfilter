@@ -199,11 +199,11 @@ export class NetworkRuleDeclarativeValidator {
         const permittedMethods = r.rule.getPermittedMethods();
         const restrictedMethods = r.rule.getRestrictedMethods();
         if (
-            permittedMethods?.some((method) => method === HTTPMethod.TRACE)
-                || restrictedMethods?.some((method) => method === HTTPMethod.TRACE)
+            permittedMethods?.some((method) => method === HTTPMethod.TRACE) ||
+            restrictedMethods?.some((method) => method === HTTPMethod.TRACE)
         ) {
             return new UnsupportedModifierError(
-                'Network rule with $method modifier containing \'trace\' method is not supported',
+                "Network rule with $method modifier containing 'trace' method is not supported",
                 r.rule,
             );
         }
@@ -270,10 +270,7 @@ export class NetworkRuleDeclarativeValidator {
             return null;
         }
 
-        return new UnsupportedModifierError(
-            `Network rule with "${name}" modifier is not supported`,
-            r.rule,
-        );
+        return new UnsupportedModifierError(`Network rule with "${name}" modifier is not supported`, r.rule);
     };
 
     /**
@@ -322,16 +319,14 @@ export class NetworkRuleDeclarativeValidator {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         name: string,
     ): UnsupportedModifierError | null => {
-        const isRedirectRule = r.rule.isOptionEnabled(NetworkRuleOption.Redirect)
-            && (r.rule.getAdvancedModifier() as RedirectModifier).isRedirectingOnlyBlocked;
+        const isRedirectRule =
+            r.rule.isOptionEnabled(NetworkRuleOption.Redirect) &&
+            (r.rule.getAdvancedModifier() as RedirectModifier).isRedirectingOnlyBlocked;
         if (!isRedirectRule) {
             return null;
         }
 
-        return new UnsupportedModifierError(
-            'Network rule with $redirect-rule modifier is not supported',
-            r.rule,
-        );
+        return new UnsupportedModifierError('Network rule with $redirect-rule modifier is not supported', r.rule);
     };
 
     private static optionsValidators: NetworkRuleValidators = {
@@ -465,18 +460,10 @@ export class NetworkRuleDeclarativeValidator {
                 throw new Error(`Validator for option "${option}" is not found`);
             }
 
-            const {
-                name,
-                customChecks,
-                skipConversion,
-                notSupported,
-            } = validator;
+            const { name, customChecks, skipConversion, notSupported } = validator;
 
             if (notSupported) {
-                throw new UnsupportedModifierError(
-                    `Unsupported option "${name}"`,
-                    rule.rule,
-                );
+                throw new UnsupportedModifierError(`Unsupported option "${name}"`, rule.rule);
             }
 
             if (skipConversion) {

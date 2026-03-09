@@ -6,19 +6,8 @@ import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import {
-    CLOSE_PARENTHESIS,
-    COLON,
-    CSS_NOT_PSEUDO,
-    EMPTY,
-    OPEN_PARENTHESIS,
-} from '../../utils/constants';
-import {
-    type ModifierList,
-    type Value,
-    type Modifier,
-    type UboSelector,
-} from '../../nodes';
+import { CLOSE_PARENTHESIS, COLON, CSS_NOT_PSEUDO, EMPTY, OPEN_PARENTHESIS } from '../../utils/constants';
+import { type ModifierList, type Value, type Modifier, type UboSelector } from '../../nodes';
 import { tokenizeFnBalanced } from './balancing';
 import { type TokenData } from './css-token-stream';
 import { defaultParserOptions } from '../options';
@@ -32,7 +21,8 @@ export const ERROR_MESSAGES = {
     DUPLICATED_UBO_MODIFIER: "uBO modifier '%s' cannot be used more than once",
     EXPECTED_BUT_GOT_BEFORE: "Expected '%s' but got '%s' before '%s'",
     // eslint-disable-next-line max-len
-    NEGATED_UBO_MODIFIER_CANNOT_BE_FOLLOWED_BY: "Negated uBO modifier '%s' cannot be followed by anything else than a closing parenthesis or a whitespace",
+    NEGATED_UBO_MODIFIER_CANNOT_BE_FOLLOWED_BY:
+        "Negated uBO modifier '%s' cannot be followed by anything else than a closing parenthesis or a whitespace",
     NEGATED_UBO_MODIFIER_CANNOT_BE_PRECEDED_BY: "Negated uBO modifier '%s' cannot be preceded by '%s'",
     PSEUDO_CANNOT_BE_NESTED: "uBO modifier '%s' cannot be nested inside '%s', only '%s' is allowed as a wrapper",
     UBO_MODIFIER_CANNOT_BE_NESTED: "uBO modifier '%s' cannot be nested",
@@ -356,11 +346,8 @@ export class UboSelectorParser extends BaseParser {
             //  - `div:remove() `,
             // etc.
             if (
-                (
-                    processedModifiers.has(UboPseudoName.Style)
-                    || processedModifiers.has(UboPseudoName.Remove)
-                )
-                && type !== TokenType.Whitespace
+                (processedModifiers.has(UboPseudoName.Style) || processedModifiers.has(UboPseudoName.Remove)) &&
+                type !== TokenType.Whitespace
             ) {
                 throw new AdblockSyntaxError(
                     ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
@@ -422,8 +409,8 @@ export class UboSelectorParser extends BaseParser {
                                     modifierBalance = tokens[j].balance;
                                     break;
                                 } else if (
-                                    tokens[j].type === TokenType.Colon
-                                    || tokens[j].type === TokenType.Whitespace
+                                    tokens[j].type === TokenType.Colon ||
+                                    tokens[j].type === TokenType.Whitespace
                                 ) {
                                     continue;
                                 } else if (tokens[j].type === TokenType.Function) {
@@ -511,8 +498,8 @@ export class UboSelectorParser extends BaseParser {
                 // Do not allow any other token after `:matches-path(...)` inside `:not(...)`
                 if (lastStackedModifier?.name === UboPseudoName.MatchesPath && lastStackedModifier?.isException) {
                     if (
-                        !(type === TokenType.CloseParenthesis || type === TokenType.Whitespace)
-                        && balance < lastStackedModifier.valueBalance
+                        !(type === TokenType.CloseParenthesis || type === TokenType.Whitespace) &&
+                        balance < lastStackedModifier.valueBalance
                     ) {
                         throw new AdblockSyntaxError(
                             sprintf(

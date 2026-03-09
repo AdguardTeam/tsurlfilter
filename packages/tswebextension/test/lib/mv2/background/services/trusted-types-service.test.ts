@@ -175,17 +175,20 @@ describe('Trusted Types service', () => {
                 name: CSP_NAME,
                 actual: "require-trusted-types-for 'script'; trusted-types example#bundler example#unsafe-bypass",
                 // eslint-disable-next-line max-len
-                expected: "require-trusted-types-for 'script'; trusted-types example#bundler example#unsafe-bypass AGPolicy 'allow-duplicates'",
+                expected:
+                    "require-trusted-types-for 'script'; trusted-types example#bundler example#unsafe-bypass AGPolicy 'allow-duplicates'",
             },
             {
                 name: CSP_REPORT_NAME,
                 actual: "require-trusted-types-for 'script'; trusted-types example example#bundler example#html; report-uri https://csp.example.com/report",
-                expected: "require-trusted-types-for 'script'; trusted-types example example#bundler example#html AGPolicy 'allow-duplicates'; report-uri https://csp.example.com/report",
+                expected:
+                    "require-trusted-types-for 'script'; trusted-types example example#bundler example#html AGPolicy 'allow-duplicates'; report-uri https://csp.example.com/report",
             },
             {
                 name: CSP_REPORT_NAME,
                 actual: "require-trusted-types-for 'script'; trusted-types example example#bundler 'allow-duplicates'; report-uri https://csp.example.com/report",
-                expected: "require-trusted-types-for 'script'; trusted-types example example#bundler 'allow-duplicates' AGPolicy; report-uri https://csp.example.com/report",
+                expected:
+                    "require-trusted-types-for 'script'; trusted-types example example#bundler 'allow-duplicates' AGPolicy; report-uri https://csp.example.com/report",
             },
             // do not modify the header if it has no trusted-types directive
             {

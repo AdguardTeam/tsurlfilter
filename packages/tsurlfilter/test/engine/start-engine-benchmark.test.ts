@@ -3,13 +3,7 @@ import console from 'node:console';
 import fs from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import zlib from 'node:zlib';
-import {
-    afterEach,
-    beforeEach,
-    describe,
-    expect,
-    it,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
 import { CosmeticOption } from '../../src/engine/cosmetic-option';
@@ -119,7 +113,7 @@ const requestsFilePath = './test/resources/requests.json';
  * @returns True if the URL is supported, false otherwise.
  */
 function isSupportedURL(url: string): boolean {
-    return (!!url && (url.startsWith('http') || url.startsWith('ws')));
+    return !!url && (url.startsWith('http') || url.startsWith('ws'));
 }
 
 /**
@@ -133,11 +127,15 @@ async function unzipRequests(): Promise<void> {
         const writeStream = fs.createWriteStream(requestsFilePath);
         const unzip = zlib.createGunzip();
 
-        fileContents.pipe(unzip).pipe(writeStream).on('close', () => {
-            resolve();
-        }).on('error', () => {
-            reject();
-        });
+        fileContents
+            .pipe(unzip)
+            .pipe(writeStream)
+            .on('close', () => {
+                resolve();
+            })
+            .on('error', () => {
+                reject();
+            });
     });
 }
 
@@ -230,7 +228,7 @@ function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
     heapUsed -= base.heapUsed;
     heapTotal -= base.heapTotal;
 
-    return ({ heapUsed, heapTotal });
+    return { heapUsed, heapTotal };
 }
 
 const createCosmeticEngine = (lists: IRuleList[]): CosmeticEngine => {
@@ -371,10 +369,12 @@ describe('Benchmarks', () => {
         const ruleStorage = new RuleStorage([list]);
 
         const engineOptions: EngineFactoryOptions = {
-            filters: [{
-                id: 1,
-                content: easyList,
-            }],
+            filters: [
+                {
+                    id: 1,
+                    content: easyList,
+                },
+            ],
         };
 
         let engine;
@@ -403,9 +403,7 @@ describe('Benchmarks', () => {
         const totalMatches = runEngine(requests, (request) => {
             const matchingResult = engine.matchRequest(request);
 
-            return !!(matchingResult
-                && matchingResult.basicRule
-                && !matchingResult.basicRule.isAllowlist());
+            return !!(matchingResult && matchingResult.basicRule && !matchingResult.basicRule.isAllowlist());
         });
 
         expect(totalMatches).toBe(expectedMatchesCount);

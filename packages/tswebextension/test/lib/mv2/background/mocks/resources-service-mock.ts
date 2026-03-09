@@ -22,9 +22,6 @@ export class ResourcesService implements ResourcesServiceInterface {
      */
     // eslint-disable-next-line class-methods-use-this
     public loadResource = vi.fn().mockImplementation((): Promise<string> => {
-        return readFile(
-            path.resolve(__dirname, '../fixtures/redirects.yml'),
-            { encoding: 'utf-8' },
-        );
+        return readFile(path.resolve(__dirname, '../fixtures/redirects.yml'), { encoding: 'utf-8' });
     });
 }

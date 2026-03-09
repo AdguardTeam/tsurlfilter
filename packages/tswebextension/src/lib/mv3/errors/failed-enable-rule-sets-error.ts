@@ -22,12 +22,7 @@ export class FailedEnableRuleSetsError extends Error {
      * attempted to disable.
      * @param cause Specific browser.declarativeNetRequest error.
      */
-    constructor(
-        message: string,
-        enableRulesetIds: string[],
-        disableRulesetIds: string[],
-        cause?: Error,
-    ) {
+    constructor(message: string, enableRulesetIds: string[], disableRulesetIds: string[], cause?: Error) {
         super(message, { cause });
 
         this.name = this.constructor.name;

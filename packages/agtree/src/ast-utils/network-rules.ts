@@ -3,12 +3,7 @@
  */
 
 import { isUndefined } from '../utils/type-guards';
-import {
-    type ModifierList,
-    type NetworkRule,
-    RuleCategory,
-    NetworkRuleType,
-} from '../nodes';
+import { type ModifierList, type NetworkRule, RuleCategory, NetworkRuleType } from '../nodes';
 import { AdblockSyntax } from '../utils/adblockers';
 import { clone } from '../utils/clone';
 

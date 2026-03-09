@@ -148,11 +148,7 @@ export abstract class CommonAssistant {
             return false;
         }
 
-        const {
-            frameId,
-            url,
-            timeStamp,
-        } = details;
+        const { frameId, url, timeStamp } = details;
 
         const frameContext = tabContext.getFrameContext(frameId);
         if (!frameContext) {
@@ -161,8 +157,10 @@ export abstract class CommonAssistant {
 
         const timeSinceFrameCreatedMs = timeStamp - tabContext.assistantInitTimestamp;
 
-        return timeSinceFrameCreatedMs < CommonAssistant.FRAME_CREATION_LIMIT_MS
-            && frameContext.parentFrameId === MAIN_FRAME_ID
-            && url === CommonAssistant.FRAME_URL;
+        return (
+            timeSinceFrameCreatedMs < CommonAssistant.FRAME_CREATION_LIMIT_MS &&
+            frameContext.parentFrameId === MAIN_FRAME_ID &&
+            url === CommonAssistant.FRAME_URL
+        );
     }
 }

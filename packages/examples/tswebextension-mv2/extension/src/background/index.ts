@@ -1,10 +1,5 @@
 import browser, { Events } from 'webextension-polyfill';
-import {
-    type ConfigurationMV2,
-    FilterList,
-    MESSAGE_HANDLER_NAME,
-    createTsWebExtension,
-} from '@adguard/tswebextension';
+import { type ConfigurationMV2, FilterList, MESSAGE_HANDLER_NAME, createTsWebExtension } from '@adguard/tswebextension';
 
 import { MessageTypes } from '../common/message-types';
 import { BuildOutput } from '../../../constants';
@@ -22,9 +17,7 @@ declare global {
 
 window.tsWebExtension = tsWebExtension;
 
-const rawUserRules = [
-    'example.com##h1',
-];
+const rawUserRules = ['example.com##h1'];
 
 // simple in-memory storage for user rules and allowlist
 let userrules = new FilterList(rawUserRules.join('\n'));
@@ -74,7 +67,6 @@ const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (browser.runtime.onMessage as Events.Event<(...args: any[]) => void>).addListener((message, sender, sendResponse) => {
-
     if (message.handlerName === MESSAGE_HANDLER_NAME) {
         return tsWebExtensionMessageHandler(message, sender);
     }
@@ -126,6 +118,6 @@ const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
             break;
         }
         default:
-            // do nothing
+        // do nothing
     }
 });

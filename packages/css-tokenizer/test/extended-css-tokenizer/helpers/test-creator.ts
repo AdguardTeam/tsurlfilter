@@ -34,23 +34,28 @@ const shiftValues = (values: PseudoValues, shift: number): PseudoValues => {
  * @returns Test data for each pseudo name
  */
 export const createTests = (pseudos: string[], values: PseudoValues): TokenTest[] => {
-    return pseudos.map((name: string) => (
-        addAsProp(
-            // Create tests for each pseudo name
-            Object.entries(
-                shiftValues(values, name.length + 2),
-            ).map(([param, expected]) => ({
-                actual: `:${name}(${param})`,
-                expected: [
-                    // :function-name(
-                    [TokenType.Colon, 0, 1],
-                    [TokenType.Function, 1, name.length + 2],
-                    // parameter splitted into delim tokens
-                    ...expected,
-                    // )
-                    // eslint-disable-next-line max-len
-                    [TokenType.CloseParenthesis, 1 + name.length + param.length + 1, 1 + name.length + param.length + 2],
-                ] as TokenData[],
-            })),
-        ))).flat();
+    return pseudos
+        .map((name: string) =>
+            addAsProp(
+                // Create tests for each pseudo name
+                Object.entries(shiftValues(values, name.length + 2)).map(([param, expected]) => ({
+                    actual: `:${name}(${param})`,
+                    expected: [
+                        // :function-name(
+                        [TokenType.Colon, 0, 1],
+                        [TokenType.Function, 1, name.length + 2],
+                        // parameter splitted into delim tokens
+                        ...expected,
+                        // )
+                        // eslint-disable-next-line max-len
+                        [
+                            TokenType.CloseParenthesis,
+                            1 + name.length + param.length + 1,
+                            1 + name.length + param.length + 2,
+                        ],
+                    ] as TokenData[],
+                })),
+            ),
+        )
+        .flat();
 };

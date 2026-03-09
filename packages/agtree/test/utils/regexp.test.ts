@@ -61,7 +61,7 @@ describe('RegExpUtils', () => {
                 actual: String.raw`/\.example\.com/.*[a-zA-Z0-9]({4}/`,
                 expected: true,
             },
-        ])('isRegexPattern should return \'$expected\' for \'$actual\'', ({ actual, expected }) => {
+        ])("isRegexPattern should return '$expected' for '$actual'", ({ actual, expected }) => {
             expect(RegExpUtils.isRegexPattern(actual)).toBe(expected);
         });
     });
@@ -85,7 +85,7 @@ describe('RegExpUtils', () => {
                 actual: '/^((?!a).)*$/',
                 expected: '/^((?!a).)*$/',
             },
-        ])('negateRegexPattern should return \'$expected\' for \'$actual\'', ({ actual, expected }) => {
+        ])("negateRegexPattern should return '$expected' for '$actual'", ({ actual, expected }) => {
             expect(RegExpUtils.negateRegexPattern(actual)).toBe(expected);
         });
     });
@@ -115,7 +115,7 @@ describe('RegExpUtils', () => {
                 actual: '||',
                 expected: REGEX_ANY_CHARACTERS,
             },
-        ])('patternToRegexp should return \'$expected\' for \'$actual\'', ({ actual, expected }) => {
+        ])("patternToRegexp should return '$expected' for '$actual'", ({ actual, expected }) => {
             expect(RegExpUtils.patternToRegexp(actual)).toBe(expected);
         });
     });
@@ -323,12 +323,7 @@ describe('RegExpUtils', () => {
                     actual: 'a\nb\nc',
                     expected: false,
                 },
-            ])('should return $expected for min: $min and max: $max', ({
-                min,
-                max,
-                actual,
-                expected,
-            }) => {
+            ])('should return $expected for min: $min and max: $max', ({ min, max, actual, expected }) => {
                 const regexp = RegExpUtils.getLengthRegexp(min, max);
                 // remove leading and trailing slashes and 's' flag
                 const withoutSlashes = regexp.substring(1, regexp.length - 2);

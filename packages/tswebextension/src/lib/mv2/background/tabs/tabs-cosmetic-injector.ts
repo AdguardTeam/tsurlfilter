@@ -97,22 +97,25 @@ export class TabsCosmeticInjector {
              * - if parent frame is a document-level frame, use undefined
              * - else generate parentDocumentId based on tabId and parentFrameId.
              */
-            const calculatedParentDocumentId = parentDocumentId
-                || (TabsApi.isDocumentLevelFrame(parentFrameId)
-                    ? undefined
-                    : TabsApi.generateId(tabId, parentFrameId));
+            const calculatedParentDocumentId =
+                parentDocumentId ||
+                (TabsApi.isDocumentLevelFrame(parentFrameId) ? undefined : TabsApi.generateId(tabId, parentFrameId));
 
             const calculatedDocumentId = documentId || TabsApi.generateId(tabId, frameId);
 
-            this.tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
+            this.tabsApi.setFrameContext(
                 tabId,
                 frameId,
-                parentFrameId,
-                url,
-                timeStamp: currentTime,
-                parentDocumentId: calculatedParentDocumentId,
-                documentId: calculatedDocumentId,
-            }));
+                new FrameMV2({
+                    tabId,
+                    frameId,
+                    parentFrameId,
+                    url,
+                    timeStamp: currentTime,
+                    parentDocumentId: calculatedParentDocumentId,
+                    documentId: calculatedDocumentId,
+                }),
+            );
 
             this.cosmeticFrameProcessor.handleFrame({
                 tabId,
@@ -141,7 +144,9 @@ export class TabsCosmeticInjector {
 
             const frameContext = this.tabsApi.getFrameContext(tabId, frameId);
             if (!frameContext?.cosmeticResult) {
-                logger.debug(`[tsweb.TabsCosmeticInjector.processOpenTab]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                logger.debug(
+                    `[tsweb.TabsCosmeticInjector.processOpenTab]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`,
+                );
                 return;
             }
 
@@ -151,9 +156,7 @@ export class TabsCosmeticInjector {
                 tabId,
                 cosmeticResult: frameContext.cosmeticResult,
                 timestamp: currentTime,
-                contentType: isMainFrame
-                    ? ContentType.Document
-                    : ContentType.Subdocument,
+                contentType: isMainFrame ? ContentType.Document : ContentType.Subdocument,
             });
         });
     }

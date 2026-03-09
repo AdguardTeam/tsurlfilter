@@ -80,13 +80,12 @@ export class ClientModifier extends BaseValuesModifier {
      */
     private static stripValues(values: string[]): string[] {
         return values.map((v) => {
-            if ((v.startsWith('"') && v.endsWith('"'))
-                || (v.startsWith('\'') && v.endsWith('\''))) {
+            if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
                 // eslint-disable-next-line no-param-reassign
                 v = v.substr(1, v.length - 2);
             }
 
-            return v.replace(/\\/ig, '');
+            return v.replace(/\\/gi, '');
         });
     }
 

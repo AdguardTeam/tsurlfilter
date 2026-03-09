@@ -13,7 +13,5 @@ export * from './storage';
 // TODO: used in adguard-api so maybe worth adding a new entry point for common utils
 // so it could be imported from '@adguard/tswebextension/utils'. AG-39120
 export { type EventChannelListener, type EventChannelInterface, EventChannel } from './utils/channels';
-export {
-    isHttpRequest, getDomain, isHttpOrWsRequest, isExtensionUrl,
-} from './utils/url';
+export { isHttpRequest, getDomain, isHttpOrWsRequest, isExtensionUrl } from './utils/url';
 export { type TabInfo } from './tabs/tabs-api';

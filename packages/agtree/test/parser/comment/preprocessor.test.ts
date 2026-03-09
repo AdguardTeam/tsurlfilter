@@ -129,9 +129,7 @@ describe('PreProcessorParser', () => {
             },
         });
 
-        expect(
-            PreProcessorCommentParser.parse('!#safari_cb_affinity(content_blockers)'),
-        ).toMatchObject({
+        expect(PreProcessorCommentParser.parse('!#safari_cb_affinity(content_blockers)')).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
             end: 38,
@@ -220,9 +218,9 @@ describe('PreProcessorParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(
-                PreProcessorCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
-            ).toEqual(expected);
+            expect(PreProcessorCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false })).toEqual(
+                expected,
+            );
         });
     });
 
@@ -246,13 +244,9 @@ describe('PreProcessorParser', () => {
             '!#safari_cb_affinity(content_blockers)',
         );
 
-        expect(parseAndGenerate('!#if adguard')).toEqual(
-            '!#if adguard',
-        );
+        expect(parseAndGenerate('!#if adguard')).toEqual('!#if adguard');
 
-        expect(parseAndGenerate('!#if (adguard)')).toEqual(
-            '!#if (adguard)',
-        );
+        expect(parseAndGenerate('!#if (adguard)')).toEqual('!#if (adguard)');
 
         expect(parseAndGenerate('!#if (adguard && !adguard_ext_safari)')).toEqual(
             '!#if (adguard && !adguard_ext_safari)',

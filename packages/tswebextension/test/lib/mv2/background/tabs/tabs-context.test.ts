@@ -1,11 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    afterEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, afterEach, it, vi } from 'vitest';
 
 import { FrameMV2 } from '../../../../../src/lib/mv2/background/tabs/frame';
 import { TabContext } from '../../../../../src/lib/mv2/background/tabs/tab-context';
@@ -73,13 +66,15 @@ describe('TabContext', () => {
             const context = TabContext.createNewTabContext(tabInfo, documentApi);
 
             expect(documentApi.matchFrame).toBeCalledWith(tabInfo.pendingUrl);
-            expect(context.frames.get(MAIN_FRAME_ID)).toEqual(new FrameMV2({
-                tabId: tabInfo.id,
-                frameId: MAIN_FRAME_ID,
-                parentFrameId: NO_PARENT_FRAME_ID,
-                url: tabInfo.pendingUrl!,
-                timeStamp: 0,
-            }));
+            expect(context.frames.get(MAIN_FRAME_ID)).toEqual(
+                new FrameMV2({
+                    tabId: tabInfo.id,
+                    frameId: MAIN_FRAME_ID,
+                    parentFrameId: NO_PARENT_FRAME_ID,
+                    url: tabInfo.pendingUrl!,
+                    timeStamp: 0,
+                }),
+            );
         });
     });
 

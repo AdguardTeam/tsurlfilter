@@ -11,11 +11,7 @@ export class UnavailableRuleSetSourceError extends Error {
      * @param ruleSetId Rule set id, the source of which is not available.
      * @param cause Basic error, describes why the source is unavailable.
      */
-    constructor(
-        message: string,
-        ruleSetId: string,
-        cause?: Error,
-    ) {
+    constructor(message: string, ruleSetId: string, cause?: Error) {
         super(message, { cause });
 
         this.name = this.constructor.name;

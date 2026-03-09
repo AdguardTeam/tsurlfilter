@@ -202,11 +202,7 @@ export const hasPlatformMultipleProducts = (platform: AnyPlatform): boolean => {
     const hasAbp = !!(platform & GenericPlatform.AbpAny);
     const hasUbo = !!(platform & GenericPlatform.UboAny);
 
-    return (
-        (hasAdg && hasAbp)
-        || (hasAdg && hasUbo)
-        || (hasAbp && hasUbo)
-    );
+    return (hasAdg && hasAbp) || (hasAdg && hasUbo) || (hasAbp && hasUbo);
 };
 
 /**
@@ -346,26 +342,17 @@ export const getPlatformsByProduct = (platform: AnyPlatform): PlatformsByProduct
 
     if (platform & GenericPlatform.AdgAny) {
         const extracted = (platform & GenericPlatform.AdgAny) as unknown as number;
-        result[AdblockProduct.Adg] = optimizePlatformRepresentation(
-            extracted,
-            productPlatforms[AdblockProduct.Adg],
-        );
+        result[AdblockProduct.Adg] = optimizePlatformRepresentation(extracted, productPlatforms[AdblockProduct.Adg]);
     }
 
     if (platform & GenericPlatform.UboAny) {
         const extracted = (platform & GenericPlatform.UboAny) as unknown as number;
-        result[AdblockProduct.Ubo] = optimizePlatformRepresentation(
-            extracted,
-            productPlatforms[AdblockProduct.Ubo],
-        );
+        result[AdblockProduct.Ubo] = optimizePlatformRepresentation(extracted, productPlatforms[AdblockProduct.Ubo]);
     }
 
     if (platform & GenericPlatform.AbpAny) {
         const extracted = (platform & GenericPlatform.AbpAny) as unknown as number;
-        result[AdblockProduct.Abp] = optimizePlatformRepresentation(
-            extracted,
-            productPlatforms[AdblockProduct.Abp],
-        );
+        result[AdblockProduct.Abp] = optimizePlatformRepresentation(extracted, productPlatforms[AdblockProduct.Abp]);
     }
 
     return result;

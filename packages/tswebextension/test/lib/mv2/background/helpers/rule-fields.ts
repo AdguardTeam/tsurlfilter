@@ -4,12 +4,7 @@ import { type ApplyBasicRuleEventData } from '../../../../../src/lib/common/filt
 
 type Fields = Pick<
     ApplyBasicRuleEventData,
-    | 'isAllowlist'
-    | 'isImportant'
-    | 'isDocumentLevel'
-    | 'isCsp'
-    | 'isCookie'
-    | 'advancedModifier'
+    'isAllowlist' | 'isImportant' | 'isDocumentLevel' | 'isCsp' | 'isCookie' | 'advancedModifier'
 > & {
     // filterId and ruleIndex can be null in ApplyBasicRuleEventData
     // but here we assume that they are always present (for test purposes)

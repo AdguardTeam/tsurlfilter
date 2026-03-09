@@ -7,12 +7,12 @@
  * @returns The number of bits set to 1.
  */
 export function getBitCount(a: number): number {
-    a -= ((a >>> 1) & 0x55555555);
+    a -= (a >>> 1) & 0x55555555;
     a = (a & 0x33333333) + ((a >>> 2) & 0x33333333);
-    a = (a + (a >>> 4)) & 0x0F0F0F0F;
-    a += (a >>> 8);
-    a += (a >>> 16);
-    return a & 0x3F;
+    a = (a + (a >>> 4)) & 0x0f0f0f0f;
+    a += a >>> 8;
+    a += a >>> 16;
+    return a & 0x3f;
 }
 
 /**

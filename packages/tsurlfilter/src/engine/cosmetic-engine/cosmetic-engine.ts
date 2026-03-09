@@ -94,7 +94,9 @@ export class CosmeticEngine {
                 // (microtask) because microtasks don't give the browser a
                 // chance to refresh the screen or respond to user actions.
                 // eslint-disable-next-line no-await-in-loop
-                await new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+                await new Promise<void>((resolve) => {
+                    setTimeout(resolve, 0);
+                });
             }
 
             engine.addRule(indexedRuleParts.ruleParts, indexedRuleParts.index);
@@ -217,8 +219,7 @@ export class CosmeticEngine {
         request: Request,
     ): void {
         for (const genericRule of lookupTable.genericRules) {
-            if (!lookupTable.isAllowlisted(request, genericRule)
-                && genericRule.match(request)) {
+            if (!lookupTable.isAllowlisted(request, genericRule) && genericRule.match(request)) {
                 cosmeticResult.append(genericRule, request);
             }
         }

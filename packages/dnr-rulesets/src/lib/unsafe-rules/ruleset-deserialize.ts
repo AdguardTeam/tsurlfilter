@@ -18,31 +18,19 @@ import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-util
  *
  * @returns Promise with loaded Ruleset.
  */
-export async function loadRulesetAndFilter(
-    rulesetPath: string,
-    id: string,
-): Promise<IRuleSet> {
+export async function loadRulesetAndFilter(rulesetPath: string, id: string): Promise<IRuleSet> {
     const rulesetRaw = await fs.readFile(rulesetPath, 'utf8');
 
     // Extract metadata, lazyMetadata, and rules from ruleset JSON
     const parsedRuleset = JSON.parse(rulesetRaw);
     // First rule is always rule with metadata.
     const metadataRule = parsedRuleset[0];
-    const {
-        metadata,
-        lazyMetadata,
-        conversionData,
-        rawFilterList,
-    } = metadataRule.metadata;
+    const { metadata, lazyMetadata, conversionData, rawFilterList } = metadataRule.metadata;
 
     const filterList = new FilterList(rawFilterList, conversionData);
 
     const filterId = Number(id);
-    const filter = new Filter(
-        filterId,
-        { getContent: (): Promise<FilterList> => Promise.resolve(filterList) },
-        true,
-    );
+    const filter = new Filter(filterId, { getContent: (): Promise<FilterList> => Promise.resolve(filterList) }, true);
 
     // Prepare Ruleset.deserialize dependencies
     const ruleSetId = getRuleSetId(id);
@@ -53,21 +41,9 @@ export async function loadRulesetAndFilter(
 
     // Deserialize Ruleset as in extension
     const {
-        data: {
-            regexpRulesCount,
-            unsafeRulesCount,
-            rulesCount,
-            ruleSetHashMapRaw,
-            badFilterRulesRaw,
-        },
+        data: { regexpRulesCount, unsafeRulesCount, rulesCount, ruleSetHashMapRaw, badFilterRulesRaw },
         ruleSetContentProvider,
-    } = await RuleSet.deserialize(
-        ruleSetId,
-        rawData,
-        loadLazyData,
-        loadDeclarativeRules,
-        filters,
-    );
+    } = await RuleSet.deserialize(ruleSetId, rawData, loadLazyData, loadDeclarativeRules, filters);
 
     const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
     const ruleSetHashMap = new RulesHashMap(sources);

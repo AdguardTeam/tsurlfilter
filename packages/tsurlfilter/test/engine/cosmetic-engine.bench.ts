@@ -30,13 +30,7 @@ describe('Build engine', () => {
     };
 
     const createNewEngine = () => {
-        const list = new StringRuleList(
-            2,
-            rawFilter,
-            false,
-            false,
-            false,
-        );
+        const list = new StringRuleList(2, rawFilter, false, false, false);
         const storage = new RuleStorage([list]);
         const scanner = list.newScanner(ScannerType.CosmeticRules);
         const rulesParts: IndexedStorageCosmeticRuleParts[] = [];

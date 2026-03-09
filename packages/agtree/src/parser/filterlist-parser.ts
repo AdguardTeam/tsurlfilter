@@ -87,9 +87,7 @@ export class FilterListParser extends BaseParser {
         }
 
         // Parse the last rule (it doesn't end with a new line)
-        rules.push(
-            RuleParser.parse(raw.slice(lineStartOffset, offset), options, baseOffset + lineStartOffset),
-        );
+        rules.push(RuleParser.parse(raw.slice(lineStartOffset, offset), options, baseOffset + lineStartOffset));
 
         // Return the list of rules (FilterList node)
         const result: FilterList = {

@@ -71,12 +71,7 @@ export class CosmeticFrameProcessor {
      *
      * @returns True if recalculation should be skipped.
      */
-    public static shouldSkipRecalculation(
-        tabId: number,
-        frameId: number,
-        url: string,
-        timeStamp: number,
-    ): boolean {
+    public static shouldSkipRecalculation(tabId: number, frameId: number, url: string, timeStamp: number): boolean {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
         if (!frameContext) {
             return false;
@@ -100,27 +95,19 @@ export class CosmeticFrameProcessor {
      *
      * @returns Prepared cosmetic result with CSS and scripts rules.
      */
-    private static prepareCosmeticResult(
-        cosmeticResult: CosmeticResult,
-    ): PreparedCosmeticResultMV3 {
+    private static prepareCosmeticResult(cosmeticResult: CosmeticResult): PreparedCosmeticResultMV3 {
         const scriptRules = cosmeticResult.getScriptRules();
 
-        const {
-            localRules,
-            remoteRules,
-        } = CosmeticFrameProcessor.splitLocalRemoteScriptRules(scriptRules);
+        const { localRules, remoteRules } = CosmeticFrameProcessor.splitLocalRemoteScriptRules(scriptRules);
 
         const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
 
         const preparedCosmeticResult = {
-            cssText: CosmeticApi.getCssText(
-                cosmeticResult,
-                {
-                    areHitsStatsCollected,
-                    // always true for MV3
-                    isNativeHasSupported: true,
-                },
-            ),
+            cssText: CosmeticApi.getCssText(cosmeticResult, {
+                areHitsStatsCollected,
+                // always true for MV3
+                isNativeHasSupported: true,
+            }),
             // Local script rules should be processed separately
             // because they will be injected with two different calls
             // to scripting API.
@@ -145,12 +132,7 @@ export class CosmeticFrameProcessor {
      * @param props Handle sub frame without url props.
      */
     public static handleSubFrameWithoutUrl(props: HandleSubFrameWithoutUrlProps): void {
-        const {
-            tabId,
-            frameId,
-            mainFrameUrl,
-            parentDocumentId,
-        } = props;
+        const { tabId, frameId, mainFrameUrl, parentDocumentId } = props;
 
         let parentFrame: FrameMV3 | undefined;
         let tempParentDocumentId = parentDocumentId;
@@ -176,13 +158,7 @@ export class CosmeticFrameProcessor {
      * @param props Handle sub frame with url props.
      */
     public static handleSubFrameWithUrl(props: HandleSubFrameWithUrlProps): void {
-        const {
-            url,
-            tabId,
-            frameId,
-            mainFrameUrl,
-            mainFrameRule,
-        } = props;
+        const { url, tabId, frameId, mainFrameUrl, mainFrameRule } = props;
 
         const result = engineApi.matchRequest({
             requestUrl: url,
@@ -213,11 +189,7 @@ export class CosmeticFrameProcessor {
      * @param props Handle main frame props.
      */
     private static handleMainFrame(props: HandleMainFrameProps): void {
-        const {
-            url,
-            tabId,
-            frameId,
-        } = props;
+        const { url, tabId, frameId } = props;
 
         if (!isHttpRequest(url)) {
             return;
@@ -257,12 +229,7 @@ export class CosmeticFrameProcessor {
      * @param props Precalculate cosmetic props.
      */
     public static handleFrame(props: PrecalculateCosmeticProps): void {
-        const {
-            tabId,
-            frameId,
-            url,
-            parentDocumentId,
-        } = props;
+        const { tabId, frameId, url, parentDocumentId } = props;
 
         const isMainFrame = frameId === MAIN_FRAME_ID;
 
@@ -314,9 +281,7 @@ export class CosmeticFrameProcessor {
      *
      * @returns Object with split local and remote rules.
      */
-    private static splitLocalRemoteScriptRules(
-        scriptRules: CosmeticRule[],
-    ): SplitLocalRemoteScriptRulesResult {
+    private static splitLocalRemoteScriptRules(scriptRules: CosmeticRule[]): SplitLocalRemoteScriptRulesResult {
         const res: SplitLocalRemoteScriptRulesResult = {
             localRules: [],
             remoteRules: [],

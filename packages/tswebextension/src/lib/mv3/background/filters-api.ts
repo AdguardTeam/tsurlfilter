@@ -12,13 +12,10 @@ export type UpdateStaticFiltersResult = {
     errors: FailedEnableRuleSetsError[];
 };
 
-const loadFilterContentValidator = zod.function()
+const loadFilterContentValidator = zod
+    .function()
     .args(zod.number())
-    .returns(
-        zod.promise(
-            zod.instanceof(FilterList),
-        ),
-    );
+    .returns(zod.promise(zod.instanceof(FilterList)));
 
 /**
  * Lazy load filter content.
@@ -75,12 +72,7 @@ export default class FiltersApi {
             });
         } catch (e) {
             const msg = 'Cannot change list of enabled rule sets';
-            const err = new FailedEnableRuleSetsError(
-                msg,
-                enableRulesetIds,
-                disableRulesetIds,
-                e as Error,
-            );
+            const err = new FailedEnableRuleSetsError(msg, enableRulesetIds, disableRulesetIds, e as Error);
             res.errors.push(err);
         }
 
@@ -138,13 +130,16 @@ export default class FiltersApi {
      * @returns List of {@link IFilter} with a lazy content loading feature.
      */
     static createCustomFilters(customFilters: ConfigurationMV3['customFilters']): IFilter[] {
-        return customFilters.map((f) => new Filter(
-            f.filterId,
-            {
-                getContent: () => Promise.resolve(new FilterList(f.content, f.conversionData)),
-            },
-            f.trusted,
-        ));
+        return customFilters.map(
+            (f) =>
+                new Filter(
+                    f.filterId,
+                    {
+                        getContent: () => Promise.resolve(new FilterList(f.content, f.conversionData)),
+                    },
+                    f.trusted,
+                ),
+        );
     }
 
     /**

@@ -91,7 +91,7 @@ export class LocalScriptRulesJs {
     private static escapeJsString(str: string): string {
         return str
             .replace(/\\/g, '\\\\') // Backslash must be first
-            .replace(/'/g, '\\\'') // Single quote
+            .replace(/'/g, "\\'") // Single quote
             .replace(/\n/g, '\\n') // Newline
             .replace(/\r/g, '\\r') // Carriage return
             .replace(/\t/g, '\\t'); // Tab

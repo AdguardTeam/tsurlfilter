@@ -145,10 +145,7 @@ interface IFilterConverter {
      *
      * @returns Item of {@link ConversionResult}.
      */
-    convertStaticRuleSet(
-        filterList: IFilter,
-        options?: DeclarativeConverterOptions,
-    ): Promise<ConversionResult>;
+    convertStaticRuleSet(filterList: IFilter, options?: DeclarativeConverterOptions): Promise<ConversionResult>;
 
     /**
      * Extracts content from the provided list of dynamic filters and converts
@@ -211,28 +208,20 @@ export class DeclarativeFilterConverter implements IFilterConverter {
      * regexp rules is less than 0.
      */
     private static checkConverterOptions(options: DeclarativeConverterOptions): void {
-        const {
-            resourcesPath,
-            maxNumberOfRules,
-            maxNumberOfUnsafeRules,
-            maxNumberOfRegexpRules,
-        } = options;
+        const { resourcesPath, maxNumberOfRules, maxNumberOfUnsafeRules, maxNumberOfRegexpRules } = options;
 
         if (resourcesPath !== undefined) {
             const firstChar = 0;
-            const lastChar = resourcesPath.length > 0
-                ? resourcesPath.length - 1
-                : 0;
+            const lastChar = resourcesPath.length > 0 ? resourcesPath.length - 1 : 0;
 
             if (resourcesPath[firstChar] !== '/') {
-                const msg = 'Path to web accessible resources should '
-                    + `be started with leading slash: ${resourcesPath}`;
+                const msg =
+                    'Path to web accessible resources should ' + `be started with leading slash: ${resourcesPath}`;
                 throw new ResourcesPathError(msg);
             }
 
             if (resourcesPath[lastChar] === '/') {
-                const msg = 'Path to web accessible resources should '
-                    + `not be ended with slash: ${resourcesPath}`;
+                const msg = 'Path to web accessible resources should ' + `not be ended with slash: ${resourcesPath}`;
                 throw new ResourcesPathError(msg);
             }
         }
@@ -272,10 +261,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
         const [scannedStaticFilter] = filters;
         const { id, badFilterRules } = scannedStaticFilter;
 
-        const convertedRules = await DeclarativeRulesConverter.convert(
-            filters,
-            options,
-        );
+        const convertedRules = await DeclarativeRulesConverter.convert(filters, options);
 
         const conversionResult = DeclarativeFilterConverter.collectConvertedResult(
             `ruleset_${id}`,
@@ -340,14 +326,9 @@ export class DeclarativeFilterConverter implements IFilterConverter {
                 : undefined,
         );
 
-        const convertedRules = await DeclarativeRulesConverter.convert(
-            scanned.filters,
-            options,
-        );
+        const convertedRules = await DeclarativeRulesConverter.convert(scanned.filters, options);
 
-        const dynamicBadFilterRules = scanned.filters
-            .map(({ badFilterRules }) => badFilterRules)
-            .flat();
+        const dynamicBadFilterRules = scanned.filters.map(({ badFilterRules }) => badFilterRules).flat();
 
         const conversionResult = DeclarativeFilterConverter.collectConvertedResult(
             DeclarativeFilterConverter.COMBINED_RULESET_ID,
@@ -362,9 +343,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             dynamicBadFilterRules,
         );
 
-        conversionResult.errors = conversionResult.errors
-            .concat(scanned.errors)
-            .concat(errors);
+        conversionResult.errors = conversionResult.errors.concat(scanned.errors).concat(errors);
         conversionResult.declarativeRulesToCancel = declarativeRulesToCancel;
 
         return conversionResult;
@@ -390,12 +369,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
         convertedRules: ConvertedRules,
         badFilterRules: IndexedNetworkRuleWithHash[],
     ): ConversionResult {
-        const {
-            sourceMapValues,
-            declarativeRules,
-            errors,
-            limitations = [],
-        } = convertedRules;
+        const { sourceMapValues, declarativeRules, errors, limitations = [] } = convertedRules;
 
         const ruleSetContent: RuleSetContentProvider = {
             loadSourceMap: async () => new SourceMap(sourceMapValues),
@@ -448,9 +422,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
      * @returns Dictionary with all $badfilter rules which are extracted from
      * rulesets.
      */
-    private static createBadFilterRulesHashMap(
-        ruleSets: IRuleSet[],
-    ): Map<number, IndexedNetworkRuleWithHash[]> {
+    private static createBadFilterRulesHashMap(ruleSets: IRuleSet[]): Map<number, IndexedNetworkRuleWithHash[]> {
         const allStaticBadFilterRules: Map<number, IndexedNetworkRuleWithHash[]> = new Map();
 
         ruleSets.forEach((ruleSet) => {
@@ -486,7 +458,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
         staticRuleSet: IRuleSet,
         fastMatchedRulesByHash: SourceRuleIdxAndFilterId[],
     ): Promise<number[]> {
-        const fastMatchedDeclarativeRulesIds: number [] = [];
+        const fastMatchedDeclarativeRulesIds: number[] = [];
 
         try {
             const promises = fastMatchedRulesByHash.map(async (source) => {
@@ -497,7 +469,9 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             fastMatchedDeclarativeRulesIds.push(...ids.flat());
         } catch (e) {
             // eslint-disable-next-line max-len
-            throw new Error(`Not found declarative rule id for some source from list: ${JSON.stringify(fastMatchedDeclarativeRulesIds)}: ${getErrorMessage(e)}`);
+            throw new Error(
+                `Not found declarative rule id for some source from list: ${JSON.stringify(fastMatchedDeclarativeRulesIds)}: ${getErrorMessage(e)}`,
+            );
         }
 
         const disableRuleIds: number[] = [];
@@ -525,7 +499,9 @@ export class DeclarativeFilterConverter implements IFilterConverter {
                 indexedNetworkRulesWithHash = arrayWithRules.flat();
             } catch (e) {
                 // eslint-disable-next-line max-len
-                throw new Error(`Not found network rules from matched sources "${JSON.stringify(matchedSourceRules)}": ${getErrorMessage(e)}`);
+                throw new Error(
+                    `Not found network rules from matched sources "${JSON.stringify(matchedSourceRules)}": ${getErrorMessage(e)}`,
+                );
             }
 
             // NOTE: Here we use .some but not .every to simplify first

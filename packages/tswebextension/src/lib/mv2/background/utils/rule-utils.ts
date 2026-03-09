@@ -12,9 +12,11 @@ export class RuleUtils {
      * @returns True, if rule is request blocking, else returns false.
      */
     public static isRequestBlockedByRule(requestRule: NetworkRule | null): boolean {
-        return !!requestRule
-            && !requestRule.isAllowlist()
-            && !requestRule.isOptionEnabled(NetworkRuleOption.Replace)
-            && !requestRule.isOptionEnabled(NetworkRuleOption.Redirect);
+        return (
+            !!requestRule &&
+            !requestRule.isAllowlist() &&
+            !requestRule.isOptionEnabled(NetworkRuleOption.Replace) &&
+            !requestRule.isOptionEnabled(NetworkRuleOption.Redirect)
+        );
     }
 }

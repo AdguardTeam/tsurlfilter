@@ -45,12 +45,12 @@ export class ConfigCommentParser extends BaseParser {
             // The code below is "not pretty", but it runs fast, which is necessary, since it will run on EVERY comment
             // The essence of the indicator is that the control comment always starts with the "aglint" prefix
             return (
-                (text[0] === 'a' || text[0] === 'A')
-                && (text[1] === 'g' || text[1] === 'G')
-                && (text[2] === 'l' || text[2] === 'L')
-                && (text[3] === 'i' || text[3] === 'I')
-                && (text[4] === 'n' || text[4] === 'N')
-                && (text[5] === 't' || text[5] === 'T')
+                (text[0] === 'a' || text[0] === 'A') &&
+                (text[1] === 'g' || text[1] === 'G') &&
+                (text[2] === 'l' || text[2] === 'L') &&
+                (text[3] === 'i' || text[3] === 'I') &&
+                (text[4] === 'n' || text[4] === 'N') &&
+                (text[5] === 't' || text[5] === 'T')
             );
         }
 
@@ -109,9 +109,8 @@ export class ConfigCommentParser extends BaseParser {
 
         // Get parameter
         const paramsStart = offset;
-        const paramsEnd = commentStart !== -1
-            ? StringUtils.skipWSBack(raw, commentStart - 1) + 1
-            : StringUtils.skipWSBack(raw) + 1;
+        const paramsEnd =
+            commentStart !== -1 ? StringUtils.skipWSBack(raw, commentStart - 1) + 1 : StringUtils.skipWSBack(raw) + 1;
 
         let params: ConfigNode | ParameterList | undefined;
 

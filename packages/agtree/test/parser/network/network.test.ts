@@ -825,9 +825,7 @@ describe('NetworkRuleParser', () => {
             },
         });
 
-        expect(
-            NetworkRuleParser.parse('@@||example.org^$removeheader=request:header-name'),
-        ).toMatchObject<NetworkRule>(
+        expect(NetworkRuleParser.parse('@@||example.org^$removeheader=request:header-name')).toMatchObject<NetworkRule>(
             {
                 type: NetworkRuleType.NetworkRule,
                 start: 0,
@@ -870,21 +868,16 @@ describe('NetworkRuleParser', () => {
         );
 
         // Invalid rules
-        expect(() => NetworkRuleParser.parse('')).toThrowError(
-            'Network rule must have a pattern or modifiers',
-        );
+        expect(() => NetworkRuleParser.parse('')).toThrowError('Network rule must have a pattern or modifiers');
     });
 
     describe('empty modifiers should throw errors', () => {
-        test.each([
-            '||example.com$',
-            '||example.com$ ',
-            '||example.com^$  ',
-        ])('should throw error for empty modifiers in "%s"', (input) => {
-            expect(() => NetworkRuleParser.parse(input)).toThrowError(
-                'Empty modifiers are not allowed',
-            );
-        });
+        test.each(['||example.com$', '||example.com$ ', '||example.com^$  '])(
+            'should throw error for empty modifiers in "%s"',
+            (input) => {
+                expect(() => NetworkRuleParser.parse(input)).toThrowError('Empty modifiers are not allowed');
+            },
+        );
     });
 
     describe('parser options should work as expected', () => {
@@ -932,9 +925,9 @@ describe('NetworkRuleParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(
-                NetworkRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
-            ).toEqual(expected);
+            expect(NetworkRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false })).toEqual(
+                expected,
+            );
         });
     });
 

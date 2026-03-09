@@ -4,21 +4,11 @@ import { Filter, type IFilter } from '../../../src/rules/declarative-converter/f
 import { NetworkRule, NetworkRuleOption } from '../../../src/rules/network-rule';
 import { FilterList } from '../../../src/filterlist/filter-list';
 
-export const createFilter = (
-    rules: string[],
-    filterId: number = 0,
-): IFilter => {
-    return new Filter(
-        filterId,
-        { getContent: async () => new FilterList(rules.join('\n')) },
-        true,
-    );
+export const createFilter = (rules: string[], filterId: number = 0): IFilter => {
+    return new Filter(filterId, { getContent: async () => new FilterList(rules.join('\n')) }, true);
 };
 
-export const createScannedFilter = async (
-    filterId: number,
-    lines: string[],
-): Promise<ScannedFilter> => {
+export const createScannedFilter = async (filterId: number, lines: string[]): Promise<ScannedFilter> => {
     const filter = createFilter(lines, filterId);
 
     const scanner = await FilterScanner.createNew(filter);

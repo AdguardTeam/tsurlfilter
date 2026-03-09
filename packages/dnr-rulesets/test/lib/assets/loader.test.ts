@@ -5,14 +5,7 @@ import path from 'node:path';
 import { parse } from 'acorn';
 import { copy, type CopyOptions } from 'fs-extra';
 import process from 'process';
-import {
-    afterEach,
-    beforeEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LocalScriptRulesJs } from '../../../src/common/local-script-rules-js';
 import { LocalScriptRulesJson } from '../../../src/common/local-script-rules-json';
@@ -37,9 +30,7 @@ describe('load', () => {
         vi.clearAllMocks();
         // Re-apply spy mock after clearing
         cwdSpy.mockReturnValue('cwd');
-        mockResolve
-            .mockReturnValueOnce(to)
-            .mockReturnValueOnce(src);
+        mockResolve.mockReturnValueOnce(to).mockReturnValueOnce(src);
     });
 
     it('should load assets', async () => {
@@ -160,11 +151,7 @@ describe('extendLocalScriptRulesJs', () => {
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with rules that are not JS injection rules
-        const customRules = [
-            'example.com##.ad',
-            '||example.com^',
-            'example.com##+js(scriptlet, arg)',
-        ];
+        const customRules = ['example.com##.ad', '||example.com^', 'example.com##+js(scriptlet, arg)'];
         await loader.extendLocalScriptRulesJs(testFilePath, customRules);
 
         // Verify the file is unchanged
@@ -255,10 +242,7 @@ describe('extendLocalScriptRulesJs', () => {
     it('should not lose rules during extend', async () => {
         // This test verifies that extending preserves all existing rules
 
-        const initialRules = new Set([
-            'var x = /[sS]+/;',
-            'window.test = true;',
-        ]);
+        const initialRules = new Set(['var x = /[sS]+/;', 'window.test = true;']);
 
         const initialContent = await LocalScriptRulesJs.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
@@ -311,10 +295,7 @@ describe('extendLocalScriptRulesJs', () => {
         expect(rules1.has('function test(){}')).toBe(true);
         expect(rules1.has('function test(){ }')).toBe(true);
 
-        const rules2 = LocalScriptRulesJs.parse([
-            'example.com#%#var x=1;',
-            'example.com#%#var x = 1;',
-        ]);
+        const rules2 = LocalScriptRulesJs.parse(['example.com#%#var x=1;', 'example.com#%#var x = 1;']);
 
         // Similarly, these two should also be kept separate
         expect(rules2.size).toBe(2);
@@ -322,18 +303,12 @@ describe('extendLocalScriptRulesJs', () => {
         expect(rules2.has('var x = 1;')).toBe(true);
 
         // Now test the full flow with serialization and extension
-        const initialRules = new Set([
-            'function test(){}',
-            'function test(){ }',
-        ]);
+        const initialRules = new Set(['function test(){}', 'function test(){ }']);
         const initialContent = await LocalScriptRulesJs.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with more rules that differ only by whitespace
-        const customRules = [
-            'example.com#%#var x=1;',
-            'example.com#%#var x = 1;',
-        ];
+        const customRules = ['example.com#%#var x=1;', 'example.com#%#var x = 1;'];
         await loader.extendLocalScriptRulesJs(testFilePath, customRules);
 
         // Verify the file contains all 4 rules (none were deduplicated)
@@ -407,10 +382,9 @@ describe('extendLocalScriptRulesJson', () => {
 
     it('should merge domain configs for the same script body', async () => {
         // Create initial file with one rule
-        const initialRules = new Map([[
-            'console.log("test");',
-            [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
-        ]]);
+        const initialRules = new Map([
+            ['console.log("test");', [{ permittedDomains: ['example.com'], restrictedDomains: [] }]],
+        ]);
         const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
@@ -432,10 +406,9 @@ describe('extendLocalScriptRulesJson', () => {
 
     it('should not duplicate domain configs', async () => {
         // Create initial file with one rule
-        const initialRules = new Map([[
-            'console.log("test");',
-            [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
-        ]]);
+        const initialRules = new Map([
+            ['console.log("test");', [{ permittedDomains: ['example.com'], restrictedDomains: [] }]],
+        ]);
         const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
@@ -455,10 +428,9 @@ describe('extendLocalScriptRulesJson', () => {
 
     it('should handle rules with restricted domains', async () => {
         // Create initial file
-        const initialRules = new Map([[
-            'console.log("existing");',
-            [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
-        ]]);
+        const initialRules = new Map([
+            ['console.log("existing");', [{ permittedDomains: ['example.com'], restrictedDomains: [] }]],
+        ]);
         const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
@@ -479,10 +451,9 @@ describe('extendLocalScriptRulesJson', () => {
 
     it('should handle empty custom rules array', async () => {
         // Create initial file
-        const initialRules = new Map([[
-            'console.log("existing");',
-            [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
-        ]]);
+        const initialRules = new Map([
+            ['console.log("existing");', [{ permittedDomains: ['example.com'], restrictedDomains: [] }]],
+        ]);
         const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
@@ -497,19 +468,14 @@ describe('extendLocalScriptRulesJson', () => {
 
     it('should handle custom rules with no JS injection rules', async () => {
         // Create initial file
-        const initialRules = new Map([[
-            'console.log("existing");',
-            [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
-        ]]);
+        const initialRules = new Map([
+            ['console.log("existing");', [{ permittedDomains: ['example.com'], restrictedDomains: [] }]],
+        ]);
         const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with non-JS rules
-        const customRules = [
-            'example.com##.ad',
-            '||example.com^',
-            'example.com##+js(scriptlet, arg)',
-        ];
+        const customRules = ['example.com##.ad', '||example.com^', 'example.com##+js(scriptlet, arg)'];
         await loader.extendLocalScriptRulesJson(testFilePath, customRules);
 
         // Verify the file is unchanged
@@ -519,10 +485,9 @@ describe('extendLocalScriptRulesJson', () => {
 
     it('should handle multiple rules with different domains', async () => {
         // Create initial file
-        const initialRules = new Map([[
-            'console.log("existing");',
-            [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
-        ]]);
+        const initialRules = new Map([
+            ['console.log("existing");', [{ permittedDomains: ['example.com'], restrictedDomains: [] }]],
+        ]);
         const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 

@@ -79,15 +79,15 @@ export class AssetsLoader {
 
         const extraOptions = options?.onlyDeclarativeRulesets
             ? {
-                    filter: (srcPath: string) => {
-                        // Allow the source root itself (required for fs-extra copy to work)
-                        if (srcPath === src) {
-                            return true;
-                        }
-                        // Allow only the declarative directory and its contents
-                        return srcPath.startsWith(path.join(src, DECLARATIVE_DIR_NAME));
-                    },
-                }
+                  filter: (srcPath: string) => {
+                      // Allow the source root itself (required for fs-extra copy to work)
+                      if (srcPath === src) {
+                          return true;
+                      }
+                      // Allow only the declarative directory and its contents
+                      return srcPath.startsWith(path.join(src, DECLARATIVE_DIR_NAME));
+                  },
+              }
             : {};
 
         await copy(src, to, extraOptions);
@@ -156,10 +156,7 @@ export class AssetsLoader {
      *
      * @returns Promise that resolves when the file is updated.
      */
-    public async extendLocalScriptRulesJs(
-        localScriptRulesPath: string,
-        customRules: string[],
-    ): Promise<void> {
+    public async extendLocalScriptRulesJs(localScriptRulesPath: string, customRules: string[]): Promise<void> {
         const filePath = path.resolve(process.cwd(), localScriptRulesPath);
 
         // Read existing content
@@ -184,10 +181,7 @@ export class AssetsLoader {
      *
      * @returns Promise that resolves when the file is updated.
      */
-    public async extendLocalScriptRulesJson(
-        localScriptRulesJsonPath: string,
-        customRules: string[],
-    ): Promise<void> {
+    public async extendLocalScriptRulesJson(localScriptRulesJsonPath: string, customRules: string[]): Promise<void> {
         const filePath = path.resolve(process.cwd(), localScriptRulesJsonPath);
 
         // Parse custom rules to extract JS rules with domains

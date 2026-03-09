@@ -68,10 +68,7 @@ export class ElementCollapser {
 
         const tagName = element.tagName.toLowerCase();
 
-        const expectedEventType = (tagName === 'iframe'
-            || tagName === 'frame'
-            || tagName === 'embed'
-        ) ? 'load' : 'error';
+        const expectedEventType = tagName === 'iframe' || tagName === 'frame' || tagName === 'embed' ? 'load' : 'error';
 
         if (eventType !== expectedEventType) {
             return;
@@ -156,12 +153,14 @@ export class ElementCollapser {
      */
     private static getElementUrl(element: RequestInitiatorElement): string | null {
         let elementUrl = element.src || element.data;
-        if (!elementUrl
-            || elementUrl.indexOf('http') !== 0
+        if (
+            !elementUrl ||
+            elementUrl.indexOf('http') !== 0 ||
             // Some sources could not be set yet, lazy loaded images or smth.
             // In some cases like on gog.com, collapsing these elements could break
             // the page script loading their sources
-            || elementUrl === element.baseURI) {
+            elementUrl === element.baseURI
+        ) {
             return null;
         }
 
@@ -184,6 +183,6 @@ export class ElementCollapser {
      */
     private static isElementCollapsed(element: HTMLElement): boolean {
         const computedStyle = window.getComputedStyle(element);
-        return (computedStyle && computedStyle.display === 'none');
+        return computedStyle && computedStyle.display === 'none';
     }
 }

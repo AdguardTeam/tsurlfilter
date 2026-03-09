@@ -18,9 +18,9 @@ stages:
 Build:
   key: TSURLFILTERDOCSMV3
   docker:
-    image: "${bamboo.dockerContainer}"
+    image: '${bamboo.dockerContainer}'
     volumes:
-       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      ${system.PNPM_DIR}: '${bamboo.cachePnpm}'
   tasks:
     - checkout:
         force-clean-build: true
@@ -50,7 +50,7 @@ Build:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh"
+          - './bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh'
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
@@ -60,7 +60,7 @@ Build:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/cleanup.sh"
+          - './bamboo-specs/scripts/cleanup.sh'
   requirements:
     - extension: 'true'
 
@@ -76,7 +76,7 @@ branches:
   delete: never
   link-to-jira: true
 
-labels: [ ]
+labels: []
 
 other:
   concurrent-build-plugin: system-default

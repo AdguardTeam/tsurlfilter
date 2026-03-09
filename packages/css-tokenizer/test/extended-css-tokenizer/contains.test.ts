@@ -7,11 +7,7 @@ import { testTokenization } from '../helpers/test-utils';
 import { createTests, type PseudoValues } from './helpers/test-creator';
 import { generateDelimStream } from './helpers/delim-generator';
 
-const PSEUDO_NAMES = [
-    ExtendedCssPseudo.Contains,
-    ExtendedCssPseudo.HasText,
-    ExtendedCssPseudo.AbpContains,
-];
+const PSEUDO_NAMES = [ExtendedCssPseudo.Contains, ExtendedCssPseudo.HasText, ExtendedCssPseudo.AbpContains];
 
 const PSEUDO_VALUES: PseudoValues = {
     ...generateDelimStream([
@@ -51,44 +47,24 @@ const PSEUDO_VALUES: PseudoValues = {
     ]),
 
     // 1-length string
-    [String.raw`'a'`]: [
-        [TokenType.String, 0, 3],
-    ],
-    [String.raw`"a"`]: [
-        [TokenType.String, 0, 3],
-    ],
+    [String.raw`'a'`]: [[TokenType.String, 0, 3]],
+    [String.raw`"a"`]: [[TokenType.String, 0, 3]],
 
     // 2-length string
-    [String.raw`'ab'`]: [
-        [TokenType.String, 0, 4],
-    ],
-    [String.raw`"ab"`]: [
-        [TokenType.String, 0, 4],
-    ],
+    [String.raw`'ab'`]: [[TokenType.String, 0, 4]],
+    [String.raw`"ab"`]: [[TokenType.String, 0, 4]],
 
     // ) in string
-    [String.raw`'a)'`]: [
-        [TokenType.String, 0, 4],
-    ],
-    [String.raw`"a)"`]: [
-        [TokenType.String, 0, 4],
-    ],
+    [String.raw`'a)'`]: [[TokenType.String, 0, 4]],
+    [String.raw`"a)"`]: [[TokenType.String, 0, 4]],
 
     // ( in string
-    [String.raw`'a('`]: [
-        [TokenType.String, 0, 4],
-    ],
-    [String.raw`"a("`]: [
-        [TokenType.String, 0, 4],
-    ],
+    [String.raw`'a('`]: [[TokenType.String, 0, 4]],
+    [String.raw`"a("`]: [[TokenType.String, 0, 4]],
 
     // ( and ) in string
-    [String.raw`'a()b'`]: [
-        [TokenType.String, 0, 6],
-    ],
-    [String.raw`"a()b"`]: [
-        [TokenType.String, 0, 6],
-    ],
+    [String.raw`'a()b'`]: [[TokenType.String, 0, 6]],
+    [String.raw`"a()b"`]: [[TokenType.String, 0, 6]],
 
     // string + something
     [String.raw`'a' 12px`]: [
@@ -123,7 +99,7 @@ const PSEUDO_VALUES: PseudoValues = {
 };
 
 describe(`Extended CSS's :${PSEUDO_NAMES.join(', :')}`, () => {
-    test.each(
-        createTests(PSEUDO_NAMES, PSEUDO_VALUES),
-    )("should tokenize '$actual' as $as", (testData) => testTokenization(testData, tokenizeExtended));
+    test.each(createTests(PSEUDO_NAMES, PSEUDO_VALUES))("should tokenize '$actual' as $as", (testData) =>
+        testTokenization(testData, tokenizeExtended),
+    );
 });

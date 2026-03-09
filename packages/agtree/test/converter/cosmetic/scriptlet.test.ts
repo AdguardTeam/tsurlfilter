@@ -1,9 +1,4 @@
-import {
-    describe,
-    test,
-    expect,
-    it,
-} from 'vitest';
+import { describe, test, expect, it } from 'vitest';
 
 import { RuleParser } from '../../../src/parser/rule-parser';
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
@@ -15,50 +10,40 @@ describe('Scriptlet conversion', () => {
             // single scriptlet
             {
                 actual: '#$#abort-current-inline-script',
-                expected: [
-                    '#%#//scriptlet(\'abp-abort-current-inline-script\')',
-                ],
+                expected: ["#%#//scriptlet('abp-abort-current-inline-script')"],
                 shouldConvert: true,
             },
             // exception status should be kept
             {
                 actual: '#@$#abort-current-inline-script',
-                expected: [
-                    '#@%#//scriptlet(\'abp-abort-current-inline-script\')',
-                ],
+                expected: ["#@%#//scriptlet('abp-abort-current-inline-script')"],
                 shouldConvert: true,
             },
             // don't add prefix again if it's already there
             {
                 actual: '#$#abp-abort-current-inline-script',
-                expected: [
-                    '#%#//scriptlet(\'abp-abort-current-inline-script\')',
-                ],
+                expected: ["#%#//scriptlet('abp-abort-current-inline-script')"],
                 shouldConvert: true,
             },
             // single scriptlet with parameters
             {
                 actual: '#$#override-property-read testProp false',
-                expected: [
-                    '#%#//scriptlet(\'abp-override-property-read\', \'testProp\', \'false\')',
-                ],
+                expected: ["#%#//scriptlet('abp-override-property-read', 'testProp', 'false')"],
                 shouldConvert: true,
             },
             // redundant semicolon at the end of the rule
             {
                 actual: '#$#override-property-read testProp false;',
-                expected: [
-                    '#%#//scriptlet(\'abp-override-property-read\', \'testProp\', \'false\')',
-                ],
+                expected: ["#%#//scriptlet('abp-override-property-read', 'testProp', 'false')"],
                 shouldConvert: true,
             },
             // multiple scriptlets (ABP supports this, but ADG and uBO doesn't)
             {
                 actual: '#$#log; abort-current-inline-script; override-property-read testProp false',
                 expected: [
-                    '#%#//scriptlet(\'abp-log\')',
-                    '#%#//scriptlet(\'abp-abort-current-inline-script\')',
-                    '#%#//scriptlet(\'abp-override-property-read\', \'testProp\', \'false\')',
+                    "#%#//scriptlet('abp-log')",
+                    "#%#//scriptlet('abp-abort-current-inline-script')",
+                    "#%#//scriptlet('abp-override-property-read', 'testProp', 'false')",
                 ],
                 shouldConvert: true,
             },
@@ -66,11 +51,9 @@ describe('Scriptlet conversion', () => {
             // https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01EXQ3RP7NBM57GBZE52QQ8T2N
             {
                 actual: String.raw`example.net,example.com#$#log Hello\ no\ quotes`,
-                expected: [
-                    String.raw`example.net,example.com#%#//scriptlet('abp-log', 'Hello no quotes')`,
-                ],
+                expected: [String.raw`example.net,example.com#%#//scriptlet('abp-log', 'Hello no quotes')`],
             },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+        ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
         });
     });
@@ -80,47 +63,35 @@ describe('Scriptlet conversion', () => {
             // empty scriptlet
             {
                 actual: 'example.org#@#+js()',
-                expected: [
-                    'example.org#@%#//scriptlet()',
-                ],
+                expected: ['example.org#@%#//scriptlet()'],
                 shouldConvert: true,
             },
             // regular scriptlet
             {
                 actual: 'example.org##+js(aopr, foo)',
-                expected: [
-                    'example.org#%#//scriptlet(\'ubo-aopr\', \'foo\')',
-                ],
+                expected: ["example.org#%#//scriptlet('ubo-aopr', 'foo')"],
                 shouldConvert: true,
             },
             // exception status should be kept
             {
                 actual: 'example.org#@#+js(aopr, foo)',
-                expected: [
-                    'example.org#@%#//scriptlet(\'ubo-aopr\', \'foo\')',
-                ],
+                expected: ["example.org#@%#//scriptlet('ubo-aopr', 'foo')"],
                 shouldConvert: true,
             },
             // don't add prefix again if it's already there
             {
                 actual: 'example.org##+js(ubo-aopr, foo)',
-                expected: [
-                    'example.org#%#//scriptlet(\'ubo-aopr\', \'foo\')',
-                ],
+                expected: ["example.org#%#//scriptlet('ubo-aopr', 'foo')"],
                 shouldConvert: true,
             },
             {
                 actual: 'example.org##+js(abort-current-inline-script, $, popup)',
-                expected: [
-                    'example.org#%#//scriptlet(\'ubo-abort-current-inline-script\', \'$\', \'popup\')',
-                ],
+                expected: ["example.org#%#//scriptlet('ubo-abort-current-inline-script', '$', 'popup')"],
                 shouldConvert: true,
             },
             {
                 actual: 'example.com##+js(remove-class, blur, , stay)',
-                expected: [
-                    "example.com#%#//scriptlet('ubo-remove-class', 'blur', '', 'stay')",
-                ],
+                expected: ["example.com#%#//scriptlet('ubo-remove-class', 'blur', '', 'stay')"],
                 shouldConvert: true,
             },
             {
@@ -133,31 +104,23 @@ describe('Scriptlet conversion', () => {
             {
                 // specified selectors and applying for remove-attr/class
                 actual: 'memo-book.pl##+js(rc, .locked, body\\, html, stay)',
-                expected: [
-                    "memo-book.pl#%#//scriptlet('ubo-rc', '.locked', 'body, html', 'stay')",
-                ],
+                expected: ["memo-book.pl#%#//scriptlet('ubo-rc', '.locked', 'body, html', 'stay')"],
             },
             {
                 // specified selectors and applying for remove-attr/class - one backslash
                 // eslint-disable-next-line no-useless-escape
                 actual: 'memo-book.pl##+js(rc, .locked, body\, html, stay)',
-                expected: [
-                    "memo-book.pl#%#//scriptlet('ubo-rc', '.locked', 'body, html', 'stay')",
-                ],
+                expected: ["memo-book.pl#%#//scriptlet('ubo-rc', '.locked', 'body, html', 'stay')"],
             },
             {
                 actual: 'bokepgemoy.com##+js(nobab)',
-                expected: [
-                    "bokepgemoy.com#%#//scriptlet('ubo-nobab')",
-                ],
+                expected: ["bokepgemoy.com#%#//scriptlet('ubo-nobab')"],
             },
             {
                 actual: "example.org##+js(prevent-canvas, '2d')",
-                expected: [
-                    "example.org#%#//scriptlet('ubo-prevent-canvas', '2d')",
-                ],
+                expected: ["example.org#%#//scriptlet('ubo-prevent-canvas', '2d')"],
             },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+        ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
         });
     });
@@ -168,42 +131,32 @@ describe('Scriptlet conversion', () => {
             // empty exception scriptlet
             {
                 actual: 'example.org#@%#//scriptlet()',
-                expected: [
-                    'example.org#@%#//scriptlet()',
-                ],
+                expected: ['example.org#@%#//scriptlet()'],
                 shouldConvert: false,
             },
             // regular scriptlet
             {
-                actual: 'example.org#%#//scriptlet(\'abort-on-property-read\', \'foo\')',
-                expected: [
-                    'example.org#%#//scriptlet(\'abort-on-property-read\', \'foo\')',
-                ],
+                actual: "example.org#%#//scriptlet('abort-on-property-read', 'foo')",
+                expected: ["example.org#%#//scriptlet('abort-on-property-read', 'foo')"],
                 shouldConvert: false,
             },
             // leave quotes as is
             {
                 actual: 'example.org#%#//scriptlet("abort-on-property-read", "foo")',
-                expected: [
-                    'example.org#%#//scriptlet("abort-on-property-read", "foo")',
-                ],
+                expected: ['example.org#%#//scriptlet("abort-on-property-read", "foo")'],
                 shouldConvert: false,
             },
             {
-                actual: 'example.org#%#//scriptlet(\'abort-current-inline-script\', \'$\', \'popup\')',
-                expected: [
-                    'example.org#%#//scriptlet(\'abort-current-inline-script\', \'$\', \'popup\')',
-                ],
+                actual: "example.org#%#//scriptlet('abort-current-inline-script', '$', 'popup')",
+                expected: ["example.org#%#//scriptlet('abort-current-inline-script', '$', 'popup')"],
                 shouldConvert: false,
             },
             {
                 actual: "example.org#%#//scriptlet('prevent-canvas', '2d')",
-                expected: [
-                    "example.org#%#//scriptlet('prevent-canvas', '2d')",
-                ],
+                expected: ["example.org#%#//scriptlet('prevent-canvas', '2d')"],
                 shouldConvert: false,
             },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+        ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
         });
     });
@@ -219,28 +172,22 @@ describe('Scriptlet conversion', () => {
             },
             {
                 actual: "example.org#%#//scriptlet('prevent-setTimeout', '[native code]', '8000')",
-                expected: [
-                    'example.org##+js(no-setTimeout-if, [native code], 8000)',
-                ],
+                expected: ['example.org##+js(no-setTimeout-if, [native code], 8000)'],
                 shouldConvert: true,
             },
             {
-                actual: 'example.org#%#//scriptlet(\'set-constant\', \'config.ads.desktopAd\', \'\')',
-                expected: [
-                    'example.org##+js(set-constant, config.ads.desktopAd, \'\')',
-                ],
+                actual: "example.org#%#//scriptlet('set-constant', 'config.ads.desktopAd', '')",
+                expected: ["example.org##+js(set-constant, config.ads.desktopAd, '')"],
                 shouldConvert: true,
             },
             {
                 // eslint-disable-next-line max-len
-                actual: 'example.org#%#//scriptlet(\'remove-class\', \'promo\', \'a.class, div#id, div > #ad > .test\')',
-                expected: [
-                    'example.org##+js(remove-class, promo, a.class\\, div#id\\, div > #ad > .test)',
-                ],
+                actual: "example.org#%#//scriptlet('remove-class', 'promo', 'a.class, div#id, div > #ad > .test')",
+                expected: ['example.org##+js(remove-class, promo, a.class\\, div#id\\, div > #ad > .test)'],
                 shouldConvert: true,
             },
             {
-                actual: 'example.org#@%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')',
+                actual: "example.org#@%#//scriptlet('prevent-setTimeout', '[native code]', '8000')",
                 expected: ['example.org#@#+js(no-setTimeout-if, [native code], 8000)'],
             },
             {
@@ -252,11 +199,11 @@ describe('Scriptlet conversion', () => {
                 expected: ['example.com##+js(abort-current-script, console.log, Hello)'],
             },
             {
-                actual: 'example.com#%#//scriptlet(\'prevent-fetch\', \'*\')',
+                actual: "example.com#%#//scriptlet('prevent-fetch', '*')",
                 expected: ['example.com##+js(prevent-fetch, /^/)'],
             },
             {
-                actual: 'example.com#%#//scriptlet(\'close-window\')',
+                actual: "example.com#%#//scriptlet('close-window')",
                 expected: ['example.com##+js(close-window)'],
             },
             {
@@ -311,50 +258,36 @@ describe('Scriptlet conversion', () => {
             // Should not convert already uBO scriptlet
             {
                 actual: 'example.org##+js(google-ima)',
-                expected: [
-                    'example.org##+js(google-ima)',
-                ],
+                expected: ['example.org##+js(google-ima)'],
                 shouldConvert: false,
             },
             {
                 actual: 'example.org##+js(googletagservices_gpt)',
-                expected: [
-                    'example.org##+js(googletagservices_gpt)',
-                ],
+                expected: ['example.org##+js(googletagservices_gpt)'],
                 shouldConvert: false,
             },
             {
                 actual: String.raw`example.net,example.com#$#set-cookie-reload Hello\ no\ quotes true`,
-                expected: [
-                    String.raw`example.net,example.com##+js(set-cookie-reload, Hello no quotes, true)`,
-                ],
+                expected: [String.raw`example.net,example.com##+js(set-cookie-reload, Hello no quotes, true)`],
             },
             {
                 actual: "[$domain=/^example\\d+\\.xyz/]#%#//scriptlet('set-constant', 'foo', 'bar')",
-                expected: [
-                    '/^example\\d+\\.xyz/##+js(set-constant, foo, bar)',
-                ],
+                expected: ['/^example\\d+\\.xyz/##+js(set-constant, foo, bar)'],
             },
             {
                 // eslint-disable-next-line max-len
                 actual: "[$domain=example.com|example.org]#%#//scriptlet('set-constant', 'form')",
-                expected: [
-                    'example.com,example.org##+js(set-constant, form)',
-                ],
+                expected: ['example.com,example.org##+js(set-constant, form)'],
             },
             {
                 // eslint-disable-next-line max-len
                 actual: String.raw`[$domain=/^example\.org$/|somesite.org|somesite2.*]#%#//scriptlet('set-constant', 'form')`,
-                expected: [
-                    String.raw`/^example\.org$/,somesite.org,somesite2.*##+js(set-constant, form)`,
-                ],
+                expected: [String.raw`/^example\.org$/,somesite.org,somesite2.*##+js(set-constant, form)`],
             },
             // https://github.com/AdguardTeam/FiltersCompiler/issues/260
             {
                 actual: "aceee.org#%#//scriptlet('prevent-canvas', '2d')",
-                expected: [
-                    'aceee.org##+js(prevent-canvas, 2d)',
-                ],
+                expected: ['aceee.org##+js(prevent-canvas, 2d)'],
                 shouldConvert: true,
             },
         ])("should convert '$actual' to '$expected'", (testData) => {
@@ -418,18 +351,16 @@ describe('Scriptlet conversion', () => {
             },
         ])("should throw error on '$actual'", ({ actual, expected }) => {
             // eslint-disable-next-line max-len
-            expect(() => ScriptletRuleConverter.convertToUbo(RuleParser.parse(actual) as ScriptletInjectionRule)).toThrowError(
-                expected,
-            );
+            expect(() =>
+                ScriptletRuleConverter.convertToUbo(RuleParser.parse(actual) as ScriptletInjectionRule),
+            ).toThrowError(expected);
         });
     });
 
     it('convertToAbp', () => {
         // TODO: We should implement this later
-        expect(() => ScriptletRuleConverter.convertToAbp(
-            RuleParser.parse('#%#//scriptlet(\'test\')') as ScriptletInjectionRule,
-        )).toThrowError(
-            'Not implemented',
-        );
+        expect(() =>
+            ScriptletRuleConverter.convertToAbp(RuleParser.parse("#%#//scriptlet('test')") as ScriptletInjectionRule),
+        ).toThrowError('Not implemented');
     });
 });

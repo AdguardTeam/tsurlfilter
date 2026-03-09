@@ -97,10 +97,7 @@ class DeclarativeFilteringLog {
      *
      * @throws Error when couldn't find ruleset or rule in ruleset.
      */
-    private getRuleInfoForSessionRule = async (
-        rulesetId: string,
-        ruleId: number,
-    ): Promise<DeclarativeRuleInfo> => {
+    private getRuleInfoForSessionRule = async (rulesetId: string, ruleId: number): Promise<DeclarativeRuleInfo> => {
         if (this.mutex.isLocked()) {
             await this.mutex.waitUntilUnlocked();
         }
@@ -151,10 +148,7 @@ class DeclarativeFilteringLog {
      *
      * @throws Error when couldn't find ruleset or rule in ruleset.
      */
-    private getRuleInfo = async (
-        rulesetId: string,
-        ruleId: number,
-    ): Promise<DeclarativeRuleInfo> => {
+    private getRuleInfo = async (rulesetId: string, ruleId: number): Promise<DeclarativeRuleInfo> => {
         if (this.mutex.isLocked()) {
             await this.mutex.waitUntilUnlocked();
         }
@@ -201,7 +195,10 @@ class DeclarativeFilteringLog {
         const context = requestContextStorage.get(requestId);
 
         if (!context) {
-            logger.error('[tsweb.DeclarativeFilteringLog.logMatchedRule]: cannot find request context for request id ', requestId);
+            logger.error(
+                '[tsweb.DeclarativeFilteringLog.logMatchedRule]: cannot find request context for request id ',
+                requestId,
+            );
             return;
         }
 
@@ -213,16 +210,19 @@ class DeclarativeFilteringLog {
          * But we still need to log all other session rules, since we use them
          * for all not safe rules from static rulesets.
          */
-        if (rulesetId === chrome.declarativeNetRequest.SESSION_RULESET_ID
-            && ruleId <= SessionRulesApi.MIN_DECLARATIVE_RULE_ID) {
+        if (
+            rulesetId === chrome.declarativeNetRequest.SESSION_RULESET_ID &&
+            ruleId <= SessionRulesApi.MIN_DECLARATIVE_RULE_ID
+        ) {
             return;
         }
 
         let declarativeRuleInfo: DeclarativeRuleInfo;
 
-        const getRuleInfoFn = rulesetId === chrome.declarativeNetRequest.SESSION_RULESET_ID
-            ? this.getRuleInfoForSessionRule
-            : this.getRuleInfo;
+        const getRuleInfoFn =
+            rulesetId === chrome.declarativeNetRequest.SESSION_RULESET_ID
+                ? this.getRuleInfoForSessionRule
+                : this.getRuleInfo;
 
         try {
             declarativeRuleInfo = await getRuleInfoFn(rulesetId, ruleId);

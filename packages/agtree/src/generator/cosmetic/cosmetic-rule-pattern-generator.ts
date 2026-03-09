@@ -1,10 +1,5 @@
 import type { AnyCosmeticRule } from '../../nodes';
-import {
-    CLOSE_SQUARE_BRACKET,
-    DOLLAR_SIGN,
-    EMPTY,
-    OPEN_SQUARE_BRACKET,
-} from '../../utils/constants';
+import { CLOSE_SQUARE_BRACKET, DOLLAR_SIGN, EMPTY, OPEN_SQUARE_BRACKET } from '../../utils/constants';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { BaseGenerator } from '../base-generator';
 import { ModifierListGenerator } from '../misc/modifier-list-generator';

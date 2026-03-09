@@ -56,13 +56,14 @@ export class LocalScriptRulesJson {
     /**
      * Default comment for the JSON file explaining the AMO compliance approach.
      */
-    private static readonly DEFAULT_COMMENT = 'By the rules of AMO, we cannot use remote scripts (and our JS rules can be counted as such).\n'
-        + 'Because of that, we use the following approach (that was accepted by AMO reviewers):\n\n'
-        + '1. We pre-build JS rules from AdGuard filters into the add-on (see the file called "local_script_rules.json").\n'
-        + '2. At runtime we check every JS rule if it is included into "local_script_rules.json".\n'
-        + '   If it is included we allow this rule to work since it is pre-built. Other rules are discarded.\n'
-        + '3. We also allow "User rules" and "Custom filters" to work since those rules are added manually by the user.\n'
-        + '   This way filters maintainers can test new rules before including them in the filters.';
+    private static readonly DEFAULT_COMMENT =
+        'By the rules of AMO, we cannot use remote scripts (and our JS rules can be counted as such).\n' +
+        'Because of that, we use the following approach (that was accepted by AMO reviewers):\n\n' +
+        '1. We pre-build JS rules from AdGuard filters into the add-on (see the file called "local_script_rules.json").\n' +
+        '2. At runtime we check every JS rule if it is included into "local_script_rules.json".\n' +
+        '   If it is included we allow this rule to work since it is pre-built. Other rules are discarded.\n' +
+        '3. We also allow "User rules" and "Custom filters" to work since those rules are added manually by the user.\n' +
+        '   This way filters maintainers can test new rules before including them in the filters.';
     /* eslint-enable max-len */
 
     /**

@@ -33,7 +33,10 @@ export class CssCapabilities {
                 result = CSS.supports(feature);
             } catch (e) {
                 // If CSS.supports() throws an error, the feature is not supported
-                logger.debug(`[tsweb.CssCapabilities.isCssFeatureSupported]: CSS.supports() failed for feature: ${feature} due to`, e);
+                logger.debug(
+                    `[tsweb.CssCapabilities.isCssFeatureSupported]: CSS.supports() failed for feature: ${feature} due to`,
+                    e,
+                );
                 result = false;
             }
         }

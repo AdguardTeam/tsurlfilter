@@ -7,21 +7,9 @@ module.exports = {
         tsconfigRootDir: path.join(__dirname),
         project: 'tsconfig.json',
     },
-    plugins: [
-        'import',
-        '@typescript-eslint',
-    ],
-    extends: [
-        'airbnb-base',
-        'airbnb-typescript/base',
-        'plugin:jsdoc/recommended',
-        '@adguard/eslint-config-internal',
-    ],
-    ignorePatterns: [
-        'dist',
-        'coverage',
-        'tests/smoke',
-    ],
+    plugins: ['import', '@typescript-eslint'],
+    extends: ['airbnb-base', 'airbnb-typescript/base', 'plugin:jsdoc/recommended', '@adguard/eslint-config-internal'],
+    ignorePatterns: ['dist', 'coverage', 'tests/smoke'],
     rules: {
         indent: 'off',
         'arrow-body-style': 'off',
@@ -37,10 +25,14 @@ module.exports = {
         'import/no-cycle': 'off',
         'import/export': 'off',
 
-        '@typescript-eslint/indent': ['error', 4, {
-            SwitchCase: 1,
-            ignoredNodes: ['TSTypeParameterInstantiation'],
-        }],
+        '@typescript-eslint/indent': [
+            'error',
+            4,
+            {
+                SwitchCase: 1,
+                ignoredNodes: ['TSTypeParameterInstantiation'],
+            },
+        ],
         '@typescript-eslint/no-non-null-assertion': 'off',
         '@typescript-eslint/interface-name-prefix': 'off',
         '@typescript-eslint/explicit-function-return-type': 'error',
@@ -55,34 +47,25 @@ module.exports = {
         'jsdoc/require-jsdoc': [
             'error',
             {
-                contexts: [
-                    'ClassDeclaration',
-                    'ClassProperty',
-                    'FunctionDeclaration',
-                    'MethodDefinition',
-                ],
+                contexts: ['ClassDeclaration', 'ClassProperty', 'FunctionDeclaration', 'MethodDefinition'],
             },
         ],
         'jsdoc/require-description': [
             'error',
             {
-                contexts: [
-                    'ClassDeclaration',
-                    'ClassProperty',
-                    'FunctionDeclaration',
-                    'MethodDefinition',
-                ],
+                contexts: ['ClassDeclaration', 'ClassProperty', 'FunctionDeclaration', 'MethodDefinition'],
             },
         ],
         'jsdoc/require-description-complete-sentence': ['error'],
         'jsdoc/require-returns': ['error'],
         'jsdoc/require-hyphen-before-param-description': ['error', 'never'],
-        'jsdoc/multiline-blocks': ['error', {
-            noSingleLineBlocks: true,
-            singleLineTags: [
-                'inheritdoc',
-            ],
-        }],
+        'jsdoc/multiline-blocks': [
+            'error',
+            {
+                noSingleLineBlocks: true,
+                singleLineTags: ['inheritdoc'],
+            },
+        ],
         'jsdoc/tag-lines': [
             'error',
             'any',
@@ -90,18 +73,21 @@ module.exports = {
                 startLines: 1,
             },
         ],
-        'jsdoc/sort-tags': ['error', {
-            linesBetween: 1,
-            tagSequence: [
-                { tags: ['file'] },
-                { tags: ['template'] },
-                { tags: ['see'] },
-                { tags: ['param'] },
-                { tags: ['returns'] },
-                { tags: ['throws'] },
-                { tags: ['example'] },
-            ],
-        }],
+        'jsdoc/sort-tags': [
+            'error',
+            {
+                linesBetween: 1,
+                tagSequence: [
+                    { tags: ['file'] },
+                    { tags: ['template'] },
+                    { tags: ['see'] },
+                    { tags: ['param'] },
+                    { tags: ['returns'] },
+                    { tags: ['throws'] },
+                    { tags: ['example'] },
+                ],
+            },
+        ],
 
         '@typescript-eslint/consistent-type-imports': [
             'error',

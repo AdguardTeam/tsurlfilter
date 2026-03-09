@@ -44,13 +44,7 @@ export class ParamsService {
             return null;
         }
 
-        const {
-            matchingResult,
-            method,
-            requestUrl,
-            contentType,
-            timestamp,
-        } = context;
+        const { matchingResult, method, requestUrl, contentType, timestamp } = context;
 
         if (!matchingResult || !ParamsService.isMethodSupported(method)) {
             return null;

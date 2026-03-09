@@ -30,7 +30,7 @@ describe('Quote utils', () => {
                 expected: '\\a\\a',
                 char: 'a',
             },
-        ])('should escape \'$char\' in \'$actual\' as \'$expected\'', ({ actual, expected, char }) => {
+        ])("should escape '$char' in '$actual' as '$expected'", ({ actual, expected, char }) => {
             expect(QuoteUtils.escapeUnescapedOccurrences(actual, char)).toBe(expected);
         });
     });
@@ -67,7 +67,7 @@ describe('Quote utils', () => {
                 expected: 'aaa',
                 char: 'a',
             },
-        ])('should unescape \'$char\' in \'$actual\' as \'$expected\'', ({ actual, expected, char }) => {
+        ])("should unescape '$char' in '$actual' as '$expected'", ({ actual, expected, char }) => {
             expect(QuoteUtils.unescapeSingleEscapedOccurrences(actual, char)).toBe(expected);
         });
     });
@@ -83,11 +83,11 @@ describe('Quote utils', () => {
                 expected: QuoteType.None,
             },
             {
-                actual: 'a\'',
+                actual: "a'",
                 expected: QuoteType.None,
             },
             {
-                actual: '\'a',
+                actual: "'a",
                 expected: QuoteType.None,
             },
             {
@@ -108,7 +108,7 @@ describe('Quote utils', () => {
             },
 
             {
-                actual: '\'a\'',
+                actual: "'a'",
                 expected: QuoteType.Single,
             },
             {
@@ -116,7 +116,7 @@ describe('Quote utils', () => {
                 expected: QuoteType.Double,
             },
             {
-                actual: '\'a"b\'',
+                actual: "'a\"b'",
                 expected: QuoteType.Single,
             },
             {
@@ -124,7 +124,7 @@ describe('Quote utils', () => {
                 expected: QuoteType.Double,
             },
             {
-                actual: '\'\\\'\'',
+                actual: "'\\''",
                 expected: QuoteType.Single,
             },
             {
@@ -146,11 +146,11 @@ describe('Quote utils', () => {
                 expected: QuoteType.None,
             },
             {
-                actual: '`a\'',
+                actual: "`a'",
                 expected: QuoteType.None,
             },
             {
-                actual: '\'a`',
+                actual: "'a`",
                 expected: QuoteType.None,
             },
             {
@@ -162,11 +162,11 @@ describe('Quote utils', () => {
                 expected: QuoteType.None,
             },
             {
-                actual: '`a\'',
+                actual: "`a'",
                 expected: QuoteType.None,
             },
             {
-                actual: '\'a`',
+                actual: "'a`",
                 expected: QuoteType.None,
             },
             {
@@ -174,14 +174,14 @@ describe('Quote utils', () => {
                 expected: QuoteType.Backtick,
             },
             {
-                actual: '`\\`\'`',
+                actual: "`\\`'`",
                 expected: QuoteType.Backtick,
             },
             {
                 actual: '`"\\`"`',
                 expected: QuoteType.Backtick,
             },
-        ])('should detect \'$actual\' quotes as \'$expected\'', ({ actual, expected }) => {
+        ])("should detect '$actual' quotes as '$expected'", ({ actual, expected }) => {
             expect(QuoteUtils.getStringQuoteType(actual)).toBe(expected);
         });
     });
@@ -211,7 +211,7 @@ describe('Quote utils', () => {
                 quote: QuoteType.None,
             },
             {
-                actual: '\'a\'',
+                actual: "'a'",
                 expected: 'a',
                 quote: QuoteType.None,
             },
@@ -223,17 +223,17 @@ describe('Quote utils', () => {
 
             {
                 actual: '',
-                expected: '\'\'',
+                expected: "''",
                 quote: QuoteType.Single,
             },
             {
                 actual: ' ',
-                expected: '\' \'',
+                expected: "' '",
                 quote: QuoteType.Single,
             },
             {
                 actual: 'a',
-                expected: '\'a\'',
+                expected: "'a'",
                 quote: QuoteType.Single,
             },
 
@@ -271,18 +271,18 @@ describe('Quote utils', () => {
 
             // Leave unchanged if already quoted as expected
             {
-                actual: '\'\'',
-                expected: '\'\'',
+                actual: "''",
+                expected: "''",
                 quote: QuoteType.Single,
             },
             {
-                actual: '\' \'',
-                expected: '\' \'',
+                actual: "' '",
+                expected: "' '",
                 quote: QuoteType.Single,
             },
             {
-                actual: '\'a\'',
-                expected: '\'a\'',
+                actual: "'a'",
+                expected: "'a'",
                 quote: QuoteType.Single,
             },
 
@@ -325,12 +325,12 @@ describe('Quote utils', () => {
 
             // Change quotes if needed
             {
-                actual: '\'\'',
+                actual: "''",
                 expected: '""',
                 quote: QuoteType.Double,
             },
             {
-                actual: '\' \'',
+                actual: "' '",
                 expected: '" "',
                 quote: QuoteType.Double,
             },
@@ -340,39 +340,39 @@ describe('Quote utils', () => {
                 quote: QuoteType.Double,
             },
             {
-                actual: '\'a\'',
+                actual: "'a'",
                 expected: '"a"',
                 quote: QuoteType.Double,
             },
 
             {
                 actual: '""',
-                expected: '\'\'',
+                expected: "''",
                 quote: QuoteType.Single,
             },
             {
                 actual: '" "',
-                expected: '\' \'',
+                expected: "' '",
                 quote: QuoteType.Single,
             },
             {
                 actual: '"a"',
-                expected: '\'a\'',
+                expected: "'a'",
                 quote: QuoteType.Single,
             },
             {
                 actual: '`a`',
-                expected: '\'a\'',
+                expected: "'a'",
                 quote: QuoteType.Single,
             },
 
             {
-                actual: '\'\'',
+                actual: "''",
                 expected: '``',
                 quote: QuoteType.Backtick,
             },
             {
-                actual: '\' \'',
+                actual: "' '",
                 expected: '` `',
                 quote: QuoteType.Backtick,
             },
@@ -382,7 +382,7 @@ describe('Quote utils', () => {
                 quote: QuoteType.Backtick,
             },
             {
-                actual: '\'a\'',
+                actual: "'a'",
                 expected: '`a`',
                 quote: QuoteType.Backtick,
             },
@@ -390,20 +390,20 @@ describe('Quote utils', () => {
             // Escape quotes if needed
             {
                 actual: '"a\'b"',
-                expected: '\'a\\\'b\'',
+                expected: "'a\\'b'",
                 quote: QuoteType.Single,
             },
             {
-                actual: '\'a"b\'',
+                actual: "'a\"b'",
                 expected: '"a\\"b"',
                 quote: QuoteType.Double,
             },
             {
                 actual: '"aa`bb\'cc"',
-                expected: '`aa\\`bb\'cc`',
+                expected: "`aa\\`bb'cc`",
                 quote: QuoteType.Backtick,
             },
-        ])('should apply \'$quote\' quotes to \'$actual\' as \'$expected\'', ({ actual, expected, quote }) => {
+        ])("should apply '$quote' quotes to '$actual' as '$expected'", ({ actual, expected, quote }) => {
             expect(QuoteUtils.setStringQuoteType(actual, quote)).toBe(expected);
         });
     });
@@ -462,11 +462,12 @@ describe('Quote utils', () => {
     ];
 
     describe('removeQuotes', () => {
-        test.each(
-            commonRemoveQuotesCases,
-        )('removeQuotes should return $expected for $actual', ({ actual, expected }) => {
-            expect(QuoteUtils.removeQuotes(actual)).toBe(expected);
-        });
+        test.each(commonRemoveQuotesCases)(
+            'removeQuotes should return $expected for $actual',
+            ({ actual, expected }) => {
+                expect(QuoteUtils.removeQuotes(actual)).toBe(expected);
+            },
+        );
     });
 
     describe('removeQuotesAndUnescape', () => {
@@ -646,8 +647,8 @@ describe('Quote utils', () => {
 
             // should not unescape - inside of attribute but with single quotes - in middle
             {
-                actual: '[attr=\'test\\"test\']',
-                expected: '[attr=\'test\\"test\']',
+                actual: "[attr='test\\\"test']",
+                expected: "[attr='test\\\"test']",
             },
 
             // should not unescape - edge case - attribute pattern inside of the value but with single quotes
@@ -658,14 +659,14 @@ describe('Quote utils', () => {
 
             // should not unescape - inside of attribute but with single quotes - at beginning
             {
-                actual: '[attr=\'\\"test\']',
-                expected: '[attr=\'\\"test\']',
+                actual: "[attr='\\\"test']",
+                expected: "[attr='\\\"test']",
             },
 
             // should not escape - inside of attribute but with single quotes - at end
             {
-                actual: '[attr=\'test\\"\']',
-                expected: '[attr=\'test\\"\']',
+                actual: "[attr='test\\\"']",
+                expected: "[attr='test\\\"']",
             },
 
             // should not unescape - outside of attribute - in middle

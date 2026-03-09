@@ -29,17 +29,17 @@ pnpm build:precompile-rules
 ### Demo example
 
 1. Extension will be automatically turned on filtering after installed.
-To check work of filters - go to <https://canyoublockit.com/testing/>. Site will
-be blocked.
+   To check work of filters - go to <https://canyoublockit.com/testing/>. Site will
+   be blocked.
 
 2. Filters. You can toggle any of filters. For example, you can turn off.
-"Filter 2", go to <https://canyoublockit.com/testing/> - site will open.
+   "Filter 2", go to <https://canyoublockit.com/testing/> - site will open.
 
 3. User rules. You can apply any custom user rules, for example rule
-`||example.org$document`. Then, click "Apply" and go to <https://example.org>,
-the site will be blocked.
+   `||example.org$document`. Then, click "Apply" and go to <https://example.org>,
+   the site will be blocked.
 
 4. Cosmetic rules at now applies with huge (about 2 seconds) latency.
 
 5. To see what declarative network rules have been applied to the page - open
-console of service worker from extension page.
+   console of service worker from extension page.

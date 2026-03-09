@@ -27,12 +27,8 @@ import { EMPTY, EQUALS } from '../../utils/constants';
 import { RegExpUtils } from '../../utils/regexp';
 import { AdgHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
 import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
-import {
-    AdgHtmlFilteringBodyGenerator,
-} from '../../generator/cosmetic/html-filtering-body/adg-html-filtering-body-generator';
-import {
-    UboHtmlFilteringBodyGenerator,
-} from '../../generator/cosmetic/html-filtering-body/ubo-html-filtering-body-generator';
+import { AdgHtmlFilteringBodyGenerator } from '../../generator/cosmetic/html-filtering-body/adg-html-filtering-body-generator';
+import { UboHtmlFilteringBodyGenerator } from '../../generator/cosmetic/html-filtering-body/ubo-html-filtering-body-generator';
 
 /**
  * From the AdGuard docs:
@@ -83,10 +79,7 @@ const AdgPseudoClasses = {
 /**
  * Set of {@link UboPseudoClasses}.
  */
-const SUPPORTED_UBO_PSEUDO_CLASSES = new Set<string>([
-    UboPseudoClasses.HasText,
-    UboPseudoClasses.MinTextLength,
-]);
+const SUPPORTED_UBO_PSEUDO_CLASSES = new Set<string>([UboPseudoClasses.HasText, UboPseudoClasses.MinTextLength]);
 
 /**
  * Set of {@link AdgAttributeSelectors}.
@@ -101,9 +94,7 @@ const SUPPORTED_ADG_ATTRIBUTE_SELECTORS = new Set<string>([
 /**
  * Set of {@link AdgPseudoClasses}.
  */
-const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
-    AdgPseudoClasses.Contains,
-]);
+const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([AdgPseudoClasses.Contains]);
 
 /**
  * Error messages used in HTML filtering rule conversion.
@@ -123,11 +114,14 @@ export const ERROR_MESSAGES = {
     SPECIAL_ATTRIBUTE_SELECTOR_FLAG_NOT_SUPPORTED: "Special attribute selector '%s' does not support flags",
     SPECIAL_ATTRIBUTE_SELECTOR_VALUE_REQUIRED: "Special attribute selector '%s' requires a value",
     SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT: "Value of special attribute selector '%s' must be an integer, got '%s'",
-    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE: "Value of special attribute selector '%s' must be a positive integer, got '%s'",
+    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE:
+        "Value of special attribute selector '%s' must be a positive integer, got '%s'",
     SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED: "Special attribute selector '%s' is not supported in conversion",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED: "Special pseudo-class selector '%s' requires an argument",
-    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT: "Argument of special pseudo-class selector '%s' must be an integer, got '%s'",
-    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE: "Argument of special pseudo-class selector '%s' must be a positive integer, got '%s'",
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT:
+        "Argument of special pseudo-class selector '%s' must be an integer, got '%s'",
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE:
+        "Argument of special pseudo-class selector '%s' must be a positive integer, got '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED: "Special pseudo-class selector '%s' is not supported in conversion",
 } as const;
 /* eslint-enable max-len */
@@ -159,18 +153,14 @@ type OnSpecialPseudoClassSelectorCallback = (name: string, argument: string) => 
  * - AdGuard HTML filtering body parser - {@link AdgHtmlFilteringBodyParser}
  * - uBlock HTML filtering body parser - {@link UboHtmlFilteringBodyParser}
  */
-type HtmlFilteringRuleParser =
-    | typeof AdgHtmlFilteringBodyParser
-    | typeof UboHtmlFilteringBodyParser;
+type HtmlFilteringRuleParser = typeof AdgHtmlFilteringBodyParser | typeof UboHtmlFilteringBodyParser;
 
 /**
  * Union type of HTML filtering rule body generators:
  * - AdGuard HTML filtering body generator - {@link AdgHtmlFilteringBodyGenerator}
  * - uBlock HTML filtering body generator - {@link UboHtmlFilteringBodyGenerator}
  */
-type HtmlFilteringRuleGenerator =
-    | typeof AdgHtmlFilteringBodyGenerator
-    | typeof UboHtmlFilteringBodyGenerator;
+type HtmlFilteringRuleGenerator = typeof AdgHtmlFilteringBodyGenerator | typeof UboHtmlFilteringBodyGenerator;
 
 /**
  * HTML filtering rule converter class
@@ -235,24 +225,26 @@ export class HtmlRuleConverter extends RuleConverterBase {
         }
 
         return createNodeConversionResult(
-            [{
-                category: RuleCategory.Cosmetic,
-                type: CosmeticRuleType.HtmlFilteringRule,
-                syntax: AdblockSyntax.Adg,
+            [
+                {
+                    category: RuleCategory.Cosmetic,
+                    type: CosmeticRuleType.HtmlFilteringRule,
+                    syntax: AdblockSyntax.Adg,
 
-                exception: rule.exception,
-                domains: cloneDomainListNode(rule.domains),
+                    exception: rule.exception,
+                    domains: cloneDomainListNode(rule.domains),
 
-                // Convert the separator based on the exception status
-                separator: {
-                    type: 'Value',
-                    value: rule.exception
-                        ? CosmeticRuleSeparator.AdgHtmlFilteringException
-                        : CosmeticRuleSeparator.AdgHtmlFiltering,
+                    // Convert the separator based on the exception status
+                    separator: {
+                        type: 'Value',
+                        value: rule.exception
+                            ? CosmeticRuleSeparator.AdgHtmlFilteringException
+                            : CosmeticRuleSeparator.AdgHtmlFiltering,
+                    },
+
+                    body: convertedBody,
                 },
-
-                body: convertedBody,
-            }],
+            ],
             true,
         );
     }
@@ -289,23 +281,25 @@ export class HtmlRuleConverter extends RuleConverterBase {
         );
 
         return createNodeConversionResult(
-            [{
-                category: RuleCategory.Cosmetic,
-                type: CosmeticRuleType.HtmlFilteringRule,
-                syntax: AdblockSyntax.Ubo,
+            [
+                {
+                    category: RuleCategory.Cosmetic,
+                    type: CosmeticRuleType.HtmlFilteringRule,
+                    syntax: AdblockSyntax.Ubo,
 
-                exception: rule.exception,
-                domains: cloneDomainListNode(rule.domains),
+                    exception: rule.exception,
+                    domains: cloneDomainListNode(rule.domains),
 
-                separator: {
-                    type: 'Value',
-                    value: rule.exception
-                        ? CosmeticRuleSeparator.ElementHidingException
-                        : CosmeticRuleSeparator.ElementHiding,
+                    separator: {
+                        type: 'Value',
+                        value: rule.exception
+                            ? CosmeticRuleSeparator.ElementHidingException
+                            : CosmeticRuleSeparator.ElementHiding,
+                    },
+
+                    body: convertedBody,
                 },
-
-                body: convertedBody,
-            }],
+            ],
             true,
         );
     }
@@ -335,10 +329,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // `[tag-content="content"]` -> `:contains(content)`
             // direct conversion, no changes to value
             case AdgAttributeSelectors.TagContent: {
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    AdgPseudoClasses.Contains,
-                    value,
-                );
+                return HtmlRuleConverter.getPseudoClassSelectorNode(AdgPseudoClasses.Contains, value);
             }
 
             // `[wildcard="*content*"] -> `:contains(/*.content*./s)`
@@ -377,19 +368,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
-                    RegExpUtils.getLengthRegexp(
-                        min,
-                        max,
-                    ),
+                    RegExpUtils.getLengthRegexp(min, max),
                 );
             }
 
             // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
             default: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED,
-                    name,
-                ));
+                throw new RuleConversionError(sprintf(ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED, name));
             }
         }
     }
@@ -406,10 +391,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     private static convertSpecialPseudoClassSelectorAdgToAdg(name: string): true {
         if (SUPPORTED_UBO_PSEUDO_CLASSES.has(name)) {
-            throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.INVALID_RULE,
-                ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
-            ));
+            throw new RuleConversionError(sprintf(ERROR_MESSAGES.INVALID_RULE, ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO));
         }
 
         return true;
@@ -422,10 +404,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @throws Rule conversion error for mixed syntax.
      */
     private static convertSpecialAttributeSelectorUboToAdg(): never {
-        throw new RuleConversionError(sprintf(
-            ERROR_MESSAGES.INVALID_RULE,
-            ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
-        ));
+        throw new RuleConversionError(sprintf(ERROR_MESSAGES.INVALID_RULE, ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO));
     }
 
     /**
@@ -447,10 +426,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // `:has-text(text)` -> `:contains(text)`
             // direct conversion, no changes to argument
             case UboPseudoClasses.HasText: {
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    AdgPseudoClasses.Contains,
-                    argument,
-                );
+                return HtmlRuleConverter.getPseudoClassSelectorNode(AdgPseudoClasses.Contains, argument);
             }
 
             // `:min-text-length(min)` -> `:contains(/^(?=.{min,MAX_CONVERSION_DEFAULT}$).*\/s)`
@@ -475,18 +451,16 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             // Throw an error if the AdGuard-specific pseudo-class selector found in uBlock rule
             case AdgPseudoClasses.Contains: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.INVALID_RULE,
-                    ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
-                ));
+                throw new RuleConversionError(
+                    sprintf(ERROR_MESSAGES.INVALID_RULE, ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO),
+                );
             }
 
             // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
             default: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED,
-                    name,
-                ));
+                throw new RuleConversionError(
+                    sprintf(ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED, name),
+                );
             }
         }
     }
@@ -511,10 +485,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // `[tag-content="content"]` -> `:has-text(content)`
             // direct conversion, no changes to value
             case AdgAttributeSelectors.TagContent: {
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    UboPseudoClasses.HasText,
-                    value,
-                );
+                return HtmlRuleConverter.getPseudoClassSelectorNode(UboPseudoClasses.HasText, value);
             }
 
             // `[wildcard="*content*"] -> `:has-text(/*.content*./s)`
@@ -537,10 +508,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
                 );
 
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    UboPseudoClasses.MinTextLength,
-                    value,
-                );
+                return HtmlRuleConverter.getPseudoClassSelectorNode(UboPseudoClasses.MinTextLength, value);
             }
 
             // `[max-length]` is skipped
@@ -550,10 +518,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
             default: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED,
-                    name,
-                ));
+                throw new RuleConversionError(sprintf(ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED, name));
             }
         }
     }
@@ -575,27 +540,22 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // `:contains(text)` -> `:has-text(text)`
             // direct conversion, no changes to argument
             case AdgPseudoClasses.Contains: {
-                return HtmlRuleConverter.getPseudoClassSelectorNode(
-                    UboPseudoClasses.HasText,
-                    argument,
-                );
+                return HtmlRuleConverter.getPseudoClassSelectorNode(UboPseudoClasses.HasText, argument);
             }
 
             // Throw an error if the uBlock-specific pseudo-class selector found in AdGuard rule
             case UboPseudoClasses.HasText:
             case UboPseudoClasses.MinTextLength: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.INVALID_RULE,
-                    ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
-                ));
+                throw new RuleConversionError(
+                    sprintf(ERROR_MESSAGES.INVALID_RULE, ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO),
+                );
             }
 
             // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
             default: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED,
-                    name,
-                ));
+                throw new RuleConversionError(
+                    sprintf(ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED, name),
+                );
             }
         }
     }
@@ -654,19 +614,18 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         // Throw if selector combinator used incorrectly
                         if (
                             // If first selector in the complex selector (`> div`)
-                            j === 0
+                            j === 0 ||
                             // If the previous selector is also a combinator (`div > + span`)
-                            || j === selectors.length - 1
+                            j === selectors.length - 1 ||
                             // If the last selector in the complex selector (`div +`)
-                            || (j > 0 && selectors[j - 1].type === 'SelectorCombinator')
+                            (j > 0 && selectors[j - 1].type === 'SelectorCombinator')
                         ) {
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.INVALID_RULE,
+                            throw new RuleConversionError(
                                 sprintf(
-                                    ERROR_MESSAGES.INVALID_SELECTOR_COMBINATOR,
-                                    selector.value,
+                                    ERROR_MESSAGES.INVALID_RULE,
+                                    sprintf(ERROR_MESSAGES.INVALID_SELECTOR_COMBINATOR, selector.value),
                                 ),
-                            ));
+                            );
                         }
 
                         break;
@@ -680,27 +639,30 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                         // Throw an error if value is missing
                         if (!('value' in selector) || selector.value.value === EMPTY) {
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_REQUIRED,
-                                selector.name.value,
-                            ));
+                            throw new RuleConversionError(
+                                sprintf(ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_REQUIRED, selector.name.value),
+                            );
                         }
 
                         // Throw an error if operator is not '='
                         if (selector.operator.value !== EQUALS) {
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_OPERATOR_INVALID,
-                                selector.name.value,
-                                selector.operator.value,
-                            ));
+                            throw new RuleConversionError(
+                                sprintf(
+                                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_OPERATOR_INVALID,
+                                    selector.name.value,
+                                    selector.operator.value,
+                                ),
+                            );
                         }
 
                         // Throw an error if flag is specified
                         if (selector.flag) {
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_FLAG_NOT_SUPPORTED,
-                                selector.name.value,
-                            ));
+                            throw new RuleConversionError(
+                                sprintf(
+                                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_FLAG_NOT_SUPPORTED,
+                                    selector.name.value,
+                                ),
+                            );
                         }
 
                         const name = selector.name.value;
@@ -724,18 +686,20 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     case 'PseudoClassSelector': {
                         // Not a special pseudo-class selector - clone as-is after the switch
                         if (
-                            !SUPPORTED_ADG_PSEUDO_CLASSES.has(selector.name.value)
-                            && !SUPPORTED_UBO_PSEUDO_CLASSES.has(selector.name.value)
+                            !SUPPORTED_ADG_PSEUDO_CLASSES.has(selector.name.value) &&
+                            !SUPPORTED_UBO_PSEUDO_CLASSES.has(selector.name.value)
                         ) {
                             break;
                         }
 
                         // Throw an error if argument is missing
                         if (!selector.argument || selector.argument.value === EMPTY) {
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED,
-                                selector.name.value,
-                            ));
+                            throw new RuleConversionError(
+                                sprintf(
+                                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED,
+                                    selector.name.value,
+                                ),
+                            );
                         }
 
                         const name = selector.name.value;
@@ -799,9 +763,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @returns Cloned simple selector or selector combinator node.
      */
-    private static cloneSelector(
-        selector: SimpleSelector | SelectorCombinator,
-    ): SimpleSelector | SelectorCombinator {
+    private static cloneSelector(selector: SimpleSelector | SelectorCombinator): SimpleSelector | SelectorCombinator {
         const { type } = selector;
         switch (type) {
             case 'TypeSelector':
@@ -869,13 +831,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
             }
 
             default: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.INVALID_RULE,
-                    sprintf(
-                        ERROR_MESSAGES.UNKNOWN_SELECTOR_TYPE,
-                        type,
-                    ),
-                ));
+                throw new RuleConversionError(
+                    sprintf(ERROR_MESSAGES.INVALID_RULE, sprintf(ERROR_MESSAGES.UNKNOWN_SELECTOR_TYPE, type)),
+                );
             }
         }
     }
@@ -895,10 +853,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 type: 'Value',
                 value: name,
             },
-            argument: argument ? {
-                type: 'Value',
-                value: argument,
-            } : undefined,
+            argument: argument
+                ? {
+                      type: 'Value',
+                      value: argument,
+                  }
+                : undefined,
         };
     }
 
@@ -912,10 +872,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     private static assertNotEmpty<T extends object>(array: T[], errorMessage: string): void {
         if (array.length === 0) {
-            throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.INVALID_RULE,
-                errorMessage,
-            ));
+            throw new RuleConversionError(sprintf(ERROR_MESSAGES.INVALID_RULE, errorMessage));
         }
     }
 
@@ -938,23 +895,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
         const parsed = Number(value);
 
         if (Number.isNaN(parsed)) {
-            throw new RuleConversionError(
-                sprintf(
-                    notIntErrorMessage,
-                    name,
-                    value,
-                ),
-            );
+            throw new RuleConversionError(sprintf(notIntErrorMessage, name, value));
         }
 
         if (parsed < 0) {
-            throw new RuleConversionError(
-                sprintf(
-                    notPositiveErrorMessage,
-                    name,
-                    value,
-                ),
-            );
+            throw new RuleConversionError(sprintf(notPositiveErrorMessage, name, value));
         }
     }
 }

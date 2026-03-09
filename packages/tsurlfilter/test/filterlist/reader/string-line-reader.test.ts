@@ -1,9 +1,4 @@
-import {
-    beforeEach,
-    describe,
-    expect,
-    it,
-} from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
 

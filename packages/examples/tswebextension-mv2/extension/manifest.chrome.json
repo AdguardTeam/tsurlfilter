@@ -15,9 +15,7 @@
         "contextMenus",
         "cookies"
     ],
-    "optional_permissions": [
-        "privacy"
-    ],
+    "optional_permissions": ["privacy"],
     "background": {
         "page": "background.html",
         "persistent": true
@@ -27,21 +25,13 @@
     },
     "content_scripts": [
         {
-            "js": [
-                "content-script.js"
-            ],
+            "js": ["content-script.js"],
             "all_frames": true,
-            "matches": [
-                "http://*/*",
-                "https://*/*"
-            ],
+            "matches": ["http://*/*", "https://*/*"],
             "match_about_blank": true,
             "run_at": "document_start"
         }
     ],
     "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
-    "web_accessible_resources": [
-        "/war/*"
-    ]
+    "web_accessible_resources": ["/war/*"]
 }
-

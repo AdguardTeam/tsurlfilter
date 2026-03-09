@@ -45,10 +45,10 @@ export class CosmeticRuleSeparatorUtils {
      */
     public static isExtendedCssMarker(separator: CosmeticRuleSeparator): boolean {
         return (
-            separator === CosmeticRuleSeparator.ExtendedElementHiding
-            || separator === CosmeticRuleSeparator.ExtendedElementHidingException
-            || separator === CosmeticRuleSeparator.AdgExtendedCssInjection
-            || separator === CosmeticRuleSeparator.AdgExtendedCssInjectionException
+            separator === CosmeticRuleSeparator.ExtendedElementHiding ||
+            separator === CosmeticRuleSeparator.ExtendedElementHidingException ||
+            separator === CosmeticRuleSeparator.AdgExtendedCssInjection ||
+            separator === CosmeticRuleSeparator.AdgExtendedCssInjectionException
         );
     }
 

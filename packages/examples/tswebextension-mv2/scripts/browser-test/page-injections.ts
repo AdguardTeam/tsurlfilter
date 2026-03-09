@@ -25,19 +25,20 @@ export const addQunitListeners = (logResultFnName: string) => {
     });
 };
 
+export type SetTsWebExtensionConfigArg = [defaultConfig: ConfigurationMV2, rulesText: string];
 
-export type SetTsWebExtensionConfigArg = [ defaultConfig: ConfigurationMV2, rulesText: string ];
-
-export const setTsWebExtensionConfig =  async (arg: SetTsWebExtensionConfigArg) => {
-    const [ defaultConfig, rulesText ] = arg;
+export const setTsWebExtensionConfig = async (arg: SetTsWebExtensionConfigArg) => {
+    const [defaultConfig, rulesText] = arg;
     const configuration: ConfigurationMV2 = defaultConfig;
     const list = new FilterList(rulesText);
-    configuration.filters = [{
-        filterId: 1,
-        content: list.getContent(),
-        conversionData: list.getConversionData(),
-        trusted: true,
-    }];
+    configuration.filters = [
+        {
+            filterId: 1,
+            content: list.getContent(),
+            conversionData: list.getConversionData(),
+            trusted: true,
+        },
+    ];
     await window.tsWebExtension.configure(configuration);
 };
 

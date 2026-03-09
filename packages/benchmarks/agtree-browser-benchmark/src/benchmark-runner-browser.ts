@@ -50,13 +50,10 @@ export const runBenchmarkBrowser = async (
         });
 
         // Evaluate the benchmark in the browser
-        const resultWithoutBrowser = await page.evaluate(
-            benchmark,
-            {
-                rawFilterList: filterList.contents,
-                agtreeParserOptions,
-            } as BenchmarkArgs,
-        );
+        const resultWithoutBrowser = await page.evaluate(benchmark, {
+            rawFilterList: filterList.contents,
+            agtreeParserOptions,
+        } as BenchmarkArgs);
 
         await page.close();
         await browser.close();

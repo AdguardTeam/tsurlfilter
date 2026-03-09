@@ -19,9 +19,9 @@ Build:
   other:
     clean-working-dir: true
   docker:
-    image: "${bamboo.dockerContainer}"
+    image: '${bamboo.dockerContainer}'
     volumes:
-       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      ${system.PNPM_DIR}: '${bamboo.cachePnpm}'
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -76,7 +76,7 @@ Build:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/cleanup.sh packages/adguard-api-mv3/adguard-api-mv3.tgz,packages/examples/adguard-api-mv3/build/extension.zip"
+          - './bamboo-specs/scripts/cleanup.sh packages/adguard-api-mv3/adguard-api-mv3.tgz,packages/examples/adguard-api-mv3/build/extension.zip'
   artifacts:
     - name: adguard-api-mv3.tgz
       location: packages/adguard-api-mv3/

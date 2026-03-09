@@ -30,15 +30,11 @@ const build = async () => {
             extraScripts,
         );
         const patcher = new ManifestPatcher();
-        patcher.patch(
-            './extension/manifest.json',
-            './extension/filters',
-            {
-                forceUpdate: true,
-                ids: ENABLED_FILTERS_IDS,
-                filtersMatch: 'declarative/*/ruleset_+([0-9]).json',
-            },
-        );
+        patcher.patch('./extension/manifest.json', './extension/filters', {
+            forceUpdate: true,
+            ids: ENABLED_FILTERS_IDS,
+            filtersMatch: 'declarative/*/ruleset_+([0-9]).json',
+        });
         await excludeUnsafeRules({
             dir: './extension/filters/declarative',
             prettifyJson: false,

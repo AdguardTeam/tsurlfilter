@@ -175,10 +175,11 @@ export const enum TokenType {
  */
 const isIdentChar = (c: number): boolean => {
     return (
-        (c >= 48 && c <= 57) // 0-9
-        || (c >= 65 && c <= 90) // A-Z
-        || (c >= 97 && c <= 122) // a-z
-        || c === 45 || c === 95 // - _
+        (c >= 48 && c <= 57) || // 0-9
+        (c >= 65 && c <= 90) || // A-Z
+        (c >= 97 && c <= 122) || // a-z
+        c === 45 ||
+        c === 95 // - _
     );
 };
 

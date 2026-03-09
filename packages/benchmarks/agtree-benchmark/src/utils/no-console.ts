@@ -6,14 +6,7 @@
 /**
  * A set of console methods that are disabled while executing a function.
  */
-const consoleMethodList = new Set<string>([
-    'debug',
-    'error',
-    'info',
-    'log',
-    'trace',
-    'warn',
-]);
+const consoleMethodList = new Set<string>(['debug', 'error', 'info', 'log', 'trace', 'warn']);
 
 /**
  * A simple helper function that wraps a function to disable console methods while executing the function.

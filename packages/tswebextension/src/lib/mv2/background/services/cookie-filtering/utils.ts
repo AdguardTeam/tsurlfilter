@@ -29,9 +29,11 @@ export default class CookieUtils extends CommonCookieUtils {
     static splitMultilineCookies(responseHeaders: WebRequest.HttpHeaders): void {
         for (let i = responseHeaders.length - 1; i >= 0; i -= 1) {
             const { name, value } = responseHeaders[i];
-            if (name.toLowerCase() !== CookieUtils.SET_COOKIE_HEADER_NAME
-                || !value
-                || !value.includes(CookieUtils.LINE_FEED)) {
+            if (
+                name.toLowerCase() !== CookieUtils.SET_COOKIE_HEADER_NAME ||
+                !value ||
+                !value.includes(CookieUtils.LINE_FEED)
+            ) {
                 continue;
             }
 
@@ -135,8 +137,6 @@ export default class CookieUtils extends CommonCookieUtils {
      * @returns Cookie string or null if it failed to serialize object.
      */
     static serializeCookieToRequestHeader(cookies: ParsedCookie[]): string {
-        return cookies
-            .map((cookie) => `${cookie.name}=${cookie.value}`)
-            .join('; ');
+        return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
     }
 }

@@ -582,8 +582,11 @@ export class CosmeticRule implements IRule {
                 case CosmeticRuleModifier.Path:
                     result.pathModifier = new Pattern(
                         SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
+                            ? // eslint-disable-next-line max-len
+                              SimpleRegex.unescapeRegexSpecials(
+                                  modifierValue,
+                                  SimpleRegex.reModifierPatternEscapedSpecialCharacters,
+                              )
                             : modifierValue,
                     );
                     break;
@@ -595,8 +598,11 @@ export class CosmeticRule implements IRule {
 
                     result.urlModifier = new Pattern(
                         SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
+                            ? // eslint-disable-next-line max-len
+                              SimpleRegex.unescapeRegexSpecials(
+                                  modifierValue,
+                                  SimpleRegex.reModifierPatternEscapedSpecialCharacters,
+                              )
                             : modifierValue,
                     );
                     break;
@@ -784,10 +790,7 @@ export class CosmeticRule implements IRule {
                 // Iterate over the domain list and check every domain
                 for (const { value: domain } of ruleNode.domains.children) {
                     // Skip validation for regex domain patterns
-                    if (
-                        !RegExpUtils.isRegexPattern(domain)
-                        && !DomainUtils.isValidDomainOrHostname(domain)
-                    ) {
+                    if (!RegExpUtils.isRegexPattern(domain) && !DomainUtils.isValidDomainOrHostname(domain)) {
                         throw new Error(`'${domain}' is not a valid domain name or regexp pattern`);
                     }
                 }
@@ -821,7 +824,9 @@ export class CosmeticRule implements IRule {
                     // because it mixes removal and non-removal declarations.
                     if (ruleNode.body.declarationList) {
                         // eslint-disable-next-line max-len
-                        const declarationListValidationResult = validateDeclarationList(ruleNode.body.declarationList.value);
+                        const declarationListValidationResult = validateDeclarationList(
+                            ruleNode.body.declarationList.value,
+                        );
 
                         if (!declarationListValidationResult.isValid) {
                             throw new Error(declarationListValidationResult.errorMessage);
@@ -838,7 +843,9 @@ export class CosmeticRule implements IRule {
                 case CosmeticRuleType.ScriptletInjectionRule:
                     // Scriptlet name is the first child of the parameter list
                     // eslint-disable-next-line max-len
-                    scriptletName = QuoteUtils.removeQuotes(ruleNode.body.children[0]?.children[0]?.value ?? EMPTY_STRING);
+                    scriptletName = QuoteUtils.removeQuotes(
+                        ruleNode.body.children[0]?.children[0]?.value ?? EMPTY_STRING,
+                    );
 
                     // Special case: scriptlet name is empty, e.g. '#%#//scriptlet()'
                     if (scriptletName.length === 0) {
@@ -946,9 +953,10 @@ export class CosmeticRule implements IRule {
         // but at this point we need to store them in order to avoid double parsing
         if (parsedNode.type === CosmeticRuleType.ScriptletInjectionRule) {
             // Transform complex node into a simple array of strings
-            const params = parsedNode.body.children[0]?.children.map(
-                (param) => (param === null ? EMPTY_STRING : QuoteUtils.removeQuotesAndUnescape(param.value)),
-            ) ?? [];
+            const params =
+                parsedNode.body.children[0]?.children.map((param) =>
+                    param === null ? EMPTY_STRING : QuoteUtils.removeQuotesAndUnescape(param.value),
+                ) ?? [];
 
             this.scriptletParams = new ScriptletParams(params[0] ?? '', params.slice(1));
         } else {
@@ -1005,10 +1013,7 @@ export class CosmeticRule implements IRule {
      * @returns True if the rule matches the request, false otherwise.
      */
     public match(request: Request): boolean {
-        if (!this.domainModifier
-            && !this.pathModifier
-            && !this.urlModifier
-        ) {
+        if (!this.domainModifier && !this.pathModifier && !this.urlModifier) {
             return true;
         }
 

@@ -163,10 +163,9 @@ export type ApplyBasicRuleEventData = {
      * i.e. truly blocked requests in MV3 are logged during onErrorOccurred event.
      */
     isAssuredlyBlocked?: boolean;
-}
-& RuleInfoOptional
-& AdditionalNetworkRuleInfo
-& WithEventId;
+} & RuleInfoOptional &
+    AdditionalNetworkRuleInfo &
+    WithEventId;
 
 /**
  * Dispatched by WebRequestApi manifest v2 module on request block or allowlist rule matching in onBeforeRequest event
@@ -187,7 +186,9 @@ export type ApplyCspRuleEventData = {
     frameDomain: string | null;
     requestType: ContentType;
     timestamp: number;
-} & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
+} & RuleInfo &
+    AdditionalNetworkRuleInfo &
+    WithEventId;
 
 /**
  * Dispatched by manifest v2 csp service.
@@ -217,7 +218,8 @@ export type ApplyCosmeticRuleEventData = {
     cssRule: boolean;
     scriptRule: boolean;
     contentRule: boolean;
-} & RuleInfo & WithEventId;
+} & RuleInfo &
+    WithEventId;
 
 /**
  * Dispatched by manifest v2 messageHandler in handleSaveCssHitsStats method and in ContentStream module on html rule
@@ -256,7 +258,9 @@ export type CookieEventData = {
     requestThirdParty: boolean;
     timestamp: number;
     requestType: ContentType;
-} & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
+} & RuleInfo &
+    AdditionalNetworkRuleInfo &
+    WithEventId;
 
 /**
  * Dispatched by CookieFiltering module on cookie filtering in
@@ -279,7 +283,9 @@ export type RemoveHeaderEventData = {
     frameDomain: string;
     requestType: ContentType;
     timestamp: number;
-} & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
+} & RuleInfo &
+    AdditionalNetworkRuleInfo &
+    WithEventId;
 
 /**
  * Dispatched by RemoveHeadersService manifest v2 module on request header removing in onBeforeSendHeaders and
@@ -303,7 +309,9 @@ export type RemoveParamEventData = {
     frameDomain: string;
     requestType: ContentType;
     timestamp: number;
-} & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
+} & RuleInfo &
+    AdditionalNetworkRuleInfo &
+    WithEventId;
 
 /**
  * Dispatched by ParamsService manifest v2 module on request param removing in WebRequestApi.onBeforeRequest event
@@ -415,7 +423,8 @@ export type JsInjectEventData = {
     cssRule: boolean;
     scriptRule: boolean;
     contentRule: boolean;
-} & RuleInfo & WithEventId;
+} & RuleInfo &
+    WithEventId;
 
 /**
  * Dispatched by manifest v2 WebRequest API injectJsScript method.
@@ -519,7 +528,7 @@ export interface FilteringLogInterface {
      */
     addEventListener<T extends FilteringEventType>(
         type: T,
-        listener: FilteringLogListener<ExtractedFilteringLogEvent<T>>
+        listener: FilteringLogListener<ExtractedFilteringLogEvent<T>>,
     ): void;
 
     /**

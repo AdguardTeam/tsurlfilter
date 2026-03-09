@@ -3,19 +3,12 @@
         "moduleResolution": "bundler",
         "target": "es2022",
         "module": "es2022",
-        "lib": [
-            "esnext",
-            "dom"
-        ],
+        "lib": ["esnext", "dom"],
         "strict": true,
         "allowJs": true,
         "resolveJsonModule": true,
         "esModuleInterop": true, // This will set allowSyntheticDefaultImports to true
         "skipLibCheck": true,
-        "typeRoots": [
-            "./types",
-            "node_modules/@types",
-            "node_modules/chrome-types"
-        ]
+        "typeRoots": ["./types", "node_modules/@types", "node_modules/chrome-types"]
     }
 }

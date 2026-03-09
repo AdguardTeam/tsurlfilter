@@ -3,12 +3,7 @@
  */
 
 import { MAX_HEX_DIGITS } from '../algorithms/consumers/escaped-code-point';
-import {
-    isGreaterThanMaxAllowedCodePoint,
-    isHexDigit,
-    isSurrogate,
-    isWhitespace,
-} from '../algorithms/definitions';
+import { isGreaterThanMaxAllowedCodePoint, isHexDigit, isSurrogate, isWhitespace } from '../algorithms/definitions';
 import { CodePoint } from '../common/enums/code-points';
 
 const EMPTY_STRING = '';

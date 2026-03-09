@@ -1,6 +1,6 @@
 import { type WebRequest } from 'webextension-polyfill';
 
-export const getResponseHeaders = (): WebRequest.HttpHeaders => ([
+export const getResponseHeaders = (): WebRequest.HttpHeaders => [
     {
         name: 'date',
         value: 'Thu, 29 Feb 2024 13:11:37 GMT',
@@ -57,4 +57,4 @@ export const getResponseHeaders = (): WebRequest.HttpHeaders => ([
         name: 'X-Firefox-Spdy',
         value: 'h2',
     },
-]);
+];

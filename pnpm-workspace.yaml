@@ -1,8 +1,8 @@
 packages:
-  - "packages/*"
-  - "packages/examples/*"
-  - "packages/benchmarks/*"
-  - "packages/tsurlfilter/test/builders/*"
+  - 'packages/*'
+  - 'packages/examples/*'
+  - 'packages/benchmarks/*'
+  - 'packages/tsurlfilter/test/builders/*'
 
 # default catalog
 catalog:

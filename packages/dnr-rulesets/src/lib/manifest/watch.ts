@@ -90,15 +90,10 @@ export class Watcher {
     ): Promise<void> => {
         console.log('Rebuilding DNR rulesets...');
 
-        await convertFilters(
-            filtersPath,
-            resourcesPath,
-            destinationRulesetsPath,
-            {
-                debug,
-                prettifyJson,
-            },
-        );
+        await convertFilters(filtersPath, resourcesPath, destinationRulesetsPath, {
+            debug,
+            prettifyJson,
+        });
     };
 
     /**
@@ -111,10 +106,7 @@ export class Watcher {
      * @param paths.destinationRulesetsPath Path to destination rulesets directory.
      * @param options Patch options {@link PatchManifestOptions}.
      */
-    private filtersChangesListener = async (
-        paths: WatchPaths,
-        options?: Partial<WatchOptions>,
-    ): Promise<void> => {
+    private filtersChangesListener = async (paths: WatchPaths, options?: Partial<WatchOptions>): Promise<void> => {
         const { manifestPath, filtersPath } = paths;
 
         await this.rebuildDnrRulesets(paths, options?.debug, options?.prettifyJson);
@@ -133,10 +125,7 @@ export class Watcher {
      * @param paths.destinationRulesetsPath Path to destination rulesets directory.
      * @param options Patch options {@link PatchManifestOptions}.
      */
-    public watch = async (
-        paths: WatchPaths,
-        options?: Partial<WatchOptions>,
-    ): Promise<void> => {
+    public watch = async (paths: WatchPaths, options?: Partial<WatchOptions>): Promise<void> => {
         const { filtersPath } = paths;
 
         if (options?.latestFilters) {
@@ -190,10 +179,7 @@ export class Watcher {
             this.mutex = true;
 
             try {
-                await this.filtersChangesListener(
-                    paths,
-                    options,
-                );
+                await this.filtersChangesListener(paths, options);
             } catch (error) {
                 console.error('Error processing filter changes:', error);
             } finally {
@@ -209,8 +195,6 @@ export class Watcher {
         };
 
         // Watch for changes in the filters directory and rebuild DNR rulesets
-        watcher = watch(filtersPath, watcherOptions)
-            .on('add', listener)
-            .on('change', listener);
+        watcher = watch(filtersPath, watcherOptions).on('add', listener).on('change', listener);
     };
 }

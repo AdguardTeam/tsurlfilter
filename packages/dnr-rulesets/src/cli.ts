@@ -27,9 +27,7 @@ const processArrayOption = (option: unknown): string[] => {
     if (Array.isArray(option)) {
         // If it's already an array, process each item (they could be comma-separated strings)
         return option.flatMap((item) => {
-            return typeof item === 'string' && item.includes(',')
-                ? item.split(',').map((s) => s.trim())
-                : item;
+            return typeof item === 'string' && item.includes(',') ? item.split(',').map((s) => s.trim()) : item;
         });
     }
 
@@ -62,9 +60,7 @@ const browserOption = new Option('-b, --browser <browser>', 'Browser for which t
     .default(BrowserFilters.ChromiumMv3)
     .choices(Object.values(BrowserFilters));
 
-program
-    .name('dnr-rulesets CLI')
-    .version(version);
+program.name('dnr-rulesets CLI').version(version);
 
 program
     .command('exclude-unsafe-rules')
@@ -106,17 +102,25 @@ program
     .description('Patch MV3 manifest file')
     .argument('<path-to-manifest>', 'manifest src path')
     .argument('<path-to-filters>', 'filters src path')
-    .option('-f, --force-update', 'force update rulesets with existing id, otherwise it will throw error if ruleset is already in the manifest', false)
-    .option('-i, --ids <ids...>', 'filters ids to process, others will be ignored, by default will process all filters matched via `--filters-match`', [])
-    .option('-e, --enable <ids...>', 'enable filters by default in manifest.json (they will be enabled after enabling/reloading extension)', [])
+    .option(
+        '-f, --force-update',
+        'force update rulesets with existing id, otherwise it will throw error if ruleset is already in the manifest',
+        false,
+    )
+    .option(
+        '-i, --ids <ids...>',
+        'filters ids to process, others will be ignored, by default will process all filters matched via `--filters-match`',
+        [],
+    )
+    .option(
+        '-e, --enable <ids...>',
+        'enable filters by default in manifest.json (they will be enabled after enabling/reloading extension)',
+        [],
+    )
     .option('-r, --ruleset-prefix <prefix>', 'prefix for filters ids', 'ruleset_')
     .option('-m, --filters-match <match>', 'filters files match glob pattern', 'filter_+([0-9]).txt')
     /* eslint-enable max-len */
-    .action((
-        manifestPath: string,
-        filtersPath: string,
-        options?: Partial<PatchManifestOptions>,
-    ) => {
+    .action((manifestPath: string, filtersPath: string, options?: Partial<PatchManifestOptions>) => {
         // Process options to handle both space and comma-separated arrays
         const processedOptions = {
             ...options,
@@ -133,27 +137,52 @@ program
     .command('watch')
     .description('Watch for changes in the filters directory and rebuild DNR rulesets')
     .argument('<path-to-manifest>', 'path to the manifest.json')
-    .argument('<path-to-resources>', 'folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)')
-    .option('-p, --path-to-filters', 'path to filters and i18n metadata file (default: `./filters` relative to manifest folder)', '')
-    .option('-o, --output-path-for-rulesets', 'output path for rulesets (default: `./filters/declarative` relative to manifest folder)', '')
-    .option('-f, --force-update', 'force update rulesets with existing id, otherwise it will throw error if ruleset is already in the manifest', true)
-    .option('-i, --ids <ids...>', 'filters ids to process, others will be ignored, by default will process all filters matched via `--filters-match`', [])
-    .option('-e, --enable <ids...>', 'enable filters by default in manifest.json (they will be enabled after enabling/reloading extension)', [])
+    .argument(
+        '<path-to-resources>',
+        'folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)',
+    )
+    .option(
+        '-p, --path-to-filters',
+        'path to filters and i18n metadata file (default: `./filters` relative to manifest folder)',
+        '',
+    )
+    .option(
+        '-o, --output-path-for-rulesets',
+        'output path for rulesets (default: `./filters/declarative` relative to manifest folder)',
+        '',
+    )
+    .option(
+        '-f, --force-update',
+        'force update rulesets with existing id, otherwise it will throw error if ruleset is already in the manifest',
+        true,
+    )
+    .option(
+        '-i, --ids <ids...>',
+        'filters ids to process, others will be ignored, by default will process all filters matched via `--filters-match`',
+        [],
+    )
+    .option(
+        '-e, --enable <ids...>',
+        'enable filters by default in manifest.json (they will be enabled after enabling/reloading extension)',
+        [],
+    )
     .option('-r, --ruleset-prefix <prefix>', 'prefix for filters ids', 'ruleset_')
-    .option('-m, --filters-match <match>', 'filters files match glob pattern', ManifestPatcher.DEFAULT_FILTERS_MATCH_GLOB)
+    .option(
+        '-m, --filters-match <match>',
+        'filters files match glob pattern',
+        ManifestPatcher.DEFAULT_FILTERS_MATCH_GLOB,
+    )
     .option('-l, --latest-filters', 'download latest text filters on first start before watch', false)
     .option('-d, --debug', 'enable extended logging during conversion or not', false)
     .option('-j, --prettify-json <bool>', 'Prettify JSON output for human readability', false)
     .addOption(browserOption)
     /* eslint-enable max-len */
-    .action(async (
-        manifestPath: string,
-        resourcesPath: string,
-        options?: Partial<WatchOptionsCli>,
-    ) => {
+    .action(async (manifestPath: string, resourcesPath: string, options?: Partial<WatchOptionsCli>) => {
         if (!manifestPath || !resourcesPath) {
             // eslint-disable-next-line max-len
-            throw new Error(`Please provide all required arguments: manifestPath (provided: ${manifestPath}), resourcesPath (provided: ${resourcesPath})`);
+            throw new Error(
+                `Please provide all required arguments: manifestPath (provided: ${manifestPath}), resourcesPath (provided: ${resourcesPath})`,
+            );
         }
 
         // Process options to handle both space and comma-separated arrays

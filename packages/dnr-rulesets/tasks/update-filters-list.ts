@@ -130,6 +130,4 @@ async function updateFiltersList(sections: MetadataSection[]): Promise<void> {
     await fs.promises.writeFile(FILTERS_MARKDOWN_PATH, newFiltersList);
 }
 
-getMetadataSections()
-    .then(updateFiltersList)
-    .catch(console.error);
+getMetadataSections().then(updateFiltersList).catch(console.error);

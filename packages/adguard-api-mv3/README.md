@@ -3,7 +3,7 @@
 AdGuard API is a filtering library that provides the following features:
 
 - Request and content filtering, using
-[@adguard/tswebextension][tswebextensionreadme].
+  [@adguard/tswebextension][tswebextensionreadme].
 - Content blocking via AdGuard Assistant UI.
 
 [tswebextensionreadme]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tswebextension/README.md
@@ -52,7 +52,7 @@ AdGuard API is a filtering library that provides the following features:
 1. Import the `AdguardApi` class to the background script
 
     ```ts
-    import { AdguardApi } from "@adguard/api-mv3";
+    import { AdguardApi } from '@adguard/api-mv3';
     ```
 
 1. Import `adguard-contents` at the top of your content script entry
@@ -132,11 +132,12 @@ type Configuration = {
 - `documentBlockingPageUrl` (optional) - Redirect URL for blocking rules with
   `$document` modifier. If not specified, default browser page will be shown.
   Page will receive following query parameters:
-  - `url` - blocked URL
-  - `rule` - blocking rule that triggered on this URL
-  - `filterId` - ID of the filter that contains this rule (0 for user rules)
 
-  Example: `chrome-extension://<extension_id>/blocking-page.html?url=https%3A%2F%2Fexample.net%2F&rule=example.net%24document&filterId=0`
+    - `url` - blocked URL
+    - `rule` - blocking rule that triggered on this URL
+    - `filterId` - ID of the filter that contains this rule (0 for user rules)
+
+    Example: `chrome-extension://<extension_id>/blocking-page.html?url=https%3A%2F%2Fexample.net%2F&rule=example.net%24document&filterId=0`
 
 [filter-rules]: https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters
 
@@ -153,8 +154,7 @@ const configuration: Configuration = {
 };
 ```
 
-> ![!WARNING]
-> **Please note, that we do not allow using `filters.adtidy.org` other than for
+> ![!WARNING] > **Please note, that we do not allow using `filters.adtidy.org` other than for
 > testing purposes**. You have to use your own server for storing filter files.
 > You can (and actually should) use `filters.adtidy.org` for periodically
 > updating files on your side.
@@ -214,10 +214,7 @@ import { AssetsLoader, LOCAL_SCRIPT_RULES_JS_FILENAME } from '@adguard/dnr-rules
 import { extraScripts } from './extra-scripts';
 
 const loader = new AssetsLoader();
-await loader.extendLocalScriptRulesJs(
-    path.join('./extension/filters', LOCAL_SCRIPT_RULES_JS_FILENAME),
-    extraScripts
-);
+await loader.extendLocalScriptRulesJs(path.join('./extension/filters', LOCAL_SCRIPT_RULES_JS_FILENAME), extraScripts);
 ```
 
 ## Excluding Unsafe Rules for Chrome Web Store "Skip Review"
@@ -227,6 +224,7 @@ Chrome Web Store provides a ["skip review" option](https://developer.chrome.com/
 ### What are safe rules?
 
 According to Chrome's policy, only declarative rules with the following action types are considered "safe":
+
 - `block` - blocks network requests
 - `allow` - allows network requests
 - `allowAllRequests` - allows all requests from a domain
@@ -237,6 +235,7 @@ Rules with other action types (such as `redirect`, `modifyHeaders`, `removeHeade
 ### Why exclude unsafe rules?
 
 To qualify for the "skip review" option in Chrome Web Store:
+
 1. Your extension must only contain safe declarative rules
 2. Unsafe rules must be excluded from your rulesets during the build process
 3. This allows faster extension updates and reduces review queue time
@@ -244,6 +243,7 @@ To qualify for the "skip review" option in Chrome Web Store:
 ### How to exclude unsafe rules in your build process
 
 The `@adguard/dnr-rulesets` package provides the `excludeUnsafeRules` function that:
+
 - Scans all rulesets in your filters directory
 - Identifies and removes unsafe rules
 - Stores unsafe rules in metadata for reference
@@ -259,6 +259,7 @@ dnr-rulesets exclude-unsafe-rules ./extension/filters/declarative [options]
 ```
 
 **Options:**
+
 - `--prettify-json` (default: `true`) - Prettify JSON output
 - `--limit <number>` - Maximum number of unsafe rules allowed. Build fails if exceeded.
 
@@ -266,12 +267,12 @@ dnr-rulesets exclude-unsafe-rules ./extension/filters/declarative [options]
 
 ```json
 {
-  "scripts": {
-    "load-dnr-rulesets": "dnr-rulesets load ./extension/filters",
-    "patch-manifest": "dnr-rulesets manifest ./extension/manifest.json ./extension/filters",
-    "exclude-unsafe-rules": "dnr-rulesets exclude-unsafe-rules ./extension/filters/declarative --limit 4900",
-    "build": "npm run load-dnr-rulesets && npm run patch-manifest && npm run exclude-unsafe-rules"
-  }
+    "scripts": {
+        "load-dnr-rulesets": "dnr-rulesets load ./extension/filters",
+        "patch-manifest": "dnr-rulesets manifest ./extension/manifest.json ./extension/filters",
+        "exclude-unsafe-rules": "dnr-rulesets exclude-unsafe-rules ./extension/filters/declarative --limit 4900",
+        "build": "npm run load-dnr-rulesets && npm run patch-manifest && npm run exclude-unsafe-rules"
+    }
 }
 ```
 
@@ -291,8 +292,8 @@ async function build() {
     // Exclude unsafe rules for CWS "skip review"
     await excludeUnsafeRules({
         dir: './extension/filters/declarative',
-        prettifyJson: false,  // optional: minimize JSON file size
-        limit: 4900,          // optional: fail build if too many unsafe rules
+        prettifyJson: false, // optional: minimize JSON file size
+        limit: 4900, // optional: fail build if too many unsafe rules
     });
 
     console.log('Unsafe rules excluded. Extension is ready for CWS skip review.');
@@ -330,8 +331,8 @@ async function build() {
 ### Important Notes
 
 - **Call order matters**: Always run `excludeUnsafeRules` **after** loading rulesets and patching manifest. Prevent double call of `excludeUnsafeRules` in your build process since
-it will override unsafe rules from first call and all unsafe rules will be just
-deleted from rulesets.
+  it will override unsafe rules from first call and all unsafe rules will be just
+  deleted from rulesets.
 
 For a complete working example, see the [example extension build script](../examples/adguard-api-mv3/scripts/build/build.ts).
 
@@ -377,15 +378,15 @@ public getMessageHandler(): MessageHandlerMV3
 const handleApiMessage = adguardApi.getMessageHandler();
 
 const handleAppMessage = async (message: Message) => {
-  // handle your app messages here
+    // handle your app messages here
 };
 
 // route message depending on handler name
 browser.runtime.onMessage.addListener(async (message, sender) => {
-  if (message?.handlerName === MESSAGE_HANDLER_NAME) {
-    return Promise.resolve(handleApiMessage(message, sender));
-  }
-  return handleAppMessage(message);
+    if (message?.handlerName === MESSAGE_HANDLER_NAME) {
+        return Promise.resolve(handleApiMessage(message, sender));
+    }
+    return handleAppMessage(message);
 });
 ```
 
@@ -551,12 +552,11 @@ public onAssistantCreateRule: EventChannel<string>;
 **Example:**
 
 ```ts
-
 // update config on Assistant rule apply
 const applyRule = async (rule): Promise<void> => {
-  console.log(`Rule ${rule} was created by Adguard Assistant`);
-  configuration.rules!.push(rule);
-  await adguardApi.configure(configuration);
+    console.log(`Rule ${rule} was created by Adguard Assistant`);
+    configuration.rules!.push(rule);
+    await adguardApi.configure(configuration);
 };
 
 // add listener
@@ -649,12 +649,12 @@ Learn more about `companyCategoryName` in the [list of company categories].
 ```typescript
 // Registers an event listener
 adguardApi.onRequestBlocked.addListener(
-  callback // function, mandatory
-)
+    callback, // function, mandatory
+);
 // Removes specified event listener
 adguardApi.onRequestBlocked.removeListener(
-  callback // function, mandatory
-)
+    callback, // function, mandatory
+);
 ```
 
 > Supported Request types:
@@ -779,6 +779,7 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
 ```
 
 <!-- TODO: check minimum supported version later -->
+
 ## Minimum supported browser versions
 
 | Browser                 | Version |

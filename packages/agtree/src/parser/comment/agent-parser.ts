@@ -102,11 +102,7 @@ export class AgentParser extends BaseParser {
 
         // Agent name cannot be empty
         if (name.value.length === 0) {
-            throw new AdblockSyntaxError(
-                'Agent name cannot be empty',
-                baseOffset,
-                baseOffset + raw.length,
-            );
+            throw new AdblockSyntaxError('Agent name cannot be empty', baseOffset, baseOffset + raw.length);
         }
 
         const result: Agent = {

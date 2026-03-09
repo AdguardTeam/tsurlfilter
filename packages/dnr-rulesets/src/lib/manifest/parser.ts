@@ -6,16 +6,24 @@ import zod from 'zod';
  * @returns Manifest runtime validation schema.
  */
 function createManifestSchema() {
-    return zod.object({
-        declarative_net_request: zod.object({
-            rule_resources: zod.array(
-                zod.object({
-                    id: zod.string(),
-                    enabled: zod.boolean(),
-                }).passthrough(),
-            ).optional(),
-        }).optional(),
-    }).passthrough();
+    return zod
+        .object({
+            declarative_net_request: zod
+                .object({
+                    rule_resources: zod
+                        .array(
+                            zod
+                                .object({
+                                    id: zod.string(),
+                                    enabled: zod.boolean(),
+                                })
+                                .passthrough(),
+                        )
+                        .optional(),
+                })
+                .optional(),
+        })
+        .passthrough();
 }
 
 /**
@@ -38,7 +46,7 @@ export interface ManifestParserInterface {
      * @throws {zod.ZodError} If input data is invalid.
      */
     parse(input: string): Manifest;
-};
+}
 
 /**
  * Api for parsing manifest.

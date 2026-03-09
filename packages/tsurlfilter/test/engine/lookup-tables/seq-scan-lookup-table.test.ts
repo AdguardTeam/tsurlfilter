@@ -11,12 +11,13 @@ import { createRuleStorage, fillLookupTable } from './lookup-table';
 describe('Sequence-scan Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
         const storage = new RuleStorage([
-            new StringRuleList(0, [
-                'path',
-                '||*example.net^',
-                '||example.org^',
-                '||example.com/path',
-            ].join('\n'), false, false, false),
+            new StringRuleList(
+                0,
+                ['path', '||*example.net^', '||example.org^', '||example.com/path'].join('\n'),
+                false,
+                false,
+                false,
+            ),
         ]);
 
         const table = new SeqScanLookupTable(storage);
@@ -26,12 +27,7 @@ describe('Sequence-scan Lookup Table Tests', () => {
     });
 
     it('matches rules from lookup table', () => {
-        const rules = [
-            'path',
-            '||*example.net^',
-            '||example.org^',
-            '||example.com/path',
-        ];
+        const rules = ['path', '||*example.net^', '||example.org^', '||example.com/path'];
 
         const ruleStorage = createRuleStorage(rules);
         const table = new SeqScanLookupTable(ruleStorage);

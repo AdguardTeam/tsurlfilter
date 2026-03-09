@@ -1,9 +1,4 @@
-import {
-    NetworkRuleType,
-    RuleCategory,
-    RuleGenerator,
-    RuleParser,
-} from '@adguard/agtree';
+import { NetworkRuleType, RuleCategory, RuleGenerator, RuleParser } from '@adguard/agtree';
 import { defaultParserOptions } from '@adguard/agtree/parser';
 import { getErrorMessage } from '@adguard/logger';
 
@@ -74,7 +69,9 @@ export class RuleFactory {
                     return null;
             }
         } catch (e) {
-            logger.debug(`[tsurl.RuleFactory.createRule]: failed to create rule from text: ${ruleText}, got ${getErrorMessage(e)}`);
+            logger.debug(
+                `[tsurl.RuleFactory.createRule]: failed to create rule from text: ${ruleText}, got ${getErrorMessage(e)}`,
+            );
         }
 
         return null;

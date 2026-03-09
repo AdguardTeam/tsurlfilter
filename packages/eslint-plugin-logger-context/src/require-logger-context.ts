@@ -8,22 +8,12 @@ import { ESLintUtils, TSESTree } from '@typescript-eslint/utils';
 import type { RuleContext } from '@typescript-eslint/utils/ts-eslint';
 import path from 'path';
 import { LogMethod } from '@adguard/logger';
-import {
-    getEnclosingNames,
-    buildTag,
-    startsWithTag,
-    createFix,
-} from './helpers';
+import { getEnclosingNames, buildTag, startsWithTag, createFix } from './helpers';
 
 const DEFAULT_CONTEXT_MODULE_NAME = 'logger';
 const DEFAULT_LOGGER_VARIABLE_NAME = 'logger';
 const UNKNOWN_FILE_NAME = 'unknown';
-const FILE_EXTENSIONS: ReadonlySet<string> = new Set([
-    '.ts',
-    '.js',
-    '.tsx',
-    '.jsx',
-]);
+const FILE_EXTENSIONS: ReadonlySet<string> = new Set(['.ts', '.js', '.tsx', '.jsx']);
 
 /**
  * Options for require-logger-context ESLint rule.
@@ -52,16 +42,16 @@ type MessageIds = 'missingContextTag';
  * @returns The file name, or UNKNOWN_FILE_NAME if not a known extension.
  */
 function getFileName(context: RuleContext<MessageIds, Options>): string {
-    return (FILE_EXTENSIONS.has(path.extname(context.filename)))
-        // Only filename without extension
-        ? path.basename(context.filename).replace(path.extname(context.filename), '')
+    return FILE_EXTENSIONS.has(path.extname(context.filename))
+        ? // Only filename without extension
+          path.basename(context.filename).replace(path.extname(context.filename), '')
         : UNKNOWN_FILE_NAME;
 }
 
 /**
  * Rule definition for require-logger-context.
  */
-const createRule = ESLintUtils.RuleCreator((ruleName) => (`https://example.com/rules/${ruleName}`));
+const createRule = ESLintUtils.RuleCreator((ruleName) => `https://example.com/rules/${ruleName}`);
 
 export const requireLoggerContextRule = createRule<Options, MessageIds>({
     name: 'require-logger-context',
@@ -94,10 +84,10 @@ export const requireLoggerContextRule = createRule<Options, MessageIds>({
         return {
             CallExpression(node: TSESTree.CallExpression): void {
                 if (
-                    node.callee.type !== TSESTree.AST_NODE_TYPES.MemberExpression
-                    || node.callee.object.type !== TSESTree.AST_NODE_TYPES.Identifier
-                    || node.callee.object.name !== loggerVariableName
-                    || node.callee.property.type !== TSESTree.AST_NODE_TYPES.Identifier
+                    node.callee.type !== TSESTree.AST_NODE_TYPES.MemberExpression ||
+                    node.callee.object.type !== TSESTree.AST_NODE_TYPES.Identifier ||
+                    node.callee.object.name !== loggerVariableName ||
+                    node.callee.property.type !== TSESTree.AST_NODE_TYPES.Identifier
                 ) {
                     return;
                 }

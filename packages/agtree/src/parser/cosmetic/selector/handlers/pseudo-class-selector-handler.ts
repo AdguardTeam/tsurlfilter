@@ -21,13 +21,7 @@ export class PseudoClassSelectorHandler {
      * @throws If the pseudo-class selector is syntactically incorrect.
      */
     public static handle(context: SelectorListParserContext): void {
-        const {
-            raw,
-            options,
-            baseOffset,
-            stream,
-            complexSelector,
-        } = context;
+        const { raw, options, baseOffset, stream, complexSelector } = context;
 
         // Get colon token
         let token = stream.getOrFail();
@@ -67,11 +61,7 @@ export class PseudoClassSelectorHandler {
         // Construct pseudo-class selector node
         const result: PseudoClassSelector = {
             type: 'PseudoClassSelector',
-            name: ValueParser.parse(
-                nameRaw,
-                options,
-                baseOffset + token.start,
-            ),
+            name: ValueParser.parse(nameRaw, options, baseOffset + token.start),
         };
 
         // Include pseudo-class selector node start location if needed

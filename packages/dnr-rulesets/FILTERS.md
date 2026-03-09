@@ -115,7 +115,6 @@
         - [IndianList](#opera-mv3-filters-language-specific-indianlist)
         - [Macedonian adBlock Filters](#opera-mv3-filters-language-specific-macedonian-adblock-filters)
 
-
 ## <a id="chromium-mv3-filters"></a> Chromium MV3 filters
 
 These filter lists are used in Chromium MV3 browsers.
@@ -837,4 +836,3 @@ Blocks ads and trackers on various Macedonian websites.
 
 - Filter ID: **254**
 - Path: `dist/filters/opera-mv3/declarative/ruleset_254/ruleset_254.json`
-

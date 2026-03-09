@@ -83,10 +83,7 @@ export class CookieController {
         if (!isAppStarted && this.tries <= CookieController.MAX_GET_COOKIE_RULES_TRIES) {
             this.tries += 1;
 
-            setTimeout(
-                this.process,
-                CookieController.GET_COOKIE_RULES_RETRY_TIMEOUT_MS,
-            );
+            setTimeout(this.process, CookieController.GET_COOKIE_RULES_RETRY_TIMEOUT_MS);
 
             return;
         }
@@ -107,14 +104,14 @@ export class CookieController {
 
             cookieController.apply(cookieRules);
         } catch (e) {
-        // eslint-disable-next-line no-console
+            // eslint-disable-next-line no-console
             console.error(e);
-        /**
-         * Content script injected on in every frame, but document cookie API in
-         * iframes can be blocked by website CSP policy. We ignore this cases.
-         * Content script matching defined in browser extension.
-         * TODO: move error handling to it.
-         */
+            /**
+             * Content script injected on in every frame, but document cookie API in
+             * iframes can be blocked by website CSP policy. We ignore this cases.
+             * Content script matching defined in browser extension.
+             * TODO: move error handling to it.
+             */
         }
     };
 }

@@ -228,7 +228,10 @@ export class WebRequestApi {
         try {
             await browser.webRequest.handlerBehaviorChanged();
         } catch (e) {
-            logger.error('[tsweb.WebRequestApi.flushMemoryCache]: Cannot flush memory cache and call browser.handlerBehaviorChanged: ', e);
+            logger.error(
+                '[tsweb.WebRequestApi.flushMemoryCache]: Cannot flush memory cache and call browser.handlerBehaviorChanged: ',
+                e,
+            );
         }
     }
 
@@ -239,9 +242,7 @@ export class WebRequestApi {
      * @param requestData.context Request context.
      * @param requestData.details Event details.
      */
-    private static onBeforeRequest(
-        { context, details }: RequestData<OnBeforeRequestDetailsType>,
-    ): void {
+    private static onBeforeRequest({ context, details }: RequestData<OnBeforeRequestDetailsType>): void {
         if (!context) {
             return;
         }
@@ -282,27 +283,26 @@ export class WebRequestApi {
 
         let skipPrecalculation = true;
         if (isDocumentOrSubDocumentRequest) {
-            skipPrecalculation = CosmeticFrameProcessor.shouldSkipRecalculation(
-                tabId,
-                frameId,
-                requestUrl,
-                timestamp,
-            );
+            skipPrecalculation = CosmeticFrameProcessor.shouldSkipRecalculation(tabId, frameId, requestUrl, timestamp);
 
             if (!skipPrecalculation) {
                 /**
                  * Set in the beginning to let other events know that cosmetic result
                  * will be calculated in this event to avoid double calculation.
                  */
-                tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+                tabsApi.setFrameContext(
                     tabId,
                     frameId,
-                    parentFrameId,
-                    url: requestUrl,
-                    timeStamp: timestamp,
-                    documentId: details.documentId,
-                    parentDocumentId: details.parentDocumentId,
-                }));
+                    new FrameMV3({
+                        tabId,
+                        frameId,
+                        parentFrameId,
+                        url: requestUrl,
+                        timeStamp: timestamp,
+                        documentId: details.documentId,
+                        parentDocumentId: details.parentDocumentId,
+                    }),
+                );
             }
         }
 
@@ -403,34 +403,38 @@ export class WebRequestApi {
      * @param event.context Event context.
      * @param event.details Event details.
      */
-    private static onResponseStarted(
-        { context, details }: RequestData<WebRequest.OnResponseStartedDetailsType>,
-    ): void {
+    private static onResponseStarted({ context, details }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
         if (!context) {
             return;
         }
 
         const { requestType, tabId, frameId } = context;
 
-        if (requestType !== RequestType.Document
-            && requestType !== RequestType.SubDocument) {
+        if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
             return;
         }
 
         if (WebRequestApi.isAssistantFrame(tabId, details)) {
-            logger.debug(`[tsweb.WebRequestApi.onResponseStarted]: assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId ${frameId}`);
+            logger.debug(
+                `[tsweb.WebRequestApi.onResponseStarted]: assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId ${frameId}`,
+            );
             return;
         }
 
         if (!CosmeticApi.shouldApplyCosmetics(tabId, details.url)) {
-            logger.debug(`[tsweb.WebRequestApi.onResponseStarted]: skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${details.url}`);
+            logger.debug(
+                `[tsweb.WebRequestApi.onResponseStarted]: skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${details.url}`,
+            );
             return;
         }
 
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
         CosmeticApi.applyCosmeticRules(tabId, frameId, false).catch((e) => {
-            logger.error(`[tsweb.WebRequestApi.onResponseStarted]: error applying cosmetic rules for tabId ${tabId} and frameId ${frameId}`, e);
+            logger.error(
+                `[tsweb.WebRequestApi.onResponseStarted]: error applying cosmetic rules for tabId ${tabId} and frameId ${frameId}`,
+                e,
+            );
         });
     }
 
@@ -440,17 +444,12 @@ export class WebRequestApi {
      * @param details On before send headers details.
      * @param details.context Details context.
      */
-    private static onBeforeSendHeaders(
-        { context }: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>,
-    ): void {
+    private static onBeforeSendHeaders({ context }: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>): void {
         if (!context) {
             return;
         }
 
-        const {
-            referrerUrl,
-            tabId,
-        } = context;
+        const { referrerUrl, tabId } = context;
 
         /**
          * TODO: Remove Cookie header from requests initiated by the background
@@ -477,10 +476,7 @@ export class WebRequestApi {
      * @param event.context Event context.
      * @param event.details On headers received details.
      */
-    private static onHeadersReceived({
-        context,
-        details,
-    }: RequestData<WebRequest.OnHeadersReceivedDetailsType>): void {
+    private static onHeadersReceived({ context, details }: RequestData<WebRequest.OnHeadersReceivedDetailsType>): void {
         if (!context) {
             return;
         }
@@ -496,10 +492,7 @@ export class WebRequestApi {
             },
         });
 
-        if (
-            !context?.matchingResult
-            || context.matchingResult.getBasicResult()?.isFilteringDisabled()
-        ) {
+        if (!context?.matchingResult || context.matchingResult.getBasicResult()?.isFilteringDisabled()) {
             return;
         }
 
@@ -509,8 +502,8 @@ export class WebRequestApi {
         RequestBlockingApi.logHeaderRuleIfAny(context);
 
         const { requestUrl, requestType } = context;
-        const isDocumentOrSubDocumentRequest = requestType === RequestType.Document
-            || requestType === RequestType.SubDocument;
+        const isDocumentOrSubDocumentRequest =
+            requestType === RequestType.Document || requestType === RequestType.SubDocument;
 
         if (requestUrl && isDocumentOrSubDocumentRequest) {
             CspService.onHeadersReceived(context);
@@ -526,17 +519,8 @@ export class WebRequestApi {
      *
      * @param details Event details.
      */
-    private static onBeforeNavigate(
-        details: chrome.webNavigation.WebNavigationParentedCallbackDetails,
-    ): void {
-        const {
-            tabId,
-            frameId,
-            parentFrameId,
-            url,
-            parentDocumentId,
-            timeStamp,
-        } = details;
+    private static onBeforeNavigate(details: chrome.webNavigation.WebNavigationParentedCallbackDetails): void {
+        const { tabId, frameId, parentFrameId, url, parentDocumentId, timeStamp } = details;
 
         /**
          * In some cases `onBeforeNavigate` might happen before Tabs API `onCreated`
@@ -560,15 +544,19 @@ export class WebRequestApi {
          * Set in the beginning to let other events know that cosmetic result
          * will be calculated in this event to avoid double calculation.
          */
-        tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+        tabsApi.setFrameContext(
             tabId,
             frameId,
-            parentFrameId,
-            url,
-            timeStamp,
-            documentId: details.documentId,
-            parentDocumentId: details.parentDocumentId,
-        }));
+            new FrameMV3({
+                tabId,
+                frameId,
+                parentFrameId,
+                url,
+                timeStamp,
+                documentId: details.documentId,
+                parentDocumentId: details.parentDocumentId,
+            }),
+        );
 
         // Matching request
         CosmeticFrameProcessor.precalculateCosmetics({
@@ -589,16 +577,8 @@ export class WebRequestApi {
      * @param event On error occurred event.
      * @param event.details On error occurred event details.
      */
-    private static onErrorOccurred({
-        details,
-    }: RequestData<WebRequest.OnErrorOccurredDetailsType>): void {
-        const {
-            tabId,
-            requestId,
-            url,
-            type,
-            error,
-        } = details;
+    private static onErrorOccurred({ details }: RequestData<WebRequest.OnErrorOccurredDetailsType>): void {
+        const { tabId, requestId, url, type, error } = details;
 
         /**
          * Error related to request blocking by DNR rule.
@@ -616,13 +596,7 @@ export class WebRequestApi {
             return;
         }
 
-        const {
-            eventId,
-            requestUrl,
-            referrerUrl,
-            contentType,
-            matchingResult,
-        } = context;
+        const { eventId, requestUrl, referrerUrl, contentType, matchingResult } = context;
 
         // checking whether the matchingResult exists in the context guarantees
         // that the request was blocked by our extension
@@ -710,26 +684,19 @@ export class WebRequestApi {
      * @param event The event that occurred upon completion of the request.
      * @param event.context The context of the completed event.
      */
-    private static onCompleted({
-        context,
-    }: RequestData<WebRequest.OnCompletedDetailsType>): void {
+    private static onCompleted({ context }: RequestData<WebRequest.OnCompletedDetailsType>): void {
         if (!context) {
             return;
         }
 
-        const {
-            tabId,
-            frameId,
-            requestUrl,
-            requestType,
-            contentType,
-            timestamp,
-        } = context;
+        const { tabId, frameId, requestUrl, requestType, contentType, timestamp } = context;
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
             if (!frameContext?.preparedCosmeticResult) {
-                logger.debug(`[tsweb.WebRequestApi.onCompleted]: cannot log script rules due to not having prepared cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                logger.debug(
+                    `[tsweb.WebRequestApi.onCompleted]: cannot log script rules due to not having prepared cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`,
+                );
                 return;
             }
 
@@ -791,12 +758,16 @@ export class WebRequestApi {
         tabsApi.updateFrameContext(tabId, frameId, { documentId });
 
         if (WebRequestApi.isAssistantFrame(tabId, details)) {
-            logger.debug(`[tsweb.WebRequestApi.onCommitted]: assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`);
+            logger.debug(
+                `[tsweb.WebRequestApi.onCommitted]: assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
+            );
             return;
         }
 
         if (!CosmeticApi.shouldApplyCosmetics(tabId, details.url)) {
-            logger.debug(`[tsweb.WebRequestApi.onCommitted]: Skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${details.url}`);
+            logger.debug(
+                `[tsweb.WebRequestApi.onCommitted]: Skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${details.url}`,
+            );
             return;
         }
 
@@ -817,10 +788,7 @@ export class WebRequestApi {
      *
      * @returns True if the frame is an assistant frame, false otherwise.
      */
-    private static isAssistantFrame(
-        tabId: number,
-        details: CommonAssistantDetails,
-    ): boolean {
+    private static isAssistantFrame(tabId: number, details: CommonAssistantDetails): boolean {
         const tabContext = tabsApi.getTabContext(tabId);
 
         return CommonAssistant.isAssistantFrame(details, tabContext);

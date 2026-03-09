@@ -85,7 +85,7 @@ const printSystemSpecs = async (specs: SystemSpecs) => {
 /**
  * Main IIFE to run the benchmark.
  */
-((async () => {
+(async () => {
     const start = Date.now();
     consola.info('Starting the benchmark...');
 
@@ -95,7 +95,9 @@ const printSystemSpecs = async (specs: SystemSpecs) => {
     consola.info('Downloading filter lists...');
     const downloadedFilterLists = await downloadFilterLists(benchmarkConfig.filterLists);
     // eslint-disable-next-line max-len
-    consola.success(`Downloaded ${downloadedFilterLists.length} filter list${downloadedFilterLists.length > 1 ? 's' : ''}`);
+    consola.success(
+        `Downloaded ${downloadedFilterLists.length} filter list${downloadedFilterLists.length > 1 ? 's' : ''}`,
+    );
 
     consola.info('Building AGTree IIFE (just in-memory)...');
     const agtreeIife = buildSync({
@@ -130,7 +132,7 @@ const printSystemSpecs = async (specs: SystemSpecs) => {
     consola.info('Build AGTree for Node.js...');
     // make temp directory if it doesn't exist
     const tempDir = path.join(__dirname, 'temp');
-    if (!await pathExists(tempDir)) {
+    if (!(await pathExists(tempDir))) {
         await mkdir(tempDir);
     }
     const agTreeBundlePath = path.join(tempDir, 'agtree-node.js');
@@ -159,10 +161,7 @@ const printSystemSpecs = async (specs: SystemSpecs) => {
         };
 
         // run in Node.js
-        const nodeResult = await runBenchmarkNode(
-            filterList,
-            benchmarkConfig.parserOptions,
-        );
+        const nodeResult = await runBenchmarkNode(filterList, benchmarkConfig.parserOptions);
 
         if (nodeResult instanceof Error) {
             consola.error(nodeResult);
@@ -202,4 +201,4 @@ const printSystemSpecs = async (specs: SystemSpecs) => {
 
     const end = Date.now();
     consola.success(`Benchmark completed in ${(end - start) / 1000} seconds`);
-})());
+})();

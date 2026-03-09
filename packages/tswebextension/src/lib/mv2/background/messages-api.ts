@@ -68,34 +68,19 @@ export class MessagesApi {
 
         switch (type) {
             case MessageType.ProcessShouldCollapse: {
-                return this.handleProcessShouldCollapseMessage(
-                    sender,
-                    message.payload,
-                );
+                return this.handleProcessShouldCollapseMessage(sender, message.payload);
             }
             case MessageType.GetCosmeticData: {
-                return this.handleGetCosmeticData(
-                    sender,
-                    message.payload,
-                );
+                return this.handleGetCosmeticData(sender, message.payload);
             }
             case MessageType.GetCookieRules: {
-                return this.handleGetCookieRulesMessage(
-                    sender,
-                    message.payload,
-                );
+                return this.handleGetCookieRulesMessage(sender, message.payload);
             }
             case MessageType.SaveCookieLogEvent: {
-                return this.handleSaveCookieLogEvent(
-                    sender,
-                    message.payload,
-                );
+                return this.handleSaveCookieLogEvent(sender, message.payload);
             }
             case MessageType.AssistantCreateRule: {
-                return this.handleAssistantCreateRuleMessage(
-                    sender,
-                    message.payload,
-                );
+                return this.handleAssistantCreateRuleMessage(sender, message.payload);
             }
             case MessageType.SaveCssHitsStats: {
                 return this.handleSaveCssHitsStats(sender, message.payload);
@@ -114,10 +99,7 @@ export class MessagesApi {
      *
      * @returns True if element should be collapsed.
      */
-    private handleProcessShouldCollapseMessage(
-        sender: Runtime.MessageSender,
-        payload?: unknown,
-    ): boolean {
+    private handleProcessShouldCollapseMessage(sender: Runtime.MessageSender, payload?: unknown): boolean {
         if (!payload || !sender?.tab?.id) {
             return false;
         }
@@ -143,10 +125,7 @@ export class MessagesApi {
      *
      * @returns Content script data for applying cosmetic rules or null if no data.
      */
-    private handleGetCosmeticData(
-        sender: Runtime.MessageSender,
-        payload?: unknown,
-    ): ContentScriptCosmeticData | null {
+    private handleGetCosmeticData(sender: Runtime.MessageSender, payload?: unknown): ContentScriptCosmeticData | null {
         logger.trace('[tsweb.MessagesApi.handleGetCosmeticData]: received call: ', payload);
         if (!payload || !sender?.tab?.id) {
             return null;
@@ -178,10 +157,7 @@ export class MessagesApi {
      *
      * @returns Cookie rules data.
      */
-    private handleGetCookieRulesMessage(
-        sender: Runtime.MessageSender,
-        payload?: unknown,
-    ): CookieRule[] {
+    private handleGetCookieRulesMessage(sender: Runtime.MessageSender, payload?: unknown): CookieRule[] {
         if (!payload || !sender?.tab?.id) {
             return [];
         }
@@ -222,10 +198,7 @@ export class MessagesApi {
      *
      * @returns True if event was published to filtering log.
      */
-    private handleSaveCookieLogEvent(
-        sender: Runtime.MessageSender,
-        payload?: unknown,
-    ): boolean {
+    private handleSaveCookieLogEvent(sender: Runtime.MessageSender, payload?: unknown): boolean {
         if (!payload || !sender?.tab?.id) {
             return false;
         }
@@ -238,11 +211,7 @@ export class MessagesApi {
         const { data } = res;
 
         // Retrieve rule texts for content script cosmetic events
-        const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(
-            data.filterId,
-            data.ruleIndex,
-            engineApi,
-        );
+        const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(data.filterId, data.ruleIndex, engineApi);
 
         this.filteringLog.publishEvent({
             type: FilteringEventType.Cookie,
@@ -281,10 +250,7 @@ export class MessagesApi {
      *
      * @returns True if rule was dispatched.
      */
-    private handleAssistantCreateRuleMessage(
-        sender: Runtime.MessageSender,
-        payload?: unknown,
-    ): boolean {
+    private handleAssistantCreateRuleMessage(sender: Runtime.MessageSender, payload?: unknown): boolean {
         if (!payload || !sender?.tab?.id) {
             return false;
         }
@@ -334,11 +300,7 @@ export class MessagesApi {
             const stat = payload[i];
 
             // Retrieve rule texts for content script cosmetic events
-            const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(
-                stat.filterId,
-                stat.ruleIndex,
-                engineApi,
-            );
+            const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(stat.filterId, stat.ruleIndex, engineApi);
 
             this.filteringLog.publishEvent({
                 type: FilteringEventType.ApplyCosmeticRule,

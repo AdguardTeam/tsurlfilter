@@ -41,7 +41,7 @@ describe('Content filtering - charsets', () => {
             ['<meta content="text/html; charset=utf-8" http-equiv="content-type" />', DEFAULT_CHARSET],
         ];
 
-        test.each(table)('parseCharsetFromHtml(\'%s\')', (html, expected) => {
+        test.each(table)("parseCharsetFromHtml('%s')", (html, expected) => {
             expect(parseCharsetFromHtml(html)).toBe(expected);
         });
     });

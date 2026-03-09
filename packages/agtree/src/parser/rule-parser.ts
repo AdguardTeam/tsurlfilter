@@ -158,13 +158,17 @@ export class RuleParser extends BaseParser {
                     return result;
                 }
 
-                return CosmeticRuleParser.parse(raw, options, baseOffset)
-                    || RuleParser.parseHostOrNetworkRule(raw, options, baseOffset);
+                return (
+                    CosmeticRuleParser.parse(raw, options, baseOffset) ||
+                    RuleParser.parseHostOrNetworkRule(raw, options, baseOffset)
+                );
             }
 
-            return CommentParser.parse(raw, options, baseOffset)
-                || CosmeticRuleParser.parse(raw, options, baseOffset)
-                || RuleParser.parseHostOrNetworkRule(raw, options, baseOffset);
+            return (
+                CommentParser.parse(raw, options, baseOffset) ||
+                CosmeticRuleParser.parse(raw, options, baseOffset) ||
+                RuleParser.parseHostOrNetworkRule(raw, options, baseOffset)
+            );
         } catch (error: unknown) {
             // If tolerant mode is disabled or the error is not known, then simply
             // re-throw the error

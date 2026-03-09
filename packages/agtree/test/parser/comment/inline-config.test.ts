@@ -425,10 +425,7 @@ describe('ConfigCommentParser', () => {
                 start: 9,
                 end: 35,
                 value: {
-                    rule1: [
-                        'error',
-                        'double',
-                    ],
+                    rule1: ['error', 'double'],
                 },
             },
         });
@@ -463,10 +460,7 @@ describe('ConfigCommentParser', () => {
                 end: 70,
                 value: {
                     rule1: 'off',
-                    rule2: [
-                        1,
-                        2,
-                    ],
+                    rule2: [1, 2],
                     rule3: [
                         'error',
                         {
@@ -522,10 +516,7 @@ describe('ConfigCommentParser', () => {
                         type: 'ConfigNode',
                         value: {
                             rule1: 'off',
-                            rule2: [
-                                1,
-                                2,
-                            ],
+                            rule2: [1, 2],
                             rule3: [
                                 'error',
                                 {
@@ -541,9 +532,9 @@ describe('ConfigCommentParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(
-                ConfigCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
-            ).toEqual(expected);
+            expect(ConfigCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false })).toEqual(
+                expected,
+            );
         });
     });
 

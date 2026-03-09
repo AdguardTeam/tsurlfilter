@@ -9,7 +9,7 @@ export const OperatorValue = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type OperatorValue = typeof OperatorValue[keyof typeof OperatorValue];
+export type OperatorValue = (typeof OperatorValue)[keyof typeof OperatorValue];
 
 /**
  * Represents possible new line types.
@@ -19,20 +19,12 @@ export type NewLine = 'crlf' | 'lf' | 'cr';
 /**
  * Represents any kind of logical expression node.
  */
-export type AnyExpressionNode =
-    | ExpressionVariableNode
-    | ExpressionOperatorNode
-    | ExpressionParenthesisNode;
+export type AnyExpressionNode = ExpressionVariableNode | ExpressionOperatorNode | ExpressionParenthesisNode;
 
 /**
  * Represents any kind of adblock rule.
  */
-export type AnyRule =
-    | EmptyRule
-    | AnyCommentRule
-    | AnyCosmeticRule
-    | AnyNetworkRule
-    | InvalidRule;
+export type AnyRule = EmptyRule | AnyCommentRule | AnyCosmeticRule | AnyNetworkRule | InvalidRule;
 
 /**
  * Represents any comment-like adblock rule.
@@ -82,7 +74,7 @@ export const CommentMarker = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type CommentMarker = typeof CommentMarker[keyof typeof CommentMarker];
+export type CommentMarker = (typeof CommentMarker)[keyof typeof CommentMarker];
 
 /**
  * Represents the main categories that an adblock rule can belong to.
@@ -118,7 +110,7 @@ export const RuleCategory = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type RuleCategory = typeof RuleCategory[keyof typeof RuleCategory];
+export type RuleCategory = (typeof RuleCategory)[keyof typeof RuleCategory];
 
 /**
  * Represents similar types of modifiers values
@@ -134,7 +126,7 @@ export const ListNodeType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type ListNodeType = typeof ListNodeType[keyof typeof ListNodeType];
+export type ListNodeType = (typeof ListNodeType)[keyof typeof ListNodeType];
 
 /**
  * Represents child items for {@link ListNodeType}.
@@ -149,7 +141,7 @@ export const ListItemNodeType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type ListItemNodeType = typeof ListItemNodeType[keyof typeof ListItemNodeType];
+export type ListItemNodeType = (typeof ListItemNodeType)[keyof typeof ListItemNodeType];
 
 /**
  * Represents possible comment types.
@@ -165,7 +157,7 @@ export const CommentRuleType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type CommentRuleType = typeof CommentRuleType[keyof typeof CommentRuleType];
+export type CommentRuleType = (typeof CommentRuleType)[keyof typeof CommentRuleType];
 
 /**
  * Represents possible cosmetic rule types.
@@ -180,7 +172,7 @@ export const CosmeticRuleType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type CosmeticRuleType = typeof CosmeticRuleType[keyof typeof CosmeticRuleType];
+export type CosmeticRuleType = (typeof CosmeticRuleType)[keyof typeof CosmeticRuleType];
 
 /**
  * Represents possible cosmetic rule separators.
@@ -259,7 +251,7 @@ export const CosmeticRuleSeparator = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type CosmeticRuleSeparator = typeof CosmeticRuleSeparator[keyof typeof CosmeticRuleSeparator];
+export type CosmeticRuleSeparator = (typeof CosmeticRuleSeparator)[keyof typeof CosmeticRuleSeparator];
 
 /**
  * Represents a basic node in the AST.
@@ -1147,9 +1139,7 @@ export interface AttributeSelectorWithValue extends Node {
  *
  * @see {@link https://www.w3.org/TR/selectors-4/#attribute-selectors}
  */
-export type AttributeSelector =
-    | AttributeSelectorWithoutValue
-    | AttributeSelectorWithValue;
+export type AttributeSelector = AttributeSelectorWithoutValue | AttributeSelectorWithValue;
 
 /**
  * Represents a pseudo-class selector.
@@ -1177,12 +1167,7 @@ export interface PseudoClassSelector extends Node {
  *
  * @see {@link https://www.w3.org/TR/selectors-4/#simple}
  */
-export type SimpleSelector =
-    | TypeSelector
-    | ClassSelector
-    | IdSelector
-    | AttributeSelector
-    | PseudoClassSelector;
+export type SimpleSelector = TypeSelector | ClassSelector | IdSelector | AttributeSelector | PseudoClassSelector;
 
 /**
  * Represents selector combinator values.
@@ -1426,7 +1411,7 @@ export const NetworkRuleType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type NetworkRuleType = typeof NetworkRuleType[keyof typeof NetworkRuleType];
+export type NetworkRuleType = (typeof NetworkRuleType)[keyof typeof NetworkRuleType];
 
 /**
  * Represents the common properties of network rules

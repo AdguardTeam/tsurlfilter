@@ -88,8 +88,10 @@ export class TrustedTypesService {
     private static isCspHeader(header: WebRequest.HttpHeadersItemType): boolean {
         // header names are case-insensitive
         // https://datatracker.ietf.org/doc/html/rfc2616#section-4.2
-        return header.name.toLowerCase() === TrustedTypesService.CSP_HEADER_NAME
-            || header.name.toLowerCase() === TrustedTypesService.CSP_REPORT_ONLY_HEADER_NAME;
+        return (
+            header.name.toLowerCase() === TrustedTypesService.CSP_HEADER_NAME ||
+            header.name.toLowerCase() === TrustedTypesService.CSP_REPORT_ONLY_HEADER_NAME
+        );
     }
 
     /**
@@ -110,8 +112,7 @@ export class TrustedTypesService {
 
         const modifiedValueChunks: string[] = [];
 
-        if (valueChunks.length > 0
-            && !valueChunks.includes(TrustedTypesService.NONE_TRUSTED_TYPES_POLICY_VALUE)) {
+        if (valueChunks.length > 0 && !valueChunks.includes(TrustedTypesService.NONE_TRUSTED_TYPES_POLICY_VALUE)) {
             // copy `trusted-types` policy names from the directive value
             modifiedValueChunks.push(...valueChunks);
         }
@@ -152,9 +153,7 @@ export class TrustedTypesService {
                 continue;
             }
             const separatorIndex = directive.indexOf(TrustedTypesService.CSP_DIRECTIVE_VALUES_SEPARATOR);
-            const directiveName = separatorIndex === -1
-                ? directive
-                : directive.slice(0, separatorIndex);
+            const directiveName = separatorIndex === -1 ? directive : directive.slice(0, separatorIndex);
 
             if (directiveName !== TrustedTypesService.CSP_TRUSTED_TYPES_DIRECTIVE_NAME) {
                 // do nothing if it is not a `trusted-types` directive
@@ -162,9 +161,7 @@ export class TrustedTypesService {
                 continue;
             }
 
-            const directiveValue = separatorIndex === -1
-                ? ''
-                : directive.slice(separatorIndex + 1);
+            const directiveValue = separatorIndex === -1 ? '' : directive.slice(separatorIndex + 1);
 
             const modifiedDirectiveValue = TrustedTypesService.modifyDirectiveValue(directiveValue);
             resultDirectives.push(
@@ -241,10 +238,7 @@ export class TrustedTypesService {
         }
 
         requestContextStorage.update(context.requestId, {
-            responseHeaders: [
-                ...notCspHeaders,
-                ...modifiedCspHeaders,
-            ],
+            responseHeaders: [...notCspHeaders, ...modifiedCspHeaders],
         });
 
         return true;

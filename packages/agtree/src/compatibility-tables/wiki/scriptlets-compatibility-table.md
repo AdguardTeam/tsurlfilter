@@ -1,4 +1,5 @@
 <!-- markdownlint-disable MD013 MD033 -->
+
 # Scriptlets Compatibility Table
 
 This table is generated from the compatibility data.

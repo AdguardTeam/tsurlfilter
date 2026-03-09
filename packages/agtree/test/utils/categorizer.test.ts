@@ -66,7 +66,7 @@ describe('RuleCategorizer', () => {
                 actual: '##+js(foo',
                 expected: null,
             },
-        ])('should categorize \'$actual\' as \'$expected\'', ({ actual, expected }) => {
+        ])("should categorize '$actual' as '$expected'", ({ actual, expected }) => {
             expect(RuleCategorizer.getCosmeticRuleType(actual)).toBe(expected);
         });
     });

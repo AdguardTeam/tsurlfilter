@@ -187,14 +187,14 @@ export const benchmark = async ({
                 // https://github.com/bestiejs/benchmark.js/blob/42f3b732bac3640eddb3ae5f50e445f3141016fd/benchmark.js#L1525
                 const name = bench.name || (Number.isNaN(bench.id) ? 'NaN' : `benchmark #${bench.id}`);
 
-                return ({
+                return {
                     actionName: name,
                     opsPerSecond: `${bench.hz.toFixed(bench.hz < 100 ? 2 : 0)} (\xb1${bench.stats.rme.toFixed(2)}%)`,
                     runsSampled: bench.stats.sample.length,
                     // https://benchmarkjs.com/docs/#stats_mean (The sample arithmetic mean (secs))
                     averageRuntime: `${(bench.stats.mean * 1000).toFixed(10)} ms`,
                     status: bench.error ? bench.error.message : 'passed',
-                });
+                };
             }),
         );
     });

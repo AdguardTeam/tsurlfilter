@@ -42,14 +42,7 @@ export class CspService {
      * @returns True if headers were modified.
      */
     public onHeadersReceived(context: RequestContext): boolean {
-        const {
-            matchingResult,
-            responseHeaders,
-            requestId,
-            tabId,
-            requestUrl,
-            referrerUrl,
-        } = context;
+        const { matchingResult, responseHeaders, requestId, tabId, requestUrl, referrerUrl } = context;
 
         if (!matchingResult) {
             return false;

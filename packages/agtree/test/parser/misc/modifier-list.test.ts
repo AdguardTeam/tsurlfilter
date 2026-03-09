@@ -9,61 +9,33 @@ describe('ModifierListParser', () => {
     test('parse', () => {
         // TODO: Refactor to test.each
         // Invalid cases
-        expect(() => ModifierListParser.parse(',')).toThrowError(
-            'Modifier name cannot be empty',
-        );
+        expect(() => ModifierListParser.parse(',')).toThrowError('Modifier name cannot be empty');
 
-        expect(() => ModifierListParser.parse(' , ')).toThrowError(
-            'Modifier name cannot be empty',
-        );
+        expect(() => ModifierListParser.parse(' , ')).toThrowError('Modifier name cannot be empty');
 
-        expect(() => ModifierListParser.parse(',b')).toThrowError(
-            'Modifier name cannot be empty',
-        );
+        expect(() => ModifierListParser.parse(',b')).toThrowError('Modifier name cannot be empty');
 
-        expect(() => ModifierListParser.parse('a,')).toThrowError(
-            'Modifier name cannot be empty',
-        );
+        expect(() => ModifierListParser.parse('a,')).toThrowError('Modifier name cannot be empty');
 
-        expect(() => ModifierListParser.parse('a, ')).toThrowError(
-            'Modifier name cannot be empty',
-        );
+        expect(() => ModifierListParser.parse('a, ')).toThrowError('Modifier name cannot be empty');
 
-        expect(() => ModifierListParser.parse(' a , ')).toThrowError(
-            'Modifier name cannot be empty',
-        );
+        expect(() => ModifierListParser.parse(' a , ')).toThrowError('Modifier name cannot be empty');
 
-        expect(() => ModifierListParser.parse('a,,')).toThrowError(
-            'Modifier name cannot be empty',
-        );
+        expect(() => ModifierListParser.parse('a,,')).toThrowError('Modifier name cannot be empty');
 
-        expect(() => ModifierListParser.parse('a,b,')).toThrowError(
-            'Modifier name cannot be empty',
-        );
+        expect(() => ModifierListParser.parse('a,b,')).toThrowError('Modifier name cannot be empty');
 
-        expect(() => ModifierListParser.parse('a,,b')).toThrowError(
-            'Modifier name cannot be empty',
-        );
+        expect(() => ModifierListParser.parse('a,,b')).toThrowError('Modifier name cannot be empty');
 
-        expect(() => ModifierListParser.parse('a , , b')).toThrowError(
-            'Modifier name cannot be empty',
-        );
+        expect(() => ModifierListParser.parse('a , , b')).toThrowError('Modifier name cannot be empty');
 
-        expect(() => ModifierListParser.parse('a=')).toThrowError(
-            'Modifier value cannot be empty',
-        );
+        expect(() => ModifierListParser.parse('a=')).toThrowError('Modifier value cannot be empty');
 
-        expect(() => ModifierListParser.parse('a=,b')).toThrowError(
-            'Modifier value cannot be empty',
-        );
+        expect(() => ModifierListParser.parse('a=,b')).toThrowError('Modifier value cannot be empty');
 
-        expect(() => ModifierListParser.parse('a,b=')).toThrowError(
-            'Modifier value cannot be empty',
-        );
+        expect(() => ModifierListParser.parse('a,b=')).toThrowError('Modifier value cannot be empty');
 
-        expect(() => ModifierListParser.parse('a, b = ')).toThrowError(
-            'Modifier value cannot be empty',
-        );
+        expect(() => ModifierListParser.parse('a, b = ')).toThrowError('Modifier value cannot be empty');
 
         // Empty modifiers
         expect(ModifierListParser.parse(EMPTY)).toEqual<ModifierList>({
@@ -73,37 +45,33 @@ describe('ModifierListParser', () => {
             children: [],
         });
 
-        expect(ModifierListParser.parse(SPACE)).toEqual<ModifierList>(
-            {
-                type: 'ModifierList',
-                start: 0,
-                end: 1,
-                children: [],
-            },
-        );
+        expect(ModifierListParser.parse(SPACE)).toEqual<ModifierList>({
+            type: 'ModifierList',
+            start: 0,
+            end: 1,
+            children: [],
+        });
 
         // Valid modifiers
-        expect(ModifierListParser.parse('modifier1')).toEqual<ModifierList>(
-            {
-                type: 'ModifierList',
-                start: 0,
-                end: 9,
-                children: [
-                    {
-                        type: 'Modifier',
+        expect(ModifierListParser.parse('modifier1')).toEqual<ModifierList>({
+            type: 'ModifierList',
+            start: 0,
+            end: 9,
+            children: [
+                {
+                    type: 'Modifier',
+                    start: 0,
+                    end: 9,
+                    name: {
+                        type: 'Value',
                         start: 0,
                         end: 9,
-                        name: {
-                            type: 'Value',
-                            start: 0,
-                            end: 9,
-                            value: 'modifier1',
-                        },
-                        exception: false,
+                        value: 'modifier1',
                     },
-                ],
-            },
-        );
+                    exception: false,
+                },
+            ],
+        });
 
         expect(ModifierListParser.parse('~modifier1')).toEqual<ModifierList>({
             type: 'ModifierList',
@@ -736,7 +704,9 @@ describe('ModifierListParser', () => {
         expect(parseAndGenerate('modifier1=value1,modifier2=value2')).toEqual('modifier1=value1,modifier2=value2');
         expect(parseAndGenerate('~modifier1=value1,~modifier2=value2')).toEqual('~modifier1=value1,~modifier2=value2');
         // eslint-disable-next-line max-len
-        expect(parseAndGenerate('~modifier1  =  value1   ,   ~modifier2  =   value2')).toEqual('~modifier1=value1,~modifier2=value2');
+        expect(parseAndGenerate('~modifier1  =  value1   ,   ~modifier2  =   value2')).toEqual(
+            '~modifier1=value1,~modifier2=value2',
+        );
 
         expect(
             parseAndGenerate(

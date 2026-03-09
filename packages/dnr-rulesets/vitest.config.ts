@@ -7,9 +7,7 @@ export default defineConfig({
     test: {
         watch: false,
         coverage: {
-            include: [
-                'src/**/*.ts',
-            ],
+            include: ['src/**/*.ts'],
             thresholds: {
                 global: {
                     branches: 100,

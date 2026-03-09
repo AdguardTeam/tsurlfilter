@@ -27,7 +27,6 @@ export class ListItemsGenerator {
      * @returns String representation of the list of items.
      */
     public static generate = <T extends ListItemNodeType>(items: ListItem<T>[], separator: string): string => {
-        return items.map(ListItemsGenerator.generateListItem)
-            .join(separator);
+        return items.map(ListItemsGenerator.generateListItem).join(separator);
     };
 }

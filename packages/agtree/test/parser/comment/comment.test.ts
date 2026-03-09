@@ -153,88 +153,88 @@ describe('CommentRuleParser', () => {
             ],
         });
 
-        expect(
-            CommentParser.parse('!+ NOT_OPTIMIZED PLATFORM(windows, mac) NOT_PLATFORM(android, ios)'),
-        ).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 66,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 16,
-                    name: {
-                        type: 'Value',
+        expect(CommentParser.parse('!+ NOT_OPTIMIZED PLATFORM(windows, mac) NOT_PLATFORM(android, ios)')).toMatchObject(
+            {
+                type: 'HintCommentRule',
+                start: 0,
+                end: 66,
+                category: 'Comment',
+                syntax: 'AdGuard',
+                children: [
+                    {
+                        type: 'Hint',
                         start: 3,
                         end: 16,
-                        value: 'NOT_OPTIMIZED',
+                        name: {
+                            type: 'Value',
+                            start: 3,
+                            end: 16,
+                            value: 'NOT_OPTIMIZED',
+                        },
                     },
-                },
-                {
-                    type: 'Hint',
-                    start: 17,
-                    end: 39,
-                    name: {
-                        type: 'Value',
+                    {
+                        type: 'Hint',
                         start: 17,
-                        end: 25,
-                        value: 'PLATFORM',
+                        end: 39,
+                        name: {
+                            type: 'Value',
+                            start: 17,
+                            end: 25,
+                            value: 'PLATFORM',
+                        },
+                        params: {
+                            type: 'ParameterList',
+                            start: 26,
+                            end: 38,
+                            children: [
+                                {
+                                    type: 'Value',
+                                    start: 26,
+                                    end: 33,
+                                    value: 'windows',
+                                },
+                                {
+                                    type: 'Value',
+                                    start: 35,
+                                    end: 38,
+                                    value: 'mac',
+                                },
+                            ],
+                        },
                     },
-                    params: {
-                        type: 'ParameterList',
-                        start: 26,
-                        end: 38,
-                        children: [
-                            {
-                                type: 'Value',
-                                start: 26,
-                                end: 33,
-                                value: 'windows',
-                            },
-                            {
-                                type: 'Value',
-                                start: 35,
-                                end: 38,
-                                value: 'mac',
-                            },
-                        ],
-                    },
-                },
-                {
-                    type: 'Hint',
-                    start: 40,
-                    end: 66,
-                    name: {
-                        type: 'Value',
+                    {
+                        type: 'Hint',
                         start: 40,
-                        end: 52,
-                        value: 'NOT_PLATFORM',
+                        end: 66,
+                        name: {
+                            type: 'Value',
+                            start: 40,
+                            end: 52,
+                            value: 'NOT_PLATFORM',
+                        },
+                        params: {
+                            type: 'ParameterList',
+                            start: 53,
+                            end: 65,
+                            children: [
+                                {
+                                    type: 'Value',
+                                    start: 53,
+                                    end: 60,
+                                    value: 'android',
+                                },
+                                {
+                                    type: 'Value',
+                                    start: 62,
+                                    end: 65,
+                                    value: 'ios',
+                                },
+                            ],
+                        },
                     },
-                    params: {
-                        type: 'ParameterList',
-                        start: 53,
-                        end: 65,
-                        children: [
-                            {
-                                type: 'Value',
-                                start: 53,
-                                end: 60,
-                                value: 'android',
-                            },
-                            {
-                                type: 'Value',
-                                start: 62,
-                                end: 65,
-                                value: 'ios',
-                            },
-                        ],
-                    },
-                },
-            ],
-        });
+                ],
+            },
+        );
 
         // Pre processors
         expect(CommentParser.parse('!#if (adguard)')).toMatchObject({
@@ -352,9 +352,7 @@ describe('CommentRuleParser', () => {
             },
         });
 
-        expect(
-            CommentParser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
-        ).toMatchObject({
+        expect(CommentParser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki')).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
             end: 57,
@@ -380,9 +378,7 @@ describe('CommentRuleParser', () => {
             },
         });
 
-        expect(
-            CommentParser.parse('# Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
-        ).toMatchObject({
+        expect(CommentParser.parse('# Homepage: https://github.com/AdguardTeam/some-repo/wiki')).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
             end: 57,
@@ -589,10 +585,7 @@ describe('CommentRuleParser', () => {
                 end: 40,
                 value: {
                     rule1: 'off',
-                    rule2: [
-                        'a',
-                        'b',
-                    ],
+                    rule2: ['a', 'b'],
                 },
             },
             comment: {
@@ -627,10 +620,7 @@ describe('CommentRuleParser', () => {
                 end: 40,
                 value: {
                     rule1: 'off',
-                    rule2: [
-                        'a',
-                        'b',
-                    ],
+                    rule2: ['a', 'b'],
                 },
             },
             comment: {
@@ -746,9 +736,7 @@ describe('CommentRuleParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(
-                CommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
-            ).toEqual(expected);
+            expect(CommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false })).toEqual(expected);
         });
     });
 

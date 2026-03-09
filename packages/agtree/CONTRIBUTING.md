@@ -11,7 +11,7 @@ Here is a guide on how to set up the development environment and how to submit y
   Pnpm and not NPM, because the project is optimized for Pnpm.
 - Fork the repository on GitHub. You will need to have a GitHub account for this. If you already have a fork, make sure
   to update it with the latest changes from the main repository.
-- Clone *your forked repository* to your local machine with `git clone <repository-url>`. It is important to clone your
+- Clone _your forked repository_ to your local machine with `git clone <repository-url>`. It is important to clone your
   forked repository and not the main repository, because you will not be able to push your changes to the main
   repository, since you do not have the permissions to do so.
 - Install dependencies by following [this guide][main-dev-guide].
@@ -25,7 +25,7 @@ Here is a guide on how to set up the development environment and how to submit y
     - Add files to commit with `git add .`
     - Commit files with `git commit -m "Add some feature"`
     - Push changes to your forked repository with
-    `git push origin feature/add-some-feature`.
+      `git push origin feature/add-some-feature`.
 - When you are ready to submit your changes, go to your forked repository on GitHub and create a pull request. Make sure
   to select the correct branch. Example: `feature/add-some-feature` branch in your forked repository to `master` branch
   in the main repository.

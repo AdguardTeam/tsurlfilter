@@ -1,18 +1,9 @@
-import {
-    describe,
-    expect,
-    test,
-    vi,
-} from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 import { AdblockSyntaxError, type Value, type HtmlFilteringRuleBody } from '../../../../src';
-import {
-    UboHtmlFilteringBodyParser,
-} from '../../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
-import {
-    UboHtmlFilteringBodyGenerator,
-} from '../../../../src/generator/cosmetic/html-filtering-body/ubo-html-filtering-body-generator';
+import { UboHtmlFilteringBodyParser } from '../../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import { UboHtmlFilteringBodyGenerator } from '../../../../src/generator/cosmetic/html-filtering-body/ubo-html-filtering-body-generator';
 import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
 
 /**
@@ -38,24 +29,28 @@ describe('UboHtmlFilteringBodyParser', () => {
                     type: 'HtmlFilteringRuleBody',
                     selectorList: {
                         type: 'SelectorList',
-                        children: [{
-                            type: 'ComplexSelector',
-                            children: [{
-                                type: 'PseudoClassSelector',
-                                name: {
-                                    type: 'Value',
-                                    value: 'responseheader',
-                                    ...context.getRangeFor('responseheader'),
-                                },
-                                argument: {
-                                    type: 'Value',
-                                    value: 'Test',
-                                    ...context.getRangeFor('Test'),
-                                },
+                        children: [
+                            {
+                                type: 'ComplexSelector',
+                                children: [
+                                    {
+                                        type: 'PseudoClassSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'responseheader',
+                                            ...context.getRangeFor('responseheader'),
+                                        },
+                                        argument: {
+                                            type: 'Value',
+                                            value: 'Test',
+                                            ...context.getRangeFor('Test'),
+                                        },
+                                        ...context.getFullRange(),
+                                    },
+                                ],
                                 ...context.getFullRange(),
-                            }],
-                            ...context.getFullRange(),
-                        }],
+                            },
+                        ],
                         ...context.getFullRange(),
                     },
                     ...context.getFullRange(),
@@ -69,24 +64,28 @@ describe('UboHtmlFilteringBodyParser', () => {
                     type: 'HtmlFilteringRuleBody',
                     selectorList: {
                         type: 'SelectorList',
-                        children: [{
-                            type: 'ComplexSelector',
-                            children: [{
-                                type: 'PseudoClassSelector',
-                                name: {
-                                    type: 'Value',
-                                    value: 'responseheader',
-                                    ...context.getRangeFor('responseheader'),
-                                },
-                                argument: {
-                                    type: 'Value',
-                                    value: 'Test',
-                                    ...context.getRangeFor('Test'),
-                                },
+                        children: [
+                            {
+                                type: 'ComplexSelector',
+                                children: [
+                                    {
+                                        type: 'PseudoClassSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'responseheader',
+                                            ...context.getRangeFor('responseheader'),
+                                        },
+                                        argument: {
+                                            type: 'Value',
+                                            value: 'Test',
+                                            ...context.getRangeFor('Test'),
+                                        },
+                                        ...context.getRangeFor('responseheader(  Test  )'),
+                                    },
+                                ],
                                 ...context.getRangeFor('responseheader(  Test  )'),
-                            }],
-                            ...context.getRangeFor('responseheader(  Test  )'),
-                        }],
+                            },
+                        ],
                         ...context.getRangeFor('responseheader(  Test  )'),
                     },
                     ...context.getFullRange(),
@@ -104,40 +103,44 @@ describe('UboHtmlFilteringBodyParser', () => {
             // missing argument and closing parenthesis
             {
                 actual: 'responseheader(',
-                expected: (context) => new AdblockSyntaxError(
-                    "Expected '<)-token>', but got 'end of input'",
-                    context.getFullRange().end - 1,
-                    context.getFullRange().end,
-                ),
+                expected: (context) =>
+                    new AdblockSyntaxError(
+                        "Expected '<)-token>', but got 'end of input'",
+                        context.getFullRange().end - 1,
+                        context.getFullRange().end,
+                    ),
             },
 
             // missing closing parenthesis
             {
                 actual: 'responseheader(Test',
-                expected: (context) => new AdblockSyntaxError(
-                    "Expected '<)-token>', but got 'end of input'",
-                    context.getFullRange().end - 1,
-                    context.getFullRange().end,
-                ),
+                expected: (context) =>
+                    new AdblockSyntaxError(
+                        "Expected '<)-token>', but got 'end of input'",
+                        context.getFullRange().end - 1,
+                        context.getFullRange().end,
+                    ),
             },
 
             // missing argument
             {
                 actual: 'responseheader()',
-                expected: (context) => new AdblockSyntaxError(
-                    "Empty parameter for 'responseheader' function",
-                    context.getFullRange().end - 1,
-                    context.getFullRange().end - 1,
-                ),
+                expected: (context) =>
+                    new AdblockSyntaxError(
+                        "Empty parameter for 'responseheader' function",
+                        context.getFullRange().end - 1,
+                        context.getFullRange().end - 1,
+                    ),
             },
 
             // unexpected token after closing parenthesis
             {
                 actual: 'responseheader(Test) unexpected',
-                expected: (context) => new AdblockSyntaxError(
-                    "Expected end of rule, but got '<ident-token>'",
-                    ...context.toTuple(context.getRangeFor('unexpected')),
-                ),
+                expected: (context) =>
+                    new AdblockSyntaxError(
+                        "Expected end of rule, but got '<ident-token>'",
+                        ...context.toTuple(context.getRangeFor('unexpected')),
+                    ),
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
             const fn = vi.fn(() => UboHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions));
@@ -206,9 +209,7 @@ describe('UboHtmlFilteringBodyParser', () => {
                 }),
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(UboHtmlFilteringBodyParser.parse(actual)).toEqual(
-                expectedFn(new NodeExpectContext(actual)),
-            );
+            expect(UboHtmlFilteringBodyParser.parse(actual)).toEqual(expectedFn(new NodeExpectContext(actual)));
         });
     });
 

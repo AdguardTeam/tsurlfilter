@@ -1,9 +1,4 @@
-import {
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import browser from 'sinon-chrome';
 
 import { RequestEvent } from '../../../../../../src/lib';
@@ -12,12 +7,10 @@ describe('Request Event', () => {
     it('subscribes to original event once on initialization', () => {
         const event = new RequestEvent();
 
-        event.init(
-            browser.webRequest.onBeforeRequest,
-            (details) => ({ details }),
-            { urls: ['<all_urls>'] },
-            ['blocking', 'requestBody'],
-        );
+        event.init(browser.webRequest.onBeforeRequest, (details) => ({ details }), { urls: ['<all_urls>'] }, [
+            'blocking',
+            'requestBody',
+        ]);
 
         expect(browser.webRequest.onBeforeRequest.addListener.calledOnce);
 
@@ -31,12 +24,10 @@ describe('Request Event', () => {
     it('can add and remove listeners', () => {
         const event = new RequestEvent();
 
-        event.init(
-            browser.webRequest.onBeforeRequest,
-            (details) => ({ details }),
-            { urls: ['<all_urls>'] },
-            ['blocking', 'requestBody'],
-        );
+        event.init(browser.webRequest.onBeforeRequest, (details) => ({ details }), { urls: ['<all_urls>'] }, [
+            'blocking',
+            'requestBody',
+        ]);
 
         const firstCallback = vi.fn();
         const secondCallback = vi.fn();
@@ -55,12 +46,10 @@ describe('Request Event', () => {
     it('doesn`t call rest listeners after non-empty value returns', () => {
         const event = new RequestEvent();
 
-        event.init(
-            browser.webRequest.onBeforeRequest,
-            (details) => ({ details }),
-            { urls: ['<all_urls>'] },
-            ['blocking', 'requestBody'],
-        );
+        event.init(browser.webRequest.onBeforeRequest, (details) => ({ details }), { urls: ['<all_urls>'] }, [
+            'blocking',
+            'requestBody',
+        ]);
 
         const blockingCallback = vi.fn(() => ({ cancel: true }));
         const noop = vi.fn();

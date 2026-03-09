@@ -1,10 +1,5 @@
 /* eslint-disable max-len */
-import {
-    describe,
-    test,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 
 import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
@@ -71,18 +66,7 @@ describe('CosmeticRuleParser - general tests', () => {
     });
 
     describe('CosmeticRuleParser.parse - should throw error for empty rule bodies', () => {
-        const separators = [
-            '##',
-            '#@#',
-            '#?#',
-            '#@?#',
-            '#$#',
-            '#@$#',
-            '#$?#',
-            '#@$?#',
-            '#%#',
-            '#@%#',
-        ];
+        const separators = ['##', '#@#', '#?#', '#@?#', '#$#', '#@$#', '#$?#', '#@$?#', '#%#', '#@%#'];
 
         const domainList = 'example.com,~example.net';
 
@@ -117,10 +101,13 @@ describe('CosmeticRuleParser - general tests', () => {
             // classic domain list
             { rule: 'example.com,~example.net##.ad', expected: 'example.com,~example.net' },
             // ADG modifier list + classic domain list
-            { rule: '[$path=/foo/bar]example.com,~example.net##.foo', expected: '[$path=/foo/bar]example.com,~example.net' },
+            {
+                rule: '[$path=/foo/bar]example.com,~example.net##.foo',
+                expected: '[$path=/foo/bar]example.com,~example.net',
+            },
             // Only ADG modifier list
             { rule: '[$path=/foo/bar]##.foo', expected: '[$path=/foo/bar]' },
-        ])('should generate pattern \'$expected\' from \'$rule\'', ({ rule, expected }) => {
+        ])("should generate pattern '$expected' from '$rule'", ({ rule, expected }) => {
             const ast = CosmeticRuleParser.parse(rule);
 
             if (ast) {
@@ -138,12 +125,18 @@ describe('CosmeticRuleParser - general tests', () => {
             { rule: '##.ad,section:contains("ad")', expected: '.ad,section:contains("ad")' },
             // CSS injection (ADG)
             { rule: '#$#* { color: red; }', expected: '* { color: red; }' },
-            { rule: '#$#:contains(ad) { color: red; padding: 0 !important; }', expected: ':contains(ad) { color: red; padding: 0 !important; }' },
+            {
+                rule: '#$#:contains(ad) { color: red; padding: 0 !important; }',
+                expected: ':contains(ad) { color: red; padding: 0 !important; }',
+            },
             // CSS injection (uBO)
             { rule: '##body:style(padding:0)', expected: 'body:style(padding:0)' },
-            { rule: '##:contains(ad):style(color: red; padding: 0 !important;)', expected: ':contains(ad):style(color: red; padding: 0 !important;)' },
+            {
+                rule: '##:contains(ad):style(color: red; padding: 0 !important;)',
+                expected: ':contains(ad):style(color: red; padding: 0 !important;)',
+            },
             // Scriptlet injection (ADG)
-            { rule: '#%#//scriptlet(\'foo\', \'bar\')', expected: '//scriptlet(\'foo\', \'bar\')' },
+            { rule: "#%#//scriptlet('foo', 'bar')", expected: "//scriptlet('foo', 'bar')" },
             // Scriptlet injection (uBO)
             { rule: '##+js(foo, bar)', expected: '+js(foo, bar)' },
             // ABP snippet injection

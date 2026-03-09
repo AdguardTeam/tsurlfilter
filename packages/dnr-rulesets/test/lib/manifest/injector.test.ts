@@ -1,10 +1,4 @@
-import {
-    afterEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { RulesetsInjector } from '../../../src/lib/manifest/injector';
 
@@ -24,15 +18,18 @@ describe('RulesetsInjector', () => {
 
         expect(patched).toEqual({
             declarative_net_request: {
-                rule_resources: [{
-                    id: 'ruleset_1',
-                    enabled: false,
-                    path: 'test',
-                }, {
-                    id: 'ruleset_2',
-                    enabled: false,
-                    path: 'test',
-                }],
+                rule_resources: [
+                    {
+                        id: 'ruleset_1',
+                        enabled: false,
+                        path: 'test',
+                    },
+                    {
+                        id: 'ruleset_2',
+                        enabled: false,
+                        path: 'test',
+                    },
+                ],
             },
         });
         expect(mockGenerateRulesetPath).toHaveBeenCalledTimes(2);
@@ -45,11 +42,13 @@ describe('RulesetsInjector', () => {
 
         expect(patched).toEqual({
             declarative_net_request: {
-                rule_resources: [{
-                    id: 'ruleset_1',
-                    enabled: false,
-                    path: 'test',
-                }],
+                rule_resources: [
+                    {
+                        id: 'ruleset_1',
+                        enabled: false,
+                        path: 'test',
+                    },
+                ],
             },
         });
         expect(mockGenerateRulesetPath).toHaveBeenCalledTimes(1);
@@ -62,15 +61,18 @@ describe('RulesetsInjector', () => {
 
         expect(patched).toEqual({
             declarative_net_request: {
-                rule_resources: [{
-                    id: 'ruleset_1',
-                    enabled: true,
-                    path: 'test',
-                }, {
-                    id: 'ruleset_2',
-                    enabled: false,
-                    path: 'test',
-                }],
+                rule_resources: [
+                    {
+                        id: 'ruleset_1',
+                        enabled: true,
+                        path: 'test',
+                    },
+                    {
+                        id: 'ruleset_2',
+                        enabled: false,
+                        path: 'test',
+                    },
+                ],
             },
         });
         expect(mockGenerateRulesetPath).toHaveBeenCalledTimes(2);
@@ -79,11 +81,13 @@ describe('RulesetsInjector', () => {
     it('should throw an error if ruleset ID is duplicated', () => {
         const manifest = {
             declarative_net_request: {
-                rule_resources: [{
-                    id: 'ruleset_1',
-                    enabled: false,
-                    path: 'whatever',
-                }],
+                rule_resources: [
+                    {
+                        id: 'ruleset_1',
+                        enabled: false,
+                        path: 'whatever',
+                    },
+                ],
             },
         };
 
@@ -96,11 +100,13 @@ describe('RulesetsInjector', () => {
     it('should force update existed ruleset', () => {
         const manifest = {
             declarative_net_request: {
-                rule_resources: [{
-                    id: 'ruleset_1',
-                    enabled: false,
-                    path: 'whatever',
-                }],
+                rule_resources: [
+                    {
+                        id: 'ruleset_1',
+                        enabled: false,
+                        path: 'whatever',
+                    },
+                ],
             },
         };
 
@@ -112,15 +118,18 @@ describe('RulesetsInjector', () => {
 
         expect(patched).toEqual({
             declarative_net_request: {
-                rule_resources: [{
-                    id: 'ruleset_1',
-                    enabled: true,
-                    path: 'test',
-                }, {
-                    id: 'ruleset_2',
-                    enabled: false,
-                    path: 'test',
-                }],
+                rule_resources: [
+                    {
+                        id: 'ruleset_1',
+                        enabled: true,
+                        path: 'test',
+                    },
+                    {
+                        id: 'ruleset_2',
+                        enabled: false,
+                        path: 'test',
+                    },
+                ],
             },
         });
         expect(mockGenerateRulesetPath).toHaveBeenCalledTimes(2);
@@ -133,11 +142,13 @@ describe('RulesetsInjector', () => {
 
         expect(patched).toEqual({
             declarative_net_request: {
-                rule_resources: [{
-                    id: 'ruleset_1',
-                    enabled: false,
-                    path: 'test',
-                }],
+                rule_resources: [
+                    {
+                        id: 'ruleset_1',
+                        enabled: false,
+                        path: 'test',
+                    },
+                ],
             },
         });
         expect(mockGenerateRulesetPath).toHaveBeenCalledTimes(1);

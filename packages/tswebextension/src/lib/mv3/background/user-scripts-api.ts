@@ -87,15 +87,8 @@ export class UserScriptsApi {
      *
      * @throws Will log an error if the script execution fails.
      */
-    public static async executeScripts({
-        scriptText,
-        tabId,
-        frameId,
-    }: ExecuteCombinedScriptParams): Promise<void> {
-        const code = UserScriptsApi.wrapScriptCode(
-            String(appContext.startTimeMs),
-            String(scriptText),
-        );
+    public static async executeScripts({ scriptText, tabId, frameId }: ExecuteCombinedScriptParams): Promise<void> {
+        const code = UserScriptsApi.wrapScriptCode(String(appContext.startTimeMs), String(scriptText));
 
         try {
             await chrome.userScripts.execute({
@@ -108,7 +101,10 @@ export class UserScriptsApi {
                 world: 'MAIN',
             });
         } catch (e) {
-            logger.info(`[tsweb.UserScriptsApi.executeScripts]: failed to execute user script to tabId ${tabId} and frameId ${frameId} due to:`, e);
+            logger.info(
+                `[tsweb.UserScriptsApi.executeScripts]: failed to execute user script to tabId ${tabId} and frameId ${frameId} due to:`,
+                e,
+            );
         }
     }
 

@@ -63,12 +63,12 @@ export const consumeNumber: TokenizerContextFunction = (context: TokenizerContex
 
     // 5. If the next 2 or 3 input code points are U+0045 LATIN CAPITAL LETTER E (E) or U+0065 LATIN SMALL LETTER E
     // (e) ...
-    if ((context.code === CodePoint.LatinCapitalLetterE || context.code === CodePoint.LatinSmallLetterE)) {
+    if (context.code === CodePoint.LatinCapitalLetterE || context.code === CodePoint.LatinSmallLetterE) {
         // ... optionally followed by U+002D HYPHEN-MINUS (-) or U+002B PLUS SIGN (+)
         // Note: we split this into two if statements to avoid declaring a shift variable for the sign
         if (
-            (context.nextCode === CodePoint.HyphenMinus || context.nextCode === CodePoint.PlusSign)
-            && isDigit(context.getRelativeCode(2))
+            (context.nextCode === CodePoint.HyphenMinus || context.nextCode === CodePoint.PlusSign) &&
+            isDigit(context.getRelativeCode(2))
         ) {
             // 1. Consume them.
             context.consumeCodePoint(3); // e, sign, digit

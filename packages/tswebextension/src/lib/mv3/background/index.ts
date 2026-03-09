@@ -37,18 +37,10 @@ export { tabsApi } from '../tabs/tabs-api';
 export { TabContext } from '../tabs/tab-context';
 export { USER_FILTER_ID, MAIN_FRAME_ID } from '../../common/constants';
 
-export type {
-    ConfigurationMV3 as Configuration,
-    SettingsConfigMV3 as SettingsConfig,
-} from './configuration';
+export type { ConfigurationMV3 as Configuration, SettingsConfigMV3 as SettingsConfig } from './configuration';
 export { MessageType } from '../../common/message-constants';
 export { companiesDbService } from '../../common/companies-db-service';
-export {
-    getDomain,
-    isHttpRequest,
-    isHttpOrWsRequest,
-    isExtensionUrl,
-} from '../../common/utils/url';
+export { getDomain, isHttpRequest, isHttpOrWsRequest, isExtensionUrl } from '../../common/utils/url';
 export { MESSAGE_HANDLER_NAME } from '../../common/message-constants';
 export { type Message } from '../../common/message';
 export { StealthActions } from '../../common/stealth-actions';

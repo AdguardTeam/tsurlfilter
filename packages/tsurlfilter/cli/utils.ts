@@ -20,10 +20,7 @@ export const ensureDirSync = (dirPath: string) => {
  *
  * @returns An array of file paths that match the filter.
  */
-export const findFiles = async (
-    dir: string,
-    filter: (s: string) => boolean,
-) => {
+export const findFiles = async (dir: string, filter: (s: string) => boolean) => {
     const files = await fs.promises.readdir(dir);
     let fileList: string[] = [];
 

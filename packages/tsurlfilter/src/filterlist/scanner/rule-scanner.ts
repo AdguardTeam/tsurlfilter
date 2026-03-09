@@ -1,11 +1,6 @@
 import { IndexedRuleParts } from '../../rules/rule';
 import { type ILineReader } from '../reader/line-reader';
-import {
-    CosmeticRuleType,
-    getRuleParts,
-    RuleCategory,
-    type RuleParts,
-} from '../rule-parts';
+import { CosmeticRuleType, getRuleParts, RuleCategory, type RuleParts } from '../rule-parts';
 
 import { ScannerType } from './scanner-type';
 
@@ -80,16 +75,13 @@ export class RuleScanner {
      * @param listId Filter list ID.
      * @param configuration Scanner configuration object.
      */
-    constructor(
-        reader: ILineReader,
-        listId: number,
-        configuration: RuleScannerConfiguration,
-    ) {
+    constructor(reader: ILineReader, listId: number, configuration: RuleScannerConfiguration) {
         this.reader = reader;
         this.listId = listId;
 
-        this.ignoreCosmetic = !!configuration.ignoreCosmetic
-            || ((configuration.scannerType & ScannerType.CosmeticRules) !== ScannerType.CosmeticRules);
+        this.ignoreCosmetic =
+            !!configuration.ignoreCosmetic ||
+            (configuration.scannerType & ScannerType.CosmeticRules) !== ScannerType.CosmeticRules;
         this.ignoreNetwork = (configuration.scannerType & ScannerType.NetworkRules) !== ScannerType.NetworkRules;
         this.ignoreHost = (configuration.scannerType & ScannerType.HostRules) !== ScannerType.HostRules;
 
@@ -198,10 +190,7 @@ export class RuleScanner {
             // Ignore JS type rules.
             // TODO: in the future we may allow CSS rules and Scriptlets (except
             // for "trusted" scriptlets).
-            if (
-                this.ignoreJS
-                && ruleParts.type === CosmeticRuleType.JsInjectionRule
-            ) {
+            if (this.ignoreJS && ruleParts.type === CosmeticRuleType.JsInjectionRule) {
                 return true;
             }
         }

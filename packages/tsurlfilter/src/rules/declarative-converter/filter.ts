@@ -95,11 +95,7 @@ export class Filter implements IFilter {
      * @param source Provider of filter content.
      * @param trusted Filter trusted flag.
      */
-    constructor(
-        id: number,
-        source: IStringSourceProvider,
-        trusted: boolean,
-    ) {
+    constructor(id: number, source: IStringSourceProvider, trusted: boolean) {
         this.id = id;
         this.source = source;
         this.trusted = trusted;

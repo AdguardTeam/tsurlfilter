@@ -105,10 +105,7 @@ export const convertFilters = async (
             const filterId = Number(index);
 
             filtersPaths.set(filterId, filePath);
-            const data = fs.readFileSync(
-                path.resolve(filtersWithMetadataPath, filePath),
-                { encoding: 'utf-8' },
-            );
+            const data = fs.readFileSync(path.resolve(filtersWithMetadataPath, filePath), { encoding: 'utf-8' });
 
             console.info(`Added filter #${filterId} to convert`);
 
@@ -141,10 +138,7 @@ export const convertFilters = async (
         const filter = filters[i];
 
         // eslint-disable-next-line no-await-in-loop
-        const converted = await converter.convertStaticRuleSet(
-            filter,
-            { resourcesPath },
-        );
+        const converted = await converter.convertStaticRuleSet(filter, { resourcesPath });
 
         convertedRulesets.push(converted.ruleSet);
         errors = errors.concat(converted.errors);
@@ -165,7 +159,9 @@ export const convertFilters = async (
 
             if (converted.limitations.length > 0) {
                 // eslint-disable-next-line max-len
-                console.log(`Some converted rules were discarded to fit within the limits: ${converted.limitations.length}`);
+                console.log(
+                    `Some converted rules were discarded to fit within the limits: ${converted.limitations.length}`,
+                );
                 console.log('======================================');
                 console.log('Converted with following limitations: ');
                 console.log('======================================');
@@ -228,29 +224,22 @@ export const convertFilters = async (
     // We also have filters_i18n.json file in the filtersPath, but it is not
     // often updated, so we pack inside ruleset only filters' metadata with
     // versions, checksums and other information, not translations.
-    const rawMetadata = await fs.promises.readFile(
-        path.join(filtersAndMetadataDir, LOCAL_METADATA_FILE_NAME),
-        { encoding: 'utf-8' },
-    );
+    const rawMetadata = await fs.promises.readFile(path.join(filtersAndMetadataDir, LOCAL_METADATA_FILE_NAME), {
+        encoding: 'utf-8',
+    });
     const metadata = JSON.parse(rawMetadata);
 
-    const metadataRuleSet = new MetadataRuleSet(
-        checksums,
-        {
-            metadata,
-            ...additionalProperties,
-        },
-    );
+    const metadataRuleSet = new MetadataRuleSet(checksums, {
+        metadata,
+        ...additionalProperties,
+    });
 
     const metadataRulesetId = metadataRuleSet.getId();
     const metadataRulesetDir = path.join(destRulesetsPath, getRuleSetId(metadataRulesetId));
     ensureDirSync(metadataRulesetDir);
 
     const metadataRuleSetPath = getRuleSetPath(metadataRulesetId, destRulesetsPath);
-    await fs.promises.writeFile(
-        metadataRuleSetPath,
-        metadataRuleSet.serialize(prettifyJson),
-    );
+    await fs.promises.writeFile(metadataRuleSetPath, metadataRuleSet.serialize(prettifyJson));
 
     console.log('===============================================');
     console.info(`Metadata ruleset saved to ${metadataRuleSetPath}`);

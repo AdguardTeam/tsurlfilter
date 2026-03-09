@@ -30,100 +30,109 @@ Determine validation mode:
 ### Phase 1: Load Documentation
 
 1. **Read the feature specification**
-   - Read `/specs/.current/spec.md`
-   - Extract:
-     - Functional requirements (FR-XXX items)
-     - User stories and acceptance scenarios
-     - Success criteria (SC-XXX items)
-     - Key entities
+
+    - Read `/specs/.current/spec.md`
+    - Extract:
+        - Functional requirements (FR-XXX items)
+        - User stories and acceptance scenarios
+        - Success criteria (SC-XXX items)
+        - Key entities
 
 2. **Read the implementation plan**
-   - Read `/specs/.current/plan.md`
-   - Extract:
-     - All tasks with their verification criteria
-     - Entity definitions
-     - API contracts (if applicable)
-     - Project structure changes
+
+    - Read `/specs/.current/plan.md`
+    - Extract:
+        - All tasks with their verification criteria
+        - Entity definitions
+        - API contracts (if applicable)
+        - Project structure changes
 
 3. **Read any contract files**
-   - Check `/specs/.current/contracts/` directory
-   - Load OpenAPI or GraphQL schemas if present
+    - Check `/specs/.current/contracts/` directory
+    - Load OpenAPI or GraphQL schemas if present
 
 ### Phase 2: Task Verification
 
 For each task in the implementation plan:
 
 1. **Check task completion**
-   - Locate the files/code mentioned in the task
-   - Verify the implementation exists
-   - Run the verification criteria specified in the task
+
+    - Locate the files/code mentioned in the task
+    - Verify the implementation exists
+    - Run the verification criteria specified in the task
 
 2. **Record task status**
-   - **PASS**: Task is fully implemented and verified
-   - **PARTIAL**: Task is implemented but verification incomplete
-   - **FAIL**: Task is not implemented or verification fails
-   - **SKIP**: Task was intentionally skipped (note reason)
+    - **PASS**: Task is fully implemented and verified
+    - **PARTIAL**: Task is implemented but verification incomplete
+    - **FAIL**: Task is not implemented or verification fails
+    - **SKIP**: Task was intentionally skipped (note reason)
 
 ### Phase 3: Requirement Verification
 
 For each functional requirement (FR-XXX) in the specification:
 
 1. **Trace requirement to implementation**
-   - Find the code that implements this requirement
-   - Verify the implementation matches the requirement
+
+    - Find the code that implements this requirement
+    - Verify the implementation matches the requirement
 
 2. **Check acceptance scenarios**
-   - For each Given/When/Then scenario in user stories
-   - Verify the scenario can be executed successfully
-   - Check edge cases are handled
+
+    - For each Given/When/Then scenario in user stories
+    - Verify the scenario can be executed successfully
+    - Check edge cases are handled
 
 3. **Record requirement status**
-   - **IMPLEMENTED**: Requirement is fully satisfied
-   - **PARTIAL**: Requirement is partially implemented
-   - **NOT IMPLEMENTED**: Requirement is missing
-   - **DEVIATION**: Implementation differs from spec (note details)
+    - **IMPLEMENTED**: Requirement is fully satisfied
+    - **PARTIAL**: Requirement is partially implemented
+    - **NOT IMPLEMENTED**: Requirement is missing
+    - **DEVIATION**: Implementation differs from spec (note details)
 
 ### Phase 4: Entity Verification
 
 For each entity defined in the plan:
 
 1. **Verify entity exists**
-   - Check database schema/models
-   - Verify all fields are present with correct types
+
+    - Check database schema/models
+    - Verify all fields are present with correct types
 
 2. **Verify relationships**
-   - Check foreign keys and associations
-   - Verify cardinality matches the plan
+
+    - Check foreign keys and associations
+    - Verify cardinality matches the plan
 
 3. **Verify validation rules**
-   - Check that validation constraints are implemented
+    - Check that validation constraints are implemented
 
 ### Phase 5: Contract Verification (if applicable)
 
 Skip if no contracts exist in `/specs/.current/contracts/`.
 
 1. **Verify API endpoints**
-   - Check each endpoint exists
-   - Verify request/response schemas match contracts
-   - Check error responses are implemented
+
+    - Check each endpoint exists
+    - Verify request/response schemas match contracts
+    - Check error responses are implemented
 
 2. **Run contract tests**
-   - If contract tests exist, execute them
-   - Note any failures
+    - If contract tests exist, execute them
+    - Note any failures
 
 ### Phase 6: Success Criteria Verification
 
 For each success criterion (SC-XXX) in the specification:
 
 1. **Evaluate measurability**
-   - Can this criterion be measured with current implementation?
-   - What evidence supports meeting this criterion?
+
+    - Can this criterion be measured with current implementation?
+    - What evidence supports meeting this criterion?
 
 2. **Record criterion status**
-   - **MET**: Criterion is demonstrably satisfied
-   - **PARTIALLY MET**: Some aspects satisfied
-   - **NOT MET**: Criterion is not satisfied
-   - **CANNOT VERIFY**: Requires manual testing or production data
+    - **MET**: Criterion is demonstrably satisfied
+    - **PARTIALLY MET**: Some aspects satisfied
+    - **NOT MET**: Criterion is not satisfied
+    - **CANNOT VERIFY**: Requires manual testing or production data
 
 ### Phase 7: Generate Validation Report
 
@@ -138,13 +147,13 @@ Create a validation report with the following structure:
 
 ## Summary
 
-| Category | Pass | Partial | Fail | Total |
-|----------|------|---------|------|-------|
-| Tasks | X | X | X | X |
-| Requirements | X | X | X | X |
-| Entities | X | X | X | X |
-| Contracts | X | X | X | X |
-| Success Criteria | X | X | X | X |
+| Category         | Pass | Partial | Fail | Total |
+| ---------------- | ---- | ------- | ---- | ----- |
+| Tasks            | X    | X       | X    | X     |
+| Requirements     | X    | X       | X    | X     |
+| Entities         | X    | X       | X    | X     |
+| Contracts        | X    | X       | X    | X     |
+| Success Criteria | X    | X       | X    | X     |
 
 **Overall Status**: [COMPLETE / INCOMPLETE / BLOCKED]
 
@@ -161,38 +170,38 @@ Create a validation report with the following structure:
 
 ## Requirement Status
 
-| ID | Requirement | Status | Evidence |
-|----|-------------|--------|----------|
+| ID     | Requirement   | Status      | Evidence              |
+| ------ | ------------- | ----------- | --------------------- |
 | FR-001 | [Description] | IMPLEMENTED | [File/test reference] |
-| FR-002 | [Description] | PARTIAL | [What's missing] |
+| FR-002 | [Description] | PARTIAL     | [What's missing]      |
 
 ## Entity Status
 
 | Entity | Fields | Relationships | Validation | Status |
-|--------|--------|---------------|------------|--------|
-| [Name] | OK | OK | OK | PASS |
+| ------ | ------ | ------------- | ---------- | ------ |
+| [Name] | OK     | OK            | OK         | PASS   |
 
 ## Contract Status
 
-| Endpoint | Method | Status | Notes |
-|----------|--------|--------|-------|
-| /api/resource | POST | PASS | |
-| /api/resource/:id | GET | FAIL | Missing error handling |
+| Endpoint          | Method | Status | Notes                  |
+| ----------------- | ------ | ------ | ---------------------- |
+| /api/resource     | POST   | PASS   |                        |
+| /api/resource/:id | GET    | FAIL   | Missing error handling |
 
 ## Success Criteria Status
 
-| ID | Criterion | Status | Evidence |
-|----|-----------|--------|----------|
-| SC-001 | [Description] | MET | [How verified] |
-| SC-002 | [Description] | CANNOT VERIFY | [Why] |
+| ID     | Criterion     | Status        | Evidence       |
+| ------ | ------------- | ------------- | -------------- |
+| SC-001 | [Description] | MET           | [How verified] |
+| SC-002 | [Description] | CANNOT VERIFY | [Why]          |
 
 ## Issues Found
 
 1. **[Issue Title]**
-   - Location: [File/component]
-   - Description: [What's wrong]
-   - Impact: [How it affects the feature]
-   - Recommendation: [How to fix]
+    - Location: [File/component]
+    - Description: [What's wrong]
+    - Impact: [How it affects the feature]
+    - Recommendation: [How to fix]
 
 ## Recommendations
 
@@ -225,9 +234,11 @@ Skip Phases 1-7 and perform simplified validation:
 For each file listed in the "Affected Files" section:
 
 1. **Check file exists**
+
     - Verify the file is present in the codebase
 
 2. **Verify changes were made**
+
     - Check that the file was modified as described
     - Look for the specific changes mentioned in the solution
 
@@ -241,6 +252,7 @@ For each file listed in the "Affected Files" section:
 For each item in the "Verification" section of the quick spec:
 
 1. **Execute verification step**
+
     - Run commands, check files, or perform manual verification
     - Note the outcome
 
@@ -262,18 +274,18 @@ Create a simplified validation report:
 
 ## Summary
 
-| Category | Pass | Fail | Total |
-|----------|------|------|-------|
-| Affected Files | X | X | X |
-| Verification Steps | X | X | X |
+| Category           | Pass | Fail | Total |
+| ------------------ | ---- | ---- | ----- |
+| Affected Files     | X    | X    | X     |
+| Verification Steps | X    | X    | X     |
 
 **Overall Status**: [COMPLETE / INCOMPLETE]
 
 ## Affected Files Status
 
-| File | Expected Change | Status |
-|------|-----------------|--------|
-| [path] | [description] | MODIFIED |
+| File   | Expected Change | Status   |
+| ------ | --------------- | -------- |
+| [path] | [description]   | MODIFIED |
 
 ## Verification Checklist
 

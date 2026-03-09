@@ -28,12 +28,7 @@ import { RequestType } from '../request-type';
 import { countEnabledBits, getBitCount } from '../utils/bit-utils';
 import { hasSpaces, stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
 
-import {
-    MASK_ALLOWLIST,
-    NETWORK_RULE_OPTIONS,
-    NOT_MARK,
-    OPTIONS_DELIMITER,
-} from './network-rule-options';
+import { MASK_ALLOWLIST, NETWORK_RULE_OPTIONS, NOT_MARK, OPTIONS_DELIMITER } from './network-rule-options';
 import { Pattern } from './pattern';
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 import { SimpleRegex } from './simple-regex';
@@ -208,34 +203,34 @@ export enum NetworkRuleGroupOptions {
     /**
      * Allowlist-only modifiers.
      */
-    AllowlistOnly = NetworkRuleOption.Elemhide
-        | NetworkRuleOption.Genericblock
-        | NetworkRuleOption.Generichide
-        | NetworkRuleOption.Specifichide
-        | NetworkRuleOption.Jsinject
-        | NetworkRuleOption.Urlblock
-        | NetworkRuleOption.Content
-        | NetworkRuleOption.Extension
-        | NetworkRuleOption.Stealth,
+    AllowlistOnly = NetworkRuleOption.Elemhide |
+        NetworkRuleOption.Genericblock |
+        NetworkRuleOption.Generichide |
+        NetworkRuleOption.Specifichide |
+        NetworkRuleOption.Jsinject |
+        NetworkRuleOption.Urlblock |
+        NetworkRuleOption.Content |
+        NetworkRuleOption.Extension |
+        NetworkRuleOption.Stealth,
 
     /**
      * Options supported by host-level network rules.
      */
-    OptionHostLevelRules = NetworkRuleOption.Important
-        | NetworkRuleOption.Badfilter
-        | NetworkRuleOption.Client
-        | NetworkRuleOption.DnsRewrite
-        | NetworkRuleOption.DnsType
-        | NetworkRuleOption.Ctag,
+    OptionHostLevelRules = NetworkRuleOption.Important |
+        NetworkRuleOption.Badfilter |
+        NetworkRuleOption.Client |
+        NetworkRuleOption.DnsRewrite |
+        NetworkRuleOption.DnsType |
+        NetworkRuleOption.Ctag,
 
     /**
      * Cosmetic option modifiers.
      */
-    CosmeticOption = NetworkRuleOption.Elemhide
-        | NetworkRuleOption.Generichide
-        | NetworkRuleOption.Specifichide
-        | NetworkRuleOption.Jsinject
-        | NetworkRuleOption.Content,
+    CosmeticOption = NetworkRuleOption.Elemhide |
+        NetworkRuleOption.Generichide |
+        NetworkRuleOption.Specifichide |
+        NetworkRuleOption.Jsinject |
+        NetworkRuleOption.Content,
 
     /**
      * Removeparam compatible modifiers.
@@ -243,11 +238,11 @@ export enum NetworkRuleGroupOptions {
      * $removeparam rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
      * except $document (using by default) and this list of modifiers.
      */
-    RemoveParamCompatibleOptions = NetworkRuleOption.RemoveParam
-        | NetworkRuleOption.ThirdParty
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.Badfilter,
+    RemoveParamCompatibleOptions = NetworkRuleOption.RemoveParam |
+        NetworkRuleOption.ThirdParty |
+        NetworkRuleOption.Important |
+        NetworkRuleOption.MatchCase |
+        NetworkRuleOption.Badfilter,
 
     /**
      * Removeheader compatible modifiers.
@@ -255,21 +250,21 @@ export enum NetworkRuleGroupOptions {
      * $removeheader rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
      * except $document (using by default) and this list of modifiers.
      */
-    RemoveHeaderCompatibleOptions = NetworkRuleOption.RemoveHeader
-        | NetworkRuleOption.ThirdParty
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.Header
-        | NetworkRuleOption.Badfilter,
+    RemoveHeaderCompatibleOptions = NetworkRuleOption.RemoveHeader |
+        NetworkRuleOption.ThirdParty |
+        NetworkRuleOption.Important |
+        NetworkRuleOption.MatchCase |
+        NetworkRuleOption.Header |
+        NetworkRuleOption.Badfilter,
 
     /**
      * Permissions compatible modifiers.
      *
      * $permissions is compatible with the limited list of modifiers: $domain, $important, and $subdocument.
      */
-    PermissionsCompatibleOptions = NetworkRuleOption.Permissions
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.Badfilter,
+    PermissionsCompatibleOptions = NetworkRuleOption.Permissions |
+        NetworkRuleOption.Important |
+        NetworkRuleOption.Badfilter,
 
     /**
      * Header compatible modifiers.
@@ -284,13 +279,13 @@ export enum NetworkRuleGroupOptions {
      * - $domain
      * - all content type modifiers ($subdocument, $script, $stylesheet, etc).
      */
-    HeaderCompatibleOptions = NetworkRuleOption.Header
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.Csp
-        | NetworkRuleOption.RemoveHeader
-        | NetworkRuleOption.ThirdParty
-        | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.Badfilter,
+    HeaderCompatibleOptions = NetworkRuleOption.Header |
+        NetworkRuleOption.Important |
+        NetworkRuleOption.Csp |
+        NetworkRuleOption.RemoveHeader |
+        NetworkRuleOption.ThirdParty |
+        NetworkRuleOption.MatchCase |
+        NetworkRuleOption.Badfilter,
 }
 
 /**
@@ -411,9 +406,8 @@ export class NetworkRule implements IRule {
      *
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-1
      */
-    private static readonly CATEGORY_1_OPTIONS_MASK = NetworkRuleOption.ThirdParty
-        | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.DnsRewrite;
+    private static readonly CATEGORY_1_OPTIONS_MASK =
+        NetworkRuleOption.ThirdParty | NetworkRuleOption.MatchCase | NetworkRuleOption.DnsRewrite;
 
     /**
      * The priority weight used in {@link calculatePriorityWeight} for rules
@@ -462,14 +456,15 @@ export class NetworkRule implements IRule {
      *
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-4
      */
-    private static readonly SPECIFIC_EXCLUSIONS_MASK = NetworkRuleOption.Elemhide
-        | NetworkRuleOption.Generichide
-        | NetworkRuleOption.Specifichide
-        | NetworkRuleOption.Content
-        | NetworkRuleOption.Urlblock
-        | NetworkRuleOption.Genericblock
-        | NetworkRuleOption.Jsinject
-        | NetworkRuleOption.Extension;
+    private static readonly SPECIFIC_EXCLUSIONS_MASK =
+        NetworkRuleOption.Elemhide |
+        NetworkRuleOption.Generichide |
+        NetworkRuleOption.Specifichide |
+        NetworkRuleOption.Content |
+        NetworkRuleOption.Urlblock |
+        NetworkRuleOption.Genericblock |
+        NetworkRuleOption.Jsinject |
+        NetworkRuleOption.Extension;
 
     /**
      * The priority weight used in {@link calculatePriorityWeight} for rules
@@ -634,9 +629,11 @@ export class NetworkRule implements IRule {
             return false;
         }
 
-        return this.isOptionEnabled(NetworkRuleOption.Urlblock)
-            || this.isOptionEnabled(NetworkRuleOption.Genericblock)
-            || this.isOptionEnabled(NetworkRuleOption.Content);
+        return (
+            this.isOptionEnabled(NetworkRuleOption.Urlblock) ||
+            this.isOptionEnabled(NetworkRuleOption.Genericblock) ||
+            this.isOptionEnabled(NetworkRuleOption.Content)
+        );
     }
 
     /**
@@ -649,10 +646,12 @@ export class NetworkRule implements IRule {
             return false;
         }
 
-        return this.isOptionEnabled(NetworkRuleOption.Elemhide)
-            && this.isOptionEnabled(NetworkRuleOption.Content)
-            && this.isOptionEnabled(NetworkRuleOption.Urlblock)
-            && this.isOptionEnabled(NetworkRuleOption.Jsinject);
+        return (
+            this.isOptionEnabled(NetworkRuleOption.Elemhide) &&
+            this.isOptionEnabled(NetworkRuleOption.Content) &&
+            this.isOptionEnabled(NetworkRuleOption.Urlblock) &&
+            this.isOptionEnabled(NetworkRuleOption.Jsinject)
+        );
     }
 
     /**
@@ -856,8 +855,8 @@ export class NetworkRule implements IRule {
      */
     public isRegexRule(): boolean {
         return (
-            this.getPattern().startsWith(SimpleRegex.MASK_REGEX_RULE)
-            && this.getPattern().endsWith(SimpleRegex.MASK_REGEX_RULE)
+            this.getPattern().startsWith(SimpleRegex.MASK_REGEX_RULE) &&
+            this.getPattern().endsWith(SimpleRegex.MASK_REGEX_RULE)
         );
     }
 
@@ -899,8 +898,8 @@ export class NetworkRule implements IRule {
         }
 
         if (
-            this.isOptionEnabled(NetworkRuleOption.RemoveParam)
-            || this.isOptionEnabled(NetworkRuleOption.Permissions)
+            this.isOptionEnabled(NetworkRuleOption.RemoveParam) ||
+            this.isOptionEnabled(NetworkRuleOption.Permissions)
         ) {
             if (!this.matchRequestTypeExplicit(request.requestType)) {
                 return false;
@@ -969,8 +968,7 @@ export class NetworkRule implements IRule {
 
         const isDocumentType = request.requestType === RequestType.Document;
 
-        const hasOnlyExcludedDomains = !domainModifier.hasPermittedDomains()
-            && domainModifier.hasRestrictedDomains();
+        const hasOnlyExcludedDomains = !domainModifier.hasPermittedDomains() && domainModifier.hasRestrictedDomains();
 
         const patternIsRegex = this.isRegexRule();
         const patternIsDomainSpecific = this.pattern.isPatternDomainSpecific();
@@ -978,8 +976,10 @@ export class NetworkRule implements IRule {
 
         if (isDocumentType && (hasOnlyExcludedDomains || matchesTargetByPatternCondition)) {
             // check if matches source hostname if exists or if matches target hostname
-            return (request.sourceHostname && domainModifier.matchDomain(request.sourceHostname))
-                || domainModifier.matchDomain(request.hostname);
+            return (
+                (request.sourceHostname && domainModifier.matchDomain(request.sourceHostname)) ||
+                domainModifier.matchDomain(request.hostname)
+            );
         }
 
         return domainModifier.matchDomain(request.sourceHostname || '');
@@ -1130,10 +1130,12 @@ export class NetworkRule implements IRule {
      * @returns True if the rule must be applied to the request.
      */
     private matchRequestTypeExplicit(requestType: RequestType): boolean {
-        if (this.permittedRequestTypes === RequestType.NotSet
-            && this.restrictedRequestTypes === RequestType.NotSet
-            && requestType !== RequestType.Document
-            && requestType !== RequestType.SubDocument) {
+        if (
+            this.permittedRequestTypes === RequestType.NotSet &&
+            this.restrictedRequestTypes === RequestType.NotSet &&
+            requestType !== RequestType.Document &&
+            requestType !== RequestType.SubDocument
+        ) {
             return false;
         }
 
@@ -1185,16 +1187,10 @@ export class NetworkRule implements IRule {
             return false;
         }
 
-        const {
-            header: ruleHeaderName,
-            value: ruleHeaderValue,
-        } = ruleData;
+        const { header: ruleHeaderName, value: ruleHeaderValue } = ruleData;
 
         return responseHeadersItems.some((responseHeadersItem) => {
-            const {
-                name: responseHeaderName,
-                value: responseHeaderValue,
-            } = responseHeadersItem;
+            const { name: responseHeaderName, value: responseHeaderValue } = responseHeadersItem;
 
             // Header name matching is case-insensitive
             if (ruleHeaderName.toLowerCase() !== responseHeaderName.toLowerCase()) {
@@ -1226,7 +1222,7 @@ export class NetworkRule implements IRule {
      * @returns True if the rule is too general.
      */
     public static isTooGeneral(node: NetworkRuleNode): boolean {
-        return !(node.modifiers?.children?.length) && node.pattern.value.length < 4;
+        return !node.modifiers?.children?.length && node.pattern.value.length < 4;
     }
 
     /**
@@ -1454,10 +1450,11 @@ export class NetworkRule implements IRule {
         }
 
         if (this.enabledOptions !== NetworkRuleOption.NotSet) {
-            return ((this.enabledOptions
-                    & NetworkRuleGroupOptions.OptionHostLevelRules)
-                | (this.enabledOptions
-                    ^ NetworkRuleGroupOptions.OptionHostLevelRules)) === NetworkRuleGroupOptions.OptionHostLevelRules;
+            return (
+                ((this.enabledOptions & NetworkRuleGroupOptions.OptionHostLevelRules) |
+                    (this.enabledOptions ^ NetworkRuleGroupOptions.OptionHostLevelRules)) ===
+                NetworkRuleGroupOptions.OptionHostLevelRules
+            );
         }
 
         return true;
@@ -1476,9 +1473,7 @@ export class NetworkRule implements IRule {
     private setOptionEnabled(option: NetworkRuleOption, enabled: boolean, skipRestrictions = false): void {
         if (!skipRestrictions) {
             if (!this.allowlist && (option & NetworkRuleGroupOptions.AllowlistOnly) === option) {
-                throw new SyntaxError(
-                    `Modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule`,
-                );
+                throw new SyntaxError(`Modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule`);
             }
         }
 
@@ -1513,16 +1508,12 @@ export class NetworkRule implements IRule {
     private setDenyAllowDomains(optionValue: string): void {
         const domainModifier = new DomainModifier(optionValue, PIPE_SEPARATOR);
         if (domainModifier.restrictedDomains && domainModifier.restrictedDomains.length > 0) {
-            throw new SyntaxError(
-                'Invalid modifier: $denyallow domains cannot be negated',
-            );
+            throw new SyntaxError('Invalid modifier: $denyallow domains cannot be negated');
         }
 
         if (domainModifier.permittedDomains) {
             if (domainModifier.permittedDomains.some(DomainModifier.isWildcardOrRegexDomain)) {
-                throw new SyntaxError(
-                    'Invalid modifier: $denyallow does not support wildcards and regex domains',
-                );
+                throw new SyntaxError('Invalid modifier: $denyallow does not support wildcards and regex domains');
             }
         }
 
@@ -1800,7 +1791,7 @@ export class NetworkRule implements IRule {
             // $client
             case OPTIONS.CLIENT:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
-                    throw new SyntaxError('Extension doesn\'t support $client modifier');
+                    throw new SyntaxError("Extension doesn't support $client modifier");
                 }
                 this.setOptionEnabled(NetworkRuleOption.Client, true);
                 this.advancedModifier = new ClientModifier(optionValue);
@@ -1808,7 +1799,7 @@ export class NetworkRule implements IRule {
             // $dnsrewrite
             case OPTIONS.DNSREWRITE:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
-                    throw new SyntaxError('Extension doesn\'t support $dnsrewrite modifier');
+                    throw new SyntaxError("Extension doesn't support $dnsrewrite modifier");
                 }
                 this.setOptionEnabled(NetworkRuleOption.DnsRewrite, true);
                 this.advancedModifier = new DnsRewriteModifier(optionValue);
@@ -1816,7 +1807,7 @@ export class NetworkRule implements IRule {
             // $dnstype
             case OPTIONS.DNSTYPE:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
-                    throw new SyntaxError('Extension doesn\'t support $dnstype modifier');
+                    throw new SyntaxError("Extension doesn't support $dnstype modifier");
                 }
                 this.setOptionEnabled(NetworkRuleOption.DnsType, true);
                 this.advancedModifier = new DnsTypeModifier(optionValue);
@@ -1824,7 +1815,7 @@ export class NetworkRule implements IRule {
             // $ctag
             case OPTIONS.CTAG:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
-                    throw new SyntaxError('Extension doesn\'t support $ctag modifier');
+                    throw new SyntaxError("Extension doesn't support $ctag modifier");
                 }
                 this.setOptionEnabled(NetworkRuleOption.Ctag, true);
                 this.advancedModifier = new CtagModifier(optionValue);
@@ -1832,21 +1823,21 @@ export class NetworkRule implements IRule {
             // $app
             case OPTIONS.APP:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
-                    throw new SyntaxError('Extension doesn\'t support $app modifier');
+                    throw new SyntaxError("Extension doesn't support $app modifier");
                 }
                 this.appModifier = new AppModifier(optionValue);
                 break;
             // $network
             case OPTIONS.NETWORK:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
-                    throw new SyntaxError('Extension doesn\'t support $network modifier');
+                    throw new SyntaxError("Extension doesn't support $network modifier");
                 }
                 this.setOptionEnabled(NetworkRuleOption.Network, true);
                 break;
             // $extension, $~extension
             case OPTIONS.EXTENSION:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
-                    throw new SyntaxError('Extension doesn\'t support $extension modifier');
+                    throw new SyntaxError("Extension doesn't support $extension modifier");
                 }
                 this.setOptionEnabled(NetworkRuleOption.Extension, !exception);
                 break;
@@ -1869,9 +1860,7 @@ export class NetworkRule implements IRule {
                 break;
             default: {
                 // clear empty values
-                const modifierView = [optionName, optionValue]
-                    .filter((i) => i)
-                    .join('=');
+                const modifierView = [optionName, optionValue].filter((i) => i).join('=');
                 throw new SyntaxError(`Unknown modifier: ${modifierView}`);
             }
         }
@@ -1989,10 +1978,9 @@ export class NetworkRule implements IRule {
         }
 
         // Category 5: specific exceptions.
-        this.priorityWeight += NetworkRule.CategoryFiveWeight * countEnabledBits(
-            this.enabledOptions,
-            NetworkRule.SPECIFIC_EXCLUSIONS_MASK,
-        );
+        this.priorityWeight +=
+            NetworkRule.CategoryFiveWeight *
+            countEnabledBits(this.enabledOptions, NetworkRule.SPECIFIC_EXCLUSIONS_MASK);
 
         // Category 6: allowlist rules.
         if (this.isAllowlist()) {
@@ -2043,8 +2031,10 @@ export class NetworkRule implements IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateHeaderRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.HeaderCompatibleOptions)
-                        !== NetworkRuleGroupOptions.HeaderCompatibleOptions) {
+        if (
+            (this.enabledOptions | NetworkRuleGroupOptions.HeaderCompatibleOptions) !==
+            NetworkRuleGroupOptions.HeaderCompatibleOptions
+        ) {
             throw new SyntaxError('$header rules are not compatible with some other modifiers');
         }
         if (this.advancedModifier && this.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
@@ -2062,8 +2052,10 @@ export class NetworkRule implements IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validatePermissionsRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.PermissionsCompatibleOptions)
-                !== NetworkRuleGroupOptions.PermissionsCompatibleOptions) {
+        if (
+            (this.enabledOptions | NetworkRuleGroupOptions.PermissionsCompatibleOptions) !==
+            NetworkRuleGroupOptions.PermissionsCompatibleOptions
+        ) {
             throw new SyntaxError('$permissions rules are not compatible with some other modifiers');
         }
     }
@@ -2074,8 +2066,10 @@ export class NetworkRule implements IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateRemoveParamRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.RemoveParamCompatibleOptions)
-            !== NetworkRuleGroupOptions.RemoveParamCompatibleOptions) {
+        if (
+            (this.enabledOptions | NetworkRuleGroupOptions.RemoveParamCompatibleOptions) !==
+            NetworkRuleGroupOptions.RemoveParamCompatibleOptions
+        ) {
             throw new SyntaxError('$removeparam rules are not compatible with some other modifiers');
         }
     }
@@ -2086,8 +2080,10 @@ export class NetworkRule implements IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateRemoveHeaderRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.RemoveHeaderCompatibleOptions)
-            !== NetworkRuleGroupOptions.RemoveHeaderCompatibleOptions) {
+        if (
+            (this.enabledOptions | NetworkRuleGroupOptions.RemoveHeaderCompatibleOptions) !==
+            NetworkRuleGroupOptions.RemoveHeaderCompatibleOptions
+        ) {
             throw new SyntaxError('$removeheader rules are not compatible with some other modifiers');
         }
         if (this.headerModifier && this.isOptionEnabled(NetworkRuleOption.Header)) {

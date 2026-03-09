@@ -43,10 +43,7 @@ export const createLocalScriptRulesJson = async (dir: string): Promise<void> => 
     const serializedContent = LocalScriptRulesJson.serialize(allRules);
 
     // Write to file
-    await fs.writeFile(
-        path.join(dir, LocalScriptRulesJson.FILENAME),
-        serializedContent,
-    );
+    await fs.writeFile(path.join(dir, LocalScriptRulesJson.FILENAME), serializedContent);
 
     // Extract real count of serialized rules (without duplicates)
     const deserialized = LocalScriptRulesJson.deserialize(serializedContent);

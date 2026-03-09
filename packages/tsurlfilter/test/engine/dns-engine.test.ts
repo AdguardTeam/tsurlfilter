@@ -91,9 +91,7 @@ describe('General DNS engine tests', () => {
     });
 
     it('checks match for host level network rule - protocol', () => {
-        const rules = [
-            '://example.org',
-        ];
+        const rules = ['://example.org'];
         const list = new StringRuleList(1, rules.join('\n'), false, false, false);
         const storage = new RuleStorage([list]);
         const engine = new DnsEngine(storage);
@@ -104,9 +102,7 @@ describe('General DNS engine tests', () => {
     });
 
     it('checks match for host level network rule - regex', () => {
-        const rules = [
-            '/^stats?\\./',
-        ];
+        const rules = ['/^stats?\\./'];
         const list = new StringRuleList(1, rules.join('\n'), false, false, false);
         const storage = new RuleStorage([list]);
         const engine = new DnsEngine(storage);
@@ -117,10 +113,7 @@ describe('General DNS engine tests', () => {
     });
 
     it('checks match for host level network rule - regex allowlist', () => {
-        const rules = [
-            '||stats.test.com^',
-            '@@/stats?\\./',
-        ];
+        const rules = ['||stats.test.com^', '@@/stats?\\./'];
         const list = new StringRuleList(1, rules.join('\n'), false, false, false);
         const storage = new RuleStorage([list]);
         const engine = new DnsEngine(storage);
@@ -132,10 +125,7 @@ describe('General DNS engine tests', () => {
     });
 
     it('checks match for badfilter rules', () => {
-        const rules = [
-            '||example.org^',
-            '||example.org^$badfilter',
-        ];
+        const rules = ['||example.org^', '||example.org^$badfilter'];
         const list = new StringRuleList(1, rules.join('\n'), false, false, false);
         const storage = new RuleStorage([list]);
         const engine = new DnsEngine(storage);
@@ -146,10 +136,7 @@ describe('General DNS engine tests', () => {
     });
 
     it('checks match for dnsrewrite rules', () => {
-        const rules = [
-            '||example.org^',
-            '||example.org^$dnsrewrite=1.2.3.4',
-        ];
+        const rules = ['||example.org^', '||example.org^$dnsrewrite=1.2.3.4'];
         const list = new StringRuleList(1, rules.join('\n'), false, false, false);
         const storage = new RuleStorage([list]);
         const engine = new DnsEngine(storage);

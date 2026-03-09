@@ -57,9 +57,7 @@ export class SourceMap implements ISourceMap {
                 sourceRuleIndex,
                 filterId,
             };
-            const newSourceValue = existingSourcePairs
-                ? existingSourcePairs.concat(value)
-                : [value];
+            const newSourceValue = existingSourcePairs ? existingSourcePairs.concat(value) : [value];
 
             this.ruleIdMap.set(declarativeRuleId, newSourceValue);
 
@@ -137,11 +135,11 @@ export class SourceMap implements ISourceMap {
      */
     public serialize(): string {
         // Remove fields names to reduce size of serialized string
-        const plainArray = this.sources.map(({
+        const plainArray = this.sources.map(({ declarativeRuleId, sourceRuleIndex, filterId }) => [
             declarativeRuleId,
             sourceRuleIndex,
             filterId,
-        }) => ([declarativeRuleId, sourceRuleIndex, filterId]));
+        ]);
         return JSON.stringify(plainArray);
     }
 }

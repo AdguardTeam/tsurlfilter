@@ -7,10 +7,7 @@ module.exports = {
         tsconfigRootDir: path.join(__dirname),
         project: 'tsconfig.eslint.json',
     },
-    plugins: [
-        'import',
-        '@typescript-eslint',
-    ],
+    plugins: ['import', '@typescript-eslint'],
     extends: [
         'eslint:recommended',
         'plugin:@typescript-eslint/eslint-recommended',
@@ -19,7 +16,7 @@ module.exports = {
         '@adguard/eslint-config-internal',
     ],
     rules: {
-        'indent': 'off',
+        indent: 'off',
         '@typescript-eslint/indent': ['error', 4],
         'no-bitwise': 'off',
         'no-new': 'off',
@@ -27,9 +24,9 @@ module.exports = {
         'import/prefer-default-export': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
         'no-continue': 'off',
-        'import/no-extraneous-dependencies': ['error', { 'devDependencies': true }],
+        'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
         'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
-        'no-constant-condition': ['error', { 'checkLoops': false }],
+        'no-constant-condition': ['error', { checkLoops: false }],
         '@typescript-eslint/interface-name-prefix': 'off',
         '@typescript-eslint/member-delimiter-style': 'error',
         'arrow-body-style': 'off',

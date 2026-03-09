@@ -1,11 +1,6 @@
 import { isUboResponseHeaderRemovalRuleBody } from '../../../common/ubo-html-filtering-body-common';
 import { type Value, type PseudoClassSelector, type HtmlFilteringRuleBody } from '../../../nodes';
-import {
-    CLOSE_PARENTHESIS,
-    EMPTY,
-    OPEN_PARENTHESIS,
-    UBO_RESPONSEHEADER_FN,
-} from '../../../utils/constants';
+import { CLOSE_PARENTHESIS, EMPTY, OPEN_PARENTHESIS, UBO_RESPONSEHEADER_FN } from '../../../utils/constants';
 import { BaseGenerator } from '../../base-generator';
 import { ValueGenerator } from '../../misc/value-generator';
 import { HtmlFilteringBodyGenerator } from './html-filtering-body-generator';

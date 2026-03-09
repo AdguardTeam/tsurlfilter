@@ -1,10 +1,5 @@
 import browser from 'webextension-polyfill';
-import {
-    RequestType,
-    type CosmeticRule,
-    type NetworkRule,
-    NetworkRuleOption,
-} from '@adguard/tsurlfilter';
+import { RequestType, type CosmeticRule, type NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog } from '../../../../common/filtering-log';
 import { type RuleTextProvider } from '../../../../common/utils/rule-text-provider';
@@ -81,9 +76,10 @@ export class ContentFiltering {
     private static getReplaceRules(context: RequestContext): NetworkRule[] | null {
         const { requestType, matchingResult } = context;
 
-        if (!requestType
-            || !matchingResult
-            || !ContentFiltering.supportedReplaceRulesRequestTypes.includes(requestType)
+        if (
+            !requestType ||
+            !matchingResult ||
+            !ContentFiltering.supportedReplaceRulesRequestTypes.includes(requestType)
         ) {
             return null;
         }
@@ -162,9 +158,11 @@ export class ContentFiltering {
      * @param context Request context.
      */
     public process(context: RequestContext): void {
-        if (!browser.webRequest.filterResponseData
-            || !ContentFiltering.isRequestMethodSupported(context)
-            || ContentFiltering.hasContentExceptionRule(context)) {
+        if (
+            !browser.webRequest.filterResponseData ||
+            !ContentFiltering.isRequestMethodSupported(context) ||
+            ContentFiltering.hasContentExceptionRule(context)
+        ) {
             return;
         }
 

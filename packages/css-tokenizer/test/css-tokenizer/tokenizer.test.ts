@@ -12,21 +12,27 @@ describe('tokenizer', () => {
     test('should skip leading BOM in the regular tokenizer', () => {
         const tokens: TokenData[] = [];
         tokenize('\uFEFF ', (...args) => tokens.push(args));
-        expect(tokens.map((call) => call.slice(0, 3))).toEqual([
-            [TokenType.Whitespace, 1, 2],
-        ]);
+        expect(tokens.map((call) => call.slice(0, 3))).toEqual([[TokenType.Whitespace, 1, 2]]);
     });
 
     test('should merge custom handlers in the regular tokenizer', () => {
         const tokens: TokenData[] = [];
-        tokenize(':custom(a)', (...args) => tokens.push(args), () => {}, new Map([
-            [getStringHash('custom'), (context: TokenizerContext) => {
-                const start = context.offset;
-                // this is a simple handler that just consumes one single code point - just for testing purposes
-                context.consumeCodePoint();
-                context.onToken(TokenType.Delim, start, context.offset, undefined, context.stop);
-            }],
-        ]));
+        tokenize(
+            ':custom(a)',
+            (...args) => tokens.push(args),
+            () => {},
+            new Map([
+                [
+                    getStringHash('custom'),
+                    (context: TokenizerContext) => {
+                        const start = context.offset;
+                        // this is a simple handler that just consumes one single code point - just for testing purposes
+                        context.consumeCodePoint();
+                        context.onToken(TokenType.Delim, start, context.offset, undefined, context.stop);
+                    },
+                ],
+            ]),
+        );
         expect(tokens.map((call) => call.slice(0, 3))).toEqual([
             [TokenType.Colon, 0, 1],
             [TokenType.Function, 1, 8],
@@ -41,9 +47,11 @@ describe('tokenizer', () => {
 
         // callback function is called with the error
         const errors: ErrorData[] = [];
-        tokenize('"str', () => {}, (...args) => errors.push(args));
-        expect(errors).toEqual([
-            [ErrorMessage.UnexpectedEofInString, 0, 4],
-        ]);
+        tokenize(
+            '"str',
+            () => {},
+            (...args) => errors.push(args),
+        );
+        expect(errors).toEqual([[ErrorMessage.UnexpectedEofInString, 0, 4]]);
     });
 });

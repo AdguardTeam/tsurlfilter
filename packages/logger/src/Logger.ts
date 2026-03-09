@@ -57,16 +57,18 @@ const levelMapNumToString = {
 /**
  * Log levels map, which maps string level to number level.
  */
-const levelMapStringToNum: Record<string, LogLevelNumeric> = Object.entries(levelMapNumToString)
-    .reduce((acc, [key, value]) => {
-    // Here, key is originally a string since Object.entries() returns [string, string][].
-    // We need to cast the key to LogLevelNumeric correctly without causing type mismatches.
+const levelMapStringToNum: Record<string, LogLevelNumeric> = Object.entries(levelMapNumToString).reduce(
+    (acc, [key, value]) => {
+        // Here, key is originally a string since Object.entries() returns [string, string][].
+        // We need to cast the key to LogLevelNumeric correctly without causing type mismatches.
         const numericKey = Number(key) as LogLevelNumeric;
         if (!Number.isNaN(numericKey)) {
             acc[value] = numericKey;
         }
         return acc;
-    }, {} as Record<string, LogLevelNumeric>);
+    },
+    {} as Record<string, LogLevelNumeric>,
+);
 
 /**
  * Methods supported by console. Used to manage levels.
@@ -245,10 +247,7 @@ export class Logger {
      * @param formattedTime Formatted time.
      * @param formattedArgs Formatted arguments.
      */
-    private printWithStackTrace(
-        formattedTime: string,
-        formattedArgs: any[],
-    ): void {
+    private printWithStackTrace(formattedTime: string, formattedArgs: any[]): void {
         // If grouping is not supported, print just expanded trace, but this
         // leads to a lot of dirty logs in the console, since the stack trace
         // will be printed for every message.
@@ -272,11 +271,7 @@ export class Logger {
      * @param method Logger method.
      * @param args Printed arguments.
      */
-    private print(
-        level: LogLevelNumeric,
-        method: LogMethod,
-        args: any[],
-    ): void {
+    private print(level: LogLevelNumeric, method: LogMethod, args: any[]): void {
         // Skip writing if the basic conditions are not met.
         if (this.currentLevelValue < level) {
             return;
@@ -313,10 +308,7 @@ export class Logger {
          * Exception is Error method, because it is already contains build-in
          * stack trace.
          */
-        if (
-            this.currentLevelValue >= levelMapStringToNum[LogLevel.Debug]
-            && method !== LogMethod.Error
-        ) {
+        if (this.currentLevelValue >= levelMapStringToNum[LogLevel.Debug] && method !== LogMethod.Error) {
             this.printWithStackTrace(formattedTime, formattedArgs);
             return;
         }

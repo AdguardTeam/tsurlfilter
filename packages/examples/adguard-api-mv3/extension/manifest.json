@@ -38,9 +38,7 @@
         "cookies",
         "userScripts"
     ],
-    "host_permissions": [
-        "<all_urls>"
-    ],
+    "host_permissions": ["<all_urls>"],
     "background": {
         "service_worker": "background.js"
     },
@@ -50,26 +48,16 @@
     "content_scripts": [
         {
             "all_frames": true,
-            "js": [
-                "content-script.js"
-            ],
-            "matches": [
-                "http://*/*",
-                "https://*/*"
-            ],
+            "js": ["content-script.js"],
+            "matches": ["http://*/*", "https://*/*"],
             "match_about_blank": true,
             "run_at": "document_start"
         }
     ],
     "web_accessible_resources": [
         {
-            "resources": [
-                "/adguard/*"
-            ],
-            "matches": [
-                "http://*/*",
-                "https://*/*"
-            ],
+            "resources": ["/adguard/*"],
+            "matches": ["http://*/*", "https://*/*"],
             "use_dynamic_url": true
         }
     ]

@@ -51,10 +51,7 @@ export class SeqScanLookupTable implements ILookupTable {
                 return false;
             }
 
-            this.rules.set(
-                storageIdx,
-                rule,
-            );
+            this.rules.set(storageIdx, rule);
             this.rulesCount += 1;
             return true;
         } catch (e) {

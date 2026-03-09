@@ -17,10 +17,7 @@ describe('test declarative rule converter performance', () => {
     it('tests declarative rule converter performance', async () => {
         const rules = generateRules(300_000);
         const filterId = 1;
-        const filter = await createScannedFilter(
-            filterId,
-            rules,
-        );
+        const filter = await createScannedFilter(filterId, rules);
         const start = performance.now();
         const result = await DeclarativeRulesConverter.convert([filter], { maxNumberOfRules: 5000 });
         const end = performance.now();

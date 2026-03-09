@@ -130,10 +130,10 @@ export const consumeUrlToken: TokenizerContextFunction = (context: TokenizerCont
         // U+0028 LEFT PARENTHESIS (()
         // non-printable code point
         if (
-            context.code === CodePoint.QuotationMark
-            || context.code === CodePoint.Apostrophe
-            || context.code === CodePoint.LeftParenthesis
-            || isNonPrintableCodePoint(context.code)
+            context.code === CodePoint.QuotationMark ||
+            context.code === CodePoint.Apostrophe ||
+            context.code === CodePoint.LeftParenthesis ||
+            isNonPrintableCodePoint(context.code)
         ) {
             // This is a parse error. Consume the remnants of a bad url, create a <bad-url-token>, and return it.
             context.onError(ErrorMessage.UnexpectedCharInUrl, start, context.offset);

@@ -7,4 +7,4 @@ export enum ManifestVersionEnv {
 }
 
 // By default we use the third version of the manifest.
-export const MANIFEST_ENV = process.env.MANIFEST_ENV as ManifestVersionEnv || ManifestVersionEnv.Third;
+export const MANIFEST_ENV = (process.env.MANIFEST_ENV as ManifestVersionEnv) || ManifestVersionEnv.Third;

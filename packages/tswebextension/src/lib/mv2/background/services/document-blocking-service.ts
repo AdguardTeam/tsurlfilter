@@ -39,15 +39,8 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
      * @param tabsApi Wrapper around browser.tabs API.
      * @param engineApi Engine API.
      */
-    constructor(
-        tabsApi: TabsApi,
-        engineApi: EngineApi,
-    ) {
-        super(
-            tabsApi,
-            engineApi,
-            browserDetectorMV2,
-        );
+    constructor(tabsApi: TabsApi, engineApi: EngineApi) {
+        super(tabsApi, engineApi, browserDetectorMV2);
     }
 
     /**
@@ -87,11 +80,7 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
      * @returns Blocking response or null {@link WebRequestApi.onBeforeRequest}.
      */
     public getDocumentBlockingResponse(data: GetDocumentBlockingResponseParams): WebRequest.BlockingResponse | void {
-        const {
-            tabId,
-            rule,
-            requestUrl,
-        } = data;
+        const { tabId, rule, requestUrl } = data;
 
         // if request url is trusted, no redirect to blocking page
         if (this.isTrusted(requestUrl)) {

@@ -3,17 +3,8 @@
     "compilerOptions": {
         // With this tsconfig, we don't need to emit any files,
         // we just want to check the types
-        "noEmit": true,
+        "noEmit": true
     },
-    "include": [
-        "src",
-        "tests",
-        "scripts",
-        "rollup.config.ts",
-        ".eslintrc.js",
-        "vitest.config.ts",
-    ],
-    "exclude": [
-        "tests/smoke",
-    ]
+    "include": ["src", "tests", "scripts", "rollup.config.ts", ".eslintrc.js", "vitest.config.ts"],
+    "exclude": ["tests/smoke"]
 }

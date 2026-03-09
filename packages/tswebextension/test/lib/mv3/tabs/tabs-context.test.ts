@@ -1,11 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    afterEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, afterEach, it, vi } from 'vitest';
 
 import { TabContext } from '../../../../src/lib/mv3/tabs/tab-context';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
@@ -59,13 +52,15 @@ describe('TabContext', () => {
             const context = TabContext.createNewTabContext(tabInfo);
 
             expect(engineApi.matchFrame).toBeCalledWith(tabInfo.pendingUrl);
-            expect(context.frames.get(MAIN_FRAME_ID)).toEqual(new FrameMV3({
-                tabId: tabInfo.id,
-                frameId: MAIN_FRAME_ID,
-                parentFrameId: NO_PARENT_FRAME_ID,
-                url: tabInfo.pendingUrl!,
-                timeStamp: 0,
-            }));
+            expect(context.frames.get(MAIN_FRAME_ID)).toEqual(
+                new FrameMV3({
+                    tabId: tabInfo.id,
+                    frameId: MAIN_FRAME_ID,
+                    parentFrameId: NO_PARENT_FRAME_ID,
+                    url: tabInfo.pendingUrl!,
+                    timeStamp: 0,
+                }),
+            );
         });
     });
 

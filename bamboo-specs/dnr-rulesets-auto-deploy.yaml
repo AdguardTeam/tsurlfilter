@@ -20,7 +20,7 @@ npmjs 3.3.X:
   docker: &docker
     image: adguard/node-ssh:22.14--0
     volumes:
-      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      ${system.PNPM_DIR}: '${bamboo.cachePnpm}'
   # run auto-deploy only after successful build for dnr-rulesets v3.3.X
   triggers:
     - build-success:

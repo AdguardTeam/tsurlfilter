@@ -20,10 +20,7 @@ export class Extractor {
      * @param jsonFilePath Path to the JSON file containing metadata.
      * @param outputPath Path to save the extracted metadata.
      */
-    private static async extractMetadata(
-        jsonFilePath: string,
-        outputPath: string,
-    ): Promise<void> {
+    private static async extractMetadata(jsonFilePath: string, outputPath: string): Promise<void> {
         const rawJson = await fs.readFile(jsonFilePath, 'utf8');
 
         const metadataRuleset = MetadataRuleSet.deserialize(rawJson);
@@ -34,10 +31,7 @@ export class Extractor {
             throw new Error(`Metadata not found in ${jsonFilePath}`);
         }
 
-        await fs.writeFile(
-            path.join(outputPath, LOCAL_METADATA_FILE_NAME),
-            JSON.stringify(metadata, null, 2),
-        );
+        await fs.writeFile(path.join(outputPath, LOCAL_METADATA_FILE_NAME), JSON.stringify(metadata, null, 2));
     }
 
     /**
@@ -48,16 +42,10 @@ export class Extractor {
      *
      * @throws Error if rulesetsPath is not a directory or if an error occurs while reading or parsing files.
      */
-    public static async extract(
-        rulesetsPath: string,
-        outputPath: string,
-    ): Promise<void> {
+    public static async extract(rulesetsPath: string, outputPath: string): Promise<void> {
         ensureDirSync(outputPath);
 
-        const rulesetsPaths = await findFiles(
-            rulesetsPath,
-            (filePath: string) => filePath.endsWith(RULESET_FILE_EXT),
-        );
+        const rulesetsPaths = await findFiles(rulesetsPath, (filePath: string) => filePath.endsWith(RULESET_FILE_EXT));
 
         for (const rulesetPath of rulesetsPaths) {
             const jsonFilePath = rulesetPath;

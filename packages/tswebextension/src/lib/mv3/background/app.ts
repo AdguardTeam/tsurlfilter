@@ -52,11 +52,7 @@ type FiltersUpdateInfo = {
 };
 
 // Reexport types
-export type {
-    ConfigurationResult,
-    ConversionResult,
-    FailedEnableRuleSetsError,
-};
+export type { ConfigurationResult, ConversionResult, FailedEnableRuleSetsError };
 
 /**
  * The TsWebExtension class is a facade for working with the Chrome
@@ -64,11 +60,7 @@ export type {
  * adding/editing/deleting custom filters or custom rules,
  * starting/stopping declarative filtering log.
  */
-export class TsWebExtension implements AppInterface<
-    ConfigurationMV3,
-    ConfigurationMV3Context,
-    ConfigurationResult
-> {
+export class TsWebExtension implements AppInterface<ConfigurationMV3, ConfigurationMV3Context, ConfigurationResult> {
     /**
      * Fires on filtering log event.
      */
@@ -200,10 +192,7 @@ export class TsWebExtension implements AppInterface<
      * RuleSetsLoaderApi to prevent concurrent access issues between multiple
      * instances.
      */
-    public static async syncRuleSetWithIdbByFilterId(
-        staticFilterId: number,
-        ruleSetsPath: string,
-    ): Promise<void> {
+    public static async syncRuleSetWithIdbByFilterId(staticFilterId: number, ruleSetsPath: string): Promise<void> {
         const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
 
         const ruleSetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
@@ -219,10 +208,7 @@ export class TsWebExtension implements AppInterface<
      * @param ruleSetsPath Path to rule sets.
      * @param staticFiltersIds Array of static filter IDs to sync.
      */
-    private static async syncRuleSetsWithIdb(
-        ruleSetsPath: string,
-        staticFiltersIds: number[],
-    ): Promise<void> {
+    private static async syncRuleSetsWithIdb(ruleSetsPath: string, staticFiltersIds: number[]): Promise<void> {
         const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
 
         const syncTasks = staticFiltersIds.map((staticFilterId) => {
@@ -280,7 +266,9 @@ export class TsWebExtension implements AppInterface<
         const removedRules = await SessionRulesApi.removeAllRules();
 
         if (removedRules.length > 0) {
-            logger.warn(`[tsweb.TsWebExtension.removeAllFilteringRules]: Found ${removedRules.length} session rule(s) not cleared by services. Rule IDs: [${removedRules.map((rule) => rule.id).join(', ')}]`);
+            logger.warn(
+                `[tsweb.TsWebExtension.removeAllFilteringRules]: Found ${removedRules.length} session rule(s) not cleared by services. Rule IDs: [${removedRules.map((rule) => rule.id).join(', ')}]`,
+            );
         }
 
         declarativeFilteringLog.startUpdate();
@@ -334,13 +322,7 @@ export class TsWebExtension implements AppInterface<
         await TsWebExtension.syncRuleSetsWithIdb(config.ruleSetsPath, config.staticFiltersIds);
 
         // Exclude binary fields from logged config.
-        const binaryFields = [
-            'userrules',
-            'sourceMap',
-            'rawFilterList',
-            'filterList',
-            'conversionMap',
-        ];
+        const binaryFields = ['userrules', 'sourceMap', 'rawFilterList', 'filterList', 'conversionMap'];
         logger.trace('[tsweb.TsWebExtension.configure]: start with ', stringifyObjectWithoutKeys(config, binaryFields));
 
         const configuration = configurationMV3Validator.parse(config); // error happens here
@@ -363,24 +345,14 @@ export class TsWebExtension implements AppInterface<
             res.stealthResult = await StealthService.applySettings(configuration.settings);
 
             // Extract filters info from configuration and wrap them into IFilters.
-            const {
-                staticFilters,
-                customFilters,
-                filtersIdsToEnable,
-                filtersIdsToDisable,
-            } = await TsWebExtension.getFiltersUpdateInfo(configuration, FiltersApi.loadFilterContent);
+            const { staticFilters, customFilters, filtersIdsToEnable, filtersIdsToDisable } =
+                await TsWebExtension.getFiltersUpdateInfo(configuration, FiltersApi.loadFilterContent);
 
             // Update list of enabled static filters
-            res.staticFiltersStatus = await FiltersApi.updateFiltering(
-                filtersIdsToDisable,
-                filtersIdsToEnable,
-            );
+            res.staticFiltersStatus = await FiltersApi.updateFiltering(filtersIdsToDisable, filtersIdsToEnable);
 
             // Create static rulesets.
-            const staticRuleSets = await TsWebExtension.loadStaticRuleSets(
-                configuration.ruleSetsPath,
-                staticFilters,
-            );
+            const staticRuleSets = await TsWebExtension.loadStaticRuleSets(configuration.ruleSetsPath, staticFilters);
 
             // Get enabled static rule sets
             const enabledRuleSetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
@@ -399,10 +371,7 @@ export class TsWebExtension implements AppInterface<
                 {
                     getContent: (): Promise<FilterList> => {
                         return Promise.resolve(
-                            new FilterList(
-                                configuration.userrules.content,
-                                configuration.userrules.conversionData,
-                            ),
+                            new FilterList(configuration.userrules.content, configuration.userrules.conversionData),
                         );
                     },
                 },
@@ -457,10 +426,7 @@ export class TsWebExtension implements AppInterface<
                 this.webAccessibleResourcesPath,
             );
 
-            await SessionRulesApi.updateSessionRules(
-                enabledStaticRuleSets,
-                res.dynamicRules.declarativeRulesToCancel,
-            );
+            await SessionRulesApi.updateSessionRules(enabledStaticRuleSets, res.dynamicRules.declarativeRulesToCancel);
 
             await CspService.addCspReportBlockingRule();
 
@@ -479,10 +445,7 @@ export class TsWebExtension implements AppInterface<
             await engineApi.waitingForEngine;
 
             // TODO: Recreate only dynamic ruleset, because static cannot be changed
-            const ruleSets = [
-                ...staticRuleSets,
-                res.dynamicRules.ruleSet,
-            ];
+            const ruleSets = [...staticRuleSets, res.dynamicRules.ruleSet];
 
             // Update rulesets in declarative filtering log.
             declarativeFilteringLog.finishUpdate(ruleSets, configuration.declarativeLogEnabled);
@@ -684,18 +647,9 @@ export class TsWebExtension implements AppInterface<
      *
      * @returns ConfigurationContext.
      */
-    private static createConfigurationContext(
-        configuration: ConfigurationMV3,
-    ): ConfigurationMV3Context {
-        const {
-            staticFiltersIds,
-            customFilters,
-            verbose,
-            settings,
-            filtersPath,
-            ruleSetsPath,
-            declarativeLogEnabled,
-        } = configuration;
+    private static createConfigurationContext(configuration: ConfigurationMV3): ConfigurationMV3Context {
+        const { staticFiltersIds, customFilters, verbose, settings, filtersPath, ruleSetsPath, declarativeLogEnabled } =
+            configuration;
 
         return {
             staticFiltersIds,
@@ -721,18 +675,11 @@ export class TsWebExtension implements AppInterface<
         loadFilterContent: LoadFilterContent,
     ): Promise<FiltersUpdateInfo> {
         // Wrap filters to tsurlfilter.IFilter
-        const staticFilters = FiltersApi.createStaticFilters(
-            parsedConfiguration.staticFiltersIds,
-            loadFilterContent,
-        );
-        const customFilters = FiltersApi.createCustomFilters(
-            parsedConfiguration.customFilters,
-        );
-        const filtersIdsToEnable = staticFilters
-            .map((filter) => filter.getId());
+        const staticFilters = FiltersApi.createStaticFilters(parsedConfiguration.staticFiltersIds, loadFilterContent);
+        const customFilters = FiltersApi.createCustomFilters(parsedConfiguration.customFilters);
+        const filtersIdsToEnable = staticFilters.map((filter) => filter.getId());
         const enabledRuleSetsIds = await FiltersApi.getEnabledRuleSets();
-        const filtersIdsToDisable = enabledRuleSetsIds
-            .filter((id) => !filtersIdsToEnable.includes(id));
+        const filtersIdsToDisable = enabledRuleSetsIds.filter((id) => !filtersIdsToEnable.includes(id));
 
         return {
             staticFilters,
@@ -765,8 +712,9 @@ export class TsWebExtension implements AppInterface<
         // Note: we cannot create rulesets only for enabled filters because we
         // need to get all rulesets' counters for checking limits on the client.
         // Note: we skip metadata ruleset, because it is not a real ruleset.
-        const manifestRuleSets = manifest.declarative_net_request.rule_resources
-            .filter(({ id }) => id !== getRuleSetId(METADATA_RULESET_ID));
+        const manifestRuleSets = manifest.declarative_net_request.rule_resources.filter(
+            ({ id }) => id !== getRuleSetId(METADATA_RULESET_ID),
+        );
 
         const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
             return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
@@ -779,7 +727,10 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             const filterListIds = staticFilters.map((f) => f.getId());
 
-            logger.error(`[tsweb.TsWebExtension.loadStaticRuleSets]: cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
+            logger.error(
+                `[tsweb.TsWebExtension.loadStaticRuleSets]: cannot scan rules of filter list with ids ${filterListIds} due to: `,
+                e,
+            );
 
             return [];
         }
@@ -832,7 +783,7 @@ export class TsWebExtension implements AppInterface<
      */
     private static updateLogLevel(logLevel: ConfigurationMV3['logLevel']): void {
         try {
-            logger.currentLevel = logLevel as LogLevel || LogLevel.Info;
+            logger.currentLevel = (logLevel as LogLevel) || LogLevel.Info;
         } catch (e) {
             logger.currentLevel = LogLevel.Info;
         }

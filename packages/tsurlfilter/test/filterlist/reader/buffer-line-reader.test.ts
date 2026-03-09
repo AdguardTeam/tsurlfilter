@@ -1,9 +1,4 @@
-import {
-    beforeEach,
-    describe,
-    expect,
-    it,
-} from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { BufferLineReader } from '../../../src/filterlist/reader/buffer-line-reader';
 

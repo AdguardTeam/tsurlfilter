@@ -1,4 +1,5 @@
 <!-- omit in toc -->
+
 # CSS / Extended CSS Tokenizer
 
 [![npm-badge]][npm-url] [![install-size-badge]][install-size-url] [![license-badge]][license-url]
@@ -6,9 +7,9 @@
 This library provides two distinct CSS tokenizers:
 
 1. **Standard CSS Tokenizer**: This tokenizer strictly adheres to the CSS Syntax Level 3 specification outlined by the
-[W3C][css-syntax].
+   [W3C][css-syntax].
 1. **Extended CSS Tokenizer**: Designed to extend the capabilities of the standard tokenizer, this component introduces
-support for special pseudo-classes like `:contains()` and `:xpath()`.
+   support for special pseudo-classes like `:contains()` and `:xpath()`.
 
 Table of contents:
 
@@ -56,14 +57,15 @@ Extended CSS introduces additional pseudo-classes that are not defined in the CS
 please refer to the following resources:
 
 <!--markdownlint-disable MD013-->
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard: *Extended CSS capabilities*][adg-ext-css]
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock Origin logo" width="14px"> [uBlock Origin: *Procedural cosmetic filters*][ubo-procedural]
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus: *Extended CSS selectors*][abp-ext-css]
-<!--markdownlint-enable MD013-->
+
+- <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard: _Extended CSS capabilities_][adg-ext-css]
+- <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock Origin logo" width="14px"> [uBlock Origin: _Procedural cosmetic filters_][ubo-procedural]
+- <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus: _Extended CSS selectors_][abp-ext-css]
+      <!--markdownlint-enable MD013-->
 
 ### Why do we need a custom tokenizer?
 
-The standard CSS tokenizer cannot handle Extended CSS's pseudo-classes *in every case*. For example, the `:contains()`
+The standard CSS tokenizer cannot handle Extended CSS's pseudo-classes _in every case_. For example, the `:contains()`
 pseudo-class can have the following syntax:
 
 ```css
@@ -124,7 +126,7 @@ const COLUMNS = Object.freeze({
     TOKEN: 'Token',
     START: 'Start',
     END: 'End',
-    FRAGMENT: 'Fragment'
+    FRAGMENT: 'Fragment',
 });
 
 // Prepare the data array
@@ -235,7 +237,7 @@ function tokenizeExtended(
     onToken: OnTokenCallback,
     onError: OnErrorCallback = () => {},
     functionHandlers: Map<number, TokenizerContextFunction> = new Map(),
-): void
+): void;
 ```
 
 ### Utilities
@@ -268,7 +270,7 @@ source code, current position, and other relevant information.
 
 #### `decodeIdent`
 
-```ts
+````ts
 /**
  * Decodes a CSS identifier according to the CSS Syntax Module Level 3 specification.
  *
@@ -283,7 +285,7 @@ source code, current position, and other relevant information.
  * @returns Decoded CSS identifier.
  */
 function decodeIdent(ident: string): string;
-```
+````
 
 ### `CSS_TOKENIZER_VERSION`
 
@@ -305,7 +307,7 @@ See https://www.w3.org/TR/css-syntax-3/#tokenization for more details.
 
 #### `getBaseTokenName`
 
-```ts
+````ts
 /**
  * Get base token name by token type
  *
@@ -320,11 +322,11 @@ See https://www.w3.org/TR/css-syntax-3/#tokenization for more details.
  * @returns Base token name or 'unknown' if token type is unknown
  */
 function getBaseTokenName(type: TokenType): string;
-```
+````
 
 #### `getFormattedTokenName`
 
-```ts
+````ts
 /**
  * Get formatted token name by token type
  *
@@ -339,7 +341,7 @@ function getBaseTokenName(type: TokenType): string;
  * @returns Formatted token name or `'<unknown-token>'` if token type is unknown
  */
 function getFormattedTokenName(type: TokenType): string;
-```
+````
 
 > [!NOTE]
 > Our API and token list is also compatible with the [CSSTree][css-tree-repo]'s tokenizer API, and in the long term, we

@@ -32,9 +32,7 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
      *
      * @param documentApi Document API instance.
      */
-    constructor(
-        readonly documentApi: DocumentApi,
-    ) {
+    constructor(readonly documentApi: DocumentApi) {
         super(documentApi);
     }
 

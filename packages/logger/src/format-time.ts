@@ -18,7 +18,7 @@ const pad = (num: number, size = 2): string => {
  * @returns {string} The formatted date string.
  */
 export const formatTime = (date: Date | number): string => {
-    const d = (date instanceof Date) ? date : new Date(date);
+    const d = date instanceof Date ? date : new Date(date);
     const year = d.getFullYear();
     const month = pad(d.getMonth() + 1); // Months are 0-based
     const day = pad(d.getDate());

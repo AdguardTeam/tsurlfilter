@@ -54,10 +54,7 @@ class CompaniesDbService {
      *
      * @returns Matched company category id or `null` if not found.
      */
-    private matchCompanyCategoryId(
-        domainToCheck: string | null,
-        rootDomain: string | null,
-    ): number | null {
+    private matchCompanyCategoryId(domainToCheck: string | null, rootDomain: string | null): number | null {
         if (!domainToCheck || !rootDomain) {
             return null;
         }

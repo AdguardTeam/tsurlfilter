@@ -305,7 +305,10 @@ export class WebRequestApi {
         try {
             await browser.webRequest.handlerBehaviorChanged();
         } catch (e) {
-            logger.error('[tsweb.WebRequestApi.flushMemoryCache]: Cannot flush memory cache and call browser.handlerBehaviorChanged: ', e);
+            logger.error(
+                '[tsweb.WebRequestApi.flushMemoryCache]: Cannot flush memory cache and call browser.handlerBehaviorChanged: ',
+                e,
+            );
         }
     }
 
@@ -318,9 +321,10 @@ export class WebRequestApi {
      *
      * @returns Web request response or void if there is nothing to do.
      */
-    private static onBeforeRequest(
-        { context, details }: RequestData<OnBeforeRequestDetailsType>,
-    ): WebRequestEventResponse {
+    private static onBeforeRequest({
+        context,
+        details,
+    }: RequestData<OnBeforeRequestDetailsType>): WebRequestEventResponse {
         if (!context) {
             return undefined;
         }
@@ -362,27 +366,26 @@ export class WebRequestApi {
 
         let skipPrecalculation = true;
         if (isDocumentOrSubDocumentRequest) {
-            skipPrecalculation = cosmeticFrameProcessor.shouldSkipRecalculation(
-                tabId,
-                frameId,
-                requestUrl,
-                timestamp,
-            );
+            skipPrecalculation = cosmeticFrameProcessor.shouldSkipRecalculation(tabId, frameId, requestUrl, timestamp);
 
             if (!skipPrecalculation) {
                 /**
                  * Set in the beginning to let other events know that cosmetic result
                  * will be calculated in this event to avoid double calculation.
                  */
-                tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
+                tabsApi.setFrameContext(
                     tabId,
                     frameId,
-                    parentFrameId,
-                    url: requestUrl,
-                    timeStamp: timestamp,
-                    documentId: details.documentId,
-                    parentDocumentId: details.parentDocumentId,
-                }));
+                    new FrameMV2({
+                        tabId,
+                        frameId,
+                        parentFrameId,
+                        url: requestUrl,
+                        timeStamp: timestamp,
+                        documentId: details.documentId,
+                        parentDocumentId: details.parentDocumentId,
+                    }),
+                );
             }
         }
 
@@ -676,9 +679,7 @@ export class WebRequestApi {
      * @param event On response started event.
      * @param event.context Event context.
      */
-    private static onResponseStarted({
-        context,
-    }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
+    private static onResponseStarted({ context }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
         if (!context) {
             return;
         }
@@ -699,22 +700,12 @@ export class WebRequestApi {
      * @param event.context The context of the completed event.
      * @param event.details The details of the completed event.
      */
-    private static onCompleted({
-        context,
-        details,
-    }: RequestData<WebRequest.OnCompletedDetailsType>): void {
+    private static onCompleted({ context, details }: RequestData<WebRequest.OnCompletedDetailsType>): void {
         if (!context) {
             return;
         }
 
-        const {
-            requestType,
-            tabId,
-            frameId,
-            requestUrl,
-            timestamp,
-            contentType,
-        } = context;
+        const { requestType, tabId, frameId, requestUrl, timestamp, contentType } = context;
 
         const isFirefox = browserDetectorMV2.isFirefox();
 
@@ -729,7 +720,9 @@ export class WebRequestApi {
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
             if (!frameContext?.cosmeticResult) {
-                logger.debug(`[tsweb.WebRequestApi.onCompleted]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                logger.debug(
+                    `[tsweb.WebRequestApi.onCompleted]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`,
+                );
                 return;
             }
 
@@ -772,17 +765,17 @@ export class WebRequestApi {
      * @param details Event details.
      */
     private static injectCosmetic(
-        details: WebNavigation.OnCommittedDetailsType
-        | WebNavigation.OnDOMContentLoadedDetailsType
-        | WebRequest.OnCompletedDetailsType,
+        details:
+            | WebNavigation.OnCommittedDetailsType
+            | WebNavigation.OnDOMContentLoadedDetailsType
+            | WebRequest.OnCompletedDetailsType,
     ): void {
-        const {
-            tabId,
-            frameId,
-        } = details;
+        const { tabId, frameId } = details;
 
         if (WebRequestApi.isAssistantFrame(tabId, details)) {
-            logger.trace(`[tsweb.WebRequestApi.injectCosmetic]: assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`);
+            logger.trace(
+                `[tsweb.WebRequestApi.injectCosmetic]: assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
+            );
             return;
         }
 
@@ -795,15 +788,7 @@ export class WebRequestApi {
      * @param details Event details.
      */
     private static onBeforeNavigate(details: OnBeforeNavigateDetailsType): void {
-        const {
-            frameId,
-            tabId,
-            timeStamp,
-            url,
-            documentId,
-            documentLifecycle,
-            parentFrameId,
-        } = details;
+        const { frameId, tabId, timeStamp, url, documentId, documentLifecycle, parentFrameId } = details;
 
         // supported by Chrome 106+
         // but not supported by Firefox so it is calculated based on tabId and frameId
@@ -818,9 +803,7 @@ export class WebRequestApi {
          * - else generate parentDocumentId based on tabId and parentFrameId.
          */
         if (!parentDocumentId) {
-            parentDocumentId = isDocumentLevelFrame
-                ? undefined
-                : TabsApi.generateId(tabId, parentFrameId);
+            parentDocumentId = isDocumentLevelFrame ? undefined : TabsApi.generateId(tabId, parentFrameId);
         }
 
         /**
@@ -845,15 +828,19 @@ export class WebRequestApi {
          * Set in the beginning to let other events know that cosmetic result
          * will be calculated in this event to avoid double calculation.
          */
-        tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
+        tabsApi.setFrameContext(
             tabId,
             frameId,
-            parentFrameId,
-            url,
-            timeStamp,
-            documentId,
-            parentDocumentId,
-        }));
+            new FrameMV2({
+                tabId,
+                frameId,
+                parentFrameId,
+                url,
+                timeStamp,
+                documentId,
+                parentDocumentId,
+            }),
+        );
 
         // TODO: Check, should we record this event for filtering log.
 
@@ -887,13 +874,9 @@ export class WebRequestApi {
         } = details;
 
         // This is necessary mainly to update documentId
-        tabsApi.updateFrameContext(
-            tabId,
-            frameId,
-            {
-                documentId: documentId || TabsApi.generateId(tabId, frameId),
-            },
-        );
+        tabsApi.updateFrameContext(tabId, frameId, {
+            documentId: documentId || TabsApi.generateId(tabId, frameId),
+        });
 
         WebRequestApi.injectCosmetic(details);
     }
@@ -908,10 +891,7 @@ export class WebRequestApi {
      *
      * @returns True if the frame is an assistant frame, false otherwise.
      */
-    private static isAssistantFrame(
-        tabId: number,
-        details: CommonAssistantDetails,
-    ): boolean {
+    private static isAssistantFrame(tabId: number, details: CommonAssistantDetails): boolean {
         const tabContext = tabsApi.getTabContext(tabId);
 
         return CommonAssistant.isAssistantFrame(details, tabContext);
@@ -939,13 +919,9 @@ export class WebRequestApi {
         } = details;
 
         // This is necessary mainly to update documentId
-        tabsApi.updateFrameContext(
-            tabId,
-            frameId,
-            {
-                documentId: documentId || TabsApi.generateId(tabId, frameId),
-            },
-        );
+        tabsApi.updateFrameContext(tabId, frameId, {
+            documentId: documentId || TabsApi.generateId(tabId, frameId),
+        });
 
         WebRequestApi.injectCosmetic(details);
     }
@@ -965,9 +941,9 @@ export class WebRequestApi {
      *
      * @returns Web request response or void if there is nothing to do.
      */
-    private static onBeforeCspReport(
-        { context }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
-    ): WebRequestEventResponse {
+    private static onBeforeCspReport({
+        context,
+    }: RequestData<WebRequest.OnBeforeRequestDetailsType>): WebRequestEventResponse {
         // If filtering is disabled - skip process request.
         if (!engineApi.isFilteringEnabled) {
             return undefined;
@@ -977,14 +953,7 @@ export class WebRequestApi {
             return undefined;
         }
 
-        const {
-            requestType,
-            matchingResult,
-            tabId,
-            eventId,
-            referrerUrl,
-            thirdParty,
-        } = context;
+        const { requestType, matchingResult, tabId, eventId, referrerUrl, thirdParty } = context;
 
         /**
          * Checks request type here instead of creating two event listener with
@@ -1050,11 +1019,7 @@ export class WebRequestApi {
      * @param details Event details.
      */
     private static onCommittedOperaHook(details: WebNavigation.OnCommittedDetailsType): void {
-        const {
-            frameId,
-            tabId,
-            url,
-        } = details;
+        const { frameId, tabId, url } = details;
 
         if (!isHttpOrWsRequest(url)) {
             return;

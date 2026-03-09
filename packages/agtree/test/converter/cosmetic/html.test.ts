@@ -34,9 +34,11 @@ describe('HtmlRuleConverter', () => {
     describe('convertToAdg', () => {
         describe('from ABP', () => {
             test('should throw unsupported error', () => {
-                expect(() => HtmlRuleConverter.convertToAdg({
-                    syntax: 'AdblockPlus',
-                } as HtmlFilteringRule)).toThrowError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
+                expect(() =>
+                    HtmlRuleConverter.convertToAdg({
+                        syntax: 'AdblockPlus',
+                    } as HtmlFilteringRule),
+                ).toThrowError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
             });
         });
 
@@ -186,9 +188,11 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -202,12 +206,16 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -220,21 +228,28 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'TypeSelector',
-                                            value: 'span',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'span',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -247,15 +262,20 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -468,9 +488,11 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'UblockOrigin',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -484,12 +506,16 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'UblockOrigin',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -502,21 +528,28 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'UblockOrigin',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'TypeSelector',
-                                            value: 'span',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'span',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -529,15 +562,20 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'UblockOrigin',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -654,9 +692,11 @@ describe('HtmlRuleConverter', () => {
     describe('convertToUbo', () => {
         describe('from ABP', () => {
             test('should throw unsupported error', () => {
-                expect(() => HtmlRuleConverter.convertToUbo({
-                    syntax: 'AdblockPlus',
-                } as HtmlFilteringRule)).toThrowError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
+                expect(() =>
+                    HtmlRuleConverter.convertToUbo({
+                        syntax: 'AdblockPlus',
+                    } as HtmlFilteringRule),
+                ).toThrowError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
             });
         });
 
@@ -800,9 +840,11 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -816,12 +858,16 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -834,21 +880,28 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'TypeSelector',
-                                            value: 'span',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'span',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -861,15 +914,20 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -1014,25 +1072,31 @@ describe('HtmlRuleConverter', () => {
     describe('convertToAbp', () => {
         describe('from ABP', () => {
             test('should throw not implemented error', () => {
-                expect(() => HtmlRuleConverter.convertToAbp({
-                    syntax: 'AdblockPlus',
-                } as HtmlFilteringRule)).toThrowError(NotImplementedError);
+                expect(() =>
+                    HtmlRuleConverter.convertToAbp({
+                        syntax: 'AdblockPlus',
+                    } as HtmlFilteringRule),
+                ).toThrowError(NotImplementedError);
             });
         });
 
         describe('from ADG', () => {
             test('should throw not implemented error', () => {
-                expect(() => HtmlRuleConverter.convertToAbp({
-                    syntax: 'AdGuard',
-                } as HtmlFilteringRule)).toThrowError(NotImplementedError);
+                expect(() =>
+                    HtmlRuleConverter.convertToAbp({
+                        syntax: 'AdGuard',
+                    } as HtmlFilteringRule),
+                ).toThrowError(NotImplementedError);
             });
         });
 
         describe('from uBO', () => {
             test('should throw not implemented error', () => {
-                expect(() => HtmlRuleConverter.convertToAbp({
-                    syntax: 'UblockOrigin',
-                } as HtmlFilteringRule)).toThrowError(NotImplementedError);
+                expect(() =>
+                    HtmlRuleConverter.convertToAbp({
+                        syntax: 'UblockOrigin',
+                    } as HtmlFilteringRule),
+                ).toThrowError(NotImplementedError);
             });
         });
     });

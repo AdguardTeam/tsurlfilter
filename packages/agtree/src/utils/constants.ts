@@ -53,7 +53,7 @@ export const NEWLINE = LF;
 // Quotes
 export const BACKTICK_QUOTE = '`';
 export const DOUBLE_QUOTE = '"';
-export const SINGLE_QUOTE = '\'';
+export const SINGLE_QUOTE = "'";
 
 // Brackets
 export const OPEN_PARENTHESIS = '(';

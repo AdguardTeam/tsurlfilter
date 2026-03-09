@@ -17,34 +17,27 @@ export interface RequestData<Details> {
  *
  * @returns Request data.
  */
-export type DetailsHandler<Details> = (
-    details: Details
-) => RequestData<Details>;
+export type DetailsHandler<Details> = (details: Details) => RequestData<Details>;
 
 /**
  * Callback function passed as {@link RequestEvent} methods argument.
  *
  */
-export type EventCallback<Details> = (
-    requestData: RequestData<Details>
-) => WebRequest.BlockingResponseOrPromise | void;
+export type EventCallback<Details> = (requestData: RequestData<Details>) => WebRequest.BlockingResponseOrPromise | void;
 
 /**
  * Function registered as listener of the browser.WebRequest event.
  */
-export type BrowserEventListener<Details> = (
-    details: Details
-) => WebRequest.BlockingResponseOrPromise | void;
+export type BrowserEventListener<Details> = (details: Details) => WebRequest.BlockingResponseOrPromise | void;
 
 /**
  * More flexible variants for {@link Events.Event} interfaces.
  */
-export interface BrowserRequestEvent<Details, Options>
-    extends Events.Event<BrowserEventListener<Details>> {
+export interface BrowserRequestEvent<Details, Options> extends Events.Event<BrowserEventListener<Details>> {
     addListener(
         callback: BrowserEventListener<Details>,
         filter: WebRequest.RequestFilter,
-        extraInfoSpec?: Options[]
+        extraInfoSpec?: Options[],
     ): void;
 }
 

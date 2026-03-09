@@ -51,11 +51,7 @@ export interface RuleInfoText {
  *
  * @returns Object containing appliedRuleText (non-null string with fallback) and originalRuleText (nullable).
  */
-export function getRuleTextsByIndex(
-    filterId: number,
-    ruleIndex: number,
-    provider: RuleTextProvider,
-): RuleInfoText {
+export function getRuleTextsByIndex(filterId: number, ruleIndex: number, provider: RuleTextProvider): RuleInfoText {
     // For negative indices (shouldn't happen during normal operation)
     if (ruleIndex < 0) {
         return {
@@ -84,10 +80,7 @@ export function getRuleTextsByIndex(
  *
  * @returns Object containing appliedRuleText (non-null string, empty if not found) and originalRuleText (nullable).
  */
-export function getRuleTexts(
-    rule: NetworkRule | CosmeticRule,
-    provider: RuleTextProvider,
-): RuleInfoText {
+export function getRuleTexts(rule: NetworkRule | CosmeticRule, provider: RuleTextProvider): RuleInfoText {
     if (!rule) {
         // should never happen during normal operation
         return {

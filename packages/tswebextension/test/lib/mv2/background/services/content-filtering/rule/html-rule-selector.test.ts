@@ -4,9 +4,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createCosmeticRule } from '../../../../../../helpers/rule-creator';
-import {
-    HtmlRuleSelector,
-} from '../../../../../../../src/lib/mv2/background/services/content-filtering/rule/html-rule-selector';
+import { HtmlRuleSelector } from '../../../../../../../src/lib/mv2/background/services/content-filtering/rule/html-rule-selector';
 
 describe('Html rule selector', () => {
     it('checks simple cases', () => {
@@ -355,7 +353,8 @@ describe('Html rule selector', () => {
         `;
 
         // eslint-disable-next-line max-len
-        const ruleText = 'example.org$$.container:contains(Container Content) > .parent:contains(Parent Content) > .child:contains(Child Content)';
+        const ruleText =
+            'example.org$$.container:contains(Container Content) > .parent:contains(Parent Content) > .child:contains(Child Content)';
         const rule = createCosmeticRule(ruleText, 0);
         const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
 

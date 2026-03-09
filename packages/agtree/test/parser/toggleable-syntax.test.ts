@@ -1,9 +1,4 @@
-import {
-    describe,
-    test,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 
 import { AdblockSyntaxError } from '../../src/errors/adblock-syntax-error';
 import { RuleParser } from '../../src/parser/rule-parser';
@@ -54,10 +49,12 @@ describe('Toggleable syntax', () => {
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = vi.fn(() => RuleParser.parse(actual, {
-                ...defaultParserOptions,
-                parseUboSpecificRules: false,
-            }));
+            const fn = vi.fn(() =>
+                RuleParser.parse(actual, {
+                    ...defaultParserOptions,
+                    parseUboSpecificRules: false,
+                }),
+            );
 
             // parse should throw
             expect(fn).toThrow();
@@ -96,10 +93,12 @@ describe('Toggleable syntax', () => {
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = vi.fn(() => RuleParser.parse(actual, {
-                ...defaultParserOptions,
-                parseAbpSpecificRules: false,
-            }));
+            const fn = vi.fn(() =>
+                RuleParser.parse(actual, {
+                    ...defaultParserOptions,
+                    parseAbpSpecificRules: false,
+                }),
+            );
 
             // parse should throw
             expect(fn).toThrow();

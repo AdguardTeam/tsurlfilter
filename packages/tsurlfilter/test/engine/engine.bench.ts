@@ -29,11 +29,13 @@ describe('Build engine', () => {
 
     const createNewEngine = () => {
         return Engine.createSync({
-            filters: [{
-                id: 2,
-                content: rawFilter,
-                ignoreCosmetic,
-            }],
+            filters: [
+                {
+                    id: 2,
+                    content: rawFilter,
+                    ignoreCosmetic,
+                },
+            ],
         });
     };
 
@@ -56,11 +58,13 @@ describe('Build engine', () => {
 
     bench('new engine (async)', async () => {
         await Engine.createAsync({
-            filters: [{
-                id: 2,
-                content: rawFilter,
-                ignoreCosmetic,
-            }],
+            filters: [
+                {
+                    id: 2,
+                    content: rawFilter,
+                    ignoreCosmetic,
+                },
+            ],
         });
     });
 });

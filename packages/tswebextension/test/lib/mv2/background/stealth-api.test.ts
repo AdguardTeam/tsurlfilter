@@ -1,10 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, it, vi } from 'vitest';
 import { MatchingResult } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../helpers/rule-creator';
@@ -17,22 +11,23 @@ import { mockEngineApi } from '../../../helpers/mocks';
 
 vi.mock('../../../../src/lib/mv2/background/app-context', async () => {
     const { MockAppContext } = await import('./mocks/mock-app-context');
-    return ({
+    return {
         AppContext: MockAppContext,
         appContext: new MockAppContext(),
-    });
+    };
 });
 
-const getDefaultConfiguration = (): ConfigurationMV2Context => ({
-    settings: {
-        stealthModeEnabled: true,
-        filteringEnabled: true,
-        stealth: {
-            hideReferrer: true,
-            sendDoNotTrack: true,
+const getDefaultConfiguration = (): ConfigurationMV2Context =>
+    ({
+        settings: {
+            stealthModeEnabled: true,
+            filteringEnabled: true,
+            stealth: {
+                hideReferrer: true,
+                sendDoNotTrack: true,
+            },
         },
-    },
-} as ConfigurationMV2Context);
+    }) as ConfigurationMV2Context;
 
 describe('StealthApi', () => {
     const appContext = new AppContext();
@@ -69,16 +64,10 @@ describe('StealthApi', () => {
         });
 
         it('only returns the script that is not allowlisted by $stealth rule', () => {
-            let result = new MatchingResult(
-                [createNetworkRule('@@||*.*^$stealth=referrer', 0)],
-                null,
-            );
+            let result = new MatchingResult([createNetworkRule('@@||*.*^$stealth=referrer', 0)], null);
             expect(stealthApi.getStealthScript(null, result)).toBe(ACTUAL_DNT_SCRIPT);
 
-            result = new MatchingResult(
-                [createNetworkRule('@@||*.*^$stealth=donottrack', 0)],
-                null,
-            );
+            result = new MatchingResult([createNetworkRule('@@||*.*^$stealth=donottrack', 0)], null);
             expect(stealthApi.getStealthScript(null, result)).toBe(ACTUAL_REFERRER_SCRIPT);
         });
 
@@ -93,18 +82,12 @@ describe('StealthApi', () => {
         });
 
         it('returns empty string if a global stealth rule is present', () => {
-            const result = new MatchingResult(
-                [createNetworkRule('@@||*.*^$stealth', 0)],
-                null,
-            );
+            const result = new MatchingResult([createNetworkRule('@@||*.*^$stealth', 0)], null);
             expect(stealthApi.getStealthScript(null, result)).toBe('');
         });
 
         it('returns empty string if a document rule is present', () => {
-            const result = new MatchingResult(
-                [],
-                createNetworkRule('@@||*.*^$urlblock', 0),
-            );
+            const result = new MatchingResult([], createNetworkRule('@@||*.*^$urlblock', 0));
             expect(stealthApi.getStealthScript(null, result)).toBe('');
         });
     });

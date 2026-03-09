@@ -3,29 +3,17 @@ import { AdblockSyntax } from '../utils/adblockers';
 /**
  * Possible AdGuard agent markers.
  */
-const ADG_NAME_MARKERS = new Set([
-    'adguard',
-    'adg',
-]);
+const ADG_NAME_MARKERS = new Set(['adguard', 'adg']);
 
 /**
  * Possible uBlock Origin agent markers.
  */
-const UBO_NAME_MARKERS = new Set([
-    'ublock',
-    'ublock origin',
-    'ubo',
-]);
+const UBO_NAME_MARKERS = new Set(['ublock', 'ublock origin', 'ubo']);
 
 /**
  * Possible Adblock Plus agent markers.
  */
-const ABP_NAME_MARKERS = new Set([
-    'adblock',
-    'adblock plus',
-    'adblockplus',
-    'abp',
-]);
+const ABP_NAME_MARKERS = new Set(['adblock', 'adblock plus', 'adblockplus', 'abp']);
 
 /**
  * Returns the adblock syntax based on the adblock name parsed from the agent type comment.

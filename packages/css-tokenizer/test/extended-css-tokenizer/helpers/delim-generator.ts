@@ -13,9 +13,7 @@ export const generateDelimStream = (inputs: string[]): PseudoValues => {
     const result: PseudoValues = {};
 
     for (const input of inputs) {
-        result[input] = input.split('').map((_, index) => (
-            [TokenType.Delim, index, index + 1] as TokenData
-        ));
+        result[input] = input.split('').map((_, index) => [TokenType.Delim, index, index + 1] as TokenData);
     }
 
     return result;

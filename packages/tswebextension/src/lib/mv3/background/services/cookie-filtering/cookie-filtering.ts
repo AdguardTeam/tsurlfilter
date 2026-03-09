@@ -70,10 +70,9 @@ export class CookieFiltering {
 
         // Removes cookies from browser with browser.cookies api, but not
         // removing them from context to correct process them in headers.
-        this.applyRules(context)
-            .catch((e) => {
-                logger.error('[tsweb.CookieFiltering.onBeforeSendHeaders]: cannot apply rules due to: ', e);
-            });
+        this.applyRules(context).catch((e) => {
+            logger.error('[tsweb.CookieFiltering.onBeforeSendHeaders]: cannot apply rules due to: ', e);
+        });
     }
 
     /**
@@ -83,12 +82,7 @@ export class CookieFiltering {
      * @param context Request context.
      */
     public onHeadersReceived(context: RequestContext): void {
-        const {
-            responseHeaders,
-            requestUrl,
-            thirdParty,
-            requestId,
-        } = context;
+        const { responseHeaders, requestUrl, thirdParty, requestId } = context;
 
         /**
          * Full context can be created in onBeforeRequest, partial context can
@@ -110,10 +104,9 @@ export class CookieFiltering {
 
         // Removes cookies from browser with browser.cookies api, but not
         // removing them from context to correct process them in headers.
-        this.applyRules(context)
-            .catch((e) => {
-                logger.error('[tsweb.CookieFiltering.onHeadersReceived]: cannot apply rules due to: ', e);
-            });
+        this.applyRules(context).catch((e) => {
+            logger.error('[tsweb.CookieFiltering.onHeadersReceived]: cannot apply rules due to: ', e);
+        });
     }
 
     /**
@@ -122,12 +115,7 @@ export class CookieFiltering {
      * @param context Request context.
      */
     private async applyRules(context: RequestContext): Promise<void> {
-        const {
-            matchingResult,
-            cookies,
-            requestUrl,
-            tabId,
-        } = context;
+        const { matchingResult, cookies, requestUrl, tabId } = context;
 
         if (!matchingResult || !cookies) {
             return;
@@ -196,7 +184,7 @@ export class CookieFiltering {
 
         const bRule = CookieRulesFinder.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
         if (bRule) {
-            if (bRule.isAllowlist() || await this.browserCookieApi.removeCookie(cookie.name, cookie.url)) {
+            if (bRule.isAllowlist() || (await this.browserCookieApi.removeCookie(cookie.name, cookie.url))) {
                 CookieFiltering.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, isThirdPartyCookie);
             }
 
@@ -217,14 +205,7 @@ export class CookieFiltering {
 
             if (await this.browserCookieApi.modifyCookie(cookieToModify)) {
                 appliedRules.forEach((r) => {
-                    CookieFiltering.recordCookieEvent(
-                        tabId,
-                        cookieToModify,
-                        requestUrl,
-                        r,
-                        true,
-                        isThirdPartyCookie,
-                    );
+                    CookieFiltering.recordCookieEvent(tabId, cookieToModify, requestUrl, r, true, isThirdPartyCookie);
                 });
             }
         }

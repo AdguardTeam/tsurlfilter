@@ -19,23 +19,27 @@ const parseBool = (v: string) => /^true|1|yes|on$/i.test(v);
  * Main function to set up and run the CLI program.
  */
 async function main() {
-    program
-        .name(CLI_NAME)
-        .description('CLI to convert filters to declarative rulesets')
-        .version(version);
+    program.name(CLI_NAME).description('CLI to convert filters to declarative rulesets').version(version);
 
     program
         .command('convert')
         .description('Converts filters to declarative rulesets')
         // eslint-disable-next-line max-len
-        .argument('<filters_and_metadata_dir>', `Path to filters and their metadata with name "${LOCAL_METADATA_FILE_NAME}" to convert`)
+        .argument(
+            '<filters_and_metadata_dir>',
+            `Path to filters and their metadata with name "${LOCAL_METADATA_FILE_NAME}" to convert`,
+        )
         .argument('<resources_dir>', 'Path to web accessible resources')
         .argument('[dest_rule_sets_dir]', 'Destination path for rulesets', DEFAULT_DEST_RULE_SETS_DIR)
         .option('--debug', 'Enable debug mode', false)
         // parseBool is needed since commander.js treats boolean options as strings
         .option('--prettify-json <bool>', 'Prettify JSON output', parseBool, true)
         // eslint-disable-next-line max-len
-        .option('--additional-properties <json>', 'Additional properties to include in metadata ruleset as JSON string', '{}')
+        .option(
+            '--additional-properties <json>',
+            'Additional properties to include in metadata ruleset as JSON string',
+            '{}',
+        )
         .action(async (filtersAndMetadataDir, resourcesDir, destRulesetsDir, options) => {
             await convertFilters(filtersAndMetadataDir, resourcesDir, destRulesetsDir, {
                 debug: options.debug,
@@ -49,10 +53,7 @@ async function main() {
         .description('Extracts filters from converted declarative rulesets')
         .argument('<path-to-rulesets>', 'path to the rulesets directory')
         .argument('<path-to-output>', 'path to save extracted filters')
-        .action(async (
-            rulesetsPath: string,
-            outputPath: string,
-        ) => {
+        .action(async (rulesetsPath: string, outputPath: string) => {
             try {
                 await Extractor.extract(rulesetsPath, outputPath);
                 console.log(`Filters extracted to ${outputPath}`);

@@ -191,12 +191,12 @@ export class SimpleRegex {
         const { length } = pattern;
 
         if (
-            !pattern
+            !pattern ||
             // length should be at least 3: "/x/", "//" does not make sense
-            || length < 3
+            length < 3 ||
             // regex pattern should start and end with '/'
-            || pattern[0] !== '/'
-            || pattern[length - 1] !== '/'
+            pattern[0] !== '/' ||
+            pattern[length - 1] !== '/'
         ) {
             return '';
         }
@@ -207,9 +207,7 @@ export class SimpleRegex {
          * `i` is our primary index into the pattern;
          * we skip the initial `/` or jump after the protocol marker `://`.
          */
-        let i = protocolIndex !== -1
-            ? protocolIndex + protocolMarker.length
-            : 1;
+        let i = protocolIndex !== -1 ? protocolIndex + protocolMarker.length : 1;
 
         let longestToken = '';
         let longestTokenInGroup = '';
@@ -449,10 +447,10 @@ export class SimpleRegex {
      */
     public static patternToRegexp(pattern: string): string {
         if (
-            pattern === this.MASK_START_URL
-            || pattern === this.MASK_PIPE
-            || pattern === this.MASK_ANY_CHARACTER
-            || pattern === ''
+            pattern === this.MASK_START_URL ||
+            pattern === this.MASK_PIPE ||
+            pattern === this.MASK_ANY_CHARACTER ||
+            pattern === ''
         ) {
             return this.REGEX_ANY_CHARACTER;
         }
@@ -467,21 +465,23 @@ export class SimpleRegex {
 
         // Now escape "|" characters but avoid escaping them in the special places
         if (regex.startsWith(this.MASK_START_URL)) {
-            regex = regex.substring(0, this.MASK_START_URL.length)
-                + replaceAll(
+            regex =
+                regex.substring(0, this.MASK_START_URL.length) +
+                replaceAll(
                     regex.substring(this.MASK_START_URL.length, regex.length - this.MASK_PIPE.length),
                     this.MASK_PIPE,
                     `\\${this.MASK_PIPE}`,
-                )
-                + regex.substring(regex.length - this.MASK_PIPE.length);
+                ) +
+                regex.substring(regex.length - this.MASK_PIPE.length);
         } else {
-            regex = regex.substring(0, this.MASK_PIPE.length)
-                + replaceAll(
+            regex =
+                regex.substring(0, this.MASK_PIPE.length) +
+                replaceAll(
                     regex.substring(this.MASK_PIPE.length, regex.length - this.MASK_PIPE.length),
                     this.MASK_PIPE,
                     `\\${this.MASK_PIPE}`,
-                )
-                + regex.substring(regex.length - this.MASK_PIPE.length);
+                ) +
+                regex.substring(regex.length - this.MASK_PIPE.length);
         }
 
         // Replace special URL masks
@@ -511,7 +511,7 @@ export class SimpleRegex {
      */
     public static patternFromString(str: string): RegExp {
         const parts = splitByDelimiterWithEscapeCharacter(str, '/', '\\', true);
-        let modifiers = (parts[1] || '');
+        let modifiers = parts[1] || '';
         if (modifiers.indexOf('g') < 0) {
             modifiers += 'g';
         }
@@ -570,10 +570,7 @@ export class SimpleRegex {
      *
      * @returns The escaped string.
      */
-    public static escapeRegexSpecials(
-        str: string,
-        searchPattern: string | RegExp = reSpecialCharactersFull,
-    ): string {
+    public static escapeRegexSpecials(str: string, searchPattern: string | RegExp = reSpecialCharactersFull): string {
         return str.replace(searchPattern, '\\$&');
     }
 

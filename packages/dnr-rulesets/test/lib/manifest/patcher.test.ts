@@ -1,13 +1,7 @@
 import fastGlob from 'fast-glob';
 import fs from 'fs';
 import path from 'path';
-import {
-    afterEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { RulesetPathGenerator } from '../../../src/lib/manifest/injector';
 import type { Manifest } from '../../../src/lib/manifest/parser';
@@ -43,15 +37,18 @@ describe('ManifestPatcher', () => {
     };
 
     const declarative_net_request = {
-        rule_resources: [{
-            id: 'ruleset_1',
-            enabled: false,
-            path: 'test',
-        }, {
-            id: 'ruleset_2',
-            enabled: false,
-            path: 'test',
-        }],
+        rule_resources: [
+            {
+                id: 'ruleset_1',
+                enabled: false,
+                path: 'test',
+            },
+            {
+                id: 'ruleset_2',
+                enabled: false,
+                path: 'test',
+            },
+        ],
     };
 
     const mockLoader = {
@@ -59,22 +56,22 @@ describe('ManifestPatcher', () => {
     };
 
     const mockInjector = {
-        applyRulesets: vi.fn().mockImplementation((
-            generateRulesetPath: RulesetPathGenerator,
-            manifest: Manifest,
-            filterNames: string[],
-        ) => {
-            filterNames.forEach((filterName) => {
-                const rulesetIndexMatch = filterName.match(/\d+/);
-                if (!rulesetIndexMatch) {
-                    return;
-                }
+        applyRulesets: vi
+            .fn()
+            .mockImplementation(
+                (generateRulesetPath: RulesetPathGenerator, manifest: Manifest, filterNames: string[]) => {
+                    filterNames.forEach((filterName) => {
+                        const rulesetIndexMatch = filterName.match(/\d+/);
+                        if (!rulesetIndexMatch) {
+                            return;
+                        }
 
-                generateRulesetPath(`ruleset_${rulesetIndexMatch[0]}`);
-            });
+                        generateRulesetPath(`ruleset_${rulesetIndexMatch[0]}`);
+                    });
 
-            return { ...manifest, declarative_net_request };
-        }),
+                    return { ...manifest, declarative_net_request };
+                },
+            ),
     };
 
     afterEach(() => {
@@ -119,10 +116,17 @@ describe('ManifestPatcher', () => {
         expect(mockRelative).toHaveBeenCalledWith(dir, `${filtersPath}/declarative/ruleset_1/ruleset_1.json`);
         expect(mockRelative).toHaveBeenCalledWith(dir, `${filtersPath}/declarative/ruleset_2/ruleset_2.json`);
         expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
-        expect(mockWriteFileSync).toHaveBeenCalledWith(manifestPath, JSON.stringify({
-            ...manifest,
-            declarative_net_request,
-        }, null, 4));
+        expect(mockWriteFileSync).toHaveBeenCalledWith(
+            manifestPath,
+            JSON.stringify(
+                {
+                    ...manifest,
+                    declarative_net_request,
+                },
+                null,
+                4,
+            ),
+        );
     });
 
     it('should apply rulesets to manifest when relative paths are provided', () => {
@@ -130,17 +134,11 @@ describe('ManifestPatcher', () => {
         const resolvedManifestPath = `${resolvedDir}/manifest.json`;
         const resolvedFiltersPath = `${resolvedDir}/resolved/filters`;
 
-        mockDirname
-            .mockReturnValueOnce(resolvedDir)
-            .mockReturnValueOnce(resolvedDir);
+        mockDirname.mockReturnValueOnce(resolvedDir).mockReturnValueOnce(resolvedDir);
 
-        mockIsAbsolute
-            .mockReturnValueOnce(false)
-            .mockReturnValueOnce(false);
+        mockIsAbsolute.mockReturnValueOnce(false).mockReturnValueOnce(false);
 
-        mockResolve
-            .mockReturnValueOnce(resolvedManifestPath)
-            .mockReturnValueOnce(resolvedFiltersPath);
+        mockResolve.mockReturnValueOnce(resolvedManifestPath).mockReturnValueOnce(resolvedFiltersPath);
 
         const patcher = new ManifestPatcher(mockLoader, mockInjector);
 
@@ -174,10 +172,17 @@ describe('ManifestPatcher', () => {
             `${resolvedFiltersPath}/declarative/ruleset_2/ruleset_2.json`,
         );
         expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
-        expect(mockWriteFileSync).toHaveBeenCalledWith(resolvedManifestPath, JSON.stringify({
-            ...manifest,
-            declarative_net_request,
-        }, null, 4));
+        expect(mockWriteFileSync).toHaveBeenCalledWith(
+            resolvedManifestPath,
+            JSON.stringify(
+                {
+                    ...manifest,
+                    declarative_net_request,
+                },
+                null,
+                4,
+            ),
+        );
     });
 
     it('should throw an error if path is not found', () => {

@@ -14,11 +14,7 @@ export class EmptyDomainsError extends InvalidDeclarativeRuleError {
      * @param networkRule {@link NetworkRuleWithNodeAndText}.
      * @param declarativeRule {@link DeclarativeRule}.
      */
-    constructor(
-        message: string,
-        networkRule: NetworkRuleWithNodeAndText,
-        declarativeRule: DeclarativeRule,
-    ) {
+    constructor(message: string, networkRule: NetworkRuleWithNodeAndText, declarativeRule: DeclarativeRule) {
         super(message, networkRule, declarativeRule);
 
         this.name = this.constructor.name;

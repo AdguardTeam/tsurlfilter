@@ -108,7 +108,7 @@ export class ResourcesService implements ResourcesServiceInterface {
     private createSecretParam(): string {
         if (this.secrets.length !== 0) {
             // TODO move magic numbers to constants
-            if ((Date.now() - this.lastSecretTime) > 5000) {
+            if (Date.now() - this.lastSecretTime > 5000) {
                 this.secrets.splice(0);
             } else if (this.secrets.length > 256) {
                 this.secrets.splice(0, this.secrets.length - 192);

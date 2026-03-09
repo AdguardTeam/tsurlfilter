@@ -2,13 +2,7 @@
  * @vitest-environment jsdom
  */
 
-import {
-    describe,
-    expect,
-    beforeEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, it, vi } from 'vitest';
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../helpers/rule-creator';
@@ -23,9 +17,7 @@ describe('Cookie Controller Tests', () => {
     });
 
     it('checks apply simple rule', () => {
-        const rules = [
-            createNetworkRule('||example.org^$cookie=user_one', 1),
-        ];
+        const rules = [createNetworkRule('||example.org^$cookie=user_one', 1)];
 
         const rulesData = rules.map((rule) => ({
             match: rule.getAdvancedModifierValue()!,
@@ -44,9 +36,7 @@ describe('Cookie Controller Tests', () => {
     });
 
     it('checks to not apply non-matching rule', () => {
-        const rules = [
-            createNetworkRule('||example.org^$cookie=user', 1),
-        ];
+        const rules = [createNetworkRule('||example.org^$cookie=user', 1)];
 
         const rulesData = rules.map((rule) => ({
             match: rule.getAdvancedModifierValue()!,
@@ -68,9 +58,7 @@ describe('Cookie Controller Tests', () => {
     });
 
     it('checks apply wildcard rule', () => {
-        const rules = [
-            createNetworkRule('||example.org^$cookie', 1),
-        ];
+        const rules = [createNetworkRule('||example.org^$cookie', 1)];
 
         const rulesData = rules.map((rule) => ({
             match: rule.getAdvancedModifierValue()!,
@@ -122,19 +110,23 @@ describe('Cookie Controller Tests', () => {
 
         document.cookie = 'pick=test';
         controller.apply(rulesData);
-        expect(onAppliedCallback).toHaveBeenLastCalledWith(expect.objectContaining({
-            cookieName: 'pick',
-            cookieValue: 'test',
-            ruleIndex: 1,
-        }));
+        expect(onAppliedCallback).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                cookieName: 'pick',
+                cookieValue: 'test',
+                ruleIndex: 1,
+            }),
+        );
 
         document.cookie = 'other=test';
         controller.apply(rulesData);
-        expect(onAppliedCallback).toHaveBeenLastCalledWith(expect.objectContaining({
-            cookieName: 'other',
-            cookieValue: 'test',
-            ruleIndex: 0,
-        }));
+        expect(onAppliedCallback).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                cookieName: 'other',
+                cookieValue: 'test',
+                ruleIndex: 0,
+            }),
+        );
     });
 
     it('checks apply important blocking rule', () => {
@@ -153,15 +145,15 @@ describe('Cookie Controller Tests', () => {
         document.cookie = 'user_one=test';
         controller.apply(rulesData);
 
-        expect(onAppliedCallback).toHaveBeenLastCalledWith(expect.objectContaining({
-            ruleIndex: 1,
-        }));
+        expect(onAppliedCallback).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                ruleIndex: 1,
+            }),
+        );
     });
 
     it('check third-party rules are skipped for first-party cookies', () => {
-        const rules = [
-            createNetworkRule('||example.org^$third-party,cookie=/user/', 1),
-        ];
+        const rules = [createNetworkRule('||example.org^$third-party,cookie=/user/', 1)];
 
         const rulesData = rules.map((rule) => ({
             match: rule.getAdvancedModifierValue()!,

@@ -66,9 +66,7 @@ export const writeMdTable = async (resourceBenchResults: ResourceBenchResult[], 
 
                     // Add the table rows
                     ...toolBenchResults.map(({ toolName, ...rest }) => [
-                        toolConfigs[toolName]
-                            ? `[${toolName}](${toolConfigs[toolName].url})`
-                            : toolName,
+                        toolConfigs[toolName] ? `[${toolName}](${toolConfigs[toolName].url})` : toolName,
                         ...Object.values(rest).map(String),
                     ]),
                 ],
@@ -99,14 +97,16 @@ export const printResourceResults = ({ resourceName, toolBenchResults }: Resourc
     /* eslint-disable no-console */
     console.group(`Results for ${resourceName}:`);
 
-    console.table(toolBenchResults.map((result) => ({
-        [HEADERS.TOOL]: result.toolName,
-        [HEADERS.OPT_PER_SECOND]: result.opsPerSecond,
-        [HEADERS.RUNS_SAMPLED]: result.runsSampled,
-        [HEADERS.AVERAGE_RUNTIME]: result.averageRuntime,
-        [HEADERS.RESULT]: result.result,
-        [HEADERS.STATUS]: result.status,
-    })));
+    console.table(
+        toolBenchResults.map((result) => ({
+            [HEADERS.TOOL]: result.toolName,
+            [HEADERS.OPT_PER_SECOND]: result.opsPerSecond,
+            [HEADERS.RUNS_SAMPLED]: result.runsSampled,
+            [HEADERS.AVERAGE_RUNTIME]: result.averageRuntime,
+            [HEADERS.RESULT]: result.result,
+            [HEADERS.STATUS]: result.status,
+        })),
+    );
 
     console.groupEnd();
     /* eslint-enable no-console */

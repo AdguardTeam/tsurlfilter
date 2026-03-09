@@ -85,11 +85,7 @@ export class ScriptingApi {
      *
      * @returns Promise that resolves when the CSS is injected.
      */
-    public static async insertCSS({
-        tabId,
-        frameId,
-        cssText,
-    }: InsertCSSParams): Promise<void> {
+    public static async insertCSS({ tabId, frameId, cssText }: InsertCSSParams): Promise<void> {
         await chrome.scripting.insertCSS({
             css: cssText,
             origin: 'USER',
@@ -188,11 +184,7 @@ export class ScriptingApi {
      *
      * @returns Promise that resolves when the script is executed.
      */
-    public static async executeScriptFunc({
-        tabId,
-        frameId,
-        scriptFunction,
-    }: ExecuteScriptFuncParams): Promise<void> {
+    public static async executeScriptFunc({ tabId, frameId, scriptFunction }: ExecuteScriptFuncParams): Promise<void> {
         /**
          * This is STEP 4.2: Apply JS functions from pre-built filters — via chrome.scripting API.
          *

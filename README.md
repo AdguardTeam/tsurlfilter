@@ -16,20 +16,20 @@ in AdGuard browser extensions and other projects.
 
 The following packages are available in this repository:
 
-| Package Name                                   | Description                                                                          |
-|------------------------------------------------|--------------------------------------------------------------------------------------|
-| [`logger`][loggerreadme]                       | Logging library for AdGuard extensions.                                              |
-| [`css-tokenizer`][csstokenizerreadme]          | A fast, spec-compliant CSS tokenizer for standard and Extended CSS.                  |
-| [`agtree`][agtreereadme]                       | Universal adblock filter list parser which produces a detailed AST.                  |
-| [`tsurlfilter`][tsurlfilterreadme]             | A library that enforces AdGuard's blocking rules logic.                              |
-| [`tswebextension`][tswebextensionreadme]       | Wraps the web extension API for use with [`tsurlfilter`][tsurlfilterreadme].         |
-| [`adguard-api`][adguardapireadme]              | Manages filter lists and ad filtering via [`tswebextension`][tswebextensionreadme].  |
-| [`adguard-api-mv3`][adguardapimv3readme]       | MV3 compatible version of [`adguard-api`][adguardapireadme].                         |
-| [`dnr-rulesets`][dnrrulesetsreadme]            | Utility to load prebuilt AdGuard DNR rulesets for mv3 extensions.                    |
-| [`examples/manifest-v2`][manifestv2]           | Example using Manifest V2.                                                           |
-| [`examples/manifest-v3`][manifestv3]           | Example using Manifest V3.                                                           |
-| [`examples/tswebextension-mv2`][tswebextensionmv2] | Example for [`tswebextension`][tswebextensionreadme] using Manifest V2.            |
-| [`examples/tswebextension-mv3`][tswebextensionmv3] | Example for [`tswebextension`][tswebextensionreadme] using Manifest V3.          |
+| Package Name                                       | Description                                                                         |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| [`logger`][loggerreadme]                           | Logging library for AdGuard extensions.                                             |
+| [`css-tokenizer`][csstokenizerreadme]              | A fast, spec-compliant CSS tokenizer for standard and Extended CSS.                 |
+| [`agtree`][agtreereadme]                           | Universal adblock filter list parser which produces a detailed AST.                 |
+| [`tsurlfilter`][tsurlfilterreadme]                 | A library that enforces AdGuard's blocking rules logic.                             |
+| [`tswebextension`][tswebextensionreadme]           | Wraps the web extension API for use with [`tsurlfilter`][tsurlfilterreadme].        |
+| [`adguard-api`][adguardapireadme]                  | Manages filter lists and ad filtering via [`tswebextension`][tswebextensionreadme]. |
+| [`adguard-api-mv3`][adguardapimv3readme]           | MV3 compatible version of [`adguard-api`][adguardapireadme].                        |
+| [`dnr-rulesets`][dnrrulesetsreadme]                | Utility to load prebuilt AdGuard DNR rulesets for mv3 extensions.                   |
+| [`examples/manifest-v2`][manifestv2]               | Example using Manifest V2.                                                          |
+| [`examples/manifest-v3`][manifestv3]               | Example using Manifest V3.                                                          |
+| [`examples/tswebextension-mv2`][tswebextensionmv2] | Example for [`tswebextension`][tswebextensionreadme] using Manifest V2.             |
+| [`examples/tswebextension-mv3`][tswebextensionmv3] | Example for [`tswebextension`][tswebextensionreadme] using Manifest V3.             |
 
 Detailed information on each package is available in the [`./packages`][packages-dir] directory.
 
@@ -201,22 +201,27 @@ These packages do not depend on other monorepo packages:
 Below is the dependency relationship between packages:
 
 - `@adguard/agtree` depends on:
+
     - `@adguard/css-tokenizer`
 
 - `@adguard/tsurlfilter` depends on:
+
     - `@adguard/agtree`
     - `@adguard/css-tokenizer`
 
 - `@adguard/tswebextension` depends on:
+
     - `@adguard/agtree`
     - `@adguard/logger`
     - `@adguard/tsurlfilter`
 
 - `@adguard/dnr-rulesets` depends on:
+
     - `@adguard/logger`
     - `@adguard/tsurlfilter` as devDependency
 
 - `@adguard/api` depends on:
+
     - `@adguard/tswebextension`
 
 - `@adguard/api-mv3` depends on:
@@ -259,15 +264,18 @@ To summarize the dependency tree, here is a scheme of the dependency tree:
 There are also some example packages which are needed for development and testing.
 
 - `packages/examples/adguard-api` depends on:
+
     - `@adguard/api`
     - `@adguard/tswebextension` as devDependency
 
 - `packages/examples/adguard-api-mv3` depends on:
+
     - `@adguard/api-mv3`
     - `@adguard/dnr-rulesets` as devDependency
     - `@adguard/tswebextension` as devDependency
 
 - `packages/examples/tswebextension-mv2` depends on:
+
     - `@adguard/tswebextension`
     - `@adguard/tsurlfilter` as devDependency
 

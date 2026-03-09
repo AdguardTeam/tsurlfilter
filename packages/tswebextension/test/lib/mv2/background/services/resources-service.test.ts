@@ -1,9 +1,4 @@
-import {
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import browser from 'sinon-chrome';
 
 import { ResourcesService } from '../../../../../src/lib/mv2/background/services/resources-service';
@@ -45,8 +40,7 @@ describe('Resources Service', () => {
         }).toThrow();
 
         resourcesService.init('war');
-        expect(resourcesService.createResourceUrl('resources/path'))
-            .toBe('test/war/resources/path?secret=12345');
+        expect(resourcesService.createResourceUrl('resources/path')).toBe('test/war/resources/path?secret=12345');
         resourcesService.stop();
     });
 
@@ -54,8 +48,7 @@ describe('Resources Service', () => {
         await expect(resourcesService.loadResource('test')).rejects.toThrow();
 
         resourcesService.init('war');
-        expect(await resourcesService.loadResource('test'))
-            .toBe('test response');
+        expect(await resourcesService.loadResource('test')).toBe('test response');
         resourcesService.stop();
     });
 });

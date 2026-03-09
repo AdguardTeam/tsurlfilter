@@ -75,21 +75,12 @@ export class CosmeticController {
      * @param cosmeticData Response cosmetic data from background.
      */
     private applyCosmetic(cosmeticData: ContentScriptCosmeticData): void {
-        const {
-            isAppStarted,
-            extCssRules,
-            areHitsStatsCollected,
-        } = cosmeticData;
+        const { isAppStarted, extCssRules, areHitsStatsCollected } = cosmeticData;
 
-        if (!isAppStarted
-            && this.tries <= CosmeticController.MAX_GET_COSMETIC_DATA_TRIES
-        ) {
+        if (!isAppStarted && this.tries <= CosmeticController.MAX_GET_COSMETIC_DATA_TRIES) {
             this.tries += 1;
 
-            setTimeout(
-                this.process,
-                CosmeticController.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS,
-            );
+            setTimeout(this.process, CosmeticController.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS);
             return;
         }
 

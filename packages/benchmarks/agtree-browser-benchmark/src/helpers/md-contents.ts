@@ -48,18 +48,16 @@ export const getMdFileContents = async (specs: SystemSpecs, filterListResults: F
 
             // Print benchmark results as a markdown table
             result.push(
-                markdownTable(
-                    [
-                        ['Action', 'Ops/s', 'Runs sampled', 'Average runtime', 'Status'],
-                        ...benchResult.benchmarkJsResults.map((benchmarkResult) => [
-                            benchmarkResult.actionName,
-                            benchmarkResult.opsPerSecond,
-                            String(benchmarkResult.runsSampled),
-                            benchmarkResult.averageRuntime,
-                            benchmarkResult.status,
-                        ]),
-                    ],
-                ),
+                markdownTable([
+                    ['Action', 'Ops/s', 'Runs sampled', 'Average runtime', 'Status'],
+                    ...benchResult.benchmarkJsResults.map((benchmarkResult) => [
+                        benchmarkResult.actionName,
+                        benchmarkResult.opsPerSecond,
+                        String(benchmarkResult.runsSampled),
+                        benchmarkResult.averageRuntime,
+                        benchmarkResult.status,
+                    ]),
+                ]),
             );
 
             result.push(EMPTY);
@@ -69,13 +67,11 @@ export const getMdFileContents = async (specs: SystemSpecs, filterListResults: F
 
             // Print stats as a markdown table
             result.push(
-                markdownTable(
-                    [
-                        ['Stat', 'Value'],
-                        ['Raw filter list size (utf-8)', printBytesAsMegabytes(benchResult.stats.rawFilterListSize)],
-                        ['Parsed filter list size', printBytesAsMegabytes(benchResult.stats.parsedFilterListSize)],
-                    ],
-                ),
+                markdownTable([
+                    ['Stat', 'Value'],
+                    ['Raw filter list size (utf-8)', printBytesAsMegabytes(benchResult.stats.rawFilterListSize)],
+                    ['Parsed filter list size', printBytesAsMegabytes(benchResult.stats.parsedFilterListSize)],
+                ]),
             );
 
             result.push(EMPTY);

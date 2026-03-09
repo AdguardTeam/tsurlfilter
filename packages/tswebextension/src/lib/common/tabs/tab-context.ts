@@ -227,7 +227,8 @@ export class TabContextCommon<F extends FrameCommon> {
      * This method clears stale document IDs.
      */
     private clearStaleDocumentIds(): void {
-        const documentIdsLeft = this.frames.values()
+        const documentIdsLeft = this.frames
+            .values()
             .map((frame) => frame.documentId)
             .filter(identity);
 

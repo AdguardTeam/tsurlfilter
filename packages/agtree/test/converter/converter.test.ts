@@ -40,7 +40,7 @@ describe('Converter integration tests', () => {
                     expected: ['##selector'],
                     shouldConvert: false,
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -68,7 +68,7 @@ describe('Converter integration tests', () => {
                     actual: "example.com##^script:has-text(d.createElement('script'))",
                     expected: ["example.com$$script:contains(d.createElement('script'))"],
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -82,12 +82,14 @@ describe('Converter integration tests', () => {
                 {
                     actual: '##^:min-text-length(abc)',
                     // eslint-disable-next-line max-len
-                    expected: "Argument of special pseudo-class selector 'min-text-length' must be an integer, got 'abc'",
+                    expected:
+                        "Argument of special pseudo-class selector 'min-text-length' must be an integer, got 'abc'",
                 },
                 {
                     actual: '##^:min-text-length(-1)',
                     // eslint-disable-next-line max-len
-                    expected: "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",
+                    expected:
+                        "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",
                 },
             ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
                 expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual))).toThrowError(
@@ -131,7 +133,9 @@ describe('Converter integration tests', () => {
                     // eslint-disable-next-line max-len
                     actual: 'blog.livedoor.jp##:matches-path(/sexykpopidol) #containerWrap > #container > .blog-title-outer + #content.hfeed',
                     // eslint-disable-next-line max-len
-                    expected: ['[$path=/sexykpopidol]blog.livedoor.jp###containerWrap > #container > .blog-title-outer + #content.hfeed'],
+                    expected: [
+                        '[$path=/sexykpopidol]blog.livedoor.jp###containerWrap > #container > .blog-title-outer + #content.hfeed',
+                    ],
                 },
                 {
                     actual: String.raw`www.google.*##:not(:matches-path(/\/search\?q=.*?tbm=shop/)) #test`,
@@ -144,15 +148,19 @@ describe('Converter integration tests', () => {
                 {
                     actual: 'example.com#@#:not(:matches-path(/page))h1:style(background-color: blue !important)',
                     // eslint-disable-next-line max-len
-                    expected: [String.raw`[$path=/^((?!\/page).)*$/]example.com#@$#h1 { background-color: blue !important }`],
+                    expected: [
+                        String.raw`[$path=/^((?!\/page).)*$/]example.com#@$#h1 { background-color: blue !important }`,
+                    ],
                 },
                 {
                     // eslint-disable-next-line max-len
                     actual: String.raw`example.org##:matches-path(/\/(sub1|sub2)\/page\.html/)p:has-text(/[\w\W]{30,}/):style(background: #ff0033 !important;)`,
                     // eslint-disable-next-line max-len
-                    expected: [String.raw`[$path=/\\/(sub1|sub2)\\/page\\.html/]example.org#$?#p:contains(/[\w\W]{30,}/) { background: #ff0033 !important; }`],
+                    expected: [
+                        String.raw`[$path=/\\/(sub1|sub2)\\/page\\.html/]example.org#$?#p:contains(/[\w\W]{30,}/) { background: #ff0033 !important; }`,
+                    ],
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -173,7 +181,7 @@ describe('Converter integration tests', () => {
                     expected: ['! ya.ru#@#^responseheader(header-name)'],
                     shouldConvert: false,
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -214,7 +222,7 @@ describe('Converter integration tests', () => {
                     actual: 'example.org#?##case26:remove()',
                     expected: ['example.org#$?##case26 { remove: true; }'],
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -267,7 +275,7 @@ describe('Converter integration tests', () => {
                     expected: ['hotline.ua##.reset-scroll::before, .class::before'],
                     shouldConvert: false,
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -285,7 +293,7 @@ describe('Converter integration tests', () => {
                     expected: ['example.org#%#var str = /[class$=" undefined"]/; console.log(str);'],
                     shouldConvert: false,
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -331,24 +339,32 @@ describe('Converter integration tests', () => {
                 {
                     actual: '||vcrypt.net^$inline-script',
                     // eslint-disable-next-line max-len
-                    expected: ['||vcrypt.net^$csp=script-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:'],
+                    expected: [
+                        "||vcrypt.net^$csp=script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:",
+                    ],
                 },
                 {
                     actual: '||vcrypt.net^$frame,inline-script',
                     // eslint-disable-next-line max-len
-                    expected: ['||vcrypt.net^$subdocument,csp=script-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:'],
+                    expected: [
+                        "||vcrypt.net^$subdocument,csp=script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:",
+                    ],
                 },
 
                 // converts inline-font modifier into csp rule
                 {
                     actual: '||vcrypt.net^$inline-font',
                     // eslint-disable-next-line max-len
-                    expected: ['||vcrypt.net^$csp=font-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:'],
+                    expected: [
+                        "||vcrypt.net^$csp=font-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:",
+                    ],
                 },
                 {
                     actual: '||vcrypt.net^$inline-font,domain=example.org',
                     // eslint-disable-next-line max-len
-                    expected: ['||vcrypt.net^$domain=example.org,csp=font-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:'],
+                    expected: [
+                        "||vcrypt.net^$domain=example.org,csp=font-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:",
+                    ],
                 },
 
                 // converts ghide, ehide, shide options
@@ -522,7 +538,7 @@ describe('Converter integration tests', () => {
                     actual: String.raw`/\/\?[0-9a-zA-Z]{32}&[0-9]{5}&(https?|undefined$)/$1p,script`,
                     expected: [String.raw`/\/\?[0-9a-zA-Z]{32}&[0-9]{5}&(https?|undefined$)/$~third-party,script`],
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -545,17 +561,17 @@ describe('Converter integration tests', () => {
                 // should convert uBO scriptlet injection rules
                 {
                     actual: 'example.org##+js(setTimeout-defuser.js, [native code], 8000)',
-                    expected: ['example.org#%#//scriptlet(\'ubo-setTimeout-defuser.js\', \'[native code]\', \'8000\')'],
+                    expected: ["example.org#%#//scriptlet('ubo-setTimeout-defuser.js', '[native code]', '8000')"],
                 },
                 {
                     actual: 'example.org#@#+js(setTimeout-defuser.js, [native code], 8000)',
                     // eslint-disable-next-line max-len
-                    expected: ['example.org#@%#//scriptlet(\'ubo-setTimeout-defuser.js\', \'[native code]\', \'8000\')'],
+                    expected: ["example.org#@%#//scriptlet('ubo-setTimeout-defuser.js', '[native code]', '8000')"],
                 },
 
                 {
                     actual: 'example.org#@#script:inject(abort-on-property-read.js, some.prop)',
-                    expected: ['example.org#@%#//scriptlet(\'ubo-abort-on-property-read.js\', \'some.prop\')'],
+                    expected: ["example.org#@%#//scriptlet('ubo-abort-on-property-read.js', 'some.prop')"],
                 },
 
                 {
@@ -578,7 +594,7 @@ describe('Converter integration tests', () => {
                         "example.org#%#//scriptlet('abp-abort-on-property-write', 'aoipwb')",
                     ],
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -614,7 +630,7 @@ describe('Converter integration tests', () => {
                     actual: '||delivery.tf1.fr/pub$media,rewrite=abp-resource:blank-mp3,domain=tf1.fr',
                     expected: ['||delivery.tf1.fr/pub$media,redirect=noopmp3-0.1s,domain=tf1.fr'],
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -676,7 +692,7 @@ describe('Converter integration tests', () => {
                     expected: ['##div[foo="yay{"][href="yay}"]'],
                     shouldConvert: false,
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -703,7 +719,7 @@ describe('Converter integration tests', () => {
                     expected: ['#?#:contains(foo)'],
                     shouldConvert: true,
                 },
-            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
@@ -782,30 +798,22 @@ describe('Converter integration tests', () => {
                 // should convert exception rules properly
                 {
                     actual: 'example.org#@$##siteNav { transform: none !important; }',
-                    expected: [
-                        'example.org#@##siteNav:style(transform: none !important;)',
-                    ],
+                    expected: ['example.org#@##siteNav:style(transform: none !important;)'],
                     shouldConvert: true,
                 },
                 {
                     actual: 'example.*#@?#div[data-asin]:has(> div.sg-col > span[class*="widget=loom-desktop"])',
-                    expected: [
-                        'example.*#@#div[data-asin]:has(> div.sg-col > span[class*="widget=loom-desktop"])',
-                    ],
+                    expected: ['example.*#@#div[data-asin]:has(> div.sg-col > span[class*="widget=loom-desktop"])'],
                     shouldConvert: true,
                 },
                 {
                     actual: 'example.com,~example.net$$div[max-length="262144"]',
-                    expected: [
-                        'example.com,~example.net##^div',
-                    ],
+                    expected: ['example.com,~example.net##^div'],
                     shouldConvert: true,
                 },
                 {
                     actual: 'example.com,~example.net$$div[attr][max-length="262144"]',
-                    expected: [
-                        'example.com,~example.net##^div[attr]',
-                    ],
+                    expected: ['example.com,~example.net##^div[attr]'],
                     shouldConvert: true,
                 },
             ])("should convert '$actual' to '$expected'", (testData) => {
@@ -817,39 +825,29 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: 'example.com$$script[tag-content="12313"][max-length="262144"]',
-                    expected: [
-                        'example.com##^script:has-text(12313)',
-                    ],
+                    expected: ['example.com##^script:has-text(12313)'],
                     shouldConvert: true,
                 },
                 {
                     actual: 'example.com,~example.net$$div[max-length="262144"]',
-                    expected: [
-                        'example.com,~example.net##^div',
-                    ],
+                    expected: ['example.com,~example.net##^div'],
                     shouldConvert: true,
                 },
                 {
                     actual: 'example.com,~example.net$$div[attr][max-length="262144"]',
-                    expected: [
-                        'example.com,~example.net##^div[attr]',
-                    ],
+                    expected: ['example.com,~example.net##^div[attr]'],
                     shouldConvert: true,
                 },
                 {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
-                    expected: [
-                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
-                    ],
+                    expected: ['example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)'],
                     shouldConvert: true,
                 },
                 {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
-                    expected: [
-                        "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
-                    ],
+                    expected: ["example.com,~example.net#@#^script:has-text(d.createElement('script'))"],
                     shouldConvert: true,
                 },
                 {
@@ -862,18 +860,14 @@ describe('Converter integration tests', () => {
                     shouldConvert: true,
                 },
                 {
-                // eslint-disable-next-line max-len
+                    // eslint-disable-next-line max-len
                     actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
-                    expected: [
-                        'example.com,~example.net#@#^script:has-text(console.log("doubles"))',
-                    ],
+                    expected: ['example.com,~example.net#@#^script:has-text(console.log("doubles"))'],
                     shouldConvert: true,
                 },
                 {
                     actual: 'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
-                    expected: [
-                        'example.com,~example.net#@#^script[data-test]:has-text(12313)',
-                    ],
+                    expected: ['example.com,~example.net#@#^script[data-test]:has-text(12313)'],
                     shouldConvert: true,
                 },
             ])("should convert '$actual' to '$expected'", (testData) => {
@@ -885,33 +879,25 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: 'example.com,~example.net$$div[custom_attr]',
-                    expected: [
-                        'example.com,~example.net##^div[custom_attr]',
-                    ],
+                    expected: ['example.com,~example.net##^div[custom_attr]'],
                     shouldConvert: true,
                 },
                 {
                     // eslint-disable-next-line max-len
                     actual: String.raw`~example.com,google.com$$div[id="ad_text"][max-length="500000"][min-length="50"]`,
-                    expected: [
-                        String.raw`~example.com,google.com##^div[id="ad_text"]:min-text-length(50)`,
-                    ],
+                    expected: [String.raw`~example.com,google.com##^div[id="ad_text"]:min-text-length(50)`],
                     shouldConvert: true,
                 },
                 {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
-                    expected: [
-                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
-                    ],
+                    expected: ['example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)'],
                     shouldConvert: true,
                 },
                 {
                     // eslint-disable-next-line max-len
                     actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
-                    expected: [
-                        "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
-                    ],
+                    expected: ["example.com,~example.net#@#^script:has-text(d.createElement('script'))"],
                     shouldConvert: true,
                 },
                 {
@@ -924,18 +910,14 @@ describe('Converter integration tests', () => {
                     shouldConvert: true,
                 },
                 {
-                // eslint-disable-next-line max-len
+                    // eslint-disable-next-line max-len
                     actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
-                    expected: [
-                        'example.com,~example.net#@#^script:has-text(console.log("doubles"))',
-                    ],
+                    expected: ['example.com,~example.net#@#^script:has-text(console.log("doubles"))'],
                     shouldConvert: true,
                 },
                 {
                     actual: 'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
-                    expected: [
-                        'example.com,~example.net#@#^script[data-test]:has-text(12313)',
-                    ],
+                    expected: ['example.com,~example.net#@#^script[data-test]:has-text(12313)'],
                     shouldConvert: true,
                 },
             ])("should convert '$actual' to '$expected'", (testData) => {

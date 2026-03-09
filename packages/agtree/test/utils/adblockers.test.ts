@@ -17,8 +17,9 @@ describe('Adblockers Utils', () => {
         });
 
         it('should throw error for unknown product', () => {
-            expect(() => getHumanReadableProductName('UnknownProduct' as AdblockProduct))
-                .toThrow('Unknown product: UnknownProduct');
+            expect(() => getHumanReadableProductName('UnknownProduct' as AdblockProduct)).toThrow(
+                'Unknown product: UnknownProduct',
+            );
         });
     });
 });

@@ -107,8 +107,8 @@ export class UboScriptletInjectionBodyParser extends BaseParser {
 
         // Closing parentheses should be present
         if (
-            raw[closingParenthesesIndex] !== CLOSE_PARENTHESIS
-            || raw[closingParenthesesIndex - 1] === ESCAPE_CHARACTER
+            raw[closingParenthesesIndex] !== CLOSE_PARENTHESIS ||
+            raw[closingParenthesesIndex - 1] === ESCAPE_CHARACTER
         ) {
             throw new AdblockSyntaxError(
                 this.ERROR_MESSAGES.NO_CLOSING_PARENTHESIS,

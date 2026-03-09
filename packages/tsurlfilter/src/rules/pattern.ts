@@ -87,11 +87,12 @@ export class Pattern {
             // If we have a `||example.org^` rule, it's easier to match
             // against the request's hostname only without matching
             // a regular expression.
-            return request.hostname === this.hostname
-                || (// First light check without new string memory allocation
-                    request.hostname.endsWith(this.hostname)
+            return (
+                request.hostname === this.hostname || // First light check without new string memory allocation
+                (request.hostname.endsWith(this.hostname) &&
                     // Strict check
-                    && request.hostname.endsWith(`.${this.hostname}`));
+                    request.hostname.endsWith(`.${this.hostname}`))
+            );
         }
 
         // If the regular expression is invalid, just return false right away.
@@ -169,17 +170,21 @@ export class Pattern {
 
         // Rules like `/example/*` are rather often in the real-life filters,
         // we might want to process them.
-        if (this.pattern.startsWith(this.shortcut)
-            && this.pattern.length === this.shortcut.length + 1
-            && this.pattern.endsWith('*')) {
+        if (
+            this.pattern.startsWith(this.shortcut) &&
+            this.pattern.length === this.shortcut.length + 1 &&
+            this.pattern.endsWith('*')
+        ) {
             this.patternShortcut = true;
             return;
         }
 
-        if (this.pattern.startsWith(SimpleRegex.MASK_START_URL)
-            && this.pattern.endsWith(SimpleRegex.MASK_SEPARATOR)
-            && this.pattern.indexOf('*') < 0
-            && this.pattern.indexOf('/') < 0) {
+        if (
+            this.pattern.startsWith(SimpleRegex.MASK_START_URL) &&
+            this.pattern.endsWith(SimpleRegex.MASK_SEPARATOR) &&
+            this.pattern.indexOf('*') < 0 &&
+            this.pattern.indexOf('/') < 0
+        ) {
             this.hostname = this.pattern.slice(2, this.pattern.length - 1);
             return;
         }
@@ -227,10 +232,11 @@ export class Pattern {
      */
     public isPatternDomainSpecific(): boolean {
         if (this.patternDomainSpecific === undefined) {
-            this.patternDomainSpecific = this.pattern.startsWith(SimpleRegex.MASK_START_URL)
-                || this.pattern.startsWith('http://')
-                || this.pattern.startsWith('https:/')
-                || this.pattern.startsWith('://');
+            this.patternDomainSpecific =
+                this.pattern.startsWith(SimpleRegex.MASK_START_URL) ||
+                this.pattern.startsWith('http://') ||
+                this.pattern.startsWith('https:/') ||
+                this.pattern.startsWith('://');
         }
 
         return this.patternDomainSpecific;

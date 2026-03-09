@@ -1,9 +1,4 @@
-import {
-    beforeAll,
-    describe,
-    expect,
-    it,
-} from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { CSP_HEADER_NAME } from '../../../src/modifiers/csp-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../src/modifiers/permissions-modifier';
@@ -27,10 +22,7 @@ describe('DeclarativeRulesConverter', () => {
     it('converts simple blocking rules', async () => {
         const filterId = 0;
 
-        const filter = await createScannedFilter(
-            filterId,
-            ['||example.org^'],
-        );
+        const filter = await createScannedFilter(filterId, ['||example.org^']);
         const {
             declarativeRules: [declarativeRule],
         } = await DeclarativeRulesConverter.convert([filter]);
@@ -48,10 +40,7 @@ describe('DeclarativeRulesConverter', () => {
 
     it('converts simple allowlist rules', async () => {
         const filterId = 0;
-        const filter = await createScannedFilter(
-            filterId,
-            ['@@||example.org^'],
-        );
+        const filter = await createScannedFilter(filterId, ['@@||example.org^']);
         const {
             declarativeRules: [declarativeRule],
         } = await DeclarativeRulesConverter.convert([filter]);
@@ -63,17 +52,13 @@ describe('DeclarativeRulesConverter', () => {
             },
             condition: {
                 urlFilter: '||example.org^',
-
             },
         });
     });
 
     it('converts important allowlist rules', async () => {
         const filterId = 0;
-        const filter = await createScannedFilter(
-            filterId,
-            ['@@||example.org^$important'],
-        );
+        const filter = await createScannedFilter(filterId, ['@@||example.org^$important']);
         const {
             declarativeRules: [declarativeRule],
         } = await DeclarativeRulesConverter.convert([filter]);
@@ -85,7 +70,6 @@ describe('DeclarativeRulesConverter', () => {
             },
             condition: {
                 urlFilter: '||example.org^',
-
             },
         });
     });
@@ -93,15 +77,10 @@ describe('DeclarativeRulesConverter', () => {
     it('converts rules with $third-party modifiers', async () => {
         const filterId = 0;
 
-        const filterWithThirdPartyRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$third-party'],
-        );
+        const filterWithThirdPartyRules = await createScannedFilter(filterId, ['||example.org^$third-party']);
         const {
             declarativeRules: [thirdPartyDeclarative],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithThirdPartyRules],
-        );
+        } = await DeclarativeRulesConverter.convert([filterWithThirdPartyRules]);
         expect(thirdPartyDeclarative).toEqual({
             id: expect.any(Number),
             priority: 2,
@@ -111,19 +90,13 @@ describe('DeclarativeRulesConverter', () => {
             condition: {
                 domainType: 'thirdParty',
                 urlFilter: '||example.org^',
-
             },
         });
 
-        const filterWithNegateFirstPartyRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$~third-party'],
-        );
+        const filterWithNegateFirstPartyRules = await createScannedFilter(filterId, ['||example.org^$~third-party']);
         const {
             declarativeRules: [negateFirstPartyDeclarative],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithNegateFirstPartyRules],
-        );
+        } = await DeclarativeRulesConverter.convert([filterWithNegateFirstPartyRules]);
 
         expect(negateFirstPartyDeclarative).toEqual({
             id: expect.any(Number),
@@ -134,7 +107,6 @@ describe('DeclarativeRulesConverter', () => {
             condition: {
                 domainType: 'firstParty',
                 urlFilter: '||example.org^',
-
             },
         });
     });
@@ -142,15 +114,10 @@ describe('DeclarativeRulesConverter', () => {
     it('converts rules with first-party modifiers', async () => {
         const filterId = 0;
 
-        const filterWithFirstPartyRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$first-party'],
-        );
+        const filterWithFirstPartyRules = await createScannedFilter(filterId, ['||example.org^$first-party']);
         const {
             declarativeRules: [firstPartyDeclarative],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithFirstPartyRules],
-        );
+        } = await DeclarativeRulesConverter.convert([filterWithFirstPartyRules]);
         expect(firstPartyDeclarative).toEqual({
             id: expect.any(Number),
             priority: 2,
@@ -160,7 +127,6 @@ describe('DeclarativeRulesConverter', () => {
             condition: {
                 domainType: 'firstParty',
                 urlFilter: '||example.org^',
-
             },
         });
 
@@ -191,15 +157,10 @@ describe('DeclarativeRulesConverter', () => {
     it('converts rules with $domain modifiers', async () => {
         const filterId = 0;
 
-        const filterWithDomainRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$domain=example.com'],
-        );
+        const filterWithDomainRules = await createScannedFilter(filterId, ['||example.org^$domain=example.com']);
         const {
             declarativeRules: [domainDeclarative],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithDomainRules],
-        );
+        } = await DeclarativeRulesConverter.convert([filterWithDomainRules]);
         expect(domainDeclarative).toEqual({
             id: expect.any(Number),
             priority: 201,
@@ -209,19 +170,15 @@ describe('DeclarativeRulesConverter', () => {
             condition: {
                 urlFilter: '||example.org^',
                 initiatorDomains: ['example.com'],
-
             },
         });
 
-        const filterWithMultipleDomainRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$domain=example.com|example2.com|~example3.com|~example4.com'],
-        );
+        const filterWithMultipleDomainRules = await createScannedFilter(filterId, [
+            '||example.org^$domain=example.com|example2.com|~example3.com|~example4.com',
+        ]);
         const {
             declarativeRules: [multipleDomainDeclarative],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithMultipleDomainRules],
-        );
+        } = await DeclarativeRulesConverter.convert([filterWithMultipleDomainRules]);
         expect(multipleDomainDeclarative).toEqual({
             id: expect.any(Number),
             priority: 152,
@@ -232,19 +189,13 @@ describe('DeclarativeRulesConverter', () => {
                 urlFilter: '||example.org^',
                 initiatorDomains: ['example.com', 'example2.com'],
                 excludedInitiatorDomains: ['example3.com', 'example4.com'],
-
             },
         });
 
-        const filterWithNegateDomainRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$domain=~example.com'],
-        );
+        const filterWithNegateDomainRules = await createScannedFilter(filterId, ['||example.org^$domain=~example.com']);
         const {
             declarativeRules: [negateDomainDeclarative],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithNegateDomainRules],
-        );
+        } = await DeclarativeRulesConverter.convert([filterWithNegateDomainRules]);
         expect(negateDomainDeclarative).toEqual({
             id: expect.any(Number),
             priority: 2,
@@ -254,7 +205,6 @@ describe('DeclarativeRulesConverter', () => {
             condition: {
                 urlFilter: '||example.org^',
                 excludedInitiatorDomains: ['example.com'],
-
             },
         });
     });
@@ -262,15 +212,10 @@ describe('DeclarativeRulesConverter', () => {
     it('converts rules with specified request types', async () => {
         const filterId = 0;
 
-        const filterWithScriptRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$script'],
-        );
+        const filterWithScriptRules = await createScannedFilter(filterId, ['||example.org^$script']);
         const {
             declarativeRules: [scriptRuleDeclarative],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithScriptRules],
-        );
+        } = await DeclarativeRulesConverter.convert([filterWithScriptRules]);
         expect(scriptRuleDeclarative).toEqual({
             id: expect.any(Number),
             priority: 101,
@@ -283,15 +228,10 @@ describe('DeclarativeRulesConverter', () => {
             },
         });
 
-        const filterWithNegatedScriptRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$~script'],
-        );
+        const filterWithNegatedScriptRules = await createScannedFilter(filterId, ['||example.org^$~script']);
         const {
             declarativeRules: [negatedScriptRuleDeclarative],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithNegatedScriptRules],
-        );
+        } = await DeclarativeRulesConverter.convert([filterWithNegatedScriptRules]);
         expect(negatedScriptRuleDeclarative).toEqual({
             id: expect.any(Number),
             priority: 2,
@@ -304,43 +244,32 @@ describe('DeclarativeRulesConverter', () => {
             },
         });
 
-        const filterWithMultipleRequestTypesRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$script,image,media'],
-        );
+        const filterWithMultipleRequestTypesRules = await createScannedFilter(filterId, [
+            '||example.org^$script,image,media',
+        ]);
         const {
             declarativeRules: [multipleDeclarativeRule],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithMultipleRequestTypesRules],
-        );
-        expect(multipleDeclarativeRule.condition?.resourceTypes?.sort())
-            .toEqual(['script', 'image', 'media'].sort());
+        } = await DeclarativeRulesConverter.convert([filterWithMultipleRequestTypesRules]);
+        expect(multipleDeclarativeRule.condition?.resourceTypes?.sort()).toEqual(['script', 'image', 'media'].sort());
 
-        const filterWithMultipleNegatedRequestTypesRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$~script,~subdocument'],
-        );
+        const filterWithMultipleNegatedRequestTypesRules = await createScannedFilter(filterId, [
+            '||example.org^$~script,~subdocument',
+        ]);
         const {
             declarativeRules: [multipleNegatedDeclarativeRule],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithMultipleNegatedRequestTypesRules],
+        } = await DeclarativeRulesConverter.convert([filterWithMultipleNegatedRequestTypesRules]);
+        expect(multipleNegatedDeclarativeRule!.condition?.excludedResourceTypes?.sort()).toEqual(
+            ['script', 'sub_frame', 'main_frame'].sort(),
         );
-        expect(multipleNegatedDeclarativeRule!.condition?.excludedResourceTypes?.sort())
-            .toEqual(['script', 'sub_frame', 'main_frame'].sort());
     });
 
     it('set rules case sensitive if necessary', async () => {
         const filterId = 0;
 
-        const filterWithMatchCaseRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$match-case'],
-        );
+        const filterWithMatchCaseRules = await createScannedFilter(filterId, ['||example.org^$match-case']);
         const {
             declarativeRules: [matchCaseDeclarative],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithMatchCaseRules],
-        );
+        } = await DeclarativeRulesConverter.convert([filterWithMatchCaseRules]);
         expect(matchCaseDeclarative).toEqual({
             id: expect.any(Number),
             priority: 2,
@@ -353,15 +282,10 @@ describe('DeclarativeRulesConverter', () => {
             },
         });
 
-        const filterWithNegatedMatchCaseRules = await createScannedFilter(
-            filterId,
-            ['||example.org^$~match-case'],
-        );
+        const filterWithNegatedMatchCaseRules = await createScannedFilter(filterId, ['||example.org^$~match-case']);
         const {
             declarativeRules: [negatedMatchCaseDeclarative],
-        } = await DeclarativeRulesConverter.convert(
-            [filterWithNegatedMatchCaseRules],
-        );
+        } = await DeclarativeRulesConverter.convert([filterWithNegatedMatchCaseRules]);
         expect(negatedMatchCaseDeclarative).toEqual({
             id: expect.any(Number),
             priority: 2,
@@ -379,10 +303,7 @@ describe('DeclarativeRulesConverter', () => {
     it('converts wildcard blocking rules', async () => {
         const filterId = 0;
 
-        const filter = await createScannedFilter(
-            filterId,
-            ['||*example.org^'],
-        );
+        const filter = await createScannedFilter(filterId, ['||*example.org^']);
         const {
             declarativeRules: [declarativeRule],
         } = await DeclarativeRulesConverter.convert([filter]);
@@ -395,7 +316,6 @@ describe('DeclarativeRulesConverter', () => {
             },
             condition: {
                 urlFilter: '*example.org^',
-
             },
         });
     });
@@ -408,7 +328,9 @@ describe('DeclarativeRulesConverter', () => {
         const filter = await createScannedFilter(
             filterId,
             // eslint-disable-next-line max-len
-            ['/\\.vidzi\\.tv\\/([a-f0-9]{2})\\/([a-f0-9]{2})\\/([a-f0-9]{2})\\/\\1\\2\\3([a-f0-9]{26})\\.js/$domain=vidzi.tv'],
+            [
+                '/\\.vidzi\\.tv\\/([a-f0-9]{2})\\/([a-f0-9]{2})\\/([a-f0-9]{2})\\/\\1\\2\\3([a-f0-9]{26})\\.js/$domain=vidzi.tv',
+            ],
         );
         const {
             declarativeRules: [declarativeRule],
@@ -423,15 +345,9 @@ describe('DeclarativeRulesConverter', () => {
         '/^https?:\\/\\/[a-f0-9]{32}\\.[a-z]{7}\\.sbs\\b/',
     ])('checks complex regex that should fail: %s', async (regexpRuleText) => {
         const filterId = 0;
-        const filter = await createScannedFilter(
-            filterId,
-            [regexpRuleText],
-        );
+        const filter = await createScannedFilter(filterId, [regexpRuleText]);
 
-        const {
-            errors,
-            declarativeRules,
-        } = await DeclarativeRulesConverter.convert([filter]);
+        const { errors, declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
 
         const networkRule = createNetworkRuleWithNode(regexpRuleText, filterId, 0);
 
@@ -440,18 +356,15 @@ describe('DeclarativeRulesConverter', () => {
 
         const actualError = errors[0];
         expect(actualError.message).toStrictEqual(`Regex is unsupported: "${regexpRuleText}"`);
-        expect((actualError as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(
-            networkRule.getIndex(),
-        );
+        expect((actualError as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(networkRule.getIndex());
     });
 
     it('excludes regex negative lookahead', async () => {
         const filterId = 0;
 
-        const filter = await createScannedFilter(
-            filterId,
-            ['/rustorka.\\w+\\/forum\\/(?!login.php)/$removeheader=location'],
-        );
+        const filter = await createScannedFilter(filterId, [
+            '/rustorka.\\w+\\/forum\\/(?!login.php)/$removeheader=location',
+        ]);
 
         const {
             declarativeRules: [declarativeRule],
@@ -463,10 +376,7 @@ describe('DeclarativeRulesConverter', () => {
     it('converts $cookies rules', async () => {
         const filterId = 0;
 
-        const filter = await createScannedFilter(
-            filterId,
-            ['$cookie=bf_lead'],
-        );
+        const filter = await createScannedFilter(filterId, ['$cookie=bf_lead']);
 
         const {
             declarativeRules: [declarativeRule],
@@ -478,10 +388,7 @@ describe('DeclarativeRulesConverter', () => {
     describe('converts non-ascii rules', () => {
         it('converts domains section', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['path$domain=меил.рф'],
-            );
+            const filter = await createScannedFilter(filterId, ['path$domain=меил.рф']);
 
             const {
                 declarativeRules: [declarativeRule],
@@ -496,19 +403,14 @@ describe('DeclarativeRulesConverter', () => {
                 condition: {
                     urlFilter: 'path',
 
-                    initiatorDomains: [
-                        'xn--e1agjb.xn--p1ai',
-                    ],
+                    initiatorDomains: ['xn--e1agjb.xn--p1ai'],
                 },
             });
         });
 
         it('converts urlFilterSection', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['||банрек.рус^$third-party'],
-            );
+            const filter = await createScannedFilter(filterId, ['||банрек.рус^$third-party']);
 
             const {
                 declarativeRules: [declarativeRule],
@@ -523,7 +425,6 @@ describe('DeclarativeRulesConverter', () => {
                 condition: {
                     urlFilter: 'xn--||-8kcdv4aty.xn--^-4tbdh',
                     domainType: 'thirdParty',
-
                 },
             });
         });
@@ -548,7 +449,6 @@ describe('DeclarativeRulesConverter', () => {
                 },
                 condition: {
                     urlFilter: 'abc@-db7a',
-
                 },
             });
         });
@@ -558,17 +458,11 @@ describe('DeclarativeRulesConverter', () => {
         const resourcesPath = '/web-accessible-resources/redirects';
         const filterId = 0;
 
-        const filter = await createScannedFilter(
-            filterId,
-            ['||example.org/script.js$script,redirect=noopjs'],
-        );
+        const filter = await createScannedFilter(filterId, ['||example.org/script.js$script,redirect=noopjs']);
 
         const {
             declarativeRules: [declarativeRule],
-        } = await DeclarativeRulesConverter.convert(
-            [filter],
-            { resourcesPath },
-        );
+        } = await DeclarativeRulesConverter.convert([filter], { resourcesPath });
 
         expect(declarativeRule).toStrictEqual({
             id: expect.any(Number),
@@ -580,10 +474,7 @@ describe('DeclarativeRulesConverter', () => {
                 },
             },
             condition: {
-
-                resourceTypes: [
-                    'script',
-                ],
+                resourceTypes: ['script'],
                 urlFilter: '||example.org/script.js',
             },
         });
@@ -593,17 +484,9 @@ describe('DeclarativeRulesConverter', () => {
         const resourcesPath = '/web-accessible-resources/redirects';
         const filterId = 0;
 
-        const filter = await createScannedFilter(
-            filterId,
-            ['||example.org/script.js$script,redirect-rule=noopjs'],
-        );
+        const filter = await createScannedFilter(filterId, ['||example.org/script.js$script,redirect-rule=noopjs']);
 
-        const {
-            declarativeRules,
-        } = await DeclarativeRulesConverter.convert(
-            [filter],
-            { resourcesPath },
-        );
+        const { declarativeRules } = await DeclarativeRulesConverter.convert([filter], { resourcesPath });
 
         expect(declarativeRules).toHaveLength(0);
     });
@@ -612,10 +495,9 @@ describe('DeclarativeRulesConverter', () => {
         it('converts denyallow simple rule', async () => {
             const filterId = 0;
 
-            const filter = await createScannedFilter(
-                filterId,
-                ['/adguard_circle.png$image,denyallow=cdn.adguard.com,domain=testcases.adguard.com|surge.sh'],
-            );
+            const filter = await createScannedFilter(filterId, [
+                '/adguard_circle.png$image,denyallow=cdn.adguard.com,domain=testcases.adguard.com|surge.sh',
+            ]);
 
             const {
                 declarativeRules: [declarativeRule],
@@ -627,13 +509,9 @@ describe('DeclarativeRulesConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '/adguard_circle.png',
-                    initiatorDomains: [
-                        'testcases.adguard.com',
-                        'surge.sh',
-                    ],
+                    initiatorDomains: ['testcases.adguard.com', 'surge.sh'],
                     excludedRequestDomains: ['cdn.adguard.com'],
                     resourceTypes: ['image'],
-
                 },
             });
         });
@@ -644,7 +522,9 @@ describe('DeclarativeRulesConverter', () => {
             const filter = await createScannedFilter(
                 filterId,
                 // eslint-disable-next-line max-len
-                ['@@/adguard_dns_map.png$image,denyallow=cdn.adguard.com|fastcdn.adguard.com,domain=testcases.adguard.com|surge.sh'],
+                [
+                    '@@/adguard_dns_map.png$image,denyallow=cdn.adguard.com|fastcdn.adguard.com,domain=testcases.adguard.com|surge.sh',
+                ],
             );
 
             const {
@@ -657,16 +537,9 @@ describe('DeclarativeRulesConverter', () => {
                 action: { type: 'allow' },
                 condition: {
                     urlFilter: '/adguard_dns_map.png',
-                    initiatorDomains: [
-                        'testcases.adguard.com',
-                        'surge.sh',
-                    ],
-                    excludedRequestDomains: [
-                        'cdn.adguard.com',
-                        'fastcdn.adguard.com',
-                    ],
+                    initiatorDomains: ['testcases.adguard.com', 'surge.sh'],
+                    excludedRequestDomains: ['cdn.adguard.com', 'fastcdn.adguard.com'],
                     resourceTypes: ['image'],
-
                 },
             });
         });
@@ -745,11 +618,7 @@ describe('DeclarativeRulesConverter', () => {
                     redirect: {
                         transform: {
                             queryTransform: {
-                                removeParams: [
-                                    'p1case1',
-                                    'p2case1',
-                                    'P3Case1',
-                                ],
+                                removeParams: ['p1case1', 'p2case1', 'P3Case1'],
                             },
                         },
                     },
@@ -861,20 +730,11 @@ describe('DeclarativeRulesConverter', () => {
     });
 
     it('ignores rules with explicitly enabled modifier - popup', async () => {
-        const rules = [
-            '||example.org^$popup',
-            '||test.com^$document,popup',
-        ];
+        const rules = ['||example.org^$popup', '||test.com^$document,popup'];
         const filterId = 0;
 
-        const filter = await createScannedFilter(
-            filterId,
-            rules,
-        );
-        const {
-            declarativeRules,
-            errors,
-        } = await DeclarativeRulesConverter.convert([filter]);
+        const filter = await createScannedFilter(filterId, rules);
+        const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
 
         expect(errors).toHaveLength(2);
         expect(errors[0].message).toEqual('Network rule with explicitly enabled $popup modifier is not supported');
@@ -887,10 +747,7 @@ describe('DeclarativeRulesConverter', () => {
     it('converts all rule', async () => {
         const filterId = 0;
 
-        const filter = await createScannedFilter(
-            filterId,
-            ['||example.org^$all', '||test.com^$document'],
-        );
+        const filter = await createScannedFilter(filterId, ['||example.org^$all', '||test.com^$document']);
         const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
         expect(declarativeRules).toHaveLength(2);
         expect(declarativeRules[0]).toStrictEqual({
@@ -914,7 +771,6 @@ describe('DeclarativeRulesConverter', () => {
             condition: {
                 urlFilter: '||test.com^',
                 resourceTypes: ['main_frame'],
-
             },
         });
     });
@@ -922,18 +778,14 @@ describe('DeclarativeRulesConverter', () => {
     it('ignore exceptions rules with non-blocking modifiers', async () => {
         const filterId = 0;
 
-        const filter = await createScannedFilter(
-            filterId,
-            [
-                '||example.com/script.js$script,redirect=noopjs',
-                '||example.com^$image',
-                '@@||example.com^$redirect',
-            ],
-        );
-        const { declarativeRules } = await DeclarativeRulesConverter.convert(
-            [filter],
-            { resourcesPath: '/path/to/resources' },
-        );
+        const filter = await createScannedFilter(filterId, [
+            '||example.com/script.js$script,redirect=noopjs',
+            '||example.com^$image',
+            '@@||example.com^$redirect',
+        ]);
+        const { declarativeRules } = await DeclarativeRulesConverter.convert([filter], {
+            resourcesPath: '/path/to/resources',
+        });
         expect(declarativeRules).toHaveLength(2);
         expect(declarativeRules[0]).toStrictEqual({
             id: expect.any(Number),
@@ -946,10 +798,7 @@ describe('DeclarativeRulesConverter', () => {
             },
             condition: {
                 urlFilter: '||example.com/script.js',
-                resourceTypes: [
-                    'script',
-                ],
-
+                resourceTypes: ['script'],
             },
         });
         expect(declarativeRules[1]).toStrictEqual({
@@ -961,7 +810,6 @@ describe('DeclarativeRulesConverter', () => {
             condition: {
                 urlFilter: '||example.com^',
                 resourceTypes: ['image'],
-
             },
         });
     });
@@ -969,10 +817,7 @@ describe('DeclarativeRulesConverter', () => {
     describe('check removeheader', () => {
         it('converts $removeheader rules for responseHeaders', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['||example.com$removeheader=refresh'],
-            );
+            const filter = await createScannedFilter(filterId, ['||example.com$removeheader=refresh']);
 
             const {
                 declarativeRules: [declarativeRule],
@@ -982,12 +827,9 @@ describe('DeclarativeRulesConverter', () => {
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
-                    responseHeaders: [
-                        { header: 'refresh', operation: 'remove' },
-                    ],
+                    responseHeaders: [{ header: 'refresh', operation: 'remove' }],
                 },
                 condition: {
-
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -996,10 +838,7 @@ describe('DeclarativeRulesConverter', () => {
 
         it('converts $removeheader rules for requestHeaders', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['||example.com$removeheader=request:location'],
-            );
+            const filter = await createScannedFilter(filterId, ['||example.com$removeheader=request:location']);
 
             const {
                 declarativeRules: [declarativeRule],
@@ -1009,9 +848,7 @@ describe('DeclarativeRulesConverter', () => {
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
-                    requestHeaders: [
-                        { header: 'location', operation: 'remove' },
-                    ],
+                    requestHeaders: [{ header: 'location', operation: 'remove' }],
                 },
                 condition: {
                     urlFilter: '||example.com',
@@ -1022,13 +859,10 @@ describe('DeclarativeRulesConverter', () => {
 
         it('converts removeheader rules for both: response and request', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                [
-                    '||example.com$removeheader=location',
-                    '||example.com$removeheader=request:location',
-                ],
-            );
+            const filter = await createScannedFilter(filterId, [
+                '||example.com$removeheader=location',
+                '||example.com$removeheader=request:location',
+            ]);
 
             const {
                 declarativeRules: [declarativeRule],
@@ -1042,7 +876,6 @@ describe('DeclarativeRulesConverter', () => {
                     requestHeaders: [{ header: 'location', operation: 'remove' }],
                 },
                 condition: {
-
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1055,31 +888,22 @@ describe('DeclarativeRulesConverter', () => {
                 '||example.com$removeheader=content-type',
             ];
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                [
-                    ruleWithUnsupportedHeaders[0],
-                    '||example.com$removeheader=location',
-                    ruleWithUnsupportedHeaders[1],
-                ],
-            );
+            const filter = await createScannedFilter(filterId, [
+                ruleWithUnsupportedHeaders[0],
+                '||example.com$removeheader=location',
+                ruleWithUnsupportedHeaders[1],
+            ]);
 
-            const {
-                declarativeRules,
-                errors,
-            } = await DeclarativeRulesConverter.convert([filter]);
+            const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
-                    responseHeaders: [
-                        { header: 'location', operation: 'remove' },
-                    ],
+                    responseHeaders: [{ header: 'location', operation: 'remove' }],
                 },
                 condition: {
-
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1098,14 +922,11 @@ describe('DeclarativeRulesConverter', () => {
 
         it('converts removeheader rules for responseHeaders and skips general allowlist rule', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                [
-                    '||example.org$removeheader=refresh',
-                    '||example.org$removeheader=location',
-                    '@@||example.org/path/$removeheader',
-                ],
-            );
+            const filter = await createScannedFilter(filterId, [
+                '||example.org$removeheader=refresh',
+                '||example.org$removeheader=location',
+                '@@||example.org/path/$removeheader',
+            ]);
 
             const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
@@ -1130,15 +951,12 @@ describe('DeclarativeRulesConverter', () => {
         // eslint-disable-next-line max-len
         it('converts $removeheader rules for responseHeaders and skips general allowlist rule and for other domain', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                [
-                    '||example.org^$removeheader=refresh',
-                    '||example.org^$removeheader=location',
-                    '||example.com^$removeheader=refresh',
-                    '@@||example.org^$removeheader',
-                ],
-            );
+            const filter = await createScannedFilter(filterId, [
+                '||example.org^$removeheader=refresh',
+                '||example.org^$removeheader=location',
+                '||example.com^$removeheader=refresh',
+                '@@||example.org^$removeheader',
+            ]);
 
             const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(2);
@@ -1163,9 +981,7 @@ describe('DeclarativeRulesConverter', () => {
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
-                    responseHeaders: [
-                        { header: 'refresh', operation: 'remove' },
-                    ],
+                    responseHeaders: [{ header: 'refresh', operation: 'remove' }],
                 },
                 condition: {
                     urlFilter: '||example.com^',
@@ -1179,10 +995,7 @@ describe('DeclarativeRulesConverter', () => {
             const badRule = '||example.com$removeheader=dnt:1';
             const filter = await createScannedFilter(0, [badRule]);
 
-            const {
-                declarativeRules,
-                errors,
-            } = await DeclarativeRulesConverter.convert([filter]);
+            const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
 
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
@@ -1194,19 +1007,14 @@ describe('DeclarativeRulesConverter', () => {
 
         it('combine several $removeheader rule', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                [
-                    '||example.com$removeheader=header1',
-                    '||example.com$removeheader=request:header2',
-                    '||example.com$removeheader=header3',
-                    '||example.com$removeheader=request:header4',
-                ],
-            );
+            const filter = await createScannedFilter(filterId, [
+                '||example.com$removeheader=header1',
+                '||example.com$removeheader=request:header2',
+                '||example.com$removeheader=header3',
+                '||example.com$removeheader=request:header4',
+            ]);
 
-            const {
-                declarativeRules,
-            } = await DeclarativeRulesConverter.convert([filter]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toStrictEqual({
                 id: expect.any(Number),
@@ -1233,10 +1041,7 @@ describe('DeclarativeRulesConverter', () => {
 
     describe('$header modifier', () => {
         it('converts $header rule with only a header name', async () => {
-            const filter = await createScannedFilter(
-                0,
-                ['||example.com$header=location'],
-            );
+            const filter = await createScannedFilter(0, ['||example.com$header=location']);
 
             const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules[0]).toEqual({
@@ -1253,10 +1058,7 @@ describe('DeclarativeRulesConverter', () => {
         });
 
         it('converts $header rule with a header name and value', async () => {
-            const filter = await createScannedFilter(
-                0,
-                ['||example.com$header=location:value123'],
-            );
+            const filter = await createScannedFilter(0, ['||example.com$header=location:value123']);
 
             const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules[0]).toEqual({
@@ -1273,10 +1075,7 @@ describe('DeclarativeRulesConverter', () => {
         });
 
         it('throws an error for a $header rule if the value is a regex', async () => {
-            const filter = await createScannedFilter(
-                0,
-                ['||example.com$header=location:/value123/'],
-            );
+            const filter = await createScannedFilter(0, ['||example.com$header=location:/value123/']);
             const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(0);
             expect(errors[0].message).toEqual(
@@ -1285,10 +1084,7 @@ describe('DeclarativeRulesConverter', () => {
         });
 
         it('converts $header rules with specific request types', async () => {
-            const filter = await createScannedFilter(
-                0,
-                ['||example.com$script,header=location:value123'],
-            );
+            const filter = await createScannedFilter(0, ['||example.com$script,header=location:value123']);
             const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
@@ -1308,30 +1104,24 @@ describe('DeclarativeRulesConverter', () => {
     describe('check $csp', () => {
         it('converts $csp rules', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['||example.com$csp=frame-src \'none\''],
-            );
+            const filter = await createScannedFilter(filterId, ["||example.com$csp=frame-src 'none'"]);
 
-            const {
-                declarativeRules,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
-                    responseHeaders: [{
-                        header: CSP_HEADER_NAME,
-                        operation: 'append',
-                        value: 'frame-src \'none\'',
-                    }],
+                    responseHeaders: [
+                        {
+                            header: CSP_HEADER_NAME,
+                            operation: 'append',
+                            value: "frame-src 'none'",
+                        },
+                    ],
                 },
                 condition: {
-
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1340,35 +1130,31 @@ describe('DeclarativeRulesConverter', () => {
 
         it('combine several $csp rule', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                [
-                    '||example.com$csp=frame-src \'none\'',
-                    '||example.com$csp=script-src \'self\' \'unsafe-eval\' http: https:',
-                    '||example.com$csp=worker-src \'none\',subdocument',
-                    '$csp=worker-src \'none\',domain=example.org|example.net',
-                ],
-            );
+            const filter = await createScannedFilter(filterId, [
+                "||example.com$csp=frame-src 'none'",
+                "||example.com$csp=script-src 'self' 'unsafe-eval' http: https:",
+                "||example.com$csp=worker-src 'none',subdocument",
+                "$csp=worker-src 'none',domain=example.org|example.net",
+            ]);
 
-            const { declarativeRules } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(3);
             expect(declarativeRules[0]).toStrictEqual({
                 id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
-                    responseHeaders: [{
-                        header: CSP_HEADER_NAME,
-                        operation: 'append',
-                        value: 'frame-src \'none\'; script-src \'self\' \'unsafe-eval\' http: https:',
-                    }],
+                    responseHeaders: [
+                        {
+                            header: CSP_HEADER_NAME,
+                            operation: 'append',
+                            value: "frame-src 'none'; script-src 'self' 'unsafe-eval' http: https:",
+                        },
+                    ],
                 },
                 condition: {
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
-
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
@@ -1376,16 +1162,17 @@ describe('DeclarativeRulesConverter', () => {
                 priority: 101,
                 action: {
                     type: 'modifyHeaders',
-                    responseHeaders: [{
-                        header: CSP_HEADER_NAME,
-                        operation: 'append',
-                        value: 'worker-src \'none\'',
-                    }],
+                    responseHeaders: [
+                        {
+                            header: CSP_HEADER_NAME,
+                            operation: 'append',
+                            value: "worker-src 'none'",
+                        },
+                    ],
                 },
                 condition: {
                     urlFilter: '||example.com',
                     resourceTypes: ['sub_frame'],
-
                 },
             });
             expect(declarativeRules[2]).toStrictEqual({
@@ -1393,19 +1180,17 @@ describe('DeclarativeRulesConverter', () => {
                 priority: 151,
                 action: {
                     type: 'modifyHeaders',
-                    responseHeaders: [{
-                        header: CSP_HEADER_NAME,
-                        operation: 'append',
-                        value: 'worker-src \'none\'',
-                    }],
+                    responseHeaders: [
+                        {
+                            header: CSP_HEADER_NAME,
+                            operation: 'append',
+                            value: "worker-src 'none'",
+                        },
+                    ],
                 },
                 condition: {
-                    initiatorDomains: [
-                        'example.org',
-                        'example.net',
-                    ],
+                    initiatorDomains: ['example.org', 'example.net'],
                     resourceTypes: allResourcesTypes,
-
                 },
             });
         });
@@ -1418,10 +1203,7 @@ describe('DeclarativeRulesConverter', () => {
             const badRule = `@@||example.com$${modifier}`;
             const filter = await createScannedFilter(0, [badRule]);
 
-            const {
-                declarativeRules,
-                errors,
-            } = await DeclarativeRulesConverter.convert([filter]);
+            const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
 
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(0);
@@ -1431,30 +1213,27 @@ describe('DeclarativeRulesConverter', () => {
     describe('check $cookie', () => {
         it('converts $cookie rules without params', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['||example.com$cookie'],
-            );
+            const filter = await createScannedFilter(filterId, ['||example.com$cookie']);
 
-            const {
-                declarativeRules,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules.length).toBe(1);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
-                    requestHeaders: [{
-                        header: 'Cookie',
-                        operation: 'remove',
-                    }],
-                    responseHeaders: [{
-                        header: 'Set-Cookie',
-                        operation: 'remove',
-                    }],
+                    requestHeaders: [
+                        {
+                            header: 'Cookie',
+                            operation: 'remove',
+                        },
+                    ],
+                    responseHeaders: [
+                        {
+                            header: 'Set-Cookie',
+                            operation: 'remove',
+                        },
+                    ],
                 },
                 condition: {
                     urlFilter: '||example.com',
@@ -1470,17 +1249,9 @@ describe('DeclarativeRulesConverter', () => {
                 '||example.com$cookie=user;maxAge=3600',
                 '||example.com$cookie=utm;maxAge=3600;sameSite=lax',
             ];
-            const filter = await createScannedFilter(
-                filterId,
-                rulesText,
-            );
+            const filter = await createScannedFilter(filterId, rulesText);
 
-            const {
-                declarativeRules,
-                errors,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
             expect(errors.length).toBe(3);
 
             expect(declarativeRules).toHaveLength(0);
@@ -1503,16 +1274,9 @@ describe('DeclarativeRulesConverter', () => {
     describe('check $to', () => {
         it('converts $to rule with two domains', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['/ads$to=evil.com|evil.org'],
-            );
+            const filter = await createScannedFilter(filterId, ['/ads$to=evil.com|evil.org']);
 
-            const {
-                declarativeRules,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
@@ -1521,11 +1285,7 @@ describe('DeclarativeRulesConverter', () => {
                     type: 'block',
                 },
                 condition: {
-
-                    requestDomains: [
-                        'evil.com',
-                        'evil.org',
-                    ],
+                    requestDomains: ['evil.com', 'evil.org'],
                     urlFilter: '/ads',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1534,16 +1294,9 @@ describe('DeclarativeRulesConverter', () => {
 
         it('converts $to rule with one included and one excluded domain', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['/ads$to=~not.evil.com|evil.com'],
-            );
+            const filter = await createScannedFilter(filterId, ['/ads$to=~not.evil.com|evil.com']);
 
-            const {
-                declarativeRules,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toMatchObject({
                 priority: 2,
@@ -1551,7 +1304,6 @@ describe('DeclarativeRulesConverter', () => {
                     type: 'block',
                 },
                 condition: {
-
                     requestDomains: ['evil.com'],
                     excludedRequestDomains: ['not.evil.com'],
                     urlFilter: '/ads',
@@ -1562,16 +1314,9 @@ describe('DeclarativeRulesConverter', () => {
 
         it('converts $to rule with two excluded domains', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['/ads$to=~good.com|~good.org'],
-            );
+            const filter = await createScannedFilter(filterId, ['/ads$to=~good.com|~good.org']);
 
-            const {
-                declarativeRules,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
@@ -1580,11 +1325,7 @@ describe('DeclarativeRulesConverter', () => {
                     type: 'block',
                 },
                 condition: {
-
-                    excludedRequestDomains: [
-                        'good.com',
-                        'good.org',
-                    ],
+                    excludedRequestDomains: ['good.com', 'good.org'],
                     urlFilter: '/ads',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1595,16 +1336,9 @@ describe('DeclarativeRulesConverter', () => {
     describe('check $method', () => {
         it('converts rule with two permitted methods', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['||evil.com$method=get|head'],
-            );
+            const filter = await createScannedFilter(filterId, ['||evil.com$method=get|head']);
 
-            const {
-                declarativeRules,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
@@ -1623,16 +1357,9 @@ describe('DeclarativeRulesConverter', () => {
 
         it('converts rule with two restricted methods', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['||evil.com$method=~post|~put'],
-            );
+            const filter = await createScannedFilter(filterId, ['||evil.com$method=~post|~put']);
 
-            const {
-                declarativeRules,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
@@ -1651,16 +1378,9 @@ describe('DeclarativeRulesConverter', () => {
 
         it('allowlist rule with one permitted method', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['@@||evil.com$method=get'],
-            );
+            const filter = await createScannedFilter(filterId, ['@@||evil.com$method=get']);
 
-            const {
-                declarativeRules,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
@@ -1679,16 +1399,9 @@ describe('DeclarativeRulesConverter', () => {
 
         it('allowlist rule with two restricted methods', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['@@||evil.com$method=~post'],
-            );
+            const filter = await createScannedFilter(filterId, ['@@||evil.com$method=~post']);
 
-            const {
-                declarativeRules,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
@@ -1710,17 +1423,12 @@ describe('DeclarativeRulesConverter', () => {
             const ruleText = '||evil.com$method=trace';
             const filter = await createScannedFilter(filterId, [ruleText]);
 
-            const {
-                declarativeRules,
-                errors,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
 
             expect(errors[0].message).toBe(
-                'Network rule with $method modifier containing \'trace\' method is not supported',
+                "Network rule with $method modifier containing 'trace' method is not supported",
             );
             expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toBe(0);
         });
@@ -1739,11 +1447,13 @@ describe('DeclarativeRulesConverter', () => {
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
-                    responseHeaders: [{
-                        header: PERMISSIONS_POLICY_HEADER_NAME,
-                        operation: 'append',
-                        value: 'autoplay=()',
-                    }],
+                    responseHeaders: [
+                        {
+                            header: PERMISSIONS_POLICY_HEADER_NAME,
+                            operation: 'append',
+                            value: 'autoplay=()',
+                        },
+                    ],
                 },
                 condition: {
                     urlFilter: '||example.org^',
@@ -1764,18 +1474,17 @@ describe('DeclarativeRulesConverter', () => {
                 priority: 151,
                 action: {
                     type: 'modifyHeaders',
-                    responseHeaders: [{
-                        header: PERMISSIONS_POLICY_HEADER_NAME,
-                        operation: 'append',
-                        // TODO: Add special tokenization for AGTree to handle unescaped commas in some modifier values
-                        value: 'storage-access=(), сamera=()',
-                    }],
+                    responseHeaders: [
+                        {
+                            header: PERMISSIONS_POLICY_HEADER_NAME,
+                            operation: 'append',
+                            // TODO: Add special tokenization for AGTree to handle unescaped commas in some modifier values
+                            value: 'storage-access=(), сamera=()',
+                        },
+                    ],
                 },
                 condition: {
-                    initiatorDomains: [
-                        'example.org',
-                        'example.com',
-                    ],
+                    initiatorDomains: ['example.org', 'example.com'],
                     resourceTypes: documentResourceTypes,
                 },
             });
@@ -1793,11 +1502,13 @@ describe('DeclarativeRulesConverter', () => {
                 priority: 101,
                 action: {
                     type: 'modifyHeaders',
-                    responseHeaders: [{
-                        header: PERMISSIONS_POLICY_HEADER_NAME,
-                        operation: 'append',
-                        value: 'identity-credentials-get=()',
-                    }],
+                    responseHeaders: [
+                        {
+                            header: PERMISSIONS_POLICY_HEADER_NAME,
+                            operation: 'append',
+                            value: 'identity-credentials-get=()',
+                        },
+                    ],
                 },
                 condition: {
                     urlFilter: '||example.com^',
@@ -1813,12 +1524,7 @@ describe('DeclarativeRulesConverter', () => {
             const ruleText = '@@||example.org^$genericblock';
             const filter = await createScannedFilter(filterId, [ruleText]);
 
-            const {
-                declarativeRules,
-                errors,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
 

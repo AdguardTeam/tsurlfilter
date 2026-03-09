@@ -22,7 +22,8 @@ export const logTestResult = (details: LogDetails) => {
     console.log(colorizeTitleText(details.name));
 
     console.log('Status:', colorizeStatusText(details.status));
-    console.log('Total %d tests: %d passed, %d failed, %d skipped',
+    console.log(
+        'Total %d tests: %d passed, %d failed, %d skipped',
         counts.total,
         counts.passed,
         counts.failed,

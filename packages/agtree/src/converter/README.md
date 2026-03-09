@@ -4,10 +4,8 @@ This directory contains adblock rule converter that can be used to convert rules
 It is used by AdGuard to convert rules to AdGuard format, but in the future we plan to extend it to support other
 formats.
 
->
 > :warning: **This converter is still in development, currently it only supports converting Adblock Plus and uBlock
 > Origin rules to AdGuard format.** Later we will plan to add support for other formats.
->
 
 Table of contents:
 
@@ -37,8 +35,8 @@ The idea is quite simple, we provide two converter classes:
 Converter classes have the following methods:
 
 - `convertToAdg`: converts to AdGuard format
-- `convertToAbp`: converts to Adblock Plus format *(not implemented yet)*
-- `convertToUbo`: converts to uBlock Origin format *(not implemented yet)*
+- `convertToAbp`: converts to Adblock Plus format _(not implemented yet)_
+- `convertToUbo`: converts to uBlock Origin format _(not implemented yet)_
 
 Each converter method expects an AST (Abstract Syntax Tree) node as an input and returns the converted AST node(s) as an
 output. **This means that you should parse the rule/filter list first**, then pass the AST node to the converter, which

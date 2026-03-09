@@ -93,11 +93,13 @@ export class CommentParser extends BaseParser {
 
         // Note: we parse non-functional comments at the end,
         // if the input does not match any of the previous, more specific comment patterns
-        return AgentCommentParser.parse(raw, options, baseOffset)
-            || HintCommentParser.parse(raw, options, baseOffset)
-            || PreProcessorCommentParser.parse(raw, options, baseOffset)
-            || MetadataCommentParser.parse(raw, options, baseOffset)
-            || ConfigCommentParser.parse(raw, options, baseOffset)
-            || SimpleCommentParser.parse(raw, options, baseOffset);
+        return (
+            AgentCommentParser.parse(raw, options, baseOffset) ||
+            HintCommentParser.parse(raw, options, baseOffset) ||
+            PreProcessorCommentParser.parse(raw, options, baseOffset) ||
+            MetadataCommentParser.parse(raw, options, baseOffset) ||
+            ConfigCommentParser.parse(raw, options, baseOffset) ||
+            SimpleCommentParser.parse(raw, options, baseOffset)
+        );
     }
 }

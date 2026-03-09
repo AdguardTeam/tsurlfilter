@@ -1,13 +1,6 @@
 import { BaseGenerator } from '../base-generator';
 import { UboPseudoName } from '../../common/ubo-selector-common';
-import {
-    CLOSE_PARENTHESIS,
-    COLON,
-    CSS_NOT_PSEUDO,
-    EMPTY,
-    OPEN_PARENTHESIS,
-    SPACE,
-} from '../../utils/constants';
+import { CLOSE_PARENTHESIS, COLON, CSS_NOT_PSEUDO, EMPTY, OPEN_PARENTHESIS, SPACE } from '../../utils/constants';
 import { type UboSelector } from '../../nodes';
 
 /**
@@ -30,7 +23,13 @@ export class UboSelectorGenerator extends BaseGenerator {
                     case UboPseudoName.Remove:
                     case UboPseudoName.Style:
                         // eslint-disable-next-line max-len
-                        suffix.push(COLON, modifier.name.value, OPEN_PARENTHESIS, modifier.value?.value || EMPTY, CLOSE_PARENTHESIS);
+                        suffix.push(
+                            COLON,
+                            modifier.name.value,
+                            OPEN_PARENTHESIS,
+                            modifier.value?.value || EMPTY,
+                            CLOSE_PARENTHESIS,
+                        );
                         break;
 
                     default:
@@ -41,7 +40,13 @@ export class UboSelectorGenerator extends BaseGenerator {
 
                         // :modifier-name(value)
                         // eslint-disable-next-line max-len
-                        prefix.push(COLON, modifier.name.value, OPEN_PARENTHESIS, modifier.value?.value || EMPTY, CLOSE_PARENTHESIS);
+                        prefix.push(
+                            COLON,
+                            modifier.name.value,
+                            OPEN_PARENTHESIS,
+                            modifier.value?.value || EMPTY,
+                            CLOSE_PARENTHESIS,
+                        );
 
                         // Close the `:not()` if we are in an exception
                         if (modifier.exception) {

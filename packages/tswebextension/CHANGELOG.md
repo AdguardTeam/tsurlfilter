@@ -471,7 +471,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remade JS rules injections in MV3:
     - use `chrome.scripting` API for injecting functions for script rules from the pre-built filters,
     - use script tag injection only for script rules manually added by users —
-      rules from *User rules* and *Custom filters*.
+      rules from _User rules_ and _Custom filters_.
 
 [2.4.0-alpha.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.8
 
@@ -909,7 +909,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `webNavigation.onCommitted` event handler to take into account Opera event
-firing bug.
+  firing bug.
 - Updated [@adguard/tsurlfilter] to `v2.2.9`.
 - Updated [@adguard/scriptlets] to `v1.9.105`.
 
@@ -930,7 +930,7 @@ firing bug.
 ### Fixed
 
 - `Do Not Track` and `Hide Referrer from third parties` ignoring global Stealth
-mode toggle.
+  mode toggle.
 
 [1.0.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.5
 
@@ -1009,7 +1009,7 @@ mode toggle.
 ### Added
 
 - API `settings.debugScriptlets` property and `setDebugScriptlets()` method for
-its setting [AdguardBrowserExtension#2584].
+  its setting [AdguardBrowserExtension#2584].
 
 ### Changed
 
@@ -1210,7 +1210,6 @@ its setting [AdguardBrowserExtension#2584].
 
 [AdguardBrowserExtension#2459]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2459
 [AdguardBrowserExtension#2461]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2461
-
 [0.3.14]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.14
 
 ## [0.3.13] - 2023-08-25
@@ -1441,7 +1440,7 @@ its setting [AdguardBrowserExtension#2584].
 ### Fixed
 
 - Stealth module correctly sets browser privacy network settings based on
-`blockWebRTC`, `stealthModeEnabled` and `filteringEnabled` options.
+  `blockWebRTC`, `stealthModeEnabled` and `filteringEnabled` options.
 - unique `eventId` for `FilteringEventType.JsInject` events.
 
 [0.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.2.0
@@ -1691,11 +1690,9 @@ its setting [AdguardBrowserExtension#2584].
 - Request events initialization
 
 [0.0.44]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.44
-
 [@adguard/agtree]: ../agtree/CHANGELOG.md
 [@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/tsurlfilter]: ../tsurlfilter/CHANGELOG.md
-
 [@adguard/assistant]: https://github.com/AdguardTeam/AdguardAssistant/blob/master/CHANGELOG.md
 [@adguard/extended-css]: https://github.com/AdguardTeam/ExtendedCss/blob/master/CHANGELOG.md
 [@adguard/scriptlets]: https://github.com/AdguardTeam/Scriptlets/blob/master/CHANGELOG.md

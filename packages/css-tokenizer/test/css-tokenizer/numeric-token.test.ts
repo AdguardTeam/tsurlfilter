@@ -38,34 +38,34 @@ describe('numeric-token', () => {
     // Create test cases for <number-token>, <percentage-token> and <dimension-token> based on the test data
     test.each([
         // <number-token> cases
-        ...addAsProp(testData.map((value) => ({
-            actual: value,
-            expected: [
-                [TokenType.Number, 0, value.length],
-            ],
-        }))),
+        ...addAsProp(
+            testData.map((value) => ({
+                actual: value,
+                expected: [[TokenType.Number, 0, value.length]],
+            })),
+        ),
 
         // <percentage-token> cases
-        ...addAsProp(testData.map((value) => ({
-            actual: `${value}%`,
-            expected: [
-                [TokenType.Percentage, 0, value.length + 1],
-            ],
-        }))),
+        ...addAsProp(
+            testData.map((value) => ({
+                actual: `${value}%`,
+                expected: [[TokenType.Percentage, 0, value.length + 1]],
+            })),
+        ),
 
         // <dimension-token> cases
-        ...addAsProp(testData.map((value) => ({
-            actual: `${value}px`,
-            expected: [
-                [TokenType.Dimension, 0, value.length + 2],
-            ],
-        }))),
-        ...addAsProp(testData.map((value) => ({
-            actual: `${value}rem`,
-            expected: [
-                [TokenType.Dimension, 0, value.length + 3],
-            ],
-        }))),
+        ...addAsProp(
+            testData.map((value) => ({
+                actual: `${value}px`,
+                expected: [[TokenType.Dimension, 0, value.length + 2]],
+            })),
+        ),
+        ...addAsProp(
+            testData.map((value) => ({
+                actual: `${value}rem`,
+                expected: [[TokenType.Dimension, 0, value.length + 3]],
+            })),
+        ),
     ])("should tokenize '$actual' as $as", (testCase) => {
         testTokenization(testCase);
     });

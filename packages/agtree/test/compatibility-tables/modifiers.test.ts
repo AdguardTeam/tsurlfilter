@@ -27,16 +27,14 @@ describe('Modifiers Compatibility Table', () => {
     });
 
     it('modifiersCompatibilityTable.getSingle', () => {
-        expect(
-            modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AdgExtChrome),
-        ).toMatchObject(baseThirdPartyData);
+        expect(modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AdgExtChrome)).toMatchObject(
+            baseThirdPartyData,
+        );
 
         expect(modifiersCompatibilityTable.getSingle('nonexistent', SpecificPlatform.AbpExtChrome)).toBeNull();
 
         // docs url differs
-        expect(
-            modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AdgExtChrome)?.docs,
-        ).not.toEqual(
+        expect(modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AdgExtChrome)?.docs).not.toEqual(
             modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AbpExtChrome)?.docs,
         );
     });

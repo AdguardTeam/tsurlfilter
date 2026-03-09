@@ -36,100 +36,113 @@ If either file is missing:
 ### Phase 1: Load Context
 
 1. **Read the implementation plan**
-   - Read `/specs/.current/plan.md`
-   - Extract all tasks with their:
-     - Description and complexity
-     - Prerequisites
-     - Verification criteria
-   - Note the task execution order
+
+    - Read `/specs/.current/plan.md`
+    - Extract all tasks with their:
+        - Description and complexity
+        - Prerequisites
+        - Verification criteria
+    - Note the task execution order
 
 2. **Read the feature specification**
-   - Read `/specs/.current/spec.md`
-   - Extract functional requirements for reference
-   - Note acceptance scenarios for verification
+
+    - Read `/specs/.current/spec.md`
+    - Extract functional requirements for reference
+    - Note acceptance scenarios for verification
 
 3. **Read project guidelines**
-   - Read `AGENTS.md` if it exists (coding standards and patterns)
-   - Read `DEVELOPMENT.md` if it exists (development setup)
-   - These inform implementation style and conventions
+
+    - Read `AGENTS.md` if it exists (coding standards and patterns)
+    - Read `DEVELOPMENT.md` if it exists (development setup)
+    - These inform implementation style and conventions
 
 4. **Load contracts** (if applicable)
-   - Check `/specs/.current/contracts/` directory
-   - Load API schemas to guide implementation
+    - Check `/specs/.current/contracts/` directory
+    - Load API schemas to guide implementation
 
 ### Phase 2: Determine Scope
 
 1. **Parse user input** (if provided)
-   - Identify which tasks to implement
-   - Note any tasks to skip
-   - Determine starting point
+
+    - Identify which tasks to implement
+    - Note any tasks to skip
+    - Determine starting point
 
 2. **Build task queue**
-   - If no input: queue all tasks in plan order
-   - If input specifies tasks: queue only those tasks
-   - Verify prerequisites are satisfied for queued tasks
+
+    - If no input: queue all tasks in plan order
+    - If input specifies tasks: queue only those tasks
+    - Verify prerequisites are satisfied for queued tasks
 
 3. **Report scope**
-   - List tasks that will be implemented
-   - Note any skipped tasks and reasons
-   - Confirm with user if scope is ambiguous
+    - List tasks that will be implemented
+    - Note any skipped tasks and reasons
+    - Confirm with user if scope is ambiguous
 
 ### Phase 3: Execute Tasks
 
 For each task in the queue:
 
 1. **Announce task**
-   - Display task ID, description, and complexity
-   - List prerequisites and their status
+
+    - Display task ID, description, and complexity
+    - List prerequisites and their status
 
 2. **Research before coding**
-   - Search codebase for related patterns
-   - Find similar implementations to follow
-   - Identify files that need modification
+
+    - Search codebase for related patterns
+    - Find similar implementations to follow
+    - Identify files that need modification
 
 3. **Implement the task**
-   - Follow existing code patterns and conventions
-   - Adhere to project guidelines from `AGENTS.md`
-   - Create new files only when necessary
-   - Prefer minimal, focused changes
+
+    - Follow existing code patterns and conventions
+    - Adhere to project guidelines from `AGENTS.md`
+    - Create new files only when necessary
+    - Prefer minimal, focused changes
 
 4. **Verify the task**
-   - Execute the verification criteria from the plan
-   - Run relevant tests if they exist
-   - Check that acceptance scenarios pass
+
+    - Execute the verification criteria from the plan
+    - Run relevant tests if they exist
+    - Check that acceptance scenarios pass
 
 5. **Report task status**
-   - **DONE**: Task completed and verified
-   - **BLOCKED**: Cannot proceed (explain why)
-   - **NEEDS INPUT**: Requires user decision
+
+    - **DONE**: Task completed and verified
+    - **BLOCKED**: Cannot proceed (explain why)
+    - **NEEDS INPUT**: Requires user decision
 
 6. **Update plan progress**
-   - Mark completed tasks in the plan file
-   - Add implementation notes if helpful
+    - Mark completed tasks in the plan file
+    - Add implementation notes if helpful
 
 ### Phase 4: Integration Check
 
 After completing all queued tasks:
 
 1. **Run project verification**
-   - Execute build command (if applicable)
-   - Run linter and formatter
-   - Execute test suite
+
+    - Execute build command (if applicable)
+    - Run linter and formatter
+    - Execute test suite
 
 2. **Check requirement coverage**
-   - For each functional requirement in the spec
-   - Verify implementation addresses it
-   - Note any gaps
+
+    - For each functional requirement in the spec
+    - Verify implementation addresses it
+    - Note any gaps
 
 3. **Report completion status**
-   - List completed tasks
-   - List any remaining tasks
-   - Note issues encountered
+
+    - List completed tasks
+    - List any remaining tasks
+    - Note issues encountered
 
 4. **Update spec status**
-   - If all tasks completed successfully:
-     - Change status from "Draft" to "Implemented" in `spec.md`
-     - Add implementation notes if helpful
+    - If all tasks completed successfully:
+        - Change status from "Draft" to "Implemented" in `spec.md`
+        - Add implementation notes if helpful
 
 ## Task Execution Guidelines
 
@@ -164,17 +177,19 @@ After completing all queued tasks:
 After implementation:
 
 1. **Summary of completed work**
-   - Tasks completed
-   - Files created/modified
-   - Tests added
+
+    - Tasks completed
+    - Files created/modified
+    - Tests added
 
 2. **Remaining work** (if any)
-   - Tasks not yet implemented
-   - Known issues or blockers
+
+    - Tasks not yet implemented
+    - Known issues or blockers
 
 3. **Next steps**
-   - Suggest running `/sdd:validate` to verify completeness
-   - Note any manual verification needed
+    - Suggest running `/sdd:validate` to verify completeness
+    - Note any manual verification needed
 
 ## Guidelines
 

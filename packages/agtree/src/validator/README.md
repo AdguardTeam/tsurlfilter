@@ -76,6 +76,7 @@ validate(platforms: AnyPlatform, modifier: Modifier, isException = false): Valid
 where
 
 - `platforms` is any compatibility table platform - can be:
+
     - A specific platform (e.g., `SpecificPlatform.AdgExtChrome`)
     - A generic platform for a single product (e.g., `GenericPlatform.AdgAny`,
       `GenericPlatform.UboExtChromium`)
@@ -95,9 +96,9 @@ where
      * - otherwise `{ valid: false, error: <invalidity reason> }`
      */
     type ValidationResult = {
-        valid: boolean,
-        error?: string,
-        warn?: string,
+        valid: boolean;
+        error?: string;
+        warn?: string;
     };
     ```
 
@@ -113,10 +114,7 @@ import { SpecificPlatform, ModifierParser, modifierValidator } from '@adguard/ag
 - `$webrtc` is not supported by AdGuard:
 
     ```ts
-    modifierValidator.validate(
-        SpecificPlatform.AdgOsWindows,
-        ModifierParser.parse('webrtc'),
-    );
+    modifierValidator.validate(SpecificPlatform.AdgOsWindows, ModifierParser.parse('webrtc'));
     ```
 
     ↓↓↓
@@ -131,10 +129,7 @@ import { SpecificPlatform, ModifierParser, modifierValidator } from '@adguard/ag
 - but `$webrtc` is supported by uBlock Origin:
 
     ```ts
-    modifierValidator.validate(
-        SpecificPlatform.UboExtFirefox,
-        ModifierParser.parse('webrtc'),
-    );
+    modifierValidator.validate(SpecificPlatform.UboExtFirefox, ModifierParser.parse('webrtc'));
     ```
 
     ↓↓↓
@@ -148,11 +143,7 @@ import { SpecificPlatform, ModifierParser, modifierValidator } from '@adguard/ag
 - `$stealth` is not supported for blocking rules, only for exceptions:
 
     ```ts
-    modifierValidator.validate(
-        SpecificPlatform.AdgOsWindows,
-        ModifierParser.parse('stealth=dpi'),
-        false,
-    );
+    modifierValidator.validate(SpecificPlatform.AdgOsWindows, ModifierParser.parse('stealth=dpi'), false);
     ```
 
     ↓↓↓
@@ -167,15 +158,12 @@ import { SpecificPlatform, ModifierParser, modifierValidator } from '@adguard/ag
 - `$mp4` is deprecated but still supported:
 
     ```ts
-    modifierValidator.validate(
-        SpecificPlatform.AdgOsWindows,
-        ModifierParser.parse('mp4'),
-    );
+    modifierValidator.validate(SpecificPlatform.AdgOsWindows, ModifierParser.parse('mp4'));
     ```
 
     ↓↓↓
 
-    <!-- markdownlint-disable line-length -->
+          <!-- markdownlint-disable line-length -->
 
     ```ts
     {

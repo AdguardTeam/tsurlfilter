@@ -44,7 +44,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeA
      *
      * @see {@link https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier}
      */
-    public declare ruleParts: NetworkRuleWithNodeAndText;
+    declare public ruleParts: NetworkRuleWithNodeAndText;
 
     /**
      * Constructor.
@@ -119,8 +119,9 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeA
         // declarative rules, that's why we ignore cosmetic and host rules.
         let networkRule: IRule | null;
         try {
-            if (ruleConvertedToAGSyntax.category !== RuleCategory.Network
-                || ruleConvertedToAGSyntax.type === NetworkRuleType.HostRule
+            if (
+                ruleConvertedToAGSyntax.category !== RuleCategory.Network ||
+                ruleConvertedToAGSyntax.type === NetworkRuleType.HostRule
             ) {
                 return null;
             }
@@ -148,7 +149,9 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeA
 
         if (!(networkRule instanceof NetworkRule)) {
             // eslint-disable-next-line max-len
-            throw new Error(`Rule from filter "${filterId}" and byte offset "${index}" is not network rule: ${networkRule}`);
+            throw new Error(
+                `Rule from filter "${filterId}" and byte offset "${index}" is not network rule: ${networkRule}`,
+            );
         }
 
         const patternHash = IndexedNetworkRuleWithHash.createRulePatternHash(networkRule);
@@ -164,7 +167,9 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeA
 
         if (!indexedNetworkRuleWithHash) {
             // eslint-disable-next-line max-len
-            throw new Error(`Cannot create indexed network rule with hash from filter "${filterId}" and byte offset "${index}"`);
+            throw new Error(
+                `Cannot create indexed network rule with hash from filter "${filterId}" and byte offset "${index}"`,
+            );
         }
 
         return indexedNetworkRuleWithHash;
@@ -183,11 +188,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeA
      *
      * @returns Item of {@link IndexedNetworkRuleWithHash}.
      */
-    public static createFromText(
-        filterId: number,
-        ruleIndex: number,
-        text: string,
-    ): IndexedNetworkRuleWithHash[] {
+    public static createFromText(filterId: number, ruleIndex: number, text: string): IndexedNetworkRuleWithHash[] {
         // Converts a raw string rule to AG syntax (apply aliases, etc.)
         let rulesConvertedToAGSyntax: AnyRule[];
         try {

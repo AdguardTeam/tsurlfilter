@@ -16,10 +16,7 @@ setConfiguration({
 
 const filterConverter = new DeclarativeFilterConverter();
 
-const outputTemplate = (
-    txtRules: string[],
-    convertedRules: DeclarativeRule[],
-): string[] => {
+const outputTemplate = (txtRules: string[], convertedRules: DeclarativeRule[]): string[] => {
     const codeBlock = '```';
     const template = `
 ${codeBlock}adblock
@@ -74,21 +71,13 @@ const findParentLink = (tableOfContents: string[], indentLeft: string): string =
  *
  * @returns Declarative rules.
  */
-const convertTxtToRules = async (
-    rules: string[],
-): Promise<DeclarativeRule[]> => {
-    const filter = new Filter(
-        0,
-        { getContent: async () => Promise.resolve(new FilterList(rules.join('\n'))) },
-        true,
-    );
+const convertTxtToRules = async (rules: string[]): Promise<DeclarativeRule[]> => {
+    const filter = new Filter(0, { getContent: async () => Promise.resolve(new FilterList(rules.join('\n'))) }, true);
 
     try {
-        const { ruleSet } = await filterConverter.convertDynamicRuleSets(
-            [filter],
-            [],
-            { resourcesPath: '/path/to/resources' },
-        );
+        const { ruleSet } = await filterConverter.convertDynamicRuleSets([filter], [], {
+            resourcesPath: '/path/to/resources',
+        });
 
         const declarativeRules = await ruleSet.getDeclarativeRules();
 
@@ -111,10 +100,7 @@ const convertTxtToRules = async (
  * @example
  * '# Description' -> ['1. [Description](#description)', '<a name="description"></a>']
  */
-const parseRowAndLinkFromText = (
-    txt: string,
-    tableOfContents: string[],
-): [string, string] | null => {
+const parseRowAndLinkFromText = (txt: string, tableOfContents: string[]): [string, string] | null => {
     if (!txt.startsWith('#')) {
         return null;
     }
@@ -134,28 +120,19 @@ const parseRowAndLinkFromText = (
     const hash = parentLink ? `${parentLink}__` : '';
 
     // Gen link
-    const linkName = txt
-        .slice(levelInTable)
-        .trim()
-        .toLocaleLowerCase()
-        .replace(/[\s,]/g, '_');
+    const linkName = txt.slice(levelInTable).trim().toLocaleLowerCase().replace(/[\s,]/g, '_');
 
     const idLinkWithHash = `${hash}${linkName}`;
     const htmlLink = `<a name="${idLinkWithHash}"></a>`;
 
-    return [
-        `${indentLeft}1. [${txt.slice(levelInTable).trim()}](#${idLinkWithHash})`,
-        htmlLink,
-    ];
+    return [`${indentLeft}1. [${txt.slice(levelInTable).trim()}](#${idLinkWithHash})`, htmlLink];
 };
 
 const parseTxt = async (filePath: string) => {
     const lines = readFileByLines(filePath);
 
     const output: string[] = [];
-    const tableOfContents: string[] = [
-        '# Table of contents',
-    ];
+    const tableOfContents: string[] = ['# Table of contents'];
     const commentTextStartPos = 2;
 
     // eslint-disable-next-line no-plusplus

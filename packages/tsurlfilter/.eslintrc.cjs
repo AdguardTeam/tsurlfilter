@@ -33,13 +33,16 @@ const ESLINT_RULES = {
     ],
     // Sort members of import statements, e.g. `import { B, A } from 'module';` -> `import { A, B } from 'module';`
     // Note: imports themself are sorted by import/order rule
-    'sort-imports': ['error', {
-        ignoreCase: true,
-        // Avoid conflict with import/order rule
-        ignoreDeclarationSort: true,
-        ignoreMemberSort: false,
-        memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
-    }],
+    'sort-imports': [
+        'error',
+        {
+            ignoreCase: true,
+            // Avoid conflict with import/order rule
+            ignoreDeclarationSort: true,
+            ignoreMemberSort: false,
+            memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+        },
+    ],
 };
 
 /**
@@ -167,19 +170,14 @@ const JSDOC_PLUGIN_RULES = {
     'jsdoc/require-description-complete-sentence': [
         'error',
         {
-            abbreviations: [
-                'e.g.',
-                'i.e.',
-            ],
+            abbreviations: ['e.g.', 'i.e.'],
         },
     ],
     'jsdoc/multiline-blocks': [
         'error',
         {
             noSingleLineBlocks: true,
-            singleLineTags: [
-                'inheritdoc',
-            ],
+            singleLineTags: ['inheritdoc'],
         },
     ],
     'jsdoc/tag-lines': [
@@ -227,18 +225,21 @@ const N_PLUGIN_RULES = {
  * @see {@link https://github.com/javierbrea/eslint-plugin-boundaries#readme}
  */
 const BOUNDARIES_PLUGIN_RULES = {
-    'boundaries/element-types': ['error', {
-        default: 'allow',
-        rules: [
-            // Do not allow too general imports in tests, e.g. import something from `src` directly.
-            {
-                from: 'test-folder',
-                disallow: ['src-index'],
-                message: 'Do not import directly from src/. Use specific submodules like src/utils instead.',
-            },
-            // TODO: Add more rules, like helpers only can import helpers, etc.
-        ],
-    }],
+    'boundaries/element-types': [
+        'error',
+        {
+            default: 'allow',
+            rules: [
+                // Do not allow too general imports in tests, e.g. import something from `src` directly.
+                {
+                    from: 'test-folder',
+                    disallow: ['src-index'],
+                    message: 'Do not import directly from src/. Use specific submodules like src/utils instead.',
+                },
+                // TODO: Add more rules, like helpers only can import helpers, etc.
+            ],
+        },
+    ],
 };
 
 /**
@@ -248,9 +249,12 @@ const BOUNDARIES_PLUGIN_RULES = {
  */
 const LOGGER_CONTEXT_PLUGIN_RULES = {
     // Check that every logger call has a context tag.
-    '@adguard/logger-context/require-logger-context': ['error', {
-        contextModuleName: 'tsurl',
-    }],
+    '@adguard/logger-context/require-logger-context': [
+        'error',
+        {
+            contextModuleName: 'tsurl',
+        },
+    ],
 };
 
 /**
@@ -280,14 +284,7 @@ module.exports = {
         tsconfigRootDir: path.join(__dirname),
         project: 'tsconfig.json',
     },
-    plugins: [
-        'import',
-        'import-newlines',
-        '@adguard/logger-context',
-        '@typescript-eslint',
-        'n',
-        'boundaries',
-    ],
+    plugins: ['import', 'import-newlines', '@adguard/logger-context', '@typescript-eslint', 'n', 'boundaries'],
     extends: [
         'airbnb-base',
         'airbnb-typescript/base',
@@ -297,10 +294,7 @@ module.exports = {
         'plugin:n/recommended',
         '@adguard/eslint-config-internal',
     ],
-    ignorePatterns: [
-        'dist',
-        'coverage',
-    ],
+    ignorePatterns: ['dist', 'coverage'],
     settings: {
         'boundaries/elements': [
             {

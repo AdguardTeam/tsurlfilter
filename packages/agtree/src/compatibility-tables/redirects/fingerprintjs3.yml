@@ -11,4 +11,3 @@ ubo_any:
   description: Mocks FingerprintJS v3.
   resource_types:
     - script
-

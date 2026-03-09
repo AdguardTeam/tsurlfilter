@@ -54,18 +54,12 @@ describe('TestMatchAllowlistRule', () => {
         const rules = [rule, exceptionRule];
         const rawFilterList = rules.join('\n');
 
-        const engine = createNetworkEngine([
-            new StringRuleList(1, rawFilterList, false, false, false),
-        ]);
+        const engine = createNetworkEngine([new StringRuleList(1, rawFilterList, false, false, false)]);
         const request = new Request('http://example.org/', '', RequestType.Script);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            getRawRuleIndex(rawFilterList, exceptionRule),
-        );
+        expect(result!.getIndex()).toBe(getRawRuleIndex(rawFilterList, exceptionRule));
     });
 
     it('finds correct $method rule', () => {
@@ -74,28 +68,18 @@ describe('TestMatchAllowlistRule', () => {
         const rules = [rule, exceptionRule];
         const rawFilterList = rules.join('\n');
 
-        const engine = createNetworkEngine([
-            new StringRuleList(1, rawFilterList, false, false, false),
-        ]);
+        const engine = createNetworkEngine([new StringRuleList(1, rawFilterList, false, false, false)]);
         const request = new Request('http://example.org/', '', RequestType.Script, HTTPMethod.POST);
         let result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            getRawRuleIndex(rawFilterList, exceptionRule),
-        );
+        expect(result!.getIndex()).toBe(getRawRuleIndex(rawFilterList, exceptionRule));
 
         request.method = HTTPMethod.GET;
         result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            getRawRuleIndex(rawFilterList, rule),
-        );
+        expect(result!.getIndex()).toBe(getRawRuleIndex(rawFilterList, rule));
     });
 
     it('finds correct $to rule', () => {
@@ -104,18 +88,12 @@ describe('TestMatchAllowlistRule', () => {
         const rules = [rule, exceptionRule];
         const rawFilterList = rules.join('\n');
 
-        const engine = createNetworkEngine([
-            new StringRuleList(1, rawFilterList, false, false, false),
-        ]);
+        const engine = createNetworkEngine([new StringRuleList(1, rawFilterList, false, false, false)]);
         const request = new Request('http://evil.com/', '', RequestType.Script);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            getRawRuleIndex(rawFilterList, rule),
-        );
+        expect(result!.getIndex()).toBe(getRawRuleIndex(rawFilterList, rule));
     });
 });
 
@@ -126,9 +104,7 @@ describe('TestMatchImportantRule', () => {
     const rules = [r1, r2, r3];
     const rawFilterList = rules.join('\n');
 
-    const engine = createNetworkEngine([
-        new StringRuleList(1, rawFilterList, false, false, false),
-    ]);
+    const engine = createNetworkEngine([new StringRuleList(1, rawFilterList, false, false, false)]);
     let request;
     let result;
 
@@ -137,11 +113,7 @@ describe('TestMatchImportantRule', () => {
         result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            getRawRuleIndex(rawFilterList, r2),
-        );
+        expect(result!.getIndex()).toBe(getRawRuleIndex(rawFilterList, r2));
     });
 
     it('should find domain allowlist rule', () => {
@@ -149,11 +121,7 @@ describe('TestMatchImportantRule', () => {
         result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            getRawRuleIndex(rawFilterList, r2),
-        );
+        expect(result!.getIndex()).toBe(getRawRuleIndex(rawFilterList, r2));
     });
 
     it('should find suitable sub-domain allowlist rule', () => {
@@ -161,22 +129,17 @@ describe('TestMatchImportantRule', () => {
         result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            getRawRuleIndex(rawFilterList, r1),
-        );
+        expect(result!.getIndex()).toBe(getRawRuleIndex(rawFilterList, r1));
     });
 });
 
 describe('TestMatchSourceRule', () => {
     it('works if it finds rule for source url', () => {
         // eslint-disable-next-line max-len
-        const rule = '|https://$image,media,script,third-party,domain=~feedback.pornhub.com|pornhub.com|redtube.com|redtube.com.br|tube8.com|tube8.es|tube8.fr|youporn.com|youporngay.com';
+        const rule =
+            '|https://$image,media,script,third-party,domain=~feedback.pornhub.com|pornhub.com|redtube.com|redtube.com.br|tube8.com|tube8.es|tube8.fr|youporn.com|youporngay.com';
         const rawFilterList = rule;
-        const engine = createNetworkEngine([
-            new StringRuleList(1, rawFilterList, false, false, false),
-        ]);
+        const engine = createNetworkEngine([new StringRuleList(1, rawFilterList, false, false, false)]);
 
         const url = 'https://ci.phncdn.com/videos/201809/25/184777011/original/(m=ecuKGgaaaa)(mh=VSmV9L_iouBcWJJ)4.jpg';
         const sourceURL = 'https://www.pornhub.com/view_video.php?viewkey=ph5be89d11de4b0';
@@ -185,30 +148,20 @@ describe('TestMatchSourceRule', () => {
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            getRawRuleIndex(rawFilterList, rule),
-        );
+        expect(result!.getIndex()).toBe(getRawRuleIndex(rawFilterList, rule));
     });
 });
 
 describe('Test $domain modifier semantics', () => {
     const rule = 'path$domain=example.org|check.com';
-    const engine = createNetworkEngine([
-        new StringRuleList(1, rule, false, false, false),
-    ]);
+    const engine = createNetworkEngine([new StringRuleList(1, rule, false, false, false)]);
 
     it('will match document url host', () => {
         const request = new Request('http://check.com/path', 'http://www.example.org/', RequestType.Document);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            0,
-        );
+        expect(result!.getIndex()).toBe(0);
     });
 
     it('checks pattern does not match', () => {
@@ -223,11 +176,7 @@ describe('Test $domain modifier semantics', () => {
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            0,
-        );
+        expect(result!.getIndex()).toBe(0);
     });
 
     it('checks request type Document is required', () => {
@@ -241,9 +190,7 @@ describe('Test $domain modifier semantics', () => {
 describe('TestMatchSimplePattern', () => {
     it('works if it finds rule matching pattern', () => {
         const rule = '_prebid_';
-        const engine = createNetworkEngine([
-            new StringRuleList(1, rule, false, false, false),
-        ]);
+        const engine = createNetworkEngine([new StringRuleList(1, rule, false, false, false)]);
 
         const url = 'https://ap.lijit.com/rtb/bid?src=prebid_prebid_1.35.0';
         const sourceURL = 'https://www.drudgereport.com/';
@@ -252,20 +199,14 @@ describe('TestMatchSimplePattern', () => {
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            0,
-        );
+        expect(result!.getIndex()).toBe(0);
     });
 });
 
 describe('Test match simple domain rules', () => {
     it('works if it finds rule with domain', () => {
         const rule = '||example.org';
-        const engine = createNetworkEngine([
-            new StringRuleList(1, rule, false, false, false),
-        ]);
+        const engine = createNetworkEngine([new StringRuleList(1, rule, false, false, false)]);
 
         const url = 'https://example.org/rtb/bid?src=prebid_prebid_1.35.0';
         const sourceURL = 'https://www.test.com/';
@@ -274,18 +215,12 @@ describe('Test match simple domain rules', () => {
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            0,
-        );
+        expect(result!.getIndex()).toBe(0);
     });
 
     it('works if it finds rule with naked domain', () => {
         const rule = 'example.org';
-        const engine = createNetworkEngine([
-            new StringRuleList(1, rule, false, false, false),
-        ]);
+        const engine = createNetworkEngine([new StringRuleList(1, rule, false, false, false)]);
 
         const url = 'https://example.org/rtb/bid?src=prebid_prebid_1.35.0';
         const sourceURL = 'https://www.test.com/';
@@ -294,30 +229,20 @@ describe('Test match simple domain rules', () => {
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            0,
-        );
+        expect(result!.getIndex()).toBe(0);
     });
 });
 
 describe('Test Match Wildcard domain', () => {
     it('works if it finds rule matching wildcard domain', () => {
         const rule = '||*/te/^$domain=~negative.*|example.*,third-party';
-        const engine = createNetworkEngine([
-            new StringRuleList(1, rule, false, false, false),
-        ]);
+        const engine = createNetworkEngine([new StringRuleList(1, rule, false, false, false)]);
 
         const request = new Request('https://test.ru/te/', 'https://example.com/', RequestType.Image);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            0,
-        );
+        expect(result!.getIndex()).toBe(0);
 
         const negativeRequest = new Request('https://test.ru/te/', 'https://negative.com/', RequestType.Image);
         const negativeResult = engine.match(negativeRequest);
@@ -327,96 +252,46 @@ describe('Test Match Wildcard domain', () => {
 
     it('works if it finds rule matching wildcard domain - shortcuts', () => {
         const rule = '||*/tests/^$domain=~negative.*|example.*,third-party';
-        const engine = createNetworkEngine([
-            new StringRuleList(1, rule, false, false, false),
-        ]);
+        const engine = createNetworkEngine([new StringRuleList(1, rule, false, false, false)]);
 
         const request = new Request('https://test.ru/tests/', 'https://example.com/', RequestType.Image);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            0,
-        );
+        expect(result!.getIndex()).toBe(0);
     });
 });
 
 describe('Test match denyallow rules', () => {
     it('works if it finds denyallow rule', () => {
         const rule = '*$script,domain=a.com|b.com,denyallow=x.com|y.com';
-        const engine = createNetworkEngine([
-            new StringRuleList(1, rule, false, false, false),
-        ]);
+        const engine = createNetworkEngine([new StringRuleList(1, rule, false, false, false)]);
 
-        const result = engine.match(new Request(
-            'https://z.com/',
-            'https://www.a.com/',
-            RequestType.Script,
-        ));
+        const result = engine.match(new Request('https://z.com/', 'https://www.a.com/', RequestType.Script));
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            0,
-        );
+        expect(result!.getIndex()).toBe(0);
 
-        expect(engine.match(new Request(
-            'https://z.com/',
-            'https://www.c.com/',
-            RequestType.Script,
-        ))).toBeNull();
+        expect(engine.match(new Request('https://z.com/', 'https://www.c.com/', RequestType.Script))).toBeNull();
 
-        expect(engine.match(new Request(
-            'https://x.com/',
-            'https://www.a.com/',
-            RequestType.Script,
-        ))).toBeNull();
+        expect(engine.match(new Request('https://x.com/', 'https://www.a.com/', RequestType.Script))).toBeNull();
 
-        expect(engine.match(new Request(
-            'https://www.x.com/',
-            'https://www.a.com/',
-            RequestType.Script,
-        ))).toBeNull();
+        expect(engine.match(new Request('https://www.x.com/', 'https://www.a.com/', RequestType.Script))).toBeNull();
 
-        expect(engine.match(new Request(
-            'https://sub.x.com/',
-            'https://www.a.com/',
-            RequestType.Script,
-        ))).toBeNull();
+        expect(engine.match(new Request('https://sub.x.com/', 'https://www.a.com/', RequestType.Script))).toBeNull();
     });
 
     it('works if it finds corresponding regex rule', () => {
         const rule = '/^(?!.*(x.com|y.com)).*$/$script,domain=a.com|b.com';
-        const engine = createNetworkEngine([
-            new StringRuleList(1, rule, false, false, false),
-        ]);
+        const engine = createNetworkEngine([new StringRuleList(1, rule, false, false, false)]);
 
-        const result = engine.match(new Request(
-            'https://z.com/',
-            'https://www.a.com/',
-            RequestType.Script,
-        ));
+        const result = engine.match(new Request('https://z.com/', 'https://www.a.com/', RequestType.Script));
 
         expect(result).toBeTruthy();
-        expect(
-            result!.getIndex(),
-        ).toBe(
-            getRawRuleIndex(rule, rule),
-        );
+        expect(result!.getIndex()).toBe(getRawRuleIndex(rule, rule));
 
-        expect(engine.match(new Request(
-            'https://z.com/',
-            'https://www.c.com/',
-            RequestType.Script,
-        ))).toBeNull();
+        expect(engine.match(new Request('https://z.com/', 'https://www.c.com/', RequestType.Script))).toBeNull();
 
-        expect(engine.match(new Request(
-            'https://x.com/',
-            'https://www.a.com/',
-            RequestType.Script,
-        ))).toBeNull();
+        expect(engine.match(new Request('https://x.com/', 'https://www.a.com/', RequestType.Script))).toBeNull();
     });
 });

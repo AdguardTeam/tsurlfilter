@@ -25,6 +25,7 @@ If no description is provided, stop and report:
 ### Phase 1: Problem Analysis
 
 1. **Extract the problem statement**
+
     - Identify what needs to be fixed or changed
     - Determine the type of task (bug fix, refactoring, configuration, etc.)
     - Note any specific files, functions, or components mentioned
@@ -37,11 +38,13 @@ If no description is provided, stop and report:
 ### Phase 2: Research
 
 1. **Search the codebase**
+
     - Find the code related to the problem
     - Identify where the issue manifests or where changes are needed
     - Look for similar patterns or related functionality
 
 2. **Analyze the findings**
+
     - For bugs: identify the root cause
     - For refactoring: find all usages and dependencies
     - For configuration: understand existing patterns
@@ -54,6 +57,7 @@ If no description is provided, stop and report:
 ### Phase 3: Solution Design
 
 1. **Propose the solution**
+
     - Describe the fix or change approach
     - Keep it minimal and focused
     - Note any alternative approaches considered
@@ -66,6 +70,7 @@ If no description is provided, stop and report:
 ### Phase 4: Complexity Check
 
 1. **Evaluate task complexity**
+
     - Check for indicators that suggest full SDD is needed:
         - Multiple unrelated components affected
         - New entities or data models required
@@ -80,6 +85,7 @@ If no description is provided, stop and report:
 ### Phase 5: Write Quick Spec
 
 1. **Create the quick spec file**
+
     - Write to `specs/.current/quick.md`
     - Create the `specs/.current/` directory if it doesn't exist
     - Use the template structure below

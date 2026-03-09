@@ -36,12 +36,14 @@ Also verify these documents exist (optional but recommended):
 ### Phase 1: Information Gathering
 
 1. **Read the current DEPLOYMENT.md** (if it exists)
+
     - Review existing content
     - Note what sections exist and their quality
     - Identify placeholder content that needs to be filled in
     - Identify outdated or incorrect information
 
 2. **Analyze environment variable usage**
+
     - Search for `process.env`, `os.environ`, `env::var`, `os.Getenv`, or
       similar patterns
     - Check `.env.example`, `.env.sample`, or similar files
@@ -49,6 +51,7 @@ Also verify these documents exist (optional but recommended):
     - Document each variable: name, purpose, required/optional, example value
 
 3. **Detect infrastructure dependencies**
+
     - **Databases**: Look for connection strings, ORM configurations, database
       clients (PostgreSQL, MySQL, MongoDB, SQLite, etc.)
     - **Caches**: Look for Redis, Memcached, or other cache client usage
@@ -57,28 +60,33 @@ Also verify these documents exist (optional but recommended):
     - Document connection configuration for each
 
 4. **Identify external integrations**
+
     - Search for API client initializations (Stripe, SendGrid, Twilio, etc.)
     - Look for OAuth/SSO provider configurations
     - Check for webhook endpoints that receive external calls
     - Document each integration and its required configuration
 
 5. **Check error reporting configuration**
+
     - Look for Sentry SDK initialization (`Sentry.init`, `sentry_sdk.init`)
     - Check for other error reporting tools (Bugsnag, Rollbar, etc.)
     - Document DSN configuration and any custom options
 
 6. **Analyze logging configuration**
+
     - Look for logging framework setup (winston, pino, logrus, Python logging)
     - Check where logs are written (stdout, files, external services)
     - Identify log format (JSON, plain text, structured)
     - Document log level configuration
 
 7. **Identify health check endpoints** (optional)
+
     - Look for `/health`, `/ready`, `/live`, or similar endpoints
     - Document what each endpoint checks
 
 8. **Identify information gaps**
-    After gathering information, determine if you can document:
+   After gathering information, determine if you can document:
+
     - All required environment variables
     - All infrastructure dependencies and their connection config
     - All external integrations and their setup
@@ -91,7 +99,8 @@ Also verify these documents exist (optional but recommended):
 ### Phase 2: Content Planning
 
 1. **Determine applicable sections**
-    Based on gathered information, decide which sections to include:
+   Based on gathered information, decide which sections to include:
+
     - Environment Variables (always include if any exist)
     - Infrastructure Dependencies (include if databases, caches, queues exist)
     - Integrations (include if external APIs or auth providers exist)
@@ -100,22 +109,24 @@ Also verify these documents exist (optional but recommended):
     - Health Checks (include if health endpoints exist)
 
 2. **Plan content for each section**
-    For each applicable section, note:
+   For each applicable section, note:
+
     - Specific items to document
     - Configuration details to include
     - Content to update or remove (if updating existing doc)
 
 3. **Handle non-deployable projects**
-    If no deployment configuration is detected:
+   If no deployment configuration is detected:
     - Ask the user if the project has deployment requirements not visible in code
     - If confirmed non-deployable, suggest skipping this workflow
 
 ### Phase 3: Writing
 
 1. **Create or update DEPLOYMENT.md**
-    Apply these rules strictly:
+   Apply these rules strictly:
 
     **Include:**
+
     - All environment variables with name, purpose, required/optional, example
     - Infrastructure dependencies with type, version, connection configuration
     - External integrations with purpose and required credentials
@@ -124,6 +135,7 @@ Also verify these documents exist (optional but recommended):
     - Health check endpoints and their purpose
 
     **Exclude (belongs in other documents):**
+
     - Development setup (belongs in DEVELOPMENT.md)
     - Build instructions (belongs in DEVELOPMENT.md)
     - User-facing documentation (belongs in README.md)
@@ -131,6 +143,7 @@ Also verify these documents exist (optional but recommended):
     - CI/CD pipeline configuration (separate concern)
 
 2. **Replace placeholder content**
+
     - Fill in all `<!-- comment -->` placeholders with actual content
     - Replace generic examples with project-specific values
     - Remove sections that don't apply to this project
@@ -143,7 +156,8 @@ Also verify these documents exist (optional but recommended):
 ### Phase 4: Validation
 
 1. **Review against requirements**
-    Verify the DEPLOYMENT.md:
+   Verify the DEPLOYMENT.md:
+
     - [ ] Lists all environment variables with purpose and examples
     - [ ] Documents all infrastructure dependencies
     - [ ] Explains external integration configuration
@@ -154,6 +168,7 @@ Also verify these documents exist (optional but recommended):
     - [ ] Does not expose actual secrets
 
 2. **Cross-reference with codebase**
+
     - Verify documented env vars match what code actually uses
     - Confirm infrastructure dependencies are accurate
     - Check that integration configuration is complete

@@ -84,10 +84,12 @@ export class RegExpUtils {
         const trimmedPattern = pattern.trim();
 
         // Avoid false positives
-        return trimmedPattern.length > REGEX_MARKER.length * 2
-            && trimmedPattern.startsWith(REGEX_MARKER)
-            && trimmedPattern.endsWith(REGEX_MARKER)
-            && trimmedPattern[REGEX_MARKER.length - 2] !== ESCAPE_CHARACTER;
+        return (
+            trimmedPattern.length > REGEX_MARKER.length * 2 &&
+            trimmedPattern.startsWith(REGEX_MARKER) &&
+            trimmedPattern.endsWith(REGEX_MARKER) &&
+            trimmedPattern[REGEX_MARKER.length - 2] !== ESCAPE_CHARACTER
+        );
     }
 
     /**
@@ -200,10 +202,7 @@ export class RegExpUtils {
         const trimmed = pattern.trim();
 
         // Return regex for any character sequence if the pattern is just |, ||, * or empty
-        if (trimmed === ADBLOCK_URL_START
-            || trimmed === PIPE
-            || trimmed === ADBLOCK_WILDCARD
-            || trimmed === EMPTY) {
+        if (trimmed === ADBLOCK_URL_START || trimmed === PIPE || trimmed === ADBLOCK_WILDCARD || trimmed === EMPTY) {
             return REGEX_ANY_CHARACTERS;
         }
 

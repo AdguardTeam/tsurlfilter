@@ -117,8 +117,8 @@ export const tokenize: TokenizerFunction = (
                 // If the next input code point is an ident code point or the next two input code points are a
                 // valid escape, then:
                 if (
-                    isIdentCodePoint(context.getRelativeCode(1))
-                    || checkForValidEscape(context.getRelativeCode(1), context.getRelativeCode(2))
+                    isIdentCodePoint(context.getRelativeCode(1)) ||
+                    checkForValidEscape(context.getRelativeCode(1), context.getRelativeCode(2))
                 ) {
                     const start = context.offset;
 
@@ -153,11 +153,7 @@ export const tokenize: TokenizerFunction = (
             case CodePoint.PlusSign:
                 // If the input stream starts with a number, reconsume the current input code point, consume a
                 // numeric token, and return it.
-                if (checkForNumberStart(
-                    context.code,
-                    context.getRelativeCode(1),
-                    context.getRelativeCode(2),
-                )) {
+                if (checkForNumberStart(context.code, context.getRelativeCode(1), context.getRelativeCode(2))) {
                     consumeNumericToken(context);
                     break;
                 }
@@ -176,8 +172,10 @@ export const tokenize: TokenizerFunction = (
 
                 // Otherwise, if the next 2 input code points are U+002D HYPHEN-MINUS U+003E GREATER-THAN SIGN
                 // (>), consume them and return a <CDC-token>.
-                if (context.getRelativeCode(1) === CodePoint.HyphenMinus
-                        && context.getRelativeCode(2) === CodePoint.GreaterThanSign) {
+                if (
+                    context.getRelativeCode(1) === CodePoint.HyphenMinus &&
+                    context.getRelativeCode(2) === CodePoint.GreaterThanSign
+                ) {
                     context.consumeCodePoint(3);
                     context.onToken(TokenType.Cdc, context.offset - 3, context.offset, undefined, context.stop);
                     break;
@@ -210,9 +208,9 @@ export const tokenize: TokenizerFunction = (
                 // If the next 3 input code points are U+0021 EXCLAMATION MARK U+002D HYPHEN-MINUS U+002D
                 // HYPHEN-MINUS (!--), consume them and return a <CDO-token>.
                 if (
-                    context.getRelativeCode(1) === CodePoint.ExclamationMark
-                        && context.getRelativeCode(2) === CodePoint.HyphenMinus
-                        && context.getRelativeCode(3) === CodePoint.HyphenMinus
+                    context.getRelativeCode(1) === CodePoint.ExclamationMark &&
+                    context.getRelativeCode(2) === CodePoint.HyphenMinus &&
+                    context.getRelativeCode(3) === CodePoint.HyphenMinus
                 ) {
                     context.consumeCodePoint(4);
                     context.onToken(TokenType.Cdo, context.offset - 4, context.offset, undefined, context.stop);
@@ -226,11 +224,13 @@ export const tokenize: TokenizerFunction = (
             case CodePoint.CommercialAt:
                 // If the next 3 input code points would start an ident sequence, consume an ident sequence,
                 // create an <at-keyword-token> with its value set to the returned value, and return it.
-                if (checkForIdentStart(
-                    context.getRelativeCode(1),
-                    context.getRelativeCode(2),
-                    context.getRelativeCode(3),
-                )) {
+                if (
+                    checkForIdentStart(
+                        context.getRelativeCode(1),
+                        context.getRelativeCode(2),
+                        context.getRelativeCode(3),
+                    )
+                ) {
                     const start = context.offset;
 
                     // Consume commercial at character
@@ -276,11 +276,7 @@ export const tokenize: TokenizerFunction = (
                     context.consumeUntilCommentEnd();
 
                     if (context.isEof()) {
-                        context.onError(
-                            ErrorMessage.UnterminatedComment,
-                            start,
-                            context.length - 2,
-                        );
+                        context.onError(ErrorMessage.UnterminatedComment, start, context.length - 2);
                     }
 
                     context.onToken(TokenType.Comment, start, context.offset, undefined, context.stop);

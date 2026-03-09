@@ -32,10 +32,7 @@ const RESOURCE_TYPE_MODIFIER_MAP: Readonly<Record<ResourceType, string>> = Objec
  * @returns A string containing the adblock modifier name for the given resource type
  * or `null` if the modifier could not be found.
  */
-export const getResourceTypeModifier = (
-    resourceType: ResourceType,
-    platform: AnyPlatform,
-): string | null => {
+export const getResourceTypeModifier = (resourceType: ResourceType, platform: AnyPlatform): string | null => {
     const modifierName = RESOURCE_TYPE_MODIFIER_MAP[resourceType];
 
     if (!modifierName) {

@@ -140,9 +140,9 @@ describe('TestGetCosmeticOption', () => {
         const result = new MatchingResult(rules, sourceRule);
 
         expect(result.getCosmeticOption()).toEqual(
-            CosmeticOption.CosmeticOptionSpecificCSS
-            | CosmeticOption.CosmeticOptionJS
-            | CosmeticOption.CosmeticOptionHtml,
+            CosmeticOption.CosmeticOptionSpecificCSS |
+                CosmeticOption.CosmeticOptionJS |
+                CosmeticOption.CosmeticOptionHtml,
         );
     });
 
@@ -152,9 +152,9 @@ describe('TestGetCosmeticOption', () => {
         const result = new MatchingResult(rules, sourceRule);
 
         expect(result.getCosmeticOption()).toEqual(
-            CosmeticOption.CosmeticOptionGenericCSS
-            | CosmeticOption.CosmeticOptionJS
-            | CosmeticOption.CosmeticOptionHtml,
+            CosmeticOption.CosmeticOptionGenericCSS |
+                CosmeticOption.CosmeticOptionJS |
+                CosmeticOption.CosmeticOptionHtml,
         );
     });
 
@@ -166,9 +166,9 @@ describe('TestGetCosmeticOption', () => {
         expect(result).toBeTruthy();
         expect(result.getCosmeticOption()).toBeTruthy();
         expect(result.getCosmeticOption()).toEqual(
-            CosmeticOption.CosmeticOptionGenericCSS
-            | CosmeticOption.CosmeticOptionSpecificCSS
-            | CosmeticOption.CosmeticOptionHtml,
+            CosmeticOption.CosmeticOptionGenericCSS |
+                CosmeticOption.CosmeticOptionSpecificCSS |
+                CosmeticOption.CosmeticOptionHtml,
         );
     });
 
@@ -203,9 +203,9 @@ describe('TestGetCosmeticOption', () => {
         expect(result).toBeTruthy();
         expect(result.getCosmeticOption()).toBeTruthy();
         expect(result.getCosmeticOption()).toEqual(
-            CosmeticOption.CosmeticOptionGenericCSS
-            | CosmeticOption.CosmeticOptionSpecificCSS
-            | CosmeticOption.CosmeticOptionJS,
+            CosmeticOption.CosmeticOptionGenericCSS |
+                CosmeticOption.CosmeticOptionSpecificCSS |
+                CosmeticOption.CosmeticOptionJS,
         );
     });
 
@@ -244,10 +244,7 @@ describe('TestGetCosmeticOption', () => {
         const allBlockingRule = createNetworkRule('||example.org^$all', 0);
         const specifichideAllowlistRule = createNetworkRule('@@||example.org^$specifichide', 0);
 
-        rules = [
-            allBlockingRule,
-            specifichideAllowlistRule,
-        ];
+        rules = [allBlockingRule, specifichideAllowlistRule];
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -267,10 +264,7 @@ describe('TestGetCosmeticOption', () => {
         const documentBlockingRule = createNetworkRule('||example.org^$document', 0);
         const generichideAllowlistRule = createNetworkRule('@@||example.org^$generichide', 0);
 
-        rules = [
-            documentBlockingRule,
-            generichideAllowlistRule,
-        ];
+        rules = [documentBlockingRule, generichideAllowlistRule];
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -303,10 +297,7 @@ describe('TestGetCosmeticOption', () => {
 
 describe('MatchingResult constructor handling badfilter modifier', () => {
     it('works if badfilter is ok', () => {
-        const rules = [
-            createNetworkRule('||example.org^', 0),
-            createNetworkRule('||example.org^$badfilter', 0),
-        ];
+        const rules = [createNetworkRule('||example.org^', 0), createNetworkRule('||example.org^$badfilter', 0)];
 
         const result = new MatchingResult(rules, null);
 
@@ -373,10 +364,10 @@ describe('MatchingResult constructor handling badfilter modifier', () => {
 });
 
 describe('MatchingResult constructor handling csp rules', () => {
-    const cspRule = '||example.org^$third-party,csp=connect-src \'none\',domain=~example.com|test.com';
-    const directiveAllowlistRule = '@@||example.org^$csp=connect-src \'none\'';
+    const cspRule = "||example.org^$third-party,csp=connect-src 'none',domain=~example.com|test.com";
+    const directiveAllowlistRule = "@@||example.org^$csp=connect-src 'none'";
     const globalAllowlistRule = '@@||example.org^$csp';
-    const directiveMissAllowlistRule = '@@||example.org^$csp=frame-src \'none\'';
+    const directiveMissAllowlistRule = "@@||example.org^$csp=frame-src 'none'";
 
     it('works if csp rule is found', () => {
         const rules = [createNetworkRule(cspRule, 0)];
@@ -389,10 +380,7 @@ describe('MatchingResult constructor handling csp rules', () => {
     });
 
     it('works if csp directive allowlist rule is found', () => {
-        const rules = [
-            createNetworkRule(cspRule, 0),
-            createNetworkRule(directiveAllowlistRule, 0),
-        ];
+        const rules = [createNetworkRule(cspRule, 0), createNetworkRule(directiveAllowlistRule, 0)];
         const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
@@ -416,10 +404,7 @@ describe('MatchingResult constructor handling csp rules', () => {
     });
 
     it('works if csp wrong directive allowlist rule is not found', () => {
-        const rules = [
-            createNetworkRule(cspRule, 0),
-            createNetworkRule(directiveMissAllowlistRule, 0),
-        ];
+        const rules = [createNetworkRule(cspRule, 0), createNetworkRule(directiveMissAllowlistRule, 0)];
 
         const result = new MatchingResult(rules, null);
         expect(result).toBeTruthy();
@@ -559,10 +544,7 @@ describe('MatchingResult constructor handling replace rules', () => {
     });
 
     it('work if @@||example.org^$replace will disable all $replace rules matching ||example.org^.', () => {
-        const ruleTexts = [
-            '||example.org^$replace=/test1/test2/g',
-            '@@||example.org^$replace',
-        ];
+        const ruleTexts = ['||example.org^$replace=/test1/test2/g', '@@||example.org^$replace'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
@@ -580,10 +562,7 @@ describe('MatchingResult constructor handling replace rules', () => {
     });
 
     it('work if @@||example.org^$content will be found', () => {
-        const ruleTexts = [
-            '||example.org^$replace=/test1/test2/g',
-            '@@||example.org^$content',
-        ];
+        const ruleTexts = ['||example.org^$replace=/test1/test2/g', '@@||example.org^$content'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
@@ -602,10 +581,7 @@ describe('MatchingResult constructor handling replace rules', () => {
     });
 
     it('work if @@||example.org^$document will be found', () => {
-        const ruleTexts = [
-            '||example.org^$replace=/test1/test2/g',
-            '@@||example.org^$document',
-        ];
+        const ruleTexts = ['||example.org^$replace=/test1/test2/g', '@@||example.org^$document'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
@@ -624,10 +600,7 @@ describe('MatchingResult constructor handling replace rules', () => {
     });
 
     it('checks only $document and $content rules disable $replace', () => {
-        const ruleTexts = [
-            '||example.org^$replace=/test1/test2/g',
-            '@@||example.org^$genericblock',
-        ];
+        const ruleTexts = ['||example.org^$replace=/test1/test2/g', '@@||example.org^$genericblock'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
@@ -648,10 +621,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
     const cookieRuleAllowlistRegexpText = '@@$cookie=/__cfd[a-z]/';
 
     it('works if cookie rules are found', () => {
-        const rules = [
-            createNetworkRule(cookieRuleTextOne, 0),
-            createNetworkRule(cookieRuleTextTwo, 0),
-        ];
+        const rules = [createNetworkRule(cookieRuleTextOne, 0), createNetworkRule(cookieRuleTextTwo, 0)];
         const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
@@ -726,10 +696,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
 
     it('returns empty list if document allowlist rule added', () => {
         const documentAllowlistRule = '@@||example.com^$document';
-        const rules = [
-            createNetworkRule(cookieRuleTextOne, 0),
-            createNetworkRule(cookieRuleTextTwo, 0),
-        ];
+        const rules = [createNetworkRule(cookieRuleTextOne, 0), createNetworkRule(cookieRuleTextTwo, 0)];
         const sourceRule = createNetworkRule(documentAllowlistRule, 0);
         const result = new MatchingResult(rules, sourceRule);
         const cookieRules = result.getCookieRules();
@@ -752,10 +719,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
     it('checks $cookie rule is negated by regex allowlist', () => {
         const importBlockingRuleText = '||example.com^$cookie=test';
         const allowlistRuleText = '@@||example.com^$cookie=/test|other/';
-        const rules = [
-            createNetworkRule(allowlistRuleText, 0),
-            createNetworkRule(importBlockingRuleText, 0),
-        ];
+        const rules = [createNetworkRule(allowlistRuleText, 0), createNetworkRule(importBlockingRuleText, 0)];
 
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
@@ -778,10 +742,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
 
     it('respects $cookie-$important rules - empty option', () => {
         const importBlockingRuleText = '||example.com^$cookie,important';
-        const rules = [
-            createNetworkRule('@@||example.com^$cookie', 0),
-            createNetworkRule(importBlockingRuleText, 0),
-        ];
+        const rules = [createNetworkRule('@@||example.com^$cookie', 0), createNetworkRule(importBlockingRuleText, 0)];
 
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
@@ -791,10 +752,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
 
     it('respects $cookie-$important rules - allowlist empty option', () => {
         const importBlockingRuleText = '||example.com^$cookie=test,important';
-        const rules = [
-            createNetworkRule('@@||example.com^$cookie', 0),
-            createNetworkRule(importBlockingRuleText, 0),
-        ];
+        const rules = [createNetworkRule('@@||example.com^$cookie', 0), createNetworkRule(importBlockingRuleText, 0)];
 
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
@@ -821,18 +779,12 @@ describe('MatchingResult constructor handling stealth modifier', () => {
     });
 
     it('manages stealth rules with single and multiple options', () => {
-        const singleOptionRule = createNetworkRule(
-            `@@||example.org^$stealth=${StealthOptionName.XClientData}`,
-            0,
-        );
+        const singleOptionRule = createNetworkRule(`@@||example.org^$stealth=${StealthOptionName.XClientData}`, 0);
         const multipleOptionsRule = createNetworkRule(
             `@@||example.org^$stealth=${StealthOptionName.HideReferrer}|${StealthOptionName.DoNotTrack}`,
             0,
         );
-        const rules = [
-            singleOptionRule,
-            multipleOptionsRule,
-        ];
+        const rules = [singleOptionRule, multipleOptionsRule];
 
         const result = new MatchingResult(rules, null);
         expect(result).toBeTruthy();
@@ -848,10 +800,7 @@ describe('MatchingResult constructor handling stealth modifier', () => {
     it('works if stealth rule is found with an other rule', () => {
         const ruleText = '||example.org^';
         const stealthRuleText = '@@||example.org^$stealth';
-        const rules = [
-            createNetworkRule(ruleText, 0),
-            createNetworkRule(stealthRuleText, 0),
-        ];
+        const rules = [createNetworkRule(ruleText, 0), createNetworkRule(stealthRuleText, 0)];
 
         const result = new MatchingResult(rules, null);
 
@@ -910,10 +859,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
     });
 
     it('checks that unrelated exception does not exclude other blocking rules', () => {
-        const ruleTexts = [
-            '||ya.ru$redirect=1x1-transparent.gif',
-            '@@||ya.ru$redirect=2x2-transparent.png',
-        ];
+        const ruleTexts = ['||ya.ru$redirect=1x1-transparent.gif', '@@||ya.ru$redirect=2x2-transparent.png'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
@@ -1003,10 +949,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
     });
 
     it('checks that common allowlist rule negates redirect rule without $important', () => {
-        const ruleTexts = [
-            '||*/redirect-exception-test.js$redirect=noopjs',
-            '@@||*/redirect-exception-test.js',
-        ];
+        const ruleTexts = ['||*/redirect-exception-test.js$redirect=noopjs', '@@||*/redirect-exception-test.js'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
@@ -1074,10 +1017,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
     });
 
     it('checks if redirect and redirect-rule modifiers are ok together', () => {
-        const ruleTexts = [
-            '||example.org^$redirect-rule=noopjs',
-            '||example.org^$redirect=noopjs',
-        ];
+        const ruleTexts = ['||example.org^$redirect-rule=noopjs', '||example.org^$redirect=noopjs'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
@@ -1089,11 +1029,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
     });
 
     it('checks if redirect and redirect-rule modifiers are ok together with blocking rule', () => {
-        const ruleTexts = [
-            '||example.org',
-            '||example.org^$redirect-rule=noopjs',
-            '||example.org^$redirect=noopjs',
-        ];
+        const ruleTexts = ['||example.org', '||example.org^$redirect-rule=noopjs', '||example.org^$redirect=noopjs'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
@@ -1130,10 +1066,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
             '||googleads.g.doubleclick.net/pagead/id^$xmlhttprequest,redirect=nooptext',
             0,
         );
-        const rules = [
-            blockingRule,
-            redirectRuleRule,
-        ];
+        const rules = [blockingRule, redirectRuleRule];
 
         const result = new MatchingResult(rules, null);
         const resultRule = result.getBasicResult();
@@ -1144,9 +1077,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
 
 describe('MatchingResult constructor handling removeparam rules', () => {
     it('works if removeparam rules are found', () => {
-        const rules = [
-            createNetworkRule('||example.org^$removeparam=/p1|p2/', 0),
-        ];
+        const rules = [createNetworkRule('||example.org^$removeparam=/p1|p2/', 0)];
 
         const result = new MatchingResult(rules, null);
         const found = result.getRemoveParamRules();
@@ -1170,10 +1101,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
     });
 
     it('works if important removeparam rule is more important than allowlist rule', () => {
-        const ruleTexts = [
-            '||example.org$important,removeparam=p1',
-            '@@||example.org$removeparam=p1',
-        ];
+        const ruleTexts = ['||example.org$important,removeparam=p1', '@@||example.org$removeparam=p1'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
@@ -1185,10 +1113,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
 
     it('work if @@||example.org^$removeparam will disable all $removeparam rules matching ||example.org^.', () => {
         const allowlistRule = '@@||example.org^$removeparam';
-        const ruleTexts = [
-            '||example.org^$removeparam=/p1|p2/',
-            allowlistRule,
-        ];
+        const ruleTexts = ['||example.org^$removeparam=/p1|p2/', allowlistRule];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
         const result = new MatchingResult(rules, null);
@@ -1199,9 +1124,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
     });
 
     it('works if inverted removeparam rule is found', () => {
-        const rules = [
-            createNetworkRule('||example.org^$removeparam=~p0', 0),
-        ];
+        const rules = [createNetworkRule('||example.org^$removeparam=~p0', 0)];
 
         const result = new MatchingResult(rules, null);
         const found = result.getRemoveParamRules();
@@ -1225,9 +1148,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
 
 describe('MatchingResult constructor handling removeheader rules', () => {
     it('works if removeheader rules are found', () => {
-        const rules = [
-            createNetworkRule('||example.org^$removeheader=header-name', 0),
-        ];
+        const rules = [createNetworkRule('||example.org^$removeheader=header-name', 0)];
 
         const result = new MatchingResult(rules, null);
         const found = result.getRemoveHeaderRules();
@@ -1250,10 +1171,7 @@ describe('MatchingResult constructor handling removeheader rules', () => {
 
     it('work if @@||example.org^$removeheader will disable all $removeheader rules matching ||example.org^.', () => {
         const allowlistRule = '@@||example.org^$removeheader';
-        const ruleTexts = [
-            '||example.org^$removeheader=h2',
-            allowlistRule,
-        ];
+        const ruleTexts = ['||example.org^$removeheader=h2', allowlistRule];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
         const result = new MatchingResult(rules, null);
@@ -1264,10 +1182,7 @@ describe('MatchingResult constructor handling removeheader rules', () => {
     });
 
     it('work if document allowlist rule will disable all $removeheader rules ', () => {
-        const ruleTexts = [
-            '||example.org^$removeheader=h2',
-            '@@||example.org^$document',
-        ];
+        const ruleTexts = ['||example.org^$removeheader=h2', '@@||example.org^$document'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
         const result = new MatchingResult(rules, null);
@@ -1277,10 +1192,7 @@ describe('MatchingResult constructor handling removeheader rules', () => {
     });
 
     it('work if urlblock allowlist rule will disable all $removeheader rules ', () => {
-        const ruleTexts = [
-            '||example.org^$removeheader=h2',
-            '@@||example.org^$urlblock',
-        ];
+        const ruleTexts = ['||example.org^$removeheader=h2', '@@||example.org^$urlblock'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
         const result = new MatchingResult(rules, null);
@@ -1290,10 +1202,7 @@ describe('MatchingResult constructor handling removeheader rules', () => {
     });
 
     it('work if allowlist rule will not disable $removeheader rules ', () => {
-        const ruleTexts = [
-            '||example.org^$removeheader=h2',
-            '@@||example.org^',
-        ];
+        const ruleTexts = ['||example.org^$removeheader=h2', '@@||example.org^'];
 
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
         const result = new MatchingResult(rules, null);
@@ -1315,9 +1224,9 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
 
         expect(result.cosmeticExceptionRule).toMatchNetworkRule(createNetworkRule(cosmeticExceptionRuleText, 0));
         expect(result.getCosmeticOption()).toEqual(
-            CosmeticOption.CosmeticOptionSpecificCSS
-            | CosmeticOption.CosmeticOptionJS
-            | CosmeticOption.CosmeticOptionHtml,
+            CosmeticOption.CosmeticOptionSpecificCSS |
+                CosmeticOption.CosmeticOptionJS |
+                CosmeticOption.CosmeticOptionHtml,
         );
 
         // $specific hide
@@ -1329,9 +1238,9 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
         expect(result.basicRule).toMatchNetworkRule(createNetworkRule(basicRuleText, 0));
         expect(result.cosmeticExceptionRule).toMatchNetworkRule(createNetworkRule(cosmeticExceptionRuleText, 0));
         expect(result.getCosmeticOption()).toEqual(
-            CosmeticOption.CosmeticOptionGenericCSS
-            | CosmeticOption.CosmeticOptionJS
-            | CosmeticOption.CosmeticOptionHtml,
+            CosmeticOption.CosmeticOptionGenericCSS |
+                CosmeticOption.CosmeticOptionJS |
+                CosmeticOption.CosmeticOptionHtml,
         );
 
         // $important should not matter, as cosmetic option modifier must be used separately
@@ -1379,10 +1288,7 @@ describe('getResponseHeadersResult', () => {
     it('finds $header rule with matching header value', () => {
         const matchingRule = '||example.org/r/w64$header=Content-Length:138';
         const nonMatchingRule = '||example.org/r/w64$header=Etag:yes';
-        const rules = [
-            createNetworkRule(matchingRule, 0),
-            createNetworkRule(nonMatchingRule, 0),
-        ];
+        const rules = [createNetworkRule(matchingRule, 0), createNetworkRule(nonMatchingRule, 0)];
         const responseHeaders = [
             {
                 name: 'Content-Length',
@@ -1398,9 +1304,7 @@ describe('getResponseHeadersResult', () => {
 
     it('returns null if no rules are found', () => {
         const nonMatchingRule = '||example.org/r/w64$header=Etag:yes';
-        const rules = [
-            createNetworkRule(nonMatchingRule, 0),
-        ];
+        const rules = [createNetworkRule(nonMatchingRule, 0)];
         const responseHeaders = [
             {
                 name: 'Content-Length',
@@ -1416,10 +1320,7 @@ describe('getResponseHeadersResult', () => {
     it('returns allowlist rule against blocking rule', () => {
         const blockingRule = '||example.org/r/w64$header=Content-Length:138';
         const allowlistRule = '@@||example.org$header=Content-Length:138';
-        const rules = [
-            createNetworkRule(blockingRule, 0),
-            createNetworkRule(allowlistRule, 0),
-        ];
+        const rules = [createNetworkRule(blockingRule, 0), createNetworkRule(allowlistRule, 0)];
         const responseHeaders = [
             {
                 name: 'Content-Length',
@@ -1435,10 +1336,7 @@ describe('getResponseHeadersResult', () => {
     it('returns blocking rule with higher priority against allowlist rule', () => {
         const blockingRule = '||example.org/r/w64$header=Content-Length:138,important';
         const allowlistRule = '@@||example.org$header=Content-Length:138';
-        const rules = [
-            createNetworkRule(blockingRule, 0),
-            createNetworkRule(allowlistRule, 0),
-        ];
+        const rules = [createNetworkRule(blockingRule, 0), createNetworkRule(allowlistRule, 0)];
         const responseHeaders = [
             {
                 name: 'Content-Length',
@@ -1454,10 +1352,7 @@ describe('getResponseHeadersResult', () => {
     it('returns null when basic or document allowlist rule is present', () => {
         const headerRule = '||example.org/r/w64$header=Content-Length:138,important';
         let allowlistRule = '@@||example.org';
-        const rules = [
-            createNetworkRule(headerRule, 0),
-            createNetworkRule(allowlistRule, 0),
-        ];
+        const rules = [createNetworkRule(headerRule, 0), createNetworkRule(allowlistRule, 0)];
         const responseHeaders = [
             {
                 name: 'Content-Length',

@@ -5,12 +5,7 @@
 import zod from 'zod';
 
 import { zodToCamelCase } from '../utils/zod-camelcase';
-import {
-    baseCompatibilityDataSchema,
-    baseRefineLogic,
-    booleanSchema,
-    nonEmptyStringSchema,
-} from './base';
+import { baseCompatibilityDataSchema, baseRefineLogic, booleanSchema, nonEmptyStringSchema } from './base';
 
 /**
  * Zod schema for scriptlet parameter data.
@@ -58,38 +53,40 @@ const scriptletParametersSchema = zod.array(scriptletParameterSchema);
  * Zod schema for scriptlet data.
  */
 export const scriptletDataSchema = zodToCamelCase(
-    baseCompatibilityDataSchema.extend({
-        /**
-         * List of parameters that the scriptlet accepts.
-         * **Every** parameter should be listed here, because we check that the scriptlet is used correctly
-         * (e.g. that the number of parameters is correct).
-         */
-        parameters: scriptletParametersSchema.optional(),
-    }).superRefine((data, ctx) => {
-        // TODO: find something better, for now we can't add refine logic to the base schema:
-        // https://github.com/colinhacks/zod/issues/454#issuecomment-848370721
-        baseRefineLogic(data, ctx);
+    baseCompatibilityDataSchema
+        .extend({
+            /**
+             * List of parameters that the scriptlet accepts.
+             * **Every** parameter should be listed here, because we check that the scriptlet is used correctly
+             * (e.g. that the number of parameters is correct).
+             */
+            parameters: scriptletParametersSchema.optional(),
+        })
+        .superRefine((data, ctx) => {
+            // TODO: find something better, for now we can't add refine logic to the base schema:
+            // https://github.com/colinhacks/zod/issues/454#issuecomment-848370721
+            baseRefineLogic(data, ctx);
 
-        // we don't allow required parameters after optional ones
-        if (!data.parameters) {
-            return;
-        }
-
-        let optionalFound = false;
-
-        for (const parameter of data.parameters) {
-            if (optionalFound && parameter.required) {
-                ctx.addIssue({
-                    code: zod.ZodIssueCode.custom,
-                    message: 'Required parameters must be before optional ones',
-                });
+            // we don't allow required parameters after optional ones
+            if (!data.parameters) {
+                return;
             }
 
-            if (!parameter.required) {
-                optionalFound = true;
+            let optionalFound = false;
+
+            for (const parameter of data.parameters) {
+                if (optionalFound && parameter.required) {
+                    ctx.addIssue({
+                        code: zod.ZodIssueCode.custom,
+                        message: 'Required parameters must be before optional ones',
+                    });
+                }
+
+                if (!parameter.required) {
+                    optionalFound = true;
+                }
             }
-        }
-    }),
+        }),
 );
 
 /**

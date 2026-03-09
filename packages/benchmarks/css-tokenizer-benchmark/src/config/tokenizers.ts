@@ -36,7 +36,9 @@ export const tokenizerConfigs: TokenizerConfigs = {
         url: 'https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer',
         tokenize: (css: string) => {
             let count = 0;
-            AdGuardCssTokenizer.tokenize(css, () => { count += 1; });
+            AdGuardCssTokenizer.tokenize(css, () => {
+                count += 1;
+            });
             return count;
         },
     },
@@ -54,7 +56,9 @@ export const tokenizerConfigs: TokenizerConfigs = {
         url: 'https://github.com/csstree/csstree',
         tokenize: (css: string) => {
             let count = 0;
-            CssTree.tokenize(css, () => { count += 1; });
+            CssTree.tokenize(css, () => {
+                count += 1;
+            });
             return count;
         },
     },

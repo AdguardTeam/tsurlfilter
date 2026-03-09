@@ -87,7 +87,9 @@ export class NetworkEngine {
                 // (microtask) because microtasks don't give the browser a
                 // chance to refresh the screen or respond to user actions.
                 // eslint-disable-next-line no-await-in-loop
-                await new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+                await new Promise<void>((resolve) => {
+                    setTimeout(resolve, 0);
+                });
             }
 
             engine.addRule(indexedRuleParts.ruleParts, indexedRuleParts.index);
@@ -140,9 +142,9 @@ export class NetworkEngine {
     public matchAll(request: Request): NetworkRule[] {
         // First check by shortcuts
         const result = this.hostnameLookupTable.matchAll(request);
-        result.push(...(this.shortcutsLookupTable.matchAll(request)));
-        result.push(...(this.domainsLookupTable.matchAll(request)));
-        result.push(...(this.seqScanLookupTable.matchAll(request)));
+        result.push(...this.shortcutsLookupTable.matchAll(request));
+        result.push(...this.domainsLookupTable.matchAll(request));
+        result.push(...this.seqScanLookupTable.matchAll(request));
 
         return result;
     }
@@ -175,9 +177,11 @@ export class NetworkEngine {
      * @returns The total number of rules.
      */
     public get rulesCount(): number {
-        return this.domainsLookupTable.getRulesCount()
-            + this.hostnameLookupTable.getRulesCount()
-            + this.shortcutsLookupTable.getRulesCount()
-            + this.seqScanLookupTable.getRulesCount();
+        return (
+            this.domainsLookupTable.getRulesCount() +
+            this.hostnameLookupTable.getRulesCount() +
+            this.shortcutsLookupTable.getRulesCount() +
+            this.seqScanLookupTable.getRulesCount()
+        );
     }
 }

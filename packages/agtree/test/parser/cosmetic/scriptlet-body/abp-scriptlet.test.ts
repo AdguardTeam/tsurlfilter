@@ -1,20 +1,11 @@
-import {
-    describe,
-    test,
-    expect,
-    vi,
-} from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
-import {
-    AbpSnippetInjectionBodyParser,
-} from '../../../../src/parser/cosmetic/scriptlet-body/abp-snippet-injection-body-parser';
+import { AbpSnippetInjectionBodyParser } from '../../../../src/parser/cosmetic/scriptlet-body/abp-snippet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import { EMPTY, SPACE } from '../../../../src/utils/constants';
-import {
-    AbpSnippetInjectionBodyGenerator,
-} from '../../../../src/generator/cosmetic/scriptlet-body/abp-snippet-injection-body-generator';
+import { AbpSnippetInjectionBodyGenerator } from '../../../../src/generator/cosmetic/scriptlet-body/abp-snippet-injection-body-generator';
 import { AbpSnippetInjectionBodyCommon } from '../../../../src/common/abp-snippet-injection-body-common';
 
 describe('AbpSnippetInjectionBodyParser', () => {
@@ -186,7 +177,6 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                         ...context.getRangeFor(String.raw`'arg0 arg1;`),
                                         value: String.raw`'arg0 arg1;`,
                                     },
-
                                 ],
                             },
                         ],
@@ -214,7 +204,6 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                         ...context.getRangeFor(String.raw`"arg0 arg1;`),
                                         value: String.raw`"arg0 arg1;`,
                                     },
-
                                 ],
                             },
                         ],
@@ -242,7 +231,6 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                         ...context.getRangeFor(String.raw`some'thing`),
                                         value: String.raw`some'thing`,
                                     },
-
                                 ],
                             },
                         ],
@@ -397,7 +385,9 @@ describe('AbpSnippetInjectionBodyParser', () => {
                         children: [
                             {
                                 type: 'ParameterList',
-                                ...context.getRangeFor(String.raw`hide-if-matches-xpath './/*[@class="test-xpath-class"]'`),
+                                ...context.getRangeFor(
+                                    String.raw`hide-if-matches-xpath './/*[@class="test-xpath-class"]'`,
+                                ),
                                 children: [
                                     {
                                         type: 'Value',
@@ -413,7 +403,9 @@ describe('AbpSnippetInjectionBodyParser', () => {
                             },
                             {
                                 type: 'ParameterList',
-                                ...context.getRangeFor(String.raw`hide-if-matches-xpath './/div[@id="aaa"]//div[starts-with(@id,"aaa")][.//h1//span/text()="aaa"]'`),
+                                ...context.getRangeFor(
+                                    String.raw`hide-if-matches-xpath './/div[@id="aaa"]//div[starts-with(@id,"aaa")][.//h1//span/text()="aaa"]'`,
+                                ),
                                 children: [
                                     {
                                         type: 'Value',
@@ -422,14 +414,18 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                     },
                                     {
                                         type: 'Value',
-                                        ...context.getRangeFor(String.raw`'.//div[@id="aaa"]//div[starts-with(@id,"aaa")][.//h1//span/text()="aaa"]'`),
+                                        ...context.getRangeFor(
+                                            String.raw`'.//div[@id="aaa"]//div[starts-with(@id,"aaa")][.//h1//span/text()="aaa"]'`,
+                                        ),
                                         value: String.raw`'.//div[@id="aaa"]//div[starts-with(@id,"aaa")][.//h1//span/text()="aaa"]'`,
                                     },
                                 ],
                             },
                             {
                                 type: 'ParameterList',
-                                ...context.getRangeFor(String.raw`hide-if-matches-xpath './/div[@id="bbb"]//div[starts-with(@id,"bbb")][.//h1//span/text()="bbb"]'`),
+                                ...context.getRangeFor(
+                                    String.raw`hide-if-matches-xpath './/div[@id="bbb"]//div[starts-with(@id,"bbb")][.//h1//span/text()="bbb"]'`,
+                                ),
                                 children: [
                                     {
                                         type: 'Value',
@@ -438,7 +434,9 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                     },
                                     {
                                         type: 'Value',
-                                        ...context.getRangeFor(String.raw`'.//div[@id="bbb"]//div[starts-with(@id,"bbb")][.//h1//span/text()="bbb"]'`),
+                                        ...context.getRangeFor(
+                                            String.raw`'.//div[@id="bbb"]//div[starts-with(@id,"bbb")][.//h1//span/text()="bbb"]'`,
+                                        ),
                                         value: String.raw`'.//div[@id="bbb"]//div[starts-with(@id,"bbb")][.//h1//span/text()="bbb"]'`,
                                     },
                                 ],
@@ -474,7 +472,9 @@ describe('AbpSnippetInjectionBodyParser', () => {
                             },
                             {
                                 type: 'ParameterList',
-                                ...context.getRangeFor(String.raw`hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ 'div[role=feed] div[role=article]' a[href="#"][role="link"]`),
+                                ...context.getRangeFor(
+                                    String.raw`hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ 'div[role=feed] div[role=article]' a[href="#"][role="link"]`,
+                                ),
                                 children: [
                                     {
                                         type: 'Value',
@@ -483,7 +483,10 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                     },
                                     {
                                         type: 'Value',
-                                        ...context.getRangeFor(String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`, 1),
+                                        ...context.getRangeFor(
+                                            String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`,
+                                            1,
+                                        ),
                                         value: String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`,
                                     },
                                     {
@@ -500,7 +503,9 @@ describe('AbpSnippetInjectionBodyParser', () => {
                             },
                             {
                                 type: 'ParameterList',
-                                ...context.getRangeFor(String.raw`hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ 'div[role=feed] div[role=article]' a[href^="?__cft__"]`),
+                                ...context.getRangeFor(
+                                    String.raw`hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ 'div[role=feed] div[role=article]' a[href^="?__cft__"]`,
+                                ),
                                 children: [
                                     {
                                         type: 'Value',
@@ -509,7 +514,10 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                     },
                                     {
                                         type: 'Value',
-                                        ...context.getRangeFor(String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`, 2),
+                                        ...context.getRangeFor(
+                                            String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`,
+                                            2,
+                                        ),
                                         value: String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`,
                                     },
                                     {
@@ -526,7 +534,9 @@ describe('AbpSnippetInjectionBodyParser', () => {
                             },
                             {
                                 type: 'ParameterList',
-                                ...context.getRangeFor(String.raw`hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ 'div[role=feed] div[role=article]' a[href="#"][role="link"]>span>span>b`),
+                                ...context.getRangeFor(
+                                    String.raw`hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ 'div[role=feed] div[role=article]' a[href="#"][role="link"]>span>span>b`,
+                                ),
                                 children: [
                                     {
                                         type: 'Value',
@@ -535,7 +545,10 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                     },
                                     {
                                         type: 'Value',
-                                        ...context.getRangeFor(String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`, 3),
+                                        ...context.getRangeFor(
+                                            String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`,
+                                            3,
+                                        ),
                                         value: String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`,
                                     },
                                     {
@@ -552,7 +565,9 @@ describe('AbpSnippetInjectionBodyParser', () => {
                             },
                             {
                                 type: 'ParameterList',
-                                ...context.getRangeFor(String.raw`hide-if-matches-xpath './/div[@role="feed"]//div[@role="article"]//a[@aria-label[.="Patrocinado" or .="Sponsa" or .="Bersponsor" or .="Commandité" or .="Ditaja" or .="Gesponsert" or .="Gesponsord" or .="Sponsrad" or .="Publicidad" or .="Sponsoreret" or .="Sponset" or .="Sponsored" or .="Sponsorisé" or .="Sponsorizat" or .="Sponsorizzato" or .="Sponsorlu" or .="Sponsorowane" or .="Реклама" or .="ממומן" or .="تمويل شوي" or .="دارای پشتیبانی مالی" or .="سپانسرڈ" or .="مُموَّل" or .="प्रायोजित" or .="সৌজন্যে" or .="ได้รับการสนับสนุน" or .="内容" or .="贊助" or .="Sponsoroitu" or .="May Sponsor" or .="Được tài trợ"]]/ancestor::div[@role="article"]'`),
+                                ...context.getRangeFor(
+                                    String.raw`hide-if-matches-xpath './/div[@role="feed"]//div[@role="article"]//a[@aria-label[.="Patrocinado" or .="Sponsa" or .="Bersponsor" or .="Commandité" or .="Ditaja" or .="Gesponsert" or .="Gesponsord" or .="Sponsrad" or .="Publicidad" or .="Sponsoreret" or .="Sponset" or .="Sponsored" or .="Sponsorisé" or .="Sponsorizat" or .="Sponsorizzato" or .="Sponsorlu" or .="Sponsorowane" or .="Реклама" or .="ממומן" or .="تمويل شوي" or .="دارای پشتیبانی مالی" or .="سپانسرڈ" or .="مُموَّل" or .="प्रायोजित" or .="সৌজন্যে" or .="ได้รับการสนับสนุน" or .="内容" or .="贊助" or .="Sponsoroitu" or .="May Sponsor" or .="Được tài trợ"]]/ancestor::div[@role="article"]'`,
+                                ),
                                 children: [
                                     {
                                         type: 'Value',
@@ -561,7 +576,9 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                     },
                                     {
                                         type: 'Value',
-                                        ...context.getRangeFor(String.raw`'.//div[@role="feed"]//div[@role="article"]//a[@aria-label[.="Patrocinado" or .="Sponsa" or .="Bersponsor" or .="Commandité" or .="Ditaja" or .="Gesponsert" or .="Gesponsord" or .="Sponsrad" or .="Publicidad" or .="Sponsoreret" or .="Sponset" or .="Sponsored" or .="Sponsorisé" or .="Sponsorizat" or .="Sponsorizzato" or .="Sponsorlu" or .="Sponsorowane" or .="Реклама" or .="ממומן" or .="تمويل شوي" or .="دارای پشتیبانی مالی" or .="سپانسرڈ" or .="مُموَّل" or .="प्रायोजित" or .="সৌজন্যে" or .="ได้รับการสนับสนุน" or .="内容" or .="贊助" or .="Sponsoroitu" or .="May Sponsor" or .="Được tài trợ"]]/ancestor::div[@role="article"]'`),
+                                        ...context.getRangeFor(
+                                            String.raw`'.//div[@role="feed"]//div[@role="article"]//a[@aria-label[.="Patrocinado" or .="Sponsa" or .="Bersponsor" or .="Commandité" or .="Ditaja" or .="Gesponsert" or .="Gesponsord" or .="Sponsrad" or .="Publicidad" or .="Sponsoreret" or .="Sponset" or .="Sponsored" or .="Sponsorisé" or .="Sponsorizat" or .="Sponsorizzato" or .="Sponsorlu" or .="Sponsorowane" or .="Реклама" or .="ממומן" or .="تمويل شوي" or .="دارای پشتیبانی مالی" or .="سپانسرڈ" or .="مُموَّل" or .="प्रायोजित" or .="সৌজন্যে" or .="ได้รับการสนับสนุน" or .="内容" or .="贊助" or .="Sponsoroitu" or .="May Sponsor" or .="Được tài trợ"]]/ancestor::div[@role="article"]'`,
+                                        ),
                                         value: String.raw`'.//div[@role="feed"]//div[@role="article"]//a[@aria-label[.="Patrocinado" or .="Sponsa" or .="Bersponsor" or .="Commandité" or .="Ditaja" or .="Gesponsert" or .="Gesponsord" or .="Sponsrad" or .="Publicidad" or .="Sponsoreret" or .="Sponset" or .="Sponsored" or .="Sponsorisé" or .="Sponsorizat" or .="Sponsorizzato" or .="Sponsorlu" or .="Sponsorowane" or .="Реклама" or .="ממומן" or .="تمويل شوي" or .="دارای پشتیبانی مالی" or .="سپانسرڈ" or .="مُموَّل" or .="प्रायोजित" or .="সৌজন্যে" or .="ได้รับการสนับสนุน" or .="内容" or .="贊助" or .="Sponsoroitu" or .="May Sponsor" or .="Được tài trợ"]]/ancestor::div[@role="article"]'`,
                                     },
                                 ],
@@ -589,7 +606,9 @@ describe('AbpSnippetInjectionBodyParser', () => {
             /* eslint-enable max-len */
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
             // eslint-disable-next-line max-len
-            expect(AbpSnippetInjectionBodyParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
+            expect(AbpSnippetInjectionBodyParser.parse(actual)).toMatchObject(
+                expectedFn(new NodeExpectContext(actual)),
+            );
         });
     });
 

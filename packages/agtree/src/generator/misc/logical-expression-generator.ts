@@ -15,7 +15,8 @@ export class LogicalExpressionGenerator extends BaseGenerator {
     public static generate(node: AnyExpressionNode): string {
         if (node.type === NodeType.Variable) {
             return node.name;
-        } if (node.type === NodeType.Operator) {
+        }
+        if (node.type === NodeType.Operator) {
             const left = LogicalExpressionGenerator.generate(node.left);
             const right = node.right ? LogicalExpressionGenerator.generate(node.right) : undefined;
             const { operator } = node;
@@ -31,7 +32,8 @@ export class LogicalExpressionGenerator extends BaseGenerator {
             }
 
             return `${left} ${operator} ${right}`;
-        } if (node.type === NodeType.Parenthesis) {
+        }
+        if (node.type === NodeType.Parenthesis) {
             const expressionString = LogicalExpressionGenerator.generate(node.expression);
 
             return `(${expressionString})`;

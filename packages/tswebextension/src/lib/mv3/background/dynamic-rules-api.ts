@@ -89,26 +89,17 @@ export default class DynamicRulesApi {
         enabledStaticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
-        const filterList = [
-            allowlistRules,
-            blockingPageTrustedFilter,
-            userRules,
-            ...customFilters,
-        ];
+        const filterList = [allowlistRules, blockingPageTrustedFilter, userRules, ...customFilters];
 
         // Create filter and convert into single rule set
         const converter = new DeclarativeFilterConverter();
 
-        const conversionResult = await converter.convertDynamicRuleSets(
-            filterList,
-            enabledStaticRuleSets,
-            {
-                resourcesPath,
-                maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_RULES,
-                maxNumberOfUnsafeRules: DynamicRulesApi.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES,
-                maxNumberOfRegexpRules: DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES,
-            },
-        );
+        const conversionResult = await converter.convertDynamicRuleSets(filterList, enabledStaticRuleSets, {
+            resourcesPath,
+            maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_RULES,
+            maxNumberOfUnsafeRules: DynamicRulesApi.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES,
+            maxNumberOfRegexpRules: DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES,
+        });
         const { ruleSet, declarativeRulesToCancel } = conversionResult;
 
         const declarativeRules = await ruleSet.getDeclarativeRules();
@@ -141,9 +132,7 @@ export default class DynamicRulesApi {
      *
      * @param staticRuleSets List of static {@link IRuleSet}.
      */
-    private static async cancelAllStaticRulesUpdates(
-        staticRuleSets: IRuleSet[],
-    ): Promise<void> {
+    private static async cancelAllStaticRulesUpdates(staticRuleSets: IRuleSet[]): Promise<void> {
         const tasks = staticRuleSets.map(async (r) => {
             const rulesetId = r.getId();
 
@@ -160,7 +149,10 @@ export default class DynamicRulesApi {
         try {
             await Promise.all(tasks);
         } catch (e) {
-            logger.error('[tsweb.DynamicRulesApi.cancelAllStaticRulesUpdates]: cannot cancel all updates to static rules due to: ', e);
+            logger.error(
+                '[tsweb.DynamicRulesApi.cancelAllStaticRulesUpdates]: cannot cancel all updates to static rules due to: ',
+                e,
+            );
         }
     }
 
@@ -170,13 +162,8 @@ export default class DynamicRulesApi {
      *
      * @param declarativeRulesToCancel List of {@link UpdateStaticRulesOptions}.
      */
-    private static async applyBadFilterRules(
-        declarativeRulesToCancel: UpdateStaticRulesOptions[],
-    ): Promise<void> {
-        const tasks = declarativeRulesToCancel.map(async ({
-            rulesetId,
-            disableRuleIds: ruleIdsToDisable,
-        }) => {
+    private static async applyBadFilterRules(declarativeRulesToCancel: UpdateStaticRulesOptions[]): Promise<void> {
+        const tasks = declarativeRulesToCancel.map(async ({ rulesetId, disableRuleIds: ruleIdsToDisable }) => {
             // Get list of current disabled rules ids.
             const disabledRuleIds = await browser.declarativeNetRequest.getDisabledRuleIds({ rulesetId });
 
@@ -196,7 +183,10 @@ export default class DynamicRulesApi {
         try {
             await Promise.all(tasks);
         } catch (e) {
-            logger.error('[tsweb.DynamicRulesApi.applyBadFilterRules]: cannot apply updates to static rules due to: ', e);
+            logger.error(
+                '[tsweb.DynamicRulesApi.applyBadFilterRules]: cannot apply updates to static rules due to: ',
+                e,
+            );
         }
     }
 

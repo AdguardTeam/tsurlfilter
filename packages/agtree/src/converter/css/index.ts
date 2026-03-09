@@ -1,14 +1,7 @@
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import {
-    CLOSE_PARENTHESIS,
-    COLON,
-    COMMA,
-    EMPTY,
-    EQUALS,
-    OPEN_PARENTHESIS,
-} from '../../utils/constants';
+import { CLOSE_PARENTHESIS, COLON, COMMA, EMPTY, EQUALS, OPEN_PARENTHESIS } from '../../utils/constants';
 import { ABP_EXT_CSS_PREFIX, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css';
 import { BaseConverter } from '../base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result';
@@ -34,7 +27,7 @@ export const PseudoClasses = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type PseudoClasses = typeof PseudoClasses[keyof typeof PseudoClasses];
+export type PseudoClasses = (typeof PseudoClasses)[keyof typeof PseudoClasses];
 
 export const PseudoElements = {
     After: 'after',
@@ -43,12 +36,9 @@ export const PseudoElements = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type PseudoElements = typeof PseudoElements[keyof typeof PseudoElements];
+export type PseudoElements = (typeof PseudoElements)[keyof typeof PseudoElements];
 
-const PSEUDO_ELEMENT_NAMES = new Set<string>([
-    PseudoElements.After,
-    PseudoElements.Before,
-]);
+const PSEUDO_ELEMENT_NAMES = new Set<string>([PseudoElements.After, PseudoElements.Before]);
 
 /**
  * CSS selector converter
@@ -66,9 +56,7 @@ export class CssSelectorConverter extends BaseConverter {
      * @throws If the rule is invalid or incompatible
      */
     public static convertToAdg(selectorList: string | CssTokenStream): ConversionResult<string> {
-        const stream = selectorList instanceof CssTokenStream
-            ? selectorList
-            : new CssTokenStream(selectorList);
+        const stream = selectorList instanceof CssTokenStream ? selectorList : new CssTokenStream(selectorList);
 
         const converted: string[] = [];
 

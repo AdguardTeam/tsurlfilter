@@ -172,9 +172,7 @@ class ModifierValidator {
         if (modifier.name.value.startsWith(UNDERSCORE)) {
             // check whether the modifier value contains something else besides underscores
             if (!isValidNoopModifier(modifier.name.value)) {
-                return getInvalidValidationResult(
-                    `${VALIDATION_ERROR_PREFIX.INVALID_NOOP}: '${modifier.name.value}'`,
-                );
+                return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.INVALID_NOOP}: '${modifier.name.value}'`);
             }
         }
 

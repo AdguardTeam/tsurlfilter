@@ -91,9 +91,7 @@ describe('Request Type', () => {
         };
 
         for (const key in types) {
-            expect(
-                getRequestType(key as WebRequest.ResourceType),
-            ).toEqual(types[key as WebRequest.ResourceType]);
+            expect(getRequestType(key as WebRequest.ResourceType)).toEqual(types[key as WebRequest.ResourceType]);
         }
     });
 });

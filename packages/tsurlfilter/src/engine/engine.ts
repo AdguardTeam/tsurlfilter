@@ -199,7 +199,9 @@ export class Engine {
                 // (microtask) because microtasks don't give the browser a
                 // chance to refresh the screen or respond to user actions.
                 // eslint-disable-next-line no-await-in-loop
-                await new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+                await new Promise<void>((resolve) => {
+                    setTimeout(resolve, 0);
+                });
             }
 
             const ruleParts = scanner.getRuleParts();
@@ -235,11 +237,7 @@ export class Engine {
      * @param networkEngine Network engine.
      * @param cosmeticEngine Cosmetic engine.
      */
-    private constructor(
-        ruleStorage: RuleStorage,
-        networkEngine: NetworkEngine,
-        cosmeticEngine: CosmeticEngine,
-    ) {
+    private constructor(ruleStorage: RuleStorage, networkEngine: NetworkEngine, cosmeticEngine: CosmeticEngine) {
         this.ruleStorage = ruleStorage;
         this.networkEngine = networkEngine;
         this.cosmeticEngine = cosmeticEngine;

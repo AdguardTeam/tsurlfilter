@@ -30,10 +30,10 @@ export function isUboResponseHeaderRemovalRuleBody(node: HtmlFilteringRuleBody):
 
     return (
         // Should be a pseudo-class selector
-        simpleSelector.type === 'PseudoClassSelector'
+        simpleSelector.type === 'PseudoClassSelector' &&
         // Pseudo-class selector name should match `UBO_RESPONSEHEADER_FN`
-        && simpleSelector.name.value === UBO_RESPONSEHEADER_FN
+        simpleSelector.name.value === UBO_RESPONSEHEADER_FN &&
         // Should have argument
-        && simpleSelector.argument !== undefined
+        simpleSelector.argument !== undefined
     );
 }

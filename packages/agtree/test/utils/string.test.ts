@@ -42,13 +42,13 @@ describe('String utils', () => {
         expect(StringUtils.findUnescapedNonStringNonRegexChar('\'aa\\a\' "aaa" /aaa/ \\a   a', 'a')).toEqual(24);
 
         expect(StringUtils.findUnescapedNonStringNonRegexChar('\'aa\\a\' "aaa" /aaa/ /a/', 'a')).toEqual(-1);
-        expect(StringUtils.findUnescapedNonStringNonRegexChar('\'aa\\a\' "a\'aa" /a\'a\'a/ /a/', 'a')).toEqual(-1);
+        expect(StringUtils.findUnescapedNonStringNonRegexChar("'aa\\a' \"a'aa\" /a'a'a/ /a/", 'a')).toEqual(-1);
         expect(StringUtils.findUnescapedNonStringNonRegexChar(EMPTY, 'a')).toEqual(-1);
     });
 
     test('findNextUnquotedUnescapedCharacter', () => {
         // works with valid input
-        const testString = '"a,b",\'c,d\',\'e\'';
+        const testString = "\"a,b\",'c,d','e'";
 
         expect(StringUtils.findNextUnquotedUnescapedCharacter(testString, ',')).toEqual(5);
         expect(StringUtils.findNextUnquotedUnescapedCharacter(testString, ',', 6)).toEqual(11);
@@ -72,7 +72,9 @@ describe('String utils', () => {
 
         // invalid
         // eslint-disable-next-line max-len
-        expect(() => StringUtils.findNextNotBracketedUnescapedCharacter(EMPTY, ',', 0, ESCAPE_CHARACTER, '(', '(')).toThrowError('Open and close bracket cannot be the same');
+        expect(() =>
+            StringUtils.findNextNotBracketedUnescapedCharacter(EMPTY, ',', 0, ESCAPE_CHARACTER, '(', '('),
+        ).toThrowError('Open and close bracket cannot be the same');
     });
 
     test('splitStringByUnquotedUnescapedCharacter', () => {
@@ -86,14 +88,14 @@ describe('String utils', () => {
         ]);
 
         // eslint-disable-next-line max-len
-        expect(StringUtils.splitStringByUnquotedUnescapedCharacter('\'aa|bb\' "aaa | bb" \\|\\| | bbb|ccc', '|')).toEqual(
-            ['\'aa|bb\' "aaa | bb" \\|\\| ', ' bbb', 'ccc'],
-        );
+        expect(
+            StringUtils.splitStringByUnquotedUnescapedCharacter('\'aa|bb\' "aaa | bb" \\|\\| | bbb|ccc', '|'),
+        ).toEqual(['\'aa|bb\' "aaa | bb" \\|\\| ', ' bbb', 'ccc']);
 
         // eslint-disable-next-line max-len
-        expect(StringUtils.splitStringByUnquotedUnescapedCharacter('\'aa|bb\' "aaa | bb" \\|\\| \\| bbb', '|')).toEqual([
-            '\'aa|bb\' "aaa | bb" \\|\\| \\| bbb',
-        ]);
+        expect(StringUtils.splitStringByUnquotedUnescapedCharacter('\'aa|bb\' "aaa | bb" \\|\\| \\| bbb', '|')).toEqual(
+            ['\'aa|bb\' "aaa | bb" \\|\\| \\| bbb'],
+        );
     });
 
     test('splitStringByUnescapedNonStringNonRegexChar', () => {
@@ -107,7 +109,10 @@ describe('String utils', () => {
 
         expect(
             // eslint-disable-next-line max-len
-            StringUtils.splitStringByUnescapedNonStringNonRegexChar('\'aa|bb\' "aaa | bb" \\|\\| /aa|bb/ | bbb|ccc', '|'),
+            StringUtils.splitStringByUnescapedNonStringNonRegexChar(
+                '\'aa|bb\' "aaa | bb" \\|\\| /aa|bb/ | bbb|ccc',
+                '|',
+            ),
         ).toEqual(['\'aa|bb\' "aaa | bb" \\|\\| /aa|bb/ ', ' bbb', 'ccc']);
 
         expect(
@@ -186,8 +191,8 @@ describe('String utils', () => {
         ]);
 
         expect(
-            StringUtils.splitStringByUnescapedCharacter('aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd|eeee|\'ffff\'', '|'),
-        ).toEqual(['aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd', 'eeee', '\'ffff\'']);
+            StringUtils.splitStringByUnescapedCharacter("aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd|eeee|'ffff'", '|'),
+        ).toEqual(['aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd', 'eeee', "'ffff'"]);
 
         expect(StringUtils.splitStringByUnescapedCharacter('aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd\\|eeee', '|')).toEqual([
             'aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd\\|eeee',
@@ -362,9 +367,12 @@ describe('String utils', () => {
                 expected: '\\\\',
                 characters: new Set(['\\']),
             },
-        // eslint-disable-next-line max-len
-        ])('escapeCharacters returns \'$expected\' when given \'$actual\' and \'$characters\'', ({ actual, expected, characters }) => {
-            expect(StringUtils.escapeCharacters(actual, characters)).toBe(expected);
-        });
+            // eslint-disable-next-line max-len
+        ])(
+            "escapeCharacters returns '$expected' when given '$actual' and '$characters'",
+            ({ actual, expected, characters }) => {
+                expect(StringUtils.escapeCharacters(actual, characters)).toBe(expected);
+            },
+        );
     });
 });

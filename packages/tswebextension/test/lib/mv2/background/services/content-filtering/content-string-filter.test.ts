@@ -1,17 +1,9 @@
-import {
-    beforeEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
 import { RequestContextState } from '../../../../../../src/lib/mv2/background/request/request-context-storage';
-import {
-    ContentStringFilter,
-} from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
+import { ContentStringFilter } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { defaultFilteringLog } from '../../../../../../src/lib/common/filtering-log';
 import { mockEngineApi } from '../../../../../helpers/mocks';
@@ -43,10 +35,7 @@ describe('Content string filter', () => {
     });
 
     it('applies html rules to content', () => {
-        const htmlRules = [
-            createCosmeticRule('$$h1', 1),
-            createCosmeticRule('example.org$$span', 1),
-        ];
+        const htmlRules = [createCosmeticRule('$$h1', 1), createCosmeticRule('example.org$$span', 1)];
 
         const contentStringFilter = new ContentStringFilter(
             context,
@@ -104,9 +93,7 @@ describe('Content string filter', () => {
 
         const jsContent = 'var banner = "test";';
 
-        const htmlRules = [
-            createCosmeticRule('$$script[tag-content="banner"]', 1),
-        ];
+        const htmlRules = [createCosmeticRule('$$script[tag-content="banner"]', 1)];
 
         const contentStringFilter = new ContentStringFilter(
             jsContext,
@@ -127,9 +114,7 @@ describe('Content string filter', () => {
             contentTypeHeader: 'text/html; charset=utf-8',
         };
 
-        const htmlRules = [
-            createCosmeticRule('$$h1', 1),
-        ];
+        const htmlRules = [createCosmeticRule('$$h1', 1)];
 
         const contentStringFilter = new ContentStringFilter(
             htmlContext,
@@ -145,13 +130,7 @@ describe('Content string filter', () => {
     });
 
     it('returns original content, if rules does not exist', () => {
-        const contentStringFilter = new ContentStringFilter(
-            context,
-            null,
-            null,
-            defaultFilteringLog,
-            mockEngineApi,
-        );
+        const contentStringFilter = new ContentStringFilter(context, null, null, defaultFilteringLog, mockEngineApi);
 
         const modified = contentStringFilter.applyRules(content);
 

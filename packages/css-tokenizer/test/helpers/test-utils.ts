@@ -76,10 +76,7 @@ export const addAsProp = (tests: TokenTest[]): TokenTest[] => {
  * @param test Token test
  * @param fn Tokenizer function
  */
-export const testTokenization = (
-    test: TokenTest,
-    fn: typeof tokenize | typeof tokenizeExtended = tokenize,
-): void => {
+export const testTokenization = (test: TokenTest, fn: typeof tokenize | typeof tokenizeExtended = tokenize): void => {
     const tokens: TokenData[] = [];
 
     // Ignore props and stop for test

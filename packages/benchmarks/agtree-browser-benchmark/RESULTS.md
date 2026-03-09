@@ -78,7 +78,6 @@ Report generated on: Tue, 03 Feb 2026 07:12:31 GMT
 | Raw filter list size (utf-8) | 2.03 MB  |
 | Parsed filter list size      | 29.44 MB |
 
-
 ## AdGuard Base List
 
 ### Node.js v22.20.0
@@ -145,7 +144,6 @@ Report generated on: Tue, 03 Feb 2026 07:12:31 GMT
 | Raw filter list size (utf-8) | 7.04 MB  |
 | Parsed filter list size      | 72.51 MB |
 
-
 ## uBlock Base List
 
 ### Node.js v22.20.0
@@ -211,4 +209,3 @@ Report generated on: Tue, 03 Feb 2026 07:12:31 GMT
 | ---------------------------- | ------- |
 | Raw filter list size (utf-8) | 0.46 MB |
 | Parsed filter list size      | 4.96 MB |
-

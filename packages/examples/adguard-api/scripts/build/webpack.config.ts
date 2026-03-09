@@ -4,13 +4,7 @@ import { Configuration } from 'webpack';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
-import {
-    BACKGROUND_PATH,
-    CONTENT_SCRIPT,
-    POPUP_PATH,
-    BUILD_PATH,
-    ASSISTANT_INJECT,
-} from '../constants';
+import { BACKGROUND_PATH, CONTENT_SCRIPT, POPUP_PATH, BUILD_PATH, ASSISTANT_INJECT } from '../constants';
 
 const require = createRequire(import.meta.url);
 

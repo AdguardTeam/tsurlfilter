@@ -122,18 +122,12 @@ export {
     SPECIAL_REGEX_SYMBOLS,
     RegExpUtils,
 } from './utils/regexp';
-export {
-    QuoteType,
-    QuoteUtils,
-} from './utils/quotes';
+export { QuoteType, QuoteUtils } from './utils/quotes';
 export { type Position, PositionProvider } from './utils/position-provider';
 export { RuleCategorizer } from './utils/categorizer';
 
 // Constants
-export {
-    NATIVE_CSS_PSEUDO_CLASSES,
-    REMOVE_PROPERTY,
-} from './converter/data/css';
+export { NATIVE_CSS_PSEUDO_CLASSES, REMOVE_PROPERTY } from './converter/data/css';
 
 // CSS utilities
 export { CssTokenStream } from './parser/css/css-token-stream';

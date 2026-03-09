@@ -168,12 +168,7 @@ export class StealthService {
             return;
         }
 
-        const {
-            hideReferrer,
-            hideSearchQueries,
-            blockChromeClientData,
-            sendDoNotTrack,
-        } = settings.stealth;
+        const { hideReferrer, hideSearchQueries, blockChromeClientData, sendDoNotTrack } = settings.stealth;
 
         const headersToRemove = new Set<string>();
         const headersToAdd: WebRequest.HttpHeaders = [];
@@ -189,9 +184,7 @@ export class StealthService {
                 appliedAllowlistRules.add(disablingRule);
             } else if (hasHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER.name)) {
                 stealthActions |= StealthActions.HideReferrer;
-                headersToRemove.add(
-                    StealthService.HEADERS.REFERRER.name.toLowerCase(),
-                );
+                headersToRemove.add(StealthService.HEADERS.REFERRER.name.toLowerCase());
             }
         }
 
@@ -202,13 +195,11 @@ export class StealthService {
             if (StealthService.IS_ALLOWLIST_IMPLEMENTED && disablingRule) {
                 appliedAllowlistRules.add(disablingRule);
             } else if (
-                hasHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER.name)
-                && StealthService.isSearchEngine(requestUrl)
+                hasHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER.name) &&
+                StealthService.isSearchEngine(requestUrl)
             ) {
                 stealthActions |= StealthActions.HideSearchQueries;
-                headersToRemove.add(
-                    StealthService.HEADERS.REFERRER.name.toLowerCase(),
-                );
+                headersToRemove.add(StealthService.HEADERS.REFERRER.name.toLowerCase());
             }
         }
 
@@ -219,9 +210,7 @@ export class StealthService {
                 appliedAllowlistRules.add(disablingRule);
             } else if (hasHeaderByName(requestHeaders, StealthService.HEADERS.X_CLIENT_DATA.name)) {
                 stealthActions |= StealthActions.BlockChromeClientData;
-                headersToRemove.add(
-                    StealthService.HEADERS.X_CLIENT_DATA.name.toLowerCase(),
-                );
+                headersToRemove.add(StealthService.HEADERS.X_CLIENT_DATA.name.toLowerCase());
             }
         }
 
@@ -282,7 +271,9 @@ export class StealthService {
                         ruleIndex: rule.getIndex(),
                         // fallback should never happen during normal operation
                         // eslint-disable-next-line max-len
-                        appliedRuleText: rule.getText() ?? `<dynamic rule text is not specified> (${rule.getFilterListId()}:${rule.getIndex()})`,
+                        appliedRuleText:
+                            rule.getText() ??
+                            `<dynamic rule text is not specified> (${rule.getFilterListId()}:${rule.getIndex()})`,
                         originalRuleText: null,
                         isAllowlist: rule.isAllowlist(),
                         isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
@@ -320,29 +311,23 @@ export class StealthService {
      * changes.
      */
     public static async applySettings(settingsConfig: SettingsConfigMV3): Promise<StealthConfigurationResult> {
-        const {
-            stealthModeEnabled,
-            stealth,
-            gpcScriptUrl,
-            hideDocumentReferrerScriptUrl,
-        } = settingsConfig;
+        const { stealthModeEnabled, stealth, gpcScriptUrl, hideDocumentReferrerScriptUrl } = settingsConfig;
 
         // "Syntax sugar" to fit into 120 max characters per line.
         const enabled = stealthModeEnabled;
 
-        const [
-            hideReferrer,
-            blockWebRTC,
-            blockChromeClientData,
-            sendDoNotTrack,
-            hideSearchQueries,
-        ] = await Promise.all([
-            StealthService.setHideReferrer(enabled && stealth.hideReferrer),
-            StealthService.setDisableWebRTC(enabled && stealth.blockWebRTC),
-            StealthService.setBlockChromeClientData(enabled && stealth.blockChromeClientData),
-            StealthService.setSendDoNotTrack(enabled && stealth.sendDoNotTrack, gpcScriptUrl),
-            StealthService.setHideSearchQueries(enabled && stealth.hideSearchQueries, hideDocumentReferrerScriptUrl),
-        ]);
+        const [hideReferrer, blockWebRTC, blockChromeClientData, sendDoNotTrack, hideSearchQueries] = await Promise.all(
+            [
+                StealthService.setHideReferrer(enabled && stealth.hideReferrer),
+                StealthService.setDisableWebRTC(enabled && stealth.blockWebRTC),
+                StealthService.setBlockChromeClientData(enabled && stealth.blockChromeClientData),
+                StealthService.setSendDoNotTrack(enabled && stealth.sendDoNotTrack, gpcScriptUrl),
+                StealthService.setHideSearchQueries(
+                    enabled && stealth.hideSearchQueries,
+                    hideDocumentReferrerScriptUrl,
+                ),
+            ],
+        );
 
         return {
             hideReferrer,
@@ -367,7 +352,10 @@ export class StealthService {
 
                 return isReferrerHidden;
             } catch (e) {
-                logger.error('[tsweb.StealthService.setHideReferrer]: error on removing the stealth rule "hide-referrer": ', e);
+                logger.error(
+                    '[tsweb.StealthService.setHideReferrer]: error on removing the stealth rule "hide-referrer": ',
+                    e,
+                );
 
                 return !isReferrerHidden;
             }
@@ -378,10 +366,12 @@ export class StealthService {
                 id: SessionRuleId.HideReferrer,
                 action: {
                     type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-                    requestHeaders: [{
-                        header: StealthService.HEADERS.REFERRER.name,
-                        operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
-                    }],
+                    requestHeaders: [
+                        {
+                            header: StealthService.HEADERS.REFERRER.name,
+                            operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
+                        },
+                    ],
                 },
                 condition: {
                     urlFilter: '*',
@@ -412,7 +402,10 @@ export class StealthService {
 
                 return isBlockChromeClientData;
             } catch (e) {
-                logger.error('[tsweb.StealthService.setBlockChromeClientData]: error on removing the stealth rule $xclientdata: ', e);
+                logger.error(
+                    '[tsweb.StealthService.setBlockChromeClientData]: error on removing the stealth rule $xclientdata: ',
+                    e,
+                );
 
                 return !isBlockChromeClientData;
             }
@@ -423,10 +416,12 @@ export class StealthService {
                 id: SessionRuleId.BlockChromeClientData,
                 action: {
                     type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-                    requestHeaders: [{
-                        header: StealthService.HEADERS.X_CLIENT_DATA.name,
-                        operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
-                    }],
+                    requestHeaders: [
+                        {
+                            header: StealthService.HEADERS.X_CLIENT_DATA.name,
+                            operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
+                        },
+                    ],
                 },
                 condition: {
                     urlFilter: '*',
@@ -436,7 +431,10 @@ export class StealthService {
 
             return isBlockChromeClientData;
         } catch (e) {
-            logger.error('[tsweb.StealthService.setBlockChromeClientData]: error on setting the stealth rule $xclientdata: ', e);
+            logger.error(
+                '[tsweb.StealthService.setBlockChromeClientData]: error on setting the stealth rule $xclientdata: ',
+                e,
+            );
 
             return !isBlockChromeClientData;
         }
@@ -451,10 +449,7 @@ export class StealthService {
      *
      * @returns Promise that resolves with current state of the referrer header.
      */
-    public static async setSendDoNotTrack(
-        isSendDoNotTrack: boolean,
-        gpcScriptUrl: string,
-    ): Promise<boolean> {
+    public static async setSendDoNotTrack(isSendDoNotTrack: boolean, gpcScriptUrl: string): Promise<boolean> {
         if (!isSendDoNotTrack) {
             try {
                 await Promise.all([
@@ -464,7 +459,10 @@ export class StealthService {
 
                 return isSendDoNotTrack;
             } catch (e) {
-                logger.error('[tsweb.StealthService.setSendDoNotTrack]: error on removing the stealth rule $donottrack: ', e);
+                logger.error(
+                    '[tsweb.StealthService.setSendDoNotTrack]: error on removing the stealth rule $donottrack: ',
+                    e,
+                );
 
                 return !isSendDoNotTrack;
             }
@@ -476,15 +474,18 @@ export class StealthService {
                     id: SessionRuleId.SendDoNotTrack,
                     action: {
                         type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-                        requestHeaders: [{
-                            header: StealthService.HEADERS.DO_NOT_TRACK.name,
-                            value: StealthService.HEADERS.DO_NOT_TRACK.value,
-                            operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                        }, {
-                            header: StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL.name,
-                            value: StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL.value,
-                            operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                        }],
+                        requestHeaders: [
+                            {
+                                header: StealthService.HEADERS.DO_NOT_TRACK.name,
+                                value: StealthService.HEADERS.DO_NOT_TRACK.value,
+                                operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+                            },
+                            {
+                                header: StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL.name,
+                                value: StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL.value,
+                                operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+                            },
+                        ],
                     },
                     condition: {
                         urlFilter: '*',
@@ -496,17 +497,17 @@ export class StealthService {
                     js: [gpcScriptUrl],
                     world: 'MAIN',
                     runAt: 'document_start',
-                    matches: [
-                        'http://*/*',
-                        'https://*/*',
-                    ],
+                    matches: ['http://*/*', 'https://*/*'],
                     persistAcrossSessions: false,
                 }),
             ]);
 
             return isSendDoNotTrack;
         } catch (e) {
-            logger.error('[tsweb.StealthService.setSendDoNotTrack]: error on setting the stealth rule $donottrack: ', e);
+            logger.error(
+                '[tsweb.StealthService.setSendDoNotTrack]: error on setting the stealth rule $donottrack: ',
+                e,
+            );
 
             return !isSendDoNotTrack;
         }
@@ -534,7 +535,10 @@ export class StealthService {
 
                 return isHideSearchQueries;
             } catch (e) {
-                logger.error('[tsweb.StealthService.setHideSearchQueries]: error on removing the stealth rule $searchqueries: ', e);
+                logger.error(
+                    '[tsweb.StealthService.setHideSearchQueries]: error on removing the stealth rule $searchqueries: ',
+                    e,
+                );
 
                 return !isHideSearchQueries;
             }
@@ -546,10 +550,12 @@ export class StealthService {
                     id: SessionRuleId.HideSearchQueries,
                     action: {
                         type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-                        requestHeaders: [{
-                            header: StealthService.HEADERS.REFERRER.name,
-                            operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
-                        }],
+                        requestHeaders: [
+                            {
+                                header: StealthService.HEADERS.REFERRER.name,
+                                operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
+                            },
+                        ],
                     },
                     condition: {
                         urlFilter: '*',
@@ -562,17 +568,17 @@ export class StealthService {
                     js: [hideDocumentReferrerScriptUrl],
                     world: 'MAIN',
                     runAt: 'document_start',
-                    matches: [
-                        'http://*/*',
-                        'https://*/*',
-                    ],
+                    matches: ['http://*/*', 'https://*/*'],
                     persistAcrossSessions: false,
                 }),
             ]);
 
             return isHideSearchQueries;
         } catch (e) {
-            logger.error('[tsweb.StealthService.setHideSearchQueries]: error on setting the stealth rule $searchqueries: ', e);
+            logger.error(
+                '[tsweb.StealthService.setHideSearchQueries]: error on setting the stealth rule $searchqueries: ',
+                e,
+            );
 
             return !isHideSearchQueries;
         }
@@ -599,7 +605,10 @@ export class StealthService {
                 return isWebRTCDisabled;
             }
 
-            logger.error('[tsweb.StealthService.setDisableWebRTC]: permissions are not granted: ', permissions.join(', '));
+            logger.error(
+                '[tsweb.StealthService.setDisableWebRTC]: permissions are not granted: ',
+                permissions.join(', '),
+            );
 
             return !isWebRTCDisabled;
         }
@@ -608,10 +617,7 @@ export class StealthService {
             const setting = chrome.privacy.network.webRTCIPHandlingPolicy;
 
             if (isWebRTCDisabled) {
-                await StealthService.setSetting(
-                    setting,
-                    chrome.privacy.IPHandlingPolicy.DISABLE_NON_PROXIED_UDP,
-                );
+                await StealthService.setSetting(setting, chrome.privacy.IPHandlingPolicy.DISABLE_NON_PROXIED_UDP);
             } else {
                 await StealthService.clearSetting(setting);
             }
@@ -640,10 +646,7 @@ export class StealthService {
      *
      * @throws Error if the setting is not controllable or controlled by other extensions.
      */
-    private static async setSetting<T>(
-        setting: chrome.types.ChromeSetting<T>,
-        value: T,
-    ): Promise<void> {
+    private static async setSetting<T>(setting: chrome.types.ChromeSetting<T>, value: T): Promise<void> {
         await StealthService.validateLevelOfControl(setting);
 
         return setting.set({ value, scope: StealthService.SETTING_SCOPE });
@@ -674,9 +677,7 @@ export class StealthService {
      *
      * @throws Error if something went wrong.
      */
-    private static async clearSetting<T>(
-        setting: chrome.types.ChromeSetting<T>,
-    ): Promise<void> {
+    private static async clearSetting<T>(setting: chrome.types.ChromeSetting<T>): Promise<void> {
         await StealthService.validateLevelOfControl(setting);
 
         return setting.clear({ scope: StealthService.SETTING_SCOPE });
@@ -689,9 +690,7 @@ export class StealthService {
      *
      * @throws Error, if setting is not controllable.
      */
-    private static async validateLevelOfControl<T>(
-        setting: chrome.types.ChromeSetting<T>,
-    ): Promise<void> {
+    private static async validateLevelOfControl<T>(setting: chrome.types.ChromeSetting<T>): Promise<void> {
         const { levelOfControl } = await StealthService.getSetting(setting);
 
         if (levelOfControl === 'not_controllable') {
@@ -741,7 +740,7 @@ export class StealthService {
 
         if (existedContentScripts.length > 0) {
             await chrome.scripting.unregisterContentScripts({
-                ids: existedContentScripts.map(((script) => script.id)),
+                ids: existedContentScripts.map((script) => script.id),
             });
         }
     }

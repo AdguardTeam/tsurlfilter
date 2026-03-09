@@ -54,8 +54,11 @@ export class TrieLookupTable implements ILookupTable {
 
         const shortcut = SimpleRegex.extractShortcut(pattern);
 
-        if (!shortcut || TrieLookupTable.isAnyURLShortcut(shortcut)
-            || shortcut.length < SimpleRegex.MIN_SHORTCUT_LENGTH) {
+        if (
+            !shortcut ||
+            TrieLookupTable.isAnyURLShortcut(shortcut) ||
+            shortcut.length < SimpleRegex.MIN_SHORTCUT_LENGTH
+        ) {
             return false;
         }
 

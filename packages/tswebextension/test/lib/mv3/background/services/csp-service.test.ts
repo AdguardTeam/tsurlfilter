@@ -1,10 +1,4 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, it, vi } from 'vitest';
 import { RequestType } from '@adguard/tsurlfilter';
 
 import { CspService } from '../../../../../src/lib/mv3/background/services/csp-service';

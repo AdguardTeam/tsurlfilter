@@ -1,9 +1,4 @@
-import {
-    describe,
-    expect,
-    test,
-    vi,
-} from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import browser from 'sinon-chrome';
 import { type WebRequest } from 'webextension-polyfill';
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
@@ -85,16 +80,22 @@ describe('Request Events', () => {
         browser.webRequest.onBeforeRequest.dispatch(requestDetails);
 
         // First prerender request
-        expect(listener).toHaveBeenNthCalledWith(1, expect.objectContaining({
-            details: prerenderRequestDetails,
-            context: prerenderRequestContext,
-        }));
+        expect(listener).toHaveBeenNthCalledWith(
+            1,
+            expect.objectContaining({
+                details: prerenderRequestDetails,
+                context: prerenderRequestContext,
+            }),
+        );
 
         // Second real navigation request
-        expect(listener).toHaveBeenNthCalledWith(2, expect.objectContaining({
-            details: requestDetails,
-            context: requestContext,
-        }));
+        expect(listener).toHaveBeenNthCalledWith(
+            2,
+            expect.objectContaining({
+                details: requestDetails,
+                context: requestContext,
+            }),
+        );
     });
 
     describe.each([
@@ -244,13 +245,7 @@ describe('Request Events', () => {
                 ...commonContextData,
             },
         },
-    ])('listener called on ', ({
-        testName,
-        details,
-        context,
-        testEventChannel,
-        browserEventChannel,
-    }) => {
+    ])('listener called on ', ({ testName, details, context, testEventChannel, browserEventChannel }) => {
         test(testName, () => {
             RequestEvents.init();
 

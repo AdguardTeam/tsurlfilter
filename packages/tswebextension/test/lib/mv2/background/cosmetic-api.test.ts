@@ -1,10 +1,4 @@
-import {
-    describe,
-    expect,
-    it,
-    test,
-    vi,
-} from 'vitest';
+import { describe, expect, it, test, vi } from 'vitest';
 import { CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule } from '../../../helpers/rule-creator';
@@ -57,36 +51,27 @@ describe('cosmetic api', () => {
             const testCases = [
                 {
                     // one specific rule
-                    actual: [
-                        'example.com##h1',
-                    ],
+                    actual: ['example.com##h1'],
                     expected: 'h1 { display: none !important; }',
                 },
                 {
                     // few specific rules
-                    actual: [
-                        'example.com##h1',
-                        'example.org##h2',
-                    ],
+                    actual: ['example.com##h1', 'example.org##h2'],
                     expected: 'h1, h2 { display: none !important; }',
                 },
                 {
                     // few generic rules
-                    actual: [
-                        '##h1',
-                        '##h2',
-                    ],
+                    actual: ['##h1', '##h2'],
                     expected: 'h1, h2 { display: none !important; }',
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getElemhideCosmeticResult(actual);
-                expect(CosmeticApi.getCssText(
-                    cosmeticResult,
-                    {
+                expect(
+                    CosmeticApi.getCssText(cosmeticResult, {
                         areHitsStatsCollected: false,
-                    },
-                )).toEqual(expected);
+                    }),
+                ).toEqual(expected);
             });
         });
 
@@ -94,9 +79,7 @@ describe('cosmetic api', () => {
             const testCases = [
                 {
                     // one specific rule
-                    actual: [
-                        'example.com#$#h1 { color: black !important; }',
-                    ],
+                    actual: ['example.com#$#h1 { color: black !important; }'],
                     expected: 'h1 { color: black !important; }',
                 },
                 {
@@ -109,21 +92,17 @@ describe('cosmetic api', () => {
                 },
                 {
                     // few generic rules
-                    actual: [
-                        '#$#h1 { color: black !important; }',
-                        '#$#h2 { color: red !important; }',
-                    ],
+                    actual: ['#$#h1 { color: black !important; }', '#$#h2 { color: red !important; }'],
                     expected: 'h1 { color: black !important; }\r\nh2 { color: red !important; }',
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getCssCosmeticResult(actual);
-                expect(CosmeticApi.getCssText(
-                    cosmeticResult,
-                    {
+                expect(
+                    CosmeticApi.getCssText(cosmeticResult, {
                         areHitsStatsCollected: false,
-                    },
-                )).toEqual(expected);
+                    }),
+                ).toEqual(expected);
             });
         });
 
@@ -131,39 +110,32 @@ describe('cosmetic api', () => {
             const testCases = [
                 {
                     // one specific rules
-                    actual: [
-                        'example.com##h1',
-                    ],
+                    actual: ['example.com##h1'],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { display: none !important; content: \'adguard0%3B0\' !important; }',
+                    expected: "h1 { display: none !important; content: 'adguard0%3B0' !important; }",
                 },
                 {
                     // few specific rules
-                    actual: [
-                        'example.com##h1',
-                        'example.org##h2',
-                    ],
+                    actual: ['example.com##h1', 'example.org##h2'],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { display: none !important; content: \'adguard0%3B0\' !important; }\r\nh2 { display: none !important; content: \'adguard0%3B1\' !important; }',
+                    expected:
+                        "h1 { display: none !important; content: 'adguard0%3B0' !important; }\r\nh2 { display: none !important; content: 'adguard0%3B1' !important; }",
                 },
                 {
                     // few generic rules
-                    actual: [
-                        '##h1',
-                        '##h2',
-                    ],
+                    actual: ['##h1', '##h2'],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { display: none !important; content: \'adguard0%3B0\' !important; }\r\nh2 { display: none !important; content: \'adguard0%3B1\' !important; }',
+                    expected:
+                        "h1 { display: none !important; content: 'adguard0%3B0' !important; }\r\nh2 { display: none !important; content: 'adguard0%3B1' !important; }",
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getElemhideCosmeticResult(actual);
-                expect(CosmeticApi.getCssText(
-                    cosmeticResult,
-                    {
+                expect(
+                    CosmeticApi.getCssText(cosmeticResult, {
                         areHitsStatsCollected: true,
-                    },
-                )).toEqual(expected);
+                    }),
+                ).toEqual(expected);
             });
         });
 
@@ -171,11 +143,9 @@ describe('cosmetic api', () => {
             const testCases = [
                 {
                     // one specific rules
-                    actual: [
-                        'example.com#$#h1 { color: black !important; }',
-                    ],
+                    actual: ['example.com#$#h1 { color: black !important; }'],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { color: black !important; content: \'adguard0%3B0\' !important; }',
+                    expected: "h1 { color: black !important; content: 'adguard0%3B0' !important; }",
                 },
                 {
                     // few specific rules
@@ -184,26 +154,22 @@ describe('cosmetic api', () => {
                         'example.org#$#h2 { color: red !important; }',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { color: black !important; content: \'adguard0%3B0\' !important; }\r\nh2 { color: red !important; content: \'adguard0%3B1\' !important; }',
+                    expected:
+                        "h1 { color: black !important; content: 'adguard0%3B0' !important; }\r\nh2 { color: red !important; content: 'adguard0%3B1' !important; }",
                 },
                 {
                     // few generic rules
-                    actual: [
-                        '#$#h1 { color: black !important; }',
-                        '#$#h2 { color: red !important; }',
-                    ],
+                    actual: ['#$#h1 { color: black !important; }', '#$#h2 { color: red !important; }'],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { color: black !important; content: \'adguard0%3B0\' !important; }\r\nh2 { color: red !important; content: \'adguard0%3B1\' !important; }',
+                    expected:
+                        "h1 { color: black !important; content: 'adguard0%3B0' !important; }\r\nh2 { color: red !important; content: 'adguard0%3B1' !important; }",
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getCssCosmeticResult(actual);
-                const exp = CosmeticApi.getCssText(
-                    cosmeticResult,
-                    {
-                        areHitsStatsCollected: true,
-                    },
-                );
+                const exp = CosmeticApi.getCssText(cosmeticResult, {
+                    areHitsStatsCollected: true,
+                });
                 expect(exp).toEqual(expected);
             });
         });
@@ -214,44 +180,27 @@ describe('cosmetic api', () => {
             const testCases = [
                 {
                     // one specific rule
-                    actual: [
-                        'example.com#?#h1',
-                    ],
-                    expected: [
-                        'h1 { display: none !important; }',
-                    ],
+                    actual: ['example.com#?#h1'],
+                    expected: ['h1 { display: none !important; }'],
                 },
                 {
                     // few specific rules
-                    actual: [
-                        'example.com#?#h1',
-                        'example.org#?#h2',
-                    ],
-                    expected: [
-                        'h1 { display: none !important; }',
-                        'h2 { display: none !important; }',
-                    ],
+                    actual: ['example.com#?#h1', 'example.org#?#h2'],
+                    expected: ['h1 { display: none !important; }', 'h2 { display: none !important; }'],
                 },
                 {
                     // few generic rules
-                    actual: [
-                        '#?#h1',
-                        '#?#h2',
-                    ],
-                    expected: [
-                        'h1 { display: none !important; }',
-                        'h2 { display: none !important; }',
-                    ],
+                    actual: ['#?#h1', '#?#h2'],
+                    expected: ['h1 { display: none !important; }', 'h2 { display: none !important; }'],
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getElemhideCosmeticResult(actual);
-                expect(CosmeticApi.getExtCssRules(
-                    cosmeticResult,
-                    {
+                expect(
+                    CosmeticApi.getExtCssRules(cosmeticResult, {
                         areHitsStatsCollected: false,
-                    },
-                )).toEqual(expected);
+                    }),
+                ).toEqual(expected);
             });
         });
 
@@ -259,12 +208,8 @@ describe('cosmetic api', () => {
             const testCases = [
                 {
                     // one specific rule
-                    actual: [
-                        'example.com#$?#h1 { color: black !important; }',
-                    ],
-                    expected: [
-                        'h1 { color: black !important; }',
-                    ],
+                    actual: ['example.com#$?#h1 { color: black !important; }'],
+                    expected: ['h1 { color: black !important; }'],
                 },
                 {
                     // few specific rules
@@ -272,31 +217,21 @@ describe('cosmetic api', () => {
                         'example.com#$?#h1 { color: black !important; }',
                         'example.org#$?#h2 { color: red !important; }',
                     ],
-                    expected: [
-                        'h1 { color: black !important; }',
-                        'h2 { color: red !important; }',
-                    ],
+                    expected: ['h1 { color: black !important; }', 'h2 { color: red !important; }'],
                 },
                 {
                     // few generic rules
-                    actual: [
-                        '#$?#h1 { color: black !important; }',
-                        '#$?#h2 { color: red !important; }',
-                    ],
-                    expected: [
-                        'h1 { color: black !important; }',
-                        'h2 { color: red !important; }',
-                    ],
+                    actual: ['#$?#h1 { color: black !important; }', '#$?#h2 { color: red !important; }'],
+                    expected: ['h1 { color: black !important; }', 'h2 { color: red !important; }'],
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getCssCosmeticResult(actual);
-                expect(CosmeticApi.getExtCssRules(
-                    cosmeticResult,
-                    {
+                expect(
+                    CosmeticApi.getExtCssRules(cosmeticResult, {
                         areHitsStatsCollected: false,
-                    },
-                )).toEqual(expected);
+                    }),
+                ).toEqual(expected);
             });
         });
 
@@ -304,44 +239,33 @@ describe('cosmetic api', () => {
             const testCases = [
                 {
                     // one specific rules
-                    actual: [
-                        'example.com#?#h1',
-                    ],
-                    expected: [
-                        'h1 { display: none !important; content: \'adguard0%3B0\' !important; }',
-                    ],
+                    actual: ['example.com#?#h1'],
+                    expected: ["h1 { display: none !important; content: 'adguard0%3B0' !important; }"],
                 },
                 {
                     // few specific rules
-                    actual: [
-                        'example.com#?#h1',
-                        'example.org#?#h2',
-                    ],
+                    actual: ['example.com#?#h1', 'example.org#?#h2'],
                     expected: [
-                        'h1 { display: none !important; content: \'adguard0%3B0\' !important; }',
-                        'h2 { display: none !important; content: \'adguard0%3B1\' !important; }',
+                        "h1 { display: none !important; content: 'adguard0%3B0' !important; }",
+                        "h2 { display: none !important; content: 'adguard0%3B1' !important; }",
                     ],
                 },
                 {
                     // few generic rules
-                    actual: [
-                        '#?#h1',
-                        '#?#h2',
-                    ],
+                    actual: ['#?#h1', '#?#h2'],
                     expected: [
-                        'h1 { display: none !important; content: \'adguard0%3B0\' !important; }',
-                        'h2 { display: none !important; content: \'adguard0%3B1\' !important; }',
+                        "h1 { display: none !important; content: 'adguard0%3B0' !important; }",
+                        "h2 { display: none !important; content: 'adguard0%3B1' !important; }",
                     ],
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getElemhideCosmeticResult(actual);
-                expect(CosmeticApi.getExtCssRules(
-                    cosmeticResult,
-                    {
+                expect(
+                    CosmeticApi.getExtCssRules(cosmeticResult, {
                         areHitsStatsCollected: true,
-                    },
-                )).toEqual(expected);
+                    }),
+                ).toEqual(expected);
             });
         });
 
@@ -349,12 +273,10 @@ describe('cosmetic api', () => {
             const testCases = [
                 {
                     // one specific rules
-                    actual: [
-                        'example.com#$?#h1 { color: black !important; }',
-                    ],
+                    actual: ['example.com#$?#h1 { color: black !important; }'],
                     expected: [
                         // eslint-disable-next-line max-len
-                        'h1 { color: black !important; content: \'adguard0%3B0\' !important; }',
+                        "h1 { color: black !important; content: 'adguard0%3B0' !important; }",
                     ],
                 },
                 {
@@ -365,54 +287,44 @@ describe('cosmetic api', () => {
                     ],
                     expected: [
                         // eslint-disable-next-line max-len
-                        'h1 { color: black !important; content: \'adguard0%3B0\' !important; }',
+                        "h1 { color: black !important; content: 'adguard0%3B0' !important; }",
                         // eslint-disable-next-line max-len
-                        'h2 { color: red !important; content: \'adguard0%3B1\' !important; }',
+                        "h2 { color: red !important; content: 'adguard0%3B1' !important; }",
                     ],
                 },
                 {
                     // few generic rules
-                    actual: [
-                        '#$?#h1 { color: black !important; }',
-                        '#$?#h2 { color: red !important; }',
-                    ],
+                    actual: ['#$?#h1 { color: black !important; }', '#$?#h2 { color: red !important; }'],
                     expected: [
                         // eslint-disable-next-line max-len
-                        'h1 { color: black !important; content: \'adguard0%3B0\' !important; }',
+                        "h1 { color: black !important; content: 'adguard0%3B0' !important; }",
                         // eslint-disable-next-line max-len
-                        'h2 { color: red !important; content: \'adguard0%3B1\' !important; }',
+                        "h2 { color: red !important; content: 'adguard0%3B1' !important; }",
                     ],
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getCssCosmeticResult(actual);
-                expect(CosmeticApi.getExtCssRules(
-                    cosmeticResult,
-                    {
+                expect(
+                    CosmeticApi.getExtCssRules(cosmeticResult, {
                         areHitsStatsCollected: true,
-                    },
-                )).toEqual(expected);
+                    }),
+                ).toEqual(expected);
             });
         });
     });
 
     describe('returns correct script text', () => {
         const getScriptRules = (id: number): CosmeticRule[] => {
-            return [
-                createCosmeticRule('example.com#%#window.confirm = undefined;', id),
-            ];
+            return [createCosmeticRule('example.com#%#window.confirm = undefined;', id)];
         };
 
         const getLocalScriptRules = (id: number): CosmeticRule[] => {
-            return [
-                createCosmeticRule('example.com#%#window.open = undefined;', id),
-            ];
+            return [createCosmeticRule('example.com#%#window.open = undefined;', id)];
         };
 
         const getScriptletsRules = (id: number): CosmeticRule[] => {
-            return [
-                createCosmeticRule('example.com#%#//scriptlet("abort-on-property-read", "alert")', id),
-            ];
+            return [createCosmeticRule('example.com#%#//scriptlet("abort-on-property-read", "alert")', id)];
         };
 
         const wrapScriptText = (text: string): string => {
@@ -461,11 +373,15 @@ describe('cosmetic api', () => {
 
             const scriptText = CosmeticApi.getScriptText(customFilterRules);
 
-            const expectScriptText = wrapScriptText([
-                ...getScriptRules(CUSTOM_FILTER_ID),
-                ...getLocalScriptRules(CUSTOM_FILTER_ID),
-                ...getScriptletsRules(CUSTOM_FILTER_ID),
-            ].map((rule) => rule.getScript()).join('\n'));
+            const expectScriptText = wrapScriptText(
+                [
+                    ...getScriptRules(CUSTOM_FILTER_ID),
+                    ...getLocalScriptRules(CUSTOM_FILTER_ID),
+                    ...getScriptletsRules(CUSTOM_FILTER_ID),
+                ]
+                    .map((rule) => rule.getScript())
+                    .join('\n'),
+            );
 
             expect(scriptText?.replace(/\s/g, '')).toStrictEqual(expectScriptText.replace(/\s/g, ''));
         });
@@ -484,10 +400,11 @@ describe('cosmetic api', () => {
 
             const firefoxScriptText = CosmeticApi.getScriptText(customFilterRules);
 
-            const expectFirefoxScriptText = wrapScriptText([
-                ...getLocalScriptRules(CUSTOM_FILTER_ID),
-                ...getScriptletsRules(CUSTOM_FILTER_ID),
-            ].map((rule) => rule.getScript()).join('\n'));
+            const expectFirefoxScriptText = wrapScriptText(
+                [...getLocalScriptRules(CUSTOM_FILTER_ID), ...getScriptletsRules(CUSTOM_FILTER_ID)]
+                    .map((rule) => rule.getScript())
+                    .join('\n'),
+            );
 
             expect(firefoxScriptText?.replace(/\s/g, '')).toStrictEqual(expectFirefoxScriptText.replace(/\s/g, ''));
         });

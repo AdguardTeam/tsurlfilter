@@ -1,10 +1,5 @@
 import escapeStringRegexp from 'escape-string-regexp';
-import {
-    beforeEach,
-    describe,
-    expect,
-    it,
-} from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { type RuleStorageScanner } from '../../src/filterlist/scanner/rule-storage-scanner';
@@ -25,23 +20,11 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
 };
 
 describe('Test RuleStorage', () => {
-    const rules1 = [
-        '||example.org',
-        '! test',
-        '##banner',
-    ];
+    const rules1 = ['||example.org', '! test', '##banner'];
 
-    const rules2 = [
-        '||example.com',
-        '! test',
-        '##advert',
-    ];
+    const rules2 = ['||example.com', '! test', '##advert'];
 
-    const rules3 = [
-        '||example.net',
-        '! test',
-        '##advert',
-    ];
+    const rules3 = ['||example.net', '! test', '##advert'];
 
     const text1 = rules1.join('\n');
     const text2 = rules2.join('\n');

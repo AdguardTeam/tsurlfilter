@@ -4,15 +4,17 @@ import commonjs from '@rollup/plugin-commonjs';
 
 export default {
     input: 'src/index.ts',
-    output: [{
-        dir: 'dist',
-        format: 'cjs',
-    },
-    {
-        dir: 'dist/es',
-        format: 'es',
-        entryFileNames: '[name].mjs',
-    }],
+    output: [
+        {
+            dir: 'dist',
+            format: 'cjs',
+        },
+        {
+            dir: 'dist/es',
+            format: 'es',
+            entryFileNames: '[name].mjs',
+        },
+    ],
     plugins: [
         resolve(),
         commonjs(),

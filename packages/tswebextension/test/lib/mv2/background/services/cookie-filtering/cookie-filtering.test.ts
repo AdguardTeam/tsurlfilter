@@ -1,18 +1,7 @@
-import {
-    describe,
-    expect,
-    beforeEach,
-    it,
-    vi,
-} from 'vitest';
+import { describe, expect, beforeEach, it, vi } from 'vitest';
 import browser from 'sinon-chrome';
 import polyfillBrowser from 'webextension-polyfill';
-import {
-    HTTPMethod,
-    MatchingResult,
-    type NetworkRule,
-    RequestType,
-} from '@adguard/tsurlfilter';
+import { HTTPMethod, MatchingResult, type NetworkRule, RequestType } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../../common/mocks/mock-filtering-log';
@@ -102,9 +91,7 @@ describe('Cookie filtering', () => {
 
     it('checks empty', async () => {
         const cookieRule = createNetworkRule('||example.org^$cookie=c_user', 1);
-        const rules = [
-            cookieRule,
-        ];
+        const rules = [cookieRule];
 
         const requestHeaders = createTestHeaders([]);
 
@@ -115,14 +102,14 @@ describe('Cookie filtering', () => {
 
     it('checks remove rule', async () => {
         const cookieRule = createNetworkRule('||example.org^$cookie=c_user', 1);
-        const rules = [
-            cookieRule,
-        ];
+        const rules = [cookieRule];
 
-        const requestHeaders = createTestHeaders([{
-            name: 'Cookie',
-            value: 'c_user=test_value',
-        }]);
+        const requestHeaders = createTestHeaders([
+            {
+                name: 'Cookie',
+                value: 'c_user=test_value',
+            },
+        ]);
 
         await runCase(rules, requestHeaders);
 
@@ -141,15 +128,14 @@ describe('Cookie filtering', () => {
     it('checks cookie specific allowlist rule', async () => {
         const cookieRule = createNetworkRule('$cookie=/pick|other/,domain=example.org|other.com', 1);
         const allowlistRule = createNetworkRule('@@||example.org^$cookie=pick', 1);
-        const rules = [
-            cookieRule,
-            allowlistRule,
-        ];
+        const rules = [cookieRule, allowlistRule];
 
-        const requestHeaders = createTestHeaders([{
-            name: 'Cookie',
-            value: 'pick=test_value',
-        }]);
+        const requestHeaders = createTestHeaders([
+            {
+                name: 'Cookie',
+                value: 'pick=test_value',
+            },
+        ]);
 
         await runCase(rules, requestHeaders);
         expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
@@ -170,10 +156,12 @@ describe('Cookie filtering', () => {
         const allowlistRule = createNetworkRule('@@||example.org^$cookie=pick', 1);
         const rules = [allowlistRule];
 
-        const responseHeaders = createTestHeaders([{
-            name: 'set-cookie',
-            value: 'pick=updated_value',
-        }]);
+        const responseHeaders = createTestHeaders([
+            {
+                name: 'set-cookie',
+                value: 'pick=updated_value',
+            },
+        ]);
 
         await runCase(rules, [], responseHeaders);
 
@@ -193,20 +181,21 @@ describe('Cookie filtering', () => {
     it('checks cookie specific allowlist regex rule', async () => {
         const cookieRule = createNetworkRule('||example.org^$cookie=/pick|other/,domain=example.org|other.com', 1);
         const allowlistRule = createNetworkRule('@@||example.org^$cookie=/pick|one_more/', 1);
-        const rules = [
-            cookieRule,
-            allowlistRule,
-        ];
+        const rules = [cookieRule, allowlistRule];
 
-        const requestHeaders = createTestHeaders([{
-            name: 'Cookie',
-            value: 'pick=test_value',
-        }]);
+        const requestHeaders = createTestHeaders([
+            {
+                name: 'Cookie',
+                value: 'pick=test_value',
+            },
+        ]);
 
-        const responseHeaders = createTestHeaders([{
-            name: 'Cookie',
-            value: 'pick=updated_value',
-        }]);
+        const responseHeaders = createTestHeaders([
+            {
+                name: 'Cookie',
+                value: 'pick=updated_value',
+            },
+        ]);
 
         await runCase(rules, requestHeaders, responseHeaders);
         expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
@@ -223,19 +212,21 @@ describe('Cookie filtering', () => {
 
     it('checks modifying rule - max age', async () => {
         const cookieRule = createNetworkRule('||example.org^$cookie=c_user;maxAge=15', 1);
-        const rules = [
-            cookieRule,
-        ];
+        const rules = [cookieRule];
 
-        const requestHeaders = createTestHeaders([{
-            name: 'Cookie',
-            value: 'c_user=test_value',
-        }]);
+        const requestHeaders = createTestHeaders([
+            {
+                name: 'Cookie',
+                value: 'c_user=test_value',
+            },
+        ]);
 
-        const responseHeaders = createTestHeaders([{
-            name: 'Set-Cookie',
-            value: 'c_user=new_value',
-        }]);
+        const responseHeaders = createTestHeaders([
+            {
+                name: 'Set-Cookie',
+                value: 'c_user=new_value',
+            },
+        ]);
 
         await runCase(rules, requestHeaders, responseHeaders);
 
@@ -254,14 +245,14 @@ describe('Cookie filtering', () => {
 
     it('checks modifying rule - sameSite', async () => {
         const cookieRule = createNetworkRule('||example.org^$cookie=c_user;sameSite=lax', 1);
-        const rules = [
-            cookieRule,
-        ];
+        const rules = [cookieRule];
 
-        const requestHeaders = createTestHeaders([{
-            name: 'Cookie',
-            value: 'c_user=test_value',
-        }]);
+        const requestHeaders = createTestHeaders([
+            {
+                name: 'Cookie',
+                value: 'c_user=test_value',
+            },
+        ]);
 
         await runCase(rules, requestHeaders);
 
@@ -282,15 +273,14 @@ describe('Cookie filtering', () => {
         context.thirdParty = true;
 
         const thirdPartyCookieRule = createNetworkRule('||example.org^$third-party,cookie=third_party_user', 1);
-        const rules = [
-            createNetworkRule('||example.org^$cookie=c_user', 1),
-            thirdPartyCookieRule,
-        ];
+        const rules = [createNetworkRule('||example.org^$cookie=c_user', 1), thirdPartyCookieRule];
 
-        const requestHeaders = createTestHeaders([{
-            name: 'Cookie',
-            value: 'smth=test_value',
-        }]);
+        const requestHeaders = createTestHeaders([
+            {
+                name: 'Cookie',
+                value: 'smth=test_value',
+            },
+        ]);
 
         const setCookieHeader = { name: 'set-cookie', value: 'third_party_user=test;' };
         const responseHeaders = [setCookieHeader];

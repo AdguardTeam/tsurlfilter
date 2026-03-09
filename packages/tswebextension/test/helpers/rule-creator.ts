@@ -7,13 +7,7 @@ import {
 } from '@adguard/agtree';
 import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
 import { RuleGenerator } from '@adguard/agtree/generator';
-import {
-    CosmeticRule,
-    type IRule,
-    NetworkRule,
-    RULE_INDEX_NONE,
-    RuleFactory,
-} from '@adguard/tsurlfilter';
+import { CosmeticRule, type IRule, NetworkRule, RULE_INDEX_NONE, RuleFactory } from '@adguard/tsurlfilter';
 import { isString } from 'lodash-es';
 
 /**
@@ -125,9 +119,5 @@ export const createRule = (
 
     // Generate text from node to pass to RuleFactory
     const ruleText = RuleGenerator.generate(node);
-    return RuleFactory.createRule(
-        ruleText,
-        filterListId,
-        ruleIndex,
-    );
+    return RuleFactory.createRule(ruleText, filterListId, ruleIndex);
 };
