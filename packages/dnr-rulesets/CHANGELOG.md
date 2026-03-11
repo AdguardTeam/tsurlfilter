@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- `ROList` filter list [AdguardBrowserExtension#3473].
+
 ### Changed
 
 - Updated tsurlfilter to vX.X.X. <!-- TODO: update version before release -->
+
+[AdguardBrowserExtension#3473]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3473
 
 ## [4.1.0] - 2026-02-XX
 
