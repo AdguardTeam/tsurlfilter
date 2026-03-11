@@ -9,6 +9,7 @@ export * from './request-type';
 export * from './constants';
 export * from './storage/core';
 export * from './storage';
+export * from './rule-info';
 
 // TODO: used in adguard-api so maybe worth adding a new entry point for common utils
 // so it could be imported from '@adguard/tswebextension/utils'. AG-39120
