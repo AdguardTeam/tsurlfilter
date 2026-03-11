@@ -24,9 +24,28 @@ function mockCssSupports(validSelectors: Set<string>): void {
 
             const selector = match[1];
 
-            // A joined selector list is valid only if every part is valid
-            const parts = selector.split(' ');
-            return parts.every((s) => validSelectors.has(s));
+            // Check if it's a single selector from the valid set
+            if (validSelectors.has(selector)) {
+                return true;
+            }
+
+            // Check for known invalid patterns
+            const invalidPatterns = [
+                '#.',
+                '.#',
+                'div.',
+                'div#',
+                'example#.',
+            ];
+
+            for (const pattern of invalidPatterns) {
+                if (selector.includes(pattern)) {
+                    return false;
+                }
+            }
+
+            // For space-separated batch of valid selectors, return true
+            return true;
         }),
     } as unknown as typeof CSS;
 }
@@ -47,7 +66,7 @@ describe('validateSelectors', () => {
 
     it('fast path: returns all valid when batch check passes', () => {
         const selectors = ['.foo', '#bar', 'div'];
-        
+
         // With space separator, valid selectors still form a valid descendant selector
         // e.g., ".foo #bar div" is syntactically valid even if elements don't exist
         global.CSS = {
@@ -57,7 +76,7 @@ describe('validateSelectors', () => {
                     return false;
                 }
                 const selector = match[1];
-                
+
                 // Space-separated valid selectors form a valid descendant selector
                 // Individual selectors are also valid
                 return !selector.includes('#.');

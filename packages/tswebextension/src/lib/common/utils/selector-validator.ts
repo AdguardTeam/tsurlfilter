@@ -61,20 +61,6 @@ export function validateSelectors(
             isValid = false;
         }
 
-        // Fallback: CSS.supports can be unreliable in some browsers.
-        // If it says invalid, double-check with querySelector.
-        if (!isValid) {
-            try {
-                document.querySelector(selector);
-                // If querySelector didn't throw, the selector is actually valid
-                isValid = true;
-                logger.debug(`[tsweb.selector-validator]: CSS.supports incorrectly rejected valid selector "${selector}", using querySelector fallback`);
-            } catch (e) {
-                // querySelector threw DOMException — selector is truly invalid
-                isValid = false;
-            }
-        }
-
         if (isValid) {
             valid.push(selector);
         } else {

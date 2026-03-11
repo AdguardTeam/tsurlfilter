@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on demand instead of eagerly constructing heavy objects at ruleset creation time.
 - Updated tsurlfilter to vX.X.X. <!-- TODO: update version before release -->
 
+### Fixed
+
+- Incorrect use of “#.” affects all filters [#3329]
+
+[#3329]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3329
+
 ## [4.0.3] - 2026-02-26
 
 ### Added
