@@ -58,6 +58,7 @@ const getCosmeticData = (rules: string[], areHitsStatsCollected: boolean): Conte
         isAppStarted: true,
         areHitsStatsCollected,
         extCssRules,
+        nativeCssSelectors: null,
     };
 };
 
