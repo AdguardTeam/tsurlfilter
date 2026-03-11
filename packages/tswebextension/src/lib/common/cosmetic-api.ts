@@ -52,6 +52,13 @@ export type ContentScriptCosmeticData = {
      * Extended css rules to apply.
      */
     extCssRules: string[] | null;
+
+    /**
+     * Individual native CSS element-hiding selectors.
+     * Sent to the content script so it can validate and repair grouped CSS
+     * injected by the background if any selector in a group is invalid.
+     */
+    nativeCssSelectors: string[] | null;
 };
 
 /**
@@ -313,6 +320,34 @@ export class CosmeticApiCommon {
             native: reclassifiedNativeRules,
             extended: reclassifiedExtendedRules,
         };
+    }
+
+    /**
+     * Extracts individual native CSS element-hiding selectors from the cosmetic result.
+     * These are sent to the content script so it can validate and repair grouped CSS
+     * injected by the background if any selector in a group is invalid.
+     *
+     * @param cosmeticResult Cosmetic result.
+     * @param options Options for processing cosmetic rules.
+     *
+     * @returns Array of individual native CSS selectors, or null if none exist.
+     */
+    public static getNativeCssSelectors(
+        cosmeticResult: CosmeticResult,
+        options: CosmeticOptions = {},
+    ): string[] | null {
+        const { elementHiding } = cosmeticResult;
+        const { isNativeHasSupported = false } = options;
+
+        const elemhideReclassified = CosmeticApiCommon.reclassifyNativeAndExtCssRules(
+            elementHiding.generic.concat(elementHiding.specific),
+            elementHiding.genericExtCss.concat(elementHiding.specificExtCss),
+            isNativeHasSupported,
+        );
+
+        const selectors = elemhideReclassified.native.map((rule) => rule.getContent());
+
+        return selectors.length > 0 ? selectors : null;
     }
 
     /**

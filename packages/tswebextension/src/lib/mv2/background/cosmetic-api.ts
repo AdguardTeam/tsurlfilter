@@ -174,6 +174,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             isAppStarted: false,
             areHitsStatsCollected: false,
             extCssRules: null,
+            nativeCssSelectors: null,
         };
 
         // if storage is not initialized, then app is not ready yet.
@@ -215,6 +216,11 @@ export class CosmeticApi extends CosmeticApiCommon {
                 areHitsStatsCollected,
                 isNativeHasSupported,
             },
+        );
+
+        data.nativeCssSelectors = CosmeticApi.getNativeCssSelectors(
+            cosmeticResult,
+            { isNativeHasSupported },
         );
 
         return data;
