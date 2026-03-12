@@ -15,6 +15,18 @@ import { CommentAstParser } from './comment';
 import type { PreparserParseOptions } from '../network/network-rule';
 
 /**
+ * Default maximum number of tokens per comment rule.
+ * Comment rules are typically short (metadata headers, hints, etc.).
+ */
+const DEFAULT_TOKEN_CAPACITY = 1024;
+
+/**
+ * Default maximum number of children (hints or agents) per comment rule.
+ * Most comment rules have 0-5 children; 32 provides headroom for edge cases.
+ */
+const DEFAULT_CHILDREN_CAPACITY = 32;
+
+/**
  * High-level parser for comment rules.
  *
  * Wraps the three-step pipeline (tokenize → preparse → build AST) and
@@ -32,10 +44,13 @@ export class CommentRuleParser {
     private ctx: PreparserContext;
 
     /**
-     * @param tokenCapacity Maximum number of tokens per rule (default 1024).
-     * @param childrenCapacity Maximum number of hints or agents per rule (default 32).
+     * @param tokenCapacity Maximum number of tokens per rule.
+     * @param childrenCapacity Maximum number of hints or agents per rule.
      */
-    constructor(tokenCapacity = 1024, childrenCapacity = 32) {
+    constructor(
+        tokenCapacity = DEFAULT_TOKEN_CAPACITY,
+        childrenCapacity = DEFAULT_CHILDREN_CAPACITY,
+    ) {
         this.tokens = {
             tokenCount: 0,
             types: new Uint8Array(tokenCapacity),

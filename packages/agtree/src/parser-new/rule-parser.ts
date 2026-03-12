@@ -22,6 +22,18 @@ import { NetworkRuleAstParser } from './network/network-rule';
 import type { PreparserParseOptions } from './network/network-rule';
 
 /**
+ * Default maximum number of tokens per rule.
+ * Handles both network and comment rules with varying complexity.
+ */
+const DEFAULT_TOKEN_CAPACITY = 1024;
+
+/**
+ * Default maximum number of children (modifiers, hints, or agents) per rule.
+ * Supports complex network rules with many modifiers or multi-agent comments.
+ */
+const DEFAULT_CHILDREN_CAPACITY = 64;
+
+/**
  * The set of rule types that this parser currently produces.
  * Cosmetic rules are not yet supported and will throw at parse time.
  */
@@ -52,10 +64,13 @@ export class RuleParser {
     private ctx: PreparserContext;
 
     /**
-     * @param tokenCapacity Maximum number of tokens per rule (default 1024).
-     * @param childrenCapacity Maximum modifiers / hints / agents per rule (default 64).
+     * @param tokenCapacity Maximum number of tokens per rule.
+     * @param childrenCapacity Maximum modifiers / hints / agents per rule.
      */
-    constructor(tokenCapacity = 1024, childrenCapacity = 64) {
+    constructor(
+        tokenCapacity = DEFAULT_TOKEN_CAPACITY,
+        childrenCapacity = DEFAULT_CHILDREN_CAPACITY,
+    ) {
         this.tokens = {
             tokenCount: 0,
             types: new Uint8Array(tokenCapacity),

@@ -15,6 +15,18 @@ import { NetworkRuleAstParser } from './network-rule';
 import type { PreparserParseOptions } from './network-rule';
 
 /**
+ * Default maximum number of tokens per network rule.
+ * Network rules can be complex with patterns, separators, and multiple modifiers.
+ */
+const DEFAULT_TOKEN_CAPACITY = 1024;
+
+/**
+ * Default maximum number of modifiers per network rule.
+ * Most rules have 1-5 modifiers; 64 provides headroom for complex filter rules.
+ */
+const DEFAULT_MODIFIER_CAPACITY = 64;
+
+/**
  * High-level parser for network rules.
  *
  * Wraps the three-step pipeline (tokenize → preparse → build AST) and
@@ -31,7 +43,14 @@ export class NetworkRuleParser {
 
     private ctx: PreparserContext;
 
-    constructor(tokenCapacity = 1024, modifierCapacity = 64) {
+    /**
+     * @param tokenCapacity Maximum number of tokens per rule.
+     * @param modifierCapacity Maximum number of modifiers per rule.
+     */
+    constructor(
+        tokenCapacity = DEFAULT_TOKEN_CAPACITY,
+        modifierCapacity = DEFAULT_MODIFIER_CAPACITY,
+    ) {
         this.tokens = {
             tokenCount: 0,
             types: new Uint8Array(tokenCapacity),

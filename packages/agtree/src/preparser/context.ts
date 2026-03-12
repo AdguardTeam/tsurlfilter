@@ -12,6 +12,18 @@ import { TokenType } from '../tokenizer/token-types';
 import type { TokenizeResult } from '../tokenizer/tokenizer';
 import { NR_HEADER_SIZE, MOD_STRIDE } from './network/constants';
 
+/**
+ * Default maximum number of tokens per rule.
+ * Shared default across network and comment rules.
+ */
+const DEFAULT_TOKEN_CAPACITY = 1024;
+
+/**
+ * Default maximum number of modifiers per network rule.
+ * Most network rules have 1-5 modifiers; 64 provides headroom.
+ */
+const DEFAULT_MODIFIER_CAPACITY = 64;
+
 // Minimum ctx.data slots needed to embed the LE node tree for !#if directives:
 //   CM_PREP_LE_OFFSET(5) + LE_BUFFER_SIZE(LE_HEADER(2) + LE_MAX_NODES(32) * LE_STRIDE(5)) = 167
 const CM_PREP_MIN_DATA_SLOTS = 167;
@@ -68,13 +80,13 @@ export interface PreparserContext {
 /**
  * Creates a pre-allocated PreparserContext.
  *
- * @param tokenCapacity - Maximum number of tokens (default 1024).
- * @param modifierCapacity - Maximum number of modifiers (default 64).
+ * @param tokenCapacity - Maximum number of tokens.
+ * @param modifierCapacity - Maximum number of modifiers.
  * @returns A new PreparserContext ready for use.
  */
 export function createPreparserContext(
-    tokenCapacity = 1024,
-    modifierCapacity = 64,
+    tokenCapacity = DEFAULT_TOKEN_CAPACITY,
+    modifierCapacity = DEFAULT_MODIFIER_CAPACITY,
 ): PreparserContext {
     return {
         source: '',
