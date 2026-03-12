@@ -85,13 +85,13 @@ export class ParameterListPreparser {
      *     `-1` for a null (empty) parameter.
      *   - `buf[PL_HEADER + i * PL_STRIDE + PL_PARAM_END]` — source end.
      *
-     * @param ctx       Preparser context (tokenizer output must be loaded).
-     * @param startTi   First inner token index (right after `(`).
-     * @param endTi     Exclusive boundary — the index of the closing `)` token
+     * @param ctx Preparser context (tokenizer output must be loaded).
+     * @param startTi First inner token index (right after `(`).
+     * @param endTi Exclusive boundary — the index of the closing `)` token
      *                  (or token count when there is no `)`).
      * @param listStart Source position right after the opening `(`.
-     * @param listEnd   Source position of the closing `)`.
-     * @param buf       Output buffer (at least {@link PL_BUFFER_SIZE} elements).
+     * @param listEnd Source position of the closing `)`.
+     * @param buf Output buffer (at least {@link PL_BUFFER_SIZE} elements).
      */
     public static preparse(
         ctx: PreparserContext,

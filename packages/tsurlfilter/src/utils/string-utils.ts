@@ -195,7 +195,7 @@ export function fastHash31(str: string): number {
 /**
  * Look for any symbol from "chars" array starting at "start" index or from the start of the string.
  *
- * @param str   String to search.
+ * @param str String to search.
  * @param chars Chars to search for.
  * @param start Start index (optional, inclusive).
  *
@@ -319,7 +319,7 @@ export function unescapeChar(str: string, char: string): string {
  * Supports LF, CR, FF and CRLF line breaks.
  *
  * @param str String to search in.
- * @param startIndex  Start index. Default is 0.
+ * @param startIndex Start index. Default is 0.
  *
  * @returns A tuple with the line break index and the line break length.
  * If the line break is not found, returns the string length and 0.

@@ -24,7 +24,7 @@ const buf = new Int32Array(LE_BUFFER_SIZE);
 /**
  * Tokenize, preparse, and build an AST for the given logical expression.
  *
- * @param source      Logical expression source string.
+ * @param source Logical expression source string.
  * @param isLocIncluded Whether to include source offsets in AST nodes.
  * @returns Root `AnyExpressionNode`.
  */

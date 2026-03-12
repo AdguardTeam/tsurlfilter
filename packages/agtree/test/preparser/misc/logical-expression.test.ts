@@ -31,7 +31,7 @@ const buf = new Int32Array(LE_BUFFER_SIZE);
 /**
  * Tokenize + preparse a logical expression in one step for convenience.
  *
- * @param source      Source string containing the expression.
+ * @param source Source string containing the expression.
  * @param startOffset Source start offset (default 0).
  * @returns Output buffer with the flat node-tree.
  */
@@ -45,7 +45,7 @@ function preparse(source: string, startOffset = 0): Int32Array {
 /**
  * Full pipeline: tokenize → preparse → build AST.
  *
- * @param source        Logical expression source string.
+ * @param source Logical expression source string.
  * @param isLocIncluded Whether to include source offsets in AST nodes.
  * @returns Root `AnyExpressionNode`.
  */

@@ -224,7 +224,7 @@ export class LogicalExpressionPreparser {
      * Returns the kind of node `i` (one of the `LE_KIND_*` constants).
      *
      * @param buf Buffer written by {@link LogicalExpressionPreparser.preparse}.
-     * @param i   Node index (0-based).
+     * @param i Node index (0-based).
      * @returns Node kind.
      */
     public static nodeKind(buf: Int32Array, i: number): number {
@@ -235,7 +235,7 @@ export class LogicalExpressionPreparser {
      * Returns the inclusive source start offset of node `i`.
      *
      * @param buf Buffer written by {@link LogicalExpressionPreparser.preparse}.
-     * @param i   Node index.
+     * @param i Node index.
      * @returns Source start offset.
      */
     public static nodeSrcStart(buf: Int32Array, i: number): number {
@@ -246,7 +246,7 @@ export class LogicalExpressionPreparser {
      * Returns the exclusive source end offset of node `i`.
      *
      * @param buf Buffer written by {@link LogicalExpressionPreparser.preparse}.
-     * @param i   Node index.
+     * @param i Node index.
      * @returns Source end offset (exclusive).
      */
     public static nodeSrcEnd(buf: Int32Array, i: number): number {
@@ -257,7 +257,7 @@ export class LogicalExpressionPreparser {
      * Returns the left / unary child index of node `i`, or `-1` if absent.
      *
      * @param buf Buffer written by {@link LogicalExpressionPreparser.preparse}.
-     * @param i   Node index.
+     * @param i Node index.
      * @returns Left child index, or `-1`.
      */
     public static nodeLeft(buf: Int32Array, i: number): number {
@@ -268,7 +268,7 @@ export class LogicalExpressionPreparser {
      * Returns the right child index of node `i`, or `-1` if absent.
      *
      * @param buf Buffer written by {@link LogicalExpressionPreparser.preparse}.
-     * @param i   Node index.
+     * @param i Node index.
      * @returns Right child index, or `-1`.
      */
     public static nodeRight(buf: Int32Array, i: number): number {

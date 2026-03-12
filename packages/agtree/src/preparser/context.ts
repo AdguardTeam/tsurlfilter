@@ -189,8 +189,8 @@ export function skipUntil(ctx: PreparserContext, ti: number, end: number, tokenT
  * without allocating a slice.
  *
  * @param source Source string.
- * @param start  Start index (inclusive).
- * @param end    End index (exclusive).
+ * @param start Start index (inclusive).
+ * @param end End index (exclusive).
  * @param target String to compare against.
  * @returns Whether the region exactly equals `target`.
  */

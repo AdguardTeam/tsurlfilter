@@ -32,9 +32,9 @@ const buf = new Int32Array(PL_BUFFER_SIZE);
  * `listStart` and `listEnd` default to `0` / `input.length` so callers that
  * only care about param positions can omit them.
  *
- * @param input     Inner source string (no surrounding parentheses).
+ * @param input Inner source string (no surrounding parentheses).
  * @param listStart Source position to store as the list start (default 0).
- * @param listEnd   Source position to store as the list end (default input.length).
+ * @param listEnd Source position to store as the list end (default input.length).
  * @returns The filled buffer.
  */
 function preparse(input: string, listStart = 0, listEnd = input.length): Int32Array {
@@ -47,9 +47,9 @@ function preparse(input: string, listStart = 0, listEnd = input.length): Int32Ar
 /**
  * Reads a single param's source range from the buffer.
  *
- * @param data   Buffer filled by ParameterListPreparser.preparse.
+ * @param data Buffer filled by ParameterListPreparser.preparse.
  * @param source Original source string.
- * @param i      Param index (0-based).
+ * @param i Param index (0-based).
  * @returns `{ start, end, value }` or `null` for a null param.
  */
 function getParam(data: Int32Array, source: string, i: number): { start: number; end: number; value: string } | null {

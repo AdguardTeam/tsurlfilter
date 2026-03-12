@@ -21,7 +21,7 @@ const plBuf = new Int32Array(PL_BUFFER_SIZE);
  * Tokenize, preparse, and build a ParameterList AST from an inner source string
  * (no surrounding parentheses — the caller is responsible for stripping them).
  *
- * @param source        Inner source string (no surrounding parentheses).
+ * @param source Inner source string (no surrounding parentheses).
  * @param isLocIncluded Whether to include source locations.
  * @returns ParameterList AST node.
  */

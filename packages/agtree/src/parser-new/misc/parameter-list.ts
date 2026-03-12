@@ -26,8 +26,8 @@ export class ParameterListAstParser {
     /**
      * Builds a {@link ParameterList} node from a preparsed buffer.
      *
-     * @param source        Original source string.
-     * @param buf           Buffer written by the parameter list preparser.
+     * @param source Original source string.
+     * @param buf Buffer written by the parameter list preparser.
      * @param isLocIncluded Whether to attach source locations to nodes.
      * @returns ParameterList AST node.
      */

@@ -36,8 +36,8 @@ export class PreprocessorCommentAstParser {
     /**
      * Builds a {@link PreProcessorCommentRule} node from preparsed buffer data.
      *
-     * @param source  Original source string.
-     * @param data    Buffer written by `PreprocessorCommentPreparser.preparse`.
+     * @param source Original source string.
+     * @param data Buffer written by `PreprocessorCommentPreparser.preparse`.
      * @param options Parse options.
      * @returns PreProcessorCommentRule AST node.
      */
