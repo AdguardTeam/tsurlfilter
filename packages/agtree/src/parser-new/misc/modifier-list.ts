@@ -6,13 +6,13 @@
 
 import type { Modifier, ModifierList } from '../../nodes';
 import {
-    NR_MODIFIER_COUNT,
-    NR_HEADER_SIZE,
-    MOD_STRIDE,
-    MOD_NAME_START,
-    MOD_VALUE_START,
-    MOD_VALUE_END,
-    MOD_NAME_END,
+    NR_MODIFIER_COUNT_OFFSET,
+    NR_MODIFIER_RECORDS_OFFSET,
+    MODIFIER_RECORD_STRIDE,
+    MODIFIER_FIELD_NAME_START,
+    MODIFIER_FIELD_NAME_END,
+    MODIFIER_FIELD_VALUE_START,
+    MODIFIER_FIELD_VALUE_END,
     NO_VALUE,
 } from '../../preparser/network/network-rule';
 import { ModifierParser } from './modifier';
@@ -37,7 +37,7 @@ export class ModifierListParser {
         data: Int32Array,
         isLocIncluded: boolean,
     ): ModifierList | undefined {
-        const modCount = data[NR_MODIFIER_COUNT];
+        const modCount = data[NR_MODIFIER_COUNT_OFFSET];
 
         if (modCount === 0) {
             return undefined;
@@ -55,14 +55,14 @@ export class ModifierListParser {
         };
 
         if (isLocIncluded && modCount > 0) {
-            const firstBase = NR_HEADER_SIZE + MOD_NAME_START;
-            const lastBase = NR_HEADER_SIZE + (modCount - 1) * MOD_STRIDE;
-            const lastValStart = data[lastBase + MOD_VALUE_START];
+            const firstBase = NR_MODIFIER_RECORDS_OFFSET + MODIFIER_FIELD_NAME_START;
+            const lastBase = NR_MODIFIER_RECORDS_OFFSET + (modCount - 1) * MODIFIER_RECORD_STRIDE;
+            const lastValStart = data[lastBase + MODIFIER_FIELD_VALUE_START];
 
             modifiers.start = data[firstBase];
             modifiers.end = lastValStart !== NO_VALUE
-                ? data[lastBase + MOD_VALUE_END]
-                : data[lastBase + MOD_NAME_END];
+                ? data[lastBase + MODIFIER_FIELD_VALUE_END]
+                : data[lastBase + MODIFIER_FIELD_NAME_END];
         }
 
         return modifiers;

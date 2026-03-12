@@ -6,7 +6,11 @@
 
 import { AdblockSyntax } from '../../utils/adblockers';
 import { type CommentRule, CommentRuleType, RuleCategory } from '../../nodes';
-import { CM_SIMPLE_MARKER, CM_SIMPLE_TEXT_END, CM_SIMPLE_TEXT_START } from '../../preparser/comment/simple';
+import {
+    CM_SIMPLE_MARKER_OFFSET,
+    CM_SIMPLE_TEXT_START_OFFSET,
+    CM_SIMPLE_TEXT_END_OFFSET,
+} from '../../preparser/comment/simple';
 import type { PreparserParseOptions } from '../network/network-rule';
 import { ValueParser } from '../misc/value';
 
@@ -23,9 +27,9 @@ export class SimpleCommentAstParser {
      * @returns CommentRule AST node.
      */
     static parse(source: string, data: Int32Array, options: PreparserParseOptions = {}): CommentRule {
-        const markerStart = data[CM_SIMPLE_MARKER];
-        const textStart = data[CM_SIMPLE_TEXT_START];
-        const textEnd = data[CM_SIMPLE_TEXT_END];
+        const markerStart = data[CM_SIMPLE_MARKER_OFFSET];
+        const textStart = data[CM_SIMPLE_TEXT_START_OFFSET];
+        const textEnd = data[CM_SIMPLE_TEXT_END_OFFSET];
 
         const marker = ValueParser.parse(source, markerStart, markerStart + 1, options.isLocIncluded ?? false);
         const text = ValueParser.parse(source, textStart, textEnd, options.isLocIncluded ?? false);

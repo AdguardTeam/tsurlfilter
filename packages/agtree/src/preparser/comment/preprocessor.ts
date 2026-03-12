@@ -29,25 +29,36 @@ import { LogicalExpressionPreparser } from '../misc/logical-expression';
 import { ParameterListPreparser } from '../misc/parameter-list';
 import { CM_KIND, CommentKind } from './types';
 
-export const CM_PREP_NAME_START = 1;
-export const CM_PREP_NAME_END = 2;
-export const CM_PREP_PARAMS_START = 3;
-export const CM_PREP_PARAMS_END = 4;
+/**
+ * Buffer offset: start of directive name.
+ */
+export const CM_PREP_NAME_START_OFFSET = 1;
 
 /**
- * Offset within `ctx.data` where the embedded logical-expression buffer
- * begins for `!#if` directives (right after the 5 header fields).
+ * Buffer offset: end of directive name.
  */
-export const CM_PREP_LE_OFFSET = 5;
+export const CM_PREP_NAME_END_OFFSET = 2;
 
 /**
- * Offset within `ctx.data` where the embedded parameter-list buffer
- * begins for `!#safari_cb_affinity` directives.
- *
- * Shares the same region as {@link CM_PREP_LE_OFFSET} — LE and PL are
- * mutually exclusive (different directive names).
+ * Buffer offset: start of parameters (or -1 if absent).
  */
-export const CM_PREP_PL_OFFSET = CM_PREP_LE_OFFSET;
+export const CM_PREP_PARAMS_START_OFFSET = 3;
+
+/**
+ * Buffer offset: end of parameters (or -1 if absent).
+ */
+export const CM_PREP_PARAMS_END_OFFSET = 4;
+
+/**
+ * Buffer offset: where the embedded logical-expression buffer begins for `!#if` directives.
+ */
+export const CM_PREP_LE_DATA_OFFSET = 5;
+
+/**
+ * Buffer offset: where the embedded parameter-list buffer begins for `!#safari_cb_affinity` directives.
+ * Shares the same region as {@link CM_PREP_LE_DATA_OFFSET} — LE and PL are mutually exclusive.
+ */
+export const CM_PREP_PL_DATA_OFFSET = CM_PREP_LE_DATA_OFFSET;
 
 const IF_DIRECTIVE = 'if';
 const SAFARI_CB_AFFINITY_DIRECTIVE = 'safari_cb_affinity';
@@ -62,7 +73,7 @@ export class PreprocessorCommentPreparser {
      * Assumes the caller has verified the rule starts with `!#`.
      *
      * When the directive is `if`, also writes the flat logical-expression node
-     * tree into `ctx.data` starting at {@link CM_PREP_LE_OFFSET} via
+     * tree into `ctx.data` starting at {@link CM_PREP_LE_DATA_OFFSET} via
      * {@link LogicalExpressionPreparser.preparse}.
      *
      * @param ctx Preparser context (tokenizer output must be loaded).
@@ -108,7 +119,7 @@ export class PreprocessorCommentPreparser {
             const paramEndTi = lastTi >= 0 ? lastTi + 1 : ti;
 
             if (regionEquals(ctx.source, nameStart, nameEnd, IF_DIRECTIVE)) {
-                LogicalExpressionPreparser.preparse(ctx, ti, paramEndTi, ctx.data.subarray(CM_PREP_LE_OFFSET));
+                LogicalExpressionPreparser.preparse(ctx, ti, paramEndTi, ctx.data.subarray(CM_PREP_LE_DATA_OFFSET));
             } else if (regionEquals(ctx.source, nameStart, nameEnd, SAFARI_CB_AFFINITY_DIRECTIVE)) {
                 if (ctx.types[ti] === TokenType.OpenParen) {
                     const listStart = ctx.ends[ti]; // source position right after `(`
@@ -123,17 +134,17 @@ export class PreprocessorCommentPreparser {
                         closeTi,
                         listStart,
                         listEnd,
-                        ctx.data.subarray(CM_PREP_PL_OFFSET),
+                        ctx.data.subarray(CM_PREP_PL_DATA_OFFSET),
                     );
                 }
             }
         }
 
         data[CM_KIND] = CommentKind.Preprocessor;
-        data[CM_PREP_NAME_START] = nameStart;
-        data[CM_PREP_NAME_END] = nameEnd;
-        data[CM_PREP_PARAMS_START] = paramsStart;
-        data[CM_PREP_PARAMS_END] = paramsEnd;
+        data[CM_PREP_NAME_START_OFFSET] = nameStart;
+        data[CM_PREP_NAME_END_OFFSET] = nameEnd;
+        data[CM_PREP_PARAMS_START_OFFSET] = paramsStart;
+        data[CM_PREP_PARAMS_END_OFFSET] = paramsEnd;
     }
 
     /**
@@ -143,7 +154,7 @@ export class PreprocessorCommentPreparser {
      * @returns Source start offset of the name.
      */
     public static nameStart(data: Int32Array): number {
-        return data[CM_PREP_NAME_START];
+        return data[CM_PREP_NAME_START_OFFSET];
     }
 
     /**
@@ -153,7 +164,7 @@ export class PreprocessorCommentPreparser {
      * @returns Source end offset of the name.
      */
     public static nameEnd(data: Int32Array): number {
-        return data[CM_PREP_NAME_END];
+        return data[CM_PREP_NAME_END_OFFSET];
     }
 
     /**
@@ -163,7 +174,7 @@ export class PreprocessorCommentPreparser {
      * @returns Source start offset of the parameters, or `-1`.
      */
     public static paramsStart(data: Int32Array): number {
-        return data[CM_PREP_PARAMS_START];
+        return data[CM_PREP_PARAMS_START_OFFSET];
     }
 
     /**
@@ -173,6 +184,6 @@ export class PreprocessorCommentPreparser {
      * @returns Source end offset of the parameters, or `-1`.
      */
     public static paramsEnd(data: Int32Array): number {
-        return data[CM_PREP_PARAMS_END];
+        return data[CM_PREP_PARAMS_END_OFFSET];
     }
 }

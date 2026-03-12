@@ -20,11 +20,30 @@ import type { PreparserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
 import { CM_KIND, CommentKind } from './types';
 
-export const CM_META_MARKER = 1;
-export const CM_META_HEADER_START = 2;
-export const CM_META_HEADER_END = 3;
-export const CM_META_VALUE_START = 4;
-export const CM_META_VALUE_END = 5;
+/**
+ * Buffer offset: marker position (! or #).
+ */
+export const CM_META_MARKER_OFFSET = 1;
+
+/**
+ * Buffer offset: start of header name.
+ */
+export const CM_META_HEADER_START_OFFSET = 2;
+
+/**
+ * Buffer offset: end of header name.
+ */
+export const CM_META_HEADER_END_OFFSET = 3;
+
+/**
+ * Buffer offset: start of value (after colon).
+ */
+export const CM_META_VALUE_START_OFFSET = 4;
+
+/**
+ * Buffer offset: end of value.
+ */
+export const CM_META_VALUE_END_OFFSET = 5;
 
 /**
  * Known metadata header names (lowercase for comparison).
@@ -181,11 +200,11 @@ export class MetadataCommentPreparser {
         const valueEnd = lastTi >= 0 ? ctx.ends[lastTi] : valueStart;
 
         data[CM_KIND] = CommentKind.Metadata;
-        data[CM_META_MARKER] = markerStart;
-        data[CM_META_HEADER_START] = headerStart;
-        data[CM_META_HEADER_END] = headerEnd;
-        data[CM_META_VALUE_START] = valueStart;
-        data[CM_META_VALUE_END] = valueEnd;
+        data[CM_META_MARKER_OFFSET] = markerStart;
+        data[CM_META_HEADER_START_OFFSET] = headerStart;
+        data[CM_META_HEADER_END_OFFSET] = headerEnd;
+        data[CM_META_VALUE_START_OFFSET] = valueStart;
+        data[CM_META_VALUE_END_OFFSET] = valueEnd;
     }
 
     /**
@@ -195,7 +214,7 @@ export class MetadataCommentPreparser {
      * @returns Source offset of the marker character.
      */
     public static markerStart(data: Int32Array): number {
-        return data[CM_META_MARKER];
+        return data[CM_META_MARKER_OFFSET];
     }
 
     /**
@@ -205,7 +224,7 @@ export class MetadataCommentPreparser {
      * @returns Source start offset of the header name.
      */
     public static headerStart(data: Int32Array): number {
-        return data[CM_META_HEADER_START];
+        return data[CM_META_HEADER_START_OFFSET];
     }
 
     /**
@@ -215,7 +234,7 @@ export class MetadataCommentPreparser {
      * @returns Source end offset of the header name.
      */
     public static headerEnd(data: Int32Array): number {
-        return data[CM_META_HEADER_END];
+        return data[CM_META_HEADER_END_OFFSET];
     }
 
     /**
@@ -225,7 +244,7 @@ export class MetadataCommentPreparser {
      * @returns Source start offset of the value.
      */
     public static valueStart(data: Int32Array): number {
-        return data[CM_META_VALUE_START];
+        return data[CM_META_VALUE_START_OFFSET];
     }
 
     /**
@@ -235,6 +254,6 @@ export class MetadataCommentPreparser {
      * @returns Source end offset of the value.
      */
     public static valueEnd(data: Int32Array): number {
-        return data[CM_META_VALUE_END];
+        return data[CM_META_VALUE_END_OFFSET];
     }
 }

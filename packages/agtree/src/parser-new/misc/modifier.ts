@@ -8,14 +8,14 @@
 
 import type { Modifier } from '../../nodes';
 import {
-    NR_HEADER_SIZE,
-    MOD_STRIDE,
-    MOD_NAME_START,
-    MOD_NAME_END,
-    MOD_FLAGS,
-    MOD_VALUE_START,
-    MOD_VALUE_END,
-    MOD_FLAG_NEGATED,
+    NR_MODIFIER_RECORDS_OFFSET,
+    MODIFIER_RECORD_STRIDE,
+    MODIFIER_FIELD_NAME_START,
+    MODIFIER_FIELD_NAME_END,
+    MODIFIER_FIELD_FLAGS,
+    MODIFIER_FIELD_VALUE_START,
+    MODIFIER_FIELD_VALUE_END,
+    MODIFIER_FLAG_NEGATED,
     NO_VALUE,
 } from '../../preparser/network/network-rule';
 import { ValueParser } from './value';
@@ -41,31 +41,31 @@ export class ModifierParser {
         idx: number,
         isLocIncluded: boolean,
     ): Modifier {
-        const base = NR_HEADER_SIZE + idx * MOD_STRIDE;
+        const base = NR_MODIFIER_RECORDS_OFFSET + idx * MODIFIER_RECORD_STRIDE;
 
-        const nameStart = data[base + MOD_NAME_START];
-        const nameEnd = data[base + MOD_NAME_END];
-        const modFlags = data[base + MOD_FLAGS];
-        const valStart = data[base + MOD_VALUE_START];
-        const valEnd = data[base + MOD_VALUE_END];
+        const nameStart = data[base + MODIFIER_FIELD_NAME_START];
+        const nameEnd = data[base + MODIFIER_FIELD_NAME_END];
+        const modFlags = data[base + MODIFIER_FIELD_FLAGS];
+        const valStart = data[base + MODIFIER_FIELD_VALUE_START];
+        const valEnd = data[base + MODIFIER_FIELD_VALUE_END];
 
         const name = ValueParser.parse(source, nameStart, nameEnd, isLocIncluded);
 
-        const result: Modifier = {
+        const modifier: Modifier = {
             type: 'Modifier',
             name,
-            exception: (modFlags & MOD_FLAG_NEGATED) !== 0,
+            exception: (modFlags & MODIFIER_FLAG_NEGATED) !== 0,
         };
 
         if (valStart !== NO_VALUE) {
-            result.value = ValueParser.parse(source, valStart, valEnd, isLocIncluded);
+            modifier.value = ValueParser.parse(source, valStart, valEnd, isLocIncluded);
         }
 
         if (isLocIncluded) {
-            result.start = nameStart;
-            result.end = valStart !== NO_VALUE ? valEnd : nameEnd;
+            modifier.start = nameStart;
+            modifier.end = valStart !== NO_VALUE ? valEnd : nameEnd;
         }
 
-        return result;
+        return modifier;
     }
 }

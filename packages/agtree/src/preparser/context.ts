@@ -10,7 +10,7 @@
 
 import { TokenType } from '../tokenizer/token-types';
 import type { TokenizeResult } from '../tokenizer/tokenizer';
-import { NR_HEADER_SIZE, MOD_STRIDE } from './network/constants';
+import { NR_MODIFIER_RECORDS_OFFSET, MODIFIER_RECORD_STRIDE } from './network/constants';
 
 /**
  * Default maximum number of tokens per rule.
@@ -94,7 +94,10 @@ export function createPreparserContext(
         types: new Uint8Array(tokenCapacity),
         ends: new Uint32Array(tokenCapacity),
         tokenCount: 0,
-        data: new Int32Array(Math.max(NR_HEADER_SIZE + modifierCapacity * MOD_STRIDE, CM_PREP_MIN_DATA_SLOTS)),
+        data: new Int32Array(Math.max(
+            NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MODIFIER_RECORD_STRIDE,
+            CM_PREP_MIN_DATA_SLOTS,
+        )),
         maxMods: modifierCapacity,
         status: 0,
     };

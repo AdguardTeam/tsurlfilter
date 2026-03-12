@@ -12,13 +12,13 @@ import {
     RuleCategory,
 } from '../../nodes';
 import {
-    CM_HINT_COUNT,
-    CM_HINT_HEADER,
-    CM_HINT_NAME_END,
-    CM_HINT_NAME_START,
-    CM_HINT_PARAMS_END,
-    CM_HINT_PARAMS_START,
-    CM_HINT_STRIDE,
+    CM_HINT_COUNT_OFFSET,
+    CM_HINT_RECORDS_OFFSET,
+    HINT_RECORD_STRIDE,
+    HINT_FIELD_NAME_START,
+    HINT_FIELD_NAME_END,
+    HINT_FIELD_PARAMS_START,
+    HINT_FIELD_PARAMS_END,
 } from '../../preparser/comment/hint';
 import { COMMA } from '../../utils/constants';
 import { ParameterListParser } from '../../parser/misc/parameter-list-parser';
@@ -38,15 +38,15 @@ export class HintCommentAstParser {
      * @returns HintCommentRule AST node.
      */
     static parse(source: string, data: Int32Array, options: PreparserParseOptions = {}): HintCommentRule {
-        const count = data[CM_HINT_COUNT];
+        const count = data[CM_HINT_COUNT_OFFSET];
         const children: Hint[] = new Array(count);
 
         for (let i = 0; i < count; i += 1) {
-            const base = CM_HINT_HEADER + i * CM_HINT_STRIDE;
-            const nameStart = data[base + CM_HINT_NAME_START];
-            const nameEnd = data[base + CM_HINT_NAME_END];
-            const paramsStart = data[base + CM_HINT_PARAMS_START];
-            const paramsEnd = data[base + CM_HINT_PARAMS_END];
+            const base = CM_HINT_RECORDS_OFFSET + i * HINT_RECORD_STRIDE;
+            const nameStart = data[base + HINT_FIELD_NAME_START];
+            const nameEnd = data[base + HINT_FIELD_NAME_END];
+            const paramsStart = data[base + HINT_FIELD_PARAMS_START];
+            const paramsEnd = data[base + HINT_FIELD_PARAMS_END];
 
             const name = ValueParser.parse(source, nameStart, nameEnd, options.isLocIncluded ?? false);
 

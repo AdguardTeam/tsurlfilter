@@ -15,9 +15,20 @@ import type { PreparserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
 import { CM_KIND, CommentKind } from './types';
 
-export const CM_SIMPLE_MARKER = 1;
-export const CM_SIMPLE_TEXT_START = 2;
-export const CM_SIMPLE_TEXT_END = 3;
+/**
+ * Buffer offset: marker position (! or #).
+ */
+export const CM_SIMPLE_MARKER_OFFSET = 1;
+
+/**
+ * Buffer offset: start of text (after marker and whitespace).
+ */
+export const CM_SIMPLE_TEXT_START_OFFSET = 2;
+
+/**
+ * Buffer offset: end of text (trailing whitespace trimmed).
+ */
+export const CM_SIMPLE_TEXT_END_OFFSET = 3;
 
 /**
  * Preparser for simple comment rules (`! text` and `# text`).
@@ -50,9 +61,9 @@ export class SimpleCommentPreparser {
         const textEnd = lastTi >= 0 ? ctx.ends[lastTi] : textStart;
 
         data[CM_KIND] = CommentKind.Simple;
-        data[CM_SIMPLE_MARKER] = markerStart;
-        data[CM_SIMPLE_TEXT_START] = textStart;
-        data[CM_SIMPLE_TEXT_END] = textEnd;
+        data[CM_SIMPLE_MARKER_OFFSET] = markerStart;
+        data[CM_SIMPLE_TEXT_START_OFFSET] = textStart;
+        data[CM_SIMPLE_TEXT_END_OFFSET] = textEnd;
     }
 
     /**
@@ -62,7 +73,7 @@ export class SimpleCommentPreparser {
      * @returns Source offset of the marker character.
      */
     public static markerStart(data: Int32Array): number {
-        return data[CM_SIMPLE_MARKER];
+        return data[CM_SIMPLE_MARKER_OFFSET];
     }
 
     /**
@@ -72,7 +83,7 @@ export class SimpleCommentPreparser {
      * @returns Source start offset of the text.
      */
     public static textStart(data: Int32Array): number {
-        return data[CM_SIMPLE_TEXT_START];
+        return data[CM_SIMPLE_TEXT_START_OFFSET];
     }
 
     /**
@@ -82,6 +93,6 @@ export class SimpleCommentPreparser {
      * @returns Source end offset of the text.
      */
     public static textEnd(data: Int32Array): number {
-        return data[CM_SIMPLE_TEXT_END];
+        return data[CM_SIMPLE_TEXT_END_OFFSET];
     }
 }

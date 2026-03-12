@@ -9,7 +9,7 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
-import { NR_MODIFIER_COUNT } from '../network/constants';
+import { NR_MODIFIER_COUNT_OFFSET } from '../network/constants';
 import { ModifierPreparser } from './modifier';
 
 /**
@@ -25,7 +25,7 @@ export class ModifierListPreparser {
      * @returns Modifier count.
      */
     public static getCount(data: Int32Array): number {
-        return data[NR_MODIFIER_COUNT];
+        return data[NR_MODIFIER_COUNT_OFFSET];
     }
 
     /**
@@ -37,7 +37,7 @@ export class ModifierListPreparser {
      * @returns Modifier index (0-based) or -1 if not found.
      */
     public static findIndex(source: string, data: Int32Array, name: string): number {
-        const count = data[NR_MODIFIER_COUNT];
+        const count = data[NR_MODIFIER_COUNT_OFFSET];
 
         for (let i = 0; i < count; i += 1) {
             if (ModifierPreparser.nameEquals(source, data, i, name)) {

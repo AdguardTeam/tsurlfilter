@@ -30,14 +30,14 @@ import { regionEquals, tokenStart, skipWs } from '../context';
 import { isPotentialNetModifier } from '../misc/shared';
 import { ModifierListPreparser } from '../misc/modifier-list';
 import {
-    NR_FLAGS,
-    NR_PATTERN_START,
-    NR_PATTERN_END,
-    NR_SEPARATOR_INDEX,
-    NR_MODIFIER_COUNT,
-    NR_HEADER_SIZE,
-    FLAG_EXCEPTION,
-    MOD_STRIDE,
+    NR_FLAGS_OFFSET,
+    NR_PATTERN_START_OFFSET,
+    NR_PATTERN_END_OFFSET,
+    NR_SEPARATOR_INDEX_OFFSET,
+    NR_MODIFIER_COUNT_OFFSET,
+    NR_MODIFIER_RECORDS_OFFSET,
+    NR_FLAG_EXCEPTION,
+    MODIFIER_RECORD_STRIDE,
     NO_VALUE,
 } from './constants';
 
@@ -46,27 +46,27 @@ import {
  *
  * Constants are defined in `constants.ts` (not here) to avoid circular dependencies:
  * - `network-rule.ts` imports `ModifierListPreparser` from `misc/modifier-list.ts`
- * - `modifier.ts` needs `NR_HEADER_SIZE` to calculate modifier offsets
- * - `network-rule.ts` needs `MOD_STRIDE` to allocate buffer capacity
+ * - `modifier.ts` needs `NR_MODIFIER_RECORDS_OFFSET` to calculate modifier offsets
+ * - `network-rule.ts` needs `MODIFIER_RECORD_STRIDE` to allocate buffer capacity
  *
  * Having constants in a separate dependency-free file allows all preparsers to
  * safely import the shared buffer layout without creating cycles.
  */
 export {
-    NR_FLAGS,
-    NR_PATTERN_START,
-    NR_PATTERN_END,
-    NR_SEPARATOR_INDEX,
-    NR_MODIFIER_COUNT,
-    NR_HEADER_SIZE,
-    FLAG_EXCEPTION,
-    MOD_STRIDE,
-    MOD_NAME_START,
-    MOD_NAME_END,
-    MOD_FLAGS,
-    MOD_VALUE_START,
-    MOD_VALUE_END,
-    MOD_FLAG_NEGATED,
+    NR_FLAGS_OFFSET,
+    NR_PATTERN_START_OFFSET,
+    NR_PATTERN_END_OFFSET,
+    NR_SEPARATOR_INDEX_OFFSET,
+    NR_MODIFIER_COUNT_OFFSET,
+    NR_MODIFIER_RECORDS_OFFSET,
+    NR_FLAG_EXCEPTION,
+    MODIFIER_RECORD_STRIDE,
+    MODIFIER_FIELD_NAME_START,
+    MODIFIER_FIELD_NAME_END,
+    MODIFIER_FIELD_FLAGS,
+    MODIFIER_FIELD_VALUE_START,
+    MODIFIER_FIELD_VALUE_END,
+    MODIFIER_FLAG_NEGATED,
     NO_VALUE,
 } from './constants';
 
@@ -100,7 +100,7 @@ export type NetworkRulePreparseResult = {
  */
 export function createNetworkRulePreparseResult(modifierCapacity = 64): NetworkRulePreparseResult {
     return {
-        data: new Int32Array(NR_HEADER_SIZE + modifierCapacity * MOD_STRIDE),
+        data: new Int32Array(NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MODIFIER_RECORD_STRIDE),
         status: 0,
     };
 }
@@ -123,7 +123,7 @@ export class NetworkRulePreparser {
      * @returns Whether the rule is an exception.
      */
     public static isException(data: Int32Array): boolean {
-        return (data[NR_FLAGS] & FLAG_EXCEPTION) !== 0;
+        return (data[NR_FLAGS_OFFSET] & NR_FLAG_EXCEPTION) !== 0;
     }
 
     /**
@@ -133,7 +133,7 @@ export class NetworkRulePreparser {
      * @returns Whether a separator was found.
      */
     public static hasSeparator(data: Int32Array): boolean {
-        return data[NR_SEPARATOR_INDEX] !== NO_VALUE;
+        return data[NR_SEPARATOR_INDEX_OFFSET] !== NO_VALUE;
     }
 
     /**
@@ -143,7 +143,7 @@ export class NetworkRulePreparser {
      * @returns Source start index.
      */
     public static getPatternStart(data: Int32Array): number {
-        return data[NR_PATTERN_START];
+        return data[NR_PATTERN_START_OFFSET];
     }
 
     /**
@@ -153,7 +153,7 @@ export class NetworkRulePreparser {
      * @returns Source end index (exclusive).
      */
     public static getPatternEnd(data: Int32Array): number {
-        return data[NR_PATTERN_END];
+        return data[NR_PATTERN_END_OFFSET];
     }
 
     /**
@@ -163,7 +163,7 @@ export class NetworkRulePreparser {
      * @returns Separator source index or `NO_VALUE`.
      */
     public static getSeparatorIndex(data: Int32Array): number {
-        return data[NR_SEPARATOR_INDEX];
+        return data[NR_SEPARATOR_INDEX_OFFSET];
     }
 
     /**
@@ -175,7 +175,7 @@ export class NetworkRulePreparser {
      * @returns `true` if the pattern matches the target exactly.
      */
     public static patternEquals(source: string, data: Int32Array, target: string): boolean {
-        return regionEquals(source, data[NR_PATTERN_START], data[NR_PATTERN_END], target);
+        return regionEquals(source, data[NR_PATTERN_START_OFFSET], data[NR_PATTERN_END_OFFSET], target);
     }
 
     /**
@@ -186,7 +186,7 @@ export class NetworkRulePreparser {
      * @returns Pattern substring.
      */
     public static getPattern(source: string, data: Int32Array): string {
-        return source.slice(data[NR_PATTERN_START], data[NR_PATTERN_END]);
+        return source.slice(data[NR_PATTERN_START_OFFSET], data[NR_PATTERN_END_OFFSET]);
     }
 
     /**
@@ -212,7 +212,7 @@ export class NetworkRulePreparser {
             && types[ti] === TokenType.AtSign
             && types[ti + 1] === TokenType.AtSign
         ) {
-            flags |= FLAG_EXCEPTION;
+            flags |= NR_FLAG_EXCEPTION;
             ti += 2;
         }
 
@@ -237,10 +237,10 @@ export class NetworkRulePreparser {
             separatorSourceIdx = tokenStart(ctx, sepTi);
         }
 
-        d[NR_FLAGS] = flags;
-        d[NR_PATTERN_START] = patternStartIdx;
-        d[NR_PATTERN_END] = patternEndIdx;
-        d[NR_SEPARATOR_INDEX] = separatorSourceIdx;
+        d[NR_FLAGS_OFFSET] = flags;
+        d[NR_PATTERN_START_OFFSET] = patternStartIdx;
+        d[NR_PATTERN_END_OFFSET] = patternEndIdx;
+        d[NR_SEPARATOR_INDEX_OFFSET] = separatorSourceIdx;
 
         // Parse modifiers (if separator found)
         let modCount = 0;
@@ -249,7 +249,7 @@ export class NetworkRulePreparser {
             modCount = ModifierListPreparser.preparse(ctx, sepTi + 1);
         }
 
-        d[NR_MODIFIER_COUNT] = modCount;
+        d[NR_MODIFIER_COUNT_OFFSET] = modCount;
     }
 
     /**

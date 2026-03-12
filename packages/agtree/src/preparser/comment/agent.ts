@@ -15,11 +15,30 @@ import type { PreparserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
 import { CM_KIND, CommentKind } from './types';
 
-export const CM_AGENT_COUNT = 1;
-export const CM_AGENT_HEADER = 2;
-export const CM_AGENT_STRIDE = 2;
-export const CM_AGENT_START = 0;
-export const CM_AGENT_END = 1;
+/**
+ * Buffer offset: number of agents in the rule.
+ */
+export const CM_AGENT_COUNT_OFFSET = 1;
+
+/**
+ * Buffer offset: where agent records begin.
+ */
+export const CM_AGENT_RECORDS_OFFSET = 2;
+
+/**
+ * Record size: number of Int32Array slots per agent.
+ */
+export const AGENT_RECORD_STRIDE = 2;
+
+/**
+ * Record field: start offset of agent name.
+ */
+export const AGENT_FIELD_START = 0;
+
+/**
+ * Record field: end offset of agent name.
+ */
+export const AGENT_FIELD_END = 1;
 
 /**
  * Preparser for adblock agent comment rules (`[Agent1; Agent2]`).
@@ -72,10 +91,10 @@ export class AgentCommentPreparser {
 
             // Record the agent if non-empty
             if (agentEnd > agentStart) {
-                const base = CM_AGENT_HEADER + count * CM_AGENT_STRIDE;
+                const base = CM_AGENT_RECORDS_OFFSET + count * AGENT_RECORD_STRIDE;
 
-                data[base + CM_AGENT_START] = agentStart;
-                data[base + CM_AGENT_END] = agentEnd;
+                data[base + AGENT_FIELD_START] = agentStart;
+                data[base + AGENT_FIELD_END] = agentEnd;
                 count += 1;
             }
 
@@ -86,7 +105,7 @@ export class AgentCommentPreparser {
         }
 
         data[CM_KIND] = CommentKind.Agent;
-        data[CM_AGENT_COUNT] = count;
+        data[CM_AGENT_COUNT_OFFSET] = count;
     }
 
     /**
@@ -96,7 +115,7 @@ export class AgentCommentPreparser {
      * @returns Agent count.
      */
     public static count(data: Int32Array): number {
-        return data[CM_AGENT_COUNT];
+        return data[CM_AGENT_COUNT_OFFSET];
     }
 
     /**
@@ -107,7 +126,7 @@ export class AgentCommentPreparser {
      * @returns Source start offset of the agent name.
      */
     public static agentStart(data: Int32Array, i: number): number {
-        return data[CM_AGENT_HEADER + i * CM_AGENT_STRIDE + CM_AGENT_START];
+        return data[CM_AGENT_RECORDS_OFFSET + i * AGENT_RECORD_STRIDE + AGENT_FIELD_START];
     }
 
     /**
@@ -118,6 +137,6 @@ export class AgentCommentPreparser {
      * @returns Source end offset of the agent name.
      */
     public static agentEnd(data: Int32Array, i: number): number {
-        return data[CM_AGENT_HEADER + i * CM_AGENT_STRIDE + CM_AGENT_END];
+        return data[CM_AGENT_RECORDS_OFFSET + i * AGENT_RECORD_STRIDE + AGENT_FIELD_END];
     }
 }

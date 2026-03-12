@@ -7,12 +7,12 @@
 import { AdblockSyntax } from '../../utils/adblockers';
 import { type PreProcessorCommentRule, CommentRuleType, RuleCategory } from '../../nodes';
 import {
-    CM_PREP_LE_OFFSET,
-    CM_PREP_NAME_END,
-    CM_PREP_NAME_START,
-    CM_PREP_PARAMS_END,
-    CM_PREP_PARAMS_START,
-    CM_PREP_PL_OFFSET,
+    CM_PREP_LE_DATA_OFFSET,
+    CM_PREP_NAME_START_OFFSET,
+    CM_PREP_NAME_END_OFFSET,
+    CM_PREP_PARAMS_START_OFFSET,
+    CM_PREP_PARAMS_END_OFFSET,
+    CM_PREP_PL_DATA_OFFSET,
 } from '../../preparser/comment/preprocessor';
 import type { PreparserParseOptions } from '../network/network-rule';
 import { ValueParser } from '../misc/value';
@@ -28,9 +28,9 @@ const SAFARI_CB_AFFINITY_DIRECTIVE = 'safari_cb_affinity';
  *
  * For `!#if` directives the `params` field is an `AnyExpressionNode` built
  * from the logical-expression node tree embedded in `data` at
- * {@link CM_PREP_LE_OFFSET} by `PreprocessorCommentPreparser.preparse`.
+ * {@link CM_PREP_LE_DATA_OFFSET} by `PreprocessorCommentPreparser.preparse`.
  * For `!#safari_cb_affinity` the `params` field is a `ParameterList` built
- * from the parameter-list buffer embedded at {@link CM_PREP_PL_OFFSET}.
+ * from the parameter-list buffer embedded at {@link CM_PREP_PL_DATA_OFFSET}.
  */
 export class PreprocessorCommentAstParser {
     /**
@@ -46,10 +46,10 @@ export class PreprocessorCommentAstParser {
         data: Int32Array,
         options: PreparserParseOptions = {},
     ): PreProcessorCommentRule {
-        const nameStart = data[CM_PREP_NAME_START];
-        const nameEnd = data[CM_PREP_NAME_END];
-        const paramsStart = data[CM_PREP_PARAMS_START];
-        const paramsEnd = data[CM_PREP_PARAMS_END];
+        const nameStart = data[CM_PREP_NAME_START_OFFSET];
+        const nameEnd = data[CM_PREP_NAME_END_OFFSET];
+        const paramsStart = data[CM_PREP_PARAMS_START_OFFSET];
+        const paramsEnd = data[CM_PREP_PARAMS_END_OFFSET];
 
         const name = ValueParser.parse(source, nameStart, nameEnd, options.isLocIncluded ?? false);
 
@@ -64,11 +64,11 @@ export class PreprocessorCommentAstParser {
             if (regionEquals(source, nameStart, nameEnd, IF_DIRECTIVE)) {
                 result.params = LogicalExpressionAstParser.parse(
                     source,
-                    data.subarray(CM_PREP_LE_OFFSET),
+                    data.subarray(CM_PREP_LE_DATA_OFFSET),
                     options.isLocIncluded ?? false,
                 );
             } else if (regionEquals(source, nameStart, nameEnd, SAFARI_CB_AFFINITY_DIRECTIVE)) {
-                const plBuf = data.subarray(CM_PREP_PL_OFFSET);
+                const plBuf = data.subarray(CM_PREP_PL_DATA_OFFSET);
 
                 if (plBuf[0] >= 0 || plBuf[1] !== -1) {
                     result.params = ParameterListAstParser.parse(

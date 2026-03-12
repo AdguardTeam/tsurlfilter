@@ -18,14 +18,14 @@ import {
     tokenStart,
 } from '../context';
 import {
-    NR_HEADER_SIZE,
-    MOD_STRIDE,
-    MOD_NAME_START,
-    MOD_NAME_END,
-    MOD_FLAGS,
-    MOD_VALUE_START,
-    MOD_VALUE_END,
-    MOD_FLAG_NEGATED,
+    NR_MODIFIER_RECORDS_OFFSET,
+    MODIFIER_RECORD_STRIDE,
+    MODIFIER_FIELD_NAME_START,
+    MODIFIER_FIELD_NAME_END,
+    MODIFIER_FIELD_FLAGS,
+    MODIFIER_FIELD_VALUE_START,
+    MODIFIER_FIELD_VALUE_END,
+    MODIFIER_FLAG_NEGATED,
     NO_VALUE,
 } from '../network/constants';
 import { ValuePreparser } from './value';
@@ -46,8 +46,8 @@ export class ModifierPreparser {
      * @returns Whether the modifier is negated.
      */
     public static isNegated(data: Int32Array, idx: number): boolean {
-        const base = NR_HEADER_SIZE + idx * MOD_STRIDE;
-        return (data[base + MOD_FLAGS] & MOD_FLAG_NEGATED) !== 0;
+        const base = NR_MODIFIER_RECORDS_OFFSET + idx * MODIFIER_RECORD_STRIDE;
+        return (data[base + MODIFIER_FIELD_FLAGS] & MODIFIER_FLAG_NEGATED) !== 0;
     }
 
     /**
@@ -58,8 +58,8 @@ export class ModifierPreparser {
      * @returns Whether the modifier has a value.
      */
     public static hasValue(data: Int32Array, idx: number): boolean {
-        const base = NR_HEADER_SIZE + idx * MOD_STRIDE;
-        return data[base + MOD_VALUE_START] !== NO_VALUE;
+        const base = NR_MODIFIER_RECORDS_OFFSET + idx * MODIFIER_RECORD_STRIDE;
+        return data[base + MODIFIER_FIELD_VALUE_START] !== NO_VALUE;
     }
 
     /**
@@ -73,8 +73,8 @@ export class ModifierPreparser {
      * @returns `true` if the modifier name matches.
      */
     public static nameEquals(source: string, data: Int32Array, idx: number, name: string): boolean {
-        const base = NR_HEADER_SIZE + idx * MOD_STRIDE;
-        return regionEquals(source, data[base + MOD_NAME_START], data[base + MOD_NAME_END], name);
+        const base = NR_MODIFIER_RECORDS_OFFSET + idx * MODIFIER_RECORD_STRIDE;
+        return regionEquals(source, data[base + MODIFIER_FIELD_NAME_START], data[base + MODIFIER_FIELD_NAME_END], name);
     }
 
     /**
@@ -86,8 +86,8 @@ export class ModifierPreparser {
      * @returns Modifier name substring.
      */
     public static getName(source: string, data: Int32Array, idx: number): string {
-        const base = NR_HEADER_SIZE + idx * MOD_STRIDE;
-        return source.slice(data[base + MOD_NAME_START], data[base + MOD_NAME_END]);
+        const base = NR_MODIFIER_RECORDS_OFFSET + idx * MODIFIER_RECORD_STRIDE;
+        return source.slice(data[base + MODIFIER_FIELD_NAME_START], data[base + MODIFIER_FIELD_NAME_END]);
     }
 
     /**
@@ -99,14 +99,14 @@ export class ModifierPreparser {
      * @returns Modifier value substring or `null`.
      */
     public static getValue(source: string, data: Int32Array, idx: number): string | null {
-        const base = NR_HEADER_SIZE + idx * MOD_STRIDE;
-        const vs = data[base + MOD_VALUE_START];
+        const base = NR_MODIFIER_RECORDS_OFFSET + idx * MODIFIER_RECORD_STRIDE;
+        const vs = data[base + MODIFIER_FIELD_VALUE_START];
 
         if (vs === NO_VALUE) {
             return null;
         }
 
-        return source.slice(vs, data[base + MOD_VALUE_END]);
+        return source.slice(vs, data[base + MODIFIER_FIELD_VALUE_END]);
     }
 
     /**
@@ -118,12 +118,12 @@ export class ModifierPreparser {
      * @returns Object with nameStart, nameEnd, valueStart, valueEnd.
      */
     public static getBounds(data: Int32Array, idx: number): ModifierBounds {
-        const base = NR_HEADER_SIZE + idx * MOD_STRIDE;
+        const base = NR_MODIFIER_RECORDS_OFFSET + idx * MODIFIER_RECORD_STRIDE;
         return {
-            nameStart: data[base + MOD_NAME_START],
-            nameEnd: data[base + MOD_NAME_END],
-            valueStart: data[base + MOD_VALUE_START],
-            valueEnd: data[base + MOD_VALUE_END],
+            nameStart: data[base + MODIFIER_FIELD_NAME_START],
+            nameEnd: data[base + MODIFIER_FIELD_NAME_END],
+            valueStart: data[base + MODIFIER_FIELD_VALUE_START],
+            valueEnd: data[base + MODIFIER_FIELD_VALUE_END],
         };
     }
 
@@ -138,7 +138,7 @@ export class ModifierPreparser {
      */
     public static preparse(ctx: PreparserContext, ti: number, modIndex: number): number {
         const { types, tokenCount } = ctx;
-        const modBase = NR_HEADER_SIZE + modIndex * MOD_STRIDE;
+        const modBase = NR_MODIFIER_RECORDS_OFFSET + modIndex * MODIFIER_RECORD_STRIDE;
         let modFlags = 0;
 
         // Skip whitespace before modifier
@@ -149,7 +149,7 @@ export class ModifierPreparser {
 
         // Check for negation (Tilde: ~)
         if (types[ti] === TokenType.Tilde) {
-            modFlags |= MOD_FLAG_NEGATED;
+            modFlags |= MODIFIER_FLAG_NEGATED;
             ti += 1;
             ti = skipWs(ctx, ti);
         }
@@ -198,11 +198,11 @@ export class ModifierPreparser {
             ti = skipUntil(ctx, ti, tokenCount, TokenType.Comma);
         }
 
-        ctx.data[modBase + MOD_NAME_START] = nameStartIdx;
-        ctx.data[modBase + MOD_NAME_END] = nameEndIdx;
-        ctx.data[modBase + MOD_FLAGS] = modFlags;
-        ctx.data[modBase + MOD_VALUE_START] = valStart;
-        ctx.data[modBase + MOD_VALUE_END] = valEnd;
+        ctx.data[modBase + MODIFIER_FIELD_NAME_START] = nameStartIdx;
+        ctx.data[modBase + MODIFIER_FIELD_NAME_END] = nameEndIdx;
+        ctx.data[modBase + MODIFIER_FIELD_FLAGS] = modFlags;
+        ctx.data[modBase + MODIFIER_FIELD_VALUE_START] = valStart;
+        ctx.data[modBase + MODIFIER_FIELD_VALUE_END] = valEnd;
 
         return ti;
     }

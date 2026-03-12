@@ -21,32 +21,77 @@
  *   [+4] valueEnd       - Source index where value ends (exclusive), or NO_VALUE (-1)
  */
 
-// Network Rule Header Field Offsets
+/**
+ * Buffer offset: rule flags (exception bit, etc.).
+ */
+export const NR_FLAGS_OFFSET = 0;
 
-export const NR_FLAGS = 0;
-export const NR_PATTERN_START = 1;
-export const NR_PATTERN_END = 2;
-export const NR_SEPARATOR_INDEX = 3;
-export const NR_MODIFIER_COUNT = 4;
-export const NR_HEADER_SIZE = 5;
+/**
+ * Buffer offset: pattern start position.
+ */
+export const NR_PATTERN_START_OFFSET = 1;
 
-// Network Rule Flag Bits
+/**
+ * Buffer offset: pattern end position.
+ */
+export const NR_PATTERN_END_OFFSET = 2;
 
-export const FLAG_EXCEPTION = 1;
+/**
+ * Buffer offset: separator ('$') position (or -1 if absent).
+ */
+export const NR_SEPARATOR_INDEX_OFFSET = 3;
 
-// Modifier Record Layout
+/**
+ * Buffer offset: number of modifiers.
+ */
+export const NR_MODIFIER_COUNT_OFFSET = 4;
 
-export const MOD_STRIDE = 5;
-export const MOD_NAME_START = 0;
-export const MOD_NAME_END = 1;
-export const MOD_FLAGS = 2;
-export const MOD_VALUE_START = 3;
-export const MOD_VALUE_END = 4;
+/**
+ * Buffer offset: where modifier records begin.
+ */
+export const NR_MODIFIER_RECORDS_OFFSET = 5;
 
-// Modifier Flag Bits
+/**
+ * Rule flag bit: exception rule (starts with @@).
+ */
+export const NR_FLAG_EXCEPTION = 1;
 
-export const MOD_FLAG_NEGATED = 1;
+/**
+ * Record size: number of Int32Array slots per modifier.
+ */
+export const MODIFIER_RECORD_STRIDE = 5;
 
-// Sentinel
+/**
+ * Record field: start offset of modifier name.
+ */
+export const MODIFIER_FIELD_NAME_START = 0;
 
+/**
+ * Record field: end offset of modifier name.
+ */
+export const MODIFIER_FIELD_NAME_END = 1;
+
+/**
+ * Record field: modifier flags (negation bit, etc.).
+ */
+export const MODIFIER_FIELD_FLAGS = 2;
+
+/**
+ * Record field: start offset of value (or -1 if absent).
+ */
+export const MODIFIER_FIELD_VALUE_START = 3;
+
+/**
+ * Record field: end offset of value (or -1 if absent).
+ */
+export const MODIFIER_FIELD_VALUE_END = 4;
+
+/**
+ * Modifier flag bit: negated modifier (starts with ~).
+ */
+export const MODIFIER_FLAG_NEGATED = 1;
+
+/**
+ * Sentinel value for absent data (-1).
+ */
 export const NO_VALUE = -1;

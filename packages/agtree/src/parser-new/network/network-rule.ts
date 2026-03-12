@@ -11,10 +11,10 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import type { NetworkRule } from '../../nodes';
 import { NetworkRuleType, RuleCategory } from '../../nodes';
 import {
-    NR_FLAGS,
-    NR_PATTERN_START,
-    NR_PATTERN_END,
-    FLAG_EXCEPTION,
+    NR_FLAGS_OFFSET,
+    NR_PATTERN_START_OFFSET,
+    NR_PATTERN_END_OFFSET,
+    NR_FLAG_EXCEPTION,
 } from '../../preparser/network/network-rule';
 import { ValueParser } from '../misc/value';
 import { ModifierListParser } from '../misc/modifier-list';
@@ -58,9 +58,9 @@ export class NetworkRuleAstParser {
         data: Int32Array,
         options: PreparserParseOptions = {},
     ): NetworkRule {
-        const flags = data[NR_FLAGS];
-        const patternStart = data[NR_PATTERN_START];
-        const patternEnd = data[NR_PATTERN_END];
+        const flags = data[NR_FLAGS_OFFSET];
+        const patternStart = data[NR_PATTERN_START_OFFSET];
+        const patternEnd = data[NR_PATTERN_END_OFFSET];
         const isLoc = options.isLocIncluded ?? false;
 
         // Build pattern Value node
@@ -74,7 +74,7 @@ export class NetworkRuleAstParser {
             type: NetworkRuleType.NetworkRule,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
-            exception: (flags & FLAG_EXCEPTION) !== 0,
+            exception: (flags & NR_FLAG_EXCEPTION) !== 0,
             pattern,
             modifiers,
         };

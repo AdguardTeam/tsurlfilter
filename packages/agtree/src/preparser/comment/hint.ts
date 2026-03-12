@@ -18,13 +18,40 @@ import type { PreparserContext } from '../context';
 import { skipWs, tokenStart } from '../context';
 import { CM_KIND, CommentKind } from './types';
 
-export const CM_HINT_COUNT = 1;
-export const CM_HINT_HEADER = 2;
-export const CM_HINT_STRIDE = 4;
-export const CM_HINT_NAME_START = 0;
-export const CM_HINT_NAME_END = 1;
-export const CM_HINT_PARAMS_START = 2;
-export const CM_HINT_PARAMS_END = 3;
+/**
+ * Buffer offset: number of hints in the rule.
+ */
+export const CM_HINT_COUNT_OFFSET = 1;
+
+/**
+ * Buffer offset: where hint records begin.
+ */
+export const CM_HINT_RECORDS_OFFSET = 2;
+
+/**
+ * Record size: number of Int32Array slots per hint.
+ */
+export const HINT_RECORD_STRIDE = 4;
+
+/**
+ * Record field: start offset of hint name.
+ */
+export const HINT_FIELD_NAME_START = 0;
+
+/**
+ * Record field: end offset of hint name.
+ */
+export const HINT_FIELD_NAME_END = 1;
+
+/**
+ * Record field: start offset of parameters (or -1 if absent).
+ */
+export const HINT_FIELD_PARAMS_START = 2;
+
+/**
+ * Record field: end offset of parameters (or -1 if absent).
+ */
+export const HINT_FIELD_PARAMS_END = 3;
 
 /**
  * Preparser for hint comment rules (`!+ HINT_NAME[(params)] ...`).
@@ -96,18 +123,18 @@ export class HintCommentPreparser {
             }
 
             // Write hint record
-            const base = CM_HINT_HEADER + count * CM_HINT_STRIDE;
+            const base = CM_HINT_RECORDS_OFFSET + count * HINT_RECORD_STRIDE;
 
-            data[base + CM_HINT_NAME_START] = nameStart;
-            data[base + CM_HINT_NAME_END] = nameEnd;
-            data[base + CM_HINT_PARAMS_START] = paramsStart;
-            data[base + CM_HINT_PARAMS_END] = paramsEnd;
+            data[base + HINT_FIELD_NAME_START] = nameStart;
+            data[base + HINT_FIELD_NAME_END] = nameEnd;
+            data[base + HINT_FIELD_PARAMS_START] = paramsStart;
+            data[base + HINT_FIELD_PARAMS_END] = paramsEnd;
 
             count += 1;
         }
 
         data[CM_KIND] = CommentKind.Hint;
-        data[CM_HINT_COUNT] = count;
+        data[CM_HINT_COUNT_OFFSET] = count;
     }
 
     /**
@@ -117,7 +144,7 @@ export class HintCommentPreparser {
      * @returns Hint count.
      */
     public static count(data: Int32Array): number {
-        return data[CM_HINT_COUNT];
+        return data[CM_HINT_COUNT_OFFSET];
     }
 
     /**
@@ -128,7 +155,7 @@ export class HintCommentPreparser {
      * @returns Source start offset of the hint name.
      */
     public static hintNameStart(data: Int32Array, i: number): number {
-        return data[CM_HINT_HEADER + i * CM_HINT_STRIDE + CM_HINT_NAME_START];
+        return data[CM_HINT_RECORDS_OFFSET + i * HINT_RECORD_STRIDE + HINT_FIELD_NAME_START];
     }
 
     /**
@@ -139,7 +166,7 @@ export class HintCommentPreparser {
      * @returns Source end offset of the hint name.
      */
     public static hintNameEnd(data: Int32Array, i: number): number {
-        return data[CM_HINT_HEADER + i * CM_HINT_STRIDE + CM_HINT_NAME_END];
+        return data[CM_HINT_RECORDS_OFFSET + i * HINT_RECORD_STRIDE + HINT_FIELD_NAME_END];
     }
 
     /**
@@ -150,7 +177,7 @@ export class HintCommentPreparser {
      * @returns Source start offset of the parameters, or `-1`.
      */
     public static hintParamsStart(data: Int32Array, i: number): number {
-        return data[CM_HINT_HEADER + i * CM_HINT_STRIDE + CM_HINT_PARAMS_START];
+        return data[CM_HINT_RECORDS_OFFSET + i * HINT_RECORD_STRIDE + HINT_FIELD_PARAMS_START];
     }
 
     /**
@@ -161,6 +188,6 @@ export class HintCommentPreparser {
      * @returns Source end offset of the parameters, or `-1`.
      */
     public static hintParamsEnd(data: Int32Array, i: number): number {
-        return data[CM_HINT_HEADER + i * CM_HINT_STRIDE + CM_HINT_PARAMS_END];
+        return data[CM_HINT_RECORDS_OFFSET + i * HINT_RECORD_STRIDE + HINT_FIELD_PARAMS_END];
     }
 }

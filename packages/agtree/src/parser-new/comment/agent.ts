@@ -12,11 +12,11 @@ import {
 } from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
-    CM_AGENT_COUNT,
-    CM_AGENT_END,
-    CM_AGENT_HEADER,
-    CM_AGENT_START,
-    CM_AGENT_STRIDE,
+    CM_AGENT_COUNT_OFFSET,
+    CM_AGENT_RECORDS_OFFSET,
+    AGENT_RECORD_STRIDE,
+    AGENT_FIELD_START,
+    AGENT_FIELD_END,
 } from '../../preparser/comment/agent';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { getAdblockSyntax } from '../../common/agent-common';
@@ -107,13 +107,13 @@ export class AgentCommentAstParser {
      * @returns AgentCommentRule AST node.
      */
     static parse(source: string, data: Int32Array, options: PreparserParseOptions = {}): AgentCommentRule {
-        const count = data[CM_AGENT_COUNT];
+        const count = data[CM_AGENT_COUNT_OFFSET];
         const children: Agent[] = new Array(count);
 
         for (let i = 0; i < count; i += 1) {
-            const base = CM_AGENT_HEADER + i * CM_AGENT_STRIDE;
-            const agentStart = data[base + CM_AGENT_START];
-            const agentEnd = data[base + CM_AGENT_END];
+            const base = CM_AGENT_RECORDS_OFFSET + i * AGENT_RECORD_STRIDE;
+            const agentStart = data[base + AGENT_FIELD_START];
+            const agentEnd = data[base + AGENT_FIELD_END];
 
             children[i] = AgentCommentAstParser.parseOneAgent(source, agentStart, agentEnd, options);
         }

@@ -7,11 +7,11 @@
 import { AdblockSyntax } from '../../utils/adblockers';
 import { type MetadataCommentRule, CommentRuleType, RuleCategory } from '../../nodes';
 import {
-    CM_META_HEADER_END,
-    CM_META_HEADER_START,
-    CM_META_MARKER,
-    CM_META_VALUE_END,
-    CM_META_VALUE_START,
+    CM_META_MARKER_OFFSET,
+    CM_META_HEADER_START_OFFSET,
+    CM_META_HEADER_END_OFFSET,
+    CM_META_VALUE_START_OFFSET,
+    CM_META_VALUE_END_OFFSET,
 } from '../../preparser/comment/metadata';
 import type { PreparserParseOptions } from '../network/network-rule';
 import { ValueParser } from '../misc/value';
@@ -33,11 +33,11 @@ export class MetadataCommentAstParser {
         data: Int32Array,
         options: PreparserParseOptions = {},
     ): MetadataCommentRule {
-        const markerStart = data[CM_META_MARKER];
-        const headerStart = data[CM_META_HEADER_START];
-        const headerEnd = data[CM_META_HEADER_END];
-        const valueStart = data[CM_META_VALUE_START];
-        const valueEnd = data[CM_META_VALUE_END];
+        const markerStart = data[CM_META_MARKER_OFFSET];
+        const headerStart = data[CM_META_HEADER_START_OFFSET];
+        const headerEnd = data[CM_META_HEADER_END_OFFSET];
+        const valueStart = data[CM_META_VALUE_START_OFFSET];
+        const valueEnd = data[CM_META_VALUE_END_OFFSET];
 
         const isLoc = options.isLocIncluded ?? false;
         const marker = ValueParser.parse(source, markerStart, markerStart + 1, isLoc);
