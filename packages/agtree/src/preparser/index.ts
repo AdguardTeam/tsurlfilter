@@ -48,7 +48,17 @@ export {
 } from './cosmetic-separator';
 export { RuleClassifier, RuleKind } from './classifier';
 export { RulePreparser } from './rule';
-export * from './comment';
+export {
+    AgentCommentPreparser,
+    HintCommentPreparser,
+    matchMetadataHeader,
+    MetadataCommentPreparser,
+    PreprocessorCommentPreparser,
+    SimpleCommentPreparser,
+    CommentClassifier,
+    CommentKind,
+    CM_KIND,
+} from './comment';
 export { NetworkRulePreparser } from './network/network-rule';
 export { ModifierListPreparser } from './misc/modifier-list';
 export { ModifierPreparser } from './misc/modifier';
