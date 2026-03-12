@@ -118,7 +118,7 @@ describe('CommentRuleParser — metadata comments', () => {
             });
         });
 
-        test('! Homepage: https://github.com/AdguardTeam/some-repo/wiki', () => {
+        test('! Homepage: https://github.com/AdguardTeam/some-repo/wiki — single-word header', () => {
             expect(
                 parser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki', { isLocIncluded: true }),
             ).toMatchObject({
@@ -144,6 +144,90 @@ describe('CommentRuleParser — metadata comments', () => {
                     start: 12,
                     end: 57,
                     value: 'https://github.com/AdguardTeam/some-repo/wiki',
+                },
+            });
+        });
+
+        test('! Last Modified: 2024-03-12 — multi-word header', () => {
+            expect(parser.parse('! Last Modified: 2024-03-12', { isLocIncluded: true })).toMatchObject({
+                type: 'MetadataCommentRule',
+                start: 0,
+                end: 27,
+                category: 'Comment',
+                syntax: 'Common',
+                marker: {
+                    type: 'Value',
+                    start: 0,
+                    end: 1,
+                    value: '!',
+                },
+                header: {
+                    type: 'Value',
+                    start: 2,
+                    end: 15,
+                    value: 'Last Modified',
+                },
+                value: {
+                    type: 'Value',
+                    start: 17,
+                    end: 27,
+                    value: '2024-03-12',
+                },
+            });
+        });
+
+        test('! last modified: 2024-03-12 — multi-word header case-insensitive', () => {
+            expect(parser.parse('! last modified: 2024-03-12', { isLocIncluded: true })).toMatchObject({
+                type: 'MetadataCommentRule',
+                start: 0,
+                end: 27,
+                category: 'Comment',
+                syntax: 'Common',
+                marker: {
+                    type: 'Value',
+                    start: 0,
+                    end: 1,
+                    value: '!',
+                },
+                header: {
+                    type: 'Value',
+                    start: 2,
+                    end: 15,
+                    value: 'last modified',
+                },
+                value: {
+                    type: 'Value',
+                    start: 17,
+                    end: 27,
+                    value: '2024-03-12',
+                },
+            });
+        });
+
+        test('! Time Updated: 15:30:00 — another multi-word header', () => {
+            expect(parser.parse('! Time Updated: 15:30:00', { isLocIncluded: true })).toMatchObject({
+                type: 'MetadataCommentRule',
+                start: 0,
+                end: 24,
+                category: 'Comment',
+                syntax: 'Common',
+                marker: {
+                    type: 'Value',
+                    start: 0,
+                    end: 1,
+                    value: '!',
+                },
+                header: {
+                    type: 'Value',
+                    start: 2,
+                    end: 14,
+                    value: 'Time Updated',
+                },
+                value: {
+                    type: 'Value',
+                    start: 16,
+                    end: 24,
+                    value: '15:30:00',
                 },
             });
         });

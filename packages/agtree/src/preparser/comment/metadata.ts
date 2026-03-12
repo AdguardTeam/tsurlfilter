@@ -157,8 +157,7 @@ export class MetadataCommentPreparser {
 
                 for (const header of KNOWN_HEADERS) {
                     if (
-                        header.includes(' ')
-                        && candidateLen === header.length
+                        candidateLen === header.length
                         && regionEqualsCI(source, headerStart, header)
                     ) {
                         isMultiWord = true;
