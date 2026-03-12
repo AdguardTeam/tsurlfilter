@@ -4,23 +4,27 @@
  * Handles `!+ HINT_NAME[(params)] ...` rules. Records per-hint name and
  * optional parameter bounds in `ctx.data`.
  *
+ * ## Data Layout
+ * [0] KIND - CommentKind.Hint
+ * [1] COUNT - Number of hints
+ * [2+] Per hint (stride=4): NAME_START, NAME_END, PARAMS_START, PARAMS_END
+ *      PARAMS_START/PARAMS_END are -1 when the hint has no parameters
+ *
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
  */
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
 import { skipWs, tokenStart } from '../context';
-import {
-    CM_HINT_COUNT,
-    CM_HINT_HEADER,
-    CM_HINT_NAME_END,
-    CM_HINT_NAME_START,
-    CM_HINT_PARAMS_END,
-    CM_HINT_PARAMS_START,
-    CM_HINT_STRIDE,
-    CM_KIND,
-    CommentKind,
-} from './types';
+import { CM_KIND, CommentKind } from './types';
+
+export const CM_HINT_COUNT = 1;
+export const CM_HINT_HEADER = 2;
+export const CM_HINT_STRIDE = 4;
+export const CM_HINT_NAME_START = 0;
+export const CM_HINT_NAME_END = 1;
+export const CM_HINT_PARAMS_START = 2;
+export const CM_HINT_PARAMS_END = 3;
 
 /**
  * Preparser for hint comment rules (`!+ HINT_NAME[(params)] ...`).

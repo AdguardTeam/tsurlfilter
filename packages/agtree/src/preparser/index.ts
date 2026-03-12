@@ -17,6 +17,7 @@ export {
     skipUntil,
 } from './context';
 
+// Re-export constants and types from network rule preparser
 export {
     NR_FLAGS,
     NR_PATTERN_START,
@@ -33,9 +34,11 @@ export {
     MOD_VALUE_END,
     MOD_FLAG_NEGATED,
     NO_VALUE,
+} from './network/constants';
+export {
     type NetworkRulePreparseResult,
     createNetworkRulePreparseResult,
-} from './network/types';
+} from './network/network-rule';
 
 export {
     CosmeticSepKind,

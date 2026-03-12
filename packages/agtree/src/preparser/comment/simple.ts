@@ -3,17 +3,21 @@
  *
  * Handles `! text` and `# text` rules. Records the marker source offset and
  * the trimmed text bounds in `ctx.data`.
+ *
+ * ## Data Layout
+ * [0] KIND - CommentKind.Simple
+ * [1] MARKER_START - Source offset of ! or # marker
+ * [2] TEXT_START - Start of text (after marker + whitespace)
+ * [3] TEXT_END - End of text (trailing whitespace trimmed)
  */
 
 import type { PreparserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
-import {
-    CM_KIND,
-    CM_SIMPLE_MARKER,
-    CM_SIMPLE_TEXT_END,
-    CM_SIMPLE_TEXT_START,
-    CommentKind,
-} from './types';
+import { CM_KIND, CommentKind } from './types';
+
+export const CM_SIMPLE_MARKER = 1;
+export const CM_SIMPLE_TEXT_START = 2;
+export const CM_SIMPLE_TEXT_END = 3;
 
 /**
  * Preparser for simple comment rules (`! text` and `# text`).

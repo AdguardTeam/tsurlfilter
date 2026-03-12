@@ -2,26 +2,112 @@
 /* eslint-disable no-param-reassign */
 
 /**
- * @file Network rule preparser — top of the preparser chain.
+ * @file Network rule preparser.
  *
- * Identifies the exception marker (@@), pattern bounds, separator ($),
- * and delegates modifier list parsing to {@link ModifierListPreparser}.
+ * The preparser fills a reusable Int32Array with structural indices into
+ * the source string. No strings are allocated during preparsing.
+ *
+ * ## Network Rule Data Layout (Int32Array)
+ *
+ * Header fields (NR_HEADER_SIZE = 5):
+ *   [0] flags           - Bit flags (FLAG_EXCEPTION, etc.)
+ *   [1] patternStart    - Source index where pattern begins
+ *   [2] patternEnd      - Source index where pattern ends (exclusive)
+ *   [3] separatorIndex  - Source index of the '$' separator, or NO_VALUE (-1)
+ *   [4] modifierCount   - Number of modifiers parsed
+ *
+ * Modifier records (MOD_STRIDE = 5 each, starting at offset NR_HEADER_SIZE):
+ *   [+0] nameStart      - Source index where modifier name begins
+ *   [+1] nameEnd        - Source index where modifier name ends (exclusive)
+ *   [+2] flags          - Modifier flags (MOD_FLAG_NEGATED, etc.)
+ *   [+3] valueStart     - Source index where value begins, or NO_VALUE (-1)
+ *   [+4] valueEnd       - Source index where value ends (exclusive), or NO_VALUE (-1)
  */
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
 import { regionEquals, tokenStart, skipWs } from '../context';
+import { isPotentialNetModifier } from '../misc/shared';
+import { ModifierListPreparser } from '../misc/modifier-list';
 import {
     NR_FLAGS,
     NR_PATTERN_START,
     NR_PATTERN_END,
     NR_SEPARATOR_INDEX,
     NR_MODIFIER_COUNT,
+    NR_HEADER_SIZE,
     FLAG_EXCEPTION,
+    MOD_STRIDE,
     NO_VALUE,
-} from './types';
-import { isPotentialNetModifier } from '../misc/shared';
-import { ModifierListPreparser } from '../misc/modifier-list';
+} from './constants';
+
+/**
+ * Re-export constants for convenience.
+ *
+ * Constants are defined in `constants.ts` (not here) to avoid circular dependencies:
+ * - `network-rule.ts` imports `ModifierListPreparser` from `misc/modifier-list.ts`
+ * - `modifier.ts` needs `NR_HEADER_SIZE` to calculate modifier offsets
+ * - `network-rule.ts` needs `MOD_STRIDE` to allocate buffer capacity
+ *
+ * Having constants in a separate dependency-free file allows all preparsers to
+ * safely import the shared buffer layout without creating cycles.
+ */
+export {
+    NR_FLAGS,
+    NR_PATTERN_START,
+    NR_PATTERN_END,
+    NR_SEPARATOR_INDEX,
+    NR_MODIFIER_COUNT,
+    NR_HEADER_SIZE,
+    FLAG_EXCEPTION,
+    MOD_STRIDE,
+    MOD_NAME_START,
+    MOD_NAME_END,
+    MOD_FLAGS,
+    MOD_VALUE_START,
+    MOD_VALUE_END,
+    MOD_FLAG_NEGATED,
+    NO_VALUE,
+} from './constants';
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Result Type
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/**
+ * Reusable result structure for network rule preparsing.
+ *
+ * **IMPORTANT**: The `data` buffer is overwritten on each call.
+ * Same reuse semantics as TokenizeResult.
+ */
+export type NetworkRulePreparseResult = {
+    /**
+     * Reusable buffer storing structural data (mutated in-place).
+     */
+    data: Int32Array;
+
+    /**
+     * 0 = success, 1 = overflow (too many modifiers for buffer capacity).
+     */
+    status: 0 | 1;
+};
+
+/**
+ * Creates a pre-allocated NetworkRulePreparseResult.
+ *
+ * @param modifierCapacity - Maximum number of modifiers supported (default: 64).
+ * @returns Pre-allocated result structure ready for reuse.
+ */
+export function createNetworkRulePreparseResult(modifierCapacity = 64): NetworkRulePreparseResult {
+    return {
+        data: new Int32Array(NR_HEADER_SIZE + modifierCapacity * MOD_STRIDE),
+        status: 0,
+    };
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Network Rule Preparser
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 /**
  * Preparser for network rules.

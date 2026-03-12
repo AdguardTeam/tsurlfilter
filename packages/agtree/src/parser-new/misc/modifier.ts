@@ -17,7 +17,7 @@ import {
     MOD_VALUE_END,
     MOD_FLAG_NEGATED,
     NO_VALUE,
-} from '../../preparser/network/types';
+} from '../../preparser/network/network-rule';
 import { ValueParser } from './value';
 
 /**

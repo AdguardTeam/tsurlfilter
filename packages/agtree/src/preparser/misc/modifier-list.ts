@@ -9,7 +9,7 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
-import { NR_MODIFIER_COUNT } from '../network/types';
+import { NR_MODIFIER_COUNT } from '../network/constants';
 import { ModifierPreparser } from './modifier';
 
 /**

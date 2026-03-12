@@ -27,7 +27,7 @@ import {
     MOD_VALUE_END,
     MOD_FLAG_NEGATED,
     NO_VALUE,
-} from '../network/types';
+} from '../network/constants';
 import { ValuePreparser } from './value';
 
 type ModifierBounds = { nameStart: number; nameEnd: number; valueStart: number; valueEnd: number };

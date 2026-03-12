@@ -19,7 +19,7 @@ import {
     CM_HINT_PARAMS_END,
     CM_HINT_PARAMS_START,
     CM_HINT_STRIDE,
-} from '../../preparser/comment/types';
+} from '../../preparser/comment/hint';
 import { COMMA } from '../../utils/constants';
 import { ParameterListParser } from '../../parser/misc/parameter-list-parser';
 import type { PreparserParseOptions } from '../network/network-rule';

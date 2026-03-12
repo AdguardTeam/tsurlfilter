@@ -6,7 +6,7 @@
 
 import { AdblockSyntax } from '../../utils/adblockers';
 import { type CommentRule, CommentRuleType, RuleCategory } from '../../nodes';
-import { CM_SIMPLE_MARKER, CM_SIMPLE_TEXT_END, CM_SIMPLE_TEXT_START } from '../../preparser/comment/types';
+import { CM_SIMPLE_MARKER, CM_SIMPLE_TEXT_END, CM_SIMPLE_TEXT_START } from '../../preparser/comment/simple';
 import type { PreparserParseOptions } from '../network/network-rule';
 import { ValueParser } from '../misc/value';
 

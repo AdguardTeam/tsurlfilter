@@ -15,7 +15,7 @@ import {
     NR_PATTERN_START,
     NR_PATTERN_END,
     FLAG_EXCEPTION,
-} from '../../preparser/network/types';
+} from '../../preparser/network/network-rule';
 import { ValueParser } from '../misc/value';
 import { ModifierListParser } from '../misc/modifier-list';
 

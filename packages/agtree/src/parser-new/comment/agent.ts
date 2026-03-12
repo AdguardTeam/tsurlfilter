@@ -17,7 +17,7 @@ import {
     CM_AGENT_HEADER,
     CM_AGENT_START,
     CM_AGENT_STRIDE,
-} from '../../preparser/comment/types';
+} from '../../preparser/comment/agent';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { getAdblockSyntax } from '../../common/agent-common';
 import type { PreparserParseOptions } from '../network/network-rule';

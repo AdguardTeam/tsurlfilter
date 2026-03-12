@@ -4,21 +4,27 @@
  * Handles `! Header: value` and `# Header: value` rules. Records the marker,
  * header name, and value bounds in `ctx.data`.
  *
+ * ## Data Layout
+ * [0] KIND - CommentKind.Metadata
+ * [1] MARKER_START - Source offset of ! or # marker
+ * [2] HEADER_START - Start of header name
+ * [3] HEADER_END - End of header name
+ * [4] VALUE_START - Start of value (after colon)
+ * [5] VALUE_END - End of value
+ *
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#special-comments}
  */
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
-import {
-    CM_KIND,
-    CM_META_HEADER_END,
-    CM_META_HEADER_START,
-    CM_META_MARKER,
-    CM_META_VALUE_END,
-    CM_META_VALUE_START,
-    CommentKind,
-} from './types';
+import { CM_KIND, CommentKind } from './types';
+
+export const CM_META_MARKER = 1;
+export const CM_META_HEADER_START = 2;
+export const CM_META_HEADER_END = 3;
+export const CM_META_VALUE_START = 4;
+export const CM_META_VALUE_END = 5;
 
 /**
  * Known metadata header names (lowercase for comparison).

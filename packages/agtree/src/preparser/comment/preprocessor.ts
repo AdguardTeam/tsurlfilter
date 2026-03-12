@@ -4,6 +4,16 @@
  * Handles `!#directive[ params]` rules. Records the directive name bounds and
  * optional parameter bounds in `ctx.data`.
  *
+ * ## Data Layout
+ * [0] KIND - CommentKind.Preprocessor
+ * [1] NAME_START - Directive name start
+ * [2] NAME_END - Directive name end
+ * [3] PARAMS_START - Parameters start (or -1 if absent)
+ * [4] PARAMS_END - Parameters end (or -1 if absent)
+ * [5+] Union buffer:
+ *      - For 'if' directive: LE node tree (LE_BUFFER_SIZE=162 slots)
+ *      - For 'safari_cb_affinity': PL entry list (PL_BUFFER_SIZE=67 slots)
+ *
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
  */
 
@@ -17,16 +27,27 @@ import {
 } from '../context';
 import { LogicalExpressionPreparser } from '../misc/logical-expression';
 import { ParameterListPreparser } from '../misc/parameter-list';
-import {
-    CM_KIND,
-    CM_PREP_LE_OFFSET,
-    CM_PREP_NAME_END,
-    CM_PREP_NAME_START,
-    CM_PREP_PARAMS_END,
-    CM_PREP_PARAMS_START,
-    CM_PREP_PL_OFFSET,
-    CommentKind,
-} from './types';
+import { CM_KIND, CommentKind } from './types';
+
+export const CM_PREP_NAME_START = 1;
+export const CM_PREP_NAME_END = 2;
+export const CM_PREP_PARAMS_START = 3;
+export const CM_PREP_PARAMS_END = 4;
+
+/**
+ * Offset within `ctx.data` where the embedded logical-expression buffer
+ * begins for `!#if` directives (right after the 5 header fields).
+ */
+export const CM_PREP_LE_OFFSET = 5;
+
+/**
+ * Offset within `ctx.data` where the embedded parameter-list buffer
+ * begins for `!#safari_cb_affinity` directives.
+ *
+ * Shares the same region as {@link CM_PREP_LE_OFFSET} — LE and PL are
+ * mutually exclusive (different directive names).
+ */
+export const CM_PREP_PL_OFFSET = CM_PREP_LE_OFFSET;
 
 const IF_DIRECTIVE = 'if';
 const SAFARI_CB_AFFINITY_DIRECTIVE = 'safari_cb_affinity';

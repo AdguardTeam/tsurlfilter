@@ -14,7 +14,7 @@ import {
     MOD_VALUE_END,
     MOD_NAME_END,
     NO_VALUE,
-} from '../../preparser/network/types';
+} from '../../preparser/network/network-rule';
 import { ModifierParser } from './modifier';
 
 /**

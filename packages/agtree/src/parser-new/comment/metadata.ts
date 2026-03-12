@@ -12,7 +12,7 @@ import {
     CM_META_MARKER,
     CM_META_VALUE_END,
     CM_META_VALUE_START,
-} from '../../preparser/comment/types';
+} from '../../preparser/comment/metadata';
 import type { PreparserParseOptions } from '../network/network-rule';
 import { ValueParser } from '../misc/value';
 

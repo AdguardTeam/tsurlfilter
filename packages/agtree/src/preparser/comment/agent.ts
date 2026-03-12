@@ -3,20 +3,23 @@
  *
  * Handles `[Agent1; Agent2]` rules. Records per-agent name bounds (trimmed)
  * in `ctx.data`.
+ *
+ * ## Data Layout
+ * [0] KIND - CommentKind.Agent
+ * [1] COUNT - Number of agents
+ * [2+] Per agent (stride=2): START, END (trimmed source offsets, exclusive end)
  */
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
-import {
-    CM_AGENT_COUNT,
-    CM_AGENT_END,
-    CM_AGENT_HEADER,
-    CM_AGENT_START,
-    CM_AGENT_STRIDE,
-    CM_KIND,
-    CommentKind,
-} from './types';
+import { CM_KIND, CommentKind } from './types';
+
+export const CM_AGENT_COUNT = 1;
+export const CM_AGENT_HEADER = 2;
+export const CM_AGENT_STRIDE = 2;
+export const CM_AGENT_START = 0;
+export const CM_AGENT_END = 1;
 
 /**
  * Preparser for adblock agent comment rules (`[Agent1; Agent2]`).

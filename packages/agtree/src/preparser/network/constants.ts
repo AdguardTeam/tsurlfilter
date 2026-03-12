@@ -1,10 +1,8 @@
-/* eslint-disable no-bitwise */
-
 /**
- * @file Preparser data layout constants, types, and factory functions.
+ * @file Network rule preparser data layout constants.
  *
- * The preparser fills a reusable Int32Array with structural indices into
- * the source string. No strings are allocated during preparsing.
+ * Separated from network-rule.ts to avoid circular dependencies with
+ * modifier preparsers.
  *
  * ## Network Rule Data Layout (Int32Array)
  *
@@ -52,38 +50,3 @@ export const MOD_FLAG_NEGATED = 1;
 // Sentinel
 
 export const NO_VALUE = -1;
-
-// Result Types
-
-/**
- * Reusable result structure for network rule preparsing.
- *
- * **IMPORTANT**: The `data` buffer is overwritten on each call.
- * Same reuse semantics as TokenizeResult.
- */
-export type NetworkRulePreparseResult = {
-    /**
-     * Reusable buffer storing structural data (mutated in-place).
-     */
-    data: Int32Array;
-
-    /**
-     * 0 = success, 1 = overflow (too many modifiers for buffer capacity).
-     */
-    status: 0 | 1;
-};
-
-// Factory
-
-/**
- * Creates a pre-allocated NetworkRulePreparseResult.
- *
- * @param modifierCapacity - Maximum number of modifiers supported (default: 64).
- * @returns Pre-allocated result structure ready for reuse.
- */
-export function createNetworkRulePreparseResult(modifierCapacity = 64): NetworkRulePreparseResult {
-    return {
-        data: new Int32Array(NR_HEADER_SIZE + modifierCapacity * MOD_STRIDE),
-        status: 0,
-    };
-}

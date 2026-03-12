@@ -13,7 +13,7 @@ import {
     CM_PREP_PARAMS_END,
     CM_PREP_PARAMS_START,
     CM_PREP_PL_OFFSET,
-} from '../../preparser/comment/types';
+} from '../../preparser/comment/preprocessor';
 import type { PreparserParseOptions } from '../network/network-rule';
 import { ValueParser } from '../misc/value';
 import { LogicalExpressionAstParser } from '../misc/logical-expression';

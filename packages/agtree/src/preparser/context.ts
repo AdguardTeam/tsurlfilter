@@ -10,7 +10,7 @@
 
 import { TokenType } from '../tokenizer/token-types';
 import type { TokenizeResult } from '../tokenizer/tokenizer';
-import { NR_HEADER_SIZE, MOD_STRIDE } from './network/types';
+import { NR_HEADER_SIZE, MOD_STRIDE } from './network/constants';
 
 // Minimum ctx.data slots needed to embed the LE node tree for !#if directives:
 //   CM_PREP_LE_OFFSET(5) + LE_BUFFER_SIZE(LE_HEADER(2) + LE_MAX_NODES(32) * LE_STRIDE(5)) = 167
