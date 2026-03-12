@@ -31,7 +31,7 @@ export class CommentAstParser {
      * @returns The appropriate comment-rule AST node.
      */
     static parse(source: string, data: Int32Array, options: PreparserParseOptions = {}): AnyCommentRule {
-        const kind = data[0] as CommentKind;
+        const kind = data[0];
 
         switch (kind) {
             case CommentKind.Preprocessor:
