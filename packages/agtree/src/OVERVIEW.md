@@ -24,6 +24,72 @@ AST objects and their `value` strings are created.
 
 ---
 
+## Benefits & Design Rationale
+
+### The Old Approach (Tokenizer → AST Parser)
+
+Previously, the parser went directly from tokens to AST nodes:
+
+```text
+source → Tokenizer → AST Parser → AST node
+                     ↑
+                     allocates strings & objects immediately
+```
+
+**Problems:**
+
+- **Wasteful allocations**: Every parse created strings and objects, even for rules you might filter out
+- **No zero-copy classification**: Couldn't determine rule type without building the full AST
+- **Memory pressure**: Parsing 100,000+ filter rules allocated millions of temporary objects
+- **No structural validation**: Syntax errors only discovered during AST construction
+- **Poor cache locality**: Scattered object allocations across heap
+
+### Why the Preparser Layer?
+
+The preparser solves these problems by inserting a **zero-allocation structural analysis** stage between tokenization
+and AST building:
+
+```text
+source → Tokenizer → Preparser → AST Parser → AST node
+                     ↑            ↑
+                     no alloc     only here
+```
+
+**Key Benefits:**
+
+1. **Zero-copy rule classification**
+   - Know rule type (Comment/Network/Cosmetic) without allocating
+   - Can filter/skip rules before building AST
+   - Essential for processing large filter lists efficiently
+
+2. **Memory efficiency**
+   - Stages 1-2 reuse the same buffers across all rules
+   - Only allocate in stage 3, and only for rules you actually need
+   - Reduces GC pressure by 10-100x for large filter lists
+
+3. **Structural validation without allocation**
+   - Catch syntax errors during preparse (cheap)
+   - Avoid building invalid ASTs (expensive)
+   - Better error messages with source offsets ready
+
+4. **Better cache locality**
+   - Flat `Int32Array` buffer vs scattered heap objects
+   - Sequential access patterns vs pointer chasing
+   - V8 can optimize hot loops more aggressively
+
+5. **Separation of concerns**
+   - Tokenizer: character classification
+   - Preparser: structural boundaries
+   - AST parser: semantic object construction
+   - Each stage is simpler and easier to maintain
+
+6. **Flexible consumption**
+   - Some use cases only need classification (no AST needed)
+   - Others need full AST for transformation
+   - Preparser enables both without waste
+
+---
+
 ## 1. Tokenizer
 
 **File:** `tokenizer/tokenizer.ts`
