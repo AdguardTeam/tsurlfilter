@@ -22,6 +22,7 @@ import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { getAdblockSyntax } from '../../common/agent-common';
 import type { PreparserParseOptions } from '../network/network-rule';
 import { ValueParser } from '../misc/value';
+import { CHAR_SPACE, CHAR_TAB } from '../../tokenizer/char-codes';
 
 /**
  * Builds {@link AgentCommentRule} AST nodes from preparsed data.
@@ -48,7 +49,11 @@ export class AgentCommentAstParser {
     private static parseOneAgent(source: string, start: number, end: number, options: PreparserParseOptions): Agent {
         let offset = start;
 
-        while (offset < end && (source.charCodeAt(offset) === 32 || source.charCodeAt(offset) === 9)) {
+        while (
+            offset < end
+            && (source.charCodeAt(offset) === CHAR_SPACE
+                || source.charCodeAt(offset) === CHAR_TAB)
+        ) {
             offset += 1;
         }
 
@@ -59,7 +64,11 @@ export class AgentCommentAstParser {
 
         while (offset < end) {
             let wordEnd = offset;
-            while (wordEnd < end && source.charCodeAt(wordEnd) !== 32 && source.charCodeAt(wordEnd) !== 9) {
+            while (
+                wordEnd < end
+                && source.charCodeAt(wordEnd) !== CHAR_SPACE
+                && source.charCodeAt(wordEnd) !== CHAR_TAB
+            ) {
                 wordEnd += 1;
             }
 
@@ -71,7 +80,11 @@ export class AgentCommentAstParser {
             }
 
             offset = wordEnd;
-            while (offset < end && (source.charCodeAt(offset) === 32 || source.charCodeAt(offset) === 9)) {
+            while (
+                offset < end
+                && (source.charCodeAt(offset) === CHAR_SPACE
+                    || source.charCodeAt(offset) === CHAR_TAB)
+            ) {
                 offset += 1;
             }
         }
