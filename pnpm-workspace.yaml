@@ -6,7 +6,7 @@ packages:
 
 # default catalog
 catalog:
-  '@adguard/assistant': ^4.3.77
+  '@adguard/assistant': ^4.4.3
   '@adguard/scriptlets': ^2.2.16
   '@rollup/plugin-alias': ^5.1.1
   '@rollup/plugin-commonjs': ^28.0.1

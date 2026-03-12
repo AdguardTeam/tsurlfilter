@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING:** Updated [@adguard/tswebextension] to v4.0.0 with `FilterList` API.
   - User rules now use `FilterList` for automatic rule conversion.
   - Configuration structure changed: `content` and `conversionData` replace previous format.
+- Updated [@adguard/assistant] to `v4.4.3`.
 
 [2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v2.0.0
 
