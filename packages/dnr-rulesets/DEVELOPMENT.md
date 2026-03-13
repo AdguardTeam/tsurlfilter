@@ -76,8 +76,9 @@ node packages/dnr-rulesets/dist/cli.cjs watch <path-to-manifest> <path-to-resour
 
 ### Branch Strategy
 
-- Create feature branches from `main`
-- Use descriptive branch names: `feature/add-auth`, `fix/login-bug`
+- Create feature branches from `master`
+- Use descriptive branch names: `feature/add-auth`, `fix/login-bug`,
+  `enhance/improve-performance`
 - Open a pull request when ready for review
 
 ### Code Style
@@ -230,3 +231,4 @@ pnpm test:coverage
 - [CHANGELOG.md](CHANGELOG.md) — Version history
 - [TSUrlFilter declarative-converter](../tsurlfilter/README.md#declarativeconverter) — Underlying DNR conversion engine
 - [adguard-api-mv3 example](../examples/adguard-api-mv3) — Usage example
+- [Root DEVELOPMENT.md](../../DEVELOPMENT.md) — Monorepo-wide development guide
