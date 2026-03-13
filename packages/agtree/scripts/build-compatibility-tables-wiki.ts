@@ -2,20 +2,21 @@
  * @file Script to generate compatibility tables for the wiki.
  */
 
-import * as prettier from 'prettier';
-import { markdownTable } from 'markdown-table';
-import { writeFile } from 'fs/promises';
-import { ensureDir } from 'fs-extra';
-import path from 'path';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
+import { ensureDir } from 'fs-extra';
+import { markdownTable } from 'markdown-table';
+import * as prettier from 'prettier';
+
+import { type CompatibilityTableBase, type ProductRecords, type RowByProduct } from '../src/compatibility-tables/base';
+import { modifiersCompatibilityTable } from '../src/compatibility-tables/modifiers';
+import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../src/compatibility-tables/platforms';
 import { redirectsCompatibilityTable } from '../src/compatibility-tables/redirects';
 import { type BaseCompatibilityDataSchema } from '../src/compatibility-tables/schemas';
-import { modifiersCompatibilityTable } from '../src/compatibility-tables/modifiers';
 import { scriptletsCompatibilityTable } from '../src/compatibility-tables/scriptlets';
-import { type ProductRecords, type RowByProduct, type CompatibilityTableBase } from '../src/compatibility-tables/base';
-import { EMPTY, NEWLINE } from '../src/utils/constants';
 import { AdblockSyntax } from '../src/utils/adblockers';
-import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../src/compatibility-tables/platforms';
+import { EMPTY, NEWLINE } from '../src/utils/constants';
 
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -114,12 +115,12 @@ const sortFn = (a: CompatibilityEntityData[], b: CompatibilityEntityData[]) => {
 /**
  * Helper function to get the rows by product.
  *
+ * @template T Type of the compatibility data.
+ *
  * @param data Compatibility data to get the rows by product from.
  * @param extended Whether to include extended compatibility information.
  *
  * @returns Rows by product.
- *
- * @template T Type of the compatibility data.
  */
 const getRowsByProduct = <T extends CompatibilityTableBase<BaseCompatibilityDataSchema>>(
     data: T,

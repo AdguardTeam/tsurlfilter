@@ -1,4 +1,4 @@
-import { type Value, type HtmlFilteringRuleBody } from '../../../nodes';
+import { type HtmlFilteringRuleBody, type Value } from '../../../nodes';
 import { BaseParser } from '../../base-parser';
 import { defaultParserOptions } from '../../options';
 import { SelectorListParser } from '../selector/selector-list-parser';
@@ -7,14 +7,14 @@ import { SelectorListParser } from '../selector/selector-list-parser';
  * Class responsible for parsing HTML filtering rule body.
  *
  * Please note that the parser will parse any HTML filtering rule body if it is syntactically correct.
- * For example, it will parse this:
+ * For example, it will parse this:.
  * ```adblock
  * span[special-attr="Example"]
  * div:special-pseudo(Example)
  * ```
  *
- * but it didn't check if the pseudo selector `special-pseudo` or if
- * the attribute selector `special-attr` actually supported by any adblocker.
+ * But it didn't check if the pseudo selector `special-pseudo` or if
+ * the attribute selector `special-attr` actually supported by any adblocker..
  *
  * @see {@link https://www.w3.org/TR/selectors-4}
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}

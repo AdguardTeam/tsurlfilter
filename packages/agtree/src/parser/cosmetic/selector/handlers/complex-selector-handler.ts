@@ -1,9 +1,10 @@
 import { getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { type ComplexSelector } from '../../../../nodes';
 import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
+import { type ComplexSelector } from '../../../../nodes';
 import { type SelectorListParserContext } from '../context';
+
 import { CompoundSelectorHandler } from './compound-selector-handler';
 
 /**

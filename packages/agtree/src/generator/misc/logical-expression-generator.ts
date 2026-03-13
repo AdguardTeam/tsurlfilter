@@ -1,6 +1,6 @@
-import { BaseGenerator } from '../base-generator';
 import { type AnyExpressionNode, OperatorValue } from '../../nodes';
 import { NodeType } from '../../parser/misc/logical-expression-parser';
+import { BaseGenerator } from '../base-generator';
 
 /**
  * Generator for logical expression nodes.
@@ -9,8 +9,9 @@ export class LogicalExpressionGenerator extends BaseGenerator {
     /**
      * Generates a string representation of the logical expression (serialization).
      *
-     * @param node Expression node
-     * @returns String representation of the logical expression
+     * @param node Expression node.
+     *
+     * @returns String representation of the logical expression.
      */
     public static generate(node: AnyExpressionNode): string {
         if (node.type === NodeType.Variable) {

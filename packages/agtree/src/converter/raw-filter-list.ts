@@ -1,15 +1,16 @@
 /**
- * @file Filter list converter for raw filter lists
+ * @file Filter list converter for raw filter lists.
  *
  * Technically, this is a wrapper around `FilterListConverter` that works with nodes instead of strings.
  */
 
-import { createConversionResult, type ConversionResult } from './base-interfaces/conversion-result';
-import { BaseConverter } from './base-interfaces/base-converter';
-import { FilterListParser } from '../parser/filterlist-parser';
-import { FilterListConverter } from './filter-list';
-import { defaultParserOptions } from '../parser/options';
 import { FilterListGenerator } from '../generator/filterlist-generator';
+import { FilterListParser } from '../parser/filterlist-parser';
+import { defaultParserOptions } from '../parser/options';
+
+import { BaseConverter } from './base-interfaces/base-converter';
+import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';
+import { FilterListConverter } from './filter-list';
 
 /**
  * Adblock filter list converter class.
@@ -18,20 +19,22 @@ import { FilterListGenerator } from '../generator/filterlist-generator';
  * This class just provides an extra layer on top of the {@link FilterListConverter} and calls the parser/serializer
  * before/after the conversion internally.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class RawFilterListConverter extends BaseConverter {
     /**
      * Converts an adblock filter list text to AdGuard format, if possible.
      *
-     * @param rawFilterList Raw filter list text to convert
+     * @param rawFilterList Raw filter list text to convert.
      * @param tolerant Indicates whether the converter should be tolerant to invalid rules. If enabled and a rule is
      * invalid, it will be left as is. If disabled and a rule is invalid, the whole filter list will be failed.
      * Defaults to `true`.
+     *
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
      * the array of converted filter list text, and its `isConverted` flag indicates whether the original rule was
-     * converted. If the rule was not converted, the original filter list text will be returned
-     * @throws If the filter list is invalid or cannot be converted (if the tolerant mode is disabled)
+     * converted. If the rule was not converted, the original filter list text will be returned.
+     *
+     * @throws If the filter list is invalid or cannot be converted (if the tolerant mode is disabled).
      */
     public static convertToAdg(rawFilterList: string, tolerant = true): ConversionResult<string> {
         const conversionResult = FilterListConverter.convertToAdg(

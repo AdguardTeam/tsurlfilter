@@ -1,4 +1,4 @@
-import { type Value, type HtmlFilteringRuleBody } from '../../../nodes';
+import { type HtmlFilteringRuleBody, type Value } from '../../../nodes';
 import { BaseGenerator } from '../../base-generator';
 import { ValueGenerator } from '../../misc/value-generator';
 import { SelectorListGenerator } from '../selector/selector-list-generator';

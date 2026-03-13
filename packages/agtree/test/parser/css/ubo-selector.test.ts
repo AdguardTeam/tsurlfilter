@@ -1,18 +1,18 @@
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
+import { sprintf } from 'sprintf-js';
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
-import { sprintf } from 'sprintf-js';
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 
+import { UboPseudoName } from '../../../src/common/ubo-selector-common';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { UboSelectorParser, ERROR_MESSAGES, formatPseudoName } from '../../../src/parser/css/ubo-selector-parser';
+import { UboSelectorGenerator } from '../../../src/generator/css/ubo-selector-generator';
+import { ERROR_MESSAGES, formatPseudoName, UboSelectorParser } from '../../../src/parser/css/ubo-selector-parser';
 import { CSS_NOT_PSEUDO, EMPTY, SPACE } from '../../../src/utils/constants';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { UboSelectorGenerator } from '../../../src/generator/css/ubo-selector-generator';
-import { UboPseudoName } from '../../../src/common/ubo-selector-common';
 
 describe('UboSelectorParser', () => {
     describe('UboSelectorParser.parse - valid', () => {

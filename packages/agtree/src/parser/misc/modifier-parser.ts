@@ -1,9 +1,10 @@
-import { MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { type Modifier, type Value } from '../../nodes';
-import { defaultParserOptions } from '../options';
+import { MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants';
+import { StringUtils } from '../../utils/string';
 import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
+
 import { ValueParser } from './value-parser';
 
 /**
@@ -20,7 +21,8 @@ export class ModifierParser extends BaseParser {
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
-     * @returns Parsed modifier
+     * @returns Parsed modifier.
+     *
      * @throws An error if modifier name or value is empty.
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): Modifier {

@@ -1,16 +1,16 @@
 /* eslint-disable max-len */
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
 
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
+import { CosmeticRuleBodyGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-body-generator';
+import { CosmeticRulePatternGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-pattern-generator';
 import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { CosmeticRulePatternGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-pattern-generator';
-import { CosmeticRuleBodyGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-body-generator';
 
 describe('CosmeticRuleParser - general tests', () => {
     describe('CosmeticRuleParser.isCosmetic', () => {

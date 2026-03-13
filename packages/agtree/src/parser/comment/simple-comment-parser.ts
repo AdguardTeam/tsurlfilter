@@ -1,12 +1,12 @@
-import { AdblockSyntax } from '../../utils/adblockers';
-import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
-import { StringUtils } from '../../utils/string';
 import {
     CommentMarker,
     type CommentRule,
     CommentRuleType,
     RuleCategory,
 } from '../../nodes';
+import { AdblockSyntax } from '../../utils/adblockers';
+import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
+import { StringUtils } from '../../utils/string';
 import { BaseParser } from '../base-parser';
 import { ValueParser } from '../misc/value-parser';
 import { defaultParserOptions } from '../options';
@@ -28,7 +28,9 @@ export class SimpleCommentParser extends BaseParser {
      * Checks if the raw rule is a simple comment.
      *
      * @param raw Raw input to check.
+     *
      * @returns `true` if the input is a simple comment, `false` otherwise.
+     *
      * @note This method does not check for adblock agent comments.
      */
     public static isSimpleComment(raw: string): boolean {
@@ -75,6 +77,7 @@ export class SimpleCommentParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
      * @returns Comment rule node or null (if the raw rule cannot be parsed as a simple comment).
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): CommentRule | null {

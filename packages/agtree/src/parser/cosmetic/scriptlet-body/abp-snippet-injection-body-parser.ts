@@ -1,26 +1,26 @@
 /**
- * @file uBlock scriptlet injection body parser
+ * @file UBlock scriptlet injection body parser.
  */
 
+import { AbpSnippetInjectionBodyCommon } from '../../../common/abp-snippet-injection-body-common';
+import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
 import { SEMICOLON, SPACE } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
-import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../../misc/parameter-list-parser';
-import { type ScriptletInjectionRuleBody } from '../../../nodes';
-import { defaultParserOptions } from '../../options';
 import { BaseParser } from '../../base-parser';
-import { AbpSnippetInjectionBodyCommon } from '../../../common/abp-snippet-injection-body-common';
+import { ParameterListParser } from '../../misc/parameter-list-parser';
+import { defaultParserOptions } from '../../options';
 
 /**
  * `AbpSnippetInjectionBodyParser` is responsible for parsing the body of an Adblock Plus-style snippet rule.
  *
  * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
- * For example, it will parse this:
+ * For example, it will parse this:.
  * ```adblock
  * example.com#$#snippet0 arg0
  * ```
  *
- * but it didn't check if the scriptlet `snippet0` actually supported by any adblocker.
+ * But it didn't check if the scriptlet `snippet0` actually supported by any adblocker..
  *
  * @see {@link https://help.eyeo.com/adblockplus/snippet-filters-tutorial}
  */
@@ -31,8 +31,11 @@ export class AbpSnippetInjectionBodyParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Node of the parsed scriptlet call body
-     * @throws If the body is syntactically incorrect
+     *
+     * @returns Node of the parsed scriptlet call body.
+     *
+     * @throws If the body is syntactically incorrect.
+     *
      * @example
      * ```
      * #$#snippet0 arg0

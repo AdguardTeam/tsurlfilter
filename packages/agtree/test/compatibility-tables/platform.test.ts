@@ -1,8 +1,8 @@
 /* eslint-disable no-bitwise */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { parseRawPlatforms, stringifyPlatforms } from '../../src/compatibility-tables/schemas/platform';
 import { GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms';
+import { parseRawPlatforms, stringifyPlatforms } from '../../src/compatibility-tables/schemas/platform';
 
 describe('Platform Serialization', () => {
     describe('parseRawPlatforms', () => {

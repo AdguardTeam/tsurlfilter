@@ -1,5 +1,5 @@
 /**
- * @file Constant values used by all parts of the library
+ * @file Constant values used by all parts of the library.
  */
 
 // TODO: remove unused constants

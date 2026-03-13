@@ -5,7 +5,7 @@ import { VALIDATION_ERROR_PREFIX } from './constants';
  * - `{ valid: true }` for valid and _fully supported_ modifier;
  * - `{ valid: true, warn: <deprecation notice> }` for valid
  *   and _still supported but deprecated_ modifier;
- * - otherwise `{ valid: true, error: <invalidity reason> }`
+ * - otherwise `{ valid: true, error: <invalidity reason> }`.
  */
 export type ValidationResult = {
     valid: boolean;

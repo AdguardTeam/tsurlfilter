@@ -9,9 +9,9 @@ import {
     SPACE,
 } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
-import { ValueGenerator } from '../misc/value-generator';
-import { ParameterListGenerator } from '../misc/parameter-list-generator';
 import { LogicalExpressionGenerator } from '../misc/logical-expression-generator';
+import { ParameterListGenerator } from '../misc/parameter-list-generator';
+import { ValueGenerator } from '../misc/value-generator';
 
 /**
  * Pre-processor comment generator.
@@ -20,8 +20,9 @@ export class PreProcessorCommentGenerator extends BaseGenerator {
     /**
      * Converts a pre-processor comment node to a string.
      *
-     * @param node Pre-processor comment node
-     * @returns Raw string
+     * @param node Pre-processor comment node.
+     *
+     * @returns Raw string.
      */
     public static generate(node: PreProcessorCommentRule): string {
         let result = EMPTY;

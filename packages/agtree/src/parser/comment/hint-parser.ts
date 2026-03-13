@@ -1,9 +1,12 @@
 /* eslint-disable no-param-reassign */
 /**
- * @file AdGuard Hints
+ * @file AdGuard Hints.
+ *
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { type Hint } from '../../nodes';
 import {
     CLOSE_PARENTHESIS,
     COMMA,
@@ -13,12 +16,10 @@ import {
     UNDERSCORE,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { type Hint } from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../misc/parameter-list-parser';
-import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { ParameterListParser } from '../misc/parameter-list-parser';
 import { ValueParser } from '../misc/value-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * `HintParser` is responsible for parsing AdGuard hints.
@@ -39,8 +40,10 @@ export class HintParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Hint rule AST or null
-     * @throws If the syntax is invalid
+     *
+     * @returns Hint rule AST or null.
+     *
+     * @throws If the syntax is invalid.
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): Hint {
         let offset = 0;
