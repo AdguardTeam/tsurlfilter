@@ -106,16 +106,24 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
             return;
         }
 
-        this.logEvent(data);
-
         // If the request is a prerender request, instead of redirecting, we
         // block the request.
         // Actual redirect will happen after user navigates to the prerendered
         // page.
         if (data.isPrerenderRequest) {
-            logger.info(`[tsweb.DocumentBlockingService.handleDocumentBlocking]: Skipping document blocking for prerender request ${requestUrl} in tab ${tabId}`);
+            logger.debug(`[tsweb.DocumentBlockingService.handleDocumentBlocking]: Skipping document blocking for prerender request ${requestUrl} in tab ${tabId}`);
             return;
         }
+
+        // If the request is a prefetch request (e.g. via Chrome's Speculation
+        // Rules API), skip the redirect — user has not navigated to the page.
+        if (data.isPrefetchRequest) {
+            logger.debug(`[tsweb.DocumentBlockingService.handleDocumentBlocking]: Skipping document blocking for prefetch request ${requestUrl} in tab ${tabId}`);
+            return;
+        }
+
+        // Prefetch/prerender requests shouldn't be logged as blocked documents
+        this.logEvent(data);
 
         this.redirectToBlockingUrl({
             tabId,

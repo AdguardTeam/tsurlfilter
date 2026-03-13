@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Correct handle prerender speculative requests in Chromium-based browsers.
+- Correctly handle prerender speculative requests in Chromium-based browsers.
+
+### Fixed
+
+- MV3: prefetch requests (via Chrome's Speculation Rules API) matching `$document` rules no longer
+  incorrectly redirect to the document blocking page. Prefetch requests are now detected in
+  `webRequest.onBeforeRequest` via `details.documentId` (excluding prerender requests) and are
+  silently blocked without showing the blocking page [AdguardBrowserExtension#3414].
 
 ### Changed
 
@@ -22,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on demand instead of eagerly constructing heavy objects at ruleset creation time.
 - Updated tsurlfilter to vX.X.X. <!-- TODO: update version before release -->
 - Updated [@adguard/assistant] to `v4.4.3`.
+
+[AdguardBrowserExtension#3414]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3414
 
 ## [4.0.3] - 2026-02-26
 

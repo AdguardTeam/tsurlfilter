@@ -7,6 +7,7 @@ import {
     vi,
 } from 'vitest';
 
+import { defaultFilteringLog } from '../../../../../src/lib/common/filtering-log';
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { DocumentBlockingService } from '../../../../../src/lib/mv3/background/services/document-blocking-service';
 import { tabsApi } from '../../../../../src/lib/mv3/tabs/tabs-api';
@@ -38,6 +39,7 @@ vi.mock('../../../../../src/lib/common/filtering-log', () => ({
 
 vi.mock('../../../../../src/lib/common/utils/logger', () => ({
     logger: {
+        debug: vi.fn(),
         info: vi.fn(),
         warn: vi.fn(),
     },
@@ -132,6 +134,58 @@ describe('DocumentBlockingService', () => {
         });
 
         // For non-prerender requests, redirectToBlockingUrl should be called
+        expect(redirectSpy).toHaveBeenCalled();
+        redirectSpy.mockRestore();
+    });
+
+    it('should skip redirect for prefetch requests', () => {
+        const requestUrl = 'https://example.com/page';
+        const mockNetworkRule = createNetworkRule('||example.com^$document', 0);
+
+        const mockConfig = getConfigurationMv3Fixture();
+        documentBlockingService.configure(mockConfig);
+
+        const redirectSpy = vi.spyOn(documentBlockingService as any, 'redirectToBlockingUrl')
+            .mockImplementation(() => {});
+        const publishEventSpy = vi.spyOn(defaultFilteringLog, 'publishEvent');
+
+        const result = documentBlockingService.handleDocumentBlocking({
+            tabId: 1,
+            eventId: 'someEvent',
+            rule: mockNetworkRule,
+            referrerUrl: 'https://referrer.com',
+            requestUrl,
+            requestId: '123',
+            isPrefetchRequest: true,
+        });
+
+        expect(result).toBeUndefined();
+        expect(redirectSpy).not.toHaveBeenCalled();
+        expect(publishEventSpy).not.toHaveBeenCalled();
+
+        redirectSpy.mockRestore();
+    });
+
+    it('should call redirectToBlockingUrl for non-prefetch requests', () => {
+        const requestUrl = 'https://example.com/page';
+        const mockNetworkRule = createNetworkRule('||example.com^$document', 0);
+
+        const mockConfig = getConfigurationMv3Fixture();
+        documentBlockingService.configure(mockConfig);
+
+        const redirectSpy = vi.spyOn(documentBlockingService as any, 'redirectToBlockingUrl')
+            .mockImplementation(() => {});
+
+        documentBlockingService.handleDocumentBlocking({
+            tabId: 1,
+            eventId: 'someEvent',
+            rule: mockNetworkRule,
+            referrerUrl: 'https://referrer.com',
+            requestUrl,
+            requestId: '123',
+            isPrefetchRequest: false,
+        });
+
         expect(redirectSpy).toHaveBeenCalled();
         redirectSpy.mockRestore();
     });

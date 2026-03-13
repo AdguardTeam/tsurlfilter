@@ -52,6 +52,12 @@ export type GetDocumentBlockingResponseParams = {
      * Indicates whether the request is a prerender request.
      */
     isPrerenderRequest?: boolean;
+
+    /**
+     * Indicates whether the request is a prefetch request
+     * (e.g. initiated by Chrome's Speculation Rules API).
+     */
+    isPrefetchRequest?: boolean;
 };
 
 /**

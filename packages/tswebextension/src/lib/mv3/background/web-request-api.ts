@@ -24,8 +24,10 @@
  * At {@link RequestEvents.onErrorOccurred}, the blocked request url will be matched by {@link companiesDbService}
  * for collecting precise statistics of blocked requests.
  *
- * The specified {@link RequestContext} or frame context {@link Frame} will be removed from the storage
- * on {@link WebNavigation.onCommitted} after injection or {@link RequestEvents.onErrorOccurred} events.
+ * The specified {@link RequestContext} is removed from {@link requestContextStorage} on
+ * {@link RequestEvents.onCompleted} or {@link RequestEvents.onErrorOccurred}.
+ * Frame context {@link Frame} is removed from {@link TabContext} on
+ * {@link WebNavigation.onCompleted} or {@link WebNavigation.onErrorOccurred}.
  *
  *
  * Web Request API Event Handling:
@@ -105,7 +107,7 @@
  * if it's not created before,           │       onBeforeNavigate      │
  * and update main frame data with       │                             │
  * {@link updateMainFrameData}           └──────────────┬──────────────┘
- * and matches {@link CosmeticResult}                   │
+ * and matches {@link CosmeticResult}.                  │
  *                                                      │
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
@@ -265,7 +267,11 @@ export class WebRequestApi {
             thirdParty,
         } = context;
 
-        const { parentFrameId, documentLifecycle } = details;
+        const {
+            parentFrameId,
+            documentLifecycle,
+            documentId,
+        } = details;
 
         const isDocumentRequest = requestType === RequestType.Document;
 
@@ -281,6 +287,12 @@ export class WebRequestApi {
          */
         if (isDocumentRequest) {
             tabsApi.createTabContextIfNotExists(tabId, requestUrl);
+
+            const isDocumentPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+            // Prefetch requests are main frame requests that have a `documentId` set,
+            // while normal main frame requests do not have a `documentId` set.
+            const isPrefetchRequest = !isDocumentPrerenderRequest && !!documentId;
+            requestContextStorage.update(requestId, { isPrefetchRequest });
         }
 
         const isDocumentOrSubDocumentRequest = isDocumentRequest || requestType === RequestType.SubDocument;
@@ -636,6 +648,7 @@ export class WebRequestApi {
             referrerUrl,
             contentType,
             matchingResult,
+            isPrefetchRequest,
         } = context;
 
         // checking whether the matchingResult exists in the context guarantees
@@ -718,6 +731,7 @@ export class WebRequestApi {
             rule,
             tabId,
             isPrerenderRequest,
+            isPrefetchRequest,
         });
     }
 

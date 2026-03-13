@@ -47,6 +47,12 @@ export type RequestContext = TabFrameRequestContextMV3 & {
      * Filtering data from {@link EngineApi.matchRequest}.
      */
     matchingResult?: MatchingResult | null;
+
+    /**
+     * Indicates that the request is a speculative prefetch request detected in
+     * Chromium MV3 via `details.documentId` in `webRequest.onBeforeRequest`.
+     */
+    isPrefetchRequest?: boolean;
 };
 
 /**
@@ -105,16 +111,11 @@ export class RequestContextStorage {
     }
 
     /**
-     * Removes non document/subdocument request context from the map by request id.
+     * Removes request context from the map by request id.
      *
      * @param requestId Request id.
      */
     public delete(requestId: string): void {
-        const context = this.requestMap.get(requestId);
-        if (!context) {
-            return;
-        }
-
         this.requestMap.delete(requestId);
     }
 
