@@ -1,30 +1,33 @@
-import { describe, test, expect } from 'vitest';
 import { TokenType } from '@adguard/css-tokenizer';
+import { describe, expect, test } from 'vitest';
 
-import { tokenizeBalanced, tokenizeFnBalanced } from '../../../src/parser/css/balancing';
+import {
+    tokenizeBalanced,
+    tokenizeFnBalanced,
+} from '../../../src/parser/css/balancing';
 
 /**
  * Type of token data.
  *
- * @param type Token type
- * @param start Token start position
- * @param end Token end position
- * @param props Token properties
- * @param balance Balance of the token
+ * @param type Token type.
+ * @param start Token start position.
+ * @param end Token end position.
+ * @param props Token properties.
+ * @param balance Balance of the token.
  */
 type TokenData = [TokenType, number, number, object | undefined, number];
 
 describe('CSS balancing', () => {
     describe('tokenizeBalanced', () => {
         // invalid cases
-        test.each([
-            '(',
-            '()(',
-            '())',
-            '({)}',
-        ])('should throw on unbalanced input: %s', (input) => {
-            expect(() => tokenizeBalanced(input, () => {})).toThrow(/^Expected/);
-        });
+        test.each(['(', '()(', '())', '({)}'])(
+            'should throw on unbalanced input: %s',
+            (input) => {
+                expect(() => tokenizeBalanced(input, () => {})).toThrow(
+                    /^Expected/,
+                );
+            },
+        );
 
         // valid cases
         test.each([
@@ -140,26 +143,28 @@ describe('CSS balancing', () => {
                     [TokenType.CloseParenthesis, 38, 39, undefined, 0],
                 ],
             },
-        ])('should tokenize balanced input: $actual', ({ actual, expected }) => {
-            const tokens: TokenData[] = [];
+        ])(
+            'should tokenize balanced input: $actual',
+            ({ actual, expected }) => {
+                const tokens: TokenData[] = [];
 
-            tokenizeBalanced(actual, (type, start, end, props, balance) => {
-                tokens.push([type, start, end, props, balance]);
-            });
+                tokenizeBalanced(actual, (type, start, end, props, balance) => {
+                    tokens.push([type, start, end, props, balance]);
+                });
 
-            expect(tokens).toEqual(expected);
-        });
+                expect(tokens).toEqual(expected);
+            },
+        );
     });
 
     describe('tokenizeFnBalanced', () => {
         // invalid cases
-        test.each([
-            'func(',
-            'func(()func((',
-            'func())',
-        ])('should throw on unbalanced input: %s', (input) => {
-            expect(() => tokenizeBalanced(input, () => {})).toThrow();
-        });
+        test.each(['func(', 'func(()func((', 'func())'])(
+            'should throw on unbalanced input: %s',
+            (input) => {
+                expect(() => tokenizeBalanced(input, () => {})).toThrow();
+            },
+        );
 
         // valid cases
         test.each([
@@ -202,14 +207,20 @@ describe('CSS balancing', () => {
                     [TokenType.CloseParenthesis, 8, 9, undefined, 0],
                 ],
             },
-        ])('should tokenize balanced input: $actual', ({ actual, expected }) => {
-            const tokens: TokenData[] = [];
+        ])(
+            'should tokenize balanced input: $actual',
+            ({ actual, expected }) => {
+                const tokens: TokenData[] = [];
 
-            tokenizeFnBalanced(actual, (type, start, end, props, balance) => {
-                tokens.push([type, start, end, props, balance]);
-            });
+                tokenizeFnBalanced(
+                    actual,
+                    (type, start, end, props, balance) => {
+                        tokens.push([type, start, end, props, balance]);
+                    },
+                );
 
-            expect(tokens).toEqual(expected);
-        });
+                expect(tokens).toEqual(expected);
+            },
+        );
     });
 });

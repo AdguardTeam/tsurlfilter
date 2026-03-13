@@ -1,15 +1,24 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/nodes';
-import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import {
+    CosmeticRuleType,
+    type ElementHidingRule,
+    RuleCategory,
+} from '../../../src/nodes';
+import {
+    CosmeticRuleParser,
+} from '../../../src/parser/cosmetic/cosmetic-rule-parser';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid element hiding rules', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<ElementHidingRule> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<ElementHidingRule>;
+        }>([
             // generic cosmetic rule - without domains
             {
                 actual: '##.ad',
@@ -79,7 +88,9 @@ describe('CosmeticRuleParser', () => {
                         syntax: AdblockSyntax.Common,
                         exception: false,
                         modifiers: undefined,
-                        domains: DomainListParser.parse('example.com,~example.net'),
+                        domains: DomainListParser.parse(
+                            'example.com,~example.net',
+                        ),
                         separator: {
                             type: 'Value',
                             value: '##',
@@ -108,7 +119,9 @@ describe('CosmeticRuleParser', () => {
                         syntax: AdblockSyntax.Common,
                         exception: true,
                         modifiers: undefined,
-                        domains: DomainListParser.parse('example.com,~example.net'),
+                        domains: DomainListParser.parse(
+                            'example.com,~example.net',
+                        ),
                         separator: {
                             type: 'Value',
                             value: '#@#',
@@ -138,7 +151,9 @@ describe('CosmeticRuleParser', () => {
                         syntax: AdblockSyntax.Common,
                         exception: false,
                         modifiers: undefined,
-                        domains: DomainListParser.parse(String.raw`/example\d{1,}\.com/`),
+                        domains: DomainListParser.parse(
+                            String.raw`/example\d{1,}\.com/`,
+                        ),
                         separator: {
                             type: 'Value',
                             value: '##',
@@ -168,7 +183,9 @@ describe('CosmeticRuleParser', () => {
                         syntax: AdblockSyntax.Common,
                         exception: false,
                         modifiers: undefined,
-                        domains: DomainListParser.parse(String.raw`/example\d{1,}\.(com|org)/`),
+                        domains: DomainListParser.parse(
+                            String.raw`/example\d{1,}\.(com|org)/`,
+                        ),
                         separator: {
                             type: 'Value',
                             value: '##',
@@ -200,7 +217,9 @@ describe('CosmeticRuleParser', () => {
                         exception: false,
                         modifiers: undefined,
                         // eslint-disable-next-line max-len
-                        domains: DomainListParser.parse(String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/`),
+                        domains: DomainListParser.parse(
+                            String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/`,
+                        ),
                         separator: {
                             type: 'Value',
                             value: '##',
@@ -230,7 +249,9 @@ describe('CosmeticRuleParser', () => {
                         syntax: AdblockSyntax.Common,
                         exception: false,
                         modifiers: undefined,
-                        domains: DomainListParser.parse(String.raw`/example\d{1,}\.com/,example.net`),
+                        domains: DomainListParser.parse(
+                            String.raw`/example\d{1,}\.com/,example.net`,
+                        ),
                         separator: {
                             type: 'Value',
                             value: '##',
@@ -250,7 +271,9 @@ describe('CosmeticRuleParser', () => {
                 },
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(CosmeticRuleParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
+            expect(CosmeticRuleParser.parse(actual)).toMatchObject(
+                expectedFn(new NodeExpectContext(actual)),
+            );
         });
     });
 
@@ -326,14 +349,19 @@ describe('CosmeticRuleParser', () => {
                 actual: String.raw`[$domain=/example\d{1,}\.com/,example.net]##.ad`,
                 expected: String.raw`[$domain=/example\d{1,}\.com/,example.net]##.ad`,
             },
-        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = CosmeticRuleParser.parse(actual);
+        ])(
+            "should generate '$expected' from '$actual'",
+            ({ actual, expected }) => {
+                const ruleNode = CosmeticRuleParser.parse(actual);
 
-            if (ruleNode === null) {
-                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
-            }
+                if (ruleNode === null) {
+                    throw new Error(
+                        `Failed to parse '${actual}' as cosmetic rule`,
+                    );
+                }
 
-            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
-        });
+                expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
+            },
+        );
     });
 });

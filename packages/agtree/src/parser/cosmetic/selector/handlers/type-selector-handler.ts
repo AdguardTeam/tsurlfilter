@@ -40,7 +40,8 @@ export class TypeSelectorHandler {
             // It should be first on current complex selector
             complexSelector.children.length !== 0
             // Or should be first on current compound selector (after combinator)
-            && complexSelector.children[complexSelector.children.length - 1].type !== 'SelectorCombinator'
+            && complexSelector.children[complexSelector.children.length - 1]
+                .type !== 'SelectorCombinator'
         ) {
             throw new AdblockSyntaxError(
                 'Type selector must be first in the compound selector',

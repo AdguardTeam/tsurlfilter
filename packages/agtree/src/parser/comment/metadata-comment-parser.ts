@@ -1,19 +1,19 @@
 /**
- * @file Metadata comments
+ * @file Metadata comments.
  */
 
-import { StringUtils } from '../../utils/string';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { COLON } from '../../utils/constants';
 import {
     CommentMarker,
     CommentRuleType,
     type MetadataCommentRule,
     RuleCategory,
 } from '../../nodes';
-import { defaultParserOptions } from '../options';
+import { AdblockSyntax } from '../../utils/adblockers';
+import { COLON } from '../../utils/constants';
+import { StringUtils } from '../../utils/string';
 import { BaseParser } from '../base-parser';
 import { ValueParser } from '../misc/value-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * Set of known metadata headers. This helps to quickly identify and validate
@@ -38,6 +38,8 @@ const KNOWN_METADATA_HEADERS = new Set([
  * `MetadataParser` is responsible for parsing metadata comments.
  * Metadata comments are special comments that specify some properties of the list.
  *
+ * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#special-comments}
+ *
  * @example
  * For example, in the case of
  * ```adblock
@@ -45,7 +47,6 @@ const KNOWN_METADATA_HEADERS = new Set([
  * ```
  * the name of the header is `Title`, and the value is `My List`, which means that
  * the list title is `My List`, and it can be used in the adblocker UI.
- * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#special-comments}
  */
 export class MetadataCommentParser extends BaseParser {
     /**
@@ -54,9 +55,14 @@ export class MetadataCommentParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Metadata comment AST or null (if the raw rule cannot be parsed as a metadata comment)
+     *
+     * @returns Metadata comment AST or null (if the raw rule cannot be parsed as a metadata comment).
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): MetadataCommentRule | null {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): MetadataCommentRule | null {
         // Fast check to avoid unnecessary work
         if (raw.indexOf(COLON) === -1) {
             return null;
@@ -68,12 +74,19 @@ export class MetadataCommentParser extends BaseParser {
         offset = StringUtils.skipWS(raw, offset);
 
         // Check if the rule starts with a comment marker (first non-space sequence)
-        if (raw[offset] !== CommentMarker.Regular && raw[offset] !== CommentMarker.Hashmark) {
+        if (
+            raw[offset] !== CommentMarker.Regular
+            && raw[offset] !== CommentMarker.Hashmark
+        ) {
             return null;
         }
 
         // Consume the comment marker
-        const marker = ValueParser.parse(raw[offset], options, baseOffset + offset);
+        const marker = ValueParser.parse(
+            raw[offset],
+            options,
+            baseOffset + offset,
+        );
 
         offset += 1;
 
@@ -88,12 +101,20 @@ export class MetadataCommentParser extends BaseParser {
 
         for (const knownHeader of KNOWN_METADATA_HEADERS) {
             // Check if the comment text starts with the header (case-insensitive)
-            if (text.toLocaleLowerCase().startsWith(knownHeader.toLocaleLowerCase())) {
+            if (
+                text
+                    .toLocaleLowerCase()
+                    .startsWith(knownHeader.toLocaleLowerCase())
+            ) {
                 // Skip the header
                 offset += knownHeader.length;
 
                 // Save header
-                const header = ValueParser.parse(raw.slice(headerStart, offset), options, baseOffset + headerStart);
+                const header = ValueParser.parse(
+                    raw.slice(headerStart, offset),
+                    options,
+                    baseOffset + headerStart,
+                );
 
                 // Skip spaces after the header
                 offset = StringUtils.skipWS(raw, offset);
@@ -120,7 +141,11 @@ export class MetadataCommentParser extends BaseParser {
                 const valueEnd = StringUtils.skipWSBack(raw, raw.length - 1) + 1;
 
                 // Save the value
-                const value = ValueParser.parse(raw.slice(valueStart, valueEnd), options, baseOffset + valueStart);
+                const value = ValueParser.parse(
+                    raw.slice(valueStart, valueEnd),
+                    options,
+                    baseOffset + valueStart,
+                );
 
                 const result: MetadataCommentRule = {
                     type: CommentRuleType.MetadataCommentRule,

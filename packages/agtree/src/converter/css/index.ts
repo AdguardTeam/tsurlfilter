@@ -1,6 +1,8 @@
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
+import { CssTokenStream } from '../../parser/css/css-token-stream';
+import { QuoteUtils } from '../../utils';
 import {
     CLOSE_PARENTHESIS,
     COLON,
@@ -9,11 +11,9 @@ import {
     EQUALS,
     OPEN_PARENTHESIS,
 } from '../../utils/constants';
-import { ABP_EXT_CSS_PREFIX, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css';
 import { BaseConverter } from '../base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result';
-import { CssTokenStream } from '../../parser/css/css-token-stream';
-import { QuoteUtils } from '../../utils';
+import { ABP_EXT_CSS_PREFIX, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css';
 
 export const ERROR_MESSAGES = {
     // eslint-disable-next-line max-len
@@ -34,7 +34,7 @@ export const PseudoClasses = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type PseudoClasses = typeof PseudoClasses[keyof typeof PseudoClasses];
+export type PseudoClasses = (typeof PseudoClasses)[keyof typeof PseudoClasses];
 
 export const PseudoElements = {
     After: 'after',
@@ -43,7 +43,8 @@ export const PseudoElements = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type PseudoElements = typeof PseudoElements[keyof typeof PseudoElements];
+export type PseudoElements =
+    (typeof PseudoElements)[keyof typeof PseudoElements];
 
 const PSEUDO_ELEMENT_NAMES = new Set<string>([
     PseudoElements.After,
@@ -51,21 +52,25 @@ const PSEUDO_ELEMENT_NAMES = new Set<string>([
 ]);
 
 /**
- * CSS selector converter
+ * CSS selector converter.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class CssSelectorConverter extends BaseConverter {
     /**
-     * Converts Extended CSS elements to AdGuard-compatible ones
+     * Converts Extended CSS elements to AdGuard-compatible ones.
      *
-     * @param selectorList Selector list to convert
+     * @param selectorList Selector list to convert.
+     *
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
      * the converted node, and its `isConverted` flag indicates whether the original node was converted.
-     * If the node was not converted, the result will contain the original node with the same object reference
-     * @throws If the rule is invalid or incompatible
+     * If the node was not converted, the result will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or incompatible.
      */
-    public static convertToAdg(selectorList: string | CssTokenStream): ConversionResult<string> {
+    public static convertToAdg(
+        selectorList: string | CssTokenStream,
+    ): ConversionResult<string> {
         const stream = selectorList instanceof CssTokenStream
             ? selectorList
             : new CssTokenStream(selectorList);
@@ -92,7 +97,9 @@ export class CssSelectorConverter extends BaseConverter {
                 case PseudoClasses.MatchesCssAfter:
                     converted.push(PseudoClasses.MatchesCss);
                     converted.push(OPEN_PARENTHESIS);
-                    converted.push(pseudo.substring(PseudoClasses.MatchesCss.length + 1));
+                    converted.push(
+                        pseudo.substring(PseudoClasses.MatchesCss.length + 1),
+                    );
                     converted.push(COMMA);
                     break;
 
@@ -122,7 +129,10 @@ export class CssSelectorConverter extends BaseConverter {
                 }
 
                 if (tempToken.type === TokenType.Ident) {
-                    const name = stream.source.slice(tempToken.start, tempToken.end);
+                    const name = stream.source.slice(
+                        tempToken.start,
+                        tempToken.end,
+                    );
 
                     if (PSEUDO_ELEMENT_NAMES.has(name)) {
                         // Add an extra colon to the name
@@ -136,7 +146,10 @@ export class CssSelectorConverter extends BaseConverter {
                     // Advance the names
                     stream.advance();
                 } else if (tempToken.type === TokenType.Function) {
-                    const name = stream.source.slice(tempToken.start, tempToken.end - 1); // omit the last parenthesis
+                    const name = stream.source.slice(
+                        tempToken.start,
+                        tempToken.end - 1,
+                    ); // omit the last parenthesis
 
                     // :-abp-contains(...) → :contains(...)
                     // :has-text(...)      → :contains(...)
@@ -165,7 +178,12 @@ export class CssSelectorConverter extends BaseConverter {
                 let attr = stream.source.slice(tempToken.start, tempToken.end);
 
                 // Skip if the attribute name is not a legacy Extended CSS one
-                if (!(attr.startsWith(LEGACY_EXT_CSS_ATTRIBUTE_PREFIX) || attr.startsWith(ABP_EXT_CSS_PREFIX))) {
+                if (
+                    !(
+                        attr.startsWith(LEGACY_EXT_CSS_ATTRIBUTE_PREFIX)
+                        || attr.startsWith(ABP_EXT_CSS_PREFIX)
+                    )
+                ) {
                     converted.push(stream.source.slice(start, tempToken.end));
                     stream.advance();
                     continue;
@@ -191,7 +209,10 @@ export class CssSelectorConverter extends BaseConverter {
                 tempToken = stream.getOrFail();
 
                 // According to the spec, attribute value should be an identifier or a string
-                if (tempToken.type !== TokenType.Ident && tempToken.type !== TokenType.String) {
+                if (
+                    tempToken.type !== TokenType.Ident
+                    && tempToken.type !== TokenType.String
+                ) {
                     throw new Error(
                         sprintf(
                             ERROR_MESSAGES.INVALID_ATTRIBUTE_VALUE,
@@ -201,7 +222,10 @@ export class CssSelectorConverter extends BaseConverter {
                     );
                 }
 
-                const value = stream.source.slice(tempToken.start, tempToken.end);
+                const value = stream.source.slice(
+                    tempToken.start,
+                    tempToken.end,
+                );
 
                 // Advance the attribute value
                 stream.advance();
@@ -220,7 +244,9 @@ export class CssSelectorConverter extends BaseConverter {
 
                 if (attr === PseudoClasses.Has) {
                     // TODO: Optimize this to avoid double tokenization
-                    processedValue = CssSelectorConverter.convertToAdg(processedValue).result;
+                    processedValue = CssSelectorConverter.convertToAdg(
+                        processedValue,
+                    ).result;
                 }
 
                 converted.push(processedValue);
@@ -234,6 +260,9 @@ export class CssSelectorConverter extends BaseConverter {
         }
 
         const convertedSelectorList = converted.join(EMPTY);
-        return createConversionResult(convertedSelectorList, stream.source !== convertedSelectorList);
+        return createConversionResult(
+            convertedSelectorList,
+            stream.source !== convertedSelectorList,
+        );
     }
 }

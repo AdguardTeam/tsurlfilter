@@ -1,7 +1,7 @@
 import type { MetadataCommentRule } from '../../nodes';
 import { COLON, EMPTY, SPACE } from '../../utils/constants';
-import { ValueGenerator } from '../misc/value-generator';
 import { BaseGenerator } from '../base-generator';
+import { ValueGenerator } from '../misc/value-generator';
 
 /**
  * Metadata comment generator.
@@ -11,6 +11,7 @@ export class MetadataCommentGenerator extends BaseGenerator {
      * Converts a metadata comment rule node to a string.
      *
      * @param node Metadata comment rule node.
+     *
      * @returns Raw string.
      */
     public static generate(node: MetadataCommentRule): string {

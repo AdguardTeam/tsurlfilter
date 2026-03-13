@@ -17,10 +17,7 @@ export class ClassSelectorHandler {
      */
     public static handle(context: SelectorListParserContext): void {
         const {
-            options,
-            baseOffset,
-            stream,
-            complexSelector,
+            options, baseOffset, stream, complexSelector,
         } = context;
 
         // Get class selector dot token

@@ -2,13 +2,9 @@
  * @file CSS token stream.
  */
 
-import { TokenType, getFormattedTokenName, tokenizeExtended } from '@adguard/css-tokenizer';
+import { getFormattedTokenName, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { tokenizeBalanced } from './balancing';
-import { EMPTY } from '../../utils/constants';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
 import {
     ABP_EXT_CSS_PREFIX,
     EXT_CSS_PSEUDO_CLASSES,
@@ -16,6 +12,11 @@ import {
     LEGACY_EXT_CSS_ATTRIBUTE_PREFIX,
     NATIVE_CSS_PSEUDO_CLASSES,
 } from '../../converter/data/css';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { EMPTY } from '../../utils/constants';
+
+import { tokenizeBalanced } from './balancing';
+import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
 
 /**
  * Interface for CSS token data.
@@ -158,6 +159,7 @@ export class CssTokenStream {
      * Gets the token at the specified index.
      *
      * @param index The index of the token to retrieve.
+     *
      * @returns The token at the specified index or undefined if the index is out of bounds.
      */
     public get(index: number = this.index): TokenData | undefined {
@@ -168,7 +170,9 @@ export class CssTokenStream {
      * Gets the token at the specified index or throws if no token is found at the specified index.
      *
      * @param index The index of the token to retrieve.
+     *
      * @returns The token at the specified index or undefined if the index is out of bounds.
+     *
      * @throws If no token is found at the specified index.
      */
     public getOrFail(index: number = this.index): TokenData {
@@ -192,6 +196,7 @@ export class CssTokenStream {
      * Gets the source fragment of the token at the specified index.
      *
      * @param index The index of the token to retrieve the fragment for.
+     *
      * @returns The source fragment of the token or an empty string if the index is out of bounds.
      */
     public fragment(index: number = this.index): string {
@@ -223,6 +228,7 @@ export class CssTokenStream {
      * Looks ahead in the stream without changing the index.
      *
      * @param index The relative index to look ahead to, starting from the current index.
+     *
      * @returns The next token or undefined if the end of the stream is reached.
      */
     public lookahead(index = 1): TokenData | undefined {
@@ -233,6 +239,7 @@ export class CssTokenStream {
      * Looks behind in the stream without changing the index.
      *
      * @param index The relative index to look behind to, starting from the current index.
+     *
      * @returns The previous token or undefined if the current token is the first in the stream.
      */
     public lookbehind(index = 1): TokenData | undefined {
@@ -302,6 +309,7 @@ export class CssTokenStream {
      *
      * @param type The type of token to skip until.
      * @param balance The balance level of the token to skip until.
+     *
      * @returns The number of tokens skipped.
      */
     public skipUntil(type: TokenType, balance?: number): number {
@@ -309,7 +317,8 @@ export class CssTokenStream {
 
         while (
             !this.isEof()
-            && (this.get()?.type !== type || (balance !== undefined && this.get()?.balance !== balance))
+            && (this.get()?.type !== type
+                || (balance !== undefined && this.get()?.balance !== balance))
         ) {
             this.index += 1;
             skipped += 1;
@@ -325,6 +334,7 @@ export class CssTokenStream {
      *
      * @param type The type of token to skip until.
      * @param balance The balance level of the token to skip until.
+     *
      * @returns An array containing the number of tokens skipped and the number of tokens skipped without leading and
      * trailing whitespace tokens.
      */
@@ -339,7 +349,10 @@ export class CssTokenStream {
             if (currentToken.type === TokenType.Whitespace) {
                 i += 1;
                 continue;
-            } else if (currentToken.type === type && currentToken.balance === balance) {
+            } else if (
+                currentToken.type === type
+                && currentToken.balance === balance
+            ) {
                 break;
             }
 
@@ -358,7 +371,10 @@ export class CssTokenStream {
         return {
             skipped,
             // if firstNonWsToken is -1, then lastNonWsToken is also -1
-            skippedTrimmed: firstNonWsToken === -1 ? 0 : lastNonWsToken - firstNonWsToken + 1,
+            skippedTrimmed:
+                firstNonWsToken === -1
+                    ? 0
+                    : lastNonWsToken - firstNonWsToken + 1,
         };
     }
 
@@ -380,6 +396,7 @@ export class CssTokenStream {
      *
      * @param type The expected token type.
      * @param data Optional expectation data.
+     *
      * @throws If the end of the stream is reached or if the token type or expectation data does not match.
      */
     public expect(type: TokenType, data?: ExpectationData): void {
@@ -440,6 +457,7 @@ export class CssTokenStream {
      * Gets the balance level of the token at the specified index.
      *
      * @param index The index of the token to retrieve the balance level for.
+     *
      * @returns The balance level of the token or 0 if the index is out of bounds.
      */
     public getBalance(index: number = this.index): number {
@@ -452,7 +470,9 @@ export class CssTokenStream {
      * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
      */
     public hasAnySelectorExtendedCssNode(): boolean {
-        return this.hasAnySelectorExtendedCssNodeInternal(EXT_CSS_PSEUDO_CLASSES);
+        return this.hasAnySelectorExtendedCssNodeInternal(
+            EXT_CSS_PSEUDO_CLASSES,
+        );
     }
 
     /**
@@ -465,7 +485,9 @@ export class CssTokenStream {
      * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
      */
     public hasAnySelectorExtendedCssNodeStrict(): boolean {
-        return this.hasAnySelectorExtendedCssNodeInternal(EXT_CSS_PSEUDO_CLASSES_STRICT);
+        return this.hasAnySelectorExtendedCssNodeInternal(
+            EXT_CSS_PSEUDO_CLASSES_STRICT,
+        );
     }
 
     /**
@@ -481,6 +503,7 @@ export class CssTokenStream {
      * and don't need the full `CssTokenStream` functionality.
      *
      * @param selector CSS selector string to check.
+     *
      * @returns True if the selector contains `:has()`, `:is()`, or `:not()`,
      * otherwise false.
      */
@@ -513,7 +536,9 @@ export class CssTokenStream {
      *
      * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
      */
-    private hasAnySelectorExtendedCssNodeInternal(pseudos: ReadonlySet<string>): boolean {
+    private hasAnySelectorExtendedCssNodeInternal(
+        pseudos: ReadonlySet<string>,
+    ): boolean {
         for (let i = 0; i < this.tokens.length; i += 1) {
             const token = this.tokens[i];
 
@@ -527,15 +552,27 @@ export class CssTokenStream {
                 let j = i + 1;
 
                 // skip whitespace
-                while (j < this.tokens.length && this.tokens[j].type === TokenType.Whitespace) {
+                while (
+                    j < this.tokens.length
+                    && this.tokens[j].type === TokenType.Whitespace
+                ) {
                     j += 1;
                 }
 
-                if (j < this.tokens.length && this.tokens[j].type === TokenType.Ident) {
-                    const attr = this.source.slice(this.tokens[j].start, this.tokens[j].end);
+                if (
+                    j < this.tokens.length
+                    && this.tokens[j].type === TokenType.Ident
+                ) {
+                    const attr = this.source.slice(
+                        this.tokens[j].start,
+                        this.tokens[j].end,
+                    );
 
                     // [-ext-<name>=...] or [-abp-<name>=...]
-                    if (attr.startsWith(LEGACY_EXT_CSS_ATTRIBUTE_PREFIX) || attr.startsWith(ABP_EXT_CSS_PREFIX)) {
+                    if (
+                        attr.startsWith(LEGACY_EXT_CSS_ATTRIBUTE_PREFIX)
+                        || attr.startsWith(ABP_EXT_CSS_PREFIX)
+                    ) {
                         return true;
                     }
                 }

@@ -1,10 +1,14 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { SimpleCommentParser } from '../../../src/parser/comment/simple-comment-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
+import {
+    SimpleCommentGenerator,
+} from '../../../src/generator/comment/simple-comment-generator';
+import {
+    SimpleCommentParser,
+} from '../../../src/parser/comment/simple-comment-parser';
 import { defaultParserOptions } from '../../../src/parser/options';
+import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { isNull } from '../../../src/utils/type-guards';
-import { SimpleCommentGenerator } from '../../../src/generator/comment/simple-comment-generator';
 
 describe('SimpleCommentParser', () => {
     describe('isSimpleComment', () => {
@@ -80,9 +84,13 @@ describe('SimpleCommentParser', () => {
         expect(SimpleCommentParser.parse('##p')).toBeNull();
         expect(SimpleCommentParser.parse('##a')).toBeNull();
         expect(SimpleCommentParser.parse('##p > a')).toBeNull();
-        expect(SimpleCommentParser.parse('##p > a[href^="/AllRes/Vlog"]')).toBeNull();
+        expect(
+            SimpleCommentParser.parse('##p > a[href^="/AllRes/Vlog"]'),
+        ).toBeNull();
 
-        expect(SimpleCommentParser.parse('! This is just a comment')).toMatchObject({
+        expect(
+            SimpleCommentParser.parse('! This is just a comment'),
+        ).toMatchObject({
             category: 'Comment',
             type: 'CommentRule',
             start: 0,
@@ -102,7 +110,9 @@ describe('SimpleCommentParser', () => {
             },
         });
 
-        expect(SimpleCommentParser.parse('# This is just a comment')).toMatchObject({
+        expect(
+            SimpleCommentParser.parse('# This is just a comment'),
+        ).toMatchObject({
             category: 'Comment',
             type: 'CommentRule',
             start: 0,
@@ -122,7 +132,9 @@ describe('SimpleCommentParser', () => {
             },
         });
 
-        expect(SimpleCommentParser.parse('!#########################')).toMatchObject({
+        expect(
+            SimpleCommentParser.parse('!#########################'),
+        ).toMatchObject({
             category: 'Comment',
             type: 'CommentRule',
             start: 0,
@@ -142,7 +154,9 @@ describe('SimpleCommentParser', () => {
             },
         });
 
-        expect(SimpleCommentParser.parse('##########################')).toMatchObject({
+        expect(
+            SimpleCommentParser.parse('##########################'),
+        ).toMatchObject({
             category: 'Comment',
             type: 'CommentRule',
             start: 0,
@@ -187,7 +201,10 @@ describe('SimpleCommentParser', () => {
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
             expect(
-                SimpleCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+                SimpleCommentParser.parse(actual, {
+                    ...defaultParserOptions,
+                    isLocIncluded: false,
+                }),
             ).toEqual(expected);
         });
     });

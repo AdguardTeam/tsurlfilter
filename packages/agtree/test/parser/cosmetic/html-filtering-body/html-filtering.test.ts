@@ -5,16 +5,28 @@ import {
     vi,
 } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { AdblockSyntaxError, type Value, type HtmlFilteringRuleBody } from '../../../../src';
+import {
+    AdblockSyntaxError,
+    type HtmlFilteringRuleBody,
+    type Value,
+} from '../../../../src';
+import {
+    HtmlFilteringBodyGenerator,
+} from '../../../../src/generator/cosmetic/html-filtering-body/html-filtering-body-generator';
 import {
     HtmlFilteringBodyParser,
 } from '../../../../src/parser/cosmetic/html-filtering-body/html-filtering-body-parser';
 import {
-    HtmlFilteringBodyGenerator,
-} from '../../../../src/generator/cosmetic/html-filtering-body/html-filtering-body-generator';
-import { SelectorListParser } from '../../../../src/parser/cosmetic/selector/selector-list-parser';
-import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
+    SelectorListParser,
+} from '../../../../src/parser/cosmetic/selector/selector-list-parser';
+import {
+    defaultParserOptions,
+    type ParserOptions,
+} from '../../../../src/parser/options';
+import {
+    NodeExpectContext,
+    type NodeExpectFn,
+} from '../../../helpers/node-utils';
 
 /**
  * Default parser options with HTML filtering rules parsing enabled.
@@ -30,7 +42,10 @@ const parsingEnabledDefaultParserOptions: ParserOptions = {
  */
 describe('HtmlFilteringBodyParser', () => {
     describe('HtmlFilteringBodyParser.parse - valid cases (parsed)', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBody> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<HtmlFilteringRuleBody>;
+        }>([
             {
                 actual: 'div',
                 expected: (context) => ({
@@ -43,7 +58,9 @@ describe('HtmlFilteringBodyParser', () => {
                 actual: 'div#id.class[attr~="value" i]:pseudo(arg)',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    selectorList: SelectorListParser.parse('div#id.class[attr~="value" i]:pseudo(arg)'),
+                    selectorList: SelectorListParser.parse(
+                        'div#id.class[attr~="value" i]:pseudo(arg)',
+                    ),
                     ...context.getFullRange(),
                 }),
             },
@@ -51,7 +68,9 @@ describe('HtmlFilteringBodyParser', () => {
                 actual: 'div > span + a ~ h1',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    selectorList: SelectorListParser.parse('div > span + a ~ h1'),
+                    selectorList: SelectorListParser.parse(
+                        'div > span + a ~ h1',
+                    ),
                     ...context.getFullRange(),
                 }),
             },
@@ -59,64 +78,78 @@ describe('HtmlFilteringBodyParser', () => {
                 actual: 'div > span, .class + #id',
                 expected: (context) => ({
                     type: 'HtmlFilteringRuleBody',
-                    selectorList: SelectorListParser.parse('div > span, .class + #id'),
+                    selectorList: SelectorListParser.parse(
+                        'div > span, .class + #id',
+                    ),
                     ...context.getFullRange(),
                 }),
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(HtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions)).toEqual(
-                expectedFn(new NodeExpectContext(actual)),
-            );
+            expect(
+                HtmlFilteringBodyParser.parse(
+                    actual,
+                    parsingEnabledDefaultParserOptions,
+                ),
+            ).toEqual(expectedFn(new NodeExpectContext(actual)));
         });
     });
 
     describe('HtmlFilteringBodyParser.parse - invalid cases (parsed)', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<AdblockSyntaxError>;
+        }>([
             {
                 actual: 'div[attr="value"]span',
-                expected: (context) => (new AdblockSyntaxError(
+                expected: (context) => new AdblockSyntaxError(
                     'Type selector is already set for the compound selector',
                     ...context.toTuple(context.getRangeFor('span')),
-                )),
+                ),
             },
             {
                 actual: '[attr="value"',
-                expected: (context) => (new AdblockSyntaxError(
+                expected: (context) => new AdblockSyntaxError(
                     "Expected '<]-token>', but got 'end of input'",
                     context.getFullRange().end - 1,
                     context.getFullRange().end,
-                )),
+                ),
             },
             {
                 actual: ':pseudo(arg',
-                expected: (context) => (new AdblockSyntaxError(
+                expected: (context) => new AdblockSyntaxError(
                     "Expected '<)-token>', but got 'end of input'",
                     context.getFullRange().end - 1,
                     context.getFullRange().end,
-                )),
+                ),
             },
             {
                 actual: 'div > + span',
-                expected: (context) => (new AdblockSyntaxError(
+                expected: (context) => new AdblockSyntaxError(
                     "Unexpected token '<delim-token>' with value '+'",
                     ...context.toTuple(context.getRangeFor('+')),
-                )),
+                ),
             },
-        ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = vi.fn(() => HtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions));
+        ])(
+            "should throw on input: '$actual'",
+            ({ actual, expected: expectedFn }) => {
+                const fn = vi.fn(() => HtmlFilteringBodyParser.parse(
+                    actual,
+                    parsingEnabledDefaultParserOptions,
+                ));
 
-            // parse should throw
-            expect(fn).toThrow();
+                // parse should throw
+                expect(fn).toThrow();
 
-            const expected = expectedFn(new NodeExpectContext(actual));
+                const expected = expectedFn(new NodeExpectContext(actual));
 
-            // check the thrown error
-            const error = fn.mock.results[0].value;
-            expect(error).toBeInstanceOf(AdblockSyntaxError);
-            expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('start', expected.start);
-            expect(error).toHaveProperty('end', expected.end);
-        });
+                // check the thrown error
+                const error = fn.mock.results[0].value;
+                expect(error).toBeInstanceOf(AdblockSyntaxError);
+                expect(error).toHaveProperty('message', expected.message);
+                expect(error).toHaveProperty('start', expected.start);
+                expect(error).toHaveProperty('end', expected.end);
+            },
+        );
     });
 
     describe('HtmlFilteringBodyGenerator.generate (parsed)', () => {
@@ -137,15 +170,25 @@ describe('HtmlFilteringBodyParser', () => {
                 actual: 'div > span, .class + #id',
                 expected: 'div > span, .class + #id',
             },
-        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = HtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions);
+        ])(
+            "should generate '$expected' from '$actual'",
+            ({ actual, expected }) => {
+                const ruleNode = HtmlFilteringBodyParser.parse(
+                    actual,
+                    parsingEnabledDefaultParserOptions,
+                );
 
-            if (ruleNode === null) {
-                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
-            }
+                if (ruleNode === null) {
+                    throw new Error(
+                        `Failed to parse '${actual}' as cosmetic rule`,
+                    );
+                }
 
-            expect(HtmlFilteringBodyGenerator.generate(ruleNode)).toBe(expected);
-        });
+                expect(HtmlFilteringBodyGenerator.generate(ruleNode)).toBe(
+                    expected,
+                );
+            },
+        );
     });
 
     /**
@@ -214,14 +257,21 @@ describe('HtmlFilteringBodyParser', () => {
                 actual: 'div > span, .class + #id',
                 expected: 'div > span, .class + #id',
             },
-        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = HtmlFilteringBodyParser.parse(actual);
+        ])(
+            "should generate '$expected' from '$actual'",
+            ({ actual, expected }) => {
+                const ruleNode = HtmlFilteringBodyParser.parse(actual);
 
-            if (ruleNode === null) {
-                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
-            }
+                if (ruleNode === null) {
+                    throw new Error(
+                        `Failed to parse '${actual}' as cosmetic rule`,
+                    );
+                }
 
-            expect(HtmlFilteringBodyGenerator.generate(ruleNode)).toBe(expected);
-        });
+                expect(HtmlFilteringBodyGenerator.generate(ruleNode)).toBe(
+                    expected,
+                );
+            },
+        );
     });
 });

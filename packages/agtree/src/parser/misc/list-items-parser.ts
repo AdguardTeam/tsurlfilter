@@ -1,19 +1,22 @@
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { type ListItem, ListItemNodeType } from '../../nodes';
-import { defaultParserOptions } from '../options';
 import { COMMA, NEGATION_MARKER } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { defaultParserOptions } from '../options';
 
 /**
  * Prefixes for error messages which are used for parsing of value lists.
  */
 export const LIST_PARSE_ERROR_PREFIX = {
     EMPTY_ITEM: 'Empty value specified in the list',
-    NO_MULTIPLE_NEGATION: 'Exception marker cannot be followed by another exception marker',
-    NO_SEPARATOR_AFTER_NEGATION: 'Exception marker cannot be followed by a separator',
+    NO_MULTIPLE_NEGATION:
+        'Exception marker cannot be followed by another exception marker',
+    NO_SEPARATOR_AFTER_NEGATION:
+        'Exception marker cannot be followed by a separator',
     NO_SEPARATOR_AT_THE_BEGINNING: 'Value list cannot start with a separator',
     NO_SEPARATOR_AT_THE_END: 'Value list cannot end with a separator',
-    NO_WHITESPACE_AFTER_NEGATION: 'Exception marker cannot be followed by whitespace',
+    NO_WHITESPACE_AFTER_NEGATION:
+        'Exception marker cannot be followed by whitespace',
 };
 
 /**
@@ -24,15 +27,17 @@ export class ListItemsParser {
      * Parses a `raw` modifier value which may be represented as a list of items separated by `separator`.
      * Needed for $app, $denyallow, $domain, $method.
      *
+     * @template T Type of the list items.
+     *
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @param separator Separator character (default: comma)
+     * @param separator Separator character (default: comma).
      * @param type Type of the list items (default: {@link ListItemNodeType.Domain}).
-     * @template T Type of the list items.
      *
      * @returns List of parsed items.
-     * @throws An {@link AdblockSyntaxError} if the list is syntactically invalid
+     *
+     * @throws An {@link AdblockSyntaxError} if the list is syntactically invalid.
      *
      * @example
      * - parses an app list — `com.example.app|Example.exe`
@@ -158,7 +163,9 @@ export class ListItemsParser {
             rawListItems.push(listItem);
 
             // Increment the offset to the next list item (or the end of the string)
-            offset = separatorStartIndex === -1 ? raw.length : separatorStartIndex + 1;
+            offset = separatorStartIndex === -1
+                ? raw.length
+                : separatorStartIndex + 1;
         }
 
         return rawListItems;

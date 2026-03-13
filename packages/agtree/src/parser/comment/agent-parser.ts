@@ -1,12 +1,12 @@
-import { StringUtils } from '../../utils/string';
-import { type Agent, type Value } from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { BaseParser } from '../base-parser';
-import { defaultParserOptions } from '../options';
-import { ValueParser } from '../misc/value-parser';
-import { isUndefined } from '../../utils/type-guards';
 import { getAdblockSyntax } from '../../common/agent-common';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { type Agent, type Value } from '../../nodes';
+import { AdblockSyntax } from '../../utils/adblockers';
+import { StringUtils } from '../../utils/string';
+import { isUndefined } from '../../utils/type-guards';
+import { BaseParser } from '../base-parser';
+import { ValueParser } from '../misc/value-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * `AgentParser` is responsible for parsing single adblock agent elements.
@@ -32,8 +32,9 @@ export class AgentParser extends BaseParser {
      * The string can have a version in formats like
      * [Adblock Plus 2.0], or [Adblock Plus 3.1; AdGuard].
      *
-     * @param str String to check
-     * @returns `true` if the string is a valid version, `false` otherwise
+     * @param str String to check.
+     *
+     * @returns `true` if the string is a valid version, `false` otherwise.
      */
     private static isValidVersion(str: string): boolean {
         // Check if the string contains a valid version pattern
@@ -46,10 +47,16 @@ export class AgentParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Agent rule AST
-     * @throws {AdblockSyntaxError} If the raw rule cannot be parsed as an adblock agent
+     *
+     * @returns Agent rule AST.
+     *
+     * @throws {AdblockSyntaxError} If the raw rule cannot be parsed as an adblock agent.
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): Agent {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): Agent {
         let offset = 0;
 
         // Save name start position
@@ -68,7 +75,10 @@ export class AgentParser extends BaseParser {
             // Skip whitespace before the part
             offset = StringUtils.skipWS(raw, offset);
 
-            const partEnd = StringUtils.findNextWhitespaceCharacter(raw, offset);
+            const partEnd = StringUtils.findNextWhitespaceCharacter(
+                raw,
+                offset,
+            );
             const part = raw.slice(offset, partEnd);
 
             if (AgentParser.isValidVersion(part)) {
@@ -82,7 +92,11 @@ export class AgentParser extends BaseParser {
 
                 const parsedNamePart = raw.slice(nameStartIndex, nameEndIndex);
 
-                name = ValueParser.parse(parsedNamePart, options, baseOffset + nameStartIndex);
+                name = ValueParser.parse(
+                    parsedNamePart,
+                    options,
+                    baseOffset + nameStartIndex,
+                );
                 version = ValueParser.parse(part, options, baseOffset + offset);
                 syntax = getAdblockSyntax(parsedNamePart);
             } else {
@@ -96,7 +110,11 @@ export class AgentParser extends BaseParser {
         // If we didn't find a version, the whole string is the name
         if (isUndefined(name)) {
             const parsedNamePart = raw.slice(nameStartIndex, nameEndIndex);
-            name = ValueParser.parse(parsedNamePart, options, baseOffset + nameStartIndex);
+            name = ValueParser.parse(
+                parsedNamePart,
+                options,
+                baseOffset + nameStartIndex,
+            );
             syntax = getAdblockSyntax(parsedNamePart);
         }
 

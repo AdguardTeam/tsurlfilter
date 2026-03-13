@@ -20,9 +20,15 @@ export {
 export { AdblockSyntax } from './adblockers';
 export { getBitCount } from './bit-count';
 export { type ReadonlyRecord } from './types';
-export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './cosmetic-rule-separator';
+export {
+    type CosmeticRuleSeparatorFinderResult,
+    CosmeticRuleSeparatorUtils,
+} from './cosmetic-rule-separator';
 export { DomainUtils } from './domain';
-export { type VariableTable, LogicalExpressionUtils } from './logical-expression';
+export {
+    type VariableTable,
+    LogicalExpressionUtils,
+} from './logical-expression';
 export {
     ADBLOCK_URL_START,
     ADBLOCK_URL_START_REGEX,
@@ -33,9 +39,6 @@ export {
     SPECIAL_REGEX_SYMBOLS,
     RegExpUtils,
 } from './regexp';
-export {
-    QuoteType,
-    QuoteUtils,
-} from './quotes';
+export { QuoteType, QuoteUtils } from './quotes';
 export { type Position, PositionProvider } from './position-provider';
 export { RuleCategorizer } from './categorizer';

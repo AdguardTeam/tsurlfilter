@@ -4,8 +4,9 @@
 
 import zod from 'zod';
 
-import { platformSchema } from './platform';
 import { zodToCamelCase } from '../utils/zod-camelcase';
+
+import { platformSchema } from './platform';
 
 /**
  * Zod schema for boolean values. Accepts both boolean and string values.
@@ -88,12 +89,16 @@ export const baseCompatibilityDataSchema = zod.object({
 /**
  * Zod schema for base compatibility data with camelCase properties.
  */
-export const baseCompatibilityDataSchemaCamelCase = zodToCamelCase(baseCompatibilityDataSchema);
+export const baseCompatibilityDataSchemaCamelCase = zodToCamelCase(
+    baseCompatibilityDataSchema,
+);
 
 /**
  * Type of the base compatibility data schema.
  */
-export type BaseCompatibilityDataSchema = zod.infer<typeof baseCompatibilityDataSchemaCamelCase>;
+export type BaseCompatibilityDataSchema = zod.infer<
+    typeof baseCompatibilityDataSchemaCamelCase
+>;
 
 /**
  * Refinement logic for base compatibility data.
@@ -101,7 +106,10 @@ export type BaseCompatibilityDataSchema = zod.infer<typeof baseCompatibilityData
  * @param data Base compatibility data.
  * @param ctx Refinement context.
  */
-export const baseRefineLogic = (data: zod.infer<typeof baseCompatibilityDataSchema>, ctx: zod.RefinementCtx) => {
+export const baseRefineLogic = (
+    data: zod.infer<typeof baseCompatibilityDataSchema>,
+    ctx: zod.RefinementCtx,
+) => {
     if (data.deprecated && !data.deprecation_message) {
         ctx.addIssue({
             code: zod.ZodIssueCode.custom,
@@ -112,7 +120,8 @@ export const baseRefineLogic = (data: zod.infer<typeof baseCompatibilityDataSche
     if (!data.deprecated && data.deprecation_message) {
         ctx.addIssue({
             code: zod.ZodIssueCode.custom,
-            message: 'deprecation_message is only allowed for deprecated modifiers',
+            message:
+                'deprecation_message is only allowed for deprecated modifiers',
         });
     }
 
@@ -131,23 +140,28 @@ export const baseRefineLogic = (data: zod.infer<typeof baseCompatibilityDataSche
  *
  * @returns Base file schema.
  */
-export const baseFileSchema = <T extends BaseCompatibilityDataSchema>(dataSchema: zod.ZodType<T>) => {
-    return zod.record(zod.any(), zod.any()).transform((val) => {
-        const result = val;
+export const baseFileSchema = <T extends BaseCompatibilityDataSchema>(
+    dataSchema: zod.ZodType<T>,
+) => {
+    return zod
+        .record(zod.any(), zod.any())
+        .transform((val) => {
+            const result = val;
 
-        // Note: js-yaml will leave `define` key in the object, but we don't need it,
-        // and since we're using a strict schema, we need to remove it.
-        if ('define' in result) {
-            delete result.define;
-        }
+            // Note: js-yaml will leave `define` key in the object, but we don't need it,
+            // and since we're using a strict schema, we need to remove it.
+            if ('define' in result) {
+                delete result.define;
+            }
 
-        return result;
-    }).pipe(
-        zod.record(platformSchema, dataSchema),
-    );
+            return result;
+        })
+        .pipe(zod.record(platformSchema, dataSchema));
 };
 
 /**
  * Type of the base file schema.
  */
-export type BaseFileSchema<T extends BaseCompatibilityDataSchema> = zod.infer<ReturnType<typeof baseFileSchema<T>>>;
+export type BaseFileSchema<T extends BaseCompatibilityDataSchema> = zod.infer<
+ReturnType<typeof baseFileSchema<T>>
+>;

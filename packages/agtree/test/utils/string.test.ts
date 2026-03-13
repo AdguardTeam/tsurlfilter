@@ -5,113 +5,247 @@ import { StringUtils } from '../../src/utils/string';
 
 describe('String utils', () => {
     test('findNextUnescapedCharacter', () => {
-        expect(StringUtils.findNextUnescapedCharacter(' \\,\\, , ,', ',')).toEqual(6);
-        expect(StringUtils.findNextUnescapedCharacter(' \\,\\, , ,', ',', 7)).toEqual(8);
+        expect(
+            StringUtils.findNextUnescapedCharacter(' \\,\\, , ,', ','),
+        ).toEqual(6);
+        expect(
+            StringUtils.findNextUnescapedCharacter(' \\,\\, , ,', ',', 7),
+        ).toEqual(8);
 
         expect(StringUtils.findNextUnescapedCharacter(EMPTY, ',')).toEqual(-1);
         expect(StringUtils.findNextUnescapedCharacter(SPACE, ',')).toEqual(-1);
     });
 
     test('findNextUnescapedCharacterBackwards', () => {
-        expect(StringUtils.findNextUnescapedCharacterBackwards(String.raw`a\a\aa`, 'a')).toEqual(5);
-        expect(StringUtils.findNextUnescapedCharacterBackwards(String.raw`a\a\aa`, 'a', 4)).toEqual(0);
+        expect(
+            StringUtils.findNextUnescapedCharacterBackwards(
+                String.raw`a\a\aa`,
+                'a',
+            ),
+        ).toEqual(5);
+        expect(
+            StringUtils.findNextUnescapedCharacterBackwards(
+                String.raw`a\a\aa`,
+                'a',
+                4,
+            ),
+        ).toEqual(0);
 
-        expect(StringUtils.findNextUnescapedCharacterBackwards(EMPTY, 'a')).toEqual(-1);
-        expect(StringUtils.findNextUnescapedCharacterBackwards(SPACE, 'a')).toEqual(-1);
+        expect(
+            StringUtils.findNextUnescapedCharacterBackwards(EMPTY, 'a'),
+        ).toEqual(-1);
+        expect(
+            StringUtils.findNextUnescapedCharacterBackwards(SPACE, 'a'),
+        ).toEqual(-1);
     });
 
     test('findLastUnescapedCharacter', () => {
-        expect(StringUtils.findLastUnescapedCharacter('aaa\\a\\aa', 'a')).toEqual(7);
+        expect(
+            StringUtils.findLastUnescapedCharacter('aaa\\a\\aa', 'a'),
+        ).toEqual(7);
         expect(StringUtils.findLastUnescapedCharacter(EMPTY, 'a')).toEqual(-1);
     });
 
     test('findNextUnescapedCharacterThatNotFollowedBy', () => {
-        expect(StringUtils.findNextUnescapedCharacterThatNotFollowedBy('$\\$\\$$f$ok', 0, '$', 'f')).toEqual(0);
-        expect(StringUtils.findNextUnescapedCharacterThatNotFollowedBy('/^regexp$/$m=v', 0, '$', '/')).toEqual(10);
-        expect(StringUtils.findNextUnescapedCharacterThatNotFollowedBy(EMPTY, 0, '$', '/')).toEqual(-1);
+        expect(
+            StringUtils.findNextUnescapedCharacterThatNotFollowedBy(
+                '$\\$\\$$f$ok',
+                0,
+                '$',
+                'f',
+            ),
+        ).toEqual(0);
+        expect(
+            StringUtils.findNextUnescapedCharacterThatNotFollowedBy(
+                '/^regexp$/$m=v',
+                0,
+                '$',
+                '/',
+            ),
+        ).toEqual(10);
+        expect(
+            StringUtils.findNextUnescapedCharacterThatNotFollowedBy(
+                EMPTY,
+                0,
+                '$',
+                '/',
+            ),
+        ).toEqual(-1);
     });
 
     test('findLastUnescapedCharacterThatNotFollowedBy', () => {
-        expect(StringUtils.findLastUnescapedCharacterThatNotFollowedBy('$\\$\\$$f$ok', '$', 'f')).toEqual(7);
-        expect(StringUtils.findLastUnescapedCharacterThatNotFollowedBy(EMPTY, '$', '/')).toEqual(-1);
+        expect(
+            StringUtils.findLastUnescapedCharacterThatNotFollowedBy(
+                '$\\$\\$$f$ok',
+                '$',
+                'f',
+            ),
+        ).toEqual(7);
+        expect(
+            StringUtils.findLastUnescapedCharacterThatNotFollowedBy(
+                EMPTY,
+                '$',
+                '/',
+            ),
+        ).toEqual(-1);
     });
 
     test('findUnescapedNonStringNonRegexChar', () => {
-        expect(StringUtils.findUnescapedNonStringNonRegexChar('\'aa\\a\' "aaa" /aaa/ a', 'a')).toEqual(19);
+        expect(
+            StringUtils.findUnescapedNonStringNonRegexChar(
+                '\'aa\\a\' "aaa" /aaa/ a',
+                'a',
+            ),
+        ).toEqual(19);
 
-        expect(StringUtils.findUnescapedNonStringNonRegexChar('\'aa\\a\' "aaa" /aaa/ \\a   a', 'a')).toEqual(24);
+        expect(
+            StringUtils.findUnescapedNonStringNonRegexChar(
+                '\'aa\\a\' "aaa" /aaa/ \\a   a',
+                'a',
+            ),
+        ).toEqual(24);
 
-        expect(StringUtils.findUnescapedNonStringNonRegexChar('\'aa\\a\' "aaa" /aaa/ /a/', 'a')).toEqual(-1);
-        expect(StringUtils.findUnescapedNonStringNonRegexChar('\'aa\\a\' "a\'aa" /a\'a\'a/ /a/', 'a')).toEqual(-1);
-        expect(StringUtils.findUnescapedNonStringNonRegexChar(EMPTY, 'a')).toEqual(-1);
+        expect(
+            StringUtils.findUnescapedNonStringNonRegexChar(
+                '\'aa\\a\' "aaa" /aaa/ /a/',
+                'a',
+            ),
+        ).toEqual(-1);
+        expect(
+            StringUtils.findUnescapedNonStringNonRegexChar(
+                "'aa\\a' \"a'aa\" /a'a'a/ /a/",
+                'a',
+            ),
+        ).toEqual(-1);
+        expect(
+            StringUtils.findUnescapedNonStringNonRegexChar(EMPTY, 'a'),
+        ).toEqual(-1);
     });
 
     test('findNextUnquotedUnescapedCharacter', () => {
         // works with valid input
-        const testString = '"a,b",\'c,d\',\'e\'';
+        const testString = "\"a,b\",'c,d','e'";
 
-        expect(StringUtils.findNextUnquotedUnescapedCharacter(testString, ',')).toEqual(5);
-        expect(StringUtils.findNextUnquotedUnescapedCharacter(testString, ',', 6)).toEqual(11);
+        expect(
+            StringUtils.findNextUnquotedUnescapedCharacter(testString, ','),
+        ).toEqual(5);
+        expect(
+            StringUtils.findNextUnquotedUnescapedCharacter(testString, ',', 6),
+        ).toEqual(11);
 
         // no unquoted
-        expect(StringUtils.findNextUnquotedUnescapedCharacter("'a,b'", ',')).toEqual(-1);
-        expect(StringUtils.findNextUnquotedUnescapedCharacter('"a,b"', ',')).toEqual(-1);
+        expect(
+            StringUtils.findNextUnquotedUnescapedCharacter("'a,b'", ','),
+        ).toEqual(-1);
+        expect(
+            StringUtils.findNextUnquotedUnescapedCharacter('"a,b"', ','),
+        ).toEqual(-1);
 
         // empty strings
-        expect(StringUtils.findNextUnquotedUnescapedCharacter(EMPTY, ',')).toEqual(-1);
-        expect(StringUtils.findNextUnquotedUnescapedCharacter(SPACE, ',')).toEqual(-1);
+        expect(
+            StringUtils.findNextUnquotedUnescapedCharacter(EMPTY, ','),
+        ).toEqual(-1);
+        expect(
+            StringUtils.findNextUnquotedUnescapedCharacter(SPACE, ','),
+        ).toEqual(-1);
     });
 
     test('findNextNotBracketedUnescapedCharacter', () => {
-        expect(StringUtils.findNextNotBracketedUnescapedCharacter('(a,b,c),(a,b,c)', ',')).toEqual(7);
-        expect(StringUtils.findNextNotBracketedUnescapedCharacter('(a,b,c)\\,(a,b,c),(a)', ',')).toEqual(16);
+        expect(
+            StringUtils.findNextNotBracketedUnescapedCharacter(
+                '(a,b,c),(a,b,c)',
+                ',',
+            ),
+        ).toEqual(7);
+        expect(
+            StringUtils.findNextNotBracketedUnescapedCharacter(
+                '(a,b,c)\\,(a,b,c),(a)',
+                ',',
+            ),
+        ).toEqual(16);
 
         // empty strings
-        expect(StringUtils.findNextNotBracketedUnescapedCharacter(EMPTY, ',')).toEqual(-1);
-        expect(StringUtils.findNextNotBracketedUnescapedCharacter(SPACE, ',')).toEqual(-1);
+        expect(
+            StringUtils.findNextNotBracketedUnescapedCharacter(EMPTY, ','),
+        ).toEqual(-1);
+        expect(
+            StringUtils.findNextNotBracketedUnescapedCharacter(SPACE, ','),
+        ).toEqual(-1);
 
         // invalid
         // eslint-disable-next-line max-len
-        expect(() => StringUtils.findNextNotBracketedUnescapedCharacter(EMPTY, ',', 0, ESCAPE_CHARACTER, '(', '(')).toThrowError('Open and close bracket cannot be the same');
+        expect(() => StringUtils.findNextNotBracketedUnescapedCharacter(
+            EMPTY,
+            ',',
+            0,
+            ESCAPE_CHARACTER,
+            '(',
+            '(',
+        )).toThrowError('Open and close bracket cannot be the same');
     });
 
     test('splitStringByUnquotedUnescapedCharacter', () => {
-        expect(StringUtils.splitStringByUnquotedUnescapedCharacter('', '|')).toEqual(['']);
+        expect(
+            StringUtils.splitStringByUnquotedUnescapedCharacter('', '|'),
+        ).toEqual(['']);
 
-        expect(StringUtils.splitStringByUnquotedUnescapedCharacter('  ', '|')).toEqual(['  ']);
+        expect(
+            StringUtils.splitStringByUnquotedUnescapedCharacter('  ', '|'),
+        ).toEqual(['  ']);
 
-        expect(StringUtils.splitStringByUnquotedUnescapedCharacter('\'aa|bb\' "aaa | bb" \\|\\| | bbb', '|')).toEqual([
-            '\'aa|bb\' "aaa | bb" \\|\\| ',
-            ' bbb',
-        ]);
+        expect(
+            StringUtils.splitStringByUnquotedUnescapedCharacter(
+                '\'aa|bb\' "aaa | bb" \\|\\| | bbb',
+                '|',
+            ),
+        ).toEqual(['\'aa|bb\' "aaa | bb" \\|\\| ', ' bbb']);
 
         // eslint-disable-next-line max-len
-        expect(StringUtils.splitStringByUnquotedUnescapedCharacter('\'aa|bb\' "aaa | bb" \\|\\| | bbb|ccc', '|')).toEqual(
-            ['\'aa|bb\' "aaa | bb" \\|\\| ', ' bbb', 'ccc'],
-        );
+        expect(
+            StringUtils.splitStringByUnquotedUnescapedCharacter(
+                '\'aa|bb\' "aaa | bb" \\|\\| | bbb|ccc',
+                '|',
+            ),
+        ).toEqual(['\'aa|bb\' "aaa | bb" \\|\\| ', ' bbb', 'ccc']);
 
         // eslint-disable-next-line max-len
-        expect(StringUtils.splitStringByUnquotedUnescapedCharacter('\'aa|bb\' "aaa | bb" \\|\\| \\| bbb', '|')).toEqual([
-            '\'aa|bb\' "aaa | bb" \\|\\| \\| bbb',
-        ]);
+        expect(
+            StringUtils.splitStringByUnquotedUnescapedCharacter(
+                '\'aa|bb\' "aaa | bb" \\|\\| \\| bbb',
+                '|',
+            ),
+        ).toEqual(['\'aa|bb\' "aaa | bb" \\|\\| \\| bbb']);
     });
 
     test('splitStringByUnescapedNonStringNonRegexChar', () => {
-        expect(StringUtils.splitStringByUnescapedNonStringNonRegexChar('', '|')).toEqual(['']);
-
-        expect(StringUtils.splitStringByUnescapedNonStringNonRegexChar('  ', '|')).toEqual(['  ']);
+        expect(
+            StringUtils.splitStringByUnescapedNonStringNonRegexChar('', '|'),
+        ).toEqual(['']);
 
         expect(
-            StringUtils.splitStringByUnescapedNonStringNonRegexChar('\'aa|bb\' "aaa | bb" \\|\\| /aa|bb/ | bbb', '|'),
+            StringUtils.splitStringByUnescapedNonStringNonRegexChar('  ', '|'),
+        ).toEqual(['  ']);
+
+        expect(
+            StringUtils.splitStringByUnescapedNonStringNonRegexChar(
+                '\'aa|bb\' "aaa | bb" \\|\\| /aa|bb/ | bbb',
+                '|',
+            ),
         ).toEqual(['\'aa|bb\' "aaa | bb" \\|\\| /aa|bb/ ', ' bbb']);
 
         expect(
             // eslint-disable-next-line max-len
-            StringUtils.splitStringByUnescapedNonStringNonRegexChar('\'aa|bb\' "aaa | bb" \\|\\| /aa|bb/ | bbb|ccc', '|'),
+            StringUtils.splitStringByUnescapedNonStringNonRegexChar(
+                '\'aa|bb\' "aaa | bb" \\|\\| /aa|bb/ | bbb|ccc',
+                '|',
+            ),
         ).toEqual(['\'aa|bb\' "aaa | bb" \\|\\| /aa|bb/ ', ' bbb', 'ccc']);
 
         expect(
-            StringUtils.splitStringByUnescapedNonStringNonRegexChar('\'aa|bb\' "aaa | bb" \\|\\| \\| bbb', '|'),
+            StringUtils.splitStringByUnescapedNonStringNonRegexChar(
+                '\'aa|bb\' "aaa | bb" \\|\\| \\| bbb',
+                '|',
+            ),
         ).toEqual(['\'aa|bb\' "aaa | bb" \\|\\| \\| bbb']);
     });
 
@@ -128,7 +262,9 @@ describe('String utils', () => {
         expect(StringUtils.isDigit('a')).toEqual(false);
 
         for (let i = 0; i < 10; i += 1) {
-            expect(StringUtils.isDigit(String.fromCharCode(48 + i))).toEqual(true);
+            expect(StringUtils.isDigit(String.fromCharCode(48 + i))).toEqual(
+                true,
+            );
         }
     });
 
@@ -137,11 +273,15 @@ describe('String utils', () => {
 
         // Exclude capital letters
         for (let i = 0; i < 26; i += 1) {
-            expect(StringUtils.isSmallLetter(String.fromCharCode(65 + i))).toEqual(false);
+            expect(
+                StringUtils.isSmallLetter(String.fromCharCode(65 + i)),
+            ).toEqual(false);
         }
 
         for (let i = 0; i < 26; i += 1) {
-            expect(StringUtils.isSmallLetter(String.fromCharCode(97 + i))).toEqual(true);
+            expect(
+                StringUtils.isSmallLetter(String.fromCharCode(97 + i)),
+            ).toEqual(true);
         }
     });
 
@@ -150,11 +290,15 @@ describe('String utils', () => {
 
         // Exclude small letters
         for (let i = 0; i < 26; i += 1) {
-            expect(StringUtils.isCapitalLetter(String.fromCharCode(97 + i))).toEqual(false);
+            expect(
+                StringUtils.isCapitalLetter(String.fromCharCode(97 + i)),
+            ).toEqual(false);
         }
 
         for (let i = 0; i < 26; i += 1) {
-            expect(StringUtils.isCapitalLetter(String.fromCharCode(65 + i))).toEqual(true);
+            expect(
+                StringUtils.isCapitalLetter(String.fromCharCode(65 + i)),
+            ).toEqual(true);
         }
     });
 
@@ -163,35 +307,53 @@ describe('String utils', () => {
         expect(StringUtils.isAlphaNumeric(' ')).toEqual(false);
 
         for (let i = 0; i < 10; i += 1) {
-            expect(StringUtils.isAlphaNumeric(String.fromCharCode(48 + i))).toEqual(true);
+            expect(
+                StringUtils.isAlphaNumeric(String.fromCharCode(48 + i)),
+            ).toEqual(true);
         }
 
         for (let i = 0; i < 26; i += 1) {
-            expect(StringUtils.isAlphaNumeric(String.fromCharCode(65 + i))).toEqual(true);
+            expect(
+                StringUtils.isAlphaNumeric(String.fromCharCode(65 + i)),
+            ).toEqual(true);
         }
 
         for (let i = 0; i < 26; i += 1) {
-            expect(StringUtils.isAlphaNumeric(String.fromCharCode(97 + i))).toEqual(true);
+            expect(
+                StringUtils.isAlphaNumeric(String.fromCharCode(97 + i)),
+            ).toEqual(true);
         }
     });
 
     test('splitStringByUnescapedCharacter', () => {
-        expect(StringUtils.splitStringByUnescapedCharacter('', '|')).toEqual(['']);
+        expect(StringUtils.splitStringByUnescapedCharacter('', '|')).toEqual([
+            '',
+        ]);
 
-        expect(StringUtils.splitStringByUnescapedCharacter('  ', '|')).toEqual(['  ']);
-
-        expect(StringUtils.splitStringByUnescapedCharacter('aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd|eeee', '|')).toEqual([
-            'aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd',
-            'eeee',
+        expect(StringUtils.splitStringByUnescapedCharacter('  ', '|')).toEqual([
+            '  ',
         ]);
 
         expect(
-            StringUtils.splitStringByUnescapedCharacter('aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd|eeee|\'ffff\'', '|'),
-        ).toEqual(['aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd', 'eeee', '\'ffff\'']);
+            StringUtils.splitStringByUnescapedCharacter(
+                'aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd|eeee',
+                '|',
+            ),
+        ).toEqual(['aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd', 'eeee']);
 
-        expect(StringUtils.splitStringByUnescapedCharacter('aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd\\|eeee', '|')).toEqual([
-            'aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd\\|eeee',
-        ]);
+        expect(
+            StringUtils.splitStringByUnescapedCharacter(
+                "aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd|eeee|'ffff'",
+                '|',
+            ),
+        ).toEqual(['aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd', 'eeee', "'ffff'"]);
+
+        expect(
+            StringUtils.splitStringByUnescapedCharacter(
+                'aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd\\|eeee',
+                '|',
+            ),
+        ).toEqual(['aaaa\\|bbbb\\|\\|ccc\\|\\|\\\\|dddd\\|eeee']);
     });
 
     test('findFirstNonWhitespaceCharacter', () => {
@@ -200,7 +362,9 @@ describe('String utils', () => {
         expect(StringUtils.findFirstNonWhitespaceCharacter('a')).toEqual(0);
         expect(StringUtils.findFirstNonWhitespaceCharacter(' a')).toEqual(1);
         expect(StringUtils.findFirstNonWhitespaceCharacter(' a b')).toEqual(1);
-        expect(StringUtils.findFirstNonWhitespaceCharacter('     a b c')).toEqual(5);
+        expect(
+            StringUtils.findFirstNonWhitespaceCharacter('     a b c'),
+        ).toEqual(5);
     });
 
     test('findLastNonWhitespaceCharacter', () => {
@@ -209,7 +373,9 @@ describe('String utils', () => {
         expect(StringUtils.findLastNonWhitespaceCharacter('a')).toEqual(0);
         expect(StringUtils.findLastNonWhitespaceCharacter(' a')).toEqual(1);
         expect(StringUtils.findLastNonWhitespaceCharacter(' a b')).toEqual(3);
-        expect(StringUtils.findLastNonWhitespaceCharacter('     a b c')).toEqual(9);
+        expect(
+            StringUtils.findLastNonWhitespaceCharacter('     a b c'),
+        ).toEqual(9);
     });
 
     test('escapeCharacter', () => {
@@ -220,12 +386,22 @@ describe('String utils', () => {
 
     test('splitStringByNewLines', () => {
         expect(StringUtils.splitStringByNewLines('')).toStrictEqual(['']);
-        expect(StringUtils.splitStringByNewLines('a\nb\nc')).toStrictEqual(['a', 'b', 'c']);
-        expect(StringUtils.splitStringByNewLines('a\r\nb\nc')).toStrictEqual(['a', 'b', 'c']);
+        expect(StringUtils.splitStringByNewLines('a\nb\nc')).toStrictEqual([
+            'a',
+            'b',
+            'c',
+        ]);
+        expect(StringUtils.splitStringByNewLines('a\r\nb\nc')).toStrictEqual([
+            'a',
+            'b',
+            'c',
+        ]);
     });
 
     test('splitStringByNewLinesEx', () => {
-        expect(StringUtils.splitStringByNewLinesEx(EMPTY)).toStrictEqual([[EMPTY, null]]);
+        expect(StringUtils.splitStringByNewLinesEx(EMPTY)).toStrictEqual([
+            [EMPTY, null],
+        ]);
 
         expect(StringUtils.splitStringByNewLinesEx('a\nb\nc')).toStrictEqual([
             ['a', 'lf'],
@@ -239,13 +415,17 @@ describe('String utils', () => {
             ['c', null],
         ]);
 
-        expect(StringUtils.splitStringByNewLinesEx('a\r\nb\nc\n')).toStrictEqual([
+        expect(
+            StringUtils.splitStringByNewLinesEx('a\r\nb\nc\n'),
+        ).toStrictEqual([
             ['a', 'crlf'],
             ['b', 'lf'],
             ['c', 'lf'],
         ]);
 
-        expect(StringUtils.splitStringByNewLinesEx('a\r\nb\nc\rd\n\n')).toStrictEqual([
+        expect(
+            StringUtils.splitStringByNewLinesEx('a\r\nb\nc\rd\n\n'),
+        ).toStrictEqual([
             ['a', 'crlf'],
             ['b', 'lf'],
             ['c', 'cr'],
@@ -255,21 +435,35 @@ describe('String utils', () => {
     });
 
     test('mergeStringByNewLines', () => {
-        expect(StringUtils.mergeStringByNewLines(StringUtils.splitStringByNewLinesEx(EMPTY))).toEqual(EMPTY);
+        expect(
+            StringUtils.mergeStringByNewLines(
+                StringUtils.splitStringByNewLinesEx(EMPTY),
+            ),
+        ).toEqual(EMPTY);
 
-        expect(StringUtils.mergeStringByNewLines(StringUtils.splitStringByNewLinesEx('a\nb\nc'))).toEqual('a\nb\nc');
+        expect(
+            StringUtils.mergeStringByNewLines(
+                StringUtils.splitStringByNewLinesEx('a\nb\nc'),
+            ),
+        ).toEqual('a\nb\nc');
 
-        expect(StringUtils.mergeStringByNewLines(StringUtils.splitStringByNewLinesEx('a\r\nb\nc'))).toEqual(
-            'a\r\nb\nc',
-        );
+        expect(
+            StringUtils.mergeStringByNewLines(
+                StringUtils.splitStringByNewLinesEx('a\r\nb\nc'),
+            ),
+        ).toEqual('a\r\nb\nc');
 
-        expect(StringUtils.mergeStringByNewLines(StringUtils.splitStringByNewLinesEx('a\r\nb\nc\n'))).toEqual(
-            'a\r\nb\nc\n',
-        );
+        expect(
+            StringUtils.mergeStringByNewLines(
+                StringUtils.splitStringByNewLinesEx('a\r\nb\nc\n'),
+            ),
+        ).toEqual('a\r\nb\nc\n');
 
-        expect(StringUtils.mergeStringByNewLines(StringUtils.splitStringByNewLinesEx('a\r\nb\nc\rd\n\n'))).toEqual(
-            'a\r\nb\nc\rd\n\n',
-        );
+        expect(
+            StringUtils.mergeStringByNewLines(
+                StringUtils.splitStringByNewLinesEx('a\r\nb\nc\rd\n\n'),
+            ),
+        ).toEqual('a\r\nb\nc\rd\n\n');
     });
 
     test('findNextWhitespaceCharacter', () => {
@@ -362,9 +556,14 @@ describe('String utils', () => {
                 expected: '\\\\',
                 characters: new Set(['\\']),
             },
-        // eslint-disable-next-line max-len
-        ])('escapeCharacters returns \'$expected\' when given \'$actual\' and \'$characters\'', ({ actual, expected, characters }) => {
-            expect(StringUtils.escapeCharacters(actual, characters)).toBe(expected);
-        });
+            // eslint-disable-next-line max-len
+        ])(
+            "escapeCharacters returns '$expected' when given '$actual' and '$characters'",
+            ({ actual, expected, characters }) => {
+                expect(StringUtils.escapeCharacters(actual, characters)).toBe(
+                    expected,
+                );
+            },
+        );
     });
 });

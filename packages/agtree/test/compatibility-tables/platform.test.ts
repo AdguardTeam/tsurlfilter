@@ -1,37 +1,61 @@
 /* eslint-disable no-bitwise */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { parseRawPlatforms, stringifyPlatforms } from '../../src/compatibility-tables/schemas/platform';
-import { GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms';
+import {
+    GenericPlatform,
+    SpecificPlatform,
+} from '../../src/compatibility-tables/platforms';
+import {
+    parseRawPlatforms,
+    stringifyPlatforms,
+} from '../../src/compatibility-tables/schemas/platform';
 
 describe('Platform Serialization', () => {
     describe('parseRawPlatforms', () => {
         it('should parse single generic platform', () => {
-            expect(parseRawPlatforms('adg_os_any')).toBe(GenericPlatform.AdgOsAny);
-            expect(parseRawPlatforms('adg_ext_chromium')).toBe(GenericPlatform.AdgExtChromium);
+            expect(parseRawPlatforms('adg_os_any')).toBe(
+                GenericPlatform.AdgOsAny,
+            );
+            expect(parseRawPlatforms('adg_ext_chromium')).toBe(
+                GenericPlatform.AdgExtChromium,
+            );
             expect(parseRawPlatforms('adg_any')).toBe(GenericPlatform.AdgAny);
             expect(parseRawPlatforms('any')).toBe(GenericPlatform.Any);
         });
 
         it('should parse single specific platform', () => {
-            expect(parseRawPlatforms('adg_os_windows')).toBe(SpecificPlatform.AdgOsWindows);
-            expect(parseRawPlatforms('adg_ext_chrome')).toBe(SpecificPlatform.AdgExtChrome);
-            expect(parseRawPlatforms('ubo_ext_firefox')).toBe(SpecificPlatform.UboExtFirefox);
-            expect(parseRawPlatforms('abp_ext_edge')).toBe(SpecificPlatform.AbpExtEdge);
+            expect(parseRawPlatforms('adg_os_windows')).toBe(
+                SpecificPlatform.AdgOsWindows,
+            );
+            expect(parseRawPlatforms('adg_ext_chrome')).toBe(
+                SpecificPlatform.AdgExtChrome,
+            );
+            expect(parseRawPlatforms('ubo_ext_firefox')).toBe(
+                SpecificPlatform.UboExtFirefox,
+            );
+            expect(parseRawPlatforms('abp_ext_edge')).toBe(
+                SpecificPlatform.AbpExtEdge,
+            );
         });
 
         it('should parse multiple platforms with OR', () => {
             const result = parseRawPlatforms('adg_os_windows|adg_ext_chrome');
-            expect(result).toBe(SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgExtChrome);
+            expect(result).toBe(
+                SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgExtChrome,
+            );
         });
 
         it('should parse combination of generic and specific platforms', () => {
             const result = parseRawPlatforms('adg_os_any|ubo_ext_chrome');
-            expect(result).toBe(GenericPlatform.AdgOsAny | SpecificPlatform.UboExtChrome);
+            expect(result).toBe(
+                GenericPlatform.AdgOsAny | SpecificPlatform.UboExtChrome,
+            );
         });
 
         it('should handle whitespace correctly', () => {
-            expect(parseRawPlatforms('  adg_os_any  ')).toBe(GenericPlatform.AdgOsAny);
+            expect(parseRawPlatforms('  adg_os_any  ')).toBe(
+                GenericPlatform.AdgOsAny,
+            );
             expect(parseRawPlatforms('adg_os_windows | adg_ext_chrome')).toBe(
                 SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgExtChrome,
             );
@@ -40,18 +64,26 @@ describe('Platform Serialization', () => {
         it('should handle platform negation', () => {
             const result = parseRawPlatforms('adg_any|~adg_safari_any');
             // adg_any with adg_safari_any removed
-            expect(result).toBe(GenericPlatform.AdgAny & ~GenericPlatform.AdgSafariAny);
+            expect(result).toBe(
+                GenericPlatform.AdgAny & ~GenericPlatform.AdgSafariAny,
+            );
         });
 
         it('should handle multiple negations', () => {
-            const result = parseRawPlatforms('adg_ext_any|~adg_ext_chrome|~adg_ext_opera');
+            const result = parseRawPlatforms(
+                'adg_ext_any|~adg_ext_chrome|~adg_ext_opera',
+            );
             expect(result).toBe(
-                GenericPlatform.AdgExtAny & ~SpecificPlatform.AdgExtChrome & ~SpecificPlatform.AdgExtOpera,
+                GenericPlatform.AdgExtAny
+                    & ~SpecificPlatform.AdgExtChrome
+                    & ~SpecificPlatform.AdgExtOpera,
             );
         });
 
         it('should throw error for unknown platform', () => {
-            expect(() => parseRawPlatforms('unknown_platform')).toThrow('Unknown platform: unknown_platform');
+            expect(() => parseRawPlatforms('unknown_platform')).toThrow(
+                'Unknown platform: unknown_platform',
+            );
         });
 
         it('should throw error when result is 0', () => {
@@ -61,22 +93,36 @@ describe('Platform Serialization', () => {
 
     describe('stringifyPlatforms', () => {
         it('should serialize single generic platform', () => {
-            expect(stringifyPlatforms(GenericPlatform.AdgOsAny)).toBe('adg_os_any');
-            expect(stringifyPlatforms(GenericPlatform.AdgExtChromium)).toBe('adg_ext_chromium');
+            expect(stringifyPlatforms(GenericPlatform.AdgOsAny)).toBe(
+                'adg_os_any',
+            );
+            expect(stringifyPlatforms(GenericPlatform.AdgExtChromium)).toBe(
+                'adg_ext_chromium',
+            );
             expect(stringifyPlatforms(GenericPlatform.AdgAny)).toBe('adg_any');
             expect(stringifyPlatforms(GenericPlatform.Any)).toBe('any');
         });
 
         it('should serialize single specific platform', () => {
-            expect(stringifyPlatforms(SpecificPlatform.AdgOsWindows)).toBe('adg_os_windows');
-            expect(stringifyPlatforms(SpecificPlatform.AdgExtChrome)).toBe('adg_ext_chrome');
-            expect(stringifyPlatforms(SpecificPlatform.UboExtFirefox)).toBe('ubo_ext_firefox');
-            expect(stringifyPlatforms(SpecificPlatform.AbpExtEdge)).toBe('abp_ext_edge');
+            expect(stringifyPlatforms(SpecificPlatform.AdgOsWindows)).toBe(
+                'adg_os_windows',
+            );
+            expect(stringifyPlatforms(SpecificPlatform.AdgExtChrome)).toBe(
+                'adg_ext_chrome',
+            );
+            expect(stringifyPlatforms(SpecificPlatform.UboExtFirefox)).toBe(
+                'ubo_ext_firefox',
+            );
+            expect(stringifyPlatforms(SpecificPlatform.AbpExtEdge)).toBe(
+                'abp_ext_edge',
+            );
         });
 
         it('should prefer generic platforms over specific combinations', () => {
             // AdgOsAny = AdgOsWindows | AdgOsMac | AdgOsAndroid
-            const bitmask = SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgOsMac | SpecificPlatform.AdgOsAndroid;
+            const bitmask = SpecificPlatform.AdgOsWindows
+                | SpecificPlatform.AdgOsMac
+                | SpecificPlatform.AdgOsAndroid;
             expect(stringifyPlatforms(bitmask)).toBe('adg_os_any');
         });
 
@@ -112,7 +158,9 @@ describe('Platform Serialization', () => {
 
         it('should handle Chromium extensions correctly', () => {
             // AdgExtChromium = AdgExtChrome | AdgExtOpera | AdgExtEdge
-            const bitmask = SpecificPlatform.AdgExtChrome | SpecificPlatform.AdgExtOpera | SpecificPlatform.AdgExtEdge;
+            const bitmask = SpecificPlatform.AdgExtChrome
+                | SpecificPlatform.AdgExtOpera
+                | SpecificPlatform.AdgExtEdge;
             expect(stringifyPlatforms(bitmask)).toBe('adg_ext_chromium');
         });
 
@@ -123,7 +171,9 @@ describe('Platform Serialization', () => {
         it('should throw error for unknown platform bits', () => {
             // Use a bitmask with bits that don't correspond to any platform
             const invalidBitmask = 1 << 30;
-            expect(() => stringifyPlatforms(invalidBitmask)).toThrow('Unknown platform bits in bitmask');
+            expect(() => stringifyPlatforms(invalidBitmask)).toThrow(
+                'Unknown platform bits in bitmask',
+            );
         });
     });
 

@@ -1,5 +1,5 @@
 /**
- * @file Constant values used by all parts of the library
+ * @file Constant values used by all parts of the library.
  */
 
 // TODO: remove unused constants
@@ -53,7 +53,7 @@ export const NEWLINE = LF;
 // Quotes
 export const BACKTICK_QUOTE = '`';
 export const DOUBLE_QUOTE = '"';
-export const SINGLE_QUOTE = '\'';
+export const SINGLE_QUOTE = "'";
 
 // Brackets
 export const OPEN_PARENTHESIS = '(';

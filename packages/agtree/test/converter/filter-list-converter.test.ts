@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { FilterListParser } from '../../src/parser/filterlist-parser';
-import { NEWLINE } from '../../src/utils/constants';
 import { FilterListConverter } from '../../src/converter/filter-list';
 import { FilterListGenerator } from '../../src/generator/filterlist-generator';
+import { FilterListParser } from '../../src/parser/filterlist-parser';
+import { NEWLINE } from '../../src/utils/constants';
 
 describe('FilterListConverter', () => {
     test('convertToAdg should leave non-affected filter lists as is', () => {
@@ -21,8 +21,12 @@ describe('FilterListConverter', () => {
         const convertedFilterList = FilterListConverter.convertToAdg(filterListNode);
 
         // Converted filter list should be the same as the original one
-        expect(convertedFilterList.result.children).toHaveLength(filterListNode.children.length);
-        expect(FilterListGenerator.generate(convertedFilterList.result)).toBe(filterListContent);
+        expect(convertedFilterList.result.children).toHaveLength(
+            filterListNode.children.length,
+        );
+        expect(FilterListGenerator.generate(convertedFilterList.result)).toBe(
+            filterListContent,
+        );
 
         // Rule object references should be the same
         convertedFilterList.result.children.forEach((rule, index) => {
@@ -72,14 +76,18 @@ describe('FilterListConverter', () => {
         expect(convertedFilterList.result).not.toBe(filterListNode);
 
         // Serialized filter lists should be equal with the expected one
-        expect(FilterListGenerator.generate(convertedFilterList.result)).toBe(expectedFilterListContent);
+        expect(FilterListGenerator.generate(convertedFilterList.result)).toBe(
+            expectedFilterListContent,
+        );
 
         // Rule object references should be different
         convertedFilterList.result.children.forEach((convertedRule) => {
             // TODO: Add deep check for properties, eg domain list
             filterListNode.children.forEach((originalRule) => {
                 if (originalRule === convertedRule) {
-                    throw new Error('Rule object references should be different');
+                    throw new Error(
+                        'Rule object references should be different',
+                    );
                 }
             });
         });
@@ -111,6 +119,8 @@ describe('FilterListConverter', () => {
         expect(tolerant).not.toThrow();
 
         // The rule should be left as is
-        expect(FilterListGenerator.generate(tolerant().result)).toBe(expectedFilterListContent);
+        expect(FilterListGenerator.generate(tolerant().result)).toBe(
+            expectedFilterListContent,
+        );
     });
 });

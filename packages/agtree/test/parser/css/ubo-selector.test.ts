@@ -1,22 +1,31 @@
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
+import { sprintf } from 'sprintf-js';
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
-import { sprintf } from 'sprintf-js';
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 
+import { UboPseudoName } from '../../../src/common/ubo-selector-common';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { UboSelectorParser, ERROR_MESSAGES, formatPseudoName } from '../../../src/parser/css/ubo-selector-parser';
+import {
+    UboSelectorGenerator,
+} from '../../../src/generator/css/ubo-selector-generator';
+import {
+    ERROR_MESSAGES,
+    formatPseudoName,
+    UboSelectorParser,
+} from '../../../src/parser/css/ubo-selector-parser';
 import { CSS_NOT_PSEUDO, EMPTY, SPACE } from '../../../src/utils/constants';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { UboSelectorGenerator } from '../../../src/generator/css/ubo-selector-generator';
-import { UboPseudoName } from '../../../src/common/ubo-selector-common';
 
 describe('UboSelectorParser', () => {
     describe('UboSelectorParser.parse - valid', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<UboSelectorParser> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<UboSelectorParser>;
+        }>([
             // empty selector
             {
                 actual: EMPTY,
@@ -37,40 +46,38 @@ describe('UboSelectorParser', () => {
             },
             {
                 actual: SPACE,
-                expected: (context: NodeExpectContext): UboSelectorParser => (
-                    {
-                        type: 'UboSelector',
-                        selector: {
-                            type: 'Value',
-                            value: SPACE,
-                            ...context.getFullRange(),
-                        },
-                        modifiers: {
-                            type: 'ModifierList',
-                            children: [],
-                            ...context.getFullRange(),
-                        },
+                expected: (context: NodeExpectContext): UboSelectorParser => ({
+                    type: 'UboSelector',
+                    selector: {
+                        type: 'Value',
+                        value: SPACE,
                         ...context.getFullRange(),
-                    }),
+                    },
+                    modifiers: {
+                        type: 'ModifierList',
+                        children: [],
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
             },
             // tricky case - in this case, parser will run, because it finds an indicator
             {
                 actual: '[a=":style(padding:0)"]',
-                expected: (context: NodeExpectContext): UboSelectorParser => (
-                    {
-                        type: 'UboSelector',
-                        selector: {
-                            type: 'Value',
-                            value: '[a=":style(padding:0)"]',
-                            ...context.getFullRange(),
-                        },
-                        modifiers: {
-                            type: 'ModifierList',
-                            children: [],
-                            ...context.getFullRange(),
-                        },
+                expected: (context: NodeExpectContext): UboSelectorParser => ({
+                    type: 'UboSelector',
+                    selector: {
+                        type: 'Value',
+                        value: '[a=":style(padding:0)"]',
                         ...context.getFullRange(),
-                    }),
+                    },
+                    modifiers: {
+                        type: 'ModifierList',
+                        children: [],
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
             },
 
             // selector without uBO modifiers
@@ -396,7 +403,9 @@ describe('UboSelectorParser', () => {
                                         ...context.getRangeFor('/path'),
                                     },
                                     exception: true,
-                                    ...context.getRangeFor(':not(:matches-path(/path))'),
+                                    ...context.getRangeFor(
+                                        ':not(:matches-path(/path))',
+                                    ),
                                 },
                             ],
                             ...context.getFullRange(),
@@ -433,7 +442,9 @@ describe('UboSelectorParser', () => {
                                         ...context.getRangeFor('/path'),
                                     },
                                     exception: false,
-                                    ...context.getRangeFor(':not(:not(:matches-path(/path)))'),
+                                    ...context.getRangeFor(
+                                        ':not(:not(:matches-path(/path)))',
+                                    ),
                                 },
                             ],
                             ...context.getFullRange(),
@@ -470,7 +481,9 @@ describe('UboSelectorParser', () => {
                                         ...context.getRangeFor('/path'),
                                     },
                                     exception: true,
-                                    ...context.getRangeFor(':not(:not(:not(:matches-path(/path))))'),
+                                    ...context.getRangeFor(
+                                        ':not(:not(:not(:matches-path(/path))))',
+                                    ),
                                 },
                             ],
                             ...context.getFullRange(),
@@ -504,10 +517,14 @@ describe('UboSelectorParser', () => {
                                 value: {
                                     type: 'Value',
                                     value: '(min-width: 1000px)',
-                                    ...context.getRangeFor('(min-width: 1000px)'),
+                                    ...context.getRangeFor(
+                                        '(min-width: 1000px)',
+                                    ),
                                 },
                                 exception: false,
-                                ...context.getRangeFor(':matches-media((min-width: 1000px))'),
+                                ...context.getRangeFor(
+                                    ':matches-media((min-width: 1000px))',
+                                ),
                             },
                             {
                                 type: 'Modifier',
@@ -522,7 +539,9 @@ describe('UboSelectorParser', () => {
                                     ...context.getRangeFor('/path'),
                                 },
                                 exception: true,
-                                ...context.getRangeFor(':not(:matches-path(/path))'),
+                                ...context.getRangeFor(
+                                    ':not(:matches-path(/path))',
+                                ),
                             },
                             {
                                 type: 'Modifier',
@@ -534,10 +553,14 @@ describe('UboSelectorParser', () => {
                                 value: {
                                     type: 'Value',
                                     value: 'padding:0; color: red!important',
-                                    ...context.getRangeFor('padding:0; color: red!important'),
+                                    ...context.getRangeFor(
+                                        'padding:0; color: red!important',
+                                    ),
                                 },
                                 exception: false,
-                                ...context.getRangeFor(':style(padding:0; color: red!important)'),
+                                ...context.getRangeFor(
+                                    ':style(padding:0; color: red!important)',
+                                ),
                             },
                         ],
                         ...context.getFullRange(),
@@ -546,7 +569,9 @@ describe('UboSelectorParser', () => {
                 }),
             },
         ])("should parse input: '$actual'", ({ actual, expected }) => {
-            expect(UboSelectorParser.parse(actual)).toMatchObject(expected(new NodeExpectContext(actual)));
+            expect(UboSelectorParser.parse(actual)).toMatchObject(
+                expected(new NodeExpectContext(actual)),
+            );
         });
     });
 
@@ -567,12 +592,17 @@ describe('UboSelectorParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(UboSelectorParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                UboSelectorParser.parse(actual, { isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
     describe('UboSelectorParser.parse - invalid', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<AdblockSyntaxError>;
+        }>([
             // uBO style injection cannot be followed by anything else
             {
                 actual: 'div:style(border: none!important):remove()',
@@ -590,7 +620,11 @@ describe('UboSelectorParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
-                        ...context.toTuple(context.getRangeFor(':style(border: none!important)')),
+                        ...context.toTuple(
+                            context.getRangeFor(
+                                ':style(border: none!important)',
+                            ),
+                        ),
                     );
                 },
             },
@@ -625,7 +659,11 @@ describe('UboSelectorParser', () => {
                             ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED,
                             formatPseudoName(UboPseudoName.MatchesMedia),
                         ),
-                        ...context.toTuple(context.getRangeFor(':matches-media((min-width: 1000px)))')),
+                        ...context.toTuple(
+                            context.getRangeFor(
+                                ':matches-media((min-width: 1000px)))',
+                            ),
+                        ),
                     );
                 },
             },
@@ -638,7 +676,11 @@ describe('UboSelectorParser', () => {
                             ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED,
                             formatPseudoName(UboPseudoName.MatchesMedia),
                         ),
-                        ...context.toTuple(context.getRangeFor(':matches-media((min-width: 1000px)))')),
+                        ...context.toTuple(
+                            context.getRangeFor(
+                                ':matches-media((min-width: 1000px)))',
+                            ),
+                        ),
                     );
                 },
             },
@@ -651,7 +693,9 @@ describe('UboSelectorParser', () => {
                             ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED,
                             formatPseudoName(UboPseudoName.Style),
                         ),
-                        ...context.toTuple(context.getRangeFor(':style(padding: 0))')),
+                        ...context.toTuple(
+                            context.getRangeFor(':style(padding: 0))'),
+                        ),
                     );
                 },
             },
@@ -667,7 +711,9 @@ describe('UboSelectorParser', () => {
                             formatPseudoName(UboPseudoName.MatchesPath),
                             getFormattedTokenName(TokenType.Ident),
                         ),
-                        ...context.toTuple(context.getRangeFor('div:matches-path(/path))')),
+                        ...context.toTuple(
+                            context.getRangeFor('div:matches-path(/path))'),
+                        ),
                     );
                 },
             },
@@ -695,7 +741,9 @@ describe('UboSelectorParser', () => {
                             formatPseudoName(UboPseudoName.MatchesPath),
                             getFormattedTokenName(TokenType.Ident),
                         ),
-                        ...context.toTuple(context.getRangeFor(':matches-path(/path2))')),
+                        ...context.toTuple(
+                            context.getRangeFor(':matches-path(/path2))'),
+                        ),
                     );
                 },
             },
@@ -709,7 +757,11 @@ describe('UboSelectorParser', () => {
                             formatPseudoName(UboPseudoName.MatchesPath),
                             getFormattedTokenName(TokenType.Ident),
                         ),
-                        ...context.toTuple(context.getRangeFor('div:not(:matches-path(/path)))')),
+                        ...context.toTuple(
+                            context.getRangeFor(
+                                'div:not(:matches-path(/path)))',
+                            ),
+                        ),
                     );
                 },
             },
@@ -723,7 +775,9 @@ describe('UboSelectorParser', () => {
                             formatPseudoName(UboPseudoName.MatchesPath),
                             getFormattedTokenName(TokenType.Ident),
                         ),
-                        ...context.toTuple(context.getRangeFor('div:matches-path(/path)))')),
+                        ...context.toTuple(
+                            context.getRangeFor('div:matches-path(/path)))'),
+                        ),
                     );
                 },
             },
@@ -738,7 +792,9 @@ describe('UboSelectorParser', () => {
                             ERROR_MESSAGES.DUPLICATED_UBO_MODIFIER,
                             formatPseudoName(UboPseudoName.MatchesPath),
                         ),
-                        ...context.toTuple(context.getRangeFor(':matches-path(/path)', -1)),
+                        ...context.toTuple(
+                            context.getRangeFor(':matches-path(/path)', -1),
+                        ),
                     );
                 },
             },
@@ -755,7 +811,9 @@ describe('UboSelectorParser', () => {
                             formatPseudoName('any'),
                             formatPseudoName(CSS_NOT_PSEUDO),
                         ),
-                        ...context.toTuple(context.getRangeFor(':any(:matches-path(/path))')),
+                        ...context.toTuple(
+                            context.getRangeFor(':any(:matches-path(/path))'),
+                        ),
                     );
                 },
             },
@@ -768,7 +826,10 @@ describe('UboSelectorParser', () => {
                             ERROR_MESSAGES.EXPECTED_BUT_GOT_BEFORE,
                             getFormattedTokenName(TokenType.Colon),
                             'nothing',
-                            formatPseudoName(UboPseudoName.MatchesPath, CSS_NOT_PSEUDO),
+                            formatPseudoName(
+                                UboPseudoName.MatchesPath,
+                                CSS_NOT_PSEUDO,
+                            ),
                         ),
                         ...context.toTuple(context.getFullRange()),
                     );
@@ -783,27 +844,33 @@ describe('UboSelectorParser', () => {
                             ERROR_MESSAGES.EXPECTED_BUT_GOT_BEFORE,
                             getFormattedTokenName(TokenType.Colon),
                             'nothing',
-                            formatPseudoName(UboPseudoName.MatchesPath, CSS_NOT_PSEUDO),
+                            formatPseudoName(
+                                UboPseudoName.MatchesPath,
+                                CSS_NOT_PSEUDO,
+                            ),
                         ),
                         ...context.toTuple(context.getFullRange()),
                     );
                 },
             },
-        ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = vi.fn(() => UboSelectorParser.parse(actual));
+        ])(
+            "should throw on input: '$actual'",
+            ({ actual, expected: expectedFn }) => {
+                const fn = vi.fn(() => UboSelectorParser.parse(actual));
 
-            // parse should throw
-            expect(fn).toThrow();
+                // parse should throw
+                expect(fn).toThrow();
 
-            const expected = expectedFn(new NodeExpectContext(actual));
+                const expected = expectedFn(new NodeExpectContext(actual));
 
-            // check the thrown error
-            const error = fn.mock.results[0].value;
-            expect(error).toBeInstanceOf(AdblockSyntaxError);
-            expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('start', expected.start);
-            expect(error).toHaveProperty('end', expected.end);
-        });
+                // check the thrown error
+                const error = fn.mock.results[0].value;
+                expect(error).toBeInstanceOf(AdblockSyntaxError);
+                expect(error).toHaveProperty('message', expected.message);
+                expect(error).toHaveProperty('start', expected.start);
+                expect(error).toHaveProperty('end', expected.end);
+            },
+        );
     });
 
     describe('UboSelectorParser.generate', () => {
@@ -848,10 +915,13 @@ describe('UboSelectorParser', () => {
                 // eslint-disable-next-line max-len
                 actual: ':matches-media((min-width: 1000px)) div:has(> [ad]):not(:matches-path(/path)):style(padding:0; color: red!important)',
                 // eslint-disable-next-line max-len
-                expected: ':matches-media((min-width: 1000px)):not(:matches-path(/path)) div:has(> [ad]):style(padding:0; color: red!important)',
+                expected:
+                    ':matches-media((min-width: 1000px)):not(:matches-path(/path)) div:has(> [ad]):style(padding:0; color: red!important)',
             },
-        ])('should generate input: \'$actual\'', ({ actual, expected }) => {
-            expect(UboSelectorGenerator.generate(UboSelectorParser.parse(actual))).toBe(expected);
+        ])("should generate input: '$actual'", ({ actual, expected }) => {
+            expect(
+                UboSelectorGenerator.generate(UboSelectorParser.parse(actual)),
+            ).toBe(expected);
         });
     });
 });

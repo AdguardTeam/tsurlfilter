@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { sprintf } from 'sprintf-js';
-
+import { type AnyCosmeticRule } from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
     CLOSE_PARENTHESIS,
@@ -10,19 +9,22 @@ import {
     OPEN_PARENTHESIS,
     SPACE,
 } from '../../utils/constants';
-import { type AnyCosmeticRule } from '../../nodes';
 import { BaseGenerator } from '../base-generator';
-import { CosmeticRulePatternGenerator } from './cosmetic-rule-pattern-generator';
+
 import { CosmeticRuleBodyGenerator } from './cosmetic-rule-body-generator';
+import { CosmeticRulePatternGenerator } from './cosmetic-rule-pattern-generator';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
  */
 export const ERROR_MESSAGES = {
     EMPTY_RULE_BODY: 'Empty rule body',
-    INVALID_BODY_FOR_SEPARATOR: "Body '%s' is not valid for the '%s' cosmetic rule separator",
-    MISSING_ADGUARD_MODIFIER_LIST_END: "Missing '%s' at the end of the AdGuard modifier list in pattern '%s'",
-    MISSING_ADGUARD_MODIFIER_LIST_MARKER: "Missing '%s' at the beginning of the AdGuard modifier list in pattern '%s'",
+    INVALID_BODY_FOR_SEPARATOR:
+        "Body '%s' is not valid for the '%s' cosmetic rule separator",
+    MISSING_ADGUARD_MODIFIER_LIST_END:
+        "Missing '%s' at the end of the AdGuard modifier list in pattern '%s'",
+    MISSING_ADGUARD_MODIFIER_LIST_MARKER:
+        "Missing '%s' at the beginning of the AdGuard modifier list in pattern '%s'",
     SYNTAXES_CANNOT_BE_MIXED: "'%s' syntax cannot be mixed with '%s' syntax",
     SYNTAX_DISABLED: "Parsing '%s' syntax is disabled, but the rule uses it",
 };
@@ -37,8 +39,9 @@ export class CosmeticRuleGenerator extends BaseGenerator {
     /**
      * Converts a cosmetic rule AST into a string.
      *
-     * @param node Cosmetic rule AST
-     * @returns Raw string
+     * @param node Cosmetic rule AST.
+     *
+     * @returns Raw string.
      */
     public static generate(node: AnyCosmeticRule): string {
         let result = EMPTY;
@@ -70,7 +73,9 @@ export class CosmeticRuleGenerator extends BaseGenerator {
             });
 
             // If there are at least one modifier, add a space
-            if (node.modifiers.children.some((modifier) => modifier?.name.value)) {
+            if (
+                node.modifiers.children.some((modifier) => modifier?.name.value)
+            ) {
                 result += SPACE;
             }
         }

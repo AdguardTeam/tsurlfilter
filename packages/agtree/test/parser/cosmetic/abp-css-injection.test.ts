@@ -1,29 +1,39 @@
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
+import { sprintf } from 'sprintf-js';
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
-import { sprintf } from 'sprintf-js';
-import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
+import {
+    CosmeticRuleGenerator,
+} from '../../../src/generator/cosmetic/cosmetic-rule-generator';
 import {
     CosmeticRuleType,
-    RuleCategory,
     type CssInjectionRule,
     type ElementHidingRule,
+    RuleCategory,
 } from '../../../src/nodes';
-import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-generator';
-import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
+import {
+    CosmeticRuleParser,
+} from '../../../src/parser/cosmetic/cosmetic-rule-parser';
+import {
+    ERROR_MESSAGES as CSS_TOKEN_STREAM_ERROR_MESSAGES,
+    END_OF_INPUT,
+} from '../../../src/parser/css/constants';
 import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
-import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { ERROR_MESSAGES as CSS_TOKEN_STREAM_ERROR_MESSAGES, END_OF_INPUT } from '../../../src/parser/css/constants';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid AdblockPlus CSS injection rules', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<ElementHidingRule | CssInjectionRule> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<ElementHidingRule | CssInjectionRule>;
+        }>([
             // generic cosmetic rule - without domains
             {
                 actual: '##div { display: none !important; }',
@@ -50,9 +60,13 @@ describe('CosmeticRuleParser', () => {
                             declarationList: {
                                 type: 'Value',
                                 value: 'display: none !important;',
-                                ...context.getRangeFor('display: none !important;'),
+                                ...context.getRangeFor(
+                                    'display: none !important;',
+                                ),
                             },
-                            ...context.getRangeFor('div { display: none !important; }'),
+                            ...context.getRangeFor(
+                                'div { display: none !important; }',
+                            ),
                         },
                         ...context.getFullRange(),
                     };
@@ -83,9 +97,13 @@ describe('CosmeticRuleParser', () => {
                             declarationList: {
                                 type: 'Value',
                                 value: 'display: none !important;',
-                                ...context.getRangeFor('display: none !important;'),
+                                ...context.getRangeFor(
+                                    'display: none !important;',
+                                ),
                             },
-                            ...context.getRangeFor('div { display: none !important; }'),
+                            ...context.getRangeFor(
+                                'div { display: none !important; }',
+                            ),
                         },
                         ...context.getFullRange(),
                     };
@@ -182,9 +200,13 @@ describe('CosmeticRuleParser', () => {
                             declarationList: {
                                 type: 'Value',
                                 value: 'display: none !important;',
-                                ...context.getRangeFor('display: none !important;'),
+                                ...context.getRangeFor(
+                                    'display: none !important;',
+                                ),
                             },
-                            ...context.getRangeFor('.banner:has(.foo) { display: none !important; }'),
+                            ...context.getRangeFor(
+                                '.banner:has(.foo) { display: none !important; }',
+                            ),
                         },
                         ...context.getFullRange(),
                     };
@@ -215,9 +237,13 @@ describe('CosmeticRuleParser', () => {
                             declarationList: {
                                 type: 'Value',
                                 value: 'display: none !important;',
-                                ...context.getRangeFor('display: none !important;'),
+                                ...context.getRangeFor(
+                                    'display: none !important;',
+                                ),
                             },
-                            ...context.getRangeFor('.banner:has(.foo) { display: none !important; }'),
+                            ...context.getRangeFor(
+                                '.banner:has(.foo) { display: none !important; }',
+                            ),
                         },
                         ...context.getFullRange(),
                     };
@@ -248,9 +274,13 @@ describe('CosmeticRuleParser', () => {
                             declarationList: {
                                 type: 'Value',
                                 value: 'display: none !important;',
-                                ...context.getRangeFor('display: none !important;'),
+                                ...context.getRangeFor(
+                                    'display: none !important;',
+                                ),
                             },
-                            ...context.getRangeFor('.banner:contains({) { display: none !important; }'),
+                            ...context.getRangeFor(
+                                '.banner:contains({) { display: none !important; }',
+                            ),
                         },
                         ...context.getFullRange(),
                     };
@@ -281,9 +311,13 @@ describe('CosmeticRuleParser', () => {
                             declarationList: {
                                 type: 'Value',
                                 value: 'display: none !important;',
-                                ...context.getRangeFor('display: none !important;'),
+                                ...context.getRangeFor(
+                                    'display: none !important;',
+                                ),
                             },
-                            ...context.getRangeFor('.banner:contains({) { display: none !important; }'),
+                            ...context.getRangeFor(
+                                '.banner:contains({) { display: none !important; }',
+                            ),
                         },
                         ...context.getFullRange(),
                     };
@@ -314,7 +348,9 @@ describe('CosmeticRuleParser', () => {
                             declarationList: {
                                 type: 'Value',
                                 value: 'padding: 10px !important; background: black !important;',
-                                ...context.getRangeFor('padding: 10px !important; background: black !important;'),
+                                ...context.getRangeFor(
+                                    'padding: 10px !important; background: black !important;',
+                                ),
                             },
                             ...context.getRangeFor(
                                 '.banner { padding: 10px !important; background: black !important; }',
@@ -428,16 +464,22 @@ describe('CosmeticRuleParser', () => {
                             selectorList: {
                                 type: 'Value',
                                 value: '.foo[class^="foo{"][href*="}"]',
-                                ...context.getRangeFor('.foo[class^="foo{"][href*="}"]'),
+                                ...context.getRangeFor(
+                                    '.foo[class^="foo{"][href*="}"]',
+                                ),
                             },
-                            ...context.getRangeFor('.foo[class^="foo{"][href*="}"]'),
+                            ...context.getRangeFor(
+                                '.foo[class^="foo{"][href*="}"]',
+                            ),
                         },
                         ...context.getFullRange(),
                     };
                 },
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(CosmeticRuleParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
+            expect(CosmeticRuleParser.parse(actual)).toMatchObject(
+                expectedFn(new NodeExpectContext(actual)),
+            );
         });
     });
 
@@ -470,15 +512,18 @@ describe('CosmeticRuleParser', () => {
             },
             {
                 actual: '#?#.banner:contains({) { display: none !important; }',
-                expected: '#?#.banner:contains({) { display: none !important; }',
+                expected:
+                    '#?#.banner:contains({) { display: none !important; }',
             },
             {
                 actual: '#@?#.banner:contains({) { display: none !important; }',
-                expected: '#@?#.banner:contains({) { display: none !important; }',
+                expected:
+                    '#@?#.banner:contains({) { display: none !important; }',
             },
             {
                 actual: '##.banner { padding: 10px !important; background: black !important; }',
-                expected: '##.banner { padding: 10px !important; background: black !important; }',
+                expected:
+                    '##.banner { padding: 10px !important; background: black !important; }',
             },
             {
                 actual: '##div[class^="foo{"]',
@@ -492,19 +537,27 @@ describe('CosmeticRuleParser', () => {
                 actual: '#?#.foo:contains({)',
                 expected: '#?#.foo:contains({)',
             },
-        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = CosmeticRuleParser.parse(actual);
+        ])(
+            "should generate '$expected' from '$actual'",
+            ({ actual, expected }) => {
+                const ruleNode = CosmeticRuleParser.parse(actual);
 
-            if (ruleNode === null) {
-                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
-            }
+                if (ruleNode === null) {
+                    throw new Error(
+                        `Failed to parse '${actual}' as cosmetic rule`,
+                    );
+                }
 
-            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
-        });
+                expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
+            },
+        );
     });
 
     describe('AdgScriptletInjectionBodyParser.parse - invalid cases', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<AdblockSyntaxError>;
+        }>([
             {
                 actual: String.raw`##div { display: none !important`,
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
@@ -545,20 +598,23 @@ describe('CosmeticRuleParser', () => {
                     );
                 },
             },
-        ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = vi.fn(() => CosmeticRuleParser.parse(actual));
+        ])(
+            "should throw on input: '$actual'",
+            ({ actual, expected: expectedFn }) => {
+                const fn = vi.fn(() => CosmeticRuleParser.parse(actual));
 
-            // parse should throw
-            expect(fn).toThrow();
+                // parse should throw
+                expect(fn).toThrow();
 
-            const expected = expectedFn(new NodeExpectContext(actual));
+                const expected = expectedFn(new NodeExpectContext(actual));
 
-            // check the thrown error
-            const error = fn.mock.results[0].value;
-            expect(error).toBeInstanceOf(AdblockSyntaxError);
-            expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('start', (expected.start));
-            expect(error).toHaveProperty('end', expected.end);
-        });
+                // check the thrown error
+                const error = fn.mock.results[0].value;
+                expect(error).toBeInstanceOf(AdblockSyntaxError);
+                expect(error).toHaveProperty('message', expected.message);
+                expect(error).toHaveProperty('start', expected.start);
+                expect(error).toHaveProperty('end', expected.end);
+            },
+        );
     });
 });

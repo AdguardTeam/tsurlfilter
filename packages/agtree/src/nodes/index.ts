@@ -9,7 +9,7 @@ export const OperatorValue = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type OperatorValue = typeof OperatorValue[keyof typeof OperatorValue];
+export type OperatorValue = (typeof OperatorValue)[keyof typeof OperatorValue];
 
 /**
  * Represents possible new line types.
@@ -82,7 +82,7 @@ export const CommentMarker = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type CommentMarker = typeof CommentMarker[keyof typeof CommentMarker];
+export type CommentMarker = (typeof CommentMarker)[keyof typeof CommentMarker];
 
 /**
  * Represents the main categories that an adblock rule can belong to.
@@ -118,7 +118,7 @@ export const RuleCategory = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type RuleCategory = typeof RuleCategory[keyof typeof RuleCategory];
+export type RuleCategory = (typeof RuleCategory)[keyof typeof RuleCategory];
 
 /**
  * Represents similar types of modifiers values
@@ -134,7 +134,7 @@ export const ListNodeType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type ListNodeType = typeof ListNodeType[keyof typeof ListNodeType];
+export type ListNodeType = (typeof ListNodeType)[keyof typeof ListNodeType];
 
 /**
  * Represents child items for {@link ListNodeType}.
@@ -149,7 +149,8 @@ export const ListItemNodeType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type ListItemNodeType = typeof ListItemNodeType[keyof typeof ListItemNodeType];
+export type ListItemNodeType =
+    (typeof ListItemNodeType)[keyof typeof ListItemNodeType];
 
 /**
  * Represents possible comment types.
@@ -165,7 +166,8 @@ export const CommentRuleType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type CommentRuleType = typeof CommentRuleType[keyof typeof CommentRuleType];
+export type CommentRuleType =
+    (typeof CommentRuleType)[keyof typeof CommentRuleType];
 
 /**
  * Represents possible cosmetic rule types.
@@ -180,7 +182,8 @@ export const CosmeticRuleType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type CosmeticRuleType = typeof CosmeticRuleType[keyof typeof CosmeticRuleType];
+export type CosmeticRuleType =
+    (typeof CosmeticRuleType)[keyof typeof CosmeticRuleType];
 
 /**
  * Represents possible cosmetic rule separators.
@@ -259,7 +262,8 @@ export const CosmeticRuleSeparator = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type CosmeticRuleSeparator = typeof CosmeticRuleSeparator[keyof typeof CosmeticRuleSeparator];
+export type CosmeticRuleSeparator =
+    (typeof CosmeticRuleSeparator)[keyof typeof CosmeticRuleSeparator];
 
 /**
  * Represents a basic node in the AST.
@@ -361,7 +365,7 @@ export interface ParameterList extends Node {
     type: 'ParameterList';
 
     /**
-     * List of values
+     * List of values.
      *
      * @note `null` values are allowed in the list, they represent empty parameters.
      */
@@ -401,7 +405,7 @@ export interface FilterList extends Node {
     type: 'FilterList';
 
     /**
-     * List of rules
+     * List of rules.
      */
     children: AnyRule[];
 }
@@ -418,21 +422,21 @@ export interface RuleBase extends Node {
     syntax: AdblockSyntax;
 
     /**
-     * Category of the adblock rule
+     * Category of the adblock rule.
      */
     category: RuleCategory;
 
     /**
-     * Raw data of the rule
+     * Raw data of the rule.
      */
     raws?: {
         /**
-         * Original rule text
+         * Original rule text.
          */
         text?: string;
 
         /**
-         * Newline character used in the rule (if any)
+         * Newline character used in the rule (if any).
          */
         nl?: NewLine;
     };
@@ -442,12 +446,12 @@ export interface InvalidRuleError extends Node {
     type: 'InvalidRuleError';
 
     /**
-     * Error name
+     * Error name.
      */
     name: string;
 
     /**
-     * Error message
+     * Error message.
      */
     message: string;
 }
@@ -459,32 +463,32 @@ export interface InvalidRule extends RuleBase {
     type: 'InvalidRule';
 
     /**
-     * Category of the adblock rule
+     * Category of the adblock rule.
      */
     category: typeof RuleCategory.Invalid;
 
     /**
-     * Raw rule text
+     * Raw rule text.
      */
     raw: string;
 
     /**
-     * Error details
+     * Error details.
      */
     error: InvalidRuleError;
 }
 
 /**
- * Represents an "empty rule" (practically an empty line)
+ * Represents an "empty rule" (practically an empty line).
  */
 export interface EmptyRule extends RuleBase {
     /**
-     * Type of the adblock rule (should be always present)
+     * Type of the adblock rule (should be always present).
      */
     type: 'EmptyRule';
 
     /**
-     * Category of the adblock rule
+     * Category of the adblock rule.
      */
     category: typeof RuleCategory.Empty;
 }
@@ -501,7 +505,7 @@ export interface CommentBase extends RuleBase {
  * Represents a simple comment.
  *
  * @example
- * Example rules:
+ * Example rules.
  *   - ```adblock
  *     ! This is just a comment
  *     ```
@@ -645,12 +649,12 @@ export interface PreProcessorCommentRule extends CommentBase {
     type: typeof CommentRuleType.PreProcessorCommentRule;
 
     /**
-     * Name of the directive
+     * Name of the directive.
      */
     name: Value;
 
     /**
-     * Params (optional)
+     * Params (optional).
      */
     params?: Value | ParameterList | AnyExpressionNode;
 }
@@ -788,17 +792,17 @@ export interface ModifierList extends Node {
  */
 export interface Modifier extends Node {
     /**
-     * Modifier name
+     * Modifier name.
      */
     name: Value;
 
     /**
-     * Is this modifier an exception? For example, `~third-party` is an exception
+     * Is this modifier an exception? For example, `~third-party` is an exception.
      */
     exception?: boolean;
 
     /**
-     * Modifier value (optional)
+     * Modifier value (optional).
      */
     value?: Value;
 }
@@ -883,7 +887,7 @@ export type AnyListItem = App | Domain | Method | StealthOption;
  */
 export interface DomainList extends Node {
     /**
-     * Type of the node. Basically, the idea is that each main AST part should have a type
+     * Type of the node. Basically, the idea is that each main AST part should have a type.
      */
     type: typeof ListNodeType.DomainList;
 
@@ -893,7 +897,7 @@ export interface DomainList extends Node {
     separator: DomainListSeparator;
 
     /**
-     * List of domains
+     * List of domains.
      */
     children: Domain[];
 }
@@ -907,7 +911,7 @@ export interface DomainList extends Node {
  */
 export interface AppList extends Node {
     /**
-     * Type of the node. Basically, the idea is that each main AST part should have a type
+     * Type of the node. Basically, the idea is that each main AST part should have a type.
      */
     type: typeof ListNodeType.AppList;
 
@@ -917,7 +921,7 @@ export interface AppList extends Node {
     separator: PipeSeparator;
 
     /**
-     * List of apps
+     * List of apps.
      */
     children: App[];
 }
@@ -931,7 +935,7 @@ export interface AppList extends Node {
  */
 export interface MethodList extends Node {
     /**
-     * Type of the node. Basically, the idea is that each main AST part should have a type
+     * Type of the node. Basically, the idea is that each main AST part should have a type.
      */
     type: typeof ListNodeType.MethodList;
 
@@ -941,7 +945,7 @@ export interface MethodList extends Node {
     separator: PipeSeparator;
 
     /**
-     * List of methods
+     * List of methods.
      */
     children: Method[];
 }
@@ -955,7 +959,7 @@ export interface MethodList extends Node {
  */
 export interface StealthOptionList extends Node {
     /**
-     * Type of the node. Basically, the idea is that each main AST part should have a type
+     * Type of the node. Basically, the idea is that each main AST part should have a type.
      */
     type: typeof ListNodeType.StealthOptionList;
 
@@ -965,7 +969,7 @@ export interface StealthOptionList extends Node {
     separator: PipeSeparator;
 
     /**
-     * List of stealth options
+     * List of stealth options.
      */
     children: StealthOption[];
 }
@@ -1013,7 +1017,7 @@ export interface CssInjectionRuleBody extends Node {
     declarationList?: Value;
 
     /**
-     * Remove flag
+     * Remove flag.
      */
     remove?: boolean;
 }
@@ -1104,7 +1108,13 @@ export interface AttributeSelectorWithoutValue extends Node {
  *
  * @see {@link https://www.w3.org/TR/selectors-4/#attribute-selectors}
  */
-export type AttributeSelectorOperatorValue = '=' | '~=' | '|=' | '^=' | '$=' | '*=';
+export type AttributeSelectorOperatorValue =
+    | '='
+    | '~='
+    | '|='
+    | '^='
+    | '$='
+    | '*=';
 
 /**
  * Represents CSS attribute selector flag values.
@@ -1256,7 +1266,7 @@ export interface CosmeticRule extends RuleBase {
     type: CosmeticRuleType;
 
     /**
-     * List of modifiers (optional)
+     * List of modifiers (optional).
      */
     modifiers?: ModifierList;
 
@@ -1292,7 +1302,8 @@ export interface CosmeticRule extends RuleBase {
 /**
  * Representation of an element hiding rule.
  *
- * Example rules:
+ * @example
+ * Example rules.
  * - ```adblock
  *   example.com##.ads
  *   ```
@@ -1314,6 +1325,7 @@ export interface ElementHidingRule extends CosmeticRule {
 /**
  * Representation of a CSS injection rule.
  *
+ * @example
  * Example rules (AdGuard):
  *  - ```adblock
  *    example.com#$#body { padding-top: 0 !important; }
@@ -1344,6 +1356,7 @@ export interface CssInjectionRule extends CosmeticRule {
 /**
  * Representation of a scriptlet injection rule.
  *
+ * @example
  * Example rules (AdGuard):
  *  - ```adblock
  *    example.com#%#//scriptlet('scriptlet-name', 'arg0', 'arg1')
@@ -1379,6 +1392,7 @@ export interface ScriptletInjectionRule extends CosmeticRule {
 /**
  * Representation of a HTML filtering rule.
  *
+ * @example
  * Example rules (AdGuard):
  *  - ```adblock
  *    example.com$$script[tag-content="detect"]
@@ -1403,6 +1417,7 @@ export interface HtmlFilteringRule extends CosmeticRule {
 /**
  * Representation of a JS injection rule.
  *
+ * @example
  * Example rules (AdGuard):
  *  - ```adblock
  *    example.com#%#let a = 2;
@@ -1426,10 +1441,11 @@ export const NetworkRuleType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type NetworkRuleType = typeof NetworkRuleType[keyof typeof NetworkRuleType];
+export type NetworkRuleType =
+    (typeof NetworkRuleType)[keyof typeof NetworkRuleType];
 
 /**
- * Represents the common properties of network rules
+ * Represents the common properties of network rules.
  */
 export interface NetworkRuleBase extends RuleBase {
     /**
@@ -1450,7 +1466,7 @@ export interface NetworkRuleBase extends RuleBase {
 }
 
 /**
- * Represents the common properties of network rules
+ * Represents the common properties of network rules.
  */
 export interface NetworkRule extends NetworkRuleBase {
     /**
@@ -1540,6 +1556,7 @@ export interface HostRule extends NetworkRuleBase {
      * 127.0.0.1 example.com example.org
      * ↑↑↑↑↑↑↑↑↑
      * ```
+     *
      * @note If IP is not specified in the rule, it parsed as null IP: `0.0.0.0`.
      */
     ip: Value;

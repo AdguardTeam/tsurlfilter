@@ -1,8 +1,8 @@
+import { ListItemNodeType, ListNodeType, type MethodList } from '../../nodes';
 import { PIPE } from '../../utils/constants';
-import { type MethodList, ListNodeType, ListItemNodeType } from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
+
 import { ListItemsParser } from './list-items-parser';
 
 const METHOD_LIST_SEPARATOR = PIPE;
@@ -22,14 +22,25 @@ export class MethodListParser extends BaseParser {
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
      * @returns Method list AST.
+     *
      * @throws An {@link AdblockSyntaxError} if the method list is syntactically invalid.
      * @throws An {@link Error} if the options are invalid.
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): MethodList {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): MethodList {
         const result: MethodList = {
             type: ListNodeType.MethodList,
             separator: METHOD_LIST_SEPARATOR,
-            children: ListItemsParser.parse(raw, options, baseOffset, METHOD_LIST_SEPARATOR, ListItemNodeType.Method),
+            children: ListItemsParser.parse(
+                raw,
+                options,
+                baseOffset,
+                METHOD_LIST_SEPARATOR,
+                ListItemNodeType.Method,
+            ),
         };
 
         if (options.isLocIncluded) {

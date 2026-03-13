@@ -6,11 +6,12 @@ import { TokenType } from '@adguard/css-tokenizer';
 
 import { REMOVE_PROPERTY, REMOVE_VALUE } from '../../converter/data/css';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { type CssInjectionRuleBody, type Value } from '../../nodes';
 import { CSS_MEDIA_MARKER, EMPTY } from '../../utils/constants';
-import { type Value, type CssInjectionRuleBody } from '../../nodes';
-import { CssTokenStream } from './css-token-stream';
-import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
+
+import { CssTokenStream } from './css-token-stream';
 
 export const ERROR_MESSAGES = {
     MEDIA_QUERY_LIST_IS_EMPTY: 'Media query list is empty',
@@ -30,9 +31,14 @@ export class AdgCssInjectionParser extends BaseParser {
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
      * @returns Parsed AdGuard CSS injection {@link CssInjectionRuleBody}.
+     *
      * @throws An {@link AdblockSyntaxError} if the selector list is syntactically invalid.
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): CssInjectionRuleBody {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): CssInjectionRuleBody {
         let mediaQueryList: Value | undefined;
         const selectorList: Value = { type: 'Value', value: EMPTY };
         const declarationList: Value = { type: 'Value', value: EMPTY };
@@ -52,7 +58,10 @@ export class AdgCssInjectionParser extends BaseParser {
         if (stream.getOrFail().type === TokenType.AtKeyword) {
             // Currently only '@media' is supported, we should throw an error if we encounter anything else,
             // like '@supports' or '@charset', etc.
-            stream.expect(TokenType.AtKeyword, { value: CSS_MEDIA_MARKER, balance: 0 });
+            stream.expect(TokenType.AtKeyword, {
+                value: CSS_MEDIA_MARKER,
+                balance: 0,
+            });
             stream.advance();
 
             // Skip whitespace characters after @media keyword, if any
@@ -72,7 +81,10 @@ export class AdgCssInjectionParser extends BaseParser {
             while (!stream.isEof()) {
                 const token = stream.getOrFail();
 
-                if (token.type === TokenType.OpenCurlyBracket && token.balance === 1) {
+                if (
+                    token.type === TokenType.OpenCurlyBracket
+                    && token.balance === 1
+                ) {
                     break;
                 }
 
@@ -179,7 +191,10 @@ export class AdgCssInjectionParser extends BaseParser {
         while (!stream.isEof()) {
             const token = stream.getOrFail();
 
-            if (token.type === TokenType.CloseCurlyBracket && stream.getBalance() === balanceShift) {
+            if (
+                token.type === TokenType.CloseCurlyBracket
+                && stream.getBalance() === balanceShift
+            ) {
                 declarationsEnd = lastNonWsIndex;
                 break;
             }
@@ -188,7 +203,10 @@ export class AdgCssInjectionParser extends BaseParser {
                 lastNonWsIndex = token.end;
             }
 
-            if (token.type === TokenType.Ident && stream.lookahead()?.type === TokenType.Colon) {
+            if (
+                token.type === TokenType.Ident
+                && stream.lookahead()?.type === TokenType.Colon
+            ) {
                 const ident = raw.slice(token.start, token.end);
                 declarations.add(ident);
 

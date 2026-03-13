@@ -1,8 +1,9 @@
-import { StringUtils } from '../../utils/string';
 import { type ParameterList } from '../../nodes';
 import { COMMA } from '../../utils/constants';
-import { defaultParserOptions } from '../options';
+import { StringUtils } from '../../utils/string';
 import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
+
 import { ValueParser } from './value-parser';
 
 /**
@@ -15,8 +16,9 @@ export class ParameterListParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @param separator Separator character (default: comma)
-     * @returns Parameter list AST
+     * @param separator Separator character (default: comma).
+     *
+     * @returns Parameter list AST.
      */
     public static parse(
         raw: string,
@@ -58,7 +60,11 @@ export class ParameterListParser extends BaseParser {
                 const paramStart = offset;
 
                 // Get next unescaped separator position
-                const nextSeparator = StringUtils.findUnescapedNonStringNonRegexChar(raw, separator, offset);
+                const nextSeparator = StringUtils.findUnescapedNonStringNonRegexChar(
+                    raw,
+                    separator,
+                    offset,
+                );
 
                 // Get parameter end position
                 const paramEnd = nextSeparator !== -1

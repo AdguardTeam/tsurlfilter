@@ -1,18 +1,18 @@
 /* eslint-disable no-param-reassign */
-import { getHostname, getDomain } from 'tldts';
 import isIp from 'is-ip';
+import { getDomain, getHostname } from 'tldts';
 
-import { StringUtils } from '../../utils/string';
 import {
     type HostRule,
     NetworkRuleType,
     RuleCategory,
     type Value,
 } from '../../nodes';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
 import { AdblockSyntax } from '../../utils/adblockers';
+import { StringUtils } from '../../utils/string';
+import { BaseParser } from '../base-parser';
 import { ValueParser } from '../misc/value-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * `HostRuleParser` is responsible for parsing hosts-like rules.
@@ -20,21 +20,33 @@ import { ValueParser } from '../misc/value-parser';
  * HostRule is a structure for simple host-level rules (i.e. /etc/hosts syntax).
  * It also supports "just domain" syntax. In this case, the IP will be set to 0.0.0.0.
  *
- * Rules syntax looks like this:
+ * Rules syntax looks like this:.
  * ```text
  * IP_address canonical_hostname [aliases...]
  * ```
+ *
+ * @see {@link http://man7.org/linux/man-pages/man5/hosts.5.html}
  *
  * @example
  * `192.168.1.13 bar.mydomain.org bar` -- ipv4
  * `ff02::1 ip6-allnodes` -- ipv6
  * `::1 localhost ip6-localhost ip6-loopback` -- ipv6 aliases
  * `example.org` -- "just domain" syntax
- * @see {@link http://man7.org/linux/man-pages/man5/hosts.5.html}
  */
 export class HostRuleParser extends BaseParser {
+    /**
+     * Null IP address used in host rules.
+     */
     public static readonly NULL_IP = '0.0.0.0';
 
+    /**
+     * Localhost IP address used in host rules.
+     */
+    public static readonly LOCALHOST_IP = '127.0.0.1';
+
+    /**
+     * Comment marker character used in host rules.
+     */
     public static readonly COMMENT_MARKER = '#';
 
     /**
@@ -43,20 +55,34 @@ export class HostRuleParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
      * @returns Host rule node.
      *
      * @throws If the input contains invalid data.
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): HostRule {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): HostRule {
         let offset = StringUtils.skipWS(raw, 0);
         const parts: Value[] = [];
         let lastPartStartIndex = offset;
         let comment: Value | null = null;
         const rawLength = raw.length;
 
-        const parsePartIfNeeded = (startIndex: number, endIndex: number): void => {
+        const parsePartIfNeeded = (
+            startIndex: number,
+            endIndex: number,
+        ): void => {
             if (startIndex < endIndex) {
-                parts.push(ValueParser.parse(raw.slice(startIndex, endIndex), options, baseOffset + startIndex));
+                parts.push(
+                    ValueParser.parse(
+                        raw.slice(startIndex, endIndex),
+                        options,
+                        baseOffset + startIndex,
+                    ),
+                );
             }
         };
 
@@ -68,7 +94,11 @@ export class HostRuleParser extends BaseParser {
             } else if (raw[offset] === HostRuleParser.COMMENT_MARKER) {
                 const commentStart = offset;
                 offset = StringUtils.skipWS(raw, offset + 1);
-                comment = ValueParser.parse(raw.slice(offset), options, baseOffset + commentStart);
+                comment = ValueParser.parse(
+                    raw.slice(offset),
+                    options,
+                    baseOffset + commentStart,
+                );
                 offset = rawLength;
                 lastPartStartIndex = offset;
             } else {
@@ -81,7 +111,9 @@ export class HostRuleParser extends BaseParser {
         const partsLength = parts.length;
 
         if (partsLength < 1) {
-            throw new Error('Host rule must have at least one domain name or an IP address and a domain name');
+            throw new Error(
+                'Host rule must have at least one domain name or an IP address and a domain name',
+            );
         }
 
         const result: Partial<HostRule> = {

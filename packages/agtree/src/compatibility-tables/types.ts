@@ -34,4 +34,7 @@ export type CompatibilityTableRow<T> = MapWithSharedStorage<number, T>;
  *
  * @template T Type of the compatibility data.
  */
-export type CompatibilityTable<T> = MapWithSharedStorage<string, CompatibilityTableRow<T>>;
+export type CompatibilityTable<T> = MapWithSharedStorage<
+string,
+CompatibilityTableRow<T>
+>;

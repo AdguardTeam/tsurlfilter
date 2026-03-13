@@ -1,9 +1,13 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { MetadataCommentParser } from '../../../src/parser/comment/metadata-comment-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
+import {
+    MetadataCommentGenerator,
+} from '../../../src/generator/comment/metadata-comment-generator';
+import {
+    MetadataCommentParser,
+} from '../../../src/parser/comment/metadata-comment-parser';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { MetadataCommentGenerator } from '../../../src/generator/comment/metadata-comment-generator';
+import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('MetadataCommentRuleParser', () => {
     test('parse', () => {
@@ -37,7 +41,9 @@ describe('MetadataCommentRuleParser', () => {
         expect(MetadataCommentParser.parse('! Title:')).toBeNull();
         expect(MetadataCommentParser.parse('! Title:  ')).toBeNull();
 
-        expect(MetadataCommentParser.parse('! Title: FilterList Title')).toMatchObject({
+        expect(
+            MetadataCommentParser.parse('! Title: FilterList Title'),
+        ).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
             end: 25,
@@ -63,7 +69,9 @@ describe('MetadataCommentRuleParser', () => {
             },
         });
 
-        expect(MetadataCommentParser.parse('# Title: FilterList Title')).toMatchObject({
+        expect(
+            MetadataCommentParser.parse('# Title: FilterList Title'),
+        ).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
             end: 25,
@@ -89,7 +97,9 @@ describe('MetadataCommentRuleParser', () => {
             },
         });
 
-        expect(MetadataCommentParser.parse('! title: FilterList Title')).toMatchObject({
+        expect(
+            MetadataCommentParser.parse('! title: FilterList Title'),
+        ).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
             end: 25,
@@ -115,7 +125,9 @@ describe('MetadataCommentRuleParser', () => {
             },
         });
 
-        expect(MetadataCommentParser.parse('!    title:    Filter   ')).toMatchObject({
+        expect(
+            MetadataCommentParser.parse('!    title:    Filter   '),
+        ).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
             end: 24,
@@ -142,7 +154,9 @@ describe('MetadataCommentRuleParser', () => {
         });
 
         expect(
-            MetadataCommentParser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
+            MetadataCommentParser.parse(
+                '! Homepage: https://github.com/AdguardTeam/some-repo/wiki',
+            ),
         ).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
@@ -198,7 +212,10 @@ describe('MetadataCommentRuleParser', () => {
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
             expect(
-                MetadataCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+                MetadataCommentParser.parse(actual, {
+                    ...defaultParserOptions,
+                    isLocIncluded: false,
+                }),
             ).toEqual(expected);
         });
     });
@@ -216,15 +233,21 @@ describe('MetadataCommentRuleParser', () => {
 
         // TODO: Refactor to test.each
         expect(parseAndGenerate('! Title: Filter')).toEqual('! Title: Filter');
-        expect(parseAndGenerate('!   Title: Filter   ')).toEqual('! Title: Filter');
+        expect(parseAndGenerate('!   Title: Filter   ')).toEqual(
+            '! Title: Filter',
+        );
         expect(parseAndGenerate('# Title: Filter')).toEqual('# Title: Filter');
 
-        expect(parseAndGenerate('! Homepage: https://github.com/AdguardTeam/some-repo/wiki')).toEqual(
-            '! Homepage: https://github.com/AdguardTeam/some-repo/wiki',
-        );
+        expect(
+            parseAndGenerate(
+                '! Homepage: https://github.com/AdguardTeam/some-repo/wiki',
+            ),
+        ).toEqual('! Homepage: https://github.com/AdguardTeam/some-repo/wiki');
 
-        expect(parseAndGenerate('# Homepage: https://github.com/AdguardTeam/some-repo/wiki')).toEqual(
-            '# Homepage: https://github.com/AdguardTeam/some-repo/wiki',
-        );
+        expect(
+            parseAndGenerate(
+                '# Homepage: https://github.com/AdguardTeam/some-repo/wiki',
+            ),
+        ).toEqual('# Homepage: https://github.com/AdguardTeam/some-repo/wiki');
     });
 });

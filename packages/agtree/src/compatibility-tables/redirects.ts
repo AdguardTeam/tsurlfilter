@@ -2,15 +2,16 @@
  * @file Compatibility tables for redirects.
  */
 
-import { CompatibilityTableBase } from './base';
-import { type RedirectDataSchema } from './schemas';
-import { redirectsCompatibilityTableData } from './compatibility-table-data';
-import { type CompatibilityTable } from './types';
-import { deepFreeze } from '../utils/deep-freeze';
 import { COLON } from '../utils/constants';
-import { type AnyPlatform } from './platforms';
-import { getResourceTypeModifier } from './utils/resource-type-helpers';
+import { deepFreeze } from '../utils/deep-freeze';
 import { isNull, isString, isUndefined } from '../utils/type-guards';
+
+import { CompatibilityTableBase } from './base';
+import { redirectsCompatibilityTableData } from './compatibility-table-data';
+import { type AnyPlatform } from './platforms';
+import { type RedirectDataSchema } from './schemas';
+import { type CompatibilityTable } from './types';
+import { getResourceTypeModifier } from './utils/resource-type-helpers';
 
 /**
  * Prefix for resource redirection names.
@@ -93,7 +94,10 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
         }
 
         for (const resourceType of redirectData.resourceTypes) {
-            const modifierName = getResourceTypeModifier(resourceType, platform);
+            const modifierName = getResourceTypeModifier(
+                resourceType,
+                platform,
+            );
 
             if (isNull(modifierName)) {
                 continue;
@@ -114,4 +118,6 @@ deepFreeze(redirectsCompatibilityTableData);
 /**
  * Compatibility table instance for redirects.
  */
-export const redirectsCompatibilityTable = new RedirectsCompatibilityTable(redirectsCompatibilityTableData);
+export const redirectsCompatibilityTable = new RedirectsCompatibilityTable(
+    redirectsCompatibilityTableData,
+);

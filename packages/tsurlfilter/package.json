@@ -171,7 +171,7 @@
         "eslint-plugin-import": "catalog:",
         "eslint-plugin-import-newlines": "catalog:",
         "eslint-plugin-jsdoc": "catalog:",
-        "eslint-plugin-n": "^17.21.3",
+        "eslint-plugin-n": "catalog:",
         "lint-staged": "catalog:",
         "lodash-es": "catalog:",
         "msw": "^2.7.0",

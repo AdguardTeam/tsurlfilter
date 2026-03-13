@@ -1,19 +1,20 @@
 import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
+import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import {
-    type Value,
-    type SelectorList,
     type ComplexSelector,
-    type PseudoClassSelector,
     type HtmlFilteringRuleBody,
+    type PseudoClassSelector,
+    type SelectorList,
+    type Value,
 } from '../../../nodes';
+import { UBO_RESPONSEHEADER_FN } from '../../../utils/constants';
 import { BaseParser } from '../../base-parser';
 import { CssTokenStream } from '../../css/css-token-stream';
-import { defaultParserOptions } from '../../options';
-import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { ValueParser } from '../../misc/value-parser';
-import { UBO_RESPONSEHEADER_FN } from '../../../utils/constants';
+import { defaultParserOptions } from '../../options';
+
 import { HtmlFilteringBodyParser } from './html-filtering-body-parser';
 
 /**
@@ -21,14 +22,14 @@ import { HtmlFilteringBodyParser } from './html-filtering-body-parser';
  * an uBlock-style HTML filtering rule, and also uBlock-style response header removal rule.
  *
  * Please note that the parser will parse any HTML filtering rule if it is syntactically correct.
- * For example, it will parse this:
+ * For example, it will parse this:.
  * ```adblock
  * example.com##^script:pseudo(content)
  * example.com##^responseheader(header-name)
  * ```
  *
- * but it didn't check if the pseudo selector `pseudo` or if
- * the header name `header-name` actually supported by any adblocker.
+ * But it didn't check if the pseudo selector `pseudo` or if
+ * the header name `header-name` actually supported by any adblocker..
  *
  * @see {@link https://www.w3.org/TR/selectors-4}
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
@@ -59,7 +60,11 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         baseOffset = 0,
     ): Value | HtmlFilteringRuleBody {
         // First, check if it's a response header removal rule and return if so
-        const responseHeaderBody = UboHtmlFilteringBodyParser.parseResponseHeaderRule(raw, options, baseOffset);
+        const responseHeaderBody = UboHtmlFilteringBodyParser.parseResponseHeaderRule(
+            raw,
+            options,
+            baseOffset,
+        );
         if (responseHeaderBody !== null) {
             return responseHeaderBody;
         }

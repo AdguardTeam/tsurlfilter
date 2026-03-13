@@ -1,5 +1,5 @@
-import { BaseGenerator } from '../base-generator';
 import { UboPseudoName } from '../../common/ubo-selector-common';
+import { type UboSelector } from '../../nodes';
 import {
     CLOSE_PARENTHESIS,
     COLON,
@@ -8,7 +8,7 @@ import {
     OPEN_PARENTHESIS,
     SPACE,
 } from '../../utils/constants';
-import { type UboSelector } from '../../nodes';
+import { BaseGenerator } from '../base-generator';
 
 /**
  * UBO selector generator.
@@ -17,8 +17,9 @@ export class UboSelectorGenerator extends BaseGenerator {
     /**
      * Serializes a uBO selector node to a string.
      *
-     * @param node UBO selector node
-     * @returns Raw string
+     * @param node UBO selector node.
+     *
+     * @returns Raw string.
      */
     public static generate(node: UboSelector): string {
         const prefix: string[] = []; // List of leading modifiers
@@ -30,18 +31,34 @@ export class UboSelectorGenerator extends BaseGenerator {
                     case UboPseudoName.Remove:
                     case UboPseudoName.Style:
                         // eslint-disable-next-line max-len
-                        suffix.push(COLON, modifier.name.value, OPEN_PARENTHESIS, modifier.value?.value || EMPTY, CLOSE_PARENTHESIS);
+                        suffix.push(
+                            COLON,
+                            modifier.name.value,
+                            OPEN_PARENTHESIS,
+                            modifier.value?.value || EMPTY,
+                            CLOSE_PARENTHESIS,
+                        );
                         break;
 
                     default:
                         // Wrap exceptions in `:not()`
                         if (modifier.exception) {
-                            prefix.push(COLON, CSS_NOT_PSEUDO, OPEN_PARENTHESIS);
+                            prefix.push(
+                                COLON,
+                                CSS_NOT_PSEUDO,
+                                OPEN_PARENTHESIS,
+                            );
                         }
 
                         // :modifier-name(value)
                         // eslint-disable-next-line max-len
-                        prefix.push(COLON, modifier.name.value, OPEN_PARENTHESIS, modifier.value?.value || EMPTY, CLOSE_PARENTHESIS);
+                        prefix.push(
+                            COLON,
+                            modifier.name.value,
+                            OPEN_PARENTHESIS,
+                            modifier.value?.value || EMPTY,
+                            CLOSE_PARENTHESIS,
+                        );
 
                         // Close the `:not()` if we are in an exception
                         if (modifier.exception) {

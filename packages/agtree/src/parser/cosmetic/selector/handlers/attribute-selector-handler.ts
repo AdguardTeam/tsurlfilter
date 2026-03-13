@@ -1,14 +1,14 @@
 import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
+import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
 import {
     type AttributeSelector,
-    type AttributeSelectorOperatorValue,
     type AttributeSelectorFlagValue,
+    type AttributeSelectorOperatorValue,
     type AttributeSelectorWithValue,
     type Value,
 } from '../../../../nodes';
-import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
 import {
     ASTERISK,
     CARET,
@@ -52,10 +52,7 @@ export class AttributeSelectorHandler {
      *
      * @see {@link AttributeSelectorFlagValue}
      */
-    private static readonly ALLOWED_ATTRIBUTE_FLAGS: ReadonlySet<AttributeSelectorFlagValue> = new Set([
-        'i',
-        's',
-    ]);
+    private static readonly ALLOWED_ATTRIBUTE_FLAGS: ReadonlySet<AttributeSelectorFlagValue> = new Set(['i', 's']);
 
     /**
      * Handles attribute selector parsing by creating an attribute selector node
@@ -67,10 +64,7 @@ export class AttributeSelectorHandler {
      */
     public static handle(context: SelectorListParserContext): void {
         const {
-            options,
-            baseOffset,
-            stream,
-            complexSelector,
+            options, baseOffset, stream, complexSelector,
         } = context;
 
         // Get open square bracket token
@@ -97,11 +91,7 @@ export class AttributeSelectorHandler {
         // Construct attribute selector node and attribute selector name node
         const result: AttributeSelector = {
             type: 'AttributeSelector',
-            name: ValueParser.parse(
-                nameRaw,
-                options,
-                baseOffset + token.start,
-            ),
+            name: ValueParser.parse(nameRaw, options, baseOffset + token.start),
         };
 
         // Include attribute selector node start location if needed
@@ -127,7 +117,9 @@ export class AttributeSelectorHandler {
             let operatorRaw = stream.fragment();
 
             // Check if it's prefix operator
-            if (AttributeSelectorHandler.ATTR_EQUALITY_PREFIXES.has(operatorRaw)) {
+            if (
+                AttributeSelectorHandler.ATTR_EQUALITY_PREFIXES.has(operatorRaw)
+            ) {
                 // Advance prefix operator token
                 stream.advance();
 
@@ -293,7 +285,9 @@ export class AttributeSelectorHandler {
      *
      * @returns `true` if the flag is valid, otherwise `false`.
      */
-    private static isValidFlag(flag: string): flag is AttributeSelectorFlagValue {
+    private static isValidFlag(
+        flag: string,
+    ): flag is AttributeSelectorFlagValue {
         return AttributeSelectorHandler.ALLOWED_ATTRIBUTE_FLAGS.has(
             flag as AttributeSelectorFlagValue,
         );

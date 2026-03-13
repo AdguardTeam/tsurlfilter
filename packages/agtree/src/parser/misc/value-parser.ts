@@ -1,6 +1,6 @@
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
 import { type Value } from '../../nodes';
+import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * Value parser.
@@ -16,7 +16,11 @@ export class ValueParser extends BaseParser {
      *
      * @returns Value node.
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): Value {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): Value {
         const result: Value = {
             type: 'Value',
             value: raw,

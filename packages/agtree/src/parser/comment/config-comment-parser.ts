@@ -1,26 +1,27 @@
 /**
  * @file AGLint configuration comments. Inspired by ESLint inline configuration comments.
+ *
  * @see {@link https://eslint.org/docs/latest/user-guide/configuring/rules#using-configuration-comments}
  */
 
 import JSON5 from 'json5';
 
-import { AdblockSyntax } from '../../utils/adblockers';
-import { AGLINT_COMMAND_PREFIX, AGLINT_CONFIG_COMMENT_MARKER, COMMA } from '../../utils/constants';
 import {
     CommentMarker,
     CommentRuleType,
     type ConfigCommentRule,
+    type ConfigNode,
     type ParameterList,
     RuleCategory,
     type Value,
-    type ConfigNode,
 } from '../../nodes';
+import { AdblockSyntax } from '../../utils/adblockers';
+import { AGLINT_COMMAND_PREFIX, AGLINT_CONFIG_COMMENT_MARKER, COMMA } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { ParameterListParser } from '../misc/parameter-list-parser';
-import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { ParameterListParser } from '../misc/parameter-list-parser';
 import { ValueParser } from '../misc/value-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.
@@ -32,13 +33,17 @@ export class ConfigCommentParser extends BaseParser {
     /**
      * Checks if the raw rule is an inline configuration comment rule.
      *
-     * @param raw Raw rule
+     * @param raw Raw rule.
+     *
      * @returns `true` if the rule is an inline configuration comment rule, otherwise `false`.
      */
     public static isConfigComment(raw: string): boolean {
         const trimmed = raw.trim();
 
-        if (trimmed[0] === CommentMarker.Regular || trimmed[0] === CommentMarker.Hashmark) {
+        if (
+            trimmed[0] === CommentMarker.Regular
+            || trimmed[0] === CommentMarker.Hashmark
+        ) {
             // Skip comment marker and trim comment text (it is necessary because of "!     something")
             const text = raw.slice(1).trim();
 
@@ -63,10 +68,15 @@ export class ConfigCommentParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
      * @returns
-     * Inline configuration comment AST or null (if the raw rule cannot be parsed as configuration comment)
+     * Inline configuration comment AST or null (if the raw rule cannot be parsed as configuration comment).
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): ConfigCommentRule | null {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): ConfigCommentRule | null {
         if (!ConfigCommentParser.isConfigComment(raw)) {
             return null;
         }
@@ -77,7 +87,11 @@ export class ConfigCommentParser extends BaseParser {
         offset = StringUtils.skipWS(raw, offset);
 
         // Get comment marker
-        const marker = ValueParser.parse(raw[offset], options, baseOffset + offset);
+        const marker = ValueParser.parse(
+            raw[offset],
+            options,
+            baseOffset + offset,
+        );
 
         // Skip marker
         offset += 1;
@@ -91,7 +105,11 @@ export class ConfigCommentParser extends BaseParser {
         // Get comment text, for example: "aglint-disable-next-line"
         offset = StringUtils.findNextWhitespaceCharacter(raw, offset);
 
-        const command = ValueParser.parse(raw.slice(commandStart, offset), options, baseOffset + commandStart);
+        const command = ValueParser.parse(
+            raw.slice(commandStart, offset),
+            options,
+            baseOffset + commandStart,
+        );
 
         // Skip whitespace after command
         offset = StringUtils.skipWS(raw, offset);
@@ -104,7 +122,11 @@ export class ConfigCommentParser extends BaseParser {
 
         // Check if there is a comment
         if (commentStart !== -1) {
-            comment = ValueParser.parse(raw.slice(commentStart, commentEnd), options, baseOffset + commentStart);
+            comment = ValueParser.parse(
+                raw.slice(commentStart, commentEnd),
+                options,
+                baseOffset + commentStart,
+            );
         }
 
         // Get parameter

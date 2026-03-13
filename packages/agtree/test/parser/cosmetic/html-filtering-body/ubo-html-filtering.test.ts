@@ -5,15 +5,25 @@ import {
     vi,
 } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { AdblockSyntaxError, type Value, type HtmlFilteringRuleBody } from '../../../../src';
+import {
+    AdblockSyntaxError,
+    type HtmlFilteringRuleBody,
+    type Value,
+} from '../../../../src';
+import {
+    UboHtmlFilteringBodyGenerator,
+} from '../../../../src/generator/cosmetic/html-filtering-body/ubo-html-filtering-body-generator';
 import {
     UboHtmlFilteringBodyParser,
 } from '../../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
 import {
-    UboHtmlFilteringBodyGenerator,
-} from '../../../../src/generator/cosmetic/html-filtering-body/ubo-html-filtering-body-generator';
-import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
+    defaultParserOptions,
+    type ParserOptions,
+} from '../../../../src/parser/options';
+import {
+    NodeExpectContext,
+    type NodeExpectFn,
+} from '../../../helpers/node-utils';
 
 /**
  * Default parser options with HTML filtering rules parsing enabled.
@@ -30,7 +40,10 @@ const parsingEnabledDefaultParserOptions: ParserOptions = {
  */
 describe('UboHtmlFilteringBodyParser', () => {
     describe('UboHtmlFilteringBodyParser.parse - valid cases (parsed)', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBody> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<HtmlFilteringRuleBody>;
+        }>([
             // responseheader removal rule
             {
                 actual: 'responseheader(Test)',
@@ -38,24 +51,30 @@ describe('UboHtmlFilteringBodyParser', () => {
                     type: 'HtmlFilteringRuleBody',
                     selectorList: {
                         type: 'SelectorList',
-                        children: [{
-                            type: 'ComplexSelector',
-                            children: [{
-                                type: 'PseudoClassSelector',
-                                name: {
-                                    type: 'Value',
-                                    value: 'responseheader',
-                                    ...context.getRangeFor('responseheader'),
-                                },
-                                argument: {
-                                    type: 'Value',
-                                    value: 'Test',
-                                    ...context.getRangeFor('Test'),
-                                },
+                        children: [
+                            {
+                                type: 'ComplexSelector',
+                                children: [
+                                    {
+                                        type: 'PseudoClassSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'responseheader',
+                                            ...context.getRangeFor(
+                                                'responseheader',
+                                            ),
+                                        },
+                                        argument: {
+                                            type: 'Value',
+                                            value: 'Test',
+                                            ...context.getRangeFor('Test'),
+                                        },
+                                        ...context.getFullRange(),
+                                    },
+                                ],
                                 ...context.getFullRange(),
-                            }],
-                            ...context.getFullRange(),
-                        }],
+                            },
+                        ],
                         ...context.getFullRange(),
                     },
                     ...context.getFullRange(),
@@ -69,38 +88,54 @@ describe('UboHtmlFilteringBodyParser', () => {
                     type: 'HtmlFilteringRuleBody',
                     selectorList: {
                         type: 'SelectorList',
-                        children: [{
-                            type: 'ComplexSelector',
-                            children: [{
-                                type: 'PseudoClassSelector',
-                                name: {
-                                    type: 'Value',
-                                    value: 'responseheader',
-                                    ...context.getRangeFor('responseheader'),
-                                },
-                                argument: {
-                                    type: 'Value',
-                                    value: 'Test',
-                                    ...context.getRangeFor('Test'),
-                                },
-                                ...context.getRangeFor('responseheader(  Test  )'),
-                            }],
-                            ...context.getRangeFor('responseheader(  Test  )'),
-                        }],
+                        children: [
+                            {
+                                type: 'ComplexSelector',
+                                children: [
+                                    {
+                                        type: 'PseudoClassSelector',
+                                        name: {
+                                            type: 'Value',
+                                            value: 'responseheader',
+                                            ...context.getRangeFor(
+                                                'responseheader',
+                                            ),
+                                        },
+                                        argument: {
+                                            type: 'Value',
+                                            value: 'Test',
+                                            ...context.getRangeFor('Test'),
+                                        },
+                                        ...context.getRangeFor(
+                                            'responseheader(  Test  )',
+                                        ),
+                                    },
+                                ],
+                                ...context.getRangeFor(
+                                    'responseheader(  Test  )',
+                                ),
+                            },
+                        ],
                         ...context.getRangeFor('responseheader(  Test  )'),
                     },
                     ...context.getFullRange(),
                 }),
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(UboHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions)).toEqual(
-                expectedFn(new NodeExpectContext(actual)),
-            );
+            expect(
+                UboHtmlFilteringBodyParser.parse(
+                    actual,
+                    parsingEnabledDefaultParserOptions,
+                ),
+            ).toEqual(expectedFn(new NodeExpectContext(actual)));
         });
     });
 
     describe('UboHtmlFilteringBodyParser.parse - invalid cases (parsed)', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<AdblockSyntaxError>;
+        }>([
             // missing argument and closing parenthesis
             {
                 actual: 'responseheader(',
@@ -139,21 +174,27 @@ describe('UboHtmlFilteringBodyParser', () => {
                     ...context.toTuple(context.getRangeFor('unexpected')),
                 ),
             },
-        ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = vi.fn(() => UboHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions));
+        ])(
+            "should throw on input: '$actual'",
+            ({ actual, expected: expectedFn }) => {
+                const fn = vi.fn(() => UboHtmlFilteringBodyParser.parse(
+                    actual,
+                    parsingEnabledDefaultParserOptions,
+                ));
 
-            // parse should throw
-            expect(fn).toThrow();
+                // parse should throw
+                expect(fn).toThrow();
 
-            const expected = expectedFn(new NodeExpectContext(actual));
+                const expected = expectedFn(new NodeExpectContext(actual));
 
-            // check the thrown error
-            const error = fn.mock.results[0].value;
-            expect(error).toBeInstanceOf(AdblockSyntaxError);
-            expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('start', expected.start);
-            expect(error).toHaveProperty('end', expected.end);
-        });
+                // check the thrown error
+                const error = fn.mock.results[0].value;
+                expect(error).toBeInstanceOf(AdblockSyntaxError);
+                expect(error).toHaveProperty('message', expected.message);
+                expect(error).toHaveProperty('start', expected.start);
+                expect(error).toHaveProperty('end', expected.end);
+            },
+        );
     });
 
     describe('UboHtmlFilteringBodyGenerator.generate (parsed)', () => {
@@ -166,15 +207,25 @@ describe('UboHtmlFilteringBodyParser', () => {
                 actual: '  responseheader(  Test  )  ',
                 expected: 'responseheader(Test)',
             },
-        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = UboHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions);
+        ])(
+            "should generate '$expected' from '$actual'",
+            ({ actual, expected }) => {
+                const ruleNode = UboHtmlFilteringBodyParser.parse(
+                    actual,
+                    parsingEnabledDefaultParserOptions,
+                );
 
-            if (ruleNode === null) {
-                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
-            }
+                if (ruleNode === null) {
+                    throw new Error(
+                        `Failed to parse '${actual}' as cosmetic rule`,
+                    );
+                }
 
-            expect(UboHtmlFilteringBodyGenerator.generate(ruleNode)).toBe(expected);
-        });
+                expect(UboHtmlFilteringBodyGenerator.generate(ruleNode)).toBe(
+                    expected,
+                );
+            },
+        );
     });
 
     /**
@@ -222,14 +273,21 @@ describe('UboHtmlFilteringBodyParser', () => {
                 actual: '  responseheader(  Test  )  ',
                 expected: '  responseheader(  Test  )  ',
             },
-        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = UboHtmlFilteringBodyParser.parse(actual);
+        ])(
+            "should generate '$expected' from '$actual'",
+            ({ actual, expected }) => {
+                const ruleNode = UboHtmlFilteringBodyParser.parse(actual);
 
-            if (ruleNode === null) {
-                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
-            }
+                if (ruleNode === null) {
+                    throw new Error(
+                        `Failed to parse '${actual}' as cosmetic rule`,
+                    );
+                }
 
-            expect(UboHtmlFilteringBodyGenerator.generate(ruleNode)).toBe(expected);
-        });
+                expect(UboHtmlFilteringBodyGenerator.generate(ruleNode)).toBe(
+                    expected,
+                );
+            },
+        );
     });
 });

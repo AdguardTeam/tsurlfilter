@@ -1,9 +1,12 @@
 /* eslint-disable no-param-reassign */
 /**
- * @file AdGuard Hints
+ * @file AdGuard Hints.
+ *
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { type Hint } from '../../nodes';
 import {
     CLOSE_PARENTHESIS,
     COMMA,
@@ -13,12 +16,10 @@ import {
     UNDERSCORE,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { type Hint } from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../misc/parameter-list-parser';
-import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { ParameterListParser } from '../misc/parameter-list-parser';
 import { ValueParser } from '../misc/value-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * `HintParser` is responsible for parsing AdGuard hints.
@@ -39,10 +40,16 @@ export class HintParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Hint rule AST or null
-     * @throws If the syntax is invalid
+     *
+     * @returns Hint rule AST or null.
+     *
+     * @throws If the syntax is invalid.
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): Hint {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): Hint {
         let offset = 0;
 
         // Skip whitespace characters before the hint
@@ -81,7 +88,11 @@ export class HintParser extends BaseParser {
 
         // Hint name cannot be empty
         if (name === EMPTY) {
-            throw new AdblockSyntaxError('Empty hint name', baseOffset, baseOffset + nameEndIndex);
+            throw new AdblockSyntaxError(
+                'Empty hint name',
+                baseOffset,
+                baseOffset + nameEndIndex,
+            );
         }
 
         // Now we have two case:
@@ -101,7 +112,11 @@ export class HintParser extends BaseParser {
         }
 
         // Create the hint name node (we can reuse it in the 'HINT_NAME' case, if needed)
-        const nameNode = ValueParser.parse(name, options, baseOffset + nameStartIndex);
+        const nameNode = ValueParser.parse(
+            name,
+            options,
+            baseOffset + nameStartIndex,
+        );
 
         // Just return the hint name if we have 'HINT_NAME' case (no params)
         if (raw[offset] !== OPEN_PARENTHESIS) {

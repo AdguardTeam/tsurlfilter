@@ -1,45 +1,48 @@
 /**
- * @file HTML filtering rule converter
+ * @file HTML filtering rule converter.
  */
 
 import { sprintf } from 'sprintf-js';
 
-import {
-    CosmeticRuleSeparator,
-    CosmeticRuleType,
-    type Value,
-    type HtmlFilteringRule,
-    type HtmlFilteringRuleBody,
-    type SimpleSelector,
-    type ComplexSelector,
-    type AttributeSelector,
-    type AttributeSelectorWithValue,
-    type PseudoClassSelector,
-    type SelectorCombinator,
-    RuleCategory,
-} from '../../nodes';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode } from '../../ast-utils/clone';
-import { EMPTY, EQUALS } from '../../utils/constants';
-import { RegExpUtils } from '../../utils/regexp';
-import { AdgHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
-import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     AdgHtmlFilteringBodyGenerator,
 } from '../../generator/cosmetic/html-filtering-body/adg-html-filtering-body-generator';
 import {
     UboHtmlFilteringBodyGenerator,
 } from '../../generator/cosmetic/html-filtering-body/ubo-html-filtering-body-generator';
+import {
+    type AttributeSelector,
+    type AttributeSelectorWithValue,
+    type ComplexSelector,
+    CosmeticRuleSeparator,
+    CosmeticRuleType,
+    type HtmlFilteringRule,
+    type HtmlFilteringRuleBody,
+    type PseudoClassSelector,
+    RuleCategory,
+    type SelectorCombinator,
+    type SimpleSelector,
+    type Value,
+} from '../../nodes';
+import { AdgHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
+import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import { AdblockSyntax } from '../../utils/adblockers';
+import { EMPTY, EQUALS } from '../../utils/constants';
+import { RegExpUtils } from '../../utils/regexp';
+import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
 /**
  * From the AdGuard docs:
- * Specifies the maximum length for content of HTML element. If this parameter is
- * set and the content length exceeds the value, a rule does not apply to the element.
- * If this parameter is not specified, the max-length is considered to be 8192 (8 KB).
- * When converting from other formats, we set the max-length to 262144 (256 KB).
+ * Specifies the maximum length for content of HTML element.
+ * If this parameter is set and the content length exceeds the value,
+ * a rule does not apply to the element.
+ * If this parameter is not specified,
+ * the max-length is considered to be 8192 (8 KB).
+ * When converting from other formats,
+ * we set the max-length to 262144 (256 KB).
  *
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
  */
@@ -110,30 +113,45 @@ const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
  */
 /* eslint-disable max-len */
 export const ERROR_MESSAGES = {
-    ABP_NOT_SUPPORTED: 'Invalid rule, ABP does not support HTML filtering rules',
+    ABP_NOT_SUPPORTED:
+        'Invalid rule, ABP does not support HTML filtering rules',
     INVALID_RULE: 'Invalid HTML filtering rule: %s',
     MIXED_SYNTAX_ADG_UBO: 'Mixed AdGuard and uBlock syntax',
 
-    EMPTY_SELECTOR_LIST: 'Selector list of HTML filtering rule must not be empty',
-    EMPTY_COMPLEX_SELECTOR: 'Complex selector of selector list must not be empty',
-    INVALID_SELECTOR_COMBINATOR: "Invalid selector combinator '%s' used between selectors",
+    EMPTY_SELECTOR_LIST:
+        'Selector list of HTML filtering rule must not be empty',
+    EMPTY_COMPLEX_SELECTOR:
+        'Complex selector of selector list must not be empty',
+    INVALID_SELECTOR_COMBINATOR:
+        "Invalid selector combinator '%s' used between selectors",
     UNKNOWN_SELECTOR_TYPE: "Unknown selector type '%s' found during conversion",
 
-    SPECIAL_ATTRIBUTE_SELECTOR_OPERATOR_INVALID: "Special attribute selector '%s' has invalid operator '%s'",
-    SPECIAL_ATTRIBUTE_SELECTOR_FLAG_NOT_SUPPORTED: "Special attribute selector '%s' does not support flags",
-    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_REQUIRED: "Special attribute selector '%s' requires a value",
-    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT: "Value of special attribute selector '%s' must be an integer, got '%s'",
-    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE: "Value of special attribute selector '%s' must be a positive integer, got '%s'",
-    SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED: "Special attribute selector '%s' is not supported in conversion",
-    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED: "Special pseudo-class selector '%s' requires an argument",
-    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT: "Argument of special pseudo-class selector '%s' must be an integer, got '%s'",
-    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE: "Argument of special pseudo-class selector '%s' must be a positive integer, got '%s'",
-    SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED: "Special pseudo-class selector '%s' is not supported in conversion",
+    SPECIAL_ATTRIBUTE_SELECTOR_OPERATOR_INVALID:
+        "Special attribute selector '%s' has invalid operator '%s'",
+    SPECIAL_ATTRIBUTE_SELECTOR_FLAG_NOT_SUPPORTED:
+        "Special attribute selector '%s' does not support flags",
+    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_REQUIRED:
+        "Special attribute selector '%s' requires a value",
+    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT:
+        "Value of special attribute selector '%s' must be an integer, got '%s'",
+    SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE:
+        "Value of special attribute selector '%s' must be a positive integer, got '%s'",
+    SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED:
+        "Special attribute selector '%s' is not supported in conversion",
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED:
+        "Special pseudo-class selector '%s' requires an argument",
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT:
+        "Argument of special pseudo-class selector '%s' must be an integer, got '%s'",
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE:
+        "Argument of special pseudo-class selector '%s' must be a positive integer, got '%s'",
+    SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED:
+        "Special pseudo-class selector '%s' is not supported in conversion",
 } as const;
 /* eslint-enable max-len */
 
 /**
- * Callback type for handling special attribute selectors during selector list conversion.
+ * Callback type for handling special attribute selectors
+ * during selector list conversion.
  *
  * @param name Name of the special attribute selector.
  * @param value Value of the special attribute selector.
@@ -141,10 +159,14 @@ export const ERROR_MESSAGES = {
  * @returns A {@link SimpleSelector} to add to the current complex selector,
  * or `false` to skip it, or `true` to keep it as-is.
  */
-type OnSpecialAttributeSelectorCallback = (name: string, value: string) => SimpleSelector | boolean;
+type OnSpecialAttributeSelectorCallback = (
+    name: string,
+    value: string,
+) => SimpleSelector | boolean;
 
 /**
- * Callback type for handling special pseudo-class selectors during selector list conversion.
+ * Callback type for handling special pseudo-class selectors
+ * during selector list conversion.
  *
  * @param name Name of the special pseudo-class selector.
  * @param argument Argument of the special pseudo-class selector.
@@ -152,12 +174,17 @@ type OnSpecialAttributeSelectorCallback = (name: string, value: string) => Simpl
  * @returns A {@link SimpleSelector} to add to the current complex selector,
  * or `false` to skip it, or `true` to keep it as-is.
  */
-type OnSpecialPseudoClassSelectorCallback = (name: string, argument: string) => SimpleSelector | boolean;
+type OnSpecialPseudoClassSelectorCallback = (
+    name: string,
+    argument: string,
+) => SimpleSelector | boolean;
 
 /**
  * Union type of HTML filtering rule body parsers:
- * - AdGuard HTML filtering body parser - {@link AdgHtmlFilteringBodyParser}
- * - uBlock HTML filtering body parser - {@link UboHtmlFilteringBodyParser}
+ * - AdGuard HTML filtering body parser -
+ *   {@link AdgHtmlFilteringBodyParser}
+ * - uBlock HTML filtering body parser -
+ *   {@link UboHtmlFilteringBodyParser}.
  */
 type HtmlFilteringRuleParser =
     | typeof AdgHtmlFilteringBodyParser
@@ -165,22 +192,26 @@ type HtmlFilteringRuleParser =
 
 /**
  * Union type of HTML filtering rule body generators:
- * - AdGuard HTML filtering body generator - {@link AdgHtmlFilteringBodyGenerator}
- * - uBlock HTML filtering body generator - {@link UboHtmlFilteringBodyGenerator}
+ * - AdGuard HTML filtering body generator -
+ *   {@link AdgHtmlFilteringBodyGenerator}
+ * - uBlock HTML filtering body generator -
+ *   {@link UboHtmlFilteringBodyGenerator}.
  */
 type HtmlFilteringRuleGenerator =
     | typeof AdgHtmlFilteringBodyGenerator
     | typeof UboHtmlFilteringBodyGenerator;
 
 /**
- * HTML filtering rule converter class
+ * HTML filtering rule converter class.
  *
- * @todo Implement `convertToUbo` (ABP currently doesn't support HTML filtering rules)
+ * @todo Implement `convertToUbo`
+ * (ABP currently doesn't support HTML filtering rules).
  */
 export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Converts a HTML rule to AdGuard syntax, if possible.
-     * Also can be used to convert AdGuard rules to AdGuard syntax to validate them.
+     * Also can be used to convert AdGuard rules to AdGuard syntax
+     * to validate them.
      *
      * @param rule Rule node to convert.
      *
@@ -190,7 +221,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @throws If the rule is invalid or cannot be converted.
      */
-    public static convertToAdg(rule: HtmlFilteringRule): NodeConversionResult<HtmlFilteringRule> {
+    public static convertToAdg(
+        rule: HtmlFilteringRule,
+    ): NodeConversionResult<HtmlFilteringRule> {
         let parser: HtmlFilteringRuleParser;
         let onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback;
         let onSpecialPseudoClassSelector: OnSpecialPseudoClassSelectorCallback;
@@ -203,20 +236,27 @@ export class HtmlRuleConverter extends RuleConverterBase {
                  * Mark rule as converted in ADG -> ADG conversion only if
                  * special attribute selectors are present in the rule body,
                  * because they are deprecated and will be removed soon,
-                 * so we convert them to pseudo-class selectors
+                 * so we convert them to pseudo-class selectors.
                  */
                 isConverted = true;
-                return HtmlRuleConverter.convertSpecialAttributeSelectorAdgToAdg(name, value);
+                return HtmlRuleConverter
+                    .convertSpecialAttributeSelectorAdgToAdg(
+                        name,
+                        value,
+                    );
             };
-            onSpecialPseudoClassSelector = HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToAdg;
+            onSpecialPseudoClassSelector = HtmlRuleConverter
+                .convertSpecialPseudoClassSelectorAdgToAdg;
         } else if (rule.syntax === AdblockSyntax.Ubo) {
             /**
              * Always mark rule as converted in UBO -> ADG conversion.
              */
             isConverted = true;
             parser = UboHtmlFilteringBodyParser;
-            onSpecialAttributeSelector = HtmlRuleConverter.convertSpecialAttributeSelectorUboToAdg;
-            onSpecialPseudoClassSelector = HtmlRuleConverter.convertSpecialPseudoClassSelectorUboToAdg;
+            onSpecialAttributeSelector = HtmlRuleConverter
+                .convertSpecialAttributeSelectorUboToAdg;
+            onSpecialPseudoClassSelector = HtmlRuleConverter
+                .convertSpecialPseudoClassSelectorUboToAdg;
         } else {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
@@ -235,31 +275,34 @@ export class HtmlRuleConverter extends RuleConverterBase {
         }
 
         return createNodeConversionResult(
-            [{
-                category: RuleCategory.Cosmetic,
-                type: CosmeticRuleType.HtmlFilteringRule,
-                syntax: AdblockSyntax.Adg,
+            [
+                {
+                    category: RuleCategory.Cosmetic,
+                    type: CosmeticRuleType.HtmlFilteringRule,
+                    syntax: AdblockSyntax.Adg,
 
-                exception: rule.exception,
-                domains: cloneDomainListNode(rule.domains),
+                    exception: rule.exception,
+                    domains: cloneDomainListNode(rule.domains),
 
-                // Convert the separator based on the exception status
-                separator: {
-                    type: 'Value',
-                    value: rule.exception
-                        ? CosmeticRuleSeparator.AdgHtmlFilteringException
-                        : CosmeticRuleSeparator.AdgHtmlFiltering,
+                    // Convert the separator based on the exception status
+                    separator: {
+                        type: 'Value',
+                        value: rule.exception
+                            ? CosmeticRuleSeparator.AdgHtmlFilteringException
+                            : CosmeticRuleSeparator.AdgHtmlFiltering,
+                    },
+
+                    body: convertedBody,
                 },
-
-                body: convertedBody,
-            }],
+            ],
             true,
         );
     }
 
     /**
      * Converts a HTML rule to uBlock syntax, if possible.
-     * Also can be used to convert uBlock rules to uBlock syntax to validate them.
+     * Also can be used to convert uBlock rules to uBlock syntax
+     * to validate them.
      *
      * @param rule Rule node to convert.
      *
@@ -269,7 +312,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @throws Error if the rule is invalid or cannot be converted.
      */
-    public static convertToUbo(rule: HtmlFilteringRule): NodeConversionResult<HtmlFilteringRule> {
+    public static convertToUbo(
+        rule: HtmlFilteringRule,
+    ): NodeConversionResult<HtmlFilteringRule> {
         // Ignore uBlock rules
         if (rule.syntax === AdblockSyntax.Ubo) {
             return createNodeConversionResult([rule], false);
@@ -289,23 +334,25 @@ export class HtmlRuleConverter extends RuleConverterBase {
         );
 
         return createNodeConversionResult(
-            [{
-                category: RuleCategory.Cosmetic,
-                type: CosmeticRuleType.HtmlFilteringRule,
-                syntax: AdblockSyntax.Ubo,
+            [
+                {
+                    category: RuleCategory.Cosmetic,
+                    type: CosmeticRuleType.HtmlFilteringRule,
+                    syntax: AdblockSyntax.Ubo,
 
-                exception: rule.exception,
-                domains: cloneDomainListNode(rule.domains),
+                    exception: rule.exception,
+                    domains: cloneDomainListNode(rule.domains),
 
-                separator: {
-                    type: 'Value',
-                    value: rule.exception
-                        ? CosmeticRuleSeparator.ElementHidingException
-                        : CosmeticRuleSeparator.ElementHiding,
+                    separator: {
+                        type: 'Value',
+                        value: rule.exception
+                            ? CosmeticRuleSeparator.ElementHidingException
+                            : CosmeticRuleSeparator.ElementHiding,
+                    },
+
+                    body: convertedBody,
                 },
-
-                body: convertedBody,
-            }],
+            ],
             true,
         );
     }
@@ -317,9 +364,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `[wildcard="*content*"]` -> `:contains(/*.content*./s)`
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
-     *   converts to a length-matching regular expression
+     *   converts to a length-matching regular expression.
      * - `[max-length="max"]` -> `:contains(/^(?=.{0,max}$).*\/s)`
-     *   converts to a length-matching regular expression
+     *   converts to a length-matching regular expression.
      *
      * Note: This attribute selector to pseudo-class selector conversion
      * is needed because AdGuard special attribute selectors are going
@@ -330,7 +377,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @returns A {@link SimpleSelector} to add to the current complex selector.
      */
-    private static convertSpecialAttributeSelectorAdgToAdg(name: string, value: string): SimpleSelector {
+    private static convertSpecialAttributeSelectorAdgToAdg(
+        name: string,
+        value: string,
+    ): SimpleSelector {
         switch (name) {
             // `[tag-content="content"]` -> `:contains(content)`
             // direct conversion, no changes to value
@@ -377,19 +427,18 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
-                    RegExpUtils.getLengthRegexp(
-                        min,
-                        max,
-                    ),
+                    RegExpUtils.getLengthRegexp(min, max),
                 );
             }
 
             // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
             default: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED,
-                    name,
-                ));
+                throw new RuleConversionError(
+                    sprintf(
+                        ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED,
+                        name,
+                    ),
+                );
             }
         }
     }
@@ -404,12 +453,16 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @throws Rule conversion error for mixed syntax.
      */
-    private static convertSpecialPseudoClassSelectorAdgToAdg(name: string): true {
+    private static convertSpecialPseudoClassSelectorAdgToAdg(
+        name: string,
+    ): true {
         if (SUPPORTED_UBO_PSEUDO_CLASSES.has(name)) {
-            throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.INVALID_RULE,
-                ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
-            ));
+            throw new RuleConversionError(
+                sprintf(
+                    ERROR_MESSAGES.INVALID_RULE,
+                    ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
+                ),
+            );
         }
 
         return true;
@@ -422,10 +475,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @throws Rule conversion error for mixed syntax.
      */
     private static convertSpecialAttributeSelectorUboToAdg(): never {
-        throw new RuleConversionError(sprintf(
-            ERROR_MESSAGES.INVALID_RULE,
-            ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
-        ));
+        throw new RuleConversionError(
+            sprintf(
+                ERROR_MESSAGES.INVALID_RULE,
+                ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
+            ),
+        );
     }
 
     /**
@@ -433,7 +488,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `:has-text(text)` -> `:contains(text)`
      *   direct conversion, no changes to argument
      * - `:min-text-length(min)` -> `:contains(/^(?=.{min,MAX_CONVERSION_DEFAULT}$).*\/s)`
-     *   converts to a length-matching regular expression
+     *   converts to a length-matching regular expression.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -442,7 +497,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @throws If AdGuard-specific pseudo-class selector is found in uBlock rule.
      */
-    private static convertSpecialPseudoClassSelectorUboToAdg(name: string, argument: string): SimpleSelector {
+    private static convertSpecialPseudoClassSelectorUboToAdg(
+        name: string,
+        argument: string,
+    ): SimpleSelector {
         switch (name) {
             // `:has-text(text)` -> `:contains(text)`
             // direct conversion, no changes to argument
@@ -469,24 +527,31 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
-                    RegExpUtils.getLengthRegexp(minLength, ADG_HTML_CONVERSION_MAX_LENGTH),
+                    RegExpUtils.getLengthRegexp(
+                        minLength,
+                        ADG_HTML_CONVERSION_MAX_LENGTH,
+                    ),
                 );
             }
 
             // Throw an error if the AdGuard-specific pseudo-class selector found in uBlock rule
             case AdgPseudoClasses.Contains: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.INVALID_RULE,
-                    ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
-                ));
+                throw new RuleConversionError(
+                    sprintf(
+                        ERROR_MESSAGES.INVALID_RULE,
+                        ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
+                    ),
+                );
             }
 
             // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
             default: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED,
-                    name,
-                ));
+                throw new RuleConversionError(
+                    sprintf(
+                        ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED,
+                        name,
+                    ),
+                );
             }
         }
     }
@@ -499,14 +564,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:min-text-length(min)`
      *   direct conversion, no changes to value
-     * - `[max-length]` is skipped
+     * - `[max-length]` is skipped.
      *
      * @param name Name of the special attribute selector.
      * @param value Value of the special attribute selector.
      *
      * @returns A {@link SimpleSelector} to add to the current complex selector, or `false` to skip it.
      */
-    private static convertSpecialAttributeSelectorAdgToUbo(name: string, value: string): SimpleSelector | false {
+    private static convertSpecialAttributeSelectorAdgToUbo(
+        name: string,
+        value: string,
+    ): SimpleSelector | false {
         switch (name) {
             // `[tag-content="content"]` -> `:has-text(content)`
             // direct conversion, no changes to value
@@ -550,10 +618,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
             default: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED,
-                    name,
-                ));
+                throw new RuleConversionError(
+                    sprintf(
+                        ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_NOT_SUPPORTED,
+                        name,
+                    ),
+                );
             }
         }
     }
@@ -561,7 +631,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special pseudo-class selectors during AdGuard to uBlock conversion:
      * - `:contains(text)` -> `:has-text(text)`
-     *   direct conversion, no changes to argument
+     *   direct conversion, no changes to argument.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -570,7 +640,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @throws If uBlock-specific pseudo-class selector is found in AdGuard rule.
      */
-    private static convertSpecialPseudoClassSelectorAdgToUbo(name: string, argument: string): SimpleSelector {
+    private static convertSpecialPseudoClassSelectorAdgToUbo(
+        name: string,
+        argument: string,
+    ): SimpleSelector {
         switch (name) {
             // `:contains(text)` -> `:has-text(text)`
             // direct conversion, no changes to argument
@@ -584,18 +657,22 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // Throw an error if the uBlock-specific pseudo-class selector found in AdGuard rule
             case UboPseudoClasses.HasText:
             case UboPseudoClasses.MinTextLength: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.INVALID_RULE,
-                    ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
-                ));
+                throw new RuleConversionError(
+                    sprintf(
+                        ERROR_MESSAGES.INVALID_RULE,
+                        ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
+                    ),
+                );
             }
 
             // This line is unreachable due to exhausted cases, but we keep it to satisfy TS
             default: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED,
-                    name,
-                ));
+                throw new RuleConversionError(
+                    sprintf(
+                        ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED,
+                        name,
+                    ),
+                );
             }
         }
     }
@@ -634,7 +711,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
         const { children: complexSelectors } = processedBody.selectorList;
 
         // Selector list node must not be empty
-        HtmlRuleConverter.assertNotEmpty(complexSelectors, ERROR_MESSAGES.EMPTY_SELECTOR_LIST);
+        HtmlRuleConverter.assertNotEmpty(
+            complexSelectors,
+            ERROR_MESSAGES.EMPTY_SELECTOR_LIST,
+        );
 
         // Convert each complex selector
         const convertedComplexSelectors: ComplexSelector[] = [];
@@ -642,7 +722,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
             const { children: selectors } = complexSelectors[i];
 
             // Complex selector node must not be empty
-            HtmlRuleConverter.assertNotEmpty(selectors, ERROR_MESSAGES.EMPTY_COMPLEX_SELECTOR);
+            HtmlRuleConverter.assertNotEmpty(
+                selectors,
+                ERROR_MESSAGES.EMPTY_COMPLEX_SELECTOR,
+            );
 
             // Convert each selector
             const convertedSelectors: (SimpleSelector | SelectorCombinator)[] = [];
@@ -658,15 +741,18 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             // If the previous selector is also a combinator (`div > + span`)
                             || j === selectors.length - 1
                             // If the last selector in the complex selector (`div +`)
-                            || (j > 0 && selectors[j - 1].type === 'SelectorCombinator')
+                            || (j > 0
+                                && selectors[j - 1].type === 'SelectorCombinator')
                         ) {
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.INVALID_RULE,
+                            throw new RuleConversionError(
                                 sprintf(
-                                    ERROR_MESSAGES.INVALID_SELECTOR_COMBINATOR,
-                                    selector.value,
+                                    ERROR_MESSAGES.INVALID_RULE,
+                                    sprintf(
+                                        ERROR_MESSAGES.INVALID_SELECTOR_COMBINATOR,
+                                        selector.value,
+                                    ),
                                 ),
-                            ));
+                            );
                         }
 
                         break;
@@ -674,33 +760,46 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                     case 'AttributeSelector': {
                         // Not a special attribute selector - clone as-is after the switch
-                        if (!SUPPORTED_ADG_ATTRIBUTE_SELECTORS.has(selector.name.value)) {
+                        if (
+                            !SUPPORTED_ADG_ATTRIBUTE_SELECTORS.has(
+                                selector.name.value,
+                            )
+                        ) {
                             break;
                         }
 
                         // Throw an error if value is missing
-                        if (!('value' in selector) || selector.value.value === EMPTY) {
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_REQUIRED,
-                                selector.name.value,
-                            ));
+                        if (
+                            !('value' in selector)
+                            || selector.value.value === EMPTY
+                        ) {
+                            throw new RuleConversionError(
+                                sprintf(
+                                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_REQUIRED,
+                                    selector.name.value,
+                                ),
+                            );
                         }
 
                         // Throw an error if operator is not '='
                         if (selector.operator.value !== EQUALS) {
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_OPERATOR_INVALID,
-                                selector.name.value,
-                                selector.operator.value,
-                            ));
+                            throw new RuleConversionError(
+                                sprintf(
+                                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_OPERATOR_INVALID,
+                                    selector.name.value,
+                                    selector.operator.value,
+                                ),
+                            );
                         }
 
                         // Throw an error if flag is specified
                         if (selector.flag) {
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_FLAG_NOT_SUPPORTED,
-                                selector.name.value,
-                            ));
+                            throw new RuleConversionError(
+                                sprintf(
+                                    ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_FLAG_NOT_SUPPORTED,
+                                    selector.name.value,
+                                ),
+                            );
                         }
 
                         const name = selector.name.value;
@@ -724,18 +823,27 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     case 'PseudoClassSelector': {
                         // Not a special pseudo-class selector - clone as-is after the switch
                         if (
-                            !SUPPORTED_ADG_PSEUDO_CLASSES.has(selector.name.value)
-                            && !SUPPORTED_UBO_PSEUDO_CLASSES.has(selector.name.value)
+                            !SUPPORTED_ADG_PSEUDO_CLASSES.has(
+                                selector.name.value,
+                            )
+                            && !SUPPORTED_UBO_PSEUDO_CLASSES.has(
+                                selector.name.value,
+                            )
                         ) {
                             break;
                         }
 
                         // Throw an error if argument is missing
-                        if (!selector.argument || selector.argument.value === EMPTY) {
-                            throw new RuleConversionError(sprintf(
-                                ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED,
-                                selector.name.value,
-                            ));
+                        if (
+                            !selector.argument
+                            || selector.argument.value === EMPTY
+                        ) {
+                            throw new RuleConversionError(
+                                sprintf(
+                                    ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED,
+                                    selector.name.value,
+                                ),
+                            );
                         }
 
                         const name = selector.name.value;
@@ -745,7 +853,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         // - add returned simple selector if it's not boolean
                         // - skip adding if returned value is false
                         // - keep original simple selector if returned value is true
-                        const result = onSpecialPseudoClassSelector(name, argument);
+                        const result = onSpecialPseudoClassSelector(
+                            name,
+                            argument,
+                        );
                         if (typeof result !== 'boolean') {
                             convertedSelectors.push(result);
                             continue;
@@ -764,7 +875,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 }
 
                 // Clone selector if previous conditions are not met
-                convertedSelectors.push(HtmlRuleConverter.cloneSelector(selector));
+                convertedSelectors.push(
+                    HtmlRuleConverter.cloneSelector(selector),
+                );
             }
 
             convertedComplexSelectors.push({
@@ -828,18 +941,24 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 };
 
                 if ('value' in selector && selector.value) {
-                    (attributeSelectorClone as AttributeSelectorWithValue).operator = {
+                    (
+                        attributeSelectorClone as AttributeSelectorWithValue
+                    ).operator = {
                         type: selector.operator.type,
                         value: selector.operator.value,
                     };
 
-                    (attributeSelectorClone as AttributeSelectorWithValue).value = {
+                    (
+                        attributeSelectorClone as AttributeSelectorWithValue
+                    ).value = {
                         type: selector.value.type,
                         value: selector.value.value,
                     };
 
                     if (selector.flag) {
-                        (attributeSelectorClone as AttributeSelectorWithValue).flag = {
+                        (
+                            attributeSelectorClone as AttributeSelectorWithValue
+                        ).flag = {
                             type: selector.flag.type,
                             value: selector.flag.value,
                         };
@@ -869,13 +988,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
             }
 
             default: {
-                throw new RuleConversionError(sprintf(
-                    ERROR_MESSAGES.INVALID_RULE,
+                throw new RuleConversionError(
                     sprintf(
-                        ERROR_MESSAGES.UNKNOWN_SELECTOR_TYPE,
-                        type,
+                        ERROR_MESSAGES.INVALID_RULE,
+                        sprintf(ERROR_MESSAGES.UNKNOWN_SELECTOR_TYPE, type),
                     ),
-                ));
+                );
             }
         }
     }
@@ -888,17 +1006,22 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @returns CSS pseudo-class selector node.
      */
-    private static getPseudoClassSelectorNode(name: string, argument?: string): PseudoClassSelector {
+    private static getPseudoClassSelectorNode(
+        name: string,
+        argument?: string,
+    ): PseudoClassSelector {
         return {
             type: 'PseudoClassSelector',
             name: {
                 type: 'Value',
                 value: name,
             },
-            argument: argument ? {
-                type: 'Value',
-                value: argument,
-            } : undefined,
+            argument: argument
+                ? {
+                    type: 'Value',
+                    value: argument,
+                }
+                : undefined,
         };
     }
 
@@ -910,12 +1033,14 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *
      * @throws If the array is empty.
      */
-    private static assertNotEmpty<T extends object>(array: T[], errorMessage: string): void {
+    private static assertNotEmpty<T extends object>(
+        array: T[],
+        errorMessage: string,
+    ): void {
         if (array.length === 0) {
-            throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.INVALID_RULE,
-                errorMessage,
-            ));
+            throw new RuleConversionError(
+                sprintf(ERROR_MESSAGES.INVALID_RULE, errorMessage),
+            );
         }
     }
 
@@ -939,21 +1064,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
         if (Number.isNaN(parsed)) {
             throw new RuleConversionError(
-                sprintf(
-                    notIntErrorMessage,
-                    name,
-                    value,
-                ),
+                sprintf(notIntErrorMessage, name, value),
             );
         }
 
         if (parsed < 0) {
             throw new RuleConversionError(
-                sprintf(
-                    notPositiveErrorMessage,
-                    name,
-                    value,
-                ),
+                sprintf(notPositiveErrorMessage, name, value),
             );
         }
     }

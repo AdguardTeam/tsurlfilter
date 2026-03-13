@@ -1,5 +1,5 @@
 /**
- * @file Regular expression utilities
+ * @file Regular expression utilities.
  */
 
 import GlobToRegExp from 'glob-to-regexp';
@@ -44,7 +44,7 @@ export const REGEX_NEGATION_PREFIX = '^((?!';
 export const REGEX_NEGATION_SUFFIX = ').)*$';
 
 /**
- * Special RegExp symbols
+ * Special RegExp symbols.
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-escape
  */
@@ -67,7 +67,7 @@ export const SPECIAL_REGEX_SYMBOLS = new Set([
 ]);
 
 /**
- * Utility functions for working with RegExp patterns
+ * Utility functions for working with RegExp patterns.
  */
 export class RegExpUtils {
     /**
@@ -77,50 +77,76 @@ export class RegExpUtils {
      * Note: it does not perform a full validation of the pattern,
      * it just checks if the string starts and ends with a slash.
      *
-     * @param pattern - Pattern to check
-     * @returns `true` if the string is a RegExp pattern, `false` otherwise
+     * @param pattern Pattern to check.
+     *
+     * @returns `true` if the string is a RegExp pattern, `false` otherwise.
      */
     public static isRegexPattern(pattern: string): boolean {
         const trimmedPattern = pattern.trim();
 
         // Avoid false positives
-        return trimmedPattern.length > REGEX_MARKER.length * 2
+        return (
+            trimmedPattern.length > REGEX_MARKER.length * 2
             && trimmedPattern.startsWith(REGEX_MARKER)
             && trimmedPattern.endsWith(REGEX_MARKER)
-            && trimmedPattern[REGEX_MARKER.length - 2] !== ESCAPE_CHARACTER;
+            && trimmedPattern[REGEX_MARKER.length - 2] !== ESCAPE_CHARACTER
+        );
     }
 
     /**
      * Checks whether a string is a negated RegExp pattern.
      *
-     * @param pattern - Pattern to check
-     * @returns `true` if the string is a negated RegExp pattern, `false` otherwise
+     * @param pattern Pattern to check.
+     *
+     * @returns `true` if the string is a negated RegExp pattern, `false` otherwise.
      */
     public static isNegatedRegexPattern(pattern: string): boolean {
-        if (pattern.startsWith(REGEX_MARKER) && pattern.endsWith(REGEX_MARKER)) {
-            const innerPattern = pattern.slice(REGEX_MARKER.length, pattern.length - REGEX_MARKER.length);
-            return innerPattern.startsWith(REGEX_NEGATION_PREFIX) && innerPattern.endsWith(REGEX_NEGATION_SUFFIX);
+        if (
+            pattern.startsWith(REGEX_MARKER)
+            && pattern.endsWith(REGEX_MARKER)
+        ) {
+            const innerPattern = pattern.slice(
+                REGEX_MARKER.length,
+                pattern.length - REGEX_MARKER.length,
+            );
+            return (
+                innerPattern.startsWith(REGEX_NEGATION_PREFIX)
+                && innerPattern.endsWith(REGEX_NEGATION_SUFFIX)
+            );
         }
 
-        return pattern.startsWith(REGEX_NEGATION_PREFIX) && pattern.endsWith(REGEX_NEGATION_SUFFIX);
+        return (
+            pattern.startsWith(REGEX_NEGATION_PREFIX)
+            && pattern.endsWith(REGEX_NEGATION_SUFFIX)
+        );
     }
 
     /**
      * Removes negation from a RegExp pattern.
      *
-     * @param pattern - RegExp pattern to remove negation from
-     * @returns RegExp pattern without negation
+     * @param pattern RegExp pattern to remove negation from.
+     *
+     * @returns RegExp pattern without negation.
      */
     public static removeNegationFromRegexPattern(pattern: string): string {
         let result = pattern.trim();
         const slashes = RegExpUtils.isRegexPattern(result);
 
         if (slashes) {
-            result = result.substring(REGEX_MARKER.length, result.length - REGEX_MARKER.length);
+            result = result.substring(
+                REGEX_MARKER.length,
+                result.length - REGEX_MARKER.length,
+            );
         }
 
-        if (result.startsWith(REGEX_NEGATION_PREFIX) && result.endsWith(REGEX_NEGATION_SUFFIX)) {
-            result = result.substring(REGEX_NEGATION_PREFIX.length, result.length - REGEX_NEGATION_SUFFIX.length);
+        if (
+            result.startsWith(REGEX_NEGATION_PREFIX)
+            && result.endsWith(REGEX_NEGATION_SUFFIX)
+        ) {
+            result = result.substring(
+                REGEX_NEGATION_PREFIX.length,
+                result.length - REGEX_NEGATION_SUFFIX.length,
+            );
         }
 
         return slashes ? `${REGEX_MARKER}${result}${REGEX_MARKER}` : result;
@@ -131,8 +157,9 @@ export class RegExpUtils {
      *
      * RegExp modifiers are not supported.
      *
-     * @param pattern Pattern to negate (can be wrapped in slashes or not)
-     * @returns Negated RegExp pattern
+     * @param pattern Pattern to negate (can be wrapped in slashes or not).
+     *
+     * @returns Negated RegExp pattern.
      */
     public static negateRegexPattern(pattern: string): string {
         let result = pattern.trim();
@@ -140,12 +167,20 @@ export class RegExpUtils {
 
         // Remove the leading and trailing slashes (/)
         if (RegExpUtils.isRegexPattern(result)) {
-            result = result.substring(REGEX_MARKER.length, result.length - REGEX_MARKER.length);
+            result = result.substring(
+                REGEX_MARKER.length,
+                result.length - REGEX_MARKER.length,
+            );
             slashes = true;
         }
 
         // Only negate the pattern if it's not already negated
-        if (!(result.startsWith(REGEX_NEGATION_PREFIX) && result.endsWith(REGEX_NEGATION_SUFFIX))) {
+        if (
+            !(
+                result.startsWith(REGEX_NEGATION_PREFIX)
+                && result.endsWith(REGEX_NEGATION_SUFFIX)
+            )
+        ) {
             // Remove leading caret (^)
             if (result.startsWith(REGEX_START)) {
                 result = result.substring(REGEX_START.length);
@@ -171,8 +206,9 @@ export class RegExpUtils {
     /**
      * Ensures that a pattern is wrapped in slashes.
      *
-     * @param pattern Pattern to ensure slashes for
-     * @returns Pattern with slashes
+     * @param pattern Pattern to ensure slashes for.
+     *
+     * @returns Pattern with slashes.
      */
     public static ensureSlashes(pattern: string): string {
         let result = pattern;
@@ -190,26 +226,33 @@ export class RegExpUtils {
 
     /**
      * Converts a basic adblock rule pattern to a RegExp pattern. Based on
-     * https://github.com/AdguardTeam/tsurlfilter/blob/9b26e0b4a0e30b87690bc60f7cf377d112c3085c/packages/tsurlfilter/src/rules/simple-regex.ts#L219
+     * https://github.com/AdguardTeam/tsurlfilter/blob/9b26e0b4a0e30b87690bc60f7cf377d112c3085c/packages/tsurlfilter/src/rules/simple-regex.ts#L219.
      *
-     * @param pattern Pattern to convert
-     * @returns RegExp equivalent of the pattern
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
+     *
+     * @param pattern Pattern to convert.
+     *
+     * @returns RegExp equivalent of the pattern.
      */
     public static patternToRegexp(pattern: string): string {
         const trimmed = pattern.trim();
 
         // Return regex for any character sequence if the pattern is just |, ||, * or empty
-        if (trimmed === ADBLOCK_URL_START
+        if (
+            trimmed === ADBLOCK_URL_START
             || trimmed === PIPE
             || trimmed === ADBLOCK_WILDCARD
-            || trimmed === EMPTY) {
+            || trimmed === EMPTY
+        ) {
             return REGEX_ANY_CHARACTERS;
         }
 
         // If the pattern is already a RegExp, just return it, but remove the leading and trailing slashes
         if (RegExpUtils.isRegexPattern(pattern)) {
-            return pattern.substring(REGEX_MARKER.length, pattern.length - REGEX_MARKER.length);
+            return pattern.substring(
+                REGEX_MARKER.length,
+                pattern.length - REGEX_MARKER.length,
+            );
         }
 
         let result = EMPTY;
@@ -266,14 +309,17 @@ export class RegExpUtils {
      * Creates a length-matching regular expression string: /^(?=.{min,max}$).*\/s
      * Where:
      * - (?=.{min,max}$) is a lookahead that ensures the string length is between min and max
-     * - .* matches any character (including newlines, due to the 's' flag)
+     * - .* matches any character (including newlines, due to the 's' flag).
      *
      * @param min Minimum length or `null` for no minimum (default to `0`).
      * @param max Maximum length or `null` for no maximum (default to no maximum).
      *
      * @returns Length-matching regular expression string.
      */
-    public static getLengthRegexp(min: number | null, max: number | null): string {
+    public static getLengthRegexp(
+        min: number | null,
+        max: number | null,
+    ): string {
         return `/^(?=.{${min ?? 0},${max ?? ''}}$).*/s`;
     }
 

@@ -15,11 +15,7 @@ export class IdSelectorHandler {
      */
     public static handle(context: SelectorListParserContext): void {
         const {
-            raw,
-            options,
-            baseOffset,
-            stream,
-            complexSelector,
+            raw, options, baseOffset, stream, complexSelector,
         } = context;
 
         // Get ID selector token

@@ -1,21 +1,22 @@
 /* eslint-disable no-param-reassign */
-import { AdblockSyntax } from '../utils/adblockers';
-import { CommentParser } from './comment/comment-parser';
-import { CosmeticRuleParser } from './cosmetic/cosmetic-rule-parser';
-import { NetworkRuleParser } from './network/network-rule-parser';
+import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import {
     type AnyRule,
-    type InvalidRule,
-    RuleCategory,
     type EmptyRule,
+    type HostRule,
+    type InvalidRule,
     type InvalidRuleError,
     type NetworkRule,
-    type HostRule,
+    RuleCategory,
 } from '../nodes';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
-import { defaultParserOptions } from './options';
+import { AdblockSyntax } from '../utils/adblockers';
+
 import { BaseParser } from './base-parser';
+import { CommentParser } from './comment/comment-parser';
+import { CosmeticRuleParser } from './cosmetic/cosmetic-rule-parser';
 import { HostRuleParser } from './network/host-rule-parser';
+import { NetworkRuleParser } from './network/network-rule-parser';
+import { defaultParserOptions } from './options';
 
 /**
  * `RuleParser` is responsible for parsing the rules.
@@ -30,6 +31,7 @@ export class RuleParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
      * @returns Host rule or network rule node.
      */
     private static parseHostOrNetworkRule(
@@ -76,8 +78,11 @@ export class RuleParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Adblock rule node
-     * @throws If the input matches a pattern but syntactically invalid
+     *
+     * @returns Adblock rule node.
+     *
+     * @throws If the input matches a pattern but syntactically invalid.
+     *
      * @example
      * Take a look at the following example:
      * ```js
@@ -106,7 +111,11 @@ export class RuleParser extends BaseParser {
      * const ast7 = RuleParser.parse("!#if (adguard)");
      * ```
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AnyRule {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): AnyRule {
         try {
             // Empty lines / rules (handle it just for convenience)
             if (raw.trim().length === 0) {
@@ -158,13 +167,17 @@ export class RuleParser extends BaseParser {
                     return result;
                 }
 
-                return CosmeticRuleParser.parse(raw, options, baseOffset)
-                    || RuleParser.parseHostOrNetworkRule(raw, options, baseOffset);
+                return (
+                    CosmeticRuleParser.parse(raw, options, baseOffset)
+                    || RuleParser.parseHostOrNetworkRule(raw, options, baseOffset)
+                );
             }
 
-            return CommentParser.parse(raw, options, baseOffset)
+            return (
+                CommentParser.parse(raw, options, baseOffset)
                 || CosmeticRuleParser.parse(raw, options, baseOffset)
-                || RuleParser.parseHostOrNetworkRule(raw, options, baseOffset);
+                || RuleParser.parseHostOrNetworkRule(raw, options, baseOffset)
+            );
         } catch (error: unknown) {
             // If tolerant mode is disabled or the error is not known, then simply
             // re-throw the error

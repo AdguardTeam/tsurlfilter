@@ -1,8 +1,8 @@
+import { type AppList, ListItemNodeType, ListNodeType } from '../../nodes';
 import { PIPE as APP_LIST_SEPARATOR } from '../../utils/constants';
-import { type AppList, ListNodeType, ListItemNodeType } from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
+
 import { ListItemsParser } from './list-items-parser';
 
 /**
@@ -20,14 +20,25 @@ export class AppListParser extends BaseParser {
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
      * @returns App list AST.
+     *
      * @throws An {@link AdblockSyntaxError} if the app list is syntactically invalid.
      * @throws An {@link Error} if the options are invalid.
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AppList {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): AppList {
         const result: AppList = {
             type: ListNodeType.AppList,
             separator: APP_LIST_SEPARATOR,
-            children: ListItemsParser.parse(raw, options, baseOffset, APP_LIST_SEPARATOR, ListItemNodeType.App),
+            children: ListItemsParser.parse(
+                raw,
+                options,
+                baseOffset,
+                APP_LIST_SEPARATOR,
+                ListItemNodeType.App,
+            ),
         };
 
         if (options.isLocIncluded) {

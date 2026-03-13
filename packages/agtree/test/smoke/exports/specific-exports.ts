@@ -1,5 +1,8 @@
 import { RuleParser } from '@adguard/agtree/parser';
-import { CosmeticRuleGenerator, RuleGenerator } from '@adguard/agtree/generator';
+import {
+    CosmeticRuleGenerator,
+    RuleGenerator,
+} from '@adguard/agtree/generator';
 import { ok } from 'assert';
 
 const ruleText = '||example.com^';

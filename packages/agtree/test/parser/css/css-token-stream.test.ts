@@ -1,15 +1,18 @@
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
+import { sprintf } from 'sprintf-js';
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
-import { sprintf } from 'sprintf-js';
 
-import { END_OF_INPUT, ERROR_MESSAGES } from '../../../src/parser/css/constants';
-import { CssTokenStream } from '../../../src/parser/css/css-token-stream';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
+import {
+    END_OF_INPUT,
+    ERROR_MESSAGES,
+} from '../../../src/parser/css/constants';
+import { CssTokenStream } from '../../../src/parser/css/css-token-stream';
 
 describe('CssTokenStream', () => {
     test('length', () => {
@@ -47,7 +50,9 @@ describe('CssTokenStream', () => {
     test('lookahead & lookbehind', () => {
         // ident, whitespace, number
         const stream = new CssTokenStream('ident 2');
-        expect(stream.lookahead()).toMatchObject({ type: TokenType.Whitespace });
+        expect(stream.lookahead()).toMatchObject({
+            type: TokenType.Whitespace,
+        });
         expect(stream.lookahead(2)).toMatchObject({ type: TokenType.Number });
         expect(stream.lookbehind()).toBeUndefined(); // no previous token
         expect(stream.lookbehind(2)).toBeUndefined(); // no previous token
@@ -57,7 +62,9 @@ describe('CssTokenStream', () => {
         stream.advance(); // eat whitespace
         expect(stream.lookahead()).toBeUndefined(); // no next token
         expect(stream.lookahead(2)).toBeUndefined(); // no next token
-        expect(stream.lookbehind()).toMatchObject({ type: TokenType.Whitespace });
+        expect(stream.lookbehind()).toMatchObject({
+            type: TokenType.Whitespace,
+        });
         expect(stream.lookbehind(2)).toMatchObject({ type: TokenType.Ident });
     });
 
@@ -67,7 +74,9 @@ describe('CssTokenStream', () => {
         expect(stream.lookbehindForNonWs()).toBeUndefined();
         stream.advance(); // eat ident
         stream.advance(); // eat whitespace
-        expect(stream.lookbehindForNonWs()).toMatchObject({ type: TokenType.Ident });
+        expect(stream.lookbehindForNonWs()).toMatchObject({
+            type: TokenType.Ident,
+        });
     });
 
     test('get & skipWhitespace', () => {
@@ -83,10 +92,7 @@ describe('CssTokenStream', () => {
         const stream = new CssTokenStream('ident');
         stream.advance(); // eat ident
         expect(() => stream.getOrFail()).toThrow(
-            sprintf(
-                ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT,
-                END_OF_INPUT,
-            ),
+            sprintf(ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT, END_OF_INPUT),
         );
     });
 
@@ -96,7 +102,9 @@ describe('CssTokenStream', () => {
         stream.advance(); // eat whitespace
         stream.advance(); // eat {
         stream.skipUntilBalanced();
-        expect(stream.get()).toMatchObject({ type: TokenType.CloseCurlyBracket });
+        expect(stream.get()).toMatchObject({
+            type: TokenType.CloseCurlyBracket,
+        });
 
         stream.advance(); // eat }
         // if we already reached the end of input, then skipUntilBalanced should return 0
@@ -115,7 +123,9 @@ describe('CssTokenStream', () => {
         const stream = new CssTokenStream('ident;{padding: 0;}');
         stream.skipUntil(TokenType.Semicolon, 1); // skip until the next semicolon with balance 1
         expect(stream.get()).toMatchObject({ type: TokenType.Semicolon });
-        expect(stream.lookahead()).toMatchObject({ type: TokenType.CloseCurlyBracket }); // not the first semicolon
+        expect(stream.lookahead()).toMatchObject({
+            type: TokenType.CloseCurlyBracket,
+        }); // not the first semicolon
     });
 
     test('skipUntilExt', () => {
@@ -123,7 +133,10 @@ describe('CssTokenStream', () => {
         const stream = new CssTokenStream('ident 2');
         stream.advance(); // eat ident
         stream.advance(); // eat whitespace
-        const { skipped, skippedTrimmed } = stream.skipUntilExt(TokenType.Ident, 0);
+        const { skipped, skippedTrimmed } = stream.skipUntilExt(
+            TokenType.Ident,
+            0,
+        );
         expect(skipped).toBe(1);
         expect(skippedTrimmed).toBe(1);
     });
@@ -199,7 +212,9 @@ describe('CssTokenStream', () => {
                 [String.raw`input:checked`],
             ])('%s', (input) => {
                 const stream = new CssTokenStream(input);
-                expect(stream.hasAnySelectorExtendedCssNodeStrict()).toBe(false);
+                expect(stream.hasAnySelectorExtendedCssNodeStrict()).toBe(
+                    false,
+                );
             });
         });
 
@@ -210,10 +225,14 @@ describe('CssTokenStream', () => {
                 [String.raw`.target:is(div, p)`],
                 [String.raw`.target:not(.excluded)`],
                 [String.raw`.target:has(.banner):is(div)`],
-                [String.raw`div:is(.css1, [style*="min-height:"]:not([class]), .css2):has(.adSlot)`],
+                [
+                    String.raw`div:is(.css1, [style*="min-height:"]:not([class]), .css2):has(.adSlot)`,
+                ],
             ])('%s', (input) => {
                 const stream = new CssTokenStream(input);
-                expect(stream.hasAnySelectorExtendedCssNodeStrict()).toBe(false);
+                expect(stream.hasAnySelectorExtendedCssNodeStrict()).toBe(
+                    false,
+                );
             });
         });
 
@@ -252,7 +271,9 @@ describe('CssTokenStream', () => {
                 [String.raw`input:checked`],
                 [String.raw`.target:hover:active`],
             ])('%s', (input) => {
-                expect(CssTokenStream.hasNativeCssPseudoClass(input)).toBe(false);
+                expect(CssTokenStream.hasNativeCssPseudoClass(input)).toBe(
+                    false,
+                );
             });
         });
 
@@ -262,7 +283,9 @@ describe('CssTokenStream', () => {
                 [String.raw`:contains(a)`],
                 [String.raw`:upward(2)`],
             ])('%s', (input) => {
-                expect(CssTokenStream.hasNativeCssPseudoClass(input)).toBe(false);
+                expect(CssTokenStream.hasNativeCssPseudoClass(input)).toBe(
+                    false,
+                );
             });
         });
 
@@ -276,7 +299,9 @@ describe('CssTokenStream', () => {
                 [String.raw`.banner:not(.main, .content)`],
                 [String.raw`div:has(.ad):not(.exclude)`],
             ])('%s', (input) => {
-                expect(CssTokenStream.hasNativeCssPseudoClass(input)).toBe(true);
+                expect(CssTokenStream.hasNativeCssPseudoClass(input)).toBe(
+                    true,
+                );
             });
         });
     });
@@ -292,7 +317,10 @@ describe('CssTokenStream', () => {
         // check the thrown error
         const error = fn.mock.results[0].value;
         expect(error).toBeInstanceOf(AdblockSyntaxError);
-        expect(error).toHaveProperty('message', "Expected '<}-token>', but got 'end of input'");
+        expect(error).toHaveProperty(
+            'message',
+            "Expected '<}-token>', but got 'end of input'",
+        );
         expect(error).toHaveProperty('start', offset + actual.length - 1);
         expect(error).toHaveProperty('end', offset + actual.length);
     });

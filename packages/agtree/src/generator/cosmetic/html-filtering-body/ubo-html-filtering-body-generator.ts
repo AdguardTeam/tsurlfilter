@@ -1,5 +1,5 @@
 import { isUboResponseHeaderRemovalRuleBody } from '../../../common/ubo-html-filtering-body-common';
-import { type Value, type PseudoClassSelector, type HtmlFilteringRuleBody } from '../../../nodes';
+import { type HtmlFilteringRuleBody, type PseudoClassSelector, type Value } from '../../../nodes';
 import {
     CLOSE_PARENTHESIS,
     EMPTY,
@@ -8,10 +8,11 @@ import {
 } from '../../../utils/constants';
 import { BaseGenerator } from '../../base-generator';
 import { ValueGenerator } from '../../misc/value-generator';
+
 import { HtmlFilteringBodyGenerator } from './html-filtering-body-generator';
 
 /**
- * uBlock HTML Filtering body generator.
+ * UBlock HTML Filtering body generator.
  */
 export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
     /**
@@ -45,8 +46,13 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
      * @note This method accepts `HtmlFilteringRuleBody` as `node` because,
      * response header removal rule syntax is same as uBlock-style HTML filtering rule syntax.
      */
-    private static generateResponseHeaderRule(node: Value | HtmlFilteringRuleBody): string | null {
-        if (node.type !== 'HtmlFilteringRuleBody' || !isUboResponseHeaderRemovalRuleBody(node)) {
+    private static generateResponseHeaderRule(
+        node: Value | HtmlFilteringRuleBody,
+    ): string | null {
+        if (
+            node.type !== 'HtmlFilteringRuleBody'
+            || !isUboResponseHeaderRemovalRuleBody(node)
+        ) {
             return null;
         }
 

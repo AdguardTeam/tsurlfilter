@@ -1,11 +1,12 @@
-import { StringUtils } from '../../utils/string';
-import { COMMA, ESCAPE_CHARACTER } from '../../utils/constants';
-import { defaultParserOptions } from '../options';
-import { ValueParser } from './value-parser';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { QUOTE_SET } from '../../utils/quotes';
-import { ParameterListParser } from './parameter-list-parser';
 import { type ParameterList } from '../../nodes';
+import { COMMA, ESCAPE_CHARACTER } from '../../utils/constants';
+import { QUOTE_SET } from '../../utils/quotes';
+import { StringUtils } from '../../utils/string';
+import { defaultParserOptions } from '../options';
+
+import { ParameterListParser } from './parameter-list-parser';
+import { ValueParser } from './value-parser';
 
 /**
  * Parser for uBO-specific parameter lists.
@@ -20,6 +21,7 @@ export class UboParameterListParser extends ParameterListParser {
      * @param separator Separator character (default: comma).
      * @param requireQuotes Whether to require quotes around the parameter values (default: false).
      * @param supportedQuotes Set of accepted quotes (default: {@link QUOTE_SET}).
+     *
      * @returns Parameter list node.
      *
      * @note Based on {@link https://github.com/gorhill/uBlock/blob/f9ab4b75041815e6e5690d80851189ae3dc660d0/src/js/static-filtering-parser.js#L607-L699} to provide consistency.
@@ -56,11 +58,18 @@ export class UboParameterListParser extends ParameterListParser {
 
             if (supportedQuotes.has(raw[offset])) {
                 // Find the closing quote
-                const possibleClosingQuoteIndex = StringUtils.findNextUnescapedCharacter(raw, raw[offset], offset + 1);
+                const possibleClosingQuoteIndex = StringUtils.findNextUnescapedCharacter(
+                    raw,
+                    raw[offset],
+                    offset + 1,
+                );
 
                 if (possibleClosingQuoteIndex !== -1) {
                     // Next non-whitespace character after the closing quote should be the separator
-                    const nextSeparatorIndex = StringUtils.skipWS(raw, possibleClosingQuoteIndex + 1);
+                    const nextSeparatorIndex = StringUtils.skipWS(
+                        raw,
+                        possibleClosingQuoteIndex + 1,
+                    );
 
                     if (nextSeparatorIndex === length) {
                         // If the separator is not found, the param end is the end of the string
@@ -83,16 +92,16 @@ export class UboParameterListParser extends ParameterListParser {
                          * At that point found `possibleClosingQuoteIndex` is wrong
                          * | is `offset`
                          * ~ is `possibleClosingQuoteIndex`
-                         * ^ is `nextSeparatorIndex`
+                         * ^ is `nextSeparatorIndex`.
                          *
                          * Example 1: "abc, ').cba='1'"
-                         *                  |      ~^
+                         *                  |      ~^.
                          * Example 2: "abc, ').cba, '1'"
                          *                  |       ~^
                          * Example 3: "abc, ').cba='1', cba"
-                         *                  |      ~^
+                         *                  |      ~^.
                          *
-                         * Search for separator before `possibleClosingQuoteIndex`
+                         * Search for separator before `possibleClosingQuoteIndex`.
                          */
 
                         const separatorIndexBeforeQuote = StringUtils.findNextUnescapedCharacterBackwards(
@@ -104,7 +113,10 @@ export class UboParameterListParser extends ParameterListParser {
                         );
                         if (separatorIndexBeforeQuote !== -1) {
                             // Found separator before (Example 2)
-                            paramEnd = StringUtils.skipWSBack(raw, separatorIndexBeforeQuote - 1) + 1;
+                            paramEnd = StringUtils.skipWSBack(
+                                raw,
+                                separatorIndexBeforeQuote - 1,
+                            ) + 1;
                             offset = separatorIndexBeforeQuote + 1;
                         } else {
                             // Didn't found separator before, search after
@@ -115,7 +127,10 @@ export class UboParameterListParser extends ParameterListParser {
                             );
                             if (separatorIndexAfterQuote !== -1) {
                                 // We found separator after (Example 3)
-                                paramEnd = StringUtils.skipWSBack(raw, separatorIndexAfterQuote - 1) + 1;
+                                paramEnd = StringUtils.skipWSBack(
+                                    raw,
+                                    separatorIndexAfterQuote - 1,
+                                ) + 1;
                                 offset = separatorIndexAfterQuote + 1;
                             } else {
                                 // If the separator is not found, the param end is the end of the string (Example 1)
@@ -144,7 +159,11 @@ export class UboParameterListParser extends ParameterListParser {
                         baseOffset + length,
                     );
                 }
-                const nextSeparator = StringUtils.findNextUnescapedCharacter(raw, separator, offset);
+                const nextSeparator = StringUtils.findNextUnescapedCharacter(
+                    raw,
+                    separator,
+                    offset,
+                );
 
                 if (nextSeparator === -1) {
                     // If the separator is not found, the param end is the end of the string
@@ -162,11 +181,13 @@ export class UboParameterListParser extends ParameterListParser {
             }
 
             if (paramStart < paramEnd) {
-                params.children.push(ValueParser.parse(
-                    raw.slice(paramStart, paramEnd),
-                    options,
-                    baseOffset + paramStart,
-                ));
+                params.children.push(
+                    ValueParser.parse(
+                        raw.slice(paramStart, paramEnd),
+                        options,
+                        baseOffset + paramStart,
+                    ),
+                );
             } else {
                 params.children.push(null);
             }

@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import { RawRuleConverter } from '../../src/converter/raw-rule';
 
@@ -10,29 +10,21 @@ describe('Raw rule converter wrapper should work correctly', () => {
             // leave as is
             {
                 actual: '||example.com^$third-party',
-                expected: [
-                    '||example.com^$third-party',
-                ],
+                expected: ['||example.com^$third-party'],
                 shouldConvert: false,
             },
             // simple conversion
             {
                 actual: '||example.com^$3p',
-                expected: [
-                    '||example.com^$third-party',
-                ],
+                expected: ['||example.com^$third-party'],
             },
             {
                 actual: 'example.com##^script:has-text(foo)',
-                expected: [
-                    'example.com$$script:contains(foo)',
-                ],
+                expected: ['example.com$$script:contains(foo)'],
             },
             {
                 actual: 'example.com,~example.net##^div[custom_attr]',
-                expected: [
-                    'example.com,~example.net$$div[custom_attr]',
-                ],
+                expected: ['example.com,~example.net$$div[custom_attr]'],
             },
             // multiple rules in the result
             {
@@ -42,15 +34,18 @@ describe('Raw rule converter wrapper should work correctly', () => {
                     "example.com#%#//scriptlet('abp-snippet2', 'arg0', 'arg1')",
                 ],
             },
-        ])('should convert \'$actual\' to \'$expected\'', ({ actual, expected, shouldConvert = true }) => {
-            const converterFn = () => RawRuleConverter.convertToAdg(actual);
+        ])(
+            "should convert '$actual' to '$expected'",
+            ({ actual, expected, shouldConvert = true }) => {
+                const converterFn = () => RawRuleConverter.convertToAdg(actual);
 
-            expect(converterFn).not.toThrow();
+                expect(converterFn).not.toThrow();
 
-            const conversionResult = converterFn();
+                const conversionResult = converterFn();
 
-            expect(conversionResult.isConverted).toBe(shouldConvert);
-            expect(conversionResult.result).toEqual(expected);
-        });
+                expect(conversionResult.isConverted).toBe(shouldConvert);
+                expect(conversionResult.result).toEqual(expected);
+            },
+        );
     });
 });

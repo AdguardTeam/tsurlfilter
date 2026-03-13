@@ -1,9 +1,11 @@
 /**
- * @file AdGuard scriptlet injection body parser
+ * @file AdGuard scriptlet injection body parser.
  */
 
 import { sprintf } from 'sprintf-js';
 
+import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
+import { type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes';
 import {
     ADG_SCRIPTLET_MASK,
     CLOSE_PARENTHESIS,
@@ -15,12 +17,10 @@ import {
     SPACE,
 } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
-import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../../options';
+import { isNull } from '../../../utils/type-guards';
 import { BaseParser } from '../../base-parser';
 import { ValueParser } from '../../misc/value-parser';
-import { type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes';
-import { isNull } from '../../../utils/type-guards';
+import { defaultParserOptions } from '../../options';
 
 type SingleOrDoubleQuote = typeof SINGLE_QUOTE | typeof DOUBLE_QUOTE;
 
@@ -28,12 +28,12 @@ type SingleOrDoubleQuote = typeof SINGLE_QUOTE | typeof DOUBLE_QUOTE;
  * `AdgScriptletInjectionBodyParser` is responsible for parsing the body of an AdGuard-style scriptlet rule.
  *
  * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
- * For example, it will parse this:
+ * For example, it will parse this:.
  * ```adblock
  * example.com#%#//scriptlet('scriptlet0', 'arg0')
  * ```
  *
- * but it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker.
+ * But it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker..
  *
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
  */
@@ -45,8 +45,10 @@ export class AdgScriptletInjectionBodyParser extends BaseParser {
         NO_SCRIPTLET_MASK: `Invalid ADG scriptlet call, no scriptlet call mask '${ADG_SCRIPTLET_MASK}' found`,
         NO_OPENING_PARENTHESIS: `Invalid ADG scriptlet call, no opening parentheses '${OPEN_PARENTHESIS}' found`,
         NO_CLOSING_PARENTHESIS: `Invalid ADG scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
-        WHITESPACE_AFTER_MASK: 'Invalid ADG scriptlet call, whitespace is not allowed after the scriptlet call mask',
-        NO_INCONSISTENT_QUOTES: 'Invalid ADG scriptlet call, inconsistent quotes',
+        WHITESPACE_AFTER_MASK:
+            'Invalid ADG scriptlet call, whitespace is not allowed after the scriptlet call mask',
+        NO_INCONSISTENT_QUOTES:
+            'Invalid ADG scriptlet call, inconsistent quotes',
         NO_UNCLOSED_PARAMETER: 'Invalid ADG scriptlet call, unclosed parameter',
         EXPECTED_QUOTE: "Invalid ADG scriptlet call, expected quote, got '%s'",
         EXPECTED_COMMA: "Invalid ADG scriptlet call, expected comma, got '%s'",
@@ -58,14 +60,21 @@ export class AdgScriptletInjectionBodyParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Node of the parsed scriptlet call body
-     * @throws If the body is syntactically incorrect
+     *
+     * @returns Node of the parsed scriptlet call body.
+     *
+     * @throws If the body is syntactically incorrect.
+     *
      * @example
      * ```
      * //scriptlet('scriptlet0', 'arg0')
      * ```
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): ScriptletInjectionRuleBody {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): ScriptletInjectionRuleBody {
         let offset = 0;
 
         // Skip leading spaces
@@ -104,7 +113,10 @@ export class AdgScriptletInjectionBodyParser extends BaseParser {
         const openingParenthesesIndex = offset;
 
         // Skip whitespace from the end
-        const closingParenthesesIndex = StringUtils.skipWSBack(raw, raw.length - 1);
+        const closingParenthesesIndex = StringUtils.skipWSBack(
+            raw,
+            raw.length - 1,
+        );
 
         // Closing parentheses should be present
         if (
@@ -132,7 +144,10 @@ export class AdgScriptletInjectionBodyParser extends BaseParser {
         }
 
         // Special case: empty scriptlet call, like `//scriptlet()`, `//scriptlet( )` etc.
-        if (StringUtils.skipWS(raw, openingParenthesesIndex + 1) === closingParenthesesIndex) {
+        if (
+            StringUtils.skipWS(raw, openingParenthesesIndex + 1)
+            === closingParenthesesIndex
+        ) {
             return result;
         }
 
@@ -156,7 +171,11 @@ export class AdgScriptletInjectionBodyParser extends BaseParser {
             if (parameterList.children.length > 0) {
                 if (raw[offset] !== COMMA) {
                     throw new AdblockSyntaxError(
-                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_COMMA, raw[offset]),
+                        sprintf(
+                            AdgScriptletInjectionBodyParser.ERROR_MESSAGES
+                                .EXPECTED_COMMA,
+                            raw[offset],
+                        ),
                         baseOffset + offset,
                         baseOffset + raw.length,
                     );
@@ -182,7 +201,11 @@ export class AdgScriptletInjectionBodyParser extends BaseParser {
                 }
 
                 // Find next unescaped same quote
-                const closingQuoteIndex = StringUtils.findNextUnescapedCharacter(raw, detectedQuote, offset + 1);
+                const closingQuoteIndex = StringUtils.findNextUnescapedCharacter(
+                    raw,
+                    detectedQuote,
+                    offset + 1,
+                );
 
                 if (closingQuoteIndex === -1) {
                     throw new AdblockSyntaxError(
@@ -205,7 +228,11 @@ export class AdgScriptletInjectionBodyParser extends BaseParser {
                 offset = StringUtils.skipWS(raw, closingQuoteIndex + 1);
             } else {
                 throw new AdblockSyntaxError(
-                    sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, raw[offset]),
+                    sprintf(
+                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES
+                            .EXPECTED_QUOTE,
+                        raw[offset],
+                    ),
                     baseOffset + offset,
                     baseOffset + raw.length,
                 );

@@ -9,12 +9,12 @@ import { CR, FF, LF } from './constants';
  */
 export interface Position {
     /**
-     * 1-based line number
+     * 1-based line number.
      */
     line: number;
 
     /**
-     * 1-based column number
+     * 1-based column number.
      */
     column: number;
 }
@@ -51,9 +51,13 @@ export class PositionProvider {
             this.offsetToLine[i] = currentLine;
 
             // Handle different types of line breaks: LF, FF, and CR
-            if (sourceCode[i] === LF || sourceCode[i] === FF || sourceCode[i] === CR) {
+            if (
+                sourceCode[i] === LF
+                || sourceCode[i] === FF
+                || sourceCode[i] === CR
+            ) {
                 currentLine += 1;
-                this.lineStartOffsets[currentLine] = (sourceCode[i] === CR && sourceCode[i + 1] === LF)
+                this.lineStartOffsets[currentLine] = sourceCode[i] === CR && sourceCode[i + 1] === LF
                     ? i + 2
                     : i + 1;
 
@@ -72,9 +76,10 @@ export class PositionProvider {
      * Converts a character offset to a line and column position.
      *
      * @param offset The zero-based character offset in the source code.
+     *
      * @returns A Position object containing the 1-based line and column number, or null if the offset is out of range.
      */
-    convertOffsetToPosition(offset: number): Position | null {
+    public convertOffsetToPosition(offset: number): Position | null {
         if (offset < 0 || offset > this.offsetToLine.length - 1) {
             return null;
         }

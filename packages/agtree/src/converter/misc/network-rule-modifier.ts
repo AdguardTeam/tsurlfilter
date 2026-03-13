@@ -2,17 +2,17 @@
  * @file Network rule modifier list converter.
  */
 
-import { type Modifier, type ModifierList } from '../../nodes';
-import { SEMICOLON, SPACE } from '../../utils/constants';
-import { createModifierNode } from '../../ast-utils/modifiers';
-import { BaseConverter } from '../base-interfaces/base-converter';
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { MultiValueMap } from '../../utils/multi-value-map';
-import { createConversionResult, type ConversionResult } from '../base-interfaces/conversion-result';
 import { cloneModifierListNode } from '../../ast-utils/clone';
+import { createModifierNode } from '../../ast-utils/modifiers';
 import { GenericPlatform, modifiersCompatibilityTable, redirectsCompatibilityTable } from '../../compatibility-tables';
 import { isValidResourceType } from '../../compatibility-tables/utils/resource-type-helpers';
+import { RuleConversionError } from '../../errors/rule-conversion-error';
+import { type Modifier, type ModifierList } from '../../nodes';
+import { SEMICOLON, SPACE } from '../../utils/constants';
+import { MultiValueMap } from '../../utils/multi-value-map';
 import { isUndefined } from '../../utils/type-guards';
+import { BaseConverter } from '../base-interfaces/base-converter';
+import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result';
 
 /**
  * Modifier conversion interface.
@@ -21,8 +21,9 @@ interface ModifierConversion {
     /**
      * Sets the new modifier name.
      *
-     * @param actual Actual modifier name
-     * @returns New modifier name
+     * @param actual Actual modifier name.
+     *
+     * @returns New modifier name.
      */
     name: (actual: string) => string;
 
@@ -30,8 +31,9 @@ interface ModifierConversion {
      * Sets the new modifier exception value. If you don't specify this function,
      * the modifier exception value will be copied from the original modifier.
      *
-     * @param actual Actual modifier exception value
-     * @returns `true` if the modifier should be negated, `false` otherwise
+     * @param actual Actual modifier exception value.
+     *
+     * @returns `true` if the modifier should be negated, `false` otherwise.
      */
     exception?: (actual: boolean) => boolean;
 
@@ -39,9 +41,10 @@ interface ModifierConversion {
      * Sets the new modifier value. If you don't specify this function,
      * the modifier value will be copied from the original modifier.
      *
-     * @param actual Actual modifier value
+     * @param actual Actual modifier value.
+     *
      * @returns Converted modifier value or `undefined` if the modifier
-     * value should be removed
+     * value should be removed.
      */
     value?: (actual: string | undefined) => string | undefined;
 }
@@ -56,7 +59,7 @@ const CSP_SEPARATOR = SEMICOLON + SPACE;
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#csp-modifier}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy}
  */
-const COMMON_CSP_PARAMS = '\'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:';
+const COMMON_CSP_PARAMS = "'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:";
 
 /**
  * @see {@link https://help.adblockplus.org/hc/en-us/articles/360062733293#rewrite}
@@ -97,12 +100,37 @@ const ADG_CONVERSION_MAP = new Map<string, ModifierConversion[]>([
     ['doc', [{ name: () => 'document' }]],
     ['ehide', [{ name: () => 'elemhide' }]],
     ['empty', [{ name: () => 'redirect', value: () => 'nooptext' }]],
-    ['first-party', [{ name: () => 'third-party', exception: (actual) => !actual }]],
+    [
+        'first-party',
+        [{ name: () => 'third-party', exception: (actual) => !actual }],
+    ],
     ['frame', [{ name: () => 'subdocument' }]],
     ['ghide', [{ name: () => 'generichide' }]],
-    ['inline-font', [{ name: () => CSP_MODIFIER, value: () => `font-src ${COMMON_CSP_PARAMS}` }]],
-    ['inline-script', [{ name: () => CSP_MODIFIER, value: () => `script-src ${COMMON_CSP_PARAMS}` }]],
-    ['mp4', [{ name: () => 'redirect', value: () => 'noopmp4-1s' }, { name: () => 'media', value: () => undefined }]],
+    [
+        'inline-font',
+        [
+            {
+                name: () => CSP_MODIFIER,
+                value: () => `font-src ${COMMON_CSP_PARAMS}`,
+            },
+        ],
+    ],
+    [
+        'inline-script',
+        [
+            {
+                name: () => CSP_MODIFIER,
+                value: () => `script-src ${COMMON_CSP_PARAMS}`,
+            },
+        ],
+    ],
+    [
+        'mp4',
+        [
+            { name: () => 'redirect', value: () => 'noopmp4-1s' },
+            { name: () => 'media', value: () => undefined },
+        ],
+    ],
     ['queryprune', [{ name: () => 'removeparam' }]],
     ['shide', [{ name: () => 'specifichide' }]],
     ['xhr', [{ name: () => 'xmlhttprequest' }]],
@@ -111,36 +139,47 @@ const ADG_CONVERSION_MAP = new Map<string, ModifierConversion[]>([
 /**
  * Helper class for converting network rule modifier lists.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class NetworkRuleModifierListConverter extends BaseConverter {
     /**
      * Converts a network rule modifier list to AdGuard format, if possible.
      *
-     * @param modifierList Network rule modifier list node to convert
-     * @param isException If `true`, the rule is an exception rule
+     * @param modifierList Network rule modifier list node to convert.
+     * @param isException If `true`, the rule is an exception rule.
+     *
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
      * the converted node, and its `isConverted` flag indicates whether the original node was converted.
-     * If the node was not converted, the result will contain the original node with the same object reference
-     * @throws If the conversion is not possible
+     * If the node was not converted, the result will contain the original node with the same object reference.
+     *
+     * @throws If the conversion is not possible.
      */
-    public static convertToAdg(modifierList: ModifierList, isException = false): ConversionResult<ModifierList> {
+    public static convertToAdg(
+        modifierList: ModifierList,
+        isException = false,
+    ): ConversionResult<ModifierList> {
         const conversionMap = new MultiValueMap<number, Modifier>();
 
         // Special case: $csp modifier
         let cspCount = 0;
 
         modifierList.children.forEach((modifierNode, index) => {
-            const modifierConversions = ADG_CONVERSION_MAP.get(modifierNode.name.value);
+            const modifierConversions = ADG_CONVERSION_MAP.get(
+                modifierNode.name.value,
+            );
 
             if (modifierConversions) {
                 for (const modifierConversion of modifierConversions) {
-                    const name = modifierConversion.name(modifierNode.name.value);
+                    const name = modifierConversion.name(
+                        modifierNode.name.value,
+                    );
 
                     const exception = modifierConversion.exception
                         // If the exception value is undefined in the original modifier, it
                         // means that the modifier isn't negated
-                        ? modifierConversion.exception(modifierNode.exception || false)
+                        ? modifierConversion.exception(
+                            modifierNode.exception || false,
+                        )
                         : modifierNode.exception;
 
                     const value = modifierConversion.value
@@ -149,8 +188,14 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
 
                     // Check if the name or the value is different from the original modifier
                     // If so, add the converted modifier to the list
-                    if (name !== modifierNode.name.value || value !== modifierNode.value?.value) {
-                        conversionMap.add(index, createModifierNode(name, value, exception));
+                    if (
+                        name !== modifierNode.name.value
+                        || value !== modifierNode.value?.value
+                    ) {
+                        conversionMap.add(
+                            index,
+                            createModifierNode(name, value, exception),
+                        );
                     }
 
                     // Special case: $csp modifier
@@ -198,7 +243,8 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                 // If so, add the converted modifier to the list
                 if (
                     modifierName !== modifierNode.name.value
-                    || (convertedRedirectResource !== undefined && convertedRedirectResource !== redirectResource)
+                    || (convertedRedirectResource !== undefined
+                        && convertedRedirectResource !== redirectResource)
                 ) {
                     conversionMap.add(
                         index,
@@ -220,39 +266,46 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
 
             // Replace the original modifiers with the converted ones
             // One modifier may be replaced with multiple modifiers, so we need to flatten the array
-            modifierListClone.children = modifierListClone.children.map((modifierNode, index) => {
-                const conversionRecord = conversionMap.get(index);
+            modifierListClone.children = modifierListClone.children
+                .map((modifierNode, index) => {
+                    const conversionRecord = conversionMap.get(index);
 
-                if (conversionRecord) {
-                    return conversionRecord;
-                }
+                    if (conversionRecord) {
+                        return conversionRecord;
+                    }
 
-                return modifierNode;
-            }).flat();
+                    return modifierNode;
+                })
+                .flat();
 
             // Special case: $csp modifier: merge multiple $csp modifiers into one
             // and put it at the end of the modifier list
             if (cspCount) {
                 const cspValues: string[] = [];
 
-                modifierListClone.children = modifierListClone.children.filter((modifierNode) => {
-                    if (modifierNode.name.value === CSP_MODIFIER) {
-                        if (!modifierNode.value?.value) {
-                            throw new RuleConversionError(
-                                '$csp modifier value is missing',
-                            );
+                modifierListClone.children = modifierListClone.children.filter(
+                    (modifierNode) => {
+                        if (modifierNode.name.value === CSP_MODIFIER) {
+                            if (!modifierNode.value?.value) {
+                                throw new RuleConversionError(
+                                    '$csp modifier value is missing',
+                                );
+                            }
+
+                            cspValues.push(modifierNode.value?.value);
+
+                            return false;
                         }
 
-                        cspValues.push(modifierNode.value?.value);
-
-                        return false;
-                    }
-
-                    return true;
-                });
+                        return true;
+                    },
+                );
 
                 modifierListClone.children.push(
-                    createModifierNode(CSP_MODIFIER, cspValues.join(CSP_SEPARATOR)),
+                    createModifierNode(
+                        CSP_MODIFIER,
+                        cspValues.join(CSP_SEPARATOR),
+                    ),
                 );
             }
 
@@ -260,8 +313,8 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
             modifierListClone.children = modifierListClone.children.filter(
                 (modifierNode, index, self) => self.findIndex(
                     (m) => m.name.value === modifierNode.name.value
-                        && m.exception === modifierNode.exception
-                        && m.value?.value === modifierNode.value?.value,
+                            && m.exception === modifierNode.exception
+                            && m.value?.value === modifierNode.value?.value,
                 ) === index,
             );
 
@@ -274,21 +327,29 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
     /**
      * Converts a network rule modifier list to uBlock format, if possible.
      *
-     * @param modifierList Network rule modifier list node to convert
-     * @param isException If `true`, the rule is an exception rule
+     * @param modifierList Network rule modifier list node to convert.
+     * @param isException If `true`, the rule is an exception rule.
+     *
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
      * the converted node, and its `isConverted` flag indicates whether the original node was converted.
-     * If the node was not converted, the result will contain the original node with the same object reference
-     * @throws If the conversion is not possible
+     * If the node was not converted, the result will contain the original node with the same object reference.
+     *
+     * @throws If the conversion is not possible.
      */
     // TODO: Optimize
-    public static convertToUbo(modifierList: ModifierList, isException = false): ConversionResult<ModifierList> {
+    public static convertToUbo(
+        modifierList: ModifierList,
+        isException = false,
+    ): ConversionResult<ModifierList> {
         const conversionMap = new MultiValueMap<number, Modifier>();
         const resourceTypeModifiersToAdd = new Set<string>();
 
         modifierList.children.forEach((modifierNode, index) => {
             const originalModifierName = modifierNode.name.value;
-            const modifierData = modifiersCompatibilityTable.getFirst(originalModifierName, GenericPlatform.UboAny);
+            const modifierData = modifiersCompatibilityTable.getFirst(
+                originalModifierName,
+                GenericPlatform.UboAny,
+            );
 
             // Handle special case: resource redirection modifiers
             if (REDIRECT_MODIFIERS.has(originalModifierName)) {
@@ -342,22 +403,27 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                     // TODO: Optimize this logic
 
                     // Check if the current resource is the noop text resource
-                    const isNoopTextResource = convertedRedirectResourceName === UBO_NOOP_TEXT_RESOURCE;
+                    const isNoopTextResource = convertedRedirectResourceName
+                        === UBO_NOOP_TEXT_RESOURCE;
 
                     // Determine if there are any valid resource types already present
-                    const hasValidResourceType = modifierList.children.some((modifier) => {
-                        const name = modifier.name.value;
-                        if (!isValidResourceType(name)) {
-                            return false;
-                        }
+                    const hasValidResourceType = modifierList.children.some(
+                        (modifier) => {
+                            const name = modifier.name.value;
+                            if (!isValidResourceType(name)) {
+                                return false;
+                            }
 
-                        const convertedModifierData = modifiersCompatibilityTable.getFirst(
-                            name,
-                            GenericPlatform.UboAny,
-                        );
+                            const convertedModifierData = modifiersCompatibilityTable.getFirst(
+                                name,
+                                GenericPlatform.UboAny,
+                            );
 
-                        return uboResourceTypeModifiers.has(convertedModifierData?.name ?? name);
-                    });
+                            return uboResourceTypeModifiers.has(
+                                convertedModifierData?.name ?? name,
+                            );
+                        },
+                    );
 
                     // If it's not the noop text resource or if no valid resource types are present
                     if (!isNoopTextResource || !hasValidResourceType) {
@@ -371,10 +437,8 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                 // If so, add the converted modifier to the list
                 if (
                     modifierName !== originalModifierName
-                    || (
-                        !isUndefined(convertedRedirectResourceName)
-                        && convertedRedirectResourceName !== redirectResourceName
-                    )
+                    || (!isUndefined(convertedRedirectResourceName)
+                        && convertedRedirectResourceName !== redirectResourceName)
                 ) {
                     conversionMap.add(
                         index,
@@ -382,7 +446,8 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                             modifierName,
                             // If the redirect resource name is unknown, fall back to the original one
                             // Later, the validator will throw an error if the resource name is invalid
-                            convertedRedirectResourceName || redirectResourceName,
+                            convertedRedirectResourceName
+                                || redirectResourceName,
                             modifierNode.exception,
                         ),
                     );
@@ -395,7 +460,11 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
             if (modifierData && modifierData.name !== originalModifierName) {
                 conversionMap.add(
                     index,
-                    createModifierNode(modifierData.name, modifierNode.value?.value, modifierNode.exception),
+                    createModifierNode(
+                        modifierData.name,
+                        modifierNode.value?.value,
+                        modifierNode.exception,
+                    ),
                 );
             }
         });
@@ -406,31 +475,37 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
 
             // Replace the original modifiers with the converted ones
             // One modifier may be replaced with multiple modifiers, so we need to flatten the array
-            modifierListClone.children = modifierListClone.children.map((modifierNode, index) => {
-                const conversionRecord = conversionMap.get(index);
+            modifierListClone.children = modifierListClone.children
+                .map((modifierNode, index) => {
+                    const conversionRecord = conversionMap.get(index);
 
-                if (conversionRecord) {
-                    return conversionRecord;
-                }
+                    if (conversionRecord) {
+                        return conversionRecord;
+                    }
 
-                return modifierNode;
-            }).flat();
+                    return modifierNode;
+                })
+                .flat();
 
             // Before returning the result, remove duplicated modifiers
             modifierListClone.children = modifierListClone.children.filter(
                 (modifierNode, index, self) => self.findIndex(
                     (m) => m.name.value === modifierNode.name.value
-                        && m.exception === modifierNode.exception
-                        && m.value?.value === modifierNode.value?.value,
+                            && m.exception === modifierNode.exception
+                            && m.value?.value === modifierNode.value?.value,
                 ) === index,
             );
 
             if (resourceTypeModifiersToAdd.size) {
-                const modifierNameSet = new Set(modifierList.children.map((m) => m.name.value));
+                const modifierNameSet = new Set(
+                    modifierList.children.map((m) => m.name.value),
+                );
 
                 resourceTypeModifiersToAdd.forEach((resourceType) => {
                     if (!modifierNameSet.has(resourceType)) {
-                        modifierListClone.children.push(createModifierNode(resourceType));
+                        modifierListClone.children.push(
+                            createModifierNode(resourceType),
+                        );
                     }
                 });
             }

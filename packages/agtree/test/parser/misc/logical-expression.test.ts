@@ -1,8 +1,12 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
+import {
+    LogicalExpressionGenerator,
+} from '../../../src/generator/misc/logical-expression-generator';
 import { type AnyExpressionNode } from '../../../src/nodes';
-import { LogicalExpressionParser } from '../../../src/parser/misc/logical-expression-parser';
-import { LogicalExpressionGenerator } from '../../../src/generator/misc/logical-expression-generator';
+import {
+    LogicalExpressionParser,
+} from '../../../src/parser/misc/logical-expression-parser';
 
 describe('LogicalExpressionParser', () => {
     // TODO: Refactor to test.each
@@ -327,7 +331,9 @@ describe('LogicalExpressionParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(LogicalExpressionParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                LogicalExpressionParser.parse(actual, { isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -378,29 +384,35 @@ describe('LogicalExpressionParser', () => {
         expect(parseAndGenerate('((a) && ((b)))')).toEqual('((a) && ((b)))');
         expect(parseAndGenerate('((a) && (!(b)))')).toEqual('((a) && (!(b)))');
 
-        expect(parseAndGenerate('((a) || (!(b))) && c')).toEqual('((a) || (!(b))) && c');
-        expect(parseAndGenerate('((!!a) || (!(b))) && ((!!(!!c)))')).toEqual('((!!a) || (!(b))) && ((!!(!!c)))');
+        expect(parseAndGenerate('((a) || (!(b))) && c')).toEqual(
+            '((a) || (!(b))) && c',
+        );
+        expect(parseAndGenerate('((!!a) || (!(b))) && ((!!(!!c)))')).toEqual(
+            '((!!a) || (!(b))) && ((!!(!!c)))',
+        );
 
-        expect(parseAndGenerate(
-            // eslint-disable-next-line max-len
-            '(adguard && !adguard_ext_safari) && (adguard_ext_android || (adguard_ext_chromium && (!adguard_ext_firefox)))',
-        )).toEqual(
+        expect(
+            parseAndGenerate(
+                // eslint-disable-next-line max-len
+                '(adguard && !adguard_ext_safari) && (adguard_ext_android || (adguard_ext_chromium && (!adguard_ext_firefox)))',
+            ),
+        ).toEqual(
             // eslint-disable-next-line max-len
             '(adguard && !adguard_ext_safari) && (adguard_ext_android || (adguard_ext_chromium && (!adguard_ext_firefox)))',
         );
 
-        expect(parseAndGenerate(
-            // eslint-disable-next-line max-len
-            '(((adguard)) && !adguard_ext_safari) && ((adguard_ext_android) || (adguard_ext_chromium && (!adguard_ext_firefox)))',
-        )).toEqual(
+        expect(
+            parseAndGenerate(
+                // eslint-disable-next-line max-len
+                '(((adguard)) && !adguard_ext_safari) && ((adguard_ext_android) || (adguard_ext_chromium && (!adguard_ext_firefox)))',
+            ),
+        ).toEqual(
             // eslint-disable-next-line max-len
             '(((adguard)) && !adguard_ext_safari) && ((adguard_ext_android) || (adguard_ext_chromium && (!adguard_ext_firefox)))',
         );
 
         // Invalid AST
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        expect(() => LogicalExpressionGenerator.generate(<any>{ type: 'Unknown' })).toThrowError(
-            'Unexpected node type',
-        );
+        expect(() => LogicalExpressionGenerator.generate(<any>{ type: 'Unknown' })).toThrowError('Unexpected node type');
     });
 });

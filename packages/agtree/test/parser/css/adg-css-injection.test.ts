@@ -1,29 +1,39 @@
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
+import { sprintf } from 'sprintf-js';
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
-import { sprintf } from 'sprintf-js';
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 
+import { REMOVE_VALUE } from '../../../src/converter/data/css';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import {
-    AdgCssInjectionParser,
-    ERROR_MESSAGES as ADG_CSS_INJ_ERROR_MESSAGES,
-} from '../../../src/parser/css/adg-css-injection-parser';
-import { ERROR_MESSAGES as CSS_TOKEN_STREAM_ERROR_MESSAGES, END_OF_INPUT } from '../../../src/parser/css/constants';
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
+    AdgCssInjectionGenerator,
+} from '../../../src/generator/css/adg-css-injection-generator';
 import { type CssInjectionRuleBody } from '../../../src/nodes';
-import { REMOVE_VALUE } from '../../../src/converter/data/css';
-import { AdgCssInjectionGenerator } from '../../../src/generator/css/adg-css-injection-generator';
+import {
+    ERROR_MESSAGES as ADG_CSS_INJ_ERROR_MESSAGES,
+    AdgCssInjectionParser,
+} from '../../../src/parser/css/adg-css-injection-parser';
+import {
+    ERROR_MESSAGES as CSS_TOKEN_STREAM_ERROR_MESSAGES,
+    END_OF_INPUT,
+} from '../../../src/parser/css/constants';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 
 describe('AdgCssInjectionParser', () => {
     describe('AdgCssInjectionParser.parse - valid', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<CssInjectionRuleBody> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<CssInjectionRuleBody>;
+        }>([
             {
                 actual: 'div { padding: 0; }',
-                expected: (context: NodeExpectContext): CssInjectionRuleBody => {
+                expected: (
+                    context: NodeExpectContext,
+                ): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
                         ...context.getFullRange(),
@@ -42,19 +52,25 @@ describe('AdgCssInjectionParser', () => {
             },
             {
                 actual: 'div:has(> section[advert]) { padding-top: 0 !important; padding-bottom: 0 !important; }',
-                expected: (context: NodeExpectContext): CssInjectionRuleBody => {
+                expected: (
+                    context: NodeExpectContext,
+                ): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
                         ...context.getFullRange(),
                         selectorList: {
                             type: 'Value',
                             value: 'div:has(> section[advert])',
-                            ...context.getRangeFor('div:has(> section[advert])'),
+                            ...context.getRangeFor(
+                                'div:has(> section[advert])',
+                            ),
                         },
                         declarationList: {
                             type: 'Value',
                             value: 'padding-top: 0 !important; padding-bottom: 0 !important;',
-                            ...context.getRangeFor('padding-top: 0 !important; padding-bottom: 0 !important;'),
+                            ...context.getRangeFor(
+                                'padding-top: 0 !important; padding-bottom: 0 !important;',
+                            ),
                         },
                     };
                 },
@@ -63,24 +79,32 @@ describe('AdgCssInjectionParser', () => {
             {
                 // eslint-disable-next-line max-len
                 actual: '@media ((min-width: 400px) and (max-width: 700px)) { div:has(> section[advert]) { padding-top: 0 !important; padding-bottom: 0 !important; } }',
-                expected: (context: NodeExpectContext): CssInjectionRuleBody => {
+                expected: (
+                    context: NodeExpectContext,
+                ): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
                         ...context.getFullRange(),
                         mediaQueryList: {
                             type: 'Value',
                             value: '((min-width: 400px) and (max-width: 700px))',
-                            ...context.getRangeFor('((min-width: 400px) and (max-width: 700px))'),
+                            ...context.getRangeFor(
+                                '((min-width: 400px) and (max-width: 700px))',
+                            ),
                         },
                         selectorList: {
                             type: 'Value',
                             value: 'div:has(> section[advert])',
-                            ...context.getRangeFor('div:has(> section[advert])'),
+                            ...context.getRangeFor(
+                                'div:has(> section[advert])',
+                            ),
                         },
                         declarationList: {
                             type: 'Value',
                             value: 'padding-top: 0 !important; padding-bottom: 0 !important;',
-                            ...context.getRangeFor('padding-top: 0 !important; padding-bottom: 0 !important;'),
+                            ...context.getRangeFor(
+                                'padding-top: 0 !important; padding-bottom: 0 !important;',
+                            ),
                         },
                     };
                 },
@@ -88,24 +112,32 @@ describe('AdgCssInjectionParser', () => {
             {
                 // eslint-disable-next-line max-len
                 actual: '@media (min-width: 400px) and (max-width: 700px) { div:has(> section[advert]) { padding-top: 0 !important; padding-bottom: 0 !important; } }',
-                expected: (context: NodeExpectContext): CssInjectionRuleBody => {
+                expected: (
+                    context: NodeExpectContext,
+                ): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
                         ...context.getFullRange(),
                         mediaQueryList: {
                             type: 'Value',
                             value: '(min-width: 400px) and (max-width: 700px)',
-                            ...context.getRangeFor('(min-width: 400px) and (max-width: 700px)'),
+                            ...context.getRangeFor(
+                                '(min-width: 400px) and (max-width: 700px)',
+                            ),
                         },
                         selectorList: {
                             type: 'Value',
                             value: 'div:has(> section[advert])',
-                            ...context.getRangeFor('div:has(> section[advert])'),
+                            ...context.getRangeFor(
+                                'div:has(> section[advert])',
+                            ),
                         },
                         declarationList: {
                             type: 'Value',
                             value: 'padding-top: 0 !important; padding-bottom: 0 !important;',
-                            ...context.getRangeFor('padding-top: 0 !important; padding-bottom: 0 !important;'),
+                            ...context.getRangeFor(
+                                'padding-top: 0 !important; padding-bottom: 0 !important;',
+                            ),
                         },
                     };
                 },
@@ -114,14 +146,18 @@ describe('AdgCssInjectionParser', () => {
             {
                 // eslint-disable-next-line max-len
                 actual: "@media not all and (hover: hover) { abbr::after { content: 'dummy'; } }",
-                expected: (context: NodeExpectContext): CssInjectionRuleBody => {
+                expected: (
+                    context: NodeExpectContext,
+                ): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
                         ...context.getFullRange(),
                         mediaQueryList: {
                             type: 'Value',
                             value: 'not all and (hover: hover)',
-                            ...context.getRangeFor('not all and (hover: hover)'),
+                            ...context.getRangeFor(
+                                'not all and (hover: hover)',
+                            ),
                         },
                         selectorList: {
                             type: 'Value',
@@ -139,7 +175,9 @@ describe('AdgCssInjectionParser', () => {
             // remove
             {
                 actual: 'div { remove: true; }',
-                expected: (context: NodeExpectContext): CssInjectionRuleBody => {
+                expected: (
+                    context: NodeExpectContext,
+                ): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
                         ...context.getFullRange(),
@@ -158,7 +196,9 @@ describe('AdgCssInjectionParser', () => {
                 },
             },
         ])("should parse input: '$actual'", ({ actual, expected }) => {
-            expect(AdgCssInjectionParser.parse(actual)).toMatchObject(expected(new NodeExpectContext(actual)));
+            expect(AdgCssInjectionParser.parse(actual)).toMatchObject(
+                expected(new NodeExpectContext(actual)),
+            );
         });
     });
 
@@ -180,12 +220,17 @@ describe('AdgCssInjectionParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(AdgCssInjectionParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                AdgCssInjectionParser.parse(actual, { isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
     describe('AdgCssInjectionParser.parse - invalid', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<AdblockSyntaxError>;
+        }>([
             // media query / selector / declaration list is empty
             {
                 actual: '{ padding: 0; }',
@@ -203,7 +248,9 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ADG_CSS_INJ_ERROR_MESSAGES.SELECTOR_LIST_IS_EMPTY,
-                        ...context.toTuple(context.getRangeFor('{ padding: 0; }')),
+                        ...context.toTuple(
+                            context.getRangeFor('{ padding: 0; }'),
+                        ),
                     );
                 },
             },
@@ -213,7 +260,9 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ADG_CSS_INJ_ERROR_MESSAGES.SELECTOR_LIST_IS_EMPTY,
-                        ...context.toTuple(context.getRangeFor('{ padding: 0; }')),
+                        ...context.toTuple(
+                            context.getRangeFor('{ padding: 0; }'),
+                        ),
                     );
                 },
             },
@@ -348,21 +397,24 @@ describe('AdgCssInjectionParser', () => {
                     );
                 },
             },
-        ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = vi.fn(() => AdgCssInjectionParser.parse(actual));
+        ])(
+            "should throw on input: '$actual'",
+            ({ actual, expected: expectedFn }) => {
+                const fn = vi.fn(() => AdgCssInjectionParser.parse(actual));
 
-            // parse should throw
-            expect(fn).toThrow();
+                // parse should throw
+                expect(fn).toThrow();
 
-            const expected = expectedFn(new NodeExpectContext(actual));
+                const expected = expectedFn(new NodeExpectContext(actual));
 
-            // check the thrown error
-            const error = fn.mock.results[0].value;
-            expect(error).toBeInstanceOf(AdblockSyntaxError);
-            expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('start', expected.start);
-            expect(error).toHaveProperty('end', expected.end);
-        });
+                // check the thrown error
+                const error = fn.mock.results[0].value;
+                expect(error).toBeInstanceOf(AdblockSyntaxError);
+                expect(error).toHaveProperty('message', expected.message);
+                expect(error).toHaveProperty('start', expected.start);
+                expect(error).toHaveProperty('end', expected.end);
+            },
+        );
     });
 
     describe('AdgCssInjectionParser.generate', () => {
@@ -380,10 +432,15 @@ describe('AdgCssInjectionParser', () => {
                 // eslint-disable-next-line max-len
                 actual: '@media ((min-width: 400px) and (max-width: 700px)) { div:has(> section[advert]) { padding-top: 0 !important; padding-bottom: 0 !important; } }',
                 // eslint-disable-next-line max-len
-                expected: '@media ((min-width: 400px) and (max-width: 700px)) { div:has(> section[advert]) { padding-top: 0 !important; padding-bottom: 0 !important; } }',
+                expected:
+                    '@media ((min-width: 400px) and (max-width: 700px)) { div:has(> section[advert]) { padding-top: 0 !important; padding-bottom: 0 !important; } }',
             },
-        ])('should generate input: \'$actual\'', ({ actual, expected }) => {
-            expect(AdgCssInjectionGenerator.generate(AdgCssInjectionParser.parse(actual))).toBe(expected);
+        ])("should generate input: '$actual'", ({ actual, expected }) => {
+            expect(
+                AdgCssInjectionGenerator.generate(
+                    AdgCssInjectionParser.parse(actual),
+                ),
+            ).toBe(expected);
         });
     });
 });

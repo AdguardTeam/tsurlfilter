@@ -1,12 +1,13 @@
 import { type ComplexSelector } from '../../../nodes';
 import { EMPTY } from '../../../utils/constants';
 import { BaseGenerator } from '../../base-generator';
-import { TypeSelectorGenerator } from './type-selector-generator';
-import { IdSelectorGenerator } from './id-selector-generator';
-import { ClassSelectorGenerator } from './class-selector-generator';
+
 import { AttributeSelectorGenerator } from './attribute-selector-generator';
+import { ClassSelectorGenerator } from './class-selector-generator';
+import { IdSelectorGenerator } from './id-selector-generator';
 import { PseudoClassSelectorGenerator } from './pseudo-class-selector-generator';
 import { SelectorCombinatorGenerator } from './selector-combinator-generator';
+import { TypeSelectorGenerator } from './type-selector-generator';
 
 /**
  * Complex selector generator.
@@ -33,7 +34,8 @@ export class ComplexSelectorGenerator extends BaseGenerator {
 
             // Validate that compound selectors are not empty
             if (
-                (i === 0 || node.children[i - 1].type === 'SelectorCombinator')
+                (i === 0
+                    || node.children[i - 1].type === 'SelectorCombinator')
                 && type === 'SelectorCombinator'
             ) {
                 throw new Error('Empty compound selector found');

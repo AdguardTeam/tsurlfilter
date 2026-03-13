@@ -1,6 +1,7 @@
-import { BaseGenerator } from './base-generator';
 import { type AnyRule, NetworkRuleType, RuleCategory } from '../nodes';
 import { EMPTY } from '../utils/constants';
+
+import { BaseGenerator } from './base-generator';
 import { CommentRuleGenerator } from './comment';
 import { CosmeticRuleGenerator } from './cosmetic';
 import { HostRuleGenerator, NetworkRuleGenerator } from './network';
@@ -12,8 +13,10 @@ export class RuleGenerator extends BaseGenerator {
     /**
      * Converts a rule AST to a string.
      *
-     * @param ast - Adblock rule AST
-     * @returns Raw string
+     * @param ast Adblock rule AST.
+     *
+     * @returns Raw string.
+     *
      * @example
      * Take a look at the following example:
      * ```js

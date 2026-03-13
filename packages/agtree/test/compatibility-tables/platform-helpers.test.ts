@@ -1,34 +1,46 @@
 /* eslint-disable no-bitwise */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
-    isGenericPlatform,
-    hasPlatformMultipleProducts,
-    platformToAdblockProduct,
+    type AnyPlatform,
+    GenericPlatform,
+    SpecificPlatform,
+} from '../../src/compatibility-tables/platforms';
+import {
+    getAllPlatformNames,
+    getHumanReadablePlatformName,
+    getPlatformId,
     getPlatformsByProduct,
     getProductGenericPlatforms,
     getProductSpecificPlatforms,
-    getPlatformId,
     getSpecificPlatformName,
-    getHumanReadablePlatformName,
-    getAllPlatformNames,
+    hasPlatformMultipleProducts,
+    isGenericPlatform,
+    platformToAdblockProduct,
 } from '../../src/compatibility-tables/utils/platform-helpers';
-import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms';
 import { AdblockProduct } from '../../src/utils/adblockers';
 
 describe('Platform Helpers', () => {
     describe('isGenericPlatform', () => {
         it('should return false for specific platforms', () => {
-            expect(isGenericPlatform(SpecificPlatform.AdgOsWindows)).toBe(false);
-            expect(isGenericPlatform(SpecificPlatform.AdgExtChrome)).toBe(false);
-            expect(isGenericPlatform(SpecificPlatform.UboExtFirefox)).toBe(false);
+            expect(isGenericPlatform(SpecificPlatform.AdgOsWindows)).toBe(
+                false,
+            );
+            expect(isGenericPlatform(SpecificPlatform.AdgExtChrome)).toBe(
+                false,
+            );
+            expect(isGenericPlatform(SpecificPlatform.UboExtFirefox)).toBe(
+                false,
+            );
             expect(isGenericPlatform(SpecificPlatform.AbpExtEdge)).toBe(false);
             expect(isGenericPlatform(SpecificPlatform.AdgCbSafari)).toBe(false);
         });
 
         it('should return true for generic platforms', () => {
             expect(isGenericPlatform(GenericPlatform.AdgOsAny)).toBe(true);
-            expect(isGenericPlatform(GenericPlatform.AdgExtChromium)).toBe(true);
+            expect(isGenericPlatform(GenericPlatform.AdgExtChromium)).toBe(
+                true,
+            );
             expect(isGenericPlatform(GenericPlatform.AdgExtAny)).toBe(true);
             expect(isGenericPlatform(GenericPlatform.AdgAny)).toBe(true);
             expect(isGenericPlatform(GenericPlatform.UboExtAny)).toBe(true);
@@ -39,9 +51,12 @@ describe('Platform Helpers', () => {
         });
 
         it('should return true for combinations of platforms', () => {
-            const combined1 = (SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgOsMac) as AnyPlatform;
-            const combined2 = (SpecificPlatform.AdgExtChrome | SpecificPlatform.UboExtChrome) as AnyPlatform;
-            const combined3 = (GenericPlatform.AdgAny | GenericPlatform.UboAny) as AnyPlatform;
+            const combined1 = (SpecificPlatform.AdgOsWindows
+                | SpecificPlatform.AdgOsMac) as AnyPlatform;
+            const combined2 = (SpecificPlatform.AdgExtChrome
+                | SpecificPlatform.UboExtChrome) as AnyPlatform;
+            const combined3 = (GenericPlatform.AdgAny
+                | GenericPlatform.UboAny) as AnyPlatform;
             expect(isGenericPlatform(combined1)).toBe(true);
             expect(isGenericPlatform(combined2)).toBe(true);
             expect(isGenericPlatform(combined3)).toBe(true);
@@ -50,66 +65,105 @@ describe('Platform Helpers', () => {
 
     describe('hasPlatformMultipleProducts', () => {
         it('should return false for single AdGuard platforms', () => {
-            expect(hasPlatformMultipleProducts(SpecificPlatform.AdgOsWindows)).toBe(false);
-            expect(hasPlatformMultipleProducts(SpecificPlatform.AdgExtChrome)).toBe(false);
-            expect(hasPlatformMultipleProducts(GenericPlatform.AdgOsAny)).toBe(false);
-            expect(hasPlatformMultipleProducts(GenericPlatform.AdgExtChromium)).toBe(false);
-            expect(hasPlatformMultipleProducts(GenericPlatform.AdgExtAny)).toBe(false);
-            expect(hasPlatformMultipleProducts(GenericPlatform.AdgAny)).toBe(false);
+            expect(
+                hasPlatformMultipleProducts(SpecificPlatform.AdgOsWindows),
+            ).toBe(false);
+            expect(
+                hasPlatformMultipleProducts(SpecificPlatform.AdgExtChrome),
+            ).toBe(false);
+            expect(hasPlatformMultipleProducts(GenericPlatform.AdgOsAny)).toBe(
+                false,
+            );
+            expect(
+                hasPlatformMultipleProducts(GenericPlatform.AdgExtChromium),
+            ).toBe(false);
+            expect(hasPlatformMultipleProducts(GenericPlatform.AdgExtAny)).toBe(
+                false,
+            );
+            expect(hasPlatformMultipleProducts(GenericPlatform.AdgAny)).toBe(
+                false,
+            );
         });
 
         it('should return false for single uBlock Origin platforms', () => {
-            expect(hasPlatformMultipleProducts(SpecificPlatform.UboExtChrome)).toBe(false);
-            expect(hasPlatformMultipleProducts(SpecificPlatform.UboExtFirefox)).toBe(false);
-            expect(hasPlatformMultipleProducts(GenericPlatform.UboExtChromium)).toBe(false);
-            expect(hasPlatformMultipleProducts(GenericPlatform.UboExtAny)).toBe(false);
-            expect(hasPlatformMultipleProducts(GenericPlatform.UboAny)).toBe(false);
+            expect(
+                hasPlatformMultipleProducts(SpecificPlatform.UboExtChrome),
+            ).toBe(false);
+            expect(
+                hasPlatformMultipleProducts(SpecificPlatform.UboExtFirefox),
+            ).toBe(false);
+            expect(
+                hasPlatformMultipleProducts(GenericPlatform.UboExtChromium),
+            ).toBe(false);
+            expect(hasPlatformMultipleProducts(GenericPlatform.UboExtAny)).toBe(
+                false,
+            );
+            expect(hasPlatformMultipleProducts(GenericPlatform.UboAny)).toBe(
+                false,
+            );
         });
 
         it('should return false for single Adblock Plus platforms', () => {
-            expect(hasPlatformMultipleProducts(SpecificPlatform.AbpExtChrome)).toBe(false);
-            expect(hasPlatformMultipleProducts(SpecificPlatform.AbpExtEdge)).toBe(false);
-            expect(hasPlatformMultipleProducts(GenericPlatform.AbpExtChromium)).toBe(false);
-            expect(hasPlatformMultipleProducts(GenericPlatform.AbpExtAny)).toBe(false);
-            expect(hasPlatformMultipleProducts(GenericPlatform.AbpAny)).toBe(false);
+            expect(
+                hasPlatformMultipleProducts(SpecificPlatform.AbpExtChrome),
+            ).toBe(false);
+            expect(
+                hasPlatformMultipleProducts(SpecificPlatform.AbpExtEdge),
+            ).toBe(false);
+            expect(
+                hasPlatformMultipleProducts(GenericPlatform.AbpExtChromium),
+            ).toBe(false);
+            expect(hasPlatformMultipleProducts(GenericPlatform.AbpExtAny)).toBe(
+                false,
+            );
+            expect(hasPlatformMultipleProducts(GenericPlatform.AbpAny)).toBe(
+                false,
+            );
         });
 
         it('should return true for AdGuard + uBlock Origin', () => {
-            const adgUbo1 = (GenericPlatform.AdgAny | GenericPlatform.UboAny) as AnyPlatform;
-            const adgUbo2 = (SpecificPlatform.AdgExtChrome | SpecificPlatform.UboExtChrome) as AnyPlatform;
-            const adgUbo3 = (GenericPlatform.AdgOsAny | GenericPlatform.UboExtAny) as AnyPlatform;
+            const adgUbo1 = (GenericPlatform.AdgAny
+                | GenericPlatform.UboAny) as AnyPlatform;
+            const adgUbo2 = (SpecificPlatform.AdgExtChrome
+                | SpecificPlatform.UboExtChrome) as AnyPlatform;
+            const adgUbo3 = (GenericPlatform.AdgOsAny
+                | GenericPlatform.UboExtAny) as AnyPlatform;
             expect(hasPlatformMultipleProducts(adgUbo1)).toBe(true);
             expect(hasPlatformMultipleProducts(adgUbo2)).toBe(true);
             expect(hasPlatformMultipleProducts(adgUbo3)).toBe(true);
         });
 
         it('should return true for AdGuard + Adblock Plus', () => {
-            const adgAbp1 = (GenericPlatform.AdgAny | GenericPlatform.AbpAny) as AnyPlatform;
-            const adgAbp2 = (SpecificPlatform.AdgExtChrome | SpecificPlatform.AbpExtChrome) as AnyPlatform;
-            const adgAbp3 = (GenericPlatform.AdgExtAny | GenericPlatform.AbpExtAny) as AnyPlatform;
+            const adgAbp1 = (GenericPlatform.AdgAny
+                | GenericPlatform.AbpAny) as AnyPlatform;
+            const adgAbp2 = (SpecificPlatform.AdgExtChrome
+                | SpecificPlatform.AbpExtChrome) as AnyPlatform;
+            const adgAbp3 = (GenericPlatform.AdgExtAny
+                | GenericPlatform.AbpExtAny) as AnyPlatform;
             expect(hasPlatformMultipleProducts(adgAbp1)).toBe(true);
             expect(hasPlatformMultipleProducts(adgAbp2)).toBe(true);
             expect(hasPlatformMultipleProducts(adgAbp3)).toBe(true);
         });
 
         it('should return true for uBlock Origin + Adblock Plus', () => {
-            const uboAbp1 = (GenericPlatform.UboAny | GenericPlatform.AbpAny) as AnyPlatform;
-            const uboAbp2 = (SpecificPlatform.UboExtChrome | SpecificPlatform.AbpExtChrome) as AnyPlatform;
-            const uboAbp3 = (GenericPlatform.UboExtAny | GenericPlatform.AbpExtChromium) as AnyPlatform;
+            const uboAbp1 = (GenericPlatform.UboAny
+                | GenericPlatform.AbpAny) as AnyPlatform;
+            const uboAbp2 = (SpecificPlatform.UboExtChrome
+                | SpecificPlatform.AbpExtChrome) as AnyPlatform;
+            const uboAbp3 = (GenericPlatform.UboExtAny
+                | GenericPlatform.AbpExtChromium) as AnyPlatform;
             expect(hasPlatformMultipleProducts(uboAbp1)).toBe(true);
             expect(hasPlatformMultipleProducts(uboAbp2)).toBe(true);
             expect(hasPlatformMultipleProducts(uboAbp3)).toBe(true);
         });
 
         it('should return true for all three products', () => {
-            const allProducts1 = (
-                GenericPlatform.AdgAny | GenericPlatform.UboAny | GenericPlatform.AbpAny
-            ) as AnyPlatform;
-            const allProducts2 = (
-                SpecificPlatform.AdgExtChrome
+            const allProducts1 = (GenericPlatform.AdgAny
+                | GenericPlatform.UboAny
+                | GenericPlatform.AbpAny) as AnyPlatform;
+            const allProducts2 = (SpecificPlatform.AdgExtChrome
                 | SpecificPlatform.UboExtChrome
-                | SpecificPlatform.AbpExtChrome
-            ) as AnyPlatform;
+                | SpecificPlatform.AbpExtChrome) as AnyPlatform;
             expect(hasPlatformMultipleProducts(allProducts1)).toBe(true);
             expect(hasPlatformMultipleProducts(allProducts2)).toBe(true);
         });
@@ -119,9 +173,12 @@ describe('Platform Helpers', () => {
         });
 
         it('should return false for combinations within the same product', () => {
-            const sameProduct1 = (SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgExtChrome) as AnyPlatform;
-            const sameProduct2 = (SpecificPlatform.UboExtChrome | SpecificPlatform.UboExtFirefox) as AnyPlatform;
-            const sameProduct3 = (SpecificPlatform.AbpExtChrome | SpecificPlatform.AbpExtEdge) as AnyPlatform;
+            const sameProduct1 = (SpecificPlatform.AdgOsWindows
+                | SpecificPlatform.AdgExtChrome) as AnyPlatform;
+            const sameProduct2 = (SpecificPlatform.UboExtChrome
+                | SpecificPlatform.UboExtFirefox) as AnyPlatform;
+            const sameProduct3 = (SpecificPlatform.AbpExtChrome
+                | SpecificPlatform.AbpExtEdge) as AnyPlatform;
             expect(hasPlatformMultipleProducts(sameProduct1)).toBe(false);
             expect(hasPlatformMultipleProducts(sameProduct2)).toBe(false);
             expect(hasPlatformMultipleProducts(sameProduct3)).toBe(false);
@@ -131,96 +188,177 @@ describe('Platform Helpers', () => {
     describe('platformToAdblockProduct', () => {
         describe('AdGuard platforms', () => {
             it('should return AdGuard for specific AdGuard platforms', () => {
-                expect(platformToAdblockProduct(SpecificPlatform.AdgOsWindows)).toEqual([AdblockProduct.Adg]);
-                expect(platformToAdblockProduct(SpecificPlatform.AdgOsMac)).toEqual([AdblockProduct.Adg]);
-                expect(platformToAdblockProduct(SpecificPlatform.AdgOsAndroid)).toEqual([AdblockProduct.Adg]);
-                expect(platformToAdblockProduct(SpecificPlatform.AdgExtChrome)).toEqual([AdblockProduct.Adg]);
-                expect(platformToAdblockProduct(SpecificPlatform.AdgExtFirefox)).toEqual([AdblockProduct.Adg]);
-                expect(platformToAdblockProduct(SpecificPlatform.AdgCbSafari)).toEqual([AdblockProduct.Adg]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.AdgOsWindows),
+                ).toEqual([AdblockProduct.Adg]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.AdgOsMac),
+                ).toEqual([AdblockProduct.Adg]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.AdgOsAndroid),
+                ).toEqual([AdblockProduct.Adg]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.AdgExtChrome),
+                ).toEqual([AdblockProduct.Adg]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.AdgExtFirefox),
+                ).toEqual([AdblockProduct.Adg]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.AdgCbSafari),
+                ).toEqual([AdblockProduct.Adg]);
             });
 
             it('should return AdGuard for generic AdGuard platforms', () => {
-                expect(platformToAdblockProduct(GenericPlatform.AdgOsAny)).toEqual([AdblockProduct.Adg]);
-                expect(platformToAdblockProduct(GenericPlatform.AdgSafariAny)).toEqual([AdblockProduct.Adg]);
-                expect(platformToAdblockProduct(GenericPlatform.AdgExtChromium)).toEqual([AdblockProduct.Adg]);
-                expect(platformToAdblockProduct(GenericPlatform.AdgExtAny)).toEqual([AdblockProduct.Adg]);
-                expect(platformToAdblockProduct(GenericPlatform.AdgAny)).toEqual([AdblockProduct.Adg]);
+                expect(
+                    platformToAdblockProduct(GenericPlatform.AdgOsAny),
+                ).toEqual([AdblockProduct.Adg]);
+                expect(
+                    platformToAdblockProduct(GenericPlatform.AdgSafariAny),
+                ).toEqual([AdblockProduct.Adg]);
+                expect(
+                    platformToAdblockProduct(GenericPlatform.AdgExtChromium),
+                ).toEqual([AdblockProduct.Adg]);
+                expect(
+                    platformToAdblockProduct(GenericPlatform.AdgExtAny),
+                ).toEqual([AdblockProduct.Adg]);
+                expect(
+                    platformToAdblockProduct(GenericPlatform.AdgAny),
+                ).toEqual([AdblockProduct.Adg]);
             });
 
             it('should return AdGuard for combinations of AdGuard platforms', () => {
-                const combined = (SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgExtChrome) as AnyPlatform;
-                expect(platformToAdblockProduct(combined)).toEqual([AdblockProduct.Adg]);
+                const combined = (SpecificPlatform.AdgOsWindows
+                    | SpecificPlatform.AdgExtChrome) as AnyPlatform;
+                expect(platformToAdblockProduct(combined)).toEqual([
+                    AdblockProduct.Adg,
+                ]);
             });
         });
 
         describe('uBlock Origin platforms', () => {
             it('should return UblockOrigin for specific uBlock Origin platforms', () => {
-                expect(platformToAdblockProduct(SpecificPlatform.UboExtChrome)).toEqual([AdblockProduct.Ubo]);
-                expect(platformToAdblockProduct(SpecificPlatform.UboExtOpera)).toEqual([AdblockProduct.Ubo]);
-                expect(platformToAdblockProduct(SpecificPlatform.UboExtEdge)).toEqual([AdblockProduct.Ubo]);
-                expect(platformToAdblockProduct(SpecificPlatform.UboExtFirefox)).toEqual([AdblockProduct.Ubo]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.UboExtChrome),
+                ).toEqual([AdblockProduct.Ubo]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.UboExtOpera),
+                ).toEqual([AdblockProduct.Ubo]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.UboExtEdge),
+                ).toEqual([AdblockProduct.Ubo]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.UboExtFirefox),
+                ).toEqual([AdblockProduct.Ubo]);
             });
 
             it('should return UblockOrigin for generic uBlock Origin platforms', () => {
-                expect(platformToAdblockProduct(GenericPlatform.UboExtChromium)).toEqual([AdblockProduct.Ubo]);
-                expect(platformToAdblockProduct(GenericPlatform.UboExtAny)).toEqual([AdblockProduct.Ubo]);
-                expect(platformToAdblockProduct(GenericPlatform.UboAny)).toEqual([AdblockProduct.Ubo]);
+                expect(
+                    platformToAdblockProduct(GenericPlatform.UboExtChromium),
+                ).toEqual([AdblockProduct.Ubo]);
+                expect(
+                    platformToAdblockProduct(GenericPlatform.UboExtAny),
+                ).toEqual([AdblockProduct.Ubo]);
+                expect(
+                    platformToAdblockProduct(GenericPlatform.UboAny),
+                ).toEqual([AdblockProduct.Ubo]);
             });
 
             it('should return UblockOrigin for combinations of uBlock Origin platforms', () => {
-                const combined = (SpecificPlatform.UboExtChrome | SpecificPlatform.UboExtFirefox) as AnyPlatform;
-                expect(platformToAdblockProduct(combined)).toEqual([AdblockProduct.Ubo]);
+                const combined = (SpecificPlatform.UboExtChrome
+                    | SpecificPlatform.UboExtFirefox) as AnyPlatform;
+                expect(platformToAdblockProduct(combined)).toEqual([
+                    AdblockProduct.Ubo,
+                ]);
             });
         });
 
         describe('Adblock Plus platforms', () => {
             it('should return AdblockPlus for specific Adblock Plus platforms', () => {
-                expect(platformToAdblockProduct(SpecificPlatform.AbpExtChrome)).toEqual([AdblockProduct.Abp]);
-                expect(platformToAdblockProduct(SpecificPlatform.AbpExtOpera)).toEqual([AdblockProduct.Abp]);
-                expect(platformToAdblockProduct(SpecificPlatform.AbpExtEdge)).toEqual([AdblockProduct.Abp]);
-                expect(platformToAdblockProduct(SpecificPlatform.AbpExtFirefox)).toEqual([AdblockProduct.Abp]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.AbpExtChrome),
+                ).toEqual([AdblockProduct.Abp]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.AbpExtOpera),
+                ).toEqual([AdblockProduct.Abp]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.AbpExtEdge),
+                ).toEqual([AdblockProduct.Abp]);
+                expect(
+                    platformToAdblockProduct(SpecificPlatform.AbpExtFirefox),
+                ).toEqual([AdblockProduct.Abp]);
             });
 
             it('should return AdblockPlus for generic Adblock Plus platforms', () => {
-                expect(platformToAdblockProduct(GenericPlatform.AbpExtChromium)).toEqual([AdblockProduct.Abp]);
-                expect(platformToAdblockProduct(GenericPlatform.AbpExtAny)).toEqual([AdblockProduct.Abp]);
-                expect(platformToAdblockProduct(GenericPlatform.AbpAny)).toEqual([AdblockProduct.Abp]);
+                expect(
+                    platformToAdblockProduct(GenericPlatform.AbpExtChromium),
+                ).toEqual([AdblockProduct.Abp]);
+                expect(
+                    platformToAdblockProduct(GenericPlatform.AbpExtAny),
+                ).toEqual([AdblockProduct.Abp]);
+                expect(
+                    platformToAdblockProduct(GenericPlatform.AbpAny),
+                ).toEqual([AdblockProduct.Abp]);
             });
 
             it('should return AdblockPlus for combinations of Adblock Plus platforms', () => {
-                const combined = (SpecificPlatform.AbpExtChrome | SpecificPlatform.AbpExtEdge) as AnyPlatform;
-                expect(platformToAdblockProduct(combined)).toEqual([AdblockProduct.Abp]);
+                const combined = (SpecificPlatform.AbpExtChrome
+                    | SpecificPlatform.AbpExtEdge) as AnyPlatform;
+                expect(platformToAdblockProduct(combined)).toEqual([
+                    AdblockProduct.Abp,
+                ]);
             });
         });
 
         describe('Multiple products', () => {
             it('should return array with AdGuard and UblockOrigin', () => {
-                const adgUbo1 = (GenericPlatform.AdgAny | GenericPlatform.UboAny) as AnyPlatform;
-                const adgUbo2 = (SpecificPlatform.AdgExtChrome | SpecificPlatform.UboExtChrome) as AnyPlatform;
-                expect(platformToAdblockProduct(adgUbo1)).toEqual([AdblockProduct.Adg, AdblockProduct.Ubo]);
-                expect(platformToAdblockProduct(adgUbo2)).toEqual([AdblockProduct.Adg, AdblockProduct.Ubo]);
+                const adgUbo1 = (GenericPlatform.AdgAny
+                    | GenericPlatform.UboAny) as AnyPlatform;
+                const adgUbo2 = (SpecificPlatform.AdgExtChrome
+                    | SpecificPlatform.UboExtChrome) as AnyPlatform;
+                expect(platformToAdblockProduct(adgUbo1)).toEqual([
+                    AdblockProduct.Adg,
+                    AdblockProduct.Ubo,
+                ]);
+                expect(platformToAdblockProduct(adgUbo2)).toEqual([
+                    AdblockProduct.Adg,
+                    AdblockProduct.Ubo,
+                ]);
             });
 
             it('should return array with AdGuard and AdblockPlus', () => {
-                const adgAbp1 = (GenericPlatform.AdgAny | GenericPlatform.AbpAny) as AnyPlatform;
-                const adgAbp2 = (SpecificPlatform.AdgExtChrome | SpecificPlatform.AbpExtChrome) as AnyPlatform;
-                expect(platformToAdblockProduct(adgAbp1)).toEqual([AdblockProduct.Adg, AdblockProduct.Abp]);
-                expect(platformToAdblockProduct(adgAbp2)).toEqual([AdblockProduct.Adg, AdblockProduct.Abp]);
+                const adgAbp1 = (GenericPlatform.AdgAny
+                    | GenericPlatform.AbpAny) as AnyPlatform;
+                const adgAbp2 = (SpecificPlatform.AdgExtChrome
+                    | SpecificPlatform.AbpExtChrome) as AnyPlatform;
+                expect(platformToAdblockProduct(adgAbp1)).toEqual([
+                    AdblockProduct.Adg,
+                    AdblockProduct.Abp,
+                ]);
+                expect(platformToAdblockProduct(adgAbp2)).toEqual([
+                    AdblockProduct.Adg,
+                    AdblockProduct.Abp,
+                ]);
             });
 
             it('should return array with UblockOrigin and AdblockPlus', () => {
-                const uboAbp1 = (GenericPlatform.UboAny | GenericPlatform.AbpAny) as AnyPlatform;
-                const uboAbp2 = (SpecificPlatform.UboExtChrome | SpecificPlatform.AbpExtChrome) as AnyPlatform;
-                expect(platformToAdblockProduct(uboAbp1)).toEqual([AdblockProduct.Ubo, AdblockProduct.Abp]);
-                expect(platformToAdblockProduct(uboAbp2)).toEqual([AdblockProduct.Ubo, AdblockProduct.Abp]);
+                const uboAbp1 = (GenericPlatform.UboAny
+                    | GenericPlatform.AbpAny) as AnyPlatform;
+                const uboAbp2 = (SpecificPlatform.UboExtChrome
+                    | SpecificPlatform.AbpExtChrome) as AnyPlatform;
+                expect(platformToAdblockProduct(uboAbp1)).toEqual([
+                    AdblockProduct.Ubo,
+                    AdblockProduct.Abp,
+                ]);
+                expect(platformToAdblockProduct(uboAbp2)).toEqual([
+                    AdblockProduct.Ubo,
+                    AdblockProduct.Abp,
+                ]);
             });
 
             it('should return array with all three products', () => {
-                const allProducts = (
-                    GenericPlatform.AdgAny
+                const allProducts = (GenericPlatform.AdgAny
                     | GenericPlatform.UboAny
-                    | GenericPlatform.AbpAny
-                ) as AnyPlatform;
+                    | GenericPlatform.AbpAny) as AnyPlatform;
                 expect(platformToAdblockProduct(allProducts)).toEqual([
                     AdblockProduct.Adg,
                     AdblockProduct.Ubo,
@@ -248,60 +386,98 @@ describe('Platform Helpers', () => {
         it('should return object with AdGuard key for AdGuard-only platform', () => {
             const result = getPlatformsByProduct(GenericPlatform.AdgAny);
             expect(Object.keys(result)).toEqual([AdblockProduct.Adg]);
-            expect(result[AdblockProduct.Adg]).toEqual([GenericPlatform.AdgAny]);
+            expect(result[AdblockProduct.Adg]).toEqual([
+                GenericPlatform.AdgAny,
+            ]);
         });
 
         it('should return object with UblockOrigin key for uBlock Origin-only platform', () => {
             const result = getPlatformsByProduct(GenericPlatform.UboAny);
             expect(Object.keys(result)).toEqual([AdblockProduct.Ubo]);
-            expect(result[AdblockProduct.Ubo]).toEqual([GenericPlatform.UboAny]);
+            expect(result[AdblockProduct.Ubo]).toEqual([
+                GenericPlatform.UboAny,
+            ]);
         });
 
         it('should return object with AdblockPlus key for Adblock Plus-only platform', () => {
             const result = getPlatformsByProduct(GenericPlatform.AbpAny);
             expect(Object.keys(result)).toEqual([AdblockProduct.Abp]);
-            expect(result[AdblockProduct.Abp]).toEqual([GenericPlatform.AbpAny]);
+            expect(result[AdblockProduct.Abp]).toEqual([
+                GenericPlatform.AbpAny,
+            ]);
         });
 
         it('should split AdGuard + uBlock Origin into two product keys', () => {
-            const combined = (GenericPlatform.AdgAny | GenericPlatform.UboAny) as AnyPlatform;
+            const combined = (GenericPlatform.AdgAny
+                | GenericPlatform.UboAny) as AnyPlatform;
             const result = getPlatformsByProduct(combined);
-            expect(Object.keys(result).sort()).toEqual([AdblockProduct.Adg, AdblockProduct.Ubo].sort());
-            expect(result[AdblockProduct.Adg]).toEqual([GenericPlatform.AdgAny]);
-            expect(result[AdblockProduct.Ubo]).toEqual([GenericPlatform.UboAny]);
+            expect(Object.keys(result).sort()).toEqual(
+                [AdblockProduct.Adg, AdblockProduct.Ubo].sort(),
+            );
+            expect(result[AdblockProduct.Adg]).toEqual([
+                GenericPlatform.AdgAny,
+            ]);
+            expect(result[AdblockProduct.Ubo]).toEqual([
+                GenericPlatform.UboAny,
+            ]);
         });
 
         it('should split AdGuard + Adblock Plus into two product keys', () => {
-            const combined = (GenericPlatform.AdgAny | GenericPlatform.AbpAny) as AnyPlatform;
+            const combined = (GenericPlatform.AdgAny
+                | GenericPlatform.AbpAny) as AnyPlatform;
             const result = getPlatformsByProduct(combined);
-            expect(Object.keys(result).sort()).toEqual([AdblockProduct.Abp, AdblockProduct.Adg].sort());
-            expect(result[AdblockProduct.Adg]).toEqual([GenericPlatform.AdgAny]);
-            expect(result[AdblockProduct.Abp]).toEqual([GenericPlatform.AbpAny]);
+            expect(Object.keys(result).sort()).toEqual(
+                [AdblockProduct.Abp, AdblockProduct.Adg].sort(),
+            );
+            expect(result[AdblockProduct.Adg]).toEqual([
+                GenericPlatform.AdgAny,
+            ]);
+            expect(result[AdblockProduct.Abp]).toEqual([
+                GenericPlatform.AbpAny,
+            ]);
         });
 
         it('should split uBlock Origin + Adblock Plus into two product keys', () => {
-            const combined = (GenericPlatform.UboAny | GenericPlatform.AbpAny) as AnyPlatform;
+            const combined = (GenericPlatform.UboAny
+                | GenericPlatform.AbpAny) as AnyPlatform;
             const result = getPlatformsByProduct(combined);
-            expect(Object.keys(result).sort()).toEqual([AdblockProduct.Abp, AdblockProduct.Ubo].sort());
-            expect(result[AdblockProduct.Ubo]).toEqual([GenericPlatform.UboAny]);
-            expect(result[AdblockProduct.Abp]).toEqual([GenericPlatform.AbpAny]);
+            expect(Object.keys(result).sort()).toEqual(
+                [AdblockProduct.Abp, AdblockProduct.Ubo].sort(),
+            );
+            expect(result[AdblockProduct.Ubo]).toEqual([
+                GenericPlatform.UboAny,
+            ]);
+            expect(result[AdblockProduct.Abp]).toEqual([
+                GenericPlatform.AbpAny,
+            ]);
         });
 
         it('should split all three products', () => {
-            const combined = (
-                GenericPlatform.AdgAny | GenericPlatform.UboAny | GenericPlatform.AbpAny
-            ) as AnyPlatform;
+            const combined = (GenericPlatform.AdgAny
+                | GenericPlatform.UboAny
+                | GenericPlatform.AbpAny) as AnyPlatform;
             const result = getPlatformsByProduct(combined);
             expect(Object.keys(result).sort()).toEqual(
-                [AdblockProduct.Abp, AdblockProduct.Adg, AdblockProduct.Ubo].sort(),
+                [
+                    AdblockProduct.Abp,
+                    AdblockProduct.Adg,
+                    AdblockProduct.Ubo,
+                ].sort(),
             );
-            expect(result[AdblockProduct.Adg]).toEqual([GenericPlatform.AdgAny]);
-            expect(result[AdblockProduct.Ubo]).toEqual([GenericPlatform.UboAny]);
-            expect(result[AdblockProduct.Abp]).toEqual([GenericPlatform.AbpAny]);
+            expect(result[AdblockProduct.Adg]).toEqual([
+                GenericPlatform.AdgAny,
+            ]);
+            expect(result[AdblockProduct.Ubo]).toEqual([
+                GenericPlatform.UboAny,
+            ]);
+            expect(result[AdblockProduct.Abp]).toEqual([
+                GenericPlatform.AbpAny,
+            ]);
         });
 
         it('should extract only product bits for each platform', () => {
-            const combined = (GenericPlatform.AdgAny | GenericPlatform.UboAny) as AnyPlatform;
+            const combined = (GenericPlatform.AdgAny
+                | GenericPlatform.UboAny) as AnyPlatform;
             const result = getPlatformsByProduct(combined);
 
             // Verify AdGuard platform only has AdGuard bits
@@ -325,14 +501,15 @@ describe('Platform Helpers', () => {
         it('should work with specific platforms', () => {
             const result = getPlatformsByProduct(SpecificPlatform.AdgExtChrome);
             expect(Object.keys(result)).toEqual([AdblockProduct.Adg]);
-            expect(result[AdblockProduct.Adg]).toEqual([SpecificPlatform.AdgExtChrome]);
+            expect(result[AdblockProduct.Adg]).toEqual([
+                SpecificPlatform.AdgExtChrome,
+            ]);
         });
 
         describe('Optimization logic', () => {
             it('should optimize Chrome + Firefox extensions to smallest covering generic', () => {
-                const combined = (
-                    SpecificPlatform.AdgExtChrome | SpecificPlatform.AdgExtFirefox
-                ) as AnyPlatform;
+                const combined = (SpecificPlatform.AdgExtChrome
+                    | SpecificPlatform.AdgExtFirefox) as AnyPlatform;
                 const result = getPlatformsByProduct(combined);
 
                 // Should optimize to a single generic platform
@@ -345,12 +522,10 @@ describe('Platform Helpers', () => {
 
             it('should keep strongest generic when all Chromium platforms are covered', () => {
                 // All Chromium-based extensions (Chrome, Firefox, Opera, Edge)
-                const allChromiumExt = (
-                    SpecificPlatform.AdgExtChrome
+                const allChromiumExt = (SpecificPlatform.AdgExtChrome
                     | SpecificPlatform.AdgExtFirefox
                     | SpecificPlatform.AdgExtOpera
-                    | SpecificPlatform.AdgExtEdge
-                ) as AnyPlatform;
+                    | SpecificPlatform.AdgExtEdge) as AnyPlatform;
                 const result = getPlatformsByProduct(allChromiumExt);
 
                 // Should optimize to single generic
@@ -365,11 +540,9 @@ describe('Platform Helpers', () => {
 
             it('should include both generic and specific when not all platforms covered', () => {
                 // Extension platforms + one OS platform that aren't part of the same generic
-                const mixed = (
-                    SpecificPlatform.AdgExtChrome
+                const mixed = (SpecificPlatform.AdgExtChrome
                     | SpecificPlatform.AdgExtFirefox
-                    | SpecificPlatform.AdgOsWindows
-                ) as AnyPlatform;
+                    | SpecificPlatform.AdgOsWindows) as AnyPlatform;
                 const result = getPlatformsByProduct(mixed);
 
                 // Should optimize, but exact length depends on generic platform hierarchy
@@ -380,33 +553,37 @@ describe('Platform Helpers', () => {
                     combinedBits |= p as unknown as number;
                 }
                 // Verify all original platforms are covered
-                expect(combinedBits & SpecificPlatform.AdgExtChrome).toBeTruthy();
-                expect(combinedBits & SpecificPlatform.AdgExtFirefox).toBeTruthy();
-                expect(combinedBits & SpecificPlatform.AdgOsWindows).toBeTruthy();
+                expect(
+                    combinedBits & SpecificPlatform.AdgExtChrome,
+                ).toBeTruthy();
+                expect(
+                    combinedBits & SpecificPlatform.AdgExtFirefox,
+                ).toBeTruthy();
+                expect(
+                    combinedBits & SpecificPlatform.AdgOsWindows,
+                ).toBeTruthy();
             });
 
             it('should optimize to most specific generic platforms first', () => {
                 // All AdGuard OS platforms (Windows, Mac, Android)
-                const allOs = (
-                    SpecificPlatform.AdgOsWindows
+                const allOs = (SpecificPlatform.AdgOsWindows
                     | SpecificPlatform.AdgOsMac
-                    | SpecificPlatform.AdgOsAndroid
-                ) as AnyPlatform;
+                    | SpecificPlatform.AdgOsAndroid) as AnyPlatform;
                 const result = getPlatformsByProduct(allOs);
 
                 // Should optimize to AdgOsAny (most specific generic covering all OS)
-                expect(result[AdblockProduct.Adg]).toEqual([GenericPlatform.AdgOsAny]);
+                expect(result[AdblockProduct.Adg]).toEqual([
+                    GenericPlatform.AdgOsAny,
+                ]);
             });
 
             it('should handle partial coverage with multiple generics', () => {
                 // OS platforms + Extension platforms - should optimize each separately
-                const osAndExt = (
-                    SpecificPlatform.AdgOsWindows
+                const osAndExt = (SpecificPlatform.AdgOsWindows
                     | SpecificPlatform.AdgOsMac
                     | SpecificPlatform.AdgOsAndroid
                     | SpecificPlatform.AdgExtChrome
-                    | SpecificPlatform.AdgExtFirefox
-                ) as AnyPlatform;
+                    | SpecificPlatform.AdgExtFirefox) as AnyPlatform;
                 const result = getPlatformsByProduct(osAndExt);
 
                 // Should have at least one platform, possibly multiple
@@ -418,29 +595,40 @@ describe('Platform Helpers', () => {
                 for (const p of platforms) {
                     combinedBits |= p as unknown as number;
                 }
-                expect(combinedBits & SpecificPlatform.AdgOsWindows).toBeTruthy();
+                expect(
+                    combinedBits & SpecificPlatform.AdgOsWindows,
+                ).toBeTruthy();
                 expect(combinedBits & SpecificPlatform.AdgOsMac).toBeTruthy();
-                expect(combinedBits & SpecificPlatform.AdgOsAndroid).toBeTruthy();
-                expect(combinedBits & SpecificPlatform.AdgExtChrome).toBeTruthy();
-                expect(combinedBits & SpecificPlatform.AdgExtFirefox).toBeTruthy();
+                expect(
+                    combinedBits & SpecificPlatform.AdgOsAndroid,
+                ).toBeTruthy();
+                expect(
+                    combinedBits & SpecificPlatform.AdgExtChrome,
+                ).toBeTruthy();
+                expect(
+                    combinedBits & SpecificPlatform.AdgExtFirefox,
+                ).toBeTruthy();
             });
 
             it('should optimize to AdgAny when all AdGuard platforms present', () => {
                 // If all platforms under AdgAny are present, should return just AdgAny
                 const result = getPlatformsByProduct(GenericPlatform.AdgAny);
-                expect(result[AdblockProduct.Adg]).toEqual([GenericPlatform.AdgAny]);
+                expect(result[AdblockProduct.Adg]).toEqual([
+                    GenericPlatform.AdgAny,
+                ]);
             });
 
             it('should not break down already optimal generic platform', () => {
                 // AdgExtAny should remain as-is, not broken into smaller parts
                 const result = getPlatformsByProduct(GenericPlatform.AdgExtAny);
-                expect(result[AdblockProduct.Adg]).toEqual([GenericPlatform.AdgExtAny]);
+                expect(result[AdblockProduct.Adg]).toEqual([
+                    GenericPlatform.AdgExtAny,
+                ]);
             });
 
             it('should optimize uBlock platforms similarly', () => {
-                const chromiumExt = (
-                    SpecificPlatform.UboExtChrome | SpecificPlatform.UboExtOpera
-                ) as AnyPlatform;
+                const chromiumExt = (SpecificPlatform.UboExtChrome
+                    | SpecificPlatform.UboExtOpera) as AnyPlatform;
                 const result = getPlatformsByProduct(chromiumExt);
 
                 // Should optimize to single generic covering both
@@ -451,11 +639,9 @@ describe('Platform Helpers', () => {
             });
 
             it('should optimize Adblock Plus platforms similarly', () => {
-                const chromiumExt = (
-                    SpecificPlatform.AbpExtChrome
+                const chromiumExt = (SpecificPlatform.AbpExtChrome
                     | SpecificPlatform.AbpExtOpera
-                    | SpecificPlatform.AbpExtEdge
-                ) as AnyPlatform;
+                    | SpecificPlatform.AbpExtEdge) as AnyPlatform;
                 const result = getPlatformsByProduct(chromiumExt);
 
                 // Should optimize to single generic covering all three
@@ -470,31 +656,53 @@ describe('Platform Helpers', () => {
 
     describe('getPlatformId', () => {
         it('should return specific platform for specific platform names', () => {
-            expect(getPlatformId('adg_os_windows')).toBe(SpecificPlatform.AdgOsWindows);
-            expect(getPlatformId('adg_ext_chrome')).toBe(SpecificPlatform.AdgExtChrome);
-            expect(getPlatformId('ubo_ext_firefox')).toBe(SpecificPlatform.UboExtFirefox);
-            expect(getPlatformId('abp_ext_edge')).toBe(SpecificPlatform.AbpExtEdge);
+            expect(getPlatformId('adg_os_windows')).toBe(
+                SpecificPlatform.AdgOsWindows,
+            );
+            expect(getPlatformId('adg_ext_chrome')).toBe(
+                SpecificPlatform.AdgExtChrome,
+            );
+            expect(getPlatformId('ubo_ext_firefox')).toBe(
+                SpecificPlatform.UboExtFirefox,
+            );
+            expect(getPlatformId('abp_ext_edge')).toBe(
+                SpecificPlatform.AbpExtEdge,
+            );
         });
 
         it('should return generic platform for generic platform names', () => {
             expect(getPlatformId('adg_os_any')).toBe(GenericPlatform.AdgOsAny);
-            expect(getPlatformId('adg_ext_chromium')).toBe(GenericPlatform.AdgExtChromium);
+            expect(getPlatformId('adg_ext_chromium')).toBe(
+                GenericPlatform.AdgExtChromium,
+            );
             expect(getPlatformId('adg_any')).toBe(GenericPlatform.AdgAny);
             expect(getPlatformId('any')).toBe(GenericPlatform.Any);
         });
 
         it('should throw error for unknown platform', () => {
-            expect(() => getPlatformId('unknown_platform')).toThrow('Unknown platform: unknown_platform');
-            expect(() => getPlatformId('invalid')).toThrow('Unknown platform: invalid');
+            expect(() => getPlatformId('unknown_platform')).toThrow(
+                'Unknown platform: unknown_platform',
+            );
+            expect(() => getPlatformId('invalid')).toThrow(
+                'Unknown platform: invalid',
+            );
         });
     });
 
     describe('getSpecificPlatformName', () => {
         it('should return platform name for specific platforms', () => {
-            expect(getSpecificPlatformName(SpecificPlatform.AdgOsWindows)).toBe('adg_os_windows');
-            expect(getSpecificPlatformName(SpecificPlatform.AdgExtChrome)).toBe('adg_ext_chrome');
-            expect(getSpecificPlatformName(SpecificPlatform.UboExtFirefox)).toBe('ubo_ext_firefox');
-            expect(getSpecificPlatformName(SpecificPlatform.AbpExtEdge)).toBe('abp_ext_edge');
+            expect(getSpecificPlatformName(SpecificPlatform.AdgOsWindows)).toBe(
+                'adg_os_windows',
+            );
+            expect(getSpecificPlatformName(SpecificPlatform.AdgExtChrome)).toBe(
+                'adg_ext_chrome',
+            );
+            expect(
+                getSpecificPlatformName(SpecificPlatform.UboExtFirefox),
+            ).toBe('ubo_ext_firefox');
+            expect(getSpecificPlatformName(SpecificPlatform.AbpExtEdge)).toBe(
+                'abp_ext_edge',
+            );
         });
 
         it('should throw error for unknown platform', () => {
@@ -504,40 +712,56 @@ describe('Platform Helpers', () => {
 
     describe('getHumanReadablePlatformName', () => {
         it('should return human-readable name for specific platforms', () => {
-            expect(getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows))
-                .toBe('AdGuard App for Windows');
-            expect(getHumanReadablePlatformName(SpecificPlatform.AdgExtChrome))
-                .toBe('AdGuard Browser Extension for Chrome');
-            expect(getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox))
-                .toBe('uBlock Origin Browser Extension for Firefox');
-            expect(getHumanReadablePlatformName(SpecificPlatform.AbpExtEdge))
-                .toBe('AdBlock / Adblock Plus Browser Extension for Edge');
+            expect(
+                getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows),
+            ).toBe('AdGuard App for Windows');
+            expect(
+                getHumanReadablePlatformName(SpecificPlatform.AdgExtChrome),
+            ).toBe('AdGuard Browser Extension for Chrome');
+            expect(
+                getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox),
+            ).toBe('uBlock Origin Browser Extension for Firefox');
+            expect(
+                getHumanReadablePlatformName(SpecificPlatform.AbpExtEdge),
+            ).toBe('AdBlock / Adblock Plus Browser Extension for Edge');
         });
 
         it('should return human-readable name for generic platforms', () => {
-            expect(getHumanReadablePlatformName(GenericPlatform.AdgOsAny)).toBe('Any System-level AdGuard App');
-            expect(getHumanReadablePlatformName(GenericPlatform.AdgExtChromium))
-                .toBe('Any AdGuard Browser Extension for Chromium');
-            expect(getHumanReadablePlatformName(GenericPlatform.AdgAny)).toBe('Any AdGuard product');
-            expect(getHumanReadablePlatformName(GenericPlatform.UboAny)).toBe('Any uBlock Origin product');
-            expect(getHumanReadablePlatformName(GenericPlatform.AbpAny)).toBe('Any AdBlock / Adblock Plus product');
-            expect(getHumanReadablePlatformName(GenericPlatform.Any)).toBe('Any product');
+            expect(getHumanReadablePlatformName(GenericPlatform.AdgOsAny)).toBe(
+                'Any System-level AdGuard App',
+            );
+            expect(
+                getHumanReadablePlatformName(GenericPlatform.AdgExtChromium),
+            ).toBe('Any AdGuard Browser Extension for Chromium');
+            expect(getHumanReadablePlatformName(GenericPlatform.AdgAny)).toBe(
+                'Any AdGuard product',
+            );
+            expect(getHumanReadablePlatformName(GenericPlatform.UboAny)).toBe(
+                'Any uBlock Origin product',
+            );
+            expect(getHumanReadablePlatformName(GenericPlatform.AbpAny)).toBe(
+                'Any AdBlock / Adblock Plus product',
+            );
+            expect(getHumanReadablePlatformName(GenericPlatform.Any)).toBe(
+                'Any product',
+            );
         });
 
         it('should throw error for unknown platform', () => {
-            expect(() => getHumanReadablePlatformName(999999 as AnyPlatform))
-                .toThrow('Unknown platform');
+            expect(() => getHumanReadablePlatformName(999999 as AnyPlatform)).toThrow('Unknown platform');
         });
     });
 
     describe('getProductGenericPlatforms', () => {
         it('should return a record with all three products', () => {
             const result = getProductGenericPlatforms();
-            expect(Object.keys(result).sort()).toEqual([
-                AdblockProduct.Abp,
-                AdblockProduct.Adg,
-                AdblockProduct.Ubo,
-            ].sort());
+            expect(Object.keys(result).sort()).toEqual(
+                [
+                    AdblockProduct.Abp,
+                    AdblockProduct.Adg,
+                    AdblockProduct.Ubo,
+                ].sort(),
+            );
         });
 
         it('should include all AdGuard generic platforms', () => {
@@ -575,8 +799,12 @@ describe('Platform Helpers', () => {
             // Check AdGuard platforms are sorted by bit count
             const adgPlatforms = result[AdblockProduct.Adg];
             for (let i = 0; i < adgPlatforms.length - 1; i += 1) {
-                const currentBits = (adgPlatforms[i] as unknown as number).toString(2).split('1').length - 1;
-                const nextBits = (adgPlatforms[i + 1] as unknown as number).toString(2).split('1').length - 1;
+                const currentBits = (adgPlatforms[i] as unknown as number)
+                    .toString(2)
+                    .split('1').length - 1;
+                const nextBits = (adgPlatforms[i + 1] as unknown as number)
+                    .toString(2)
+                    .split('1').length - 1;
                 expect(currentBits).toBeLessThanOrEqual(nextBits);
             }
         });
@@ -602,9 +830,15 @@ describe('Platform Helpers', () => {
             const result = getProductGenericPlatforms();
 
             // GenericPlatform.Any doesn't start with Adg/Ubo/Abp prefix
-            expect(result[AdblockProduct.Adg]).not.toContain(GenericPlatform.Any);
-            expect(result[AdblockProduct.Ubo]).not.toContain(GenericPlatform.Any);
-            expect(result[AdblockProduct.Abp]).not.toContain(GenericPlatform.Any);
+            expect(result[AdblockProduct.Adg]).not.toContain(
+                GenericPlatform.Any,
+            );
+            expect(result[AdblockProduct.Ubo]).not.toContain(
+                GenericPlatform.Any,
+            );
+            expect(result[AdblockProduct.Abp]).not.toContain(
+                GenericPlatform.Any,
+            );
         });
 
         it('should only include platforms with matching prefix', () => {
@@ -642,7 +876,9 @@ describe('Platform Helpers', () => {
             expect(osAnyIndex).toBeLessThan(adgAnyIndex);
 
             // AdgExtChromium should come before AdgExtAny (fewer bits)
-            const extChromiumIndex = adgPlatforms.indexOf(GenericPlatform.AdgExtChromium);
+            const extChromiumIndex = adgPlatforms.indexOf(
+                GenericPlatform.AdgExtChromium,
+            );
             const extAnyIndex = adgPlatforms.indexOf(GenericPlatform.AdgExtAny);
             expect(extChromiumIndex).toBeLessThan(extAnyIndex);
         });
@@ -728,34 +964,55 @@ describe('Platform Helpers', () => {
         });
 
         it('should only include platforms with matching prefix', () => {
-            const adgPlatforms = getProductSpecificPlatforms(AdblockProduct.Adg);
-            const uboPlatforms = getProductSpecificPlatforms(AdblockProduct.Ubo);
-            const abpPlatforms = getProductSpecificPlatforms(AdblockProduct.Abp);
+            const adgPlatforms = getProductSpecificPlatforms(
+                AdblockProduct.Adg,
+            );
+            const uboPlatforms = getProductSpecificPlatforms(
+                AdblockProduct.Ubo,
+            );
+            const abpPlatforms = getProductSpecificPlatforms(
+                AdblockProduct.Abp,
+            );
 
             // Verify each platform starts with the correct prefix
             for (const platform of adgPlatforms) {
                 const platformValue = platform as unknown as number;
                 // Should be one of the AdGuard-specific platform bits
-                expect(platformValue & (GenericPlatform.AdgAny as unknown as number)).toBeTruthy();
+                expect(
+                    platformValue
+                        & (GenericPlatform.AdgAny as unknown as number),
+                ).toBeTruthy();
             }
 
             for (const platform of uboPlatforms) {
                 const platformValue = platform as unknown as number;
                 // Should be one of the uBlock-specific platform bits
-                expect(platformValue & (GenericPlatform.UboAny as unknown as number)).toBeTruthy();
+                expect(
+                    platformValue
+                        & (GenericPlatform.UboAny as unknown as number),
+                ).toBeTruthy();
             }
 
             for (const platform of abpPlatforms) {
                 const platformValue = platform as unknown as number;
                 // Should be one of the Adblock Plus-specific platform bits
-                expect(platformValue & (GenericPlatform.AbpAny as unknown as number)).toBeTruthy();
+                expect(
+                    platformValue
+                        & (GenericPlatform.AbpAny as unknown as number),
+                ).toBeTruthy();
             }
         });
 
         it('should not have any overlap between products', () => {
-            const adgPlatforms = getProductSpecificPlatforms(AdblockProduct.Adg);
-            const uboPlatforms = getProductSpecificPlatforms(AdblockProduct.Ubo);
-            const abpPlatforms = getProductSpecificPlatforms(AdblockProduct.Abp);
+            const adgPlatforms = getProductSpecificPlatforms(
+                AdblockProduct.Adg,
+            );
+            const uboPlatforms = getProductSpecificPlatforms(
+                AdblockProduct.Ubo,
+            );
+            const abpPlatforms = getProductSpecificPlatforms(
+                AdblockProduct.Abp,
+            );
 
             // No overlap between products
             for (const platform of adgPlatforms) {
@@ -775,7 +1032,9 @@ describe('Platform Helpers', () => {
         });
 
         it('should return platforms that are truly specific (single bit set)', () => {
-            const adgPlatforms = getProductSpecificPlatforms(AdblockProduct.Adg);
+            const adgPlatforms = getProductSpecificPlatforms(
+                AdblockProduct.Adg,
+            );
 
             for (const platform of adgPlatforms) {
                 const platformValue = platform as unknown as number;

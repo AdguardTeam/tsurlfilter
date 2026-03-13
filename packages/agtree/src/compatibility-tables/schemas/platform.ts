@@ -5,9 +5,9 @@
 
 import zod from 'zod';
 
-import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP_REVERSE } from '../utils/platform-helpers';
 import { isUndefined } from '../../utils/type-guards';
 import { type AnyPlatform } from '../platforms';
+import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP_REVERSE } from '../utils/platform-helpers';
 
 /**
  * Platform separator, e.g. 'adg_os_any|adg_safari_any' means any AdGuard OS platform and
@@ -45,7 +45,8 @@ export const parseRawPlatforms = (rawPlatforms: string): AnyPlatform => {
             rawPlatform = rawPlatform.slice(1).trim();
         }
 
-        const platform = SPECIFIC_PLATFORM_MAP.get(rawPlatform) ?? GENERIC_PLATFORM_MAP.get(rawPlatform);
+        const platform = SPECIFIC_PLATFORM_MAP.get(rawPlatform)
+            ?? GENERIC_PLATFORM_MAP.get(rawPlatform);
 
         if (isUndefined(platform)) {
             throw new Error(`Unknown platform: ${rawPlatform}`);
@@ -72,6 +73,7 @@ export const parseRawPlatforms = (rawPlatforms: string): AnyPlatform => {
  * @param bitmask Platform bitmask (can be specific, generic, or combined platforms).
  *
  * @returns Platform string, e.g. 'adg_safari_any|adg_os_any' or 'adg_os_windows|adg_ext_chrome'.
+ *
  * @throws Error if the bitmask is 0 or contains unknown platforms.
  */
 export const stringifyPlatforms = (bitmask: AnyPlatform): string => {
@@ -92,7 +94,9 @@ export const stringifyPlatforms = (bitmask: AnyPlatform): string => {
     let remaining = bitmask;
 
     // Sort generic platforms by value (descending) to prefer larger combinations
-    const sortedGenericPlatforms = [...GENERIC_PLATFORM_MAP.entries()].sort((a, b) => b[1] - a[1]);
+    const sortedGenericPlatforms = [...GENERIC_PLATFORM_MAP.entries()].sort(
+        (a, b) => b[1] - a[1],
+    );
 
     for (const [name, value] of sortedGenericPlatforms) {
         // Check if this generic platform is fully contained in the remaining bitmask

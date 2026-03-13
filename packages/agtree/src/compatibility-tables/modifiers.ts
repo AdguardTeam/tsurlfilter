@@ -2,13 +2,14 @@
  * @file Compatibility tables for modifiers.
  */
 
-import { CompatibilityTableBase } from './base';
-import { type ModifierDataSchema } from './schemas';
-import { modifiersCompatibilityTableData } from './compatibility-table-data';
 import { UNDERSCORE } from '../utils/constants';
-import { type CompatibilityTable } from './types';
 import { deepFreeze } from '../utils/deep-freeze';
 import { isValidNoopModifier } from '../utils/noop-modifier';
+
+import { CompatibilityTableBase } from './base';
+import { modifiersCompatibilityTableData } from './compatibility-table-data';
+import { type ModifierDataSchema } from './schemas';
+import { type CompatibilityTable } from './types';
 
 /**
  * Transforms the name of the modifier to a normalized form.
@@ -16,6 +17,7 @@ import { isValidNoopModifier } from '../utils/noop-modifier';
  * e.g. '____' is also valid. In this case, we need to normalize the name to '_'.
  *
  * @param name Modifier name to normalize.
+ *
  * @returns Normalized modifier name.
  */
 const noopModifierNameNormalizer = (name: string): string => {
@@ -52,4 +54,6 @@ deepFreeze(modifiersCompatibilityTableData);
 /**
  * Compatibility table instance for modifiers.
  */
-export const modifiersCompatibilityTable = new ModifiersCompatibilityTable(modifiersCompatibilityTableData);
+export const modifiersCompatibilityTable = new ModifiersCompatibilityTable(
+    modifiersCompatibilityTableData,
+);

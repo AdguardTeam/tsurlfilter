@@ -1,56 +1,60 @@
 /**
- * @file Custom Vitest matcher to check proper rule conversion
+ * @file Custom Vitest matcher to check proper rule conversion.
  *
  * @see https://vitest.dev/guide/extending-matchers#extending-matchers
  */
-import * as z from 'zod';
-import { expect } from 'vitest';
 import { type SyncExpectationResult } from '@vitest/expect';
+import { expect } from 'vitest';
+import * as z from 'zod';
 
-import { type BaseConverter } from '../../../src/converter/base-interfaces/base-converter';
-import { RuleParser } from '../../../src/parser/rule-parser';
-import { everyRefsAreDifferent } from '../../helpers/refs';
-import { getErrorMessage } from '../../../src/utils/error';
-import { type AnyRule } from '../../../src/nodes';
-import { type NodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
+import {
+    type BaseConverter,
+} from '../../../src/converter/base-interfaces/base-converter';
+import {
+    type NodeConversionResult,
+} from '../../../src/converter/base-interfaces/conversion-result';
 import { RuleGenerator } from '../../../src/generator';
+import { type AnyRule } from '../../../src/nodes';
 import { defaultParserOptions } from '../../../src/parser/options';
+import { RuleParser } from '../../../src/parser/rule-parser';
+import { getErrorMessage } from '../../../src/utils/error';
+import { everyRefsAreDifferent } from '../../helpers/refs';
 
 /**
- * Schema for the received parameter from expect()
+ * Schema for the received parameter from expect().
  */
 const receivedSchema = z.object({
     /**
-     * Rule to convert (original rule text)
+     * Rule to convert (original rule text).
      */
     actual: z.string(),
 
     /**
-     * Expected result (array of converted rule texts)
+     * Expected result (array of converted rule texts).
      */
     expected: z.array(z.string()),
 
     /**
      * Whether the rule should be converted or not
-     * If not specified, defaults to true
+     * If not specified, defaults to true.
      */
     shouldConvert: z.boolean().optional().default(true),
 });
 
 /**
- * Type based on the zod schema
+ * Type based on the zod schema.
  */
 type ReceivedSchema = z.infer<typeof receivedSchema>;
 
 /**
- * Helper function to check rule conversion
+ * Helper function to check rule conversion.
  *
- * @param received Received parameter from expect()
- * @param converter Converter instance
- * @param method Method name to call on the converter
- * @param parserOptions Parser options to use during rule parsing
+ * @param received Received parameter from expect().
+ * @param converter Converter instance.
+ * @param method Method name to call on the converter.
+ * @param parserOptions Parser options to use during rule parsing.
  *
- * @returns Matcher result
+ * @returns Matcher result.
  */
 const toBeConvertedProperly = (
     received: unknown,
@@ -153,7 +157,7 @@ const toBeConvertedProperly = (
         if (!everyRefsAreDifferent(ruleNode, ...conversionResult.result)) {
             return {
                 pass: false,
-                message: () => 'Conversion failed, converted rule hasn\'t been cloned properly',
+                message: () => "Conversion failed, converted rule hasn't been cloned properly",
             };
         }
     } else {
@@ -176,7 +180,9 @@ const toBeConvertedProperly = (
     }
 
     // Finally, we should compare the stringified versions of the nodes
-    expect(conversionResult.result.map(RuleGenerator.generate)).toEqual(receivedParsed.expected);
+    expect(conversionResult.result.map(RuleGenerator.generate)).toEqual(
+        receivedParsed.expected,
+    );
 
     return {
         pass: true,

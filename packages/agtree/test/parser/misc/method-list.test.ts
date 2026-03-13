@@ -1,7 +1,7 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
+import { ListItemNodeType, ListNodeType } from '../../../src/nodes';
 import { MethodListParser } from '../../../src/parser/misc/method-list-parser';
-import { ListNodeType, ListItemNodeType } from '../../../src/nodes';
 import { EMPTY } from '../../../src/utils/constants';
 
 describe('MethodListParser', () => {
@@ -294,7 +294,9 @@ describe('MethodListParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(MethodListParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                MethodListParser.parse(actual, { isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 });

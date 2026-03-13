@@ -1,9 +1,19 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { ListItemNodeType, type CommaSeparator, type PipeSeparator } from '../../../src/nodes';
+import {
+    type CommaSeparator,
+    ListItemNodeType,
+    type PipeSeparator,
+} from '../../../src/nodes';
+import {
+    LIST_PARSE_ERROR_PREFIX,
+    ListItemsParser,
+} from '../../../src/parser/misc/list-items-parser';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { COMMA_DOMAIN_LIST_SEPARATOR, PIPE } from '../../../src/utils/constants';
-import { LIST_PARSE_ERROR_PREFIX, ListItemsParser } from '../../../src/parser/misc/list-items-parser';
+import {
+    COMMA_DOMAIN_LIST_SEPARATOR,
+    PIPE,
+} from '../../../src/utils/constants';
 
 /**
  * Checks that common function `parseListItems()` throws an error with the `expected` message.
@@ -81,7 +91,9 @@ describe('common parseListItems', () => {
                 ],
             },
         ])('$actual', ({ actual, expected }) => {
-            expect(ListItemsParser.parse(actual, defaultParserOptions, 0, PIPE)).toEqual(expected);
+            expect(
+                ListItemsParser.parse(actual, defaultParserOptions, 0, PIPE),
+            ).toEqual(expected);
         });
     });
 
@@ -98,11 +110,13 @@ describe('common parseListItems', () => {
                 },
                 {
                     actual: ' ~ ~ ~ ',
-                    expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                    expected:
+                        LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
                 },
                 {
                     actual: '~  Example.exe',
-                    expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                    expected:
+                        LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
                 },
             ])('$actual', ({ actual, expected }) => {
                 expectToThrowWhileParse(actual, expected);
@@ -140,7 +154,11 @@ describe('common parseListItems', () => {
                     expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                 },
             ])('$actual', ({ actual, expected }) => {
-                expectToThrowWhileParse(actual, expected, COMMA_DOMAIN_LIST_SEPARATOR);
+                expectToThrowWhileParse(
+                    actual,
+                    expected,
+                    COMMA_DOMAIN_LIST_SEPARATOR,
+                );
             });
         });
 
@@ -149,7 +167,8 @@ describe('common parseListItems', () => {
             test.each([
                 {
                     actual: '~,~,~',
-                    expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                    expected:
+                        LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
                 },
                 {
                     // https://github.com/AdguardTeam/AGLint/issues/143
@@ -166,7 +185,8 @@ describe('common parseListItems', () => {
                 },
                 {
                     actual: ',',
-                    expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
+                    expected:
+                        LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                 },
                 {
                     actual: 'example.com,,',
@@ -177,14 +197,19 @@ describe('common parseListItems', () => {
                     expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
                 },
             ])('$actual', ({ actual, expected }) => {
-                expectToThrowWhileParse(actual, expected, COMMA_DOMAIN_LIST_SEPARATOR);
+                expectToThrowWhileParse(
+                    actual,
+                    expected,
+                    COMMA_DOMAIN_LIST_SEPARATOR,
+                );
             });
 
             // pipe-separated
             test.each([
                 {
                     actual: '~|~|~',
-                    expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                    expected:
+                        LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
                 },
                 {
                     actual: 'Example.exe|',
@@ -200,7 +225,8 @@ describe('common parseListItems', () => {
                 },
                 {
                     actual: '|',
-                    expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
+                    expected:
+                        LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                 },
                 {
                     actual: 'head|get|',
@@ -212,7 +238,8 @@ describe('common parseListItems', () => {
                 },
                 {
                     actual: '|dpi|ip',
-                    expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
+                    expected:
+                        LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                 },
             ])('$actual', ({ actual, expected }) => {
                 expectToThrowWhileParse(actual, expected, PIPE);
@@ -234,7 +261,12 @@ describe('common parseListItems', () => {
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
             expect(
-                ListItemsParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }, 0, PIPE),
+                ListItemsParser.parse(
+                    actual,
+                    { ...defaultParserOptions, isLocIncluded: false },
+                    0,
+                    PIPE,
+                ),
             ).toEqual(expected);
         });
     });

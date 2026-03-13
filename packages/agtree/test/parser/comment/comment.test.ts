@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { CommentParser } from '../../../src/parser/comment/comment-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
 import { CommentRuleGenerator } from '../../../src/generator/comment';
+import { CommentParser } from '../../../src/parser/comment/comment-parser';
+import { defaultParserOptions } from '../../../src/parser/options';
+import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('CommentRuleParser', () => {
     test('isCommentRule', () => {
@@ -19,8 +19,12 @@ describe('CommentRuleParser', () => {
         expect(CommentParser.isCommentRule('! comment')).toBeTruthy();
         expect(CommentParser.isCommentRule('!+comment')).toBeTruthy();
         expect(CommentParser.isCommentRule('!#comment')).toBeTruthy();
-        expect(CommentParser.isCommentRule('!#########################')).toBeTruthy();
-        expect(CommentParser.isCommentRule('! #########################')).toBeTruthy();
+        expect(
+            CommentParser.isCommentRule('!#########################'),
+        ).toBeTruthy();
+        expect(
+            CommentParser.isCommentRule('! #########################'),
+        ).toBeTruthy();
         expect(CommentParser.isCommentRule(' !')).toBeTruthy();
         expect(CommentParser.isCommentRule('  !')).toBeTruthy();
 
@@ -31,26 +35,40 @@ describe('CommentRuleParser', () => {
         expect(CommentParser.isCommentRule('#comment')).toBeTruthy();
         expect(CommentParser.isCommentRule('# comment')).toBeTruthy();
         expect(CommentParser.isCommentRule('#+comment')).toBeTruthy();
-        expect(CommentParser.isCommentRule('#########################')).toBeTruthy();
-        expect(CommentParser.isCommentRule('# ########################')).toBeTruthy();
+        expect(
+            CommentParser.isCommentRule('#########################'),
+        ).toBeTruthy();
+        expect(
+            CommentParser.isCommentRule('# ########################'),
+        ).toBeTruthy();
         expect(CommentParser.isCommentRule(' #')).toBeTruthy();
         expect(CommentParser.isCommentRule('  ##')).toBeTruthy();
 
         // Cosmetic rules (also begins with #)
         expect(CommentParser.isCommentRule('##.selector')).toBeFalsy();
         expect(CommentParser.isCommentRule('#@#.selector')).toBeFalsy();
-        expect(CommentParser.isCommentRule("#%#//scriptlet('scriptlet')")).toBeFalsy();
-        expect(CommentParser.isCommentRule(" #%#//scriptlet('scriptlet')")).toBeFalsy();
+        expect(
+            CommentParser.isCommentRule("#%#//scriptlet('scriptlet')"),
+        ).toBeFalsy();
+        expect(
+            CommentParser.isCommentRule(" #%#//scriptlet('scriptlet')"),
+        ).toBeFalsy();
 
         // Adblock agents
         expect(CommentParser.isCommentRule('[Adblock Plus 2.0]')).toBeTruthy();
         expect(CommentParser.isCommentRule('[Adblock]')).toBeTruthy();
-        expect(CommentParser.isCommentRule('[Adblock Plus 2.0; AdGuard]')).toBeTruthy();
-        expect(CommentParser.isCommentRule('[Adblock Plus 2.0; AdGuard 1.0]')).toBeTruthy();
+        expect(
+            CommentParser.isCommentRule('[Adblock Plus 2.0; AdGuard]'),
+        ).toBeTruthy();
+        expect(
+            CommentParser.isCommentRule('[Adblock Plus 2.0; AdGuard 1.0]'),
+        ).toBeTruthy();
         expect(CommentParser.isCommentRule('[uBlock]')).toBeTruthy();
         expect(CommentParser.isCommentRule('[uBlock Origin]')).toBeTruthy();
         expect(CommentParser.isCommentRule('[Adblock Plus 2.0]')).toBeTruthy();
-        expect(CommentParser.isCommentRule('  [Adblock Plus 2.0]')).toBeTruthy();
+        expect(
+            CommentParser.isCommentRule('  [Adblock Plus 2.0]'),
+        ).toBeTruthy();
     });
 
     test('parse', () => {
@@ -154,7 +172,9 @@ describe('CommentRuleParser', () => {
         });
 
         expect(
-            CommentParser.parse('!+ NOT_OPTIMIZED PLATFORM(windows, mac) NOT_PLATFORM(android, ios)'),
+            CommentParser.parse(
+                '!+ NOT_OPTIMIZED PLATFORM(windows, mac) NOT_PLATFORM(android, ios)',
+            ),
         ).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
@@ -262,7 +282,9 @@ describe('CommentRuleParser', () => {
             },
         });
 
-        expect(CommentParser.parse('!#if (adguard && !adguard_ext_safari)')).toMatchObject({
+        expect(
+            CommentParser.parse('!#if (adguard && !adguard_ext_safari)'),
+        ).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
             end: 37,
@@ -305,7 +327,11 @@ describe('CommentRuleParser', () => {
             },
         });
 
-        expect(CommentParser.parse('!#include https://example.org/path/includedfile.txt')).toMatchObject({
+        expect(
+            CommentParser.parse(
+                '!#include https://example.org/path/includedfile.txt',
+            ),
+        ).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
             end: 51,
@@ -353,7 +379,9 @@ describe('CommentRuleParser', () => {
         });
 
         expect(
-            CommentParser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
+            CommentParser.parse(
+                '! Homepage: https://github.com/AdguardTeam/some-repo/wiki',
+            ),
         ).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
@@ -381,7 +409,9 @@ describe('CommentRuleParser', () => {
         });
 
         expect(
-            CommentParser.parse('# Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
+            CommentParser.parse(
+                '# Homepage: https://github.com/AdguardTeam/some-repo/wiki',
+            ),
         ).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
@@ -409,7 +439,9 @@ describe('CommentRuleParser', () => {
         });
 
         // Config comments
-        expect(CommentParser.parse('! aglint-disable rule1, rule2')).toMatchObject({
+        expect(
+            CommentParser.parse('! aglint-disable rule1, rule2'),
+        ).toMatchObject({
             type: 'ConfigCommentRule',
             start: 0,
             end: 29,
@@ -448,7 +480,9 @@ describe('CommentRuleParser', () => {
             },
         });
 
-        expect(CommentParser.parse('! aglint-enable rule1, rule2')).toMatchObject({
+        expect(
+            CommentParser.parse('! aglint-enable rule1, rule2'),
+        ).toMatchObject({
             type: 'ConfigCommentRule',
             start: 0,
             end: 28,
@@ -487,7 +521,9 @@ describe('CommentRuleParser', () => {
             },
         });
 
-        expect(CommentParser.parse('# aglint-disable rule1, rule2')).toMatchObject({
+        expect(
+            CommentParser.parse('# aglint-disable rule1, rule2'),
+        ).toMatchObject({
             type: 'ConfigCommentRule',
             start: 0,
             end: 29,
@@ -526,7 +562,9 @@ describe('CommentRuleParser', () => {
             },
         });
 
-        expect(CommentParser.parse('# aglint-enable rule1, rule2')).toMatchObject({
+        expect(
+            CommentParser.parse('# aglint-enable rule1, rule2'),
+        ).toMatchObject({
             type: 'ConfigCommentRule',
             start: 0,
             end: 28,
@@ -565,7 +603,11 @@ describe('CommentRuleParser', () => {
             },
         });
 
-        expect(CommentParser.parse('! aglint rule1: "off", rule2: ["a", "b"] -- this is a comment')).toMatchObject({
+        expect(
+            CommentParser.parse(
+                '! aglint rule1: "off", rule2: ["a", "b"] -- this is a comment',
+            ),
+        ).toMatchObject({
             type: 'ConfigCommentRule',
             start: 0,
             end: 61,
@@ -589,10 +631,7 @@ describe('CommentRuleParser', () => {
                 end: 40,
                 value: {
                     rule1: 'off',
-                    rule2: [
-                        'a',
-                        'b',
-                    ],
+                    rule2: ['a', 'b'],
                 },
             },
             comment: {
@@ -603,7 +642,11 @@ describe('CommentRuleParser', () => {
             },
         });
 
-        expect(CommentParser.parse('# aglint rule1: "off", rule2: ["a", "b"] -- this is a comment')).toMatchObject({
+        expect(
+            CommentParser.parse(
+                '# aglint rule1: "off", rule2: ["a", "b"] -- this is a comment',
+            ),
+        ).toMatchObject({
             type: 'ConfigCommentRule',
             start: 0,
             end: 61,
@@ -627,10 +670,7 @@ describe('CommentRuleParser', () => {
                 end: 40,
                 value: {
                     rule1: 'off',
-                    rule2: [
-                        'a',
-                        'b',
-                    ],
+                    rule2: ['a', 'b'],
                 },
             },
             comment: {
@@ -682,45 +722,49 @@ describe('CommentRuleParser', () => {
             },
         });
 
-        expect(CommentParser.parse('!#########################')).toMatchObject({
-            category: 'Comment',
-            type: 'CommentRule',
-            start: 0,
-            end: 26,
-            syntax: 'Common',
-            marker: {
-                type: 'Value',
+        expect(CommentParser.parse('!#########################')).toMatchObject(
+            {
+                category: 'Comment',
+                type: 'CommentRule',
                 start: 0,
-                end: 1,
-                value: '!',
-            },
-            text: {
-                type: 'Value',
-                start: 1,
                 end: 26,
-                value: '#########################',
+                syntax: 'Common',
+                marker: {
+                    type: 'Value',
+                    start: 0,
+                    end: 1,
+                    value: '!',
+                },
+                text: {
+                    type: 'Value',
+                    start: 1,
+                    end: 26,
+                    value: '#########################',
+                },
             },
-        });
+        );
 
-        expect(CommentParser.parse('##########################')).toMatchObject({
-            category: 'Comment',
-            type: 'CommentRule',
-            start: 0,
-            end: 26,
-            syntax: 'Common',
-            marker: {
-                type: 'Value',
+        expect(CommentParser.parse('##########################')).toMatchObject(
+            {
+                category: 'Comment',
+                type: 'CommentRule',
                 start: 0,
-                end: 1,
-                value: '#',
-            },
-            text: {
-                type: 'Value',
-                start: 1,
                 end: 26,
-                value: '#########################',
+                syntax: 'Common',
+                marker: {
+                    type: 'Value',
+                    start: 0,
+                    end: 1,
+                    value: '#',
+                },
+                text: {
+                    type: 'Value',
+                    start: 1,
+                    end: 26,
+                    value: '#########################',
+                },
             },
-        });
+        );
     });
 
     describe('parser options should work as expected', () => {
@@ -747,7 +791,10 @@ describe('CommentRuleParser', () => {
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
             expect(
-                CommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+                CommentParser.parse(actual, {
+                    ...defaultParserOptions,
+                    isLocIncluded: false,
+                }),
             ).toEqual(expected);
         });
     });
@@ -764,32 +811,44 @@ describe('CommentRuleParser', () => {
         };
 
         // TODO: Refactor to test.each
-        expect(parseAndGenerate('[Adblock Plus 2.0]')).toEqual('[Adblock Plus 2.0]');
-
-        expect(parseAndGenerate('[Adblock Plus 2.0; AdGuard]')).toEqual('[Adblock Plus 2.0; AdGuard]');
-
-        expect(parseAndGenerate('!+ NOT_OPTIMIZED')).toEqual('!+ NOT_OPTIMIZED');
-
-        expect(parseAndGenerate('!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac)')).toEqual(
-            '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac)',
+        expect(parseAndGenerate('[Adblock Plus 2.0]')).toEqual(
+            '[Adblock Plus 2.0]',
         );
 
-        expect(parseAndGenerate('!#if (adguard && !adguard_ext_safari)')).toEqual(
-            '!#if (adguard && !adguard_ext_safari)',
+        expect(parseAndGenerate('[Adblock Plus 2.0; AdGuard]')).toEqual(
+            '[Adblock Plus 2.0; AdGuard]',
         );
 
-        expect(parseAndGenerate('! Homepage: https://github.com/AdguardTeam/some-repo/wiki')).toEqual(
-            '! Homepage: https://github.com/AdguardTeam/some-repo/wiki',
+        expect(parseAndGenerate('!+ NOT_OPTIMIZED')).toEqual(
+            '!+ NOT_OPTIMIZED',
         );
 
-        expect(parseAndGenerate('! aglint-enable rule1, rule2 -- comment')).toEqual(
-            '! aglint-enable rule1, rule2 -- comment',
-        );
+        expect(
+            parseAndGenerate(
+                '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac)',
+            ),
+        ).toEqual('!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac)');
 
-        expect(parseAndGenerate('# aglint-enable rule1, rule2 -- comment')).toEqual(
-            '# aglint-enable rule1, rule2 -- comment',
-        );
+        expect(
+            parseAndGenerate('!#if (adguard && !adguard_ext_safari)'),
+        ).toEqual('!#if (adguard && !adguard_ext_safari)');
 
-        expect(parseAndGenerate('! This is just a comment')).toEqual('! This is just a comment');
+        expect(
+            parseAndGenerate(
+                '! Homepage: https://github.com/AdguardTeam/some-repo/wiki',
+            ),
+        ).toEqual('! Homepage: https://github.com/AdguardTeam/some-repo/wiki');
+
+        expect(
+            parseAndGenerate('! aglint-enable rule1, rule2 -- comment'),
+        ).toEqual('! aglint-enable rule1, rule2 -- comment');
+
+        expect(
+            parseAndGenerate('# aglint-enable rule1, rule2 -- comment'),
+        ).toEqual('# aglint-enable rule1, rule2 -- comment');
+
+        expect(parseAndGenerate('! This is just a comment')).toEqual(
+            '! This is just a comment',
+        );
     });
 });

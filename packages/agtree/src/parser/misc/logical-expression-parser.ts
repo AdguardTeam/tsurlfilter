@@ -1,4 +1,4 @@
-import { StringUtils } from '../../utils/string';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import {
     type AnyExpressionNode,
     type ExpressionParenthesisNode,
@@ -13,9 +13,9 @@ import {
     PIPE,
     UNDERSCORE,
 } from '../../utils/constants';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../options';
+import { StringUtils } from '../../utils/string';
 import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * Possible token types in the logical expression.
@@ -28,7 +28,7 @@ const TokenType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-type TokenType = typeof TokenType[keyof typeof TokenType];
+type TokenType = (typeof TokenType)[keyof typeof TokenType];
 
 /**
  * Possible node types in the logical expression.
@@ -41,7 +41,7 @@ export const NodeType = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type NodeType = typeof NodeType[keyof typeof NodeType];
+export type NodeType = (typeof NodeType)[keyof typeof NodeType];
 
 /**
  * Precedence of the operators, larger number means higher precedence.
@@ -88,10 +88,12 @@ export class LogicalExpressionParser extends BaseParser {
     /**
      * Split the expression into tokens.
      *
-     * @param raw Source code of the expression
+     * @param raw Source code of the expression.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Token list
-     * @throws {AdblockSyntaxError} If the expression is invalid
+     *
+     * @returns Token list.
+     *
+     * @throws {AdblockSyntaxError} If the expression is invalid.
      */
     private static tokenize(raw: string, baseOffset = 0): Token[] {
         const tokens: Token[] = [];
@@ -111,7 +113,8 @@ export class LogicalExpressionParser extends BaseParser {
                 // but can contain them
                 while (
                     offset + 1 < raw.length
-                    && (StringUtils.isAlphaNumeric(raw[offset + 1]) || raw[offset + 1] === UNDERSCORE)
+                    && (StringUtils.isAlphaNumeric(raw[offset + 1])
+                        || raw[offset + 1] === UNDERSCORE)
                 ) {
                     offset += 1;
                 }
@@ -123,7 +126,10 @@ export class LogicalExpressionParser extends BaseParser {
                 });
 
                 offset += 1;
-            } else if (char === OPEN_PARENTHESIS || char === CLOSE_PARENTHESIS) {
+            } else if (
+                char === OPEN_PARENTHESIS
+                || char === CLOSE_PARENTHESIS
+            ) {
                 // Parenthesis
                 tokens.push({
                     type: TokenType.Parenthesis,
@@ -175,11 +181,17 @@ export class LogicalExpressionParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Parsed expression
-     * @throws {AdblockSyntaxError} If the expression is invalid
+     *
+     * @returns Parsed expression.
+     *
+     * @throws {AdblockSyntaxError} If the expression is invalid.
      */
     // TODO: Create a separate TokenStream class
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AnyExpressionNode {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): AnyExpressionNode {
         // Tokenize the source (produces an array of tokens)
         const tokens = LogicalExpressionParser.tokenize(raw, baseOffset);
 
@@ -189,8 +201,9 @@ export class LogicalExpressionParser extends BaseParser {
         /**
          * Consumes a token of the expected type.
          *
-         * @param type Expected token type
-         * @returns The consumed token
+         * @param type Expected token type.
+         *
+         * @returns The consumed token.
          */
         function consume(type: TokenType): Token {
             const token = tokens[tokenIndex];
@@ -222,7 +235,7 @@ export class LogicalExpressionParser extends BaseParser {
         /**
          * Parses a variable.
          *
-         * @returns Variable node
+         * @returns Variable node.
          */
         function parseVariable(): ExpressionVariableNode {
             const token = consume(TokenType.Variable);
@@ -243,23 +256,33 @@ export class LogicalExpressionParser extends BaseParser {
         /**
          * Parses a binary expression.
          *
-         * @param left Left-hand side of the expression
-         * @param minPrecedence Minimum precedence of the operator
-         * @returns Binary expression node
+         * @param left Left-hand side of the expression.
+         * @param minPrecedence Minimum precedence of the operator.
+         *
+         * @returns Binary expression node.
          */
-        function parseBinaryExpression(left: AnyExpressionNode, minPrecedence = 0): AnyExpressionNode {
+        function parseBinaryExpression(
+            left: AnyExpressionNode,
+            minPrecedence = 0,
+        ): AnyExpressionNode {
             let node = left;
             let operatorToken;
 
             while (tokens[tokenIndex]) {
                 operatorToken = tokens[tokenIndex];
 
-                if (!operatorToken || operatorToken.type !== TokenType.Operator) {
+                if (
+                    !operatorToken
+                    || operatorToken.type !== TokenType.Operator
+                ) {
                     break;
                 }
 
                 // It is safe to cast here, because we already checked the type
-                const operator = raw.slice(operatorToken.start, operatorToken.end) as OperatorValue;
+                const operator = raw.slice(
+                    operatorToken.start,
+                    operatorToken.end,
+                ) as OperatorValue;
                 const precedence = OPERATOR_PRECEDENCE[operator];
 
                 if (precedence < minPrecedence) {
@@ -292,7 +315,7 @@ export class LogicalExpressionParser extends BaseParser {
         /**
          * Parses a parenthesized expression.
          *
-         * @returns Parenthesized expression node
+         * @returns Parenthesized expression node.
          */
         function parseParenthesizedExpression(): ExpressionParenthesisNode {
             consume(TokenType.Parenthesis);
@@ -316,8 +339,9 @@ export class LogicalExpressionParser extends BaseParser {
         /**
          * Parses an expression.
          *
-         * @param minPrecedence Minimum precedence of the operator
-         * @returns Expression node
+         * @param minPrecedence Minimum precedence of the operator.
+         *
+         * @returns Expression node.
          */
         function parseExpression(minPrecedence = 0): AnyExpressionNode {
             let node: AnyExpressionNode;
@@ -327,10 +351,15 @@ export class LogicalExpressionParser extends BaseParser {
 
             if (token.type === TokenType.Variable) {
                 node = parseVariable();
-            } else if (token.type === TokenType.Operator && value === OperatorValue.Not) {
+            } else if (
+                token.type === TokenType.Operator
+                && value === OperatorValue.Not
+            ) {
                 tokenIndex += 1;
 
-                const expression = parseExpression(OPERATOR_PRECEDENCE[OperatorValue.Not]);
+                const expression = parseExpression(
+                    OPERATOR_PRECEDENCE[OperatorValue.Not],
+                );
 
                 node = {
                     type: NodeType.Operator,
@@ -348,7 +377,10 @@ export class LogicalExpressionParser extends BaseParser {
                         node.end = baseOffset + token.end;
                     }
                 }
-            } else if (token.type === TokenType.Parenthesis && value === OPEN_PARENTHESIS) {
+            } else if (
+                token.type === TokenType.Parenthesis
+                && value === OPEN_PARENTHESIS
+            ) {
                 node = parseParenthesizedExpression();
             } else {
                 throw new AdblockSyntaxError(

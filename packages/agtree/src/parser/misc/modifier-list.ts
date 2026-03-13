@@ -1,9 +1,10 @@
 /* eslint-disable no-param-reassign */
+import { type ModifierList } from '../../nodes';
 import { MODIFIERS_SEPARATOR } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { type ModifierList } from '../../nodes';
 import { BaseParser } from '../base-parser';
 import { defaultParserOptions } from '../options';
+
 import { ModifierParser } from './modifier-parser';
 
 /**
@@ -24,9 +25,14 @@ export class ModifierListParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Parsed modifiers interface
+     *
+     * @returns Parsed modifiers interface.
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): ModifierList {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): ModifierList {
         const result: ModifierList = {
             type: 'ModifierList',
             children: [],
@@ -75,7 +81,11 @@ export class ModifierListParser extends BaseParser {
                         // If yes, this might be a complex pattern like replace=/pattern/replacement/flags
                         // and we should use simple search to avoid breaking it
                         let hasMoreSlashes = false;
-                        for (let i = firstClosingSlashIndex + 1; i < raw.length; i += 1) {
+                        for (
+                            let i = firstClosingSlashIndex + 1;
+                            i < raw.length;
+                            i += 1
+                        ) {
                             if (raw[i] === '/' && raw[i - 1] !== '\\') {
                                 hasMoreSlashes = true;
                                 break;

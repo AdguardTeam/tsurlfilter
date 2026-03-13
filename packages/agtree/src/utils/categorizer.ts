@@ -1,7 +1,8 @@
 import { type CosmeticRuleType } from '../nodes';
 import { CosmeticRuleParser } from '../parser/cosmetic/cosmetic-rule-parser';
-import { isNull } from './type-guards';
 import { defaultParserOptions } from '../parser/options';
+
+import { isNull } from './type-guards';
 
 /**
  * Utility functions for categorizing rules.
@@ -16,7 +17,9 @@ export class RuleCategorizer {
      *
      * @returns Type of the cosmetic rule or `null` if the rule is cannot be parsed as a cosmetic rule.
      */
-    public static getCosmeticRuleType(rawRule: string): CosmeticRuleType | null {
+    public static getCosmeticRuleType(
+        rawRule: string,
+    ): CosmeticRuleType | null {
         try {
             const node = CosmeticRuleParser.parse(rawRule, {
                 ...defaultParserOptions,

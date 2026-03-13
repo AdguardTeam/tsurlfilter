@@ -10,6 +10,7 @@ export class HostRuleGenerator extends BaseGenerator {
      * Converts a host rule node to a raw string.
      *
      * @param node Host rule node.
+     *
      * @returns Raw string.
      */
     public static generate(node: HostRule): string {
@@ -21,7 +22,9 @@ export class HostRuleGenerator extends BaseGenerator {
 
         if (node.hostnames) {
             result.push(SPACE);
-            result.push(node.hostnames.children.map(({ value }) => value).join(SPACE));
+            result.push(
+                node.hostnames.children.map(({ value }) => value).join(SPACE),
+            );
         }
 
         if (node.comment) {

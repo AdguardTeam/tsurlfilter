@@ -1,10 +1,11 @@
 /**
- * @file CSS conversion tests
+ * @file CSS conversion tests.
  *
- * Some of these tests are taken from the ExtendedCss project:
+ * Some of these tests are taken from the ExtendedCss project.
+ *
  * @see {@link https://github.com/AdguardTeam/ExtendedCss/blob/master/test/selector/converter.test.ts}
  */
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import { CssSelectorConverter } from '../../../src/converter/css';
 
@@ -209,7 +210,8 @@ describe('CssSelectorConverter', () => {
             },
             {
                 actual: 'div[style*="z-index:"][-ext-has=\'>div[id$="_content"]>iframe#overlay_iframe\']',
-                expected: 'div[style*="z-index:"]:has(>div[id$="_content"]>iframe#overlay_iframe)',
+                expected:
+                    'div[style*="z-index:"]:has(>div[id$="_content"]>iframe#overlay_iframe)',
                 shouldConvert: true,
             },
             {
@@ -237,7 +239,8 @@ describe('CssSelectorConverter', () => {
             {
                 /* eslint-disable max-len */
                 actual: 'div[style="text-align: center"] > b[-ext-contains="Ads:"]+a[href^="http://example.com/test.html?id="]+br',
-                expected: 'div[style="text-align: center"] > b:contains(Ads:)+a[href^="http://example.com/test.html?id="]+br',
+                expected:
+                    'div[style="text-align: center"] > b:contains(Ads:)+a[href^="http://example.com/test.html?id="]+br',
                 /* eslint-enable max-len */
                 shouldConvert: true,
             },
@@ -245,7 +248,8 @@ describe('CssSelectorConverter', () => {
             // matches-css
             {
                 actual: '#test-matches-css div[-ext-matches-css="background-image: url(data:*)"]',
-                expected: '#test-matches-css div:matches-css(background-image: url(data:*))',
+                expected:
+                    '#test-matches-css div:matches-css(background-image: url(data:*))',
                 shouldConvert: true,
             },
             {
@@ -255,12 +259,14 @@ describe('CssSelectorConverter', () => {
             },
             {
                 actual: '#test-matches-css div[-ext-matches-css-before="content: *find me*"]',
-                expected: '#test-matches-css div:matches-css(before,content: *find me*)',
+                expected:
+                    '#test-matches-css div:matches-css(before,content: *find me*)',
                 shouldConvert: true,
             },
             {
                 actual: '#test-matches-css div[-ext-matches-css-after="content: *find me*"]',
-                expected: '#test-matches-css div:matches-css(after,content: *find me*)',
+                expected:
+                    '#test-matches-css div:matches-css(after,content: *find me*)',
                 shouldConvert: true,
             },
 
@@ -272,17 +278,20 @@ describe('CssSelectorConverter', () => {
             },
             {
                 actual: 'div[i18n][-ext-contains="adg-test"][-ext-has="div.test-class-two"]',
-                expected: 'div[i18n]:contains(adg-test):has(div.test-class-two)',
+                expected:
+                    'div[i18n]:contains(adg-test):has(div.test-class-two)',
                 shouldConvert: true,
             },
             {
                 actual: 'div[-ext-has="div.test-class-two"] > .test-class[-ext-contains="test"]',
-                expected: 'div:has(div.test-class-two) > .test-class:contains(test)',
+                expected:
+                    'div:has(div.test-class-two) > .test-class:contains(test)',
                 shouldConvert: true,
             },
             {
                 actual: '#sidebar div[class^="text-"][-ext-has=">.box-inner>h2:contains(ads)"]',
-                expected: '#sidebar div[class^="text-"]:has(>.box-inner>h2:contains(ads))',
+                expected:
+                    '#sidebar div[class^="text-"]:has(>.box-inner>h2:contains(ads))',
                 shouldConvert: true,
             },
             {
@@ -296,25 +305,29 @@ describe('CssSelectorConverter', () => {
                 shouldConvert: true,
             },
             {
-                actual: '*[-ext-contains=\'/\\s[a-t]{8}$/\'] + *:contains(/^[^\\"\\\'"]{30}quickly/)',
-                expected: '*:contains(/\\s[a-t]{8}$/) + *:contains(/^[^\\"\\\'"]{30}quickly/)',
+                actual: "*[-ext-contains='/\\s[a-t]{8}$/'] + *:contains(/^[^\\\"\\'\"]{30}quickly/)",
+                expected:
+                    '*:contains(/\\s[a-t]{8}$/) + *:contains(/^[^\\"\\\'"]{30}quickly/)',
                 shouldConvert: true,
             },
             {
-                actual: '[-ext-matches-css-before=\'content:  /^[A-Z][a-z]{2}\\s/  \']',
-                expected: ':matches-css(before,content:  /^[A-Z][a-z]{2}\\s/  )',
+                actual: "[-ext-matches-css-before='content:  /^[A-Z][a-z]{2}\\s/  ']",
+                expected:
+                    ':matches-css(before,content:  /^[A-Z][a-z]{2}\\s/  )',
                 shouldConvert: true,
             },
             {
                 // eslint-disable-next-line max-len
-                actual: '[-ext-has=\'+:matches-css-after( content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/)\']',
-                expected: ':has(+:matches-css(after, content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/))',
+                actual: "[-ext-has='+:matches-css-after( content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/)']",
+                expected:
+                    ':has(+:matches-css(after, content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/))',
                 shouldConvert: true,
             },
             {
                 /* eslint-disable max-len */
-                actual: ':matches-css(    background-image: /^url\\((.)[a-z]{4}:[a-z]{2}\\1nk\\)$/    ) + [-ext-matches-css-before=\'content:  /^[A-Z][a-z]{2}\\s/  \'][-ext-has=\'+:matches-css-after( content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/)\']',
-                expected: ':matches-css(    background-image: /^url\\((.)[a-z]{4}:[a-z]{2}\\1nk\\)$/    ) + :matches-css(before,content:  /^[A-Z][a-z]{2}\\s/  ):has(+:matches-css(after, content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/))',
+                actual: ":matches-css(    background-image: /^url\\((.)[a-z]{4}:[a-z]{2}\\1nk\\)$/    ) + [-ext-matches-css-before='content:  /^[A-Z][a-z]{2}\\s/  '][-ext-has='+:matches-css-after( content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/)']",
+                expected:
+                    ':matches-css(    background-image: /^url\\((.)[a-z]{4}:[a-z]{2}\\1nk\\)$/    ) + :matches-css(before,content:  /^[A-Z][a-z]{2}\\s/  ):has(+:matches-css(after, content  :   /(\\d+\\s)*me/  ):contains(/^(?![\\s\\S])/))',
                 /* eslint-enable max-len */
                 shouldConvert: true,
             },
@@ -327,18 +340,22 @@ describe('CssSelectorConverter', () => {
             {
                 // eslint-disable-next-line max-len
                 actual: 'div[-ext-has-text="test"]:-abp-has(div) + div[-ext-matches-css-before="content: *find me*"]:after',
-                expected: 'div:contains(test):has(div) + div:matches-css(before,content: *find me*)::after',
+                expected:
+                    'div:contains(test):has(div) + div:matches-css(before,content: *find me*)::after',
                 shouldConvert: true,
             },
-        ])('should convert \'$actual\' to \'$expected\'', ({ actual, expected, shouldConvert }) => {
-            // Convert the selector list with the converter API
-            const conversionResult = CssSelectorConverter.convertToAdg(actual);
+        ])(
+            "should convert '$actual' to '$expected'",
+            ({ actual, expected, shouldConvert }) => {
+                // Convert the selector list with the converter API
+                const conversionResult = CssSelectorConverter.convertToAdg(actual);
 
-            expect(conversionResult).toHaveProperty('isConverted');
-            expect(conversionResult.isConverted).toBe(shouldConvert);
+                expect(conversionResult).toHaveProperty('isConverted');
+                expect(conversionResult.isConverted).toBe(shouldConvert);
 
-            // Check the result
-            expect(conversionResult.result).toBe(expected);
-        });
+                // Check the result
+                expect(conversionResult.result).toBe(expected);
+            },
+        );
     });
 });

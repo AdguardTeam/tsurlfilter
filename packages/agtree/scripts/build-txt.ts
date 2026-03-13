@@ -1,9 +1,9 @@
 /**
- * @file Output the version number to a build.txt file
+ * @file Output the version number to a build.txt file.
  */
 
 import fs from 'fs-extra';
-import path from 'path';
+import path from 'node:path';
 
 const PROJECT_ROOT_RELATIVE_PATH = '../';
 const DIST_FOLDER_NAME = 'dist';
@@ -14,8 +14,16 @@ const PKG_FILE_NAME = 'package.json';
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 // Computed constants
-const distFolderPath = path.join(__dirname, PROJECT_ROOT_RELATIVE_PATH, DIST_FOLDER_NAME);
-const pkgFilePath = path.join(__dirname, PROJECT_ROOT_RELATIVE_PATH, PKG_FILE_NAME);
+const distFolderPath = path.join(
+    __dirname,
+    PROJECT_ROOT_RELATIVE_PATH,
+    DIST_FOLDER_NAME,
+);
+const pkgFilePath = path.join(
+    __dirname,
+    PROJECT_ROOT_RELATIVE_PATH,
+    PKG_FILE_NAME,
+);
 const outputFilePath = path.join(distFolderPath, OUTPUT_FILE_NAME);
 
 const rawPkg = fs.readFileSync(pkgFilePath, 'utf-8');
@@ -26,7 +34,7 @@ if (!pkg.version) {
 }
 
 /**
- * Main function
+ * Main function.
  */
 const main = (): void => {
     // Create the dist folder if it doesn't exist

@@ -1,23 +1,34 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, RuleCategory, type ScriptletInjectionRule } from '../../../src/nodes';
-import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import {
+    CosmeticRuleType,
+    RuleCategory,
+    type ScriptletInjectionRule,
+} from '../../../src/nodes';
+import {
+    CosmeticRuleParser,
+} from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import {
     AbpSnippetInjectionBodyParser,
 } from '../../../src/parser/cosmetic/scriptlet-body/abp-snippet-injection-body-parser';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid Adblock Plus snippet injection rules', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<ScriptletInjectionRule> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<ScriptletInjectionRule>;
+        }>([
             // single snippets - without domains
             {
                 actual: '#$#scriptlet0 arg0 arg1',
-                expected: (context: NodeExpectContext): ScriptletInjectionRule => {
+                expected: (
+                    context: NodeExpectContext,
+                ): ScriptletInjectionRule => {
                     return {
                         category: RuleCategory.Cosmetic,
                         type: CosmeticRuleType.ScriptletInjectionRule,
@@ -43,7 +54,9 @@ describe('CosmeticRuleParser', () => {
             },
             {
                 actual: '#@$#scriptlet0 arg0 arg1',
-                expected: (context: NodeExpectContext): ScriptletInjectionRule => {
+                expected: (
+                    context: NodeExpectContext,
+                ): ScriptletInjectionRule => {
                     return {
                         category: RuleCategory.Cosmetic,
                         type: CosmeticRuleType.ScriptletInjectionRule,
@@ -71,7 +84,9 @@ describe('CosmeticRuleParser', () => {
             // multiple snippets - without domains
             {
                 actual: '#$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
-                expected: (context: NodeExpectContext): ScriptletInjectionRule => {
+                expected: (
+                    context: NodeExpectContext,
+                ): ScriptletInjectionRule => {
                     return {
                         category: RuleCategory.Cosmetic,
                         type: CosmeticRuleType.ScriptletInjectionRule,
@@ -97,7 +112,9 @@ describe('CosmeticRuleParser', () => {
             },
             {
                 actual: '#@$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
-                expected: (context: NodeExpectContext): ScriptletInjectionRule => {
+                expected: (
+                    context: NodeExpectContext,
+                ): ScriptletInjectionRule => {
                     return {
                         category: RuleCategory.Cosmetic,
                         type: CosmeticRuleType.ScriptletInjectionRule,
@@ -125,7 +142,9 @@ describe('CosmeticRuleParser', () => {
             // semicolon at the end - without domains
             {
                 actual: '#$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
-                expected: (context: NodeExpectContext): ScriptletInjectionRule => {
+                expected: (
+                    context: NodeExpectContext,
+                ): ScriptletInjectionRule => {
                     return {
                         category: RuleCategory.Cosmetic,
                         type: CosmeticRuleType.ScriptletInjectionRule,
@@ -153,14 +172,18 @@ describe('CosmeticRuleParser', () => {
             // single snippets - with domains
             {
                 actual: 'example.com,~example.net#$#scriptlet0 arg0 arg1',
-                expected: (context: NodeExpectContext): ScriptletInjectionRule => {
+                expected: (
+                    context: NodeExpectContext,
+                ): ScriptletInjectionRule => {
                     return {
                         category: RuleCategory.Cosmetic,
                         type: CosmeticRuleType.ScriptletInjectionRule,
                         syntax: AdblockSyntax.Abp,
                         exception: false,
                         modifiers: undefined,
-                        domains: DomainListParser.parse('example.com,~example.net'),
+                        domains: DomainListParser.parse(
+                            'example.com,~example.net',
+                        ),
                         separator: {
                             type: 'Value',
                             value: '#$#',
@@ -179,14 +202,18 @@ describe('CosmeticRuleParser', () => {
             },
             {
                 actual: 'example.com,~example.net#@$#scriptlet0 arg0 arg1',
-                expected: (context: NodeExpectContext): ScriptletInjectionRule => {
+                expected: (
+                    context: NodeExpectContext,
+                ): ScriptletInjectionRule => {
                     return {
                         category: RuleCategory.Cosmetic,
                         type: CosmeticRuleType.ScriptletInjectionRule,
                         syntax: AdblockSyntax.Abp,
                         exception: true,
                         modifiers: undefined,
-                        domains: DomainListParser.parse('example.com,~example.net'),
+                        domains: DomainListParser.parse(
+                            'example.com,~example.net',
+                        ),
                         separator: {
                             type: 'Value',
                             value: '#@$#',
@@ -207,14 +234,18 @@ describe('CosmeticRuleParser', () => {
             // multiple snippets - with domains
             {
                 actual: 'example.com,~example.net#$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
-                expected: (context: NodeExpectContext): ScriptletInjectionRule => {
+                expected: (
+                    context: NodeExpectContext,
+                ): ScriptletInjectionRule => {
                     return {
                         category: RuleCategory.Cosmetic,
                         type: CosmeticRuleType.ScriptletInjectionRule,
                         syntax: AdblockSyntax.Abp,
                         exception: false,
                         modifiers: undefined,
-                        domains: DomainListParser.parse('example.com,~example.net'),
+                        domains: DomainListParser.parse(
+                            'example.com,~example.net',
+                        ),
                         separator: {
                             type: 'Value',
                             value: '#$#',
@@ -233,14 +264,18 @@ describe('CosmeticRuleParser', () => {
             },
             {
                 actual: 'example.com,~example.net#@$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
-                expected: (context: NodeExpectContext): ScriptletInjectionRule => {
+                expected: (
+                    context: NodeExpectContext,
+                ): ScriptletInjectionRule => {
                     return {
                         category: RuleCategory.Cosmetic,
                         type: CosmeticRuleType.ScriptletInjectionRule,
                         syntax: AdblockSyntax.Abp,
                         exception: true,
                         modifiers: undefined,
-                        domains: DomainListParser.parse('example.com,~example.net'),
+                        domains: DomainListParser.parse(
+                            'example.com,~example.net',
+                        ),
                         separator: {
                             type: 'Value',
                             value: '#@$#',
@@ -261,14 +296,18 @@ describe('CosmeticRuleParser', () => {
             // semicolon at the end - with domains
             {
                 actual: 'example.com,~example.net#$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
-                expected: (context: NodeExpectContext): ScriptletInjectionRule => {
+                expected: (
+                    context: NodeExpectContext,
+                ): ScriptletInjectionRule => {
                     return {
                         category: RuleCategory.Cosmetic,
                         type: CosmeticRuleType.ScriptletInjectionRule,
                         syntax: AdblockSyntax.Abp,
                         exception: false,
                         modifiers: undefined,
-                        domains: DomainListParser.parse('example.com,~example.net'),
+                        domains: DomainListParser.parse(
+                            'example.com,~example.net',
+                        ),
                         separator: {
                             type: 'Value',
                             value: '#$#',
@@ -286,7 +325,9 @@ describe('CosmeticRuleParser', () => {
                 },
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(CosmeticRuleParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
+            expect(CosmeticRuleParser.parse(actual)).toMatchObject(
+                expectedFn(new NodeExpectContext(actual)),
+            );
         });
     });
 
@@ -335,30 +376,39 @@ describe('CosmeticRuleParser', () => {
             // multiple snippets - with domains
             {
                 actual: 'example.com,~example.net#$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
-                expected: 'example.com,~example.net#$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+                expected:
+                    'example.com,~example.net#$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
             },
             {
                 actual: 'example.com,~example.net#@$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
-                expected: 'example.com,~example.net#@$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+                expected:
+                    'example.com,~example.net#@$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
             },
 
             // trailing semicolon - with domains
             {
                 actual: 'example.com,~example.net#$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
-                expected: 'example.com,~example.net#$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+                expected:
+                    'example.com,~example.net#$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
             },
             {
                 actual: 'example.com,~example.net#@$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
-                expected: 'example.com,~example.net#@$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+                expected:
+                    'example.com,~example.net#@$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
             },
-        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = CosmeticRuleParser.parse(actual);
+        ])(
+            "should generate '$expected' from '$actual'",
+            ({ actual, expected }) => {
+                const ruleNode = CosmeticRuleParser.parse(actual);
 
-            if (ruleNode === null) {
-                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
-            }
+                if (ruleNode === null) {
+                    throw new Error(
+                        `Failed to parse '${actual}' as cosmetic rule`,
+                    );
+                }
 
-            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
-        });
+                expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
+            },
+        );
     });
 });

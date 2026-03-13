@@ -1,6 +1,11 @@
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import {
+    type ModifierList,
+    type NetworkRule,
+    NetworkRuleType,
+    RuleCategory,
+} from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { StringUtils } from '../../utils/string';
-import { ModifierListParser } from '../misc/modifier-list';
 import {
     ESCAPE_CHARACTER,
     NETWORK_RULE_EXCEPTION_MARKER,
@@ -8,16 +13,11 @@ import {
     NETWORK_RULE_SEPARATOR,
     REGEX_MARKER,
 } from '../../utils/constants';
-import {
-    type ModifierList,
-    type NetworkRule,
-    RuleCategory,
-    NetworkRuleType,
-} from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../options';
+import { StringUtils } from '../../utils/string';
 import { BaseParser } from '../base-parser';
+import { ModifierListParser } from '../misc/modifier-list';
 import { ValueParser } from '../misc/value-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * `NetworkRuleParser` is responsible for parsing network rules.
@@ -35,11 +35,16 @@ export class NetworkRuleParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Network rule AST
+     *
+     * @returns Network rule AST.
      *
      * @throws If the rule is syntactically incorrect.
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): NetworkRule {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): NetworkRule {
         let offset = 0;
 
         // Skip leading whitespace
@@ -100,7 +105,10 @@ export class NetworkRuleParser extends BaseParser {
         }
 
         // Throw error if there is no pattern and no modifiers
-        if (pattern.value.length === 0 && (modifiers === undefined || modifiers.children.length === 0)) {
+        if (
+            pattern.value.length === 0
+            && (modifiers === undefined || modifiers.children.length === 0)
+        ) {
             throw new AdblockSyntaxError(
                 'Network rule must have a pattern or modifiers',
                 baseOffset,
@@ -134,8 +142,9 @@ export class NetworkRuleParser extends BaseParser {
     /**
      * Finds the index of the separator character in a network rule.
      *
-     * @param rule Network rule to check
-     * @returns The index of the separator character, or -1 if there is no separator
+     * @param rule Network rule to check.
+     *
+     * @returns The index of the separator character, or -1 if there is no separator.
      */
     public static findNetworkRuleSeparatorIndex(rule: string): number {
         // As we are looking for the last separator, we start from the end of the string
@@ -144,7 +153,11 @@ export class NetworkRuleParser extends BaseParser {
             // - if it's not escaped
             // - if it's not followed by a regex marker, for example: `example.org^$removeparam=/regex$/`
             // eslint-disable-next-line max-len
-            if (rule[i] === NETWORK_RULE_SEPARATOR && rule[i + 1] !== REGEX_MARKER && rule[i - 1] !== ESCAPE_CHARACTER) {
+            if (
+                rule[i] === NETWORK_RULE_SEPARATOR
+                && rule[i + 1] !== REGEX_MARKER
+                && rule[i - 1] !== ESCAPE_CHARACTER
+            ) {
                 return i;
             }
         }

@@ -10,4 +10,4 @@ export const UboPseudoName = {
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type UboPseudoName = typeof UboPseudoName[keyof typeof UboPseudoName];
+export type UboPseudoName = (typeof UboPseudoName)[keyof typeof UboPseudoName];

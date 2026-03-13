@@ -1,11 +1,19 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
-import { type HtmlFilteringRule } from '../../../src/nodes';
-import { RuleParser } from '../../../src/parser/rule-parser';
+import {
+    createNodeConversionResult,
+} from '../../../src/converter/base-interfaces/conversion-result';
+import {
+    ERROR_MESSAGES,
+    HtmlRuleConverter,
+} from '../../../src/converter/cosmetic/html';
 import { NotImplementedError } from '../../../src/errors/not-implemented-error';
-import { createNodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
-import { defaultParserOptions, type ParserOptions } from '../../../src/parser/options';
+import { type HtmlFilteringRule } from '../../../src/nodes';
+import {
+    defaultParserOptions,
+    type ParserOptions,
+} from '../../../src/parser/options';
+import { RuleParser } from '../../../src/parser/rule-parser';
 
 /**
  * Invalid test data interface.
@@ -46,7 +54,9 @@ describe('HtmlRuleConverter', () => {
                     // complex selector without special simplex selectors
                     {
                         actual: '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
-                        expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                        expected: [
+                            '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        ],
                         shouldConvert: false,
                     },
 
@@ -59,7 +69,9 @@ describe('HtmlRuleConverter', () => {
                     // `[min-length]` special attribute selector - multiple usages
                     {
                         actual: '$$div[min-length="10"][min-length="20"]',
-                        expected: ['$$div:contains(/^(?=.{10,}$).*/s):contains(/^(?=.{20,}$).*/s)'],
+                        expected: [
+                            '$$div:contains(/^(?=.{10,}$).*/s):contains(/^(?=.{20,}$).*/s)',
+                        ],
                     },
 
                     // `[max-length]` special attribute selector
@@ -71,7 +83,9 @@ describe('HtmlRuleConverter', () => {
                     // `[max-length]` special attribute selector - multiple usages
                     {
                         actual: '$$div[max-length="100"][max-length="200"]',
-                        expected: ['$$div:contains(/^(?=.{0,100}$).*/s):contains(/^(?=.{0,200}$).*/s)'],
+                        expected: [
+                            '$$div:contains(/^(?=.{0,100}$).*/s):contains(/^(?=.{0,200}$).*/s)',
+                        ],
                     },
 
                     // `[tag-content]` special attribute selector
@@ -95,7 +109,9 @@ describe('HtmlRuleConverter', () => {
                     // `[wildcard]` special attribute selector - multiple usages
                     {
                         actual: '$$div[wildcard="*example*"][wildcard="*test*"]',
-                        expected: ['$$div:contains(/^.*example.*$/s):contains(/^.*test.*$/s)'],
+                        expected: [
+                            '$$div:contains(/^.*example.*$/s):contains(/^.*test.*$/s)',
+                        ],
                     },
 
                     // `:contains()` special pseudo-class selector (leave as-is)
@@ -136,7 +152,9 @@ describe('HtmlRuleConverter', () => {
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]',
-                        expected: ['$$div:contains(a):contains(/^.*example.*$/s)'],
+                        expected: [
+                            '$$div:contains(a):contains(/^.*example.*$/s)',
+                        ],
                     },
 
                     // `[tag-content]` and `:contains()` special simple selectors - mixed usage
@@ -148,13 +166,17 @@ describe('HtmlRuleConverter', () => {
                     // `[wildcard]` and `:contains()` special simple selectors - mixed usage
                     {
                         actual: '$$div[wildcard="*example*"]:contains(b)',
-                        expected: ['$$div:contains(/^.*example.*$/s):contains(b)'],
+                        expected: [
+                            '$$div:contains(/^.*example.*$/s):contains(b)',
+                        ],
                     },
 
                     // `[tag-content]`, `[wildcard]` and `:contains()` special simple selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
-                        expected: ['$$div:contains(a):contains(/^.*example.*$/s):contains(b)'],
+                        expected: [
+                            '$$div:contains(a):contains(/^.*example.*$/s):contains(b)',
+                        ],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(
@@ -186,9 +208,11 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -202,12 +226,16 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -220,21 +248,28 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'TypeSelector',
-                                            value: 'span',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'span',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -247,15 +282,20 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -312,7 +352,10 @@ describe('HtmlRuleConverter', () => {
                     } else {
                         expect(() => {
                             HtmlRuleConverter.convertToAdg(
-                                RuleParser.parse(input, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                                RuleParser.parse(
+                                    input,
+                                    parsingEnabledDefaultParserOptions,
+                                ) as HtmlFilteringRule,
                             );
                         }).toThrowError(error);
                     }
@@ -328,7 +371,9 @@ describe('HtmlRuleConverter', () => {
                 test.each([
                     {
                         actual: '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
-                        expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                        expected: [
+                            '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        ],
                         shouldConvert: false,
                     },
                     {
@@ -349,7 +394,10 @@ describe('HtmlRuleConverter', () => {
                         shouldConvert: false,
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
-                    expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
+                    expect(testData).toBeConvertedProperly(
+                        HtmlRuleConverter,
+                        'convertToAdg',
+                    );
                 });
             });
 
@@ -381,7 +429,9 @@ describe('HtmlRuleConverter', () => {
                         }).toThrowError(error);
                     } else {
                         expect(() => {
-                            HtmlRuleConverter.convertToAdg(RuleParser.parse(input) as HtmlFilteringRule);
+                            HtmlRuleConverter.convertToAdg(
+                                RuleParser.parse(input) as HtmlFilteringRule,
+                            );
                         }).toThrowError(error);
                     }
                 });
@@ -394,7 +444,9 @@ describe('HtmlRuleConverter', () => {
                     // complex selector without special simplex selectors
                     {
                         actual: '##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
-                        expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                        expected: [
+                            '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        ],
                     },
 
                     // `:min-text-length()` special pseudo-class selector (max is conversion default)
@@ -406,7 +458,9 @@ describe('HtmlRuleConverter', () => {
                     // `:min-text-length()` special pseudo-class selector (max is conversion default) - multiple usages
                     {
                         actual: '##^div:min-text-length(10):min-text-length(20)',
-                        expected: ['$$div:contains(/^(?=.{10,262144}$).*/s):contains(/^(?=.{20,262144}$).*/s)'],
+                        expected: [
+                            '$$div:contains(/^(?=.{10,262144}$).*/s):contains(/^(?=.{20,262144}$).*/s)',
+                        ],
                     },
 
                     // `:has-text()` special pseudo-class selector
@@ -468,9 +522,11 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'UblockOrigin',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -484,12 +540,16 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'UblockOrigin',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -502,21 +562,28 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'UblockOrigin',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'TypeSelector',
-                                            value: 'span',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'span',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -529,15 +596,20 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'UblockOrigin',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -583,7 +655,10 @@ describe('HtmlRuleConverter', () => {
                     } else {
                         expect(() => {
                             HtmlRuleConverter.convertToAdg(
-                                RuleParser.parse(input, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                                RuleParser.parse(
+                                    input,
+                                    parsingEnabledDefaultParserOptions,
+                                ) as HtmlFilteringRule,
                             );
                         }).toThrowError(error);
                     }
@@ -599,7 +674,9 @@ describe('HtmlRuleConverter', () => {
                 test.each([
                     {
                         actual: '##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
-                        expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                        expected: [
+                            '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        ],
                     },
                     {
                         actual: '##^div:min-text-length(10)',
@@ -610,7 +687,10 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(example)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
-                    expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
+                    expect(testData).toBeConvertedProperly(
+                        HtmlRuleConverter,
+                        'convertToAdg',
+                    );
                 });
             });
 
@@ -643,7 +723,9 @@ describe('HtmlRuleConverter', () => {
                         }).toThrowError(error);
                     } else {
                         expect(() => {
-                            HtmlRuleConverter.convertToAdg(RuleParser.parse(input) as HtmlFilteringRule);
+                            HtmlRuleConverter.convertToAdg(
+                                RuleParser.parse(input) as HtmlFilteringRule,
+                            );
                         }).toThrowError(error);
                     }
                 });
@@ -666,7 +748,9 @@ describe('HtmlRuleConverter', () => {
                     // complex selector without special simple selectors
                     {
                         actual: '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
-                        expected: ['##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                        expected: [
+                            '##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        ],
                     },
 
                     // `[min-length]` special attribute selector
@@ -678,7 +762,9 @@ describe('HtmlRuleConverter', () => {
                     // `[min-length]` special attribute selector - multiple usages
                     {
                         actual: '$$div[min-length="10"][min-length="20"]',
-                        expected: ['##^div:min-text-length(10):min-text-length(20)'],
+                        expected: [
+                            '##^div:min-text-length(10):min-text-length(20)',
+                        ],
                     },
 
                     // `[max-length]` special attribute selector (ignored during conversion)
@@ -714,7 +800,9 @@ describe('HtmlRuleConverter', () => {
                     // `[wildcard]` special attribute selector - multiple usages
                     {
                         actual: '$$div[wildcard="*example*"][wildcard="*test*"]',
-                        expected: ['##^div:has-text(/^.*example.*$/s):has-text(/^.*test.*$/s)'],
+                        expected: [
+                            '##^div:has-text(/^.*example.*$/s):has-text(/^.*test.*$/s)',
+                        ],
                     },
 
                     // `:contains()` special pseudo-class selector
@@ -750,7 +838,9 @@ describe('HtmlRuleConverter', () => {
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]',
-                        expected: ['##^div:has-text(a):has-text(/^.*example.*$/s)'],
+                        expected: [
+                            '##^div:has-text(a):has-text(/^.*example.*$/s)',
+                        ],
                     },
 
                     // `[tag-content]` and `:contains()` special simple selectors - mixed usage
@@ -762,13 +852,17 @@ describe('HtmlRuleConverter', () => {
                     // `[wildcard]` and `:contains()` special simple selectors - mixed usage
                     {
                         actual: '$$div[wildcard="*example*"]:contains(b)',
-                        expected: ['##^div:has-text(/^.*example.*$/s):has-text(b)'],
+                        expected: [
+                            '##^div:has-text(/^.*example.*$/s):has-text(b)',
+                        ],
                     },
 
                     // `[tag-content]`, `[wildcard]` and `:contains()` special simple selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
-                        expected: ['##^div:has-text(a):has-text(/^.*example.*$/s):has-text(b)'],
+                        expected: [
+                            '##^div:has-text(a):has-text(/^.*example.*$/s):has-text(b)',
+                        ],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(
@@ -800,9 +894,11 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -816,12 +912,16 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -834,21 +934,28 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }, {
-                                            type: 'TypeSelector',
-                                            value: 'span',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'span',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -861,15 +968,20 @@ describe('HtmlRuleConverter', () => {
                             syntax: 'AdGuard',
                             body: {
                                 selectorList: {
-                                    children: [{
-                                        children: [{
-                                            type: 'TypeSelector',
-                                            value: 'div',
-                                        }, {
-                                            type: 'SelectorCombinator',
-                                            value: '>',
-                                        }],
-                                    }],
+                                    children: [
+                                        {
+                                            children: [
+                                                {
+                                                    type: 'TypeSelector',
+                                                    value: 'div',
+                                                },
+                                                {
+                                                    type: 'SelectorCombinator',
+                                                    value: '>',
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 },
                             },
                         } as unknown as HtmlFilteringRule,
@@ -926,7 +1038,10 @@ describe('HtmlRuleConverter', () => {
                     } else {
                         expect(() => {
                             HtmlRuleConverter.convertToUbo(
-                                RuleParser.parse(input, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                                RuleParser.parse(
+                                    input,
+                                    parsingEnabledDefaultParserOptions,
+                                ) as HtmlFilteringRule,
                             );
                         }).toThrowError(error);
                     }
@@ -942,7 +1057,9 @@ describe('HtmlRuleConverter', () => {
                 test.each([
                     {
                         actual: '$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
-                        expected: ['##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
+                        expected: [
+                            '##^div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)',
+                        ],
                     },
                     {
                         actual: '$$div[min-length="10"]',
@@ -961,7 +1078,10 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div:has-text(example)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
-                    expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToUbo');
+                    expect(testData).toBeConvertedProperly(
+                        HtmlRuleConverter,
+                        'convertToUbo',
+                    );
                 });
             });
 
@@ -993,7 +1113,9 @@ describe('HtmlRuleConverter', () => {
                         }).toThrowError(error);
                     } else {
                         expect(() => {
-                            HtmlRuleConverter.convertToUbo(RuleParser.parse(input) as HtmlFilteringRule);
+                            HtmlRuleConverter.convertToUbo(
+                                RuleParser.parse(input) as HtmlFilteringRule,
+                            );
                         }).toThrowError(error);
                     }
                 });
@@ -1006,7 +1128,9 @@ describe('HtmlRuleConverter', () => {
                     syntax: 'UblockOrigin',
                 } as HtmlFilteringRule;
 
-                expect(HtmlRuleConverter.convertToUbo(rule)).toEqual(createNodeConversionResult([rule], false));
+                expect(HtmlRuleConverter.convertToUbo(rule)).toEqual(
+                    createNodeConversionResult([rule], false),
+                );
             });
         });
     });

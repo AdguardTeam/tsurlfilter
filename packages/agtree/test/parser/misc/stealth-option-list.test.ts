@@ -1,7 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { StealthOptionListParser } from '../../../src/parser/misc/stealth-option-list-parser';
-import { ListNodeType, ListItemNodeType } from '../../../src/nodes';
+import { ListItemNodeType, ListNodeType } from '../../../src/nodes';
+import {
+    StealthOptionListParser,
+} from '../../../src/parser/misc/stealth-option-list-parser';
 import { EMPTY } from '../../../src/utils/constants';
 
 describe('StealthOptionListParser', () => {
@@ -169,7 +171,9 @@ describe('StealthOptionListParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(StealthOptionListParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                StealthOptionListParser.parse(actual, { isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 });

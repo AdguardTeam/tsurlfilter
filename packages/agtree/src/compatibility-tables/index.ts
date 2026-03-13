@@ -7,11 +7,7 @@ export { redirectsCompatibilityTable } from './redirects';
 export { scriptletsCompatibilityTable } from './scriptlets';
 export * from './types';
 export * from './platforms';
-export type {
-    ProductRecords,
-    RowByProduct,
-    RowsByProduct,
-} from './base';
+export type { ProductRecords, RowByProduct, RowsByProduct } from './base';
 export {
     parseRawPlatforms,
     stringifyPlatforms,
@@ -31,9 +27,7 @@ export {
     getAllPlatformNames,
 } from './utils/platform-helpers';
 export type { PlatformsByProduct } from './utils/platform-helpers';
-export {
-    ResourceType,
-} from './schemas/resource-type';
+export { ResourceType } from './schemas/resource-type';
 export {
     getResourceTypeModifier,
     isValidResourceType,

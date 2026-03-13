@@ -1,11 +1,11 @@
 import { type AttributeSelector } from '../../../nodes';
-import { QuoteType, QuoteUtils } from '../../../utils/quotes';
 import {
     CLOSE_SQUARE_BRACKET,
     EMPTY,
     OPEN_SQUARE_BRACKET,
     SPACE,
 } from '../../../utils/constants';
+import { QuoteType, QuoteUtils } from '../../../utils/quotes';
 import { BaseGenerator } from '../../base-generator';
 import { ValueGenerator } from '../../misc/value-generator';
 
@@ -30,7 +30,10 @@ export class AttributeSelectorGenerator extends BaseGenerator {
             result.push(ValueGenerator.generate(node.operator));
 
             const generatedValue = ValueGenerator.generate(node.value);
-            const quotedValue = QuoteUtils.setStringQuoteType(generatedValue, QuoteType.Double);
+            const quotedValue = QuoteUtils.setStringQuoteType(
+                generatedValue,
+                QuoteType.Double,
+            );
             result.push(quotedValue);
 
             if (node.flag) {

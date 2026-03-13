@@ -1,12 +1,12 @@
-import { AdblockSyntax } from '../../utils/adblockers';
-import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
-import { StringUtils } from '../../utils/string';
 import {
     CommentMarker,
     type CommentRule,
     CommentRuleType,
     RuleCategory,
 } from '../../nodes';
+import { AdblockSyntax } from '../../utils/adblockers';
+import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
+import { StringUtils } from '../../utils/string';
 import { BaseParser } from '../base-parser';
 import { ValueParser } from '../misc/value-parser';
 import { defaultParserOptions } from '../options';
@@ -28,7 +28,9 @@ export class SimpleCommentParser extends BaseParser {
      * Checks if the raw rule is a simple comment.
      *
      * @param raw Raw input to check.
+     *
      * @returns `true` if the input is a simple comment, `false` otherwise.
+     *
      * @note This method does not check for adblock agent comments.
      */
     public static isSimpleComment(raw: string): boolean {
@@ -57,10 +59,8 @@ export class SimpleCommentParser extends BaseParser {
             if (
                 !trimmed[end]
                 || StringUtils.isWhitespace(trimmed[end])
-                || (
-                    trimmed[end] === CommentMarker.Hashmark
-                    && trimmed[end + 1] === CommentMarker.Hashmark
-                )
+                || (trimmed[end] === CommentMarker.Hashmark
+                    && trimmed[end + 1] === CommentMarker.Hashmark)
             ) {
                 return true;
             }
@@ -75,9 +75,14 @@ export class SimpleCommentParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
      * @returns Comment rule node or null (if the raw rule cannot be parsed as a simple comment).
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): CommentRule | null {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): CommentRule | null {
         // Ignore non-comment rules
         if (!this.isSimpleComment(raw)) {
             return null;
@@ -90,13 +95,21 @@ export class SimpleCommentParser extends BaseParser {
         offset = StringUtils.skipWS(raw, offset);
 
         // Get comment marker
-        const marker = ValueParser.parse(raw[offset], options, baseOffset + offset);
+        const marker = ValueParser.parse(
+            raw[offset],
+            options,
+            baseOffset + offset,
+        );
 
         // Skip marker
         offset += 1;
 
         // Get comment text
-        const text = ValueParser.parse(raw.slice(offset), options, baseOffset + offset);
+        const text = ValueParser.parse(
+            raw.slice(offset),
+            options,
+            baseOffset + offset,
+        );
 
         // Regular comment rule
         const result: CommentRule = {

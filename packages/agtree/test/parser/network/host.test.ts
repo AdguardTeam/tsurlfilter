@@ -1,9 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { type HostRule, NetworkRuleType, RuleCategory } from '../../../src/nodes';
-import { HostRuleParser } from '../../../src/parser/network/host-rule-parser';
 import { HostRuleGenerator } from '../../../src/generator/network';
+import {
+    type HostRule,
+    NetworkRuleType,
+    RuleCategory,
+} from '../../../src/nodes';
+import { HostRuleParser } from '../../../src/parser/network/host-rule-parser';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
 
 describe('HostRuleParser', () => {
     describe('parse', () => {
@@ -172,7 +176,8 @@ describe('HostRuleParser', () => {
                 // empty rule
                 {
                     actual: '',
-                    expected: 'Host rule must have at least one domain name or an IP address and a domain name',
+                    expected:
+                        'Host rule must have at least one domain name or an IP address and a domain name',
                 },
 
                 // invalid IP
@@ -186,9 +191,14 @@ describe('HostRuleParser', () => {
                     actual: 'example..com',
                     expected: /^Not a valid domain:/,
                 },
-            ])("should throw an error for '$actual'", ({ actual, expected }) => {
-                expect(() => HostRuleParser.parse(actual)).toThrow(expected);
-            });
+            ])(
+                "should throw an error for '$actual'",
+                ({ actual, expected }) => {
+                    expect(() => HostRuleParser.parse(actual)).toThrow(
+                        expected,
+                    );
+                },
+            );
         });
     });
 
@@ -212,14 +222,20 @@ describe('HostRuleParser', () => {
             },
             {
                 actual: '127.0.0.1 example.org example.info # this is a comment',
-                expected: '127.0.0.1 example.org example.info # this is a comment',
+                expected:
+                    '127.0.0.1 example.org example.info # this is a comment',
             },
             {
                 actual: 'ff02::1 ip6-allnodes',
                 expected: 'ff02::1 ip6-allnodes',
             },
-        ])("should generate '$expected' for '$actual'", ({ actual, expected }) => {
-            expect(HostRuleGenerator.generate(HostRuleParser.parse(actual))).toBe(expected);
-        });
+        ])(
+            "should generate '$expected' for '$actual'",
+            ({ actual, expected }) => {
+                expect(
+                    HostRuleGenerator.generate(HostRuleParser.parse(actual)),
+                ).toBe(expected);
+            },
+        );
     });
 });

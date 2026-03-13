@@ -2,20 +2,20 @@
  * @file Script to generate compatibility tables for the wiki.
  */
 
-import * as prettier from 'prettier';
-import { markdownTable } from 'markdown-table';
-import { writeFile } from 'fs/promises';
 import { ensureDir } from 'fs-extra';
-import path from 'path';
+import { markdownTable } from 'markdown-table';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import * as prettier from 'prettier';
 
+import { type CompatibilityTableBase, type ProductRecords, type RowByProduct } from '../src/compatibility-tables/base';
+import { modifiersCompatibilityTable } from '../src/compatibility-tables/modifiers';
+import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../src/compatibility-tables/platforms';
 import { redirectsCompatibilityTable } from '../src/compatibility-tables/redirects';
 import { type BaseCompatibilityDataSchema } from '../src/compatibility-tables/schemas';
-import { modifiersCompatibilityTable } from '../src/compatibility-tables/modifiers';
 import { scriptletsCompatibilityTable } from '../src/compatibility-tables/scriptlets';
-import { type ProductRecords, type RowByProduct, type CompatibilityTableBase } from '../src/compatibility-tables/base';
-import { EMPTY, NEWLINE } from '../src/utils/constants';
 import { AdblockSyntax } from '../src/utils/adblockers';
-import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../src/compatibility-tables/platforms';
+import { EMPTY, NEWLINE } from '../src/utils/constants';
 
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -28,7 +28,10 @@ const LABELS = {
     'Adblock Plus / AdBlock': ['Chromium', 'Firefox'],
 };
 
-type CompatibilityEntityData = Pick<BaseCompatibilityDataSchema, 'name' | 'aliases' | 'docs'>;
+type CompatibilityEntityData = Pick<
+BaseCompatibilityDataSchema,
+'name' | 'aliases' | 'docs'
+>;
 
 /**
  * Helper function to get the name with aliases, e.g. `name (alias1, alias2)`.
@@ -68,18 +71,21 @@ const getNameWithAliases = (
  */
 const getFirstCompatibleEntityFromRow = <T extends BaseCompatibilityDataSchema>(
     row: RowByProduct<T>,
-    syntax: typeof AdblockSyntax.Adg | typeof AdblockSyntax.Ubo | typeof AdblockSyntax.Abp,
+    syntax:
+    | typeof AdblockSyntax.Adg
+    | typeof AdblockSyntax.Ubo
+    | typeof AdblockSyntax.Abp,
     compatibility: AnyPlatform,
 ): CompatibilityEntityData => {
     const productRow: ProductRecords<T> = row[syntax];
     for (const [key, value] of Object.entries(productRow)) {
         // eslint-disable-next-line no-bitwise
         if (Number(key) & compatibility) {
-            return ({
+            return {
                 name: value.name,
                 aliases: value.aliases,
                 docs: value.docs,
-            });
+            };
         }
     }
 
@@ -114,38 +120,94 @@ const sortFn = (a: CompatibilityEntityData[], b: CompatibilityEntityData[]) => {
 /**
  * Helper function to get the rows by product.
  *
+ * @template T Type of the compatibility data.
+ *
  * @param data Compatibility data to get the rows by product from.
  * @param extended Whether to include extended compatibility information.
  *
  * @returns Rows by product.
- *
- * @template T Type of the compatibility data.
  */
-const getRowsByProduct = <T extends CompatibilityTableBase<BaseCompatibilityDataSchema>>(
+const getRowsByProduct = <
+    T extends CompatibilityTableBase<BaseCompatibilityDataSchema>,
+>(
     data: T,
     extended = false,
 ): string[][] => {
     const result: CompatibilityEntityData[][] = extended
-        ? data.getRowsByProduct().map((row) => [
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgOsAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgExtChromium),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, SpecificPlatform.AdgExtFirefox),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgSafariAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, SpecificPlatform.AdgCbAndroid),
+        ? data
+            .getRowsByProduct()
+            .map((row) => [
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Adg,
+                    GenericPlatform.AdgOsAny,
+                ),
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Adg,
+                    GenericPlatform.AdgExtChromium,
+                ),
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Adg,
+                    SpecificPlatform.AdgExtFirefox,
+                ),
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Adg,
+                    GenericPlatform.AdgSafariAny,
+                ),
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Adg,
+                    SpecificPlatform.AdgCbAndroid,
+                ),
 
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, GenericPlatform.UboExtChromium),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, SpecificPlatform.UboExtFirefox),
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Ubo,
+                    GenericPlatform.UboExtChromium,
+                ),
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Ubo,
+                    SpecificPlatform.UboExtFirefox,
+                ),
 
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, GenericPlatform.AbpExtChromium),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, SpecificPlatform.AbpExtFirefox),
-        ])
-        : data.getRowsByProduct().map((row) => [
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Adg, GenericPlatform.AdgAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Ubo, GenericPlatform.UboAny),
-            getFirstCompatibleEntityFromRow(row, AdblockSyntax.Abp, GenericPlatform.AbpAny),
-        ]);
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Abp,
+                    GenericPlatform.AbpExtChromium,
+                ),
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Abp,
+                    SpecificPlatform.AbpExtFirefox,
+                ),
+            ])
+        : data
+            .getRowsByProduct()
+            .map((row) => [
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Adg,
+                    GenericPlatform.AdgAny,
+                ),
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Ubo,
+                    GenericPlatform.UboAny,
+                ),
+                getFirstCompatibleEntityFromRow(
+                    row,
+                    AdblockSyntax.Abp,
+                    GenericPlatform.AbpAny,
+                ),
+            ]);
 
-    return result.sort(sortFn).map((row) => row.map((cell) => getNameWithAliases(cell, extended)));
+    return result
+        .sort(sortFn)
+        .map((row) => row.map((cell) => getNameWithAliases(cell, extended)));
 };
 
 /**
@@ -177,23 +239,28 @@ const getMarkdownFileContent = (title: string, table: string): string => {
  *
  * @returns Markdown table content.
  */
-const getTableContent = async (bodyData: string[][], extended = false): Promise<string> => {
+const getTableContent = async (
+    bodyData: string[][],
+    extended = false,
+): Promise<string> => {
     if (extended) {
         /* eslint-disable @typescript-eslint/indent */
         const header = `
             <thead>
                 <tr>
                     ${Object.entries(LABELS)
-                        .map(([mainLabel, subLabels]) => `<th colspan="${subLabels.length}">${mainLabel}</th>`)
-                        .join(EMPTY)
-                    }
+                        .map(
+                            ([mainLabel, subLabels]) => `<th colspan="${subLabels.length}">${mainLabel}</th>`,
+                        )
+                        .join(EMPTY)}
                 </tr>
                 <tr>
                     ${Object.entries(LABELS)
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        .map(([_, subLabels]) => subLabels.map((subLabel) => `<th>${subLabel}</th>`).join(EMPTY))
-                        .join(EMPTY)
-                    }
+                        .map(([_, subLabels]) => subLabels
+                                .map((subLabel) => `<th>${subLabel}</th>`)
+                                .join(EMPTY))
+                        .join(EMPTY)}
                 </tr>
             </thead>
         `;
@@ -210,10 +277,7 @@ const getTableContent = async (bodyData: string[][], extended = false): Promise<
         });
     }
 
-    return markdownTable([
-        Object.keys(LABELS),
-        ...bodyData,
-    ]);
+    return markdownTable([Object.keys(LABELS), ...bodyData]);
 };
 
 /**
@@ -224,7 +288,9 @@ const getTableContent = async (bodyData: string[][], extended = false): Promise<
  * @param filePath File path to save the markdown file.
  * @param extended Whether to include extended compatibility information.
  */
-const writeMarkdownFile = async <T extends CompatibilityTableBase<BaseCompatibilityDataSchema>>(
+const writeMarkdownFile = async <
+    T extends CompatibilityTableBase<BaseCompatibilityDataSchema>,
+>(
     title: string,
     compatibilityTable: T,
     filePath: string,

@@ -1,6 +1,6 @@
-import { BaseGenerator } from '../base-generator';
 import { type AnyExpressionNode, OperatorValue } from '../../nodes';
 import { NodeType } from '../../parser/misc/logical-expression-parser';
+import { BaseGenerator } from '../base-generator';
 
 /**
  * Generator for logical expression nodes.
@@ -9,15 +9,19 @@ export class LogicalExpressionGenerator extends BaseGenerator {
     /**
      * Generates a string representation of the logical expression (serialization).
      *
-     * @param node Expression node
-     * @returns String representation of the logical expression
+     * @param node Expression node.
+     *
+     * @returns String representation of the logical expression.
      */
     public static generate(node: AnyExpressionNode): string {
         if (node.type === NodeType.Variable) {
             return node.name;
-        } if (node.type === NodeType.Operator) {
+        }
+        if (node.type === NodeType.Operator) {
             const left = LogicalExpressionGenerator.generate(node.left);
-            const right = node.right ? LogicalExpressionGenerator.generate(node.right) : undefined;
+            const right = node.right
+                ? LogicalExpressionGenerator.generate(node.right)
+                : undefined;
             const { operator } = node;
 
             // Special case for NOT operator
@@ -31,8 +35,11 @@ export class LogicalExpressionGenerator extends BaseGenerator {
             }
 
             return `${left} ${operator} ${right}`;
-        } if (node.type === NodeType.Parenthesis) {
-            const expressionString = LogicalExpressionGenerator.generate(node.expression);
+        }
+        if (node.type === NodeType.Parenthesis) {
+            const expressionString = LogicalExpressionGenerator.generate(
+                node.expression,
+            );
 
             return `(${expressionString})`;
         }

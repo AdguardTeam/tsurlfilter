@@ -11,7 +11,9 @@ import { type ToBeConvertedProperly } from '../test/setup/custom-matchers/check-
 
 // Note: first argument is passed to `expect`, so we need to remove it
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type RemoveFirstArg<T> = T extends (arg0: any, ...args: infer U) => infer R ? (...args: U) => R : never;
+type RemoveFirstArg<T> = T extends (arg0: any, ...args: infer U) => infer R
+    ? (...args: U) => R
+    : never;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface CustomMatchers<R = unknown> {

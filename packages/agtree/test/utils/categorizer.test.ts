@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
-import { RuleCategorizer } from '../../src/utils/categorizer';
 import { CosmeticRuleType } from '../../src/nodes';
+import { RuleCategorizer } from '../../src/utils/categorizer';
 
 describe('RuleCategorizer', () => {
     describe('getCosmeticRuleType', () => {
@@ -66,8 +66,13 @@ describe('RuleCategorizer', () => {
                 actual: '##+js(foo',
                 expected: null,
             },
-        ])('should categorize \'$actual\' as \'$expected\'', ({ actual, expected }) => {
-            expect(RuleCategorizer.getCosmeticRuleType(actual)).toBe(expected);
-        });
+        ])(
+            "should categorize '$actual' as '$expected'",
+            ({ actual, expected }) => {
+                expect(RuleCategorizer.getCosmeticRuleType(actual)).toBe(
+                    expected,
+                );
+            },
+        );
     });
 });

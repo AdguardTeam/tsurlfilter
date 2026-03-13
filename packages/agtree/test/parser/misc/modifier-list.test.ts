@@ -1,9 +1,11 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { ModifierListParser } from '../../../src/parser/misc/modifier-list';
+import {
+    ModifierListGenerator,
+} from '../../../src/generator/misc/modifier-list-generator';
 import { type ModifierList } from '../../../src/nodes';
+import { ModifierListParser } from '../../../src/parser/misc/modifier-list';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { ModifierListGenerator } from '../../../src/generator/misc/modifier-list-generator';
 
 describe('ModifierListParser', () => {
     test('parse', () => {
@@ -73,37 +75,33 @@ describe('ModifierListParser', () => {
             children: [],
         });
 
-        expect(ModifierListParser.parse(SPACE)).toEqual<ModifierList>(
-            {
-                type: 'ModifierList',
-                start: 0,
-                end: 1,
-                children: [],
-            },
-        );
+        expect(ModifierListParser.parse(SPACE)).toEqual<ModifierList>({
+            type: 'ModifierList',
+            start: 0,
+            end: 1,
+            children: [],
+        });
 
         // Valid modifiers
-        expect(ModifierListParser.parse('modifier1')).toEqual<ModifierList>(
-            {
-                type: 'ModifierList',
-                start: 0,
-                end: 9,
-                children: [
-                    {
-                        type: 'Modifier',
+        expect(ModifierListParser.parse('modifier1')).toEqual<ModifierList>({
+            type: 'ModifierList',
+            start: 0,
+            end: 9,
+            children: [
+                {
+                    type: 'Modifier',
+                    start: 0,
+                    end: 9,
+                    name: {
+                        type: 'Value',
                         start: 0,
                         end: 9,
-                        name: {
-                            type: 'Value',
-                            start: 0,
-                            end: 9,
-                            value: 'modifier1',
-                        },
-                        exception: false,
+                        value: 'modifier1',
                     },
-                ],
-            },
-        );
+                    exception: false,
+                },
+            ],
+        });
 
         expect(ModifierListParser.parse('~modifier1')).toEqual<ModifierList>({
             type: 'ModifierList',
@@ -125,7 +123,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('modifier1,modifier2')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('modifier1,modifier2'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 19,
@@ -157,7 +157,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('modifier1,~modifier2')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('modifier1,~modifier2'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 20,
@@ -189,7 +191,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('~modifier1,modifier2')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('~modifier1,modifier2'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 20,
@@ -221,7 +225,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('~modifier1,~modifier2')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('~modifier1,~modifier2'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 21,
@@ -253,7 +259,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('modifier1, modifier2')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('modifier1, modifier2'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 20,
@@ -285,7 +293,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('modifier1, ~modifier2')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('modifier1, ~modifier2'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 21,
@@ -317,7 +327,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('modifier1=value1')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('modifier1=value1'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 16,
@@ -343,7 +355,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('~modifier1=value1')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('~modifier1=value1'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 17,
@@ -369,7 +383,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('modifier1 = value1')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('modifier1 = value1'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 18,
@@ -395,7 +411,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('~modifier1 = value1')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('~modifier1 = value1'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 19,
@@ -421,7 +439,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('   modifier1   =    value1       ')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('   modifier1   =    value1       '),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 33,
@@ -447,7 +467,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('modifier1,modifier2=value2')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('modifier1,modifier2=value2'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 26,
@@ -485,7 +507,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('modifier1=value1,modifier2=value2')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('modifier1=value1,modifier2=value2'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 33,
@@ -530,7 +554,9 @@ describe('ModifierListParser', () => {
         });
 
         // Escaped separator comma
-        expect(ModifierListParser.parse('modifier1=a\\,b\\,c,modifier2=value2')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('modifier1=a\\,b\\,c,modifier2=value2'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 34,
@@ -574,7 +600,9 @@ describe('ModifierListParser', () => {
             ],
         });
 
-        expect(ModifierListParser.parse('modifier1=a\\,b\\,c,~modifier2=value2')).toEqual<ModifierList>({
+        expect(
+            ModifierListParser.parse('modifier1=a\\,b\\,c,~modifier2=value2'),
+        ).toEqual<ModifierList>({
             type: 'ModifierList',
             start: 0,
             end: 35,
@@ -694,7 +722,9 @@ describe('ModifierListParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(ModifierListParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                ModifierListParser.parse(actual, { isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -712,42 +742,86 @@ describe('ModifierListParser', () => {
         // TODO: Refactor to test.each
         expect(parseAndGenerate('modifier1')).toEqual('modifier1');
         expect(parseAndGenerate('~modifier1')).toEqual('~modifier1');
-        expect(parseAndGenerate('modifier1=value1')).toEqual('modifier1=value1');
-        expect(parseAndGenerate('modifier1 = value1')).toEqual('modifier1=value1');
-        expect(parseAndGenerate('~modifier1=value1')).toEqual('~modifier1=value1');
-        expect(parseAndGenerate('~modifier1 = value1')).toEqual('~modifier1=value1');
+        expect(parseAndGenerate('modifier1=value1')).toEqual(
+            'modifier1=value1',
+        );
+        expect(parseAndGenerate('modifier1 = value1')).toEqual(
+            'modifier1=value1',
+        );
+        expect(parseAndGenerate('~modifier1=value1')).toEqual(
+            '~modifier1=value1',
+        );
+        expect(parseAndGenerate('~modifier1 = value1')).toEqual(
+            '~modifier1=value1',
+        );
 
-        expect(parseAndGenerate('modifier1=value1,modifier2')).toEqual('modifier1=value1,modifier2');
-        expect(parseAndGenerate('~modifier1=value1,modifier2')).toEqual('~modifier1=value1,modifier2');
-        expect(parseAndGenerate('modifier1=value1,~modifier2')).toEqual('modifier1=value1,~modifier2');
-        expect(parseAndGenerate('~modifier1=value1,~modifier2')).toEqual('~modifier1=value1,~modifier2');
+        expect(parseAndGenerate('modifier1=value1,modifier2')).toEqual(
+            'modifier1=value1,modifier2',
+        );
+        expect(parseAndGenerate('~modifier1=value1,modifier2')).toEqual(
+            '~modifier1=value1,modifier2',
+        );
+        expect(parseAndGenerate('modifier1=value1,~modifier2')).toEqual(
+            'modifier1=value1,~modifier2',
+        );
+        expect(parseAndGenerate('~modifier1=value1,~modifier2')).toEqual(
+            '~modifier1=value1,~modifier2',
+        );
 
-        expect(parseAndGenerate('modifier1 = value1, modifier2')).toEqual('modifier1=value1,modifier2');
-        expect(parseAndGenerate('~modifier1 = value1, modifier2')).toEqual('~modifier1=value1,modifier2');
-        expect(parseAndGenerate('modifier1 = value1, ~modifier2')).toEqual('modifier1=value1,~modifier2');
-        expect(parseAndGenerate('~modifier1 = value1, ~modifier2')).toEqual('~modifier1=value1,~modifier2');
+        expect(parseAndGenerate('modifier1 = value1, modifier2')).toEqual(
+            'modifier1=value1,modifier2',
+        );
+        expect(parseAndGenerate('~modifier1 = value1, modifier2')).toEqual(
+            '~modifier1=value1,modifier2',
+        );
+        expect(parseAndGenerate('modifier1 = value1, ~modifier2')).toEqual(
+            'modifier1=value1,~modifier2',
+        );
+        expect(parseAndGenerate('~modifier1 = value1, ~modifier2')).toEqual(
+            '~modifier1=value1,~modifier2',
+        );
 
-        expect(parseAndGenerate('modifier1,modifier2=value2')).toEqual('modifier1,modifier2=value2');
-        expect(parseAndGenerate('modifier1, modifier2 = value2')).toEqual('modifier1,modifier2=value2');
+        expect(parseAndGenerate('modifier1,modifier2=value2')).toEqual(
+            'modifier1,modifier2=value2',
+        );
+        expect(parseAndGenerate('modifier1, modifier2 = value2')).toEqual(
+            'modifier1,modifier2=value2',
+        );
 
-        expect(parseAndGenerate('modifier1,modifier2')).toEqual('modifier1,modifier2');
-        expect(parseAndGenerate('modifier1, modifier2')).toEqual('modifier1,modifier2');
+        expect(parseAndGenerate('modifier1,modifier2')).toEqual(
+            'modifier1,modifier2',
+        );
+        expect(parseAndGenerate('modifier1, modifier2')).toEqual(
+            'modifier1,modifier2',
+        );
 
-        expect(parseAndGenerate('modifier1=value1,modifier2=value2')).toEqual('modifier1=value1,modifier2=value2');
-        expect(parseAndGenerate('~modifier1=value1,~modifier2=value2')).toEqual('~modifier1=value1,~modifier2=value2');
+        expect(parseAndGenerate('modifier1=value1,modifier2=value2')).toEqual(
+            'modifier1=value1,modifier2=value2',
+        );
+        expect(parseAndGenerate('~modifier1=value1,~modifier2=value2')).toEqual(
+            '~modifier1=value1,~modifier2=value2',
+        );
         // eslint-disable-next-line max-len
-        expect(parseAndGenerate('~modifier1  =  value1   ,   ~modifier2  =   value2')).toEqual('~modifier1=value1,~modifier2=value2');
+        expect(
+            parseAndGenerate(
+                '~modifier1  =  value1   ,   ~modifier2  =   value2',
+            ),
+        ).toEqual('~modifier1=value1,~modifier2=value2');
 
         expect(
             parseAndGenerate(
                 'path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i',
             ),
-        ).toEqual('path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i');
+        ).toEqual(
+            'path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i',
+        );
 
         expect(
             parseAndGenerate(
                 '~path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i',
             ),
-        ).toEqual('~path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i');
+        ).toEqual(
+            '~path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i',
+        );
     });
 });

@@ -1,13 +1,13 @@
 /**
  * @file Rollup configurations for generating AGTree builds.
  */
-import typescript from '@rollup/plugin-typescript';
-import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import externals from 'rollup-plugin-node-externals';
 import json from '@rollup/plugin-json';
-import path from 'node:path';
+import resolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import externals from 'rollup-plugin-node-externals';
 
 import { compatibilityTablePlugin } from './rollup.plugins';
 
@@ -26,16 +26,13 @@ const pkg = JSON.parse(readFileSync(pkgFileLocation, 'utf-8'));
 
 // Check if the package.json file has all required fields
 // (we need them for the banner)
-const REQUIRED_PKG_FIELDS = [
-    'author',
-    'homepage',
-    'license',
-    'version',
-];
+const REQUIRED_PKG_FIELDS = ['author', 'homepage', 'license', 'version'];
 
 for (const field of REQUIRED_PKG_FIELDS) {
     if (!(field in pkg)) {
-        throw new Error(`Missing required field "${field}" in ${PKG_FILE_NAME}`);
+        throw new Error(
+            `Missing required field "${field}" in ${PKG_FILE_NAME}`,
+        );
     }
 }
 
@@ -77,13 +74,8 @@ const main = {
             banner,
         },
     ],
-    plugins: [
-        ...commonPlugins,
-        compatibilityTablePlugin(),
-    ],
+    plugins: [...commonPlugins, compatibilityTablePlugin()],
 };
 
 // Export build configs for Rollup
-export default [
-    main,
-];
+export default [main];

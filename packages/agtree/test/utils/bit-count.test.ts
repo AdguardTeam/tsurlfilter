@@ -31,11 +31,11 @@ describe('getBitCount', () => {
     });
 
     test('should handle 32-bit max unsigned integer correctly', () => {
-        expect(getBitCount(0xFFFFFFFF)).toBe(32);
+        expect(getBitCount(0xffffffff)).toBe(32);
     });
 
     test('should return correct bit count for alternating bits', () => {
-        expect(getBitCount(0xAAAAAAAA)).toBe(16);
+        expect(getBitCount(0xaaaaaaaa)).toBe(16);
         expect(getBitCount(0x55555555)).toBe(16);
     });
 
@@ -62,9 +62,9 @@ describe('getBitCount', () => {
 
     test('should handle large numbers with scattered bits', () => {
         expect(getBitCount(0x12345678)).toBe(13);
-        expect(getBitCount(0xABCDEF01)).toBe(18); // 0b10101011110011011110111100000001 = 18 bits
-        expect(getBitCount(0xF0F0F0F0)).toBe(16);
-        expect(getBitCount(0x0F0F0F0F)).toBe(16);
+        expect(getBitCount(0xabcdef01)).toBe(18); // 0b10101011110011011110111100000001 = 18 bits
+        expect(getBitCount(0xf0f0f0f0)).toBe(16);
+        expect(getBitCount(0x0f0f0f0f)).toBe(16);
     });
 
     test('should be consistent with multiple calls', () => {

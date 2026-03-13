@@ -3,6 +3,7 @@
  */
 import { NotImplementedError } from '../errors/not-implemented-error';
 import { type Node } from '../nodes';
+
 import { type ParserOptions } from './options';
 
 /**
@@ -17,8 +18,16 @@ export class BaseParser {
      * @param baseOffset Base offset. Locations in the AST node will be relative to this offset.
      * @param args Additional, parser-specific arguments, if needed.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public static parse(input: string, options: ParserOptions, baseOffset: number, ...args: unknown[]): Node | null {
+    public static parse(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        input: string,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        options: ParserOptions,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        baseOffset: number,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        ...args: unknown[]
+    ): Node | null {
         throw new NotImplementedError();
     }
 }

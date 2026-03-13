@@ -1,31 +1,38 @@
+import { sprintf } from 'sprintf-js';
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
-import { sprintf } from 'sprintf-js';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/nodes';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
-import {
-    CosmeticRuleParser,
-    ERROR_MESSAGES as COSMETIC_ERROR_MESSAGES,
-} from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import {
-    ERROR_MESSAGES as UBO_SELECTOR_ERROR_MESSAGES,
-    formatPseudoName,
-} from '../../../src/parser/css/ubo-selector-parser';
-import { CSS_NOT_PSEUDO } from '../../../src/utils/constants';
-import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
 import { UboPseudoName } from '../../../src/common/ubo-selector-common';
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import {
+    CosmeticRuleType,
+    type ElementHidingRule,
+    RuleCategory,
+} from '../../../src/nodes';
+import {
+    ERROR_MESSAGES as COSMETIC_ERROR_MESSAGES,
+    CosmeticRuleParser,
+} from '../../../src/parser/cosmetic/cosmetic-rule-parser';
+import {
+    formatPseudoName,
+    ERROR_MESSAGES as UBO_SELECTOR_ERROR_MESSAGES,
+} from '../../../src/parser/css/ubo-selector-parser';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
+import { CSS_NOT_PSEUDO } from '../../../src/utils/constants';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid usage of uBlock modifier list', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<ElementHidingRule> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<ElementHidingRule>;
+        }>([
             // generic cosmetic rule - without domains
             {
                 actual: '##:matches-path(/path) .ad',
@@ -65,7 +72,9 @@ describe('CosmeticRuleParser', () => {
                             selectorList: {
                                 type: 'Value',
                                 value: '.ad',
-                                ...context.getRangeFor(':matches-path(/path) .ad'),
+                                ...context.getRangeFor(
+                                    ':matches-path(/path) .ad',
+                                ),
                             },
                             ...context.getRangeFor(':matches-path(/path) .ad'),
                         },
@@ -74,12 +83,17 @@ describe('CosmeticRuleParser', () => {
                 },
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(CosmeticRuleParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
+            expect(CosmeticRuleParser.parse(actual)).toMatchObject(
+                expectedFn(new NodeExpectContext(actual)),
+            );
         });
     });
 
     describe('CosmeticRuleParser.parse - invalid usage of uBlock modifier list', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<AdblockSyntaxError>;
+        }>([
             // There is no need to test every possible errors here, because uBO modifiers are well tested in
             // 'tests/parser/css/ubo-selector.test.ts' - this is their separate section
             // We just test that errors are thrown correctly here as well
@@ -95,7 +109,11 @@ describe('CosmeticRuleParser', () => {
                             formatPseudoName('has'),
                             formatPseudoName(CSS_NOT_PSEUDO),
                         ),
-                        ...context.toTuple(context.getRangeFor(':has(:matches-path(/path)) .ad')),
+                        ...context.toTuple(
+                            context.getRangeFor(
+                                ':has(:matches-path(/path)) .ad',
+                            ),
+                        ),
                     );
                 },
             },
@@ -114,21 +132,24 @@ describe('CosmeticRuleParser', () => {
                     );
                 },
             },
-        ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = vi.fn(() => CosmeticRuleParser.parse(actual));
+        ])(
+            "should throw on input: '$actual'",
+            ({ actual, expected: expectedFn }) => {
+                const fn = vi.fn(() => CosmeticRuleParser.parse(actual));
 
-            // parse should throw
-            expect(fn).toThrow();
+                // parse should throw
+                expect(fn).toThrow();
 
-            const expected = expectedFn(new NodeExpectContext(actual));
+                const expected = expectedFn(new NodeExpectContext(actual));
 
-            // check the thrown error
-            const error = fn.mock.results[0].value;
-            expect(error).toBeInstanceOf(AdblockSyntaxError);
-            expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('start', expected.start);
-            expect(error).toHaveProperty('end', expected.end);
-        });
+                // check the thrown error
+                const error = fn.mock.results[0].value;
+                expect(error).toBeInstanceOf(AdblockSyntaxError);
+                expect(error).toHaveProperty('message', expected.message);
+                expect(error).toHaveProperty('start', expected.start);
+                expect(error).toHaveProperty('end', expected.end);
+            },
+        );
     });
 
     describe('CosmeticRuleParser.generate - valid usage of AdGuard modifier list', () => {
@@ -137,15 +158,20 @@ describe('CosmeticRuleParser', () => {
                 actual: '##:matches-path(/path) .ad',
                 expected: '##:matches-path(/path) .ad',
             },
-        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = CosmeticRuleParser.parse(actual);
+        ])(
+            "should generate '$expected' from '$actual'",
+            ({ actual, expected }) => {
+                const ruleNode = CosmeticRuleParser.parse(actual);
 
-            if (ruleNode === null) {
-                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
-            }
+                if (ruleNode === null) {
+                    throw new Error(
+                        `Failed to parse '${actual}' as cosmetic rule`,
+                    );
+                }
 
-            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
-        });
+                expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
+            },
+        );
     });
 
     describe('CosmeticRuleParser.generate - valid usage of AdGuard negation modifier list', () => {
@@ -158,14 +184,21 @@ describe('CosmeticRuleParser', () => {
                 actual: 'example.com##:not(:matches-path(/\\/page/)) .foo',
                 expected: 'example.com##:not(:matches-path(/\\/page/)) .foo',
             },
-        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
-            const ruleNode = CosmeticRuleParser.parse(actual, { parseUboSpecificRules: true });
+        ])(
+            "should generate '$expected' from '$actual'",
+            ({ actual, expected }) => {
+                const ruleNode = CosmeticRuleParser.parse(actual, {
+                    parseUboSpecificRules: true,
+                });
 
-            if (ruleNode === null) {
-                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
-            }
+                if (ruleNode === null) {
+                    throw new Error(
+                        `Failed to parse '${actual}' as cosmetic rule`,
+                    );
+                }
 
-            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
-        });
+                expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
+            },
+        );
     });
 });

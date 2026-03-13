@@ -13,7 +13,10 @@ const generatedRuleText = RuleGenerator.generate(ruleNode);
 
 ok(generatedRuleText === ruleText);
 
-const modifierData = modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AdgExtChrome);
+const modifierData = modifiersCompatibilityTable.getSingle(
+    'third-party',
+    SpecificPlatform.AdgExtChrome,
+);
 
 ok(modifierData);
 

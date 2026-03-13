@@ -5,7 +5,7 @@ import { VALIDATION_ERROR_PREFIX } from './constants';
  * - `{ valid: true }` for valid and _fully supported_ modifier;
  * - `{ valid: true, warn: <deprecation notice> }` for valid
  *   and _still supported but deprecated_ modifier;
- * - otherwise `{ valid: true, error: <invalidity reason> }`
+ * - otherwise `{ valid: true, error: <invalidity reason> }`.
  */
 export type ValidationResult = {
     valid: boolean;
@@ -28,13 +28,18 @@ export const getInvalidValidationResult = (error: string): ValidationResult => {
 };
 
 /**
- * Returns invalid validation result which uses {@link VALIDATION_ERROR_PREFIX.VALUE_REQUIRED} as prefix
- * and specifies the given `modifierName` in the error message.
+ * Returns invalid validation result which uses
+ * {@link VALIDATION_ERROR_PREFIX.VALUE_REQUIRED} as prefix and specifies
+ * the given `modifierName` in the error message.
  *
  * @param modifierName Modifier name.
  *
  * @returns Validation result `{ valid: false, error }`.
  */
-export const getValueRequiredValidationResult = (modifierName: string): ValidationResult => {
-    return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_REQUIRED}: '${modifierName}'`);
+export const getValueRequiredValidationResult = (
+    modifierName: string,
+): ValidationResult => {
+    return getInvalidValidationResult(
+        `${VALIDATION_ERROR_PREFIX.VALUE_REQUIRED}: '${modifierName}'`,
+    );
 };

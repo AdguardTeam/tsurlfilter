@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import { tokenize, TokenType } from '../../src/tokenizer/tokenizer';
 
@@ -47,12 +47,23 @@ describe('Tokenizer', () => {
     });
 
     test('Cosmetic separator variants with raw content', () => {
-        const inputs = ['##div', '#?#div', '#$#div', '#$?#div', '#@#div', '#@?#div', '#@$#div', '#@$?#div'];
+        const inputs = [
+            '##div',
+            '#?#div',
+            '#$#div',
+            '#$?#div',
+            '#@#div',
+            '#@?#div',
+            '#@$#div',
+            '#@$?#div',
+        ];
 
         for (const input of inputs) {
             const tokens = runTokenizer(input);
             expect(tokens[0].type).toBe(
-                input.startsWith('#@') ? TokenType.AllowlistCosmeticSeparator : TokenType.CosmeticSeparator,
+                input.startsWith('#@')
+                    ? TokenType.AllowlistCosmeticSeparator
+                    : TokenType.CosmeticSeparator,
             );
             expect(tokens[1].type).toBe(TokenType.RawContent);
         }
@@ -91,7 +102,9 @@ describe('Tokenizer', () => {
         ];
 
         const tokens = runTokenizer(input);
-        const tokenTypes = tokens.map((t) => t.type).filter((t) => t !== TokenType.Whitespace);
+        const tokenTypes = tokens
+            .map((t) => t.type)
+            .filter((t) => t !== TokenType.Whitespace);
         expect(tokenTypes).toEqual(types);
     });
 
@@ -134,8 +147,12 @@ describe('Tokenizer', () => {
         const input = 'example.com,~example.net#$#body { padding: 0; }';
         const tokens = runTokenizer(input);
         expect(tokens[0].type).toBe(TokenType.Ident);
-        expect(tokens.find((t) => t.type === TokenType.CosmeticSeparator)).toBeTruthy();
-        expect(tokens.find((t) => t.type === TokenType.RawContent)).toBeTruthy();
+        expect(
+            tokens.find((t) => t.type === TokenType.CosmeticSeparator),
+        ).toBeTruthy();
+        expect(
+            tokens.find((t) => t.type === TokenType.RawContent),
+        ).toBeTruthy();
     });
 
     test('Complex mixed input', () => {

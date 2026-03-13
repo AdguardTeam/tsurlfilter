@@ -2,10 +2,17 @@
  * @file Parser for special uBO selectors.
  */
 
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
+import { UboPseudoName } from '../../common/ubo-selector-common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import {
+    type Modifier,
+    type ModifierList,
+    type UboSelector,
+    type Value,
+} from '../../nodes';
 import {
     CLOSE_PARENTHESIS,
     COLON,
@@ -13,17 +20,11 @@ import {
     EMPTY,
     OPEN_PARENTHESIS,
 } from '../../utils/constants';
-import {
-    type ModifierList,
-    type Value,
-    type Modifier,
-    type UboSelector,
-} from '../../nodes';
+import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
+
 import { tokenizeFnBalanced } from './balancing';
 import { type TokenData } from './css-token-stream';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { UboPseudoName } from '../../common/ubo-selector-common';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
@@ -32,11 +33,15 @@ export const ERROR_MESSAGES = {
     DUPLICATED_UBO_MODIFIER: "uBO modifier '%s' cannot be used more than once",
     EXPECTED_BUT_GOT_BEFORE: "Expected '%s' but got '%s' before '%s'",
     // eslint-disable-next-line max-len
-    NEGATED_UBO_MODIFIER_CANNOT_BE_FOLLOWED_BY: "Negated uBO modifier '%s' cannot be followed by anything else than a closing parenthesis or a whitespace",
-    NEGATED_UBO_MODIFIER_CANNOT_BE_PRECEDED_BY: "Negated uBO modifier '%s' cannot be preceded by '%s'",
-    PSEUDO_CANNOT_BE_NESTED: "uBO modifier '%s' cannot be nested inside '%s', only '%s' is allowed as a wrapper",
+    NEGATED_UBO_MODIFIER_CANNOT_BE_FOLLOWED_BY:
+        "Negated uBO modifier '%s' cannot be followed by anything else than a closing parenthesis or a whitespace",
+    NEGATED_UBO_MODIFIER_CANNOT_BE_PRECEDED_BY:
+        "Negated uBO modifier '%s' cannot be preceded by '%s'",
+    PSEUDO_CANNOT_BE_NESTED:
+        "uBO modifier '%s' cannot be nested inside '%s', only '%s' is allowed as a wrapper",
     UBO_MODIFIER_CANNOT_BE_NESTED: "uBO modifier '%s' cannot be nested",
-    UBO_STYLE_CANNOT_BE_FOLLOWED: 'uBO style injection cannot be followed by anything else than a whitespace',
+    UBO_STYLE_CANNOT_BE_FOLLOWED:
+        'uBO style injection cannot be followed by anything else than a whitespace',
 };
 
 /**
@@ -201,6 +206,7 @@ type StackedUboModifier = {
  * in the hot path of the parser.
  *
  * @param raw Raw selector string.
+ *
  * @returns `true` if the selector has any uBO modifier, `false` otherwise.
  */
 const hasAnyUboModifier = (raw: string): boolean => {
@@ -209,7 +215,10 @@ const hasAnyUboModifier = (raw: string): boolean => {
 
     while (colonIndex !== -1) {
         // Find next opening parenthesis
-        const openingParenthesisIndex = raw.indexOf(OPEN_PARENTHESIS, colonIndex + 1);
+        const openingParenthesisIndex = raw.indexOf(
+            OPEN_PARENTHESIS,
+            colonIndex + 1,
+        );
 
         // If there is no opening parenthesis, then the selector doesn't contain any uBO modifier
         if (openingParenthesisIndex === -1) {
@@ -217,7 +226,11 @@ const hasAnyUboModifier = (raw: string): boolean => {
         }
 
         // Check if the modifier is a known uBO modifier
-        if (KNOWN_UBO_MODIFIERS.has(raw.slice(colonIndex + 1, openingParenthesisIndex))) {
+        if (
+            KNOWN_UBO_MODIFIERS.has(
+                raw.slice(colonIndex + 1, openingParenthesisIndex),
+            )
+        ) {
             return true;
         }
 
@@ -233,7 +246,9 @@ const hasAnyUboModifier = (raw: string): boolean => {
  *
  * @param name Pseudo name.
  * @param wrapper Wrapper pseudo name (eg. `not`) (optional, defaults to `undefined`).
+ *
  * @returns Formatted pseudo name.
+ *
  * @example
  * ```ts
  * formatPseudoName('matches-path', 'not'); // => ':not(:matches-path(...))'
@@ -268,9 +283,14 @@ export class UboSelectorParser extends BaseParser {
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
      * @returns Parsed uBO selector {@link UboSelectorParser}.
+     *
      * @throws An {@link AdblockSyntaxError} if the selector list is syntactically invalid.
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): UboSelector {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): UboSelector {
         // Prepare helper variables
         const modifiers: ModifierList = {
             type: 'ModifierList',
@@ -327,7 +347,10 @@ export class UboSelectorParser extends BaseParser {
         const stackModifier = (modifier: StackedUboModifier) => {
             if (processedModifiers.has(modifier.name)) {
                 throw new AdblockSyntaxError(
-                    sprintf(ERROR_MESSAGES.DUPLICATED_UBO_MODIFIER, formatPseudoName(modifier.name)),
+                    sprintf(
+                        ERROR_MESSAGES.DUPLICATED_UBO_MODIFIER,
+                        formatPseudoName(modifier.name),
+                    ),
                     baseOffset + modifier.modifierStart,
                     baseOffset + raw.length,
                 );
@@ -356,10 +379,8 @@ export class UboSelectorParser extends BaseParser {
             //  - `div:remove() `,
             // etc.
             if (
-                (
-                    processedModifiers.has(UboPseudoName.Style)
-                    || processedModifiers.has(UboPseudoName.Remove)
-                )
+                (processedModifiers.has(UboPseudoName.Style)
+                    || processedModifiers.has(UboPseudoName.Remove))
                 && type !== TokenType.Whitespace
             ) {
                 throw new AdblockSyntaxError(
@@ -370,7 +391,10 @@ export class UboSelectorParser extends BaseParser {
             }
 
             // Check for pseudo classes (colon followed by a function)
-            if (tokens[i - 1]?.type === TokenType.Colon && type === TokenType.Function) {
+            if (
+                tokens[i - 1]?.type === TokenType.Colon
+                && type === TokenType.Function
+            ) {
                 // Since closing parenthesis is always included in the function token, but we only need the function
                 // name, we need to cut off the last character, this is why we use `end - 1` here
                 const fn = raw.slice(start, end - 1);
@@ -402,8 +426,14 @@ export class UboSelectorParser extends BaseParser {
                                 throw new AdblockSyntaxError(
                                     sprintf(
                                         ERROR_MESSAGES.PSEUDO_CANNOT_BE_NESTED,
-                                        formatPseudoName(UboPseudoName.MatchesPath),
-                                        formatPseudoName(uboModifierStack[uboModifierStack.length - 1].name),
+                                        formatPseudoName(
+                                            UboPseudoName.MatchesPath,
+                                        ),
+                                        formatPseudoName(
+                                            uboModifierStack[
+                                                uboModifierStack.length - 1
+                                            ].name,
+                                        ),
                                         formatPseudoName(CSS_NOT_PSEUDO),
                                     ),
                                     baseOffset + start - 1,
@@ -426,35 +456,54 @@ export class UboSelectorParser extends BaseParser {
                                     || tokens[j].type === TokenType.Whitespace
                                 ) {
                                     continue;
-                                } else if (tokens[j].type === TokenType.Function) {
-                                    const wrapperFnName = raw.slice(tokens[j].start, tokens[j].end - 1);
+                                } else if (
+                                    tokens[j].type === TokenType.Function
+                                ) {
+                                    const wrapperFnName = raw.slice(
+                                        tokens[j].start,
+                                        tokens[j].end - 1,
+                                    );
                                     if (wrapperFnName !== CSS_NOT_PSEUDO) {
                                         throw new AdblockSyntaxError(
                                             sprintf(
                                                 ERROR_MESSAGES.PSEUDO_CANNOT_BE_NESTED,
-                                                formatPseudoName(UboPseudoName.MatchesPath),
+                                                formatPseudoName(
+                                                    UboPseudoName.MatchesPath,
+                                                ),
                                                 formatPseudoName(wrapperFnName),
-                                                formatPseudoName(CSS_NOT_PSEUDO),
+                                                formatPseudoName(
+                                                    CSS_NOT_PSEUDO,
+                                                ),
                                             ),
                                             baseOffset + tokens[j].start - 1,
                                             baseOffset + raw.length,
                                         );
                                     }
 
-                                    if (tokens[j - 1]?.type !== TokenType.Colon) {
+                                    if (
+                                        tokens[j - 1]?.type !== TokenType.Colon
+                                    ) {
                                         const got = tokens[j - 1]?.type
-                                            ? getFormattedTokenName(tokens[j - 1]?.type)
+                                            ? getFormattedTokenName(
+                                                tokens[j - 1]?.type,
+                                            )
                                             : 'nothing';
 
                                         throw new AdblockSyntaxError(
                                             sprintf(
                                                 ERROR_MESSAGES.EXPECTED_BUT_GOT_BEFORE,
-                                                getFormattedTokenName(TokenType.Colon),
+                                                getFormattedTokenName(
+                                                    TokenType.Colon,
+                                                ),
                                                 got,
-                                                formatPseudoName(UboPseudoName.MatchesPath, CSS_NOT_PSEUDO),
+                                                formatPseudoName(
+                                                    UboPseudoName.MatchesPath,
+                                                    CSS_NOT_PSEUDO,
+                                                ),
                                             ),
                                             // eslint-disable-next-line no-unsafe-optional-chaining
-                                            baseOffset + tokens[j - 1]?.start || 0,
+                                            baseOffset + tokens[j - 1]?.start
+                                                || 0,
                                             baseOffset + raw.length,
                                         );
                                     }
@@ -465,8 +514,12 @@ export class UboSelectorParser extends BaseParser {
                                     throw new AdblockSyntaxError(
                                         sprintf(
                                             ERROR_MESSAGES.NEGATED_UBO_MODIFIER_CANNOT_BE_PRECEDED_BY,
-                                            formatPseudoName(UboPseudoName.MatchesPath),
-                                            getFormattedTokenName(tokens[j].type),
+                                            formatPseudoName(
+                                                UboPseudoName.MatchesPath,
+                                            ),
+                                            getFormattedTokenName(
+                                                tokens[j].type,
+                                            ),
                                         ),
                                         baseOffset + tokens[j].start,
                                         baseOffset + raw.length,
@@ -486,7 +539,10 @@ export class UboSelectorParser extends BaseParser {
                             });
                         } else {
                             throw new AdblockSyntaxError(
-                                sprintf(ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED, formatPseudoName(fn)),
+                                sprintf(
+                                    ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED,
+                                    formatPseudoName(fn),
+                                ),
                                 baseOffset + start - 1,
                                 baseOffset + raw.length,
                             );
@@ -509,9 +565,15 @@ export class UboSelectorParser extends BaseParser {
                 const lastStackedModifier = uboModifierStack[uboModifierStack.length - 1];
 
                 // Do not allow any other token after `:matches-path(...)` inside `:not(...)`
-                if (lastStackedModifier?.name === UboPseudoName.MatchesPath && lastStackedModifier?.isException) {
+                if (
+                    lastStackedModifier?.name === UboPseudoName.MatchesPath
+                    && lastStackedModifier?.isException
+                ) {
                     if (
-                        !(type === TokenType.CloseParenthesis || type === TokenType.Whitespace)
+                        !(
+                            type === TokenType.CloseParenthesis
+                            || type === TokenType.Whitespace
+                        )
                         && balance < lastStackedModifier.valueBalance
                     ) {
                         throw new AdblockSyntaxError(
@@ -528,12 +590,21 @@ export class UboSelectorParser extends BaseParser {
 
                 // If we have reached a closing parenthesis, then we should check if it closes the last stacked modifier
                 // and if so, pop it from the stack
-                if (type === TokenType.CloseParenthesis && lastStackedModifier) {
-                    if (balance === Math.max(0, lastStackedModifier.valueBalance - 1)) {
+                if (
+                    type === TokenType.CloseParenthesis
+                    && lastStackedModifier
+                ) {
+                    if (
+                        balance
+                        === Math.max(0, lastStackedModifier.valueBalance - 1)
+                    ) {
                         lastStackedModifier.valueEnd = start;
                     }
 
-                    if (balance === Math.max(0, lastStackedModifier.modifierBalance - 1)) {
+                    if (
+                        balance
+                        === Math.max(0, lastStackedModifier.modifierBalance - 1)
+                    ) {
                         const modifierName: Value = {
                             type: 'Value',
                             value: lastStackedModifier.name,
@@ -547,7 +618,10 @@ export class UboSelectorParser extends BaseParser {
 
                         const value: Value = {
                             type: 'Value',
-                            value: raw.slice(lastStackedModifier.valueStart, lastStackedModifier.valueEnd),
+                            value: raw.slice(
+                                lastStackedModifier.valueStart,
+                                lastStackedModifier.valueEnd,
+                            ),
                         };
 
                         if (options.isLocIncluded) {
@@ -575,7 +649,11 @@ export class UboSelectorParser extends BaseParser {
                         uboModifierStack.pop();
 
                         // Mark the character slots in the selector string that are occupied by uBO modifiers
-                        uboIndexes.fill(true, lastStackedModifier.modifierStart, end);
+                        uboIndexes.fill(
+                            true,
+                            lastStackedModifier.modifierStart,
+                            end,
+                        );
                     }
                 }
             }

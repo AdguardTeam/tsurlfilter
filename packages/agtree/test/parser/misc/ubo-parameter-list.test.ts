@@ -1,22 +1,27 @@
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
 
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
+import { type ParameterList } from '../../../src/nodes';
+import {
+    UboParameterListParser,
+} from '../../../src/parser/misc/ubo-parameter-list-parser';
+import { defaultParserOptions } from '../../../src/parser/options';
 import { COMMA } from '../../../src/utils/constants';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { UboParameterListParser } from '../../../src/parser/misc/ubo-parameter-list-parser';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { type ParameterList } from '../../../src/nodes';
 
 describe('UboParameterListParser', () => {
     // valid cases are tested in `../cosmetic/body/ubo-scriptlet.test.ts`
 
     describe('UboParameterListParser.parse - invalid cases when requireQuotes enabled', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
+        test.each<{
+            actual: string;
+            expected: NodeExpectFn<AdblockSyntaxError>;
+        }>([
             {
                 actual: String.raw`abc`,
                 //                 ~~~
@@ -53,7 +58,9 @@ describe('UboParameterListParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         'Expected closing quote, got end of string',
-                        ...context.toTuple(context.getRangeFor(String.raw`'aaa`)),
+                        ...context.toTuple(
+                            context.getRangeFor(String.raw`'aaa`),
+                        ),
                     );
                 },
             },
@@ -63,7 +70,9 @@ describe('UboParameterListParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Expected quote, got: 'b'",
-                        ...context.toTuple(context.getRangeFor(String.raw`bbb`)),
+                        ...context.toTuple(
+                            context.getRangeFor(String.raw`bbb`),
+                        ),
                     );
                 },
             },
@@ -73,25 +82,36 @@ describe('UboParameterListParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Expected separator, got: '''",
-                        ...context.toTuple(context.getRangeFor(String.raw`'bbb'`)),
+                        ...context.toTuple(
+                            context.getRangeFor(String.raw`'bbb'`),
+                        ),
                     );
                 },
             },
-        ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = vi.fn(() => UboParameterListParser.parse(actual, defaultParserOptions, 0, COMMA, true));
+        ])(
+            "should throw on input: '$actual'",
+            ({ actual, expected: expectedFn }) => {
+                const fn = vi.fn(() => UboParameterListParser.parse(
+                    actual,
+                    defaultParserOptions,
+                    0,
+                    COMMA,
+                    true,
+                ));
 
-            // parse should throw
-            expect(fn).toThrow();
+                // parse should throw
+                expect(fn).toThrow();
 
-            const expected = expectedFn(new NodeExpectContext(actual));
+                const expected = expectedFn(new NodeExpectContext(actual));
 
-            // check the thrown error
-            const error = fn.mock.results[0].value;
-            expect(error).toBeInstanceOf(AdblockSyntaxError);
-            expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('start', expected.start);
-            expect(error).toHaveProperty('end', expected.end);
-        });
+                // check the thrown error
+                const error = fn.mock.results[0].value;
+                expect(error).toBeInstanceOf(AdblockSyntaxError);
+                expect(error).toHaveProperty('message', expected.message);
+                expect(error).toHaveProperty('start', expected.start);
+                expect(error).toHaveProperty('end', expected.end);
+            },
+        );
     });
 
     describe('UboParameterListParser.parse - valid cases when requireQuotes disabled', () => {
@@ -298,10 +318,19 @@ describe('UboParameterListParser', () => {
                     ],
                 },
             },
-        ])("should parse correctly on input '$actual'", ({ actual, expected }) => {
-            const result = UboParameterListParser.parse(actual, defaultParserOptions, 0, COMMA, false);
+        ])(
+            "should parse correctly on input '$actual'",
+            ({ actual, expected }) => {
+                const result = UboParameterListParser.parse(
+                    actual,
+                    defaultParserOptions,
+                    0,
+                    COMMA,
+                    false,
+                );
 
-            expect(result).toMatchObject(expected);
-        });
+                expect(result).toMatchObject(expected);
+            },
+        );
     });
 });

@@ -1,13 +1,14 @@
-import { CLOSE_SQUARE_BRACKET, OPEN_SQUARE_BRACKET, SEMICOLON } from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
-import { type AgentCommentRule, CommentRuleType, RuleCategory } from '../../nodes';
-import { AgentParser } from './agent-parser';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { type AgentCommentRule, CommentRuleType, RuleCategory } from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
+import { CLOSE_SQUARE_BRACKET, OPEN_SQUARE_BRACKET, SEMICOLON } from '../../utils/constants';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
+import { StringUtils } from '../../utils/string';
+import { isNull } from '../../utils/type-guards';
 import { BaseParser } from '../base-parser';
 import { defaultParserOptions } from '../options';
-import { isNull } from '../../utils/type-guards';
+
+import { AgentParser } from './agent-parser';
 
 /**
  * `AgentParser` is responsible for parsing an Adblock agent rules.
@@ -35,13 +36,17 @@ export class AgentCommentParser extends BaseParser {
     /**
      * Checks if the raw rule is an adblock agent comment.
      *
-     * @param raw Raw rule
-     * @returns `true` if the rule is an adblock agent, `false` otherwise
+     * @param raw Raw rule.
+     *
+     * @returns `true` if the rule is an adblock agent, `false` otherwise.
      */
     public static isAgentRule(raw: string): boolean {
         const rawTrimmed = raw.trim();
 
-        if (rawTrimmed.startsWith(OPEN_SQUARE_BRACKET) && rawTrimmed.endsWith(CLOSE_SQUARE_BRACKET)) {
+        if (
+            rawTrimmed.startsWith(OPEN_SQUARE_BRACKET)
+            && rawTrimmed.endsWith(CLOSE_SQUARE_BRACKET)
+        ) {
             // Avoid this case: [$adg-modifier]##[class^="adg-"]
             return isNull(CosmeticRuleSeparatorUtils.find(rawTrimmed));
         }
@@ -55,9 +60,14 @@ export class AgentCommentParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Agent rule AST or null (if the raw rule cannot be parsed as an adblock agent comment)
+     *
+     * @returns Agent rule AST or null (if the raw rule cannot be parsed as an adblock agent comment).
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AgentCommentRule | null {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): AgentCommentRule | null {
         // Ignore non-agent rules
         if (!AgentCommentParser.isAgentRule(raw)) {
             return null;
@@ -74,7 +84,10 @@ export class AgentCommentParser extends BaseParser {
         // last character should be a closing bracket
         const closingBracketIndex = StringUtils.skipWSBack(raw, raw.length - 1);
 
-        if (closingBracketIndex === -1 || raw[closingBracketIndex] !== CLOSE_SQUARE_BRACKET) {
+        if (
+            closingBracketIndex === -1
+            || raw[closingBracketIndex] !== CLOSE_SQUARE_BRACKET
+        ) {
             throw new AdblockSyntaxError(
                 'Missing closing bracket',
                 offset,
@@ -118,11 +131,17 @@ export class AgentCommentParser extends BaseParser {
             // (if we have spaces between the agent name and the separator)
             const agentEndIndex = StringUtils.findLastNonWhitespaceCharacter(
                 raw.slice(offset, separatorIndex),
-            ) + offset + 1;
+            )
+                + offset
+                + 1;
 
             // Collect the agent
             result.children.push(
-                AgentParser.parse(raw.slice(offset, agentEndIndex), options, baseOffset + offset),
+                AgentParser.parse(
+                    raw.slice(offset, agentEndIndex),
+                    options,
+                    baseOffset + offset,
+                ),
             );
 
             // Set the offset to the next agent or the end of the rule

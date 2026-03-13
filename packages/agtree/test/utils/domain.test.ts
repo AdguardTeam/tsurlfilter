@@ -9,27 +9,45 @@ describe('Domain utils', () => {
 
         // Regular domains
         expect(DomainUtils.isValidDomainOrHostname('example.com')).toBeTruthy();
-        expect(DomainUtils.isValidDomainOrHostname('something.example.com')).toBeTruthy();
-        expect(DomainUtils.isValidDomainOrHostname('anything.something.example.com')).toBeTruthy();
+        expect(
+            DomainUtils.isValidDomainOrHostname('something.example.com'),
+        ).toBeTruthy();
+        expect(
+            DomainUtils.isValidDomainOrHostname(
+                'anything.something.example.com',
+            ),
+        ).toBeTruthy();
 
         // Wildcard TLD
         expect(DomainUtils.isValidDomainOrHostname('example.*')).toBeTruthy();
-        expect(DomainUtils.isValidDomainOrHostname('something.example.*')).toBeTruthy();
-        expect(DomainUtils.isValidDomainOrHostname('anything.something.example.*')).toBeTruthy();
+        expect(
+            DomainUtils.isValidDomainOrHostname('something.example.*'),
+        ).toBeTruthy();
+        expect(
+            DomainUtils.isValidDomainOrHostname('anything.something.example.*'),
+        ).toBeTruthy();
 
         // Wildcard subdomain
-        expect(DomainUtils.isValidDomainOrHostname('*.example.com')).toBeTruthy();
-        expect(DomainUtils.isValidDomainOrHostname('*.something.example.com')).toBeTruthy();
+        expect(
+            DomainUtils.isValidDomainOrHostname('*.example.com'),
+        ).toBeTruthy();
+        expect(
+            DomainUtils.isValidDomainOrHostname('*.something.example.com'),
+        ).toBeTruthy();
 
         // Wildcard subdomain and TLD
         expect(DomainUtils.isValidDomainOrHostname('*.example.*')).toBeTruthy();
-        expect(DomainUtils.isValidDomainOrHostname('*.something.example.*')).toBeTruthy();
+        expect(
+            DomainUtils.isValidDomainOrHostname('*.something.example.*'),
+        ).toBeTruthy();
 
         // IP address
         expect(DomainUtils.isValidDomainOrHostname('127.0.0.1')).toBeTruthy();
 
         // IDN
-        expect(DomainUtils.isValidDomainOrHostname('한글코딩.org')).toBeTruthy();
+        expect(
+            DomainUtils.isValidDomainOrHostname('한글코딩.org'),
+        ).toBeTruthy();
     });
 
     test('isValidDomainOrHostname should return false for invalid domains', () => {

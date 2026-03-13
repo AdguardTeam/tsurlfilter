@@ -14,7 +14,7 @@
  * ### Covers:
  * - `import` declarations
  * - `export` declarations
- * - `import("./x").Type` (ImportType nodes)
+ * - `import("./x").Type` (ImportType nodes).
  *
  * This is useful for projects targeting `"module"` + `"NodeNext"` in `tsconfig.json`,
  * where `.d.ts` files must reflect the `.js` suffix used in runtime ESM.
@@ -23,9 +23,9 @@
  * since the build is handled by Rollup, and the .d.ts files are adjusted by this script.
  */
 
-import { Project, SyntaxKind } from 'ts-morph';
-import path from 'node:path';
 import fs from 'node:fs';
+import path from 'node:path';
+import { Project, SyntaxKind } from 'ts-morph';
 
 const RELATIVE_PATH_MARKER = '.';
 const EXT_JS = '.js';
@@ -42,18 +42,21 @@ const project = new Project({
     skipFileDependencyResolution: true,
 });
 
-project.addSourceFilesAtPaths(path.join(__dirname, `../dist/types/**/*${EXT_DTS}`));
+project.addSourceFilesAtPaths(
+    path.join(__dirname, `../dist/types/**/*${EXT_DTS}`),
+);
 
 /**
  * Decide how (or if) to rewrite a module specifier.
  * - keeps non-relative or already-extended specifiers unchanged
  * - './foo'  → './foo.js'
  * - '../foo' → '../foo.js'
- * - './bar'  → './bar/index.js' (if ./bar/index.d.ts exists)
+ * - './bar'  → './bar/index.js' (if ./bar/index.d.ts exists).
  *
- * @param dir Source file directory
- * @param spec Module specifier
- * @returns Rewritten module specifier or null if no change is needed
+ * @param dir Source file directory.
+ * @param spec Module specifier.
+ *
+ * @returns Rewritten module specifier or null if no change is needed.
  */
 function rewriteSpecifier(dir: string, spec: string): string | null {
     // Ignore non-relative specifiers
@@ -99,7 +102,11 @@ for (const sf of project.getSourceFiles()) {
 
     // type Foo = import('./x').Foo
     sf.getDescendantsOfKind(SyntaxKind.ImportType).forEach((impType) => {
-        const lit = impType.getArgument()?.getChildAtIndex(0)?.asKind(SyntaxKind.StringLiteral)?.getLiteralText();
+        const lit = impType
+            .getArgument()
+            ?.getChildAtIndex(0)
+            ?.asKind(SyntaxKind.StringLiteral)
+            ?.getLiteralText();
 
         if (lit === undefined) {
             return;

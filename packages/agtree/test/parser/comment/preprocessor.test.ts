@@ -1,9 +1,13 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { PreProcessorCommentParser } from '../../../src/parser/comment/preprocessor-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
+import {
+    PreProcessorCommentGenerator,
+} from '../../../src/generator/comment/pre-processor-comment-generator';
+import {
+    PreProcessorCommentParser,
+} from '../../../src/parser/comment/preprocessor-parser';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { PreProcessorCommentGenerator } from '../../../src/generator/comment/pre-processor-comment-generator';
+import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('PreProcessorParser', () => {
     test('isPreProcessorRule', () => {
@@ -34,7 +38,9 @@ describe('PreProcessorParser', () => {
             },
         });
 
-        expect(PreProcessorCommentParser.parse('!#include ../sections/ads.txt')).toMatchObject({
+        expect(
+            PreProcessorCommentParser.parse('!#include ../sections/ads.txt'),
+        ).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
             end: 29,
@@ -54,57 +60,36 @@ describe('PreProcessorParser', () => {
             },
         });
 
-        expect(PreProcessorCommentParser.parse('!#if (adguard)')).toMatchObject({
-            type: 'PreProcessorCommentRule',
-            start: 0,
-            end: 14,
-            category: 'Comment',
-            syntax: 'Common',
-            name: {
-                type: 'Value',
-                start: 2,
-                end: 4,
-                value: 'if',
-            },
-            params: {
-                type: 'Parenthesis',
-                start: 6,
-                end: 13,
-                expression: {
-                    type: 'Variable',
+        expect(PreProcessorCommentParser.parse('!#if (adguard)')).toMatchObject(
+            {
+                type: 'PreProcessorCommentRule',
+                start: 0,
+                end: 14,
+                category: 'Comment',
+                syntax: 'Common',
+                name: {
+                    type: 'Value',
+                    start: 2,
+                    end: 4,
+                    value: 'if',
+                },
+                params: {
+                    type: 'Parenthesis',
                     start: 6,
                     end: 13,
-                    name: 'adguard',
+                    expression: {
+                        type: 'Variable',
+                        start: 6,
+                        end: 13,
+                        name: 'adguard',
+                    },
                 },
             },
-        });
+        );
 
-        expect(PreProcessorCommentParser.parse('!#if      (adguard)')).toMatchObject({
-            type: 'PreProcessorCommentRule',
-            start: 0,
-            end: 19,
-            category: 'Comment',
-            syntax: 'Common',
-            name: {
-                type: 'Value',
-                start: 2,
-                end: 4,
-                value: 'if',
-            },
-            params: {
-                type: 'Parenthesis',
-                start: 11,
-                end: 18,
-                expression: {
-                    type: 'Variable',
-                    start: 11,
-                    end: 18,
-                    name: 'adguard',
-                },
-            },
-        });
-
-        expect(PreProcessorCommentParser.parse('!#if      (adguard)')).toMatchObject({
+        expect(
+            PreProcessorCommentParser.parse('!#if      (adguard)'),
+        ).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
             end: 19,
@@ -130,7 +115,36 @@ describe('PreProcessorParser', () => {
         });
 
         expect(
-            PreProcessorCommentParser.parse('!#safari_cb_affinity(content_blockers)'),
+            PreProcessorCommentParser.parse('!#if      (adguard)'),
+        ).toMatchObject({
+            type: 'PreProcessorCommentRule',
+            start: 0,
+            end: 19,
+            category: 'Comment',
+            syntax: 'Common',
+            name: {
+                type: 'Value',
+                start: 2,
+                end: 4,
+                value: 'if',
+            },
+            params: {
+                type: 'Parenthesis',
+                start: 11,
+                end: 18,
+                expression: {
+                    type: 'Variable',
+                    start: 11,
+                    end: 18,
+                    name: 'adguard',
+                },
+            },
+        });
+
+        expect(
+            PreProcessorCommentParser.parse(
+                '!#safari_cb_affinity(content_blockers)',
+            ),
         ).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
@@ -162,30 +176,30 @@ describe('PreProcessorParser', () => {
         });
 
         // If the parenthesis is open, do not split it in half along the space:
-        expect(PreProcessorCommentParser.parse('!#aaa(bbb ccc)')).toMatchObject({
-            type: 'PreProcessorCommentRule',
-            start: 0,
-            end: 14,
-            category: 'Comment',
-            syntax: 'Common',
-            name: {
-                type: 'Value',
-                start: 2,
-                end: 5,
-                value: 'aaa',
-            },
-            params: {
-                type: 'Value',
-                start: 5,
+        expect(PreProcessorCommentParser.parse('!#aaa(bbb ccc)')).toMatchObject(
+            {
+                type: 'PreProcessorCommentRule',
+                start: 0,
                 end: 14,
-                value: '(bbb ccc)',
+                category: 'Comment',
+                syntax: 'Common',
+                name: {
+                    type: 'Value',
+                    start: 2,
+                    end: 5,
+                    value: 'aaa',
+                },
+                params: {
+                    type: 'Value',
+                    start: 5,
+                    end: 14,
+                    value: '(bbb ccc)',
+                },
             },
-        });
+        );
 
         // Invalid
-        expect(() => PreProcessorCommentParser.parse('!#include    ')).toThrowError(
-            'Directive "include" requires parameters',
-        );
+        expect(() => PreProcessorCommentParser.parse('!#include    ')).toThrowError('Directive "include" requires parameters');
 
         expect(() => PreProcessorCommentParser.parse('!#safari_cb_affinity (a)')).toThrowError(
             'Unexpected whitespace after "safari_cb_affinity" directive name',
@@ -221,7 +235,10 @@ describe('PreProcessorParser', () => {
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
             expect(
-                PreProcessorCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+                PreProcessorCommentParser.parse(actual, {
+                    ...defaultParserOptions,
+                    isLocIncluded: false,
+                }),
             ).toEqual(expected);
         });
     });
@@ -240,22 +257,20 @@ describe('PreProcessorParser', () => {
         // TODO: Refactor to test.each
         expect(parseAndGenerate('!#endif')).toEqual('!#endif');
 
-        expect(parseAndGenerate('!#include ../sections/ads.txt')).toEqual('!#include ../sections/ads.txt');
-
-        expect(parseAndGenerate('!#safari_cb_affinity(content_blockers)')).toEqual(
-            '!#safari_cb_affinity(content_blockers)',
+        expect(parseAndGenerate('!#include ../sections/ads.txt')).toEqual(
+            '!#include ../sections/ads.txt',
         );
 
-        expect(parseAndGenerate('!#if adguard')).toEqual(
-            '!#if adguard',
-        );
+        expect(
+            parseAndGenerate('!#safari_cb_affinity(content_blockers)'),
+        ).toEqual('!#safari_cb_affinity(content_blockers)');
 
-        expect(parseAndGenerate('!#if (adguard)')).toEqual(
-            '!#if (adguard)',
-        );
+        expect(parseAndGenerate('!#if adguard')).toEqual('!#if adguard');
 
-        expect(parseAndGenerate('!#if (adguard && !adguard_ext_safari)')).toEqual(
-            '!#if (adguard && !adguard_ext_safari)',
-        );
+        expect(parseAndGenerate('!#if (adguard)')).toEqual('!#if (adguard)');
+
+        expect(
+            parseAndGenerate('!#if (adguard && !adguard_ext_safari)'),
+        ).toEqual('!#if (adguard && !adguard_ext_safari)');
     });
 });

@@ -42,7 +42,10 @@ export const getResourceTypeModifier = (
         return null;
     }
 
-    const modifierData = modifiersCompatibilityTable.getFirst(modifierName, platform);
+    const modifierData = modifiersCompatibilityTable.getFirst(
+        modifierName,
+        platform,
+    );
 
     if (isNull(modifierData)) {
         return null;

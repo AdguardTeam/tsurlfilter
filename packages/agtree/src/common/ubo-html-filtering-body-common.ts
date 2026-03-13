@@ -11,7 +11,9 @@ import { UBO_RESPONSEHEADER_FN } from '../utils/constants';
  * @note This method checks `HtmlFilteringRuleBody` because, response header
  * removal rule syntax is same as uBlock-style HTML filtering rule syntax.
  */
-export function isUboResponseHeaderRemovalRuleBody(node: HtmlFilteringRuleBody): boolean {
+export function isUboResponseHeaderRemovalRuleBody(
+    node: HtmlFilteringRuleBody,
+): boolean {
     const { selectorList } = node;
 
     // Must have exactly one complex selector

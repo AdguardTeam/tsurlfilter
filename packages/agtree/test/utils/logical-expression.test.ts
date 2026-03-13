@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 
-import { LogicalExpressionParser } from '../../src/parser/misc/logical-expression-parser';
+import {
+    LogicalExpressionParser,
+} from '../../src/parser/misc/logical-expression-parser';
 import { LogicalExpressionUtils } from '../../src/utils/logical-expression';
 
 describe('LogicalExpressionUtils', () => {
@@ -201,30 +203,30 @@ describe('LogicalExpressionUtils', () => {
     test('evaluate', () => {
         // Invalid AST
         expect(() => LogicalExpressionUtils.evaluate(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            <any>{
-                type: 'Invalid',
-            },
-            {},
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                <any>{
+                    type: 'Invalid',
+                },
+                {},
         )).toThrowError("Unexpected node type 'Invalid'");
 
         // Invalid right operand
         expect(() => LogicalExpressionUtils.evaluate(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            <any>{
-                type: 'Operator',
-                operator: '&&',
-            },
-            {},
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                <any>{
+                    type: 'Operator',
+                    operator: '&&',
+                },
+                {},
         )).toThrowError("Unexpected operator '&&'");
 
         expect(() => LogicalExpressionUtils.evaluate(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            <any>{
-                type: 'Operator',
-                operator: '||',
-            },
-            {},
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                <any>{
+                    type: 'Operator',
+                    operator: '||',
+                },
+                {},
         )).toThrowError("Unexpected operator '||'");
 
         // Variable itself
@@ -372,7 +374,11 @@ describe('LogicalExpressionUtils', () => {
                     '(a && !b) && (c || (d && (!e)))',
                 ),
                 {
-                    a: true, b: false, c: true, d: true, e: false,
+                    a: true,
+                    b: false,
+                    c: true,
+                    d: true,
+                    e: false,
                 },
             ),
         ).toBeTruthy();

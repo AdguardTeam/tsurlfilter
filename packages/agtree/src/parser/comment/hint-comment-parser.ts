@@ -1,3 +1,11 @@
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import {
+    CommentRuleType,
+    type Hint,
+    type HintCommentRule,
+    RuleCategory,
+} from '../../nodes';
+import { AdblockSyntax } from '../../utils/adblockers';
 import {
     BACKSLASH,
     CLOSE_PARENTHESIS,
@@ -6,20 +14,15 @@ import {
     OPEN_PARENTHESIS,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import {
-    CommentRuleType,
-    type Hint,
-    type HintCommentRule,
-    RuleCategory,
-} from '../../nodes';
-import { HintParser } from './hint-parser';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
+
+import { HintParser } from './hint-parser';
 
 /**
  * `HintRuleParser` is responsible for parsing AdGuard hint rules.
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
  *
  * @example
  * The following hint rule
@@ -27,14 +30,14 @@ import { BaseParser } from '../base-parser';
  * !+ NOT_OPTIMIZED PLATFORM(windows)
  * ```
  * contains two hints: `NOT_OPTIMIZED` and `PLATFORM`.
- * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
  */
 export class HintCommentParser extends BaseParser {
     /**
      * Checks if the raw rule is a hint rule.
      *
-     * @param raw Raw rule
-     * @returns `true` if the rule is a hint rule, `false` otherwise
+     * @param raw Raw rule.
+     *
+     * @returns `true` if the rule is a hint rule, `false` otherwise.
      */
     public static isHintRule(raw: string): boolean {
         return raw.trim().startsWith(HINT_MARKER);
@@ -43,14 +46,21 @@ export class HintCommentParser extends BaseParser {
     /**
      * Parses a raw rule as a hint comment.
      *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints-1}
+     *
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Hint AST or null (if the raw rule cannot be parsed as a hint comment)
-     * @throws If the input matches the HINT pattern but syntactically invalid
-     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints-1}
+     *
+     * @returns Hint AST or null (if the raw rule cannot be parsed as a hint comment).
+     *
+     * @throws If the input matches the HINT pattern but syntactically invalid.
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): HintCommentRule | null {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): HintCommentRule | null {
         // Ignore non-hint rules
         if (!HintCommentParser.isHintRule(raw)) {
             return null;
@@ -84,7 +94,10 @@ export class HintCommentParser extends BaseParser {
             let balance = 0;
 
             while (hintEndIndex < raw.length) {
-                if (raw[hintEndIndex] === OPEN_PARENTHESIS && raw[hintEndIndex - 1] !== BACKSLASH) {
+                if (
+                    raw[hintEndIndex] === OPEN_PARENTHESIS
+                    && raw[hintEndIndex - 1] !== BACKSLASH
+                ) {
                     balance += 1;
 
                     // Throw error for nesting
@@ -95,9 +108,15 @@ export class HintCommentParser extends BaseParser {
                             baseOffset + hintEndIndex,
                         );
                     }
-                } else if (raw[hintEndIndex] === CLOSE_PARENTHESIS && raw[hintEndIndex - 1] !== BACKSLASH) {
+                } else if (
+                    raw[hintEndIndex] === CLOSE_PARENTHESIS
+                    && raw[hintEndIndex - 1] !== BACKSLASH
+                ) {
                     balance -= 1;
-                } else if (StringUtils.isWhitespace(raw[hintEndIndex]) && balance === 0) {
+                } else if (
+                    StringUtils.isWhitespace(raw[hintEndIndex])
+                    && balance === 0
+                ) {
                     break;
                 }
 

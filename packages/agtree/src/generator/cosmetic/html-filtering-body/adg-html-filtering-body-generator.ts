@@ -1,6 +1,7 @@
-import { type Value, type HtmlFilteringRuleBody } from '../../../nodes';
+import { type HtmlFilteringRuleBody, type Value } from '../../../nodes';
 import { QuoteUtils } from '../../../utils';
 import { BaseGenerator } from '../../base-generator';
+
 import { HtmlFilteringBodyGenerator } from './html-filtering-body-generator';
 
 /**

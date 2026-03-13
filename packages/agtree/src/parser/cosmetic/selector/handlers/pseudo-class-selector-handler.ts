@@ -1,8 +1,8 @@
 import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { type PseudoClassSelector } from '../../../../nodes';
 import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
+import { type PseudoClassSelector } from '../../../../nodes';
 import { EMPTY } from '../../../../utils/constants';
 import { type TokenData } from '../../../css/css-token-stream';
 import { ValueParser } from '../../../misc/value-parser';
@@ -22,11 +22,7 @@ export class PseudoClassSelectorHandler {
      */
     public static handle(context: SelectorListParserContext): void {
         const {
-            raw,
-            options,
-            baseOffset,
-            stream,
-            complexSelector,
+            raw, options, baseOffset, stream, complexSelector,
         } = context;
 
         // Get colon token
@@ -67,11 +63,7 @@ export class PseudoClassSelectorHandler {
         // Construct pseudo-class selector node
         const result: PseudoClassSelector = {
             type: 'PseudoClassSelector',
-            name: ValueParser.parse(
-                nameRaw,
-                options,
-                baseOffset + token.start,
-            ),
+            name: ValueParser.parse(nameRaw, options, baseOffset + token.start),
         };
 
         // Include pseudo-class selector node start location if needed
@@ -125,7 +117,10 @@ export class PseudoClassSelectorHandler {
                 // Skip to the closing parenthesis at the matching balance level
                 while (stream.get()?.balance !== balance - 1) {
                     const currentToken = stream.get();
-                    if (currentToken && currentToken.type !== TokenType.Whitespace) {
+                    if (
+                        currentToken
+                        && currentToken.type !== TokenType.Whitespace
+                    ) {
                         lastNonWsToken = currentToken;
                     }
                     stream.advance();
@@ -135,7 +130,9 @@ export class PseudoClassSelectorHandler {
                 token = stream.getOrFail();
 
                 // Save pseudo-class selector argument end position (after last non-whitespace token)
-                const argumentEnd = lastNonWsToken ? lastNonWsToken.end : token.start;
+                const argumentEnd = lastNonWsToken
+                    ? lastNonWsToken.end
+                    : token.start;
 
                 // Extract pseudo-class selector argument raw value (trimmed)
                 // TODO: Consider parsing inner selectors (like :not(.class))

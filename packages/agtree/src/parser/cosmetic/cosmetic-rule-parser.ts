@@ -1,60 +1,64 @@
-import { sprintf } from 'sprintf-js';
 import { hasToken, TokenType } from '@adguard/css-tokenizer';
+import { sprintf } from 'sprintf-js';
 
-import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
+import { UboPseudoName } from '../../common/ubo-selector-common';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import {
+    type AnyCosmeticRule,
+    type CosmeticRule,
+    type CosmeticRuleSeparator,
+    CosmeticRuleType,
+    type CssInjectionRule,
+    type CssInjectionRuleBody,
+    type ElementHidingRule,
+    type ElementHidingRuleBody,
+    type HtmlFilteringRule,
+    type JsInjectionRule,
+    type ModifierList,
+    RuleCategory,
+    type ScriptletInjectionRule,
+    type UboSelector,
+    type Value,
+} from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { DomainListParser } from '../misc/domain-list-parser';
-import { ModifierListParser } from '../misc/modifier-list';
 import {
     ADG_SCRIPTLET_MASK,
-    CSS_BLOCK_OPEN,
-    CSS_BLOCK_CLOSE,
     CLOSE_SQUARE_BRACKET,
+    CSS_BLOCK_CLOSE,
+    CSS_BLOCK_OPEN,
     DOLLAR_SIGN,
     OPEN_SQUARE_BRACKET,
     UBO_HTML_MASK,
     UBO_SCRIPTLET_MASK,
     UBO_SCRIPTLET_MASK_LEGACY,
 } from '../../utils/constants';
-import {
-    type AnyCosmeticRule,
-    type CosmeticRuleSeparator,
-    CosmeticRuleType,
-    type ModifierList,
-    RuleCategory,
-    type Value,
-    type CssInjectionRuleBody,
-    type ElementHidingRuleBody,
-    type CosmeticRule,
-    type ElementHidingRule,
-    type CssInjectionRule,
-    type ScriptletInjectionRule,
-    type JsInjectionRule,
-    type HtmlFilteringRule,
-    type UboSelector,
-} from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { StringUtils } from '../../utils/string';
+import { BaseParser } from '../base-parser';
 import { CommentParser } from '../comment/comment-parser';
-import { defaultParserOptions } from '../options';
-import { UboSelectorParser } from '../css/ubo-selector-parser';
 import { AdgCssInjectionParser } from '../css/adg-css-injection-parser';
-import { AbpSnippetInjectionBodyParser } from './scriptlet-body/abp-snippet-injection-body-parser';
-import { UboScriptletInjectionBodyParser } from './scriptlet-body/ubo-scriptlet-injection-body-parser';
-import { AdgScriptletInjectionBodyParser } from './scriptlet-body/adg-scriptlet-injection-body-parser';
+import { UboSelectorParser } from '../css/ubo-selector-parser';
+import { DomainListParser } from '../misc/domain-list-parser';
+import { ModifierListParser } from '../misc/modifier-list';
+import { defaultParserOptions } from '../options';
+
 import { AdgHtmlFilteringBodyParser } from './html-filtering-body/adg-html-filtering-body-parser';
 import { UboHtmlFilteringBodyParser } from './html-filtering-body/ubo-html-filtering-body-parser';
-import { BaseParser } from '../base-parser';
-import { UboPseudoName } from '../../common/ubo-selector-common';
+import { AbpSnippetInjectionBodyParser } from './scriptlet-body/abp-snippet-injection-body-parser';
+import { AdgScriptletInjectionBodyParser } from './scriptlet-body/adg-scriptlet-injection-body-parser';
+import { UboScriptletInjectionBodyParser } from './scriptlet-body/ubo-scriptlet-injection-body-parser';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
  */
 export const ERROR_MESSAGES = {
     EMPTY_RULE_BODY: 'Empty rule body',
-    INVALID_BODY_FOR_SEPARATOR: "Body '%s' is not valid for the '%s' cosmetic rule separator",
-    MISSING_ADGUARD_MODIFIER_LIST_END: "Missing '%s' at the end of the AdGuard modifier list in pattern '%s'",
-    MISSING_ADGUARD_MODIFIER_LIST_MARKER: "Missing '%s' at the beginning of the AdGuard modifier list in pattern '%s'",
+    INVALID_BODY_FOR_SEPARATOR:
+        "Body '%s' is not valid for the '%s' cosmetic rule separator",
+    MISSING_ADGUARD_MODIFIER_LIST_END:
+        "Missing '%s' at the end of the AdGuard modifier list in pattern '%s'",
+    MISSING_ADGUARD_MODIFIER_LIST_MARKER:
+        "Missing '%s' at the beginning of the AdGuard modifier list in pattern '%s'",
     SYNTAXES_CANNOT_BE_MIXED: "'%s' syntax cannot be mixed with '%s' syntax",
     SYNTAX_DISABLED: "Parsing '%s' syntax is disabled, but the rule uses it",
 };
@@ -67,7 +71,7 @@ const ADG_CSS_INJECTION_PATTERN = /^(?:.+){(?:.+)}$/;
  * Where possible, it automatically detects the difference between supported syntaxes:
  *  - AdGuard
  *  - uBlock Origin
- *  - Adblock Plus
+ *  - Adblock Plus.
  *
  * If the syntax is common / cannot be determined, the parser gives `Common` syntax.
  *
@@ -82,8 +86,9 @@ export class CosmeticRuleParser extends BaseParser {
      * Determines whether a rule is a cosmetic rule. The rule is considered cosmetic if it
      * contains a cosmetic rule separator.
      *
-     * @param raw Raw rule
-     * @returns `true` if the rule is a cosmetic rule, `false` otherwise
+     * @param raw Raw rule.
+     *
+     * @returns `true` if the rule is a cosmetic rule, `false` otherwise.
      */
     public static isCosmeticRule(raw: string) {
         const trimmed = raw.trim();
@@ -99,17 +104,23 @@ export class CosmeticRuleParser extends BaseParser {
      * Parses a cosmetic rule. The structure of the cosmetic rules:
      *  - pattern (AdGuard pattern can have modifiers, other syntaxes don't)
      *  - separator
-     *  - body
+     *  - body.
      *
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
      * @returns
-     * Parsed cosmetic rule AST or null if it failed to parse based on the known cosmetic rules
-     * @throws If the input matches the cosmetic rule pattern but syntactically invalid
+     * Parsed cosmetic rule AST or null if it failed to parse based on the known cosmetic rules.
+     *
+     * @throws If the input matches the cosmetic rule pattern but syntactically invalid.
      */
     // TODO: Split to smaller functions
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AnyCosmeticRule | null {
+    public static parse(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): AnyCosmeticRule | null {
         // Find cosmetic rule separator - each cosmetic rule must have it, otherwise it is not a cosmetic rule
         const separatorResult = CosmeticRuleSeparatorUtils.find(raw);
 
@@ -152,7 +163,11 @@ export class CosmeticRuleParser extends BaseParser {
             // Open square bracket should be followed by a modifier separator: [$
             if (rawPattern[patternOffset] !== DOLLAR_SIGN) {
                 throw new AdblockSyntaxError(
-                    sprintf(ERROR_MESSAGES.MISSING_ADGUARD_MODIFIER_LIST_MARKER, DOLLAR_SIGN, rawPattern),
+                    sprintf(
+                        ERROR_MESSAGES.MISSING_ADGUARD_MODIFIER_LIST_MARKER,
+                        DOLLAR_SIGN,
+                        rawPattern,
+                    ),
                     baseOffset + patternOffset,
                     baseOffset + rawPattern.length,
                 );
@@ -176,7 +191,11 @@ export class CosmeticRuleParser extends BaseParser {
 
             if (modifierListEnd === -1) {
                 throw new AdblockSyntaxError(
-                    sprintf(ERROR_MESSAGES.MISSING_ADGUARD_MODIFIER_LIST_END, CLOSE_SQUARE_BRACKET, rawPattern),
+                    sprintf(
+                        ERROR_MESSAGES.MISSING_ADGUARD_MODIFIER_LIST_END,
+                        CLOSE_SQUARE_BRACKET,
+                        rawPattern,
+                    ),
                     baseOffset + patternOffset,
                     baseOffset + rawPattern.length,
                 );
@@ -223,7 +242,9 @@ export class CosmeticRuleParser extends BaseParser {
             separator.end = baseOffset + separatorResult.end;
         }
 
-        const exception = CosmeticRuleSeparatorUtils.isException(separatorResult.separator);
+        const exception = CosmeticRuleSeparatorUtils.isException(
+            separatorResult.separator,
+        );
 
         // Step 3. Parse the rule body
         let rawBody = raw.slice(bodyStart, bodyEnd);
@@ -231,6 +252,10 @@ export class CosmeticRuleParser extends BaseParser {
         /**
          * Ensures that the rule syntax is common or the expected one. This function is used to prevent mixing
          * different syntaxes in the same rule.
+         *
+         * @param expectedSyntax Expected syntax.
+         *
+         * @throws If the rule syntax is not common or the expected one.
          *
          * @example
          * The following rule mixes AdGuard and uBO syntaxes, because it uses AdGuard modifier list and uBO
@@ -240,14 +265,17 @@ export class CosmeticRuleParser extends BaseParser {
          * ```
          * In this case, parser sets syntax to AdGuard, because it detects the AdGuard modifier list, but
          * when parsing the rule body, it detects uBO CSS injection, which is not compatible with AdGuard.
-         *
-         * @param expectedSyntax Expected syntax
-         * @throws If the rule syntax is not common or the expected one
          */
-        const expectCommonOrSpecificSyntax = (expectedSyntax: AdblockSyntax) => {
+        const expectCommonOrSpecificSyntax = (
+            expectedSyntax: AdblockSyntax,
+        ) => {
             if (syntax !== AdblockSyntax.Common && syntax !== expectedSyntax) {
                 throw new AdblockSyntaxError(
-                    sprintf(ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED, expectedSyntax, syntax),
+                    sprintf(
+                        ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED,
+                        expectedSyntax,
+                        syntax,
+                    ),
                     baseOffset + patternStart,
                     baseOffset + bodyEnd,
                 );
@@ -258,11 +286,18 @@ export class CosmeticRuleParser extends BaseParser {
 
         // Parse UBO rule modifiers
         if (options.parseUboSpecificRules) {
-            uboSelector = UboSelectorParser.parse(rawBody, options, baseOffset + bodyStart);
+            uboSelector = UboSelectorParser.parse(
+                rawBody,
+                options,
+                baseOffset + bodyStart,
+            );
             rawBody = uboSelector.selector.value;
 
             // Do not allow ADG modifiers and UBO modifiers in the same rule
-            if (uboSelector.modifiers && uboSelector.modifiers.children.length > 0) {
+            if (
+                uboSelector.modifiers
+                && uboSelector.modifiers.children.length > 0
+            ) {
                 // If modifiers are present, that means that the ADG modifier list was parsed
                 expectCommonOrSpecificSyntax(AdblockSyntax.Ubo);
 
@@ -325,8 +360,15 @@ export class CosmeticRuleParser extends BaseParser {
             baseRule.end = baseOffset + raw.length;
         }
 
-        const parseUboCssInjection = (): Pick<CssInjectionRule, RestProps> | null => {
-            if (!uboSelector || !uboSelector.modifiers || uboSelector.modifiers.children?.length < 1) {
+        const parseUboCssInjection = (): Pick<
+        CssInjectionRule,
+        RestProps
+        > | null => {
+            if (
+                !uboSelector
+                || !uboSelector.modifiers
+                || uboSelector.modifiers.children?.length < 1
+            ) {
                 return null;
             }
 
@@ -414,7 +456,10 @@ export class CosmeticRuleParser extends BaseParser {
             };
         };
 
-        const parseAdgCssInjection = (): Pick<CssInjectionRule, RestProps> | null => {
+        const parseAdgCssInjection = (): Pick<
+        CssInjectionRule,
+        RestProps
+        > | null => {
             // TODO: Improve this detection. Need to cover the following cases:
             // #$#body { color: red;
             // #$#@media (min-width: 100px) { body { color: red; }
@@ -429,33 +474,55 @@ export class CosmeticRuleParser extends BaseParser {
             return {
                 syntax: AdblockSyntax.Adg,
                 type: CosmeticRuleType.CssInjectionRule,
-                body: AdgCssInjectionParser.parse(rawBody, options, baseOffset + bodyStart),
+                body: AdgCssInjectionParser.parse(
+                    rawBody,
+                    options,
+                    baseOffset + bodyStart,
+                ),
             };
         };
 
         /**
          * Parses Adb CSS injection rules
-         * eg: example.com##.foo { display: none; }
+         * eg: example.com##.foo { display: none; }.
          *
-         * @returns parsed rule
+         * @returns Parsed rule.
          */
-        const parseAbpCssInjection = (): Pick<CssInjectionRule, RestProps> | null => {
+        const parseAbpCssInjection = (): Pick<
+        CssInjectionRule,
+        RestProps
+        > | null => {
             if (!options.parseAbpSpecificRules) {
                 return null;
             }
 
             // check if the rule contains both CSS block open and close characters
             // if none of them is present we can stop parsing
-            if (rawBody.indexOf(CSS_BLOCK_OPEN) === -1 && rawBody.indexOf(CSS_BLOCK_CLOSE) === -1) {
+            if (
+                rawBody.indexOf(CSS_BLOCK_OPEN) === -1
+                && rawBody.indexOf(CSS_BLOCK_CLOSE) === -1
+            ) {
                 return null;
             }
 
-            if (!hasToken(rawBody, new Set([TokenType.OpenCurlyBracket, TokenType.CloseCurlyBracket]))) {
+            if (
+                !hasToken(
+                    rawBody,
+                    new Set([
+                        TokenType.OpenCurlyBracket,
+                        TokenType.CloseCurlyBracket,
+                    ]),
+                )
+            ) {
                 return null;
             }
 
             // try to parse the raw body as an AdGuard CSS injection rule
-            const body = AdgCssInjectionParser.parse(rawBody, options, baseOffset + bodyStart);
+            const body = AdgCssInjectionParser.parse(
+                rawBody,
+                options,
+                baseOffset + bodyStart,
+            );
             // if the parsed rule type is a 'CssInjectionRuleBody', return the parsed rule
             return {
                 syntax: AdblockSyntax.Abp,
@@ -464,7 +531,10 @@ export class CosmeticRuleParser extends BaseParser {
             };
         };
 
-        const parseAbpSnippetInjection = (): Pick<ScriptletInjectionRule, RestProps> | null => {
+        const parseAbpSnippetInjection = (): Pick<
+        ScriptletInjectionRule,
+        RestProps
+        > | null => {
             if (!options.parseAbpSpecificRules) {
                 throw new AdblockSyntaxError(
                     sprintf(ERROR_MESSAGES.SYNTAX_DISABLED, AdblockSyntax.Abp),
@@ -475,7 +545,11 @@ export class CosmeticRuleParser extends BaseParser {
 
             expectCommonOrSpecificSyntax(AdblockSyntax.Abp);
 
-            const body = AbpSnippetInjectionBodyParser.parse(rawBody, options, baseOffset + bodyStart);
+            const body = AbpSnippetInjectionBodyParser.parse(
+                rawBody,
+                options,
+                baseOffset + bodyStart,
+            );
 
             if (options.isLocIncluded) {
                 body.start = baseOffset + bodyStart;
@@ -489,8 +563,14 @@ export class CosmeticRuleParser extends BaseParser {
             };
         };
 
-        const parseUboScriptletInjection = (): Pick<ScriptletInjectionRule, RestProps> | null => {
-            if (!rawBody.startsWith(UBO_SCRIPTLET_MASK) && !rawBody.startsWith(UBO_SCRIPTLET_MASK_LEGACY)) {
+        const parseUboScriptletInjection = (): Pick<
+        ScriptletInjectionRule,
+        RestProps
+        > | null => {
+            if (
+                !rawBody.startsWith(UBO_SCRIPTLET_MASK)
+                && !rawBody.startsWith(UBO_SCRIPTLET_MASK_LEGACY)
+            ) {
                 return null;
             }
 
@@ -504,7 +584,11 @@ export class CosmeticRuleParser extends BaseParser {
 
             expectCommonOrSpecificSyntax(AdblockSyntax.Ubo);
 
-            const body = UboScriptletInjectionBodyParser.parse(rawBody, options, baseOffset + bodyStart);
+            const body = UboScriptletInjectionBodyParser.parse(
+                rawBody,
+                options,
+                baseOffset + bodyStart,
+            );
             if (options.isLocIncluded) {
                 body.start = baseOffset + bodyStart;
                 body.end = baseOffset + bodyEnd;
@@ -517,7 +601,10 @@ export class CosmeticRuleParser extends BaseParser {
             };
         };
 
-        const parseAdgScriptletInjection = (): Pick<ScriptletInjectionRule, RestProps> | null => {
+        const parseAdgScriptletInjection = (): Pick<
+        ScriptletInjectionRule,
+        RestProps
+        > | null => {
             // ADG scriptlet injection
             if (!rawBody.startsWith(ADG_SCRIPTLET_MASK)) {
                 return null;
@@ -525,7 +612,11 @@ export class CosmeticRuleParser extends BaseParser {
 
             expectCommonOrSpecificSyntax(AdblockSyntax.Adg);
 
-            const body = AdgScriptletInjectionBodyParser.parse(rawBody, options, baseOffset + bodyStart);
+            const body = AdgScriptletInjectionBodyParser.parse(
+                rawBody,
+                options,
+                baseOffset + bodyStart,
+            );
 
             if (options.isLocIncluded) {
                 body.start = baseOffset + bodyStart;
@@ -559,7 +650,10 @@ export class CosmeticRuleParser extends BaseParser {
             };
         };
 
-        const parseUboHtmlFiltering = (): Pick<HtmlFilteringRule, RestProps> | null => {
+        const parseUboHtmlFiltering = (): Pick<
+        HtmlFilteringRule,
+        RestProps
+        > | null => {
             if (!rawBody.startsWith(UBO_HTML_MASK)) {
                 return null;
             }
@@ -588,10 +682,17 @@ export class CosmeticRuleParser extends BaseParser {
             };
         };
 
-        const parseAdgHtmlFiltering = (): Pick<HtmlFilteringRule, RestProps> => {
+        const parseAdgHtmlFiltering = (): Pick<
+        HtmlFilteringRule,
+        RestProps
+        > => {
             expectCommonOrSpecificSyntax(AdblockSyntax.Adg);
 
-            const body = AdgHtmlFilteringBodyParser.parse(rawBody, options, baseOffset + bodyStart);
+            const body = AdgHtmlFilteringBodyParser.parse(
+                rawBody,
+                options,
+                baseOffset + bodyStart,
+            );
 
             return {
                 syntax: AdblockSyntax.Adg,
@@ -620,8 +721,16 @@ export class CosmeticRuleParser extends BaseParser {
                 parseElementHiding,
             ],
 
-            '#?#': [parseUboCssInjection, parseAbpCssInjection, parseElementHiding],
-            '#@?#': [parseUboCssInjection, parseAbpCssInjection, parseElementHiding],
+            '#?#': [
+                parseUboCssInjection,
+                parseAbpCssInjection,
+                parseElementHiding,
+            ],
+            '#@?#': [
+                parseUboCssInjection,
+                parseAbpCssInjection,
+                parseElementHiding,
+            ],
 
             '#$#': [parseAdgCssInjection, parseAbpSnippetInjection],
             '#@$#': [parseAdgCssInjection, parseAbpSnippetInjection],
@@ -650,7 +759,11 @@ export class CosmeticRuleParser extends BaseParser {
         // If none of the parsing functions returned a result, it means that the rule is unknown / invalid.
         if (!restProps) {
             throw new AdblockSyntaxError(
-                sprintf(ERROR_MESSAGES.INVALID_BODY_FOR_SEPARATOR, rawBody, separatorResult.separator),
+                sprintf(
+                    ERROR_MESSAGES.INVALID_BODY_FOR_SEPARATOR,
+                    rawBody,
+                    separatorResult.separator,
+                ),
                 baseOffset + bodyStart,
                 baseOffset + bodyEnd,
             );

@@ -12,19 +12,30 @@ import { BaseGenerator } from '../base-generator';
  * AdGuard CSS injection generator.
  */
 export class AdgCssInjectionGenerator extends BaseGenerator {
+    /**
+     * CSS declaration for removing elements.
+     */
     private static REMOVE_DECLARATION = 'remove: true;';
 
     /**
      * Serializes an AdGuard CSS injection node into a raw string.
      *
      * @param node Node to serialize.
+     *
      * @returns Raw string.
      */
     public static generate(node: CssInjectionRuleBody): string {
         const result: string[] = [];
 
         if (node.mediaQueryList) {
-            result.push(CSS_MEDIA_MARKER, SPACE, node.mediaQueryList.value, SPACE, OPEN_CURLY_BRACKET, SPACE);
+            result.push(
+                CSS_MEDIA_MARKER,
+                SPACE,
+                node.mediaQueryList.value,
+                SPACE,
+                OPEN_CURLY_BRACKET,
+                SPACE,
+            );
         }
 
         result.push(node.selectorList.value, SPACE, OPEN_CURLY_BRACKET, SPACE);

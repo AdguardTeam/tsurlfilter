@@ -1,11 +1,15 @@
 /**
- * @file AGTree entry point
+ * @file AGTree entry point.
  */
 
 // Parser
 export { RuleParser } from './parser/rule-parser';
 export { RuleGenerator } from './generator/rule-generator';
-export { type OnParseError, defaultParserOptions, type ParserOptions } from './parser/options';
+export {
+    type OnParseError,
+    defaultParserOptions,
+    type ParserOptions,
+} from './parser/options';
 
 export {
     type Agent,
@@ -108,10 +112,20 @@ export {
     SAFARI_CB_AFFINITY,
     UBO_SCRIPTLET_MASK,
 } from './utils/constants';
-export { AdblockSyntax, AdblockProduct, getHumanReadableProductName } from './utils/adblockers';
-export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './utils/cosmetic-rule-separator';
+export {
+    AdblockSyntax,
+    AdblockProduct,
+    getHumanReadableProductName,
+} from './utils/adblockers';
+export {
+    type CosmeticRuleSeparatorFinderResult,
+    CosmeticRuleSeparatorUtils,
+} from './utils/cosmetic-rule-separator';
 export { DomainUtils } from './utils/domain';
-export { type VariableTable, LogicalExpressionUtils } from './utils/logical-expression';
+export {
+    type VariableTable,
+    LogicalExpressionUtils,
+} from './utils/logical-expression';
 export {
     ADBLOCK_URL_START,
     ADBLOCK_URL_START_REGEX,
@@ -122,10 +136,7 @@ export {
     SPECIAL_REGEX_SYMBOLS,
     RegExpUtils,
 } from './utils/regexp';
-export {
-    QuoteType,
-    QuoteUtils,
-} from './utils/quotes';
+export { QuoteType, QuoteUtils } from './utils/quotes';
 export { type Position, PositionProvider } from './utils/position-provider';
 export { RuleCategorizer } from './utils/categorizer';
 

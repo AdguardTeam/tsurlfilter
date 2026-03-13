@@ -3,10 +3,10 @@
  * @file Provides platform mapping and helper functions.
  */
 
-import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../platforms';
 import { AdblockProduct } from '../../utils/adblockers';
 import { getBitCount } from '../../utils/bit-count';
 import { type ReadonlyRecord } from '../../utils/types';
+import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../platforms';
 
 /**
  * Map of specific platforms string names to their corresponding enum values.
@@ -84,36 +84,78 @@ const SPECIFIC_PLATFORM_HUMAN_READABLE_NAME_MAP: Map<SpecificPlatform, string> =
     [SpecificPlatform.AdgExtChrome, 'AdGuard Browser Extension for Chrome'],
     [SpecificPlatform.AdgExtOpera, 'AdGuard Browser Extension for Opera'],
     [SpecificPlatform.AdgExtEdge, 'AdGuard Browser Extension for Edge'],
-    [SpecificPlatform.AdgExtFirefox, 'AdGuard Browser Extension for Firefox'],
+    [
+        SpecificPlatform.AdgExtFirefox,
+        'AdGuard Browser Extension for Firefox',
+    ],
 
     [SpecificPlatform.AdgCbAndroid, 'AdGuard Content Blocker for Android'],
     [SpecificPlatform.AdgCbIos, 'AdGuard Content Blocker for iOS'],
     [SpecificPlatform.AdgCbSafari, 'AdGuard Content Blocker for Safari'],
 
-    [SpecificPlatform.UboExtChrome, 'uBlock Origin Browser Extension for Chrome'],
-    [SpecificPlatform.UboExtOpera, 'uBlock Origin Browser Extension for Opera'],
-    [SpecificPlatform.UboExtEdge, 'uBlock Origin Browser Extension for Edge'],
-    [SpecificPlatform.UboExtFirefox, 'uBlock Origin Browser Extension for Firefox'],
+    [
+        SpecificPlatform.UboExtChrome,
+        'uBlock Origin Browser Extension for Chrome',
+    ],
+    [
+        SpecificPlatform.UboExtOpera,
+        'uBlock Origin Browser Extension for Opera',
+    ],
+    [
+        SpecificPlatform.UboExtEdge,
+        'uBlock Origin Browser Extension for Edge',
+    ],
+    [
+        SpecificPlatform.UboExtFirefox,
+        'uBlock Origin Browser Extension for Firefox',
+    ],
 
-    [SpecificPlatform.AbpExtChrome, 'AdBlock / Adblock Plus Browser Extension for Chrome'],
-    [SpecificPlatform.AbpExtOpera, 'AdBlock / Adblock Plus Browser Extension for Opera'],
-    [SpecificPlatform.AbpExtEdge, 'AdBlock / Adblock Plus Browser Extension for Edge'],
-    [SpecificPlatform.AbpExtFirefox, 'AdBlock / Adblock Plus Browser Extension for Firefox'],
+    [
+        SpecificPlatform.AbpExtChrome,
+        'AdBlock / Adblock Plus Browser Extension for Chrome',
+    ],
+    [
+        SpecificPlatform.AbpExtOpera,
+        'AdBlock / Adblock Plus Browser Extension for Opera',
+    ],
+    [
+        SpecificPlatform.AbpExtEdge,
+        'AdBlock / Adblock Plus Browser Extension for Edge',
+    ],
+    [
+        SpecificPlatform.AbpExtFirefox,
+        'AdBlock / Adblock Plus Browser Extension for Firefox',
+    ],
 ]);
 
 const GENERIC_PLATFORM_HUMAN_READABLE_NAME_MAP: Map<GenericPlatform, string> = new Map([
     [GenericPlatform.AdgOsAny, 'Any System-level AdGuard App'],
-    [GenericPlatform.AdgSafariAny, 'Any AdGuard Content Blocker for Safari'],
-    [GenericPlatform.AdgExtChromium, 'Any AdGuard Browser Extension for Chromium'],
+    [
+        GenericPlatform.AdgSafariAny,
+        'Any AdGuard Content Blocker for Safari',
+    ],
+    [
+        GenericPlatform.AdgExtChromium,
+        'Any AdGuard Browser Extension for Chromium',
+    ],
     [GenericPlatform.AdgExtAny, 'Any AdGuard Browser Extension'],
     [GenericPlatform.AdgAny, 'Any AdGuard product'],
 
-    [GenericPlatform.UboExtChromium, 'Any uBlock Origin Browser Extension for Chromium'],
+    [
+        GenericPlatform.UboExtChromium,
+        'Any uBlock Origin Browser Extension for Chromium',
+    ],
     [GenericPlatform.UboExtAny, 'Any uBlock Origin Browser Extension'],
     [GenericPlatform.UboAny, 'Any uBlock Origin product'],
 
-    [GenericPlatform.AbpExtChromium, 'Any AdBlock / Adblock Plus Browser Extension for Chromium'],
-    [GenericPlatform.AbpExtAny, 'Any AdBlock / Adblock Plus Browser Extension'],
+    [
+        GenericPlatform.AbpExtChromium,
+        'Any AdBlock / Adblock Plus Browser Extension for Chromium',
+    ],
+    [
+        GenericPlatform.AbpExtAny,
+        'Any AdBlock / Adblock Plus Browser Extension',
+    ],
     [GenericPlatform.AbpAny, 'Any AdBlock / Adblock Plus product'],
 
     [GenericPlatform.Any, 'Any product'],
@@ -123,13 +165,19 @@ const GENERIC_PLATFORM_HUMAN_READABLE_NAME_MAP: Map<GenericPlatform, string> = n
  * Generic platforms for each product, ordered from most specific to least specific.
  * Computed lazily on first access.
  */
-let PRODUCT_GENERIC_PLATFORMS: ReadonlyRecord<AdblockProduct, readonly GenericPlatform[]> | null = null;
+let PRODUCT_GENERIC_PLATFORMS: ReadonlyRecord<
+AdblockProduct,
+readonly GenericPlatform[]
+> | null = null;
 
 /**
  * Map of products to their specific platforms.
  * Cached after first call to avoid recomputing.
  */
-let PRODUCT_SPECIFIC_PLATFORMS: ReadonlyRecord<AdblockProduct, readonly SpecificPlatform[]> | null = null;
+let PRODUCT_SPECIFIC_PLATFORMS: ReadonlyRecord<
+AdblockProduct,
+readonly SpecificPlatform[]
+> | null = null;
 
 /**
  * Initializes and returns the product generic platforms map.
@@ -137,7 +185,10 @@ let PRODUCT_SPECIFIC_PLATFORMS: ReadonlyRecord<AdblockProduct, readonly Specific
  *
  * @returns Map of products to their generic platforms, ordered from most to least specific.
  */
-export const getProductGenericPlatforms = (): ReadonlyRecord<AdblockProduct, readonly GenericPlatform[]> => {
+export const getProductGenericPlatforms = (): ReadonlyRecord<
+AdblockProduct,
+readonly GenericPlatform[]
+> => {
     if (PRODUCT_GENERIC_PLATFORMS !== null) {
         return PRODUCT_GENERIC_PLATFORMS;
     }
@@ -149,7 +200,10 @@ export const getProductGenericPlatforms = (): ReadonlyRecord<AdblockProduct, rea
     };
 
     // Iterate over all generic platforms and group by product prefix
-    const genericPlatformEntries = Object.entries(GenericPlatform) as [string, GenericPlatform][];
+    const genericPlatformEntries = Object.entries(GenericPlatform) as [
+        string,
+        GenericPlatform,
+    ][];
 
     for (const [name, platform] of genericPlatformEntries) {
         // Check which product this platform belongs to
@@ -171,7 +225,10 @@ export const getProductGenericPlatforms = (): ReadonlyRecord<AdblockProduct, rea
     }
 
     // Cache the result as readonly
-    PRODUCT_GENERIC_PLATFORMS = result as ReadonlyRecord<AdblockProduct, readonly GenericPlatform[]>;
+    PRODUCT_GENERIC_PLATFORMS = result as ReadonlyRecord<
+    AdblockProduct,
+    readonly GenericPlatform[]
+    >;
     return PRODUCT_GENERIC_PLATFORMS;
 };
 
@@ -182,7 +239,9 @@ export const getProductGenericPlatforms = (): ReadonlyRecord<AdblockProduct, rea
  *
  * @returns True if the platform is a generic platform or combined platforms, false if it's a specific platform.
  */
-export const isGenericPlatform = (platform: AnyPlatform): platform is GenericPlatform | number => {
+export const isGenericPlatform = (
+    platform: AnyPlatform,
+): platform is GenericPlatform | number => {
     // if more than one bit is set, it's a generic platform or combined platforms
     // Cast to number for bitwise operations
     const num = platform as unknown as number;
@@ -202,11 +261,7 @@ export const hasPlatformMultipleProducts = (platform: AnyPlatform): boolean => {
     const hasAbp = !!(platform & GenericPlatform.AbpAny);
     const hasUbo = !!(platform & GenericPlatform.UboAny);
 
-    return (
-        (hasAdg && hasAbp)
-        || (hasAdg && hasUbo)
-        || (hasAbp && hasUbo)
-    );
+    return (hasAdg && hasAbp) || (hasAdg && hasUbo) || (hasAbp && hasUbo);
 };
 
 /**
@@ -222,9 +277,11 @@ export const hasPlatformMultipleProducts = (platform: AnyPlatform): boolean => {
  * - Empty array `[]` if platform is 0 or no products are found
  * - Array of specific products based on which products are present
  *   (e.g., `['AdGuard', 'UblockOrigin']` if both AdGuard and uBlock Origin are specified)
- * - `['AdGuard', 'UblockOrigin', 'AdblockPlus']` for GenericPlatform.Any
+ * - `['AdGuard', 'UblockOrigin', 'AdblockPlus']` for GenericPlatform.Any.
  */
-export const platformToAdblockProduct = (platform: AnyPlatform): AdblockProduct[] => {
+export const platformToAdblockProduct = (
+    platform: AnyPlatform,
+): AdblockProduct[] => {
     const products: AdblockProduct[] = [];
 
     if (platform & GenericPlatform.AdgAny) {
@@ -315,7 +372,7 @@ const optimizePlatformRepresentation = (
  * - Empty object `{}` if platform is 0 or no products are found
  * - Object with single product key for single-product platforms
  * - Object with multiple product keys for multi-product platforms
- * - Each array contains the minimal representation using generic platforms where possible
+ * - Each array contains the minimal representation using generic platforms where possible.
  *
  * @example
  * ```typescript
@@ -340,12 +397,15 @@ const optimizePlatformRepresentation = (
  * }
  * ```
  */
-export const getPlatformsByProduct = (platform: AnyPlatform): PlatformsByProduct => {
+export const getPlatformsByProduct = (
+    platform: AnyPlatform,
+): PlatformsByProduct => {
     const result: PlatformsByProduct = {};
     const productPlatforms = getProductGenericPlatforms();
 
     if (platform & GenericPlatform.AdgAny) {
-        const extracted = (platform & GenericPlatform.AdgAny) as unknown as number;
+        const extracted = (platform
+            & GenericPlatform.AdgAny) as unknown as number;
         result[AdblockProduct.Adg] = optimizePlatformRepresentation(
             extracted,
             productPlatforms[AdblockProduct.Adg],
@@ -353,7 +413,8 @@ export const getPlatformsByProduct = (platform: AnyPlatform): PlatformsByProduct
     }
 
     if (platform & GenericPlatform.UboAny) {
-        const extracted = (platform & GenericPlatform.UboAny) as unknown as number;
+        const extracted = (platform
+            & GenericPlatform.UboAny) as unknown as number;
         result[AdblockProduct.Ubo] = optimizePlatformRepresentation(
             extracted,
             productPlatforms[AdblockProduct.Ubo],
@@ -361,7 +422,8 @@ export const getPlatformsByProduct = (platform: AnyPlatform): PlatformsByProduct
     }
 
     if (platform & GenericPlatform.AbpAny) {
-        const extracted = (platform & GenericPlatform.AbpAny) as unknown as number;
+        const extracted = (platform
+            & GenericPlatform.AbpAny) as unknown as number;
         result[AdblockProduct.Abp] = optimizePlatformRepresentation(
             extracted,
             productPlatforms[AdblockProduct.Abp],
@@ -377,9 +439,12 @@ export const getPlatformsByProduct = (platform: AnyPlatform): PlatformsByProduct
  * @param platform Platform string name, e.g., 'adg_os_windows'.
  *
  * @returns Specific or generic platform enum value.
+ *
  * @throws Error if the platform is unknown.
  */
-export const getPlatformId = (platform: string): SpecificPlatform | GenericPlatform => {
+export const getPlatformId = (
+    platform: string,
+): SpecificPlatform | GenericPlatform => {
     const specificPlatform = SPECIFIC_PLATFORM_MAP.get(platform);
 
     if (specificPlatform) {
@@ -401,6 +466,7 @@ export const getPlatformId = (platform: string): SpecificPlatform | GenericPlatf
  * @param platform Specific platform enum value.
  *
  * @returns Specific platform string name, e.g., 'adg_os_windows'.
+ *
  * @throws Error if the platform is unknown.
  */
 export const getSpecificPlatformName = (platform: SpecificPlatform): string => {
@@ -424,14 +490,18 @@ export const getSpecificPlatformName = (platform: SpecificPlatform): string => {
  */
 export const getHumanReadablePlatformName = (platform: AnyPlatform): string => {
     // Try specific platform first
-    const specificPlatform = SPECIFIC_PLATFORM_HUMAN_READABLE_NAME_MAP.get(platform as SpecificPlatform);
+    const specificPlatform = SPECIFIC_PLATFORM_HUMAN_READABLE_NAME_MAP.get(
+        platform as SpecificPlatform,
+    );
 
     if (specificPlatform) {
         return specificPlatform;
     }
 
     // Then try generic platform
-    const genericPlatform = GENERIC_PLATFORM_HUMAN_READABLE_NAME_MAP.get(platform as GenericPlatform);
+    const genericPlatform = GENERIC_PLATFORM_HUMAN_READABLE_NAME_MAP.get(
+        platform as GenericPlatform,
+    );
 
     if (genericPlatform) {
         return genericPlatform;
@@ -454,7 +524,9 @@ export const getHumanReadablePlatformName = (platform: AnyPlatform): string => {
  * // Returns: [AdgOsWindows, AdgOsMac, AdgOsAndroid, AdgExtChrome, ...]
  * ```
  */
-export const getProductSpecificPlatforms = (product: AdblockProduct): readonly SpecificPlatform[] => {
+export const getProductSpecificPlatforms = (
+    product: AdblockProduct,
+): readonly SpecificPlatform[] => {
     // Initialize cache if needed
     if (PRODUCT_SPECIFIC_PLATFORMS === null) {
         const result: Record<AdblockProduct, SpecificPlatform[]> = {
@@ -464,7 +536,10 @@ export const getProductSpecificPlatforms = (product: AdblockProduct): readonly S
         };
 
         // Iterate over all specific platforms and group by product prefix
-        const specificPlatformEntries = Object.entries(SpecificPlatform) as [string, SpecificPlatform][];
+        const specificPlatformEntries = Object.entries(SpecificPlatform) as [
+            string,
+            SpecificPlatform,
+        ][];
 
         for (const [name, platform] of specificPlatformEntries) {
             // Check which product this platform belongs to
@@ -477,7 +552,10 @@ export const getProductSpecificPlatforms = (product: AdblockProduct): readonly S
         }
 
         // Cache the result as readonly
-        PRODUCT_SPECIFIC_PLATFORMS = result as ReadonlyRecord<AdblockProduct, readonly SpecificPlatform[]>;
+        PRODUCT_SPECIFIC_PLATFORMS = result as ReadonlyRecord<
+        AdblockProduct,
+        readonly SpecificPlatform[]
+        >;
     }
 
     return PRODUCT_SPECIFIC_PLATFORMS[product];

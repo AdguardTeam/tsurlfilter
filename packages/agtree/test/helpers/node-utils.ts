@@ -11,11 +11,14 @@ interface Range {
  * Finds the start and end indices of a substring occurrence in a string.
  *
  * @param string The input string to search within.
- * @param substring - The substring to find.
- * @param occurrence - The occurrence of the substring to locate. Positive values start searching from the beginning,
+ * @param substring The substring to find.
+ * @param occurrence The occurrence of the substring to locate. Positive values start searching from the beginning,
  * negative values start searching from the end. Must be a non-zero number.
+ *
  * @returns A tuple containing the start and end indices of the substring occurrence.
+ *
  * @throws Throws an error if the occurrence is not found or if occurrence is 0.
+ *
  * @example
  * ```ts
  * getRanges('abcabcabc', 'abc', 1); // [0, 3]
@@ -29,9 +32,15 @@ interface Range {
  * getRanges('abcabcabc', 'abc', 0); // Error: Invalid occurrence value. Occurrence must be a non-zero number.
  * ```
  */
-export function getRange(string: string, substring: string, occurrence: number): Range {
+export function getRange(
+    string: string,
+    substring: string,
+    occurrence: number,
+): Range {
     if (occurrence === 0) {
-        throw new Error('Invalid occurrence value. Occurrence must be a non-zero number.');
+        throw new Error(
+            'Invalid occurrence value. Occurrence must be a non-zero number.',
+        );
     }
 
     let index: number;
@@ -49,7 +58,9 @@ export function getRange(string: string, substring: string, occurrence: number):
     }
 
     if (index === -1) {
-        throw new Error(`Substring '${substring}' not found for occurrence '${occurrence}'`);
+        throw new Error(
+            `Substring '${substring}' not found for occurrence '${occurrence}'`,
+        );
     }
 
     return {
@@ -72,7 +83,7 @@ export class NodeExpectContext {
      *
      * @param actual Actual string that test is run on.
      */
-    public constructor(actual: string) {
+    constructor(actual: string) {
         this.actual = actual;
     }
 
@@ -104,6 +115,7 @@ export class NodeExpectContext {
      * Converts the given range to a tuple.
      *
      * @param range Range to convert.
+     *
      * @returns Tuple containing the start and end indices of the range.
      */
     // eslint-disable-next-line class-methods-use-this
@@ -121,7 +133,9 @@ export class NodeExpectContext {
      * @param occurrence 1-based occurrence of the substring to get the location range for. Defaults to 1
      * (first occurrence). If you want to get the last occurrence, you can pass -1, or if you want to get the
      * second last occurrence, you can pass -2, etc.
+     *
      * @returns Location range. See {@link Range}.
+     *
      * @throws Throws an error if the occurrence is not found or if occurrence is 0.
      */
     public getRangeFor(substring: string, occurrence = 1): Range {
@@ -133,6 +147,7 @@ export class NodeExpectContext {
      *
      * @param substring1 The first substring.
      * @param substring2 The second substring.
+     *
      * @returns Location range. See {@link Range}.
      */
     public getRangeBetween(substring1: string, substring2: string): Range {

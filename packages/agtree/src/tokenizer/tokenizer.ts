@@ -13,7 +13,7 @@ export const enum TokenType {
     Whitespace,
 
     /**
-     * Line break (`\r\n` or just `\n`)
+     * Line break (`\r\n` or just `\n`).
      */
     LineBreak,
 
@@ -40,7 +40,7 @@ export const enum TokenType {
 
     /**
      * Raw content after cosmetic rule separator.
-     * For example, no need to tokenize CSS with this tokenizer after the `##`, `#?#`, etc. separators,
+     * For example, no need to tokenize CSS with this tokenizer after the `##`, `#?#`, etc. Separators,
      * so we use this token type as an optimization strategy.
      */
     RawContent,
@@ -178,7 +178,8 @@ const isIdentChar = (c: number): boolean => {
         (c >= 48 && c <= 57) // 0-9
         || (c >= 65 && c <= 90) // A-Z
         || (c >= 97 && c <= 122) // a-z
-        || c === 45 || c === 95 // - _
+        || c === 45
+        || c === 95 // - _
     );
 };
 
@@ -382,19 +383,46 @@ export const tokenize = (string: string, onToken: OnTokenCallback) => {
 
                 if (next === HASHMARK) {
                     // ##
-                    onToken(TokenType.CosmeticSeparator, i, i + 2, stop, skip, jump);
+                    onToken(
+                        TokenType.CosmeticSeparator,
+                        i,
+                        i + 2,
+                        stop,
+                        skip,
+                        jump,
+                    );
                     i += 2;
                     emitRawContent();
                     break;
-                } else if (next === QUESTION_MARK && string.charCodeAt(i + 2) === HASHMARK) {
+                } else if (
+                    next === QUESTION_MARK
+                    && string.charCodeAt(i + 2) === HASHMARK
+                ) {
                     // #?#
-                    onToken(TokenType.CosmeticSeparator, i, i + 3, stop, skip, jump);
+                    onToken(
+                        TokenType.CosmeticSeparator,
+                        i,
+                        i + 3,
+                        stop,
+                        skip,
+                        jump,
+                    );
                     i += 3;
                     emitRawContent();
                     break;
-                } else if (next === PERCENT && string.charCodeAt(i + 2) === HASHMARK) {
+                } else if (
+                    next === PERCENT
+                    && string.charCodeAt(i + 2) === HASHMARK
+                ) {
                     // #%#
-                    onToken(TokenType.CosmeticSeparator, i, i + 3, stop, skip, jump);
+                    onToken(
+                        TokenType.CosmeticSeparator,
+                        i,
+                        i + 3,
+                        stop,
+                        skip,
+                        jump,
+                    );
                     i += 3;
                     // lets tokenize content
                     cosmeticRule = true;
@@ -402,14 +430,31 @@ export const tokenize = (string: string, onToken: OnTokenCallback) => {
                 } else if (next === DOLLAR_SIGN) {
                     if (string.charCodeAt(i + 2) === HASHMARK) {
                         // #$#
-                        onToken(TokenType.CosmeticSeparator, i, i + 3, stop, skip, jump);
+                        onToken(
+                            TokenType.CosmeticSeparator,
+                            i,
+                            i + 3,
+                            stop,
+                            skip,
+                            jump,
+                        );
                         i += 3;
                         emitRawContent();
                         break;
                     }
-                    if (string.charCodeAt(i + 2) === QUESTION_MARK && string.charCodeAt(i + 3) === HASHMARK) {
+                    if (
+                        string.charCodeAt(i + 2) === QUESTION_MARK
+                        && string.charCodeAt(i + 3) === HASHMARK
+                    ) {
                         // #$?#
-                        onToken(TokenType.CosmeticSeparator, i, i + 4, stop, skip, jump);
+                        onToken(
+                            TokenType.CosmeticSeparator,
+                            i,
+                            i + 4,
+                            stop,
+                            skip,
+                            jump,
+                        );
                         i += 4;
                         emitRawContent();
                         break;
@@ -417,21 +462,48 @@ export const tokenize = (string: string, onToken: OnTokenCallback) => {
                 } else if (next === AT_SIGN) {
                     if (string.charCodeAt(i + 2) === HASHMARK) {
                         // #@#
-                        onToken(TokenType.AllowlistCosmeticSeparator, i, i + 3, stop, skip, jump);
+                        onToken(
+                            TokenType.AllowlistCosmeticSeparator,
+                            i,
+                            i + 3,
+                            stop,
+                            skip,
+                            jump,
+                        );
                         i += 3;
                         emitRawContent();
                         break;
                     }
-                    if (string.charCodeAt(i + 2) === QUESTION_MARK && string.charCodeAt(i + 3) === HASHMARK) {
+                    if (
+                        string.charCodeAt(i + 2) === QUESTION_MARK
+                        && string.charCodeAt(i + 3) === HASHMARK
+                    ) {
                         // #@?#
-                        onToken(TokenType.AllowlistCosmeticSeparator, i, i + 4, stop, skip, jump);
+                        onToken(
+                            TokenType.AllowlistCosmeticSeparator,
+                            i,
+                            i + 4,
+                            stop,
+                            skip,
+                            jump,
+                        );
                         i += 4;
                         emitRawContent();
                         break;
                     }
-                    if (string.charCodeAt(i + 2) === PERCENT && string.charCodeAt(i + 3) === HASHMARK) {
+                    if (
+                        string.charCodeAt(i + 2) === PERCENT
+                        && string.charCodeAt(i + 3) === HASHMARK
+                    ) {
                         // #@%#
-                        onToken(TokenType.AllowlistCosmeticSeparator, i, i + 4, stop, skip, jump);
+                        onToken(
+                            TokenType.AllowlistCosmeticSeparator,
+                            i,
+                            i + 4,
+                            stop,
+                            skip,
+                            jump,
+                        );
                         i += 4;
                         // lets tokenize content
                         cosmeticRule = true;
@@ -440,14 +512,31 @@ export const tokenize = (string: string, onToken: OnTokenCallback) => {
                     if (string.charCodeAt(i + 2) === DOLLAR_SIGN) {
                         if (string.charCodeAt(i + 3) === HASHMARK) {
                             // #@$#
-                            onToken(TokenType.AllowlistCosmeticSeparator, i, i + 4, stop, skip, jump);
+                            onToken(
+                                TokenType.AllowlistCosmeticSeparator,
+                                i,
+                                i + 4,
+                                stop,
+                                skip,
+                                jump,
+                            );
                             i += 4;
                             emitRawContent();
                             break;
                         }
-                        if (string.charCodeAt(i + 3) === QUESTION_MARK && string.charCodeAt(i + 4) === HASHMARK) {
+                        if (
+                            string.charCodeAt(i + 3) === QUESTION_MARK
+                            && string.charCodeAt(i + 4) === HASHMARK
+                        ) {
                             // #@$?#
-                            onToken(TokenType.AllowlistCosmeticSeparator, i, i + 5, stop, skip, jump);
+                            onToken(
+                                TokenType.AllowlistCosmeticSeparator,
+                                i,
+                                i + 5,
+                                stop,
+                                skip,
+                                jump,
+                            );
                             i += 5;
                             emitRawContent();
                             break;
@@ -470,13 +559,30 @@ export const tokenize = (string: string, onToken: OnTokenCallback) => {
 
                 if (next === DOLLAR_SIGN) {
                     // $$
-                    onToken(TokenType.CosmeticSeparator, i, i + 2, stop, skip, jump);
+                    onToken(
+                        TokenType.CosmeticSeparator,
+                        i,
+                        i + 2,
+                        stop,
+                        skip,
+                        jump,
+                    );
                     i += 2;
                     emitRawContent();
                     break;
-                } else if (next === AT_SIGN && string.charCodeAt(i + 2) === DOLLAR_SIGN) {
+                } else if (
+                    next === AT_SIGN
+                    && string.charCodeAt(i + 2) === DOLLAR_SIGN
+                ) {
                     // $@$
-                    onToken(TokenType.AllowlistCosmeticSeparator, i, i + 3, stop, skip, jump);
+                    onToken(
+                        TokenType.AllowlistCosmeticSeparator,
+                        i,
+                        i + 3,
+                        stop,
+                        skip,
+                        jump,
+                    );
                     i += 3;
                     emitRawContent();
                     break;

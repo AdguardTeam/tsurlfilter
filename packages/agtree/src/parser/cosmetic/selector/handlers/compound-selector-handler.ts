@@ -1,8 +1,8 @@
-import { sprintf } from 'sprintf-js';
 import { getFormattedTokenName } from '@adguard/css-tokenizer';
+import { sprintf } from 'sprintf-js';
 
-import { type SelectorCombinator, type SelectorCombinatorValue } from '../../../../nodes';
 import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
+import { type SelectorCombinator, type SelectorCombinatorValue } from '../../../../nodes';
 import {
     COMMA,
     GREATER_THAN,
@@ -46,14 +46,12 @@ export class CompoundSelectorHandler {
      *
      * @throws If the current compound selector has no simple selectors.
      */
-    public static handle(context: SelectorListParserContext, combinator?: SelectorCombinatorValue): void {
+    public static handle(
+        context: SelectorListParserContext,
+        combinator?: SelectorCombinatorValue,
+    ): void {
         const {
-            raw,
-            options,
-            baseOffset,
-            stream,
-            token,
-            complexSelector,
+            raw, options, baseOffset, stream, token, complexSelector,
         } = context;
 
         // Get current compound selector end token
@@ -65,7 +63,8 @@ export class CompoundSelectorHandler {
             !currentEndToken
             || complexSelector.children.length === 0
             // And the last token in the complex selector shouldn't be a combinator
-            || complexSelector.children[complexSelector.children.length - 1].type === 'SelectorCombinator'
+            || complexSelector.children[complexSelector.children.length - 1]
+                .type === 'SelectorCombinator'
         ) {
             throw new AdblockSyntaxError(
                 sprintf(
@@ -89,7 +88,11 @@ export class CompoundSelectorHandler {
             }
 
             // Combinator or Comma - just skip, we shouldn't consider it as descendant combinator
-            if (CompoundSelectorHandler.ALLOWED_SYMBOLS_BETWEEN_SELECTORS.has(stream.fragment())) {
+            if (
+                CompoundSelectorHandler.ALLOWED_SYMBOLS_BETWEEN_SELECTORS.has(
+                    stream.fragment(),
+                )
+            ) {
                 return;
             }
         } else {

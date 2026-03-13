@@ -1,9 +1,10 @@
 import { getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { type ComplexSelector } from '../../../../nodes';
 import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
+import { type ComplexSelector } from '../../../../nodes';
 import { type SelectorListParserContext } from '../context';
+
 import { CompoundSelectorHandler } from './compound-selector-handler';
 
 /**
@@ -23,7 +24,10 @@ export class ComplexSelectorHandler {
      *
      * @throws If the current compound / complex selector has no simple selectors / compound selectors.
      */
-    public static handle(context: SelectorListParserContext, isEof = true): void {
+    public static handle(
+        context: SelectorListParserContext,
+        isEof = true,
+    ): void {
         const {
             raw,
             options,

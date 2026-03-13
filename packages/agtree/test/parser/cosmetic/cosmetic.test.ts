@@ -1,16 +1,23 @@
 /* eslint-disable max-len */
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
 
-import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { CosmeticRulePatternGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-pattern-generator';
-import { CosmeticRuleBodyGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-body-generator';
+import {
+    CosmeticRuleBodyGenerator,
+} from '../../../src/generator/cosmetic/cosmetic-rule-body-generator';
+import {
+    CosmeticRulePatternGenerator,
+} from '../../../src/generator/cosmetic/cosmetic-rule-pattern-generator';
+import {
+    CosmeticRuleParser,
+    ERROR_MESSAGES,
+} from '../../../src/parser/cosmetic/cosmetic-rule-parser';
+import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('CosmeticRuleParser - general tests', () => {
     describe('CosmeticRuleParser.isCosmetic', () => {
@@ -104,7 +111,10 @@ describe('CosmeticRuleParser - general tests', () => {
             // check the thrown error
             const error = fn.mock.results[0].value;
             expect(error).toBeInstanceOf(AdblockSyntaxError);
-            expect(error).toHaveProperty('message', ERROR_MESSAGES.EMPTY_RULE_BODY);
+            expect(error).toHaveProperty(
+                'message',
+                ERROR_MESSAGES.EMPTY_RULE_BODY,
+            );
             expect(error).toHaveProperty('start', 0);
             expect(error).toHaveProperty('end', actual.length);
         });
@@ -115,53 +125,92 @@ describe('CosmeticRuleParser - general tests', () => {
             // no pattern at all
             { rule: '##.ad', expected: '' },
             // classic domain list
-            { rule: 'example.com,~example.net##.ad', expected: 'example.com,~example.net' },
+            {
+                rule: 'example.com,~example.net##.ad',
+                expected: 'example.com,~example.net',
+            },
             // ADG modifier list + classic domain list
-            { rule: '[$path=/foo/bar]example.com,~example.net##.foo', expected: '[$path=/foo/bar]example.com,~example.net' },
+            {
+                rule: '[$path=/foo/bar]example.com,~example.net##.foo',
+                expected: '[$path=/foo/bar]example.com,~example.net',
+            },
             // Only ADG modifier list
             { rule: '[$path=/foo/bar]##.foo', expected: '[$path=/foo/bar]' },
-        ])('should generate pattern \'$expected\' from \'$rule\'', ({ rule, expected }) => {
-            const ast = CosmeticRuleParser.parse(rule);
+        ])(
+            "should generate pattern '$expected' from '$rule'",
+            ({ rule, expected }) => {
+                const ast = CosmeticRuleParser.parse(rule);
 
-            if (ast) {
-                expect(CosmeticRulePatternGenerator.generate(ast)).toEqual(expected);
-            } else {
-                throw new Error(`Failed to parse '${rule}'`);
-            }
-        });
+                if (ast) {
+                    expect(CosmeticRulePatternGenerator.generate(ast)).toEqual(
+                        expected,
+                    );
+                } else {
+                    throw new Error(`Failed to parse '${rule}'`);
+                }
+            },
+        );
     });
 
     describe('CosmeticRuleParser.generateBody', () => {
         test.each([
             // element hiding
             { rule: '##.ad', expected: '.ad' },
-            { rule: '##.ad,section:contains("ad")', expected: '.ad,section:contains("ad")' },
+            {
+                rule: '##.ad,section:contains("ad")',
+                expected: '.ad,section:contains("ad")',
+            },
             // CSS injection (ADG)
             { rule: '#$#* { color: red; }', expected: '* { color: red; }' },
-            { rule: '#$#:contains(ad) { color: red; padding: 0 !important; }', expected: ':contains(ad) { color: red; padding: 0 !important; }' },
+            {
+                rule: '#$#:contains(ad) { color: red; padding: 0 !important; }',
+                expected:
+                    ':contains(ad) { color: red; padding: 0 !important; }',
+            },
             // CSS injection (uBO)
-            { rule: '##body:style(padding:0)', expected: 'body:style(padding:0)' },
-            { rule: '##:contains(ad):style(color: red; padding: 0 !important;)', expected: ':contains(ad):style(color: red; padding: 0 !important;)' },
+            {
+                rule: '##body:style(padding:0)',
+                expected: 'body:style(padding:0)',
+            },
+            {
+                rule: '##:contains(ad):style(color: red; padding: 0 !important;)',
+                expected:
+                    ':contains(ad):style(color: red; padding: 0 !important;)',
+            },
             // Scriptlet injection (ADG)
-            { rule: '#%#//scriptlet(\'foo\', \'bar\')', expected: '//scriptlet(\'foo\', \'bar\')' },
+            {
+                rule: "#%#//scriptlet('foo', 'bar')",
+                expected: "//scriptlet('foo', 'bar')",
+            },
             // Scriptlet injection (uBO)
             { rule: '##+js(foo, bar)', expected: '+js(foo, bar)' },
             // ABP snippet injection
             { rule: '#$#abp-snippet foo bar', expected: 'abp-snippet foo bar' },
             // HTML filtering (ADG)
-            { rule: '$$script[tag-content="ads"]', expected: 'script[tag-content="ads"]' },
+            {
+                rule: '$$script[tag-content="ads"]',
+                expected: 'script[tag-content="ads"]',
+            },
             // HTML filtering (uBO)
-            { rule: '##^script:has-text(ads)', expected: '^script:has-text(ads)' },
+            {
+                rule: '##^script:has-text(ads)',
+                expected: '^script:has-text(ads)',
+            },
             // JS injection (ADG)
             { rule: '#%#const a = 2;', expected: 'const a = 2;' },
-        ])("should generate body '$expected' from '$rule'", ({ rule, expected }) => {
-            const ast = CosmeticRuleParser.parse(rule);
+        ])(
+            "should generate body '$expected' from '$rule'",
+            ({ rule, expected }) => {
+                const ast = CosmeticRuleParser.parse(rule);
 
-            if (ast) {
-                expect(CosmeticRuleBodyGenerator.generate(ast)).toEqual(expected);
-            } else {
-                throw new Error(`Failed to parse '${rule}'`);
-            }
-        });
+                if (ast) {
+                    expect(CosmeticRuleBodyGenerator.generate(ast)).toEqual(
+                        expected,
+                    );
+                } else {
+                    throw new Error(`Failed to parse '${rule}'`);
+                }
+            },
+        );
     });
 });

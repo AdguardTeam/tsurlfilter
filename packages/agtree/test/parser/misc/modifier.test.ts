@@ -1,20 +1,23 @@
 import {
     describe,
-    test,
     expect,
     it,
+    test,
 } from 'vitest';
 
+import {
+    ModifierGenerator,
+} from '../../../src/generator/misc/modifier-generator';
 import { type Modifier } from '../../../src/nodes';
 import { ModifierParser } from '../../../src/parser/misc/modifier-parser';
-import { ModifierGenerator } from '../../../src/generator/misc/modifier-generator';
 
 /**
  * Helper function that parses and generates a modifier.
  *
- * @param raw Raw input
+ * @param raw Raw input.
+ *
  * @returns Generated output or null if the input is doesn't match
- * the parser pattern
+ * the parser pattern.
  */
 const generate = (raw: string) => {
     const ast = ModifierParser.parse(raw);
@@ -57,119 +60,107 @@ describe('ModifierParser', () => {
 
         it('should work correctly if the modifier is valid', () => {
             // Valid modifiers
-            expect(ModifierParser.parse('a')).toMatchObject(
-                {
-                    type: 'Modifier',
+            expect(ModifierParser.parse('a')).toMatchObject({
+                type: 'Modifier',
+                start: 0,
+                end: 1,
+                name: {
+                    type: 'Value',
                     start: 0,
                     end: 1,
-                    name: {
-                        type: 'Value',
-                        start: 0,
-                        end: 1,
-                        value: 'a',
-                    },
-                    exception: false,
+                    value: 'a',
                 },
-            );
+                exception: false,
+            });
 
-            expect(ModifierParser.parse('~a')).toMatchObject(
-                {
-                    type: 'Modifier',
-                    start: 0,
-                    end: 2,
-                    name: {
-                        type: 'Value',
-                        start: 1,
-                        end: 2,
-                        value: 'a',
-                    },
-                    exception: true,
-                },
-            );
-
-            expect(ModifierParser.parse('a=b')).toMatchObject(
-                {
-                    type: 'Modifier',
-                    start: 0,
-                    end: 3,
-                    name: {
-                        type: 'Value',
-                        start: 0,
-                        end: 1,
-                        value: 'a',
-                    },
-                    value: {
-                        type: 'Value',
-                        start: 2,
-                        end: 3,
-                        value: 'b',
-                    },
-                    exception: false,
-                },
-            );
-
-            expect(ModifierParser.parse('a=~b')).toMatchObject(
-                {
-                    type: 'Modifier',
-                    start: 0,
-                    end: 4,
-                    name: {
-                        type: 'Value',
-                        start: 0,
-                        end: 1,
-                        value: 'a',
-                    },
-                    value: {
-                        type: 'Value',
-                        start: 2,
-                        end: 4,
-                        value: '~b',
-                    },
-                    exception: false,
-                },
-            );
-
-            expect(ModifierParser.parse(' a = b ')).toMatchObject(
-                {
-                    type: 'Modifier',
+            expect(ModifierParser.parse('~a')).toMatchObject({
+                type: 'Modifier',
+                start: 0,
+                end: 2,
+                name: {
+                    type: 'Value',
                     start: 1,
-                    end: 6,
-                    name: {
-                        type: 'Value',
-                        start: 1,
-                        end: 2,
-                        value: 'a',
-                    },
-                    value: {
-                        type: 'Value',
-                        start: 5,
-                        end: 6,
-                        value: 'b',
-                    },
-                    exception: false,
+                    end: 2,
+                    value: 'a',
                 },
-            );
+                exception: true,
+            });
 
-            expect(ModifierParser.parse('~a=b')).toMatchObject(
-                {
-                    type: 'Modifier',
+            expect(ModifierParser.parse('a=b')).toMatchObject({
+                type: 'Modifier',
+                start: 0,
+                end: 3,
+                name: {
+                    type: 'Value',
                     start: 0,
-                    end: 4,
-                    name: {
-                        type: 'Value',
-                        start: 1,
-                        end: 2,
-                        value: 'a',
-                    },
-                    value: {
-                        type: 'Value',
-                        start: 3,
-                        end: 4,
-                        value: 'b',
-                    },
-                    exception: true,
+                    end: 1,
+                    value: 'a',
                 },
-            );
+                value: {
+                    type: 'Value',
+                    start: 2,
+                    end: 3,
+                    value: 'b',
+                },
+                exception: false,
+            });
+
+            expect(ModifierParser.parse('a=~b')).toMatchObject({
+                type: 'Modifier',
+                start: 0,
+                end: 4,
+                name: {
+                    type: 'Value',
+                    start: 0,
+                    end: 1,
+                    value: 'a',
+                },
+                value: {
+                    type: 'Value',
+                    start: 2,
+                    end: 4,
+                    value: '~b',
+                },
+                exception: false,
+            });
+
+            expect(ModifierParser.parse(' a = b ')).toMatchObject({
+                type: 'Modifier',
+                start: 1,
+                end: 6,
+                name: {
+                    type: 'Value',
+                    start: 1,
+                    end: 2,
+                    value: 'a',
+                },
+                value: {
+                    type: 'Value',
+                    start: 5,
+                    end: 6,
+                    value: 'b',
+                },
+                exception: false,
+            });
+
+            expect(ModifierParser.parse('~a=b')).toMatchObject({
+                type: 'Modifier',
+                start: 0,
+                end: 4,
+                name: {
+                    type: 'Value',
+                    start: 1,
+                    end: 2,
+                    value: 'a',
+                },
+                value: {
+                    type: 'Value',
+                    start: 3,
+                    end: 4,
+                    value: 'b',
+                },
+                exception: true,
+            });
         });
     });
 
@@ -191,7 +182,9 @@ describe('ModifierParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(ModifierParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                ModifierParser.parse(actual, { isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
