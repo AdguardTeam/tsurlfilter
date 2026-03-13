@@ -98,8 +98,9 @@ const IMPORT_PLUGIN_RULES = {
         'error',
         {
             groups: [
-                // Built-in Node.js modules and external packages should be grouped together in the first place
+                // Built-in Node.js modules, e.g. 'path', 'fs'
                 'builtin',
+                // External packages
                 'external',
                 // Parent modules should be in the second place, e.g. `import { foo } from '../bar';`
                 'parent',
