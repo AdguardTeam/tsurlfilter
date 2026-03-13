@@ -254,7 +254,7 @@ function mergeRules(...ruleSets) {
     const merged = {};
     for (const rules of ruleSets) {
         for (const [key, value] of Object.entries(rules)) {
-            if (merged[key]) {
+            if (Object.prototype.hasOwnProperty.call(merged, key)) {
                 throw new Error(`Duplicate ESLint rule: ${key}`);
             }
             merged[key] = value;
