@@ -566,3 +566,9 @@ import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
 | Firefox                  |  78       |
 | Opera                    |  66       |
 | Edge                     |  79       |
+
+## Documentation
+
+- [Changelog](CHANGELOG.md)
+- [Development guide](../../DEVELOPMENT.md)
+- [LLM agent rules](AGENTS.md)

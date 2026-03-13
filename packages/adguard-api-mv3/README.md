@@ -785,22 +785,8 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
 | ----------------------- | :-----: |
 | Chromium Based Browsers |   84    |
 
-## Development
+## Documentation
 
-### Install dependencies
-
-```shell
-pnpm install
-```
-
-### Build
-
-```shell
-npx lerna run build --scope @adguard/api-mv3 --include-dependencies
-```
-
-### Lint
-
-```shell
-pnpm run lint
-```
+- [Changelog](CHANGELOG.md)
+- [Development guide](../../DEVELOPMENT.md)
+- [LLM agent rules](AGENTS.md)

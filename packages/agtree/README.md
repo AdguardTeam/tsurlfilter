@@ -45,9 +45,12 @@ You can install the library using
 [npm-pkg-manager-url]: https://www.npmjs.com/get-npm
 [pnpm-pkg-manager-url]: https://pnpm.io/
 
-## Development & Contribution
+## Documentation
 
-Please read the [CONTRIBUTING.md][contributing-url] file for details on how to contribute to this project.
+- [Contributing guidelines](CONTRIBUTING.md)
+- [Changelog](CHANGELOG.md)
+- [Development guide](../../DEVELOPMENT.md)
+- [LLM agent rules](AGENTS.md)
 
 ## Ideas & Questions
 
