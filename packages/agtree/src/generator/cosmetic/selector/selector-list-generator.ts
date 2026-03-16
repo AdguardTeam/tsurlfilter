@@ -1,6 +1,7 @@
 import { type SelectorList } from '../../../nodes';
 import { COMMA, EMPTY, SPACE } from '../../../utils/constants';
 import { BaseGenerator } from '../../base-generator';
+
 import { ComplexSelectorGenerator } from './complex-selector-generator';
 
 /**

@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import { CosmeticRuleConverter } from '../../../src/converter/cosmetic';
 

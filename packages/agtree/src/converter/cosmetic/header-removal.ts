@@ -1,24 +1,24 @@
 /**
- * @file Converter for request header removal rules
+ * @file Converter for request header removal rules.
  */
 
+import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
+import { createNetworkRuleNode } from '../../ast-utils/network-rules';
+import { isUboResponseHeaderRemovalRuleBody } from '../../common/ubo-html-filtering-body-common';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
-    CosmeticRuleType,
-    RuleCategory,
     type AnyRule,
+    CosmeticRuleType,
     type HtmlFilteringRuleBody,
     type PseudoClassSelector,
+    RuleCategory,
 } from '../../nodes';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
+import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import { AdblockSyntax } from '../../utils/adblockers';
 import { EMPTY, UBO_RESPONSEHEADER_FN } from '../../utils/constants';
 import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_START } from '../../utils/regexp';
-import { createNetworkRuleNode } from '../../ast-utils/network-rules';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
-import { isUboResponseHeaderRemovalRuleBody } from '../../common/ubo-html-filtering-body-common';
-import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
 const ADG_REMOVEHEADER_MODIFIER = 'removeheader';
 
@@ -29,19 +29,22 @@ export const ERROR_MESSAGES = {
 };
 
 /**
- * Converter for request header removal rules
+ * Converter for request header removal rules.
  *
- * @todo Implement `convertToUbo` (ABP currently doesn't support header removal rules)
+ * @todo Implement `convertToUbo` (ABP currently doesn't support header removal rules).
  */
 export class HeaderRemovalRuleConverter extends RuleConverterBase {
     /**
      * Converts a header removal rule to AdGuard syntax, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
+     *
      * @example
      * If the input rule is:
      * ```adblock

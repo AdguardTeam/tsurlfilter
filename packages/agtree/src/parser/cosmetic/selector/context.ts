@@ -1,6 +1,6 @@
+import { type ComplexSelector, type SelectorList } from '../../../nodes';
+import { type CssTokenStream, type TokenData } from '../../css/css-token-stream';
 import { type ParserOptions } from '../../options';
-import { type TokenData, type CssTokenStream } from '../../css/css-token-stream';
-import { type SelectorList, type ComplexSelector } from '../../../nodes';
 
 /**
  * Interface that represents current selector list parser context.

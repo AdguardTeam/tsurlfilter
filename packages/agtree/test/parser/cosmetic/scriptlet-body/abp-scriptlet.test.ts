@@ -1,21 +1,21 @@
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
+import { AbpSnippetInjectionBodyCommon } from '../../../../src/common/abp-snippet-injection-body-common';
+import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
+import {
+    AbpSnippetInjectionBodyGenerator,
+} from '../../../../src/generator/cosmetic/scriptlet-body/abp-snippet-injection-body-generator';
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
 import {
     AbpSnippetInjectionBodyParser,
 } from '../../../../src/parser/cosmetic/scriptlet-body/abp-snippet-injection-body-parser';
-import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import { EMPTY, SPACE } from '../../../../src/utils/constants';
-import {
-    AbpSnippetInjectionBodyGenerator,
-} from '../../../../src/generator/cosmetic/scriptlet-body/abp-snippet-injection-body-generator';
-import { AbpSnippetInjectionBodyCommon } from '../../../../src/common/abp-snippet-injection-body-common';
+import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 
 describe('AbpSnippetInjectionBodyParser', () => {
     describe('AbpSnippetInjectionBodyParser.parse - valid cases', () => {

@@ -1,10 +1,10 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
+import { AgentCommentGenerator } from '../../../src/generator/comment/agent-comment-generator';
 import { AgentCommentParser } from '../../../src/parser/comment/agent-comment-parser';
+import { defaultParserOptions } from '../../../src/parser/options';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { AgentCommentGenerator } from '../../../src/generator/comment/agent-comment-generator';
 
 describe('AgentCommentParser', () => {
     test('isAgent', () => {

@@ -5,9 +5,9 @@
 
 import zod from 'zod';
 
-import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP_REVERSE } from '../utils/platform-helpers';
 import { isUndefined } from '../../utils/type-guards';
 import { type AnyPlatform } from '../platforms';
+import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP_REVERSE } from '../utils/platform-helpers';
 
 /**
  * Platform separator, e.g. 'adg_os_any|adg_safari_any' means any AdGuard OS platform and
@@ -72,6 +72,7 @@ export const parseRawPlatforms = (rawPlatforms: string): AnyPlatform => {
  * @param bitmask Platform bitmask (can be specific, generic, or combined platforms).
  *
  * @returns Platform string, e.g. 'adg_safari_any|adg_os_any' or 'adg_os_windows|adg_ext_chrome'.
+ *
  * @throws Error if the bitmask is 0 or contains unknown platforms.
  */
 export const stringifyPlatforms = (bitmask: AnyPlatform): string => {

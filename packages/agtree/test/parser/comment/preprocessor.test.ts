@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { PreProcessorCommentParser } from '../../../src/parser/comment/preprocessor-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
 import { PreProcessorCommentGenerator } from '../../../src/generator/comment/pre-processor-comment-generator';
+import { PreProcessorCommentParser } from '../../../src/parser/comment/preprocessor-parser';
+import { defaultParserOptions } from '../../../src/parser/options';
+import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('PreProcessorParser', () => {
     test('isPreProcessorRule', () => {

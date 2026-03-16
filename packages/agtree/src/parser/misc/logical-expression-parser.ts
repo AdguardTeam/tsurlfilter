@@ -1,4 +1,4 @@
-import { StringUtils } from '../../utils/string';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import {
     type AnyExpressionNode,
     type ExpressionParenthesisNode,
@@ -13,9 +13,9 @@ import {
     PIPE,
     UNDERSCORE,
 } from '../../utils/constants';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../options';
+import { StringUtils } from '../../utils/string';
 import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * Possible token types in the logical expression.
@@ -88,10 +88,12 @@ export class LogicalExpressionParser extends BaseParser {
     /**
      * Split the expression into tokens.
      *
-     * @param raw Source code of the expression
+     * @param raw Source code of the expression.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Token list
-     * @throws {AdblockSyntaxError} If the expression is invalid
+     *
+     * @returns Token list.
+     *
+     * @throws {AdblockSyntaxError} If the expression is invalid.
      */
     private static tokenize(raw: string, baseOffset = 0): Token[] {
         const tokens: Token[] = [];
@@ -175,8 +177,10 @@ export class LogicalExpressionParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Parsed expression
-     * @throws {AdblockSyntaxError} If the expression is invalid
+     *
+     * @returns Parsed expression.
+     *
+     * @throws {AdblockSyntaxError} If the expression is invalid.
      */
     // TODO: Create a separate TokenStream class
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AnyExpressionNode {
@@ -189,8 +193,9 @@ export class LogicalExpressionParser extends BaseParser {
         /**
          * Consumes a token of the expected type.
          *
-         * @param type Expected token type
-         * @returns The consumed token
+         * @param type Expected token type.
+         *
+         * @returns The consumed token.
          */
         function consume(type: TokenType): Token {
             const token = tokens[tokenIndex];
@@ -222,7 +227,7 @@ export class LogicalExpressionParser extends BaseParser {
         /**
          * Parses a variable.
          *
-         * @returns Variable node
+         * @returns Variable node.
          */
         function parseVariable(): ExpressionVariableNode {
             const token = consume(TokenType.Variable);
@@ -243,9 +248,10 @@ export class LogicalExpressionParser extends BaseParser {
         /**
          * Parses a binary expression.
          *
-         * @param left Left-hand side of the expression
-         * @param minPrecedence Minimum precedence of the operator
-         * @returns Binary expression node
+         * @param left Left-hand side of the expression.
+         * @param minPrecedence Minimum precedence of the operator.
+         *
+         * @returns Binary expression node.
          */
         function parseBinaryExpression(left: AnyExpressionNode, minPrecedence = 0): AnyExpressionNode {
             let node = left;
@@ -292,7 +298,7 @@ export class LogicalExpressionParser extends BaseParser {
         /**
          * Parses a parenthesized expression.
          *
-         * @returns Parenthesized expression node
+         * @returns Parenthesized expression node.
          */
         function parseParenthesizedExpression(): ExpressionParenthesisNode {
             consume(TokenType.Parenthesis);
@@ -316,8 +322,9 @@ export class LogicalExpressionParser extends BaseParser {
         /**
          * Parses an expression.
          *
-         * @param minPrecedence Minimum precedence of the operator
-         * @returns Expression node
+         * @param minPrecedence Minimum precedence of the operator.
+         *
+         * @returns Expression node.
          */
         function parseExpression(minPrecedence = 0): AnyExpressionNode {
             let node: AnyExpressionNode;

@@ -12,12 +12,16 @@ import { BaseGenerator } from '../base-generator';
  * AdGuard CSS injection generator.
  */
 export class AdgCssInjectionGenerator extends BaseGenerator {
+    /**
+     * CSS declaration for removing elements.
+     */
     private static REMOVE_DECLARATION = 'remove: true;';
 
     /**
      * Serializes an AdGuard CSS injection node into a raw string.
      *
      * @param node Node to serialize.
+     *
      * @returns Raw string.
      */
     public static generate(node: CssInjectionRuleBody): string {

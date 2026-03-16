@@ -3,10 +3,10 @@
  * @file Provides platform mapping and helper functions.
  */
 
-import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../platforms';
 import { AdblockProduct } from '../../utils/adblockers';
 import { getBitCount } from '../../utils/bit-count';
 import { type ReadonlyRecord } from '../../utils/types';
+import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../platforms';
 
 /**
  * Map of specific platforms string names to their corresponding enum values.
@@ -222,7 +222,7 @@ export const hasPlatformMultipleProducts = (platform: AnyPlatform): boolean => {
  * - Empty array `[]` if platform is 0 or no products are found
  * - Array of specific products based on which products are present
  *   (e.g., `['AdGuard', 'UblockOrigin']` if both AdGuard and uBlock Origin are specified)
- * - `['AdGuard', 'UblockOrigin', 'AdblockPlus']` for GenericPlatform.Any
+ * - `['AdGuard', 'UblockOrigin', 'AdblockPlus']` for GenericPlatform.Any.
  */
 export const platformToAdblockProduct = (platform: AnyPlatform): AdblockProduct[] => {
     const products: AdblockProduct[] = [];
@@ -315,7 +315,7 @@ const optimizePlatformRepresentation = (
  * - Empty object `{}` if platform is 0 or no products are found
  * - Object with single product key for single-product platforms
  * - Object with multiple product keys for multi-product platforms
- * - Each array contains the minimal representation using generic platforms where possible
+ * - Each array contains the minimal representation using generic platforms where possible.
  *
  * @example
  * ```typescript
@@ -377,6 +377,7 @@ export const getPlatformsByProduct = (platform: AnyPlatform): PlatformsByProduct
  * @param platform Platform string name, e.g., 'adg_os_windows'.
  *
  * @returns Specific or generic platform enum value.
+ *
  * @throws Error if the platform is unknown.
  */
 export const getPlatformId = (platform: string): SpecificPlatform | GenericPlatform => {
@@ -401,6 +402,7 @@ export const getPlatformId = (platform: string): SpecificPlatform | GenericPlatf
  * @param platform Specific platform enum value.
  *
  * @returns Specific platform string name, e.g., 'adg_os_windows'.
+ *
  * @throws Error if the platform is unknown.
  */
 export const getSpecificPlatformName = (platform: SpecificPlatform): string => {

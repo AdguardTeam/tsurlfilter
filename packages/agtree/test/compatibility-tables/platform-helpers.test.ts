@@ -1,19 +1,19 @@
 /* eslint-disable no-bitwise */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms';
 import {
-    isGenericPlatform,
-    hasPlatformMultipleProducts,
-    platformToAdblockProduct,
+    getAllPlatformNames,
+    getHumanReadablePlatformName,
+    getPlatformId,
     getPlatformsByProduct,
     getProductGenericPlatforms,
     getProductSpecificPlatforms,
-    getPlatformId,
     getSpecificPlatformName,
-    getHumanReadablePlatformName,
-    getAllPlatformNames,
+    hasPlatformMultipleProducts,
+    isGenericPlatform,
+    platformToAdblockProduct,
 } from '../../src/compatibility-tables/utils/platform-helpers';
-import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms';
 import { AdblockProduct } from '../../src/utils/adblockers';
 
 describe('Platform Helpers', () => {

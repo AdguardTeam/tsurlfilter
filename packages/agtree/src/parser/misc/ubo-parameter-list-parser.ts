@@ -1,11 +1,12 @@
-import { StringUtils } from '../../utils/string';
-import { COMMA, ESCAPE_CHARACTER } from '../../utils/constants';
-import { defaultParserOptions } from '../options';
-import { ValueParser } from './value-parser';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { QUOTE_SET } from '../../utils/quotes';
-import { ParameterListParser } from './parameter-list-parser';
 import { type ParameterList } from '../../nodes';
+import { COMMA, ESCAPE_CHARACTER } from '../../utils/constants';
+import { QUOTE_SET } from '../../utils/quotes';
+import { StringUtils } from '../../utils/string';
+import { defaultParserOptions } from '../options';
+
+import { ParameterListParser } from './parameter-list-parser';
+import { ValueParser } from './value-parser';
 
 /**
  * Parser for uBO-specific parameter lists.
@@ -20,6 +21,7 @@ export class UboParameterListParser extends ParameterListParser {
      * @param separator Separator character (default: comma).
      * @param requireQuotes Whether to require quotes around the parameter values (default: false).
      * @param supportedQuotes Set of accepted quotes (default: {@link QUOTE_SET}).
+     *
      * @returns Parameter list node.
      *
      * @note Based on {@link https://github.com/gorhill/uBlock/blob/f9ab4b75041815e6e5690d80851189ae3dc660d0/src/js/static-filtering-parser.js#L607-L699} to provide consistency.
@@ -83,16 +85,16 @@ export class UboParameterListParser extends ParameterListParser {
                          * At that point found `possibleClosingQuoteIndex` is wrong
                          * | is `offset`
                          * ~ is `possibleClosingQuoteIndex`
-                         * ^ is `nextSeparatorIndex`
+                         * ^ is `nextSeparatorIndex`.
                          *
                          * Example 1: "abc, ').cba='1'"
-                         *                  |      ~^
+                         *                  |      ~^.
                          * Example 2: "abc, ').cba, '1'"
                          *                  |       ~^
                          * Example 3: "abc, ').cba='1', cba"
-                         *                  |      ~^
+                         *                  |      ~^.
                          *
-                         * Search for separator before `possibleClosingQuoteIndex`
+                         * Search for separator before `possibleClosingQuoteIndex`.
                          */
 
                         const separatorIndexBeforeQuote = StringUtils.findNextUnescapedCharacterBackwards(

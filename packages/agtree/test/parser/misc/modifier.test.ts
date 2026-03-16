@@ -1,20 +1,21 @@
 import {
     describe,
-    test,
     expect,
     it,
+    test,
 } from 'vitest';
 
+import { ModifierGenerator } from '../../../src/generator/misc/modifier-generator';
 import { type Modifier } from '../../../src/nodes';
 import { ModifierParser } from '../../../src/parser/misc/modifier-parser';
-import { ModifierGenerator } from '../../../src/generator/misc/modifier-generator';
 
 /**
  * Helper function that parses and generates a modifier.
  *
- * @param raw Raw input
+ * @param raw Raw input.
+ *
  * @returns Generated output or null if the input is doesn't match
- * the parser pattern
+ * the parser pattern.
  */
 const generate = (raw: string) => {
     const ast = ModifierParser.parse(raw);

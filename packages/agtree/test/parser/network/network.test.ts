@@ -1,10 +1,10 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { NetworkRuleParser } from '../../../src/parser/network/network-rule-parser';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/nodes';
-import { defaultParserOptions } from '../../../src/parser/options';
 import { NetworkRuleGenerator } from '../../../src/generator/network';
+import { type NetworkRule, NetworkRuleType, RuleCategory } from '../../../src/nodes';
+import { NetworkRuleParser } from '../../../src/parser/network/network-rule-parser';
+import { defaultParserOptions } from '../../../src/parser/options';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
 
 describe('NetworkRuleParser', () => {
     test('parse', () => {

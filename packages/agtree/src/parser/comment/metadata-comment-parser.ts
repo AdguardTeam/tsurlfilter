@@ -1,19 +1,19 @@
 /**
- * @file Metadata comments
+ * @file Metadata comments.
  */
 
-import { StringUtils } from '../../utils/string';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { COLON } from '../../utils/constants';
 import {
     CommentMarker,
     CommentRuleType,
     type MetadataCommentRule,
     RuleCategory,
 } from '../../nodes';
-import { defaultParserOptions } from '../options';
+import { AdblockSyntax } from '../../utils/adblockers';
+import { COLON } from '../../utils/constants';
+import { StringUtils } from '../../utils/string';
 import { BaseParser } from '../base-parser';
 import { ValueParser } from '../misc/value-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * Set of known metadata headers. This helps to quickly identify and validate
@@ -38,6 +38,8 @@ const KNOWN_METADATA_HEADERS = new Set([
  * `MetadataParser` is responsible for parsing metadata comments.
  * Metadata comments are special comments that specify some properties of the list.
  *
+ * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#special-comments}
+ *
  * @example
  * For example, in the case of
  * ```adblock
@@ -45,7 +47,6 @@ const KNOWN_METADATA_HEADERS = new Set([
  * ```
  * the name of the header is `Title`, and the value is `My List`, which means that
  * the list title is `My List`, and it can be used in the adblocker UI.
- * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#special-comments}
  */
 export class MetadataCommentParser extends BaseParser {
     /**
@@ -54,7 +55,8 @@ export class MetadataCommentParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Metadata comment AST or null (if the raw rule cannot be parsed as a metadata comment)
+     *
+     * @returns Metadata comment AST or null (if the raw rule cannot be parsed as a metadata comment).
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): MetadataCommentRule | null {
         // Fast check to avoid unnecessary work

@@ -1,19 +1,19 @@
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
-import {
-    UboScriptletInjectionBodyParser,
-} from '../../../../src/parser/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import {
     UboScriptletInjectionBodyGenerator,
 } from '../../../../src/generator/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-generator';
+import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
+import {
+    UboScriptletInjectionBodyParser,
+} from '../../../../src/parser/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-parser';
+import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 
 describe('UboScriptletInjectionBodyParser', () => {
     describe('UboScriptletInjectionBodyParser.parse - valid cases', () => {

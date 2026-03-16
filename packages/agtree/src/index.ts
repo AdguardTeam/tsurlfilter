@@ -1,5 +1,5 @@
 /**
- * @file AGTree entry point
+ * @file AGTree entry point.
  */
 
 // Parser

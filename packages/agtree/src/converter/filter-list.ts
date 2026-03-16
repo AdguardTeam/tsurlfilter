@@ -1,36 +1,39 @@
 /**
- * @file Adblock filter list converter
+ * @file Adblock filter list converter.
  */
 
-import { RuleConverter } from './rule';
 import { type AnyRule, type FilterList } from '../nodes';
 import { clone } from '../utils/clone';
 import { MultiValueMap } from '../utils/multi-value-map';
-import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';
+
 import { BaseConverter } from './base-interfaces/base-converter';
+import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';
+import { RuleConverter } from './rule';
 
 /**
- * Adblock filter list converter class
+ * Adblock filter list converter class.
  *
  * This class just provides an extra layer on top of the {@link RuleConverter}
  * and can be used to convert entire filter lists.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  * @todo Implement tolerant mode, which will allow to convert a filter list
- * even if some of its rules are invalid
+ * even if some of its rules are invalid.
  */
 export class FilterListConverter extends BaseConverter {
     /**
      * Converts an adblock filter list to AdGuard format, if possible.
      *
-     * @param filterListNode Filter list node to convert
+     * @param filterListNode Filter list node to convert.
      * @param tolerant Indicates whether the converter should be tolerant to invalid rules. If enabled and a rule is
      * invalid, it will be left as is. If disabled and a rule is invalid, the whole filter list will be failed.
      * Defaults to `true`.
+     *
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
      * the converted node, and its `isConverted` flag indicates whether the original node was converted.
-     * If the node was not converted, the result will contain the original node with the same object reference
-     * @throws If the filter list is invalid or cannot be converted (if the tolerant mode is disabled)
+     * If the node was not converted, the result will contain the original node with the same object reference.
+     *
+     * @throws If the filter list is invalid or cannot be converted (if the tolerant mode is disabled).
      */
     public static convertToAdg(filterListNode: FilterList, tolerant = true): ConversionResult<FilterList> {
         // Prepare a map to store the converted rules by their index in the filter list

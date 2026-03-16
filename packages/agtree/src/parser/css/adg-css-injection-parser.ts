@@ -6,11 +6,12 @@ import { TokenType } from '@adguard/css-tokenizer';
 
 import { REMOVE_PROPERTY, REMOVE_VALUE } from '../../converter/data/css';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { type CssInjectionRuleBody, type Value } from '../../nodes';
 import { CSS_MEDIA_MARKER, EMPTY } from '../../utils/constants';
-import { type Value, type CssInjectionRuleBody } from '../../nodes';
-import { CssTokenStream } from './css-token-stream';
-import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
+
+import { CssTokenStream } from './css-token-stream';
 
 export const ERROR_MESSAGES = {
     MEDIA_QUERY_LIST_IS_EMPTY: 'Media query list is empty',
@@ -30,6 +31,7 @@ export class AdgCssInjectionParser extends BaseParser {
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
      * @returns Parsed AdGuard CSS injection {@link CssInjectionRuleBody}.
+     *
      * @throws An {@link AdblockSyntaxError} if the selector list is syntactically invalid.
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): CssInjectionRuleBody {

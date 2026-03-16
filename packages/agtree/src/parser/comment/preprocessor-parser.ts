@@ -1,10 +1,13 @@
 /**
- * Pre-processor directives
+ * Pre-processor directives.
  *
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import type { AnyExpressionNode, PreProcessorCommentRule, Value } from '../../nodes';
+import { CommentRuleType, RuleCategory } from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
     CLOSE_PARENTHESIS,
@@ -19,20 +22,20 @@ import {
     SAFARI_CB_AFFINITY,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import type { AnyExpressionNode, PreProcessorCommentRule, Value } from '../../nodes';
-import { CommentRuleType, RuleCategory } from '../../nodes';
-import { LogicalExpressionParser } from '../misc/logical-expression-parser';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../misc/parameter-list-parser';
-import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { LogicalExpressionParser } from '../misc/logical-expression-parser';
+import { ParameterListParser } from '../misc/parameter-list-parser';
 import { ValueParser } from '../misc/value-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * `PreProcessorParser` is responsible for parsing preprocessor rules.
  * Pre-processor comments are special comments that are used to control the behavior of the filter list processor.
  * Please note that this parser only handles general syntax for now, and does not validate the parameters at
  * the parsing stage.
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
  *
  * @example
  * If your rule is
@@ -41,15 +44,14 @@ import { ValueParser } from '../misc/value-parser';
  * ```
  * then the directive's name is `if` and its value is `(adguard)`, but the parameter list
  * is not parsed / validated further.
- * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
- * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
  */
 export class PreProcessorCommentParser extends BaseParser {
     /**
      * Determines whether the rule is a pre-processor rule.
      *
-     * @param raw Raw rule
-     * @returns `true` if the rule is a pre-processor rule, `false` otherwise
+     * @param raw Raw rule.
+     *
+     * @returns `true` if the rule is a pre-processor rule, `false` otherwise.
      */
     public static isPreProcessorRule(raw: string): boolean {
         const trimmed = raw.trim();
@@ -64,8 +66,9 @@ export class PreProcessorCommentParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
      * @returns
-     * Pre-processor comment AST or null (if the raw rule cannot be parsed as a pre-processor comment)
+     * Pre-processor comment AST or null (if the raw rule cannot be parsed as a pre-processor comment).
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): PreProcessorCommentRule | null {
         // Ignore non-pre-processor rules

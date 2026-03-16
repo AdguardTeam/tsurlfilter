@@ -361,7 +361,7 @@ export interface ParameterList extends Node {
     type: 'ParameterList';
 
     /**
-     * List of values
+     * List of values.
      *
      * @note `null` values are allowed in the list, they represent empty parameters.
      */
@@ -401,7 +401,7 @@ export interface FilterList extends Node {
     type: 'FilterList';
 
     /**
-     * List of rules
+     * List of rules.
      */
     children: AnyRule[];
 }
@@ -418,21 +418,21 @@ export interface RuleBase extends Node {
     syntax: AdblockSyntax;
 
     /**
-     * Category of the adblock rule
+     * Category of the adblock rule.
      */
     category: RuleCategory;
 
     /**
-     * Raw data of the rule
+     * Raw data of the rule.
      */
     raws?: {
         /**
-         * Original rule text
+         * Original rule text.
          */
         text?: string;
 
         /**
-         * Newline character used in the rule (if any)
+         * Newline character used in the rule (if any).
          */
         nl?: NewLine;
     };
@@ -442,12 +442,12 @@ export interface InvalidRuleError extends Node {
     type: 'InvalidRuleError';
 
     /**
-     * Error name
+     * Error name.
      */
     name: string;
 
     /**
-     * Error message
+     * Error message.
      */
     message: string;
 }
@@ -459,32 +459,32 @@ export interface InvalidRule extends RuleBase {
     type: 'InvalidRule';
 
     /**
-     * Category of the adblock rule
+     * Category of the adblock rule.
      */
     category: typeof RuleCategory.Invalid;
 
     /**
-     * Raw rule text
+     * Raw rule text.
      */
     raw: string;
 
     /**
-     * Error details
+     * Error details.
      */
     error: InvalidRuleError;
 }
 
 /**
- * Represents an "empty rule" (practically an empty line)
+ * Represents an "empty rule" (practically an empty line).
  */
 export interface EmptyRule extends RuleBase {
     /**
-     * Type of the adblock rule (should be always present)
+     * Type of the adblock rule (should be always present).
      */
     type: 'EmptyRule';
 
     /**
-     * Category of the adblock rule
+     * Category of the adblock rule.
      */
     category: typeof RuleCategory.Empty;
 }
@@ -645,12 +645,12 @@ export interface PreProcessorCommentRule extends CommentBase {
     type: typeof CommentRuleType.PreProcessorCommentRule;
 
     /**
-     * Name of the directive
+     * Name of the directive.
      */
     name: Value;
 
     /**
-     * Params (optional)
+     * Params (optional).
      */
     params?: Value | ParameterList | AnyExpressionNode;
 }
@@ -788,17 +788,17 @@ export interface ModifierList extends Node {
  */
 export interface Modifier extends Node {
     /**
-     * Modifier name
+     * Modifier name.
      */
     name: Value;
 
     /**
-     * Is this modifier an exception? For example, `~third-party` is an exception
+     * Is this modifier an exception? For example, `~third-party` is an exception.
      */
     exception?: boolean;
 
     /**
-     * Modifier value (optional)
+     * Modifier value (optional).
      */
     value?: Value;
 }
@@ -883,7 +883,7 @@ export type AnyListItem = App | Domain | Method | StealthOption;
  */
 export interface DomainList extends Node {
     /**
-     * Type of the node. Basically, the idea is that each main AST part should have a type
+     * Type of the node. Basically, the idea is that each main AST part should have a type.
      */
     type: typeof ListNodeType.DomainList;
 
@@ -893,7 +893,7 @@ export interface DomainList extends Node {
     separator: DomainListSeparator;
 
     /**
-     * List of domains
+     * List of domains.
      */
     children: Domain[];
 }
@@ -907,7 +907,7 @@ export interface DomainList extends Node {
  */
 export interface AppList extends Node {
     /**
-     * Type of the node. Basically, the idea is that each main AST part should have a type
+     * Type of the node. Basically, the idea is that each main AST part should have a type.
      */
     type: typeof ListNodeType.AppList;
 
@@ -917,7 +917,7 @@ export interface AppList extends Node {
     separator: PipeSeparator;
 
     /**
-     * List of apps
+     * List of apps.
      */
     children: App[];
 }
@@ -931,7 +931,7 @@ export interface AppList extends Node {
  */
 export interface MethodList extends Node {
     /**
-     * Type of the node. Basically, the idea is that each main AST part should have a type
+     * Type of the node. Basically, the idea is that each main AST part should have a type.
      */
     type: typeof ListNodeType.MethodList;
 
@@ -941,7 +941,7 @@ export interface MethodList extends Node {
     separator: PipeSeparator;
 
     /**
-     * List of methods
+     * List of methods.
      */
     children: Method[];
 }
@@ -955,7 +955,7 @@ export interface MethodList extends Node {
  */
 export interface StealthOptionList extends Node {
     /**
-     * Type of the node. Basically, the idea is that each main AST part should have a type
+     * Type of the node. Basically, the idea is that each main AST part should have a type.
      */
     type: typeof ListNodeType.StealthOptionList;
 
@@ -965,7 +965,7 @@ export interface StealthOptionList extends Node {
     separator: PipeSeparator;
 
     /**
-     * List of stealth options
+     * List of stealth options.
      */
     children: StealthOption[];
 }
@@ -1013,7 +1013,7 @@ export interface CssInjectionRuleBody extends Node {
     declarationList?: Value;
 
     /**
-     * Remove flag
+     * Remove flag.
      */
     remove?: boolean;
 }
@@ -1256,7 +1256,7 @@ export interface CosmeticRule extends RuleBase {
     type: CosmeticRuleType;
 
     /**
-     * List of modifiers (optional)
+     * List of modifiers (optional).
      */
     modifiers?: ModifierList;
 
@@ -1295,16 +1295,16 @@ export interface CosmeticRule extends RuleBase {
  * Example rules:
  * - ```adblock
  *   example.com##.ads
- *   ```
+ *   ```.
  * - ```adblock
  *   example.com#@#.ads
- *   ```
+ *   ```.
  * - ```adblock
  *   example.com#?#.ads:has(> .something)
- *   ```
+ *   ```.
  * - ```adblock
  *   example.com#@?#.ads:has(> .something)
- *   ```
+ *   ```.
  */
 export interface ElementHidingRule extends CosmeticRule {
     type: typeof CosmeticRuleType.ElementHidingRule;
@@ -1317,24 +1317,24 @@ export interface ElementHidingRule extends CosmeticRule {
  * Example rules (AdGuard):
  *  - ```adblock
  *    example.com#$#body { padding-top: 0 !important; }
- *    ```
+ *    ```.
  *  - ```adblock
  *    example.com#$#@media (min-width: 1024px) { body { padding-top: 0 !important; } }
- *    ```
+ *    ```.
  *  - ```adblock
  *    example.com#$?#@media (min-width: 1024px) { .something:has(.ads) { padding-top: 0 !important; } }
- *    ```
+ *    ```.
  *  - ```adblock
  *    example.com#$#.ads { remove: true; }
- *    ```
+ *    ```.
  *
  * Example rules (uBlock Origin):
  *  - ```adblock
  *    example.com##body:style(padding-top: 0 !important;)
- *    ```
+ *    ```.
  *  - ```adblock
  *    example.com##.ads:remove()
- *    ```
+ *    ```.
  */
 export interface CssInjectionRule extends CosmeticRule {
     type: typeof CosmeticRuleType.CssInjectionRule;
@@ -1347,29 +1347,29 @@ export interface CssInjectionRule extends CosmeticRule {
  * Example rules (AdGuard):
  *  - ```adblock
  *    example.com#%#//scriptlet('scriptlet-name', 'arg0', 'arg1')
- *    ```
+ *    ```.
  *  - ```adblock
  *    example.com#@%#//scriptlet('scriptlet-name', 'arg0', 'arg1')
- *    ```
+ *    ```.
  *
  * Example rules (uBlock Origin):
  *  - ```adblock
  *    example.com##+js(scriptlet-name, arg0, arg1)
- *    ```
+ *    ```.
  *  - ```adblock
  *    example.com#@#+js(scriptlet-name, arg0, arg1)
- *    ```
+ *    ```.
  *
  * Example rules (Adblock Plus):
  *  - ```adblock
  *    example.com#$#scriptlet-name arg0 arg1
- *    ```
+ *    ```.
  *  - ```adblock
  *    example.com#@$#scriptlet-name arg0 arg1
- *    ```
+ *    ```.
  *  - ```adblock
  *    example.com#$#scriptlet0 arg00 arg01; scriptlet1 arg10 arg11
- *    ```
+ *    ```.
  */
 export interface ScriptletInjectionRule extends CosmeticRule {
     type: typeof CosmeticRuleType.ScriptletInjectionRule;
@@ -1382,18 +1382,18 @@ export interface ScriptletInjectionRule extends CosmeticRule {
  * Example rules (AdGuard):
  *  - ```adblock
  *    example.com$$script[tag-content="detect"]
- *    ```
+ *    ```.
  *  - ```adblock
  *    example.com$@$script[tag-content="detect"]
- *    ```
+ *    ```.
  *
  * Example rules (uBlock Origin):
  *  - ```adblock
  *    example.com##^script:has-text(detect)
- *    ```
+ *    ```.
  *  - ```adblock
  *    example.com#@#^script:has-text(detect)
- *    ```
+ *    ```.
  */
 export interface HtmlFilteringRule extends CosmeticRule {
     type: typeof CosmeticRuleType.HtmlFilteringRule;
@@ -1406,10 +1406,10 @@ export interface HtmlFilteringRule extends CosmeticRule {
  * Example rules (AdGuard):
  *  - ```adblock
  *    example.com#%#let a = 2;
- *    ```
+ *    ```.
  *  - ```adblock
  *    example.com#@%#let a = 2;
- *    ```
+ *    ```.
  */
 export interface JsInjectionRule extends CosmeticRule {
     type: typeof CosmeticRuleType.JsInjectionRule;
@@ -1429,7 +1429,7 @@ export const NetworkRuleType = {
 export type NetworkRuleType = typeof NetworkRuleType[keyof typeof NetworkRuleType];
 
 /**
- * Represents the common properties of network rules
+ * Represents the common properties of network rules.
  */
 export interface NetworkRuleBase extends RuleBase {
     /**
@@ -1450,7 +1450,7 @@ export interface NetworkRuleBase extends RuleBase {
 }
 
 /**
- * Represents the common properties of network rules
+ * Represents the common properties of network rules.
  */
 export interface NetworkRule extends NetworkRuleBase {
     /**
@@ -1540,6 +1540,7 @@ export interface HostRule extends NetworkRuleBase {
      * 127.0.0.1 example.com example.org
      * ↑↑↑↑↑↑↑↑↑
      * ```
+     *
      * @note If IP is not specified in the rule, it parsed as null IP: `0.0.0.0`.
      */
     ip: Value;

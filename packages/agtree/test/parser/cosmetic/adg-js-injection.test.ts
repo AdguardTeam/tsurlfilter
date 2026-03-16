@@ -1,11 +1,11 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, RuleCategory, type JsInjectionRule } from '../../../src/nodes';
-import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import { CosmeticRuleType, type JsInjectionRule, RuleCategory } from '../../../src/nodes';
+import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid AdGuard JS injection rules', () => {

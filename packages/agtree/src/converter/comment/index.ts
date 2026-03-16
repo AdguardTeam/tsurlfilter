@@ -1,27 +1,29 @@
 /**
- * @file Comment rule converter
+ * @file Comment rule converter.
  */
 
 import { type AnyCommentRule, CommentMarker, CommentRuleType } from '../../nodes';
-import { SPACE } from '../../utils/constants';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { clone } from '../../utils/clone';
+import { SPACE } from '../../utils/constants';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
 /**
- * Comment rule converter class
+ * Comment rule converter class.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class CommentRuleConverter extends RuleConverterBase {
     /**
      * Converts a comment rule to AdGuard format, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rule: AnyCommentRule): NodeConversionResult<AnyCommentRule> {
         // TODO: Add support for other comment types, if needed
