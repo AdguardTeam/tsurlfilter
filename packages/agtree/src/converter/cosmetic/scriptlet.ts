@@ -12,6 +12,12 @@ import {
 } from '../../ast-utils/scriptlets';
 import { Platform, scriptletsCompatibilityTable } from '../../compatibility-tables';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
+import {
+    CosmeticRuleSeparator,
+    type DomainList,
+    type ParameterList,
+    type ScriptletInjectionRule,
+} from '../../nodes';
 import { DomainListParser } from '../../parser';
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
