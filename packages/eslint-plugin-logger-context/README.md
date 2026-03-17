@@ -32,3 +32,8 @@ module.exports = {
 ```js
 logger.info('[module.page-handler]: some message');
 ```
+
+## Documentation
+
+- [Development guide](../../DEVELOPMENT.md)
+- [LLM agent rules](AGENTS.md)
