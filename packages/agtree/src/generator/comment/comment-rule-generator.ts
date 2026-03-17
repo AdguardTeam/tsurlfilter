@@ -1,11 +1,12 @@
 /* eslint-disable no-param-reassign */
 import { type AnyCommentRule, CommentRuleType } from '../../nodes';
 import { BaseGenerator } from '../base-generator';
+
 import { AgentCommentGenerator } from './agent-comment-generator';
-import { HintCommentGenerator } from './hint-comment-generator';
-import { PreProcessorCommentGenerator } from './pre-processor-comment-generator';
-import { MetadataCommentGenerator } from './metadata-comment-generator';
 import { ConfigCommentGenerator } from './config-comment-generator';
+import { HintCommentGenerator } from './hint-comment-generator';
+import { MetadataCommentGenerator } from './metadata-comment-generator';
+import { PreProcessorCommentGenerator } from './pre-processor-comment-generator';
 import { SimpleCommentGenerator } from './simple-comment-generator';
 
 /**
@@ -15,8 +16,9 @@ export class CommentRuleGenerator extends BaseGenerator {
     /**
      * Converts a comment rule node to a string.
      *
-     * @param node Comment rule node
-     * @returns Raw string
+     * @param node Comment rule node.
+     *
+     * @returns Raw string.
      */
     public static generate(node: AnyCommentRule): string {
         switch (node.type) {

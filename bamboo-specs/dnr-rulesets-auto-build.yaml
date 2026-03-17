@@ -15,9 +15,10 @@ stages:
         - DoNothing
 
 # Since auto-build is being run only for stable branches:
-# branch 'stable/dnr-rulesets-3.2' - for AdGuard browser extension v5.2.X.
-# branch 'stable/dnr-rulesets-3.3' - for AdGuard API v3.1.
-# branch 'stable/dnr-rulesets-4.0' - for AdGuard browser extension v5.3.X.
+# branch 'stable/dnr-rulesets-3.2' - for AdGuard browser extension v5.2.X
+# branch 'stable/dnr-rulesets-3.3' - for AdGuard API v3.1
+# branch 'stable/dnr-rulesets-4.0' - for AdGuard browser extension v5.3.0.X
+# branch 'stable/dnr-rulesets-4.1' - for AdGuard browser extension v5.3.1.X
 # we should skip the build stage for other branches.
 DoNothing:
   key: NOTHING
@@ -68,14 +69,14 @@ branches: &branches
   link-to-jira: true
 
 # Run plan only for:
-# branch 'stable/dnr-rulesets-3.2' - for AdGuard browser extension v5.2.X.
-# branch 'stable/dnr-rulesets-3.3' - for AdGuard API v3.1.
-# branch 'stable/dnr-rulesets-4.0' - for AdGuard browser extension v5.3.X.
+# branch 'stable/dnr-rulesets-3.3' - for AdGuard API v3.1
+# branch 'stable/dnr-rulesets-4.0' - for AdGuard browser extension v5.3.X
+# branch 'stable/dnr-rulesets-4.1' - for AdGuard browser extension v5.3.1.X
 # Override is needed to skip the build stage for other branches,
 # because even if branches are not supposed to be run for PRs (due to 'create: manually' above),
 # build was triggered by 'cron' anyway.
 branch-overrides:
-  - '^stable\/dnr-rulesets-(3\.2|3\.3|4\.0)$':
+  - '^stable\/dnr-rulesets-(3\.3|4\.0|4\.1)$':
       stages:
         - Build:
             - Build
@@ -105,10 +106,12 @@ branch-overrides:
                   BRANCH="${bamboo.planRepository.branchName}"
 
                   # Deploy package from:
-                  # "stable/dnr-rulesets-3.2",
-                  # "stable/dnr-rulesets-3.3"
-                  # "stable/dnr-rulesets-4.0" branches only.
-                  if [ $BRANCH != "stable/dnr-rulesets-3.2" ] && [ $BRANCH != "stable/dnr-rulesets-3.3" ] && [ $BRANCH != "stable/dnr-rulesets-4.0" ];
+                  # "stable/dnr-rulesets-3.3",
+                  # "stable/dnr-rulesets-4.0",
+                  # "stable/dnr-rulesets-4.1" branches only.
+                  if [ $BRANCH != "stable/dnr-rulesets-3.3" ] \
+                      && [ $BRANCH != "stable/dnr-rulesets-4.0" ] \
+                      && [ $BRANCH != "stable/dnr-rulesets-4.1" ];
                   then
                     echo "deployment is not supported on branch ${BRANCH}, skipping"
                     exit 0;

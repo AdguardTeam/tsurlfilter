@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [4.1.0] - 2026-02-XX
+
+### Changed
+
+- Build output structure for declarative rules, see [README](./README.md#output-structure) for details.
+
+### Added
+
+- Opera MV3 filters support.
+- New option `-b, --browser` for `load` command to specify for which browser to load filters.
+- New option `-b, --browser` for `watch` command to specify for which browser to download latest filters.
+
+[4.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.1.0
+
+## [4.0.20260217160105] - 2026-02-17
 
 ### Added
 

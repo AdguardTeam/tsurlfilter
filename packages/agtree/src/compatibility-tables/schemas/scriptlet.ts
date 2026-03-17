@@ -5,6 +5,7 @@
 import zod from 'zod';
 
 import { zodToCamelCase } from '../utils/zod-camelcase';
+
 import {
     baseCompatibilityDataSchema,
     baseRefineLogic,
@@ -76,7 +77,7 @@ const variadicParameterValidatorSchema = scriptletParameterSchema.omit({ require
  * - Validate SPECIFIC positions using `parameters` (0-indexed)
  * - Combine both: `all_parameters` as default, `parameters` for position-specific overrides
  * - Set no validation to accept any arguments
- * - Enforce count limits with `min_count` and `max_count`
+ * - Enforce count limits with `min_count` and `max_count`.
  *
  * @example
  * ```yaml
@@ -85,7 +86,6 @@ const variadicParameterValidatorSchema = scriptletParameterSchema.omit({ require
  *   min_count: 0
  *   max_count: null
  * ```
- *
  * @example
  * ```yaml
  * # All variadic args must match the same pattern
@@ -95,7 +95,6 @@ const variadicParameterValidatorSchema = scriptletParameterSchema.omit({ require
  *     name: message_part
  *     pattern: ^[a-zA-Z0-9\s]+$
  * ```
- *
  * @example
  * ```yaml
  * # Validate only the 3rd argument (index 2)
@@ -106,7 +105,6 @@ const variadicParameterValidatorSchema = scriptletParameterSchema.omit({ require
  *       name: timeout
  *       pattern: ^\d+$
  * ```
- *
  * @example
  * ```yaml
  * # Default validation + position-specific overrides
@@ -175,6 +173,8 @@ const variadicParametersSchema = zod.object({
  * positional parameters in scriptlet calls. They provide additional configuration
  * options and are parsed by the getExtraArgs() function.
  *
+ * @see {@link https://github.com/gorhill/uBlock/blob/f1689a9ab30ae5aece3db6d7a67dbde90f6e69df/src/js/resources/safe-self.js#L137-L149}
+ *
  * @example
  * ```adblock
  * example.com##+js(aeld, click, popMagic, runAt, idle)
@@ -190,8 +190,6 @@ const variadicParametersSchema = zod.object({
  * ```js
  * { runAt: 'idle' }
  * ```
- *
- * @see {@link https://github.com/gorhill/uBlock/blob/f1689a9ab30ae5aece3db6d7a67dbde90f6e69df/src/js/resources/safe-self.js#L137-L149}
  */
 const uboScriptletTokenSchema = zod.object({
     /**
@@ -227,17 +225,16 @@ const uboScriptletTokenSchema = zod.object({
      *
      * - 'string': Used as-is for string matching/operations
      * - 'integer': Numeric string auto-converted to integer during parsing
-     * - 'boolean': Used as a flag; code checks for truthiness, not exact value
+     * - 'boolean': Used as a flag; code checks for truthiness, not exact value.
      *
      * This complements `value_format` by providing semantic meaning:
      * - value_format describes WHAT is valid (syntax)
-     * - value_type describes HOW it's interpreted (semantics)
+     * - value_type describes HOW it's interpreted (semantics).
      *
      * @example
      * // Token: stay
      * // value_format: null (any non-empty string works)
      * // value_type: 'boolean' (checked with `if (extraArgs.stay)`)
-     *
      * @example
      * // Token: quitAfter
      * // value_format: '^\\d+$' (must be digits)

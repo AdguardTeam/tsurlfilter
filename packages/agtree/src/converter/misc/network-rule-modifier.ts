@@ -2,17 +2,17 @@
  * @file Network rule modifier list converter.
  */
 
-import { type Modifier, type ModifierList } from '../../nodes';
-import { SEMICOLON, SPACE } from '../../utils/constants';
-import { createModifierNode } from '../../ast-utils/modifiers';
-import { BaseConverter } from '../base-interfaces/base-converter';
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { MultiValueMap } from '../../utils/multi-value-map';
-import { createConversionResult, type ConversionResult } from '../base-interfaces/conversion-result';
 import { cloneModifierListNode } from '../../ast-utils/clone';
+import { createModifierNode } from '../../ast-utils/modifiers';
 import { modifiersCompatibilityTable, Platform, redirectsCompatibilityTable } from '../../compatibility-tables';
 import { isValidResourceType } from '../../compatibility-tables/utils/resource-type-helpers';
+import { RuleConversionError } from '../../errors/rule-conversion-error';
+import { type Modifier, type ModifierList } from '../../nodes';
+import { SEMICOLON, SPACE } from '../../utils/constants';
+import { MultiValueMap } from '../../utils/multi-value-map';
 import { isUndefined } from '../../utils/type-guards';
+import { BaseConverter } from '../base-interfaces/base-converter';
+import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result';
 
 /**
  * Modifier conversion interface.
@@ -21,8 +21,9 @@ interface ModifierConversion {
     /**
      * Sets the new modifier name.
      *
-     * @param actual Actual modifier name
-     * @returns New modifier name
+     * @param actual Actual modifier name.
+     *
+     * @returns New modifier name.
      */
     name: (actual: string) => string;
 
@@ -30,8 +31,9 @@ interface ModifierConversion {
      * Sets the new modifier exception value. If you don't specify this function,
      * the modifier exception value will be copied from the original modifier.
      *
-     * @param actual Actual modifier exception value
-     * @returns `true` if the modifier should be negated, `false` otherwise
+     * @param actual Actual modifier exception value.
+     *
+     * @returns `true` if the modifier should be negated, `false` otherwise.
      */
     exception?: (actual: boolean) => boolean;
 
@@ -39,9 +41,10 @@ interface ModifierConversion {
      * Sets the new modifier value. If you don't specify this function,
      * the modifier value will be copied from the original modifier.
      *
-     * @param actual Actual modifier value
+     * @param actual Actual modifier value.
+     *
      * @returns Converted modifier value or `undefined` if the modifier
-     * value should be removed
+     * value should be removed.
      */
     value?: (actual: string | undefined) => string | undefined;
 }
@@ -111,18 +114,20 @@ const ADG_CONVERSION_MAP = new Map<string, ModifierConversion[]>([
 /**
  * Helper class for converting network rule modifier lists.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class NetworkRuleModifierListConverter extends BaseConverter {
     /**
      * Converts a network rule modifier list to AdGuard format, if possible.
      *
-     * @param modifierList Network rule modifier list node to convert
-     * @param isException If `true`, the rule is an exception rule
+     * @param modifierList Network rule modifier list node to convert.
+     * @param isException If `true`, the rule is an exception rule.
+     *
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
      * the converted node, and its `isConverted` flag indicates whether the original node was converted.
-     * If the node was not converted, the result will contain the original node with the same object reference
-     * @throws If the conversion is not possible
+     * If the node was not converted, the result will contain the original node with the same object reference.
+     *
+     * @throws If the conversion is not possible.
      */
     public static convertToAdg(modifierList: ModifierList, isException = false): ConversionResult<ModifierList> {
         const conversionMap = new MultiValueMap<number, Modifier>();
@@ -274,12 +279,14 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
     /**
      * Converts a network rule modifier list to uBlock format, if possible.
      *
-     * @param modifierList Network rule modifier list node to convert
-     * @param isException If `true`, the rule is an exception rule
+     * @param modifierList Network rule modifier list node to convert.
+     * @param isException If `true`, the rule is an exception rule.
+     *
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
      * the converted node, and its `isConverted` flag indicates whether the original node was converted.
-     * If the node was not converted, the result will contain the original node with the same object reference
-     * @throws If the conversion is not possible
+     * If the node was not converted, the result will contain the original node with the same object reference.
+     *
+     * @throws If the conversion is not possible.
      */
     // TODO: Optimize
     public static convertToUbo(modifierList: ModifierList, isException = false): ConversionResult<ModifierList> {

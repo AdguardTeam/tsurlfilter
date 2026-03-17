@@ -2,19 +2,20 @@
  * @file Script to generate compatibility tables for the wiki.
  */
 
-import * as prettier from 'prettier';
-import { markdownTable } from 'markdown-table';
-import { writeFile } from 'fs/promises';
-import { ensureDir } from 'fs-extra';
-import path from 'path';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
+import { ensureDir } from 'fs-extra';
+import { markdownTable } from 'markdown-table';
+import * as prettier from 'prettier';
+
+import { type CompatibilityTableBase } from '../src/compatibility-tables/base';
+import { modifiersCompatibilityTable } from '../src/compatibility-tables/modifiers';
+import { Platform } from '../src/compatibility-tables/platform';
 import { redirectsCompatibilityTable } from '../src/compatibility-tables/redirects';
 import { type BaseCompatibilityDataSchema } from '../src/compatibility-tables/schemas';
-import { modifiersCompatibilityTable } from '../src/compatibility-tables/modifiers';
 import { scriptletsCompatibilityTable } from '../src/compatibility-tables/scriptlets';
-import { type CompatibilityTableBase } from '../src/compatibility-tables/base';
 import { EMPTY, NEWLINE } from '../src/utils/constants';
-import { Platform } from '../src/compatibility-tables/platform';
 
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -116,8 +117,6 @@ const sortFn = (a: CompatibilityEntityData[], b: CompatibilityEntityData[]) => {
  * @param extended Whether to include extended compatibility information.
  *
  * @returns Rows by product.
- *
- * @template T Type of the compatibility data.
  */
 const getRowsByProduct = <T extends CompatibilityTableBase<BaseCompatibilityDataSchema>>(
     table: T,

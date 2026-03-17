@@ -1,5 +1,6 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+
 import { parse } from '@typescript-eslint/parser';
 import { parse as parseJsdoc } from 'comment-parser';
 
@@ -13,8 +14,9 @@ const ABP_SOURCE_DIR = path.join(
 /**
  * Extracts scriptlets from a single ABP source file.
  *
- * @param filePath - Path to the JavaScript file
- * @returns Array of extracted scriptlets
+ * @param filePath Path to the JavaScript file.
+ *
+ * @returns Array of extracted scriptlets.
  */
 async function extractFromFile(filePath: string): Promise<Scriptlet[]> {
     const code = await fs.readFile(filePath, 'utf-8');
@@ -173,8 +175,9 @@ async function extractFromFile(filePath: string): Promise<Scriptlet[]> {
 /**
  * Recursively finds all .js files in a directory, excluding utils folders.
  *
- * @param dir - Directory to search
- * @returns Array of file paths
+ * @param dir Directory to search.
+ *
+ * @returns Array of file paths.
  */
 async function findScriptletFiles(dir: string): Promise<string[]> {
     const files: string[] = [];
@@ -186,6 +189,7 @@ async function findScriptletFiles(dir: string): Promise<string[]> {
         if (entry.isDirectory()) {
             // Skip utils folders
             if (entry.name !== 'utils') {
+                // eslint-disable-next-line no-await-in-loop
                 const subFiles = await findScriptletFiles(fullPath);
                 files.push(...subFiles);
             }
@@ -200,7 +204,7 @@ async function findScriptletFiles(dir: string): Promise<string[]> {
 /**
  * Extracts all ABP scriptlets from the source directory.
  *
- * @returns Array of all extracted ABP scriptlets
+ * @returns Array of all extracted ABP scriptlets.
  */
 export async function extractAbpScriptlets(): Promise<Scriptlet[]> {
     console.log('Extracting ABP scriptlets...');
@@ -210,6 +214,7 @@ export async function extractAbpScriptlets(): Promise<Scriptlet[]> {
 
     for (const file of files) {
         // console.log(`Processing: ${path.relative(ABP_SOURCE_DIR, file)}`);
+        // eslint-disable-next-line no-await-in-loop
         const scriptlets = await extractFromFile(file);
         allScriptlets.push(...scriptlets);
     }

@@ -4,17 +4,18 @@
 
 import { sprintf } from 'sprintf-js';
 
-import { CompatibilityTableBase } from './base';
-import { type RedirectDataSchema } from './schemas';
-import { redirectsCompatibilityTableData } from './compatibility-table-data';
-import { type CompatibilityTable } from './types';
-import { deepFreeze } from '../utils/deep-freeze';
 import { COLON, NEWLINE, SPACE } from '../utils/constants';
-import { type Platform } from './platform';
-import { getResourceTypeModifier } from './utils/resource-type-helpers';
+import { deepFreeze } from '../utils/deep-freeze';
 import { isNull, isString, isUndefined } from '../utils/type-guards';
-import { type ValidationContext } from './validators/types';
 import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from '../validator/constants';
+
+import { CompatibilityTableBase } from './base';
+import { redirectsCompatibilityTableData } from './compatibility-table-data';
+import { type Platform } from './platform';
+import { type RedirectDataSchema } from './schemas';
+import { type CompatibilityTable } from './types';
+import { getResourceTypeModifier } from './utils/resource-type-helpers';
+import { type ValidationContext } from './validators/types';
 
 /**
  * Prefix for resource redirection names.

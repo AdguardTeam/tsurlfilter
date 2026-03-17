@@ -4,8 +4,9 @@
 
 import zod from 'zod';
 
-import { platformSchema } from './platform';
 import { zodToCamelCase } from '../utils/zod-camelcase';
+
+import { platformSchema } from './platform';
 
 /**
  * Special key name for common compatibility data that will be merged with platform-specific data.

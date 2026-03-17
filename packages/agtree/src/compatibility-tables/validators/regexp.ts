@@ -3,6 +3,7 @@
  */
 
 import { RegExpUtils } from '../../utils';
+
 import { type ValidationContext, type Validator } from './types';
 
 /**

@@ -2,10 +2,17 @@
  * @file Parser for special uBO selectors.
  */
 
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
+import { UboPseudoName } from '../../common/ubo-selector-common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import {
+    type Modifier,
+    type ModifierList,
+    type UboSelector,
+    type Value,
+} from '../../nodes';
 import {
     CLOSE_PARENTHESIS,
     COLON,
@@ -13,17 +20,11 @@ import {
     EMPTY,
     OPEN_PARENTHESIS,
 } from '../../utils/constants';
-import {
-    type ModifierList,
-    type Value,
-    type Modifier,
-    type UboSelector,
-} from '../../nodes';
+import { BaseParser } from '../base-parser';
+import { defaultParserOptions } from '../options';
+
 import { tokenizeFnBalanced } from './balancing';
 import { type TokenData } from './css-token-stream';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { UboPseudoName } from '../../common/ubo-selector-common';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
@@ -201,6 +202,7 @@ type StackedUboModifier = {
  * in the hot path of the parser.
  *
  * @param raw Raw selector string.
+ *
  * @returns `true` if the selector has any uBO modifier, `false` otherwise.
  */
 const hasAnyUboModifier = (raw: string): boolean => {
@@ -233,7 +235,9 @@ const hasAnyUboModifier = (raw: string): boolean => {
  *
  * @param name Pseudo name.
  * @param wrapper Wrapper pseudo name (eg. `not`) (optional, defaults to `undefined`).
+ *
  * @returns Formatted pseudo name.
+ *
  * @example
  * ```ts
  * formatPseudoName('matches-path', 'not'); // => ':not(:matches-path(...))'
@@ -268,6 +272,7 @@ export class UboSelectorParser extends BaseParser {
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
      * @returns Parsed uBO selector {@link UboSelectorParser}.
+     *
      * @throws An {@link AdblockSyntaxError} if the selector list is syntactically invalid.
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): UboSelector {

@@ -138,6 +138,9 @@ catalogs:
     eslint-config-airbnb-typescript:
       specifier: ^18.0.0
       version: 18.0.0
+    eslint-plugin-boundaries:
+      specifier: ^5.0.1
+      version: 5.0.1
     eslint-plugin-import:
       specifier: ^2.29.0
       version: 2.31.0
@@ -147,6 +150,9 @@ catalogs:
     eslint-plugin-jsdoc:
       specifier: ^48.11.0
       version: 48.11.0
+    eslint-plugin-n:
+      specifier: ^17.21.3
+      version: 17.21.3
     eslint-webpack-plugin:
       specifier: ^3.2.0
       version: 3.2.0
@@ -531,6 +537,9 @@ importers:
       eslint-config-airbnb-typescript:
         specifier: 'catalog:'
         version: 18.0.0(@typescript-eslint/eslint-plugin@7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3))(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-boundaries:
+        specifier: 'catalog:'
+        version: 5.0.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)
       eslint-plugin-import:
         specifier: 'catalog:'
         version: 2.31.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)
@@ -540,6 +549,9 @@ importers:
       eslint-plugin-jsdoc:
         specifier: 'catalog:'
         version: 48.11.0(eslint@8.57.1)
+      eslint-plugin-n:
+        specifier: 'catalog:'
+        version: 17.21.3(eslint@8.57.1)(typescript@5.8.3)
       fs-extra:
         specifier: 'catalog:'
         version: 11.3.0
@@ -1751,7 +1763,7 @@ importers:
         specifier: 'catalog:'
         version: 18.0.0(@typescript-eslint/eslint-plugin@7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3))(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1))(eslint@8.57.1)
       eslint-plugin-boundaries:
-        specifier: ^5.0.1
+        specifier: 'catalog:'
         version: 5.0.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)
       eslint-plugin-import:
         specifier: 'catalog:'
@@ -1763,7 +1775,7 @@ importers:
         specifier: 'catalog:'
         version: 48.11.0(eslint@8.57.1)
       eslint-plugin-n:
-        specifier: ^17.21.3
+        specifier: 'catalog:'
         version: 17.21.3(eslint@8.57.1)(typescript@5.8.3)
       lint-staged:
         specifier: 'catalog:'
@@ -18229,7 +18241,7 @@ snapshots:
 
   ts-declaration-location@1.0.7(typescript@5.8.3):
     dependencies:
-      picomatch: 4.0.2
+      picomatch: 4.0.3
       typescript: 5.8.3
 
   ts-morph@26.0.0:

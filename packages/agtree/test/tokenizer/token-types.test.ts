@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { TokenType, getBaseTokenName, getFormattedTokenName } from '../../src/tokenizer/token-types';
+import { getBaseTokenName, getFormattedTokenName, TokenType } from '../../src/tokenizer/token-types';
 
 describe('TokenType', () => {
     test('should have correct numeric values', () => {

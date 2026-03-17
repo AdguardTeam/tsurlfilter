@@ -7,8 +7,8 @@
 
 import { describe, expect, test } from 'vitest';
 
-import { modifiersCompatibilityTable } from '../../../src/compatibility-tables/modifiers';
 import { Platform } from '../../../src/compatibility-tables';
+import { modifiersCompatibilityTable } from '../../../src/compatibility-tables/modifiers';
 import { ValidationContext } from '../../../src/compatibility-tables/validators/validation-context';
 
 /**

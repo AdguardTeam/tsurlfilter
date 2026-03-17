@@ -3,22 +3,24 @@
  */
 
 import {
-    TokenType,
-    tokenizeExtended,
+    getFormattedTokenName,
     type OnErrorCallback,
     type OnTokenCallback,
+    tokenizeExtended,
     type TokenizerContextFunction,
-    getFormattedTokenName,
+    TokenType,
 } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+
 import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
 
 /**
  * Utility type to get the last element from a tuple, handling optional last elements correctly.
  *
- * @param T - The tuple to extract the last element from.
+ * @param T The tuple to extract the last element from.
+ *
  * @returns The last element of the tuple if present; `L | undefined` if the last element is optional.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -30,7 +32,8 @@ type Last<T extends unknown[]> = T extends [...infer _I, infer L]
 /**
  * Utility type to remove the last element from a tuple, handling optional last elements correctly.
  *
- * @param T - The tuple to remove the last element from.
+ * @param T The tuple to remove the last element from.
+ *
  * @returns A tuple without the last element. If the last element is optional, it is also removed.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -56,6 +59,7 @@ type OnTokenCallbackParameters = Parameters<OnTokenCallback>;
  * @param props Additional properties of the token (if any - can be `undefined`, depending on the token type).
  * @param balance Calculated balance level of the token.
  * @param stop Function to halt tokenization.
+ *
  * @note This function is keeping the same signature as the original `OnTokenCallback` to avoid breaking changes,
  * just adding the `balance` parameter at the end.
  */
@@ -85,13 +89,15 @@ const functionTokenPairs = new Map<TokenType, TokenType>([
 /**
  * Helper function to tokenize and ensure balanced pairs.
  *
- * @param raw Raw CSS string to tokenize
- * @param onToken Callback which will be invoked for each token, extended with a `balance` parameter
- * @param onError Error callback which is called when a parsing error is found (optional)
- * @param functionHandlers Custom function handlers (optional)
- * @param tokenPairs Map of opening tokens to their corresponding closing tokens
- * @throws If the input is not balanced
- * @todo Consider adding a `tolerant` flag if error throwing seems too aggressive in the future
+ * @param raw Raw CSS string to tokenize.
+ * @param onToken Callback which will be invoked for each token, extended with a `balance` parameter.
+ * @param onError Error callback which is called when a parsing error is found (optional).
+ * @param functionHandlers Custom function handlers (optional).
+ * @param tokenPairs Map of opening tokens to their corresponding closing tokens.
+ *
+ * @throws If the input is not balanced.
+ *
+ * @todo Consider adding a `tolerant` flag if error throwing seems too aggressive in the future.
  */
 const tokenizeWithBalancedPairs = (
     raw: string,
@@ -151,11 +157,12 @@ const tokenizeWithBalancedPairs = (
 /**
  * Tokenize and ensure balanced pairs for standard CSS.
  *
- * @param raw Raw CSS string to tokenize
- * @param onToken Callback which will be invoked for each token, extended with a `balance` parameter
- * @param onError Error callback which is called when a parsing error is found (optional)
- * @param functionHandlers Custom function handlers (optional)
- * @throws If the input is not balanced
+ * @param raw Raw CSS string to tokenize.
+ * @param onToken Callback which will be invoked for each token, extended with a `balance` parameter.
+ * @param onError Error callback which is called when a parsing error is found (optional).
+ * @param functionHandlers Custom function handlers (optional).
+ *
+ * @throws If the input is not balanced.
  */
 export const tokenizeBalanced = (
     raw: string,
@@ -169,11 +176,12 @@ export const tokenizeBalanced = (
 /**
  * Tokenize and ensure balanced pairs for function calls.
  *
- * @param raw Raw CSS string to tokenize
- * @param onToken Callback which will be invoked for each token, extended with a `balance` parameter
- * @param onError Error callback which is called when a parsing error is found (optional)
- * @param functionHandlers Custom function handlers (optional)
- * @throws If the input is not balanced
+ * @param raw Raw CSS string to tokenize.
+ * @param onToken Callback which will be invoked for each token, extended with a `balance` parameter.
+ * @param onError Error callback which is called when a parsing error is found (optional).
+ * @param functionHandlers Custom function handlers (optional).
+ *
+ * @throws If the input is not balanced.
  */
 export const tokenizeFnBalanced = (
     raw: string,

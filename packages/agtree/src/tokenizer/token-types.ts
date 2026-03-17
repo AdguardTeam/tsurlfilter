@@ -13,7 +13,7 @@ export const enum TokenType {
     Whitespace = 1,
 
     /**
-     * Line break (`\r\n` or just `\n`)
+     * Line break (`\r\n` or just `\n`).
      */
     LineBreak = 2,
 
@@ -212,8 +212,9 @@ const TOKEN_NAMES: Record<TokenType, string> = {
 /**
  * Get the base name for a token type.
  *
- * @param type - Token type
- * @returns Base name string (e.g., "eof", "whitespace", "=")
+ * @param type Token type.
+ *
+ * @returns Base name string (e.g., "eof", "whitespace", "=").
  */
 export function getBaseTokenName(type: TokenType): string {
     return TOKEN_NAMES[type] ?? 'unknown';
@@ -222,8 +223,9 @@ export function getBaseTokenName(type: TokenType): string {
 /**
  * Get the formatted name for a token type.
  *
- * @param type - Token type
- * @returns Formatted name string (e.g., "<eof-token>", "<whitespace-token>")
+ * @param type Token type.
+ *
+ * @returns Formatted name string (e.g., "<eof-token>", "<whitespace-token>").
  */
 export function getFormattedTokenName(type: TokenType): string {
     const baseName = getBaseTokenName(type);

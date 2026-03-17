@@ -1,22 +1,22 @@
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
+import { sprintf } from 'sprintf-js';
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
-import { sprintf } from 'sprintf-js';
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 
+import { REMOVE_VALUE } from '../../../src/converter/data/css';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
+import { AdgCssInjectionGenerator } from '../../../src/generator/css/adg-css-injection-generator';
+import { type CssInjectionRuleBody } from '../../../src/nodes';
 import {
-    AdgCssInjectionParser,
     ERROR_MESSAGES as ADG_CSS_INJ_ERROR_MESSAGES,
+    AdgCssInjectionParser,
 } from '../../../src/parser/css/adg-css-injection-parser';
 import { ERROR_MESSAGES as CSS_TOKEN_STREAM_ERROR_MESSAGES, END_OF_INPUT } from '../../../src/parser/css/constants';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { type CssInjectionRuleBody } from '../../../src/nodes';
-import { REMOVE_VALUE } from '../../../src/converter/data/css';
-import { AdgCssInjectionGenerator } from '../../../src/generator/css/adg-css-injection-generator';
 
 describe('AdgCssInjectionParser', () => {
     describe('AdgCssInjectionParser.parse - valid', () => {

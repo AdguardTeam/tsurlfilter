@@ -2,11 +2,12 @@
  * @file Validator for pipe-separated apps.
  */
 
-import { AppListParser } from '../../parser/misc/app-list-parser';
-import { DOT, WILDCARD } from '../../utils/constants';
-import { defaultParserOptions } from '../../parser/options';
-import { type ValidationContext, type Validator } from './types';
 import { type AppList } from '../../nodes';
+import { AppListParser } from '../../parser/misc/app-list-parser';
+import { defaultParserOptions } from '../../parser/options';
+import { DOT, WILDCARD } from '../../utils/constants';
+
+import { type ValidationContext, type Validator } from './types';
 
 const UNDERSCORE_CODE = '_'.charCodeAt(0);
 const LATIN_SMALL_A_CODE = 'a'.charCodeAt(0);

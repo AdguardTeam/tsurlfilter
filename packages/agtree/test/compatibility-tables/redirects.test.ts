@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { redirectsCompatibilityTable, Platform } from '../../src/compatibility-tables';
+import { Platform, redirectsCompatibilityTable } from '../../src/compatibility-tables';
 
 const baseNoopJsData = {
     name: 'noopjs',

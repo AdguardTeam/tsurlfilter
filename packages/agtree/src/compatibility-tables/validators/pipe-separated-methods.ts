@@ -2,10 +2,11 @@
  * @file Validator for pipe-separated HTTP methods.
  */
 
+import { type MethodList } from '../../nodes';
 import { MethodListParser } from '../../parser/misc/method-list-parser';
 import { defaultParserOptions } from '../../parser/options';
+
 import { type ValidationContext, type Validator } from './types';
-import { type MethodList } from '../../nodes';
 
 /**
  * Allowed methods for $method modifier.

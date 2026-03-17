@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { AdblockSyntax } from '../../../src/utils/adblockers';
+import { HostRuleGenerator } from '../../../src/generator/network';
 import { type HostRule, NetworkRuleType, RuleCategory } from '../../../src/nodes';
 import { HostRuleParser } from '../../../src/parser/network/host-rule-parser';
-import { HostRuleGenerator } from '../../../src/generator/network';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
 
 describe('HostRuleParser', () => {
     describe('parse', () => {

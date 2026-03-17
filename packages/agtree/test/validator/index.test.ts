@@ -1,13 +1,13 @@
-import { describe, expect, test } from 'vitest';
 import { sprintf } from 'sprintf-js';
+import { describe, expect, test } from 'vitest';
 
-import { type Modifier } from '../../src/nodes';
-import { ModifierParser } from '../../src/parser/misc/modifier-parser';
-import { modifierValidator } from '../../src/validator';
-import { StringUtils } from '../../src/utils/string';
-import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
-import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-items-parser';
 import { Platform } from '../../src/compatibility-tables';
+import { type Modifier } from '../../src/nodes';
+import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-items-parser';
+import { ModifierParser } from '../../src/parser/misc/modifier-parser';
+import { StringUtils } from '../../src/utils/string';
+import { modifierValidator } from '../../src/validator';
+import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
 
 /**
  * Returns modifier AST node for given rawModifier.
@@ -15,6 +15,7 @@ import { Platform } from '../../src/compatibility-tables';
  * @param rawModifier String or modifier AST node.
  *
  * @returns Parsed Modifier or null if given modifier is invalid.
+ *
  * @throws If given `rawModifier` cannot be parsed into Modifier.
  */
 const getModifier = (rawModifier: string | Modifier): Modifier => {

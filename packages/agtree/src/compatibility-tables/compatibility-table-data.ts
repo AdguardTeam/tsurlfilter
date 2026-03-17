@@ -2,31 +2,33 @@
  * @file Compatibility table data loading with hybrid trie structure.
  */
 
-import path, { dirname } from 'path';
-import { readFileSync, readdirSync } from 'fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import path, { dirname } from 'node:path';
 // eslint-disable-next-line import/no-extraneous-dependencies
+import { fileURLToPath } from 'node:url';
+
 import yaml from 'js-yaml';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import XRegExp from 'xregexp';
 import zod from 'zod';
-import { fileURLToPath } from 'url';
 
-import { type HybridCompatibilityTableRow, type CompatibilityTable } from './types';
-import { TrieNode } from './trie';
+import { EMPTY } from '../utils/constants';
+import { deepFreeze } from '../utils/deep-freeze';
+
 import { PlatformExpressionEvaluator } from './platform-expression-evaluator';
 import {
     type BaseCompatibilityDataSchema,
     baseFileSchema,
-    modifierDataSchema,
-    redirectDataSchema,
-    scriptletDataSchema,
     type ModifierDataSchema,
+    modifierDataSchema,
     type RedirectDataSchema,
+    redirectDataSchema,
     type ScriptletDataSchema,
+    scriptletDataSchema,
 } from './schemas';
+import { TrieNode } from './trie';
+import { type CompatibilityTable, type HybridCompatibilityTableRow } from './types';
 import { KNOWN_VALIDATORS } from './validators';
-import { deepFreeze } from '../utils/deep-freeze';
-import { EMPTY } from '../utils/constants';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -51,11 +53,11 @@ const getYmlFilesFromDir = (dir: string): string[] => {
  * Creates both a trie for wildcard queries and a flat map for O(1) specific lookups.
  * Supports multiple platforms in a single key with negation (e.g., 'adg_os_any|~adg_os_windows').
  *
+ * @template T Type of the compatibility data schema.
+ *
  * @param fileData Parsed YAML data (platform string/expression → data).
  *
  * @returns Hybrid compatibility table row.
- *
- * @template T Type of the compatibility data schema.
  */
 const buildHybridRow = <T extends BaseCompatibilityDataSchema>(
     fileData: Record<string, T>,
@@ -96,12 +98,12 @@ const buildHybridRow = <T extends BaseCompatibilityDataSchema>(
 /**
  * Gets compatibility table data from a directory using hybrid structure.
  *
+ * @template T Type of the compatibility data schema.
+ *
  * @param dir Directory to get the compatibility table data from.
  * @param fileSchema File schema to parse the compatibility table data.
  *
  * @returns Compatibility table data with hybrid structure.
- *
- * @template T Type of the compatibility data schema.
  *
  * @throws Error if the file is not found or cannot be read.
  */

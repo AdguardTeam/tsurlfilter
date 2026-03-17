@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+
 import { parse } from '@typescript-eslint/parser';
 import { parse as parseJsdoc } from 'comment-parser';
 
@@ -14,8 +15,9 @@ const ADG_SOURCE_DIR = path.join(
 /**
  * Cleans up version string by removing leading 'v' and trailing '.'.
  *
- * @param rawVersion - Raw version string
- * @returns Cleaned version string
+ * @param rawVersion Raw version string.
+ *
+ * @returns Cleaned version string.
  */
 function cleanVersion(rawVersion: string): string {
     let version = rawVersion.trim();
@@ -31,8 +33,9 @@ function cleanVersion(rawVersion: string): string {
 /**
  * Extracts parameters from function AST node.
  *
- * @param func - Function AST node
- * @returns Array of parameters
+ * @param func Function AST node.
+ *
+ * @returns Array of parameters.
  */
 function extractParameters(func: any): ScriptletParameter[] {
     const parameters: ScriptletParameter[] = [];
@@ -79,8 +82,9 @@ function extractParameters(func: any): ScriptletParameter[] {
 /**
  * Parses JSDoc comment and extracts scriptlet metadata.
  *
- * @param jsdocComment - JSDoc comment text
- * @returns Parsed metadata
+ * @param jsdocComment JSDoc comment text.
+ *
+ * @returns Parsed metadata.
  */
 function parseScriptletJSDoc(jsdocComment: string) {
     const parsed = parseJsdoc(jsdocComment);
@@ -132,9 +136,10 @@ function parseScriptletJSDoc(jsdocComment: string) {
 /**
  * Finds JSDoc comment before a node that contains @scriptlet or @trustedScriptlet tag.
  *
- * @param comments - Array of comments from AST
- * @param node - Node to find comment for
- * @returns JSDoc comment text or undefined
+ * @param comments Array of comments from AST.
+ * @param node Node to find comment for.
+ *
+ * @returns JSDoc comment text or undefined.
  */
 function findScriptletJSDoc(comments: any[] | undefined, node: any): string | undefined {
     if (!comments || !node.range) {
@@ -162,10 +167,11 @@ function findScriptletJSDoc(comments: any[] | undefined, node: any): string | un
 /**
  * Merges aliases from const array with existing aliases.
  *
- * @param aliasesFromArray - Aliases extracted from const array
- * @param existingAliases - Existing aliases from JSDoc
- * @param currentScriptletName - Current scriptlet name
- * @returns Updated scriptlet name and merged aliases
+ * @param aliasesFromArray Aliases extracted from const array.
+ * @param existingAliases Existing aliases from JSDoc.
+ * @param currentScriptletName Current scriptlet name.
+ *
+ * @returns Updated scriptlet name and merged aliases.
  */
 function mergeAliases(
     aliasesFromArray: string[],
@@ -196,9 +202,10 @@ function mergeAliases(
 /**
  * Extracts scriptlet metadata from a single AdGuard scriptlet file.
  *
- * @param filePath - Path to the JavaScript file
- * @param exportedName - The name used in the export statement
- * @returns Extracted scriptlet or null if not found
+ * @param filePath Path to the JavaScript file.
+ * @param exportedName The name used in the export statement.
+ *
+ * @returns Extracted scriptlet or null if not found.
  */
 async function extractFromFile(filePath: string, exportedName: string): Promise<Scriptlet | null> {
     const code = await fs.readFile(filePath, 'utf-8');
@@ -357,7 +364,7 @@ async function extractFromFile(filePath: string, exportedName: string): Promise<
 /**
  * Parses scriptlets-list.ts to get all exported scriptlet names and their file paths.
  *
- * @returns Map of export name to file path
+ * @returns Map of export name to file path.
  */
 async function parseScriptletsList(): Promise<Map<string, string>> {
     const listPath = path.join(ADG_SOURCE_DIR, 'scriptlets-list.ts');
@@ -393,7 +400,7 @@ async function parseScriptletsList(): Promise<Map<string, string>> {
 /**
  * Extracts all AdGuard scriptlets from the source directory.
  *
- * @returns Array of all extracted AdGuard scriptlets
+ * @returns Array of all extracted AdGuard scriptlets.
  */
 export async function extractAdgScriptlets(): Promise<Scriptlet[]> {
     console.log('Extracting AdGuard scriptlets...');
@@ -408,6 +415,7 @@ export async function extractAdgScriptlets(): Promise<Scriptlet[]> {
 
         let filePath = jsPath;
         try {
+            // eslint-disable-next-line no-await-in-loop
             await fs.access(jsPath);
         } catch {
             // .js doesn't exist, try .ts
@@ -415,6 +423,7 @@ export async function extractAdgScriptlets(): Promise<Scriptlet[]> {
         }
 
         try {
+            // eslint-disable-next-line no-await-in-loop
             const scriptlet = await extractFromFile(filePath, exportedName);
             if (scriptlet) {
                 allScriptlets.push(scriptlet);

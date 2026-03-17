@@ -1,7 +1,9 @@
 /**
- * @file uBlock scriptlet injection body parser
+ * @file UBlock scriptlet injection body parser.
  */
 
+import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
 import {
     CLOSE_PARENTHESIS,
     COMMA,
@@ -12,22 +14,20 @@ import {
     UBO_SCRIPTLET_MASK_LEGACY,
 } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
-import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import { type ScriptletInjectionRuleBody } from '../../../nodes';
-import { defaultParserOptions } from '../../options';
 import { BaseParser } from '../../base-parser';
 import { UboParameterListParser } from '../../misc/ubo-parameter-list-parser';
+import { defaultParserOptions } from '../../options';
 
 /**
  * `UboScriptletInjectionBodyParser` is responsible for parsing the body of a uBlock-style scriptlet rule.
  *
  * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
- * For example, it will parse this:
+ * For example, it will parse this:.
  * ```adblock
  * example.com##+js(scriptlet0, arg0)
  * ```
  *
- * but it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker.
+ * But it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker..
  *
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#scriptlet-injection}
  */
@@ -49,8 +49,11 @@ export class UboScriptletInjectionBodyParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Node of the parsed scriptlet call body
-     * @throws If the body is syntactically incorrect
+     *
+     * @returns Node of the parsed scriptlet call body.
+     *
+     * @throws If the body is syntactically incorrect.
+     *
      * @example
      * ```
      * ##+js(scriptlet0, arg0)

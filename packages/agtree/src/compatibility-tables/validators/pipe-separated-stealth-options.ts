@@ -2,10 +2,11 @@
  * @file Validator for pipe-separated stealth options.
  */
 
+import { type StealthOptionList } from '../../nodes';
 import { StealthOptionListParser } from '../../parser/misc/stealth-option-list-parser';
 import { defaultParserOptions } from '../../parser/options';
+
 import { type ValidationContext, type Validator } from './types';
-import { type StealthOptionList } from '../../nodes';
 
 /**
  * Allowed stealth options for $stealth modifier.

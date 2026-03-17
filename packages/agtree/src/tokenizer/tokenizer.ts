@@ -46,23 +46,23 @@ const RESERVE = 64;
  */
 export type TokenizeResult = {
     /**
-     * Number of tokens successfully parsed
+     * Number of tokens successfully parsed.
      */
     tokenCount: number;
     /**
-     * Reusable buffer storing token types (mutated in-place)
+     * Reusable buffer storing token types (mutated in-place).
      */
     types: Uint8Array;
     /**
-     * Reusable buffer storing token end positions (mutated in-place)
+     * Reusable buffer storing token end positions (mutated in-place).
      */
     ends: Uint32Array;
     /**
-     * The actual character position where tokenization stopped
+     * The actual character position where tokenization stopped.
      */
     actualEnd: number;
     /**
-     * Flag indicating if buffer capacity was exceeded (1) or not (0)
+     * Flag indicating if buffer capacity was exceeded (1) or not (0).
      */
     overflowed: 0 | 1;
 };
@@ -77,19 +77,19 @@ export type TokenizeResult = {
  * **Benefits**:
  * - Avoids allocating new TypedArrays on every tokenization call
  * - Reduces garbage collection pressure during high-volume parsing
- * - Enables buffer reuse across thousands of filter rules
+ * - Enables buffer reuse across thousands of filter rules.
  *
  * **WARNING - Users must understand**:
  * 1. **Never** hold references to `out.types` or `out.ends` across multiple calls
  * 2. The buffers are overwritten on each call - previous data is lost
  * 3. If you need to preserve tokens, copy them immediately after tokenization
- * 4. The same `TokenizeResult` object should be reused for sequential tokenizations
+ * 4. The same `TokenizeResult` object should be reused for sequential tokenizations.
  *
  * **Performance Design**:
  * - Optimized for the common case: 99.9% of filter rules fit within buffer capacity
  * - Overflow handling is minimal (single flag check) to keep fast path fast
  * - Edge cases (0.1% overflow) handled gracefully via `overflowed` flag
- * - Caller can retry with larger buffer or use slow path when overflow occurs
+ * - Caller can retry with larger buffer or use slow path when overflow occurs.
  *
  * **V8 Optimizations**:
  * - TypedArrays (Uint8Array/Uint32Array) for predictable memory layout and access patterns
@@ -97,11 +97,11 @@ export type TokenizeResult = {
  * - Monomorphic operations (consistent types) to enable inline caching
  * - Local variable caching (t, e, ws, ident, map) to minimize property access
  * - No dynamic allocations in hot loop - all buffers pre-allocated
- * - Bitwise operations disabled via eslint as they can deopt in some contexts
+ * - Bitwise operations disabled via eslint as they can deopt in some contexts.
  *
- * @param source - The source string to tokenize
- * @param start - Starting character position in the source
- * @param out - Pre-allocated result structure (buffers will be overwritten)
+ * @param source The source string to tokenize.
+ * @param start Starting character position in the source.
+ * @param out Pre-allocated result structure (buffers will be overwritten).
  *
  * @example
  * ```ts

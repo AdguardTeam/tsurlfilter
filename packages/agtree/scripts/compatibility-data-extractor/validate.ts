@@ -1,6 +1,7 @@
+/* eslint-disable n/no-process-exit */
 /* eslint-disable no-console */
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 import { scriptletsCompatibilityTableData } from '../../src/compatibility-tables/compatibility-table-data';
 import type { ScriptletDataSchema } from '../../src/compatibility-tables/schemas';
@@ -23,8 +24,9 @@ interface ExtractedScriptlet {
 /**
  * Gets a scriptlet from the compatibility table by name or alias.
  *
- * @param name - Scriptlet name to search for
- * @returns Scriptlet data or null if not found
+ * @param name Scriptlet name to search for.
+ *
+ * @returns Scriptlet data or null if not found.
  */
 function getScriptletFromTable(name: string): ScriptletDataSchema | null {
     // Check if name exists as a key in rows Map
@@ -51,8 +53,9 @@ function getScriptletFromTable(name: string): ScriptletDataSchema | null {
 /**
  * Gets category name from file name.
  *
- * @param fileName - File name
- * @returns Category name
+ * @param fileName File name.
+ *
+ * @returns Category name.
  */
 function getCategoryName(fileName: string): string {
     const name = fileName.replace('.json', '');
@@ -67,7 +70,7 @@ function getCategoryName(fileName: string): string {
 /**
  * Gets all scriptlet names from the compatibility table.
  *
- * @returns Set of all scriptlet names in the table
+ * @returns Set of all scriptlet names in the table.
  */
 function getAllTableScriptletNames(): Set<string> {
     const names = new Set<string>();
@@ -113,6 +116,7 @@ async function validateScriptlets(): Promise<void> {
         console.log(`=== Checking ${category} (${file}) ===`);
 
         const filePath = path.join(SCRIPTLETS_DIR, file);
+        // eslint-disable-next-line no-await-in-loop
         const content = await fs.readFile(filePath, 'utf-8');
         const scriptlets: ExtractedScriptlet[] = JSON.parse(content);
 

@@ -1,9 +1,10 @@
 import { type AnyRule, type FilterList, type NewLine } from '../nodes';
-import { RuleParser } from './rule-parser';
 import { CR, LF } from '../utils/constants';
 import { StringUtils } from '../utils/string';
-import { defaultParserOptions } from './options';
+
 import { BaseParser } from './base-parser';
+import { defaultParserOptions } from './options';
+import { RuleParser } from './rule-parser';
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
@@ -16,7 +17,11 @@ export class FilterListParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns AST of the source code (list of rules)
+     *
+     * @returns AST of the source code (list of rules).
+     *
+     * @throws If one of the rules is syntactically invalid (if `tolerant` is `false`).
+     *
      * @example
      * ```js
      * import { readFileSync } from 'fs';
@@ -28,7 +33,6 @@ export class FilterListParser extends BaseParser {
      * // Parse the filter list content, then do something with the AST
      * const ast = FilterListParser.parse(content);
      * ```
-     * @throws If one of the rules is syntactically invalid (if `tolerant` is `false`)
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): FilterList {
         // Actual position in the source code

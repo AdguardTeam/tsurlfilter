@@ -1,7 +1,7 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
+import { spawn } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -49,9 +49,9 @@ const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
 /**
  * Clones a git repository to the specified directory.
  *
- * @param gitUrl - The git repository URL
- * @param destination - The directory to clone into
- * @param branch - Optional branch name to clone
+ * @param gitUrl The git repository URL.
+ * @param destination The directory to clone into.
+ * @param branch Optional branch name to clone.
  */
 async function cloneRepository(gitUrl: string, destination: string, branch?: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -95,7 +95,7 @@ async function cloneRepository(gitUrl: string, destination: string, branch?: str
 /**
  * Clones multiple git repositories to the downloads folder.
  *
- * @param resources - Array of git repositories with URLs and folder names
+ * @param resources Array of git repositories with URLs and folder names.
  */
 export async function cloneRepositories(resources: DownloadableResource[]): Promise<void> {
     try {
@@ -111,6 +111,7 @@ export async function cloneRepositories(resources: DownloadableResource[]): Prom
         const cloneDir = path.join(DOWNLOADS_DIR, resource.folderName);
 
         console.log(`Cloning: ${resource.gitUrl} (${resource.branch || 'default branch'})`);
+        // eslint-disable-next-line no-await-in-loop
         await cloneRepository(resource.gitUrl, cloneDir, resource.branch);
 
         console.log(`✓ Completed: ${resource.folderName}`);

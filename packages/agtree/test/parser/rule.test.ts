@@ -1,11 +1,12 @@
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
 
 import { AdblockSyntaxError } from '../../src/errors/adblock-syntax-error';
+import { RuleGenerator } from '../../src/generator';
 import {
     type AnyRule,
     CommentRuleType,
@@ -13,10 +14,9 @@ import {
     RuleCategory,
 } from '../../src/nodes';
 import { type ParserOptions } from '../../src/parser/options';
+import { defaultParserOptions } from '../../src/parser/options';
 import { RuleParser } from '../../src/parser/rule-parser';
 import { AdblockSyntax } from '../../src/utils/adblockers';
-import { defaultParserOptions } from '../../src/parser/options';
-import { RuleGenerator } from '../../src/generator';
 
 describe('RuleParser', () => {
     test('parse', () => {

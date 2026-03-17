@@ -4,14 +4,15 @@
 
 import { sprintf } from 'sprintf-js';
 
+import { type Platform } from '../compatibility-tables';
+import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
 import { type Modifier } from '../nodes';
 import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
-import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
-import { type ValidationResult, getInvalidValidationResult, getValueRequiredValidationResult } from './helpers';
-import { validateValue } from './value';
-import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
 import { isValidNoopModifier } from '../utils/noop-modifier';
-import { type Platform } from '../compatibility-tables';
+
+import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
+import { getInvalidValidationResult, getValueRequiredValidationResult, type ValidationResult } from './helpers';
+import { validateValue } from './value';
 
 /**
  * Fully checks whether the given `modifier` is valid for specified platforms:
@@ -107,7 +108,7 @@ const validateForSpecificProduct = (
          * TODO: consider to return `{ valid: true, warn: 'Modifier value may be specified' }` (???)
          * for $stealth modifier without a value
          * but only after the extension will support value for $stealth:
-         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2107
+         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2107.
          */
 
         if (!specificBlockerData.valueFormat) {
@@ -154,10 +155,10 @@ class ModifierValidator {
      * @param isException Whether the modifier is used in exception rule, default to false.
      * Needed to check whether the modifier is allowed only in blocking or exception rules.
      *
+     * @returns Result of modifier validation.
+     *
      * @note For single product: validates using first platform's compatibility data.
      * If multiple products are specified (e.g., [AdgAny, UboAny]), validation is skipped and returns valid.
-     *
-     * @returns Result of modifier validation.
      */
     public validate = (platforms: Platform[], modifier: Modifier, isException = false): ValidationResult => {
         // special case: handle noop modifier which may be used as multiple underscores (not just one)

@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { type Value, type HtmlFilteringRuleBody } from '../../../../src';
-import {
-    AdgHtmlFilteringBodyParser,
-} from '../../../../src/parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
 import {
     AdgHtmlFilteringBodyGenerator,
 } from '../../../../src/generator/cosmetic/html-filtering-body/adg-html-filtering-body-generator';
+import { type HtmlFilteringRuleBody, type Value } from '../../../../src/nodes';
+import {
+    AdgHtmlFilteringBodyParser,
+} from '../../../../src/parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
 import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
+import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 
 /**
  * Default parser options with HTML filtering rules parsing enabled.

@@ -1,33 +1,36 @@
 /**
- * @file Adblock rule converter
+ * @file Adblock rule converter.
  *
  * This file is the entry point for all rule converters
  * which automatically detects the rule type and calls
  * the corresponding "sub-converter".
  */
 
-import { type AnyRule, RuleCategory, NetworkRuleType } from '../nodes';
+import { RuleConversionError } from '../errors/rule-conversion-error';
+import { type AnyRule, NetworkRuleType, RuleCategory } from '../nodes';
+
+import { createConversionResult, type NodeConversionResult } from './base-interfaces/conversion-result';
+import { RuleConverterBase } from './base-interfaces/rule-converter-base';
 import { CommentRuleConverter } from './comment';
 import { CosmeticRuleConverter } from './cosmetic';
 import { NetworkRuleConverter } from './network';
-import { RuleConversionError } from '../errors/rule-conversion-error';
-import { RuleConverterBase } from './base-interfaces/rule-converter-base';
-import { createConversionResult, type NodeConversionResult } from './base-interfaces/conversion-result';
 
 /**
- * Adblock filtering rule converter class
+ * Adblock filtering rule converter class.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class RuleConverter extends RuleConverterBase {
     /**
      * Converts an adblock filtering rule to AdGuard format, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rule: AnyRule): NodeConversionResult<AnyRule> {
         // Delegate conversion to the corresponding sub-converter
@@ -60,11 +63,13 @@ export class RuleConverter extends RuleConverterBase {
     /**
      * Converts an adblock filtering rule to uBlock Origin format, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
      */
     // TODO: Add support for other rule types
     public static convertToUbo(rule: AnyRule): NodeConversionResult<AnyRule> {

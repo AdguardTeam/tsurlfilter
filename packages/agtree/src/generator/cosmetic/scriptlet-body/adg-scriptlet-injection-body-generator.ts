@@ -5,8 +5,8 @@ import {
     EMPTY,
     OPEN_PARENTHESIS,
 } from '../../../utils/constants';
-import { ParameterListGenerator } from '../../misc/parameter-list-generator';
 import { BaseGenerator } from '../../base-generator';
+import { ParameterListGenerator } from '../../misc/parameter-list-generator';
 
 /**
  * AdGuard scriptlet injection body generator.
@@ -22,9 +22,11 @@ export class AdgScriptletInjectionBodyGenerator extends BaseGenerator {
     /**
      * Generates a string representation of the AdGuard scriptlet call body.
      *
-     * @param node Scriptlet injection rule body
-     * @returns String representation of the rule body
-     * @throws Error if the scriptlet call has multiple parameters
+     * @param node Scriptlet injection rule body.
+     *
+     * @returns String representation of the rule body.
+     *
+     * @throws Error if the scriptlet call has multiple parameters.
      */
     public static generate(node: ScriptletInjectionRuleBody): string {
         const result: string[] = [];

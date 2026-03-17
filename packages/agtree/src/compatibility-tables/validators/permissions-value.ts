@@ -12,6 +12,7 @@ import {
     WILDCARD,
 } from '../../utils/constants';
 import { QuoteType, QuoteUtils } from '../../utils/quotes';
+
 import { type ValidationContext, type Validator } from './types';
 
 /**

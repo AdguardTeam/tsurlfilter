@@ -1,8 +1,8 @@
 import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { type PseudoClassSelector } from '../../../../nodes';
 import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
+import { type PseudoClassSelector } from '../../../../nodes';
 import { EMPTY } from '../../../../utils/constants';
 import { type TokenData } from '../../../css/css-token-stream';
 import { ValueParser } from '../../../misc/value-parser';

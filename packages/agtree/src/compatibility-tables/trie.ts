@@ -37,7 +37,7 @@ export class TrieNode<T> {
      * @param path Path segments (e.g., ['adg', 'os', 'windows']).
      * @param data Data to store.
      */
-    insert(path: string[], data: T): void {
+    public insert(path: string[], data: T): void {
         let node: TrieNode<T> = this;
 
         // Invalidate cache on root
@@ -60,9 +60,10 @@ export class TrieNode<T> {
      * Gets data at the exact path.
      *
      * @param path Path segments.
+     *
      * @returns Data if found, undefined otherwise.
      */
-    get(path: string[]): T | undefined {
+    public get(path: string[]): T | undefined {
         let node: TrieNode<T> = this;
 
         for (const segment of path) {
@@ -81,9 +82,10 @@ export class TrieNode<T> {
      * Supports wildcard queries by collecting all data in the subtree.
      *
      * @param path Prefix path segments.
+     *
      * @returns Array of all data under the prefix.
      */
-    query(path: string[]): T[] {
+    public query(path: string[]): T[] {
         let node: TrieNode<T> = this;
 
         // Navigate to the prefix node
@@ -103,9 +105,10 @@ export class TrieNode<T> {
      * Checks if any data exists under a given prefix path.
      *
      * @param path Prefix path segments.
+     *
      * @returns True if any data exists, false otherwise.
      */
-    has(path: string[]): boolean {
+    public has(path: string[]): boolean {
         let node: TrieNode<T> = this;
 
         for (const segment of path) {
@@ -181,7 +184,7 @@ export class TrieNode<T> {
      *
      * @returns JSON-serializable object.
      */
-    toJSON(): unknown {
+    public toJSON(): unknown {
         const result: {
             data?: T;
             children?: Record<string, unknown>;
@@ -205,9 +208,10 @@ export class TrieNode<T> {
      * Deserializes a trie from JSON.
      *
      * @param json JSON object.
+     *
      * @returns TrieNode instance.
      */
-    static fromJSON<T>(json: unknown): TrieNode<T> {
+    public static fromJSON<T>(json: unknown): TrieNode<T> {
         const node = new TrieNode<T>();
         const obj = json as {
             data?: T;

@@ -1,5 +1,6 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
+/* eslint-disable n/no-process-exit */
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 import { cloneRepositories, scriptletsUrls } from './downloader';
 import { extractAbpScriptlets } from './extractors/abp-scriptlets';

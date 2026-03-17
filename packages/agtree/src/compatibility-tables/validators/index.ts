@@ -2,17 +2,17 @@
  * @file Validators for modifier value formats.
  */
 
-import { PipeSeparatedAppsValidator } from './pipe-separated-apps';
-import { PipeSeparatedDomainsValidator } from './pipe-separated-domains';
-import { PipeSeparatedDenyAllowDomainsValidator } from './pipe-separated-denyallow-domains';
-import { PipeSeparatedMethodsValidator } from './pipe-separated-methods';
-import { PipeSeparatedStealthOptionsValidator } from './pipe-separated-stealth-options';
 import { CspValueValidator } from './csp-value';
 import { PermissionsValueValidator } from './permissions-value';
+import { PipeSeparatedAppsValidator } from './pipe-separated-apps';
+import { PipeSeparatedDenyAllowDomainsValidator } from './pipe-separated-denyallow-domains';
+import { PipeSeparatedDomainsValidator } from './pipe-separated-domains';
+import { PipeSeparatedMethodsValidator } from './pipe-separated-methods';
+import { PipeSeparatedStealthOptionsValidator } from './pipe-separated-stealth-options';
 import { ReferrerPolicyValueValidator } from './referrerpolicy-value';
-import { UrlValidator } from './url';
 import { RegexpValidator } from './regexp';
-import { type Validator, type ValidatorFn, type ValidationContext } from './types';
+import { type ValidationContext, type Validator, type ValidatorFn } from './types';
+import { UrlValidator } from './url';
 
 /**
  * All available validators.

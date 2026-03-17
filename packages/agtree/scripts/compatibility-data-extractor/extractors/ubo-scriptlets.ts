@@ -1,4 +1,5 @@
-import * as path from 'path';
+import * as path from 'node:path';
+
 import { parse } from '@typescript-eslint/parser';
 
 import type { Scriptlet, ScriptletParameter } from '../schema';
@@ -11,8 +12,9 @@ const UBO_RESOURCES_DIR = path.join(
 /**
  * Detects getExtraArgs call and returns the starting position of extra args.
  *
- * @param funcSource - Function source code
- * @returns Starting position of extra args, or null if not found
+ * @param funcSource Function source code.
+ *
+ * @returns Starting position of extra args, or null if not found.
  */
 function detectExtraArgsPosition(funcSource: string): number | null {
     // Look for: safe.getExtraArgs(Array.from(arguments), N)
@@ -26,8 +28,9 @@ function detectExtraArgsPosition(funcSource: string): number | null {
 /**
  * Extracts parameters from a function.
  *
- * @param func - Function to extract parameters from
- * @returns Array of parameters
+ * @param func Function to extract parameters from.
+ *
+ * @returns Array of parameters.
  */
 function extractParameters(func: (...args: unknown[]) => unknown): ScriptletParameter[] {
     const funcSource = func.toString();
@@ -122,7 +125,7 @@ function extractParameters(func: (...args: unknown[]) => unknown): ScriptletPara
 /**
  * Extracts all uBlock Origin scriptlets by importing scriptlets.js.
  *
- * @returns Array of all extracted uBlock scriptlets
+ * @returns Array of all extracted uBlock scriptlets.
  */
 export async function extractUboScriptlets(): Promise<Scriptlet[]> {
     console.log('Extracting uBlock Origin scriptlets...');

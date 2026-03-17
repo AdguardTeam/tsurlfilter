@@ -2,17 +2,18 @@
  * @file New compatibility table base class with Platform-based queries.
  */
 
-import { type BaseCompatibilityDataSchema } from './schemas';
-import { type HybridCompatibilityTableRow, type CompatibilityTable } from './types';
-import { type AdblockProduct } from '../utils/adblockers';
 import { type Node } from '../nodes';
-import { type ValidationContext } from './validators/types';
+import { type AdblockProduct } from '../utils/adblockers';
+
 import {
     getValidAdblockProducts,
     getValidProductCodes,
     Platform,
     WILDCARD_ANY,
 } from './platform';
+import { type BaseCompatibilityDataSchema } from './schemas';
+import { type CompatibilityTable, type HybridCompatibilityTableRow } from './types';
+import { type ValidationContext } from './validators/types';
 
 /**
  * Lists all supported entity records by a product.

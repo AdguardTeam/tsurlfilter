@@ -4,20 +4,21 @@
 
 import { sprintf } from 'sprintf-js';
 
-import { CompatibilityTableBase } from './base';
-import { type ModifierDataSchema } from './schemas';
-import { modifiersCompatibilityTableData } from './compatibility-table-data';
-import { UNDERSCORE } from '../utils/constants';
-import { type CompatibilityTable } from './types';
-import { deepFreeze } from '../utils/deep-freeze';
-import { isValidNoopModifier } from '../utils/noop-modifier';
 import { type Modifier } from '../nodes';
 import { ModifierParser } from '../parser/misc/modifier-parser';
 import { defaultParserOptions } from '../parser/options';
-import { type Platform } from './platform';
-import { VALIDATION_ERROR_PREFIX, SOURCE_DATA_ERROR_PREFIX } from '../validator/constants';
-import { isString } from '../utils/type-guards';
+import { UNDERSCORE } from '../utils/constants';
+import { deepFreeze } from '../utils/deep-freeze';
 import { getErrorMessage } from '../utils/error';
+import { isValidNoopModifier } from '../utils/noop-modifier';
+import { isString } from '../utils/type-guards';
+import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from '../validator/constants';
+
+import { CompatibilityTableBase } from './base';
+import { modifiersCompatibilityTableData } from './compatibility-table-data';
+import { type Platform } from './platform';
+import { type ModifierDataSchema } from './schemas';
+import { type CompatibilityTable } from './types';
 import { isKnownValidator, validate } from './validators';
 import { type ValidationContext } from './validators/types';
 
@@ -27,6 +28,7 @@ import { type ValidationContext } from './validators/types';
  * e.g. '____' is also valid. In this case, we need to normalize the name to '_'.
  *
  * @param name Modifier name to normalize.
+ *
  * @returns Normalized modifier name.
  */
 const noopModifierNameNormalizer = (name: string): string => {

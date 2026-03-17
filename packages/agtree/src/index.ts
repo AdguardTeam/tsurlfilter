@@ -1,5 +1,5 @@
 /**
- * @file AGTree entry point
+ * @file AGTree entry point.
  */
 
 // Parser
@@ -83,7 +83,6 @@ export { ParameterListParser } from './parser/misc/parameter-list-parser';
 export { HostRuleParser } from './parser/network/host-rule-parser';
 export { PreProcessorCommentParser } from './parser/comment/preprocessor-parser';
 export { RuleConversionError } from './errors/rule-conversion-error';
-export { BinarySchemaMismatchError } from './errors/binary-schema-mismatch-error';
 
 // Validator
 export { modifierValidator } from './validator';

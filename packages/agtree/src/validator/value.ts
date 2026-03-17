@@ -1,9 +1,10 @@
-import { type Modifier } from '../nodes';
-import { type ValidationResult, getInvalidValidationResult, getValueRequiredValidationResult } from './helpers';
-import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
-import { isString } from '../utils/type-guards';
 import { isKnownValidator, validate } from '../compatibility-tables/validators';
 import { ValidationContext, type ValidationIssue } from '../compatibility-tables/validators/types';
+import { type Modifier } from '../nodes';
+import { isString } from '../utils/type-guards';
+
+import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
+import { getInvalidValidationResult, getValueRequiredValidationResult, type ValidationResult } from './helpers';
 
 /**
  * Formats a list of values as quoted, comma-separated items: `'v1', 'v2'`.

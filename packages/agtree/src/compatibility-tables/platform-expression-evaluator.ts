@@ -2,7 +2,7 @@
  * @file Platform expression evaluator with support for negation and wildcards.
  */
 
-import { Platform, type SpecificProductCode, type SpecificPlatformType } from './platform';
+import { Platform, type SpecificPlatformType, type SpecificProductCode } from './platform';
 
 /**
  * Platform separator, e.g. 'adg_os_any|adg_safari_any' means any AdGuard OS platform and
@@ -48,10 +48,12 @@ export class PlatformExpressionEvaluator {
      * Handles wildcards and negation operators.
      *
      * @param expression Platform expression string (e.g., 'adg_os_any|~adg_os_windows').
+     *
      * @returns Array of concrete Platform objects after expansion and filtering.
+     *
      * @throws Error if expression is empty or contains only negations.
      */
-    static evaluate(expression: string): Platform[] {
+    public static evaluate(expression: string): Platform[] {
         const parts = expression
             .split(PLATFORM_SEPARATOR)
             .map((p) => p.trim())
@@ -96,6 +98,7 @@ export class PlatformExpressionEvaluator {
      * Expands wildcard platforms into their concrete matches.
      *
      * @param platforms Array of platforms (may include wildcards).
+     *
      * @returns Array of concrete platforms.
      */
     private static expandPlatforms(platforms: Platform[]): Platform[] {
@@ -130,6 +133,7 @@ export class PlatformExpressionEvaluator {
      * Gets all concrete platforms that match a wildcard platform.
      *
      * @param wildcard Wildcard platform to match against.
+     *
      * @returns Array of matching concrete platforms.
      */
     private static getConcreteMatches(wildcard: Platform): Platform[] {
@@ -141,6 +145,7 @@ export class PlatformExpressionEvaluator {
      * Converts an array of platforms to a Set of their string representations.
      *
      * @param platforms Array of platforms.
+     *
      * @returns Set of platform strings.
      */
     private static toPlatformStringSet(platforms: Platform[]): Set<string> {
@@ -152,6 +157,7 @@ export class PlatformExpressionEvaluator {
      *
      * @param platforms Platforms to filter.
      * @param negated Negated platform patterns (may include wildcards).
+     *
      * @returns Filtered platforms.
      */
     private static filterNegated(platforms: Platform[], negated: Platform[]): Platform[] {
@@ -177,6 +183,7 @@ export class PlatformExpressionEvaluator {
      * Returns the minimal set of platforms needed to represent the input.
      *
      * @param platforms Array of concrete Platform objects.
+     *
      * @returns Optimized array with wildcards where possible.
      *
      * @example
@@ -198,7 +205,7 @@ export class PlatformExpressionEvaluator {
      * // Returns: [Platform.AdgOsWindows, Platform.AdgOsLinux]
      * ```
      */
-    static optimize(platforms: Platform[]): Platform[] {
+    public static optimize(platforms: Platform[]): Platform[] {
         if (platforms.length === 0) {
             return [];
         }
@@ -278,6 +285,7 @@ export class PlatformExpressionEvaluator {
      * If all platforms for a product are present, replace with product wildcard.
      *
      * @param platforms Array of platforms (may include type-level wildcards).
+     *
      * @returns Optimized array.
      */
     private static optimizeProducts(platforms: Platform[]): Platform[] {

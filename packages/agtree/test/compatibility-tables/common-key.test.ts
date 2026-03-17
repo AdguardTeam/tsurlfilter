@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import zod from 'zod';
 
-import { baseFileSchema, baseCompatibilityDataSchema, COMMON_KEY } from '../../src/compatibility-tables/schemas/base';
+import { baseCompatibilityDataSchema, baseFileSchema, COMMON_KEY } from '../../src/compatibility-tables/schemas/base';
 import { zodToCamelCase } from '../../src/compatibility-tables/utils/zod-camelcase';
 
 describe('Common Key Feature', () => {

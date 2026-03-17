@@ -1,14 +1,14 @@
 import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
+import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
 import {
     type AttributeSelector,
-    type AttributeSelectorOperatorValue,
     type AttributeSelectorFlagValue,
+    type AttributeSelectorOperatorValue,
     type AttributeSelectorWithValue,
     type Value,
 } from '../../../../nodes';
-import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
 import {
     ASTERISK,
     CARET,

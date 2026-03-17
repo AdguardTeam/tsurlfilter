@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { MetadataCommentParser } from '../../../src/parser/comment/metadata-comment-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
 import { MetadataCommentGenerator } from '../../../src/generator/comment/metadata-comment-generator';
+import { MetadataCommentParser } from '../../../src/parser/comment/metadata-comment-parser';
+import { defaultParserOptions } from '../../../src/parser/options';
+import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('MetadataCommentRuleParser', () => {
     test('parse', () => {

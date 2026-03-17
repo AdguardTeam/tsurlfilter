@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
     modifiersCompatibilityTable,
-    redirectsCompatibilityTable,
-    scriptletsCompatibilityTable,
     Platform,
     PlatformExpressionEvaluator,
+    redirectsCompatibilityTable,
+    scriptletsCompatibilityTable,
 } from '../../src/compatibility-tables';
 
 /**

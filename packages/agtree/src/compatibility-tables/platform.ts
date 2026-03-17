@@ -212,7 +212,7 @@ export class Platform {
      *
      * @returns AdblockProduct enum or 'any'.
      */
-    getProductEnum(): AdblockProduct | typeof WILDCARD_ANY {
+    public getProductEnum(): AdblockProduct | typeof WILDCARD_ANY {
         return PRODUCT_CODE_TO_ENUM[this.product];
     }
 
@@ -221,7 +221,7 @@ export class Platform {
      *
      * @returns True if this is a wildcard query.
      */
-    get isWildcard(): boolean {
+    public get isWildcard(): boolean {
         return this.product === ProductCode.Any || !this.type || !this.specific;
     }
 
@@ -229,9 +229,9 @@ export class Platform {
      * Converts platform to string key format.
      * Result is cached for performance.
      *
-     * @returns String key (e.g., 'adg_os_windows', 'adg_any')
+     * @returns String key (e.g., 'adg_os_windows', 'adg_any').
      */
-    toString(): string {
+    public toString(): string {
         // Return cached value if available
         if (this.stringCache !== undefined) {
             return this.stringCache;
@@ -272,9 +272,9 @@ export class Platform {
      * Converts platform to path array for trie navigation.
      * Result is cached for performance.
      *
-     * @returns Path array (e.g., ['adg', 'os', 'windows'])
+     * @returns Path array (e.g., ['adg', 'os', 'windows']).
      */
-    toPath(): string[] {
+    public toPath(): string[] {
         // Return cached value if available
         if (this.pathCache !== undefined) {
             return this.pathCache;
@@ -306,9 +306,10 @@ export class Platform {
      * Wildcards match their children.
      *
      * @param target Platform to check against.
+     *
      * @returns True if this platform matches the target.
      */
-    matches(target: Platform): boolean {
+    public matches(target: Platform): boolean {
         // 'any' matches everything
         if (this.product === ProductCode.Any) {
             return true;
@@ -342,9 +343,10 @@ export class Platform {
      * Checks if this platform is for a specific product.
      *
      * @param product Product code to check.
+     *
      * @returns True if platform is for this product.
      */
-    isProduct(product: ProductCode): boolean {
+    public isProduct(product: ProductCode): boolean {
         return this.product === product || this.product === ProductCode.Any;
     }
 
@@ -353,7 +355,7 @@ export class Platform {
      *
      * @returns Human-readable platform name.
      */
-    toHumanReadable(): string {
+    public toHumanReadable(): string {
         if (this.product === ProductCode.Any) {
             return 'Any product';
         }
@@ -411,10 +413,12 @@ export class Platform {
      * Parses a platform string into a Platform object.
      *
      * @param str Platform string (e.g., 'adg_os_windows', 'ubo_ext_chrome').
+     *
      * @returns Platform object.
+     *
      * @throws Error if platform string is invalid.
      */
-    static parse(str: string): Platform {
+    public static parse(str: string): Platform {
         const platformStr = str.trim();
 
         if (platformStr === WILDCARD_ANY) {
@@ -472,7 +476,7 @@ export class Platform {
      *
      * @returns Array of all specific platform instances.
      */
-    static getAllConcretePlatforms(): Platform[] {
+    public static getAllConcretePlatforms(): Platform[] {
         if (Platform.concretePlatformsCache === null) {
             const platforms: Platform[] = [];
 
@@ -496,85 +500,253 @@ export class Platform {
         return Platform.concretePlatformsCache;
     }
 
-    static readonly AdgOsWindows = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Windows);
+    /**
+     * AdGuard for Windows platform.
+     */
+    public static readonly AdgOsWindows = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Windows);
 
-    static readonly AdgOsLinux = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Linux);
+    /**
+     * AdGuard for Linux platform.
+     */
+    public static readonly AdgOsLinux = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Linux);
 
-    static readonly AdgOsMac = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Mac);
+    /**
+     * AdGuard for Mac platform.
+     */
+    public static readonly AdgOsMac = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Mac);
 
-    static readonly AdgOsAndroid = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Android);
+    /**
+     * AdGuard for Android platform.
+     */
+    public static readonly AdgOsAndroid = new Platform(ProductCode.Adg, PlatformType.Os, PlatformSpecific.Android);
 
-    static readonly AdgExtChrome = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Chrome);
+    /**
+     * AdGuard Browser Extension for Chrome platform.
+     */
+    public static readonly AdgExtChrome = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Chrome);
 
-    static readonly AdgExtOpera = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Opera);
+    /**
+     * AdGuard Browser Extension for Opera platform.
+     */
+    public static readonly AdgExtOpera = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Opera);
 
-    static readonly AdgExtEdge = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Edge);
+    /**
+     * AdGuard Browser Extension for Edge platform.
+     */
+    public static readonly AdgExtEdge = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Edge);
 
-    static readonly AdgExtFirefox = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Firefox);
+    /**
+     * AdGuard Browser Extension for Firefox platform.
+     */
+    public static readonly AdgExtFirefox = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.Firefox);
 
-    static readonly AdgExtChromeMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.ChromeMv3);
+    /**
+     * AdGuard Browser Extension for Chrome MV3 platform.
+     */
+    public static readonly AdgExtChromeMv3 = new Platform(
+        ProductCode.Adg,
+        PlatformType.Ext,
+        PlatformSpecific.ChromeMv3,
+    );
 
-    static readonly AdgExtOperaMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.OperaMv3);
+    /**
+     * AdGuard Browser Extension for Opera MV3 platform.
+     */
+    public static readonly AdgExtOperaMv3 = new Platform(
+        ProductCode.Adg,
+        PlatformType.Ext,
+        PlatformSpecific.OperaMv3,
+    );
 
-    static readonly AdgExtEdgeMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.EdgeMv3);
+    /**
+     * AdGuard Browser Extension for Edge MV3 platform.
+     */
+    public static readonly AdgExtEdgeMv3 = new Platform(
+        ProductCode.Adg,
+        PlatformType.Ext,
+        PlatformSpecific.EdgeMv3,
+    );
 
-    static readonly AdgExtFirefoxMv3 = new Platform(ProductCode.Adg, PlatformType.Ext, PlatformSpecific.FirefoxMv3);
+    /**
+     * AdGuard Browser Extension for Firefox MV3 platform.
+     */
+    public static readonly AdgExtFirefoxMv3 = new Platform(
+        ProductCode.Adg,
+        PlatformType.Ext,
+        PlatformSpecific.FirefoxMv3,
+    );
 
-    static readonly AdgCbAndroid = new Platform(ProductCode.Adg, PlatformType.Cb, PlatformSpecific.Android);
+    /**
+     * AdGuard Content Blocker for Android platform.
+     */
+    public static readonly AdgCbAndroid = new Platform(ProductCode.Adg, PlatformType.Cb, PlatformSpecific.Android);
 
-    static readonly AdgCbIos = new Platform(ProductCode.Adg, PlatformType.Cb, PlatformSpecific.Ios);
+    /**
+     * AdGuard Content Blocker for iOS platform.
+     */
+    public static readonly AdgCbIos = new Platform(ProductCode.Adg, PlatformType.Cb, PlatformSpecific.Ios);
 
-    static readonly AdgCbSafari = new Platform(ProductCode.Adg, PlatformType.Cb, PlatformSpecific.Safari);
+    /**
+     * AdGuard Content Blocker for Safari platform.
+     */
+    public static readonly AdgCbSafari = new Platform(ProductCode.Adg, PlatformType.Cb, PlatformSpecific.Safari);
 
-    static readonly UboExtChrome = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Chrome);
+    /**
+     * UBlock Origin for Chrome platform.
+     */
+    public static readonly UboExtChrome = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Chrome);
 
-    static readonly UboExtOpera = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Opera);
+    /**
+     * UBlock Origin for Opera platform.
+     */
+    public static readonly UboExtOpera = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Opera);
 
-    static readonly UboExtEdge = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Edge);
+    /**
+     * UBlock Origin for Edge platform.
+     */
+    public static readonly UboExtEdge = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Edge);
 
-    static readonly UboExtFirefox = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Firefox);
+    /**
+     * UBlock Origin for Firefox platform.
+     */
+    public static readonly UboExtFirefox = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.Firefox);
 
-    static readonly UboExtChromeMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.ChromeMv3);
+    /**
+     * UBlock Origin for Chrome MV3 platform.
+     */
+    public static readonly UboExtChromeMv3 = new Platform(
+        ProductCode.Ubo,
+        PlatformType.Ext,
+        PlatformSpecific.ChromeMv3,
+    );
 
-    static readonly UboExtOperaMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.OperaMv3);
+    /**
+     * UBlock Origin for Opera MV3 platform.
+     */
+    public static readonly UboExtOperaMv3 = new Platform(
+        ProductCode.Ubo,
+        PlatformType.Ext,
+        PlatformSpecific.OperaMv3,
+    );
 
-    static readonly UboExtEdgeMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.EdgeMv3);
+    /**
+     * UBlock Origin for Edge MV3 platform.
+     */
+    public static readonly UboExtEdgeMv3 = new Platform(
+        ProductCode.Ubo,
+        PlatformType.Ext,
+        PlatformSpecific.EdgeMv3,
+    );
 
-    static readonly UboExtFirefoxMv3 = new Platform(ProductCode.Ubo, PlatformType.Ext, PlatformSpecific.FirefoxMv3);
+    /**
+     * UBlock Origin for Firefox MV3 platform.
+     */
+    public static readonly UboExtFirefoxMv3 = new Platform(
+        ProductCode.Ubo,
+        PlatformType.Ext,
+        PlatformSpecific.FirefoxMv3,
+    );
 
-    static readonly AbpExtChrome = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Chrome);
+    /**
+     * Adblock Plus for Chrome platform.
+     */
+    public static readonly AbpExtChrome = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Chrome);
 
-    static readonly AbpExtOpera = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Opera);
+    /**
+     * Adblock Plus for Opera platform.
+     */
+    public static readonly AbpExtOpera = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Opera);
 
-    static readonly AbpExtEdge = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Edge);
+    /**
+     * Adblock Plus for Edge platform.
+     */
+    public static readonly AbpExtEdge = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Edge);
 
-    static readonly AbpExtFirefox = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Firefox);
+    /**
+     * Adblock Plus for Firefox platform.
+     */
+    public static readonly AbpExtFirefox = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.Firefox);
 
-    static readonly AbpExtChromeMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.ChromeMv3);
+    /**
+     * Adblock Plus for Chrome MV3 platform.
+     */
+    public static readonly AbpExtChromeMv3 = new Platform(
+        ProductCode.Abp,
+        PlatformType.Ext,
+        PlatformSpecific.ChromeMv3,
+    );
 
-    static readonly AbpExtOperaMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.OperaMv3);
+    /**
+     * Adblock Plus for Opera MV3 platform.
+     */
+    public static readonly AbpExtOperaMv3 = new Platform(
+        ProductCode.Abp,
+        PlatformType.Ext,
+        PlatformSpecific.OperaMv3,
+    );
 
-    static readonly AbpExtEdgeMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.EdgeMv3);
+    /**
+     * Adblock Plus for Edge MV3 platform.
+     */
+    public static readonly AbpExtEdgeMv3 = new Platform(
+        ProductCode.Abp,
+        PlatformType.Ext,
+        PlatformSpecific.EdgeMv3,
+    );
 
-    static readonly AbpExtFirefoxMv3 = new Platform(ProductCode.Abp, PlatformType.Ext, PlatformSpecific.FirefoxMv3);
+    /**
+     * Adblock Plus for Firefox MV3 platform.
+     */
+    static readonly AbpExtFirefoxMv3 = new Platform(
+        ProductCode.Abp,
+        PlatformType.Ext,
+        PlatformSpecific.FirefoxMv3,
+    );
 
     // ===== Generic Platforms (Wildcards) =====
 
+    /**
+     * AdGuard for any OS platform (wildcard).
+     */
     static readonly AdgOsAny = new Platform(ProductCode.Adg, PlatformType.Os);
 
+    /**
+     * AdGuard Content Blocker for any platform (wildcard).
+     */
     static readonly AdgCbAny = new Platform(ProductCode.Adg, PlatformType.Cb);
 
+    /**
+     * AdGuard Browser Extension for any platform (wildcard).
+     */
     static readonly AdgExtAny = new Platform(ProductCode.Adg, PlatformType.Ext);
 
+    /**
+     * AdGuard for any platform (wildcard).
+     */
     static readonly AdgAny = new Platform(ProductCode.Adg);
 
+    /**
+     * UBlock Origin for any platform (wildcard).
+     */
     static readonly UboExtAny = new Platform(ProductCode.Ubo, PlatformType.Ext);
 
+    /**
+     * UBlock Origin for any platform (wildcard).
+     */
     static readonly UboAny = new Platform(ProductCode.Ubo);
 
+    /**
+     * Adblock Plus for any platform (wildcard).
+     */
     static readonly AbpExtAny = new Platform(ProductCode.Abp, PlatformType.Ext);
 
+    /**
+     * Adblock Plus for any platform (wildcard).
+     */
     static readonly AbpAny = new Platform(ProductCode.Abp);
 
+    /**
+     * Any product on any platform (wildcard).
+     */
     static readonly Any = new Platform(ProductCode.Any);
 }

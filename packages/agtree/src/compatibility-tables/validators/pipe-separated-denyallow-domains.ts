@@ -2,11 +2,12 @@
  * @file Validator for pipe-separated domains.
  */
 
-import { DomainListParser } from '../../parser/misc/domain-list-parser';
-import { DomainUtils } from '../../utils/domain';
-import { PIPE, WILDCARD } from '../../utils/constants';
-import { defaultParserOptions } from '../../parser/options';
 import { type DomainList } from '../../nodes';
+import { DomainListParser } from '../../parser/misc/domain-list-parser';
+import { defaultParserOptions } from '../../parser/options';
+import { PIPE, WILDCARD } from '../../utils/constants';
+import { DomainUtils } from '../../utils/domain';
+
 import { type ValidationContext, type Validator } from './types';
 
 /**

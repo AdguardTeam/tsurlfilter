@@ -1,6 +1,7 @@
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { type Plugin } from 'rollup';
-import { fileURLToPath } from 'url';
 
 import * as data from './src/compatibility-tables/compatibility-table-data';
 import type { CompatibilityTable, SerializableCompatibilityTable } from './src/compatibility-tables/types';
@@ -12,6 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * Converts a CompatibilityTable to a JSON-serializable format.
  *
  * @param table Compatibility table with Maps and TrieNodes.
+ *
  * @returns Serializable compatibility table.
  */
 function serializeCompatibilityTable<T>(table: CompatibilityTable<T>): SerializableCompatibilityTable<T> {
@@ -39,7 +41,7 @@ function serializeCompatibilityTable<T>(table: CompatibilityTable<T>): Serializa
  * A Rollup plugin that replaces imports of `compatibility-table-data.ts`
  * with inline JSON exports of compatibility data.
  *
- * @returns {Plugin} A Rollup plugin object with the `name` and `transform` hook.
+ * @returns A Rollup plugin object with the `name` and `transform` hook.
  */
 export function compatibilityTablePlugin(): Plugin {
     return {
@@ -49,7 +51,8 @@ export function compatibilityTablePlugin(): Plugin {
          * Transforms the target file by inlining compatibility data as JSON exports.
          *
          * @param _ Unused source code.
-         * @param id file path of the module.
+         * @param id File path of the module.
+         *
          * @returns Transformed code or null if no transformation is applied.
          */
         transform(_: string, id: string) {

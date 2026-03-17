@@ -1,8 +1,8 @@
 import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { type SelectorList } from '../../../nodes';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
+import { type SelectorList } from '../../../nodes';
 import {
     ASTERISK,
     DOT,
@@ -14,25 +14,26 @@ import {
 import { BaseParser } from '../../base-parser';
 import { CssTokenStream } from '../../css/css-token-stream';
 import { defaultParserOptions } from '../../options';
+
 import { type SelectorListParserContext } from './context';
-import { TypeSelectorHandler } from './handlers/type-selector-handler';
-import { IdSelectorHandler } from './handlers/id-selector-handler';
 import { AttributeSelectorHandler } from './handlers/attribute-selector-handler';
-import { PseudoClassSelectorHandler } from './handlers/pseudo-class-selector-handler';
 import { ClassSelectorHandler } from './handlers/class-selector-handler';
-import { CompoundSelectorHandler } from './handlers/compound-selector-handler';
 import { ComplexSelectorHandler } from './handlers/complex-selector-handler';
+import { CompoundSelectorHandler } from './handlers/compound-selector-handler';
+import { IdSelectorHandler } from './handlers/id-selector-handler';
+import { PseudoClassSelectorHandler } from './handlers/pseudo-class-selector-handler';
+import { TypeSelectorHandler } from './handlers/type-selector-handler';
 
 /**
  * Class responsible for parsing selector lists.
  *
  * Please note that the parser will parse any selector list if it is syntactically correct.
- * For example, it will parse this:
+ * For example, it will parse this:.
  * ```adblock
  * div[attr1="value1"] > h1[attr2="value2"], span[attr3="value3"]
  * ```
  *
- * but it didn't check if the given attribute or pseudo-class is valid or not.
+ * But it didn't check if the given attribute or pseudo-class is valid or not..
  *
  * @see {@link https://www.w3.org/TR/selectors-4/#selector-list}'
  */

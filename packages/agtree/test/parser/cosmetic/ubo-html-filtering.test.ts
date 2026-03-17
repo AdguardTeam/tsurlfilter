@@ -1,15 +1,15 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, RuleCategory, type HtmlFilteringRule } from '../../../src/nodes';
-import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import { CosmeticRuleType, type HtmlFilteringRule, RuleCategory } from '../../../src/nodes';
+import { defaultParserOptions } from '../../../src/parser';
+import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import {
     UboHtmlFilteringBodyParser,
 } from '../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
-import { defaultParserOptions } from '../../../src/parser';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid uBlock HTML filtering rules', () => {

@@ -4,6 +4,7 @@
 
 import { SEMICOLON, SPACE } from '../../utils/constants';
 import { QuoteUtils } from '../../utils/quotes';
+
 import { type ValidationContext, type Validator } from './types';
 
 /**
