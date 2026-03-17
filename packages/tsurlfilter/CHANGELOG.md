@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `rulesHashMap` parameters.
 
 ### Fixed
+
 - $badfilter incorrectly negates rules with different $denyallow values [AdguardBrowserExtension#3428].
 
 [AdguardBrowserExtension#3428]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3428

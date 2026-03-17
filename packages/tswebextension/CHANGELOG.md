@@ -118,7 +118,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory leak caused by storing data URL favicons in tab contexts. [AdguardBrowserExtension#2594]
 
 [3.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.19
-[AdguardBrowserExtension#2594]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594
 
 ## [3.2.18] - 2025-12-16
 
@@ -498,7 +497,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remade JS rules injections in MV3:
     - use `chrome.scripting` API for injecting functions for script rules from the pre-built filters,
     - use script tag injection only for script rules manually added by users —
-      rules from *User rules* and *Custom filters*.
+      rules from _User rules_ and _Custom filters_.
 
 [2.4.0-alpha.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.8
 
