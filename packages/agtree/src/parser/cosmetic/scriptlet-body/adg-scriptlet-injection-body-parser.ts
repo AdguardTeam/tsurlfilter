@@ -1,9 +1,11 @@
 /**
- * @file AdGuard scriptlet injection body parser
+ * @file AdGuard scriptlet injection body parser.
  */
 
 import { sprintf } from 'sprintf-js';
 
+import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
+import { type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes';
 import {
     ADG_SCRIPTLET_MASK,
     CLOSE_PARENTHESIS,
@@ -15,12 +17,10 @@ import {
     SPACE,
 } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
-import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../../options';
+import { isNull } from '../../../utils/type-guards';
 import { BaseParser } from '../../base-parser';
 import { ValueParser } from '../../misc/value-parser';
-import { type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes';
-import { isNull } from '../../../utils/type-guards';
+import { defaultParserOptions } from '../../options';
 
 type SingleOrDoubleQuote = typeof SINGLE_QUOTE | typeof DOUBLE_QUOTE;
 
@@ -28,12 +28,12 @@ type SingleOrDoubleQuote = typeof SINGLE_QUOTE | typeof DOUBLE_QUOTE;
  * `AdgScriptletInjectionBodyParser` is responsible for parsing the body of an AdGuard-style scriptlet rule.
  *
  * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
- * For example, it will parse this:
+ * For example, it will parse this:.
  * ```adblock
  * example.com#%#//scriptlet('scriptlet0', 'arg0')
  * ```
  *
- * but it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker.
+ * But it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker..
  *
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
  */
@@ -58,8 +58,11 @@ export class AdgScriptletInjectionBodyParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Node of the parsed scriptlet call body
-     * @throws If the body is syntactically incorrect
+     *
+     * @returns Node of the parsed scriptlet call body.
+     *
+     * @throws If the body is syntactically incorrect.
+     *
      * @example
      * ```
      * //scriptlet('scriptlet0', 'arg0')

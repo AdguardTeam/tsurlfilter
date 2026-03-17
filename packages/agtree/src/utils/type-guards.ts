@@ -46,6 +46,7 @@ export const isInteger = (value: unknown): value is number => {
  * Checks whether the given value is a string.
  *
  * @param value Value to check.
+ *
  * @returns `true` if the value is a string, `false` otherwise.
  */
 export const isString = (value: unknown): value is string => {

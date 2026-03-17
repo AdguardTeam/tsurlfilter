@@ -1,8 +1,8 @@
-import { sprintf } from 'sprintf-js';
 import { getFormattedTokenName } from '@adguard/css-tokenizer';
+import { sprintf } from 'sprintf-js';
 
-import { type SelectorCombinator, type SelectorCombinatorValue } from '../../../../nodes';
 import { AdblockSyntaxError } from '../../../../errors/adblock-syntax-error';
+import { type SelectorCombinator, type SelectorCombinatorValue } from '../../../../nodes';
 import {
     COMMA,
     GREATER_THAN,

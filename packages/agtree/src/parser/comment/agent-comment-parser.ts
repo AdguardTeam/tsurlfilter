@@ -1,13 +1,14 @@
-import { CLOSE_SQUARE_BRACKET, OPEN_SQUARE_BRACKET, SEMICOLON } from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
-import { type AgentCommentRule, CommentRuleType, RuleCategory } from '../../nodes';
-import { AgentParser } from './agent-parser';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { type AgentCommentRule, CommentRuleType, RuleCategory } from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
+import { CLOSE_SQUARE_BRACKET, OPEN_SQUARE_BRACKET, SEMICOLON } from '../../utils/constants';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
+import { StringUtils } from '../../utils/string';
+import { isNull } from '../../utils/type-guards';
 import { BaseParser } from '../base-parser';
 import { defaultParserOptions } from '../options';
-import { isNull } from '../../utils/type-guards';
+
+import { AgentParser } from './agent-parser';
 
 /**
  * `AgentParser` is responsible for parsing an Adblock agent rules.
@@ -35,8 +36,9 @@ export class AgentCommentParser extends BaseParser {
     /**
      * Checks if the raw rule is an adblock agent comment.
      *
-     * @param raw Raw rule
-     * @returns `true` if the rule is an adblock agent, `false` otherwise
+     * @param raw Raw rule.
+     *
+     * @returns `true` if the rule is an adblock agent, `false` otherwise.
      */
     public static isAgentRule(raw: string): boolean {
         const rawTrimmed = raw.trim();
@@ -55,7 +57,8 @@ export class AgentCommentParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Agent rule AST or null (if the raw rule cannot be parsed as an adblock agent comment)
+     *
+     * @returns Agent rule AST or null (if the raw rule cannot be parsed as an adblock agent comment).
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AgentCommentRule | null {
         // Ignore non-agent rules

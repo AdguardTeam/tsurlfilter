@@ -1,8 +1,8 @@
+import { AbpSnippetInjectionBodyCommon } from '../../../common/abp-snippet-injection-body-common';
 import type { ScriptletInjectionRuleBody } from '../../../nodes';
 import { SEMICOLON, SPACE } from '../../../utils/constants';
 import { BaseGenerator } from '../../base-generator';
 import { ParameterListGenerator } from '../../misc/parameter-list-generator';
-import { AbpSnippetInjectionBodyCommon } from '../../../common/abp-snippet-injection-body-common';
 
 /**
  * Adblock Plus snippet injection body generator.
@@ -11,9 +11,11 @@ export class AbpSnippetInjectionBodyGenerator extends BaseGenerator {
     /**
      * Generates a string representation of the Adblock Plus-style snippet call body.
      *
-     * @param node Scriptlet injection rule body
-     * @returns String representation of the rule body
-     * @throws Error if the scriptlet call is empty
+     * @param node Scriptlet injection rule body.
+     *
+     * @returns String representation of the rule body.
+     *
+     * @throws Error if the scriptlet call is empty.
      */
     public static generate(node: ScriptletInjectionRuleBody): string {
         const result: string[] = [];

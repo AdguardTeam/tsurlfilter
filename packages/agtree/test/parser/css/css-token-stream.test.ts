@@ -1,15 +1,15 @@
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
+import { sprintf } from 'sprintf-js';
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
-import { sprintf } from 'sprintf-js';
 
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { END_OF_INPUT, ERROR_MESSAGES } from '../../../src/parser/css/constants';
 import { CssTokenStream } from '../../../src/parser/css/css-token-stream';
-import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 
 describe('CssTokenStream', () => {
     test('length', () => {

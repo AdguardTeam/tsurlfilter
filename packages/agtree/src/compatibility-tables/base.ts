@@ -3,12 +3,13 @@
  * @file Provides common compatibility table methods.
  */
 
-import { type BaseCompatibilityDataSchema } from './schemas';
-import { type AnyPlatform, GenericPlatform, type SpecificPlatform } from './platforms';
-import { isUndefined } from '../utils/type-guards';
-import { type CompatibilityTable, type CompatibilityTableRow } from './types';
-import { isGenericPlatform, getSpecificPlatformName } from './utils/platform-helpers';
 import { type AdblockProduct, AdblockSyntax } from '../utils/adblockers';
+import { isUndefined } from '../utils/type-guards';
+
+import { type AnyPlatform, GenericPlatform, type SpecificPlatform } from './platforms';
+import { type BaseCompatibilityDataSchema } from './schemas';
+import { type CompatibilityTable, type CompatibilityTableRow } from './types';
+import { isGenericPlatform } from './utils/platform-helpers';
 
 /**
  * Lists all supported entity records by a product.
@@ -94,6 +95,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
      * Helper method to get a 'row' from the compatibility table data by name.
      *
      * @param name Compatibility data name.
+     *
      * @returns Compatibility table row storage or `null` if not found.
      */
     private getRowStorage(name: string): CompatibilityTableRow<T> | null {
@@ -109,12 +111,12 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
     /**
      * Checks whether a compatibility data `name` exists for any platform.
      *
-     * @note Technically, do the same as `exists()` method with generic platform _any_
-     * but it is faster because it does not apply complex logic.
-     *
      * @param name Compatibility data name.
      *
      * @returns True if the compatibility data exists, false otherwise.
+     *
+     * @note Technically, do the same as `exists()` method with generic platform _any_
+     * but it is faster because it does not apply complex logic.
      */
     public existsAny(name: string): boolean {
         const normalizedName = this.nameTransformer ? this.nameTransformer(name) : name;

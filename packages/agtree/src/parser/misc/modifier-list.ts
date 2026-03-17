@@ -1,9 +1,10 @@
 /* eslint-disable no-param-reassign */
+import { type ModifierList } from '../../nodes';
 import { MODIFIERS_SEPARATOR } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { type ModifierList } from '../../nodes';
 import { BaseParser } from '../base-parser';
 import { defaultParserOptions } from '../options';
+
 import { ModifierParser } from './modifier-parser';
 
 /**
@@ -24,7 +25,8 @@ export class ModifierListParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @returns Parsed modifiers interface
+     *
+     * @returns Parsed modifiers interface.
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): ModifierList {
         const result: ModifierList = {

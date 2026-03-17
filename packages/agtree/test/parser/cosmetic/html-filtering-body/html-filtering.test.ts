@@ -5,16 +5,17 @@ import {
     vi,
 } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { AdblockSyntaxError, type Value, type HtmlFilteringRuleBody } from '../../../../src';
-import {
-    HtmlFilteringBodyParser,
-} from '../../../../src/parser/cosmetic/html-filtering-body/html-filtering-body-parser';
+import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import {
     HtmlFilteringBodyGenerator,
 } from '../../../../src/generator/cosmetic/html-filtering-body/html-filtering-body-generator';
+import { type HtmlFilteringRuleBody, type Value } from '../../../../src/nodes';
+// eslint-disable-next-line max-len, import-newlines/enforce
+import { HtmlFilteringBodyParser } from '../../../../src/parser/cosmetic/html-filtering-body/html-filtering-body-parser';
+// eslint-disable-next-line max-len, import-newlines/enforce
 import { SelectorListParser } from '../../../../src/parser/cosmetic/selector/selector-list-parser';
 import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
+import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 
 /**
  * Default parser options with HTML filtering rules parsing enabled.

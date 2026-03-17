@@ -1,15 +1,15 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
 import { CosmeticRuleType, RuleCategory, type ScriptletInjectionRule } from '../../../src/nodes';
+import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import {
     AdgScriptletInjectionBodyParser,
 } from '../../../src/parser/cosmetic/scriptlet-body/adg-scriptlet-injection-body-parser';
-import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid AdGuard scriptlet injection rules', () => {

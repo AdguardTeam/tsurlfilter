@@ -10,6 +10,7 @@ export class HostRuleGenerator extends BaseGenerator {
      * Converts a host rule node to a raw string.
      *
      * @param node Host rule node.
+     *
      * @returns Raw string.
      */
     public static generate(node: HostRule): string {

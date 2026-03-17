@@ -1,19 +1,20 @@
-import { type Value, type HtmlFilteringRuleBody } from '../../../nodes';
+import { type HtmlFilteringRuleBody, type Value } from '../../../nodes';
 import { QuoteUtils } from '../../../utils/quotes';
 import { BaseParser } from '../../base-parser';
 import { defaultParserOptions } from '../../options';
+
 import { HtmlFilteringBodyParser } from './html-filtering-body-parser';
 
 /**
  * `AdgHtmlFilteringBodyParser` is responsible for parsing the body of an AdGuard-style HTML filtering rule.
  *
  * Please note that the parser will parse any HTML filtering rule if it is syntactically correct.
- * For example, it will parse this:
+ * For example, it will parse this:.
  * ```adblock
  * example.com$$div[special-attr="value"]
  * ```
  *
- * but it didn't check if the attribute `special-attr` actually supported by any adblocker.
+ * But it didn't check if the attribute `special-attr` actually supported by any adblocker..
  *
  * @see {@link https://www.w3.org/TR/selectors-4}
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}

@@ -11,6 +11,7 @@ export class NetworkRuleGenerator extends BaseGenerator {
      * Generates a string from a network rule AST node.
      *
      * @param node Network rule node to generate a string from.
+     *
      * @returns Generated string representation of the network rule.
      */
     public static generate(node: NetworkRule): string {

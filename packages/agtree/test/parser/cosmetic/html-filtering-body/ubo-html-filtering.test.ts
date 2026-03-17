@@ -5,15 +5,16 @@ import {
     vi,
 } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { AdblockSyntaxError, type Value, type HtmlFilteringRuleBody } from '../../../../src';
-import {
-    UboHtmlFilteringBodyParser,
-} from '../../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import {
     UboHtmlFilteringBodyGenerator,
 } from '../../../../src/generator/cosmetic/html-filtering-body/ubo-html-filtering-body-generator';
+import { type HtmlFilteringRuleBody, type Value } from '../../../../src/nodes';
+import {
+    UboHtmlFilteringBodyParser,
+} from '../../../../src/parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
 import { defaultParserOptions, type ParserOptions } from '../../../../src/parser/options';
+import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 
 /**
  * Default parser options with HTML filtering rules parsing enabled.

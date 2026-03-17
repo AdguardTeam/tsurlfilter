@@ -5,10 +5,11 @@ import {
     vi,
 } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { AdblockSyntaxError, type SelectorList } from '../../../src';
-import { SelectorListParser } from '../../../src/parser/cosmetic/selector/selector-list-parser';
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { SelectorListGenerator } from '../../../src/generator/cosmetic/selector/selector-list-generator';
+import { type SelectorList } from '../../../src/nodes';
+import { SelectorListParser } from '../../../src/parser/cosmetic/selector/selector-list-parser';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 
 describe('CssSelectorListParser', () => {
     describe('CssSelectorListParser.parse - valid cases', () => {

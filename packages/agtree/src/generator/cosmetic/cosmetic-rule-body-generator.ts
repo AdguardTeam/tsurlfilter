@@ -1,5 +1,6 @@
-import { BaseGenerator } from '../base-generator';
+import { UboPseudoName } from '../../common/ubo-selector-common';
 import { type AnyCosmeticRule, CosmeticRuleType } from '../../nodes';
+import { AdblockSyntax } from '../../utils/adblockers';
 import {
     CLOSE_PARENTHESIS,
     COLON,
@@ -8,14 +9,14 @@ import {
     SPACE,
     UBO_HTML_MASK,
 } from '../../utils/constants';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { AdgScriptletInjectionBodyGenerator } from './scriptlet-body/adg-scriptlet-injection-body-generator';
+import { BaseGenerator } from '../base-generator';
 import { AdgCssInjectionGenerator } from '../css/adg-css-injection-generator';
-import { AbpSnippetInjectionBodyGenerator } from './scriptlet-body/abp-snippet-injection-body-generator';
-import { UboScriptletInjectionBodyGenerator } from './scriptlet-body/ubo-scriptlet-injection-body-generator';
+
 import { AdgHtmlFilteringBodyGenerator } from './html-filtering-body/adg-html-filtering-body-generator';
 import { UboHtmlFilteringBodyGenerator } from './html-filtering-body/ubo-html-filtering-body-generator';
-import { UboPseudoName } from '../../common/ubo-selector-common';
+import { AbpSnippetInjectionBodyGenerator } from './scriptlet-body/abp-snippet-injection-body-generator';
+import { AdgScriptletInjectionBodyGenerator } from './scriptlet-body/adg-scriptlet-injection-body-generator';
+import { UboScriptletInjectionBodyGenerator } from './scriptlet-body/ubo-scriptlet-injection-body-generator';
 
 /**
  * Cosmetic rule body generator.
@@ -24,14 +25,16 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
     /**
      * Generates the rule body from the node.
      *
-     * @param node Cosmetic rule node
-     * @returns Raw rule body
+     * @param node Cosmetic rule node.
+     *
+     * @returns Raw rule body.
+     *
+     * @throws Error if the rule type is unknown.
+     *
      * @example
      * - '##.foo' → '.foo'
      * - 'example.com,example.org##.foo' → '.foo'
      * - 'example.com#%#//scriptlet('foo')' → '//scriptlet('foo')'
-     *
-     * @throws Error if the rule type is unknown
      */
     public static generate(node: AnyCosmeticRule): string {
         let result = EMPTY;

@@ -1,15 +1,15 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
+import { DomainListGenerator } from '../../../src/generator/misc/domain-list-generator';
 import {
     type DomainList,
     type DomainListSeparator,
-    ListNodeType,
     ListItemNodeType,
+    ListNodeType,
 } from '../../../src/nodes';
-import { COMMA, EMPTY } from '../../../src/utils/constants';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { DomainListGenerator } from '../../../src/generator/misc/domain-list-generator';
+import { COMMA, EMPTY } from '../../../src/utils/constants';
 
 describe('DomainListParser', () => {
     // invalid inputs are tested in `list-helpers.test.ts`

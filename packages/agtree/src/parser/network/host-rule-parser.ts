@@ -1,18 +1,18 @@
 /* eslint-disable no-param-reassign */
-import { getHostname, getDomain } from 'tldts';
 import isIp from 'is-ip';
+import { getDomain, getHostname } from 'tldts';
 
-import { StringUtils } from '../../utils/string';
 import {
     type HostRule,
     NetworkRuleType,
     RuleCategory,
     type Value,
 } from '../../nodes';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
 import { AdblockSyntax } from '../../utils/adblockers';
+import { StringUtils } from '../../utils/string';
+import { BaseParser } from '../base-parser';
 import { ValueParser } from '../misc/value-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * `HostRuleParser` is responsible for parsing hosts-like rules.
@@ -20,21 +20,28 @@ import { ValueParser } from '../misc/value-parser';
  * HostRule is a structure for simple host-level rules (i.e. /etc/hosts syntax).
  * It also supports "just domain" syntax. In this case, the IP will be set to 0.0.0.0.
  *
- * Rules syntax looks like this:
+ * Rules syntax looks like this:.
  * ```text
  * IP_address canonical_hostname [aliases...]
  * ```
+ *
+ * @see {@link http://man7.org/linux/man-pages/man5/hosts.5.html}
  *
  * @example
  * `192.168.1.13 bar.mydomain.org bar` -- ipv4
  * `ff02::1 ip6-allnodes` -- ipv6
  * `::1 localhost ip6-localhost ip6-loopback` -- ipv6 aliases
  * `example.org` -- "just domain" syntax
- * @see {@link http://man7.org/linux/man-pages/man5/hosts.5.html}
  */
 export class HostRuleParser extends BaseParser {
+    /**
+     * Default IP address for host rules without explicit IP.
+     */
     public static readonly NULL_IP = '0.0.0.0';
 
+    /**
+     * Comment marker character.
+     */
     public static readonly COMMENT_MARKER = '#';
 
     /**
@@ -43,6 +50,7 @@ export class HostRuleParser extends BaseParser {
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
      * @returns Host rule node.
      *
      * @throws If the input contains invalid data.

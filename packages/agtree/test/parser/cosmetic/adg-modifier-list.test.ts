@@ -1,20 +1,20 @@
+import { sprintf } from 'sprintf-js';
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
-import { sprintf } from 'sprintf-js';
 
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/nodes';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
-import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { CLOSE_SQUARE_BRACKET, DOLLAR_SIGN } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
 import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/nodes';
+import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
+import { defaultParserOptions } from '../../../src/parser/options';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
+import { CLOSE_SQUARE_BRACKET, DOLLAR_SIGN } from '../../../src/utils/constants';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid usage of AdGuard modifier list', () => {

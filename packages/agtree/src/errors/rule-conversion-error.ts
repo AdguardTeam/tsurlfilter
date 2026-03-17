@@ -11,7 +11,7 @@ export class RuleConversionError extends Error {
     /**
      * Constructs a new `RuleConversionError` instance.
      *
-     * @param message Error message
+     * @param message Error message.
      */
     constructor(message: string) {
         super(message);

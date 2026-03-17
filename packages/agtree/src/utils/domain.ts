@@ -29,8 +29,9 @@ export class DomainUtils {
     /**
      * Check if the input is a valid domain or hostname.
      *
-     * @param domain Domain to check
-     * @returns `true` if the domain is valid, `false` otherwise
+     * @param domain Domain to check.
+     *
+     * @returns `true` if the domain is valid, `false` otherwise.
      */
     public static isValidDomainOrHostname(domain: string): boolean {
         let domainToCheck = domain;

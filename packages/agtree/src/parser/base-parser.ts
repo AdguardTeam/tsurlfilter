@@ -3,6 +3,7 @@
  */
 import { NotImplementedError } from '../errors/not-implemented-error';
 import { type Node } from '../nodes';
+
 import { type ParserOptions } from './options';
 
 /**

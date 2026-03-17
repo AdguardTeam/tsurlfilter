@@ -1,7 +1,9 @@
 /**
- * @file Path-in-domain converter helper
+ * @file Path-in-domain converter helper.
  */
 
+import { createModifierNode } from '../../ast-utils/modifiers';
+import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     type AnyCosmeticRule,
     type AnyRule,
@@ -11,16 +13,14 @@ import {
 import { AdblockSyntax } from '../../utils/adblockers';
 import { clone } from '../../utils/clone';
 import {
+    ADG_PATH_MODIFIER,
     CLOSE_SQUARE_BRACKET,
     ESCAPE_CHARACTER,
     OPEN_SQUARE_BRACKET,
     REGEX_MARKER,
     SLASH,
-    ADG_PATH_MODIFIER,
 } from '../../utils/constants';
-import { createModifierNode } from '../../ast-utils/modifiers';
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
+import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 
 /**
  * Finds the index of the first escaped forward slash (`\/`) in a regex string,
@@ -54,7 +54,7 @@ function findFirstEscapedSlash(str: string): number {
 /**
  * Converts path-in-domain syntax to $path modifier.
  *
- * Example: `example.org/path##.ad` → `[$path=/path]example.org##.ad`
+ * Example: `example.org/path##.ad` → `[$path=/path]example.org##.ad`.
  *
  * @param rule Rule to check and convert.
  *

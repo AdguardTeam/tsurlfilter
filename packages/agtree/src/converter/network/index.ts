@@ -1,31 +1,33 @@
 /**
- * @file Network rule converter
+ * @file Network rule converter.
  */
 
 import {
-    RuleCategory,
+    type AnyNetworkRule,
     type NetworkRule,
     NetworkRuleType,
-    type AnyNetworkRule,
+    RuleCategory,
 } from '../../nodes';
-import { NetworkRuleModifierListConverter } from '../misc/network-rule-modifier';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
+import { NetworkRuleModifierListConverter } from '../misc/network-rule-modifier';
 
 /**
- * Network rule converter class (also known as "basic rule converter")
+ * Network rule converter class (also known as "basic rule converter").
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class NetworkRuleConverter extends RuleConverterBase {
     /**
      * Converts a network rule to AdGuard format, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rule: AnyNetworkRule): NodeConversionResult<NetworkRule> {
         // TODO: add support for host rules
@@ -63,11 +65,13 @@ export class NetworkRuleConverter extends RuleConverterBase {
     /**
      * Converts a network rule to uBlock format, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToUbo(rule: AnyNetworkRule): NodeConversionResult<NetworkRule> {
         // TODO: add support for host rules

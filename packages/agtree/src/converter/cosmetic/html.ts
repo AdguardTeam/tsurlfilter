@@ -1,38 +1,38 @@
 /**
- * @file HTML filtering rule converter
+ * @file HTML filtering rule converter.
  */
 
 import { sprintf } from 'sprintf-js';
 
-import {
-    CosmeticRuleSeparator,
-    CosmeticRuleType,
-    type Value,
-    type HtmlFilteringRule,
-    type HtmlFilteringRuleBody,
-    type SimpleSelector,
-    type ComplexSelector,
-    type AttributeSelector,
-    type AttributeSelectorWithValue,
-    type PseudoClassSelector,
-    type SelectorCombinator,
-    RuleCategory,
-} from '../../nodes';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode } from '../../ast-utils/clone';
-import { EMPTY, EQUALS } from '../../utils/constants';
-import { RegExpUtils } from '../../utils/regexp';
-import { AdgHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
-import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     AdgHtmlFilteringBodyGenerator,
 } from '../../generator/cosmetic/html-filtering-body/adg-html-filtering-body-generator';
 import {
     UboHtmlFilteringBodyGenerator,
 } from '../../generator/cosmetic/html-filtering-body/ubo-html-filtering-body-generator';
+import {
+    type AttributeSelector,
+    type AttributeSelectorWithValue,
+    type ComplexSelector,
+    CosmeticRuleSeparator,
+    CosmeticRuleType,
+    type HtmlFilteringRule,
+    type HtmlFilteringRuleBody,
+    type PseudoClassSelector,
+    RuleCategory,
+    type SelectorCombinator,
+    type SimpleSelector,
+    type Value,
+} from '../../nodes';
+import { AdgHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
+import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+import { AdblockSyntax } from '../../utils/adblockers';
+import { EMPTY, EQUALS } from '../../utils/constants';
+import { RegExpUtils } from '../../utils/regexp';
+import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
 /**
  * From the AdGuard docs:
@@ -157,7 +157,7 @@ type OnSpecialPseudoClassSelectorCallback = (name: string, argument: string) => 
 /**
  * Union type of HTML filtering rule body parsers:
  * - AdGuard HTML filtering body parser - {@link AdgHtmlFilteringBodyParser}
- * - uBlock HTML filtering body parser - {@link UboHtmlFilteringBodyParser}
+ * - uBlock HTML filtering body parser - {@link UboHtmlFilteringBodyParser}.
  */
 type HtmlFilteringRuleParser =
     | typeof AdgHtmlFilteringBodyParser
@@ -166,16 +166,16 @@ type HtmlFilteringRuleParser =
 /**
  * Union type of HTML filtering rule body generators:
  * - AdGuard HTML filtering body generator - {@link AdgHtmlFilteringBodyGenerator}
- * - uBlock HTML filtering body generator - {@link UboHtmlFilteringBodyGenerator}
+ * - uBlock HTML filtering body generator - {@link UboHtmlFilteringBodyGenerator}.
  */
 type HtmlFilteringRuleGenerator =
     | typeof AdgHtmlFilteringBodyGenerator
     | typeof UboHtmlFilteringBodyGenerator;
 
 /**
- * HTML filtering rule converter class
+ * HTML filtering rule converter class.
  *
- * @todo Implement `convertToUbo` (ABP currently doesn't support HTML filtering rules)
+ * @todo Implement `convertToUbo` (ABP currently doesn't support HTML filtering rules).
  */
 export class HtmlRuleConverter extends RuleConverterBase {
     /**
@@ -203,7 +203,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                  * Mark rule as converted in ADG -> ADG conversion only if
                  * special attribute selectors are present in the rule body,
                  * because they are deprecated and will be removed soon,
-                 * so we convert them to pseudo-class selectors
+                 * so we convert them to pseudo-class selectors.
                  */
                 isConverted = true;
                 return HtmlRuleConverter.convertSpecialAttributeSelectorAdgToAdg(name, value);
@@ -317,9 +317,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `[wildcard="*content*"]` -> `:contains(/*.content*./s)`
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
-     *   converts to a length-matching regular expression
+     *   converts to a length-matching regular expression.
      * - `[max-length="max"]` -> `:contains(/^(?=.{0,max}$).*\/s)`
-     *   converts to a length-matching regular expression
+     *   converts to a length-matching regular expression.
      *
      * Note: This attribute selector to pseudo-class selector conversion
      * is needed because AdGuard special attribute selectors are going
@@ -433,7 +433,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - `:has-text(text)` -> `:contains(text)`
      *   direct conversion, no changes to argument
      * - `:min-text-length(min)` -> `:contains(/^(?=.{min,MAX_CONVERSION_DEFAULT}$).*\/s)`
-     *   converts to a length-matching regular expression
+     *   converts to a length-matching regular expression.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.
@@ -499,7 +499,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:min-text-length(min)`
      *   direct conversion, no changes to value
-     * - `[max-length]` is skipped
+     * - `[max-length]` is skipped.
      *
      * @param name Name of the special attribute selector.
      * @param value Value of the special attribute selector.
@@ -561,7 +561,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special pseudo-class selectors during AdGuard to uBlock conversion:
      * - `:contains(text)` -> `:has-text(text)`
-     *   direct conversion, no changes to argument
+     *   direct conversion, no changes to argument.
      *
      * @param name Name of the special pseudo-class selector.
      * @param argument Argument of the special pseudo-class selector.

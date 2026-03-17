@@ -1,13 +1,14 @@
 /**
  * @file Rollup configurations for generating AGTree builds.
  */
-import typescript from '@rollup/plugin-typescript';
-import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import externals from 'rollup-plugin-node-externals';
-import json from '@rollup/plugin-json';
-import path from 'node:path';
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+import commonjs from '@rollup/plugin-commonjs';
+import json from '@rollup/plugin-json';
+import resolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
+import externals from 'rollup-plugin-node-externals';
 
 import { compatibilityTablePlugin } from './rollup.plugins';
 

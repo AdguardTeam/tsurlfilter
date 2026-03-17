@@ -1,6 +1,6 @@
 /**
  * @file Known CSS elements and attributes.
- * TODO: Implement a compatibility table for Extended CSS
+ * TODO: Implement a compatibility table for Extended CSS.
  */
 
 /**
@@ -30,20 +30,20 @@ export const ABP_EXT_CSS_PREFIX = '-abp';
  */
 export const NATIVE_CSS_PSEUDO_CLASSES: ReadonlySet<string> = new Set([
     /**
-     * https://developer.mozilla.org/en-US/docs/Web/CSS/:has
-     * https://github.com/AdguardTeam/ExtendedCss#extended-css-has
+     * Https://developer.mozilla.org/en-US/docs/Web/CSS/:has
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-has.
      */
     'has',
 
     /**
-     * https://developer.mozilla.org/en-US/docs/Web/CSS/:is
-     * https://github.com/AdguardTeam/ExtendedCss#extended-css-is
+     * Https://developer.mozilla.org/en-US/docs/Web/CSS/:is
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-is.
      */
     'is',
 
     /**
-     * https://developer.mozilla.org/en-US/docs/Web/CSS/:not
-     * https://github.com/AdguardTeam/ExtendedCss#extended-css-not
+     * Https://developer.mozilla.org/en-US/docs/Web/CSS/:not
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-not.
      */
     'not',
 ]);

@@ -1,7 +1,8 @@
 /**
- * @file Cosmetic rule converter
+ * @file Cosmetic rule converter.
  */
 
+import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     type AnyCosmeticRule,
     type AnyRule,
@@ -11,39 +12,41 @@ import {
     type ModifierList,
     RuleCategory,
 } from '../../nodes';
+import { COMMA } from '../../utils';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { HtmlRuleConverter } from './html';
-import { ScriptletRuleConverter } from './scriptlet';
-import { RuleConversionError } from '../../errors/rule-conversion-error';
+import { clone } from '../../utils/clone';
+import {
+    type ConversionResult,
+    createNodeConversionResult,
+    type NodeConversionResult,
+} from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { AdgCosmeticRuleModifierConverter } from './rule-modifiers/adg';
+
 import { CssInjectionRuleConverter } from './css';
 import { ElementHidingRuleConverter } from './element-hiding';
 import { HeaderRemovalRuleConverter } from './header-removal';
-import {
-    type NodeConversionResult,
-    createNodeConversionResult,
-    type ConversionResult,
-} from '../base-interfaces/conversion-result';
-import { UboCosmeticRuleModifierConverter } from './rule-modifiers/ubo';
-import { clone } from '../../utils/clone';
-import { COMMA } from '../../utils';
+import { HtmlRuleConverter } from './html';
 import { convertPathInDomainToModifier } from './path-converter';
+import { AdgCosmeticRuleModifierConverter } from './rule-modifiers/adg';
+import { UboCosmeticRuleModifierConverter } from './rule-modifiers/ubo';
+import { ScriptletRuleConverter } from './scriptlet';
 
 /**
- * Cosmetic rule converter class (also known as "non-basic rule converter")
+ * Cosmetic rule converter class (also known as "non-basic rule converter").
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class CosmeticRuleConverter extends RuleConverterBase {
     /**
      * Converts a cosmetic rule to AdGuard syntax, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rule: AnyCosmeticRule): NodeConversionResult<AnyRule> {
         let subconverterResult: NodeConversionResult<AnyRule>;
@@ -151,11 +154,13 @@ export class CosmeticRuleConverter extends RuleConverterBase {
     /**
      * Converts a cosmetic rule to uBlock Origin syntax, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToUbo(rule: AnyCosmeticRule): NodeConversionResult<AnyRule> {
         // Skip conversation if the rule is already in uBO format

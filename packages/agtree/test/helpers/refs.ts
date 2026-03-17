@@ -1,12 +1,13 @@
 /**
- * @file Helper functions for testing AST nodes cloning by comparing object references
+ * @file Helper functions for testing AST nodes cloning by comparing object references.
  */
 
 /**
  * Collect all object references from the input object. For our AST nodes, it's enough to collect objects and arrays.
  *
- * @param obj Object to collect references from
- * @returns Collected references
+ * @param obj Object to collect references from.
+ *
+ * @returns Collected references.
  */
 function collectRefs(obj: object): object[] {
     const refs: object[] = [];
@@ -33,11 +34,12 @@ function collectRefs(obj: object): object[] {
 
 /**
  * Sort two arrays by length, the shortest array first and the longest array second.
- * This is just a helper function for reference comparison
+ * This is just a helper function for reference comparison.
  *
- * @param a First array
- * @param b Second array
- * @returns A tuple with the shortest array first and the longest array second
+ * @param a First array.
+ * @param b Second array.
+ *
+ * @returns A tuple with the shortest array first and the longest array second.
  */
 function sortArraysByLength<T>(a: T[], b: T[]): [T[], T[]] {
     if (a.length <= b.length) {
@@ -49,10 +51,11 @@ function sortArraysByLength<T>(a: T[], b: T[]): [T[], T[]] {
 
 /**
  * A very simple helper function to check that all references from A are not in B. This is not a fully general purpose,
- * but it's enough for testing our AST nodes
+ * but it's enough for testing our AST nodes.
  *
- * @param objects Objects to check
- * @returns `true` if all references from A are not in B, `false` otherwise
+ * @param objects Objects to check.
+ *
+ * @returns `true` if all references from A are not in B, `false` otherwise.
  */
 export function everyRefsAreDifferent(...objects: object[]): boolean {
     // trivial case

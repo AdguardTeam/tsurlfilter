@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { CommentParser } from '../../../src/parser/comment/comment-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
 import { CommentRuleGenerator } from '../../../src/generator/comment';
+import { CommentParser } from '../../../src/parser/comment/comment-parser';
+import { defaultParserOptions } from '../../../src/parser/options';
+import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('CommentRuleParser', () => {
     test('isCommentRule', () => {

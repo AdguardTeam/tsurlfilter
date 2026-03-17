@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
-import { RuleCategorizer } from '../../src/utils/categorizer';
 import { CosmeticRuleType } from '../../src/nodes';
+import { RuleCategorizer } from '../../src/utils/categorizer';
 
 describe('RuleCategorizer', () => {
     describe('getCosmeticRuleType', () => {

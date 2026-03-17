@@ -1,11 +1,11 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
-import { type HtmlFilteringRule } from '../../../src/nodes';
-import { RuleParser } from '../../../src/parser/rule-parser';
-import { NotImplementedError } from '../../../src/errors/not-implemented-error';
 import { createNodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
+import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
+import { NotImplementedError } from '../../../src/errors/not-implemented-error';
+import { type HtmlFilteringRule } from '../../../src/nodes';
 import { defaultParserOptions, type ParserOptions } from '../../../src/parser/options';
+import { RuleParser } from '../../../src/parser/rule-parser';
 
 /**
  * Invalid test data interface.
