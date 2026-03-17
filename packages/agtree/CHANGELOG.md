@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [4.0.2] - 2026-03-17
+
+### Fixed
+
+- Parsing of pseudo-class selectors containing attribute selectors,
+  e.g., `:not([class])`.
+
+[4.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-4.0.2
+
 ## [4.0.1] - 2026-02-19
 
 ### Added
