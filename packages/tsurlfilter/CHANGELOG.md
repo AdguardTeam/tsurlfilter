@@ -12,8 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated [@adguard/agtree] to `v4.0.2`.
 - Updated [@adguard/scriptlets] to `v2.3.0`.
 
-### Fixed
-
 ### Changed
 
 - **BREAKING: `IRuleSet.getBadFilterRules()` and `IRuleSet.getRulesHashMap()` are now async**
