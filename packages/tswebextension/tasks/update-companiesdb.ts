@@ -113,30 +113,90 @@ const simplifyCompaniesDbTrackers = (rawData: CompaniesDbTrackers): CompaniesDbM
 };
 
 /**
+ * Compares two companies database objects, ignoring the `timeUpdated` field.
+ *
+ * @param oldData Existing companies database data.
+ * @param newData Newly downloaded companies database data.
+ *
+ * @returns True if meaningful changes exist (categories or trackerDomains differ), false otherwise.
+ */
+const hasMeaningfulChanges = (oldData: CompaniesDbMin, newData: CompaniesDbMin): boolean => {
+    const oldCategoriesJson = JSON.stringify(oldData.categories);
+    const newCategoriesJson = JSON.stringify(newData.categories);
+
+    if (oldCategoriesJson !== newCategoriesJson) {
+        return true;
+    }
+
+    const oldTrackerDomainsJson = JSON.stringify(oldData.trackerDomains);
+    const newTrackerDomainsJson = JSON.stringify(newData.trackerDomains);
+
+    return oldTrackerDomainsJson !== newTrackerDomainsJson;
+};
+
+/**
+ * Extracts the companies database object from a TypeScript file.
+ *
+ * @param fileContent Content of the trackers-min.ts file.
+ *
+ * @returns Parsed companies database object, or null if parsing fails.
+ */
+const extractCompaniesDbFromFile = (fileContent: string): CompaniesDbMin | null => {
+    try {
+        const match = fileContent.match(/export const rawCompaniesDb = ({.*});/s);
+        if (!match) {
+            return null;
+        }
+        return JSON.parse(match[1]);
+    } catch {
+        return null;
+    }
+};
+
+/**
  * Downloads companies database from AdguardTeam/companiesdb repository
  * and minifies it to a format needed for the extension.
+ *
+ * Compares the new data with the existing file (ignoring `timeUpdated` field).
+ * Only writes the file if meaningful changes are detected.
  *
  * @see https://github.com/AdguardTeam/companiesdb
  *
  * @param dest Path to save the JSON database.
  *
- * @returns Promise that resolves when the database is downloaded.
+ * @returns Promise that resolves to true if changes were written,
+ * false if no meaningful changes.
  *
  * @throws Error if the download fails.
  */
-export async function downloadCompaniesDb(dest: string): Promise<void> {
+export async function downloadCompaniesDb(dest: string): Promise<boolean> {
     // eslint-disable-next-line no-console
     console.info('Downloading companies db...');
     const res = await fetch(COMPANIES_DB_URL);
-    if (res.ok) {
-        const data = await res.json();
-        const simplifiedData = simplifyCompaniesDbTrackers(data);
-        fs.writeFileSync(dest, `export const rawCompaniesDb = ${JSON.stringify(simplifiedData, null, '\t')};\n`);
-    } else {
+    if (!res.ok) {
         throw new Error(`Failed to download file, status code: ${res.status}`);
     }
+
+    const data = await res.json();
+    const simplifiedData = simplifyCompaniesDbTrackers(data);
+
+    // Check if file exists and compare with new data
+    if (fs.existsSync(dest)) {
+        const existingContent = fs.readFileSync(dest, 'utf-8');
+        const existingData = extractCompaniesDbFromFile(existingContent);
+
+        if (existingData && !hasMeaningfulChanges(existingData, simplifiedData)) {
+            // eslint-disable-next-line no-console
+            console.info('No meaningful changes detected (only timeUpdated differs)');
+            return false;
+        }
+    }
+
+    // Write file if it doesn't exist or meaningful changes were detected
+    fs.writeFileSync(dest, `export const rawCompaniesDb = ${JSON.stringify(simplifiedData, null, '\t')};\n`);
     // eslint-disable-next-line no-console
-    console.info('Downloading successful');
+    console.info('Downloading successful, changes written');
+    return true;
 }
 
 (async (): Promise<void> => {
@@ -144,5 +204,6 @@ export async function downloadCompaniesDb(dest: string): Promise<void> {
         fs.mkdirSync(outputDirPath, { recursive: true });
     }
 
-    await downloadCompaniesDb(outputFilePath);
+    const hasChanges = await downloadCompaniesDb(outputFilePath);
+    process.exit(hasChanges ? 0 : 1);
 })();
