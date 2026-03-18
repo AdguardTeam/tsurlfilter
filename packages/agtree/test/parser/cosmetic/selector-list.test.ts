@@ -1077,6 +1077,257 @@ describe('CssSelectorListParser', () => {
                 }),
             },
 
+            // pseudo-class with nested attribute selector - :not([class])
+            {
+                actual: 'div:not([class])',
+                expected: (context) => ({
+                    type: 'SelectorList',
+                    children: [{
+                        type: 'ComplexSelector',
+                        children: [{
+                            type: 'TypeSelector',
+                            value: 'div',
+                            ...context.getRangeFor('div'),
+                        }, {
+                            type: 'PseudoClassSelector',
+                            name: {
+                                type: 'Value',
+                                value: 'not',
+                                ...context.getRangeFor('not'),
+                            },
+                            argument: {
+                                type: 'Value',
+                                value: '[class]',
+                                ...context.getRangeFor('[class]'),
+                            },
+                            ...context.getRangeFor(':not([class])'),
+                        }],
+                        ...context.getFullRange(),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // pseudo-class with nested attribute selector - multiple :not() with attributes
+            {
+                actual: 'a:not([href]):not([id])',
+                expected: (context) => ({
+                    type: 'SelectorList',
+                    children: [{
+                        type: 'ComplexSelector',
+                        children: [{
+                            type: 'TypeSelector',
+                            value: 'a',
+                            ...context.getRangeFor('a'),
+                        }, {
+                            type: 'PseudoClassSelector',
+                            name: {
+                                type: 'Value',
+                                value: 'not',
+                                ...context.getRangeFor('not'),
+                            },
+                            argument: {
+                                type: 'Value',
+                                value: '[href]',
+                                ...context.getRangeFor('[href]'),
+                            },
+                            ...context.getRangeFor(':not([href])'),
+                        }, {
+                            type: 'PseudoClassSelector',
+                            name: {
+                                type: 'Value',
+                                value: 'not',
+                                ...context.getRangeFor('not', 2),
+                            },
+                            argument: {
+                                type: 'Value',
+                                value: '[id]',
+                                ...context.getRangeFor('[id]'),
+                            },
+                            ...context.getRangeFor(':not([id])'),
+                        }],
+                        ...context.getFullRange(),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // pseudo-class with nested attribute selector - :has([data-value="test"])
+            {
+                actual: 'span:has([data-value="test"])',
+                expected: (context) => ({
+                    type: 'SelectorList',
+                    children: [{
+                        type: 'ComplexSelector',
+                        children: [{
+                            type: 'TypeSelector',
+                            value: 'span',
+                            ...context.getRangeFor('span'),
+                        }, {
+                            type: 'PseudoClassSelector',
+                            name: {
+                                type: 'Value',
+                                value: 'has',
+                                ...context.getRangeFor('has'),
+                            },
+                            argument: {
+                                type: 'Value',
+                                value: '[data-value="test"]',
+                                ...context.getRangeFor('[data-value="test"]'),
+                            },
+                            ...context.getRangeFor(':has([data-value="test"])'),
+                        }],
+                        ...context.getFullRange(),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // pseudo-class with nested attribute selector - :is([type="text"])
+            {
+                actual: 'p:is([type="text"])',
+                expected: (context) => ({
+                    type: 'SelectorList',
+                    children: [{
+                        type: 'ComplexSelector',
+                        children: [{
+                            type: 'TypeSelector',
+                            value: 'p',
+                            ...context.getRangeFor('p'),
+                        }, {
+                            type: 'PseudoClassSelector',
+                            name: {
+                                type: 'Value',
+                                value: 'is',
+                                ...context.getRangeFor('is'),
+                            },
+                            argument: {
+                                type: 'Value',
+                                value: '[type="text"]',
+                                ...context.getRangeFor('[type="text"]'),
+                            },
+                            ...context.getRangeFor(':is([type="text"])'),
+                        }],
+                        ...context.getFullRange(),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // pseudo-class with nested attribute selector - exact reported selector body
+            {
+                actual: 'iframe[name]:not([class]):not([id]):not([src])[style="display:none"]',
+                expected: (context) => ({
+                    type: 'SelectorList',
+                    children: [{
+                        type: 'ComplexSelector',
+                        children: [{
+                            type: 'TypeSelector',
+                            value: 'iframe',
+                            ...context.getRangeFor('iframe'),
+                        }, {
+                            type: 'AttributeSelector',
+                            name: {
+                                type: 'Value',
+                                value: 'name',
+                                ...context.getRangeFor('name'),
+                            },
+                            ...context.getRangeFor('[name]'),
+                        }, {
+                            type: 'PseudoClassSelector',
+                            name: {
+                                type: 'Value',
+                                value: 'not',
+                                ...context.getRangeFor('not'),
+                            },
+                            argument: {
+                                type: 'Value',
+                                value: '[class]',
+                                ...context.getRangeFor('[class]'),
+                            },
+                            ...context.getRangeFor(':not([class])'),
+                        }, {
+                            type: 'PseudoClassSelector',
+                            name: {
+                                type: 'Value',
+                                value: 'not',
+                                ...context.getRangeFor('not', 2),
+                            },
+                            argument: {
+                                type: 'Value',
+                                value: '[id]',
+                                ...context.getRangeFor('[id]'),
+                            },
+                            ...context.getRangeFor(':not([id])'),
+                        }, {
+                            type: 'PseudoClassSelector',
+                            name: {
+                                type: 'Value',
+                                value: 'not',
+                                ...context.getRangeFor('not', 3),
+                            },
+                            argument: {
+                                type: 'Value',
+                                value: '[src]',
+                                ...context.getRangeFor('[src]'),
+                            },
+                            ...context.getRangeFor(':not([src])'),
+                        }, {
+                            type: 'AttributeSelector',
+                            name: {
+                                type: 'Value',
+                                value: 'style',
+                                ...context.getRangeFor('style'),
+                            },
+                            operator: {
+                                type: 'Value',
+                                value: '=',
+                                ...context.getRangeFor('='),
+                            },
+                            value: {
+                                type: 'Value',
+                                value: 'display:none',
+                                ...context.getRangeFor('display:none'),
+                            },
+                            ...context.getRangeFor('[style="display:none"]'),
+                        }],
+                        ...context.getFullRange(),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // pseudo-class with nested attribute selector - nested brackets in attribute value
+            {
+                actual: 'div:not([attr="value with [brackets]"])',
+                expected: (context) => ({
+                    type: 'SelectorList',
+                    children: [{
+                        type: 'ComplexSelector',
+                        children: [{
+                            type: 'TypeSelector',
+                            value: 'div',
+                            ...context.getRangeFor('div'),
+                        }, {
+                            type: 'PseudoClassSelector',
+                            name: {
+                                type: 'Value',
+                                value: 'not',
+                                ...context.getRangeFor('not'),
+                            },
+                            argument: {
+                                type: 'Value',
+                                value: '[attr="value with [brackets]"]',
+                                ...context.getRangeFor('[attr="value with [brackets]"]'),
+                            },
+                            ...context.getRangeFor(':not([attr="value with [brackets]"])'),
+                        }],
+                        ...context.getFullRange(),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
             // combined selector
             {
                 actual: 'div#id.class[attr~="value" i]:pseudo(arg)',
@@ -2094,6 +2345,30 @@ describe('CssSelectorListParser', () => {
             {
                 actual: ':not(div, span.class)',
                 expected: ':not(div, span.class)',
+            },
+            {
+                actual: 'div:not([class])',
+                expected: 'div:not([class])',
+            },
+            {
+                actual: 'a:not([href]):not([id])',
+                expected: 'a:not([href]):not([id])',
+            },
+            {
+                actual: 'span:has([data-value="test"])',
+                expected: 'span:has([data-value="test"])',
+            },
+            {
+                actual: 'p:is([type="text"])',
+                expected: 'p:is([type="text"])',
+            },
+            {
+                actual: 'iframe[name]:not([class]):not([id]):not([src])[style="display:none"]',
+                expected: 'iframe[name]:not([class]):not([id]):not([src])[style="display:none"]',
+            },
+            {
+                actual: 'div:not([attr="value with [brackets]"])',
+                expected: 'div:not([attr="value with [brackets]"])',
             },
             {
                 actual: 'div#id.class[attr~="value" i]:pseudo(arg)',

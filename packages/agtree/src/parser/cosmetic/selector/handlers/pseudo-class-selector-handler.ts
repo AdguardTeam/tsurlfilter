@@ -81,6 +81,9 @@ export class PseudoClassSelectorHandler {
 
         // If it's a function, parse its argument
         if (isFunction) {
+            // Save the function token's balance level for finding the matching close parenthesis
+            const functionBalance = stream.getBalance();
+
             // Advance pseudo-class selector name token
             stream.advance();
 
@@ -107,8 +110,8 @@ export class PseudoClassSelectorHandler {
 
             // Check if there is any argument part
             if (token.type !== TokenType.CloseParenthesis) {
-                // Save the balance level to find the matching closing parenthesis
-                const balance = stream.getBalance();
+                // Use the function token's balance level to find the matching closing parenthesis
+                const balance = functionBalance;
 
                 // Skip leading whitespace
                 stream.skipWhitespace();

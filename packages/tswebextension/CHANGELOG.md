@@ -11,13 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Correctly handle prerender speculative requests in Chromium-based browsers.
 
-### Fixed
-
-- MV3: prefetch requests (via Chrome's Speculation Rules API) matching `$document` rules no longer
-  incorrectly redirect to the document blocking page. Prefetch requests are now detected in
-  `webRequest.onBeforeRequest` via `details.documentId` (excluding prerender requests) and are
-  silently blocked without showing the blocking page [AdguardBrowserExtension#3414].
-
 ### Changed
 
 - Reduced MV3 extension memory usage by unloading heavy ruleset metadata
@@ -30,13 +23,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated tsurlfilter to vX.X.X. <!-- TODO: update version before release -->
 - Updated [@adguard/assistant] to `v4.4.3`.
 
-[AdguardBrowserExtension#3414]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3414
-
 ### Fixed
 
-- Use of invalid CSS selectors in element hiding rules affects all injected styles [AdguardBrowserExtension#3329]
+- Use of invalid CSS selectors in element hiding rules affects all injected styles [AdguardBrowserExtension#3329].
+- MV3: prefetch requests (via Chrome's Speculation Rules API) matching `$document` rules no longer
+  incorrectly redirect to the document blocking page. Prefetch requests are now detected in
+  `webRequest.onBeforeRequest` via `details.documentId` (excluding prerender requests) and are
+  silently blocked without showing the blocking page [AdguardBrowserExtension#3414].
 
 [AdguardBrowserExtension#3329]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3329
+[AdguardBrowserExtension#3414]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3414
+
+## [4.0.4] - 2026-03-18
+
+### Changed
+
+- Updated [@adguard/agtree] to `v4.0.2`.
+- Updated [@adguard/tsurlfilter] to `v4.0.3`.
+- Updated [@adguard/scriptlets] to `v2.3.0`.
+
+[4.0.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v4.0.4
 
 ## [4.0.3] - 2026-02-26
 
@@ -121,7 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Memory leak caused by storing data URL favicons in tab contexts. [AdguardBrowserExtension#2594]
+- Memory leak caused by storing data URL favicons in tab contexts [AdguardBrowserExtension#2594].
 
 [3.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.19
 

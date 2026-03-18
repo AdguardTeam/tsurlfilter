@@ -27,4 +27,10 @@ The results will be displayed on the console and saved in [`RESULTS.md`][results
 > [!NOTE]
 > Please be aware that the benchmark may take several minutes to complete.
 
+## Documentation
+
+- [Results](RESULTS.md)
+- [Benchmarks overview](../AGENTS.md)
+- [Development guide](../../../DEVELOPMENT.md)
+
 [results]: ./RESULTS.md
