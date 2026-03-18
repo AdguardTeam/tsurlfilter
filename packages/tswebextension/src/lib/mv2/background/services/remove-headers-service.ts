@@ -177,8 +177,8 @@ export class RemoveHeadersService {
     /**
      * Checks if rule is applicable to headers.
      *
-     * @param headers   Headers.
-     * @param rule  Rule with $removeheader modifier.
+     * @param headers Headers.
+     * @param rule Rule with $removeheader modifier.
      * @param isRequestHeaders Is headers are _request_ headers, i.e. `false`
      * for _response_ headers.
      *

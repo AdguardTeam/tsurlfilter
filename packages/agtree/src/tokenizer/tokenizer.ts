@@ -1,36 +1,37 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable no-param-reassign */
+import {
+    CHAR_AND_SIGN,
+    CHAR_APOSTROPHE,
+    CHAR_ASTERISK,
+    CHAR_AT_SIGN,
+    CHAR_BACKSLASH,
+    CHAR_CARET,
+    CHAR_CLOSE_BRACE,
+    CHAR_CLOSE_PAREN,
+    CHAR_CLOSE_SQUARE,
+    CHAR_COLON,
+    CHAR_COMMA,
+    CHAR_DOLLAR_SIGN,
+    CHAR_DOT,
+    CHAR_EQUALS_SIGN,
+    CHAR_EXCLAMATION_MARK,
+    CHAR_HASHMARK,
+    CHAR_OPEN_BRACE,
+    CHAR_OPEN_PAREN,
+    CHAR_OPEN_SQUARE,
+    CHAR_PERCENT,
+    CHAR_PIPE,
+    CHAR_PLUS_SIGN,
+    CHAR_QUESTION_MARK,
+    CHAR_QUOTE,
+    CHAR_SEMICOLON,
+    CHAR_SLASH,
+    CHAR_SPACE,
+    CHAR_TAB,
+    CHAR_TILDE,
+} from './char-codes';
 import { TokenType } from './token-types';
-
-const SPACE = ' '.charCodeAt(0);
-const TAB = '\t'.charCodeAt(0);
-const BACKSLASH = '\\'.charCodeAt(0);
-const DOLLAR_SIGN = '$'.charCodeAt(0);
-const SLASH = '/'.charCodeAt(0);
-const EQUALS_SIGN = '='.charCodeAt(0);
-const COMMA = ','.charCodeAt(0);
-const OPEN_PAREN = '('.charCodeAt(0);
-const CLOSE_PAREN = ')'.charCodeAt(0);
-const OPEN_BRACE = '{'.charCodeAt(0);
-const CLOSE_BRACE = '}'.charCodeAt(0);
-const OPEN_SQUARE = '['.charCodeAt(0);
-const CLOSE_SQUARE = ']'.charCodeAt(0);
-const APOSTROPHE = "'".charCodeAt(0);
-const QUOTE = '"'.charCodeAt(0);
-const HASHMARK = '#'.charCodeAt(0);
-const QUESTION_MARK = '?'.charCodeAt(0);
-const PERCENT = '%'.charCodeAt(0);
-const AT_SIGN = '@'.charCodeAt(0);
-const ASTERISK = '*'.charCodeAt(0);
-const PIPE = '|'.charCodeAt(0);
-const EXCLAMATION_MARK = '!'.charCodeAt(0);
-const PLUS_SIGN = '+'.charCodeAt(0);
-const AND_SIGN = '&'.charCodeAt(0);
-const TILDE = '~'.charCodeAt(0);
-const CARET = '^'.charCodeAt(0);
-const DOT = '.'.charCodeAt(0);
-const SEMICOLON = ';'.charCodeAt(0);
-const COLON = ':'.charCodeAt(0);
 
 /**
  * Optional reserved space at the end of the buffer to trigger overflow earlier.
@@ -125,37 +126,37 @@ export type TokenizeResult = {
 export const tokenizeLine = (() => {
     // Lookup table for single-character tokens
     const TOKEN_MAP = new Uint8Array(256);
-    TOKEN_MAP[SLASH] = TokenType.Slash;
-    TOKEN_MAP[EQUALS_SIGN] = TokenType.EqualsSign;
-    TOKEN_MAP[COMMA] = TokenType.Comma;
-    TOKEN_MAP[OPEN_PAREN] = TokenType.OpenParen;
-    TOKEN_MAP[CLOSE_PAREN] = TokenType.CloseParen;
-    TOKEN_MAP[OPEN_BRACE] = TokenType.OpenBrace;
-    TOKEN_MAP[CLOSE_BRACE] = TokenType.CloseBrace;
-    TOKEN_MAP[OPEN_SQUARE] = TokenType.OpenSquare;
-    TOKEN_MAP[CLOSE_SQUARE] = TokenType.CloseSquare;
-    TOKEN_MAP[PIPE] = TokenType.Pipe;
-    TOKEN_MAP[AT_SIGN] = TokenType.AtSign;
-    TOKEN_MAP[ASTERISK] = TokenType.Asterisk;
-    TOKEN_MAP[QUOTE] = TokenType.Quote;
-    TOKEN_MAP[APOSTROPHE] = TokenType.Apostrophe;
-    TOKEN_MAP[EXCLAMATION_MARK] = TokenType.ExclamationMark;
-    TOKEN_MAP[PLUS_SIGN] = TokenType.PlusSign;
-    TOKEN_MAP[AND_SIGN] = TokenType.AndSign;
-    TOKEN_MAP[TILDE] = TokenType.Tilde;
-    TOKEN_MAP[CARET] = TokenType.Caret;
-    TOKEN_MAP[DOT] = TokenType.Dot;
-    TOKEN_MAP[SEMICOLON] = TokenType.Semicolon;
-    TOKEN_MAP[COLON] = TokenType.Colon;
-    TOKEN_MAP[HASHMARK] = TokenType.HashMark;
-    TOKEN_MAP[DOLLAR_SIGN] = TokenType.DollarSign;
-    TOKEN_MAP[QUESTION_MARK] = TokenType.QuestionMark;
-    TOKEN_MAP[PERCENT] = TokenType.Percent;
+    TOKEN_MAP[CHAR_SLASH] = TokenType.Slash;
+    TOKEN_MAP[CHAR_EQUALS_SIGN] = TokenType.EqualsSign;
+    TOKEN_MAP[CHAR_COMMA] = TokenType.Comma;
+    TOKEN_MAP[CHAR_OPEN_PAREN] = TokenType.OpenParen;
+    TOKEN_MAP[CHAR_CLOSE_PAREN] = TokenType.CloseParen;
+    TOKEN_MAP[CHAR_OPEN_BRACE] = TokenType.OpenBrace;
+    TOKEN_MAP[CHAR_CLOSE_BRACE] = TokenType.CloseBrace;
+    TOKEN_MAP[CHAR_OPEN_SQUARE] = TokenType.OpenSquare;
+    TOKEN_MAP[CHAR_CLOSE_SQUARE] = TokenType.CloseSquare;
+    TOKEN_MAP[CHAR_PIPE] = TokenType.Pipe;
+    TOKEN_MAP[CHAR_AT_SIGN] = TokenType.AtSign;
+    TOKEN_MAP[CHAR_ASTERISK] = TokenType.Asterisk;
+    TOKEN_MAP[CHAR_QUOTE] = TokenType.Quote;
+    TOKEN_MAP[CHAR_APOSTROPHE] = TokenType.Apostrophe;
+    TOKEN_MAP[CHAR_EXCLAMATION_MARK] = TokenType.ExclamationMark;
+    TOKEN_MAP[CHAR_PLUS_SIGN] = TokenType.PlusSign;
+    TOKEN_MAP[CHAR_AND_SIGN] = TokenType.AndSign;
+    TOKEN_MAP[CHAR_TILDE] = TokenType.Tilde;
+    TOKEN_MAP[CHAR_CARET] = TokenType.Caret;
+    TOKEN_MAP[CHAR_DOT] = TokenType.Dot;
+    TOKEN_MAP[CHAR_SEMICOLON] = TokenType.Semicolon;
+    TOKEN_MAP[CHAR_COLON] = TokenType.Colon;
+    TOKEN_MAP[CHAR_HASHMARK] = TokenType.HashMark;
+    TOKEN_MAP[CHAR_DOLLAR_SIGN] = TokenType.DollarSign;
+    TOKEN_MAP[CHAR_QUESTION_MARK] = TokenType.QuestionMark;
+    TOKEN_MAP[CHAR_PERCENT] = TokenType.Percent;
 
     // Whitespace lookup
     const IS_WHITESPACE = new Uint8Array(256);
-    IS_WHITESPACE[SPACE] = 1;
-    IS_WHITESPACE[TAB] = 1;
+    IS_WHITESPACE[CHAR_SPACE] = 1;
+    IS_WHITESPACE[CHAR_TAB] = 1;
 
     // Identifier lookup
     const IS_IDENT_CHAR = new Uint8Array(256);
@@ -243,7 +244,7 @@ export const tokenizeLine = (() => {
                     continue;
                 }
 
-                if (c === BACKSLASH) {
+                if (c === CHAR_BACKSLASH) {
                     if (i + 1 < len) {
                         t[tokenCount] = TokenType.Escaped;
                         e[tokenCount] = i + 2;
