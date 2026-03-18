@@ -58,8 +58,73 @@ const getCosmeticData = (rules: string[], areHitsStatsCollected: boolean): Conte
         isAppStarted: true,
         areHitsStatsCollected,
         extCssRules,
+        nativeCssSelectors: null,
     };
 };
+
+describe('invalid native CSS selectors are handled gracefully', () => {
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <div id="target" class="ad_banner" style="display: block">ad content</div>
+            <div id="valid-target" class="ad_popup" style="display: block">popup content</div>
+        `;
+
+        global.CSS = {
+            supports: vi.fn((condition: string) => {
+                const match = condition.match(/^selector\((.+)\)$/);
+                if (!match) {
+                    return false;
+                }
+                const selector = match[1];
+                // Known invalid patterns
+                if (selector.includes('#.') || selector.includes('.#')) {
+                    return false;
+                }
+                return true;
+            }),
+        } as unknown as typeof CSS;
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
+        document.head.querySelectorAll('style').forEach((el) => el.remove());
+        // @ts-ignore Clean up global mock
+        delete global.CSS;
+    });
+
+    it('applies valid selectors and skips invalid ones without error', async () => {
+        const validSelectors = ['.ad_banner', '.ad_popup'];
+        const invalidSelector = '#.broken';
+
+        const cosmeticData: ContentScriptCosmeticData = {
+            isAppStarted: true,
+            areHitsStatsCollected: false,
+            extCssRules: null,
+            nativeCssSelectors: [...validSelectors, invalidSelector],
+        };
+
+        vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(cosmeticData);
+
+        const cosmeticController = new CosmeticController();
+        cosmeticController.init();
+
+        // Wait for the cosmetic controller to process
+        await new Promise((resolve) => {
+            setTimeout(resolve, 20);
+        });
+
+        const styleElements = document.head.querySelectorAll('style');
+        const injectedStyles = Array.from(styleElements)
+            .map((el) => el.textContent)
+            .join('\n');
+
+        for (const selector of validSelectors) {
+            expect(injectedStyles).toContain(selector);
+        }
+
+        expect(injectedStyles).not.toContain(invalidSelector);
+    });
+});
 
 describe('some extended css rules are invalid', () => {
     beforeEach(() => {

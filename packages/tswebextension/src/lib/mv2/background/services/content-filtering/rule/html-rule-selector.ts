@@ -106,12 +106,22 @@ export class HtmlRuleSelector {
         // if no combinator is specified, it means that it's the first selector and container is document
         // descendant combinator can be queried directly
         if (!selector.combinator || selector.combinator === ' ') {
-            return Array.from(container.querySelectorAll(nativeSelector));
+            try {
+                return Array.from(container.querySelectorAll(nativeSelector));
+            } catch (e) {
+                logger.debug(`[tsweb.HtmlRuleSelector.queryContainer]: querySelectorAll failed for selector "${nativeSelector}":`, e);
+                return [];
+            }
         }
 
         // child combinator needs special handling with :scope
         if (selector.combinator === '>') {
-            return Array.from(container.querySelectorAll(`:scope > ${nativeSelector}`));
+            try {
+                return Array.from(container.querySelectorAll(`:scope > ${nativeSelector}`));
+            } catch (e) {
+                logger.debug(`[tsweb.HtmlRuleSelector.queryContainer]: querySelectorAll failed for selector ":scope > ${nativeSelector}":`, e);
+                return [];
+            }
         }
 
         // Unknown combinator
@@ -138,7 +148,12 @@ export class HtmlRuleSelector {
             const nextSibling = parentChildren[indexOfContainerInParent + 1];
 
             // No next sibling or next sibling does not match
-            if (!nextSibling || !nextSibling.matches(nativeSelector)) {
+            try {
+                if (!nextSibling || !nextSibling.matches(nativeSelector)) {
+                    return [];
+                }
+            } catch (e) {
+                logger.debug(`[tsweb.HtmlRuleSelector.queryContainer]: matches failed for selector "${nativeSelector}":`, e);
                 return [];
             }
 
@@ -149,8 +164,13 @@ export class HtmlRuleSelector {
         const matchedSiblings: Element[] = [];
         for (let i = indexOfContainerInParent + 1; i < parentChildren.length; i += 1) {
             const sibling = parentChildren[i];
-            if (sibling.matches(nativeSelector)) {
-                matchedSiblings.push(sibling);
+            try {
+                if (sibling.matches(nativeSelector)) {
+                    matchedSiblings.push(sibling);
+                }
+            } catch (e) {
+                logger.debug(`[tsweb.HtmlRuleSelector.queryContainer]: matches failed for selector "${nativeSelector}":`, e);
+                return matchedSiblings;
             }
         }
         return matchedSiblings;

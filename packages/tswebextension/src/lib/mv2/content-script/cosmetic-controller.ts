@@ -4,6 +4,8 @@ import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
+import { validateSelectors } from '../../common/utils/selector-validator';
+import { HIDING_STYLE } from '../common/hidden-style';
 
 import { ElementCollapser } from './element-collapser';
 
@@ -79,6 +81,7 @@ export class CosmeticController {
             isAppStarted,
             extCssRules,
             areHitsStatsCollected,
+            nativeCssSelectors,
         } = cosmeticData;
 
         if (!isAppStarted
@@ -97,6 +100,8 @@ export class CosmeticController {
             this.cssHitsCounter = CosmeticController.createCssHitsCounter();
         }
 
+        CosmeticController.repairNativeCss(nativeCssSelectors);
+
         if (!extCssRules || extCssRules.length === 0) {
             return;
         }
@@ -111,6 +116,41 @@ export class CosmeticController {
 
         const extendedCss = new ExtendedCss(extendedCssConfig);
         extendedCss.apply();
+    }
+
+    /**
+     * Validates native CSS element-hiding selectors and injects a corrective
+     * `<style>` element containing only the valid ones if any invalid selectors
+     * are found.
+     *
+     * The background already injected grouped native CSS via the browser API.
+     * When any selector in a group is invalid, the browser drops the entire
+     * group. This method validates all selectors and, if any are invalid,
+     * re-injects only the valid selectors individually to restore correct filtering.
+     *
+     * @param selectors Individual native CSS element-hiding selectors.
+     */
+    private static repairNativeCss(selectors: string[] | null): void {
+        if (!selectors || selectors.length === 0) {
+            return;
+        }
+
+        const { valid, invalid } = validateSelectors(selectors);
+
+        if (invalid.length === 0) {
+            return;
+        }
+
+        if (valid.length === 0) {
+            return;
+        }
+
+        const style = document.createElement('style');
+        style.setAttribute('type', 'text/css');
+        style.textContent = valid
+            .map((sel) => `${sel} ${HIDING_STYLE}`)
+            .join('\n');
+        (document.head || document.documentElement).appendChild(style);
     }
 
     /**

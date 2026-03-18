@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [AdguardBrowserExtension#3414]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3414
 
+### Fixed
+
+- Use of invalid CSS selectors in element hiding rules affects all injected styles [AdguardBrowserExtension#3329]
+
+[AdguardBrowserExtension#3329]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3329
+
 ## [4.0.3] - 2026-02-26
 
 ### Added

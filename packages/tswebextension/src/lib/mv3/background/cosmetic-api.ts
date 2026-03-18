@@ -194,6 +194,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             isAppStarted: false,
             areHitsStatsCollected: false,
             extCssRules: null,
+            nativeCssSelectors: null,
         };
 
         // if storage is not initialized, then app is not ready yet.
@@ -231,6 +232,11 @@ export class CosmeticApi extends CosmeticApiCommon {
                 // since minimum version of mv3 browser already supports :has()
                 isNativeHasSupported: true,
             },
+        );
+
+        data.nativeCssSelectors = CosmeticApi.getNativeCssSelectors(
+            cosmeticResult,
+            { isNativeHasSupported: true },
         );
 
         return data;
