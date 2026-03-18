@@ -25,6 +25,18 @@ const DEFAULT_TOKEN_CAPACITY = 1024;
  */
 const DEFAULT_MODIFIER_CAPACITY = 64;
 
+/**
+ * Default maximum number of domains per cosmetic rule.
+ * Most cosmetic rules have 1-10 domains; 128 provides headroom.
+ * This can grow dynamically if needed.
+ */
+const DEFAULT_DOMAIN_CAPACITY = 128;
+
+/**
+ * Domain record stride (3 slots: valueStart, valueEnd, flags).
+ */
+const DOMAIN_RECORD_STRIDE = 3;
+
 // Minimum ctx.data slots needed to embed the LE node tree for !#if directives:
 //   CM_PREP_LE_OFFSET(5) + LE_BUFFER_SIZE(LE_HEADER(2) + LE_MAX_NODES(32) * LE_STRIDE(5)) = 167
 const CM_PREP_MIN_DATA_SLOTS = 167;
@@ -73,6 +85,11 @@ export interface PreparserContext {
     maxMods: number;
 
     /**
+     * Maximum number of domains the buffer can hold.
+     */
+    maxDomains: number;
+
+    /**
      * Parse status: 0 = success, 1 = overflow.
      */
     status: 0 | 1;
@@ -83,12 +100,14 @@ export interface PreparserContext {
  *
  * @param tokenCapacity Maximum number of tokens.
  * @param modifierCapacity Maximum number of modifiers.
+ * @param domainCapacity Maximum number of domains.
  *
  * @returns A new PreparserContext ready for use.
  */
 export function createPreparserContext(
     tokenCapacity = DEFAULT_TOKEN_CAPACITY,
     modifierCapacity = DEFAULT_MODIFIER_CAPACITY,
+    domainCapacity = DEFAULT_DOMAIN_CAPACITY,
 ): PreparserContext {
     return {
         source: '',
@@ -97,10 +116,11 @@ export function createPreparserContext(
         ends: new Uint32Array(tokenCapacity),
         tokenCount: 0,
         data: new Int32Array(Math.max(
-            NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MODIFIER_RECORD_STRIDE,
+            NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MODIFIER_RECORD_STRIDE + domainCapacity * DOMAIN_RECORD_STRIDE,
             CM_PREP_MIN_DATA_SLOTS,
         )),
         maxMods: modifierCapacity,
+        maxDomains: domainCapacity,
         status: 0,
     };
 }
@@ -188,6 +208,32 @@ export function skipUntil(ctx: PreparserContext, ti: number, end: number, tokenT
         ti += 1;
     }
     return ti;
+}
+
+/**
+ * Computes the offset where domain records begin in ctx.data.
+ *
+ * @param ctx Preparser context.
+ *
+ * @returns Domain records offset.
+ */
+export function domainRecordsOffset(ctx: PreparserContext): number {
+    return NR_MODIFIER_RECORDS_OFFSET + ctx.maxMods * MODIFIER_RECORD_STRIDE;
+}
+
+/**
+ * Grows the domain capacity by doubling maxDomains and reallocating ctx.data.
+ * Called by DomainListPreparser when domain count reaches capacity.
+ *
+ * @param ctx Preparser context to grow.
+ */
+export function growDomainCapacity(ctx: PreparserContext): void {
+    const newMaxDomains = ctx.maxDomains * 2;
+    const newSize = NR_MODIFIER_RECORDS_OFFSET + ctx.maxMods * MODIFIER_RECORD_STRIDE + newMaxDomains * DOMAIN_RECORD_STRIDE;
+    const newData = new Int32Array(newSize);
+    newData.set(ctx.data);
+    ctx.data = newData;
+    ctx.maxDomains = newMaxDomains;
 }
 
 /**

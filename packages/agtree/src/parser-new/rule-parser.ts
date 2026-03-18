@@ -9,6 +9,7 @@ import {
     type AnyCommentRule,
     type EmptyRule,
     type NetworkRule,
+    type ElementHidingRule,
     RuleCategory,
 } from '../nodes';
 import { createPreparserContext, initPreparserContext } from '../preparser/context';
@@ -21,6 +22,7 @@ import { AdblockSyntax } from '../utils/adblockers';
 import { CommentAstParser } from './comment/comment';
 import { NetworkRuleAstParser } from './network/network-rule';
 import type { PreparserParseOptions } from './network/network-rule';
+import { ElementHidingAstParser } from './cosmetic/element-hiding';
 
 /**
  * Default maximum number of tokens per rule.
@@ -36,20 +38,21 @@ const DEFAULT_CHILDREN_CAPACITY = 64;
 
 /**
  * The set of rule types that this parser currently produces.
- * Cosmetic rules are not yet supported and will throw at parse time.
+ * Includes element hiding cosmetic rules. Other cosmetic types (CSS injection,
+ * scriptlets, etc.) are not yet supported.
  */
 // TODO: Use AnyRule from nodes.ts
-export type AnyParsedRule = EmptyRule | AnyCommentRule | NetworkRule;
+export type AnyParsedRule = EmptyRule | AnyCommentRule | NetworkRule | ElementHidingRule;
 
 /**
  * High-level parser for adblock rules.
  *
  * Wraps the three-step pipeline (tokenize → preparse → build AST) and
  * reuses internal buffers for performance. Automatically determines whether
- * the input is a comment, network, or empty rule.
+ * the input is a comment, network, cosmetic, or empty rule.
  *
- * Cosmetic rules are not yet supported — a descriptive `Error` is thrown if
- * one is encountered.
+ * Element hiding cosmetic rules (##, #@#, #?#, #@?#) are supported. Other
+ * cosmetic rule types throw a descriptive error.
  *
  * @example
  * ```typescript
@@ -98,7 +101,7 @@ export class RuleParser {
      *
      * @returns Parsed rule AST node.
      *
-     * @throws For cosmetic rules (not yet implemented).
+     * @throws For non-element-hiding cosmetic rules (not yet implemented).
      */
     public parse(source: string, options?: PreparserParseOptions): AnyParsedRule {
         if (source.trim().length === 0) {
@@ -131,6 +134,9 @@ export class RuleParser {
 
             case RuleKind.Network:
                 return NetworkRuleAstParser.parse(source, this.ctx.data, options);
+
+            case RuleKind.Cosmetic:
+                return ElementHidingAstParser.parse(source, this.ctx.data, this.ctx.maxMods, options);
 
             default:
                 throw new Error(`Unknown rule kind: ${kind}`);

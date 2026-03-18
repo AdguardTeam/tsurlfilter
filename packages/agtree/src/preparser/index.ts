@@ -15,6 +15,8 @@ export {
     tokenStart,
     skipWs,
     skipUntil,
+    domainRecordsOffset,
+    growDomainCapacity,
 } from './context';
 
 // Re-export constants and types from network rule preparser
@@ -35,6 +37,26 @@ export {
     MODIFIER_FLAG_NEGATED,
     NO_VALUE,
 } from './network/constants';
+export {
+    CR_FLAGS_OFFSET,
+    CR_SEP_SOURCE_START,
+    CR_DOMAIN_COUNT,
+    CR_BODY_START,
+    CR_FLAG_EXCEPTION,
+    CR_FLAG_HAS_ADG_MODS,
+    CR_FLAG_HAS_UBO_MODS,
+    CR_SEP_KIND_SHIFT,
+    CR_SEP_KIND_MASK,
+    DOMAIN_RECORD_STRIDE,
+    DOMAIN_FIELD_VALUE_START,
+    DOMAIN_FIELD_VALUE_END,
+    DOMAIN_FIELD_FLAGS,
+    DOMAIN_FLAG_EXCEPTION,
+    cosmeticSepLength,
+    cosmeticSepTokenCount,
+    cosmeticSepIsException,
+    cosmeticSepToString,
+} from './cosmetic/constants';
 export {
     type NetworkRulePreparseResult,
     createNetworkRulePreparseResult,
@@ -60,6 +82,8 @@ export {
     CM_KIND,
 } from './comment';
 export { NetworkRulePreparser } from './network/network-rule';
+export { ElementHidingPreparser } from './cosmetic/element-hiding';
+export { DomainListPreparser } from './misc/domain-list';
 export { ModifierListPreparser } from './misc/modifier-list';
 export { ModifierPreparser } from './misc/modifier';
 export { ValuePreparser } from './misc/value';

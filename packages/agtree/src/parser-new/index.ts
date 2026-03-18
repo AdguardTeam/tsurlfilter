@@ -5,8 +5,10 @@
 export { ValueParser } from './misc/value';
 export { ModifierParser } from './misc/modifier';
 export { ModifierListParser } from './misc/modifier-list';
+export { DomainListParser } from './misc/domain-list';
 export { NetworkRuleAstParser, type PreparserParseOptions } from './network/network-rule';
 export { NetworkRuleParser } from './network/network-rule-parser';
+export { ElementHidingAstParser, type ElementHidingParseOptions } from './cosmetic/element-hiding';
 export {
     SimpleCommentAstParser,
     PreprocessorCommentAstParser,
