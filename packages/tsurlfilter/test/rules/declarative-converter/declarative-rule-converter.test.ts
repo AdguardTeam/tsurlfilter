@@ -694,7 +694,7 @@ describe('DeclarativeRulesConverter', () => {
                     },
                 },
                 condition: {
-                    urlFilter: '||example.com',
+                    urlFilter: '||example.com*^param=',
                     resourceTypes: documentResourceTypes,
                 },
             });
@@ -725,7 +725,7 @@ describe('DeclarativeRulesConverter', () => {
             });
         });
 
-        it('combine several $removeparam rule', async () => {
+        it('does not merge $removeparam rules (param-aware urlFilter)', async () => {
             const filterId = 0;
             const rules = [
                 '||testcases.adguard.com$xmlhttprequest,removeparam=p1case1',
@@ -736,8 +736,15 @@ describe('DeclarativeRulesConverter', () => {
             const filter = await createScannedFilter(filterId, rules);
 
             const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
-            expect(declarativeRules).toHaveLength(2);
-            expect(declarativeRules[0]).toStrictEqual({
+            // Rules are no longer merged because each has a unique
+            // param-aware urlFilter, enabling multi-hop redirect chaining.
+            expect(declarativeRules).toHaveLength(4);
+
+            const findByParam = (param: string) => declarativeRules.find(
+                (r) => r.action.redirect?.transform?.queryTransform?.removeParams?.[0] === param,
+            );
+
+            expect(findByParam('p1case1')).toStrictEqual({
                 id: expect.any(Number),
                 priority: 101,
                 action: {
@@ -745,21 +752,53 @@ describe('DeclarativeRulesConverter', () => {
                     redirect: {
                         transform: {
                             queryTransform: {
-                                removeParams: [
-                                    'p1case1',
-                                    'p2case1',
-                                    'P3Case1',
-                                ],
+                                removeParams: ['p1case1'],
                             },
                         },
                     },
                 },
                 condition: {
-                    urlFilter: '||testcases.adguard.com',
+                    urlFilter: '||testcases.adguard.com*^p1case1=',
                     resourceTypes: [ResourceType.XmlHttpRequest],
                 },
             });
-            expect(declarativeRules[1]).toStrictEqual({
+            expect(findByParam('p2case1')).toStrictEqual({
+                id: expect.any(Number),
+                priority: 101,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        transform: {
+                            queryTransform: {
+                                removeParams: ['p2case1'],
+                            },
+                        },
+                    },
+                },
+                condition: {
+                    urlFilter: '||testcases.adguard.com*^p2case1=',
+                    resourceTypes: [ResourceType.XmlHttpRequest],
+                },
+            });
+            expect(findByParam('P3Case1')).toStrictEqual({
+                id: expect.any(Number),
+                priority: 101,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        transform: {
+                            queryTransform: {
+                                removeParams: ['P3Case1'],
+                            },
+                        },
+                    },
+                },
+                condition: {
+                    urlFilter: '||testcases.adguard.com*^P3Case1=',
+                    resourceTypes: [ResourceType.XmlHttpRequest],
+                },
+            });
+            expect(findByParam('p1case2')).toStrictEqual({
                 id: expect.any(Number),
                 priority: 101,
                 action: {
@@ -773,6 +812,7 @@ describe('DeclarativeRulesConverter', () => {
                     },
                 },
                 condition: {
+                    urlFilter: '^p1case2=',
                     resourceTypes: [ResourceType.XmlHttpRequest],
                 },
             });
@@ -800,7 +840,7 @@ describe('DeclarativeRulesConverter', () => {
                 },
                 condition: {
                     resourceTypes: [ResourceType.XmlHttpRequest],
-                    urlFilter: '||testcases.adguard.com',
+                    urlFilter: '||testcases.adguard.com*^p2case2=',
                 },
             });
         });
@@ -826,7 +866,7 @@ describe('DeclarativeRulesConverter', () => {
                     },
                 },
                 condition: {
-                    urlFilter: '||example.com^',
+                    urlFilter: '||example.com^*^id=',
                     resourceTypes: [ResourceType.Script],
                 },
             });
@@ -853,10 +893,145 @@ describe('DeclarativeRulesConverter', () => {
                     },
                 },
                 condition: {
-                    urlFilter: '||example.com',
+                    urlFilter: '||example.com*^$param=',
                     resourceTypes: documentResourceTypes,
                 },
             });
+        });
+
+        it('generic removeparam rules produce param-aware urlFilter for multi-hop chaining', async () => {
+            const filterId = 0;
+            const rules = [
+                '$removeparam=utm_source',
+                '$removeparam=utm_medium',
+                '$removeparam=utm_campaign',
+            ];
+            const filter = await createScannedFilter(filterId, rules);
+
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(3);
+
+            const findByParam = (param: string) => declarativeRules.find(
+                (r) => r.action.redirect?.transform?.queryTransform?.removeParams?.[0] === param,
+            );
+
+            for (const param of ['utm_source', 'utm_medium', 'utm_campaign']) {
+                const rule = findByParam(param);
+                expect(rule).toBeDefined();
+                expect(rule!.condition.urlFilter).toBe(`^${param}=`);
+                expect(rule!.action.redirect?.transform?.queryTransform?.removeParams).toEqual([param]);
+                expect(rule!.condition.resourceTypes).toEqual(documentResourceTypes);
+            }
+        });
+
+        it('domain-scoped and generic removeparam rules coexist with param-aware urlFilter', async () => {
+            const filterId = 0;
+            const rules = [
+                '$removeparam=utm_campaign',
+                '||adguard.$removeparam=clid',
+            ];
+            const filter = await createScannedFilter(filterId, rules);
+
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(2);
+
+            const findByParam = (param: string) => declarativeRules.find(
+                (r) => r.action.redirect?.transform?.queryTransform?.removeParams?.[0] === param,
+            );
+
+            const utmRule = findByParam('utm_campaign');
+            expect(utmRule).toBeDefined();
+            expect(utmRule!.condition.urlFilter).toBe('^utm_campaign=');
+
+            const clidRule = findByParam('clid');
+            expect(clidRule).toBeDefined();
+            expect(clidRule!.condition.urlFilter).toBe('||adguard.*^clid=');
+        });
+
+        it('regex removeparam is not supported and does not get param-aware urlFilter', async () => {
+            const filterId = 0;
+            const rule = '||example.com$removeparam=/^utm_/';
+            const filter = await createScannedFilter(filterId, [rule]);
+
+            const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+            expect(errors[0].message).toBe(
+                'Network rule with $removeparam modifier with negation or regexp is not supported',
+            );
+        });
+
+        it('negation removeparam is not supported and does not get param-aware urlFilter', async () => {
+            const filterId = 0;
+            const rule = '||example.com$removeparam=~param';
+            const filter = await createScannedFilter(filterId, [rule]);
+
+            const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+            expect(errors[0].message).toBe(
+                'Network rule with $removeparam modifier with negation or regexp is not supported',
+            );
+        });
+
+        it('empty removeparam preserves strip-all behavior without param token', async () => {
+            const filterId = 0;
+            const rule = '||example.com^$removeparam';
+            const filter = await createScannedFilter(filterId, [rule]);
+
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toEqual({
+                id: expect.any(Number),
+                priority: 1,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        transform: {
+                            query: '',
+                        },
+                    },
+                },
+                condition: {
+                    urlFilter: '||example.com^',
+                    resourceTypes: documentResourceTypes,
+                },
+            });
+        });
+
+        it('removeparam with value that cannot be decoded produces a conversion error', async () => {
+            const filterId = 0;
+            const rule = '||example.com^$removeparam=%E0%A4%A';
+            const filter = await createScannedFilter(filterId, [rule]);
+
+            const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+            expect(errors[0].message).toBe(
+                'Network rule with $removeparam modifier contains value that cannot be decoded',
+            );
+        });
+
+        it('whitespace-only removeparam does not get param-aware urlFilter', async () => {
+            const filterId = 0;
+            const rule = '||example.com^$removeparam=%20';
+            const filter = await createScannedFilter(filterId, [rule]);
+
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+
+            // Should have redirect action but no param-aware urlFilter token.
+            expect(declarativeRules[0].action).toEqual({
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        queryTransform: {
+                            removeParams: [' '],
+                        },
+                    },
+                },
+            });
+            expect(declarativeRules[0].condition.urlFilter).toBe('||example.com^');
         });
     });
 

@@ -2,6 +2,8 @@ import { type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { type DeclarativeRuleInfo, defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
+import { nanoid } from '../../common/utils/nanoid';
+import { getDomain } from '../../common/utils/url';
 import { Mutex } from '../utils/mutex';
 
 import { requestContextStorage } from './request';
@@ -194,7 +196,7 @@ class DeclarativeFilteringLog {
      */
     private async logMatchedRule(record: chrome.declarativeNetRequest.MatchedRuleInfoDebug): Promise<void> {
         const {
-            request: { requestId },
+            request: { requestId, url: requestUrl },
             rule: { rulesetId, ruleId },
         } = record;
 
@@ -231,10 +233,44 @@ class DeclarativeFilteringLog {
             return;
         }
 
+        // Determine the eventId to associate with this rule match.
+        // If the matched URL differs from the stored context URL, Chrome
+        // applied a DNR redirect without firing onBeforeRequest for this hop
+        // (observed with $removeparam redirect chains). In that case we emit
+        // a synthetic SendRequest so the filtering log gets a dedicated entry.
+        let { eventId } = context;
+
+        if (requestUrl !== context.requestUrl) {
+            eventId = nanoid();
+
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.SendRequest,
+                data: {
+                    tabId: context.tabId,
+                    eventId,
+                    requestUrl,
+                    requestDomain: getDomain(requestUrl),
+                    frameUrl: context.referrerUrl,
+                    frameDomain: getDomain(context.referrerUrl),
+                    requestType: context.contentType,
+                    timestamp: context.timestamp,
+                    requestThirdParty: context.thirdParty,
+                    method: context.method,
+                },
+            });
+
+            // Update the stored context so the next onRuleMatchedDebug for
+            // the same requestId sees the current hop URL and eventId.
+            requestContextStorage.update(requestId, {
+                eventId,
+                requestUrl,
+            });
+        }
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.MatchedDeclarativeRule,
             data: {
-                eventId: context.eventId,
+                eventId,
                 tabId: context.tabId,
                 declarativeRuleInfo,
             },

@@ -366,16 +366,21 @@ describe('DeclarativeConverter', () => {
 
         const declarativeRules = await ruleSet.getDeclarativeRules();
 
-        // Since we combine removeparam rules into one.
-        expect(declarativeRules).toHaveLength(2);
+        // Rules are no longer merged because each has a unique
+        // param-aware urlFilter, enabling multi-hop redirect chaining.
+        expect(declarativeRules).toHaveLength(4);
 
-        let sources = await ruleSet.getRulesById(declarativeRules[0].id);
-        let originalRules = sources.map(({ sourceRule }) => sourceRule);
-        expect(originalRules).toEqual(expect.arrayContaining(rules));
-
-        sources = await ruleSet.getRulesById(declarativeRules[1].id);
-        originalRules = sources.map(({ sourceRule }) => sourceRule);
-        expect(originalRules).toEqual(expect.arrayContaining([additionalRule]));
+        // Each declarative rule maps back to its own source rule.
+        const allSources = await Promise.all(
+            declarativeRules.map((declRule) => ruleSet.getRulesById(declRule.id)),
+        );
+        for (const sources of allSources) {
+            const originalRules = sources.map(({ sourceRule }) => sourceRule);
+            expect(originalRules).toHaveLength(1);
+            expect([...rules, additionalRule]).toEqual(
+                expect.arrayContaining(originalRules),
+            );
+        }
     });
 
     it('returns badfilter sources', async () => {
@@ -1329,8 +1334,9 @@ describe('DeclarativeConverter', () => {
             ], []);
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
-            // 5 is because of 2 removeparam rules are converted into 1 declarative rule.
-            expect(declarativeRules).toHaveLength(5);
+            // 6 because removeparam rules are no longer merged (each has
+            // a unique param-aware urlFilter for multi-hop redirect chaining).
+            expect(declarativeRules).toHaveLength(6);
 
             // Function to bring more human readable error message.
             const checkForUniqueRule = (rules: typeof declarativeRules) => {

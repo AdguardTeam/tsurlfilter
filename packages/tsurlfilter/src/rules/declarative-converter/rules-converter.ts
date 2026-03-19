@@ -95,7 +95,6 @@ import { isSafeRule } from '../declarative-converter-utils/is-safe-dnr-rule';
 import { type DeclarativeRule } from './declarative-rule';
 import { type ConvertedRules } from './converted-result';
 import { RegularRulesConverter } from './grouped-rules-converters/regular-converter';
-import { RemoveParamRulesConverter } from './grouped-rules-converters/remove-param-converter';
 import { RemoveHeaderRulesConverter } from './grouped-rules-converters/remove-header-converter';
 import { CspRulesConverter } from './grouped-rules-converters/csp-converter';
 import { type Source } from './source-map';
@@ -139,7 +138,6 @@ export class DeclarativeRulesConverter {
     static converters = {
         [RulesGroup.Regular]: RegularRulesConverter,
         [RulesGroup.Csp]: CspRulesConverter,
-        [RulesGroup.RemoveParam]: RemoveParamRulesConverter,
         [RulesGroup.RemoveHeader]: RemoveHeaderRulesConverter,
         [RulesGroup.BadFilter]: BadFilterRulesConverter,
     };
