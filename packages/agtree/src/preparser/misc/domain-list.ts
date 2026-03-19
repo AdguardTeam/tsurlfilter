@@ -59,7 +59,7 @@ export class DomainListPreparser {
             return 0;
         }
 
-        const recordsOffset = domainRecordsOffset(ctx);
+        let recordsOffset = domainRecordsOffset(ctx);
 
         while (itemStartTi < endTi) {
             // Find the end of this item (next separator or endTi)
@@ -152,6 +152,7 @@ export class DomainListPreparser {
             // Check capacity and grow if needed
             if (domainCount >= ctx.maxDomains) {
                 growDomainCapacity(ctx);
+                recordsOffset = domainRecordsOffset(ctx);
             }
 
             // Write domain record
