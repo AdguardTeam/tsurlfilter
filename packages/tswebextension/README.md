@@ -855,29 +855,8 @@ type:
 
 Dispatch the specified filtering event.
 
-## Development
+## Documentation
 
-This project is part of the `@adguard/extensions` monorepo.
-It is highly recommended to use `lerna` for commands, as it will execute scripts in the correct order and can cache dependencies.
-
-Run module tests
-
-```sh
-npx lerna run --scope=@adguard/tswebextension test
-```
-
-Run build
-
-```sh
-npx lerna run --scope=@adguard/tswebextension build
-```
-
-> Note that during the build simplified [companiesdb] data — `trackers-min.ts` — is to be updated.
-
-Lint source code
-
-```sh
-npx lerna run --scope=@adguard/tswebextension lint
-```
-
-[companiesdb]: https://github.com/AdguardTeam/companiesdb
+- [Changelog](CHANGELOG.md)
+- [Development guide](../../DEVELOPMENT.md)
+- [LLM agent rules](AGENTS.md)

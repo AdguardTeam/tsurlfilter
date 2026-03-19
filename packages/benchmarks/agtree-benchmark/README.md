@@ -36,6 +36,12 @@ To incorporate a new tool or resource, follow these steps:
     - For adding a new resource, access [`config/resources.ts`][resources-config].
 2. Create a new entry, ensuring that it follows the same format as existing entries in the respective file.
 
+## Documentation
+
+- [Results](RESULTS.md)
+- [Benchmarks overview](../AGENTS.md)
+- [Development guide](../../../DEVELOPMENT.md)
+
 [resources-config]: ./src/config/resources.ts
 [results]: ./RESULTS.md
 [tools-config]: ./src/config/tools.ts

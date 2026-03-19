@@ -32,6 +32,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Serializer and Deserializer APIs.
 - Bitwise platform enums (`GenericPlatform`, `SpecificPlatform`) and related helpers.
 
+## [4.0.2] - 2026-03-17
+
+### Fixed
+
+- Parsing of pseudo-class selectors containing attribute selectors,
+  e.g., `:not([class])`.
+
+[4.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-4.0.2
+
 ## [4.0.1] - 2026-02-19
 
 ### Added

@@ -27,3 +27,6 @@ Makefile
 
 # compatibility-data-extractor downloads
 packages/agtree/scripts/compatibility-data-extractor/downloads/
+
+# SDD specs
+specs/.current/

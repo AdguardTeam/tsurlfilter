@@ -446,7 +446,7 @@ interface ConversionData {
      * Original filter list rules that were converted.
      */
     originals: string[];
-    
+
     /**
      * Conversion map.
      * Maps line start offsets in the converted content to indexes in the originals array.
@@ -783,39 +783,8 @@ npx tsurlfilter extract-filters ./build/rulesets ./filters
 
 This will extract the filters from the rulesets and their metadata and save these files to the specified output path.
 
-## Development
+## Documentation
 
-This project is part of the `@adguard/extensions` monorepo.
-It is highly recommended to use `lerna` for commands as it will execute scripts in the correct order and can cache dependencies.
-
-```sh
-npx lerna run --scope=@adguard/tsurlfilter:<script>
-```
-
-### <a id="npm-scripts"></a>NPM scripts
-
-- `lint`: Run ESLint and TSC
-- `lint:code`: Run ESLint
-- `lint:types`: Run TSC
-- `start` Start build in watch mode
-- `build`: Build the project
-- `build:types`: Generate types
-- `docs`: Generate documentation
-- `docs:mv3`: Generate documentation for manifest v3
-- `test`: Run tests
-- `test:light`: Run tests without benchmarks
-- `test:watch`: Run tests in watch mode
-- `test:coverage`: Run tests with coverage
-- `test:smoke`: Run smoke tests
-- `test:prod`: Run production tests, i.e lint, smoke tests, and tests
-- `report-coverage`: Report coverage to coveralls
-
-### <a id="excluding-peer-dependencies"></a>Excluding peerDependencies
-
-On library development, one might want to set some peer dependencies, and thus remove those from the final bundle. You can see in [Rollup docs](https://rollupjs.org/#peer-dependencies) how to do that.
-
-Good news: the setup is here for you, you must only include the dependency name in `external` property within `rollup.config.js`. For example, if you want to exclude `lodash`, just write there `external: ['lodash']`.
-
-### <a id="git-hooks"></a>Git Hooks
-
-There is already set a `precommit` hook for formatting your code with Eslint :nail_care:
+- [Changelog](CHANGELOG.md)
+- [Development guide](../../DEVELOPMENT.md)
+- [LLM agent rules](AGENTS.md)

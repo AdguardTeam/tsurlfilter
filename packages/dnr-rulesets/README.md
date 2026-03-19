@@ -396,51 +396,8 @@ Example of usage: [adguard-api-mv3](../examples/adguard-api-mv3)
 
 See the list of included filters in [FILTERS.md](FILTERS.md).
 
-## Development
+## Documentation
 
-### `build:assets`
-
-Downloads original rules, converts it to DNR rule sets via [TSUrlFilter declarative-converter](../tsurlfilter/README.md#declarativeconverter) and generates extension manifest with predefined rules resources.
-
-```bash
-pnpm build:assets
-```
-
-### `build:lib`
-
-Builds SDK to load DNR rule sets to the specified directory.
-
-```bash
-pnpm build:lib
-```
-
-### `build:cli`
-
-Builds CLI utility to load DNR rule sets to the specified directory, inject rulesets to the manifest object and can be used for local development for DNR rulesets.
-
-```bash
-pnpm build:cli
-```
-
-### `build:docs`
-
-Generates [Included filter lists](#included-filter-lists) section.
-
-```bash
-pnpm build:docs
-```
-
-### `build`
-
-Clears `dist` folder and runs `build:assets`, `build:cli` and `build:lib` scripts.
-
-```bash
-pnpm build
-```
-
-### `watch`
-Watches for changes in the `dist/filters` folder and rebuilds DNR rulesets.
-
-```bash
-pnpm watch
-```
+- [Changelog](CHANGELOG.md)
+- [Development guide](../../DEVELOPMENT.md)
+- [LLM agent rules](AGENTS.md)
