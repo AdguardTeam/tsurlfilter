@@ -5,14 +5,14 @@
  * Decoupled from specific rule types - all parameters are caller-provided.
  */
 
-import { ListNodeType, ListItemNodeType } from '../../nodes';
-import type { DomainList, Domain, DomainListSeparator } from '../../nodes';
+import { ListItemNodeType, ListNodeType } from '../../nodes';
+import type { Domain, DomainList, DomainListSeparator } from '../../nodes';
 import {
-    DOMAIN_RECORD_STRIDE,
-    DOMAIN_FIELD_VALUE_START,
-    DOMAIN_FIELD_VALUE_END,
     DOMAIN_FIELD_FLAGS,
+    DOMAIN_FIELD_VALUE_END,
+    DOMAIN_FIELD_VALUE_START,
     DOMAIN_FLAG_EXCEPTION,
+    DOMAIN_RECORD_STRIDE,
 } from '../../preparser/cosmetic/constants';
 
 /**

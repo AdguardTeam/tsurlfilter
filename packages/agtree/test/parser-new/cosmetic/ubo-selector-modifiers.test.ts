@@ -101,6 +101,7 @@ describe('RuleParser — uBO selector modifiers', () => {
     });
 
     describe('multiple modifiers', () => {
+        // eslint-disable-next-line max-len
         test(':matches-path() + :matches-media() - ##:matches-path(/page):matches-media((min-width: 1024px)) .ad', () => {
             const ast = parser.parse('##:matches-path(/page):matches-media((min-width: 1024px)) .ad') as any;
 

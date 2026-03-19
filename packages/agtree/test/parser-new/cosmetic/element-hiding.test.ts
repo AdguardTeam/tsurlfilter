@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
-import { RuleParser } from '../../../src/parser-new/rule-parser';
 import type { ElementHidingRule } from '../../../src/nodes';
+import { RuleParser } from '../../../src/parser-new/rule-parser';
 
 const parser = new RuleParser();
 
@@ -9,7 +9,7 @@ describe('RuleParser — element hiding rules', () => {
     describe('parse (with location)', () => {
         test('example.com##.ads — basic element hiding', () => {
             const ast = parser.parse('example.com##.ads', { isLocIncluded: true });
-            
+
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
                 category: 'Cosmetic',
@@ -54,7 +54,7 @@ describe('RuleParser — element hiding rules', () => {
 
         test('example.com#@#.ads — element hiding exception', () => {
             const ast = parser.parse('example.com#@#.ads', { isLocIncluded: true });
-            
+
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
                 exception: true,
@@ -80,7 +80,7 @@ describe('RuleParser — element hiding rules', () => {
 
         test('example.com,~example.org##.banner — multiple domains with exception', () => {
             const ast = parser.parse('example.com,~example.org##.banner', { isLocIncluded: true });
-            
+
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
                 exception: false,
@@ -120,7 +120,7 @@ describe('RuleParser — element hiding rules', () => {
 
         test('##.popup — no domains, global rule', () => {
             const ast = parser.parse('##.popup', { isLocIncluded: true });
-            
+
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
                 exception: false,
@@ -149,7 +149,7 @@ describe('RuleParser — element hiding rules', () => {
 
         test('example.com#?#div:has(> .ad) — extended element hiding', () => {
             const ast = parser.parse('example.com#?#div:has(> .ad)', { isLocIncluded: true });
-            
+
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
                 exception: false,
@@ -173,7 +173,7 @@ describe('RuleParser — element hiding rules', () => {
 
         test('example.com#@?#div:has(> .ad) — extended element hiding exception', () => {
             const ast = parser.parse('example.com#@?#div:has(> .ad)', { isLocIncluded: true });
-            
+
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
                 exception: true,
@@ -197,7 +197,7 @@ describe('RuleParser — element hiding rules', () => {
 
         test('example.com ## .ads — whitespace around separator', () => {
             const ast = parser.parse('example.com ## .ads', { isLocIncluded: true });
-            
+
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
                 body: {
@@ -212,7 +212,7 @@ describe('RuleParser — element hiding rules', () => {
 
         test('example.com##div[id="foo,bar"] — complex selector with comma', () => {
             const ast = parser.parse('example.com##div[id="foo,bar"]', { isLocIncluded: true });
-            
+
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
                 body: {
@@ -227,7 +227,7 @@ describe('RuleParser — element hiding rules', () => {
 
         test('example.com##.class1,.class2 — multiple selectors', () => {
             const ast = parser.parse('example.com##.class1,.class2', { isLocIncluded: true });
-            
+
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
                 body: {
@@ -244,7 +244,7 @@ describe('RuleParser — element hiding rules', () => {
     describe('parse (without location)', () => {
         test('example.com##.ads', () => {
             const ast = parser.parse('example.com##.ads', { isLocIncluded: false });
-            
+
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
                 exception: false,
@@ -280,7 +280,7 @@ describe('RuleParser — element hiding rules', () => {
     describe('edge cases', () => {
         test('trailing whitespace in body is trimmed', () => {
             const ast = parser.parse('example.com##.ads   ', { isLocIncluded: true });
-            
+
             expect(ast).toMatchObject({
                 body: {
                     selectorList: {
@@ -294,7 +294,7 @@ describe('RuleParser — element hiding rules', () => {
 
         test('unicode in selector', () => {
             const ast = parser.parse('example.com##.класс', { isLocIncluded: false });
-            
+
             expect(ast).toMatchObject({
                 body: {
                     selectorList: {
@@ -306,7 +306,7 @@ describe('RuleParser — element hiding rules', () => {
 
         test('complex domain list with regex domain', () => {
             const ast = parser.parse('/example\\.com/,test.com##.ads', { isLocIncluded: false });
-            
+
             expect(ast).toMatchObject({
                 domains: {
                     children: [
@@ -345,7 +345,7 @@ describe('RuleParser — element hiding rules', () => {
         ])('separator %s has exception=%s', (separator, expectedException) => {
             const rule = `example.com${separator}.ads`;
             const ast = parser.parse(rule) as ElementHidingRule;
-            
+
             expect(ast.exception).toBe(expectedException);
             expect(ast.separator.value).toBe(separator);
         });

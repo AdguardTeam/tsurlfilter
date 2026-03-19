@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'vitest';
 
-import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
-import { createPreparserContext, initPreparserContext, domainRecordsOffset } from '../../../src/preparser/context';
-import { DomainListPreparser } from '../../../src/preparser/misc/domain-list';
 import { DomainListParser } from '../../../src/parser-new/misc/domain-list';
+import { createPreparserContext, domainRecordsOffset, initPreparserContext } from '../../../src/preparser/context';
+import { DomainListPreparser } from '../../../src/preparser/misc/domain-list';
 import { TokenType } from '../../../src/tokenizer/token-types';
+import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
 
 describe('DomainListParser', () => {
     const createTokensAndContext = (source: string) => {
@@ -15,12 +15,12 @@ describe('DomainListParser', () => {
             actualEnd: 0,
             overflowed: 0 as 0 | 1,
         };
-        
+
         tokenizeLine(source, 0, tokens);
-        
+
         const ctx = createPreparserContext();
         initPreparserContext(ctx, source, tokens);
-        
+
         return { tokens, ctx };
     };
 
@@ -28,14 +28,14 @@ describe('DomainListParser', () => {
         test('single domain', () => {
             const source = 'example.com';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -44,7 +44,7 @@ describe('DomainListParser', () => {
                 ',',
                 true,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!).toMatchObject({
                 type: 'DomainList',
@@ -66,14 +66,14 @@ describe('DomainListParser', () => {
         test('multiple domains separated by comma', () => {
             const source = 'example.com,test.org,foo.net';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -82,7 +82,7 @@ describe('DomainListParser', () => {
                 ',',
                 true,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!).toMatchObject({
                 type: 'DomainList',
@@ -118,14 +118,14 @@ describe('DomainListParser', () => {
         test('domains with exception prefix ~', () => {
             const source = 'example.com,~test.org,foo.net';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -134,7 +134,7 @@ describe('DomainListParser', () => {
                 ',',
                 true,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!).toMatchObject({
                 type: 'DomainList',
@@ -164,14 +164,14 @@ describe('DomainListParser', () => {
         test('domains separated by pipe', () => {
             const source = 'example.com|test.org';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Pipe,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -180,7 +180,7 @@ describe('DomainListParser', () => {
                 '|',
                 true,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!).toMatchObject({
                 type: 'DomainList',
@@ -203,14 +203,14 @@ describe('DomainListParser', () => {
         test('regex domain', () => {
             const source = '/example\\.com/';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -219,7 +219,7 @@ describe('DomainListParser', () => {
                 ',',
                 true,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!).toMatchObject({
                 type: 'DomainList',
@@ -239,14 +239,14 @@ describe('DomainListParser', () => {
         test('regex domain with embedded comma', () => {
             const source = '/example\\.(com|org)/,test.net';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -255,7 +255,7 @@ describe('DomainListParser', () => {
                 ',',
                 true,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!).toMatchObject({
                 type: 'DomainList',
@@ -273,21 +273,21 @@ describe('DomainListParser', () => {
                     },
                 ],
             });
-            
+
             expect(domainList!.children).toHaveLength(2);
         });
 
         test('domains with whitespace', () => {
             const source = ' example.com , test.org ';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -296,7 +296,7 @@ describe('DomainListParser', () => {
                 ',',
                 true,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!).toMatchObject({
                 type: 'DomainList',
@@ -319,14 +319,14 @@ describe('DomainListParser', () => {
         test('empty domain list', () => {
             const source = '';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -335,7 +335,7 @@ describe('DomainListParser', () => {
                 ',',
                 true,
             );
-            
+
             // Empty domain list returns undefined
             expect(domainList).toBeUndefined();
         });
@@ -343,14 +343,14 @@ describe('DomainListParser', () => {
         test('all exception domains', () => {
             const source = '~example.com,~test.org';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -359,7 +359,7 @@ describe('DomainListParser', () => {
                 ',',
                 true,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!.children).toHaveLength(2);
             expect(domainList!.children[0]).toMatchObject({
@@ -379,14 +379,14 @@ describe('DomainListParser', () => {
         test('domains without location info', () => {
             const source = 'example.com,~test.org';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -395,7 +395,7 @@ describe('DomainListParser', () => {
                 ',',
                 false,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!).toMatchObject({
                 type: 'DomainList',
@@ -413,7 +413,7 @@ describe('DomainListParser', () => {
                     },
                 ],
             });
-            
+
             expect(domainList!).not.toHaveProperty('start');
             expect(domainList!).not.toHaveProperty('end');
             expect(domainList!.children[0]).not.toHaveProperty('start');
@@ -425,14 +425,14 @@ describe('DomainListParser', () => {
         test('unicode in domain', () => {
             const source = 'пример.рф,test.com';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -441,7 +441,7 @@ describe('DomainListParser', () => {
                 ',',
                 false,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!.children).toHaveLength(2);
             expect(domainList!.children[0].value).toBe('пример.рф');
@@ -451,14 +451,14 @@ describe('DomainListParser', () => {
         test('complex regex with nested structures', () => {
             const source = '/example\\.(com|org|net)$/,test.io';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -467,7 +467,7 @@ describe('DomainListParser', () => {
                 ',',
                 false,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!.children).toHaveLength(2);
             expect(domainList!.children[0].value).toBe('/example\\.(com|org|net)$/');
@@ -477,14 +477,14 @@ describe('DomainListParser', () => {
         test('mixed regex and regular domains', () => {
             const source = 'example.com,/test\\d+\\.org/,~foo.net';
             const { ctx } = createTokensAndContext(source);
-            
+
             const domainCount = DomainListPreparser.preparse(
                 ctx,
                 0,
                 ctx.tokenCount,
                 TokenType.Comma,
             );
-            
+
             const domainList = DomainListParser.parse(
                 source,
                 ctx.data,
@@ -493,7 +493,7 @@ describe('DomainListParser', () => {
                 ',',
                 false,
             );
-            
+
             expect(domainList).toBeDefined();
             expect(domainList!.children).toHaveLength(3);
             expect(domainList!.children[0]).toMatchObject({

@@ -11,13 +11,18 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
-import { tokenStart, skipWs, domainRecordsOffset, growDomainCapacity } from '../context';
 import {
-    DOMAIN_RECORD_STRIDE,
-    DOMAIN_FIELD_VALUE_START,
-    DOMAIN_FIELD_VALUE_END,
+    domainRecordsOffset,
+    growDomainCapacity,
+    skipWs,
+    tokenStart,
+} from '../context';
+import {
     DOMAIN_FIELD_FLAGS,
+    DOMAIN_FIELD_VALUE_END,
+    DOMAIN_FIELD_VALUE_START,
     DOMAIN_FLAG_EXCEPTION,
+    DOMAIN_RECORD_STRIDE,
 } from '../cosmetic/constants';
 
 /**
@@ -45,7 +50,7 @@ export class DomainListPreparser {
         endTi: number,
         separatorType: TokenType.Comma | TokenType.Pipe,
     ): number {
-        const { types, source } = ctx;
+        const { types } = ctx;
         let domainCount = 0;
         let itemStartTi = skipWs(ctx, startTi);
 

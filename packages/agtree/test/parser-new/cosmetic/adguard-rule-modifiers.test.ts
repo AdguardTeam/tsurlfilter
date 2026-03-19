@@ -217,6 +217,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
             });
         });
 
+        // eslint-disable-next-line max-len
         test.skip('[$domain] with regex containing quantifier braces - [$domain=/example\\d{1,}\\.(com|org)/]##.ad', () => {
             // TODO: The value parser's isPotentialNetModifier heuristic may split
             // on the comma inside {1,} — needs investigation

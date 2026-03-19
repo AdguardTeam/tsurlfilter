@@ -116,6 +116,7 @@ export function createPreparserContext(
         ends: new Uint32Array(tokenCapacity),
         tokenCount: 0,
         data: new Int32Array(Math.max(
+            // eslint-disable-next-line max-len
             NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MODIFIER_RECORD_STRIDE + domainCapacity * DOMAIN_RECORD_STRIDE,
             CM_PREP_MIN_DATA_SLOTS,
         )),
@@ -229,6 +230,7 @@ export function domainRecordsOffset(ctx: PreparserContext): number {
  */
 export function growDomainCapacity(ctx: PreparserContext): void {
     const newMaxDomains = ctx.maxDomains * 2;
+    // eslint-disable-next-line max-len
     const newSize = NR_MODIFIER_RECORDS_OFFSET + ctx.maxMods * MODIFIER_RECORD_STRIDE + newMaxDomains * DOMAIN_RECORD_STRIDE;
     const newData = new Int32Array(newSize);
     newData.set(ctx.data);
