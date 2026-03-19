@@ -31,13 +31,21 @@ import { sendAppMessage } from '../send-app-message';
 import { hasTypeField } from './message-type-guards';
 
 interface CustomWindow extends Window {
-    isAssistantInitiated: boolean;
+    /**
+     * Reference to the current assistant message listener,
+     * stored on window to be accessible across bundles.
+     */
+    assistantMessageListener?: (message: unknown) => Promise<undefined>;
 }
 
 const customWindow: CustomWindow = window as unknown as CustomWindow;
 
 /**
  * Creates handlers for assistant messages.
+ *
+ * Safe to call multiple times: checks for old listener before adding
+ * a new one so that re-injection of the dynamically loaded assistant always
+ * results in a working message channel.
  */
 export const createAssistantMessageListener = (): void => {
     // Check, that script executed in the top frame
@@ -45,12 +53,12 @@ export const createAssistantMessageListener = (): void => {
         return;
     }
 
-    // Create assistant message listener only once.
-    if (customWindow.isAssistantInitiated) {
+    // If the listener is present on previous isolated world it won't be visible here.
+    if (customWindow.assistantMessageListener) {
         return;
     }
 
-    browser.runtime.onMessage.addListener(async (message): Promise<undefined> => {
+    const listener = async (message: unknown): Promise<undefined> => {
         if (!hasTypeField(message)) {
             logger.warn('[tsweb.assistant-listener]: message do not contain required field "type": ', message);
             return;
@@ -88,7 +96,8 @@ export const createAssistantMessageListener = (): void => {
                 logger.error(`[tsweb.assistant-listener]: not found handler for message type '${message.type}'`);
             }
         }
-    });
+    };
 
-    customWindow.isAssistantInitiated = true;
+    browser.runtime.onMessage.addListener(listener);
+    customWindow.assistantMessageListener = listener;
 };

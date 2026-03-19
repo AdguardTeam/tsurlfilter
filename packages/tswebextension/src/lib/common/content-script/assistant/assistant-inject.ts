@@ -31,6 +31,8 @@
  */
 import { adguardAssistant, type Assistant } from '@adguard/assistant';
 
+import { createAssistantMessageListener } from './assistant-listener';
+
 declare global {
     interface Window {
         adguardAssistant: Assistant | undefined;
@@ -40,3 +42,5 @@ declare global {
 if (!window.adguardAssistant) {
     window.adguardAssistant = adguardAssistant();
 }
+
+createAssistantMessageListener();

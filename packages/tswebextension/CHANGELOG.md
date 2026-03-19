@@ -30,9 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   incorrectly redirect to the document blocking page. Prefetch requests are now detected in
   `webRequest.onBeforeRequest` via `details.documentId` (excluding prerender requests) and are
   silently blocked without showing the blocking page [AdguardBrowserExtension#3414].
+- "Block ads manual" doesn't work on tabs opened before the update [AdguardBrowserExtension#3452].
 
 [AdguardBrowserExtension#3329]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3329
 [AdguardBrowserExtension#3414]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3414
+[AdguardBrowserExtension#3452]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3452
 
 ## [4.0.4] - 2026-03-18
 

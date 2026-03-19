@@ -1,6 +1,5 @@
 // Import directly from files to avoid side effects of tree shaking.
 // If import from '../../common', entire tsurlfilter will be in the package.
-import { createAssistantMessageListener } from '../../common/content-script/assistant/assistant-listener';
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { CookieController, type CookieRule } from '../../common/content-script/cookie-controller';
@@ -15,8 +14,6 @@ export { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 
 const cosmeticController = new CosmeticController();
 cosmeticController.init();
-
-createAssistantMessageListener();
 
 /**
  * TODO: wait for engine starts (like in {@link CosmeticController}).
