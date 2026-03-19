@@ -7,9 +7,9 @@
 
 import {
     type AnyCommentRule,
+    type ElementHidingRule,
     type EmptyRule,
     type NetworkRule,
-    type ElementHidingRule,
     RuleCategory,
 } from '../nodes';
 import { createPreparserContext, initPreparserContext } from '../preparser/context';
@@ -20,9 +20,9 @@ import { tokenizeLine } from '../tokenizer/tokenizer';
 import { AdblockSyntax } from '../utils/adblockers';
 
 import { CommentAstParser } from './comment/comment';
+import { ElementHidingAstParser } from './cosmetic/element-hiding';
 import { NetworkRuleAstParser } from './network/network-rule';
 import type { PreparserParseOptions } from './network/network-rule';
-import { ElementHidingAstParser } from './cosmetic/element-hiding';
 
 /**
  * Default maximum number of tokens per rule.
@@ -126,7 +126,7 @@ export class RuleParser {
         tokenizeLine(source, 0, this.tokens);
         initPreparserContext(this.ctx, source, this.tokens);
 
-        const kind = RulePreparser.preparse(this.ctx);
+        const kind = RulePreparser.preparse(this.ctx, options?.parseUboSpecificRules ?? true);
 
         switch (kind) {
             case RuleKind.Comment:

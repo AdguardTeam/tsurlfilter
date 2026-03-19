@@ -280,18 +280,16 @@ describe('RuleParser — AdGuard rule modifiers', () => {
     });
 
     describe('validation - mutually exclusive with uBO modifiers', () => {
-        test.skip('should reject AdGuard [$...] + uBO :matches-path()', () => {
-            // TODO: Implement uBO modifier detection first, then mixed-syntax rejection
+        test('should reject AdGuard [$...] + uBO :matches-path()', () => {
             expect(() => {
                 parser.parse('[$path=/page]##:matches-path(/other) .ads');
-            }).toThrow(/cannot mix.*AdGuard.*uBO/i);
+            }).toThrow('Cannot mix AdGuard modifier list [$...] with uBO pseudo-class modifiers');
         });
 
-        test.skip('should reject AdGuard [$...] + uBO :style()', () => {
-            // TODO: Implement uBO modifier detection first, then mixed-syntax rejection
+        test('should reject AdGuard [$...] + uBO :style()', () => {
             expect(() => {
                 parser.parse('[$domain=example.com]##.ads:style(display: none)');
-            }).toThrow(/cannot mix.*AdGuard.*uBO/i);
+            }).toThrow('Cannot mix AdGuard modifier list [$...] with uBO pseudo-class modifiers');
         });
     });
 });

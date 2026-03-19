@@ -4,220 +4,197 @@ import { RuleParser } from '../../../src/parser-new/rule-parser';
 
 const parser = new RuleParser();
 
-describe('RuleParser — uBO selector modifiers (NOT YET IMPLEMENTED)', () => {
-    describe('uBO pseudo-class modifiers in selector', () => {
-        test.skip(':style() pseudo-class - example.com##.ads:style(display: none !important)', () => {
-            // TODO: Implement uBO :style() pseudo-class detection and extraction
-            // uBO modifiers are pseudo-classes within the CSS selector
-            // Format: selector:modifier(value)
-            
-            const ast = parser.parse('example.com##.ads:style(display: none !important)');
-            
-            expect(ast).toMatchObject({
-                type: 'ElementHidingRule',
-                body: {
-                    selectorList: {
-                        // When implemented, selector may be stripped of modifier
-                        value: '.ads',
-                    },
-                    // modifiers: [
-                    //     {
-                    //         name: 'style',
-                    //         value: 'display: none !important',
-                    //     },
-                    // ],
-                },
-            });
+describe('RuleParser — uBO selector modifiers', () => {
+    describe(':matches-path() extraction', () => {
+        test('basic - ##:matches-path(/page) .ad', () => {
+            const ast = parser.parse('##:matches-path(/page) .ad') as any;
+
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.body.selectorList.value).toBe('.ad');
+            expect(ast.modifiers).toBeDefined();
+            expect(ast.modifiers.children).toHaveLength(1);
+            expect(ast.modifiers.children[0].name.value).toBe('matches-path');
+            expect(ast.modifiers.children[0].value.value).toBe('/page');
+            expect(ast.modifiers.children[0].exception).toBeUndefined();
         });
 
-        test.skip(':remove() pseudo-class - example.com##.banner:remove()', () => {
-            // TODO: Implement uBO :remove() pseudo-class detection
-            
-            const ast = parser.parse('example.com##.banner:remove()');
-            
-            expect(ast).toMatchObject({
-                type: 'ElementHidingRule',
-                body: {
-                    selectorList: {
-                        value: '.banner',
-                    },
-                    // modifiers: [
-                    //     {
-                    //         name: 'remove',
-                    //     },
-                    // ],
-                },
-            });
+        test('with domain - example.com##:matches-path(/page) .ad', () => {
+            const ast = parser.parse('example.com##:matches-path(/page) .ad') as any;
+
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.body.selectorList.value).toBe('.ad');
+            expect(ast.modifiers.children[0].name.value).toBe('matches-path');
+            expect(ast.modifiers.children[0].value.value).toBe('/page');
+            expect(ast.domains.children).toHaveLength(1);
         });
 
-        test.skip(':has-text() pseudo-class - example.com##div:has-text(advertisement)', () => {
-            // TODO: Implement uBO :has-text() pseudo-class detection
-            
-            const ast = parser.parse('example.com##div:has-text(advertisement)');
-            
-            expect(ast).toMatchObject({
-                type: 'ElementHidingRule',
-                body: {
-                    selectorList: {
-                        value: 'div',
-                    },
-                    // modifiers: [
-                    //     {
-                    //         name: 'has-text',
-                    //         value: 'advertisement',
-                    //     },
-                    // ],
-                },
-            });
+        test('at end of selector - ##.ad:matches-path(/page)', () => {
+            const ast = parser.parse('##.ad:matches-path(/page)') as any;
+
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.body.selectorList.value).toBe('.ad');
+            expect(ast.modifiers.children[0].name.value).toBe('matches-path');
+            expect(ast.modifiers.children[0].value.value).toBe('/page');
         });
 
-        test.skip(':matches-css() pseudo-class - example.com##div:matches-css(display: block)', () => {
-            // TODO: Implement uBO :matches-css() pseudo-class detection
-            
-            const ast = parser.parse('example.com##div:matches-css(display: block)');
-            
-            expect(ast).toMatchObject({
-                type: 'ElementHidingRule',
-                body: {
-                    selectorList: {
-                        value: 'div',
-                    },
-                    // modifiers: [
-                    //     {
-                    //         name: 'matches-css',
-                    //         value: 'display: block',
-                    //     },
-                    // ],
-                },
-            });
-        });
+        test('regex-like value with parens - ##:matches-path(/\\/(sub1|sub2)\\/page/) .ad', () => {
+            const ast = parser.parse('##:matches-path(/\\/(sub1|sub2)\\/page/) .ad') as any;
 
-        test.skip(':matches-path() pseudo-class - ##:matches-path(/page) .ad', () => {
-            // TODO: Implement uBO :matches-path() pseudo-class detection
-            // Can appear at the beginning of selector
-            
-            const ast = parser.parse('##:matches-path(/page) .ad');
-            
-            expect(ast).toMatchObject({
-                type: 'ElementHidingRule',
-                body: {
-                    selectorList: {
-                        value: '.ad',
-                    },
-                    // modifiers: [
-                    //     {
-                    //         name: 'matches-path',
-                    //         value: '/page',
-                    //     },
-                    // ],
-                },
-            });
-        });
-
-        test.skip(':matches-media() pseudo-class - ##:matches-media((min-width: 1024px)) .ad', () => {
-            // TODO: Implement uBO :matches-media() pseudo-class detection
-            
-            const ast = parser.parse('##:matches-media((min-width: 1024px)) .ad');
-            
-            expect(ast).toMatchObject({
-                type: 'ElementHidingRule',
-                body: {
-                    selectorList: {
-                        value: '.ad',
-                    },
-                    // modifiers: [
-                    //     {
-                    //         name: 'matches-media',
-                    //         value: '(min-width: 1024px)',
-                    //     },
-                    // ],
-                },
-            });
-        });
-
-        test.skip('negated with :not() - ##:not(:matches-path(/exclude)) .foo', () => {
-            // TODO: Implement :not() wrapper detection for uBO modifiers
-            // Format: :not(:matches-path(value))
-            
-            const ast = parser.parse('##:not(:matches-path(/exclude)) .foo');
-            
-            expect(ast).toMatchObject({
-                type: 'ElementHidingRule',
-                body: {
-                    selectorList: {
-                        value: '.foo',
-                    },
-                    // modifiers: [
-                    //     {
-                    //         name: 'matches-path',
-                    //         value: '/exclude',
-                    //         exception: true,  // negated
-                    //     },
-                    // ],
-                },
-            });
-        });
-
-        test.skip('multiple uBO modifiers - ##:matches-path(/page):style(color: red) .ad', () => {
-            // TODO: Implement multiple uBO modifier extraction
-            
-            const ast = parser.parse('##:matches-path(/page):style(color: red) .ad');
-            
-            expect(ast).toMatchObject({
-                type: 'ElementHidingRule',
-                body: {
-                    selectorList: {
-                        value: '.ad',
-                    },
-                    // modifiers: [
-                    //     {
-                    //         name: 'matches-path',
-                    //         value: '/page',
-                    //     },
-                    //     {
-                    //         name: 'style',
-                    //         value: 'color: red',
-                    //     },
-                    // ],
-                },
-            });
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.body.selectorList.value).toBe('.ad');
+            expect(ast.modifiers.children[0].name.value).toBe('matches-path');
+            expect(ast.modifiers.children[0].value.value).toBe('/\\/(sub1|sub2)\\/page/');
         });
     });
 
-    describe('current behavior - uBO modifiers treated as CSS pseudo-classes', () => {
-        test(':style() currently parsed as part of selector', () => {
-            // Current implementation treats uBO modifiers as regular CSS selector
-            // This documents current behavior (will change when uBO modifier extraction is implemented)
-            
-            const ast = parser.parse('example.com##.ads:style(display:none)') as any;
-            
+    describe(':matches-media() extraction', () => {
+        test('basic - ##:matches-media((min-width: 1024px)) .ad', () => {
+            const ast = parser.parse('##:matches-media((min-width: 1024px)) .ad') as any;
+
             expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.body.selectorList.value).toBe('.ads:style(display:none)');
-            expect(ast.body).not.toHaveProperty('modifiers');
+            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.body.selectorList.value).toBe('.ad');
+            expect(ast.modifiers.children).toHaveLength(1);
+            expect(ast.modifiers.children[0].name.value).toBe('matches-media');
+            expect(ast.modifiers.children[0].value.value).toBe('(min-width: 1024px)');
+        });
+    });
+
+    describe(':not() wrapping (negation)', () => {
+        test('single :not() - ##:not(:matches-path(/exclude)) .foo', () => {
+            const ast = parser.parse('##:not(:matches-path(/exclude)) .foo') as any;
+
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.body.selectorList.value).toBe('.foo');
+            expect(ast.modifiers.children).toHaveLength(1);
+            expect(ast.modifiers.children[0].name.value).toBe('matches-path');
+            expect(ast.modifiers.children[0].value.value).toBe('/exclude');
+            expect(ast.modifiers.children[0].exception).toBe(true);
         });
 
-        test(':remove() currently parsed as part of selector', () => {
-            const ast = parser.parse('example.com##.ads:remove()') as any;
-            
+        test('double :not() (cancels) - ##:not(:not(:matches-path(/path))) .foo', () => {
+            const ast = parser.parse('##:not(:not(:matches-path(/path))) .foo') as any;
+
             expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.body.selectorList.value).toBe('.ads:remove()');
-            expect(ast.body).not.toHaveProperty('modifiers');
+            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.body.selectorList.value).toBe('.foo');
+            expect(ast.modifiers.children[0].name.value).toBe('matches-path');
+            expect(ast.modifiers.children[0].value.value).toBe('/path');
+            expect(ast.modifiers.children[0].exception).toBeUndefined();
         });
 
-        test(':has-text() currently parsed as part of selector', () => {
+        test('triple :not() (single negation) - ##:not(:not(:not(:matches-path(/path)))) .foo', () => {
+            const ast = parser.parse('##:not(:not(:not(:matches-path(/path)))) .foo') as any;
+
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.body.selectorList.value).toBe('.foo');
+            expect(ast.modifiers.children[0].name.value).toBe('matches-path');
+            expect(ast.modifiers.children[0].value.value).toBe('/path');
+            expect(ast.modifiers.children[0].exception).toBe(true);
+        });
+    });
+
+    describe('multiple modifiers', () => {
+        test(':matches-path() + :matches-media() - ##:matches-path(/page):matches-media((min-width: 1024px)) .ad', () => {
+            const ast = parser.parse('##:matches-path(/page):matches-media((min-width: 1024px)) .ad') as any;
+
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.body.selectorList.value).toBe('.ad');
+            expect(ast.modifiers.children).toHaveLength(2);
+            expect(ast.modifiers.children[0].name.value).toBe('matches-path');
+            expect(ast.modifiers.children[0].value.value).toBe('/page');
+            expect(ast.modifiers.children[1].name.value).toBe('matches-media');
+            expect(ast.modifiers.children[1].value.value).toBe('(min-width: 1024px)');
+        });
+    });
+
+    describe(':style() and :remove() — not yet implemented', () => {
+        test(':style() throws not implemented', () => {
+            expect(() => {
+                parser.parse('example.com##.ads:style(display: none !important)');
+            }).toThrow(':style() is not yet implemented');
+        });
+
+        test(':remove() throws not implemented', () => {
+            expect(() => {
+                parser.parse('example.com##.banner:remove()');
+            }).toThrow(':remove() is not yet implemented');
+        });
+    });
+
+    describe('non-uBO pseudo-classes remain in selector', () => {
+        test(':has-text() stays in selector', () => {
             const ast = parser.parse('example.com##div:has-text(advertisement)') as any;
-            
+
             expect(ast.type).toBe('ElementHidingRule');
             expect(ast.body.selectorList.value).toBe('div:has-text(advertisement)');
-            expect(ast.body).not.toHaveProperty('modifiers');
+            expect(ast.modifiers).toBeUndefined();
         });
 
-        test(':matches-path() currently parsed as part of selector', () => {
-            const ast = parser.parse('##:matches-path(/page) .ad') as any;
-            
+        test(':matches-css() stays in selector', () => {
+            const ast = parser.parse('example.com##div:matches-css(display: block)') as any;
+
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.body.selectorList.value).toBe('div:matches-css(display: block)');
+            expect(ast.modifiers).toBeUndefined();
+        });
+    });
+
+    describe('error cases', () => {
+        test('duplicate modifier throws', () => {
+            expect(() => {
+                parser.parse('##:matches-path(/a):matches-path(/b) .ad');
+            }).toThrow('Duplicate uBO modifier');
+        });
+
+        test(':matches-media() nested inside pseudo-class throws', () => {
+            expect(() => {
+                parser.parse('##:not(:matches-media((min-width: 1024px))) .ad');
+            }).toThrow('cannot be nested');
+        });
+
+        test(':style() not at end throws', () => {
+            // :style() detected by preparser as terminal, but followed by non-whitespace
+            expect(() => {
+                parser.parse('example.com##.ads:style(display:none) div');
+            }).toThrow(':style() and :remove() can only be used at the end');
+        });
+    });
+
+    describe('parseUboSpecificRules=false disables detection', () => {
+        test('modifiers remain in selector when disabled', () => {
+            const ast = parser.parse('##:matches-path(/page) .ad', {
+                parseUboSpecificRules: false,
+            }) as any;
+
             expect(ast.type).toBe('ElementHidingRule');
             expect(ast.body.selectorList.value).toBe(':matches-path(/page) .ad');
-            expect(ast.body).not.toHaveProperty('modifiers');
+            expect(ast.modifiers).toBeUndefined();
+        });
+    });
+
+    describe('location info', () => {
+        test(':matches-path() with isLocIncluded', () => {
+            const ast = parser.parse('##:matches-path(/page) .ad', {
+                isLocIncluded: true,
+            }) as any;
+
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.modifiers.children[0].name.value).toBe('matches-path');
+            expect(ast.modifiers.children[0].name.start).toBe(3);
+            expect(ast.modifiers.children[0].name.end).toBe(15);
+            expect(ast.modifiers.children[0].value.value).toBe('/page');
+            expect(ast.modifiers.children[0].value.start).toBe(16);
+            expect(ast.modifiers.children[0].value.end).toBe(21);
+            expect(ast.modifiers.children[0].start).toBe(2);
+            expect(ast.modifiers.children[0].end).toBe(22);
         });
     });
 });

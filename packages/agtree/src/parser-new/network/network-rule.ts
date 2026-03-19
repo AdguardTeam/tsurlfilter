@@ -32,6 +32,12 @@ export interface PreparserParseOptions {
      * Whether to include raw text on the root node.
      */
     includeRaws?: boolean;
+
+    /**
+     * Whether to parse uBlock Origin-specific rules (uBO modifiers in cosmetic rules).
+     * Defaults to `true`.
+     */
+    parseUboSpecificRules?: boolean;
 }
 
 /**

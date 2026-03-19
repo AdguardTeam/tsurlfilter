@@ -5,11 +5,11 @@
  * matching comment, network, or cosmetic preparser.
  */
 
-import { RuleClassifier, RuleKind, CosmeticSepKind } from './classifier';
+import { CosmeticSepKind, RuleClassifier, RuleKind } from './classifier';
 import { CommentClassifier } from './comment/classifier';
 import type { PreparserContext } from './context';
-import { NetworkRulePreparser } from './network/network-rule';
 import { ElementHidingPreparser } from './cosmetic/element-hiding';
+import { NetworkRulePreparser } from './network/network-rule';
 
 export { RuleKind } from './classifier';
 
@@ -32,13 +32,14 @@ export class RulePreparser {
      * Classifies the rule and runs the appropriate preparser.
      *
      * @param ctx Preparser context with tokenizer output already loaded.
+     * @param parseUboSpecificRules Whether to detect uBO modifiers (default true).
      *
      * @returns The {@link RuleKind} of the rule, so the caller can dispatch
      *   to the correct AST parser.
      *
      * @throws If the rule is a non-element-hiding cosmetic rule (not yet implemented).
      */
-    public static preparse(ctx: PreparserContext): RuleKind {
+    public static preparse(ctx: PreparserContext, parseUboSpecificRules = true): RuleKind {
         const classified = RuleClassifier.classify(ctx);
         const kind = RuleClassifier.ruleKind(classified);
 
@@ -54,8 +55,9 @@ export class RulePreparser {
             case RuleKind.Cosmetic: {
                 const sepKind = RuleClassifier.cosmeticSepKind(classified);
                 // Element hiding: ##, #@#, #?#, #@?# (kinds 1-4)
-                if (sepKind >= CosmeticSepKind.ElementHiding && sepKind <= CosmeticSepKind.ExtendedElementHidingException) {
-                    ElementHidingPreparser.preparse(ctx, classified);
+                if (sepKind >= CosmeticSepKind.ElementHiding
+                    && sepKind <= CosmeticSepKind.ExtendedElementHidingException) {
+                    ElementHidingPreparser.preparse(ctx, classified, parseUboSpecificRules);
                     return RuleKind.Cosmetic;
                 }
                 // Other cosmetic types not yet implemented
