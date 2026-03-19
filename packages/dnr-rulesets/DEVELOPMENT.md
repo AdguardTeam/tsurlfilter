@@ -76,8 +76,9 @@ node packages/dnr-rulesets/dist/cli.cjs watch <path-to-manifest> <path-to-resour
 
 ### Branch Strategy
 
-- Create feature branches from `main`
-- Use descriptive branch names: `feature/add-auth`, `fix/login-bug`
+- Create feature branches from `master`
+- Use branch names with the pattern: `feature/AG-1234`, `fix/AG-1234`,
+  `enhance/AG-1234` — where `AG-XXX` is the task number
 - Open a pull request when ready for review
 
 ### Code Style
@@ -97,12 +98,7 @@ pnpm --filter @adguard/dnr-rulesets lint:types
 pnpm --filter @adguard/dnr-rulesets lint
 ```
 
-Key style rules:
-
-- 4-space indentation, single quotes, semicolons
-- 120-character max line length
-- Sorted imports (via `simple-import-sort`)
-- JSDoc required on all public APIs, classes, and functions
+See the ESLint flat config (`eslint.config.mjs`) for specific formatting rules.
 
 ### Running Tests
 
@@ -230,3 +226,4 @@ pnpm test:coverage
 - [CHANGELOG.md](CHANGELOG.md) — Version history
 - [TSUrlFilter declarative-converter](../tsurlfilter/README.md#declarativeconverter) — Underlying DNR conversion engine
 - [adguard-api-mv3 example](../examples/adguard-api-mv3) — Usage example
+- [Root DEVELOPMENT.md](../../DEVELOPMENT.md) — Monorepo-wide development guide

@@ -48,7 +48,14 @@ Build:
             pnpm install
 
             # update companiesdb data
-            pnpm --filter @adguard/tswebextension update:companiesdb
+            # Exit code 0 means changes were written, 1 means no meaningful changes
+            if pnpm --filter @adguard/tswebextension update:companiesdb; then
+              echo "Meaningful changes detected, committing..."
+              exit 0
+            else
+              echo "No meaningful changes detected, skipping commit"
+              exit 1
+            fi
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:

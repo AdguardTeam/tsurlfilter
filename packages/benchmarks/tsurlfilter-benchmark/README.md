@@ -50,4 +50,10 @@ The benchmark provides detailed performance metrics including:
 - **RME**: Relative margin of error
 - **Samples**: Number of benchmark iterations
 
+## Documentation
+
+- [Results](RESULTS.md)
+- [Benchmarks overview](../AGENTS.md)
+- [Development guide](../../../DEVELOPMENT.md)
+
 [results]: ./RESULTS.md
