@@ -15,6 +15,7 @@ import type {
     ModifierList,
     Value,
 } from '../../nodes';
+import { MAX_MODIFIER_RECORD_STRIDE } from '../../preparser/context';
 import {
     cosmeticSepLength,
     cosmeticSepToString,
@@ -89,7 +90,7 @@ export class ElementHidingAstParser {
 
         // Read domain count and parse domains
         const domainCount = data[CR_DOMAIN_COUNT];
-        const domainRecordsOffset = 5 + maxMods * 5;
+        const domainRecordsOffset = 5 + maxMods * MAX_MODIFIER_RECORD_STRIDE;
         const domains = DomainListParser.parse(
             source,
             data,
@@ -133,6 +134,13 @@ export class ElementHidingAstParser {
 
         if (hasUboMods) {
             const uboModCount = data[NR_MODIFIER_COUNT_OFFSET];
+
+            // Defensive bounds check: ensure uBO records fit within the modifier region
+            const uboEnd = CR_UBO_MODS_OFFSET + uboModCount * UBO_MODIFIER_RECORD_STRIDE;
+            if (uboEnd > domainRecordsOffset) {
+                // eslint-disable-next-line max-len
+                throw new Error(`uBO modifier records overflow into domain region (${uboEnd} > ${domainRecordsOffset})`);
+            }
             // eslint-disable-next-line max-len
             const uboResult = ElementHidingAstParser.buildUboModifiers(source, data, uboModCount, bodyStart, bodyEnd, isLocIncluded);
             modifiers = uboResult.modifierList;
@@ -157,7 +165,7 @@ export class ElementHidingAstParser {
         }
 
         if (includeRaws) {
-            selectorList.raw = selectorListValue;
+            selectorList.raw = source.slice(bodyStart, bodyEnd);
         }
 
         const body: ElementHidingRuleBody = {

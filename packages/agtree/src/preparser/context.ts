@@ -11,7 +11,19 @@
 import { TokenType } from '../tokenizer/token-types';
 import type { TokenizeResult } from '../tokenizer/tokenizer';
 
+import { UBO_MODIFIER_RECORD_STRIDE } from './cosmetic/constants';
 import { MODIFIER_RECORD_STRIDE, NR_MODIFIER_RECORDS_OFFSET } from './network/constants';
+
+/**
+ * Maximum modifier record stride across all rule types.
+ * Network/ADG cosmetic modifiers use stride 5, uBO uses stride 7.
+ * Domain records start after maxMods * MAX_MODIFIER_RECORD_STRIDE to
+ * guarantee no overlap regardless of which modifier type is stored.
+ */
+export const MAX_MODIFIER_RECORD_STRIDE = Math.max(
+    MODIFIER_RECORD_STRIDE,
+    UBO_MODIFIER_RECORD_STRIDE,
+) as 7;
 
 /**
  * Default maximum number of tokens per rule.
@@ -117,7 +129,7 @@ export function createPreparserContext(
         tokenCount: 0,
         data: new Int32Array(Math.max(
             // eslint-disable-next-line max-len
-            NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MODIFIER_RECORD_STRIDE + domainCapacity * DOMAIN_RECORD_STRIDE,
+            NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MAX_MODIFIER_RECORD_STRIDE + domainCapacity * DOMAIN_RECORD_STRIDE,
             CM_PREP_MIN_DATA_SLOTS,
         )),
         maxMods: modifierCapacity,
@@ -219,7 +231,7 @@ export function skipUntil(ctx: PreparserContext, ti: number, end: number, tokenT
  * @returns Domain records offset.
  */
 export function domainRecordsOffset(ctx: PreparserContext): number {
-    return NR_MODIFIER_RECORDS_OFFSET + ctx.maxMods * MODIFIER_RECORD_STRIDE;
+    return NR_MODIFIER_RECORDS_OFFSET + ctx.maxMods * MAX_MODIFIER_RECORD_STRIDE;
 }
 
 /**
@@ -231,7 +243,7 @@ export function domainRecordsOffset(ctx: PreparserContext): number {
 export function growDomainCapacity(ctx: PreparserContext): void {
     const newMaxDomains = ctx.maxDomains * 2;
     // eslint-disable-next-line max-len
-    const newSize = NR_MODIFIER_RECORDS_OFFSET + ctx.maxMods * MODIFIER_RECORD_STRIDE + newMaxDomains * DOMAIN_RECORD_STRIDE;
+    const newSize = NR_MODIFIER_RECORDS_OFFSET + ctx.maxMods * MAX_MODIFIER_RECORD_STRIDE + newMaxDomains * DOMAIN_RECORD_STRIDE;
     const newData = new Int32Array(newSize);
     newData.set(ctx.data);
     ctx.data = newData;

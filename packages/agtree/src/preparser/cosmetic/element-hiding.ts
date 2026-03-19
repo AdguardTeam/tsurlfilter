@@ -446,9 +446,7 @@ export class ElementHidingPreparser {
                                     );
                                 }
 
-                                const wrapNameStart = ends[j - 2] !== undefined
-                                    ? ends[j - 2]
-                                    : tokenStart(ctx, j - 1);
+                                const wrapNameStart = tokenStart(ctx, j - 1);
                                 const wrapNameEnd = ends[j - 1];
 
                                 if (!regionEquals(source, wrapNameStart, wrapNameEnd, 'not')) {

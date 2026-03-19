@@ -11,6 +11,7 @@ export {
     type PreparserContext,
     createPreparserContext,
     initPreparserContext,
+    MAX_MODIFIER_RECORD_STRIDE,
     regionEquals,
     tokenStart,
     skipWs,
