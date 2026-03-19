@@ -8,7 +8,7 @@
     "include": [
         "src",
         "scripts",
-        "rollup.config.ts",
+        "rolldown.config.ts",
         ".eslintrc.js",
     ]
 }
