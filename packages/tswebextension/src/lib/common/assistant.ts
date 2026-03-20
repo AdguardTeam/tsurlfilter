@@ -10,12 +10,11 @@
  * Schema:
  * - Buildtime:
  *  -- [tswebext]  Script to inject assistant from the URL provided by the extension.
- *  -- [tswebext]  Assistant controller script for interacting with the assistant. <--- current file.
- *  -- [tswebext]  Assistant messages listener on the content-script side.
+ *  -- [tswebext]  Assistant management script for interacting with the assistant. <--- current file.
  *  -- [extension] Entry point script for injecting the assistant
  * - Runtime:
  *  -- [tswebext] Content script injects into every new tab without the assistant.
- *  -- [tswebext] On-demand content script dynamically injects the assistant.
+ *  -- [tswebext] On-demand content script dynamically injects the assistant and creates a message listener.
  *  -- [tswebext] After injection, the content script interacts with the assistant.
  *
  * Reference code: ASSISTANT_INJECT.
