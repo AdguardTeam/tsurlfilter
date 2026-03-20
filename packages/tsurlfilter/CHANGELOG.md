@@ -28,9 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - $badfilter incorrectly negates rules with different $denyallow values [AdguardBrowserExtension#3428].
+- `$removeparam` rules not stripping all tracking parameters when multiple rules match the same URL in MV3 [AdguardBrowserExtension#3444].
 
 [4.0.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v4.0.3
 [AdguardBrowserExtension#3428]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3428
+[AdguardBrowserExtension#3444]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3444
 
 ## [4.0.2] - 2026-02-19
 

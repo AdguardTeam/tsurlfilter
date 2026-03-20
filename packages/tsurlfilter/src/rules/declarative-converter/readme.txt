@@ -662,9 +662,11 @@ $removeheader=location,domain=example.com
 ! <br/>
 ! Regexps, negation and allow-rules are not supported
 ! <br/>
-! Rules with the same matching condition are combined into one, but only within
-! the scope of one static filter or within the scope of all dynamic rules
-! (custom filters and user rules).
+! Each rule generates a param-aware urlFilter condition (e.g., ^utm_source=)
+! so that Chrome DNR can chain multiple redirect hops, stripping one parameter
+! per hop until all matching parameters are removed. Rules with different
+! parameter names are no longer merged into a single DNR rule — this is by
+! design, as merging would prevent multi-hop chaining across priority levels.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -689,7 +691,8 @@ $removeparam=/^(utm_source|utm_medium|utm_term)=/
 $removeparam=/^(utm_content|utm_campaign|utm_referrer)=/
 ! example 10
 ! <br/>
-! Group of similar remove param rules will be combined into one
+! Each removeparam rule produces its own DNR rule with a param-aware urlFilter
+! (e.g. ||testcases.adguard.com*^p1case1=) to enable multi-hop redirect chaining
 ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
 ||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
 ||testcases.adguard.com$xmlhttprequest,removeparam=P3Case1
