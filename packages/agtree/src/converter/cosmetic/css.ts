@@ -5,7 +5,7 @@
 import { CosmeticRuleSeparator, type CssInjectionRule } from '../../nodes';
 import { CssTokenStream } from '../../parser/css/css-token-stream';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { clone } from '../../utils/clone';
+import { cloneAnyCosmeticRule } from '../../ast-utils/clone';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { CssSelectorConverter } from '../css';
@@ -54,8 +54,7 @@ export class CssInjectionRuleConverter extends RuleConverterBase {
             || separator !== convertedSeparator
             || convertedSelectorList.isConverted
         ) {
-            // TODO: Replace with custom clone method
-            const ruleClone = clone(rule);
+            const ruleClone = cloneAnyCosmeticRule(rule);
 
             ruleClone.syntax = AdblockSyntax.Adg;
             ruleClone.separator.value = convertedSeparator;
