@@ -19,12 +19,15 @@ import { MAX_MODIFIER_RECORD_STRIDE } from '../../preparser/context';
 import {
     cosmeticSepLength,
     cosmeticSepToString,
+    CR_BODY_END,
     CR_BODY_START,
     CR_DOMAIN_COUNT,
     CR_FLAG_EXCEPTION,
     CR_FLAG_HAS_ADG_MODS,
     CR_FLAG_HAS_UBO_MODS,
     CR_FLAGS_OFFSET,
+    CR_MODIFIER_COUNT_OFFSET,
+    CR_MODIFIER_RECORDS_OFFSET,
     CR_SEP_KIND_MASK,
     CR_SEP_KIND_SHIFT,
     CR_SEP_SOURCE_START,
@@ -39,7 +42,7 @@ import {
     UBO_MODIFIER_RECORD_STRIDE,
 } from '../../preparser/cosmetic/constants';
 import type { CosmeticSepKind } from '../../preparser/cosmetic-separator';
-import { MODIFIER_FLAG_NEGATED, NO_VALUE, NR_MODIFIER_COUNT_OFFSET } from '../../preparser/network/constants';
+import { MODIFIER_FLAG_NEGATED, NO_VALUE } from '../../preparser/network/constants';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { DomainListParser } from '../misc/domain-list';
 import { ModifierListParser } from '../misc/modifier-list';
@@ -120,12 +123,9 @@ export class ElementHidingAstParser {
             separator.raw = source.slice(sepSourceStart, sepSourceEnd);
         }
 
-        // Read body start and compute body end (trimmed)
+        // Read body start and end (precomputed and trimmed by preparser)
         const bodyStart = data[CR_BODY_START];
-        let bodyEnd = source.length;
-        while (bodyEnd > bodyStart && /\s/.test(source[bodyEnd - 1])) {
-            bodyEnd -= 1;
-        }
+        const bodyEnd = data[CR_BODY_END];
 
         // Build uBO modifiers and reconstruct cleaned selector if needed
         let modifiers: ModifierList | undefined;
@@ -133,7 +133,7 @@ export class ElementHidingAstParser {
         let selectorListValue: string;
 
         if (hasUboMods) {
-            const uboModCount = data[NR_MODIFIER_COUNT_OFFSET];
+            const uboModCount = data[CR_MODIFIER_COUNT_OFFSET];
 
             // Defensive bounds check: ensure uBO records fit within the modifier region
             const uboEnd = CR_UBO_MODS_OFFSET + uboModCount * UBO_MODIFIER_RECORD_STRIDE;
@@ -147,7 +147,13 @@ export class ElementHidingAstParser {
             selectorListValue = uboResult.cleanedSelector;
             syntax = AdblockSyntax.Ubo;
         } else if (hasAdgMods) {
-            modifiers = ModifierListParser.parse(source, data, isLocIncluded);
+            modifiers = ModifierListParser.parse(
+                source,
+                data,
+                isLocIncluded,
+                CR_MODIFIER_COUNT_OFFSET,
+                CR_MODIFIER_RECORDS_OFFSET,
+            );
             selectorListValue = bodyEnd > bodyStart ? source.slice(bodyStart, bodyEnd) : '';
             syntax = AdblockSyntax.Adg;
         } else {

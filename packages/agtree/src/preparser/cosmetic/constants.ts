@@ -54,6 +54,16 @@ export const CR_DOMAIN_COUNT = 2;
 export const CR_BODY_START = 3;
 
 /**
+ * Buffer offset: number of modifiers (AdGuard or uBO, mutually exclusive).
+ */
+export const CR_MODIFIER_COUNT_OFFSET = 4;
+
+/**
+ * Buffer offset: body end position (trimmed of trailing whitespace).
+ */
+export const CR_BODY_END = 5;
+
+/**
  * Cosmetic rule flag bit: exception rule.
  */
 export const CR_FLAG_EXCEPTION = 1;
@@ -151,10 +161,14 @@ export const UBO_MOD_FIELD_SRC_START = 5;
 export const UBO_MOD_FIELD_SRC_END = 6;
 
 /**
- * Offset in ctx.data where uBO modifier records begin.
- * Same as NR_MODIFIER_RECORDS_OFFSET (5) since ADG and uBO mods are mutually exclusive.
+ * Offset in ctx.data where modifier records begin (AdGuard or uBO, mutually exclusive).
  */
-export const CR_UBO_MODS_OFFSET = 5;
+export const CR_MODIFIER_RECORDS_OFFSET = 6;
+
+/**
+ * Offset in ctx.data where uBO modifier records begin (alias for CR_MODIFIER_RECORDS_OFFSET).
+ */
+export const CR_UBO_MODS_OFFSET = CR_MODIFIER_RECORDS_OFFSET;
 
 // ---------------------------------------------------------------------------
 // uBO modifier bitmask constants (for zero-allocation duplicate detection)

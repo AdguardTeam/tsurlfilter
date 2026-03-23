@@ -31,6 +31,8 @@ export class ModifierListParser {
      * @param source Original source string.
      * @param data Preparsed data buffer.
      * @param isLocIncluded Whether to include location info.
+     * @param countOffset Buffer offset for modifier count (default: network rule offset).
+     * @param recordsOffset Buffer offset where records begin (default: network rule offset).
      *
      * @returns ModifierList AST node, or `undefined`.
      */
@@ -38,8 +40,10 @@ export class ModifierListParser {
         source: string,
         data: Int32Array,
         isLocIncluded: boolean,
+        countOffset: number = NR_MODIFIER_COUNT_OFFSET,
+        recordsOffset: number = NR_MODIFIER_RECORDS_OFFSET,
     ): ModifierList | undefined {
-        const modCount = data[NR_MODIFIER_COUNT_OFFSET];
+        const modCount = data[countOffset];
 
         if (modCount === 0) {
             return undefined;
@@ -48,7 +52,7 @@ export class ModifierListParser {
         const children: Modifier[] = new Array(modCount);
 
         for (let i = 0; i < modCount; i += 1) {
-            children[i] = ModifierParser.parse(source, data, i, isLocIncluded);
+            children[i] = ModifierParser.parse(source, data, i, isLocIncluded, recordsOffset);
         }
 
         const modifiers: ModifierList = {
@@ -57,8 +61,8 @@ export class ModifierListParser {
         };
 
         if (isLocIncluded && modCount > 0) {
-            const firstBase = NR_MODIFIER_RECORDS_OFFSET + MODIFIER_FIELD_NAME_START;
-            const lastBase = NR_MODIFIER_RECORDS_OFFSET + (modCount - 1) * MODIFIER_RECORD_STRIDE;
+            const firstBase = recordsOffset + MODIFIER_FIELD_NAME_START;
+            const lastBase = recordsOffset + (modCount - 1) * MODIFIER_RECORD_STRIDE;
             const lastValStart = data[lastBase + MODIFIER_FIELD_VALUE_START];
 
             modifiers.start = data[firstBase];

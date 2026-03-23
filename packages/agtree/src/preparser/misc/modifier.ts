@@ -135,18 +135,24 @@ export class ModifierPreparser {
     }
 
     /**
-     * Preparses a single modifier and writes its record to `ctx.data`.
+     * Preparse a single modifier starting at token `ti`.
+     * Writes to the record at `modIndex`.
      *
      * @param ctx Preparser context.
-     * @param ti Token index at the start of this modifier.
-     * @param modIndex Which modifier slot to write (0-based).
+     * @param ti Token index where the modifier starts.
+     * @param modIndex Modifier index (0-based) for writing the record.
+     * @param recordsOffset Buffer offset where modifier records should be written (defaults to network offset).
      *
-     * @returns Token index after this modifier (at the separator comma or end),
-     *          or -1 if the token at `ti` cannot start a modifier.
+     * @returns Token index after the modifier, or -1 if no modifier found.
      */
-    public static preparse(ctx: PreparserContext, ti: number, modIndex: number): number {
+    public static preparse(
+        ctx: PreparserContext,
+        ti: number,
+        modIndex: number,
+        recordsOffset: number = NR_MODIFIER_RECORDS_OFFSET,
+    ): number {
         const { types, tokenCount } = ctx;
-        const modBase = NR_MODIFIER_RECORDS_OFFSET + modIndex * MODIFIER_RECORD_STRIDE;
+        const modBase = recordsOffset + modIndex * MODIFIER_RECORD_STRIDE;
         let modFlags = 0;
 
         // Skip whitespace before modifier

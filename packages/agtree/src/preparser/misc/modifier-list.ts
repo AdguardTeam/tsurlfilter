@@ -70,16 +70,17 @@ export class ModifierListPreparser {
      *
      * @param ctx Preparser context.
      * @param startTi Token index at the first modifier (after the `$` separator).
+     * @param recordsOffset Buffer offset where modifier records should be written (defaults to network offset).
      *
      * @returns Number of modifiers parsed.
      */
-    public static preparse(ctx: PreparserContext, startTi: number): number {
+    public static preparse(ctx: PreparserContext, startTi: number, recordsOffset?: number): number {
         const { types, tokenCount, maxMods } = ctx;
         let currentTi = startTi;
         let modCount = 0;
 
         while (currentTi < tokenCount && modCount < maxMods) {
-            const nextTi = ModifierPreparser.preparse(ctx, currentTi, modCount);
+            const nextTi = ModifierPreparser.preparse(ctx, currentTi, modCount, recordsOffset);
 
             // ModifierPreparser.preparse returns -1 if it can't start a modifier
             if (nextTi === -1) {

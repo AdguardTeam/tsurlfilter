@@ -14,17 +14,20 @@ import type { PreparserContext } from '../context';
 import { regionEquals, skipWs, tokenStart } from '../context';
 import { DomainListPreparser } from '../misc/domain-list';
 import { ModifierListPreparser } from '../misc/modifier-list';
-import { MODIFIER_FLAG_NEGATED, NO_VALUE, NR_MODIFIER_COUNT_OFFSET } from '../network/constants';
+import { MODIFIER_FLAG_NEGATED, NO_VALUE } from '../network/constants';
 
 import {
     cosmeticSepIsException,
     cosmeticSepTokenCount,
+    CR_BODY_END,
     CR_BODY_START,
     CR_DOMAIN_COUNT,
     CR_FLAG_EXCEPTION,
     CR_FLAG_HAS_ADG_MODS,
     CR_FLAG_HAS_UBO_MODS,
     CR_FLAGS_OFFSET,
+    CR_MODIFIER_COUNT_OFFSET,
+    CR_MODIFIER_RECORDS_OFFSET,
     CR_SEP_KIND_MASK,
     CR_SEP_KIND_SHIFT,
     CR_SEP_SOURCE_START,
@@ -51,13 +54,17 @@ export class ElementHidingPreparser {
      * Preparse an element hiding rule.
      *
      * @param ctx Preparser context.
-     * @param classified Packed (sepKind, sepTokenIndex) from cosmetic separator finder.
+     * @param classified Packed classifier result (separator kind + index).
      * @param parseUboSpecificRules Whether to detect uBO modifiers (default true).
      *
      * @throws {Error} If body is empty or structure is invalid.
      */
-    public static preparse(ctx: PreparserContext, classified: number, parseUboSpecificRules = true): void {
-        const { types, source } = ctx;
+    public static preparse(
+        ctx: PreparserContext,
+        classified: number,
+        parseUboSpecificRules = true,
+    ): void {
+        const { types } = ctx;
 
         // Unpack separator kind and token index
         const sepKind = RuleClassifier.cosmeticSepKind(classified);
@@ -80,12 +87,20 @@ export class ElementHidingPreparser {
                 throw new Error('Unclosed AdGuard modifier list: missing ]');
             }
 
-            // Parse modifier list between $ and ]
-            // Temporarily scope tokenCount so ModifierListPreparser stops at ]
+            // Preparse modifier list (up to closeBracketTi, exclusive)
+            if (closeBracketTi === 2) {
+                throw new Error('AdGuard modifier list [$...] is empty');
+            }
+
             const savedTokenCount = ctx.tokenCount;
-            ctx.tokenCount = closeBracketTi;
-            modCount = ModifierListPreparser.preparse(ctx, 2); // start after $
-            ctx.tokenCount = savedTokenCount;
+            try {
+                ctx.tokenCount = closeBracketTi;
+                modCount = ModifierListPreparser.preparse(ctx, 2, CR_MODIFIER_RECORDS_OFFSET); // start after $
+                ctx.tokenCount = savedTokenCount;
+            } catch (e) {
+                ctx.tokenCount = savedTokenCount;
+                throw e;
+            }
 
             hasAdgMods = true;
             domainStartTi = skipWs(ctx, closeBracketTi + 1);
@@ -113,11 +128,13 @@ export class ElementHidingPreparser {
 
         const bodyStart = tokenStart(ctx, bodyStartTi);
 
-        // Validate body has content (not just whitespace)
-        const bodyEnd = source.length;
-        let trimmedEnd = bodyEnd;
-        while (trimmedEnd > bodyStart && /\s/.test(source[trimmedEnd - 1])) {
-            trimmedEnd -= 1;
+        // Find trimmed body end by tracking last non-whitespace token
+        let trimmedEnd = bodyStart; // Will be updated to end of last non-WS token
+        for (let ti = bodyStartTi; ti < ctx.tokenCount; ti += 1) {
+            if (types[ti] !== TokenType.Whitespace) {
+                // Update to end of this non-whitespace token
+                trimmedEnd = tokenStart(ctx, ti + 1);
+            }
         }
 
         if (trimmedEnd <= bodyStart) {
@@ -162,7 +179,8 @@ export class ElementHidingPreparser {
         ctx.data[CR_SEP_SOURCE_START] = sepSourceStart;
         ctx.data[CR_DOMAIN_COUNT] = domainCount;
         ctx.data[CR_BODY_START] = bodyStart;
-        ctx.data[NR_MODIFIER_COUNT_OFFSET] = uboModCount > 0 ? uboModCount : modCount;
+        ctx.data[CR_MODIFIER_COUNT_OFFSET] = uboModCount > 0 ? uboModCount : modCount;
+        ctx.data[CR_BODY_END] = trimmedEnd;
     }
 
     /**
