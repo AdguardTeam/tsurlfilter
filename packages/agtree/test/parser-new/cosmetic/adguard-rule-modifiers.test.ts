@@ -290,7 +290,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
         test('should reject AdGuard [$...] + uBO :style()', () => {
             expect(() => {
                 parser.parse('[$domain=example.com]##.ads:style(display: none)');
-            }).toThrow('Cannot mix AdGuard modifier list [$...] with uBO pseudo-class modifiers');
+            }).toThrow('uBO CSS injection (:style) is not yet implemented');
         });
     });
 });

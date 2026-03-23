@@ -405,6 +405,13 @@ export class ElementHidingPreparser {
                 }
 
                 if (modBit !== 0) {
+                    // Reject :style() and :remove() - these require CssInjectionRule, not ElementHidingRule
+                    if (modBit === UBO_MOD_BIT_STYLE || modBit === UBO_MOD_BIT_REMOVE) {
+                        const modName = source.slice(identStart, identEnd);
+                        throw new Error(
+                            `uBO CSS injection (:${modName}) is not yet implemented in the new pipeline`,
+                        );
+                    }
                     // FR-007: reject duplicates
                     if (seenMask & modBit) {
                         throw new Error(

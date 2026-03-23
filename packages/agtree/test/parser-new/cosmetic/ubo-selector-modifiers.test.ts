@@ -120,13 +120,13 @@ describe('RuleParser — uBO selector modifiers', () => {
         test(':style() throws not implemented', () => {
             expect(() => {
                 parser.parse('example.com##.ads:style(display: none !important)');
-            }).toThrow(':style() is not yet implemented');
+            }).toThrow('uBO CSS injection (:style) is not yet implemented');
         });
 
         test(':remove() throws not implemented', () => {
             expect(() => {
                 parser.parse('example.com##.banner:remove()');
-            }).toThrow(':remove() is not yet implemented');
+            }).toThrow('uBO CSS injection (:remove) is not yet implemented');
         });
     });
 
@@ -165,7 +165,7 @@ describe('RuleParser — uBO selector modifiers', () => {
             // :style() detected by preparser as terminal, but followed by non-whitespace
             expect(() => {
                 parser.parse('example.com##.ads:style(display:none) div');
-            }).toThrow(':style() and :remove() can only be used at the end');
+            }).toThrow('uBO CSS injection (:style) is not yet implemented');
         });
     });
 
