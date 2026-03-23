@@ -190,24 +190,21 @@ export const UBO_MOD_BIT_REMOVE = 1 << 3;
 export function cosmeticSepTokenCount(kind: CosmeticSepKind): number {
     switch (kind) {
         case CosmeticSepKind.ElementHiding: // ##
+        case CosmeticSepKind.AdgHtmlFiltering: // $$
             return 2;
         case CosmeticSepKind.ElementHidingException: // #@#
         case CosmeticSepKind.ExtendedElementHiding: // #?#
+        case CosmeticSepKind.AbpSnippet: // #$#
+        case CosmeticSepKind.AdgJsInjection: // #%#
+        case CosmeticSepKind.AdgHtmlFilteringException: // $@$
             return 3;
         case CosmeticSepKind.ExtendedElementHidingException: // #@?#
-            return 4;
-        case CosmeticSepKind.AbpSnippet: // #$#
         case CosmeticSepKind.AbpSnippetException: // #@$#
-            return 3;
         case CosmeticSepKind.AdgExtendedCssInjection: // #$?#
-        case CosmeticSepKind.AdgExtendedCssInjectionException: // #@$?#
-            return 4;
-        case CosmeticSepKind.AdgJsInjection: // #%#
         case CosmeticSepKind.AdgJsInjectionException: // #@%#
-            return 3;
-        case CosmeticSepKind.AdgHtmlFiltering: // $$
-        case CosmeticSepKind.AdgHtmlFilteringException: // $@$
-            return 2;
+            return 4;
+        case CosmeticSepKind.AdgExtendedCssInjectionException: // #@$?#
+            return 5;
         default:
             return 0;
     }
@@ -223,24 +220,21 @@ export function cosmeticSepTokenCount(kind: CosmeticSepKind): number {
 export function cosmeticSepLength(kind: CosmeticSepKind): number {
     switch (kind) {
         case CosmeticSepKind.ElementHiding: // ##
+        case CosmeticSepKind.AdgHtmlFiltering: // $$
             return 2;
         case CosmeticSepKind.ElementHidingException: // #@#
         case CosmeticSepKind.ExtendedElementHiding: // #?#
+        case CosmeticSepKind.AbpSnippet: // #$#
+        case CosmeticSepKind.AdgJsInjection: // #%#
+        case CosmeticSepKind.AdgHtmlFilteringException: // $@$
             return 3;
         case CosmeticSepKind.ExtendedElementHidingException: // #@?#
-            return 4;
-        case CosmeticSepKind.AbpSnippet: // #$#
         case CosmeticSepKind.AbpSnippetException: // #@$#
-            return 3;
         case CosmeticSepKind.AdgExtendedCssInjection: // #$?#
-        case CosmeticSepKind.AdgExtendedCssInjectionException: // #@$?#
-            return 4;
-        case CosmeticSepKind.AdgJsInjection: // #%#
         case CosmeticSepKind.AdgJsInjectionException: // #@%#
-            return 3;
-        case CosmeticSepKind.AdgHtmlFiltering: // $$
-        case CosmeticSepKind.AdgHtmlFilteringException: // $@$
-            return 2;
+            return 4;
+        case CosmeticSepKind.AdgExtendedCssInjectionException: // #@$?#
+            return 5;
         default:
             return 0;
     }
