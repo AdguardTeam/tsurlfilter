@@ -5,13 +5,43 @@
  * matching comment, network, or cosmetic preparser.
  */
 
-import { CosmeticSepKind, RuleClassifier, RuleKind } from './classifier';
+import { RuleClassifier, RuleKind } from './classifier';
 import { CommentClassifier } from './comment/classifier';
 import type { PreparserContext } from './context';
+import { tokenStart } from './context';
 import { ElementHidingPreparser } from './cosmetic/element-hiding';
 import { NetworkRulePreparser } from './network/network-rule';
 
 export { RuleKind } from './classifier';
+
+/**
+ * Checks whether the cosmetic separator starting at `sepStart` in `source`
+ * is an element hiding separator (##, #@#, #?#, #@?#).
+ *
+ * Element hiding separators start with `#` and the character after `#`
+ * (or `#@`) is `#` or `?` — never `$` or `%`.
+ *
+ * @param source Source string.
+ * @param sepStart Source index where the separator starts.
+ *
+ * @returns True if the separator is element-hiding.
+ */
+function isElementHidingSep(source: string, sepStart: number): boolean {
+    if (source.charCodeAt(sepStart) !== 0x23) {
+        return false; // must start with #
+    }
+    const c1 = source.charCodeAt(sepStart + 1);
+    // ## or #?#
+    if (c1 === 0x23 || c1 === 0x3F) {
+        return true;
+    }
+    // #@# or #@?#
+    if (c1 === 0x40) {
+        const c2 = source.charCodeAt(sepStart + 2);
+        return c2 === 0x23 || c2 === 0x3F;
+    }
+    return false;
+}
 
 /**
  * Top-level rule preparser.
@@ -53,15 +83,19 @@ export class RulePreparser {
                 return RuleKind.Network;
 
             case RuleKind.Cosmetic: {
-                const sepKind = RuleClassifier.cosmeticSepKind(classified);
-                // Element hiding: ##, #@#, #?#, #@?# (kinds 1-4)
-                if (sepKind >= CosmeticSepKind.HashHash
-                    && sepKind <= CosmeticSepKind.HashAtQuestionHash) {
+                const sepTokenIndex = RuleClassifier.cosmeticSepIndex(classified);
+                const sepStart = tokenStart(ctx, sepTokenIndex);
+
+                if (isElementHidingSep(ctx.source, sepStart)) {
                     ElementHidingPreparser.preparse(ctx, classified, parseUboSpecificRules);
                     return RuleKind.Cosmetic;
                 }
+
                 // Other cosmetic types not yet implemented
-                throw new Error(`Cosmetic separator kind ${sepKind} is not yet implemented in the new pipeline`);
+                const sepTokCount = RuleClassifier.cosmeticSepTokenCount(classified);
+                const sepEnd = ctx.ends[sepTokenIndex + sepTokCount - 1];
+                const sep = ctx.source.slice(sepStart, sepEnd);
+                throw new Error(`Cosmetic separator '${sep}' is not yet implemented in the new pipeline`);
             }
 
             default:

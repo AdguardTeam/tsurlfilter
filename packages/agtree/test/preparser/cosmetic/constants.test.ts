@@ -1,40 +1,70 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-    cosmeticSepLength,
+    cosmeticSepStartIndex,
     cosmeticSepTokenCount,
-    cosmeticSepToString,
-} from '../../../src/preparser/cosmetic/constants';
-import { CosmeticSepKind } from '../../../src/preparser/cosmetic-separator';
+    findCosmeticSeparator,
+} from '../../../src/preparser/cosmetic-separator';
+import type { TokenizeResult } from '../../../src/tokenizer/tokenizer';
+import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
 
-describe('cosmeticSepTokenCount', () => {
-    it('should return correct token count for all separator kinds', () => {
-        const testCases: Array<{
-            kind: CosmeticSepKind;
-            separator: string;
-        }> = [
-            { kind: CosmeticSepKind.HashHash, separator: '##' },
-            { kind: CosmeticSepKind.HashAtHash, separator: '#@#' },
-            { kind: CosmeticSepKind.HashQuestionHash, separator: '#?#' },
-            { kind: CosmeticSepKind.HashAtQuestionHash, separator: '#@?#' },
-            { kind: CosmeticSepKind.HashDollarHash, separator: '#$#' },
-            { kind: CosmeticSepKind.HashAtDollarHash, separator: '#@$#' },
-            { kind: CosmeticSepKind.HashDollarQuestionHash, separator: '#$?#' },
-            { kind: CosmeticSepKind.HashAtDollarQuestionHash, separator: '#@$?#' },
-            { kind: CosmeticSepKind.HashPercentHash, separator: '#%#' },
-            { kind: CosmeticSepKind.HashAtPercentHash, separator: '#@%#' },
-            { kind: CosmeticSepKind.DollarDollar, separator: '$$' },
-            { kind: CosmeticSepKind.DollarAtDollar, separator: '$@$' },
+describe('findCosmeticSeparator', () => {
+    const out: TokenizeResult = {
+        tokenCount: 0,
+        types: new Uint8Array(1024),
+        ends: new Uint32Array(1024),
+        actualEnd: 0,
+        overflowed: 0,
+    };
+
+    /**
+     * Helper: tokenize and find the cosmetic separator.
+     *
+     * @param rule Rule string.
+     *
+     * @returns Object with startIndex (token), tokenCount, and raw separator string, or null.
+     */
+    function find(rule: string) {
+        tokenizeLine(rule, 0, out);
+        const packed = findCosmeticSeparator(out.types, out.tokenCount);
+        if (packed === -1) {
+            return null;
+        }
+        const idx = cosmeticSepStartIndex(packed);
+        const count = cosmeticSepTokenCount(packed);
+        // Compute separator source range from token ends
+        const sepStart = idx === 0 ? 0 : out.ends[idx - 1];
+        const sepEnd = out.ends[idx + count - 1];
+        return { startIndex: idx, tokenCount: count, separator: rule.slice(sepStart, sepEnd) };
+    }
+
+    it('should find all separator types with correct token count', () => {
+        const testCases = [
+            { rule: 'example.com##.ad', separator: '##', tokenCount: 2 },
+            { rule: 'example.com#@#.ad', separator: '#@#', tokenCount: 3 },
+            { rule: 'example.com#?#.ad', separator: '#?#', tokenCount: 3 },
+            { rule: 'example.com#@?#.ad', separator: '#@?#', tokenCount: 4 },
+            { rule: 'example.com#$#body { padding: 0; }', separator: '#$#', tokenCount: 3 },
+            { rule: 'example.com#@$#body { padding: 0; }', separator: '#@$#', tokenCount: 4 },
+            { rule: 'example.com#$?#.ad', separator: '#$?#', tokenCount: 4 },
+            { rule: 'example.com#@$?#.ad', separator: '#@$?#', tokenCount: 5 },
+            { rule: 'example.com#%#//scriptlet', separator: '#%#', tokenCount: 3 },
+            { rule: 'example.com#@%#//scriptlet', separator: '#@%#', tokenCount: 4 },
+            { rule: 'example.com$$script', separator: '$$', tokenCount: 2 },
+            { rule: 'example.com$@$script', separator: '$@$', tokenCount: 3 },
         ];
 
-        testCases.forEach(({ kind, separator }) => {
-            expect(cosmeticSepTokenCount(kind)).toBe(separator.length);
-            expect(cosmeticSepToString(kind)).toBe(separator);
+        testCases.forEach(({ rule, separator, tokenCount: expectedCount }) => {
+            const result = find(rule);
+            expect(result, `Failed for rule: ${rule}`).not.toBeNull();
+            expect(result!.separator).toBe(separator);
+            expect(result!.tokenCount).toBe(expectedCount);
         });
     });
 
-    it('should return 0 for unknown separator kind', () => {
-        expect(cosmeticSepTokenCount(999 as CosmeticSepKind)).toBe(0);
-        expect(cosmeticSepLength(999 as CosmeticSepKind)).toBe(0);
+    it('should return -1 for rules without cosmetic separators', () => {
+        expect(find('||example.com^')).toBeNull();
+        expect(find('! comment')).toBeNull();
+        expect(find('# host comment')).toBeNull();
     });
 });

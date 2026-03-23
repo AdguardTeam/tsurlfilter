@@ -5,17 +5,18 @@
  *
  * ## Cosmetic Rule Data Layout (Int32Array)
  *
- * Header fields (CR_HEADER_SIZE = 4):
- *   [0] flags           - Bit flags (exception, sepKind, hasAdgMods, hasUboMods)
+ * Header fields (CR_HEADER_SIZE = 6):
+ *   [0] flags           - Bit flags (exception, sepLen, hasAdgMods, hasUboMods)
  *   [1] SepSourceStart  - Source index where cosmetic separator starts.
  *   [2] domainCount     - Number of domain items
  *   [3] bodyStart       - Source index where body starts (after separator, trimmed)
  *   [4] modifierCount   - Number of modifiers (reuses NR_MODIFIER_COUNT_OFFSET).
+ *   [5] bodyEnd         - Source index where body ends (trimmed of trailing whitespace).
  *
- * ADG modifier records (starting at offset 5, stride 5 each):
+ * ADG modifier records (starting at offset 6, stride 5 each):
  *   Reuses the network rule modifier record layout.
  *
- * UBO modifier records (starting at offset 5, stride 7 each — mutually exclusive with ADG).
+ * UBO modifier records (starting at offset 6, stride 7 each — mutually exclusive with ADG).
  *   [+0] nameStart      - Source index where modifier name begins
  *   [+1] nameEnd        - Source index where modifier name ends (exclusive)
  *   [+2] flags          - Modifier flags (MODIFIER_FLAG_NEGATED for :not() wrapping)
@@ -24,14 +25,11 @@
  *   [+5] srcStart       - Source index where full modifier range starts (incl. : or :not()
  *   [+6] srcEnd         - Source index where full modifier range ends (incl. closing )).
  *
- * Domain records (starting at offset 5 + maxMods*stride, stride 3 each):
+ * Domain records (starting at offset 6 + maxMods*stride, stride 3 each):
  *   [+0] valueStart     - Source index where domain value starts (after ~)
  *   [+1] valueEnd       - Source index where domain value ends (exclusive)
  *   [+2] flags          - Domain flags (DOMAIN_FLAG_EXCEPTION)
  */
-
-import type { CosmeticRuleSeparator } from '../../nodes';
-import { CosmeticSepKind } from '../cosmetic-separator';
 
 /**
  * Buffer offset: cosmetic rule flags.
@@ -69,6 +67,16 @@ export const CR_BODY_END = 5;
 export const CR_FLAG_EXCEPTION = 1;
 
 /**
+ * Bit shift for packing separator character length into flags (3 bits: values 2–5).
+ */
+export const CR_SEP_LEN_SHIFT = 1;
+
+/**
+ * Bit mask for extracting separator character length from flags.
+ */
+export const CR_SEP_LEN_MASK = 0x07;
+
+/**
  * Cosmetic rule flag bit: has AdGuard modifiers ([$...]).
  */
 export const CR_FLAG_HAS_ADG_MODS = 1 << 5;
@@ -77,16 +85,6 @@ export const CR_FLAG_HAS_ADG_MODS = 1 << 5;
  * Cosmetic rule flag bit: has uBO modifiers.
  */
 export const CR_FLAG_HAS_UBO_MODS = 1 << 6;
-
-/**
- * Bit shift for packing CosmeticSepKind into flags.
- */
-export const CR_SEP_KIND_SHIFT = 1;
-
-/**
- * Bit mask for extracting CosmeticSepKind from flags (4 bits: values 1-4 for element hiding).
- */
-export const CR_SEP_KIND_MASK = 0x0f;
 
 /**
  * Record size: number of Int32Array slots per domain record.
@@ -193,122 +191,3 @@ export const UBO_MOD_BIT_STYLE = 1 << 2;
  * Bitmask for :remove modifier (bit 3).
  */
 export const UBO_MOD_BIT_REMOVE = 1 << 3;
-
-/**
- * Returns the token count of a cosmetic separator.
- *
- * @param kind CosmeticSepKind value.
- *
- * @returns Separator length in tokens.
- */
-export function cosmeticSepTokenCount(kind: CosmeticSepKind): number {
-    switch (kind) {
-        case CosmeticSepKind.HashHash: // ##
-        case CosmeticSepKind.DollarDollar: // $$
-            return 2;
-        case CosmeticSepKind.HashAtHash: // #@#
-        case CosmeticSepKind.HashQuestionHash: // #?#
-        case CosmeticSepKind.HashDollarHash: // #$#
-        case CosmeticSepKind.HashPercentHash: // #%#
-        case CosmeticSepKind.DollarAtDollar: // $@$
-            return 3;
-        case CosmeticSepKind.HashAtQuestionHash: // #@?#
-        case CosmeticSepKind.HashAtDollarHash: // #@$#
-        case CosmeticSepKind.HashDollarQuestionHash: // #$?#
-        case CosmeticSepKind.HashAtPercentHash: // #@%#
-            return 4;
-        case CosmeticSepKind.HashAtDollarQuestionHash: // #@$?#
-            return 5;
-        default:
-            return 0;
-    }
-}
-
-/**
- * Returns the character length of a cosmetic separator.
- *
- * @param kind CosmeticSepKind value.
- *
- * @returns Separator length in characters.
- */
-export function cosmeticSepLength(kind: CosmeticSepKind): number {
-    switch (kind) {
-        case CosmeticSepKind.HashHash: // ##
-        case CosmeticSepKind.DollarDollar: // $$
-            return 2;
-        case CosmeticSepKind.HashAtHash: // #@#
-        case CosmeticSepKind.HashQuestionHash: // #?#
-        case CosmeticSepKind.HashDollarHash: // #$#
-        case CosmeticSepKind.HashPercentHash: // #%#
-        case CosmeticSepKind.DollarAtDollar: // $@$
-            return 3;
-        case CosmeticSepKind.HashAtQuestionHash: // #@?#
-        case CosmeticSepKind.HashAtDollarHash: // #@$#
-        case CosmeticSepKind.HashDollarQuestionHash: // #$?#
-        case CosmeticSepKind.HashAtPercentHash: // #@%#
-            return 4;
-        case CosmeticSepKind.HashAtDollarQuestionHash: // #@$?#
-            return 5;
-        default:
-            return 0;
-    }
-}
-
-/**
- * Returns whether a cosmetic separator kind represents an exception rule.
- *
- * @param kind CosmeticSepKind value.
- *
- * @returns True if the separator is an exception type.
- */
-export function cosmeticSepIsException(kind: CosmeticSepKind): boolean {
-    switch (kind) {
-        case CosmeticSepKind.HashAtHash:
-        case CosmeticSepKind.HashAtQuestionHash:
-        case CosmeticSepKind.HashAtDollarHash:
-        case CosmeticSepKind.HashAtDollarQuestionHash:
-        case CosmeticSepKind.HashAtPercentHash:
-        case CosmeticSepKind.DollarAtDollar:
-            return true;
-        default:
-            return false;
-    }
-}
-
-/**
- * Maps CosmeticSepKind to CosmeticRuleSeparator string.
- *
- * @param kind CosmeticSepKind value.
- *
- * @returns The separator string (e.g., '##', '#@#').
- */
-export function cosmeticSepToString(kind: CosmeticSepKind): CosmeticRuleSeparator {
-    switch (kind) {
-        case CosmeticSepKind.HashHash:
-            return '##';
-        case CosmeticSepKind.HashAtHash:
-            return '#@#';
-        case CosmeticSepKind.HashQuestionHash:
-            return '#?#';
-        case CosmeticSepKind.HashAtQuestionHash:
-            return '#@?#';
-        case CosmeticSepKind.HashDollarHash:
-            return '#$#';
-        case CosmeticSepKind.HashAtDollarHash:
-            return '#@$#';
-        case CosmeticSepKind.HashDollarQuestionHash:
-            return '#$?#';
-        case CosmeticSepKind.HashAtDollarQuestionHash:
-            return '#@$?#';
-        case CosmeticSepKind.HashPercentHash:
-            return '#%#';
-        case CosmeticSepKind.HashAtPercentHash:
-            return '#@%#';
-        case CosmeticSepKind.DollarDollar:
-            return '$$';
-        case CosmeticSepKind.DollarAtDollar:
-            return '$@$';
-        default:
-            throw new Error(`Unknown CosmeticSepKind: ${kind}`);
-    }
-}

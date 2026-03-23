@@ -17,8 +17,6 @@ import { ModifierListPreparser } from '../misc/modifier-list';
 import { MODIFIER_FLAG_NEGATED, NO_VALUE } from '../network/constants';
 
 import {
-    cosmeticSepIsException,
-    cosmeticSepTokenCount,
     CR_BODY_END,
     CR_BODY_START,
     CR_DOMAIN_COUNT,
@@ -28,8 +26,8 @@ import {
     CR_FLAGS_OFFSET,
     CR_MODIFIER_COUNT_OFFSET,
     CR_MODIFIER_RECORDS_OFFSET,
-    CR_SEP_KIND_MASK,
-    CR_SEP_KIND_SHIFT,
+    CR_SEP_LEN_MASK,
+    CR_SEP_LEN_SHIFT,
     CR_SEP_SOURCE_START,
     CR_UBO_MODS_OFFSET,
     UBO_MOD_BIT_MATCHES_MEDIA,
@@ -64,14 +62,16 @@ export class ElementHidingPreparser {
         classified: number,
         parseUboSpecificRules = true,
     ): void {
-        const { types } = ctx;
+        const { types, source } = ctx;
 
-        // Unpack separator kind and token index
-        const sepKind = RuleClassifier.cosmeticSepKind(classified);
+        // Unpack separator token index and token count
         const sepTokenIndex = RuleClassifier.cosmeticSepIndex(classified);
+        const sepTokens = RuleClassifier.cosmeticSepTokenCount(classified);
 
-        // Compute separator source position
+        // Compute separator source position and length
         const sepSourceStart = tokenStart(ctx, sepTokenIndex);
+        const sepSourceEnd = ctx.ends[sepTokenIndex + sepTokens - 1];
+        const sepLen = sepSourceEnd - sepSourceStart;
 
         // Detect AdGuard modifier list prefix: [$...]
         let domainStartTi = 0;
@@ -117,7 +117,6 @@ export class ElementHidingPreparser {
         );
 
         // Body starts after separator (skip all separator tokens)
-        const sepTokens = cosmeticSepTokenCount(sepKind);
         const bodyCandidateTi = sepTokenIndex + sepTokens;
         const bodyStartTi = skipWs(ctx, bodyCandidateTi);
 
@@ -141,12 +140,13 @@ export class ElementHidingPreparser {
             throw new Error('Element hiding rule has empty body');
         }
 
-        // Pack flags
+        // Pack flags — determine exception from raw separator containing '@'
         let flags = 0;
-        if (cosmeticSepIsException(sepKind)) {
+        if (source.indexOf('@', sepSourceStart) >= 0
+            && source.indexOf('@', sepSourceStart) < sepSourceEnd) {
             flags |= CR_FLAG_EXCEPTION;
         }
-        flags |= (sepKind & CR_SEP_KIND_MASK) << CR_SEP_KIND_SHIFT;
+        flags |= (sepLen & CR_SEP_LEN_MASK) << CR_SEP_LEN_SHIFT;
         if (hasAdgMods) {
             flags |= CR_FLAG_HAS_ADG_MODS;
         }

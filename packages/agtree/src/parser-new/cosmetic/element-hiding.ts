@@ -17,8 +17,6 @@ import type {
 } from '../../nodes';
 import { MAX_MODIFIER_RECORD_STRIDE } from '../../preparser/context';
 import {
-    cosmeticSepLength,
-    cosmeticSepToString,
     CR_BODY_END,
     CR_BODY_START,
     CR_DOMAIN_COUNT,
@@ -28,8 +26,8 @@ import {
     CR_FLAGS_OFFSET,
     CR_MODIFIER_COUNT_OFFSET,
     CR_MODIFIER_RECORDS_OFFSET,
-    CR_SEP_KIND_MASK,
-    CR_SEP_KIND_SHIFT,
+    CR_SEP_LEN_MASK,
+    CR_SEP_LEN_SHIFT,
     CR_SEP_SOURCE_START,
     CR_UBO_MODS_OFFSET,
     UBO_MOD_FIELD_FLAGS,
@@ -41,7 +39,6 @@ import {
     UBO_MOD_FIELD_VALUE_START,
     UBO_MODIFIER_RECORD_STRIDE,
 } from '../../preparser/cosmetic/constants';
-import type { CosmeticSepKind } from '../../preparser/cosmetic-separator';
 import { MODIFIER_FLAG_NEGATED, NO_VALUE } from '../../preparser/network/constants';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { DomainListParser } from '../misc/domain-list';
@@ -87,7 +84,6 @@ export class ElementHidingAstParser {
         // Read flags
         const flags = data[CR_FLAGS_OFFSET];
         const exception = (flags & CR_FLAG_EXCEPTION) !== 0;
-        const sepKind = ((flags >>> CR_SEP_KIND_SHIFT) & CR_SEP_KIND_MASK) as CosmeticSepKind;
         const hasAdgMods = (flags & CR_FLAG_HAS_ADG_MODS) !== 0;
         const hasUboMods = (flags & CR_FLAG_HAS_UBO_MODS) !== 0;
 
@@ -105,9 +101,9 @@ export class ElementHidingAstParser {
 
         // Read separator position and build separator Value
         const sepSourceStart = data[CR_SEP_SOURCE_START];
-        const sepLen = cosmeticSepLength(sepKind);
+        const sepLen = (flags >>> CR_SEP_LEN_SHIFT) & CR_SEP_LEN_MASK;
         const sepSourceEnd = sepSourceStart + sepLen;
-        const separatorValue = cosmeticSepToString(sepKind);
+        const separatorValue = source.slice(sepSourceStart, sepSourceEnd);
 
         const separator: Value = {
             type: 'Value',

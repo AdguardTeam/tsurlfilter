@@ -41,6 +41,8 @@ export {
 export {
     CR_FLAGS_OFFSET,
     CR_SEP_SOURCE_START,
+    CR_SEP_LEN_SHIFT,
+    CR_SEP_LEN_MASK,
     CR_DOMAIN_COUNT,
     CR_BODY_START,
     CR_FLAG_EXCEPTION,
@@ -59,17 +61,11 @@ export {
     UBO_MOD_BIT_MATCHES_MEDIA,
     UBO_MOD_BIT_STYLE,
     UBO_MOD_BIT_REMOVE,
-    CR_SEP_KIND_SHIFT,
-    CR_SEP_KIND_MASK,
     DOMAIN_RECORD_STRIDE,
     DOMAIN_FIELD_VALUE_START,
     DOMAIN_FIELD_VALUE_END,
     DOMAIN_FIELD_FLAGS,
     DOMAIN_FLAG_EXCEPTION,
-    cosmeticSepLength,
-    cosmeticSepTokenCount,
-    cosmeticSepIsException,
-    cosmeticSepToString,
 } from './cosmetic/constants';
 export {
     type NetworkRulePreparseResult,
@@ -77,9 +73,8 @@ export {
 } from './network/network-rule';
 
 export {
-    CosmeticSepKind,
-    cosmeticSepKind,
-    cosmeticSepIndex,
+    cosmeticSepTokenCount,
+    cosmeticSepStartIndex,
     findCosmeticSeparator,
 } from './cosmetic-separator';
 export { RuleClassifier, RuleKind } from './classifier';
