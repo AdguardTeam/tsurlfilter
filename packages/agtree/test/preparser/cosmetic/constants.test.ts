@@ -6,7 +6,6 @@ import {
     cosmeticSepToString,
 } from '../../../src/preparser/cosmetic/constants';
 import { CosmeticSepKind } from '../../../src/preparser/cosmetic-separator';
-import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
 
 describe('cosmeticSepTokenCount', () => {
     it('should return correct token count for all separator kinds', () => {
@@ -14,31 +13,22 @@ describe('cosmeticSepTokenCount', () => {
             kind: CosmeticSepKind;
             separator: string;
         }> = [
-            { kind: CosmeticSepKind.ElementHiding, separator: '##' },
-            { kind: CosmeticSepKind.ElementHidingException, separator: '#@#' },
-            { kind: CosmeticSepKind.ExtendedElementHiding, separator: '#?#' },
-            { kind: CosmeticSepKind.ExtendedElementHidingException, separator: '#@?#' },
-            { kind: CosmeticSepKind.AbpSnippet, separator: '#$#' },
-            { kind: CosmeticSepKind.AbpSnippetException, separator: '#@$#' },
-            { kind: CosmeticSepKind.AdgExtendedCssInjection, separator: '#$?#' },
-            { kind: CosmeticSepKind.AdgExtendedCssInjectionException, separator: '#@$?#' },
-            { kind: CosmeticSepKind.AdgJsInjection, separator: '#%#' },
-            { kind: CosmeticSepKind.AdgJsInjectionException, separator: '#@%#' },
-            { kind: CosmeticSepKind.AdgHtmlFiltering, separator: '$$' },
-            { kind: CosmeticSepKind.AdgHtmlFilteringException, separator: '$@$' },
+            { kind: CosmeticSepKind.HashHash, separator: '##' },
+            { kind: CosmeticSepKind.HashAtHash, separator: '#@#' },
+            { kind: CosmeticSepKind.HashQuestionHash, separator: '#?#' },
+            { kind: CosmeticSepKind.HashAtQuestionHash, separator: '#@?#' },
+            { kind: CosmeticSepKind.HashDollarHash, separator: '#$#' },
+            { kind: CosmeticSepKind.HashAtDollarHash, separator: '#@$#' },
+            { kind: CosmeticSepKind.HashDollarQuestionHash, separator: '#$?#' },
+            { kind: CosmeticSepKind.HashAtDollarQuestionHash, separator: '#@$?#' },
+            { kind: CosmeticSepKind.HashPercentHash, separator: '#%#' },
+            { kind: CosmeticSepKind.HashAtPercentHash, separator: '#@%#' },
+            { kind: CosmeticSepKind.DollarDollar, separator: '$$' },
+            { kind: CosmeticSepKind.DollarAtDollar, separator: '$@$' },
         ];
 
         testCases.forEach(({ kind, separator }) => {
-            const result = {
-                tokenCount: 0,
-                types: new Uint8Array(1024),
-                ends: new Uint32Array(1024),
-                actualEnd: 0,
-                overflowed: 0 as const,
-            };
-            tokenizeLine(separator, 0, result);
-
-            expect(cosmeticSepTokenCount(kind)).toBe(result.tokenCount);
+            expect(cosmeticSepTokenCount(kind)).toBe(separator.length);
             expect(cosmeticSepToString(kind)).toBe(separator);
         });
     });

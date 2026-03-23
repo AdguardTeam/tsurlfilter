@@ -189,21 +189,21 @@ export const UBO_MOD_BIT_REMOVE = 1 << 3;
  */
 export function cosmeticSepTokenCount(kind: CosmeticSepKind): number {
     switch (kind) {
-        case CosmeticSepKind.ElementHiding: // ##
-        case CosmeticSepKind.AdgHtmlFiltering: // $$
+        case CosmeticSepKind.HashHash: // ##
+        case CosmeticSepKind.DollarDollar: // $$
             return 2;
-        case CosmeticSepKind.ElementHidingException: // #@#
-        case CosmeticSepKind.ExtendedElementHiding: // #?#
-        case CosmeticSepKind.AbpSnippet: // #$#
-        case CosmeticSepKind.AdgJsInjection: // #%#
-        case CosmeticSepKind.AdgHtmlFilteringException: // $@$
+        case CosmeticSepKind.HashAtHash: // #@#
+        case CosmeticSepKind.HashQuestionHash: // #?#
+        case CosmeticSepKind.HashDollarHash: // #$#
+        case CosmeticSepKind.HashPercentHash: // #%#
+        case CosmeticSepKind.DollarAtDollar: // $@$
             return 3;
-        case CosmeticSepKind.ExtendedElementHidingException: // #@?#
-        case CosmeticSepKind.AbpSnippetException: // #@$#
-        case CosmeticSepKind.AdgExtendedCssInjection: // #$?#
-        case CosmeticSepKind.AdgJsInjectionException: // #@%#
+        case CosmeticSepKind.HashAtQuestionHash: // #@?#
+        case CosmeticSepKind.HashAtDollarHash: // #@$#
+        case CosmeticSepKind.HashDollarQuestionHash: // #$?#
+        case CosmeticSepKind.HashAtPercentHash: // #@%#
             return 4;
-        case CosmeticSepKind.AdgExtendedCssInjectionException: // #@$?#
+        case CosmeticSepKind.HashAtDollarQuestionHash: // #@$?#
             return 5;
         default:
             return 0;
@@ -219,21 +219,21 @@ export function cosmeticSepTokenCount(kind: CosmeticSepKind): number {
  */
 export function cosmeticSepLength(kind: CosmeticSepKind): number {
     switch (kind) {
-        case CosmeticSepKind.ElementHiding: // ##
-        case CosmeticSepKind.AdgHtmlFiltering: // $$
+        case CosmeticSepKind.HashHash: // ##
+        case CosmeticSepKind.DollarDollar: // $$
             return 2;
-        case CosmeticSepKind.ElementHidingException: // #@#
-        case CosmeticSepKind.ExtendedElementHiding: // #?#
-        case CosmeticSepKind.AbpSnippet: // #$#
-        case CosmeticSepKind.AdgJsInjection: // #%#
-        case CosmeticSepKind.AdgHtmlFilteringException: // $@$
+        case CosmeticSepKind.HashAtHash: // #@#
+        case CosmeticSepKind.HashQuestionHash: // #?#
+        case CosmeticSepKind.HashDollarHash: // #$#
+        case CosmeticSepKind.HashPercentHash: // #%#
+        case CosmeticSepKind.DollarAtDollar: // $@$
             return 3;
-        case CosmeticSepKind.ExtendedElementHidingException: // #@?#
-        case CosmeticSepKind.AbpSnippetException: // #@$#
-        case CosmeticSepKind.AdgExtendedCssInjection: // #$?#
-        case CosmeticSepKind.AdgJsInjectionException: // #@%#
+        case CosmeticSepKind.HashAtQuestionHash: // #@?#
+        case CosmeticSepKind.HashAtDollarHash: // #@$#
+        case CosmeticSepKind.HashDollarQuestionHash: // #$?#
+        case CosmeticSepKind.HashAtPercentHash: // #@%#
             return 4;
-        case CosmeticSepKind.AdgExtendedCssInjectionException: // #@$?#
+        case CosmeticSepKind.HashAtDollarQuestionHash: // #@$?#
             return 5;
         default:
             return 0;
@@ -249,12 +249,12 @@ export function cosmeticSepLength(kind: CosmeticSepKind): number {
  */
 export function cosmeticSepIsException(kind: CosmeticSepKind): boolean {
     switch (kind) {
-        case CosmeticSepKind.ElementHidingException:
-        case CosmeticSepKind.ExtendedElementHidingException:
-        case CosmeticSepKind.AbpSnippetException:
-        case CosmeticSepKind.AdgExtendedCssInjectionException:
-        case CosmeticSepKind.AdgJsInjectionException:
-        case CosmeticSepKind.AdgHtmlFilteringException:
+        case CosmeticSepKind.HashAtHash:
+        case CosmeticSepKind.HashAtQuestionHash:
+        case CosmeticSepKind.HashAtDollarHash:
+        case CosmeticSepKind.HashAtDollarQuestionHash:
+        case CosmeticSepKind.HashAtPercentHash:
+        case CosmeticSepKind.DollarAtDollar:
             return true;
         default:
             return false;
@@ -270,29 +270,29 @@ export function cosmeticSepIsException(kind: CosmeticSepKind): boolean {
  */
 export function cosmeticSepToString(kind: CosmeticSepKind): CosmeticRuleSeparator {
     switch (kind) {
-        case CosmeticSepKind.ElementHiding:
+        case CosmeticSepKind.HashHash:
             return '##';
-        case CosmeticSepKind.ElementHidingException:
+        case CosmeticSepKind.HashAtHash:
             return '#@#';
-        case CosmeticSepKind.ExtendedElementHiding:
+        case CosmeticSepKind.HashQuestionHash:
             return '#?#';
-        case CosmeticSepKind.ExtendedElementHidingException:
+        case CosmeticSepKind.HashAtQuestionHash:
             return '#@?#';
-        case CosmeticSepKind.AbpSnippet:
+        case CosmeticSepKind.HashDollarHash:
             return '#$#';
-        case CosmeticSepKind.AbpSnippetException:
+        case CosmeticSepKind.HashAtDollarHash:
             return '#@$#';
-        case CosmeticSepKind.AdgExtendedCssInjection:
+        case CosmeticSepKind.HashDollarQuestionHash:
             return '#$?#';
-        case CosmeticSepKind.AdgExtendedCssInjectionException:
+        case CosmeticSepKind.HashAtDollarQuestionHash:
             return '#@$?#';
-        case CosmeticSepKind.AdgJsInjection:
+        case CosmeticSepKind.HashPercentHash:
             return '#%#';
-        case CosmeticSepKind.AdgJsInjectionException:
+        case CosmeticSepKind.HashAtPercentHash:
             return '#@%#';
-        case CosmeticSepKind.AdgHtmlFiltering:
+        case CosmeticSepKind.DollarDollar:
             return '$$';
-        case CosmeticSepKind.AdgHtmlFilteringException:
+        case CosmeticSepKind.DollarAtDollar:
             return '$@$';
         default:
             throw new Error(`Unknown CosmeticSepKind: ${kind}`);

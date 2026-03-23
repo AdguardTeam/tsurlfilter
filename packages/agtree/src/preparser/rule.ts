@@ -55,8 +55,8 @@ export class RulePreparser {
             case RuleKind.Cosmetic: {
                 const sepKind = RuleClassifier.cosmeticSepKind(classified);
                 // Element hiding: ##, #@#, #?#, #@?# (kinds 1-4)
-                if (sepKind >= CosmeticSepKind.ElementHiding
-                    && sepKind <= CosmeticSepKind.ExtendedElementHidingException) {
+                if (sepKind >= CosmeticSepKind.HashHash
+                    && sepKind <= CosmeticSepKind.HashAtQuestionHash) {
                     ElementHidingPreparser.preparse(ctx, classified, parseUboSpecificRules);
                     return RuleKind.Cosmetic;
                 }

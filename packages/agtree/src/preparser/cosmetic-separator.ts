@@ -15,22 +15,22 @@ import { TokenType } from '../tokenizer/token-types';
 export const enum CosmeticSepKind {
     None = 0,
 
-    ElementHiding = 1, // ##
-    ElementHidingException = 2, // #@#
-    ExtendedElementHiding = 3, // #?#
-    ExtendedElementHidingException = 4, // #@?#
+    HashHash = 1, // ##
+    HashAtHash = 2, // #@#
+    HashQuestionHash = 3, // #?#
+    HashAtQuestionHash = 4, // #@?#
 
-    AbpSnippet = 5, // #$#
-    AbpSnippetException = 6, // #@$#
+    HashDollarHash = 5, // #$#
+    HashAtDollarHash = 6, // #@$#
 
-    AdgExtendedCssInjection = 7, // #$?#
-    AdgExtendedCssInjectionException = 8, // #@$?#
+    HashDollarQuestionHash = 7, // #$?#
+    HashAtDollarQuestionHash = 8, // #@$?#
 
-    AdgJsInjection = 9, // #%#
-    AdgJsInjectionException = 10, // #@%#
+    HashPercentHash = 9, // #%#
+    HashAtPercentHash = 10, // #@%#
 
-    AdgHtmlFiltering = 11, // $$
-    AdgHtmlFilteringException = 12, // $@$
+    DollarDollar = 11, // $$
+    DollarAtDollar = 12, // $@$
 }
 
 /**
@@ -96,10 +96,10 @@ export function findCosmeticSeparator(types: Uint8Array, tokenCount: number): nu
         if (t0 === DS) {
             const t1 = types[i + 1];
             if (t1 === DS) {
-                return (CosmeticSepKind.AdgHtmlFiltering << SH) | i; // $$
+                return (CosmeticSepKind.DollarDollar << SH) | i; // $$
             }
             if (t1 === AT && types[i + 2] === DS) {
-                return (CosmeticSepKind.AdgHtmlFilteringException << SH) | i; // $@$
+                return (CosmeticSepKind.DollarAtDollar << SH) | i; // $@$
             }
             continue;
         }
@@ -111,22 +111,22 @@ export function findCosmeticSeparator(types: Uint8Array, tokenCount: number): nu
         const t1 = types[i + 1];
 
         if (t1 === HM) {
-            return (CosmeticSepKind.ElementHiding << SH) | i; // ##
+            return (CosmeticSepKind.HashHash << SH) | i; // ##
         }
         if (t1 === QM && types[i + 2] === HM) {
-            return (CosmeticSepKind.ExtendedElementHiding << SH) | i; // #?#
+            return (CosmeticSepKind.HashQuestionHash << SH) | i; // #?#
         }
         if (t1 === PC && types[i + 2] === HM) {
-            return (CosmeticSepKind.AdgJsInjection << SH) | i; // #%#
+            return (CosmeticSepKind.HashPercentHash << SH) | i; // #%#
         }
 
         if (t1 === DS) {
             const t2 = types[i + 2];
             if (t2 === HM) {
-                return (CosmeticSepKind.AbpSnippet << SH) | i; // #$#
+                return (CosmeticSepKind.HashDollarHash << SH) | i; // #$#
             }
             if (t2 === QM && types[i + 3] === HM) {
-                return (CosmeticSepKind.AdgExtendedCssInjection << SH) | i; // #$?#
+                return (CosmeticSepKind.HashDollarQuestionHash << SH) | i; // #$?#
             }
             continue;
         }
@@ -134,21 +134,21 @@ export function findCosmeticSeparator(types: Uint8Array, tokenCount: number): nu
         if (t1 === AT) {
             const t2 = types[i + 2];
             if (t2 === HM) {
-                return (CosmeticSepKind.ElementHidingException << SH) | i; // #@#
+                return (CosmeticSepKind.HashAtHash << SH) | i; // #@#
             }
             if (t2 === QM && types[i + 3] === HM) {
-                return (CosmeticSepKind.ExtendedElementHidingException << SH) | i; // #@?#
+                return (CosmeticSepKind.HashAtQuestionHash << SH) | i; // #@?#
             }
             if (t2 === PC && types[i + 3] === HM) {
-                return (CosmeticSepKind.AdgJsInjectionException << SH) | i; // #@%#
+                return (CosmeticSepKind.HashAtPercentHash << SH) | i; // #@%#
             }
             if (t2 === DS) {
                 const t3 = types[i + 3];
                 if (t3 === HM) {
-                    return (CosmeticSepKind.AbpSnippetException << SH) | i; // #@$#
+                    return (CosmeticSepKind.HashAtDollarHash << SH) | i; // #@$#
                 }
                 if (t3 === QM && types[i + 4] === HM) {
-                    return (CosmeticSepKind.AdgExtendedCssInjectionException << SH) | i; // #@$?#
+                    return (CosmeticSepKind.HashAtDollarQuestionHash << SH) | i; // #@$?#
                 }
             }
         }
@@ -164,10 +164,10 @@ export function findCosmeticSeparator(types: Uint8Array, tokenCount: number): nu
             }
             const t1 = types[i + 1];
             if (t1 === DS) {
-                return (CosmeticSepKind.AdgHtmlFiltering << SH) | i;
+                return (CosmeticSepKind.DollarDollar << SH) | i;
             }
             if (t1 === AT && i + 2 < tokenCount && types[i + 2] === DS) {
-                return (CosmeticSepKind.AdgHtmlFilteringException << SH) | i;
+                return (CosmeticSepKind.DollarAtDollar << SH) | i;
             }
             continue;
         }
@@ -181,13 +181,13 @@ export function findCosmeticSeparator(types: Uint8Array, tokenCount: number): nu
 
         const t1 = types[i + 1];
         if (t1 === HM) {
-            return (CosmeticSepKind.ElementHiding << SH) | i;
+            return (CosmeticSepKind.HashHash << SH) | i;
         }
         if (t1 === QM && i + 2 < tokenCount && types[i + 2] === HM) {
-            return (CosmeticSepKind.ExtendedElementHiding << SH) | i;
+            return (CosmeticSepKind.HashQuestionHash << SH) | i;
         }
         if (t1 === PC && i + 2 < tokenCount && types[i + 2] === HM) {
-            return (CosmeticSepKind.AdgJsInjection << SH) | i;
+            return (CosmeticSepKind.HashPercentHash << SH) | i;
         }
 
         if (t1 === DS) {
@@ -196,10 +196,10 @@ export function findCosmeticSeparator(types: Uint8Array, tokenCount: number): nu
             }
             const t2 = types[i + 2];
             if (t2 === HM) {
-                return (CosmeticSepKind.AbpSnippet << SH) | i;
+                return (CosmeticSepKind.HashDollarHash << SH) | i;
             }
             if (t2 === QM && i + 3 < tokenCount && types[i + 3] === HM) {
-                return (CosmeticSepKind.AdgExtendedCssInjection << SH) | i;
+                return (CosmeticSepKind.HashDollarQuestionHash << SH) | i;
             }
             continue;
         }
@@ -210,13 +210,13 @@ export function findCosmeticSeparator(types: Uint8Array, tokenCount: number): nu
             }
             const t2 = types[i + 2];
             if (t2 === HM) {
-                return (CosmeticSepKind.ElementHidingException << SH) | i;
+                return (CosmeticSepKind.HashAtHash << SH) | i;
             }
             if (t2 === QM && i + 3 < tokenCount && types[i + 3] === HM) {
-                return (CosmeticSepKind.ExtendedElementHidingException << SH) | i;
+                return (CosmeticSepKind.HashAtQuestionHash << SH) | i;
             }
             if (t2 === PC && i + 3 < tokenCount && types[i + 3] === HM) {
-                return (CosmeticSepKind.AdgJsInjectionException << SH) | i;
+                return (CosmeticSepKind.HashAtPercentHash << SH) | i;
             }
             if (t2 === DS) {
                 if (i + 3 >= tokenCount) {
@@ -224,10 +224,10 @@ export function findCosmeticSeparator(types: Uint8Array, tokenCount: number): nu
                 }
                 const t3 = types[i + 3];
                 if (t3 === HM) {
-                    return (CosmeticSepKind.AbpSnippetException << SH) | i;
+                    return (CosmeticSepKind.HashAtDollarHash << SH) | i;
                 }
                 if (t3 === QM && i + 4 < tokenCount && types[i + 4] === HM) {
-                    return (CosmeticSepKind.AdgExtendedCssInjectionException << SH) | i;
+                    return (CosmeticSepKind.HashAtDollarQuestionHash << SH) | i;
                 }
             }
         }
