@@ -197,5 +197,29 @@ describe('RuleParser — uBO selector modifiers', () => {
             expect(ast.modifiers.children[0].start).toBe(2);
             expect(ast.modifiers.children[0].end).toBe(22);
         });
+
+        test('selectorList.raw matches start/end when modifiers are extracted', () => {
+            const rule = '##:matches-path(/page) .ad';
+            const ast = parser.parse(rule, { isLocIncluded: true }) as any;
+            const sel = ast.body.selectorList;
+
+            // value is the cleaned selector (modifier stripped)
+            expect(sel.value).toBe('.ad');
+            // raw is the original body text (modifier included)
+            expect(sel.raw).toBe(':matches-path(/page) .ad');
+            // start/end span the original body range
+            expect(sel.start).toBe(2);
+            expect(sel.end).toBe(26);
+            // invariant: source.slice(start, end) === raw
+            expect(rule.slice(sel.start, sel.end)).toBe(sel.raw);
+        });
+
+        test('selectorList.raw is set even without includeRaws when uBO mods present', () => {
+            const ast = parser.parse('##.ad:matches-path(/page)') as any;
+            const sel = ast.body.selectorList;
+
+            expect(sel.value).toBe('.ad');
+            expect(sel.raw).toBe('.ad:matches-path(/page)');
+        });
     });
 });

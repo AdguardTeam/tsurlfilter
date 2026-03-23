@@ -166,7 +166,7 @@ export class ElementHidingAstParser {
             selectorList.end = bodyEnd;
         }
 
-        if (includeRaws) {
+        if (includeRaws || hasUboMods) {
             selectorList.raw = source.slice(bodyStart, bodyEnd);
         }
 
