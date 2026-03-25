@@ -2,16 +2,46 @@
  * @file Rule preparser — top-level dispatcher.
  *
  * Uses {@link RuleClassifier} to determine the rule kind and delegates to the
- * matching comment or network preparser. Cosmetic rule preparsing is not yet
- * implemented.
+ * matching comment, network, or cosmetic preparser.
  */
 
 import { RuleClassifier, RuleKind } from './classifier';
 import { CommentClassifier } from './comment/classifier';
 import type { PreparserContext } from './context';
+import { tokenStart } from './context';
+import { ElementHidingPreparser } from './cosmetic/element-hiding';
 import { NetworkRulePreparser } from './network/network-rule';
 
 export { RuleKind } from './classifier';
+
+/**
+ * Checks whether the cosmetic separator starting at `sepStart` in `source`
+ * is an element hiding separator (##, #@#, #?#, #@?#).
+ *
+ * Element hiding separators start with `#` and the character after `#`
+ * (or `#@`) is `#` or `?` — never `$` or `%`.
+ *
+ * @param source Source string.
+ * @param sepStart Source index where the separator starts.
+ *
+ * @returns True if the separator is element-hiding.
+ */
+function isElementHidingSep(source: string, sepStart: number): boolean {
+    if (source.charCodeAt(sepStart) !== 0x23) {
+        return false; // must start with #
+    }
+    const c1 = source.charCodeAt(sepStart + 1);
+    // ## or #?#
+    if (c1 === 0x23 || c1 === 0x3F) {
+        return true;
+    }
+    // #@# or #@?#
+    if (c1 === 0x40) {
+        const c2 = source.charCodeAt(sepStart + 2);
+        return c2 === 0x23 || c2 === 0x3F;
+    }
+    return false;
+}
 
 /**
  * Top-level rule preparser.
@@ -32,13 +62,14 @@ export class RulePreparser {
      * Classifies the rule and runs the appropriate preparser.
      *
      * @param ctx Preparser context with tokenizer output already loaded.
+     * @param parseUboSpecificRules Whether to detect uBO modifiers (default true).
      *
      * @returns The {@link RuleKind} of the rule, so the caller can dispatch
      *   to the correct AST parser.
      *
-     * @throws If the rule is a cosmetic rule (not yet implemented).
+     * @throws If the rule is a non-element-hiding cosmetic rule (not yet implemented).
      */
-    public static preparse(ctx: PreparserContext): RuleKind {
+    public static preparse(ctx: PreparserContext, parseUboSpecificRules = true): RuleKind {
         const classified = RuleClassifier.classify(ctx);
         const kind = RuleClassifier.ruleKind(classified);
 
@@ -51,8 +82,21 @@ export class RulePreparser {
                 NetworkRulePreparser.preparse(ctx);
                 return RuleKind.Network;
 
-            case RuleKind.Cosmetic:
-                throw new Error('Cosmetic rule parsing is not yet implemented');
+            case RuleKind.Cosmetic: {
+                const sepTokenIndex = RuleClassifier.cosmeticSepIndex(classified);
+                const sepStart = tokenStart(ctx, sepTokenIndex);
+
+                if (isElementHidingSep(ctx.source, sepStart)) {
+                    ElementHidingPreparser.preparse(ctx, classified, parseUboSpecificRules);
+                    return RuleKind.Cosmetic;
+                }
+
+                // Other cosmetic types not yet implemented
+                const sepTokCount = RuleClassifier.cosmeticSepTokenCount(classified);
+                const sepEnd = ctx.ends[sepTokenIndex + sepTokCount - 1];
+                const sep = ctx.source.slice(sepStart, sepEnd);
+                throw new Error(`Cosmetic separator '${sep}' is not yet implemented in the new pipeline`);
+            }
 
             default:
                 throw new Error(`Unknown rule kind: ${kind}`);

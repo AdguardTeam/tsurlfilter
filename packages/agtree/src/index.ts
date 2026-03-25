@@ -2,10 +2,14 @@
  * @file AGTree entry point.
  */
 
-// Parser
+// Parser (legacy)
 export { RuleParser } from './parser/rule-parser';
 export { RuleGenerator } from './generator/rule-generator';
 export { type OnParseError, defaultParserOptions, type ParserOptions } from './parser/options';
+
+// New pipeline parser (supports element hiding and other cosmetic rules)
+export { RuleParser as RuleParserNew } from './parser-new/rule-parser';
+export { type PreparserParseOptions } from './parser-new/network/network-rule';
 
 export {
     type Agent,

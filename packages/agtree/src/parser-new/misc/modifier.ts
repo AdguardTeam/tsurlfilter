@@ -34,6 +34,7 @@ export class ModifierParser {
      * @param data Preparsed data buffer.
      * @param idx Modifier index (0-based).
      * @param isLocIncluded Whether to include location info.
+     * @param recordsOffset Buffer offset where records begin (default: network rule offset).
      *
      * @returns Modifier AST node.
      */
@@ -42,8 +43,9 @@ export class ModifierParser {
         data: Int32Array,
         idx: number,
         isLocIncluded: boolean,
+        recordsOffset: number = NR_MODIFIER_RECORDS_OFFSET,
     ): Modifier {
-        const base = NR_MODIFIER_RECORDS_OFFSET + idx * MODIFIER_RECORD_STRIDE;
+        const base = recordsOffset + idx * MODIFIER_RECORD_STRIDE;
 
         const nameStart = data[base + MODIFIER_FIELD_NAME_START];
         const nameEnd = data[base + MODIFIER_FIELD_NAME_END];

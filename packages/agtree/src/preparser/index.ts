@@ -11,10 +11,13 @@ export {
     type PreparserContext,
     createPreparserContext,
     initPreparserContext,
+    MAX_MODIFIER_RECORD_STRIDE,
     regionEquals,
     tokenStart,
     skipWs,
     skipUntil,
+    domainRecordsOffset,
+    growDomainCapacity,
 } from './context';
 
 // Re-export constants and types from network rule preparser
@@ -36,14 +39,42 @@ export {
     NO_VALUE,
 } from './network/constants';
 export {
+    CR_FLAGS_OFFSET,
+    CR_SEP_SOURCE_START,
+    CR_SEP_LEN_SHIFT,
+    CR_SEP_LEN_MASK,
+    CR_DOMAIN_COUNT,
+    CR_BODY_START,
+    CR_FLAG_EXCEPTION,
+    CR_FLAG_HAS_ADG_MODS,
+    CR_FLAG_HAS_UBO_MODS,
+    UBO_MODIFIER_RECORD_STRIDE,
+    UBO_MOD_FIELD_NAME_START,
+    UBO_MOD_FIELD_NAME_END,
+    UBO_MOD_FIELD_FLAGS,
+    UBO_MOD_FIELD_VALUE_START,
+    UBO_MOD_FIELD_VALUE_END,
+    UBO_MOD_FIELD_SRC_START,
+    UBO_MOD_FIELD_SRC_END,
+    CR_UBO_MODS_OFFSET,
+    UBO_MOD_BIT_MATCHES_PATH,
+    UBO_MOD_BIT_MATCHES_MEDIA,
+    UBO_MOD_BIT_STYLE,
+    UBO_MOD_BIT_REMOVE,
+    DOMAIN_RECORD_STRIDE,
+    DOMAIN_FIELD_VALUE_START,
+    DOMAIN_FIELD_VALUE_END,
+    DOMAIN_FIELD_FLAGS,
+    DOMAIN_FLAG_EXCEPTION,
+} from './cosmetic/constants';
+export {
     type NetworkRulePreparseResult,
     createNetworkRulePreparseResult,
 } from './network/network-rule';
 
 export {
-    CosmeticSepKind,
-    cosmeticSepKind,
-    cosmeticSepIndex,
+    cosmeticSepTokenCount,
+    cosmeticSepStartIndex,
     findCosmeticSeparator,
 } from './cosmetic-separator';
 export { RuleClassifier, RuleKind } from './classifier';
@@ -60,6 +91,8 @@ export {
     CM_KIND,
 } from './comment';
 export { NetworkRulePreparser } from './network/network-rule';
+export { ElementHidingPreparser } from './cosmetic/element-hiding';
+export { DomainListPreparser } from './misc/domain-list';
 export { ModifierListPreparser } from './misc/modifier-list';
 export { ModifierPreparser } from './misc/modifier';
 export { ValuePreparser } from './misc/value';

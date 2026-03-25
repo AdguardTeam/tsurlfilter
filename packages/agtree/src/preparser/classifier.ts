@@ -18,14 +18,7 @@ import { TokenType } from '../tokenizer/token-types';
 
 import type { PreparserContext } from './context';
 import { skipWs } from './context';
-import {
-    cosmeticSepIndex,
-    cosmeticSepKind,
-    type CosmeticSepKind,
-    findCosmeticSeparator,
-} from './cosmetic-separator';
-
-export { CosmeticSepKind } from './cosmetic-separator';
+import { cosmeticSepStartIndex, cosmeticSepTokenCount, findCosmeticSeparator } from './cosmetic-separator';
 
 export const enum RuleKind {
     Network = 0,
@@ -37,13 +30,13 @@ export const enum RuleKind {
  * Bit layout of the packed classify result (32-bit signed int):.
  *
  * ```
- * [31..28]  RuleKind          (4 bits, values 0–2)
- * [27..24]  CosmeticSepKind   (4 bits, values 0–12)
- * [23.. 0]  sep token index   (24 bits, max 16 M tokens)
+ * [31..28]  RuleKind              (4 bits, values 0–2)
+ * [27..24]  sep token count       (4 bits, values 0 or 2–5)
+ * [23.. 0]  sep start token index (24 bits, max 16 M tokens)
  * ```
  */
 const RULE_KIND_SHIFT = 28;
-const COSM_KIND_SHIFT = 24;
+const SEP_COUNT_SHIFT = 24;
 const SEP_IDX_MASK = 0x00ff_ffff;
 
 /**
@@ -59,7 +52,7 @@ export class RuleClassifier {
      * @param ctx Preparser context (tokenizer output must be loaded).
      *
      * @returns Packed classification result — use `ruleKind`,
-     *   `cosmeticSepKind`, and `cosmeticSepIndex` to unpack.
+     *   `cosmeticSepTokenCount`, and `cosmeticSepIndex` to unpack.
      */
     public static classify(ctx: PreparserContext): number {
         const { types, tokenCount } = ctx;
@@ -76,7 +69,11 @@ export class RuleClassifier {
         const sep = findCosmeticSeparator(types, tokenCount);
 
         if (sep !== -1) {
-            return RuleClassifier.pack(RuleKind.Cosmetic, cosmeticSepKind(sep), cosmeticSepIndex(sep));
+            return RuleClassifier.pack(
+                RuleKind.Cosmetic,
+                cosmeticSepTokenCount(sep),
+                cosmeticSepStartIndex(sep),
+            );
         }
 
         // 3. #-comment (host-style; ## would have been caught above)
@@ -114,20 +111,20 @@ export class RuleClassifier {
     }
 
     /**
-     * Extracts the {@link CosmeticSepKind} from a packed classify result.
-     * Returns `CosmeticSepKind.None` for non-cosmetic rules.
+     * Extracts the cosmetic separator token count from a packed classify result.
+     * Returns `0` for non-cosmetic rules.
      *
      * @param result Packed result from `classify`.
      *
-     * @returns The cosmetic separator kind.
+     * @returns Number of tokens the separator spans (0 or 2–5).
      */
-    public static cosmeticSepKind(result: number): CosmeticSepKind {
-        return ((result >>> COSM_KIND_SHIFT) & 0xf) as CosmeticSepKind;
+    public static cosmeticSepTokenCount(result: number): number {
+        return (result >>> SEP_COUNT_SHIFT) & 0xf;
     }
 
     /**
-     * Extracts the cosmetic separator token index from a packed classify result.
-     * Returns `0` for non-cosmetic rules.
+     * Extracts the cosmetic separator start token index from a packed classify
+     * result. Returns `0` for non-cosmetic rules.
      *
      * @param result Packed result from `classify`.
      *
@@ -141,12 +138,12 @@ export class RuleClassifier {
      * Packs a classification result.
      *
      * @param ruleKind The rule kind.
-     * @param sepKind The cosmetic separator kind.
-     * @param sepIdx The cosmetic separator token index.
+     * @param sepTokCount The cosmetic separator token count.
+     * @param sepIdx The cosmetic separator start token index.
      *
      * @returns The packed result.
      */
-    private static pack(ruleKind: RuleKind, sepKind: number, sepIdx: number): number {
-        return (ruleKind << RULE_KIND_SHIFT) | (sepKind << COSM_KIND_SHIFT) | (sepIdx & SEP_IDX_MASK);
+    private static pack(ruleKind: RuleKind, sepTokCount: number, sepIdx: number): number {
+        return (ruleKind << RULE_KIND_SHIFT) | (sepTokCount << SEP_COUNT_SHIFT) | (sepIdx & SEP_IDX_MASK);
     }
 }
