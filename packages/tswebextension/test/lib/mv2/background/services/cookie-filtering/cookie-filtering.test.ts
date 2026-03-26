@@ -15,7 +15,7 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../../../helpers/rule-creator';
-import { MockFilteringLog } from '../../../../common/mocks';
+import { MockFilteringLog } from '../../../../common/mocks/mock-filtering-log';
 import { getNetworkRuleFields } from '../../helpers/rule-fields';
 import { BrowserCookieApi } from '../../../../../../src/lib/common/cookie-filtering/browser-cookie-api';
 import { CookieFiltering } from '../../../../../../src/lib/mv2/background/services/cookie-filtering/cookie-filtering';
@@ -57,7 +57,7 @@ describe('Cookie filtering', () => {
 
     beforeEach(() => {
         mockFilteringLog = new MockFilteringLog();
-        cookieFiltering = new CookieFiltering(mockFilteringLog);
+        cookieFiltering = new CookieFiltering(mockFilteringLog, engineApi, tabsApi);
 
         requestId = '1';
 

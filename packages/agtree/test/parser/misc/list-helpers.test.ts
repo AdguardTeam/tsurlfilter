@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { ListItemNodeType, type CommaSeparator, type PipeSeparator } from '../../../src/nodes';
+import { type CommaSeparator, ListItemNodeType, type PipeSeparator } from '../../../src/nodes';
+import { LIST_PARSE_ERROR_PREFIX, ListItemsParser } from '../../../src/parser/misc/list-items-parser';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { COMMA_DOMAIN_LIST_SEPARATOR, PIPE } from '../../../src/utils/constants';
-import { LIST_PARSE_ERROR_PREFIX, ListItemsParser } from '../../../src/parser/misc/list-items-parser';
 
 /**
  * Checks that common function `parseListItems()` throws an error with the `expected` message.

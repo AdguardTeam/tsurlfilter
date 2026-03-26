@@ -19,8 +19,10 @@ import { ContentType } from '../../common/request-type';
 import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
+import { getRuleTextsByIndex } from '../../common/utils/rule-text-provider';
 import { type TabsApi } from '../tabs/tabs-api';
 
+import { engineApi } from './engine-api';
 import { type TsWebExtension } from './app';
 import { appContext } from './app-context';
 import { CosmeticApi } from './cosmetic-api';
@@ -293,6 +295,13 @@ export class MessagesApi {
         for (let i = 0; i < payload.length; i += 1) {
             const stat = payload[i];
 
+            // Retrieve rule texts for content script cosmetic events
+            const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(
+                stat.filterId,
+                stat.ruleIndex,
+                engineApi,
+            );
+
             this.filteringLog.publishEvent({
                 type: FilteringEventType.ApplyCosmeticRule,
                 data: {
@@ -300,6 +309,8 @@ export class MessagesApi {
                     eventId: nanoid(),
                     filterId: stat.filterId,
                     ruleIndex: stat.ruleIndex,
+                    appliedRuleText,
+                    originalRuleText,
                     element: stat.element,
                     frameUrl: url,
                     frameDomain: getDomain(url) as string,
@@ -339,6 +350,13 @@ export class MessagesApi {
 
         const { data } = res;
 
+        // For content script events, retrieve rule texts from engine if rule has valid index
+        const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(
+            data.filterId,
+            data.ruleIndex,
+            engineApi,
+        );
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.Cookie,
             data: {
@@ -349,11 +367,12 @@ export class MessagesApi {
                 cookieValue: data.cookieValue,
                 filterId: data.filterId,
                 ruleIndex: data.ruleIndex,
+                appliedRuleText,
+                originalRuleText,
                 isModifyingCookieRule: false,
                 requestThirdParty: data.thirdParty,
                 timestamp: Date.now(),
                 requestType: ContentType.Cookie,
-                // Additional rule properties
                 isAllowlist: data.isAllowlist,
                 isImportant: data.isImportant,
                 isDocumentLevel: data.isDocumentLevel,

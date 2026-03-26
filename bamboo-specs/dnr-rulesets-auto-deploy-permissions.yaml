@@ -8,7 +8,19 @@ deployment-permissions:
     permissions:
       - view
 environment-permissions:
-  - npmjs 3.2.X:
+  - npmjs 3.3.X:
+      - groups:
+          - extensions-developers
+        permissions:
+          - view
+          - deploy
+  - npmjs 4.0.X:
+      - groups:
+          - extensions-developers
+        permissions:
+          - view
+          - deploy
+  - npmjs 4.1.X:
       - groups:
           - extensions-developers
         permissions:

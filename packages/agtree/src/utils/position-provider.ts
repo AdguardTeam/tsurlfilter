@@ -9,12 +9,12 @@ import { CR, FF, LF } from './constants';
  */
 export interface Position {
     /**
-     * 1-based line number
+     * 1-based line number.
      */
     line: number;
 
     /**
-     * 1-based column number
+     * 1-based column number.
      */
     column: number;
 }
@@ -72,9 +72,10 @@ export class PositionProvider {
      * Converts a character offset to a line and column position.
      *
      * @param offset The zero-based character offset in the source code.
+     *
      * @returns A Position object containing the 1-based line and column number, or null if the offset is out of range.
      */
-    convertOffsetToPosition(offset: number): Position | null {
+    public convertOffsetToPosition(offset: number): Position | null {
         if (offset < 0 || offset > this.offsetToLine.length - 1) {
             return null;
         }

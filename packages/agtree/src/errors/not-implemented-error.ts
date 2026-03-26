@@ -12,7 +12,7 @@ export class NotImplementedError extends Error {
     /**
      * Constructs a new `NotImplementedError` instance.
      *
-     * @param message Additional error message (optional)
+     * @param message Additional error message (optional).
      */
     constructor(message: string | undefined = undefined) {
         // Prepare the full error message

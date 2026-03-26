@@ -13,7 +13,7 @@ export const enum TokenType {
     Whitespace,
 
     /**
-     * Line break (`\r\n` or just `\n`)
+     * Line break (`\r\n` or just `\n`).
      */
     LineBreak,
 
@@ -40,7 +40,7 @@ export const enum TokenType {
 
     /**
      * Raw content after cosmetic rule separator.
-     * For example, no need to tokenize CSS with this tokenizer after the `##`, `#?#`, etc. separators,
+     * For example, no need to tokenize CSS with this tokenizer after the `##`, `#?#`, etc. Separators,
      * so we use this token type as an optimization strategy.
      */
     RawContent,

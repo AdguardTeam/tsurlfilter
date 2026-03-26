@@ -32,14 +32,15 @@ export type NewLineSplit = [string, NewLineType | null][];
 export class StringUtils {
     /**
      * Finds the first occurrence of a character that:
-     * - isn't preceded by an escape character
+     * - isn't preceded by an escape character.
      *
-     * @param pattern - Source pattern
-     * @param searchedCharacter - Searched character
-     * @param start - Start index
-     * @param escapeCharacter - Escape character, \ by default
-     * @param end - End index (excluded)
-     * @returns Index or -1 if the character not found
+     * @param pattern Source pattern.
+     * @param searchedCharacter Searched character.
+     * @param start Start index.
+     * @param escapeCharacter Escape character, \ by default.
+     * @param end End index (excluded).
+     *
+     * @returns Index or -1 if the character not found.
      */
     public static findNextUnescapedCharacter(
         pattern: string,
@@ -60,12 +61,13 @@ export class StringUtils {
     /**
      * Finds the first occurrence in backward direction of a character that isn't preceded by an escape character.
      *
-     * @param pattern - Source pattern
-     * @param searchedCharacter - Searched character
-     * @param start - Start index
-     * @param escapeCharacter - Escape character, \ by default
-     * @param end - End index (Included)
-     * @returns Index or -1 if the character not found
+     * @param pattern Source pattern.
+     * @param searchedCharacter Searched character.
+     * @param start Start index.
+     * @param escapeCharacter Escape character, \ by default.
+     * @param end End index (Included).
+     *
+     * @returns Index or -1 if the character not found.
      */
     public static findNextUnescapedCharacterBackwards(
         pattern: string,
@@ -85,12 +87,13 @@ export class StringUtils {
 
     /**
      * Finds the last occurrence of a character that:
-     * - isn't preceded by an escape character
+     * - isn't preceded by an escape character.
      *
-     * @param pattern - Source pattern
-     * @param searchedCharacter - Searched character
-     * @param escapeCharacter - Escape character, \ by default
-     * @returns Index or -1 if the character not found
+     * @param pattern Source pattern.
+     * @param searchedCharacter Searched character.
+     * @param escapeCharacter Escape character, \ by default.
+     *
+     * @returns Index or -1 if the character not found.
      */
     public static findLastUnescapedCharacter(
         pattern: string,
@@ -109,14 +112,15 @@ export class StringUtils {
     /**
      * Finds the next occurrence of a character that:
      * - isn't preceded by an escape character
-     * - isn't followed by the specified character
+     * - isn't followed by the specified character.
      *
-     * @param pattern - Source pattern
-     * @param start - Start index
-     * @param searchedCharacter - Searched character
-     * @param notFollowedBy - Searched character not followed by this character
-     * @param escapeCharacter - Escape character, \ by default
-     * @returns Index or -1 if the character not found
+     * @param pattern Source pattern.
+     * @param start Start index.
+     * @param searchedCharacter Searched character.
+     * @param notFollowedBy Searched character not followed by this character.
+     * @param escapeCharacter Escape character, \ by default.
+     *
+     * @returns Index or -1 if the character not found.
      */
     public static findNextUnescapedCharacterThatNotFollowedBy(
         pattern: string,
@@ -141,13 +145,14 @@ export class StringUtils {
     /**
      * Finds the last occurrence of a character that:
      * - isn't preceded by an escape character
-     * - isn't followed by the specified character
+     * - isn't followed by the specified character.
      *
-     * @param pattern - Source pattern
-     * @param searchedCharacter - Searched character
-     * @param notFollowedBy - Searched character not followed by this character
-     * @param escapeCharacter - Escape character, \ by default
-     * @returns Index or -1 if the character not found
+     * @param pattern Source pattern.
+     * @param searchedCharacter Searched character.
+     * @param notFollowedBy Searched character not followed by this character.
+     * @param escapeCharacter Escape character, \ by default.
+     *
+     * @returns Index or -1 if the character not found.
      */
     public static findLastUnescapedCharacterThatNotFollowedBy(
         pattern: string,
@@ -171,12 +176,13 @@ export class StringUtils {
     /**
      * Finds the next occurrence of a character that:
      * - isn't part of any string literal ('literal' or "literal")
-     * - isn't part of any RegExp expression (/regexp/)
+     * - isn't part of any RegExp expression (/regexp/).
      *
-     * @param pattern - Source pattern
-     * @param searchedCharacter - Searched character
-     * @param start - Start index
-     * @returns Index or -1 if the character not found
+     * @param pattern Source pattern.
+     * @param searchedCharacter Searched character.
+     * @param start Start index.
+     *
+     * @returns Index or -1 if the character not found.
      */
     public static findUnescapedNonStringNonRegexChar(pattern: string, searchedCharacter: string, start = 0) {
         let open: string | null = null;
@@ -253,13 +259,14 @@ export class StringUtils {
     /**
      * Finds the next occurrence of a character that:
      * - isn't part of any string literal ('literal' or "literal")
-     * - isn't preceded by an escape character
+     * - isn't preceded by an escape character.
      *
-     * @param pattern - Source pattern
-     * @param searchedCharacter - Searched character
-     * @param start - Start index
-     * @param escapeCharacter - Escape character, \ by default
-     * @returns Index or -1 if the character not found
+     * @param pattern Source pattern.
+     * @param searchedCharacter Searched character.
+     * @param start Start index.
+     * @param escapeCharacter Escape character, \ by default.
+     *
+     * @returns Index or -1 if the character not found.
      */
     public static findNextUnquotedUnescapedCharacter(
         pattern: string,
@@ -290,16 +297,18 @@ export class StringUtils {
     /**
      * Finds the next occurrence of a character that:
      * - isn't "bracketed"
-     * - isn't preceded by an escape character
+     * - isn't preceded by an escape character.
      *
-     * @param pattern - Source pattern
-     * @param searchedCharacter - Searched character
-     * @param start - Start index
-     * @param escapeCharacter - Escape character, \ by default
-     * @param openBracket - Open bracket, ( by default
-     * @param closeBracket - Close bracket, ( by default
-     * @throws If the opening and closing brackets are the same
-     * @returns Index or -1 if the character not found
+     * @param pattern Source pattern.
+     * @param searchedCharacter Searched character.
+     * @param start Start index.
+     * @param escapeCharacter Escape character, \ by default.
+     * @param openBracket Open bracket, ( by default.
+     * @param closeBracket Close bracket, ( by default.
+     *
+     * @returns Index or -1 if the character not found.
+     *
+     * @throws If the opening and closing brackets are the same.
      */
     public static findNextNotBracketedUnescapedCharacter(
         pattern: string,
@@ -331,11 +340,12 @@ export class StringUtils {
     /**
      * Splits the source pattern along characters that:
      * - isn't part of any string literal ('literal' or "literal")
-     * - isn't preceded by an escape character
+     * - isn't preceded by an escape character.
      *
-     * @param pattern - Source pattern
-     * @param delimeterCharacter - Delimeter character
-     * @returns Splitted string
+     * @param pattern Source pattern.
+     * @param delimeterCharacter Delimeter character.
+     *
+     * @returns Splitted string.
      */
     public static splitStringByUnquotedUnescapedCharacter(pattern: string, delimeterCharacter: string): string[] {
         const parts: string[] = [];
@@ -360,11 +370,12 @@ export class StringUtils {
      * Splits the source pattern along characters that:
      * - isn't part of any string literal ('literal' or "literal")
      * - isn't part of any RegExp expression (/regexp/)
-     * - isn't preceded by an escape character
+     * - isn't preceded by an escape character.
      *
-     * @param pattern - Source pattern
-     * @param delimeterCharacter - Delimeter character
-     * @returns Splitted string
+     * @param pattern Source pattern.
+     * @param delimeterCharacter Delimeter character.
+     *
+     * @returns Splitted string.
      */
     public static splitStringByUnescapedNonStringNonRegexChar(pattern: string, delimeterCharacter: string): string[] {
         const parts: string[] = [];
@@ -387,11 +398,12 @@ export class StringUtils {
 
     /**
      * Splits the source pattern along characters that:
-     * - isn't preceded by an escape character
+     * - isn't preceded by an escape character.
      *
-     * @param pattern - Source pattern
-     * @param delimeterCharacter - Delimeter character
-     * @returns Splitted string
+     * @param pattern Source pattern.
+     * @param delimeterCharacter Delimeter character.
+     *
+     * @returns Splitted string.
      */
     public static splitStringByUnescapedCharacter(pattern: string, delimeterCharacter: string): string[] {
         const parts: string[] = [];
@@ -411,8 +423,9 @@ export class StringUtils {
     /**
      * Determines whether the given character is a space or tab character.
      *
-     * @param char - The character to check.
-     * @returns true if the given character is a space or tab character, false otherwise.
+     * @param char The character to check.
+     *
+     * @returns True if the given character is a space or tab character, false otherwise.
      */
     public static isWhitespace(char: string): boolean {
         return char === SPACE || char === TAB;
@@ -422,6 +435,7 @@ export class StringUtils {
      * Checks if the given character is a digit.
      *
      * @param char The character to check.
+     *
      * @returns `true` if the given character is a digit, `false` otherwise.
      */
     public static isDigit(char: string): boolean {
@@ -432,6 +446,7 @@ export class StringUtils {
      * Checks if the given character is a small letter.
      *
      * @param char The character to check.
+     *
      * @returns `true` if the given character is a small letter, `false` otherwise.
      */
     public static isSmallLetter(char: string): boolean {
@@ -442,6 +457,7 @@ export class StringUtils {
      * Checks if the given character is a capital letter.
      *
      * @param char The character to check.
+     *
      * @returns `true` if the given character is a capital letter, `false` otherwise.
      */
     public static isCapitalLetter(char: string): boolean {
@@ -452,6 +468,7 @@ export class StringUtils {
      * Checks if the given character is a letter (small or capital).
      *
      * @param char The character to check.
+     *
      * @returns `true` if the given character is a letter, `false` otherwise.
      */
     public static isLetter(char: string): boolean {
@@ -461,7 +478,8 @@ export class StringUtils {
     /**
      * Checks if the given character is a letter or a digit.
      *
-     * @param char Character to check
+     * @param char Character to check.
+     *
      * @returns `true` if the given character is a letter or a digit, `false` otherwise.
      */
     public static isAlphaNumeric(char: string): boolean {
@@ -471,9 +489,10 @@ export class StringUtils {
     /**
      * Searches for the first non-whitespace character in the source pattern.
      *
-     * @param pattern - Source pattern
-     * @param start - Start index
-     * @returns Index or -1 if the character not found
+     * @param pattern Source pattern.
+     * @param start Start index.
+     *
+     * @returns Index or -1 if the character not found.
      */
     public static findFirstNonWhitespaceCharacter(pattern: string, start = 0): number {
         for (let i = start; i < pattern.length; i += 1) {
@@ -487,8 +506,9 @@ export class StringUtils {
     /**
      * Searches for the last non-whitespace character in the source pattern.
      *
-     * @param pattern - Source pattern
-     * @returns Index or -1 if the character not found
+     * @param pattern Source pattern.
+     *
+     * @returns Index or -1 if the character not found.
      */
     public static findLastNonWhitespaceCharacter(pattern: string): number {
         for (let i = pattern.length - 1; i >= 0; i -= 1) {
@@ -502,9 +522,10 @@ export class StringUtils {
     /**
      * Finds the next whitespace character in the pattern.
      *
-     * @param pattern Pattern to search in
-     * @param start Start index
-     * @returns Index of the next whitespace character or the length of the pattern if not found
+     * @param pattern Pattern to search in.
+     * @param start Start index.
+     *
+     * @returns Index of the next whitespace character or the length of the pattern if not found.
      */
     public static findNextWhitespaceCharacter(pattern: string, start = 0): number {
         for (let i = start; i < pattern.length; i += 1) {
@@ -519,10 +540,11 @@ export class StringUtils {
     /**
      * Escapes a specified character in the string.
      *
-     * @param pattern - Input string
-     * @param character - Character to escape
-     * @param escapeCharacter - Escape character (optional)
-     * @returns Escaped string
+     * @param pattern Input string.
+     * @param character Character to escape.
+     * @param escapeCharacter Escape character (optional).
+     *
+     * @returns Escaped string.
      */
     public static escapeCharacter(pattern: string, character: string, escapeCharacter = ESCAPE_CHARACTER): string {
         let result = EMPTY;
@@ -540,9 +562,10 @@ export class StringUtils {
     /**
      * Searches for the next non-whitespace character in the source pattern.
      *
-     * @param pattern Pattern to search
-     * @param start Start index
-     * @returns Index of the next non-whitespace character or the length of the pattern
+     * @param pattern Pattern to search.
+     * @param start Start index.
+     *
+     * @returns Index of the next non-whitespace character or the length of the pattern.
      */
     public static skipWS(pattern: string, start = 0): number {
         let i = start;
@@ -557,9 +580,10 @@ export class StringUtils {
     /**
      * Searches for the previous non-whitespace character in the source pattern.
      *
-     * @param pattern Pattern to search
-     * @param start Start index
-     * @returns Index of the previous non-whitespace character or -1
+     * @param pattern Pattern to search.
+     * @param start Start index.
+     *
+     * @returns Index of the previous non-whitespace character or -1.
      */
     public static skipWSBack(pattern: string, start = pattern.length - 1): number {
         let i = start;
@@ -574,7 +598,8 @@ export class StringUtils {
     /**
      * Checks if the given character is a new line character.
      *
-     * @param char Character to check
+     * @param char Character to check.
+     *
      * @returns `true` if the given character is a new line character, `false` otherwise.
      */
     public static isEOL(char: string): boolean {
@@ -584,19 +609,21 @@ export class StringUtils {
     /**
      * Splits a string along newline characters.
      *
-     * @param input - Input string
-     * @returns Splitted string
+     * @param input Input string.
+     *
+     * @returns Splitted string.
      */
     public static splitStringByNewLines(input: string): string[] {
         return input.split(/\r?\n/);
     }
 
     /**
-     * Splits a string by new lines and stores the new line type for each line
+     * Splits a string by new lines and stores the new line type for each line.
      *
-     * @param input The input string to be split
+     * @param input The input string to be split.
+     *
      * @returns An array of tuples, where each tuple contains a line of the input string and its
-     * corresponding new line type ("lf", "crlf", or "cr")
+     * corresponding new line type ("lf", "crlf", or "cr").
      */
     public static splitStringByNewLinesEx(input: string): NewLineSplit {
         // Array to store the tuples of line and new line type
@@ -637,10 +664,11 @@ export class StringUtils {
     }
 
     /**
-     * Merges an array of tuples (line, newLineType) into a single string
+     * Merges an array of tuples (line, newLineType) into a single string.
      *
-     * @param input The array of tuples to be merged
-     * @returns A single string containing the lines and new line characters from the input array
+     * @param input The array of tuples to be merged.
+     *
+     * @returns A single string containing the lines and new line characters from the input array.
      */
     public static mergeStringByNewLines(input: NewLineSplit): string {
         let result = EMPTY;
@@ -667,11 +695,13 @@ export class StringUtils {
     }
 
     /**
-     * Helper method to parse a raw string as a number
+     * Helper method to parse a raw string as a number.
      *
-     * @param raw Raw string to parse
-     * @returns Parsed number
-     * @throws If the raw string can't be parsed as a number
+     * @param raw Raw string to parse.
+     *
+     * @returns Parsed number.
+     *
+     * @throws If the raw string can't be parsed as a number.
      */
     public static parseNumber(raw: string): number {
         const result = parseInt(raw, 10);
@@ -686,8 +716,9 @@ export class StringUtils {
     /**
      * Checks if the given value is a string.
      *
-     * @param value Value to check
-     * @returns `true` if the value is a string, `false` otherwise
+     * @param value Value to check.
+     *
+     * @returns `true` if the value is a string, `false` otherwise.
      */
     public static isString(value: unknown): value is string {
         return typeof value === 'string';
@@ -696,9 +727,10 @@ export class StringUtils {
     /**
      * Escapes the given characters in the input string.
      *
-     * @param input Input string
-     * @param characters Characters to escape (by default, no characters are escaped)
-     * @returns Escaped string
+     * @param input Input string.
+     * @param characters Characters to escape (by default, no characters are escaped).
+     *
+     * @returns Escaped string.
      */
     public static escapeCharacters(input: string, characters: Set<string> = new Set()): string {
         let result = EMPTY;

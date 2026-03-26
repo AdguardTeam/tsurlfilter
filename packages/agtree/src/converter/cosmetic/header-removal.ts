@@ -1,22 +1,25 @@
 /**
- * @file Converter for request header removal rules
+ * @file Converter for request header removal rules.
  */
 
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
-import { sprintf } from 'sprintf-js';
-
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { CosmeticRuleType, RuleCategory, type AnyRule } from '../../nodes';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
-import { EMPTY, UBO_HTML_MASK } from '../../utils/constants';
-import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_START } from '../../utils/regexp';
 import { createNetworkRuleNode } from '../../ast-utils/network-rules';
+import { isUboResponseHeaderRemovalRuleBody } from '../../common/ubo-html-filtering-body-common';
+import { RuleConversionError } from '../../errors/rule-conversion-error';
+import {
+    type AnyRule,
+    CosmeticRuleType,
+    type HtmlFilteringRuleBody,
+    type PseudoClassSelector,
+    RuleCategory,
+} from '../../nodes';
+import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
-import { CssTokenStream } from '../../parser/css/css-token-stream';
+import { EMPTY, UBO_RESPONSEHEADER_FN } from '../../utils/constants';
+import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_START } from '../../utils/regexp';
+import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
-const UBO_RESPONSEHEADER_FN = 'responseheader';
 const ADG_REMOVEHEADER_MODIFIER = 'removeheader';
 
 export const ERROR_MESSAGES = {
@@ -26,19 +29,22 @@ export const ERROR_MESSAGES = {
 };
 
 /**
- * Converter for request header removal rules
+ * Converter for request header removal rules.
  *
- * @todo Implement `convertToUbo` (ABP currently doesn't support header removal rules)
+ * @todo Implement `convertToUbo` (ABP currently doesn't support header removal rules).
  */
 export class HeaderRemovalRuleConverter extends RuleConverterBase {
     /**
      * Converts a header removal rule to AdGuard syntax, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
+     *
      * @example
      * If the input rule is:
      * ```adblock
@@ -56,56 +62,29 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
             return createNodeConversionResult([rule], false);
         }
 
-        const stream = new CssTokenStream(rule.body.value);
-        let token;
+        // Handle case when body is raw value string.
+        // If so, parse it first as we need to work with AST nodes.
+        let body: HtmlFilteringRuleBody | null = null;
+        if (rule.body.type === 'Value') {
+            body = UboHtmlFilteringBodyParser.parseResponseHeaderRule(rule.body.value, {
+                isLocIncluded: false,
+                parseHtmlFilteringRuleBodies: true,
+            });
+        } else {
+            body = rule.body;
+        }
 
-        // Skip leading whitespace
-        stream.skipWhitespace();
-
-        // Next token should be the `^` followed by a `responseheader` function
-        token = stream.get();
-
-        if (!token || token.type !== TokenType.Delim || rule.body.value[token.start] !== UBO_HTML_MASK) {
+        // Check if the rule body is a uBO responseheader(...) function
+        if (!body || !isUboResponseHeaderRemovalRuleBody(body)) {
             return createNodeConversionResult([rule], false);
         }
 
-        stream.advance();
-        token = stream.get();
-
-        if (!token) {
-            return createNodeConversionResult([rule], false);
-        }
-
-        const functionName = rule.body.value.slice(token.start, token.end - 1);
-
-        if (functionName !== UBO_RESPONSEHEADER_FN) {
-            return createNodeConversionResult([rule], false);
-        }
-
-        // Parse the parameter
-        const paramStart = token.end;
-        stream.skipUntilBalanced();
-        const paramEnd = stream.getOrFail().end;
-        const param = rule.body.value.slice(paramStart, paramEnd - 1).trim();
-
-        // Do not allow empty parameter
-        if (param.length === 0) {
-            throw new RuleConversionError(ERROR_MESSAGES.EMPTY_PARAMETER);
-        }
-
-        stream.expect(TokenType.CloseParenthesis);
-        stream.advance();
-
-        // Skip trailing whitespace after the function call
-        stream.skipWhitespace();
-
-        // Expect the end of the rule - so nothing should be left in the stream
-        if (!stream.isEof()) {
-            token = stream.getOrFail();
-            throw new RuleConversionError(
-                sprintf(ERROR_MESSAGES.EXPECTED_END_OF_RULE, getFormattedTokenName(token.type)),
-            );
-        }
+        // Length of AST nodes, types of nodes, non-null argument
+        // check are already done in `isUboResponseHeaderRemovalRuleBody()`
+        const { selectorList } = body;
+        const complexSelector = selectorList.children[0];
+        const pseudoClassSelector = complexSelector.children[0] as PseudoClassSelector;
+        const headerName = pseudoClassSelector.argument!.value;
 
         // Prepare network rule pattern
         const pattern: string[] = [];
@@ -126,7 +105,7 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
         // Prepare network rule modifiers
         const modifiers = createModifierListNode();
 
-        modifiers.children.push(createModifierNode(ADG_REMOVEHEADER_MODIFIER, param));
+        modifiers.children.push(createModifierNode(ADG_REMOVEHEADER_MODIFIER, headerName));
 
         // Construct the network rule
         return createNodeConversionResult(

@@ -62,7 +62,6 @@ Build:
         scripts:
           - "./bamboo-specs/scripts/cleanup.sh"
   requirements:
-    - adg-docker: 'true'
     - extension: 'true'
 
 # run docs update at 10:00 every day

@@ -1,18 +1,22 @@
-import { BaseGenerator } from '../base-generator';
+import { UboPseudoName } from '../../common/ubo-selector-common';
 import { type AnyCosmeticRule, CosmeticRuleType } from '../../nodes';
+import { AdblockSyntax } from '../../utils/adblockers';
 import {
     CLOSE_PARENTHESIS,
     COLON,
     EMPTY,
     OPEN_PARENTHESIS,
     SPACE,
+    UBO_HTML_MASK,
 } from '../../utils/constants';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { AdgScriptletInjectionBodyGenerator } from './body/adg-scriptlet-injection-body-generator';
+import { BaseGenerator } from '../base-generator';
 import { AdgCssInjectionGenerator } from '../css/adg-css-injection-generator';
-import { AbpSnippetInjectionBodyGenerator } from './body/abp-snippet-injection-body-generator';
-import { UboScriptletInjectionBodyGenerator } from './body/ubo-scriptlet-injection-body-generator';
-import { UboPseudoName } from '../../common/ubo-selector-common';
+
+import { AdgHtmlFilteringBodyGenerator } from './html-filtering-body/adg-html-filtering-body-generator';
+import { UboHtmlFilteringBodyGenerator } from './html-filtering-body/ubo-html-filtering-body-generator';
+import { AbpSnippetInjectionBodyGenerator } from './scriptlet-body/abp-snippet-injection-body-generator';
+import { AdgScriptletInjectionBodyGenerator } from './scriptlet-body/adg-scriptlet-injection-body-generator';
+import { UboScriptletInjectionBodyGenerator } from './scriptlet-body/ubo-scriptlet-injection-body-generator';
 
 /**
  * Cosmetic rule body generator.
@@ -21,14 +25,16 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
     /**
      * Generates the rule body from the node.
      *
-     * @param node Cosmetic rule node
-     * @returns Raw rule body
+     * @param node Cosmetic rule node.
+     *
+     * @returns Raw rule body.
+     *
+     * @throws Error if the rule type is unknown.
+     *
      * @example
      * - '##.foo' → '.foo'
      * - 'example.com,example.org##.foo' → '.foo'
      * - 'example.com#%#//scriptlet('foo')' → '//scriptlet('foo')'
-     *
-     * @throws Error if the rule type is unknown
      */
     public static generate(node: AnyCosmeticRule): string {
         let result = EMPTY;
@@ -69,6 +75,23 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
                 break;
 
             case CosmeticRuleType.HtmlFilteringRule:
+                switch (node.syntax) {
+                    case AdblockSyntax.Adg:
+                        result = AdgHtmlFilteringBodyGenerator.generate(node.body);
+                        break;
+
+                    case AdblockSyntax.Ubo:
+                        result = UBO_HTML_MASK + UboHtmlFilteringBodyGenerator.generate(node.body);
+                        break;
+
+                    case AdblockSyntax.Abp:
+                        throw new Error('ABP does not support HTML filtering rules');
+
+                    default:
+                        throw new Error('HTML filtering rule should have an explicit syntax');
+                }
+                break;
+
             case CosmeticRuleType.JsInjectionRule:
                 result = node.body.value;
                 break;

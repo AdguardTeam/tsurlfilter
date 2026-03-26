@@ -5,9 +5,6 @@ import { describe, expect, it } from 'vitest';
 
 import { createCosmeticRule } from '../../../../../../helpers/rule-creator';
 import {
-    HtmlRuleParser,
-} from '../../../../../../../src/lib/mv2/background/services/content-filtering/rule/html-rule-parser';
-import {
     HtmlRuleSelector,
 } from '../../../../../../../src/lib/mv2/background/services/content-filtering/rule/html-rule-selector';
 
@@ -22,180 +19,410 @@ describe('Html rule selector', () => {
 
         const ruleText = 'example.org$$div[id="childDiv"]';
         const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
 
-        const parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
-        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('childDiv');
 
-        expect(elements).not.toBeNull();
-        expect(elements).toHaveLength(1);
-        expect(elements![0].id).toBe('childDiv');
-    });
-
-    it('checks wildcard', () => {
         document.body.innerHTML = `
-        <html><body><div id="ad_text">tratata teasernet\n \ntararar</div></body></html>
+        <span class="testSpan">Hello World</span>
         `;
 
-        let rule = createCosmeticRule('example.org$$div[id="ad_text"][wildcard="*teasernet*tararar*"]', 0);
-        let parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
-        let elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
-
-        expect(elements).not.toBeNull();
-        expect(elements).toHaveLength(1);
-        expect(elements).toContain(document.getElementsByTagName('div')[0]);
-
-        rule = createCosmeticRule('example.org$$div[id="ad_text"][wildcard="*AN_OTHER_ONE*"]', 0);
-        parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
-        elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
-
-        expect(elements).toBeNull();
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
     });
 
-    it('checks wildcard with escaped', () => {
+    it('checks complex selector with combinators (descendant)', () => {
         document.body.innerHTML = `
-        <html><body><div>Testtest [123]{123}</div></body></html>
+        <div class="container">
+            <div class="parent">
+                <div id="descendant-combinator" class="child"></div>
+            </div>
+        </div>
         `;
 
-        const rule = createCosmeticRule('example.org$$div[wildcard="*Test*[123]{123}*"]', 0);
-        const parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
-        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        const ruleText = 'example.org$$.container .parent .child';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
 
-        expect(elements).not.toBeNull();
-        expect(elements).toHaveLength(1);
-        expect(elements).toContain(document.getElementsByTagName('div')[0]);
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('descendant-combinator');
+
+        document.body.innerHTML = `
+        <div class="container">
+            <div id="not-matched" class="child"></div>
+        </div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
     });
 
-    it('checks tag content attribute', () => {
+    it('checks complex selector with combinators (child)', () => {
         document.body.innerHTML = `
-        <html><body><div id="ad_text">tratata teasernet tararar</div></body></html>
+        <div class="container">
+            <div class="parent">
+                <div id="child-combinator" class="child"></div>
+            </div>
+        </div>
         `;
 
-        let rule = createCosmeticRule('example.org$$div[id="ad_text"][tag-content="teasernet"]', 0);
-        let parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
-        let elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        const ruleText = 'example.org$$.container > .parent > .child';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
 
-        expect(elements).not.toBeNull();
-        expect(elements).toHaveLength(1);
-        expect(elements).toContain(document.getElementsByTagName('div')[0]);
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('child-combinator');
 
-        rule = createCosmeticRule('example.org$$div[id="ad_text"][tag-content="an-other"]', 0);
-        parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
-        elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        document.body.innerHTML = `
+        <div class="container">
+            <div class="parent">
+                <div>
+                    <div id="not-matched" class="child"></div>
+                </div>
+            </div>
+        </div>
+        `;
 
-        expect(elements).toBeNull();
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
     });
 
-    it('checks tag min max length attribute', () => {
+    it('checks complex selector with combinators (next-sibling)', () => {
         document.body.innerHTML = `
-        <html><body><div id="ad_text">tratata teasernet tararar</div></body></html>
+        <div class="container">
+            <div class="sibling1"></div>
+            <div id="next-sibling-combinator" class="sibling2"></div>
+        </div>
         `;
 
-        let rule = createCosmeticRule('example.org$$div[max-length="500"][min-length="5"]', 0);
-        let parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
-        let elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        const ruleText = 'example.org$$.sibling1 + .sibling2';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
 
-        expect(elements).not.toBeNull();
-        expect(elements).toHaveLength(1);
-        expect(elements).toContain(document.getElementsByTagName('div')[0]);
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('next-sibling-combinator');
 
-        rule = createCosmeticRule('example.org$$div[max-length="5"][min-length="1"]', 0);
-        parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
-        elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        document.body.innerHTML = `
+        <div class="container">
+            <div class="sibling1"></div>
+            <div></div>
+            <div id="not-matched" class="sibling2"></div>
+        </div>
+        `;
 
-        expect(elements).toBeNull();
-
-        rule = createCosmeticRule('example.org$$div[max-length="500"][min-length="100"]', 0);
-        parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
-        elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
-
-        expect(elements).toBeNull();
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
     });
 
-    it('checks tag parent-elements attributes', () => {
+    it('checks complex selector with combinators (subsequent-sibling)', () => {
         document.body.innerHTML = `
-        <html><body><table><tr><td><div id="ad_text">tratata teasernet tararar</div></td></tr></table></body></html>
+        <div class="container">
+            <div class="sibling1"></div>
+            <div></div>
+            <div id="subsequent-sibling-combinator" class="sibling2"></div>
+        </div>
         `;
 
-        let rule = createCosmeticRule('example.org$$div[parent-search-level="5"][parent-elements="td,table"]', 0);
-        let parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
-        let elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        const ruleText = 'example.org$$.sibling1 ~ .sibling2';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
 
-        expect(elements).not.toBeNull();
-        expect(elements).toHaveLength(1);
-        expect(elements).toContain(document.getElementsByTagName('table')[0]);
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('subsequent-sibling-combinator');
 
-        rule = createCosmeticRule('example.org$$div[parent-search-level="5"][parent-elements=""]', 0);
-        parsed = HtmlRuleParser.parse(rule);
-        elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
-        expect(elements).toBeNull();
+        document.body.innerHTML = `
+        <div class="container">
+            <div id="not-matched" class="sibling2"></div>
+            <div class="sibling1"></div>
+        </div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
     });
 
-    it('checks attribute with no value AND element is matched', () => {
+    it('checks multiple selectors', () => {
         document.body.innerHTML = `
-        <html>
-            <body>
-                <div id="test1">no match</div>
-                <div custom_attr id="test2">match</div>
-            </body>
-        </html>
+        <div id="first-element" class="test-class"></div>
+        <div id="second-element" class="test-class"></div>
         `;
 
-        const rule = createCosmeticRule('example.org$$div[custom_attr]', 0);
-        const parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
+        const ruleText = 'example.org$$#first-element, #second-element';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
 
-        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
-        expect(elements).not.toBeNull();
-        expect(elements).toHaveLength(1);
-        expect(elements).toContain(document.getElementById('test2')!);
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(2);
+        expect(matchedElements![0].id).toBe('first-element');
+        expect(matchedElements![1].id).toBe('second-element');
+
+        document.body.innerHTML = `
+        <div id="only-element" class="test-class"></div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
     });
 
-    it('checks attribute with no value AND few element are matched', () => {
+    it('checks special selector :contains() - substring', () => {
         document.body.innerHTML = `
-        <html>
-            <body>
-                <div id="test1">no match</div>
-                <div custom_attr="custom1" id="test2">match</div>
-                <div custom_attr="custom2" id="test3">match</div>
-            </body>
-        </html>
+        <div id="contains-substring" class="test-class">This is a test string.</div>
         `;
 
-        const rule = createCosmeticRule('example.org$$div[custom_attr]', 0);
-        const parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
+        const ruleText = 'example.org$$div:contains(test string)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
 
-        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
-        expect(elements).not.toBeNull();
-        expect(elements).toHaveLength(2);
-        expect(elements).toContain(document.getElementById('test2')!);
-        expect(elements).toContain(document.getElementById('test3')!);
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('contains-substring');
+
+        document.body.innerHTML = `
+        <div id="not-matched" class="test-class">This is another string.</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
     });
 
-    it('checks attribute with no value AND no matched elements', () => {
+    it('checks special selector :contains() - regexp', () => {
         document.body.innerHTML = `
-        <html>
-            <body>
-                <div id="test1">no match</div>
-            </body>
-        </html>
+        <div id="contains-regexp" class="test-class">User123 logged in.</div>
         `;
 
-        const rule = createCosmeticRule('example.org$$div[custom_attr]', 0);
-        const parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
+        const ruleText = 'example.org$$div:contains(/User\\d+/)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
 
-        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
-        expect(elements).toBeNull();
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('contains-regexp');
+
+        document.body.innerHTML = `
+        <div id="not-matched" class="test-class">Guest logged in.</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - regexp with flags', () => {
+        document.body.innerHTML = `
+        <div id="contains-regexp-flags" class="test-class">Error: Something went wrong.</div>
+        `;
+
+        const ruleText = 'example.org$$div:contains(/error: .*/i)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('contains-regexp-flags');
+
+        document.body.innerHTML = `
+        <div id="not-matched" class="test-class">Warning: Something went wrong.</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - converted from [wildcard]', () => {
+        document.body.innerHTML = `
+        <div id="contains-wildcard" class="test-class">Welcome to AdGuard!</div>
+        `;
+
+        // This is a rule converted from `example.org$$div[wildcard="*to*"]`
+        const ruleText = 'example.org$$div:contains(/^.*to.*$/)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('contains-wildcard');
+
+        document.body.innerHTML = `
+        <div id="not-matched" class="test-class">Welcome AdGuard!</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - converted from [min-length]', () => {
+        document.body.innerHTML = `
+        <div id="contains-wildcard" class="test-class">Welcome to AdGuard!</div>
+        `;
+
+        // This is a rule converted from `example.org$$div[min-length="10"]`
+        const ruleText = 'example.org$$div:contains(/^(?=.{10,}$).*/)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('contains-wildcard');
+
+        document.body.innerHTML = `
+        <div id="not-matched" class="test-class">Short</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - converted from [max-length]', () => {
+        document.body.innerHTML = `
+        <div id="contains-wildcard" class="test-class">Short text</div>
+        `;
+
+        // This is a rule converted from `example.org$$div[max-length="20"]`
+        const ruleText = 'example.org$$div:contains(/^(?=.{0,20}$).*/)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('contains-wildcard');
+
+        document.body.innerHTML = `
+        <div id="not-matched" class="test-class">This text is definitely too long.</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - multiple usages in one selector', () => {
+        document.body.innerHTML = `
+        <div id="multiple-contains" class="test-class">Error: User123 failed to login.</div>
+        `;
+
+        const ruleText = 'example.org$$div:contains(/error/i):contains(User):contains(failed)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('multiple-contains');
+
+        document.body.innerHTML = `
+        <div id="not-matched" class="test-class">Error: Guest failed to login.</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - multiple selectors with :contains()', () => {
+        document.body.innerHTML = `
+        <div id="first-element" class="test-class">Hello World</div>
+        <div id="second-element" class="test-class">Goodbye World</div>
+        `;
+
+        const ruleText = 'example.org$$div:contains(Hello), div:contains(Goodbye)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(2);
+        expect(matchedElements![0].id).toBe('first-element');
+        expect(matchedElements![1].id).toBe('second-element');
+
+        document.body.innerHTML = `
+        <div id="not-matched" class="test-class">Welcome to AdGuard!</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - chained with combinators', () => {
+        document.body.innerHTML = `
+        <div class="container">
+            Container Content
+            <div class="parent">
+                Parent Content
+                <div id="child-element" class="child">Child Content</div>
+            </div>
+        </div>
+        `;
+
+        // eslint-disable-next-line max-len
+        const ruleText = 'example.org$$.container:contains(Container Content) > .parent:contains(Parent Content) > .child:contains(Child Content)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('child-element');
+
+        document.body.innerHTML = `
+        <div class="container">
+            Container Content
+            <div class="parent">
+                Parent Content
+                <div id="not-matched" class="child">Regular Content</div>
+            </div>
+        </div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - edge case with empty native selector', () => {
+        document.body.innerHTML = `
+        <div id="contains-only" class="test-class">Just some content</div>
+        `;
+
+        const ruleText = 'example.org$$:contains(Just some)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0]).toBe(document.documentElement);
+
+        document.body.innerHTML = `
+        <div id="not-matched" class="test-class">Different content</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - edge case with empty native selector and combinator', () => {
+        document.body.innerHTML = `
+        <div class="parent">
+            <div id="contains-only-child-1" class="child">Some unique content</div>
+        </div>
+        <div class="parent">
+            <div id="contains-only-child-2" class="child">Some content</div>
+        </div>
+        `;
+
+        const ruleText = 'example.org$$div.parent > :contains(Some unique)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('contains-only-child-1');
+
+        document.body.innerHTML = `
+        <div class="parent">
+            <div id="not-matched" class="child">Other content</div>
+        </div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
     });
 });

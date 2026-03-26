@@ -1,29 +1,31 @@
 /**
- * @file CSS injection rule converter
+ * @file CSS injection rule converter.
  */
 
 import { CosmeticRuleSeparator, type CssInjectionRule } from '../../nodes';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { CssSelectorConverter } from '../css';
+import { CssTokenStream } from '../../parser/css/css-token-stream';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { clone } from '../../utils/clone';
-import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
-import { CssTokenStream } from '../../parser/css/css-token-stream';
+import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
+import { CssSelectorConverter } from '../css';
 
 /**
- * CSS injection rule converter class
+ * CSS injection rule converter class.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class CssInjectionRuleConverter extends RuleConverterBase {
     /**
      * Converts a CSS injection rule to AdGuard format, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rule: CssInjectionRule): NodeConversionResult<CssInjectionRule> {
         const separator = rule.separator.value;

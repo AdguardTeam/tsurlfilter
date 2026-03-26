@@ -1,8 +1,8 @@
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { type ListItem, ListItemNodeType } from '../../nodes';
-import { defaultParserOptions } from '../options';
 import { COMMA, NEGATION_MARKER } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { defaultParserOptions } from '../options';
 
 /**
  * Prefixes for error messages which are used for parsing of value lists.
@@ -24,15 +24,17 @@ export class ListItemsParser {
      * Parses a `raw` modifier value which may be represented as a list of items separated by `separator`.
      * Needed for $app, $denyallow, $domain, $method.
      *
+     * @template T Type of the list items.
+     *
      * @param raw Raw input to parse.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     * @param separator Separator character (default: comma)
+     * @param separator Separator character (default: comma).
      * @param type Type of the list items (default: {@link ListItemNodeType.Domain}).
-     * @template T Type of the list items.
      *
      * @returns List of parsed items.
-     * @throws An {@link AdblockSyntaxError} if the list is syntactically invalid
+     *
+     * @throws An {@link AdblockSyntaxError} if the list is syntactically invalid.
      *
      * @example
      * - parses an app list — `com.example.app|Example.exe`

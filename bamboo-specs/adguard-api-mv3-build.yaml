@@ -89,7 +89,6 @@ Build:
       shared: true
       required: true
   requirements:
-    - adg-docker: 'true'
     - extension: 'true'
 
 triggers: []
@@ -98,14 +97,6 @@ branches:
   create: manually
   delete: never
   link-to-jira: 'true'
-
-notifications:
-  - events:
-      - plan-status-changed
-    recipients:
-      - webhook:
-          name: Build webhook
-          url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
 labels: []
 

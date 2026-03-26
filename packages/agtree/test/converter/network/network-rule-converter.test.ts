@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import { NetworkRuleConverter } from '../../../src/converter/network';
 import { RuleConversionError } from '../../../src/errors/rule-conversion-error';

@@ -48,7 +48,12 @@ const getElemhideCosmeticResult = (rules: string[]): CosmeticResult => {
  */
 const getCosmeticData = (rules: string[], areHitsStatsCollected: boolean): ContentScriptCosmeticData => {
     const cosmeticResult = getElemhideCosmeticResult(rules);
-    const extCssRules = CosmeticApi.getExtCssRules(cosmeticResult, areHitsStatsCollected);
+    const extCssRules = CosmeticApi.getExtCssRules(
+        cosmeticResult,
+        {
+            areHitsStatsCollected,
+        },
+    );
     return {
         isAppStarted: true,
         areHitsStatsCollected,

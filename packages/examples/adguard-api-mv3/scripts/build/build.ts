@@ -36,6 +36,7 @@ const build = async () => {
             {
                 forceUpdate: true,
                 ids: ENABLED_FILTERS_IDS,
+                filtersMatch: 'declarative/*/ruleset_+([0-9]).json',
             },
         );
         await excludeUnsafeRules({

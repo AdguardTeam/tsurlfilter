@@ -16,6 +16,7 @@ import { minify } from 'terser';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { mockEngineApi } from '../../../../helpers/mocks';
 import { type AppContext } from '../../../../../src/lib/mv2/background/app-context';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 import { nanoid } from '../../../../../src/lib/common/utils/nanoid';
@@ -57,7 +58,7 @@ describe('Stealth service', () => {
             appContext.configuration.settings.stealth.selfDestructFirstPartyCookies = true;
             appContext.configuration.settings.stealth.selfDestructFirstPartyCookiesTime = 1;
 
-            const service = new StealthService(appContext, filteringLog);
+            const service = new StealthService(appContext, filteringLog, mockEngineApi);
 
             const cookieRulesTexts = service.getCookieRulesTexts();
             expect(cookieRulesTexts).toHaveLength(1);
@@ -71,7 +72,7 @@ describe('Stealth service', () => {
             appContext.configuration.settings.stealth.selfDestructThirdPartyCookies = true;
             appContext.configuration.settings.stealth.selfDestructThirdPartyCookiesTime = 1;
 
-            let service = new StealthService(appContext, filteringLog);
+            let service = new StealthService(appContext, filteringLog, mockEngineApi);
 
             let cookieRules = service.getCookieRulesTexts();
             expect(cookieRules).toHaveLength(1);
@@ -80,7 +81,7 @@ describe('Stealth service', () => {
             appContext.configuration.settings.stealth.selfDestructThirdPartyCookies = true;
             appContext.configuration.settings.stealth.selfDestructThirdPartyCookiesTime = 0;
 
-            service = new StealthService(appContext, filteringLog);
+            service = new StealthService(appContext, filteringLog, mockEngineApi);
 
             cookieRules = service.getCookieRulesTexts();
             expect(cookieRules).toHaveLength(1);
@@ -93,7 +94,7 @@ describe('Stealth service', () => {
             appContext.configuration.settings.stealth.selfDestructThirdPartyCookies = true;
             appContext.configuration.settings.stealth.selfDestructThirdPartyCookiesTime = 1;
 
-            const service = new StealthService(appContext, filteringLog);
+            const service = new StealthService(appContext, filteringLog, mockEngineApi);
 
             const cookieRules = service.getCookieRulesTexts();
             expect(cookieRules).toHaveLength(2);
@@ -142,7 +143,7 @@ describe('Stealth service', () => {
 
         it('checks hide referrer', () => {
             appContext.configuration.settings.stealth.hideReferrer = true;
-            const service = new StealthService(appContext, filteringLog);
+            const service = new StealthService(appContext, filteringLog, mockEngineApi);
 
             expect(service.processRequestHeaders(getContextWithHeaders([{
                 name: 'Referer',
@@ -157,7 +158,7 @@ describe('Stealth service', () => {
 
         it('checks hide search query', () => {
             appContext.configuration.settings.stealth.hideSearchQueries = true;
-            const service = new StealthService(appContext, filteringLog);
+            const service = new StealthService(appContext, filteringLog, mockEngineApi);
 
             expect(service.processRequestHeaders(getContextWithHeaders([{
                 name: 'Referer',
@@ -172,7 +173,7 @@ describe('Stealth service', () => {
 
         it('checks block chrome client data', () => {
             appContext.configuration.settings.stealth.blockChromeClientData = true;
-            const service = new StealthService(appContext, filteringLog);
+            const service = new StealthService(appContext, filteringLog, mockEngineApi);
 
             expect(service.processRequestHeaders(getContextWithHeaders([{
                 name: 'X-Client-Data',
@@ -182,7 +183,7 @@ describe('Stealth service', () => {
 
         it('checks send-do-not-track', () => {
             appContext.configuration.settings.stealth.sendDoNotTrack = true;
-            const service = new StealthService(appContext, filteringLog);
+            const service = new StealthService(appContext, filteringLog, mockEngineApi);
 
             const context = getContextWithHeaders([]);
 
@@ -200,7 +201,7 @@ describe('Stealth service', () => {
                 appContext.configuration.settings.stealth.blockChromeClientData = true;
                 appContext.configuration.settings.stealth.sendDoNotTrack = true;
 
-                const service = new StealthService(appContext, filteringLog);
+                const service = new StealthService(appContext, filteringLog, mockEngineApi);
                 const referrerHeader = {
                     name: 'Referer',
                     value: 'http://other.org',
@@ -233,7 +234,7 @@ describe('Stealth service', () => {
                 appContext.configuration.settings.stealth.sendDoNotTrack = true;
 
                 const rule = `@@||example.org$stealth=${StealthOptionName.HideReferrer}`;
-                const service = new StealthService(appContext, filteringLog);
+                const service = new StealthService(appContext, filteringLog, mockEngineApi);
                 const referrerHeader = {
                     name: 'Referer',
                     value: 'http://other.org',
@@ -261,7 +262,7 @@ describe('Stealth service', () => {
 
         it('checks global GPC value in the navigator', async () => {
             appContext.configuration.settings.stealth.sendDoNotTrack = true;
-            const service = new StealthService(appContext, filteringLog);
+            const service = new StealthService(appContext, filteringLog, mockEngineApi);
 
             // Here we check that the function is written correctly in the
             // string, to avoid changing its form to a lambda function, for

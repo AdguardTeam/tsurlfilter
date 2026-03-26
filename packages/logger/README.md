@@ -71,34 +71,8 @@ To enable this behavior, the following conditions must be met:
 
 This feature is intended for developers who need detailed, step-by-step tracking of application execution.
 
-## Development
+## Documentation
 
-To contribute to the development of AdGuard Logger, follow these steps:
-
-### Install dependencies
-
-```bash
-pnpm install
-```
-
-### Run tests
-
-```bash
-pnpm test
-```
-
-### Build
-
-```bash
-pnpm build
-```
-
-### Lint
-
-```bash
-pnpm lint
-```
-
-## Limitations
-
-Development of this library was tested only on macOS, so some scripts may not work on Windows.
+- [Changelog](CHANGELOG.md)
+- [Development guide](../../DEVELOPMENT.md)
+- [LLM agent rules](AGENTS.md)

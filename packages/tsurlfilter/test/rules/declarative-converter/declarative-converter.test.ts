@@ -77,6 +77,33 @@ describe('DeclarativeConverter', () => {
         });
     });
 
+    it('handles empty lines in filter list', async () => {
+        const filter = createFilter([
+            '||example.org^',
+            '',
+            '||example.com^',
+            '',
+            '',
+            '||example.net^',
+        ]);
+        const { ruleSet } = await converter.convertStaticRuleSet(filter);
+        const declarativeRules = await ruleSet.getDeclarativeRules();
+
+        expect(declarativeRules).toHaveLength(3);
+        expect(declarativeRules[0]).toMatchObject({
+            action: { type: 'block' },
+            condition: { urlFilter: '||example.org^' },
+        });
+        expect(declarativeRules[1]).toMatchObject({
+            action: { type: 'block' },
+            condition: { urlFilter: '||example.com^' },
+        });
+        expect(declarativeRules[2]).toMatchObject({
+            action: { type: 'block' },
+            condition: { urlFilter: '||example.net^' },
+        });
+    });
+
     // TODO: Add cases for domain intersections
     describe('respects badfilter rules', () => {
         it('applies $badfilter to one filter', async () => {
@@ -366,8 +393,8 @@ describe('DeclarativeConverter', () => {
         const { ruleSet } = await converter.convertStaticRuleSet(filter);
 
         const badFilterRules = ruleSet.getBadFilterRules();
-        expect(badFilterRules[0].rule.rule).toMatchNetworkRule(createNetworkRule(rulesToCancel[0]));
-        expect(badFilterRules[1].rule.rule).toMatchNetworkRule(createNetworkRule(rulesToCancel[1]));
+        expect(badFilterRules[0].ruleParts.text).toEqual(rulesToCancel[0]);
+        expect(badFilterRules[1].ruleParts.text).toEqual(rulesToCancel[1]);
     });
 
     describe('respects limitations for static rulesets', () => {
@@ -526,7 +553,7 @@ describe('DeclarativeConverter', () => {
 
             const msg = 'After conversion, too many declarative rules remain: '
                 + '3 exceeds the limit provided - 2';
-            const err = new TooManyRulesError(msg, [54], maxNumberOfRules, 1);
+            const err = new TooManyRulesError(msg, [30], maxNumberOfRules, 1);
 
             expect(limitations).toHaveLength(1);
             expect(limitations[0]).toStrictEqual(err);
@@ -604,17 +631,18 @@ describe('DeclarativeConverter', () => {
             expect(limitations).toHaveLength(1);
             const msg = 'After conversion, too many unsafe rules remain: '
                 + `2 exceeds the limit provided - ${maxNumberOfUnsafeRules}`;
-            const err = new TooManyUnsafeRulesError(msg, [105], maxNumberOfUnsafeRules, 1);
+            const err = new TooManyUnsafeRulesError(msg, [65], maxNumberOfUnsafeRules, 1);
             expect(limitations[0]).toStrictEqual(err);
         });
 
         it('in one filter — unsafe first but basic (safe) rules come first after conversion', async () => {
-            const filter = createFilter([
+            const rules = [
                 '||example.com^$removeheader=test',
                 '||example.net^$removeheader=test',
                 '||example1.org^',
                 '||example2.org^',
-            ]);
+            ];
+            const filter = createFilter(rules);
 
             const maxNumberOfRules = 4;
             const maxNumberOfUnsafeRules = 1;
@@ -681,7 +709,10 @@ describe('DeclarativeConverter', () => {
             const actualErr = limitations[0];
             const expectedMsg = 'After conversion, too many unsafe rules remain: '
                 + `2 exceeds the limit provided - ${maxNumberOfUnsafeRules}`;
-            const expectedErr = new TooManyUnsafeRulesError(expectedMsg, [53], maxNumberOfUnsafeRules, 1);
+            const expectedErr = new TooManyUnsafeRulesError(expectedMsg, [
+                // first rule + line break
+                rules[0].length + 1,
+            ], maxNumberOfUnsafeRules, 1);
 
             expect(actualErr).toStrictEqual(expectedErr);
             expect(actualErr).toBeInstanceOf(TooManyUnsafeRulesError);
@@ -771,7 +802,10 @@ describe('DeclarativeConverter', () => {
             const actualErr = limitations[0];
             const expectedMsg = 'After conversion, too many declarative rules remain: '
                 + `4 exceeds the limit provided - ${maxNumberOfRules}`;
-            const expectedErr = new TooManyRulesError(expectedMsg, [53], maxNumberOfRules, 1);
+            const expectedErr = new TooManyRulesError(expectedMsg, [
+                // first rule + line break
+                rules[0].length + 1,
+            ], maxNumberOfRules, 1);
 
             expect(actualErr).toStrictEqual(expectedErr);
             expect(actualErr).toBeInstanceOf(TooManyRulesError);
@@ -1110,7 +1144,7 @@ describe('DeclarativeConverter', () => {
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
             // eslint-disable-next-line max-len
-            const err = new Error('Error during creating indexed rule with hash: Cannot create IRule from filter "0" and byte offset "4": "Unknown modifier: webrtc" in the rule: "@@$webrtc,domain=example.com"');
+            const err = new Error('Error during creating indexed rule with hash: Cannot create IRule from filter "0" and rule "@@$webrtc,domain=example.com": Unknown modifier: webrtc');
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
             expect(errors[0]).toStrictEqual(err);
@@ -1124,7 +1158,7 @@ describe('DeclarativeConverter', () => {
 
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
-            const networkRule = createNetworkRule(rule, 0, 4);
+            const networkRule = createNetworkRule(rule, 0, 0);
 
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
@@ -1142,7 +1176,7 @@ describe('DeclarativeConverter', () => {
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
             // eslint-disable-next-line max-len
-            const err = new Error('Error during creating indexed rule with hash: Cannot create IRule from filter "0" and byte offset "4": "modifier $to is not compatible with $denyallow modifier" in the rule: "/ads$to=good.org,denyallow=good.com"');
+            const err = new Error('Error during creating indexed rule with hash: Cannot create IRule from filter "0" and rule "/ads$to=good.org,denyallow=good.com": modifier $to is not compatible with $denyallow modifier');
 
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);

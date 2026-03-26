@@ -1,4 +1,3 @@
-import { type AnyRule } from '@adguard/agtree';
 import { getHostname } from 'tldts';
 
 import { DomainModifier } from '../modifiers/domain-modifier';
@@ -20,13 +19,13 @@ export class RuleSyntaxUtils {
     /**
      * Checks if rule can be matched by domain.
      *
-     * @param node Rule node.
+     * @param ruleText Rule text.
      * @param domain Domain to check.
      *
      * @returns True if the rule can be matched by the domain, false otherwise.
      */
-    public static isRuleForDomain(node: AnyRule, domain: string): boolean {
-        const rule = RuleFactory.createRule(node, this.DUMMY_FILTER_ID) as RulesUnion | null;
+    public static isRuleForDomain(ruleText: string, domain: string): boolean {
+        const rule = RuleFactory.createRule(ruleText, this.DUMMY_FILTER_ID) as RulesUnion | null;
         if (!rule) {
             return false;
         }
@@ -40,18 +39,18 @@ export class RuleSyntaxUtils {
     /**
      * Checks if rule can be matched by URL.
      *
-     * @param node Rule node.
+     * @param ruleText Rule text.
      * @param url URL to check.
      *
      * @returns True if the rule can be matched by the URL, false otherwise.
      */
-    public static isRuleForUrl(node: AnyRule, url: string): boolean {
+    public static isRuleForUrl(ruleText: string, url: string): boolean {
         const domain = getHostname(url);
 
         if (!domain) {
             return false;
         }
 
-        return this.isRuleForDomain(node, domain);
+        return this.isRuleForDomain(ruleText, domain);
     }
 }

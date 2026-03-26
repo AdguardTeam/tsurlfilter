@@ -4,8 +4,9 @@
 
 import zod from 'zod';
 
-import { platformSchema } from './platform';
 import { zodToCamelCase } from '../utils/zod-camelcase';
+
+import { platformSchema } from './platform';
 
 /**
  * Zod schema for boolean values. Accepts both boolean and string values.

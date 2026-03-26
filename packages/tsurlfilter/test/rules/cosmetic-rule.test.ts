@@ -57,7 +57,7 @@ describe('Element hiding rules constructor', () => {
     it('works if it verifies rules properly', () => {
         expect(() => {
             createCosmeticRule('||example.org^', 0);
-        }).toThrow(new Error('Not a cosmetic rule'));
+        }).toThrow('Failed to parse as cosmetic rule: ||example.org^');
 
         expect(() => {
             createCosmeticRule('example.org## ', 0);
@@ -121,7 +121,7 @@ describe('Element hiding rules constructor', () => {
     it('throws error if marker is not supported yet', () => {
         expect(() => {
             createCosmeticRule('example.org$@@$script[data-src="banner"]', 0);
-        }).toThrow(new Error('Not a cosmetic rule'));
+        }).toThrow('Failed to parse as cosmetic rule: example.org$@@$script[data-src="banner"]');
     });
 
     it('works if it parses domain wildcard properly', () => {
@@ -592,12 +592,6 @@ describe('CosmeticRule.CSS', () => {
         expect(cssRule).toBeDefined();
         expect(cssRule.getContent()).toBe(selector);
 
-        selector = '.some-class:if(test)';
-        ruleText = `example.org##${selector}`;
-        cssRule = createCosmeticRule(ruleText, 0);
-        expect(cssRule).toBeDefined();
-        expect(cssRule.getContent()).toBe(selector);
-
         selector = '.some-class:if-not(test)';
         ruleText = `example.org##${selector}`;
         cssRule = createCosmeticRule(ruleText, 0);
@@ -635,12 +629,12 @@ describe('CosmeticRule.CSS', () => {
         expect(cssRule.getContent()).toBe(selector);
     });
 
-    it('does not fails pseudo classes search on bad selector', () => {
-        const selector = 'a[src^="http:';
-        const ruleText = `example.org##${selector}`;
-        const cssRule = createCosmeticRule(ruleText, 0);
-        expect(cssRule).toBeDefined();
-        expect(cssRule.getContent()).toBe(selector);
+    it('throws syntax error on bad selector', () => {
+        expect(() => {
+            const selector = 'a[src^="http:';
+            const ruleText = `example.org##${selector}`;
+            createCosmeticRule(ruleText, 0);
+        }).toThrow(new SyntaxError("Expected '<]-token>', but got 'end of input'"));
     });
 
     it('throws error when cosmetic rule does not contain css style', () => {
@@ -741,9 +735,8 @@ describe('Extended css rule', () => {
     ruleText = '~example.com,example.org##.sponsored:has(test)';
     rule = createCosmeticRule(ruleText, 0);
 
-    // TODO: change later to 'toBeFalsy'
-    // after ':has(' is removed from EXT_CSS_PSEUDO_INDICATORS
-    expect(rule.isExtendedCss()).toBeTruthy();
+    // :has() is treated as native CSS now when used alone with ## separator
+    expect(rule.isExtendedCss()).toBeFalsy();
     expect(rule.getContent()).toEqual('.sponsored:has(test)');
 
     // but :has() pseudo-class should be considered as ExtendedCss
@@ -753,6 +746,14 @@ describe('Extended css rule', () => {
 
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('.sponsored:has(.banner)');
+
+    // :has() combined with other extended CSS pseudo-classes
+    // should be considered as ExtendedCss even with `##` marker
+    ruleText = 'example.org##.sponsored:has(.banner):contains(ad)';
+    rule = createCosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.sponsored:has(.banner):contains(ad)');
 
     // :is() pseudo-class has native implementation alike :has(),
     // so the rule with `##` marker and `:is()` should not be considered as ExtendedCss
@@ -786,6 +787,20 @@ describe('Extended css rule', () => {
 
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('.banner:not(.main, .content)');
+
+    // :is() and :not() combined with other extended CSS
+    // should be considered as ExtendedCss even with `##` marker
+    ruleText = 'example.org##.banner:is(div):contains(ad)';
+    rule = createCosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.banner:is(div):contains(ad)');
+
+    ruleText = 'example.org##.banner:not(.main):upward(2)';
+    rule = createCosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.banner:not(.main):upward(2)');
 
     ruleText = '~example.com,example.org#?#div';
     rule = createCosmeticRule(ruleText, 0);
@@ -1030,6 +1045,12 @@ describe('HTML filtering rules (content rules)', () => {
         expect(rule.getContent()).toBe(contentPart);
         expect(rule.getPermittedDomains()).toHaveLength(1);
         expect(rule.getPermittedDomains()![0]).toBe(domainPart);
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div[id="ad_text"]',
+                specialSelectors: [],
+            }]],
+        });
 
         const allowlistRuleText = `${domainPart}$@$${contentPart}`;
         const allowlistRule = createCosmeticRule(allowlistRuleText, 0);
@@ -1037,12 +1058,18 @@ describe('HTML filtering rules (content rules)', () => {
         expect(allowlistRule.isAllowlist()).toBeTruthy();
         expect(allowlistRule.getType()).toBe(CosmeticRuleType.HtmlFilteringRule);
         expect(allowlistRule.getContent()).toBe(contentPart);
-        expect(rule.getPermittedDomains()).toHaveLength(1);
-        expect(rule.getPermittedDomains()![0]).toBe(domainPart);
+        expect(allowlistRule.getPermittedDomains()).toHaveLength(1);
+        expect(allowlistRule.getPermittedDomains()![0]).toBe(domainPart);
+        expect(allowlistRule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div[id="ad_text"]',
+                specialSelectors: [],
+            }]],
+        });
     });
 
-    it('correctly parses html rules - wildcards', () => {
-        const contentPart = 'div[id="ad_text"][wildcard="*Test*[123]{123}*"]';
+    it('correctly parses html rules - contains', () => {
+        const contentPart = 'div[id="ad_text"]:contains(some text)';
         const domainPart = 'example.org';
         const ruleText = `${domainPart}$$${contentPart}`;
         const rule = createCosmeticRule(ruleText, 0);
@@ -1052,11 +1079,40 @@ describe('HTML filtering rules (content rules)', () => {
         expect(rule.getContent()).toBe(contentPart);
         expect(rule.getPermittedDomains()).toHaveLength(1);
         expect(rule.getPermittedDomains()![0]).toBe(domainPart);
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div[id="ad_text"]',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: 'some text',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - attribute selectors', () => {
+        // eslint-disable-next-line max-len
+        const contentPart = 'div[attr1="value1"][attr2*="value" i][attr3]';
+        const domainPart = 'example.org';
+        const ruleText = `${domainPart}$$${contentPart}`;
+        const rule = createCosmeticRule(ruleText, 0);
+
+        expect(rule.isAllowlist()).toBeFalsy();
+        expect(rule.getType()).toBe(CosmeticRuleType.HtmlFilteringRule);
+        expect(rule.getContent()).toBe(contentPart);
+        expect(rule.getPermittedDomains()).toHaveLength(1);
+        expect(rule.getPermittedDomains()![0]).toBe(domainPart);
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div[attr1="value1"][attr2*="value" i][attr3]',
+                specialSelectors: [],
+            }]],
+        });
     });
 
     it('correctly parses html rules - complicated cases', () => {
         // eslint-disable-next-line max-len
-        const contentPart = 'div[id="ad_text"][tag-content="teas""ernet"][max-length="500"][min-length="50"][wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]';
+        const contentPart = 'div > span, .class + h1#id:contains(some text):contains(other text)';
         const ruleText = `~nigma.ru,google.com$$${contentPart}`;
         const rule = createCosmeticRule(ruleText, 0);
 
@@ -1067,18 +1123,27 @@ describe('HTML filtering rules (content rules)', () => {
         expect(rule.getPermittedDomains()![0]).toBe('google.com');
         expect(rule.getRestrictedDomains()).toHaveLength(1);
         expect(rule.getRestrictedDomains()![0]).toBe('nigma.ru');
-    });
-
-    it('correctly parses html rules - attribute with no value', () => {
-        const contentPart = 'div[custom_attr]';
-        const domainPart = 'example.com';
-        const ruleText = `${domainPart}$$${contentPart}`;
-        const rule = createCosmeticRule(ruleText, 0);
-
-        expect(rule.isAllowlist()).toBeFalsy();
-        expect(rule.getType()).toBe(CosmeticRuleType.HtmlFilteringRule);
-        expect(rule.getContent()).toBe(contentPart);
-        expect(rule.getPermittedDomains()).toHaveLength(1);
-        expect(rule.getPermittedDomains()![0]).toBe(domainPart);
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [
+                [
+                    { nativeSelector: 'div', specialSelectors: [] },
+                    { combinator: '>', nativeSelector: 'span', specialSelectors: [] },
+                ],
+                [
+                    { nativeSelector: '.class', specialSelectors: [] },
+                    {
+                        combinator: '+',
+                        nativeSelector: 'h1#id',
+                        specialSelectors: [{
+                            name: 'contains',
+                            value: 'some text',
+                        }, {
+                            name: 'contains',
+                            value: 'other text',
+                        }],
+                    },
+                ],
+            ],
+        });
     });
 });

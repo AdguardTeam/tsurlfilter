@@ -8,7 +8,6 @@
 import 'vitest';
 
 import { type ToBeConvertedProperly } from '../test/setup/custom-matchers/check-conversion';
-import { type ToBeSerializedAndDeserializedProperly } from '../test/setup/custom-matchers/check-serialization';
 
 // Note: first argument is passed to `expect`, so we need to remove it
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,8 +16,6 @@ type RemoveFirstArg<T> = T extends (arg0: any, ...args: infer U) => infer R ? (.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface CustomMatchers<R = unknown> {
     toBeConvertedProperly: RemoveFirstArg<ToBeConvertedProperly>;
-
-    toBeSerializedAndDeserializedProperly: RemoveFirstArg<ToBeSerializedAndDeserializedProperly>;
 }
 
 declare module 'vitest' {

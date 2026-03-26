@@ -1,12 +1,12 @@
 import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 import { type ConvertedRules } from '../converted-result';
 
-import { DeclarativeRuleConverter } from './abstract-rule-converter';
+import { AbstractRuleConverter } from './abstract-rule-converter';
 
 /**
  * Just a dummy for $badfilter-rules, because they don't need to be converted.
  */
-export class BadFilterRulesConverter extends DeclarativeRuleConverter {
+export class BadFilterRulesConverter extends AbstractRuleConverter {
     /**
      * Skips converting bad rules.
      *

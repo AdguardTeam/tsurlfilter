@@ -1,7 +1,7 @@
 import zod from 'zod';
 import { Filter, type IFilter, RULESET_NAME_PREFIX } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
-import { type PreprocessedFilterList, preprocessedFilterListValidator } from '@adguard/tsurlfilter';
+import { FilterList } from '@adguard/tsurlfilter';
 
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { FiltersStorage } from '../../common/storage/filters';
@@ -16,7 +16,7 @@ const loadFilterContentValidator = zod.function()
     .args(zod.number())
     .returns(
         zod.promise(
-            preprocessedFilterListValidator,
+            zod.instanceof(FilterList),
         ),
     );
 
@@ -25,7 +25,7 @@ const loadFilterContentValidator = zod.function()
  *
  * @param filterId Filter identifier to load content for.
  *
- * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
+ * @returns Promise that resolves to the filter content (see {@link FilterList})
  * or null if the filter is not found.
  *
  * @throws Error if the filter content cannot be loaded.
@@ -117,7 +117,7 @@ export default class FiltersApi {
 
             const filter = new Filter(
                 filterId,
-                { getContent: (): Promise<PreprocessedFilterList> => loadFilterContent(filterId) },
+                { getContent: (): Promise<FilterList> => loadFilterContent(filterId) },
                 /**
                  * Static filters are trusted.
                  */
@@ -141,7 +141,7 @@ export default class FiltersApi {
         return customFilters.map((f) => new Filter(
             f.filterId,
             {
-                getContent: () => Promise.resolve(f),
+                getContent: () => Promise.resolve(new FilterList(f.content, f.conversionData)),
             },
             f.trusted,
         ));
@@ -152,12 +152,12 @@ export default class FiltersApi {
      *
      * @param filterId Filter identifier to load content for.
      *
-     * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
+     * @returns Promise that resolves to the filter content (see {@link FilterList})
      * or null if the filter is not found.
      *
      * @throws Error if the filter content cannot be loaded.
      */
-    public static loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
+    public static loadFilterContent = async (filterId: number): Promise<FilterList> => {
         try {
             const result = await FiltersStorage.get(filterId);
 
@@ -165,7 +165,7 @@ export default class FiltersApi {
                 throw new Error(`Filter with id ${filterId} not found`);
             }
 
-            return result;
+            return new FilterList(result.rawFilterList, result.conversionData);
         } catch (e) {
             throw new Error(`Failed to load filter content: ${e}`);
         }

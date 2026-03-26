@@ -1,22 +1,8 @@
 /**
- * @file Scriptlet injection rule converter
+ * @file Scriptlet injection rule converter.
  */
 
-import {
-    CosmeticRuleSeparator,
-    type DomainList,
-    type ParameterList,
-    type ScriptletInjectionRule,
-} from '../../nodes';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { QuoteType, QuoteUtils } from '../../utils/quotes';
-import {
-    ADG_DOMAINS_MODIFIER,
-    EMPTY,
-    PIPE_MODIFIER_SEPARATOR,
-    SPACE,
-} from '../../utils/constants';
+import { cloneDomainListNode, cloneModifierListNode, cloneScriptletRuleNode } from '../../ast-utils/clone';
 import {
     getScriptletName,
     setScriptletName,
@@ -24,12 +10,26 @@ import {
     transformAllScriptletArguments,
     transformNthScriptletArgument,
 } from '../../ast-utils/scriptlets';
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
-import { cloneDomainListNode, cloneModifierListNode, cloneScriptletRuleNode } from '../../ast-utils/clone';
 import { GenericPlatform, scriptletsCompatibilityTable } from '../../compatibility-tables';
-import { isNull, isUndefined } from '../../utils/type-guards';
+import { RuleConversionError } from '../../errors/rule-conversion-error';
+import {
+    CosmeticRuleSeparator,
+    type DomainList,
+    type ParameterList,
+    type ScriptletInjectionRule,
+} from '../../nodes';
 import { DomainListParser } from '../../parser';
+import { AdblockSyntax } from '../../utils/adblockers';
+import {
+    ADG_DOMAINS_MODIFIER,
+    EMPTY,
+    PIPE_MODIFIER_SEPARATOR,
+    SPACE,
+} from '../../utils/constants';
+import { QuoteType, QuoteUtils } from '../../utils/quotes';
+import { isNull, isUndefined } from '../../utils/type-guards';
+import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
 const ABP_SCRIPTLET_PREFIX = 'abp-';
 const UBO_SCRIPTLET_PREFIX = 'ubo-';
@@ -70,19 +70,21 @@ const REMOVE_ATTR_CLASS_APPLYING = new Set<string>([
 ]);
 
 /**
- * Scriptlet injection rule converter class
+ * Scriptlet injection rule converter class.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class ScriptletRuleConverter extends RuleConverterBase {
     /**
      * Converts a scriptlet injection rule to AdGuard format, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rule: ScriptletInjectionRule): NodeConversionResult<ScriptletInjectionRule> {
         // Ignore AdGuard rules
@@ -267,11 +269,13 @@ export class ScriptletRuleConverter extends RuleConverterBase {
     /**
      * Converts a scriptlet injection rule to uBlock format, if possible.
      *
-     * @param rule Rule node to convert
+     * @param rule Rule node to convert.
+     *
      * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the result array will contain the original node with the same object reference
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToUbo(rule: ScriptletInjectionRule): NodeConversionResult<ScriptletInjectionRule> {
         // Ignore uBlock rules

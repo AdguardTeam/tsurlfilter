@@ -355,6 +355,12 @@ You can find the benchmark results in the [RESULTS.md][benchmark-results] file.
 If you have any questions or ideas for new features, please [open an issue][new-issue-url] or a
 [discussion][discussions-url]. We will be happy to discuss it with you.
 
+## Documentation
+
+- [Changelog](CHANGELOG.md)
+- [Development guide](../../DEVELOPMENT.md)
+- [LLM agent rules](AGENTS.md)
+
 ## License
 
 This project is licensed under the MIT license. See the [LICENSE][license-url] file for details.

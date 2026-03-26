@@ -1,7 +1,7 @@
-import { BaseGenerator } from '../base-generator';
 import type { Agent } from '../../nodes';
 import { EMPTY, SPACE } from '../../utils/constants';
 import { isUndefined } from '../../utils/type-guards';
+import { BaseGenerator } from '../base-generator';
 
 /**
  * Generator for adblock agent nodes.
@@ -11,8 +11,9 @@ export class AgentGenerator extends BaseGenerator {
     /**
      * Converts an adblock agent node to a string.
      *
-     * @param value Agent node
-     * @returns Raw string
+     * @param value Agent node.
+     *
+     * @returns Raw string.
      */
     public static generate(value: Agent): string {
         let result = EMPTY;

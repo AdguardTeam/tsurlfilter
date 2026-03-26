@@ -503,4 +503,196 @@ describe('Quote utils', () => {
             expect(QuoteUtils.quoteAndJoinStrings(actual)).toBe(expected);
         });
     });
+
+    describe('escapeAttributeDoubleQuotes', () => {
+        test.each([
+            // should escape - inside of attribute and string quotes - in middle
+            {
+                actual: '[attr="test""test"]',
+                expected: '[attr="test\\"test"]',
+            },
+
+            // should escape - inside of attribute and string quotes - at beginning
+            {
+                actual: '[attr="""test"]',
+                expected: '[attr="\\"test"]',
+            },
+
+            // should escape - inside of attribute and string quotes - at end
+            {
+                actual: '[attr="test"""]',
+                expected: '[attr="test\\""]',
+            },
+
+            // should escape - edge case - attribute pattern inside of the value
+            {
+                actual: '[attr="[attr=""test""]"]',
+                expected: '[attr="[attr=\\"test\\"]"]',
+            },
+
+            // should not escape - inside of attribute but outside of string quotes - in middle
+            {
+                actual: '[attr=test""test]',
+                expected: '[attr=test""test]',
+            },
+
+            // should not escape - inside of attribute but outside of string quotes - at beginning
+            {
+                actual: '[attr=""test]',
+                expected: '[attr=""test]',
+            },
+
+            // should not escape - inside of attribute but outside of string quotes - at end
+            {
+                actual: '[attr=test""]',
+                expected: '[attr=test""]',
+            },
+
+            // should not escape - inside of attribute but with single quotes - in middle
+            {
+                actual: '[attr=\'test""test\']',
+                expected: '[attr=\'test""test\']',
+            },
+
+            // should not escape - inside of attribute but with single quotes - at beginning
+            {
+                actual: '[attr=\'""test\']',
+                expected: '[attr=\'""test\']',
+            },
+
+            // should not escape - inside of attribute but with single quotes - at end
+            {
+                actual: '[attr=\'test""\']',
+                expected: '[attr=\'test""\']',
+            },
+
+            // should not escape - edge case - attribute pattern inside of the value but with single quotes
+            {
+                actual: '[attr=\'[attr=""test""]\']',
+                expected: '[attr=\'[attr=""test""]\']',
+            },
+
+            // should not escape - outside of attribute - in middle
+            {
+                actual: ':pseudo("test""test")',
+                expected: ':pseudo("test""test")',
+            },
+
+            // should not escape - outside of attribute - at beginning
+            {
+                actual: ':pseudo("""test")',
+                expected: ':pseudo("""test")',
+            },
+
+            // should not escape - outside of attribute - at end
+            {
+                actual: ':pseudo("test""")',
+                expected: ':pseudo("test""")',
+            },
+
+            // should not escape - edge case - attribute pattern inside of the value of pseudo-class
+            {
+                actual: ':pseudo("[attr=""test""]")',
+                expected: ':pseudo("[attr=""test""]")',
+            },
+        ])('escapeAttributeDoubleQuotes should return $expected for $actual', ({ actual, expected }) => {
+            expect(QuoteUtils.escapeAttributeDoubleQuotes(actual)).toBe(expected);
+        });
+    });
+
+    describe('unescapeAttributeDoubleQuotes', () => {
+        test.each([
+            // should unescape - inside of attribute and string quotes - in middle
+            {
+                actual: '[attr="test\\"test"]',
+                expected: '[attr="test""test"]',
+            },
+
+            // should unescape - inside of attribute and string quotes - at beginning
+            {
+                actual: '[attr="\\"test"]',
+                expected: '[attr="""test"]',
+            },
+
+            // should unescape - inside of attribute and string quotes - at end
+            {
+                actual: '[attr="test\\""]',
+                expected: '[attr="test"""]',
+            },
+
+            // should unescape - edge case - attribute pattern inside of the value
+            {
+                actual: '[attr="[attr=\\"test\\"]"]',
+                expected: '[attr="[attr=""test""]"]',
+            },
+
+            // should not unescape - inside of attribute but outside of string quotes - in middle
+            {
+                actual: '[attr=test\\"test]',
+                expected: '[attr=test\\"test]',
+            },
+
+            // should not unescape - inside of attribute but outside of string quotes - at beginning
+            {
+                actual: '[attr=\\"test]',
+                expected: '[attr=\\"test]',
+            },
+
+            // should not unescape - inside of attribute but outside of string quotes - at end
+            {
+                actual: '[attr=test\\"]',
+                expected: '[attr=test\\"]',
+            },
+
+            // should not unescape - inside of attribute but with single quotes - in middle
+            {
+                actual: '[attr=\'test\\"test\']',
+                expected: '[attr=\'test\\"test\']',
+            },
+
+            // should not unescape - edge case - attribute pattern inside of the value but with single quotes
+            {
+                actual: '[attr=\'[attr=\\"test\\"]\']',
+                expected: '[attr=\'[attr=\\"test\\"]\']',
+            },
+
+            // should not unescape - inside of attribute but with single quotes - at beginning
+            {
+                actual: '[attr=\'\\"test\']',
+                expected: '[attr=\'\\"test\']',
+            },
+
+            // should not escape - inside of attribute but with single quotes - at end
+            {
+                actual: '[attr=\'test\\"\']',
+                expected: '[attr=\'test\\"\']',
+            },
+
+            // should not unescape - outside of attribute - in middle
+            {
+                actual: ':pseudo("test\\"test")',
+                expected: ':pseudo("test\\"test")',
+            },
+
+            // should not unescape - outside of attribute - at beginning
+            {
+                actual: ':pseudo("\\"test")',
+                expected: ':pseudo("\\"test")',
+            },
+
+            // should not unescape - outside of attribute - at end
+            {
+                actual: ':pseudo("test\\"")',
+                expected: ':pseudo("test\\"")',
+            },
+
+            // should not escape - edge case - attribute pattern inside of the value of pseudo-class
+            {
+                actual: ':pseudo("[attr=\\"test\\"]")',
+                expected: ':pseudo("[attr=\\"test\\"]")',
+            },
+        ])('unescapeAttributeDoubleQuotes should return $expected for $actual', ({ actual, expected }) => {
+            expect(QuoteUtils.unescapeAttributeDoubleQuotes(actual)).toBe(expected);
+        });
+    });
 });

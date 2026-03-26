@@ -1,14 +1,15 @@
 /**
- * @file Rule converter for raw rules
+ * @file Rule converter for raw rules.
  *
  * Technically, this is a wrapper around `RuleConverter` that works with nodes instead of strings.
  */
 
-import { createConversionResult, type ConversionResult } from './base-interfaces/conversion-result';
-import { RuleParser } from '../parser/rule-parser';
-import { RuleConverter } from './rule';
-import { BaseConverter } from './base-interfaces/base-converter';
 import { RuleGenerator } from '../generator';
+import { RuleParser } from '../parser/rule-parser';
+
+import { BaseConverter } from './base-interfaces/base-converter';
+import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';
+import { RuleConverter } from './rule';
 
 /**
  * Adblock filtering rule converter class.
@@ -17,17 +18,19 @@ import { RuleGenerator } from '../generator';
  * This class just provides an extra layer on top of the {@link RuleConverter} and calls the parser/serializer
  * before/after the conversion internally.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class RawRuleConverter extends BaseConverter {
     /**
      * Converts an adblock filtering rule to AdGuard format, if possible.
      *
-     * @param rawRule Raw rule text to convert
+     * @param rawRule Raw rule text to convert.
+     *
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
      * the array of converted rule texts, and its `isConverted` flag indicates whether the original rule was converted.
-     * If the rule was not converted, the original rule text will be returned
-     * @throws If the rule is invalid or cannot be converted
+     * If the rule was not converted, the original rule text will be returned.
+     *
+     * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rawRule: string): ConversionResult<string, string[]> {
         const conversionResult = RuleConverter.convertToAdg(RuleParser.parse(rawRule));

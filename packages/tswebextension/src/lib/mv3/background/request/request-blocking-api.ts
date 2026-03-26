@@ -3,7 +3,9 @@ import { RequestType, NetworkRuleOption, type NetworkRule } from '@adguard/tsurl
 
 import { tabsApi } from '../../tabs/tabs-api';
 import { companiesDbService } from '../../../common/companies-db-service';
+import { getRuleTexts } from '../../../common/utils/rule-text-provider';
 import { FilteringEventType, defaultFilteringLog } from '../../../common/filtering-log';
+import { engineApi } from '../engine-api';
 
 import { type RequestContext } from './request-context-storage';
 
@@ -27,13 +29,6 @@ type RequestParams = Pick<
 export type GetBlockingResponseParams = RequestParams & {
     rule: NetworkRule | null;
     popupRule: NetworkRule | null;
-};
-
-/**
- * Params for {@link RequestBlockingApi.getResponseOnHeadersReceived}.
- */
-export type GetHeadersResponseParams = RequestParams & {
-    rule: NetworkRule | null;
 };
 
 /**
@@ -117,6 +112,8 @@ export class RequestBlockingApi {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
+            const { appliedRuleText, originalRuleText } = getRuleTexts(rule, engineApi);
+
             defaultFilteringLog.publishEvent({
                 type: FilteringEventType.ApplyBasicRule,
                 data: {
@@ -129,6 +126,8 @@ export class RequestBlockingApi {
                     companyCategoryName: companiesDbService.match(requestUrl),
                     filterId: rule.getFilterListId(),
                     ruleIndex: rule.getIndex(),
+                    appliedRuleText,
+                    originalRuleText,
                     isAllowlist: rule.isAllowlist(),
                     isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
                     isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
@@ -179,6 +178,32 @@ export class RequestBlockingApi {
     }
 
     /**
+     * Logs header rule that would be blocked.
+     * In MV3, we don't actually block in web request API, but we log supposedly blocked requests.
+     *
+     * @param context Request context.
+     */
+    public static logHeaderRuleIfAny(context: RequestContext): void {
+        const {
+            matchingResult,
+            responseHeaders,
+            tabId,
+            referrerUrl,
+        } = context;
+
+        if (!matchingResult || !responseHeaders) {
+            return;
+        }
+
+        const rule = matchingResult.getResponseHeadersResult(responseHeaders);
+
+        if (rule) {
+            RequestBlockingApi.logRuleApplying(context, rule);
+            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+        }
+    }
+
+    /**
      * Creates {@link FilteringLog} event of rule applying for processed request.
      *
      * @param data Data for request processing.
@@ -202,6 +227,8 @@ export class RequestBlockingApi {
             return;
         }
 
+        const { appliedRuleText, originalRuleText } = getRuleTexts(appliedRule, engineApi);
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
             data: {
@@ -213,6 +240,8 @@ export class RequestBlockingApi {
                 requestUrl,
                 filterId: appliedRule.getFilterListId(),
                 ruleIndex: appliedRule.getIndex(),
+                appliedRuleText,
+                originalRuleText,
                 isAllowlist: appliedRule.isAllowlist(),
                 isImportant: appliedRule.isOptionEnabled(NetworkRuleOption.Important),
                 isDocumentLevel: appliedRule.isDocumentLevelAllowlistRule(),

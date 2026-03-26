@@ -1,25 +1,21 @@
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
-import { AbpSnippetInjectionBodyParser } from '../../../../src/parser/cosmetic/body/abp-snippet-injection-body-parser';
+import { AbpSnippetInjectionBodyCommon } from '../../../../src/common/abp-snippet-injection-body-common';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
-import { EMPTY, SPACE } from '../../../../src/utils/constants';
 import {
     AbpSnippetInjectionBodyGenerator,
-} from '../../../../src/generator/cosmetic/body/abp-snippet-injection-body-generator';
+} from '../../../../src/generator/cosmetic/scriptlet-body/abp-snippet-injection-body-generator';
+import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
 import {
-    AbpSnippetInjectionBodySerializer,
-} from '../../../../src/serializer/cosmetic/body/abp-snippet-injection-body-serializer';
-import {
-    AbpSnippetInjectionBodyDeserializer,
-} from '../../../../src/deserializer/cosmetic/scriptlet-body/abp-snippet-injection-body-deserializer';
-import { AbpSnippetInjectionBodyCommon } from '../../../../src/common/abp-snippet-injection-body-common';
+    AbpSnippetInjectionBodyParser,
+} from '../../../../src/parser/cosmetic/scriptlet-body/abp-snippet-injection-body-parser';
+import { EMPTY, SPACE } from '../../../../src/utils/constants';
+import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 
 describe('AbpSnippetInjectionBodyParser', () => {
     describe('AbpSnippetInjectionBodyParser.parse - valid cases', () => {
@@ -697,22 +693,6 @@ describe('AbpSnippetInjectionBodyParser', () => {
             }
 
             expect(AbpSnippetInjectionBodyGenerator.generate(ruleNode)).toBe(expected);
-        });
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            'scriptlet0',
-            'scriptlet0 arg0',
-            'scriptlet0 arg0 arg1',
-            'scriptlet0 arg00 arg01; scriptlet1; scriptlet2 arg20',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                AbpSnippetInjectionBodyParser,
-                AbpSnippetInjectionBodyGenerator,
-                AbpSnippetInjectionBodySerializer,
-                AbpSnippetInjectionBodyDeserializer,
-            );
         });
     });
 });

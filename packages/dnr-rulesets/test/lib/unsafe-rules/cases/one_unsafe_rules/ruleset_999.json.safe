@@ -39,7 +39,10 @@
 					999
 				]
 			},
-			"conversionMap": {},
+			"conversionData": {
+				"conversions": {},
+				"originals": []
+			},
 			"rawFilterList": "||example.com/ad.js$redirect=noopjs"
 		}
 	}

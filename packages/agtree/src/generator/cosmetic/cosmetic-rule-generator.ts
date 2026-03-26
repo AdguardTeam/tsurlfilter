@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { sprintf } from 'sprintf-js';
-
+import { type AnyCosmeticRule } from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
     CLOSE_PARENTHESIS,
@@ -10,10 +9,10 @@ import {
     OPEN_PARENTHESIS,
     SPACE,
 } from '../../utils/constants';
-import { type AnyCosmeticRule } from '../../nodes';
 import { BaseGenerator } from '../base-generator';
-import { CosmeticRulePatternGenerator } from './cosmetic-rule-pattern-generator';
+
 import { CosmeticRuleBodyGenerator } from './cosmetic-rule-body-generator';
+import { CosmeticRulePatternGenerator } from './cosmetic-rule-pattern-generator';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
@@ -37,8 +36,9 @@ export class CosmeticRuleGenerator extends BaseGenerator {
     /**
      * Converts a cosmetic rule AST into a string.
      *
-     * @param node Cosmetic rule AST
-     * @returns Raw string
+     * @param node Cosmetic rule AST.
+     *
+     * @returns Raw string.
      */
     public static generate(node: AnyCosmeticRule): string {
         let result = EMPTY;

@@ -19,12 +19,13 @@ import { MessageType } from '../../common/message-constants';
 import { ContentType } from '../../common/request-type';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
+import { getRuleTextsByIndex } from '../../common/utils/rule-text-provider';
 import { getDomain } from '../../common/utils/url';
 
+import { engineApi, cookieFiltering } from './api';
 import { Assistant } from './assistant';
 import { CosmeticApi } from './cosmetic-api';
 import { RequestBlockingApi } from './request';
-import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { type TabsApi } from './tabs';
 
 // TODO: add long live connection
@@ -236,6 +237,13 @@ export class MessagesApi {
 
         const { data } = res;
 
+        // Retrieve rule texts for content script cosmetic events
+        const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(
+            data.filterId,
+            data.ruleIndex,
+            engineApi,
+        );
+
         this.filteringLog.publishEvent({
             type: FilteringEventType.Cookie,
             data: {
@@ -246,6 +254,8 @@ export class MessagesApi {
                 cookieValue: data.cookieValue,
                 filterId: data.filterId,
                 ruleIndex: data.ruleIndex,
+                appliedRuleText,
+                originalRuleText,
                 isModifyingCookieRule: false,
                 requestThirdParty: data.thirdParty,
                 timestamp: Date.now(),
@@ -323,6 +333,13 @@ export class MessagesApi {
         for (let i = 0; i < payload.length; i += 1) {
             const stat = payload[i];
 
+            // Retrieve rule texts for content script cosmetic events
+            const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(
+                stat.filterId,
+                stat.ruleIndex,
+                engineApi,
+            );
+
             this.filteringLog.publishEvent({
                 type: FilteringEventType.ApplyCosmeticRule,
                 data: {
@@ -330,6 +347,8 @@ export class MessagesApi {
                     eventId: nanoid(),
                     filterId: stat.filterId,
                     ruleIndex: stat.ruleIndex,
+                    appliedRuleText,
+                    originalRuleText,
                     element: stat.element,
                     frameUrl: url,
                     frameDomain: getDomain(url) as string,

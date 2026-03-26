@@ -106,7 +106,6 @@ Test Logger:
         scripts:
           - "./bamboo-specs/scripts/cleanup.sh"
   requirements: &requirements
-    - adg-docker: 'true'
     - extension: 'true'
 
 Test CSSTokenizer:
@@ -248,14 +247,6 @@ branches:
     after-deleted-days: '1'
     after-inactive-days: '5'
   link-to-jira: true
-
-notifications:
-  - events:
-      - plan-status-changed
-    recipients:
-      - webhook:
-          name: Build webhook
-          url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
 labels: [ ]
 

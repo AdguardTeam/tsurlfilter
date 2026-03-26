@@ -37,7 +37,8 @@
  * for the request.                      └──────────────┬──────────────┘ │
  * If this is a frame request,                          │                │
  * also matches the                                     │                │
- * {@link CosmeticResult}                               │                │
+ * {@link CosmeticResult}.                              │                │
+ * Also logs CSP report blocking events.                │                │
  *                                                      │                │
  *                                                      │                │
  *                                       ┌──────────────▼──────────────┐ │
@@ -144,10 +145,11 @@
  *                                       └─────────────────────────────┘.
  */
 import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
-import { RequestType } from '@adguard/tsurlfilter';
+import { RequestType, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { companiesDbService } from '../../common/companies-db-service';
+import { getRuleTexts } from '../../common/utils/rule-text-provider';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
@@ -331,6 +333,9 @@ export class WebRequestApi {
             },
         });
 
+        // Note: Must be called after SendRequest event to ensure proper event ordering in logs
+        CspService.onBeforeRequest(context);
+
         let frameRule;
 
         /**
@@ -491,9 +496,23 @@ export class WebRequestApi {
             },
         });
 
-        const { requestUrl, requestType } = context;
+        if (
+            !context?.matchingResult
+            || context.matchingResult.getBasicResult()?.isFilteringDisabled()
+        ) {
+            return;
+        }
 
-        if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
+        // Check for header rules and log them
+        // In MV3, we don't actually block in web request API (blocking is done via DNR),
+        // but we need to log supposedly blocked requests for statistics and filtering log
+        RequestBlockingApi.logHeaderRuleIfAny(context);
+
+        const { requestUrl, requestType } = context;
+        const isDocumentOrSubDocumentRequest = requestType === RequestType.Document
+            || requestType === RequestType.SubDocument;
+
+        if (requestUrl && isDocumentOrSubDocumentRequest) {
             CspService.onHeadersReceived(context);
 
             PermissionsPolicyService.onHeadersReceived(context);
@@ -578,7 +597,6 @@ export class WebRequestApi {
             requestId,
             url,
             type,
-            parentFrameId,
             error,
         } = details;
 
@@ -613,6 +631,11 @@ export class WebRequestApi {
         }
 
         const companyCategoryName = companiesDbService.match(url);
+        const appliedRule = matchingResult.getBasicResult();
+
+        const { appliedRuleText, originalRuleText } = appliedRule
+            ? getRuleTexts(appliedRule, engineApi)
+            : { appliedRuleText: null, originalRuleText: null };
 
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
@@ -623,15 +646,17 @@ export class WebRequestApi {
                 frameUrl: referrerUrl,
                 requestId,
                 requestUrl: url,
+                filterId: appliedRule?.getFilterListId() ?? null,
+                ruleIndex: appliedRule?.getIndex() ?? null,
+                appliedRuleText,
+                originalRuleText,
+                isAllowlist: appliedRule?.isAllowlist() ?? false,
+                isImportant: appliedRule?.isOptionEnabled(NetworkRuleOption.Important) ?? false,
+                isDocumentLevel: appliedRule?.isDocumentLevelAllowlistRule() ?? false,
+                isCsp: appliedRule?.isOptionEnabled(NetworkRuleOption.Csp) ?? false,
+                isCookie: appliedRule?.isOptionEnabled(NetworkRuleOption.Cookie) ?? false,
+                advancedModifier: appliedRule?.getAdvancedModifierValue() ?? null,
                 companyCategoryName,
-                filterId: null,
-                ruleIndex: null,
-                isAllowlist: false,
-                isImportant: false,
-                isDocumentLevel: TabsApiCommon.isDocumentLevelFrame(parentFrameId),
-                isCsp: false,
-                isCookie: false,
-                advancedModifier: null,
                 isAssuredlyBlocked: true,
             },
         });

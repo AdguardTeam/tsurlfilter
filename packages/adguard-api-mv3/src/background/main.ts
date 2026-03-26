@@ -20,8 +20,8 @@ import {
     TsWebExtension,
     type Configuration as TsWebExtensionConfiguration,
     type MessageHandler,
-    FilterListPreprocessor,
     LF,
+    FilterList,
     type LocalScriptFunctionData,
 } from '@adguard/tswebextension/mv3';
 import { type Configuration, configurationValidator } from './configuration';
@@ -219,19 +219,18 @@ export class AdguardApi {
             allowlist = this.configuration.allowlist;
         }
 
-        const userrules: TsWebExtensionConfiguration['userrules'] = Object.assign(
-            FilterListPreprocessor.createEmptyPreprocessedFilterList(),
-            { trusted: true },
-        );
+        let list: FilterList;
 
         if (this.configuration.rules) {
-            Object.assign(userrules, FilterListPreprocessor.preprocess(this.configuration.rules.join(LF)));
+            list = new FilterList(this.configuration.rules.join(LF));
+        } else {
+            list = FilterList.createEmpty();
         }
 
-        const quickFixesRules: TsWebExtensionConfiguration['quickFixesRules'] = Object.assign(
-            FilterListPreprocessor.createEmptyPreprocessedFilterList(),
-            { trusted: true },
-        );
+        const userrules: TsWebExtensionConfiguration['userrules'] = {
+            content: list.getContent(),
+            conversionData: list.getConversionData(),
+        };
 
         return {
             filtersPath: this.configuration.assetsPath,
@@ -243,7 +242,6 @@ export class AdguardApi {
             staticFiltersIds: this.configuration.filters,
             allowlist,
             userrules,
-            quickFixesRules,
             settings: {
                 assistantUrl: 'adguard-assistant.js',
                 // Related stealth option is disabled

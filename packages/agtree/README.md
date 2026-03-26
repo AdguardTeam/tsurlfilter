@@ -45,9 +45,11 @@ You can install the library using
 [npm-pkg-manager-url]: https://www.npmjs.com/get-npm
 [pnpm-pkg-manager-url]: https://pnpm.io/
 
-## Development & Contribution
+## Documentation
 
-Please read the [CONTRIBUTING.md][contributing-url] file for details on how to contribute to this project.
+- [Changelog](CHANGELOG.md)
+- [Development guide](../../DEVELOPMENT.md)
+- [LLM agent rules](AGENTS.md)
 
 ## Ideas & Questions
 
@@ -88,7 +90,6 @@ resources, please let us know.
 [adg-filters]: https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters
 [adg-scriptlets]: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#scriptlets
 [compatibility-tables-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/compatibility-tables
-[contributing-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/CONTRIBUTING.md
 [converter-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/converter
 [discussions-url]: https://github.com/AdguardTeam/tsurlfilter/discussions
 [license-url]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/agtree/LICENSE

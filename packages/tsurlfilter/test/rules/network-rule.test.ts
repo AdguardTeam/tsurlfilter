@@ -607,6 +607,24 @@ describe('NetworkRule constructor', () => {
         assertBadfilterNegates('*$image,domain=example.org|example.com', '*$image,domain=example.org,badfilter', true);
         assertBadfilterNegates('*$image,domain=example.com', '*$image,domain=example.org,badfilter', false);
         assertBadfilterNegates('*$image,domain=example.org|~example.com', '*$image,domain=example.org,badfilter', false);
+
+        // denyallow modifier must be compared exactly
+        // https://github.com/AguardTeam/AdguardBrowserExtension/issues/3428
+        assertBadfilterNegates(
+            '*$script,third-party,denyallow=a.com|b.com,domain=example.org',
+            '*$script,third-party,denyallow=a.com|b.com,domain=example.org,badfilter',
+            true,
+        );
+        assertBadfilterNegates(
+            '*$script,third-party,denyallow=a.com|b.com|c.com,domain=example.org',
+            '*$script,third-party,denyallow=a.com|b.com,domain=example.org,badfilter',
+            false,
+        );
+        assertBadfilterNegates(
+            '$script,third-party,denyallow=a.com|b.com|c.com,domain=example.org',
+            '$script,third-party,denyallow=a.com|b.com,domain=example.org,badfilter',
+            false,
+        );
     });
 
     it('works if noop modifier works properly', () => {
@@ -1590,6 +1608,29 @@ describe('NetworkRule.isFilteringDisabled', () => {
 
     it.each(cases)('should return $expected for rule $rule', ({ rule, expected }) => {
         expect((createNetworkRule(rule, 0)).isFilteringDisabled()).toBe(expected);
+    });
+});
+
+describe('NetworkRule.isUnsafe', () => {
+    const cases = [
+        { rule: '||example.org^$csp=test', expected: true },
+        { rule: '||example.org^$replace=/a/b/', expected: true },
+        { rule: '||example.org^$cookie=test', expected: true },
+        { rule: '||example.org^$redirect=noop.js', expected: true },
+        { rule: '||example.org^$redirect-rule=noop.js', expected: true },
+        { rule: '||example.org^$removeparam=test', expected: true },
+        { rule: '||example.org^$removeheader=test', expected: true },
+        { rule: '||example.org^$permissions=test', expected: true },
+        { rule: '||example.org^$client=127.0.0.1', expected: true },
+        { rule: '||example.org^$dnsrewrite=REFUSED', expected: true },
+        { rule: '||example.org^$dnstype=A', expected: true },
+        { rule: '||example.org^$ctag=device_audio', expected: true },
+
+        { rule: '||example.com^', expected: false },
+    ];
+
+    it.each(cases)('should return $expected for rule $rule', ({ rule, expected }) => {
+        expect((createNetworkRule(rule, 0)).isUnsafe()).toBe(expected);
     });
 });
 

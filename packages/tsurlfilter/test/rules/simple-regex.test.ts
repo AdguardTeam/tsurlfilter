@@ -1,4 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import {
+    describe,
+    expect,
+    it,
+    test,
+} from 'vitest';
 
 import { SimpleRegex } from '../../src/rules/simple-regex';
 
@@ -179,6 +184,26 @@ describe('SimpleRegex.patternFromString', () => {
     it('works if it is able to creates basic regexp', () => {
         expect(SimpleRegex.patternFromString('/test/').source).toBe('test');
         expect(SimpleRegex.patternFromString('/test/gi').source).toBe('test');
+    });
+});
+
+describe('SimpleRegex.fromLiteral', () => {
+    test.each([
+        { input: '/test/', output: /test/ },
+        { input: '/test/gi', output: /test/gi },
+        { input: 'plain string', output: 'plain string' },
+        { input: '/unclosed', output: '/unclosed' },
+        { input: '/invalid/xyz', output: '/invalid/xyz' },
+        { input: '/[a-z]+/i', output: /[a-z]+/i },
+        { input: '/(unclosed/i', output: '/(unclosed/i' },
+        { input: '/[/]/', output: /[/]/ },
+    ])("returns '$output' for '$input'", ({ input, output }) => {
+        const result = SimpleRegex.fromLiteral(input);
+        if (typeof result === 'string') {
+            expect(result).toBe(output);
+        } else {
+            expect(result).toEqual(output);
+        }
     });
 });
 

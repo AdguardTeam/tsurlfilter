@@ -7,6 +7,7 @@ release-naming: ${bamboo.inject.version}
 
 environments:
   - npmjs • 2.x
+  - npmjs • 4.x
   - npmjs • alpha
   - npmjs • beta
 
@@ -40,15 +41,10 @@ npmjs • 2.x: &npmjs
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             npm publish tswebextension.tgz $bamboo_publishArgs
   requirements:
-    - adg-docker: 'true'
     - extension: 'true'
-  notifications:
-    - events:
-        - deployment-started-and-finished
-      recipients:
-        - webhook:
-            name: Deploy webhook
-            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+npmjs • 4.x:
+  <<: *npmjs
 
 npmjs • alpha:
   <<: *npmjs

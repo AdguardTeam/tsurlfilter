@@ -1,23 +1,24 @@
 /**
- * @file Cosmetic rule separator finder and categorizer
+ * @file Cosmetic rule separator finder and categorizer.
  */
 
 import { CosmeticRuleSeparator } from '../nodes';
+
 import { AT_SIGN, SPACE } from './constants';
 
 export interface CosmeticRuleSeparatorFinderResult {
     /**
-     * Separator type
+     * Separator type.
      */
     separator: CosmeticRuleSeparator;
 
     /**
-     * Separator start position
+     * Separator start position.
      */
     start: number;
 
     /**
-     * Separator end position
+     * Separator end position.
      */
     end: number;
 }
@@ -29,8 +30,9 @@ export class CosmeticRuleSeparatorUtils {
     /**
      * Checks whether the specified separator is an exception.
      *
-     * @param separator Separator to check
-     * @returns `true` if the separator is an exception, `false` otherwise
+     * @param separator Separator to check.
+     *
+     * @returns `true` if the separator is an exception, `false` otherwise.
      */
     public static isException(separator: CosmeticRuleSeparator): boolean {
         // Simply check the second character
@@ -40,8 +42,9 @@ export class CosmeticRuleSeparatorUtils {
     /**
      * Checks whether the specified separator is marks an Extended CSS cosmetic rule.
      *
-     * @param separator Separator to check
-     * @returns `true` if the separator is marks an Extended CSS cosmetic rule, `false` otherwise
+     * @param separator Separator to check.
+     *
+     * @returns `true` if the separator is marks an Extended CSS cosmetic rule, `false` otherwise.
      */
     public static isExtendedCssMarker(separator: CosmeticRuleSeparator): boolean {
         return (
@@ -56,16 +59,18 @@ export class CosmeticRuleSeparatorUtils {
      * Looks for the cosmetic rule separator in the rule. This is a simplified version that
      * masks the recursive function.
      *
-     * @param rule Raw rule
-     * @returns Separator result or null if no separator was found
+     * @param rule Raw rule.
+     *
+     * @returns Separator result or null if no separator was found.
      */
     public static find(rule: string): CosmeticRuleSeparatorFinderResult | null {
         /**
          * Helper function to create results of the `find` method.
          *
-         * @param start Start position
-         * @param separator Separator type
-         * @returns Cosmetic rule separator node
+         * @param start Start position.
+         * @param separator Separator type.
+         *
+         * @returns Cosmetic rule separator node.
          */
         // eslint-disable-next-line max-len
         function createResult(start: number, separator: CosmeticRuleSeparator): CosmeticRuleSeparatorFinderResult {

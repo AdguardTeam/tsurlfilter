@@ -4,7 +4,9 @@ import path from 'path';
 
 import {
     BASE_DIR,
+    BrowserFilters,
     DEST_RULESETS_DIR,
+    FILTERS_BROWSER_PLACEHOLDER,
     FILTERS_DIR,
     LOCAL_METADATA_FILE_NAME,
     RESOURCES_DIR,
@@ -60,26 +62,33 @@ const removeFiltersMetadata = async (dir: string): Promise<void> => {
 
 /**
  * Compiles rules to declarative json
- * Actually for each rule set entry in manifest's declarative_net_request:
+ * Actually for each rule set entry in manifest's declarative_net_request.
  *
+ * ```json
  * "declarative_net_request": {
  *   "rule_resources": [{
  *     "id": "ruleset_1",
  *     "enabled": true,
  *     "path": "filters/declarative/rules.json"
  *   }]
- * }.
+ * }
+ * ```
  *
  * We should find corresponding text file in resources,
  * and then convert and save json to path specified in the manifest.
+ *
+ * @param browser Browser to build filters for.
  */
-const build = async (): Promise<void> => {
-    await startDownload();
+const build = async (browser: BrowserFilters): Promise<void> => {
+    const filtersDir = FILTERS_DIR.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
+    const destRulesetsDir = DEST_RULESETS_DIR.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
+
+    await startDownload(filtersDir, browser);
 
     await convertFilters(
-        FILTERS_DIR,
+        filtersDir,
         RESOURCES_DIR,
-        DEST_RULESETS_DIR,
+        destRulesetsDir,
         {
             debug: true,
             prettifyJson: false,
@@ -90,16 +99,26 @@ const build = async (): Promise<void> => {
         },
     );
 
-    await createLocalScriptRulesJs(FILTERS_DIR);
-    await createLocalScriptRulesJson(FILTERS_DIR);
+    await createLocalScriptRulesJs(filtersDir);
+    await createLocalScriptRulesJson(filtersDir);
 
-    await removeTxtFiles(FILTERS_DIR);
+    await removeTxtFiles(filtersDir);
 
     // After single conversion, do not forget to remove filters.json file,
     // since it is packed inside metadata ruleset.
-    await removeFiltersMetadata(FILTERS_DIR);
+    await removeFiltersMetadata(filtersDir);
+};
 
+/**
+ * Builds all filters for all browsers.
+ *
+ * @todo TODO: Builds for different browsers can be done in parallel,
+ * but we do it sequentially to keep logging order. Consider improving it in the future.
+ */
+const buildAll = async (): Promise<void> => {
+    await build(BrowserFilters.ChromiumMv3);
+    await build(BrowserFilters.OperaMv3);
     await createVersionTxt();
 };
 
-build();
+buildAll();

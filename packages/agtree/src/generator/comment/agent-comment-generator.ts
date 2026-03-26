@@ -6,6 +6,7 @@ import {
     SPACE,
 } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
+
 import { AgentGenerator } from './agent-generator';
 
 /**
@@ -15,8 +16,9 @@ export class AgentCommentGenerator extends BaseGenerator {
     /**
      * Converts an adblock agent AST to a string.
      *
-     * @param ast Agent rule AST
-     * @returns Raw string
+     * @param ast Agent rule AST.
+     *
+     * @returns Raw string.
      */
     public static generate(ast: AgentCommentRule): string {
         let result = OPEN_SQUARE_BRACKET;

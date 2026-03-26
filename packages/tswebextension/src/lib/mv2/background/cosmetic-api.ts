@@ -3,6 +3,7 @@ import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { USER_FILTER_ID } from '../../common/constants';
 import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
+import { CssCapabilities } from '../../common/utils/css-capabilities';
 import { logger } from '../../common/utils/logger';
 
 import { appContext } from './app-context';
@@ -206,7 +207,15 @@ export class CosmeticApi extends CosmeticApiCommon {
             cosmeticResult = frameContext.cosmeticResult;
         }
 
-        data.extCssRules = CosmeticApi.getExtCssRules(cosmeticResult, areHitsStatsCollected);
+        const isNativeHasSupported = CssCapabilities.isNativeHasPseudoClassSupported();
+
+        data.extCssRules = CosmeticApi.getExtCssRules(
+            cosmeticResult,
+            {
+                areHitsStatsCollected,
+                isNativeHasSupported,
+            },
+        );
 
         return data;
     }
@@ -228,7 +237,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     public static logScriptRules(params: LogJsRulesParamsMv2): void {
         const scriptRules = CosmeticApi.filterScriptRulesForLog(params);
 
-        super.logScriptRules(params, scriptRules);
+        super.logScriptRules(params, scriptRules, engineApi);
     }
 
     /**

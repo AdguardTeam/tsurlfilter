@@ -13,7 +13,7 @@ import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api'
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { appContext } from '../../../../../src/lib/mv2/background/app-context';
-import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
+import { stealthApi } from '../../../../../src/lib/mv2/background/api';
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../../../src/lib/common/constants';
 import { Frames } from '../../../../../src/lib/common/tabs/frames';
 import { type TabInfo } from '../../../../../src/lib/common/tabs/tabs-api';

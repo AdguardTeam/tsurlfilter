@@ -8,6 +8,7 @@ import { HTTPMethod, MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { mockEngineApi } from '../../../../helpers/mocks';
 import { ParamsService } from '../../../../../src/lib/mv2/background/services/params-service';
 import {
     RequestContextState,
@@ -18,7 +19,7 @@ import { FilteringEventType } from '../../../../../src/lib/common/filtering-log'
 
 describe('Params service', () => {
     const mockFilteringLog = new MockFilteringLog();
-    const paramsService = new ParamsService(mockFilteringLog);
+    const paramsService = new ParamsService(mockFilteringLog, mockEngineApi);
 
     beforeEach(() => {
         mockFilteringLog.publishEvent.mockClear();

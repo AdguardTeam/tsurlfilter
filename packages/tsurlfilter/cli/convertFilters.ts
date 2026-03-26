@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
-import { FilterListPreprocessor } from '../src/filterlist/preprocessor';
+import { FilterList } from '../src/filterlist/filter-list';
 import {
     type ConversionResult,
     DeclarativeFilterConverter,
@@ -114,7 +114,7 @@ export const convertFilters = async (
 
             return new Filter(
                 filterId,
-                { getContent: async () => FilterListPreprocessor.preprocess(data) },
+                { getContent: async () => new FilterList(data) },
                 // we consider that all preinstalled filters are trusted
                 true,
             );

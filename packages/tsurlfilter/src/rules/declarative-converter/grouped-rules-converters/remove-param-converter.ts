@@ -2,12 +2,12 @@ import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-ha
 import { type DeclarativeRule } from '../declarative-rule';
 import { type ConvertedRules } from '../converted-result';
 
-import { DeclarativeRuleConverter } from './abstract-rule-converter';
+import { AbstractRuleConverter } from './abstract-rule-converter';
 
 /**
  * Describes how to convert $removeparam rules.
  */
-export class RemoveParamRulesConverter extends DeclarativeRuleConverter {
+export class RemoveParamRulesConverter extends AbstractRuleConverter {
     /**
      * Converts indexed rules grouped by $removeparam into declarative rules:
      * for each rule looks for similar rules and groups them into a new rule.

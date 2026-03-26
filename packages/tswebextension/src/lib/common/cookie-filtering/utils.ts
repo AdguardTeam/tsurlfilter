@@ -6,6 +6,30 @@ import { ParsedCookie } from './parsed-cookie';
 import HttpHeadersItemType = browser.WebRequest.HttpHeadersItemType;
 
 /**
+ * Splits multiline set-cookie headers into separate headers.
+ *
+ * @param responseHeaders HTTP response headers.
+ */
+export function splitMultilineCookies(responseHeaders: browser.WebRequest.HttpHeaders): void {
+    const SET_COOKIE_HEADER_NAME = 'set-cookie';
+    const LINE_FEED = '\n';
+
+    for (let i = responseHeaders.length - 1; i >= 0; i -= 1) {
+        const { name, value } = responseHeaders[i];
+        if (name.toLowerCase() !== SET_COOKIE_HEADER_NAME || !value || !value.includes(LINE_FEED)) {
+            continue;
+        }
+
+        const values = value.split(LINE_FEED);
+        responseHeaders.splice(i, 1);
+
+        values.forEach((val) => {
+            responseHeaders.push({ name: SET_COOKIE_HEADER_NAME, value: val });
+        });
+    }
+}
+
+/**
  * Cookie Utils.
  */
 export class CookieUtils {

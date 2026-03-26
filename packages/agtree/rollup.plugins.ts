@@ -1,8 +1,9 @@
-import path from 'path';
-import { type Plugin } from 'rollup';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { stringify } from 'javascript-stringify';
+import { type Plugin } from 'rollup';
 
 import * as data from './src/compatibility-tables/compatibility-table-data';
 
@@ -13,7 +14,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * A Rollup plugin that replaces imports of `compatibility-table-data.ts`
  * with inline JSON exports of compatibility data.
  *
- * @returns {Plugin} A Rollup plugin object with the `name` and `transform` hook.
+ * @returns A Rollup plugin object with the `name` and `transform` hook.
  */
 export function compatibilityTablePlugin(): Plugin {
     return {
@@ -23,7 +24,8 @@ export function compatibilityTablePlugin(): Plugin {
          * Transforms the target file by inlining compatibility data as JSON exports.
          *
          * @param _ Unused source code.
-         * @param id file path of the module.
+         * @param id File path of the module.
+         *
          * @returns Transformed code or null if no transformation is applied.
          */
         transform(_: string, id: string) {

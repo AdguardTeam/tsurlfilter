@@ -17,7 +17,6 @@ export {
     COMMA,
     PIPE,
 } from './constants';
-export { BINARY_SCHEMA_VERSION } from './binary-schema-version';
 export { AdblockSyntax } from './adblockers';
 export { getBitCount } from './bit-count';
 export { type ReadonlyRecord } from './types';
@@ -39,9 +38,4 @@ export {
     QuoteUtils,
 } from './quotes';
 export { type Position, PositionProvider } from './position-provider';
-export { OutputByteBuffer } from './output-byte-buffer';
-export { InputByteBuffer } from './input-byte-buffer';
-export { ByteBuffer } from './byte-buffer';
-export { encodeIntoPolyfill, type TextEncoderPolyfillResult } from './text-encoder-polyfill';
-export { decodeTextPolyfill } from './text-decoder-polyfill';
 export { RuleCategorizer } from './categorizer';

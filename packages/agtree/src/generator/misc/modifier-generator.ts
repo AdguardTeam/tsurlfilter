@@ -9,8 +9,9 @@ export class ModifierGenerator extends BaseGenerator {
     /**
      * Converts a modifier AST node to a string.
      *
-     * @param modifier Modifier AST node to convert
-     * @returns String representation of the modifier
+     * @param modifier Modifier AST node to convert.
+     *
+     * @returns String representation of the modifier.
      */
     public static generate(modifier: Modifier): string {
         let result = EMPTY;

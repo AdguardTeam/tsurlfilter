@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { ConfigurationMV2 } from '@adguard/tswebextension';
+import { type ConfigurationMV2 } from '@adguard/tswebextension';
+import { FilterList } from '@adguard/tsurlfilter';
 import { fileURLToPath } from 'node:url';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -27,13 +28,15 @@ export const TESTCASES_BASE_URL = 'https://testcases.agrd.dev';
 
 export const TESTCASES_DATA_PATH = '/data.json';
 
+const userrules = FilterList.createEmpty();
+
 export const DEFAULT_EXTENSION_CONFIG: ConfigurationMV2 = {
     filters: [],
     allowlist: [],
     trustedDomains: [],
     userrules: {
-        content: [],
-        sourceMap: {},
+        content: userrules.getContent(),
+        conversionData: userrules.getConversionData(),
     },
     verbose: false,
     settings: {

@@ -1,5 +1,5 @@
 /**
- * @file AGTree version
+ * @file AGTree version.
  */
 
 import { version as importedVersion } from '../package.json';

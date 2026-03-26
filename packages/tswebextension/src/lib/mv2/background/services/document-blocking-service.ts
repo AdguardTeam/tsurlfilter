@@ -98,7 +98,7 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
             return undefined;
         }
 
-        DocumentBlockingService.logEvent(data);
+        this.logEvent(data);
 
         // if documentBlockingPage is undefined, block request
         if (!this.documentBlockingPageUrl) {

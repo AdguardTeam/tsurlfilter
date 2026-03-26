@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { CommentRuleConverter } from '../../../src/converter/comment';
-import { CommentParser } from '../../../src/parser/comment/comment-parser';
 import { type CommentRule } from '../../../src/nodes';
+import { CommentParser } from '../../../src/parser/comment/comment-parser';
 
 describe('CommentRuleConverter', () => {
     describe('convertToAdg', () => {

@@ -1,26 +1,20 @@
+import { sprintf } from 'sprintf-js';
 import {
     describe,
-    test,
     expect,
+    test,
     vi,
 } from 'vitest';
-import { sprintf } from 'sprintf-js';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
-import {
-    AdgScriptletInjectionBodyParser,
-} from '../../../../src/parser/cosmetic/body/adg-scriptlet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import {
     AdgScriptletInjectionBodyGenerator,
-} from '../../../../src/generator/cosmetic/body/adg-scriptlet-injection-body-generator';
+} from '../../../../src/generator/cosmetic/scriptlet-body/adg-scriptlet-injection-body-generator';
+import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
 import {
-    AdgScriptletInjectionBodySerializer,
-} from '../../../../src/serializer/cosmetic/body/adg-scriptlet-injection-body-serializer';
-import {
-    AdgScriptletInjectionBodyDeserializer,
-} from '../../../../src/deserializer/cosmetic/scriptlet-body/adg-scriptlet-injection-body-deserializer';
+    AdgScriptletInjectionBodyParser,
+} from '../../../../src/parser/cosmetic/scriptlet-body/adg-scriptlet-injection-body-parser';
+import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 
 describe('AdgScriptletInjectionBodyParser', () => {
     describe('AdgScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -494,21 +488,6 @@ describe('AdgScriptletInjectionBodyParser', () => {
             }
 
             expect(AdgScriptletInjectionBodyGenerator.generate(ruleNode)).toBe(expected);
-        });
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            '//scriptlet()',
-            '//scriptlet("scriptlet0")',
-            '//scriptlet("scriptlet0", "arg0", "arg1")',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                AdgScriptletInjectionBodyParser,
-                AdgScriptletInjectionBodyGenerator,
-                AdgScriptletInjectionBodySerializer,
-                AdgScriptletInjectionBodyDeserializer,
-            );
         });
     });
 });

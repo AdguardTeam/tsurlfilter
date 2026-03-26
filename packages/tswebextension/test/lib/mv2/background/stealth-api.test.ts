@@ -13,6 +13,7 @@ import { AppContext } from '../../../../src/lib/mv2/background/app-context';
 import { StealthService } from '../../../../src/lib/mv2/background/services/stealth-service';
 import { StealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 import { defaultFilteringLog } from '../../../../src/lib/common/filtering-log';
+import { mockEngineApi } from '../../../helpers/mocks';
 
 vi.mock('../../../../src/lib/mv2/background/app-context', async () => {
     const { MockAppContext } = await import('./mocks/mock-app-context');
@@ -37,12 +38,12 @@ describe('StealthApi', () => {
     const appContext = new AppContext();
     appContext.configuration = getDefaultConfiguration();
 
-    const stealthService = new StealthService(appContext, defaultFilteringLog);
+    const stealthService = new StealthService(appContext, defaultFilteringLog, mockEngineApi);
     const ACTUAL_DNT_SCRIPT = stealthService.getSetDomSignalScript();
     const ACTUAL_REFERRER_SCRIPT = stealthService.getHideDocumentReferrerScript();
     const ACTUAL_STEALTH_SCRIPT = ACTUAL_DNT_SCRIPT + ACTUAL_REFERRER_SCRIPT;
 
-    const stealthApi = new StealthApi(appContext, defaultFilteringLog);
+    const stealthApi = new StealthApi(appContext, defaultFilteringLog, mockEngineApi);
 
     beforeEach(() => {
         appContext.configuration = getDefaultConfiguration();

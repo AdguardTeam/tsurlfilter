@@ -1,16 +1,16 @@
-import { describe, test, expect } from 'vitest';
 import { TokenType } from '@adguard/css-tokenizer';
+import { describe, expect, test } from 'vitest';
 
 import { tokenizeBalanced, tokenizeFnBalanced } from '../../../src/parser/css/balancing';
 
 /**
  * Type of token data.
  *
- * @param type Token type
- * @param start Token start position
- * @param end Token end position
- * @param props Token properties
- * @param balance Balance of the token
+ * @param type Token type.
+ * @param start Token start position.
+ * @param end Token end position.
+ * @param props Token properties.
+ * @param balance Balance of the token.
  */
 type TokenData = [TokenType, number, number, object | undefined, number];
 

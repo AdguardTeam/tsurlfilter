@@ -1,4 +1,3 @@
-import { type AnyRule } from '@adguard/agtree';
 import { type Runtime } from 'webextension-polyfill';
 
 import { type FilteringLogEvent } from './filtering-log';
@@ -81,14 +80,24 @@ export interface AppInterface<
     getMessageHandler: () => MessageHandler;
 
     /**
-     * Retrieves a rule node by its filter list identifier and rule index.
+     * Retrieves a rule text by its filter list identifier and rule index.
      *
      * If there's no rule by that index or the rule structure is invalid, it will return null.
      *
      * @param filterId Filter list identifier.
      * @param ruleIndex Rule index.
      *
-     * @returns Rule node or `null`.
+     * @returns Rule text or `null`.
      */
-    retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null;
+    retrieveRuleText(filterId: number, ruleIndex: number): string | null;
+
+    /**
+     * Retrieves the original rule text by its filter list identifier and rule index.
+     *
+     * @param filterId Filter list identifier.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null`.
+     */
+    retrieveOriginalRuleText(filterId: number, ruleIndex: number): string | null;
 }

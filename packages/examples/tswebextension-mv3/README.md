@@ -1,45 +1,40 @@
-# TSWebExtension - Manifest v3 Sample Extension
+# TSWebExtension — Manifest V3 Sample Extension
 
-This is a sample extension, presenting common usages of TSWebExtension library in manifest v3 extensions.
+A sample browser extension demonstrating how to use
+[`@adguard/tswebextension`](../../tswebextension/README.md) in a Manifest V3
+extension. It shows request filtering, cosmetic rule injection, and
+declarative rule precompilation.
 
-## <a id="idea"></a> Idea
-
-The idea is to provide an operative scheme of the extension and to show some cases with manifest v3 limitations:
-
-- Precompile rules to json [See more](#precompile)
-
-## <a id="usage"></a> Development
-
-### <a id="build"></a> Building
-
-Builds an extension ready to use:
+## Building
 
 ```shell
 pnpm build
 ```
 
-### <a id="precompile"></a> Precompile declarative rules
+The built extension is output to `build/` and can be loaded as an unpacked
+extension in Chromium.
 
-Updates and converts rules from the provided path to a set of declarative rules:
+### Precompile declarative rules
+
+Convert filter rules to DNR format before loading the extension:
 
 ```shell
 pnpm build:precompile-rules
 ```
 
-### Demo example
+## Demo
 
-1. Extension will be automatically turned on filtering after installed.
-To check work of filters - go to <https://canyoublockit.com/testing/>. Site will
-be blocked.
+1. After installing, filtering is enabled automatically. Visit
+   <https://canyoublockit.com/testing/> — the site will be blocked.
+2. Toggle filters in the popup. For example, disable "Filter 2" and revisit
+   the test page — it will open.
+3. Add custom user rules (e.g. `||example.org$document`), click "Apply", then
+   visit <https://example.org> — the site will be blocked.
+4. Cosmetic rules currently apply with ~2 s latency.
+5. To inspect applied declarative rules, open the service worker console from
+   `chrome://extensions`.
 
-2. Filters. You can toggle any of filters. For example, you can turn off.
-"Filter 2", go to <https://canyoublockit.com/testing/> - site will open.
+## Documentation
 
-3. User rules. You can apply any custom user rules, for example rule
-`||example.org$document`. Then, click "Apply" and go to <https://example.org>,
-the site will be blocked.
-
-4. Cosmetic rules at now applies with huge (about 2 seconds) latency.
-
-5. To see what declarative network rules have been applied to the page - open
-console of service worker from extension page.
+- [Examples overview](../AGENTS.md)
+- [Development guide](../../../DEVELOPMENT.md)

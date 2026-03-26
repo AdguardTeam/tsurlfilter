@@ -1,7 +1,4 @@
 import {
-    type IRuleList,
-    BufferRuleList,
-    RuleStorage,
     Engine,
     RequestType,
     Request,
@@ -12,21 +9,21 @@ import {
     type HTTPMethod,
     setConfiguration,
     CompatibilityTypes,
+    type EngineFactoryFilterList,
 } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 import { UnavailableFilterSourceError, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
-import { type AnyRule } from '@adguard/agtree';
 
-import { QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, isHttpRequest, getHost } from '../../common/utils/url';
 
 import { type ConfigurationMV3 } from './configuration';
 import { UserScriptsApi } from './user-scripts-api';
 
-const ASYNC_LOAD_CHINK_SIZE = 5000;
+type EngineConfig = {
+    verbose: ConfigurationMV3['verbose'];
 
-type EngineConfig = Pick<ConfigurationMV3, 'quickFixesRules' | 'verbose'> & {
     /**
      * For filters which bundled with extension.
      */
@@ -46,7 +43,7 @@ type EngineConfig = Pick<ConfigurationMV3, 'quickFixesRules' | 'verbose'> & {
     /**
      * Allowlist rules, user-defined.
      */
-    allowlistRulesList: IRuleList | null;
+    allowlistRulesList: string | null;
 };
 
 /**
@@ -102,11 +99,10 @@ export class EngineApi {
             remoteFilters,
             userRulesFilter,
             allowlistRulesList,
-            quickFixesRules,
             verbose,
         } = config;
 
-        const lists: IRuleList[] = [];
+        const lists: EngineFactoryFilterList[] = [];
 
         /**
          * If userScripts permission is not granted, custom filters are
@@ -124,16 +120,13 @@ export class EngineApi {
                 const content = await filter.getContent();
                 const trusted = filter.isTrusted();
 
-                lists.push(
-                    new BufferRuleList(
-                        filter.getId(),
-                        content.filterList,
-                        false,
-                        !trusted,
-                        !trusted,
-                        content.sourceMap,
-                    ),
-                );
+                lists.push({
+                    id: filter.getId(),
+                    content,
+                    ignoreCosmetic: false,
+                    ignoreJS: !trusted,
+                    ignoreUnsafe: !trusted,
+                });
             } catch (e) {
                 const filterId = filters[i].getId();
                 logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
@@ -148,18 +141,15 @@ export class EngineApi {
          */
         try {
             const userrules = await userRulesFilter.getContent();
-            if (userrules.filterList.length > 0) {
+            if (userrules.getContent().length > 0) {
                 // Note: rules are already converted at the extension side
-                lists.push(
-                    new BufferRuleList(
-                        USER_FILTER_ID,
-                        userrules.filterList,
-                        false,
-                        false,
-                        false,
-                        userrules.sourceMap,
-                    ),
-                );
+                lists.push({
+                    id: USER_FILTER_ID,
+                    content: userrules,
+                    ignoreCosmetic: false,
+                    ignoreJS: false,
+                    ignoreUnsafe: false,
+                });
             }
         } catch (e) {
             const filterId = userRulesFilter.getId();
@@ -176,25 +166,15 @@ export class EngineApi {
             }
         }
 
-        if (quickFixesRules.filterList.length > 0) {
-            // Note: rules are already converted at the extension side
-            lists.push(
-                new BufferRuleList(
-                    QUICK_FIXES_FILTER_ID,
-                    quickFixesRules.filterList,
-                    false,
-                    false,
-                    false,
-                    quickFixesRules.sourceMap,
-                ),
-            );
-        }
-
         if (allowlistRulesList) {
-            lists.push(allowlistRulesList);
+            lists.push({
+                id: ALLOWLIST_FILTER_ID,
+                content: allowlistRulesList,
+                ignoreCosmetic: true,
+                ignoreJS: false,
+                ignoreUnsafe: false,
+            });
         }
-
-        const ruleStorage = new RuleStorage(lists);
 
         /*
          * UI thread becomes blocked on the options page while request filter is
@@ -203,9 +183,9 @@ export class EngineApi {
          * Request filter creation is rather slow operation so we should
          * use setTimeout calls to give UI thread some time.
         */
-        const engine = new Engine(ruleStorage, true);
-        await engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
-        this.engine = engine;
+        this.engine = await Engine.createAsync({
+            filters: lists,
+        });
 
         // Update IDs of loaded to engine filters for split local and remote
         // scripts.
@@ -327,24 +307,6 @@ export class EngineApi {
     }
 
     /**
-     * Retrieves a rule node by its filter list identifier and rule index.
-     *
-     * If there's no rule by that index or the rule structure is invalid, it will return null.
-     *
-     * @param filterId Filter list identifier.
-     * @param ruleIndex Rule index.
-     *
-     * @returns Rule node or `null`.
-     */
-    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        if (!this.engine) {
-            return null;
-        }
-
-        return this.engine.retrieveRuleNode(filterId, ruleIndex);
-    }
-
-    /**
      * Checks if the filter with the specified id is local (built-in).
      *
      * @param filterId Filter id to check.
@@ -365,6 +327,30 @@ export class EngineApi {
      */
     public isUserRulesFilter(filterId: number): boolean {
         return filterId === this.userFilterId;
+    }
+
+    /**
+     * Retrieves rule text by filter list id and rule index.
+     *
+     * @param filterListId Filter list id.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null` if rule is not found.
+     */
+    public retrieveRuleText(filterListId: number, ruleIndex: number): string | null {
+        return this.engine?.retrieveRuleText(filterListId, ruleIndex) ?? null;
+    }
+
+    /**
+     * Retrieves the original rule text by its filter list identifier and rule index.
+     *
+     * @param filterId Filter list identifier.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null`.
+     */
+    public retrieveOriginalRuleText(filterId: number, ruleIndex: number): string | null {
+        return this.engine?.retrieveOriginalRuleText(filterId, ruleIndex) ?? null;
     }
 }
 

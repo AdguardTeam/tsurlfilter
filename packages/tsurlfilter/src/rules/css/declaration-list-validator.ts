@@ -2,15 +2,13 @@
  * @file Declaration list validator.
  */
 
+import { REMOVE_PROPERTY } from '@adguard/agtree';
 import { decodeIdent, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
 
 import { getErrorMessage } from '../../common/error';
 
 import { type CssValidationResult } from './css-validation-result';
 import { FORBIDDEN_CSS_FUNCTIONS } from './known-elements';
-
-const REMOVE_PROPERTY = 'remove';
-const REMOVE_LENGTH = REMOVE_PROPERTY.length;
 
 /**
  * Check if function name is forbidden. If so, throws an error.
@@ -58,7 +56,7 @@ export const validateDeclarationList = (declarationList: string): CssValidationR
                     break;
                 case TokenType.Ident:
                     // do a fast check before getting the substring
-                    if (end - start === REMOVE_LENGTH) {
+                    if (end - start === REMOVE_PROPERTY.length) {
                         // TODO: Improve this check, and check the whole `remove: true` sequence.
                         // Please note that the `remove : true` case also valid.
                         if (decodeIdent(declarationList.slice(start, end)) === REMOVE_PROPERTY) {

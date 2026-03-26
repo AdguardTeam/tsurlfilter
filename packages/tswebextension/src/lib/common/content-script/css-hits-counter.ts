@@ -1,15 +1,16 @@
 import { type IAffectedElement } from '@adguard/extended-css';
 
 import { SEMICOLON } from '../constants';
+import { type RuleInfoBasic } from '../rule-info';
 
 import { HitsStorage } from './hits-storage';
-import { type RuleInfo } from './rule-info';
 import { ElementUtils } from './utils/element-utils';
 
 /**
  * Counted element data structure.
+ * Rule texts are resolved in the background, so only filterId/ruleIndex are sent from content script.
  */
-type ICountedElement = RuleInfo & { element: string | Element };
+type ICountedElement = RuleInfoBasic & { element: string | Element };
 
 const DEFAULT_ELEMENT_TO_STRING = true;
 
@@ -422,9 +423,9 @@ export class CssHitsCounter {
      *
      * @param element Element to check.
      *
-     * @returns Rule info or null.
+     * @returns Basic rule info (filterId and ruleIndex only) or null.
      */
-    private static getCssHitData(element: Element): RuleInfo | null {
+    private static getCssHitData(element: Element): RuleInfoBasic | null {
         const style = getComputedStyle(element);
         return ElementUtils.parseInfo(style.content, CssHitsCounter.CONTENT_ATTR_PREFIX);
     }

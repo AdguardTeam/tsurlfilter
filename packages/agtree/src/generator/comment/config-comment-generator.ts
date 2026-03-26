@@ -1,6 +1,6 @@
-import { BaseGenerator } from '../base-generator';
 import type { ConfigCommentRule } from '../../nodes';
 import { COMMA, EMPTY, SPACE } from '../../utils/constants';
+import { BaseGenerator } from '../base-generator';
 import { ParameterListGenerator } from '../misc/parameter-list-generator';
 
 /**
@@ -10,8 +10,9 @@ export class ConfigCommentGenerator extends BaseGenerator {
     /**
      * Converts an inline configuration comment node to a string.
      *
-     * @param node Inline configuration comment node
-     * @returns Raw string
+     * @param node Inline configuration comment node.
+     *
+     * @returns Raw string.
      */
     public static generate(node: ConfigCommentRule): string {
         let result = EMPTY;

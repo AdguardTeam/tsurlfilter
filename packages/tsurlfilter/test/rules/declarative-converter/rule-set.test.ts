@@ -5,7 +5,6 @@ import {
     type MockInstance,
     vi,
 } from 'vitest';
-import { RuleParser } from '@adguard/agtree';
 
 import {
     type Filter,
@@ -16,13 +15,9 @@ import {
     RulesHashMap,
     SourceMap,
 } from '../../../src/rules/declarative-converter';
-// eslint-disable-next-line import-newlines/enforce
-import {
-    NetworkRulesScanner,
-    type ScannedFilter,
-} from '../../../src/rules/declarative-converter/network-rules-scanner';
+// eslint-disable-next-line import-newlines/enforce, max-len
+import { NetworkRulesScanner, type ScannedFilter } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
-import { PREPROCESSOR_AGTREE_OPTIONS } from '../../../src/filterlist/preprocessor';
 
 import { createFilter } from './helpers';
 
@@ -165,10 +160,10 @@ describe('RuleSet', () => {
         const ruleSetHashMap = new RulesHashMap(sources);
         const badFilterRules = badFilterRulesRaw
             .map(
-                (rawString) => IndexedNetworkRuleWithHash.createFromNode(
+                (rawString) => IndexedNetworkRuleWithHash.createFromText(
                     filterId,
                     badFilterRuleIndex,
-                    RuleParser.parse(rawString, PREPROCESSOR_AGTREE_OPTIONS),
+                    rawString,
                 ),
             )
             .flat();

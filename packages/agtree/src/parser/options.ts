@@ -5,7 +5,7 @@
 /**
  * Callback function type for handling parse errors in tolerant mode.
  *
- * @param error The error that occurred during parsing
+ * @param error The error that occurred during parsing.
  */
 export type OnParseError = (error: unknown) => void;
 
@@ -50,6 +50,12 @@ export interface ParserOptions {
     parseHostRules?: boolean;
 
     /**
+     * Whether to parse HTML filtering rule bodies.
+     * If `false`, HTML filtering rule `body` property will be plain string.
+     */
+    parseHtmlFilteringRuleBodies?: boolean;
+
+    /**
      * Callback function to handle parse errors when tolerant mode is enabled.
      */
     onParseError?: OnParseError;
@@ -66,4 +72,5 @@ export const defaultParserOptions: ParserOptions = Object.freeze({
     includeRaws: true,
     ignoreComments: false,
     parseHostRules: false,
+    parseHtmlFilteringRuleBodies: false,
 });

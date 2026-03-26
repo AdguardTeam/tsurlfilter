@@ -7,6 +7,7 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog } from '../../../../common/filtering-log';
+import { type RuleTextProvider } from '../../../../common/utils/rule-text-provider';
 import { type RequestContext } from '../../request';
 
 import { ContentStringFilter } from './content-string-filter';
@@ -17,6 +18,20 @@ import { ContentStream } from './content-stream';
  * Handles Html filtering and replace rules.
  */
 export class ContentFiltering {
+    /**
+     * Rule text provider.
+     */
+    private ruleTextProvider: RuleTextProvider;
+
+    /**
+     * Constructor.
+     *
+     * @param ruleTextProvider Rule text provider.
+     */
+    constructor(ruleTextProvider: RuleTextProvider) {
+        this.ruleTextProvider = ruleTextProvider;
+    }
+
     /**
      * Contains collection of supported request types for replace rules.
      */
@@ -142,11 +157,11 @@ export class ContentFiltering {
     }
 
     /**
-     * On before request event handler.
+     * Filters response data to apply html filtering and replace rules.
      *
      * @param context Request context.
      */
-    public static onBeforeRequest(context: RequestContext): void {
+    public process(context: RequestContext): void {
         if (!browser.webRequest.filterResponseData
             || !ContentFiltering.isRequestMethodSupported(context)
             || ContentFiltering.hasContentExceptionRule(context)) {
@@ -163,6 +178,7 @@ export class ContentFiltering {
                 htmlRules,
                 replaceRules,
                 defaultFilteringLog,
+                this.ruleTextProvider,
             );
 
             const contentStream = new ContentStream(

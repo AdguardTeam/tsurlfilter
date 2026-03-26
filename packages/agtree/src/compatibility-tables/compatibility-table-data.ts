@@ -3,30 +3,32 @@
  * @file Provides compatibility table data loading.
  */
 
-import zod from 'zod';
-import path from 'path';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
 // eslint-disable-next-line import/no-extraneous-dependencies
 import yaml from 'js-yaml';
-import { readFileSync, readdirSync } from 'fs';
 // Note: we use XRegExp as a dev dependency, but we do not include this compatibility table data loader
 // in the production build, so it is safe to ignore ESLint warning here.
 // eslint-disable-next-line import/no-extraneous-dependencies
 import XRegExp from 'xregexp';
+import zod from 'zod';
 
-import { type CompatibilityTable, type CompatibilityTableRow } from './types';
+import { EMPTY } from '../utils/constants';
+import { deepFreeze } from '../utils/deep-freeze';
+
 import {
     type BaseCompatibilityDataSchema,
     baseFileSchema,
-    modifierDataSchema,
-    redirectDataSchema,
-    scriptletDataSchema,
-    type ModifierDataSchema,
-    type RedirectDataSchema,
-    type ScriptletDataSchema,
     KNOWN_VALIDATORS,
+    type ModifierDataSchema,
+    modifierDataSchema,
+    type RedirectDataSchema,
+    redirectDataSchema,
+    type ScriptletDataSchema,
+    scriptletDataSchema,
 } from './schemas';
-import { deepFreeze } from '../utils/deep-freeze';
-import { EMPTY } from '../utils/constants';
+import { type CompatibilityTable, type CompatibilityTableRow } from './types';
 
 const localDirname = path.dirname(new URL(import.meta.url).pathname);
 
@@ -73,18 +75,17 @@ const getActiveBitSlots = (n: number): number[] => {
 /**
  * Gets compatibility table data from a directory.
  *
+ * @template T Type of the compatibility data schema.
+ *
  * @param dir Directory to get the compatibility table data from.
  * @param fileSchema File schema to parse the compatibility table data.
  *
  * @returns Compatibility table data.
  *
- * @template T Type of the compatibility data schema.
- *
  * @throws Error if the file is not found or cannot be read.
  *
  * @note We only run this when testing, before the build, compatibility tables should be pre-built
  * to `dist/compatibility-tables.json` to avoid unnecessary processing.
- *
  * @internal
  */
 const getCompatibilityTableData = <T extends BaseCompatibilityDataSchema>(

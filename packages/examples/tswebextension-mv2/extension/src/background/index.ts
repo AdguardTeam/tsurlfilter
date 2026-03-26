@@ -1,7 +1,7 @@
 import browser, { Events } from 'webextension-polyfill';
 import {
     type ConfigurationMV2,
-    FilterListPreprocessor,
+    FilterList,
     MESSAGE_HANDLER_NAME,
     createTsWebExtension,
 } from '@adguard/tswebextension';
@@ -27,7 +27,7 @@ const rawUserRules = [
 ];
 
 // simple in-memory storage for user rules and allowlist
-let userrules = FilterListPreprocessor.preprocess(rawUserRules.join('\n'));
+let userrules = new FilterList(rawUserRules.join('\n'));
 let allowlist: string[] = [];
 
 const defaultConfig: ConfigurationMV2 = {
@@ -35,8 +35,8 @@ const defaultConfig: ConfigurationMV2 = {
     allowlist,
     trustedDomains: [],
     userrules: {
-        content: userrules.filterList,
-        sourceMap: userrules.sourceMap,
+        content: userrules.getContent(),
+        conversionData: userrules.getConversionData(),
     },
     verbose: false,
     settings: {
@@ -86,20 +86,20 @@ const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
                 type: MessageTypes.GET_CONFIG_SUCCESS,
                 payload: {
                     allowlist,
-                    userrules: FilterListPreprocessor.getOriginalFilterListText(userrules),
+                    userrules: userrules.getOriginalContent(),
                 },
             });
             break;
         }
         // get current user rules and allowlist
         case MessageTypes.SET_CONFIG: {
-            userrules = FilterListPreprocessor.preprocess(message.payload.userrules);
+            userrules = new FilterList(message.payload.userrules);
             allowlist = message.payload.allowlist;
             const config = {
                 ...defaultConfig,
                 userrules: {
-                    content: userrules.filterList,
-                    sourceMap: userrules.sourceMap,
+                    content: userrules.getContent(),
+                    conversionData: userrules.getConversionData(),
                 },
                 allowlist,
             };

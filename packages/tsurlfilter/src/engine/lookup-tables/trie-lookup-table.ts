@@ -1,3 +1,4 @@
+import { type NetworkRuleParts } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
@@ -36,29 +37,22 @@ export class TrieLookupTable implements ILookupTable {
         this.trie = new TrieNode(0);
     }
 
-    /**
-     * Finds all matching rules from the shortcuts lookup table.
-     *
-     * @param request Request to check.
-     *
-     * @returns Array of matching rules.
-     */
+    /** @inheritdoc */
     public matchAll(request: Request): NetworkRule[] {
         const rulesIndexes = this.traverse(request);
         return this.matchRules(request, rulesIndexes);
     }
 
-    /**
-     * Tries to add the rule to the lookup table.
-     * Returns true if it was added.
-     *
-     * @param rule Rule to add.
-     * @param storageIdx Index of the rule in the storage.
-     *
-     * @returns True if the rule was added.
-     */
-    public addRule(rule: NetworkRule, storageIdx: number): boolean {
-        const shortcut = rule.getShortcut();
+    /** @inheritdoc */
+    public addRule(ruleParts: NetworkRuleParts, storageIdx: number): boolean {
+        const { patternStart, patternEnd } = ruleParts;
+        const pattern = ruleParts.text.slice(patternStart, patternEnd);
+
+        if (!pattern) {
+            return false;
+        }
+
+        const shortcut = SimpleRegex.extractShortcut(pattern);
 
         if (!shortcut || TrieLookupTable.isAnyURLShortcut(shortcut)
             || shortcut.length < SimpleRegex.MIN_SHORTCUT_LENGTH) {
@@ -70,11 +64,7 @@ export class TrieLookupTable implements ILookupTable {
         return true;
     }
 
-    /**
-     * Returns total rules count.
-     *
-     * @returns Total rules count.
-     */
+    /** @inheritdoc */
     public getRulesCount(): number {
         return this.rulesCount;
     }
@@ -95,8 +85,27 @@ export class TrieLookupTable implements ILookupTable {
         const result: NetworkRule[] = [];
 
         for (let j = 0; j < rulesIndexes.length; j += 1) {
-            const idx = rulesIndexes[j];
-            const rule = this.ruleStorage.retrieveNetworkRule(idx);
+            let rule: NetworkRule | null = null;
+            let shouldRemove: boolean = false;
+
+            try {
+                rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
+
+                if (!rule) {
+                    shouldRemove = true;
+                }
+            } catch (e) {
+                shouldRemove = true;
+            }
+
+            if (shouldRemove) {
+                // Fast tokenizing possibly allowed invalid rules
+                // Remove the rule index from the lookup table but keep the same array reference
+                rulesIndexes.splice(j, 1);
+                j -= 1;
+                continue;
+            }
+
             if (rule && rule.match(request, false)) {
                 result.push(rule);
             }

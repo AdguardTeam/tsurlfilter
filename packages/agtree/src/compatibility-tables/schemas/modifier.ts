@@ -4,15 +4,16 @@
 
 import zod from 'zod';
 
+import { EMPTY } from '../../utils/constants';
+import { getErrorMessage } from '../../utils/error';
 import { zodToCamelCase } from '../utils/zod-camelcase';
+
 import {
     baseCompatibilityDataSchema,
     baseRefineLogic,
     booleanSchema,
     nonEmptyStringSchema,
 } from './base';
-import { getErrorMessage } from '../../utils/error';
-import { EMPTY } from '../../utils/constants';
 
 /**
  * Known validators that don't need to be validated as regex.
@@ -75,7 +76,7 @@ export const modifierDataSchema = zodToCamelCase(baseCompatibilityDataSchema.ext
      * Describes whether the *assignable* modifier value is required.
      * For example, `$cookie` is assignable but it can be used without a value in exception rules:
      * `@@\|\|example.com^$cookie`.
-     * If `false`, the `value_format` is required, e.g. the value of `$app` should always be specified
+     * If `false`, the `value_format` is required, e.g. the value of `$app` should always be specified.
      */
     value_optional: booleanSchema.default(false),
 

@@ -32,7 +32,7 @@ describe('RuleFactory Builder Test', () => {
         expect(rule!.getFilterListId()).toBe(1);
         expect(rule!).toBeInstanceOf(NetworkRule);
 
-        rule = createRule('127.0.0.1 localhost', 1, RULE_INDEX_NONE, false, false, false);
+        rule = createRule('127.0.0.1 localhost', 1, RULE_INDEX_NONE, false, false, false, false);
         expect(rule).toBeTruthy();
         expect(rule!.getIndex()).toBe(RULE_INDEX_NONE);
         expect(rule!.getFilterListId()).toBe(1);
@@ -53,30 +53,17 @@ describe('RuleFactory Builder Test', () => {
     it('check host and network rules recognition', () => {
         let rule;
 
-        rule = createRule('example.org', 1, RULE_INDEX_NONE, false, false, true);
+        rule = createRule('example.org', 1, RULE_INDEX_NONE, false, false, true, true);
         expect(rule).toBeTruthy();
         expect(rule!.getIndex()).toBe(RULE_INDEX_NONE);
         expect(rule!.getFilterListId()).toBe(1);
         expect(rule!).toBeInstanceOf(NetworkRule);
 
-        rule = createRule('example.org', 1, RULE_INDEX_NONE, false, false, false);
+        rule = createRule('example.org', 1, RULE_INDEX_NONE, false, false, false, true);
         expect(rule).toBeTruthy();
         expect(rule!.getIndex()).toBe(RULE_INDEX_NONE);
         expect(rule!.getFilterListId()).toBe(1);
         expect(rule!).toBeInstanceOf(HostRule);
-    });
-
-    it('respects ignore flags', () => {
-        let rule;
-
-        rule = createRule('##.banner', 1, RULE_INDEX_NONE, false, true);
-        expect(rule).toBeFalsy();
-
-        rule = createRule('||example.org^', 1, RULE_INDEX_NONE, true);
-        expect(rule).toBeFalsy();
-
-        rule = createRule('127.0.0.1 localhost', 1, RULE_INDEX_NONE, false, false, true);
-        expect(rule).toBeFalsy();
     });
 
     // https://github.com/AdguardTeam/tsurlfilter/issues/56
@@ -90,7 +77,7 @@ describe('RuleFactory Builder Test', () => {
 
         setConfiguration(config);
         // eslint-disable-next-line max-len
-        const rule = createRule('*$denyallow=org|com|example.net', 1, RULE_INDEX_NONE, false, true, false);
+        const rule = createRule('*$denyallow=org|com|example.net', 1, RULE_INDEX_NONE, false, true, false, true);
         expect(rule).toBeTruthy();
     });
 });

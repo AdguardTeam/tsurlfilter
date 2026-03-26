@@ -14,6 +14,10 @@ export type HttpHeadersItem = {
     value?: string;
 };
 
+/**
+ * HTTP header matcher type for filtering rules.
+ * Used to match HTTP response headers by name and optionally by value.
+ */
 export type HttpHeaderMatcher = {
     /**
      * Name of the HTTP header.
@@ -89,11 +93,11 @@ export class HeaderModifier {
     }
 
     /**
-     * Returns header modifier value.
+     * Returns header modifier matcher.
      *
-     * @returns Header modifier value.
+     * @returns Header modifier matcher.
      */
-    public getHeaderModifierValue(): HttpHeaderMatcher {
+    public getHeaderModifierMatcher(): HttpHeaderMatcher {
         return {
             header: this.header,
             value: this.value,

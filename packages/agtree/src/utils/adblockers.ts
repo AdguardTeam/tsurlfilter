@@ -14,7 +14,7 @@ export const AdblockProduct = {
     Abp: 'AdblockPlus',
 
     /**
-     * uBlock Origin.
+     * UBlock Origin..
      *
      * @see {@link https://github.com/gorhill/uBlock}
      */
@@ -33,7 +33,7 @@ export const AdblockProduct = {
 export type AdblockProduct = typeof AdblockProduct[keyof typeof AdblockProduct];
 
 /**
- * Possible adblock syntaxes (supported by this library)
+ * Possible adblock syntaxes (supported by this library).
  */
 export const AdblockSyntax = {
     /**
@@ -52,31 +52,34 @@ export const AdblockSyntax = {
     /**
      * Adblock Plus syntax.
      *
+     * @see {@link https://adblockplus.org/}
+     *
      * @example
      * - `example.org#$#abort-on-property-read alert` is an Adblock Plus syntax, since it is not used by any other
      * adblockers directly (probably supported by some on-the-fly conversion, but this is not the native syntax).
-     * @see {@link https://adblockplus.org/}
      */
     Abp: AdblockProduct.Abp,
 
     /**
-     * uBlock Origin syntax.
+     * UBlock Origin syntax..
+     *
+     * @see {@link https://github.com/gorhill/uBlock}
      *
      * @example
      * - `example.com##+js(set, atob, noopFunc)` is an uBlock Origin syntax, since it is not used by any other
      * adblockers directly (probably supported by some on-the-fly conversion, but this is not the native syntax).
-     * @see {@link https://github.com/gorhill/uBlock}
      */
     Ubo: AdblockProduct.Ubo,
 
     /**
      * AdGuard syntax.
      *
+     * @see {@link https://adguard.com/}
+     *
      * @example
      * - `example.org#%#//scriptlet("abort-on-property-read", "alert")` is an AdGuard syntax, since it is not used
      * by any other adblockers directly (probably supported by some on-the-fly conversion, but this is not the native
      * syntax).
-     * @see {@link https://adguard.com/}
      */
     Adg: AdblockProduct.Adg,
 } as const;

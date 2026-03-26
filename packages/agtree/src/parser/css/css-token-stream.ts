@@ -2,19 +2,21 @@
  * @file CSS token stream.
  */
 
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
+import { getFormattedTokenName, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { tokenizeBalanced } from './balancing';
-import { EMPTY } from '../../utils/constants';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
 import {
     ABP_EXT_CSS_PREFIX,
     EXT_CSS_PSEUDO_CLASSES,
     EXT_CSS_PSEUDO_CLASSES_STRICT,
     LEGACY_EXT_CSS_ATTRIBUTE_PREFIX,
+    NATIVE_CSS_PSEUDO_CLASSES,
 } from '../../converter/data/css';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { EMPTY } from '../../utils/constants';
+
+import { tokenizeBalanced } from './balancing';
+import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
 
 /**
  * Interface for CSS token data.
@@ -157,6 +159,7 @@ export class CssTokenStream {
      * Gets the token at the specified index.
      *
      * @param index The index of the token to retrieve.
+     *
      * @returns The token at the specified index or undefined if the index is out of bounds.
      */
     public get(index: number = this.index): TokenData | undefined {
@@ -167,7 +170,9 @@ export class CssTokenStream {
      * Gets the token at the specified index or throws if no token is found at the specified index.
      *
      * @param index The index of the token to retrieve.
+     *
      * @returns The token at the specified index or undefined if the index is out of bounds.
+     *
      * @throws If no token is found at the specified index.
      */
     public getOrFail(index: number = this.index): TokenData {
@@ -191,6 +196,7 @@ export class CssTokenStream {
      * Gets the source fragment of the token at the specified index.
      *
      * @param index The index of the token to retrieve the fragment for.
+     *
      * @returns The source fragment of the token or an empty string if the index is out of bounds.
      */
     public fragment(index: number = this.index): string {
@@ -222,6 +228,7 @@ export class CssTokenStream {
      * Looks ahead in the stream without changing the index.
      *
      * @param index The relative index to look ahead to, starting from the current index.
+     *
      * @returns The next token or undefined if the end of the stream is reached.
      */
     public lookahead(index = 1): TokenData | undefined {
@@ -232,6 +239,7 @@ export class CssTokenStream {
      * Looks behind in the stream without changing the index.
      *
      * @param index The relative index to look behind to, starting from the current index.
+     *
      * @returns The previous token or undefined if the current token is the first in the stream.
      */
     public lookbehind(index = 1): TokenData | undefined {
@@ -301,6 +309,7 @@ export class CssTokenStream {
      *
      * @param type The type of token to skip until.
      * @param balance The balance level of the token to skip until.
+     *
      * @returns The number of tokens skipped.
      */
     public skipUntil(type: TokenType, balance?: number): number {
@@ -324,6 +333,7 @@ export class CssTokenStream {
      *
      * @param type The type of token to skip until.
      * @param balance The balance level of the token to skip until.
+     *
      * @returns An array containing the number of tokens skipped and the number of tokens skipped without leading and
      * trailing whitespace tokens.
      */
@@ -379,6 +389,7 @@ export class CssTokenStream {
      *
      * @param type The expected token type.
      * @param data Optional expectation data.
+     *
      * @throws If the end of the stream is reached or if the token type or expectation data does not match.
      */
     public expect(type: TokenType, data?: ExpectationData): void {
@@ -439,6 +450,7 @@ export class CssTokenStream {
      * Gets the balance level of the token at the specified index.
      *
      * @param index The index of the token to retrieve the balance level for.
+     *
      * @returns The balance level of the token or 0 if the index is out of bounds.
      */
     public getBalance(index: number = this.index): number {
@@ -456,6 +468,7 @@ export class CssTokenStream {
 
     /**
      * Strictly checks whether the token stream contains any Extended CSS elements, such as `:contains()`.
+     *
      * Some Extended CSS elements are natively supported by browsers, like `:has()`.
      * This method is used to check for Extended CSS elements that are not natively supported by browsers,
      * this is why it called "strict", because it strictly checks for Extended CSS elements.
@@ -467,13 +480,52 @@ export class CssTokenStream {
     }
 
     /**
+     * _Lightweight_ static check for native CSS pseudo-classes — `:has()`, `:is()`, `:not()`.
+     *
+     * This method uses `tokenizeExtended` directly with early stopping,
+     * avoiding the overhead of:
+     * - full tokenization with balance tracking;
+     * - storing all tokens in memory;
+     * - processing remaining tokens after a match is found.
+     *
+     * Use this method when you only need to detect native pseudo-classes
+     * and don't need the full `CssTokenStream` functionality.
+     *
+     * @param selector CSS selector string to check.
+     *
+     * @returns True if the selector contains `:has()`, `:is()`, or `:not()`,
+     * otherwise false.
+     */
+    public static hasNativeCssPseudoClass(selector: string): boolean {
+        let found = false;
+
+        try {
+            tokenizeExtended(selector, (type, start, end, _props, stop) => {
+                if (type === TokenType.Function) {
+                    // Omit trailing '(' from function name
+                    const name = selector.slice(start, end - 1);
+                    if (NATIVE_CSS_PSEUDO_CLASSES.has(name)) {
+                        found = true;
+                        stop();
+                    }
+                }
+            });
+        } catch {
+            // Invalid CSS, treat as not containing native pseudo-classes
+            return false;
+        }
+
+        return found;
+    }
+
+    /**
      * Checks whether the token stream contains any Extended CSS elements, such as `:has()`, `:contains()`, etc.
      *
      * @param pseudos Set of pseudo-classes to check for.
      *
      * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
      */
-    private hasAnySelectorExtendedCssNodeInternal(pseudos: Set<string>): boolean {
+    private hasAnySelectorExtendedCssNodeInternal(pseudos: ReadonlySet<string>): boolean {
         for (let i = 0; i < this.tokens.length; i += 1) {
             const token = this.tokens[i];
 

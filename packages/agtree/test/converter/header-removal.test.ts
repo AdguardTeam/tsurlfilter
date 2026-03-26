@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import { HeaderRemovalRuleConverter } from '../../src/converter/cosmetic/header-removal';
 import { RuleConversionError } from '../../src/errors/rule-conversion-error';

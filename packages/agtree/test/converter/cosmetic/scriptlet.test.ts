@@ -1,13 +1,13 @@
 import {
     describe,
-    test,
     expect,
     it,
+    test,
 } from 'vitest';
 
-import { RuleParser } from '../../../src/parser/rule-parser';
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
 import { type ScriptletInjectionRule } from '../../../src/nodes';
+import { RuleParser } from '../../../src/parser/rule-parser';
 
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {

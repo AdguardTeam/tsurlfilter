@@ -3,9 +3,10 @@ import { NetworkRuleOption, type NetworkRule, type RemoveHeaderModifier } from '
 
 import { findHeaderByName, removeHeader } from '../../../common/utils/headers';
 import { getDomain } from '../../../common/utils/url';
+import { getRuleTexts, type RuleTextProvider } from '../../../common/utils/rule-text-provider';
 import { nanoid } from '../../../common/utils/nanoid';
-import { type RequestContext, requestContextStorage } from '../request';
-import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
+import { type RequestContext, requestContextStorage } from '../request/request-context-storage';
+import { FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 
 /**
  * Headers filtering service module.
@@ -14,12 +15,19 @@ export class RemoveHeadersService {
     private filteringLog: FilteringLogInterface;
 
     /**
+     * Engine API for retrieving rule texts.
+     */
+    private readonly engineApi: RuleTextProvider;
+
+    /**
      * Constructor.
      *
      * @param filteringLog Filtering log.
+     * @param ruleTextProvider Rule text provider.
      */
-    constructor(filteringLog: FilteringLogInterface) {
+    constructor(filteringLog: FilteringLogInterface, ruleTextProvider: RuleTextProvider) {
         this.filteringLog = filteringLog;
+        this.engineApi = ruleTextProvider;
     }
 
     /**
@@ -70,6 +78,8 @@ export class RemoveHeadersService {
             }
 
             if (isAppliedRule) {
+                const { appliedRuleText, originalRuleText } = getRuleTexts(rule, this.engineApi);
+
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.RemoveHeader,
                     data: {
@@ -84,6 +94,8 @@ export class RemoveHeadersService {
                         timestamp,
                         filterId: rule.getFilterListId(),
                         ruleIndex: rule.getIndex(),
+                        appliedRuleText,
+                        originalRuleText,
                         isAllowlist: rule.isAllowlist(),
                         isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
                         isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
@@ -211,5 +223,3 @@ export class RemoveHeadersService {
         return headerName;
     }
 }
-
-export const removeHeadersService = new RemoveHeadersService(defaultFilteringLog);

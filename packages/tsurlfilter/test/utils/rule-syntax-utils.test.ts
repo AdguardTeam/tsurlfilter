@@ -1,4 +1,3 @@
-import { RuleParser } from '@adguard/agtree';
 import { describe, expect, it } from 'vitest';
 
 import { RuleSyntaxUtils } from '../../src/utils/rule-syntax-utils';
@@ -12,10 +11,10 @@ describe('RuleSyntaxUtils', () => {
 
         const domain = 'https://example.org/path';
 
-        expect(RuleSyntaxUtils.isRuleForUrl(RuleParser.parse(cosmeticRule), domain)).toBeTruthy();
-        expect(RuleSyntaxUtils.isRuleForUrl(RuleParser.parse(nonMatchingCosmeticRule), domain)).toBeFalsy();
-        expect(RuleSyntaxUtils.isRuleForUrl(RuleParser.parse(networkRule), domain)).toBeTruthy();
-        expect(RuleSyntaxUtils.isRuleForUrl(RuleParser.parse(nonMatchingNetworkRule), domain)).toBeFalsy();
+        expect(RuleSyntaxUtils.isRuleForUrl(cosmeticRule, domain)).toBeTruthy();
+        expect(RuleSyntaxUtils.isRuleForUrl(nonMatchingCosmeticRule, domain)).toBeFalsy();
+        expect(RuleSyntaxUtils.isRuleForUrl(networkRule, domain)).toBeTruthy();
+        expect(RuleSyntaxUtils.isRuleForUrl(nonMatchingNetworkRule, domain)).toBeFalsy();
     });
 
     it('removes rules matched by permitted third-level domains', () => {
@@ -26,9 +25,9 @@ describe('RuleSyntaxUtils', () => {
 
         const url = 'https://subdomain.example.org/path';
 
-        expect(RuleSyntaxUtils.isRuleForUrl(RuleParser.parse(cosmeticRule), url)).toBeTruthy();
-        expect(RuleSyntaxUtils.isRuleForUrl(RuleParser.parse(nonMatchingCosmeticRule), url)).toBeFalsy();
-        expect(RuleSyntaxUtils.isRuleForUrl(RuleParser.parse(networkRule), url)).toBeTruthy();
-        expect(RuleSyntaxUtils.isRuleForUrl(RuleParser.parse(nonMatchingNetworkRule), url)).toBeFalsy();
+        expect(RuleSyntaxUtils.isRuleForUrl(cosmeticRule, url)).toBeTruthy();
+        expect(RuleSyntaxUtils.isRuleForUrl(nonMatchingCosmeticRule, url)).toBeFalsy();
+        expect(RuleSyntaxUtils.isRuleForUrl(networkRule, url)).toBeTruthy();
+        expect(RuleSyntaxUtils.isRuleForUrl(nonMatchingNetworkRule, url)).toBeFalsy();
     });
 });

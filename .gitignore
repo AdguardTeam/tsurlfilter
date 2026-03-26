@@ -24,3 +24,6 @@ Makefile
 
 # do not expose npmjs token
 .npmrc
+
+# SDD specs
+specs/.current/

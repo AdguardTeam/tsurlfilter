@@ -8,6 +8,7 @@ import { getDomain } from '../../../../common/utils/url';
 import { logger } from '../../../../common/utils/logger';
 import { findHeaderByName } from '../../../../common/utils/headers';
 import { nanoid } from '../../../../common/utils/nanoid';
+import { getRuleTexts } from '../../../../common/utils/rule-text-provider';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
 import { CookieUtils } from '../../../../common/cookie-filtering/utils';
 import { type RequestContext, requestContextStorage } from '../../request';
@@ -321,6 +322,8 @@ export class CookieFiltering {
         isModifyingCookieRule: boolean,
         requestThirdParty: boolean,
     ): void {
+        const { appliedRuleText, originalRuleText } = getRuleTexts(rule, engineApi);
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.Cookie,
             data: {
@@ -331,6 +334,8 @@ export class CookieFiltering {
                 frameDomain: getDomain(requestUrl) || requestUrl,
                 filterId: rule.getFilterListId(),
                 ruleIndex: rule.getIndex(),
+                appliedRuleText,
+                originalRuleText,
                 isModifyingCookieRule,
                 requestThirdParty,
                 timestamp: Date.now(),

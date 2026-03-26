@@ -1,10 +1,12 @@
-import { type AnyCosmeticRule, type AnyRule, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import {
-    defaultParserOptions,
-    CosmeticRuleParser,
-    NetworkRuleParser,
-    RuleParser,
-} from '@adguard/agtree/parser';
+    NetworkRuleType,
+    RuleCategory,
+    type AnyCosmeticRule,
+    type AnyRule,
+    type NetworkRule as NetworkRuleNode,
+} from '@adguard/agtree';
+import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
+import { RuleGenerator } from '@adguard/agtree/generator';
 import {
     CosmeticRule,
     type IRule,
@@ -32,15 +34,16 @@ export const createNetworkRule = (
     filterListId = 0,
     ruleIndex = RULE_INDEX_NONE,
 ): NetworkRule => {
-    let node: NetworkRuleNode;
+    let ruleText: string;
 
     if (isString(rule)) {
-        node = NetworkRuleParser.parse(rule.trim());
+        ruleText = rule.trim();
     } else {
-        node = rule;
+        // Generate text from node
+        ruleText = RuleGenerator.generate(rule);
     }
 
-    return new NetworkRule(node, filterListId, ruleIndex);
+    return new NetworkRule(ruleText, filterListId, ruleIndex);
 };
 
 /**
@@ -61,24 +64,16 @@ export const createCosmeticRule = (
     filterListId = 0,
     ruleIndex = RULE_INDEX_NONE,
 ): CosmeticRule => {
-    let node: AnyCosmeticRule;
+    let ruleText: string;
 
     if (isString(rule)) {
-        const parsedNode = CosmeticRuleParser.parse(rule.trim(), {
-            parseAbpSpecificRules: false,
-            parseUboSpecificRules: false,
-        });
-
-        if (!parsedNode) {
-            throw new Error('Not a cosmetic rule');
-        }
-
-        node = parsedNode;
+        ruleText = rule.trim();
     } else {
-        node = rule;
+        // Generate text from node
+        ruleText = RuleGenerator.generate(rule);
     }
 
-    return new CosmeticRule(node, filterListId, ruleIndex);
+    return new CosmeticRule(ruleText, filterListId, ruleIndex);
 };
 
 /**
@@ -92,7 +87,6 @@ export const createCosmeticRule = (
  * @param ignoreNetwork Ignore network rules (optional, default is false).
  * @param ignoreCosmetic Ignore cosmetic rules (optional, default is false).
  * @param ignoreHost Ignore host rules (optional, default is true).
- * @param silent Silent mode (optional, default is true).
  *
  * @returns Rule instance.
  *
@@ -105,7 +99,6 @@ export const createRule = (
     ignoreNetwork = false,
     ignoreCosmetic = false,
     ignoreHost = true,
-    silent = true,
 ): IRule | null => {
     let node: AnyRule;
 
@@ -118,13 +111,23 @@ export const createRule = (
         node = rule;
     }
 
+    if (ignoreNetwork && node.category === RuleCategory.Network) {
+        return null;
+    }
+
+    if (ignoreHost && node.category === RuleCategory.Network && node.type === NetworkRuleType.HostRule) {
+        return null;
+    }
+
+    if (ignoreCosmetic && node.category === RuleCategory.Cosmetic) {
+        return null;
+    }
+
+    // Generate text from node to pass to RuleFactory
+    const ruleText = RuleGenerator.generate(node);
     return RuleFactory.createRule(
-        node,
+        ruleText,
         filterListId,
         ruleIndex,
-        ignoreNetwork,
-        ignoreCosmetic,
-        ignoreHost,
-        silent,
     );
 };

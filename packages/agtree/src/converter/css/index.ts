@@ -1,6 +1,8 @@
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
+import { CssTokenStream } from '../../parser/css/css-token-stream';
+import { QuoteUtils } from '../../utils';
 import {
     CLOSE_PARENTHESIS,
     COLON,
@@ -9,11 +11,9 @@ import {
     EQUALS,
     OPEN_PARENTHESIS,
 } from '../../utils/constants';
-import { ABP_EXT_CSS_PREFIX, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css';
 import { BaseConverter } from '../base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result';
-import { CssTokenStream } from '../../parser/css/css-token-stream';
-import { QuoteUtils } from '../../utils';
+import { ABP_EXT_CSS_PREFIX, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css';
 
 export const ERROR_MESSAGES = {
     // eslint-disable-next-line max-len
@@ -51,19 +51,21 @@ const PSEUDO_ELEMENT_NAMES = new Set<string>([
 ]);
 
 /**
- * CSS selector converter
+ * CSS selector converter.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement `convertToUbo` and `convertToAbp`.
  */
 export class CssSelectorConverter extends BaseConverter {
     /**
-     * Converts Extended CSS elements to AdGuard-compatible ones
+     * Converts Extended CSS elements to AdGuard-compatible ones.
      *
-     * @param selectorList Selector list to convert
+     * @param selectorList Selector list to convert.
+     *
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
      * the converted node, and its `isConverted` flag indicates whether the original node was converted.
-     * If the node was not converted, the result will contain the original node with the same object reference
-     * @throws If the rule is invalid or incompatible
+     * If the node was not converted, the result will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or incompatible.
      */
     public static convertToAdg(selectorList: string | CssTokenStream): ConversionResult<string> {
         const stream = selectorList instanceof CssTokenStream

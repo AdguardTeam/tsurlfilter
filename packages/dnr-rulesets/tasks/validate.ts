@@ -3,7 +3,7 @@ import { extractRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declar
 import fs from 'fs';
 import path from 'path';
 
-import { DEST_RULESETS_DIR } from '../common/constants';
+import { BrowserFilters, DEST_RULESETS_DIR, FILTERS_BROWSER_PLACEHOLDER } from '../common/constants';
 import { version } from '../package.json';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -34,6 +34,11 @@ type RulesetIdsAndMetadataKeys = {
      */
     rulesetMetadataKeys: string[];
 };
+
+/**
+ * Ruleset ids and metadata keys for all browsers.
+ */
+type AllRulesetIdsAndMetadataKeys = Record<BrowserFilters, RulesetIdsAndMetadataKeys>;
 
 /**
  * Retrieves data needed for rulesets validation — rulesets ids and metadata keys.
@@ -92,14 +97,14 @@ const getValidatorData = async (destDir: string): Promise<RulesetIdsAndMetadataK
 };
 
 /**
- * Retrieves old validator data.
+ * Retrieves old validator data for all browsers.
  *
  * @returns Old rulesets data for validation.
  *
  * @throws Error if old rulesets data cannot be retrieved.
  */
-const getOldValidatorData = async (): Promise<RulesetIdsAndMetadataKeys> => {
-    let oldData: RulesetIdsAndMetadataKeys;
+const getAllOldValidatorData = async (): Promise<AllRulesetIdsAndMetadataKeys> => {
+    let oldData: AllRulesetIdsAndMetadataKeys;
 
     try {
         const oldDataContent = await fs.promises.readFile(
@@ -120,13 +125,17 @@ const getOldValidatorData = async (): Promise<RulesetIdsAndMetadataKeys> => {
  * Please note that error should be thrown for both manual and auto build,
  * because if manual build is run via npx command, a log message will not be displayed.
  *
+ * @param oldData Old rulesets data for validation.
  * @param newData New rulesets data.
+ * @param browser Browser filter to use for validation.
  *
  * @throws Error if list of ruleset ids or metadata keys has changed.
  */
-const validateRulesets = async (newData: RulesetIdsAndMetadataKeys): Promise<void> => {
-    const oldData = await getOldValidatorData();
-
+const validateRulesets = async (
+    oldData: RulesetIdsAndMetadataKeys,
+    newData: RulesetIdsAndMetadataKeys,
+    browser: BrowserFilters,
+): Promise<void> => {
     const addedRulesetIds = newData.rulesetIds.filter((id) => !oldData.rulesetIds.includes(id));
     const removedRulesetIds = oldData.rulesetIds.filter((id) => !newData.rulesetIds.includes(id));
 
@@ -140,7 +149,8 @@ const validateRulesets = async (newData: RulesetIdsAndMetadataKeys): Promise<voi
             messageParts.push(`Removed rulesets: ${removedRulesetIds.join(', ')}`);
         }
 
-        messageParts.push(`Consider updating changelog ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build`);
+        // eslint-disable-next-line max-len
+        messageParts.push(`Consider updating changelog ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build of ${browser} rulesets`);
 
         throw new Error(messageParts.join('\n'));
     }
@@ -159,7 +169,7 @@ const validateRulesets = async (newData: RulesetIdsAndMetadataKeys): Promise<voi
         }
 
         // eslint-disable-next-line max-len
-        messageParts.push(`Consider bumping package version, updating changelog and ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build`);
+        messageParts.push(`Consider bumping package version, updating changelog and ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build of ${browser} rulesets`);
 
         throw new Error(messageParts.join('\n'));
     }
@@ -167,11 +177,28 @@ const validateRulesets = async (newData: RulesetIdsAndMetadataKeys): Promise<voi
 
 /**
  * Validates rulesets.
+ *
+ * @param oldData Old rulesets data for validation.
+ * @param browser Browser filter to use for validation.
  */
-const validate = async (): Promise<void> => {
-    const newData = await getValidatorData(DEST_RULESETS_DIR);
+const validate = async (oldData: RulesetIdsAndMetadataKeys, browser: BrowserFilters): Promise<void> => {
+    const destRulesetsDir = DEST_RULESETS_DIR.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
+    const newData = await getValidatorData(destRulesetsDir);
 
-    await validateRulesets(newData);
+    await validateRulesets(oldData, newData, browser);
 };
 
-validate();
+/**
+ * Validates all rulesets for all browsers.
+ */
+const validateAll = async (): Promise<void> => {
+    const allOldData = await getAllOldValidatorData();
+
+    await Promise.all(
+        Object.values(BrowserFilters).map(async (browser) => {
+            await validate(allOldData[browser], browser);
+        }),
+    );
+};
+
+validateAll();

@@ -1,5 +1,6 @@
 import type { DomainList } from '../../nodes';
 import { BaseGenerator } from '../base-generator';
+
 import { ListItemsGenerator } from './list-items-generator';
 
 /**

@@ -793,11 +793,11 @@ page$domain=targetdomain.com|~example.org
 ```
 <a name="basic_modifiers__$header"></a>
 ## $header
-<b>Status</b>: not supported
+<b>Status</b>: supported
 <br/>
 <b>MV3 limitations:</b>
 <br/>
-Cannot be converted to MV3 Declarative Rule
+Rules with regex values cannot be converted to MV3 Declarative Rule (DNR does not support regex in the header info values field)
 <br/>
 <b>Examples:</b>
 <br/>
@@ -810,7 +810,26 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 421081933,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.com^",
+      "responseHeaders": [
+        {
+          "header": "set-cookie",
+          "values": [
+            "foo"
+          ]
+        }
+      ]
+    },
+    "priority": 51
+  }
+]
 
 ```
 example 2
@@ -822,7 +841,23 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 1208366321,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.com^",
+      "responseHeaders": [
+        {
+          "header": "set-cookie"
+        }
+      ]
+    },
+    "priority": 51
+  }
+]
 
 ```
 example 3
@@ -846,7 +881,23 @@ example 4
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 1089880753,
+    "action": {
+      "type": "allow"
+    },
+    "condition": {
+      "urlFilter": "||example.com^",
+      "responseHeaders": [
+        {
+          "header": "set-cookie"
+        }
+      ]
+    },
+    "priority": 100051
+  }
+]
 
 ```
 <a name="basic_modifiers__$important"></a>

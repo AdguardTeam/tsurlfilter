@@ -16,10 +16,43 @@ import { TabContext } from './tab-context';
  */
 export class TabsCosmeticInjector {
     /**
+     * Timeout for processing open tabs during startup.
+     * Fail-open: if processing takes longer than this, startup continues anyway.
+     */
+    private static readonly PROCESS_OPEN_TABS_TIMEOUT_MS = 10_000;
+
+    /**
      * Creates contexts for tabs opened before api initialization and
      * applies cosmetic rules for each frame.
+     * Includes a fail-open timeout to prevent blocking startup indefinitely.
      */
     public static async processOpenTabs(): Promise<void> {
+        const result = await new Promise<'done' | 'timeout'>((resolve) => {
+            const timeoutId = setTimeout(() => {
+                resolve('timeout');
+            }, TabsCosmeticInjector.PROCESS_OPEN_TABS_TIMEOUT_MS);
+
+            TabsCosmeticInjector.doProcessOpenTabs()
+                .then(() => {
+                    clearTimeout(timeoutId);
+                    resolve('done');
+                })
+                .catch((error) => {
+                    clearTimeout(timeoutId);
+                    logger.error('[tsweb.TabsCosmeticInjector.processOpenTabs]: error processing open tabs: ', error);
+                    resolve('done');
+                });
+        });
+
+        if (result === 'timeout') {
+            logger.debug(`[tsweb.TabsCosmeticInjector.processOpenTabs]: timeout after ${TabsCosmeticInjector.PROCESS_OPEN_TABS_TIMEOUT_MS}ms, continue startup in fail-open mode`);
+        }
+    }
+
+    /**
+     * Internal implementation: queries all open tabs and injects cosmetics.
+     */
+    private static async doProcessOpenTabs(): Promise<void> {
         const currentTabs = await browser.tabs.query({});
 
         const tasks = currentTabs.map((tab) => TabsCosmeticInjector.processOpenTab(tab));
@@ -29,7 +62,7 @@ export class TabsCosmeticInjector {
         // Handles errors
         promises.forEach((promise) => {
             if (promise.status === 'rejected') {
-                logger.error('[tsweb.TabsCosmeticInjector.processOpenTabs]: cannot inject cosmetic to open tab: ', promise.reason);
+                logger.error('[tsweb.TabsCosmeticInjector.doProcessOpenTabs]: cannot inject cosmetic to open tab: ', promise.reason);
             }
         });
 

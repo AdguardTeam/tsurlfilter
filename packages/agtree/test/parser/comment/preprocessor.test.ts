@@ -1,11 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { PreProcessorCommentParser } from '../../../src/parser/comment/preprocessor-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
 import { PreProcessorCommentGenerator } from '../../../src/generator/comment/pre-processor-comment-generator';
-import { PreProcessorCommentSerializer } from '../../../src/serializer/comment/pre-processor-comment-serializer';
-import { PreProcessorCommentDeserializer } from '../../../src/deserializer/comment/pre-processor-comment-deserializer';
+import { PreProcessorCommentParser } from '../../../src/parser/comment/preprocessor-parser';
+import { defaultParserOptions } from '../../../src/parser/options';
+import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('PreProcessorParser', () => {
     test('isPreProcessorRule', () => {
@@ -259,25 +257,5 @@ describe('PreProcessorParser', () => {
         expect(parseAndGenerate('!#if (adguard && !adguard_ext_safari)')).toEqual(
             '!#if (adguard && !adguard_ext_safari)',
         );
-    });
-
-    describe('serialize & deserialize', () => {
-        test.each([
-            '!#endif',
-            '!#include ../sections/ads.txt',
-            '!#if adguard',
-            '!#if (adguard)',
-            '!#if (adguard && !adguard_ext_safari)',
-            '!#safari_cb_affinity(content_blockers)',
-            '!#safari_cb_affinity(general)',
-            '!#safari_cb_affinity',
-        ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                PreProcessorCommentParser,
-                PreProcessorCommentGenerator,
-                PreProcessorCommentSerializer,
-                PreProcessorCommentDeserializer,
-            );
-        });
     });
 });

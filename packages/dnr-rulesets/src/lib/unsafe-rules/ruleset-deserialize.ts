@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 
-import { RuleParser } from '@adguard/agtree/parser';
-import { FilterListPreprocessor, PreprocessedFilterList } from '@adguard/tsurlfilter';
+import { FilterList } from '@adguard/tsurlfilter';
 import {
     Filter,
     IndexedNetworkRuleWithHash,
@@ -32,19 +31,16 @@ export async function loadRulesetAndFilter(
     const {
         metadata,
         lazyMetadata,
-        conversionMap,
+        conversionData,
         rawFilterList,
     } = metadataRule.metadata;
 
-    const preprocessedFilterList = FilterListPreprocessor.preprocessLightweight({
-        rawFilterList,
-        conversionMap,
-    });
+    const filterList = new FilterList(rawFilterList, conversionData);
 
     const filterId = Number(id);
     const filter = new Filter(
         filterId,
-        { getContent: (): Promise<PreprocessedFilterList> => Promise.resolve(preprocessedFilterList) },
+        { getContent: (): Promise<FilterList> => Promise.resolve(filterList) },
         true,
     );
 
@@ -53,7 +49,7 @@ export async function loadRulesetAndFilter(
     const rawData = JSON.stringify(metadata);
     const loadLazyData = async () => JSON.stringify(lazyMetadata);
     const loadDeclarativeRules = async () => JSON.stringify(parsedRuleset.slice(1));
-    const filterList = [filter];
+    const filters = [filter];
 
     // Deserialize Ruleset as in extension
     const {
@@ -70,13 +66,13 @@ export async function loadRulesetAndFilter(
         rawData,
         loadLazyData,
         loadDeclarativeRules,
-        filterList,
+        filters,
     );
 
     const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
     const ruleSetHashMap = new RulesHashMap(sources);
     const badFilterRules = badFilterRulesRaw
-        .map((rawString: string) => IndexedNetworkRuleWithHash.createFromNode(0, 0, RuleParser.parse(rawString)))
+        .map((rawString: string) => IndexedNetworkRuleWithHash.createFromText(0, 0, rawString))
         .flat();
 
     const ruleSet = new RuleSet(

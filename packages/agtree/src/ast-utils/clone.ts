@@ -1,21 +1,23 @@
 /**
  * @file Custom clone functions for AST nodes, this is probably the most efficient way to clone AST nodes.
- * @todo Maybe move them to parser classes as 'clone' methods
+ *
+ * @todo Maybe move them to parser classes as 'clone' methods.
  */
 
 import {
-    type ParameterList,
     type DomainList,
     type Modifier,
     type ModifierList,
+    type ParameterList,
 } from '../nodes';
 import { isNull } from '../utils/type-guards';
 
 /**
  * Clones a scriptlet rule node.
  *
- * @param node Node to clone
- * @returns Cloned node
+ * @param node Node to clone.
+ *
+ * @returns Cloned node.
  */
 export function cloneScriptletRuleNode(node: ParameterList): ParameterList {
     return {
@@ -27,8 +29,9 @@ export function cloneScriptletRuleNode(node: ParameterList): ParameterList {
 /**
  * Clones a domain list node.
  *
- * @param node Node to clone
- * @returns Cloned node
+ * @param node Node to clone.
+ *
+ * @returns Cloned node.
  */
 export function cloneDomainListNode(node: DomainList): DomainList {
     return {
@@ -41,8 +44,9 @@ export function cloneDomainListNode(node: DomainList): DomainList {
 /**
  * Clones a modifier list node.
  *
- * @param node Node to clone
- * @returns Cloned node
+ * @param node Node to clone.
+ *
+ * @returns Cloned node.
  */
 export function cloneModifierListNode(node: ModifierList): ModifierList {
     return {

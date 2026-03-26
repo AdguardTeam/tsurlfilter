@@ -4,7 +4,6 @@ import {
     beforeEach,
     it,
 } from 'vitest';
-import { BufferRuleList, FilterListPreprocessor } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../helpers/rule-creator';
 import { getConfigurationMv2Fixture } from '../mv2/background/fixtures/configuration';
@@ -55,12 +54,7 @@ describe('Allowlist Api', () => {
                 title: 'should return filter list, when API is enabled and  not inverted',
                 enabled: true,
                 inverted: false,
-                expected: new BufferRuleList(
-                    ALLOWLIST_FILTER_ID,
-                    FilterListPreprocessor.preprocess(
-                        '@@///(www\\.)?example\\.com/$document,important',
-                    ).filterList,
-                ),
+                expected: '@@///(www\\.)?example\\.com/$document,important',
             },
             {
                 title: 'should return null, when API is enabled and inverted',

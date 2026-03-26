@@ -1,7 +1,7 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
+import { ListItemNodeType, ListNodeType } from '../../../src/nodes';
 import { AppListParser } from '../../../src/parser/misc/app-list-parser';
-import { ListNodeType, ListItemNodeType } from '../../../src/nodes';
 import { EMPTY } from '../../../src/utils/constants';
 
 describe('AppListParser', () => {

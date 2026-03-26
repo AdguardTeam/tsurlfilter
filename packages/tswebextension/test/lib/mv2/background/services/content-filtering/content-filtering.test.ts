@@ -23,6 +23,7 @@ import { ContentStream } from '../../../../../../src/lib/mv2/background/services
 import {
     ContentFiltering,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-filtering';
+import { contentFiltering } from '../../../../../../src/lib/mv2/background/api';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 
 describe('Content filtering', () => {
@@ -59,7 +60,7 @@ describe('Content filtering', () => {
     });
 
     it('checks html rules', () => {
-        ContentFiltering.onBeforeRequest({
+        contentFiltering.process({
             ...requestContext,
             cosmeticResult: getCosmeticResult(),
         });
@@ -68,7 +69,7 @@ describe('Content filtering', () => {
     });
 
     it('checks replace rules', () => {
-        ContentFiltering.onBeforeRequest({
+        contentFiltering.process({
             ...requestContext,
             matchingResult: new MatchingResult([createNetworkRule('||example.org^$replace=/test/test1/g', 1)], null),
         });
@@ -77,7 +78,7 @@ describe('Content filtering', () => {
     });
 
     it('checks replace rules - invalid request type', () => {
-        ContentFiltering.onBeforeRequest({
+        contentFiltering.process({
             ...requestContext,
             matchingResult: new MatchingResult([createNetworkRule('||example.org^$replace=/test/test1/g', 1)], null),
             requestType: RequestType.Image,
@@ -87,13 +88,13 @@ describe('Content filtering', () => {
     });
 
     it('checks empty cases - no rules', () => {
-        ContentFiltering.onBeforeRequest(requestContext);
+        contentFiltering.process(requestContext);
 
         expect(ContentStream.prototype.init).toBeCalledTimes(0);
     });
 
     it('checks empty cases - invalid method', () => {
-        ContentFiltering.onBeforeRequest({
+        contentFiltering.process({
             ...requestContext,
             matchingResult: new MatchingResult([createNetworkRule('||example.org^$replace=/test/test1/g', 1)], null),
             method: HTTPMethod.PUT,
@@ -103,7 +104,7 @@ describe('Content filtering', () => {
     });
 
     it('checks empty cases - allowlisted by content modifier', () => {
-        ContentFiltering.onBeforeRequest({
+        contentFiltering.process({
             ...requestContext,
             matchingResult: new MatchingResult(
                 [createNetworkRule('||example.org^$replace=/test/test1/g', 1)],
@@ -123,9 +124,10 @@ describe('Content filtering', () => {
 
         const expectedSortedRules: number[] = [2, 3, 1];
 
-        const contentStringFilterConstructorSpy = vi.spyOn(ContentFiltering, 'getReplaceRules' as any);
+        // @ts-expect-error - spying on private static method
+        const contentStringFilterConstructorSpy = vi.spyOn(ContentFiltering, 'getReplaceRules');
 
-        ContentFiltering.onBeforeRequest({
+        contentFiltering.process({
             ...requestContext,
             matchingResult: new MatchingResult(replaceRules, null),
         });

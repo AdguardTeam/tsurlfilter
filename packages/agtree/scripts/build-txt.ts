@@ -1,9 +1,10 @@
 /**
- * @file Output the version number to a build.txt file
+ * @file Output the version number to a build.txt file.
  */
 
+import path from 'node:path';
+
 import fs from 'fs-extra';
-import path from 'path';
 
 const PROJECT_ROOT_RELATIVE_PATH = '../';
 const DIST_FOLDER_NAME = 'dist';
@@ -26,7 +27,7 @@ if (!pkg.version) {
 }
 
 /**
- * Main function
+ * Main function.
  */
 const main = (): void => {
     // Create the dist folder if it doesn't exist
