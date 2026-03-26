@@ -632,7 +632,8 @@ describe('AdgHtmlFilteringBodyParser', () => {
      * And there is no need to test invalid cases here, as with parsing disabled,
      * the parser will not be able to detect any invalid syntax.
      *
-     * Only double quote escaping is handled by the parser even with parsing disabled.
+     * Double quote escaping (`""` → `\"`) is NOT applied when parsing is disabled,
+     * because the raw string will be re-parsed later by the converter (which applies escaping then).
      */
     describe('AdgHtmlFilteringBodyParser.parse - valid cases (raw)', () => {
         test.each<{ actual: string; expected: NodeExpectFn<Value> }>([
@@ -640,7 +641,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr="value with "" quotes"]',
                 expected: (context) => ({
                     type: 'Value',
-                    value: '[attr="value with \\" quotes"]',
+                    value: '[attr="value with "" quotes"]',
                     ...context.getFullRange(),
                 }),
             },
@@ -648,7 +649,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr="[attr=""test""]"]',
                 expected: (context) => ({
                     type: 'Value',
-                    value: '[attr="[attr=\\"test\\"]"]',
+                    value: '[attr="[attr=""test""]"]',
                     ...context.getFullRange(),
                 }),
             },

@@ -7,6 +7,25 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [4.0.4] - 2026-03-26
+
+### Fixed
+
+- Conversion of HTML filtering rule where `[tag-content]` value contains
+  an escaped double quotes `"`.
+
+[4.0.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.0.4
+
+## [4.0.3] - 2026-03-24
+
+### Fixed
+
+- Combine `min-length` and `max-length` into single regexp
+  during HTML filtering rule conversion [#187].
+
+[4.0.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.0.3
+[#187]: https://github.com/AdguardTeam/tsurlfilter/issues/187
+
 ## [4.0.2] - 2026-03-17
 
 ### Fixed
@@ -14,7 +33,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Parsing of pseudo-class selectors containing attribute selectors,
   e.g., `:not([class])`.
 
-[4.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-4.0.2
+[4.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.0.2
 
 ## [4.0.1] - 2026-02-19
 
@@ -41,7 +60,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Serializer and Deserializer APIs.
 
-[4.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-4.0.1
+[4.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.0.1
 [#96]: https://github.com/AdguardTeam/tsurlfilter/issues/96
 [`:contains()`]: https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains
 [deprecated HTML filtering special attribute selectors]: https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--special-attributes
@@ -54,7 +73,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `googlesyndication-adsbygoogle` in compatibility tables.
 - Support for `prevent-innerHTML` scriptlet in compatibility tables.
 
-[3.4.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.4.3
+[3.4.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.4.3
 
 ## [3.4.1] - 2025-11-28
 
@@ -66,7 +85,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Improved platform names.
 
-[3.4.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.4.1
+[3.4.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.4.1
 
 
 ## [3.4.0] - 2025-11-28
@@ -90,7 +109,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Improved `AnyPlatform` type by adding support for numeric values.
 - Improved type safety for compatibility tables functions.
 
-[3.4.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.4.0
+[3.4.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.4.0
 
 ## [3.3.1] - 2025-11-25
 
@@ -98,7 +117,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Support for negative priority suffix in UBO redirects rules.
 
-[3.3.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.3.1
+[3.3.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.3.1
 
 ## [3.3.0] - 2025-11-20
 
@@ -109,7 +128,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `getHumanReadablePlatformName` for getting a human-readable platform name.
 - `AnyPlatform` type for representing any platform.
 
-[3.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.3.0
+[3.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.3.0
 [#105]: https://github.com/AdguardTeam/tsurlfilter/issues/105
 
 ## [3.2.5] - 2025-11-12
@@ -118,7 +137,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Selector validation for single-letter HTML tags [#172].
 
-[3.2.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.5
+[3.2.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.2.5
 [#172]: https://github.com/AdguardTeam/tsurlfilter/issues/172
 
 ## [3.2.4] - 2025-10-17
@@ -146,7 +165,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Recognition of `uBO` modifier in a string with several colons.
 
-[3.2.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.2
+[3.2.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.2.2
 
 ## [3.2.1] - 2025-05-28
 
@@ -158,7 +177,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Types for `NodeNext` module resolution.
 
-[3.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.1
+[3.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.2.1
 
 ## [3.2.0] - 2025-05-22
 
@@ -166,7 +185,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Support for converting HTML rules to uBlock syntax.
 
-[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.0
+[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.2.0
 
 ## [3.1.5] - 2025-05-20
 
@@ -174,7 +193,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - UBO alias `nofab.js` for AdGuard *scriptlet* `prevent-fab-3.2.0`.
 
-[3.1.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.5
+[3.1.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.1.5
 
 ## [3.1.4] - 2025-05-19
 
@@ -182,7 +201,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Updated `zod` dependency to version `3.24.4` to resolve vulnerability warnings.
 
-[3.1.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.4
+[3.1.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.1.4
 
 ## [3.1.3] - 2025-04-29
 
@@ -190,7 +209,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Export of `FilterListGenerator` from `@adguard/agtree/generator`.
 
-[3.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.3
+[3.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.1.3
 
 ## [3.1.2] - 2025-04-23
 
@@ -198,7 +217,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Export of `FilterListConverter` and `RawRuleConverter`.
 
-[3.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.2
+[3.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.1.2
 
 ## [3.1.1] - 2025-04-17
 
@@ -211,7 +230,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Removed a space in the list of parameters in the `safari_cb_affinity` directive.
 
-[3.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.1
+[3.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.1.1
 
 ## [3.1.0] - 2025-03-31
 
@@ -219,13 +238,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Converter of `ADG` cosmetic rule modifier list to `uBO`.
 
-[3.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.0
+[3.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.1.0
 
 ## [3.0.1] - 2025-02-28
 
 The version is the same as [3.0.0-alpha.5], just removed `alpha` channel.
 
-[3.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.0.1
+[3.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.0.1
 
 ## [3.0.0-alpha.5] - 2025-02-07
 
@@ -234,7 +253,7 @@ The version is the same as [3.0.0-alpha.5], just removed `alpha` channel.
 - No `semver` usage in `agent-parser` to improve code speed, reduce bundle size
   and avoid issues with ESM imports.
 
-[3.0.0-alpha.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.0.0-alpha.5
+[3.0.0-alpha.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.0.0-alpha.5
 
 ## [3.0.0-alpha.4] - 2025-02-03
 
@@ -242,7 +261,7 @@ The version is the same as [3.0.0-alpha.5], just removed `alpha` channel.
 
 - Updated [@adguard/css-tokenizer] to `v1.2.0` which introduces the `hasToken` function.
 
-[3.0.0-alpha.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.0.0-alpha.4
+[3.0.0-alpha.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.0.0-alpha.4
 
 ## [3.0.0-alpha.3] - 2025-01-30
 
