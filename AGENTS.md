@@ -60,10 +60,12 @@ graph TD
     css-tokenizer --> tsurlfilter
     agtree --> tsurlfilter
     agtree --> tswebextension
+    agtree --> dnr-converter
     tsurlfilter --> tswebextension
     tsurlfilter --> dnr-rulesets
     logger --> tswebextension
     logger --> dnr-rulesets
+    logger --> dnr-converter
     tswebextension --> api
     tswebextension --> api-mv3
 ```

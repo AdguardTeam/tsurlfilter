@@ -28,8 +28,9 @@ The libraries are organized in layers, each building on the previous one:
    management (downloading, caching, auto-updates) on top of `tswebextension`.
 
 Supporting packages include `logger` (logging), `dnr-rulesets` (prebuilt
-Declarative Net Request rulesets for MV3), and
-`eslint-plugin-logger-context` (ESLint rule for logger call formatting).
+Declarative Net Request rulesets for MV3), `dnr-converter` (converts adblock
+rules to DNR format), and `eslint-plugin-logger-context` (ESLint rule for
+logger call formatting).
 
 ## Packages
 
@@ -40,8 +41,8 @@ Declarative Net Request rulesets for MV3), and
 | [`@adguard/tswebextension`][tswebextensionreadme] | Wraps the browser WebExtension API to integrate `tsurlfilter` into MV2 and MV3 extensions. |
 | [`@adguard/tsurlfilter`][tsurlfilterreadme] | Content blocking engine — parses AdGuard rules, matches requests, and provides a declarative converter. |
 | [`@adguard/agtree`][agtreereadme] | Universal adblock filter list parser, converter, and validator producing a detailed AST. |
+| [`@adguard/dnr-converter`][dnrconverterreadme] | Converts adblock-style filtering rules into rules compatible with the Declarative Net Request (DNR) API. |
 | [`@adguard/dnr-rulesets`][dnrrulesetsreadme] | CLI and library for building and loading prebuilt AdGuard DNR rulesets for MV3 extensions. |
-| [`@adguard/dnr-converter`][dnrconverterreadme] | A converter that transforms adblock-style filtering rules into rules compatible with the Declarative Net Request (DNR) API. |
 | [`@adguard/api`][adguardapireadme] | High-level filtering API for MV2 extensions — manages filter lists and delegates blocking to `tswebextension`. |
 | [`@adguard/api-mv3`][adguardapimv3readme] | High-level filtering API for MV3 extensions — MV3 counterpart of `@adguard/api`. |
 | [`@adguard/logger`][loggerreadme] | Lightweight logging library with configurable levels and custom writers. |
@@ -82,10 +83,12 @@ graph TD
     css-tokenizer --> tsurlfilter
     agtree --> tsurlfilter
     agtree --> tswebextension
+    agtree --> dnr-converter
     tsurlfilter --> tswebextension
     tsurlfilter --> dnr-rulesets
     logger --> tswebextension
     logger --> dnr-rulesets
+    logger --> dnr-converter
     tswebextension --> api
     tswebextension --> api-mv3
 ```
