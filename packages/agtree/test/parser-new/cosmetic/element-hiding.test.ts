@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import type { ElementHidingRule } from '../../../src/nodes';
+import type { ElementHidingRule } from '../../../src/nodes-new';
 import { RuleParser } from '../../../src/parser-new/rule-parser';
 
 const parser = new RuleParser();

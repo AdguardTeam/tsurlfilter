@@ -9,26 +9,14 @@
 
 import { UboPseudoName } from '../../common/ubo-selector-common';
 import { TokenType } from '../../tokenizer/token-types';
-import { RuleClassifier } from '../classifier';
 import type { PreparserContext } from '../context';
-import { regionEquals, skipWs, tokenStart } from '../context';
-import { DomainListPreparser } from '../misc/domain-list';
-import { ModifierListPreparser } from '../misc/modifier-list';
+import { regionEquals, tokenStart } from '../context';
 import { MODIFIER_FLAG_NEGATED, NO_VALUE } from '../network/constants';
 
 import {
-    CR_BODY_END,
-    CR_BODY_START,
-    CR_DOMAIN_COUNT,
-    CR_FLAG_EXCEPTION,
-    CR_FLAG_HAS_ADG_MODS,
     CR_FLAG_HAS_UBO_MODS,
     CR_FLAGS_OFFSET,
     CR_MODIFIER_COUNT_OFFSET,
-    CR_MODIFIER_RECORDS_OFFSET,
-    CR_SEP_LEN_MASK,
-    CR_SEP_LEN_SHIFT,
-    CR_SEP_SOURCE_START,
     CR_UBO_MODS_OFFSET,
     UBO_MOD_BIT_MATCHES_MEDIA,
     UBO_MOD_BIT_MATCHES_PATH,
@@ -43,6 +31,8 @@ import {
     UBO_MOD_FIELD_VALUE_START,
     UBO_MODIFIER_RECORD_STRIDE,
 } from './constants';
+import type { CosmeticHeaderResult } from './cosmetic-common';
+import { preparseCommonCosmeticHeader } from './cosmetic-common';
 
 /**
  * Element hiding cosmetic rule preparser.
@@ -55,101 +45,17 @@ export class ElementHidingPreparser {
      * @param classified Packed classifier result (separator kind + index).
      * @param parseUboSpecificRules Whether to detect uBO modifiers (default true).
      *
+     * @returns Common cosmetic header result for further processing.
+     *
      * @throws {Error} If body is empty or structure is invalid.
      */
     public static preparse(
         ctx: PreparserContext,
         classified: number,
         parseUboSpecificRules = true,
-    ): void {
-        const { types, source } = ctx;
-
-        // Unpack separator token index and token count
-        const sepTokenIndex = RuleClassifier.cosmeticSepIndex(classified);
-        const sepTokens = RuleClassifier.cosmeticSepTokenCount(classified);
-
-        // Compute separator source position and length
-        const sepSourceStart = tokenStart(ctx, sepTokenIndex);
-        const sepSourceEnd = ctx.ends[sepTokenIndex + sepTokens - 1];
-        const sepLen = sepSourceEnd - sepSourceStart;
-
-        // Detect AdGuard modifier list prefix: [$...]
-        let domainStartTi = 0;
-        let modCount = 0;
-        let hasAdgMods = false;
-
-        if (types[0] === TokenType.OpenSquare && types[1] === TokenType.DollarSign) {
-            // Find closing ] with bracket depth tracking
-            // Start at depth 1 (after the opening [)
-            const closeBracketTi = ElementHidingPreparser.findClosingBracket(ctx, 1, sepTokenIndex);
-
-            if (closeBracketTi < 0) {
-                throw new Error('Unclosed AdGuard modifier list: missing ]');
-            }
-
-            // Preparse modifier list (up to closeBracketTi, exclusive)
-            if (closeBracketTi === 2) {
-                throw new Error('AdGuard modifier list [$...] is empty');
-            }
-
-            const savedTokenCount = ctx.tokenCount;
-            try {
-                ctx.tokenCount = closeBracketTi;
-                modCount = ModifierListPreparser.preparse(ctx, 2, CR_MODIFIER_RECORDS_OFFSET); // start after $
-                ctx.tokenCount = savedTokenCount;
-            } catch (e) {
-                ctx.tokenCount = savedTokenCount;
-                throw e;
-            }
-
-            hasAdgMods = true;
-            domainStartTi = skipWs(ctx, closeBracketTi + 1);
-        }
-
-        const domainEndTi = sepTokenIndex;
-
-        // Parse domain list (comma-separated)
-        const domainCount = DomainListPreparser.preparse(
-            ctx,
-            domainStartTi,
-            domainEndTi,
-            TokenType.Comma,
-        );
-
-        // Body starts after separator (skip all separator tokens)
-        const bodyCandidateTi = sepTokenIndex + sepTokens;
-        const bodyStartTi = skipWs(ctx, bodyCandidateTi);
-
-        // Validate body is non-empty
-        if (bodyStartTi >= ctx.tokenCount) {
-            throw new Error('Element hiding rule has empty body');
-        }
-
-        const bodyStart = tokenStart(ctx, bodyStartTi);
-
-        // Find trimmed body end by tracking last non-whitespace token
-        let trimmedEnd = bodyStart; // Will be updated to end of last non-WS token
-        for (let ti = bodyStartTi; ti < ctx.tokenCount; ti += 1) {
-            if (types[ti] !== TokenType.Whitespace) {
-                // Update to end of this non-whitespace token
-                trimmedEnd = tokenStart(ctx, ti + 1);
-            }
-        }
-
-        if (trimmedEnd <= bodyStart) {
-            throw new Error('Element hiding rule has empty body');
-        }
-
-        // Pack flags — determine exception from raw separator containing '@'
-        let flags = 0;
-        if (source.indexOf('@', sepSourceStart) >= 0
-            && source.indexOf('@', sepSourceStart) < sepSourceEnd) {
-            flags |= CR_FLAG_EXCEPTION;
-        }
-        flags |= (sepLen & CR_SEP_LEN_MASK) << CR_SEP_LEN_SHIFT;
-        if (hasAdgMods) {
-            flags |= CR_FLAG_HAS_ADG_MODS;
-        }
+    ): CosmeticHeaderResult {
+        // Write common header (flags, sep, domains, bodyStart, bodyEnd, modCount)
+        const header = preparseCommonCosmeticHeader(ctx, classified, 'Element hiding rule');
 
         // --- uBO modifier detection (three-tier gating) ---
         let uboModCount = 0;
@@ -157,69 +63,37 @@ export class ElementHidingPreparser {
         // Gate 1: option check
         if (parseUboSpecificRules) {
             // Gate 2: cheap candidate token scan
-            const hasCandidate = ElementHidingPreparser.hasUboCandidate(ctx, bodyStartTi, ctx.tokenCount);
+            const hasCandidate = ElementHidingPreparser.hasUboCandidate(
+                ctx,
+                header.bodyStartTi,
+                ctx.tokenCount,
+            );
 
             // Gate 3: full balanced scan (only if candidate found)
             if (hasCandidate) {
-                uboModCount = ElementHidingPreparser.scanUboModifiers(ctx, bodyStartTi, ctx.tokenCount);
+                uboModCount = ElementHidingPreparser.scanUboModifiers(
+                    ctx,
+                    header.bodyStartTi,
+                    ctx.tokenCount,
+                );
             }
         }
 
         if (uboModCount > 0) {
-            flags |= CR_FLAG_HAS_UBO_MODS;
+            ctx.data[CR_FLAGS_OFFSET] = header.flags | CR_FLAG_HAS_UBO_MODS;
         }
 
         // FR-013: reject mixed ADG + uBO modifiers
-        if (hasAdgMods && uboModCount > 0) {
+        if (header.hasAdgMods && uboModCount > 0) {
             throw new Error('Cannot mix AdGuard modifier list [$...] with uBO pseudo-class modifiers');
         }
 
-        // Write header
-        ctx.data[CR_FLAGS_OFFSET] = flags;
-        ctx.data[CR_SEP_SOURCE_START] = sepSourceStart;
-        ctx.data[CR_DOMAIN_COUNT] = domainCount;
-        ctx.data[CR_BODY_START] = bodyStart;
-        ctx.data[CR_MODIFIER_COUNT_OFFSET] = uboModCount > 0 ? uboModCount : modCount;
-        ctx.data[CR_BODY_END] = trimmedEnd;
-    }
-
-    /**
-     * Find the closing bracket token (]) that matches the opening [.
-     * Tracks bracket depth to handle nested brackets (e.g. regex character classes).
-     * Skips Escaped tokens to handle \].
-     *
-     * @param ctx Preparser context.
-     * @param startTi Token index to start scanning from (after the opening [).
-     * @param endTi Token index boundary (exclusive).
-     *
-     * @returns Token index of the closing ], or -1 if not found.
-     */
-    private static findClosingBracket(
-        ctx: PreparserContext,
-        startTi: number,
-        endTi: number,
-    ): number {
-        const { types } = ctx;
-        let depth = 1;
-
-        for (let ti = startTi; ti < endTi; ti += 1) {
-            const t = types[ti];
-
-            if (t === TokenType.Escaped) {
-                continue;
-            }
-
-            if (t === TokenType.OpenSquare) {
-                depth += 1;
-            } else if (t === TokenType.CloseSquare) {
-                depth -= 1;
-                if (depth === 0) {
-                    return ti;
-                }
-            }
+        // Update modifier count if uBO modifiers were found
+        if (uboModCount > 0) {
+            ctx.data[CR_MODIFIER_COUNT_OFFSET] = uboModCount;
         }
 
-        return -1;
+        return header;
     }
 
     /**

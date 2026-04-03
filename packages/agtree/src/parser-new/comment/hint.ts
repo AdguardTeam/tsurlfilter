@@ -9,8 +9,7 @@ import {
     type Hint,
     type HintCommentRule,
     RuleCategory,
-} from '../../nodes';
-import { ParameterListParser } from '../../parser/misc/parameter-list-parser';
+} from '../../nodes-new';
 import {
     CM_HINT_COUNT_OFFSET,
     CM_HINT_RECORDS_OFFSET,
@@ -21,9 +20,9 @@ import {
     HINT_RECORD_STRIDE,
 } from '../../preparser/comment/hint';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { COMMA } from '../../utils/constants';
+import { ParameterListParser } from '../misc/parameter-list';
 import { ValueParser } from '../misc/value';
-import type { PreparserParseOptions } from '../network/network-rule';
+import type { PreparserParseOptions } from '../options';
 
 /**
  * Builds {@link HintCommentRule} AST nodes from preparsed data.
@@ -57,16 +56,11 @@ export class HintCommentAstParser {
             };
 
             if (paramsStart !== -1) {
-                // paramsStart/paramsEnd include the `(` and `)` characters;
-                // pass only the inner content to ParameterListParser.
-                const innerStart = paramsStart + 1;
-                const innerEnd = paramsEnd - 1;
-
                 hint.params = ParameterListParser.parse(
-                    source.slice(innerStart, innerEnd),
-                    options,
-                    innerStart,
-                    COMMA,
+                    source,
+                    paramsStart,
+                    paramsEnd,
+                    options.isLocIncluded ?? false,
                 );
             }
 

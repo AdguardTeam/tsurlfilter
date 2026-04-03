@@ -4,7 +4,7 @@
  * Delegates individual modifier parsing to {@link ModifierParser}.
  */
 
-import type { Modifier, ModifierList } from '../../nodes';
+import type { Modifier, ModifierList } from '../../nodes-new';
 import {
     MODIFIER_FIELD_NAME_END,
     MODIFIER_FIELD_NAME_START,

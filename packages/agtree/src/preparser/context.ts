@@ -11,7 +11,7 @@
 import { TokenType } from '../tokenizer/token-types';
 import type { TokenizeResult } from '../tokenizer/tokenizer';
 
-import { UBO_MODIFIER_RECORD_STRIDE } from './cosmetic/constants';
+import { SCRIPTLET_BODY_DATA_CAPACITY, UBO_MODIFIER_RECORD_STRIDE } from './cosmetic/constants';
 import { MODIFIER_RECORD_STRIDE, NR_MODIFIER_RECORDS_OFFSET } from './network/constants';
 
 /**
@@ -129,7 +129,7 @@ export function createPreparserContext(
         tokenCount: 0,
         data: new Int32Array(Math.max(
             // eslint-disable-next-line max-len
-            NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MAX_MODIFIER_RECORD_STRIDE + domainCapacity * DOMAIN_RECORD_STRIDE,
+            NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MAX_MODIFIER_RECORD_STRIDE + domainCapacity * DOMAIN_RECORD_STRIDE + SCRIPTLET_BODY_DATA_CAPACITY,
             CM_PREP_MIN_DATA_SLOTS,
         )),
         maxMods: modifierCapacity,
@@ -235,6 +235,18 @@ export function domainRecordsOffset(ctx: PreparserContext): number {
 }
 
 /**
+ * Computes the offset where scriptlet body data begins in ctx.data.
+ * This is right after the domain records region.
+ *
+ * @param ctx Preparser context.
+ *
+ * @returns Scriptlet body data offset.
+ */
+export function scriptletBodyDataOffset(ctx: PreparserContext): number {
+    return domainRecordsOffset(ctx) + ctx.maxDomains * DOMAIN_RECORD_STRIDE;
+}
+
+/**
  * Grows the domain capacity by doubling maxDomains and reallocating ctx.data.
  * Called by DomainListPreparser when domain count reaches capacity.
  *
@@ -243,7 +255,7 @@ export function domainRecordsOffset(ctx: PreparserContext): number {
 export function growDomainCapacity(ctx: PreparserContext): void {
     const newMaxDomains = ctx.maxDomains * 2;
     // eslint-disable-next-line max-len
-    const newSize = NR_MODIFIER_RECORDS_OFFSET + ctx.maxMods * MAX_MODIFIER_RECORD_STRIDE + newMaxDomains * DOMAIN_RECORD_STRIDE;
+    const newSize = NR_MODIFIER_RECORDS_OFFSET + ctx.maxMods * MAX_MODIFIER_RECORD_STRIDE + newMaxDomains * DOMAIN_RECORD_STRIDE + SCRIPTLET_BODY_DATA_CAPACITY;
     const newData = new Int32Array(newSize);
     newData.set(ctx.data);
     ctx.data = newData;

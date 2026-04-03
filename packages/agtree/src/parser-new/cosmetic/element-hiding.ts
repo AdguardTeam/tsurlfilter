@@ -7,14 +7,14 @@
  */
 
 import { UboPseudoName } from '../../common/ubo-selector-common';
-import { CosmeticRuleType, RuleCategory } from '../../nodes';
+import { CosmeticRuleType, RuleCategory } from '../../nodes-new';
 import type {
     ElementHidingRule,
     ElementHidingRuleBody,
     Modifier,
     ModifierList,
     Value,
-} from '../../nodes';
+} from '../../nodes-new';
 import { MAX_MODIFIER_RECORD_STRIDE } from '../../preparser/context';
 import {
     CR_BODY_END,

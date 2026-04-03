@@ -11,7 +11,7 @@ import {
     type AgentCommentRule,
     CommentRuleType,
     RuleCategory,
-} from '../../nodes';
+} from '../../nodes-new';
 import {
     AGENT_FIELD_END,
     AGENT_FIELD_START,
@@ -22,7 +22,7 @@ import {
 import { CHAR_SPACE, CHAR_TAB } from '../../tokenizer/char-codes';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ValueParser } from '../misc/value';
-import type { PreparserParseOptions } from '../network/network-rule';
+import type { PreparserParseOptions } from '../options';
 
 /**
  * Builds {@link AgentCommentRule} AST nodes from preparsed data.

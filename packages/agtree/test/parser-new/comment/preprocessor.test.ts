@@ -141,7 +141,7 @@ describe('CommentRuleParser — preprocessor comments', () => {
                     end: 37,
                     children: [
                         {
-                            type: 'Value',
+                            type: 'Parameter',
                             start: 21,
                             end: 37,
                             value: 'content_blockers',

@@ -4,7 +4,7 @@
  * Builds {@link PreProcessorCommentRule} nodes from preparsed data.
  */
 
-import { CommentRuleType, type PreProcessorCommentRule, RuleCategory } from '../../nodes';
+import { CommentRuleType, type PreProcessorCommentRule, RuleCategory } from '../../nodes-new';
 import {
     CM_PREP_LE_DATA_OFFSET,
     CM_PREP_NAME_END_OFFSET,
@@ -18,7 +18,7 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import { LogicalExpressionAstParser } from '../misc/logical-expression';
 import { ParameterListAstParser } from '../misc/parameter-list';
 import { ValueParser } from '../misc/value';
-import type { PreparserParseOptions } from '../network/network-rule';
+import type { PreparserParseOptions } from '../options';
 
 const IF_DIRECTIVE = 'if';
 const SAFARI_CB_AFFINITY_DIRECTIVE = 'safari_cb_affinity';

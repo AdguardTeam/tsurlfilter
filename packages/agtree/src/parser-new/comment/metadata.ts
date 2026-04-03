@@ -4,7 +4,7 @@
  * Builds {@link MetadataCommentRule} nodes from preparsed data.
  */
 
-import { CommentRuleType, type MetadataCommentRule, RuleCategory } from '../../nodes';
+import { CommentRuleType, type MetadataCommentRule, RuleCategory } from '../../nodes-new';
 import {
     CM_META_HEADER_END_OFFSET,
     CM_META_HEADER_START_OFFSET,
@@ -14,7 +14,7 @@ import {
 } from '../../preparser/comment/metadata';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ValueParser } from '../misc/value';
-import type { PreparserParseOptions } from '../network/network-rule';
+import type { PreparserParseOptions } from '../options';
 
 /**
  * Builds {@link MetadataCommentRule} AST nodes from preparsed data.

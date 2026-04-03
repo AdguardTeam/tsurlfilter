@@ -5,15 +5,15 @@
  * calls for optimal performance.
  */
 
-import type { NetworkRule } from '../../nodes';
-import { createPreparserContext, initPreparserContext } from '../../preparser/context';
+import type { NetworkRule } from '../../nodes-new';
 import type { PreparserContext } from '../../preparser/context';
+import { createPreparserContext, initPreparserContext } from '../../preparser/context';
 import { NetworkRulePreparser } from '../../preparser/network/network-rule';
 import type { TokenizeResult } from '../../tokenizer/tokenizer';
 import { tokenizeLine } from '../../tokenizer/tokenizer';
+import type { PreparserParseOptions } from '../options';
 
 import { NetworkRuleAstParser } from './network-rule';
-import type { PreparserParseOptions } from './network-rule';
 
 /**
  * Default maximum number of tokens per network rule.

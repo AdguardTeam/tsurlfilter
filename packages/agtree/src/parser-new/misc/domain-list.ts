@@ -5,8 +5,8 @@
  * Decoupled from specific rule types - all parameters are caller-provided.
  */
 
-import { ListItemNodeType, ListNodeType } from '../../nodes';
-import type { Domain, DomainList, DomainListSeparator } from '../../nodes';
+import { ListItemNodeType, ListNodeType } from '../../nodes-new';
+import type { Domain, DomainList, DomainListSeparator } from '../../nodes-new';
 import {
     DOMAIN_FIELD_FLAGS,
     DOMAIN_FIELD_VALUE_END,

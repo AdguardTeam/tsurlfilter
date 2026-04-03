@@ -5,13 +5,13 @@
  * calls for optimal performance.
  */
 
-import type { AnyCommentRule } from '../../nodes';
+import type { AnyCommentRule } from '../../nodes-new';
 import { CommentClassifier } from '../../preparser/comment/classifier';
 import { createPreparserContext, initPreparserContext } from '../../preparser/context';
 import type { PreparserContext } from '../../preparser/context';
 import { tokenizeLine } from '../../tokenizer/tokenizer';
 import type { TokenizeResult } from '../../tokenizer/tokenizer';
-import type { PreparserParseOptions } from '../network/network-rule';
+import type { PreparserParseOptions } from '../options';
 
 import { CommentAstParser } from './comment';
 

@@ -12,7 +12,7 @@ import {
     type ExpressionParenthesisNode,
     type ExpressionVariableNode,
     OperatorValue,
-} from '../../nodes';
+} from '../../nodes-new';
 import {
     LE_HEADER,
     LE_KIND,

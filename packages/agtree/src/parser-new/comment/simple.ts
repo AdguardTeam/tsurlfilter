@@ -4,7 +4,7 @@
  * Builds {@link CommentRule} nodes from preparsed data.
  */
 
-import { type CommentRule, CommentRuleType, RuleCategory } from '../../nodes';
+import { type CommentRule, CommentRuleType, RuleCategory } from '../../nodes-new';
 import {
     CM_SIMPLE_MARKER_OFFSET,
     CM_SIMPLE_TEXT_END_OFFSET,
@@ -12,7 +12,7 @@ import {
 } from '../../preparser/comment/simple';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ValueParser } from '../misc/value';
-import type { PreparserParseOptions } from '../network/network-rule';
+import type { PreparserParseOptions } from '../options';
 
 /**
  * Builds {@link CommentRule} AST nodes from preparsed data.

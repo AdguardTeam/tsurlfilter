@@ -6,7 +6,7 @@
  * Delegates value node creation to {@link ValueParser}.
  */
 
-import type { Modifier } from '../../nodes';
+import type { Modifier } from '../../nodes-new';
 import {
     MODIFIER_FIELD_FLAGS,
     MODIFIER_FIELD_NAME_END,

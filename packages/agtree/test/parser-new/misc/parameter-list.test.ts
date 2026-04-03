@@ -5,6 +5,7 @@ import { createPreparserContext, initPreparserContext } from '../../../src/prepa
 import { ParameterListPreparser, PL_BUFFER_SIZE } from '../../../src/preparser/misc/parameter-list';
 import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
 import type { TokenizeResult } from '../../../src/tokenizer/tokenizer';
+import { QuoteType } from '../../../src/utils/quotes';
 
 const tokenResult: TokenizeResult = {
     tokenCount: 0,
@@ -38,21 +39,21 @@ describe('ParameterListAstParser', () => {
         test('a', () => {
             expect(parse('a')).toEqual({
                 type: 'ParameterList',
-                children: [{ type: 'Value', value: 'a' }],
+                children: [{ type: 'Parameter', quoteType: QuoteType.None, value: 'a' }],
             });
         });
 
         test('content_blockers', () => {
             expect(parse('content_blockers')).toEqual({
                 type: 'ParameterList',
-                children: [{ type: 'Value', value: 'content_blockers' }],
+                children: [{ type: 'Parameter', quoteType: QuoteType.None, value: 'content_blockers' }],
             });
         });
 
         test(' a  — leading/trailing whitespace trimmed', () => {
             expect(parse(' a ')).toEqual({
                 type: 'ParameterList',
-                children: [{ type: 'Value', value: 'a' }],
+                children: [{ type: 'Parameter', quoteType: QuoteType.None, value: 'a' }],
             });
         });
     });
@@ -62,8 +63,8 @@ describe('ParameterListAstParser', () => {
             expect(parse('a,b')).toEqual({
                 type: 'ParameterList',
                 children: [
-                    { type: 'Value', value: 'a' },
-                    { type: 'Value', value: 'b' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'a' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'b' },
                 ],
             });
         });
@@ -72,8 +73,8 @@ describe('ParameterListAstParser', () => {
             expect(parse('a, b')).toEqual({
                 type: 'ParameterList',
                 children: [
-                    { type: 'Value', value: 'a' },
-                    { type: 'Value', value: 'b' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'a' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'b' },
                 ],
             });
         });
@@ -82,9 +83,9 @@ describe('ParameterListAstParser', () => {
             expect(parse('a,b,c')).toEqual({
                 type: 'ParameterList',
                 children: [
-                    { type: 'Value', value: 'a' },
-                    { type: 'Value', value: 'b' },
-                    { type: 'Value', value: 'c' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'a' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'b' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'c' },
                 ],
             });
         });
@@ -96,7 +97,7 @@ describe('ParameterListAstParser', () => {
                 type: 'ParameterList',
                 children: [
                     null,
-                    { type: 'Value', value: 'b' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'b' },
                 ],
             });
         });
@@ -105,7 +106,7 @@ describe('ParameterListAstParser', () => {
             expect(parse('a,')).toEqual({
                 type: 'ParameterList',
                 children: [
-                    { type: 'Value', value: 'a' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'a' },
                     null,
                 ],
             });
@@ -129,7 +130,8 @@ describe('ParameterListAstParser', () => {
                 end: 1,
                 children: [
                     {
-                        type: 'Value',
+                        type: 'Parameter',
+                        quoteType: QuoteType.None,
                         value: 'a',
                         start: 0,
                         end: 1,
@@ -145,7 +147,8 @@ describe('ParameterListAstParser', () => {
                 end: 16,
                 children: [
                     {
-                        type: 'Value',
+                        type: 'Parameter',
+                        quoteType: QuoteType.None,
                         value: 'content_blockers',
                         start: 0,
                         end: 16,
@@ -161,13 +164,15 @@ describe('ParameterListAstParser', () => {
                 end: 4,
                 children: [
                     {
-                        type: 'Value',
+                        type: 'Parameter',
+                        quoteType: QuoteType.None,
                         value: 'a',
                         start: 0,
                         end: 1,
                     },
                     {
-                        type: 'Value',
+                        type: 'Parameter',
+                        quoteType: QuoteType.None,
                         value: 'b',
                         start: 3,
                         end: 4,
@@ -182,6 +187,108 @@ describe('ParameterListAstParser', () => {
                 start: 0,
                 end: 0,
                 children: [],
+            });
+        });
+    });
+
+    // -------------------------------------------------------------------
+    // Escape handling — parity with ArglistParser (uBlock Origin behaviour)
+    // -------------------------------------------------------------------
+    // Convention used in comments below:
+    //   \,   = backslash + comma  (2 raw chars) — escaped comma
+    //   \\   = two backslashes   (2 raw chars) — will NOT escape the comma that follows
+    //   \\\, = \\ + \,           (4 raw chars) — one escaped \\ pair + one escaped comma
+    //
+    // Rule: N consecutive backslashes before a comma
+    //   • N is odd  → last backslash is the escape; strip it; comma becomes literal
+    //   • N is even → all backslashes form pairs (literal); comma is a real separator
+    // -------------------------------------------------------------------
+    describe('escape handling — backslash-comma sequences', () => {
+        test('\\, — single escape → one param with literal comma', () => {
+            // raw: \,   →  escaped comma  →  value ","
+            expect(parse('\\,')).toEqual({
+                type: 'ParameterList',
+                children: [{ type: 'Parameter', quoteType: QuoteType.None, value: ',' }],
+            });
+        });
+
+        test('a\\,b — escape in middle → one param', () => {
+            // raw: a\,b  →  one param, value "a,b"
+            expect(parse('a\\,b')).toEqual({
+                type: 'ParameterList',
+                children: [{ type: 'Parameter', quoteType: QuoteType.None, value: 'a,b' }],
+            });
+        });
+
+        test('a\\\\,b — double backslash then real separator → two params', () => {
+            // raw: a\\,b  →  Escaped(\\) + Comma  →  params "a\\" and "b"
+            expect(parse('a\\\\,b')).toEqual({
+                type: 'ParameterList',
+                children: [
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'a\\\\' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'b' },
+                ],
+            });
+        });
+
+        test('a\\\\\\\\\\\\,b — three backslashes (pair + escape) → one param', () => {
+            // raw: a\\\,b  →  Escaped(\\) + Escaped(\,) → one param, value "a\\,b"
+            // (String.raw used: 'a\\\\\\,b' in JS would be a\\,b due to \, escape eating)
+            // ArglistParser.normalizeArg for a\\\,b → a\\,b
+            expect(parse(String.raw`a\\\,b`)).toEqual({
+                type: 'ParameterList',
+                children: [{ type: 'Parameter', quoteType: QuoteType.None, value: 'a\\\\,b' }],
+            });
+        });
+
+        test('a\\\\\\\\,b — four backslashes then real separator → two params', () => {
+            // raw: a\\\\,b  →  Escaped(\\) + Escaped(\\) + Comma → params "a\\\\" and "b"
+            expect(parse('a\\\\\\\\,b')).toEqual({
+                type: 'ParameterList',
+                children: [
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'a\\\\\\\\' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'b' },
+                ],
+            });
+        });
+
+        test('a\\\\\\\\\\\\\\\\\\\\,b — five backslashes (two pairs + escape) → one param', () => {
+            // raw: a\\\\\,b  →  Escaped(\\) + Escaped(\\) + Escaped(\,) → value "a\\\\,b"
+            // (String.raw used: plain JS literal would consume the last \ in \,)
+            expect(parse(String.raw`a\\\\\,b`)).toEqual({
+                type: 'ParameterList',
+                children: [{ type: 'Parameter', quoteType: QuoteType.None, value: 'a\\\\\\\\,b' }],
+            });
+        });
+
+        test('\\\\, — trailing separator after double backslash → two params', () => {
+            // raw: \\,   →  Escaped(\\) + Comma  →  param "\\\\" and null
+            expect(parse('\\\\,')).toEqual({
+                type: 'ParameterList',
+                children: [
+                    { type: 'Parameter', quoteType: QuoteType.None, value: '\\\\' },
+                    null,
+                ],
+            });
+        });
+
+        test('multiple escaped commas in one param', () => {
+            // raw: a\,b\,c  →  no Comma token  →  one param, value "a,b,c"
+            expect(parse('a\\,b\\,c')).toEqual({
+                type: 'ParameterList',
+                children: [{ type: 'Parameter', quoteType: QuoteType.None, value: 'a,b,c' }],
+            });
+        });
+
+        test('escaped comma and real separator mixed', () => {
+            // raw: a\,b,c  →  Escaped(\,) within first segment, real Comma after "b"
+            // → params "a,b" (unescaped) and "c"
+            expect(parse('a\\,b,c')).toEqual({
+                type: 'ParameterList',
+                children: [
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'a,b' },
+                    { type: 'Parameter', quoteType: QuoteType.None, value: 'c' },
+                ],
             });
         });
     });

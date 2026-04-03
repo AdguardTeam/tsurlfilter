@@ -7,8 +7,8 @@
  * {@link ModifierListParser} → modifier parser → {@link ValueParser}.
  */
 
-import type { NetworkRule } from '../../nodes';
-import { NetworkRuleType, RuleCategory } from '../../nodes';
+import type { NetworkRule } from '../../nodes-new';
+import { NetworkRuleType, RuleCategory } from '../../nodes-new';
 import {
     NR_FLAG_EXCEPTION,
     NR_FLAGS_OFFSET,
@@ -18,27 +18,7 @@ import {
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ModifierListParser } from '../misc/modifier-list';
 import { ValueParser } from '../misc/value';
-
-/**
- * Options for the AST parser.
- */
-export interface PreparserParseOptions {
-    /**
-     * Whether to include source location info (start/end) on AST nodes.
-     */
-    isLocIncluded?: boolean;
-
-    /**
-     * Whether to include raw text on the root node.
-     */
-    includeRaws?: boolean;
-
-    /**
-     * Whether to parse uBlock Origin-specific rules (uBO modifiers in cosmetic rules).
-     * Defaults to `true`.
-     */
-    parseUboSpecificRules?: boolean;
-}
+import type { PreparserParseOptions } from '../options';
 
 /**
  * Internal parser that builds NetworkRule AST nodes from preparsed data.

@@ -86,6 +86,51 @@ export const CR_FLAG_HAS_ADG_MODS = 1 << 5;
  */
 export const CR_FLAG_HAS_UBO_MODS = 1 << 6;
 
+// ---------------------------------------------------------------------------
+// Cosmetic sub-kind (bits 7-9) — identifies separator family
+// ---------------------------------------------------------------------------
+
+/**
+ * Bit shift for packing cosmetic sub-kind into flags (3 bits).
+ */
+export const CR_SEP_KIND_SHIFT = 7;
+
+/**
+ * Bit mask for extracting cosmetic sub-kind from flags.
+ */
+export const CR_SEP_KIND_MASK = 0x07;
+
+/**
+ * Cosmetic sub-kind: element hiding (##, #@#, #?#, #@?#).
+ */
+export const CR_SEP_KIND_ELEMENT_HIDING = 0;
+
+/**
+ * Cosmetic sub-kind: ABP snippet (#$#, #@$#).
+ */
+export const CR_SEP_KIND_ABP_SNIPPET = 1;
+
+/**
+ * Cosmetic sub-kind: ADG JS injection (#%#, #@%#).
+ */
+export const CR_SEP_KIND_ADG_JS = 2;
+
+// ---------------------------------------------------------------------------
+// Body-type flags (bits 10-11) — identifies body prefix
+// ---------------------------------------------------------------------------
+
+/**
+ * Cosmetic rule flag bit: body starts with `//scriptlet` (ADG scriptlet).
+ * Only set when sub-kind is CR_SEP_KIND_ADG_JS.
+ */
+export const CR_FLAG_BODY_ADG_SCRIPTLET = 1 << 10;
+
+/**
+ * Cosmetic rule flag bit: body starts with `+js(` or `script:inject(`
+ * (uBO scriptlet). Only set when sub-kind is CR_SEP_KIND_ELEMENT_HIDING.
+ */
+export const CR_FLAG_BODY_UBO_SCRIPTLET = 1 << 11;
+
 /**
  * Record size: number of Int32Array slots per domain record.
  */
@@ -110,6 +155,30 @@ export const DOMAIN_FIELD_FLAGS = 2;
  * Domain flag bit: exception domain (starts with ~).
  */
 export const DOMAIN_FLAG_EXCEPTION = 1;
+
+// ---------------------------------------------------------------------------
+// Scriptlet body preparser data layout
+// ---------------------------------------------------------------------------
+// Written sequentially after domain records in ctx.data.
+// Layout: [snippetCallCount] then for each call:
+//   [paramCount] [param0Start, param0End] [param1Start, param1End] ...
+// Param start/end are source offsets. A start of -1 means null parameter.
+
+/**
+ * Maximum number of extra Int32Array slots reserved for scriptlet body data
+ * (snippet call counts + parameter boundaries).
+ *
+ * **This is an explicit parser limit**, not an implementation artifact.
+ * The layout uses 1 slot for `snippetCallCount`, then per call: 1 slot for
+ * `paramCount` + 2 slots per parameter (`paramStart`, `paramEnd`). At 128
+ * slots the parser can hold at most 63 parameters in a single scriptlet call
+ * (1 callCount + 1 paramCount + 63×2 = 128), which is well above any
+ * real-world scriptlet usage. Exceeding this limit throws a descriptive error
+ * (see `ScriptletBodyPreparser` overflow guards). Unlike domain storage,
+ * scriptlet body data is not grown dynamically because the limit is never
+ * expected to be reached in practice.
+ */
+export const SCRIPTLET_BODY_DATA_CAPACITY = 128;
 
 // ---------------------------------------------------------------------------
 // uBO modifier record constants

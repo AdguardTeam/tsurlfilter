@@ -5,15 +5,27 @@
  * calls for optimal performance.
  */
 
+import { ProductCode } from '../compatibility-tables/platform';
 import {
     type AnyCommentRule,
     type ElementHidingRule,
     type EmptyRule,
+    type JsInjectionRule,
     type NetworkRule,
     RuleCategory,
-} from '../nodes';
+    type ScriptletInjectionRule,
+} from '../nodes-new';
 import { createPreparserContext, initPreparserContext } from '../preparser/context';
 import type { PreparserContext } from '../preparser/context';
+import {
+    CR_FLAG_BODY_ADG_SCRIPTLET,
+    CR_FLAG_BODY_UBO_SCRIPTLET,
+    CR_FLAGS_OFFSET,
+    CR_SEP_KIND_ABP_SNIPPET,
+    CR_SEP_KIND_ADG_JS,
+    CR_SEP_KIND_MASK,
+    CR_SEP_KIND_SHIFT,
+} from '../preparser/cosmetic/constants';
 import { RuleKind, RulePreparser } from '../preparser/rule';
 import type { TokenizeResult } from '../tokenizer/tokenizer';
 import { tokenizeLine } from '../tokenizer/tokenizer';
@@ -21,8 +33,10 @@ import { AdblockSyntax } from '../utils/adblockers';
 
 import { CommentAstParser } from './comment/comment';
 import { ElementHidingAstParser } from './cosmetic/element-hiding';
+import { JsInjectionAstParser } from './cosmetic/js-injection';
+import { ScriptletInjectionAstParser } from './cosmetic/scriptlet-injection';
 import { NetworkRuleAstParser } from './network/network-rule';
-import type { PreparserParseOptions } from './network/network-rule';
+import type { PreparserParseOptions } from './options';
 
 /**
  * Default maximum number of tokens per rule.
@@ -38,11 +52,15 @@ const DEFAULT_CHILDREN_CAPACITY = 64;
 
 /**
  * The set of rule types that this parser currently produces.
- * Includes element hiding cosmetic rules. Other cosmetic types (CSS injection,
- * scriptlets, etc.) are not yet supported.
  */
 // TODO: Use AnyRule from nodes.ts
-export type AnyParsedRule = EmptyRule | AnyCommentRule | NetworkRule | ElementHidingRule;
+export type AnyParsedRule =
+    | EmptyRule
+    | AnyCommentRule
+    | NetworkRule
+    | ElementHidingRule
+    | ScriptletInjectionRule
+    | JsInjectionRule;
 
 /**
  * High-level parser for adblock rules.
@@ -51,8 +69,10 @@ export type AnyParsedRule = EmptyRule | AnyCommentRule | NetworkRule | ElementHi
  * reuses internal buffers for performance. Automatically determines whether
  * the input is a comment, network, cosmetic, or empty rule.
  *
- * Element hiding cosmetic rules (##, #@#, #?#, #@?#) are supported. Other
- * cosmetic rule types throw a descriptive error.
+ * Supported cosmetic rule types:
+ * - Element hiding (##, #@#, #?#, #@?#)
+ * - Scriptlet injection (ADG #%#//scriptlet, UBO ##+js, ABP #$#)
+ * - JS injection (ADG #%# without //scriptlet prefix).
  *
  * @example
  * ```typescript
@@ -101,7 +121,7 @@ export class RuleParser {
      *
      * @returns Parsed rule AST node.
      *
-     * @throws For non-element-hiding cosmetic rules (not yet implemented).
+     * @throws For unsupported cosmetic rule types.
      */
     public parse(source: string, options?: PreparserParseOptions): AnyParsedRule {
         if (source.trim().length === 0) {
@@ -136,10 +156,64 @@ export class RuleParser {
                 return NetworkRuleAstParser.parse(source, this.ctx.data, options);
 
             case RuleKind.Cosmetic:
-                return ElementHidingAstParser.parse(source, this.ctx.data, this.ctx.maxMods, options);
+                return this.dispatchCosmetic(source, options);
 
             default:
                 throw new Error(`Unknown rule kind: ${kind}`);
         }
+    }
+
+    /**
+     * Dispatch cosmetic rules to the correct AST parser based on integer
+     * flags set by the preparser. No string operations — all dispatch
+     * decisions use bit flags from ctx.data[CR_FLAGS_OFFSET].
+     *
+     * @param source Source string.
+     * @param options Parse options.
+     *
+     * @returns Parsed cosmetic rule AST node.
+     */
+    // eslint-disable-next-line no-bitwise
+    private dispatchCosmetic(
+        source: string,
+        options?: PreparserParseOptions,
+    ): ElementHidingRule | ScriptletInjectionRule | JsInjectionRule {
+        const { data, maxMods, maxDomains } = this.ctx;
+
+        // Read flags set by the preparser — all dispatch is integer-only
+        // eslint-disable-next-line no-bitwise
+        const flags = data[CR_FLAGS_OFFSET];
+        // eslint-disable-next-line no-bitwise
+        const sepKind = (flags >>> CR_SEP_KIND_SHIFT) & CR_SEP_KIND_MASK;
+
+        // #%# / #@%# — ADG scriptlet or JS injection
+        if (sepKind === CR_SEP_KIND_ADG_JS) {
+            // eslint-disable-next-line no-bitwise
+            if (flags & CR_FLAG_BODY_ADG_SCRIPTLET) {
+                return ScriptletInjectionAstParser.parse(source, data, maxMods, maxDomains, ProductCode.Adg, options);
+            }
+            return JsInjectionAstParser.parse(source, data, maxMods, options);
+        }
+
+        // #$# / #@$# — ABP snippet injection
+        if (sepKind === CR_SEP_KIND_ABP_SNIPPET) {
+            if (options?.parseAbpSpecificRules === false) {
+                throw new Error('ABP snippet rules are disabled by parseAbpSpecificRules option');
+            }
+            return ScriptletInjectionAstParser.parse(source, data, maxMods, maxDomains, ProductCode.Abp, options);
+        }
+
+        // ## / #@# / #?# / #@?# — element hiding or uBO scriptlet
+        // (sepKind === CR_SEP_KIND_ELEMENT_HIDING, which is 0 / default)
+        // eslint-disable-next-line no-bitwise
+        if (flags & CR_FLAG_BODY_UBO_SCRIPTLET) {
+            if (options?.parseUboSpecificRules === false) {
+                throw new Error('uBO scriptlet rules are disabled by parseUboSpecificRules option');
+            }
+            return ScriptletInjectionAstParser.parse(source, data, maxMods, maxDomains, ProductCode.Ubo, options);
+        }
+
+        // Default: element hiding
+        return ElementHidingAstParser.parse(source, data, maxMods, options);
     }
 }

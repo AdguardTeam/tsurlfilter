@@ -9,7 +9,7 @@ export { type OnParseError, defaultParserOptions, type ParserOptions } from './p
 
 // New pipeline parser (supports element hiding and other cosmetic rules)
 export { RuleParser as RuleParserNew } from './parser-new/rule-parser';
-export { type PreparserParseOptions } from './parser-new/network/network-rule';
+export type { PreparserParseOptions } from './parser-new/options';
 
 export {
     type Agent,

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { CommentRuleParser } from '../../../src/parser-new/comment/comment-rule-parser';
+import { QuoteType } from '../../../src/utils/quotes';
 
 const parser = new CommentRuleParser();
 
@@ -135,11 +136,13 @@ describe('CommentRuleParser — hint comments', () => {
                             type: 'ParameterList',
                             children: [
                                 {
-                                    type: 'Value',
+                                    type: 'Parameter',
+                                    quoteType: QuoteType.None,
                                     value: 'param0',
                                 },
                                 {
-                                    type: 'Value',
+                                    type: 'Parameter',
+                                    quoteType: QuoteType.None,
                                     value: 'param1',
                                 },
                             ],
@@ -173,11 +176,13 @@ describe('CommentRuleParser — hint comments', () => {
                             type: 'ParameterList',
                             children: [
                                 {
-                                    type: 'Value',
+                                    type: 'Parameter',
+                                    quoteType: QuoteType.None,
                                     value: 'param0',
                                 },
                                 {
-                                    type: 'Value',
+                                    type: 'Parameter',
+                                    quoteType: QuoteType.None,
                                     value: 'param1',
                                 },
                             ],
@@ -197,7 +202,8 @@ describe('CommentRuleParser — hint comments', () => {
                             type: 'ParameterList',
                             children: [
                                 {
-                                    type: 'Value',
+                                    type: 'Parameter',
+                                    quoteType: QuoteType.None,
                                     value: 'param0',
                                 },
                             ],
@@ -221,12 +227,14 @@ describe('CommentRuleParser — hint comments', () => {
                             type: 'ParameterList',
                             children: [
                                 {
-                                    type: 'Value',
+                                    type: 'Parameter',
+                                    quoteType: QuoteType.None,
                                     value: 'param0',
                                 },
                                 null,
                                 {
-                                    type: 'Value',
+                                    type: 'Parameter',
+                                    quoteType: QuoteType.None,
                                     value: 'param1',
                                 },
                             ],
