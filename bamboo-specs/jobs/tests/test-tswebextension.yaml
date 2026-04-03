@@ -19,6 +19,8 @@ tasks:
 
           if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/tswebextension"; then
             echo "No changes in @adguard/tswebextension, skipping tests"
+            mkdir -p output && echo 0 > output/exit-code.txt
+            skip_tests output/tests-reports/tswebextension.xml
             exit 0
           fi
 

@@ -38,9 +38,6 @@ bamboo-specs/jobs
 output
 output-*
 
-# Verification scripts (not needed inside Docker, prevents cache busting on edits)
-scripts/verify-docker-cache.sh
-
 # Misc
 *.log
 .DS_Store
