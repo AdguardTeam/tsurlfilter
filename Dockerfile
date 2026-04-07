@@ -261,9 +261,9 @@ ARG TEST_RUN_ID
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
-    npx lerna run build --scope @adguard/dnr-rulesets && \
     mkdir -p /out/tests-reports && \
     set +e; \
+    npx lerna run build --scope @adguard/dnr-rulesets; \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
       'cd packages/dnr-rulesets && pnpm lint && pnpm test:ci'; \
     EXIT_CODE=$?; \
