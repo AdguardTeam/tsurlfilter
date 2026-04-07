@@ -403,7 +403,7 @@ export class NetworkRule implements IRule {
      *
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-1
      */
-    private priorityWeight = 1;
+    private priorityWeight = 2;
 
     /**
      * Rules with base modifiers, from category 1, each of them adds 1
