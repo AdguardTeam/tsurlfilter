@@ -172,3 +172,5 @@ export {
 
 // Version
 export { AGTREE_VERSION } from './version';
+
+export { TEST_VERSION } from './test-version';
