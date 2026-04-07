@@ -10,6 +10,7 @@
 
 This is a TypeScript library that implements AdGuard's content blocking rules.
 
+
 - [Idea](#idea)
 - [Installation](#installation)
 - [API description](#api-description)
