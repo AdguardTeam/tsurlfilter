@@ -5,64 +5,25 @@ plan:
   key: TSURLFILTERTEST
   name: tsurlfilter - tests
 
-# Some packages are independent of each other so we can run them in parallel (different jobs on same stage)
-# other packages depend on each other so they should be run one after another (different stages),
-# e.g. CSSTokenizer and Logger are totally independent,
-# but DNR-Ruleset depends on TSUrlFilter, so even if it does not depend on TSWebExtension,
-# they should run on different stages, this way bamboo cache is used ("[local cache]" in logs).
+# All test jobs run in parallel in a single stage.
+# Even though packages have dependencies on each other (e.g. tswebextension depends on tsurlfilter),
+# each job runs its own `docker build --target test-X-output` and Docker BuildKit resolves the full
+# dependency chain internally via FROM directives in the Dockerfile.
+# Bamboo no longer needs to enforce build order — Docker handles it per job.
 #
 # Dependencies are described in the README.md file ("Dependency Tree" section).
 
-# Stage 1:
-# - Logger test run;
-# - CSS Tokenizer test run.
-#
-# Stage 2:
-# - AGTree test run.
-#
-# Stage 3:
-# - TSUrlFilter test run;
-#
-# Stage 4:
-# - TSWebExtension test run.
-#
-# Stage 5:
-# - DNR-Rulesets test run;
-#
-# Stage 6:
-# - Example APIs and TSWebExtensions for MV2 and MV3.
-#
-# Note: Cleanup is performed after each stage to prevent disk space issues
-# and ensure clean state for subsequent builds, as each stage runs in a separate
-# directory and accumulated build artifacts can consume significant disk space.
-# See AG-46440 for details.
-
 stages:
-  - Stage 1: &stage
+  - Tests:
       manual: false
       final: false
       jobs:
         - Test Logger
         - Test CSSTokenizer
-  - Stage 2:
-      <<: *stage
-      jobs:
         - Test AGTree
-  - Stage 3:
-      <<: *stage
-      jobs:
         - Test TSUrlFilter
-  - Stage 4:
-      <<: *stage
-      jobs:
         - Test TSWebExtension
-  - Stage 5:
-      <<: *stage
-      jobs:
         - Test DNR-Rulesets
-  - Stage 6:
-      <<: *stage
-      jobs:
         - Test Examples - APIs and TSWebExtensions
 
 Test Logger: !include 'jobs/tests/test-logger.yaml'

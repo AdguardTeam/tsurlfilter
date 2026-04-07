@@ -46,45 +46,72 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm install --frozen-lockfile --ignore-scripts
 
 # ============================================================================
+# Stage: source-base
+# Root-level configs and scripts (rarely change). Used as the foundation for
+# both the per-level source stages below and the utility `source` stage.
+# ============================================================================
+FROM deps AS source-base
+
+COPY nx.json lerna.json vitest.config.ts .eslintignore ./
+COPY scripts/ ./scripts/
+COPY bamboo-specs/scripts/ ./bamboo-specs/scripts/
+
+# ============================================================================
 # Stage: source
-# Cached until source code changes
+# Full source copy for utility stages that need all files
+# (increment-*, update-*, dnr-rulesets-auto-build).
+# The main test/build chain uses per-level source stages below instead.
+# ============================================================================
+FROM source-base AS source
+
+COPY packages/ ./packages/
+
+# ============================================================================
+# Build layers following the dependency hierarchy.
+# Source is copied just-in-time before each build step so that a change in a
+# higher-level package (e.g. tswebextension) does not invalidate the Docker
+# layer cache for lower-level packages (e.g. logger, agtree, tsurlfilter).
 #
-# TODO: if build times degrade noticeably, consider splitting COPY per package
-# instead of copying the entire tree. This would let each build layer cache
-# independently (e.g. a logger-only change wouldn't invalidate agtree/tsurlfilter).
-# See: https://docs.docker.com/build/cache/#order-your-layers
-# ============================================================================
-FROM deps AS source
-
-COPY . /tsurlfilter
-
-# ============================================================================
-# Build layers following the dependency hierarchy
-# Each layer builds packages at that level, inheriting from previous layers.
-# This matches the stage structure in tsurlfilter-tests.yaml and the
-# dependency tree in README.md:
-#   Layer 1 (built-css-tokenizer-and-logger): logger + css-tokenizer (leaf packages, no workspace deps)
-#   Layer 2 (built-agtree): agtree (depends on css-tokenizer)
-#   Layer 3 (built-tsurlfilter): tsurlfilter (depends on agtree, css-tokenizer)
-#   Layer 4 (built-tswebextension): tswebextension (depends on tsurlfilter, agtree, logger)
+# Dependency tree (see README.md for full details):
+#   Level 1: logger + css-tokenizer + eslint-plugin (leaf packages, no workspace deps)
+#   Level 2: agtree (depends on css-tokenizer)
+#   Level 3: tsurlfilter (depends on agtree, css-tokenizer)
+#   Level 4: tswebextension (depends on tsurlfilter, agtree, logger)
+#
+# Stages that need packages outside this chain (e.g. dnr-rulesets, adguard-api)
+# add their own COPY statements directly after FROM.
 # ============================================================================
 
-FROM source AS built-css-tokenizer-and-logger
+FROM source-base AS source-level-1
+COPY packages/logger/ ./packages/logger/
+COPY packages/css-tokenizer/ ./packages/css-tokenizer/
+COPY packages/eslint-plugin-logger-context/ ./packages/eslint-plugin-logger-context/
+
+FROM source-level-1 AS built-css-tokenizer-and-logger
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     npx lerna run build --scope @adguard/logger --scope @adguard/css-tokenizer
 
-FROM built-css-tokenizer-and-logger AS built-agtree
+FROM built-css-tokenizer-and-logger AS source-level-2
+COPY packages/agtree/ ./packages/agtree/
+
+FROM source-level-2 AS built-agtree
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     npx lerna run build --scope @adguard/agtree
 
-FROM built-agtree AS built-tsurlfilter
+FROM built-agtree AS source-level-3
+COPY packages/tsurlfilter/ ./packages/tsurlfilter/
+
+FROM source-level-3 AS built-tsurlfilter
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     npx lerna run build --scope @adguard/tsurlfilter
 
-FROM built-tsurlfilter AS built-tswebextension
+FROM built-tsurlfilter AS source-level-4
+COPY packages/tswebextension/ ./packages/tswebextension/
+
+FROM source-level-4 AS built-tswebextension
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     npx lerna run build --scope @adguard/tswebextension
@@ -227,6 +254,8 @@ COPY --from=test-tswebextension /out/ /
 # ============================================================================
 FROM built-tsurlfilter AS test-dnr-rulesets
 
+COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
@@ -255,6 +284,10 @@ COPY --from=test-dnr-rulesets /out/ /
 # ============================================================================
 FROM built-tswebextension AS test-examples
 
+COPY packages/adguard-api/ ./packages/adguard-api/
+COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
+COPY packages/examples/ ./packages/examples/
+
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
@@ -281,6 +314,8 @@ COPY --from=test-examples /out/ /
 # Builds @adguard/api-mv3 and runs e2e tests
 # ============================================================================
 FROM built-tswebextension AS test-adguard-api-mv3
+
+COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
 
 ARG TEST_RUN_ID
 
@@ -405,6 +440,8 @@ COPY --from=build-tswebextension /out/ /
 # ============================================================================
 FROM built-tsurlfilter AS build-dnr-rulesets
 
+COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
@@ -446,6 +483,9 @@ COPY --from=build-eslint-plugin-logger-context /out/ /
 # ============================================================================
 FROM built-tswebextension AS build-adguard-api
 
+COPY packages/adguard-api/ ./packages/adguard-api/
+COPY packages/examples/adguard-api/ ./packages/examples/adguard-api/
+
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
@@ -468,6 +508,10 @@ COPY --from=build-adguard-api /out/ /
 # Builds @adguard/api-mv3, runs e2e, builds example, and packs .tgz
 # ============================================================================
 FROM built-tswebextension AS build-adguard-api-mv3
+
+COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
+COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/examples/adguard-api-mv3/ ./packages/examples/adguard-api-mv3/
 
 ARG TEST_RUN_ID
 
