@@ -470,6 +470,7 @@ ARG TEST_RUN_ID
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    npx lerna run build --scope @adguard/eslint-plugin-logger-context && \
     cd packages/eslint-plugin-logger-context && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
