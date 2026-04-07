@@ -286,6 +286,7 @@ FROM built-tswebextension AS test-examples
 
 COPY packages/adguard-api/ ./packages/adguard-api/
 COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
+COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
 COPY packages/examples/ ./packages/examples/
 
 ARG TEST_RUN_ID
@@ -316,6 +317,7 @@ COPY --from=test-examples /out/ /
 FROM built-tswebextension AS test-adguard-api-mv3
 
 COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
+COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
 
 ARG TEST_RUN_ID
 
