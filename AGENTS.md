@@ -49,6 +49,8 @@ high-level extension APIs (`adguard-api`, `adguard-api-mv3`).
 ├── pnpm-workspace.yaml              # Workspace and catalog definitions
 ├── lerna.json                       # Lerna config (independent versioning)
 ├── nx.json                          # Nx task runner config
+├── Dockerfile                       # Multi-stage Docker CI build
+├── .dockerignore                    # Docker build context exclusions
 └── vitest.config.ts                 # Root Vitest config (delegates to packages)
 ```
 
@@ -84,6 +86,13 @@ All commands are run from the repository root unless noted otherwise.
 - **Increment a package version**: `pnpm run increment <package-name>`
 - **Pack release tarballs**: `pnpm tgz` (builds and packs `dnr-rulesets`,
   `api`, `api-mv3` with dependencies)
+
+### CI (Docker)
+
+CI pipelines use `docker buildx build --target <stage> --output type=local,dest=output .`
+with the multi-stage `Dockerfile` at the repo root. Each package has dedicated
+build/test targets. The `TEST_RUN_ID` build arg busts test-stage caches while
+reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
 
 ## Contribution Instructions
 

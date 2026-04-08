@@ -228,6 +228,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             AdgHtmlFilteringBodyGenerator,
             onSpecialAttributeSelector,
             onSpecialPseudoClassSelector,
+            rule.syntax === AdblockSyntax.Adg,
         );
 
         if (!isConverted) {
@@ -601,6 +602,94 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
+     * Pre-scans a complex selector's child selectors
+     * for {@link AdgAttributeSelectors.MinLength}
+     * and {@link AdgAttributeSelectors.MaxLength} attribute selectors.
+     *
+     * Resolves duplicates to the most *restrictive* value:
+     * - for multiple `[min-length]` selectors, the largest value is selected;
+     * - for multiple `[max-length]` selectors, the smallest value is selected.
+     *
+     * Logs a warning when duplicate length selectors are found.
+     *
+     * @param selectors Child selectors of a complex selector to scan.
+     *
+     * @returns Resolved length constraints,
+     * or `null` if no length selectors were found.
+     */
+    private static collectLengthConstraints(
+        selectors: (SimpleSelector | SelectorCombinator)[],
+    ): { min: number | null; max: number | null } | null {
+        const minValues: number[] = [];
+        const maxValues: number[] = [];
+
+        for (let i = 0; i < selectors.length; i += 1) {
+            const selector = selectors[i];
+
+            if (selector.type !== 'AttributeSelector') {
+                continue;
+            }
+
+            const { value: name } = selector.name;
+
+            if (
+                name !== AdgAttributeSelectors.MinLength
+                && name !== AdgAttributeSelectors.MaxLength
+            ) {
+                continue;
+            }
+
+            if (!('value' in selector) || selector.value.value === EMPTY) {
+                continue;
+            }
+
+            const { value } = selector.value;
+
+            HtmlRuleConverter.assertValidLengthValue(
+                name,
+                value,
+                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_INT,
+                ERROR_MESSAGES.SPECIAL_ATTRIBUTE_SELECTOR_VALUE_POSITIVE,
+            );
+
+            if (name === AdgAttributeSelectors.MinLength) {
+                minValues.push(Number(value));
+            } else {
+                maxValues.push(Number(value));
+            }
+        }
+
+        if (minValues.length === 0 && maxValues.length === 0) {
+            return null;
+        }
+
+        let min: number | null = null;
+        let max: number | null = null;
+
+        if (minValues.length > 1) {
+            min = Math.max(...minValues);
+            // eslint-disable-next-line no-console
+            console.warn(
+                `Multiple [min-length] selectors found among: [${minValues.join(', ')}]. Selected largest: ${min}.`,
+            );
+        } else if (minValues.length === 1) {
+            [min] = minValues;
+        }
+
+        if (maxValues.length > 1) {
+            max = Math.min(...maxValues);
+            // eslint-disable-next-line no-console
+            console.warn(
+                `Multiple [max-length] selectors found among: [${maxValues.join(', ')}]. Selected smallest: ${max}.`,
+            );
+        } else if (maxValues.length === 1) {
+            [max] = maxValues;
+        }
+
+        return { min, max };
+    }
+
+    /**
      * Converts a HTML filtering rule body by handling special simple selectors via callbacks.
      * Special simple selectors are skipped in the converted selector list and should be handled from callee.
      *
@@ -609,6 +698,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @param generator HTML filtering rule body generator used for generating raw value bodies.
      * @param onSpecialAttributeSelector Callback invoked when a special attribute selector is found.
      * @param onSpecialPseudoClassSelector Callback invoked when a special pseudo-class selector is found.
+     * @param shouldMergeLengthSelectors If true, `[min-length]` and `[max-length]` attribute
+     * selectors within the same complex selector are merged into a single `:contains()` pseudo-class.
+     * Defaults to `false`.
      *
      * @returns Converted selector list without special simple selectors.
      */
@@ -618,6 +710,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
         generator: HtmlFilteringRuleGenerator,
         onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback,
         onSpecialPseudoClassSelector: OnSpecialPseudoClassSelectorCallback,
+        shouldMergeLengthSelectors = false,
     ): Value | HtmlFilteringRuleBody {
         // Handle case when body is raw value string.
         // If so, parse it first as we need to work with AST nodes.
@@ -643,6 +736,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             // Complex selector node must not be empty
             HtmlRuleConverter.assertNotEmpty(selectors, ERROR_MESSAGES.EMPTY_COMPLEX_SELECTOR);
+
+            // Pre-scan for [min-length] / [max-length] constraints to merge them into one :contains()
+            const lengthConstraints = shouldMergeLengthSelectors
+                ? HtmlRuleConverter.collectLengthConstraints(selectors)
+                : null;
+            let lengthContainsEmitted = false;
 
             // Convert each selector
             const convertedSelectors: (SimpleSelector | SelectorCombinator)[] = [];
@@ -705,6 +804,32 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                         const name = selector.name.value;
                         const { value } = selector.value;
+
+                        // Merge [min-length] and [max-length] into a single :contains() (ADG→ADG)
+                        if (
+                            lengthConstraints !== null
+                            && (
+                                name === AdgAttributeSelectors.MinLength
+                                || name === AdgAttributeSelectors.MaxLength
+                            )
+                        ) {
+                            if (!lengthContainsEmitted) {
+                                // Invoke the callback once to trigger its side effects
+                                // (e.g. the isConverted flag in convertToAdg), but discard
+                                // the individual :contains() it returns — we emit the
+                                // merged one instead.
+                                onSpecialAttributeSelector(name, value);
+                                convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
+                                    AdgPseudoClasses.Contains,
+                                    RegExpUtils.getLengthRegexp(
+                                        lengthConstraints.min,
+                                        lengthConstraints.max,
+                                    ),
+                                ));
+                                lengthContainsEmitted = true;
+                            }
+                            continue;
+                        }
 
                         // Invoke callback and:
                         // - add returned simple selector if it's not boolean

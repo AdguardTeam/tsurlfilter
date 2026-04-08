@@ -2,6 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, expect, it } from 'vitest';
+import { RawRuleConverter } from '@adguard/agtree';
 
 import { createCosmeticRule } from '../../../../../../helpers/rule-creator';
 import {
@@ -255,6 +256,58 @@ describe('Html rule selector', () => {
         expect(notMatchedElements).toHaveLength(0);
     });
 
+    it('checks special selector :contains() - converted from [min-length] and [max-length] combined', () => {
+        // Convert from raw [min-length][max-length] syntax
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[min-length="10"][max-length="100"]',
+        );
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        // Content within range (50 chars) should match
+        document.body.innerHTML = `
+        <div id="matches">${'x'.repeat(50)}</div>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('matches');
+
+        // Content below min (5 chars) should NOT match
+        document.body.innerHTML = `
+        <div id="too-short">${'x'.repeat(5)}</div>
+        `;
+
+        const tooShortElements = selector.getMatchedElements(document);
+        expect(tooShortElements).toHaveLength(0);
+
+        // Content above max (200 chars) should NOT match
+        document.body.innerHTML = `
+        <div id="too-long">${'x'.repeat(200)}</div>
+        `;
+
+        const tooLongElements = selector.getMatchedElements(document);
+        expect(tooLongElements).toHaveLength(0);
+
+        // Content exactly at min boundary (10 chars) should match
+        document.body.innerHTML = `
+        <div id="at-min">${'x'.repeat(10)}</div>
+        `;
+
+        const atMinElements = selector.getMatchedElements(document);
+        expect(atMinElements).toHaveLength(1);
+        expect(atMinElements![0].id).toBe('at-min');
+
+        // Content exactly at max boundary (100 chars) should match
+        document.body.innerHTML = `
+        <div id="at-max">${'x'.repeat(100)}</div>
+        `;
+
+        const atMaxElements = selector.getMatchedElements(document);
+        expect(atMaxElements).toHaveLength(1);
+        expect(atMaxElements![0].id).toBe('at-max');
+    });
+
     it('checks special selector :contains() - converted from [min-length]', () => {
         document.body.innerHTML = `
         <div id="contains-wildcard" class="test-class">Welcome to AdGuard!</div>
@@ -293,6 +346,88 @@ describe('Html rule selector', () => {
 
         document.body.innerHTML = `
         <div id="not-matched" class="test-class">This text is definitely too long.</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - old two-:contains() form of duplicate [min-length] is not ok', () => {
+        // The old (before agtree v4.0.3) conversion produced two separate :contains() for duplicate [min-length]:
+        // $$div[min-length="10"][min-length="20"] → $$div:contains(/^(?=.{10,}$).*/s):contains(/^(?=.{20,}$).*/s)
+        // Both regexes apply with AND semantics, so the effective minimum is still 20.
+        // However this form is incorrect — the fix merges them into a single :contains() with the largest min.
+        // This test documents that the old form DOES still match content of 25 chars (≥ 20)...
+        const ruleText = 'example.org$$div:contains(/^(?=.{10,}$).*/s):contains(/^(?=.{20,}$).*/s)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        // Content of 25 chars matches both regexes
+        document.body.innerHTML = `
+        <div id="matches">${'x'.repeat(25)}</div>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('matches');
+
+        // ...but content of 15 chars satisfies min=10 yet fails min=20, so it does NOT match
+        document.body.innerHTML = `
+        <div id="not-matched">${'x'.repeat(15)}</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - converted from duplicate [min-length] (largest chosen)', () => {
+        // Rule: $$div[min-length="10"][min-length="20"] → largest min (20) chosen
+        // → $$div:contains(/^(?=.{20,}$).*/s)
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[min-length="10"][min-length="20"]',
+        );
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        // Content of 25 chars (≥ 20) should match
+        document.body.innerHTML = `
+        <div id="matches">${'x'.repeat(25)}</div>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('matches');
+
+        // Content of 15 chars (≥ 10 but < 20) should NOT match — only winning min=20 applies
+        document.body.innerHTML = `
+        <div id="not-matched">${'x'.repeat(15)}</div>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - converted from duplicate [max-length] (smallest chosen)', () => {
+        // Rule: $$div[max-length="100"][max-length="200"] → smallest max (100) chosen
+        // → $$div:contains(/^(?=.{0,100}$).*/s)
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[max-length="100"][max-length="200"]',
+        );
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        // Content of 50 chars (≤ 100) should match
+        document.body.innerHTML = `
+        <div id="matches">${'x'.repeat(50)}</div>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements![0].id).toBe('matches');
+
+        // Content of 150 chars (≤ 200 but > 100) should NOT match — only winning max=100 applies
+        document.body.innerHTML = `
+        <div id="not-matched">${'x'.repeat(150)}</div>
         `;
 
         const notMatchedElements = selector.getMatchedElements(document);
@@ -424,5 +559,90 @@ describe('Html rule selector', () => {
 
         const notMatchedElements = selector.getMatchedElements(document);
         expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - large regex quantifier below 65536', () => {
+        // "Example" is 7 chars; pad to exactly 65535 total innerHTML chars
+        document.body.innerHTML = `
+        <h1 id="matched">Example${'x'.repeat(65528)}</h1>
+        `;
+
+        const ruleText = 'example.org$$h1:contains(Example):contains(/^(?=.{1,65535}$).*/s)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+
+        // innerHTML of 65536 chars exceeds max of 65535 — must NOT match
+        document.body.innerHTML = `
+        <h1 id="not-matched">Example${'x'.repeat(65529)}</h1>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - large regex quantifier equal or larger than 65536', () => {
+        // "Example" is 7 chars; pad to exactly 65536 total innerHTML chars
+        document.body.innerHTML = `
+        <h1 id="matched">Example${'x'.repeat(65529)}</h1>
+        `;
+
+        const ruleText = 'example.org$$h1:contains(Example):contains(/^(?=.{1,65536}$).*/s)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+
+        // Empty element — matchesSpecialSelector returns false when innerHTML is empty
+        document.body.innerHTML = `
+        <h1 id="not-matched"></h1>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - real-world large quantifier range (20000-300000)', () => {
+        // "Flags." is 6 chars; pad to 50000 total innerHTML chars (within 20000-300000 range)
+        document.body.innerHTML = `
+        <script id="matched">Flags.${'x'.repeat(70000)}</script>
+        `;
+
+        const ruleText = 'example.org$$script:contains(Flags.):contains(/^(?=.{20000,300000}$).*/s)';
+        const rule = createCosmeticRule(ruleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+
+        // Too short: 1000 chars total (< 20000 minimum) — must NOT match
+        document.body.innerHTML = `
+        <script id="not-matched-short">Flags.${'x'.repeat(995)}</script>
+        `;
+
+        const notMatchedShort = selector.getMatchedElements(document);
+        expect(notMatchedShort).toHaveLength(0);
+
+        // Too long: 300001 chars total (> 300000 maximum) — must NOT match
+        document.body.innerHTML = `
+        <script id="not-matched-long">Flags.${'x'.repeat(299995)}</script>
+        `;
+
+        const notMatchedLong = selector.getMatchedElements(document);
+        expect(notMatchedLong).toHaveLength(0);
+
+        // In-range length but missing "Flags." — must NOT match
+        document.body.innerHTML = `
+        <script id="not-matched-no-flags">${'x'.repeat(50000)}</script>
+        `;
+
+        const notMatchedNoFlags = selector.getMatchedElements(document);
+        expect(notMatchedNoFlags).toHaveLength(0);
     });
 });

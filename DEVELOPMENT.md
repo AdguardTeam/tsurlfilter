@@ -229,6 +229,32 @@ pnpm install --shamefully-hoist
 
 For pnpm-based projects, use [`pnpm link`](https://pnpm.io/cli/link).
 
+## Docker CI
+
+CI builds and tests run inside Docker using a multi-stage `Dockerfile` at the
+repo root. Each package has a dedicated `--target` stage for builds and tests.
+
+### Local Verification
+
+```bash
+# Run the full cache verification suite
+bash scripts/verify-docker-cache.sh --skip-cold
+
+# Or build a specific target directly
+docker buildx build --build-arg TEST_RUN_ID=local-$(date +%s) \
+  --target test-tswebextension-output --output type=local,dest=output .
+```
+
+### How It Works
+
+- **Layer caching**: the `deps` stage is cached until `package.json` /
+  `pnpm-lock.yaml` change; the `source` stage is cached until source code
+  changes.
+- **`TEST_RUN_ID`**: a build arg that busts only test-stage caches so CI always
+  re-runs tests while reusing build layers.
+- **`test:ci` scripts**: per-package scripts that produce JUnit XML output for
+  CI reporting.
+
 ## Additional Resources
 
 - [README.md](README.md) — Project overview and package listing

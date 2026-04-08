@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { AdblockSyntaxError, CosmeticRuleType } from '@adguard/agtree';
+import { AdblockSyntaxError, CosmeticRuleType, RawRuleConverter } from '@adguard/agtree';
 import { type Source } from '@adguard/scriptlets';
 import {
     describe,
@@ -1106,6 +1106,50 @@ describe('HTML filtering rules (content rules)', () => {
             selectors: [[{
                 nativeSelector: 'div[attr1="value1"][attr2*="value" i][attr3]',
                 specialSelectors: [],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - combined min/max length regex (converted form)', () => {
+        // Convert from raw [min-length][max-length] syntax first
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div[min-length="10"][max-length="100"]',
+        );
+        const rule = createCosmeticRule(convertedRuleText, 0);
+
+        expect(rule.getType()).toBe(CosmeticRuleType.HtmlFilteringRule);
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: /^(?=.{10,100}$).*/s,
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - combined tag-content and length regex (converted form)', () => {
+        // Convert from raw [tag-content][min-length][max-length] syntax first
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$script[tag-content="text"][min-length="100000"][max-length="360000"]',
+        );
+        const rule = createCosmeticRule(convertedRuleText, 0);
+
+        expect(rule.getType()).toBe(CosmeticRuleType.HtmlFilteringRule);
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [
+                    {
+                        name: 'contains',
+                        value: 'text',
+                    },
+                    {
+                        name: 'contains',
+                        value: /^(?=.{100000,360000}$).*/s,
+                    },
+                ],
             }]],
         });
     });

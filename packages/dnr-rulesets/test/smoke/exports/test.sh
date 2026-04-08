@@ -18,7 +18,7 @@ trap cleanup EXIT
 
 (cd ../../.. && pnpm pack --out "$curr_path/$adguard_dnr_rulesets")
 
-pnpm install
+pnpm install --ignore-scripts
 
 # unzip to @adguard/dnr-rulesets to node_modules
 adguard_dnr_rulesets_node_modules=$nm_path"/@adguard/dnr-rulesets"

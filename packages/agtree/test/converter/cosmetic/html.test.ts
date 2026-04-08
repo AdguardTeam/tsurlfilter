@@ -56,10 +56,10 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{10,}$).*/s)'],
                     },
 
-                    // `[min-length]` special attribute selector - multiple usages
+                    // `[min-length]` special attribute selector - multiple usages (largest value selected)
                     {
                         actual: '$$div[min-length="10"][min-length="20"]',
-                        expected: ['$$div:contains(/^(?=.{10,}$).*/s):contains(/^(?=.{20,}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{20,}$).*/s)'],
                     },
 
                     // `[max-length]` special attribute selector
@@ -68,10 +68,34 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{0,100}$).*/s)'],
                     },
 
-                    // `[max-length]` special attribute selector - multiple usages
+                    // `[max-length]` special attribute selector - multiple usages (smallest value selected)
                     {
                         actual: '$$div[max-length="100"][max-length="200"]',
-                        expected: ['$$div:contains(/^(?=.{0,100}$).*/s):contains(/^(?=.{0,200}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{0,100}$).*/s)'],
+                    },
+
+                    // `[min-length]` and `[max-length]` combined into a single :contains()
+                    {
+                        actual: '$$div[min-length="10"][max-length="100"]',
+                        expected: ['$$div:contains(/^(?=.{10,100}$).*/s)'],
+                    },
+
+                    // `[min-length]` and `[max-length]` combined - tag-content before length selectors
+                    {
+                        actual: '$$script[tag-content="text"][min-length="100000"][max-length="360000"]',
+                        expected: ['$$script:contains(text):contains(/^(?=.{100000,360000}$).*/s)'],
+                    },
+
+                    // `[min-length]` and `[max-length]` combined - tag-content after length selectors
+                    {
+                        actual: '$$script[tag-content="Flags."][min-length="20000"][max-length="300000"]',
+                        expected: ['$$script:contains(Flags.):contains(/^(?=.{20000,300000}$).*/s)'],
+                    },
+
+                    // `[min-length]` and `[max-length]` combined - max-length appears before min-length
+                    {
+                        actual: '$$script[max-length="300000"][min-length="20000"]',
+                        expected: ['$$script:contains(/^(?=.{20000,300000}$).*/s)'],
                     },
 
                     // `[tag-content]` special attribute selector
@@ -155,6 +179,18 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
                         expected: ['$$div:contains(a):contains(/^.*example.*$/s):contains(b)'],
+                    },
+
+                    // `[tag-content]` with `""` escaped double quotes - simple case
+                    {
+                        actual: '$$div[tag-content="a""b"]',
+                        expected: ['$$div:contains(a"b)'],
+                    },
+
+                    // `[tag-content]` with `""` escaped double quotes - multiple
+                    {
+                        actual: '$$script[tag-content="{""zone_id"":"""]',
+                        expected: ['$$script:contains({"zone_id":")'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(
@@ -340,6 +376,10 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^(?=.{0,100}$).*/s)'],
                     },
                     {
+                        actual: '$$div[min-length="10"][max-length="100"]',
+                        expected: ['$$div:contains(/^(?=.{10,100}$).*/s)'],
+                    },
+                    {
                         actual: '$$div[tag-content="example"]',
                         expected: ['$$div:contains(example)'],
                     },
@@ -347,6 +387,18 @@ describe('HtmlRuleConverter', () => {
                         actual: '$$div:contains(example)',
                         expected: ['$$div:contains(example)'],
                         shouldConvert: false,
+                    },
+
+                    // `[tag-content]` with `""` escaped double quotes - simple case
+                    {
+                        actual: '$$div[tag-content="a""b"]',
+                        expected: ['$$div:contains(a"b)'],
+                    },
+
+                    // `[tag-content]` with `""` escaped double quotes - multiple
+                    {
+                        actual: '$$script[tag-content="{""zone_id"":"""]',
+                        expected: ['$$script:contains({"zone_id":")'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');

@@ -18,7 +18,7 @@ trap cleanup EXIT
 
 (cd ../../.. && pnpm pack --out "$curr_path/$agtree")
 
-pnpm install
+pnpm install --ignore-scripts
 
 # unzip to @adguard/agtree to node_modules
 agtree_node_modules=$nm_path"/@adguard/agtree"

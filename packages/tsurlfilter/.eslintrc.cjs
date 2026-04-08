@@ -8,6 +8,7 @@ const MAX_LINE_LENGTH = 120;
  * @see {@link https://eslint.org/docs/v8.x/rules/}
  */
 const ESLINT_RULES = {
+    curly: ['error', 'all'],
     indent: 'off',
     'no-bitwise': 'off',
     'no-new': 'off',

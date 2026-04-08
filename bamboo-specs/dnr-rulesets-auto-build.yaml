@@ -4,8 +4,6 @@ plan:
   project-key: AJL
   key: DNRRULESETSAUTOBUILD
   name: DNR Rulesets - auto build
-variables:
-  dockerContainer: adguard/node-ssh:22.14--0
 
 stages:
   - Build:
@@ -15,51 +13,11 @@ stages:
         - DoNothing
 
 # Since auto-build is being run only for stable branches:
-# branch 'stable/dnr-rulesets-3.2' - for AdGuard browser extension v5.2.X
 # branch 'stable/dnr-rulesets-3.3' - for AdGuard API v3.1
 # branch 'stable/dnr-rulesets-4.0' - for AdGuard browser extension v5.3.0.X
 # branch 'stable/dnr-rulesets-4.1' - for AdGuard browser extension v5.3.1.X
 # we should skip the build stage for other branches.
-DoNothing:
-  key: NOTHING
-  other:
-    clean-working-dir: true
-  docker:
-    image: "${bamboo.dockerContainer}"
-    volumes:
-      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  tasks:
-    - checkout:
-        force-clean-build: true
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            set -e
-            set -x
-
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -alt
-
-            BRANCH="${bamboo.planRepository.branchName}"
-
-            echo "Build and deployment is not supported on branch ${BRANCH}, skipping"
-  final-tasks:
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/cleanup.sh packages/dnr-rulesets/dnr-rulesets.tgz"
-  # Since the artifact is being published from a non-master branch, it should still be available in the master branch
-  artifacts: &artifacts
-    - name: dnr-rulesets.tgz
-      location: packages/dnr-rulesets/
-      pattern: dnr-rulesets.tgz
-      shared: true
-      required: true
-  requirements: &requirements
-    - extension: 'true'
+DoNothing: !include 'jobs/dnr-rulesets-auto-build/do-nothing.yaml'
 
 triggers: []
 
@@ -80,81 +38,7 @@ branch-overrides:
       stages:
         - Build:
             - Build
-      Build:
-        key: BUILD
-        other:
-          clean-working-dir: true
-        docker:
-          image: "${bamboo.dockerContainer}"
-          volumes:
-            ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-        tasks:
-          - checkout:
-              force-clean-build: true
-          - script:
-              interpreter: SHELL
-              scripts:
-                - |-
-                  set -e
-                  set -x
-
-                  # Fix mixed logs
-                  exec 2>&1
-
-                  ls -alt
-
-                  BRANCH="${bamboo.planRepository.branchName}"
-
-                  # Deploy package from:
-                  # "stable/dnr-rulesets-3.3",
-                  # "stable/dnr-rulesets-4.0",
-                  # "stable/dnr-rulesets-4.1" branches only.
-                  if [ $BRANCH != "stable/dnr-rulesets-3.3" ] \
-                      && [ $BRANCH != "stable/dnr-rulesets-4.0" ] \
-                      && [ $BRANCH != "stable/dnr-rulesets-4.1" ];
-                  then
-                    echo "deployment is not supported on branch ${BRANCH}, skipping"
-                    exit 0;
-                  fi
-
-                  # Set cache directory
-                  pnpm config set store-dir ${bamboo.cachePnpm}
-
-                  # Install dependencies
-                  pnpm install
-
-                  # Set date to package version before build to ensure that
-                  # the build number is always incremented.
-                  npx lerna run increment:auto-deploy --scope @adguard/dnr-rulesets
-
-                  # Build dnr rulesets before tests to correct import
-                  # dependencies from sibling packages.
-                  npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
-
-                  # Test dnr rulesets
-                  npx lerna run test --scope @adguard/dnr-rulesets
-
-                  # Move to package folder
-                  cd packages/dnr-rulesets
-
-                  # Create artifacts
-                  pnpm tgz
-          - inject-variables:
-              file: packages/dnr-rulesets/dist/build.txt
-              scope: RESULT
-              namespace: inject
-          - any-task:
-              plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
-              configuration:
-                commitMessage: 'skipci: Automatic increment build number during auto build [v${bamboo.inject.version}]'
-                selectedRepository: defaultRepository
-        final-tasks:
-          - script:
-              interpreter: SHELL
-              scripts:
-                - "./bamboo-specs/scripts/cleanup.sh packages/dnr-rulesets/dnr-rulesets.tgz"
-        artifacts: *artifacts
-        requirements: *requirements
+      Build: !include 'jobs/dnr-rulesets-auto-build/build.yaml'
 
       # runs plan every 1 hour since our filters are updated every hour.
       triggers:

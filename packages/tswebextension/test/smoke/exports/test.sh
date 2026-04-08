@@ -31,7 +31,7 @@ cd "$SCRIPT_DIR"
 )
 
 # Install dependencies for the smoke test environment
-pnpm install
+pnpm install --ignore-scripts
 
 # Extract the packaged @adguard/tswebextension into node_modules
 mkdir -p "$TSWEBEXTENSION_INSTALL_DIR"

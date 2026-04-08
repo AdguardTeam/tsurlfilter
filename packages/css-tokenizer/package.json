@@ -41,6 +41,8 @@
     "lint:types": "tsc",
     "lint:md": "markdownlint .",
     "test": "vitest run",
+    "test:ci": "vitest run --reporter default --reporter junit --outputFile=./tests-reports/css-tokenizer.xml",
+    "test:prod": "pnpm lint && pnpm test:smoke && pnpm test",
     "test:coverage": "vitest run --coverage",
     "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/cjs && pnpm test) && (cd test/smoke/typescript && pnpm test)",
     "tgz": "pnpm pack --out css-tokenizer.tgz"

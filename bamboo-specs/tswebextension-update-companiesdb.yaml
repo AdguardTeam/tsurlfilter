@@ -4,9 +4,6 @@ plan:
   project-key: AJL
   key: TSWEBEXTENSIONUPDCOMPANIESDB
   name: tswebextension - update companiesdb
-variables:
-  dockerContainer: adguard/node-ssh:22.14--0
-
 stages:
   - Build:
       manual: false
@@ -16,42 +13,41 @@ stages:
 
 Build:
   key: TSWEBEXTUPDCOMPANIESDB
-  docker:
-    image: "${bamboo.dockerContainer}"
-    volumes:
-       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  other:
+    clean-working-dir: true
   tasks:
     - checkout:
-        force-clean-build: 'true'
+        force-clean-build: true
     - script:
         interpreter: SHELL
         scripts:
           - |-
-            set -e
-            set -x
+            set -ex
 
             # Fix mixed logs
             exec 2>&1
 
-            ls -alt
+            BRANCH="${bamboo.planRepository.branchName}"
 
-            branch="${bamboo.planRepository.branchName}"
-
-            # Throw error if current branch is not "master".
-            if [ $branch != "master" ]
-            then
-              echo "load companiesdb is not supported on branch ${branch}."
-              exit 1;
+            if [ "$BRANCH" != "master" ]; then
+              echo "load companiesdb is not supported on branch ${BRANCH}."
+              exit 1
             fi
 
-            # Install dependencies
-            pnpm install
+            export DOCKER_BUILDKIT=1
 
-            # update companiesdb data
-            # Exit code 0 means changes were written, 1 means no meaningful changes
-            if pnpm --filter @adguard/tswebextension update:companiesdb; then
-              echo "Meaningful changes detected, committing..."
-              exit 0
+            docker build \
+              --file Dockerfile \
+              --progress plain \
+              --build-arg TEST_RUN_ID=${bamboo.buildNumber} \
+              --target update-companiesdb-output \
+              --output type=local,dest=output \
+              .
+
+            EXIT_CODE=$(cat output/exit-code.txt 2>/dev/null || echo 1)
+
+            if [ "$EXIT_CODE" -eq 0 ] && [ -d output/modified ]; then
+              cp -R output/modified/. .
             else
               echo "No meaningful changes detected, skipping commit"
               exit 1

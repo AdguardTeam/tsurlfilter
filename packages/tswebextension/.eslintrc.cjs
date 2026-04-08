@@ -25,6 +25,7 @@ module.exports = {
     ],
     ignorePatterns: ['dist', 'coverage'],
     rules: {
+        curly: ['error', 'all'],
         indent: 'off',
         '@typescript-eslint/indent': ['error', 4, {
             SwitchCase: 1,

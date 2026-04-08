@@ -30,3 +30,8 @@ packages/agtree/scripts/compatibility-data-extractor/downloads/
 
 # SDD specs
 specs/.current/
+
+# Docker CI / test:ci outputs
+output/
+output-*
+**/tests-reports
