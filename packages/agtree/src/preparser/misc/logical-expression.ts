@@ -363,7 +363,9 @@ export class LogicalExpressionPreparser {
                 prec = PREC_OR;
             }
 
-            if (opKind === -1 || prec < minPrec) break;
+            if (opKind === -1 || prec < minPrec) {
+                break;
+            }
 
             // Consume the two-token operator
             cursor.ti += 2;

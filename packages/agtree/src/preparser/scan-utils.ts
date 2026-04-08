@@ -30,7 +30,9 @@ import {
 export function skipWs(s: string, i: number, end: number): number {
     while (i < end) {
         const c = s.charCodeAt(i);
-        if (c !== CHAR_SPACE && c !== CHAR_TAB) break;
+        if (c !== CHAR_SPACE && c !== CHAR_TAB) {
+            break;
+        }
         i += 1;
     }
     return i;
@@ -48,7 +50,9 @@ export function skipWs(s: string, i: number, end: number): number {
 export function skipWsBack(s: string, i: number, start: number): number {
     while (i >= start) {
         const c = s.charCodeAt(i);
-        if (c !== CHAR_SPACE && c !== CHAR_TAB) break;
+        if (c !== CHAR_SPACE && c !== CHAR_TAB) {
+            break;
+        }
         i -= 1;
     }
     return i;
