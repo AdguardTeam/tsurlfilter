@@ -12,16 +12,9 @@ import {
     PL_PARAM_START,
     PL_STRIDE,
 } from '../../../src/preparser/misc/parameter-list';
-import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
-import type { TokenizeResult } from '../../../src/tokenizer/tokenizer';
+import { Tokenizer } from '../../../src/tokenizer/tokenizer';
 
-const tokenResult: TokenizeResult = {
-    tokenCount: 0,
-    types: new Uint8Array(1024),
-    ends: new Uint32Array(1024),
-    actualEnd: 0,
-    overflowed: 0,
-};
+const tokenizer = new Tokenizer(1024);
 
 const ctx = createPreparserContext();
 const buf = new Int32Array(PL_BUFFER_SIZE);
@@ -39,9 +32,9 @@ const buf = new Int32Array(PL_BUFFER_SIZE);
  * @returns The filled buffer.
  */
 function preparse(input: string, listStart = 0, listEnd = input.length): Int32Array {
-    tokenizeLine(input, 0, tokenResult);
-    initPreparserContext(ctx, input, tokenResult);
-    ParameterListPreparser.preparse(ctx, 0, tokenResult.tokenCount, listStart, listEnd, buf);
+    tokenizer.setSource(input);
+    initPreparserContext(ctx, input, tokenizer);
+    ParameterListPreparser.preparse(ctx, 0, tokenizer.tokenCount, listStart, listEnd, buf);
     return buf;
 }
 

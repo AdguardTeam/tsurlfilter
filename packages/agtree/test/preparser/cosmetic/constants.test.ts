@@ -5,17 +5,10 @@ import {
     cosmeticSepTokenCount,
     findCosmeticSeparator,
 } from '../../../src/preparser/cosmetic-separator';
-import type { TokenizeResult } from '../../../src/tokenizer/tokenizer';
-import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
+import { Tokenizer } from '../../../src/tokenizer/tokenizer';
 
 describe('findCosmeticSeparator', () => {
-    const out: TokenizeResult = {
-        tokenCount: 0,
-        types: new Uint8Array(1024),
-        ends: new Uint32Array(1024),
-        actualEnd: 0,
-        overflowed: 0,
-    };
+    const tokenizer = new Tokenizer(1024);
 
     /**
      * Helper: tokenize and find the cosmetic separator.
@@ -25,16 +18,16 @@ describe('findCosmeticSeparator', () => {
      * @returns Object with startIndex (token), tokenCount, and raw separator string, or null.
      */
     function find(rule: string) {
-        tokenizeLine(rule, 0, out);
-        const packed = findCosmeticSeparator(out.types, out.tokenCount);
+        tokenizer.setSource(rule);
+        const packed = findCosmeticSeparator(tokenizer.types, tokenizer.tokenCount);
         if (packed === -1) {
             return null;
         }
         const idx = cosmeticSepStartIndex(packed);
         const count = cosmeticSepTokenCount(packed);
         // Compute separator source range from token ends
-        const sepStart = idx === 0 ? 0 : out.ends[idx - 1];
-        const sepEnd = out.ends[idx + count - 1];
+        const sepStart = idx === 0 ? 0 : tokenizer.ends[idx - 1];
+        const sepEnd = tokenizer.ends[idx + count - 1];
         return { startIndex: idx, tokenCount: count, separator: rule.slice(sepStart, sepEnd) };
     }
 

@@ -4,24 +4,18 @@ import { DomainListParser } from '../../../src/parser-new/misc/domain-list';
 import { createPreparserContext, domainRecordsOffset, initPreparserContext } from '../../../src/preparser/context';
 import { DomainListPreparser } from '../../../src/preparser/misc/domain-list';
 import { TokenType } from '../../../src/tokenizer/token-types';
-import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
+import { Tokenizer } from '../../../src/tokenizer/tokenizer';
+
+const tokenizer = new Tokenizer(1024);
 
 describe('DomainListParser', () => {
     const createTokensAndContext = (source: string) => {
-        const tokens = {
-            tokenCount: 0,
-            types: new Uint8Array(1024),
-            ends: new Uint32Array(1024),
-            actualEnd: 0,
-            overflowed: 0 as 0 | 1,
-        };
-
-        tokenizeLine(source, 0, tokens);
+        tokenizer.setSource(source);
 
         const ctx = createPreparserContext();
-        initPreparserContext(ctx, source, tokens);
+        initPreparserContext(ctx, source, tokenizer);
 
-        return { tokens, ctx };
+        return { tokenizer, ctx };
     };
 
     describe('parse (with location)', () => {

@@ -18,7 +18,7 @@
  */
 
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { TokenType } from '../../tokenizer/token-types';
+import { IDENT_START_MASK, TokenType } from '../../tokenizer/token-types';
 import type { PreparserContext } from '../context';
 import { skipWs, tokenStart } from '../context';
 
@@ -441,11 +441,18 @@ export class LogicalExpressionPreparser {
             return LogicalExpressionPreparser.alloc(buf, cursor, LE_KIND_PAR, innerStart, innerEnd, inner, -1);
         }
 
-        // Variable: a single Ident token
-        if (types[ti] === TokenType.Ident) {
+        // Variable: preprocessor variable names are [A-Za-z_][A-Za-z0-9_-]*
+        // Start: Letter (0) | Underscore (3) — non-contiguous, use bitmask
+        // Continue: Letter (0) | Hyphen (1) | Digit (2) | Underscore (3) — range
+        // eslint-disable-next-line no-bitwise
+        if ((IDENT_START_MASK >>> types[ti]) & 1) {
             const varStart = tokenStart(ctx, ti);
-            const varEnd = ends[ti];
-            cursor.ti += 1;
+            let vti = ti;
+            while (vti < endTi && types[vti] <= TokenType.Underscore) {
+                vti += 1;
+            }
+            cursor.ti = vti;
+            const varEnd = ends[cursor.ti - 1];
             return LogicalExpressionPreparser.alloc(buf, cursor, LE_KIND_VAR, varStart, varEnd, -1, -1);
         }
 

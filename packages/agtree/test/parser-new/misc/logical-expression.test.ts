@@ -7,17 +7,9 @@ import {
     LE_BUFFER_SIZE,
     LogicalExpressionPreparser,
 } from '../../../src/preparser';
-import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
-import type { TokenizeResult } from '../../../src/tokenizer/tokenizer';
+import { Tokenizer } from '../../../src/tokenizer/tokenizer';
 
-const tokenResult: TokenizeResult = {
-    tokenCount: 0,
-    types: new Uint8Array(1024),
-    ends: new Uint32Array(1024),
-    actualEnd: 0,
-    overflowed: 0,
-};
-
+const tokenizer = new Tokenizer(1024);
 const ctx = createPreparserContext();
 const buf = new Int32Array(LE_BUFFER_SIZE);
 
@@ -30,9 +22,9 @@ const buf = new Int32Array(LE_BUFFER_SIZE);
  * @returns Root `AnyExpressionNode`.
  */
 function parse(source: string, isLocIncluded = false) {
-    tokenizeLine(source, 0, tokenResult);
-    initPreparserContext(ctx, source, tokenResult);
-    LogicalExpressionPreparser.preparse(ctx, 0, tokenResult.tokenCount, buf);
+    tokenizer.setSource(source);
+    initPreparserContext(ctx, source, tokenizer);
+    LogicalExpressionPreparser.preparse(ctx, 0, tokenizer.tokenCount, buf);
     return LogicalExpressionAstParser.parse(source, buf, isLocIncluded);
 }
 

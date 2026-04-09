@@ -168,14 +168,18 @@ export class ModifierPreparser {
             ti = skipWs(ctx, ti);
         }
 
-        // Modifier name — expect Ident token
-        if (ti >= tokenCount || types[ti] !== TokenType.Ident) {
+        // Modifier name — expect identifier starting with Letter
+        if (ti >= tokenCount || types[ti] !== TokenType.Letter) {
             return -1;
         }
 
         const nameStartIdx = tokenStart(ctx, ti);
-        const nameEndIdx = ctx.ends[ti];
-        ti += 1;
+        // Modifier names are [A-Za-z][A-Za-z0-9-]* — single range check covers
+        // Letter (0) | Hyphen (1) | Digit (2): types[ti] <= TokenType.Digit
+        while (ti < tokenCount && types[ti] <= TokenType.Digit) {
+            ti += 1;
+        }
+        const nameEndIdx = ctx.ends[ti - 1];
 
         // Skip whitespace after name
         ti = skipWs(ctx, ti);

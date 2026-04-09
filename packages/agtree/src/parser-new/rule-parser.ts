@@ -27,8 +27,7 @@ import {
     CR_SEP_KIND_SHIFT,
 } from '../preparser/cosmetic/constants';
 import { RuleKind, RulePreparser } from '../preparser/rule';
-import type { TokenizeResult } from '../tokenizer/tokenizer';
-import { tokenizeLine } from '../tokenizer/tokenizer';
+import { Tokenizer } from '../tokenizer/tokenizer';
 import { AdblockSyntax } from '../utils/adblockers';
 
 import { CommentAstParser } from './comment/comment';
@@ -84,9 +83,9 @@ export type AnyParsedRule =
  */
 export class RuleParser {
     /**
-     * Tokenize result buffer.
+     * Tokenizer instance.
      */
-    private tokens: TokenizeResult;
+    private tokenizer: Tokenizer;
 
     /**
      * Preparser context.
@@ -103,13 +102,7 @@ export class RuleParser {
         tokenCapacity = DEFAULT_TOKEN_CAPACITY,
         childrenCapacity = DEFAULT_CHILDREN_CAPACITY,
     ) {
-        this.tokens = {
-            tokenCount: 0,
-            types: new Uint8Array(tokenCapacity),
-            ends: new Uint32Array(tokenCapacity),
-            actualEnd: 0,
-            overflowed: 0,
-        };
+        this.tokenizer = new Tokenizer(tokenCapacity);
         this.ctx = createPreparserContext(tokenCapacity, childrenCapacity);
     }
 
@@ -143,8 +136,8 @@ export class RuleParser {
             return result;
         }
 
-        tokenizeLine(source, 0, this.tokens);
-        initPreparserContext(this.ctx, source, this.tokens);
+        this.tokenizer.setSource(source);
+        initPreparserContext(this.ctx, source, this.tokenizer);
 
         const kind = RulePreparser.preparse(this.ctx, options?.parseUboSpecificRules ?? true);
 

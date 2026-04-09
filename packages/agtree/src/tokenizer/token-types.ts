@@ -1,174 +1,218 @@
 /**
  * Token types.
+ *
+ * The first five values are ordered deliberately so that set-membership for
+ * common parser hot-paths reduces to a **single range comparison**:
+ *
+ * | Range check              | Set               | Use-case                      |
+ * |--------------------------|-------------------|-------------------------------|
+ * | `type <= Hyphen`     (≤1)| Letter, Hyphen    | CSS pseudo-class names        |
+ * | `type <= Digit`      (≤2)| + Digit           | Adblock modifier/ident names  |
+ * | `type <= Underscore` (≤3)| + Underscore      | Preprocessor variable names   |
+ * | `type <= NonAscii`   (≤4)| + NonAscii        | Full CSS ident-part           |
+ *
+ * For the non-contiguous set `Letter | Underscore` (ident-start) use the
+ * exported {@link IDENT_START_MASK} bitmask constant.
  */
 export const enum TokenType {
+    // ── Ident-part types (ordered for range checks, see table above) ─────────
+
+    /**
+     * Letter run: one or more ASCII letters (`[A-Za-z]+`).
+     */
+    Letter = 0,
+
+    /**
+     * Hyphen: `-`.
+     * Emitted as a single-character token.
+     */
+    Hyphen = 1,
+
+    /**
+     * Digit run: one or more ASCII decimal digits (`[0-9]+`).
+     */
+    Digit = 2,
+
+    /**
+     * Underscore: `_`.
+     * Emitted as a single-character token.
+     */
+    Underscore = 3,
+
+    /**
+     * Non-ASCII character (code point ≥ U+0080).
+     * Emitted as a single-character token (one token per UTF-16 code unit).
+     */
+    NonAscii = 4,
+
+    // ── Structural / infrastructure tokens ───────────────────────────────────
+
     /**
      * End of file (end of input).
      */
-    Eof = 0,
+    Eof = 5,
 
     /**
      * Whitespace.
      */
-    Whitespace = 1,
+    Whitespace = 6,
 
     /**
      * Line break (`\r\n` or just `\n`).
      */
-    LineBreak = 2,
+    LineBreak = 7,
 
     /**
      * Escaped character, e.g. `\'`, `\"`, `\\`, etc.
      */
-    Escaped = 3,
+    Escaped = 8,
 
     /**
-     * Identifier.
-     * Any character sequence that contains letters, numbers, hyphens, and underscores.
+     * Any other unrecognised single ASCII character.
      */
-    Ident = 4,
+    Symbol = 9,
+
+    // ── Single-character punctuation tokens (direct-emit in tokenizer, ≥ 10) ─
 
     /**
      * Equals: `=`.
      */
-    EqualsSign = 5,
+    EqualsSign = 10,
 
     /**
      * Slash: `/`.
      */
-    Slash = 6,
+    Slash = 11,
 
     /**
      * Dollar: `$`.
      */
-    DollarSign = 7,
+    DollarSign = 12,
 
     /**
      * Comma: `,`.
      */
-    Comma = 8,
+    Comma = 13,
 
     /**
      * Open parenthesis: `(`.
      */
-    OpenParen = 9,
+    OpenParen = 14,
 
     /**
      * Close parenthesis: `)`.
      */
-    CloseParen = 10,
+    CloseParen = 15,
 
     /**
      * Open brace: `{`.
      */
-    OpenBrace = 11,
+    OpenBrace = 16,
 
     /**
      * Close brace: `}`.
      */
-    CloseBrace = 12,
+    CloseBrace = 17,
 
     /**
      * Open square: `[`.
      */
-    OpenSquare = 13,
+    OpenSquare = 18,
 
     /**
      * Close square: `]`.
      */
-    CloseSquare = 14,
+    CloseSquare = 19,
 
     /**
      * Pipe: `|`.
      */
-    Pipe = 15,
+    Pipe = 20,
 
     /**
      * At: `@`.
      */
-    AtSign = 16,
+    AtSign = 21,
 
     /**
      * Asterisk: `*`.
      */
-    Asterisk = 17,
+    Asterisk = 22,
 
     /**
      * Quote: `"`.
      */
-    Quote = 18,
+    Quote = 23,
 
     /**
      * Apostrophe: `'`.
      */
-    Apostrophe = 19,
+    Apostrophe = 24,
 
     /**
      * Exclamation: `!`.
      */
-    ExclamationMark = 20,
+    ExclamationMark = 25,
 
     /**
      * Hashmark: `#`.
      */
-    HashMark = 21,
+    HashMark = 26,
 
     /**
      * Plus: `+`.
      */
-    PlusSign = 22,
+    PlusSign = 27,
 
     /**
      * And: `&`.
      */
-    AndSign = 23,
+    AndSign = 28,
 
     /**
      * Tilde: `~`.
      */
-    Tilde = 24,
+    Tilde = 29,
 
     /**
      * Caret: `^`.
      */
-    Caret = 25,
+    Caret = 30,
 
     /**
      * Dot: `.`.
      */
-    Dot = 26,
+    Dot = 31,
 
     /**
      * Colon: `:`.
      */
-    Colon = 27,
+    Colon = 32,
 
     /**
      * Semicolon: `;`.
      */
-    Semicolon = 28,
+    Semicolon = 33,
 
     /**
      * Question mark: `?`.
      */
-    QuestionMark = 29,
+    QuestionMark = 34,
 
     /**
      * Percent: `%`.
      */
-    Percent = 30,
-
-    /**
-     * Unicode sequence (non-ASCII characters with charCode >= 0x80).
-     * Collected as consecutive unicode characters for performance.
-     */
-    UnicodeSequence = 31,
-
-    /**
-     * Any other character.
-     */
-    Symbol = 32,
+    Percent = 35,
 }
+
+/**
+ * Bitmask for the non-contiguous ident-start set: {@link TokenType.Letter} (0)
+ * and {@link TokenType.Underscore} (3).
+ *
+ * Usage: `(IDENT_START_MASK >>> type) & 1` — non-zero iff `type` is Letter or Underscore.
+ */
+// eslint-disable-next-line no-bitwise
+export const IDENT_START_MASK = (1 << TokenType.Letter) | (1 << TokenType.Underscore); // = 0b1001 = 9
 
 /**
  * Token type name lookup table for base names.
@@ -178,7 +222,8 @@ const TOKEN_NAMES: Record<TokenType, string> = {
     [TokenType.Whitespace]: 'whitespace',
     [TokenType.LineBreak]: 'line-break',
     [TokenType.Escaped]: 'escaped',
-    [TokenType.Ident]: 'ident',
+    [TokenType.Letter]: 'letter',
+    [TokenType.Digit]: 'digit',
     [TokenType.EqualsSign]: 'equals',
     [TokenType.Slash]: 'slash',
     [TokenType.DollarSign]: 'dollar',
@@ -205,8 +250,10 @@ const TOKEN_NAMES: Record<TokenType, string> = {
     [TokenType.Semicolon]: 'semicolon',
     [TokenType.QuestionMark]: 'question',
     [TokenType.Percent]: 'percent',
-    [TokenType.UnicodeSequence]: 'unicode-sequence',
+    [TokenType.Hyphen]: 'hyphen',
+    [TokenType.NonAscii]: 'non-ascii',
     [TokenType.Symbol]: 'symbol',
+    [TokenType.Underscore]: 'underscore',
 };
 
 /**

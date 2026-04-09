@@ -35,6 +35,25 @@ import type { CosmeticHeaderResult } from './cosmetic-common';
 import { preparseCommonCosmeticHeader } from './cosmetic-common';
 
 /**
+ * Advance past a CSS pseudo-class name (`[A-Za-z]([A-Za-z-])*`).
+ * Returns the exclusive end token index.
+ *
+ * @param types Token type array.
+ * @param startTi First token index to scan.
+ * @param limit Exclusive upper bound.
+ *
+ * @returns First token index after the name span.
+ */
+function skipPseudoName(types: Uint8Array, startTi: number, limit: number): number {
+    let ti = startTi;
+    // Letter (0) | Hyphen (1): types[ti] <= TokenType.Hyphen
+    while (ti < limit && types[ti] <= TokenType.Hyphen) {
+        ti += 1;
+    }
+    return ti;
+}
+
+/**
  * Element hiding cosmetic rule preparser.
  */
 export class ElementHidingPreparser {
@@ -114,23 +133,19 @@ export class ElementHidingPreparser {
     ): boolean {
         const { types, ends, source } = ctx;
 
-        for (let ti = startTi; ti < endTi - 2; ti += 1) {
+        for (let ti = startTi; ti < endTi - 1; ti += 1) {
             if (types[ti] !== TokenType.Colon) {
                 continue;
             }
 
-            const nextTi = ti + 1;
-            if (types[nextTi] !== TokenType.Ident) {
-                continue;
-            }
-
-            if (types[ti + 2] !== TokenType.OpenParen) {
+            const identEndTi = skipPseudoName(types, ti + 1, endTi);
+            if (identEndTi === ti + 1 || identEndTi >= endTi || types[identEndTi] !== TokenType.OpenParen) {
                 continue;
             }
 
             // Check if ident matches a known uBO modifier name
             const identStart = ends[ti]; // ident starts where colon ends
-            const identEnd = ends[nextTi];
+            const identEnd = ends[identEndTi - 1];
 
             if (
                 regionEquals(source, identStart, identEnd, UboPseudoName.MatchesPath)
@@ -144,14 +159,15 @@ export class ElementHidingPreparser {
             // Also check for :not( wrapping :matches-path()
             if (regionEquals(source, identStart, identEnd, 'not')) {
                 // Look ahead inside :not() for a uBO modifier candidate
-                for (let j = ti + 3; j < endTi - 2; j += 1) {
-                    if (types[j] === TokenType.Colon
-                        && types[j + 1] === TokenType.Ident
-                        && types[j + 2] === TokenType.OpenParen) {
-                        const iStart = ends[j];
-                        const iEnd = ends[j + 1];
-                        if (regionEquals(source, iStart, iEnd, UboPseudoName.MatchesPath)) {
-                            return true;
+                for (let j = identEndTi + 1; j < endTi; j += 1) {
+                    if (types[j] === TokenType.Colon) {
+                        const innerEndTi = skipPseudoName(types, j + 1, endTi);
+                        if (innerEndTi > j + 1 && innerEndTi < endTi && types[innerEndTi] === TokenType.OpenParen) {
+                            const iStart = ends[j];
+                            const iEnd = ends[innerEndTi - 1];
+                            if (regionEquals(source, iStart, iEnd, UboPseudoName.MatchesPath)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -274,15 +290,15 @@ export class ElementHidingPreparser {
                 continue;
             }
 
-            // Detect Colon + Ident + OpenParen pattern
-            if (
-                t === TokenType.Colon
-                && ti + 2 < endTi
-                && types[ti + 1] === TokenType.Ident
-                && types[ti + 2] === TokenType.OpenParen
-            ) {
+            // Detect Colon + ident_span + OpenParen pattern
+            if (t === TokenType.Colon) {
+                const identEndTi = skipPseudoName(types, ti + 1, endTi);
+                if (identEndTi === ti + 1 || identEndTi >= endTi || types[identEndTi] !== TokenType.OpenParen) {
+                    continue;
+                }
+
                 const identStart = ends[ti];
-                const identEnd = ends[ti + 1];
+                const identEnd = ends[identEndTi - 1];
 
                 // Determine which modifier this is (if any)
                 let modBit = 0;
@@ -338,8 +354,8 @@ export class ElementHidingPreparser {
                                     );
                                 }
 
-                                // Before OpenParen should be Ident "not"
-                                if (j < 2 || types[j - 1] !== TokenType.Ident) {
+                                // Before OpenParen should be Letter token for 'not'
+                                if (j < 2 || types[j - 1] !== TokenType.Letter) {
                                     throw new Error(
                                         ':matches-path() can only be nested inside :not()',
                                     );
@@ -384,11 +400,11 @@ export class ElementHidingPreparser {
                             curModException = exception;
                             curModNotCount = notCount;
                             curModDepth = depth + 1; // depth after the modifier's ( is opened
-                            curModValueStart = ends[ti + 2]; // after OpenParen
+                            curModValueStart = ends[identEndTi]; // after OpenParen
                             curModOpen = true;
 
-                            // Skip Ident and OpenParen tokens
-                            ti += 2;
+                            // Skip ident span and OpenParen token
+                            ti = identEndTi;
                             depth += 1;
                         } else {
                             // FR-006: other modifiers cannot be nested
@@ -406,11 +422,11 @@ export class ElementHidingPreparser {
                         curModException = 0;
                         curModNotCount = 0;
                         curModDepth = depth + 1; // depth after the modifier's ( is opened
-                        curModValueStart = ends[ti + 2]; // after OpenParen
+                        curModValueStart = ends[identEndTi]; // after OpenParen
                         curModOpen = true;
 
-                        // Skip Ident and OpenParen tokens
-                        ti += 2;
+                        // Skip ident span and OpenParen token
+                        ti = identEndTi;
                         depth += 1;
                     }
                 }

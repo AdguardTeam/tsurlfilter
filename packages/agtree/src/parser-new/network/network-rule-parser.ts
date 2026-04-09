@@ -9,8 +9,7 @@ import type { NetworkRule } from '../../nodes-new';
 import type { PreparserContext } from '../../preparser/context';
 import { createPreparserContext, initPreparserContext } from '../../preparser/context';
 import { NetworkRulePreparser } from '../../preparser/network/network-rule';
-import type { TokenizeResult } from '../../tokenizer/tokenizer';
-import { tokenizeLine } from '../../tokenizer/tokenizer';
+import { Tokenizer } from '../../tokenizer/tokenizer';
 import type { PreparserParseOptions } from '../options';
 
 import { NetworkRuleAstParser } from './network-rule';
@@ -41,9 +40,9 @@ const DEFAULT_MODIFIER_CAPACITY = 64;
  */
 export class NetworkRuleParser {
     /**
-     * Tokenize result buffer.
+     * Tokenizer instance.
      */
-    private tokens: TokenizeResult;
+    private tokenizer: Tokenizer;
 
     /**
      * Preparser context.
@@ -60,13 +59,7 @@ export class NetworkRuleParser {
         tokenCapacity = DEFAULT_TOKEN_CAPACITY,
         modifierCapacity = DEFAULT_MODIFIER_CAPACITY,
     ) {
-        this.tokens = {
-            tokenCount: 0,
-            types: new Uint8Array(tokenCapacity),
-            ends: new Uint32Array(tokenCapacity),
-            actualEnd: 0,
-            overflowed: 0,
-        };
+        this.tokenizer = new Tokenizer(tokenCapacity);
         this.ctx = createPreparserContext(tokenCapacity, modifierCapacity);
     }
 
@@ -79,8 +72,8 @@ export class NetworkRuleParser {
      * @returns Parsed NetworkRule AST node.
      */
     public parse(source: string, options?: PreparserParseOptions): NetworkRule {
-        tokenizeLine(source, 0, this.tokens);
-        initPreparserContext(this.ctx, source, this.tokens);
+        this.tokenizer.setSource(source);
+        initPreparserContext(this.ctx, source, this.tokenizer);
         NetworkRulePreparser.preparse(this.ctx);
         return NetworkRuleAstParser.parse(source, this.ctx.data, options);
     }

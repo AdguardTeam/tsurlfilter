@@ -32,12 +32,14 @@ export function isPotentialNetModifier(ctx: PreparserContext, offset: number): b
         }
     }
 
-    if (i >= tokenCount || types[i] !== TokenType.Ident) {
+    if (i >= tokenCount || types[i] !== TokenType.Letter) {
         return false;
     }
 
-    // Advance past ident
-    i += 1;
+    // Advance past modifier name — Letter (0) | Hyphen (1) | Digit (2): types <= TokenType.Digit
+    while (i < tokenCount && types[i] <= TokenType.Digit) {
+        i += 1;
+    }
 
     // Skip optional whitespace after ident
     if (i < tokenCount && types[i] === TokenType.Whitespace) {

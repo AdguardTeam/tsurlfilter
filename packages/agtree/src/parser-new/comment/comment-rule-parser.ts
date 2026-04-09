@@ -9,8 +9,7 @@ import type { AnyCommentRule } from '../../nodes-new';
 import { CommentClassifier } from '../../preparser/comment/classifier';
 import { createPreparserContext, initPreparserContext } from '../../preparser/context';
 import type { PreparserContext } from '../../preparser/context';
-import { tokenizeLine } from '../../tokenizer/tokenizer';
-import type { TokenizeResult } from '../../tokenizer/tokenizer';
+import { Tokenizer } from '../../tokenizer/tokenizer';
 import type { PreparserParseOptions } from '../options';
 
 import { CommentAstParser } from './comment';
@@ -41,9 +40,9 @@ const DEFAULT_CHILDREN_CAPACITY = 32;
  */
 export class CommentRuleParser {
     /**
-     * Tokenize result buffer.
+     * Tokenizer instance.
      */
-    private tokens: TokenizeResult;
+    private tokenizer: Tokenizer;
 
     /**
      * Preparser context.
@@ -60,13 +59,7 @@ export class CommentRuleParser {
         tokenCapacity = DEFAULT_TOKEN_CAPACITY,
         childrenCapacity = DEFAULT_CHILDREN_CAPACITY,
     ) {
-        this.tokens = {
-            tokenCount: 0,
-            types: new Uint8Array(tokenCapacity),
-            ends: new Uint32Array(tokenCapacity),
-            actualEnd: 0,
-            overflowed: 0,
-        };
+        this.tokenizer = new Tokenizer(tokenCapacity);
         this.ctx = createPreparserContext(tokenCapacity, childrenCapacity);
     }
 
@@ -79,8 +72,8 @@ export class CommentRuleParser {
      * @returns Parsed comment rule AST node.
      */
     public parse(source: string, options?: PreparserParseOptions): AnyCommentRule {
-        tokenizeLine(source, 0, this.tokens);
-        initPreparserContext(this.ctx, source, this.tokens);
+        this.tokenizer.setSource(source);
+        initPreparserContext(this.ctx, source, this.tokenizer);
         CommentClassifier.preparse(this.ctx);
         return CommentAstParser.parse(source, this.ctx.data, options);
     }

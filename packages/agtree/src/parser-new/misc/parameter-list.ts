@@ -22,9 +22,13 @@ import {
     PL_PARAM_START,
     PL_STRIDE,
 } from '../../preparser/misc/parameter-list';
-import { tokenizeLine } from '../../tokenizer/tokenizer';
-import type { TokenizeResult } from '../../tokenizer/tokenizer';
+import { Tokenizer } from '../../tokenizer/tokenizer';
 import { QuoteType, QuoteUtils } from '../../utils/quotes';
+
+/**
+ * Default token capacity for the reusable {@link ParameterListParser} tokenizer.
+ */
+const DEFAULT_TOKEN_CAPACITY = 1024;
 
 /**
  * AST parser for parameter list nodes.
@@ -181,15 +185,9 @@ export class ParameterListAstParser {
  */
 export class ParameterListParser {
     /**
-     * Reusable tokenizer result buffer.
+     * Reusable tokenizer instance.
      */
-    private static readonly tokens: TokenizeResult = {
-        tokenCount: 0,
-        types: new Uint8Array(1024),
-        ends: new Uint32Array(1024),
-        actualEnd: 0,
-        overflowed: 0,
-    };
+    private static readonly tokenizer: Tokenizer = new Tokenizer(DEFAULT_TOKEN_CAPACITY);
 
     /**
      * Reusable preparser context.
@@ -221,13 +219,13 @@ export class ParameterListParser {
         const innerEnd = paramsEnd - 1;
 
         // Tokenize the source from `innerStart` — token ends are absolute positions.
-        tokenizeLine(source, innerStart, this.tokens);
-        initPreparserContext(this.ctx, source, this.tokens, innerStart);
+        this.tokenizer.setSource(source, innerStart);
+        initPreparserContext(this.ctx, source, this.tokenizer, innerStart);
 
         // Find the closing `)` token: first token whose end reaches `paramsEnd`.
-        const { tokenCount } = this.tokens;
+        const { tokenCount } = this.tokenizer;
         let closeParenTi = 0;
-        while (closeParenTi < tokenCount && this.tokens.ends[closeParenTi] < paramsEnd) {
+        while (closeParenTi < tokenCount && this.tokenizer.ends[closeParenTi] < paramsEnd) {
             closeParenTi += 1;
         }
 

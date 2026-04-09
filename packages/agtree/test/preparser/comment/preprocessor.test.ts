@@ -7,16 +7,9 @@ import {
     initPreparserContext,
     PreprocessorCommentPreparser,
 } from '../../../src/preparser';
-import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
-import type { TokenizeResult } from '../../../src/tokenizer/tokenizer';
+import { Tokenizer } from '../../../src/tokenizer/tokenizer';
 
-const tokenResult: TokenizeResult = {
-    tokenCount: 0,
-    types: new Uint8Array(1024),
-    ends: new Uint32Array(1024),
-    actualEnd: 0,
-    overflowed: 0,
-};
+const tokenizer = new Tokenizer(1024);
 
 const ctx = createPreparserContext();
 
@@ -28,8 +21,8 @@ const ctx = createPreparserContext();
  * @returns Preparsed data buffer.
  */
 function preparse(source: string): Int32Array {
-    tokenizeLine(source, 0, tokenResult);
-    initPreparserContext(ctx, source, tokenResult);
+    tokenizer.setSource(source);
+    initPreparserContext(ctx, source, tokenizer);
     CommentClassifier.preparse(ctx);
     return ctx.data;
 }

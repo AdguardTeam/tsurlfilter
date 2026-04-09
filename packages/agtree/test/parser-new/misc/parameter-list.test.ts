@@ -3,17 +3,10 @@ import { describe, expect, test } from 'vitest';
 import { ParameterListAstParser } from '../../../src/parser-new/misc/parameter-list';
 import { createPreparserContext, initPreparserContext } from '../../../src/preparser/context';
 import { ParameterListPreparser, PL_BUFFER_SIZE } from '../../../src/preparser/misc/parameter-list';
-import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
-import type { TokenizeResult } from '../../../src/tokenizer/tokenizer';
+import { Tokenizer } from '../../../src/tokenizer/tokenizer';
 import { QuoteType } from '../../../src/utils/quotes';
 
-const tokenResult: TokenizeResult = {
-    tokenCount: 0,
-    types: new Uint8Array(1024),
-    ends: new Uint32Array(1024),
-    actualEnd: 0,
-    overflowed: 0,
-};
+const tokenizer = new Tokenizer(1024);
 
 const ctx = createPreparserContext();
 const plBuf = new Int32Array(PL_BUFFER_SIZE);
@@ -28,9 +21,11 @@ const plBuf = new Int32Array(PL_BUFFER_SIZE);
  * @returns ParameterList AST node.
  */
 function parse(source: string, isLocIncluded = false) {
-    tokenizeLine(source, 0, tokenResult);
-    initPreparserContext(ctx, source, tokenResult);
-    ParameterListPreparser.preparse(ctx, 0, tokenResult.tokenCount, 0, source.length, plBuf);
+    tokenizer.source = source;
+    tokenizer.offset = 0;
+    tokenizer.tokenize();
+    initPreparserContext(ctx, source, tokenizer);
+    ParameterListPreparser.preparse(ctx, 0, tokenizer.tokenCount, 0, source.length, plBuf);
     return ParameterListAstParser.parse(source, plBuf, isLocIncluded);
 }
 

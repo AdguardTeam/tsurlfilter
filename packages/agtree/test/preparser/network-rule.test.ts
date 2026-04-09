@@ -8,18 +8,9 @@ import {
     ModifierPreparser,
     NetworkRulePreparser,
 } from '../../src/preparser';
-import { tokenizeLine } from '../../src/tokenizer/tokenizer';
-import type { TokenizeResult } from '../../src/tokenizer/tokenizer';
+import { Tokenizer } from '../../src/tokenizer/tokenizer';
 
-const createTokenResult = (capacity = 1024): TokenizeResult => ({
-    tokenCount: 0,
-    types: new Uint8Array(capacity),
-    ends: new Uint32Array(capacity),
-    actualEnd: 0,
-    overflowed: 0,
-});
-
-const tokenResult = createTokenResult();
+const tokenizer = new Tokenizer(1024);
 const ctx = createPreparserContext();
 
 /**
@@ -30,8 +21,8 @@ const ctx = createPreparserContext();
  * @returns Preparsed data buffer.
  */
 function preparse(source: string): Int32Array {
-    tokenizeLine(source, 0, tokenResult);
-    initPreparserContext(ctx, source, tokenResult);
+    tokenizer.setSource(source);
+    initPreparserContext(ctx, source, tokenizer);
     NetworkRulePreparser.preparse(ctx);
     return ctx.data;
 }

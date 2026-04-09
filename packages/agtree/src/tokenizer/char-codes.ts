@@ -2,6 +2,8 @@
  * @file Character code constants.
  *
  * Centralized character code definitions used across tokenizer and parsers.
+ * Each exported value is the result of `String.prototype.charCodeAt(0)` — i.e.
+ * a numeric character code, not a string character.
  * Using `.charCodeAt(0)` at module level ensures these are compile-time constants.
  */
 
@@ -149,3 +151,13 @@ export const CHAR_SEMICOLON = ';'.charCodeAt(0);
  * Colon character (`:`).
  */
 export const CHAR_COLON = ':'.charCodeAt(0);
+
+/**
+ * Line feed character (`\n`).
+ */
+export const CHAR_LINE_FEED = '\n'.charCodeAt(0);
+
+/**
+ * Carriage return character (`\r`).
+ */
+export const CHAR_CARRIAGE_RETURN = '\r'.charCodeAt(0);

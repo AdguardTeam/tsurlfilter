@@ -4,12 +4,15 @@ import { getBaseTokenName, getFormattedTokenName, TokenType } from '../../src/to
 
 describe('TokenType', () => {
     test('should have correct numeric values', () => {
-        expect(TokenType.Eof).toBe(0);
-        expect(TokenType.Whitespace).toBe(1);
-        expect(TokenType.LineBreak).toBe(2);
-        expect(TokenType.Ident).toBe(4);
-        expect(TokenType.UnicodeSequence).toBe(31);
-        expect(TokenType.Symbol).toBe(32);
+        expect(TokenType.Letter).toBe(0);
+        expect(TokenType.Hyphen).toBe(1);
+        expect(TokenType.Digit).toBe(2);
+        expect(TokenType.Underscore).toBe(3);
+        expect(TokenType.NonAscii).toBe(4);
+        expect(TokenType.Eof).toBe(5);
+        expect(TokenType.Whitespace).toBe(6);
+        expect(TokenType.LineBreak).toBe(7);
+        expect(TokenType.Symbol).toBe(9);
     });
 });
 
@@ -19,9 +22,12 @@ describe('getBaseTokenName', () => {
         expect(getBaseTokenName(TokenType.Whitespace)).toBe('whitespace');
         expect(getBaseTokenName(TokenType.LineBreak)).toBe('line-break');
         expect(getBaseTokenName(TokenType.Escaped)).toBe('escaped');
-        expect(getBaseTokenName(TokenType.Ident)).toBe('ident');
-        expect(getBaseTokenName(TokenType.UnicodeSequence)).toBe('unicode-sequence');
+        expect(getBaseTokenName(TokenType.Letter)).toBe('letter');
+        expect(getBaseTokenName(TokenType.Digit)).toBe('digit');
+        expect(getBaseTokenName(TokenType.Hyphen)).toBe('hyphen');
+        expect(getBaseTokenName(TokenType.NonAscii)).toBe('non-ascii');
         expect(getBaseTokenName(TokenType.Symbol)).toBe('symbol');
+        expect(getBaseTokenName(TokenType.Underscore)).toBe('underscore');
     });
 
     test('should return correct names for punctuation tokens', () => {
@@ -59,8 +65,8 @@ describe('getBaseTokenName', () => {
         expect(getBaseTokenName(100 as TokenType)).toBe('unknown');
     });
 
-    test('should have names for all token types (0-32)', () => {
-        for (let i = 0; i <= 32; i += 1) {
+    test('should have names for all token types (0-35)', () => {
+        for (let i = 0; i <= 35; i += 1) {
             const name = getBaseTokenName(i as TokenType);
             expect(name).not.toBe('unknown');
             expect(name).toBeTruthy();
@@ -73,9 +79,12 @@ describe('getFormattedTokenName', () => {
     test('should return formatted names for known token types', () => {
         expect(getFormattedTokenName(TokenType.Eof)).toBe('<eof-token>');
         expect(getFormattedTokenName(TokenType.Whitespace)).toBe('<whitespace-token>');
-        expect(getFormattedTokenName(TokenType.Ident)).toBe('<ident-token>');
+        expect(getFormattedTokenName(TokenType.Letter)).toBe('<letter-token>');
+        expect(getFormattedTokenName(TokenType.Digit)).toBe('<digit-token>');
+        expect(getFormattedTokenName(TokenType.Hyphen)).toBe('<hyphen-token>');
+        expect(getFormattedTokenName(TokenType.NonAscii)).toBe('<non-ascii-token>');
         expect(getFormattedTokenName(TokenType.Symbol)).toBe('<symbol-token>');
-        expect(getFormattedTokenName(TokenType.UnicodeSequence)).toBe('<unicode-sequence-token>');
+        expect(getFormattedTokenName(TokenType.Underscore)).toBe('<underscore-token>');
     });
 
     test('should return formatted names for punctuation tokens', () => {
@@ -92,7 +101,7 @@ describe('getFormattedTokenName', () => {
     });
 
     test('should format all valid token types correctly', () => {
-        for (let i = 0; i <= 32; i += 1) {
+        for (let i = 0; i <= 35; i += 1) {
             const formatted = getFormattedTokenName(i as TokenType);
             expect(formatted).toMatch(/^<.+-token>$/);
             expect(formatted).not.toBe('<unknown-token>');

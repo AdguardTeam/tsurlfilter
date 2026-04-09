@@ -9,7 +9,7 @@
  */
 
 import { TokenType } from '../tokenizer/token-types';
-import type { TokenizeResult } from '../tokenizer/tokenizer';
+import type { Tokenizer } from '../tokenizer/tokenizer';
 
 import { SCRIPTLET_BODY_DATA_CAPACITY, UBO_MODIFIER_RECORD_STRIDE } from './cosmetic/constants';
 import { MODIFIER_RECORD_STRIDE, NR_MODIFIER_RECORDS_OFFSET } from './network/constants';
@@ -143,13 +143,13 @@ export function createPreparserContext(
  *
  * @param ctx Context to initialize.
  * @param source Source string.
- * @param tokens Tokenizer output.
+ * @param tokens Tokenizer instance after calling tokenize().
  * @param sourceStart Source offset (default 0).
  */
 export function initPreparserContext(
     ctx: PreparserContext,
     source: string,
-    tokens: TokenizeResult,
+    tokens: Tokenizer,
     sourceStart = 0,
 ): void {
     ctx.source = source;

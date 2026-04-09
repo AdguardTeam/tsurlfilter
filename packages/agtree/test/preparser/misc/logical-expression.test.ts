@@ -14,16 +14,9 @@ import {
     LE_KIND_VAR,
     LogicalExpressionPreparser,
 } from '../../../src/preparser';
-import { tokenizeLine } from '../../../src/tokenizer/tokenizer';
-import type { TokenizeResult } from '../../../src/tokenizer/tokenizer';
+import { Tokenizer } from '../../../src/tokenizer/tokenizer';
 
-const tokenResult: TokenizeResult = {
-    tokenCount: 0,
-    types: new Uint8Array(1024),
-    ends: new Uint32Array(1024),
-    actualEnd: 0,
-    overflowed: 0,
-};
+const tokenizer = new Tokenizer(1024);
 
 const ctx = createPreparserContext();
 const buf = new Int32Array(LE_BUFFER_SIZE);
@@ -37,9 +30,11 @@ const buf = new Int32Array(LE_BUFFER_SIZE);
  * @returns Output buffer with the flat node-tree.
  */
 function preparse(source: string, startOffset = 0): Int32Array {
-    tokenizeLine(source, startOffset, tokenResult);
-    initPreparserContext(ctx, source, tokenResult, startOffset);
-    LogicalExpressionPreparser.preparse(ctx, 0, tokenResult.tokenCount, buf);
+    tokenizer.source = source;
+    tokenizer.offset = startOffset;
+    tokenizer.tokenize();
+    initPreparserContext(ctx, source, tokenizer, startOffset);
+    LogicalExpressionPreparser.preparse(ctx, 0, tokenizer.tokenCount, buf);
     return buf;
 }
 
@@ -289,17 +284,16 @@ describe('LogicalExpressionPreparser', () => {
         test('(a)) throws (extra close paren)', () => { expect(() => preparse('(a))')).toThrow(); });
         test('(a||b&&c throws (unclosed paren)', () => { expect(() => preparse('(a||b&&c')).toThrow(); });
 
-        // Behavioral difference from the old char-level parser: the new tokenizer
-        // maps `_` and digits as valid Ident-continuation chars, so `_a` and `1a`
-        // are tokenized as single Ident tokens and accepted as variable names.
-        test('_a && b — accepted (underscore is a valid Ident char in the tokenizer)', () => {
+        // With the split tokenizer `_a` starts with an Underscore token, which
+        // isIdentStart accepts, so the expression is valid.
+        test('_a && b — accepted (underscore is a valid ident-start)', () => {
             const b = preparse('_a && b');
             expect(LogicalExpressionPreparser.rootIndex(b)).not.toBe(-1);
         });
 
-        test('1a && b — accepted (digit is a valid Ident char in the tokenizer)', () => {
-            const b = preparse('1a && b');
-            expect(LogicalExpressionPreparser.rootIndex(b)).not.toBe(-1);
+        // `1a` now tokenizes as Digit + Letter; Digit is not an ident-start, so it throws.
+        test('1a && b — throws (digit cannot start a variable name)', () => {
+            expect(() => preparse('1a && b')).toThrow();
         });
 
         test('á throws (non-ASCII character)', () => { expect(() => preparse('á')).toThrow(); });
