@@ -65,6 +65,7 @@ import {
     CHAR_DOT,
     CHAR_EQUALS_SIGN,
     CHAR_EXCLAMATION_MARK,
+    CHAR_FORM_FEED,
     CHAR_HASHMARK,
     CHAR_LINE_FEED,
     CHAR_OPEN_BRACE,
@@ -197,6 +198,7 @@ export class Tokenizer {
             // Newlines
             DISPATCH[CHAR_LINE_FEED] = ACT_NEWLINE;
             DISPATCH[CHAR_CARRIAGE_RETURN] = ACT_NEWLINE;
+            DISPATCH[CHAR_FORM_FEED] = ACT_NEWLINE;
 
             // Backslash
             DISPATCH[CHAR_BACKSLASH] = ACT_BACKSLASH;

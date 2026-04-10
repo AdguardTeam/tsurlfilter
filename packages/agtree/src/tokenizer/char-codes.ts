@@ -153,6 +153,66 @@ export const CHAR_SEMICOLON = ';'.charCodeAt(0);
 export const CHAR_COLON = ':'.charCodeAt(0);
 
 /**
+ * Hyphen-minus character (`-`).
+ */
+export const CHAR_HYPHEN = '-'.charCodeAt(0);
+
+/**
+ * Less-than sign character (`<`).
+ */
+export const CHAR_LESS_THAN = '<'.charCodeAt(0);
+
+/**
+ * Greater-than sign character (`>`).
+ */
+export const CHAR_GREATER_THAN = '>'.charCodeAt(0);
+
+/**
+ * Digit zero character (`0`).
+ */
+export const CHAR_ZERO = '0'.charCodeAt(0);
+
+/**
+ * Digit nine character (`9`).
+ */
+export const CHAR_NINE = '9'.charCodeAt(0);
+
+/**
+ * Lowercase letter `a`.
+ */
+export const CHAR_LOWER_A = 'a'.charCodeAt(0);
+
+/**
+ * Lowercase letter `e`.
+ */
+export const CHAR_LOWER_E = 'e'.charCodeAt(0);
+
+/**
+ * Lowercase letter `f`.
+ */
+export const CHAR_LOWER_F = 'f'.charCodeAt(0);
+
+/**
+ * Uppercase letter `A`.
+ */
+export const CHAR_UPPER_A = 'A'.charCodeAt(0);
+
+/**
+ * Uppercase letter `E`.
+ */
+export const CHAR_UPPER_E = 'E'.charCodeAt(0);
+
+/**
+ * Uppercase letter `F`.
+ */
+export const CHAR_UPPER_F = 'F'.charCodeAt(0);
+
+/**
+ * Form feed character (`\f`).
+ */
+export const CHAR_FORM_FEED = '\f'.charCodeAt(0);
+
+/**
  * Line feed character (`\n`).
  */
 export const CHAR_LINE_FEED = '\n'.charCodeAt(0);

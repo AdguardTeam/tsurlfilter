@@ -191,6 +191,30 @@ describe('Tokenizer', () => {
             ]);
         });
 
+        test('emits LineBreak token for form feed (\\f)', () => {
+            const input = 'abc\fdef';
+            const t = tokenize(input);
+            const tokens = extractTokens(t);
+            expect(tokens).toEqual([
+                { type: TokenType.Letter, value: 'abc' },
+                { type: TokenType.LineBreak, value: '\f' },
+                { type: TokenType.Letter, value: 'def' },
+            ]);
+            expect(t.offset).toBe(input.length);
+        });
+
+        test('does not collapse \\r\\f into a single token', () => {
+            const input = 'a\r\fb';
+            const t = tokenize(input);
+            const tokens = extractTokens(t);
+            expect(tokens).toEqual([
+                { type: TokenType.Letter, value: 'a' },
+                { type: TokenType.LineBreak, value: '\r' },
+                { type: TokenType.LineBreak, value: '\f' },
+                { type: TokenType.Letter, value: 'b' },
+            ]);
+        });
+
         test('chunk-by-chunk processing via eof() and multiple tokenize() calls', () => {
             const input = 'line1\nline2\nline3';
             const t = new Tokenizer(1024);
