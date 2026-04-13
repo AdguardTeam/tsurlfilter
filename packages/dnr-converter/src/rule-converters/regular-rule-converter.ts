@@ -15,7 +15,7 @@
  *                            │    handling errors.                     │
  *  ┌─────────────────────┐   │   ┌───────────────────────────┐         │
  *  │                     │   │   │                           │         │
- *  │  abstract convert() ├───┼──►│  protected convertRules() │         │
+ *  │   public convert()  ├───┼──►│  protected convertRules() │         │
  *  │                     │   │   │                           │         │
  *  └─────────────────────┘   │   └─────────────┬─────────────┘         │
  *                            │                 │                       │
@@ -28,28 +28,21 @@
  *                            │   Transforms a single                   │                       │
  *                            │   {@link NetworkRule} into one.         │     ┌─────────────────▼────────────────────┐
  *                            │   or several {@link DeclarativeRule}    │     │                                      │
- *                            │                                         │  ┌──┤ static shouldConvertNetworkRule()    │
+ *                            │                                         │  ┌──┤      private getAction()             │
  *                            │                                         │  │  │                                      │
  *                            │                                         │  │  └──────────────────────────────────────┘
- *                            │                                         │  │  Checks if network rule conversion
- *                            │                                         │  │  is supported and if it is needed at all.
- *                            │                                         │  │
- *                            │                                         │  │  ┌──────────────────────────┐
- *                            │                                         │  └──►                          │
- *                            │                                         │     │   private getAction()    │
- *                            │                                         │  ┌──┤                          │
- *                            │                                         │  │  └──────────────────────────┘
  *                            │                                         │  │  Generates the action section
  *                            │                                         │  │  of a declarative rule.
  *                            │                                         │  │
- *                            │                                         │  │  ┌──────────────────────────────────────────┐
- *                            │                                         │  └──►                                          │
- *                            │                                         │     │         private getRedirectAction()      │
- *                            │                                         │     │   static getRemoveParamRedirectAction()  │
- *                            │                                         │     │      static getModifyHeadersAction()     │
- *                            │                                         │     │     static getAddingCspHeadersAction()   │
- *                            │                                         │  ┌──┤                                          │
- *                            │                                         │  │  └──────────────────────────────────────────┘
+ *                            │                                         │  │  ┌───────────────────────────────────────────┐
+ *                            │                                         │  └──►                                           │
+ *                            │                                         │     │         private getRedirectAction()       │
+ *                            │                                         │     │    static getRemoveParamRedirectAction()  │
+ *                            │                                         │     │       static getModifyHeadersAction()     │
+ *                            │                                         │     │ static getRemovingCookieHeadersAction()   │
+ *                            │                                         │     │      static getAddingCspHeadersAction()   │
+ *                            │                                         │  ┌──┤ static getAddingPermissionsHeadersAction()│
+ *                            │                                         │  │  └───────────────────────────────────────────┘
  *                            │                                         │  │  Modifier-specific methods. A distinct
  *                            │                                         │  │  section will be created for each modifier.
  *                            │                                         │  │
@@ -143,14 +136,14 @@ import { type ConvertedRules } from './converted-rules';
 /**
  * Contains the generic logic for converting a {@link NetworkRule} into a {@link DeclarativeRule}.
  *
- * Descendant classes must override the {@link RuleConverter.convert}
- * method, where some logic must be defined for each rule type.
+ * Descendant classes can override the {@link RegularRuleConverter.convert}
+ * method to add post-processing logic (e.g. grouping similar rules).
  *
- * Also descendant classes can use {@link RuleConverter.convertRules},
- * {@link RuleConverter.convertRule} and {@link RuleConverter.groupConvertedRules}
+ * Also descendant classes can use {@link RegularRuleConverter.convertRules},
+ * {@link RegularRuleConverter.convertRule} and {@link RegularRuleConverter.groupConvertedRules}
  * methods, which contains the general logic of transformation and grouping of rules.
  */
-export abstract class RuleConverter {
+export class RegularRuleConverter {
     /**
      * Resource types that are compatible with {@link RuleActionType.AllowAllRequests}.
      */
@@ -166,7 +159,7 @@ export abstract class RuleConverter {
     protected webAccessibleResourcesPath?: string;
 
     /**
-     * Constructor of {@link RuleConverter}.
+     * Constructor of {@link RegularRuleConverter}.
      *
      * @param webAccessibleResourcesPath Path to web accessible resources.
      */
@@ -184,7 +177,7 @@ export abstract class RuleConverter {
     private static isCompatibleWithAllowAllRequests(rule: NetworkRule): boolean {
         const types = rule.getPermittedResourceTypes();
 
-        if (types.some((type) => !RuleConverter.ALLOW_ALL_REQUEST_COMPATIBLE_RESOURCE_TYPES.has(type))) {
+        if (types.some((type) => !RegularRuleConverter.ALLOW_ALL_REQUEST_COMPATIBLE_RESOURCE_TYPES.has(type))) {
             return false;
         }
 
@@ -375,7 +368,7 @@ export abstract class RuleConverter {
      */
     private getAction(rule: NetworkRule): RuleAction {
         if (rule.isAllowlist()) {
-            if (rule.isFilteringDisabled() && RuleConverter.isCompatibleWithAllowAllRequests(rule)) {
+            if (rule.isFilteringDisabled() && RegularRuleConverter.isCompatibleWithAllowAllRequests(rule)) {
                 return { type: RuleActionType.AllowAllRequests };
             }
 
@@ -393,7 +386,7 @@ export abstract class RuleConverter {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
-            const removeParamRedirectAction = RuleConverter.getRemoveParamRedirectAction(rule);
+            const removeParamRedirectAction = RegularRuleConverter.getRemoveParamRedirectAction(rule);
             if (removeParamRedirectAction) {
                 return {
                     type: RuleActionType.Redirect,
@@ -403,7 +396,7 @@ export abstract class RuleConverter {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
-            const modifyHeadersAction = RuleConverter.getModifyHeadersAction(rule);
+            const modifyHeadersAction = RegularRuleConverter.getModifyHeadersAction(rule);
 
             if (modifyHeadersAction?.requestHeaders) {
                 return {
@@ -421,7 +414,7 @@ export abstract class RuleConverter {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
-            const headersAction = RuleConverter.getAddingCspHeadersAction(rule);
+            const headersAction = RegularRuleConverter.getAddingCspHeadersAction(rule);
             if (headersAction) {
                 return {
                     type: RuleActionType.ModifyHeaders,
@@ -431,7 +424,7 @@ export abstract class RuleConverter {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Permissions)) {
-            const headersAction = RuleConverter.getAddingPermissionsHeadersAction(rule);
+            const headersAction = RegularRuleConverter.getAddingPermissionsHeadersAction(rule);
             if (headersAction) {
                 return {
                     type: RuleActionType.ModifyHeaders,
@@ -441,7 +434,7 @@ export abstract class RuleConverter {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
-            const removeCookieHeaders = RuleConverter.getRemovingCookieHeadersAction(rule);
+            const removeCookieHeaders = RegularRuleConverter.getRemovingCookieHeadersAction(rule);
             if (removeCookieHeaders) {
                 const { responseHeaders, requestHeaders } = removeCookieHeaders;
 
@@ -658,14 +651,14 @@ export abstract class RuleConverter {
         const declarativeRule: DeclarativeRule = {
             id,
             action: this.getAction(rule),
-            condition: RuleConverter.getCondition(rule),
+            condition: RegularRuleConverter.getCondition(rule),
         };
 
         // Set calculated priority
         declarativeRule.priority = rule.getPriority();
 
         // Validate created declarative rule and throw error if not valid
-        const conversionErr = await RuleConverter.checkRuleApplication(rule, declarativeRule);
+        const conversionErr = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
         if (conversionErr) {
             throw conversionErr;
         }
@@ -788,7 +781,7 @@ export abstract class RuleConverter {
 
         await Promise.all(rules.map(async (rule: NetworkRule) => {
             const index = rule.getIndex();
-            const id = RuleConverter.generateId(rule, usedIds);
+            const id = RegularRuleConverter.generateId(rule, usedIds);
 
             try {
                 // Convert rule and collect source map value
@@ -800,7 +793,7 @@ export abstract class RuleConverter {
                 });
                 res.declarativeRules.push(converted);
             } catch (e) {
-                const err = RuleConverter.catchConversionError(index, id, e);
+                const err = RegularRuleConverter.catchConversionError(index, id, e);
                 res.errors.push(err);
             }
         }));
@@ -908,6 +901,9 @@ export abstract class RuleConverter {
      * Converts provided bunch of {@link NetworkRule} to {@link DeclarativeRule}
      * via generating source map for it and catching errors of conversations.
      *
+     * Subclasses can override this method to add post-processing logic
+     * (e.g. grouping similar rules via {@link RegularRuleConverter.groupConvertedRules}).
+     *
      * @param filterListId Filter list ID.
      * @param rules List of {@link NetworkRule}.
      * @param usedIds Set with already used IDs to exclude duplications in IDs.
@@ -915,9 +911,11 @@ export abstract class RuleConverter {
      * @returns Object of {@link ConvertedRules} which containing
      * declarative rules, source rule identifiers, errors.
      */
-    public abstract convert(
+    public async convert(
         filterListId: number,
         rules: NetworkRule[],
         usedIds: Set<number>,
-    ): Promise<ConvertedRules>;
+    ): Promise<ConvertedRules> {
+        return this.convertRules(filterListId, rules, usedIds);
+    }
 }

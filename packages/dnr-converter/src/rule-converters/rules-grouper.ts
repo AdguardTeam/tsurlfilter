@@ -26,6 +26,9 @@ export enum RulesGroup {
 
     /**
      * `$badfilter` rules.
+     *
+     * These rules are not converted to declarative rules, but are used
+     * to negate other rules during the conversion process.
      */
     BadFilter = 4,
 }

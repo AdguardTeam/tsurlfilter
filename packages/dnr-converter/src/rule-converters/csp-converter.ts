@@ -3,14 +3,14 @@ import { type DeclarativeRule, type ModifyHeaderInfo } from '../declarative-rule
 import { type NetworkRule } from '../network-rule';
 
 import { type ConvertedRules } from './converted-rules';
-import { RuleConverter } from './rule-converter';
+import { RegularRuleConverter } from './regular-rule-converter';
 
 /**
  * Describes how to convert `$csp` rules.
  *
- * @see {@link RuleConverter} parent class.
+ * @see {@link RegularRuleConverter} parent class.
  */
-export class CspConverter extends RuleConverter {
+export class CspConverter extends RegularRuleConverter {
     /**
      * Creates rule template for grouping similar `$csp` rules.
      *
@@ -127,7 +127,7 @@ export class CspConverter extends RuleConverter {
         usedIds: Set<number>,
     ): Promise<ConvertedRules> {
         const converted = await this.convertRules(filterListId, rules, usedIds);
-        const result = RuleConverter.groupConvertedRules(
+        const result = RegularRuleConverter.groupConvertedRules(
             converted,
             CspConverter.createRuleTemplate,
             CspConverter.combineRulePair,

@@ -129,3 +129,20 @@ export function isRegexPattern(str: string): boolean {
 export function hasSpaces(str: string): boolean {
     return str.includes(SPACE_CHARACTER);
 }
+
+/**
+ * Tab character used for pretty printing.
+ */
+const TAB = '\t';
+
+/**
+ * Serializes data to a JSON string.
+ *
+ * @param data Data to serialize.
+ * @param pretty Whether to pretty print the output.
+ *
+ * @returns JSON string.
+ */
+export function serializeJson(data: unknown, pretty?: boolean): string {
+    return JSON.stringify(data, null, pretty ? TAB : undefined);
+}

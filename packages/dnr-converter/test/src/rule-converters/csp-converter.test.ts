@@ -9,7 +9,7 @@ import { CSP_HEADER_NAME } from '../../../src/constants';
 import { type DeclarativeRule, HeaderOperation, RuleActionType } from '../../../src/declarative-rule';
 import { type NetworkRule } from '../../../src/network-rule';
 import { CspConverter } from '../../../src/rule-converters';
-import { RuleConverter } from '../../../src/rule-converters/rule-converter';
+import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
 
 describe('CspConverter', () => {
     describe('createRuleTemplate', () => {
@@ -345,7 +345,7 @@ describe('CspConverter', () => {
             // @ts-expect-error Accessing private method for testing purposes
             const convertRulesSpy = vi.spyOn(cspConverter, 'convertRules');
             // @ts-expect-error Accessing private method for testing purposes
-            const groupConvertedRulesSpy = vi.spyOn(RuleConverter, 'groupConvertedRules');
+            const groupConvertedRulesSpy = vi.spyOn(RegularRuleConverter, 'groupConvertedRules');
 
             const filterListId = 1;
             const rules: NetworkRule[] = [];

@@ -8,7 +8,7 @@ import {
 import { type DeclarativeRule, RuleActionType } from '../../../src/declarative-rule';
 import { type NetworkRule } from '../../../src/network-rule';
 import { RemoveParamConverter } from '../../../src/rule-converters';
-import { RuleConverter } from '../../../src/rule-converters/rule-converter';
+import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
 
 describe('RemoveParamConverter', () => {
     describe('createRuleTemplate', () => {
@@ -206,7 +206,7 @@ describe('RemoveParamConverter', () => {
             // @ts-expect-error Accessing private method for testing purposes
             const convertRulesSpy = vi.spyOn(removeParamConverter, 'convertRules');
             // @ts-expect-error Accessing private method for testing purposes
-            const groupConvertedRulesSpy = vi.spyOn(RuleConverter, 'groupConvertedRules');
+            const groupConvertedRulesSpy = vi.spyOn(RegularRuleConverter, 'groupConvertedRules');
 
             const filterListId = 1;
             const rules: NetworkRule[] = [];

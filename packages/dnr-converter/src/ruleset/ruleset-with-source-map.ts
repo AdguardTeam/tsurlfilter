@@ -1,0 +1,765 @@
+/**
+ * @file Contains the RulesetWithSourceMap class and IRulesetWithSourceMap
+ * interface for managing converted declarative rules with source maps,
+ * hash maps, lazy loading, and full serialization.
+ */
+
+import * as v from 'valibot';
+
+import { type DeclarativeRule, DeclarativeRuleValidator } from '../declarative-rule';
+import { UnavailableRulesetSourceError } from '../errors/unavailable-sources-errors';
+import { type IFilterWithSource } from '../filter/types';
+import { NetworkRule } from '../network-rule';
+import { getErrorMessage } from '../utils/error';
+import { serializeJson } from '../utils/string';
+import { strictObjectByType } from '../utils/valibot';
+
+import { createMetadataRule } from './metadata-rule';
+import { type IRulesHashMap } from './rules-hash-map';
+import { type ISourceMap, SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
+import { type IBaseRuleset, type SourceRuleAndFilterId } from './types';
+
+/**
+ * Extended rule set interface for the advanced conversion flow
+ * ({@link FilterConverterWithSourceMap}) with source-map support, hash maps,
+ * lazy loading, and full serialization.
+ */
+export interface IRulesetWithSourceMap extends IBaseRuleset {
+    /**
+     * Returns a list of pairs of source text rules and their filter identifiers
+     * for a given declarative rule identifier.
+     *
+     * @param declarativeRuleId {@link DeclarativeRule|declarative rule} Id.
+     *
+     * @returns Promise with list of source rules.
+     *
+     * @throws Error {@link UnavailableRulesetSourceError} if rule set source
+     * is not available.
+     */
+    getRulesById(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]>;
+
+    /**
+     * Returns list of network rules with `$badfilter` option.
+     *
+     * @returns List of network rules with `$badfilter` option.
+     */
+    getBadFilterRules(): NetworkRule[];
+
+    /**
+     * Returns dictionary with hashes of all ruleset's source rules.
+     *
+     * @returns Dictionary with hashes of all ruleset's source rules.
+     */
+    getRulesHashMap(): IRulesHashMap;
+
+    /**
+     * For provided source returns list of ids of converted declarative rule.
+     *
+     * @param source Source rule index and filter id.
+     *
+     * @returns List of ids of converted declarative rule.
+     */
+    getDeclarativeRulesIdsBySourceRuleIndex(
+        source: SourceRuleIdxAndFilterId,
+    ): Promise<number[]>;
+
+    /**
+     * Returns list of ruleset's declarative rules (async, lazy loaded).
+     *
+     * @returns List of ruleset's declarative rules.
+     */
+    getDeclarativeRules(): Promise<DeclarativeRule[]>;
+
+    /**
+     * Contains unsafe declarative rules which is separate from ruleset
+     * (async, lazy loaded).
+     *
+     * @returns List of unsafe declarative rules.
+     */
+    getUnsafeRules(): Promise<DeclarativeRule[]>;
+
+    /**
+     * Unload ruleset content.
+     * This method can be used to free memory until the content is needed again.
+     */
+    unloadContent(): void;
+
+    /**
+     * Serializes rule set to primitives values with lazy load.
+     *
+     * TODO: Replace this method with `serializeCompact` method, because this
+     * one is not used in the codebase.
+     *
+     * @returns Serialized rule set.
+     *
+     * @throws Error {@link UnavailableRulesetSourceError} if rule set source
+     * is not available.
+     *
+     * @deprecated
+     */
+    serialize(): Promise<SerializedRuleset>;
+
+    /**
+     * Serializes rule set to a single file.
+     *
+     * @param prettyPrint Whether to pretty print the output. Default is `true`.
+     * @param unsafeRules Optional list of unsafe rules to add to the serialized
+     * output. If this parameter is provided, number of unsafe rules will be
+     * excluded from the counter of declarative rules in the serialized metadata.
+     *
+     * IMPORTANT: currently multiple filters in a single ruleset are not supported.
+     *
+     * @returns Serialized rule set.
+     *
+     * @throws Error {@link UnavailableRulesetSourceError} if rule set source is not available.
+     * @throws Error if counter of unsafe rules is not equal to the length of
+     * the provided `unsafeRules` array.
+     */
+    serializeCompact(
+        prettyPrint?: boolean,
+        unsafeRules?: DeclarativeRule[],
+    ): Promise<string>;
+}
+
+/**
+ * Rule set content's provider for lazy load data.
+ */
+export type RulesetContentProvider = {
+    loadSourceMap: () => Promise<ISourceMap>;
+    loadFilterList: () => Promise<IFilterWithSource[]>;
+    loadDeclarativeRules: () => Promise<DeclarativeRule[]>;
+};
+
+/**
+ * Valibot validator for {@link SerializedRulesetLazyData}.
+ */
+const serializedRuleSetLazyDataValidator = strictObjectByType<SerializedRulesetLazyData>({
+    sourceMapRaw: v.string(),
+    filterIds: v.array(v.number()),
+});
+
+/**
+ * Serialized lazy data for a rule set.
+ */
+export type SerializedRulesetLazyData = {
+    sourceMapRaw: string;
+    filterIds: number[];
+};
+
+/**
+ * Valibot validator for {@link SerializedRulesetData}.
+ */
+const serializedRuleSetDataValidator = strictObjectByType<SerializedRulesetData>({
+    regexpRulesCount: v.number(),
+    unsafeRulesCount: v.number(),
+    rulesCount: v.number(),
+    ruleSetHashMapRaw: v.string(),
+    badFilterRulesRaw: v.array(v.string()),
+    unsafeRules: v.optional(v.array(DeclarativeRuleValidator)),
+});
+
+/**
+ * Serialized data for a rule set.
+ */
+export type SerializedRulesetData = {
+    regexpRulesCount: number;
+    unsafeRulesCount: number;
+    rulesCount: number;
+    ruleSetHashMapRaw: string;
+    badFilterRulesRaw: string[];
+    unsafeRules?: DeclarativeRule[];
+};
+
+/**
+ * A serialized rule set with primitive values separated into two parts: one is
+ * needed for instant creating ruleset, while the other is needed only when
+ * declarative filtering log is enabled - to find and display source rules from
+ * raw filters.
+ */
+export type SerializedRuleset = {
+    id: string;
+
+    /**
+     * Metadata needed for instant creating ruleset.
+     */
+    data: string;
+
+    /**
+     * Metadata needed for lazy load some data to ruleset to find and show
+     * source rules when declarative filtering log is enabled.
+     */
+    lazyData: string;
+};
+
+/**
+ * A deserialized rule set with loaded data and provider for lazy loading data.
+ */
+export type DeserializedRuleset = {
+    id: string;
+
+    /**
+     * Metadata needed for instant creating ruleset.
+     */
+    data: SerializedRulesetData;
+
+    /**
+     * Metadata needed for lazy load some data to ruleset to find and show
+     * source rules when declarative filtering log is enabled.
+     */
+    ruleSetContentProvider: RulesetContentProvider;
+};
+
+/**
+ * Keeps converted declarative rules, counters of rules and source map for them.
+ */
+export class RulesetWithSourceMap implements IRulesetWithSourceMap {
+    /**
+     * Id of rule set.
+     */
+    private readonly id: string;
+
+    /**
+     * Array of converted declarative rules.
+     */
+    private declarativeRules: DeclarativeRule[] = [];
+
+    /**
+     * Number of converted declarative rules.
+     *
+     * This is needed for the lazy version of the rule set,
+     * when content not loaded.
+     */
+    private readonly rulesCount: number = 0;
+
+    /**
+     * Converted declarative unsafe rules.
+     */
+    private readonly unsafeRulesCount: number = 0;
+
+    /**
+     * Array with unsafe declarative rules, which can be optionally provided
+     * when creating a ruleset.
+     *
+     * This can be used to store unsafe rules inside metadata rule to use
+     * "skip review" feature in CWS.
+     *
+     * It's marked as optional to keep backward compatibility with old rulesets.
+     *
+     * {@link https://developer.chrome.com/docs/webstore/skip-review/}.
+     *
+     * @todo TODO: Mark this field as required in the next major version.
+     */
+    private readonly unsafeRules?: DeclarativeRule[];
+
+    /**
+     * Converted declarative regexp rules.
+     */
+    private readonly regexpRulesCount: number = 0;
+
+    /**
+     * Source map for declarative rules.
+     */
+    private sourceMap: ISourceMap | undefined;
+
+    /**
+     * Dictionary which helps to fast find rule by its hash.
+     */
+    private rulesHashMap: IRulesHashMap;
+
+    /**
+     * List of network rules with $badfilter option.
+     */
+    private badFilterRules: NetworkRule[];
+
+    /**
+     * Keeps array of source filter lists.
+     *
+     * TODO: ? May it leads to memory leaks,
+     * because one FilterList with its content
+     * can be in the several RuleSet's at the same time ?
+     */
+    private filterList: Map<number, IFilterWithSource> = new Map();
+
+    /**
+     * The content provider of a rule set, is needed for lazy initialization.
+     * If request the source rules from rule set, the content provider will be
+     * called to load the source map, filter list and declarative rules list.
+     */
+    private readonly ruleSetContentProvider: RulesetContentProvider;
+
+    /**
+     * Whether the content is loaded or not.
+     */
+    private initialized: boolean = false;
+
+    /**
+     * Waiter for initialization, will be resolved when the content is loaded.
+     */
+    private initializerPromise: Promise<void> | undefined;
+
+    /**
+     * Constructor of RulesetWithSourceMap.
+     *
+     * @param id Id of rule set.
+     * @param rulesCount Number of rules.
+     * @param unsafeRulesCount Number of unsafe rules.
+     * @param regexpRulesCount Number of regexp rules.
+     * @param ruleSetContentProvider Rule set content provider.
+     * @param badFilterRules List of rules with $badfilter modifier.
+     * @param rulesHashMap Dictionary with hashes for all source rules.
+     * @param unsafeRules List of unsafe DNR rules.
+     */
+    constructor(
+        id: string,
+        rulesCount: number,
+        unsafeRulesCount: number,
+        regexpRulesCount: number,
+        ruleSetContentProvider: RulesetContentProvider,
+        badFilterRules: NetworkRule[],
+        rulesHashMap: IRulesHashMap,
+        unsafeRules?: DeclarativeRule[],
+    ) {
+        this.id = id;
+        this.rulesCount = rulesCount;
+        this.unsafeRulesCount = unsafeRulesCount;
+        this.regexpRulesCount = regexpRulesCount;
+        this.ruleSetContentProvider = ruleSetContentProvider;
+        this.badFilterRules = badFilterRules;
+        this.rulesHashMap = rulesHashMap;
+        this.unsafeRules = unsafeRules;
+    }
+
+    /** @inheritdoc */
+    public getUnsafeRules(): Promise<DeclarativeRule[]> {
+        return Promise.resolve(this.unsafeRules || []);
+    }
+
+    /** @inheritdoc */
+    public getRulesCount(): number {
+        return this.rulesCount;
+    }
+
+    /** @inheritdoc */
+    public getUnsafeRulesCount(): number {
+        return this.unsafeRulesCount;
+    }
+
+    /** @inheritdoc */
+    public getRegexpRulesCount(): number {
+        return this.regexpRulesCount;
+    }
+
+    /** @inheritdoc */
+    public getId(): string {
+        return this.id;
+    }
+
+    /**
+     * Returns a list of pairs of source text rules and their filter identifiers
+     * for a given declarative rule identifier.
+     *
+     * @param declarativeRuleId {@link DeclarativeRule|declarative rule} Id.
+     *
+     * @returns Promise with list of source rules.
+     *
+     * @throws An error when filter is not found or filter content is unavailable.
+     */
+    private async findSourceRules(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]> {
+        if (!this.sourceMap) {
+            return [];
+        }
+
+        const sourcePairs = this.sourceMap.getByDeclarativeRuleId(declarativeRuleId);
+        const sourceRules = sourcePairs.map(async ({
+            filterId,
+            sourceRuleIndex,
+        }) => {
+            const filter = this.filterList.get(filterId);
+            if (!filter) {
+                throw new Error(`Not found filter list with id: ${filterId}`);
+            }
+
+            const sourceRule = await filter.getRuleByIndex(sourceRuleIndex);
+
+            return {
+                sourceRule,
+                filterId,
+            };
+        });
+
+        return Promise.all(sourceRules);
+    }
+
+    /**
+     * Run inner lazy deserialization from rule set content provider to load
+     * data which is not needed on the creation of rule set:
+     * the source map, filter list and declarative rules list.
+     */
+    private async loadContent(): Promise<void> {
+        if (this.initialized) {
+            return;
+        }
+
+        if (this.initializerPromise) {
+            await this.initializerPromise;
+            return;
+        }
+
+        const initialize = async (): Promise<void> => {
+            const {
+                loadSourceMap,
+                loadFilterList,
+                loadDeclarativeRules,
+            } = this.ruleSetContentProvider;
+
+            this.sourceMap = await loadSourceMap();
+            this.declarativeRules = await loadDeclarativeRules();
+            // TODO: Find a better method to load filters (AG-42364)
+            const filtersList = await loadFilterList();
+            filtersList.forEach((filter: IFilterWithSource) => {
+                this.filterList.set(filter.getId(), filter);
+            });
+
+            this.initialized = true;
+        };
+
+        this.initializerPromise = initialize().finally(() => {
+            this.initializerPromise = undefined;
+        });
+        await this.initializerPromise;
+    }
+
+    /** @inheritdoc */
+    public unloadContent(): void {
+        // If content is not initialized, there is nothing to unload
+        if (!this.initialized && !this.initializerPromise) {
+            return;
+        }
+
+        // If initialization is in progress
+        if (this.initializerPromise) {
+            this.initializerPromise.finally(() => {
+                this.unloadContent();
+            });
+            return;
+        }
+
+        // Safely unload all filters in the filter list
+        this.filterList.forEach((filter) => filter.unloadContent());
+
+        // Clear loaded resources
+        this.sourceMap = undefined;
+        this.declarativeRules = [];
+        this.filterList.clear();
+
+        // Mark the content as unloaded
+        this.initialized = false;
+        this.initializerPromise = undefined;
+    }
+
+    /** @inheritdoc */
+    public async getRulesById(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]> {
+        try {
+            await this.loadContent();
+
+            const originalRules = await this.findSourceRules(declarativeRuleId);
+
+            return originalRules;
+        } catch (e) {
+            const id = this.getId();
+            // eslint-disable-next-line max-len
+            const msg = `Cannot extract source rule for given declarativeRuleId ${declarativeRuleId} in rule set '${id}', got error: ${getErrorMessage(e)}`;
+            throw new UnavailableRulesetSourceError(msg, id, e as Error);
+        }
+    }
+
+    /** @inheritdoc */
+    public getBadFilterRules(): NetworkRule[] {
+        return this.badFilterRules;
+    }
+
+    /** @inheritdoc */
+    public getRulesHashMap(): IRulesHashMap {
+        return this.rulesHashMap;
+    }
+
+    /** @inheritdoc */
+    public async getDeclarativeRulesIdsBySourceRuleIndex(
+        source: SourceRuleIdxAndFilterId,
+    ): Promise<number[]> {
+        await this.loadContent();
+
+        if (!this.sourceMap) {
+            const { filterId, sourceRuleIndex } = source;
+            // eslint-disable-next-line max-len
+            throw new Error(`Cannot find declarative rules for filter id - ${filterId}, rule index - ${sourceRuleIndex} because source map is undefined in ruleset: ${this.getId()}`);
+        }
+
+        return this.sourceMap.getBySourceRuleIndex(source);
+    }
+
+    /** @inheritdoc */
+    public async getDeclarativeRules(): Promise<DeclarativeRule[]> {
+        await this.loadContent();
+
+        return this.declarativeRules;
+    }
+
+    /**
+     * For provided source rule and filter id return network rule.
+     * This method is needed for checking the applicability of $badfilter after
+     * a fast-check of rules by comparing only hashes. Afterward, we should
+     * build the 'full' Network rule from provided source, not just the hash,
+     * to determine the applicability of $badfilter.
+     *
+     * @param source Source rule and filter id.
+     *
+     * @returns List of {@link NetworkRule | network rules}.
+     */
+    public static getNetworkRuleBySourceRule(
+        source: SourceRuleAndFilterId,
+    ): NetworkRule[] {
+        const { sourceRule, filterId } = source;
+
+        try {
+            return NetworkRule.createFromText(
+                filterId,
+                // We don't need line index because this rule
+                // will be used only for matching $badfilter rules.
+                0,
+                sourceRule,
+            );
+        } catch (e) {
+            return [];
+        }
+    }
+
+    /**
+     * Deserializes rule set to primitives values with lazy load.
+     *
+     * @param id Id of rule set.
+     * @param rawData An item of {@link SerializedRulesetData} for instant
+     * creating ruleset. It contains counters for regular declarative and regexp
+     * declarative rules, a map of hashes for all rules, and a list of rules
+     * with the `$badfilter` modifier.
+     * @param loadLazyData An item of {@link SerializedRulesetLazyData} for lazy
+     * loading ruleset data to find and display source rules when declarative
+     * filtering log is enabled. It includes a map of sources for all rules,
+     * a list of declarative rules, and a list of source filter IDs.
+     * @param loadDeclarativeRules Loader for ruleset's declarative rules from
+     * raw file as a string.
+     * @param filterList List of {@link IFilterWithSource}.
+     *
+     * @returns Deserialized rule set.
+     *
+     * @throws Error {@link UnavailableRulesetSourceError} if rule set source
+     * is not available.
+     */
+    public static async deserialize(
+        id: string,
+        rawData: string,
+        loadLazyData: () => Promise<string>,
+        loadDeclarativeRules: () => Promise<string>,
+        filterList: IFilterWithSource[],
+    ): Promise<DeserializedRuleset> {
+        let data: SerializedRulesetData;
+
+        try {
+            const objectFromString = JSON.parse(rawData);
+            data = v.parse(serializedRuleSetDataValidator, objectFromString);
+        } catch (e) {
+            // eslint-disable-next-line max-len
+            const msg = `Cannot parse serialized ruleset's data with id "${id}", got error: ${getErrorMessage(e)}`;
+
+            throw new UnavailableRulesetSourceError(msg, id, e as Error);
+        }
+
+        /**
+         * This variable is used as a singleton for all three functions
+         * (`loadSourceMap`, `loadFilterList`, `loadDeclarativeRules`) to load
+         * data only once.
+         */
+        let deserializedLazyData: SerializedRulesetLazyData | undefined;
+
+        const getLazyData = async (): Promise<SerializedRulesetLazyData> => {
+            if (deserializedLazyData !== undefined) {
+                return deserializedLazyData;
+            }
+
+            try {
+                const lazyData = await loadLazyData();
+
+                const objectFromString = JSON.parse(lazyData);
+
+                const parsed = v.parse(serializedRuleSetLazyDataValidator, objectFromString);
+                deserializedLazyData = parsed;
+
+                return parsed;
+            } catch (e) {
+                // eslint-disable-next-line max-len
+                const msg = `Cannot parse or load data for lazy metadata for rule set with id "${id}": ${getErrorMessage(e)}`;
+
+                throw new UnavailableRulesetSourceError(msg, id, e as Error);
+            }
+        };
+
+        const deserialized: DeserializedRuleset = {
+            id,
+            data,
+            ruleSetContentProvider: {
+                loadSourceMap: async () => {
+                    const { sourceMapRaw } = await getLazyData();
+                    const sources = SourceMap.deserializeSources(sourceMapRaw);
+
+                    return new SourceMap(sources);
+                },
+                loadFilterList: async () => {
+                    const { filterIds } = await getLazyData();
+
+                    return filterList.filter((filter: IFilterWithSource) => filterIds.includes(filter.getId()));
+                },
+                loadDeclarativeRules: async () => {
+                    const rawFileContent = await loadDeclarativeRules();
+
+                    const objectFromString = JSON.parse(rawFileContent);
+
+                    const declarativeRules = v.parse(
+                        v.array(DeclarativeRuleValidator),
+                        objectFromString,
+                    );
+
+                    return declarativeRules;
+                },
+            },
+        };
+
+        return deserialized;
+    }
+
+    /**
+     * Helper method to get serialized rule set data.
+     *
+     * @param unsafeRules Optional list of unsafe rules to add to the serialized
+     * output.
+     *
+     * @returns Serialized rule set data.
+     */
+    private getSerializedRuleSetData(unsafeRules?: DeclarativeRule[]): SerializedRulesetData {
+        let { rulesCount } = this;
+
+        // If unsaferRules is provided, we should not count them in
+        // the rules count, since they are moved to the metadata rule.
+        if (unsafeRules) {
+            rulesCount -= unsafeRules.length;
+        }
+
+        return {
+            regexpRulesCount: this.regexpRulesCount,
+            unsafeRulesCount: this.unsafeRulesCount,
+            rulesCount,
+            ruleSetHashMapRaw: this.rulesHashMap.serialize(),
+            badFilterRulesRaw: this.badFilterRules.map((r) => r.text),
+            unsafeRules,
+        };
+    }
+
+    /**
+     * Helper method to get serialized rule set lazy data.
+     *
+     * @returns Serialized rule set lazy data.
+     */
+    private getSerializedRuleSetLazyData(): SerializedRulesetLazyData {
+        return {
+            sourceMapRaw: this.sourceMap?.serialize() || '',
+            filterIds: Array.from(this.filterList.keys()),
+        };
+    }
+
+    /** @inheritdoc */
+    public async serialize(): Promise<SerializedRuleset> {
+        try {
+            await this.loadContent();
+        } catch (e) {
+            const id = this.getId();
+            // eslint-disable-next-line max-len
+            const msg = `Cannot serialize rule set '${id}' because of not available source, got error: ${getErrorMessage(e)}`;
+            throw new UnavailableRulesetSourceError(msg, id, e as Error);
+        }
+
+        const serialized: SerializedRuleset = {
+            id: this.id,
+            data: JSON.stringify(this.getSerializedRuleSetData()),
+            lazyData: JSON.stringify(this.getSerializedRuleSetLazyData()),
+        };
+
+        return serialized;
+    }
+
+    /** @inheritdoc */
+    public async serializeCompact(
+        prettyPrint = true,
+        unsafeRules?: DeclarativeRule[],
+    ): Promise<string> {
+        try {
+            await this.loadContent();
+        } catch (e) {
+            const id = this.getId();
+            // eslint-disable-next-line max-len
+            const msg = `Cannot serialize ruleset '${id}' because of not available source, got error: ${getErrorMessage(e)}`;
+            throw new UnavailableRulesetSourceError(msg, id, e as Error);
+        }
+
+        // TODO: Improve this code once we introduce multiple filters within a single ruleset.
+        // Also, do not forget to change metadata rule's structure to store preprocessed
+        // filter lists in an array.
+        // Currently, we expect that there is only one filter within a single rule set.
+        const filter = this.filterList.values().next().value;
+
+        if (!filter) {
+            const id = this.getId();
+            const msg = `Cannot serialize ruleset '${id}' because of not available filter list`;
+            throw new UnavailableRulesetSourceError(msg, id);
+        }
+
+        const content = await filter.getContent();
+
+        // To ensure that unsafe rules are provided and their count is correct,
+        // we check if the length of the provided unsafe rules array is equal to
+        // the `unsafeRulesCount` property of the rule set.
+        if (unsafeRules && unsafeRules.length > 0 && unsafeRules.length !== this.unsafeRulesCount) {
+            const id = this.getId();
+            // eslint-disable-next-line max-len
+            const msg = `Unsafe rules count is not equal to the length of provided unsafe rules array in rule set '${id}'`;
+            throw new Error(msg);
+        }
+
+        const metadataRule = createMetadataRule({
+            metadata: this.getSerializedRuleSetData(unsafeRules),
+            lazyMetadata: this.getSerializedRuleSetLazyData(),
+            rawFilterList: content,
+            conversionData: filter.getConversionData(),
+        });
+
+        // Insert metadata rule at the beginning of the rules array without
+        // "unshifting" it to avoid mutating the internal state of the RuleSet,
+        // which could lead to issues if serializeCompact is called multiple times.
+        let declarativeRules: DeclarativeRule[] = [];
+        declarativeRules = declarativeRules.concat(metadataRule);
+
+        const convertedRules = await this.getDeclarativeRules();
+        declarativeRules = declarativeRules.concat(convertedRules);
+
+        // Exclude unsafe rules from declarative rules if they are provided.
+        if (unsafeRules) {
+            const unsafeRulesIds = new Set(unsafeRules.map((rule) => rule.id));
+
+            declarativeRules = declarativeRules.filter((rule) => {
+                return !unsafeRulesIds.has(rule.id);
+            });
+        }
+
+        const result = serializeJson(declarativeRules, prettyPrint);
+
+        return result;
+    }
+}

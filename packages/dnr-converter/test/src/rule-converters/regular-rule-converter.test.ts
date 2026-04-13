@@ -27,7 +27,7 @@ import { ResourcesPathError } from '../../../src/errors/converter-options-errors
 import { type NetworkRule, NetworkRuleOption } from '../../../src/network-rule';
 import { re2Validator } from '../../../src/re2-regexp/re2-validator';
 import { type ConvertedRules } from '../../../src/rule-converters';
-import { RuleConverter } from '../../../src/rule-converters/rule-converter';
+import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
 import { createNetworkRuleMock } from '../../mocks/network-rule';
 
 vi.mock('@adguard/scriptlets/redirects', () => ({
@@ -45,7 +45,7 @@ vi.mock('../../../src/utils/string', async () => ({
  * this is needed because we can't create directly
  * an instance of abstract class.
  */
-class TestConverter extends RuleConverter {
+class TestConverter extends RegularRuleConverter {
     /**
      * Just a stub method to satisfy abstract class requirements.
      *
@@ -87,14 +87,14 @@ describe('RuleConverter', () => {
         it('should return conversion error as-is', () => {
             const conversionError = new UnsupportedModifierError('Test unsupported modifier error', {} as NetworkRule);
             // @ts-expect-error Accessing private member for test purposes
-            const error = RuleConverter.catchConversionError(index, id, conversionError);
+            const error = RegularRuleConverter.catchConversionError(index, id, conversionError);
 
             expect(error).toEqual(conversionError);
         });
 
         it('should wrap other error types into plain Error', () => {
             // @ts-expect-error Accessing private member for test purposes
-            const error = RuleConverter.catchConversionError(index, id, 'Test error');
+            const error = RegularRuleConverter.catchConversionError(index, id, 'Test error');
 
             expect(error).toBeInstanceOf(Error);
             expect(error.message).toBe(expectedMessage);
@@ -103,7 +103,7 @@ describe('RuleConverter', () => {
         it('should include error as cause if provided error is instance of Error', () => {
             const originalError = new Error('Original error');
             // @ts-expect-error Accessing private member for test purposes
-            const error = RuleConverter.catchConversionError(index, id, originalError);
+            const error = RegularRuleConverter.catchConversionError(index, id, originalError);
 
             expect(error).toBeInstanceOf(Error);
             expect(error.message).toBe(expectedMessage);
@@ -121,20 +121,20 @@ describe('RuleConverter', () => {
             });
 
             // @ts-expect-error Accessing private member for test purposes
-            const id1 = RuleConverter.generateId(networkRule, usedIds);
+            const id1 = RegularRuleConverter.generateId(networkRule, usedIds);
             expect(id1).toBe(1);
             expect(usedIds.has(id1)).toBe(true);
             expect(usedIds.size).toBe(1);
 
             // @ts-expect-error Accessing private member for test purposes
-            const id2 = RuleConverter.generateId(networkRule, usedIds);
+            const id2 = RegularRuleConverter.generateId(networkRule, usedIds);
             expect(id2).not.toBe(id1);
             expect(id2).toBe(2);
             expect(usedIds.has(id2)).toBe(true);
             expect(usedIds.size).toBe(2);
 
             // @ts-expect-error Accessing private member for test purposes
-            const id3 = RuleConverter.generateId(networkRule, usedIds);
+            const id3 = RegularRuleConverter.generateId(networkRule, usedIds);
             expect(id3).not.toBe(id1);
             expect(id3).not.toBe(id2);
             expect(id3).toBe(3);
@@ -149,21 +149,21 @@ describe('RuleConverter', () => {
                 permittedResourceTypes: [ResourceType.MainFrame, ResourceType.SubFrame],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result1 = RuleConverter.isCompatibleWithAllowAllRequests(networkRule1);
+            const result1 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule1);
             expect(result1).toBe(true);
 
             const networkRule2 = createNetworkRuleMock({
                 permittedResourceTypes: [ResourceType.MainFrame],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result2 = RuleConverter.isCompatibleWithAllowAllRequests(networkRule2);
+            const result2 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule2);
             expect(result2).toBe(true);
 
             const networkRule3 = createNetworkRuleMock({
                 permittedResourceTypes: [ResourceType.SubFrame],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result3 = RuleConverter.isCompatibleWithAllowAllRequests(networkRule3);
+            const result3 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule3);
             expect(result3).toBe(true);
         });
 
@@ -172,28 +172,28 @@ describe('RuleConverter', () => {
                 permittedResourceTypes: [ResourceType.Script],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result1 = RuleConverter.isCompatibleWithAllowAllRequests(networkRule1);
+            const result1 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule1);
             expect(result1).toBe(false);
 
             const networkRule2 = createNetworkRuleMock({
                 permittedResourceTypes: [ResourceType.MainFrame, ResourceType.Script],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result2 = RuleConverter.isCompatibleWithAllowAllRequests(networkRule2);
+            const result2 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule2);
             expect(result2).toBe(false);
 
             const networkRule3 = createNetworkRuleMock({
                 permittedResourceTypes: [ResourceType.SubFrame, ResourceType.Script],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result3 = RuleConverter.isCompatibleWithAllowAllRequests(networkRule3);
+            const result3 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule3);
             expect(result3).toBe(false);
 
             const networkRule4 = createNetworkRuleMock({
                 permittedResourceTypes: [ResourceType.MainFrame, ResourceType.SubFrame, ResourceType.Script],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result4 = RuleConverter.isCompatibleWithAllowAllRequests(networkRule4);
+            const result4 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule4);
             expect(result4).toBe(false);
         });
 
@@ -202,7 +202,7 @@ describe('RuleConverter', () => {
                 permittedResourceTypes: [],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result3 = RuleConverter.isCompatibleWithAllowAllRequests(networkRule3);
+            const result3 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule3);
             expect(result3).toBe(true);
         });
     });
@@ -216,7 +216,7 @@ describe('RuleConverter', () => {
                 action: { type: RuleActionType.Block },
             };
             // @ts-expect-error Accessing private member for test purposes
-            const result = await RuleConverter.checkRuleApplication(networkRule, declarativeRule);
+            const result = await RegularRuleConverter.checkRuleApplication(networkRule, declarativeRule);
             expect(result).toBeInstanceOf(EmptyResourcesError);
         });
 
@@ -230,7 +230,7 @@ describe('RuleConverter', () => {
                 action: { type: RuleActionType.Block },
             };
             // @ts-expect-error Accessing private member for test purposes
-            const result1 = await RuleConverter.checkRuleApplication(networkRule1, declarativeRule1);
+            const result1 = await RegularRuleConverter.checkRuleApplication(networkRule1, declarativeRule1);
             expect(result1).toBeInstanceOf(EmptyDomainsError);
 
             const networkRule2 = createNetworkRuleMock({
@@ -242,7 +242,7 @@ describe('RuleConverter', () => {
                 action: { type: RuleActionType.Block },
             };
             // @ts-expect-error Accessing private member for test purposes
-            const result2 = await RuleConverter.checkRuleApplication(networkRule2, declarativeRule2);
+            const result2 = await RegularRuleConverter.checkRuleApplication(networkRule2, declarativeRule2);
             expect(result2).toBeInstanceOf(EmptyDomainsError);
         });
 
@@ -258,7 +258,7 @@ describe('RuleConverter', () => {
                 action: { type: RuleActionType.Block },
             };
             // @ts-expect-error Accessing private member for test purposes
-            const result = await RuleConverter.checkRuleApplication(networkRule, declarativeRule);
+            const result = await RegularRuleConverter.checkRuleApplication(networkRule, declarativeRule);
             expect(result).toBeInstanceOf(UnsupportedRegexpError);
         });
 
@@ -278,7 +278,7 @@ describe('RuleConverter', () => {
                 action: { type: RuleActionType.Block },
             };
             // @ts-expect-error Accessing private member for test purposes
-            const result = await RuleConverter.checkRuleApplication(networkRule, declarativeRule);
+            const result = await RegularRuleConverter.checkRuleApplication(networkRule, declarativeRule);
             expect(result).toBeNull();
         });
     });
@@ -337,7 +337,7 @@ describe('RuleConverter', () => {
         it('uses getRemoveParamRedirectAction if RemoveParam option is enabled', () => {
             const getRemoveParamRedirectActionSpy = vi
                 // @ts-expect-error Accessing private member for test purposes
-                .spyOn(RuleConverter, 'getRemoveParamRedirectAction')
+                .spyOn(RegularRuleConverter, 'getRemoveParamRedirectAction')
                 .mockReturnValueOnce({} as any);
             const networkRule = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.RemoveParam],
@@ -355,7 +355,7 @@ describe('RuleConverter', () => {
         it('returns Block action if RemoveParam option is enabled but couldn\'t generate action', () => {
             const getRemoveParamRedirectActionSpy = vi
                 // @ts-expect-error Accessing private member for test purposes
-                .spyOn(RuleConverter, 'getRemoveParamRedirectAction')
+                .spyOn(RegularRuleConverter, 'getRemoveParamRedirectAction')
                 .mockReturnValueOnce(null as any);
             const networkRule = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.RemoveParam],
@@ -369,7 +369,7 @@ describe('RuleConverter', () => {
 
         it('uses getModifyHeadersAction if ModifyHeaders option is enabled', () => {
             // @ts-expect-error Accessing private member for test purposes
-            const getRemoveParamRedirectActionSpy = vi.spyOn(RuleConverter, 'getModifyHeadersAction');
+            const getRemoveParamRedirectActionSpy = vi.spyOn(RegularRuleConverter, 'getModifyHeadersAction');
             const requestHeaders: ModifyHeaderInfo[] = [{
                 header: 'Test-Request-Header',
                 operation: HeaderOperation.Remove,
@@ -416,7 +416,7 @@ describe('RuleConverter', () => {
         it('returns Block action if ModifyHeaders option is enabled but couldn\'t generate action', () => {
             const getRemoveParamRedirectActionSpy = vi
                 // @ts-expect-error Accessing private member for test purposes
-                .spyOn(RuleConverter, 'getModifyHeadersAction')
+                .spyOn(RegularRuleConverter, 'getModifyHeadersAction')
                 .mockReturnValueOnce(null as any);
             const networkRule = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.RemoveHeader],
@@ -431,7 +431,7 @@ describe('RuleConverter', () => {
         it('uses getAddingCspHeadersAction if Csp option is enabled', () => {
             const getAddingCspHeadersActionSpy = vi
                 // @ts-expect-error Accessing private member for test purposes
-                .spyOn(RuleConverter, 'getAddingCspHeadersAction')
+                .spyOn(RegularRuleConverter, 'getAddingCspHeadersAction')
                 .mockReturnValueOnce({} as any);
             const networkRule = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.Csp],
@@ -449,7 +449,7 @@ describe('RuleConverter', () => {
         it('returns Block action if Csp option is enabled but couldn\'t generate action', () => {
             const getAddingCspHeadersActionSpy = vi
                 // @ts-expect-error Accessing private member for test purposes
-                .spyOn(RuleConverter, 'getAddingCspHeadersAction')
+                .spyOn(RegularRuleConverter, 'getAddingCspHeadersAction')
                 .mockReturnValueOnce(null as any);
             const networkRule = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.Csp],
@@ -464,7 +464,7 @@ describe('RuleConverter', () => {
         it('uses getAddingPermissionsHeadersAction if Permissions option is enabled', () => {
             const getAddingPermissionsHeadersActionSpy = vi
                 // @ts-expect-error Accessing private member for test purposes
-                .spyOn(RuleConverter, 'getAddingPermissionsHeadersAction')
+                .spyOn(RegularRuleConverter, 'getAddingPermissionsHeadersAction')
                 .mockReturnValueOnce({} as any);
             const networkRule = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.Permissions],
@@ -482,7 +482,7 @@ describe('RuleConverter', () => {
         it('returns Block action if Permissions option is enabled but couldn\'t generate action', () => {
             const getAddingPermissionsHeadersActionSpy = vi
                 // @ts-expect-error Accessing private member for test purposes
-                .spyOn(RuleConverter, 'getAddingPermissionsHeadersAction')
+                .spyOn(RegularRuleConverter, 'getAddingPermissionsHeadersAction')
                 .mockReturnValueOnce(null as any);
             const networkRule = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.Permissions],
@@ -496,7 +496,7 @@ describe('RuleConverter', () => {
 
         it('uses getRemovingCookieHeadersAction if Cookie option is enabled', () => {
             // @ts-expect-error Accessing private member for test purposes
-            const getRemovingCookieHeadersActionSpy = vi.spyOn(RuleConverter, 'getRemovingCookieHeadersAction');
+            const getRemovingCookieHeadersActionSpy = vi.spyOn(RegularRuleConverter, 'getRemovingCookieHeadersAction');
             const requestHeaders: ModifyHeaderInfo[] = [{
                 header: 'Test-Request-Header',
                 operation: HeaderOperation.Remove,
@@ -571,7 +571,7 @@ describe('RuleConverter', () => {
         it('returns Block action if Cookie option is enabled but couldn\'t generate action', () => {
             const getRemovingCookieHeadersActionSpy = vi
                 // @ts-expect-error Accessing private member for test purposes
-                .spyOn(RuleConverter, 'getRemovingCookieHeadersAction')
+                .spyOn(RegularRuleConverter, 'getRemovingCookieHeadersAction')
                 .mockReturnValueOnce(null as any);
 
             const networkRule = createNetworkRuleMock({
@@ -647,7 +647,7 @@ describe('RuleConverter', () => {
         it('returns null if option is not enabled', () => {
             const networkRule = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getRemoveParamRedirectAction(networkRule);
+            const action = RegularRuleConverter.getRemoveParamRedirectAction(networkRule);
             expect(action).toBeNull();
         });
 
@@ -657,7 +657,7 @@ describe('RuleConverter', () => {
                 advancedModifierValue: null,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getRemoveParamRedirectAction(networkRule);
+            const action = RegularRuleConverter.getRemoveParamRedirectAction(networkRule);
             expect(action).toBeNull();
         });
 
@@ -667,7 +667,7 @@ describe('RuleConverter', () => {
                 advancedModifierValue: '',
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getRemoveParamRedirectAction(networkRule);
+            const action = RegularRuleConverter.getRemoveParamRedirectAction(networkRule);
             expect(action).toEqual({
                 transform: {
                     query: '',
@@ -682,7 +682,7 @@ describe('RuleConverter', () => {
                 advancedModifierValue: 'param',
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action1 = RuleConverter.getRemoveParamRedirectAction(networkRule1);
+            const action1 = RegularRuleConverter.getRemoveParamRedirectAction(networkRule1);
             expect(action1).toEqual({
                 transform: {
                     queryTransform: {
@@ -697,7 +697,7 @@ describe('RuleConverter', () => {
                 advancedModifierValue: 'param$@',
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action2 = RuleConverter.getRemoveParamRedirectAction(networkRule2);
+            const action2 = RegularRuleConverter.getRemoveParamRedirectAction(networkRule2);
             expect(action2).toEqual({
                 transform: {
                     queryTransform: {
@@ -712,7 +712,7 @@ describe('RuleConverter', () => {
         it('returns null if option is not enabled', () => {
             const networkRule = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getModifyHeadersAction(networkRule);
+            const action = RegularRuleConverter.getModifyHeadersAction(networkRule);
             expect(action).toBeNull();
         });
 
@@ -725,7 +725,7 @@ describe('RuleConverter', () => {
                 responseHeaderNameToRemove,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action1 = RuleConverter.getModifyHeadersAction(networkRule1);
+            const action1 = RegularRuleConverter.getModifyHeadersAction(networkRule1);
             expect(action1).toEqual({
                 requestHeaders: [{
                     header: requestHeaderNameToRemove,
@@ -738,7 +738,7 @@ describe('RuleConverter', () => {
                 requestHeaderNameToRemove,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action2 = RuleConverter.getModifyHeadersAction(networkRule2);
+            const action2 = RegularRuleConverter.getModifyHeadersAction(networkRule2);
             expect(action2).toEqual({
                 requestHeaders: [{
                     header: requestHeaderNameToRemove,
@@ -754,7 +754,7 @@ describe('RuleConverter', () => {
                 responseHeaderNameToRemove,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getModifyHeadersAction(networkRule);
+            const action = RegularRuleConverter.getModifyHeadersAction(networkRule);
             expect(action).toEqual({
                 responseHeaders: [{
                     header: responseHeaderNameToRemove,
@@ -768,7 +768,7 @@ describe('RuleConverter', () => {
                 enabledOptions: [NetworkRuleOption.RemoveHeader],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getModifyHeadersAction(networkRule);
+            const action = RegularRuleConverter.getModifyHeadersAction(networkRule);
             expect(action).toBeNull();
         });
     });
@@ -777,7 +777,7 @@ describe('RuleConverter', () => {
         it('returns null if option is not enabled', () => {
             const networkRule = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getRemovingCookieHeadersAction(networkRule);
+            const action = RegularRuleConverter.getRemovingCookieHeadersAction(networkRule);
             expect(action).toBeNull();
         });
 
@@ -786,7 +786,7 @@ describe('RuleConverter', () => {
                 enabledOptions: [NetworkRuleOption.Cookie],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getRemovingCookieHeadersAction(networkRule);
+            const action = RegularRuleConverter.getRemovingCookieHeadersAction(networkRule);
             expect(action).toEqual({
                 requestHeaders: [{
                     header: 'Cookie',
@@ -804,7 +804,7 @@ describe('RuleConverter', () => {
         it('returns null if option is not enabled', () => {
             const networkRule = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getAddingCspHeadersAction(networkRule);
+            const action = RegularRuleConverter.getAddingCspHeadersAction(networkRule);
             expect(action).toBeNull();
         });
 
@@ -814,7 +814,7 @@ describe('RuleConverter', () => {
                 advancedModifierValue: null,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action1 = RuleConverter.getAddingCspHeadersAction(networkRule1);
+            const action1 = RegularRuleConverter.getAddingCspHeadersAction(networkRule1);
             expect(action1).toBeNull();
 
             const networkRule2 = createNetworkRuleMock({
@@ -822,7 +822,7 @@ describe('RuleConverter', () => {
                 advancedModifierValue: '',
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action2 = RuleConverter.getAddingCspHeadersAction(networkRule2);
+            const action2 = RegularRuleConverter.getAddingCspHeadersAction(networkRule2);
             expect(action2).toBeNull();
         });
 
@@ -833,7 +833,7 @@ describe('RuleConverter', () => {
                 advancedModifierValue: testCspValue,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getAddingCspHeadersAction(networkRule);
+            const action = RegularRuleConverter.getAddingCspHeadersAction(networkRule);
             expect(action).toEqual({
                 operation: HeaderOperation.Append,
                 header: CSP_HEADER_NAME,
@@ -846,7 +846,7 @@ describe('RuleConverter', () => {
         it('returns null if option is not enabled', () => {
             const networkRule = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getAddingPermissionsHeadersAction(networkRule);
+            const action = RegularRuleConverter.getAddingPermissionsHeadersAction(networkRule);
             expect(action).toBeNull();
         });
 
@@ -856,7 +856,7 @@ describe('RuleConverter', () => {
                 advancedModifierValue: null,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action1 = RuleConverter.getAddingPermissionsHeadersAction(networkRule1);
+            const action1 = RegularRuleConverter.getAddingPermissionsHeadersAction(networkRule1);
             expect(action1).toBeNull();
 
             const networkRule2 = createNetworkRuleMock({
@@ -864,7 +864,7 @@ describe('RuleConverter', () => {
                 advancedModifierValue: '',
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action2 = RuleConverter.getAddingPermissionsHeadersAction(networkRule2);
+            const action2 = RegularRuleConverter.getAddingPermissionsHeadersAction(networkRule2);
             expect(action2).toBeNull();
         });
 
@@ -875,7 +875,7 @@ describe('RuleConverter', () => {
                 advancedModifierValue: testPermissionsValue,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RuleConverter.getAddingPermissionsHeadersAction(networkRule);
+            const action = RegularRuleConverter.getAddingPermissionsHeadersAction(networkRule);
             expect(action).toEqual({
                 header: PERMISSIONS_POLICY_HEADER_NAME,
                 operation: HeaderOperation.Append,
@@ -891,7 +891,7 @@ describe('RuleConverter', () => {
                 isRegexRule: false,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.urlFilter).toBe('asciiPrepared(example.com/path)');
         });
 
@@ -901,7 +901,7 @@ describe('RuleConverter', () => {
                 isRegexRule: false,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.urlFilter).toBe('asciiPrepared(*example.com/path)');
         });
 
@@ -911,7 +911,7 @@ describe('RuleConverter', () => {
                 isRegexRule: true,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.regexFilter).toBe('asciiPrepared(removedSlashes(/some-regex-pattern/))');
         });
 
@@ -920,7 +920,7 @@ describe('RuleConverter', () => {
                 enabledOptions: [NetworkRuleOption.ThirdParty],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.domainType).toBe(DomainType.ThirdParty);
         });
 
@@ -929,21 +929,21 @@ describe('RuleConverter', () => {
                 disabledOptions: [NetworkRuleOption.ThirdParty],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.domainType).toBe(DomainType.FirstParty);
         });
 
         it('should skip initiatorDomains if permitted domains are not specified or empty', () => {
             const networkRule1 = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition1 = RuleConverter.getCondition(networkRule1);
+            const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.initiatorDomains).toBeUndefined();
 
             const networkRule2 = createNetworkRuleMock({
                 permittedDomains: [],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition2 = RuleConverter.getCondition(networkRule2);
+            const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.initiatorDomains).toBeUndefined();
         });
 
@@ -952,21 +952,21 @@ describe('RuleConverter', () => {
                 permittedDomains: ['example.com', '/.*\\.example\\.org/'],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.initiatorDomains).toEqual(['example.com']);
         });
 
         it('should skip excludedInitiatorDomains if restricted domains are not specified or empty', () => {
             const networkRule1 = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition1 = RuleConverter.getCondition(networkRule1);
+            const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.excludedInitiatorDomains).toBeUndefined();
 
             const networkRule2 = createNetworkRuleMock({
                 restrictedDomains: [],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition2 = RuleConverter.getCondition(networkRule2);
+            const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.excludedInitiatorDomains).toBeUndefined();
         });
 
@@ -975,21 +975,21 @@ describe('RuleConverter', () => {
                 restrictedDomains: ['example.com'],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.excludedInitiatorDomains).toEqual(['example.com']);
         });
 
         it('should skip requestDomains if permitted to domains are not specified or empty', () => {
             const networkRule1 = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition1 = RuleConverter.getCondition(networkRule1);
+            const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.requestDomains).toBeUndefined();
 
             const networkRule2 = createNetworkRuleMock({
                 permittedToDomains: [],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition2 = RuleConverter.getCondition(networkRule2);
+            const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.requestDomains).toBeUndefined();
         });
 
@@ -998,7 +998,7 @@ describe('RuleConverter', () => {
                 permittedToDomains: ['example.com'],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.requestDomains).toEqual(['example.com']);
         });
 
@@ -1008,14 +1008,14 @@ describe('RuleConverter', () => {
                 restrictedToDomains: ['example2.com'],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition1 = RuleConverter.getCondition(networkRule1);
+            const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.excludedRequestDomains).toEqual(['example1.com']);
 
             const networkRule2 = createNetworkRuleMock({
                 denyAllowDomains: ['example1.com'],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition2 = RuleConverter.getCondition(networkRule2);
+            const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.excludedRequestDomains).toEqual(['example1.com']);
         });
 
@@ -1024,14 +1024,14 @@ describe('RuleConverter', () => {
                 restrictedToDomains: ['example.com'],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.excludedRequestDomains).toEqual(['example.com']);
         });
 
         it('should skip excludedResourceTypes if restricted resource types are empty', () => {
             const networkRule = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.excludedResourceTypes).toBeUndefined();
         });
 
@@ -1040,7 +1040,7 @@ describe('RuleConverter', () => {
                 restrictedResourceTypes: [ResourceType.Font, ResourceType.Image],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition1 = RuleConverter.getCondition(networkRule1);
+            const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.excludedResourceTypes).toEqual([
                 ResourceType.Font,
                 ResourceType.Image,
@@ -1051,7 +1051,7 @@ describe('RuleConverter', () => {
                 restrictedResourceTypes: [ResourceType.MainFrame, ResourceType.Image],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition2 = RuleConverter.getCondition(networkRule2);
+            const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.excludedResourceTypes).toEqual([
                 ResourceType.MainFrame,
                 ResourceType.Image,
@@ -1061,7 +1061,7 @@ describe('RuleConverter', () => {
         it('should skip resourceTypes if permitted resource types are empty', () => {
             const networkRule = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.resourceTypes).toBeUndefined();
         });
 
@@ -1071,7 +1071,7 @@ describe('RuleConverter', () => {
                 permittedResourceTypes: [ResourceType.Font],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.resourceTypes).toBeUndefined();
         });
 
@@ -1080,14 +1080,14 @@ describe('RuleConverter', () => {
                 permittedResourceTypes: [ResourceType.Font, ResourceType.Image],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.resourceTypes).toEqual([ResourceType.Font, ResourceType.Image]);
         });
 
         it('should skip requestMethods if permitted methods are empty', () => {
             const networkRule = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.requestMethods).toBeUndefined();
         });
 
@@ -1096,14 +1096,14 @@ describe('RuleConverter', () => {
                 permittedMethods: [RequestMethod.Get, RequestMethod.Connect],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.requestMethods).toEqual([RequestMethod.Get, RequestMethod.Connect]);
         });
 
         it('should skip excludedRequestMethods if restricted methods are empty', () => {
             const networkRule = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.excludedRequestMethods).toBeUndefined();
         });
 
@@ -1112,14 +1112,14 @@ describe('RuleConverter', () => {
                 restrictedMethods: [RequestMethod.Get, RequestMethod.Connect],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.excludedRequestMethods).toEqual([RequestMethod.Get, RequestMethod.Connect]);
         });
 
         it('should skip isUrlFilterCaseSensitive if match case option is not enabled', () => {
             const networkRule = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.isUrlFilterCaseSensitive).toBeUndefined();
         });
 
@@ -1128,14 +1128,14 @@ describe('RuleConverter', () => {
                 enabledOptions: [NetworkRuleOption.MatchCase],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.isUrlFilterCaseSensitive).toBe(true);
         });
 
         it('skips ResourceType.MainFrame in resourceTypes if popup option is not enabled', () => {
             const networkRule = createNetworkRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(networkRule);
             expect(condition.resourceTypes).toBeUndefined();
         });
 
@@ -1144,7 +1144,7 @@ describe('RuleConverter', () => {
                 enabledOptions: [NetworkRuleOption.Popup],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition1 = RuleConverter.getCondition(networkRule1);
+            const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.resourceTypes).toEqual([ResourceType.MainFrame]);
 
             const networkRule2 = createNetworkRuleMock({
@@ -1152,7 +1152,7 @@ describe('RuleConverter', () => {
                 permittedResourceTypes: [ResourceType.Font],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition2 = RuleConverter.getCondition(networkRule2);
+            const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.resourceTypes).toEqual([ResourceType.Font, ResourceType.MainFrame]);
 
             const networkRule3 = createNetworkRuleMock({
@@ -1160,7 +1160,7 @@ describe('RuleConverter', () => {
                 permittedResourceTypes: [ResourceType.MainFrame, ResourceType.Font],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition3 = RuleConverter.getCondition(networkRule3);
+            const condition3 = RegularRuleConverter.getCondition(networkRule3);
             expect(condition3.resourceTypes).toEqual([ResourceType.MainFrame, ResourceType.Font]);
         });
 
@@ -1171,42 +1171,42 @@ describe('RuleConverter', () => {
                 enabledOptions: [NetworkRuleOption.RemoveHeader],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition1 = RuleConverter.getCondition(networkRule1);
+            const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule2 = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.Csp],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition2 = RuleConverter.getCondition(networkRule2);
+            const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule3 = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.Cookie],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition3 = RuleConverter.getCondition(networkRule3);
+            const condition3 = RegularRuleConverter.getCondition(networkRule3);
             expect(condition3.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule4 = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.To],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition4 = RuleConverter.getCondition(networkRule4);
+            const condition4 = RegularRuleConverter.getCondition(networkRule4);
             expect(condition4.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule5 = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.Method],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition5 = RuleConverter.getCondition(networkRule5);
+            const condition5 = RegularRuleConverter.getCondition(networkRule5);
             expect(condition5.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule6 = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.Header],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition6 = RuleConverter.getCondition(networkRule6);
+            const condition6 = RegularRuleConverter.getCondition(networkRule6);
             expect(condition6.resourceTypes).toBeUndefined();
         });
 
@@ -1217,21 +1217,21 @@ describe('RuleConverter', () => {
                 enabledOptions: [NetworkRuleOption.RemoveParam],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition1 = RuleConverter.getCondition(networkRule1);
+            const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.resourceTypes).toEqual(documentResourceTypes);
 
             const networkRule2 = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.Permissions],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition2 = RuleConverter.getCondition(networkRule2);
+            const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.resourceTypes).toEqual(documentResourceTypes);
 
             const networkRule3 = createNetworkRuleMock({
                 enabledOptions: [NetworkRuleOption.Header],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition3 = RuleConverter.getCondition(networkRule3);
+            const condition3 = RegularRuleConverter.getCondition(networkRule3);
             expect(condition3.resourceTypes).toBeUndefined();
         });
 
@@ -1243,7 +1243,7 @@ describe('RuleConverter', () => {
                 },
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition1 = RuleConverter.getCondition(networkRule1);
+            const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.responseHeaders).toEqual([{
                 header: 'Test-Header',
             }]);
@@ -1256,7 +1256,7 @@ describe('RuleConverter', () => {
                 },
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition2 = RuleConverter.getCondition(networkRule2);
+            const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.responseHeaders).toEqual([{
                 header: 'Test-Header',
             }]);
@@ -1269,7 +1269,7 @@ describe('RuleConverter', () => {
                 },
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition3 = RuleConverter.getCondition(networkRule3);
+            const condition3 = RegularRuleConverter.getCondition(networkRule3);
             expect(condition3.responseHeaders).toEqual([{
                 header: 'Test-Header',
                 values: ['Header-Value'],
@@ -1280,7 +1280,7 @@ describe('RuleConverter', () => {
                 headerModifierMatcher: null,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition4 = RuleConverter.getCondition(networkRule4);
+            const condition4 = RegularRuleConverter.getCondition(networkRule4);
             expect(condition4.responseHeaders).toBeUndefined();
 
             const networkRule5 = createNetworkRuleMock({
@@ -1291,7 +1291,7 @@ describe('RuleConverter', () => {
                 },
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition5 = RuleConverter.getCondition(networkRule5);
+            const condition5 = RegularRuleConverter.getCondition(networkRule5);
             expect(condition5.responseHeaders).toEqual([{
                 header: 'Test-Header',
             }]);
@@ -1691,7 +1691,7 @@ describe('RuleConverter', () => {
             }));
 
             // @ts-expect-error Accessing protected static method for testing purposes
-            const result = RuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
+            const result = RegularRuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
 
             // Should have 2 rules: one combined (rule1 + rule2) and one standalone (rule3)
             expect(result.declarativeRules).toHaveLength(2);
@@ -1740,7 +1740,7 @@ describe('RuleConverter', () => {
             const combineRulePair = vi.fn();
 
             // @ts-expect-error Accessing protected static method for testing purposes
-            const result = RuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
+            const result = RegularRuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
 
             // Should have 2 rules (no grouping occurred)
             expect(result.declarativeRules).toHaveLength(2);
@@ -1783,7 +1783,7 @@ describe('RuleConverter', () => {
             const combineRulePair = vi.fn();
 
             // @ts-expect-error Accessing protected static method for testing purposes
-            const result = RuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
+            const result = RegularRuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
 
             // Should have 1 rule (only rule1 processed successfully)
             expect(result.declarativeRules).toHaveLength(1);
@@ -1820,7 +1820,7 @@ describe('RuleConverter', () => {
             const combineRulePair = vi.fn();
 
             // @ts-expect-error Accessing protected static method for testing purposes
-            const result = RuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
+            const result = RegularRuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
 
             // Should preserve existing error
             expect(result.errors).toHaveLength(1);
@@ -1862,7 +1862,7 @@ describe('RuleConverter', () => {
             }));
 
             // @ts-expect-error Accessing protected static method for testing purposes
-            const result = RuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
+            const result = RegularRuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
 
             // Should have 1 combined rule
             expect(result.declarativeRules).toHaveLength(1);
@@ -1889,7 +1889,7 @@ describe('RuleConverter', () => {
             const combineRulePair = vi.fn();
 
             // @ts-expect-error Accessing protected static method for testing purposes
-            const result = RuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
+            const result = RegularRuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
 
             expect(result.declarativeRules).toHaveLength(0);
             expect(result.sourceMapValues).toHaveLength(0);
@@ -1938,7 +1938,7 @@ describe('RuleConverter', () => {
             }));
 
             // @ts-expect-error Accessing protected static method for testing purposes
-            RuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
+            RegularRuleConverter.groupConvertedRules(converted, createRuleTemplate, combineRulePair);
 
             // Original rules should remain unchanged
             expect(originalRule1).toEqual(originalRule1Copy);

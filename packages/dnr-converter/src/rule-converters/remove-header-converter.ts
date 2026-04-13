@@ -2,7 +2,7 @@ import { type DeclarativeRule, type ModifyHeaderInfo } from '../declarative-rule
 import { type NetworkRule } from '../network-rule';
 
 import { type ConvertedRules } from './converted-rules';
-import { RuleConverter } from './rule-converter';
+import { RegularRuleConverter } from './regular-rule-converter';
 
 /**
  * Describes how to convert `$removeheader` rules.
@@ -11,9 +11,9 @@ import { RuleConverter } from './rule-converter';
  * incompatible modifiers: `$domain`, `$third-party`, `$important`, `$app`,
  * `$match-case`, `$script`, `$stylesheet`, etc.
  *
- * @see {@link RuleConverter} parent class.
+ * @see {@link RegularRuleConverter} parent class.
  */
-export class RemoveHeaderConverter extends RuleConverter {
+export class RemoveHeaderConverter extends RegularRuleConverter {
     /**
      * Creates rule template for grouping similar `$removeheader` rules.
      *
@@ -112,7 +112,7 @@ export class RemoveHeaderConverter extends RuleConverter {
         usedIds: Set<number>,
     ): Promise<ConvertedRules> {
         const converted = await this.convertRules(filterListId, rules, usedIds);
-        const result = RuleConverter.groupConvertedRules(
+        const result = RegularRuleConverter.groupConvertedRules(
             converted,
             RemoveHeaderConverter.createRuleTemplate,
             RemoveHeaderConverter.combineRulePair,

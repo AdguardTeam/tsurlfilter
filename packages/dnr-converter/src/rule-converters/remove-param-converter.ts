@@ -2,14 +2,14 @@ import { type DeclarativeRule } from '../declarative-rule';
 import { type NetworkRule } from '../network-rule';
 
 import { type ConvertedRules } from './converted-rules';
-import { RuleConverter } from './rule-converter';
+import { RegularRuleConverter } from './regular-rule-converter';
 
 /**
  * Describes how to convert `$removeparam` rules.
  *
- * @see {@link RuleConverter} parent class.
+ * @see {@link RegularRuleConverter} parent class.
  */
-export class RemoveParamConverter extends RuleConverter {
+export class RemoveParamConverter extends RegularRuleConverter {
     /**
      * Creates rule template for grouping similar `$removeparam` rules.
      *
@@ -76,7 +76,7 @@ export class RemoveParamConverter extends RuleConverter {
         usedIds: Set<number>,
     ): Promise<ConvertedRules> {
         const converted = await this.convertRules(filterListId, rules, usedIds);
-        const result = RuleConverter.groupConvertedRules(
+        const result = RegularRuleConverter.groupConvertedRules(
             converted,
             RemoveParamConverter.createRuleTemplate,
             RemoveParamConverter.combineRulePair,

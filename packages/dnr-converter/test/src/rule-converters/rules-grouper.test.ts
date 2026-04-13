@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { RulesGroup, RulesGrouper } from '../../../src/filter-converter/rules-grouper';
 import { type NetworkRule, NetworkRuleOption } from '../../../src/network-rule';
+import { RulesGroup, RulesGrouper } from '../../../src/rule-converters/rules-grouper';
 
 describe('RulesGrouper', () => {
     const getMockedNetworkRule = (enabledOptions: NetworkRuleOption[]): NetworkRule => {
@@ -63,9 +63,9 @@ describe('RulesGrouper', () => {
             expect(result).toEqual({
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
                 [RulesGroup.Regular]: [],
                 [RulesGroup.Csp]: [],
+                [RulesGroup.BadFilter]: [],
             });
         });
 
@@ -76,9 +76,9 @@ describe('RulesGrouper', () => {
             expect(result).toEqual({
                 [RulesGroup.RemoveParam]: [removeParamRule],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
                 [RulesGroup.Regular]: [],
                 [RulesGroup.Csp]: [],
+                [RulesGroup.BadFilter]: [],
             });
         });
 
@@ -90,9 +90,9 @@ describe('RulesGrouper', () => {
             expect(result).toEqual({
                 [RulesGroup.RemoveParam]: [removeParamRule1, removeParamRule2],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
                 [RulesGroup.Regular]: [],
                 [RulesGroup.Csp]: [],
+                [RulesGroup.BadFilter]: [],
             });
         });
 
@@ -100,7 +100,6 @@ describe('RulesGrouper', () => {
             const removeParamRule = getMockedNetworkRule([NetworkRuleOption.RemoveParam]);
             const removeHeaderRule = getMockedNetworkRule([NetworkRuleOption.RemoveHeader]);
             const cspRule = getMockedNetworkRule([NetworkRuleOption.Csp]);
-            const badFilterRule = getMockedNetworkRule([NetworkRuleOption.Badfilter]);
             const regularRule = getMockedNetworkRule([NetworkRuleOption.Important]);
             const regularRule2 = getMockedNetworkRule([NetworkRuleOption.NotSet]);
 
@@ -108,7 +107,6 @@ describe('RulesGrouper', () => {
                 removeParamRule,
                 removeHeaderRule,
                 cspRule,
-                badFilterRule,
                 regularRule,
                 regularRule2,
             ]);
@@ -117,8 +115,8 @@ describe('RulesGrouper', () => {
                 [RulesGroup.RemoveParam]: [removeParamRule],
                 [RulesGroup.RemoveHeader]: [removeHeaderRule],
                 [RulesGroup.Csp]: [cspRule],
-                [RulesGroup.BadFilter]: [badFilterRule],
                 [RulesGroup.Regular]: [regularRule, regularRule2],
+                [RulesGroup.BadFilter]: [],
             });
         });
 
@@ -138,9 +136,9 @@ describe('RulesGrouper', () => {
             expect(result).toEqual({
                 [RulesGroup.RemoveParam]: [removeParamRule],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.Regular]: [regularRule1, regularRule2, regularRule3],
+                [RulesGroup.BadFilter]: [],
             });
         });
 
@@ -168,9 +166,9 @@ describe('RulesGrouper', () => {
             expect(result).toEqual({
                 [RulesGroup.RemoveParam]: [combinedRule1],
                 [RulesGroup.RemoveHeader]: [combinedRule2],
-                [RulesGroup.BadFilter]: [],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.Regular]: [combinedRule3],
+                [RulesGroup.BadFilter]: [],
             });
         });
     });

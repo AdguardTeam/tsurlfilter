@@ -22,10 +22,13 @@ extensions.
 - [Installation](#installation)
     - [Peer dependencies](#peer-dependencies)
 - [API overview](#api-overview)
-    - [`DNR_CONVERTER_VERSION`](#dnr_converter_version)
-    - [`isSafeRule(rule)`](#issaferulerule)
+    - [`IFilter` / `IFilterWithSource`](#ifilter--ifiltersource)
     - [`ConverterOptions`](#converteroptions)
-    - [`Filter`](#filter)
+    - [Simple flow: `FilterConverter` + `Ruleset`](#simple-flow-filterconverter--ruleset)
+    - [Advanced flow: `FilterConverterWithSourceMap` + `RulesetWithSourceMap`](#advanced-flow-filterconverterwithsourcemap--rulesetwithsourcemap)
+    - [`ConversionResult`](#conversionresult)
+    - [`isSafeRule(rule)`](#issaferulerule)
+    - [`DNR_CONVERTER_VERSION`](#dnr_converter_version)
 - [Documentation](#documentation)
 
 ## Key concepts
@@ -103,15 +106,178 @@ The package requires [`@adguard/re2-wasm`](https://www.npmjs.com/package/@adguar
 
 ## API overview
 
-### `DNR_CONVERTER_VERSION`
+The library exposes **two conversion flows**:
+
+| | Simple flow | Advanced flow |
+| --- | --- | --- |
+| **Converter** | `FilterConverter` | `FilterConverterWithSourceMap` |
+| **Ruleset** | `Ruleset` (sync, in-memory) | `RulesetWithSourceMap` (lazy-load, source map) |
+| **Input filter** | `IFilter` | `IFilterWithSource` |
+| **Use case** | When you only need `DeclarativeRule[]` output from plain filter text | When you need source maps, `$badfilter` cross-filter application, and serialization |
+
+### `IFilter` / `IFilterWithSource`
 
 ```ts
-import { DNR_CONVERTER_VERSION } from '@adguard/dnr-converter';
-
-console.log(DNR_CONVERTER_VERSION); // e.g. "0.0.1"
+import type { IFilter, IFilterWithSource } from '@adguard/dnr-converter';
 ```
 
-A string constant with the current library version.
+**`IFilter`** — minimal interface for the simple flow:
+
+| Method | Type | Description |
+| --- | --- | --- |
+| `getId()` | `number` | Unique filter identifier |
+| `getContent()` | `string` | Full text of the filter list (one rule per line) |
+
+**`IFilterWithSource`** — extended interface for the advanced flow:
+
+| Method | Type | Description |
+| --- | --- | --- |
+| `getId()` | `number` | Unique filter identifier |
+| `getContent()` | `Promise<string>` | Returns the full text of the filter list |
+| `getRuleByIndex(index)` | `Promise<string>` | Returns original rule text by character offset |
+| `unloadContent()` | `void` | Releases parsed content from memory |
+
+### `ConverterOptions`
+
+```ts
+import type { ConverterOptions } from '@adguard/dnr-converter';
+```
+
+Configuration for the conversion process:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `resourcesPath` | `string?` | Path to web-accessible resources relative to the extension root (starts with `/`, no trailing `/`). Required for `$redirect` rules. |
+| `maxNumberOfRules` | `number?` | Maximum total declarative rules to produce. Excess rules are trimmed. |
+| `maxNumberOfUnsafeRules` | `number?` | Maximum unsafe (dynamic) rules allowed. |
+| `maxNumberOfRegexpRules` | `number?` | Maximum rules using `regexFilter`. |
+| `combine` | `boolean?` | Merge all input filters into a single combined rule set. |
+| `badFilterRules` | `NetworkRule[]?` | Static `$badfilter` rules to apply at scan time (advanced flow only). |
+
+### Simple flow: `FilterConverter` + `Ruleset`
+
+Use this flow when you only need `DeclarativeRule[]` output from plain filter
+text, without source maps or lazy loading.
+
+```ts
+import { FilterConverter } from '@adguard/dnr-converter';
+import type { IFilter } from '@adguard/dnr-converter';
+
+const filter: IFilter = {
+    getId: () => 1,
+    getContent: () => '||example.com^\n@@||example.com/path^',
+};
+
+const converter = new FilterConverter();
+const [{ ruleSet, errors, limitations }] = await converter.convert([filter]);
+
+console.log(ruleSet.getDeclarativeRules()); // DeclarativeRule[]
+console.log(ruleSet.getRulesCount());       // 2
+console.log(errors.length);                 // 0
+```
+
+**Combine multiple filters into one ruleset:**
+
+```ts
+const [{ ruleSet }] = await converter.convert(
+    [filter1, filter2],
+    { combine: true },
+);
+// ruleSet.getId() === FilterConverter.COMBINED_RULESET_ID
+```
+
+**Serialize and restore:**
+
+```ts
+const json = ruleSet.serialize();   // JSON string of DeclarativeRule[]
+
+const { Ruleset } = await import('@adguard/dnr-converter');
+const restored = Ruleset.deserialize(ruleSet.getId(), json);
+```
+
+`Ruleset` (returned by the simple flow) implements `IRuleset`:
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `getId()` | `string` | Rule set identifier (e.g. `"ruleset_1"`) |
+| `getRulesCount()` | `number` | Total number of declarative rules |
+| `getUnsafeRulesCount()` | `number` | Count of unsafe rules |
+| `getRegexpRulesCount()` | `number` | Count of regexp-based rules |
+| `getDeclarativeRules()` | `DeclarativeRule[]` | All converted DNR rules (synchronous) |
+| `serialize()` | `string` | JSON serialization of declarative rules |
+| `Ruleset.deserialize(id, json)` | `Ruleset` | Static: reconstruct from serialized JSON |
+
+### Advanced flow: `FilterConverterWithSourceMap` + `RulesetWithSourceMap`
+
+Use this flow in browser extension internals when you need source maps,
+`$badfilter` cross-filter application, serialization with hash maps, and lazy
+content loading.
+
+<!-- FIXME: Update this example once the `Filter` class is migrated to
+     dnr-converter (AG-52708). Replace the raw `IFilterWithSource` stub
+     with `new Filter(id, source)` and remove the manual method stubs. -->
+
+```ts
+import { FilterConverterWithSourceMap } from '@adguard/dnr-converter';
+import type { IFilterWithSource } from '@adguard/dnr-converter';
+
+const filter: IFilterWithSource = {
+    getId: () => 1,
+    getContent: async () => '||example.com^\n@@||example.com/path^',
+    getRuleByIndex: async (_index) => '',
+    getConversionData: () => undefined,
+    unloadContent: () => {},
+};
+
+const converter = new FilterConverterWithSourceMap();
+const [{ ruleSet, errors }] = await converter.convert([filter]);
+
+const declarativeRules = await ruleSet.getDeclarativeRules(); // Promise<DeclarativeRule[]>
+const sources = await ruleSet.getRulesById(declarativeRules[0].id);
+console.log(sources[0].sourceRule); // '||example.com^'
+```
+
+**Apply `$badfilter` from dynamic filters against static rule sets:**
+
+```ts
+const [{ ruleSet: dynamicRuleSet }] = await converter.convert([dynamicFilter]);
+const rulesToDisable = await converter.computeRulesToDisable(
+    [dynamicRuleSet],
+    [staticRuleSet],
+);
+// rulesToDisable: UpdateStaticRulesOptions[]
+```
+
+`RulesetWithSourceMap` (returned by the advanced flow) implements
+`IRulesetWithSourceMap`:
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `getId()` | `string` | Rule set identifier |
+| `getRulesCount()` | `number` | Total number of declarative rules |
+| `getUnsafeRulesCount()` | `number` | Count of unsafe rules |
+| `getRegexpRulesCount()` | `number` | Count of regexp-based rules |
+| `getDeclarativeRules()` | `Promise<DeclarativeRule[]>` | All converted DNR rules (lazy) |
+| `getUnsafeRules()` | `Promise<DeclarativeRule[]>` | Unsafe rules subset (lazy) |
+| `getRulesById(id)` | `Promise<SourceRuleAndFilterId[]>` | Source rules for a DNR rule |
+| `getBadFilterRules()` | `NetworkRule[]` | `$badfilter` rules in this set |
+| `getRulesHashMap()` | `IRulesHashMap` | Hash map for fast `$badfilter` matching |
+| `serialize()` | `Promise<SerializedRuleset>` | Full serialization (rules + source map + hash map) |
+| `serializeCompact(prettyPrint?, unsafeRules?)` | `Promise<string>` | Compact JSON serialization |
+| `unloadContent()` | `void` | Release lazy-loaded content |
+
+```ts
+import type { ConversionResult } from '@adguard/dnr-converter';
+```
+
+Result returned by converter methods:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `ruleSet` | `IRuleset` / `IRulesetWithSourceMap` | The converted rule set |
+| `errors` | `(ConversionError \| Error)[]` | Rules that could not be converted |
+| `limitations` | `LimitationError[]` | Warnings about exceeded limits |
+| `declarativeRulesToCancel` | `UpdateStaticRulesOptions[]?` | Static rule IDs to disable (from `computeRulesToDisable`) |
 
 ### `isSafeRule(rule)`
 
@@ -134,33 +300,15 @@ Returns `true` if the declarative rule's action is one of the
 `allowAllRequests`, `upgradeScheme`). Useful for separating safe static rules
 from unsafe dynamic rules that require additional review.
 
-### `ConverterOptions`
+### `DNR_CONVERTER_VERSION`
 
 ```ts
-import type { ConverterOptions } from '@adguard/dnr-converter';
+import { DNR_CONVERTER_VERSION } from '@adguard/dnr-converter';
+
+console.log(DNR_CONVERTER_VERSION); // e.g. "0.0.1"
 ```
 
-Configuration for the conversion process:
-
-| Property | Type | Description |
-| --- | --- | --- |
-| `resourcesPath` | `string?` | Path to web-accessible resources relative to the extension root (starts with `/`, no trailing `/`). Required for `$redirect` rules. |
-| `maxNumberOfRules` | `number?` | Maximum total declarative rules to produce. Excess rules are trimmed. |
-| `maxNumberOfUnsafeRules` | `number?` | Maximum unsafe (dynamic) rules allowed. |
-| `maxNumberOfRegexpRules` | `number?` | Maximum rules using `regexFilter`. |
-
-### `Filter`
-
-```ts
-import type { Filter } from '@adguard/dnr-converter';
-```
-
-Represents an input filter list:
-
-| Property | Type | Description |
-| --- | --- | --- |
-| `id` | `number` | Unique filter identifier |
-| `content` | `string` | Full text of the filter list (one rule per line) |
+A string constant with the current library version.
 
 ## Documentation
 

@@ -5,6 +5,8 @@
  * {@link RulesConverter.applyBadFilter} and checks for specified
  * limitations {@link RulesConverter.checkLimitations}.
  *
+ * Note: FCWSM = FilterConverterWithSourceMap.
+ *
  *                                                  Conversion
  *
  *       Two entry points        │                FilterConverter             │             RulesConverter
@@ -12,32 +14,31 @@
  *                               │       Perform the conversion at the        │      Perform the conversion at the
  *                               │       filter level.                        │      rules level.
  *                               │                                            │
- *  Converting static rules      │       Validate passed number of rules      │
- *  during extension assembly.   │       and path to web accessible resources.│
+ *  Simple conversion of filter  │       Validate options: resourcesPath,     │
+ *  lists to declarative rules.  │       max rule counts, etc.                │
  * ┌─────────────────────────┐   │      ┌────────────────────────────────┐    │
- * │                         ├─┬─┼─────►│                                │    │
- * │  convertStaticRuleSet() │ │ │      │      checkConverterOptions()   │    │
- * │                         │ │ │  ┌───┤                                │    │
- * └─────────────────────────┘ │ │  │   └────────────────────────────────┘    │
+ * │  FilterConverter        ├─┬─┼─────►│                                │    │
+ * │     .convert()          │ │ │      │      checkConverterOptions()   │    │
+ * └─────────────────────────┘ │ │  ┌───┤                                │    │
+ *                             │ │  │   └────────────────────────────────┘    │
  *                             │ │  │                                         │
- *  On-the-fly conversion      │ │  │    Filter only network rules and create │
- *  for dynamic rules.         │ │  │    network rules.                       │
- * ┌─────────────────────────┐ │ │  │    In this method, when converting      │
- * │                         │ │ │  │    dynamic rules, the rules canceled by │
- * │ convertDynamicRuleSets()├─┘ │  │    $badfilter rules from static filters │
- * │                         │   │  │    are filtered out - such rules are    │
- * └─────────────────────────┘   │  │    discarded during filter scanning.    │
- *                               │  │   ┌────────────────────────────────┐    │
+ *  Advanced conversion with   │ │  │    Parse filter text into NetworkRules. │
+ *  source maps. FCWSM builds  │ │  │    FCWSM builds a skipNegatedRulesFn    │
+ * ┌─────────────────────────┐ │ │  │    from options.badFilterRules to skip  │
+ * │ FilterConverterWith-    │ │ │  │    rules negated by $badfilter during   │
+ * │  SourceMap.convert()    ├─┘ │  │    scanning. For simple FilterConverter │
+ * │                         │   │  │    no pre-filtering is applied.         │
+ * └─────────────────────────┘   │  │   ┌────────────────────────────────┐    │
  *                               │  └──►│                                │    │
- *                               │      │    RulesScanner.scanRules()    │    │
+ *                               │      │   RulesScanner.scanFilters()   │    │
  *                               │  ┌───┤                                │    │
  *                               │  │   └────────────────────────────────┘    │  Filter rules affected by $badfilter
  *                               │  │                                         │  within one filter, then group the rules
  *                               │  │                                         │  based on modifiers, requiring specific
- *                               │  │    Convert our network rule to DNR.     │  conversion processes such as
+ *                               │  │    Convert scanned network rules to DNR.│  conversion processes such as
  *                               │  │   ┌────────────────────────────────┐    │  post-processing for similar rules.
  *                               │  └──►│                                │    │   ┌────────────────────────────────┐
- *                               │      │           convert()            ├────┼───┤                                │
+ *                               │      │   RulesConverter.convert()     ├────┼───┤                                │
  *                               │      │                                │    │   │        applyBadFilter()        │
  *                               │      └────────────────────────────────┘    │ ┌─┤                                │
  *                               │                                            │ │ └────────────────────────────────┘
@@ -48,7 +49,7 @@
  *                               │                                            │ │ results and returns them.
  *                               │                                            │ │
  *                               │                                            │ │ For details, please go to the
- *                               │                                            │ │ abstract-rule-converter.ts schema.
+ *                               │                                            │ │ regular-rule-converter.ts schema.
  *                               │                                            │ │ ┌────────────────────────────────┐
  *                               │                                            │ └►│                                │
  *                               │                                            │   │          convertRules()        │
@@ -64,26 +65,28 @@
  *                               │                                            │   │         checkLimitations()     │
  *                               │   ┌────────────────────────────────────────┼───┤                                │
  *                               │   │                                        │   └────────────────────────────────┘
- *                               │   │   Wrap conversion result into RuleSet. │
+ *                               │   │   Wrap conversion output into a        │
+ *                               │   │   RulesetWithSourceMap (FCWSM only).   │
+ *                               │   │   FilterConverter creates a Ruleset    │
+ *                               │   │   directly, without this step.         │
  *                               │   │  ┌────────────────────────────────┐    │
  *                               │   └─►│                                │    │
  *                               │      │    collectConvertedResult()    │    │
- *                               │  ┌───┤                                │    │
- *                               │  │   └────────────────────────────────┘    │
- *                               │  │                                         │
- *                               │  │    This method is only called during the│
- *                               │  │    conversion of dynamic rules.         │
- *                               │  │    Applies rules with $badfilter        │
- *                               │  │    modifier from dynamic rulesets to    │
- *                               │  │    all rules from static rulesets and   │
- *                               │  │    returns list of ids of declarative   │
- *                               │  │    rules to disable them.               │
- *                               │  │   ┌──────────────────────────────────┐  │
- *                               │  └──►│                                  │  │
- *                               │      │ collectDeclarativeRulesToCancel()│  │
- *                               │      │                                  │  │
- *                               │      └──────────────────────────────────┘  │
+ *                               │      │        (FCWSM only)            │    │
+ *                               │      └────────────────────────────────┘    │
  *                               │                                            │
+ *─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  ─ ─ ─ ─│
+ *                               │                                            │
+ *  Separate entry point, called │  Matches $badfilter rules from dynamic     │
+ *  after convert() via          │  rulesets against all static rulesets and  │
+ *  FCWSM.computeRulesToDisable().  returns the declarative rule IDs to       │
+ *  Not part of the main         │  disable per static ruleset.               │
+ *  conversion flow.             │ ┌────────────────────────────────────────┐ │
+ * ┌─────────────────────────┐   │ │                                        │ │
+ * │ FilterConverterWith-    ├───┼►│  collectDeclarativeRulesToCancel()     │ │
+ * │  SourceMap              │   │ │        (FCWSM only)                    │ │
+ * │  .computeRulesToDisable │   │ └────────────────────────────────────────┘ │
+ * └─────────────────────────┘   │                                            │
  */
 /* eslint-enable jsdoc/require-description-complete-sentence */
 
@@ -95,21 +98,18 @@ import {
     TooManyRulesError,
     TooManyUnsafeRulesError,
 } from '../errors/limitation-errors';
+import { type FilterConverterOptions } from '../filter-converter/filter-converter-options';
 import { type NetworkRule } from '../network-rule';
-import {
-    BadFilterConverter,
-    type ConvertedRules,
-    CspConverter,
-    RegularConverter,
-    RemoveHeaderConverter,
-    RemoveParamConverter,
-} from '../rule-converters';
-import { type Source } from '../source-map';
+import { type ScannedFilter } from '../rules-scanner';
+import { type Source } from '../ruleset/source-map';
 import { isSafeRule } from '../utils/is-safe-rule';
 
+import { type ConvertedRules } from './converted-rules';
+import { CspConverter } from './csp-converter';
+import { RegularRuleConverter } from './regular-rule-converter';
+import { RemoveHeaderConverter } from './remove-header-converter';
+import { RemoveParamConverter } from './remove-param-converter';
 import { type GroupedRules, RulesGroup, RulesGrouper } from './rules-grouper';
-import { type ScannedFilter } from './rules-scanner';
-import { type ConverterOptions } from './types';
 
 /**
  * Array of tuples where the first element is a filter ID
@@ -143,11 +143,10 @@ export class RulesConverter {
      * Map of converters for each rules group.
      */
     private static readonly CONVERTERS = {
-        [RulesGroup.Regular]: RegularConverter,
+        [RulesGroup.Regular]: RegularRuleConverter,
         [RulesGroup.Csp]: CspConverter,
         [RulesGroup.RemoveParam]: RemoveParamConverter,
         [RulesGroup.RemoveHeader]: RemoveHeaderConverter,
-        [RulesGroup.BadFilter]: BadFilterConverter,
     };
 
     /**
@@ -167,7 +166,7 @@ export class RulesConverter {
      */
     public static async convert(
         scannedFilters: ScannedFilter[],
-        options?: ConverterOptions,
+        options?: FilterConverterOptions,
     ): Promise<ConvertedRules> {
         const filters = RulesConverter.applyBadFilter(scannedFilters);
         let converted: ConvertedRules = {
@@ -238,7 +237,7 @@ export class RulesConverter {
         filterId: number,
         groupsRules: GroupedRules,
         usedIds: Set<number>,
-        options?: ConverterOptions,
+        options?: FilterConverterOptions,
     ): Promise<ConvertedRules> {
         const converted: ConvertedRules = {
             sourceMapValues: [],
@@ -248,22 +247,27 @@ export class RulesConverter {
 
         // Map because RulesGroup values are numbers
         const groups = Object.keys(groupsRules).map(Number);
-        await Promise.all(groups.map(async (key: RulesGroup) => {
+        const groupResults = await Promise.all(groups.map(async (key: RulesGroup) => {
+            if (key === RulesGroup.BadFilter) {
+                return null;
+            }
+
             const converter = new RulesConverter.CONVERTERS[key](options?.resourcesPath);
-            const {
-                sourceMapValues,
-                declarativeRules,
-                errors,
-            } = await converter.convert(
+            return converter.convert(
                 filterId,
                 groupsRules[key],
                 usedIds,
             );
-
-            converted.sourceMapValues = converted.sourceMapValues.concat(sourceMapValues);
-            converted.declarativeRules = converted.declarativeRules.concat(declarativeRules);
-            converted.errors = converted.errors.concat(errors);
         }));
+
+        for (const result of groupResults) {
+            if (result === null) {
+                continue;
+            }
+            converted.sourceMapValues = converted.sourceMapValues.concat(result.sourceMapValues);
+            converted.declarativeRules = converted.declarativeRules.concat(result.declarativeRules);
+            converted.errors = converted.errors.concat(result.errors);
+        }
 
         return converted;
     }
@@ -585,7 +589,8 @@ export class RulesConverter {
                 filtered[key] = filtered[key].filter(filterByBadFilterFn);
             });
 
-            // Clean up bad filters rules
+            // Clean up bad filters rules — they are not converted
+            // to declarative rules, only used for negation above
             filtered[RulesGroup.BadFilter] = [];
 
             return [filterId, filtered];

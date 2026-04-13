@@ -10,9 +10,9 @@ import {
 } from 'vitest';
 
 import { MaxScannedRulesError } from '../../../src/errors/limitation-errors/max-scanned-rules-error';
-import { RulesScanner } from '../../../src/filter-converter/rules-scanner';
-import { type Filter } from '../../../src/filter-converter/types';
+import { type IFilterWithSource } from '../../../src/filter/types';
 import { NetworkRule, NetworkRuleOption } from '../../../src/network-rule';
+import { RulesScanner } from '../../../src/rules-scanner';
 import { createNetworkRuleMock } from '../../mocks/network-rule';
 
 vi.mock('@adguard/agtree/parser', () => ({
@@ -24,9 +24,12 @@ vi.mock('../../../src/network-rule', async () => ({
     NetworkRule: { parseFromNode: vi.fn() },
 }));
 
-const createFilter = (rules: string[] = [], id = 1): Filter => ({
-    id,
-    content: rules.join('\n'),
+const createFilter = (rules: string[] = [], id = 1): IFilterWithSource => ({
+    getId: () => id,
+    getRuleByIndex: async () => '',
+    getContent: async () => rules.join('\n'),
+    getConversionData: () => undefined,
+    unloadContent: () => {},
 });
 
 const parserMock = vi.mocked(FilterListParser.parse);
@@ -42,7 +45,7 @@ describe('RulesScanner', () => {
     });
 
     describe('scanFilters', () => {
-        it('should scan multiple filters and return scanned results', () => {
+        it('should scan multiple filters and return scanned results', async () => {
             const filter1Rule1 = '||example.com^';
             const filter1 = createFilter([filter1Rule1], 1);
             const mockAst1 = {
@@ -77,7 +80,7 @@ describe('RulesScanner', () => {
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule2]);
 
-            const result = RulesScanner.scanFilters([filter1, filter2]);
+            const result = await RulesScanner.scanFilters([filter1, filter2]);
             expect(result).toEqual({
                 errors: [],
                 filters: [
@@ -95,7 +98,7 @@ describe('RulesScanner', () => {
             });
         });
 
-        it('should apply filter function to rules', () => {
+        it('should apply filter function to rules', async () => {
             const filterRule1 = '||example.com^';
             const filterRule2 = '||blocked.com^';
             const filter = createFilter([filterRule1, filterRule2]);
@@ -128,7 +131,7 @@ describe('RulesScanner', () => {
             parseFromNodeMock.mockReturnValueOnce([mockRule2]);
 
             const filterFn = vi.fn((rule: any) => rule.pattern === '||example.com^');
-            const result = RulesScanner.scanFilters([filter], filterFn);
+            const result = await RulesScanner.scanFilters([filter], filterFn);
 
             expect(filterFn).toHaveBeenCalledTimes(2);
             expect(result).toEqual({
@@ -141,7 +144,7 @@ describe('RulesScanner', () => {
             });
         });
 
-        it('should separate badfilter rules', () => {
+        it('should separate badfilter rules', async () => {
             const filterRule1 = '||example.com^';
             const filterRule2 = '||example.com^$badfilter';
             const filter = createFilter([filterRule1, filterRule2]);
@@ -175,7 +178,7 @@ describe('RulesScanner', () => {
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule2]);
 
-            const result = RulesScanner.scanFilters([filter]);
+            const result = await RulesScanner.scanFilters([filter]);
             expect(result).toEqual({
                 errors: [],
                 filters: [{
@@ -186,7 +189,7 @@ describe('RulesScanner', () => {
             });
         });
 
-        it('should handle parsing errors', () => {
+        it('should handle parsing errors', async () => {
             const filterRule = 'invalid rule';
             const filter = createFilter([filterRule]);
             const mockAst = {
@@ -202,7 +205,7 @@ describe('RulesScanner', () => {
             };
             parserMock.mockReturnValue(mockAst as any);
 
-            const result = RulesScanner.scanFilters([filter]);
+            const result = await RulesScanner.scanFilters([filter]);
 
             expect(result).toEqual({
                 errors: [new Error(
@@ -216,7 +219,7 @@ describe('RulesScanner', () => {
             });
         });
 
-        it('should handle NetworkRule creation errors', () => {
+        it('should handle NetworkRule creation errors', async () => {
             const filterRule = '||example.com^';
             const filter = createFilter([filterRule]);
             const mockAst = {
@@ -231,7 +234,7 @@ describe('RulesScanner', () => {
                 throw new Error('NetworkRule creation failed');
             });
 
-            const result = RulesScanner.scanFilters([filter]);
+            const result = await RulesScanner.scanFilters([filter]);
             expect(result).toEqual({
                 errors: [new Error('NetworkRule creation failed')],
                 filters: [{
@@ -242,7 +245,7 @@ describe('RulesScanner', () => {
             });
         });
 
-        it('should handle unknown errors during NetworkRule creation', () => {
+        it('should handle unknown errors during NetworkRule creation', async () => {
             const filterRule = '||example.com^';
             const filter = createFilter([filterRule]);
             const mockAst = {
@@ -258,7 +261,7 @@ describe('RulesScanner', () => {
                 throw 'Unknown error';
             });
 
-            const result = RulesScanner.scanFilters([filter]);
+            const result = await RulesScanner.scanFilters([filter]);
 
             expect(result).toEqual({
                 errors: [new Error(
@@ -273,7 +276,7 @@ describe('RulesScanner', () => {
             });
         });
 
-        it('should respect maximum number of scanned rules limit', () => {
+        it('should respect maximum number of scanned rules limit', async () => {
             const filterRule1 = '||example1.com^';
             const filterRule2 = '||example2.com^';
             const filterRule3 = '||example3.com^';
@@ -317,7 +320,7 @@ describe('RulesScanner', () => {
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule3]);
 
-            const result = RulesScanner.scanFilters([filter], undefined, 2);
+            const result = await RulesScanner.scanFilters([filter], undefined, 2);
             expect(result).toEqual({
                 errors: [new MaxScannedRulesError(
                     'Maximum number of scanned network rules reached at line index 15.',
@@ -331,8 +334,8 @@ describe('RulesScanner', () => {
             });
         });
 
-        it('should handle empty filters array', () => {
-            const result = RulesScanner.scanFilters([]);
+        it('should handle empty filters array', async () => {
+            const result = await RulesScanner.scanFilters([]);
 
             expect(result).toEqual({
                 errors: [],
@@ -340,12 +343,12 @@ describe('RulesScanner', () => {
             });
         });
 
-        it('should handle filters with empty content', () => {
+        it('should handle filters with empty content', async () => {
             const filter = createFilter();
             const mockAst = { children: [] };
             parserMock.mockReturnValue(mockAst as any);
 
-            const result = RulesScanner.scanFilters([filter]);
+            const result = await RulesScanner.scanFilters([filter]);
             expect(result).toEqual({
                 errors: [],
                 filters: [{

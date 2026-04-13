@@ -3,6 +3,7 @@ import {
     type NetworkRule as NetworkRuleNode,
     NetworkRuleType,
     RuleCategory,
+    RuleParser,
 } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
 import { RuleGenerator } from '@adguard/agtree/generator';
@@ -200,6 +201,60 @@ export enum NetworkRuleOption {
  */
 export class NetworkRule {
     /**
+     * Creates {@link NetworkRule} instances from raw rule text by parsing
+     * and converting to AG syntax.
+     *
+     * @param filterId Filter's id from which rule was extracted.
+     * @param ruleIndex Rule index in the filter.
+     * @param text Raw rule text.
+     *
+     * @returns Array of {@link NetworkRule} parsed from `text`.
+     *
+     * @throws `Error` when parsing or conversion fails.
+     */
+    public static createFromText(
+        filterId: number,
+        ruleIndex: number,
+        text: string,
+    ): NetworkRule[] {
+        let rulesConvertedToAGSyntax: AnyRule[];
+        try {
+            const node = RuleParser.parse(text);
+            const conversionResult = RuleConverter.convertToAdg(node);
+            if (conversionResult.isConverted) {
+                rulesConvertedToAGSyntax = conversionResult.result;
+            } else {
+                rulesConvertedToAGSyntax = [node];
+            }
+        } catch (e) {
+            throw new Error(`Unknown error during conversion rule to AG syntax: ${getErrorMessage(e)}`);
+        }
+
+        const networkRules: NetworkRule[] = [];
+        for (let i = 0; i < rulesConvertedToAGSyntax.length; i += 1) {
+            const ruleNode = rulesConvertedToAGSyntax[i];
+
+            if (
+                ruleNode.category !== RuleCategory.Network
+                || ruleNode.type !== NetworkRuleType.NetworkRule
+            ) {
+                continue;
+            }
+
+            try {
+                const rule = new NetworkRule(filterId, ruleIndex, ruleNode);
+                networkRules.push(rule);
+            } catch (e: unknown) {
+                throw new Error(
+                    `Cannot create NetworkRule from filter "${filterId}" and rule "${text}": ${getErrorMessage(e)}`,
+                );
+            }
+        }
+
+        return networkRules;
+    }
+
+    /**
      * Parses network rules from the given rule node.
      *
      * @param filterListId Filter list ID.
@@ -350,6 +405,15 @@ export class NetworkRule {
         // TODO: Improve this part: maybe use trie-lookup-table and .getShortcut()?
         // or use agtree to collect pattern + all enabled network options without values
         this.hash = fastHash(this.pattern);
+    }
+
+    /**
+     * Returns rule text generated from the AST node.
+     *
+     * @returns Rule text.
+     */
+    public get text(): string {
+        return RuleGenerator.generate(this.node);
     }
 
     /**
@@ -650,10 +714,8 @@ export class NetworkRule {
      * @returns Hash for pattern part of the network rule.
      */
     public getRuleTextHash(salt?: number): number {
-        const textOfNetworkRule = RuleGenerator.generate(this.node);
-
         // Append a null-char to not collide with legitimate rule text.
-        const trialText = salt === undefined ? textOfNetworkRule : `${textOfNetworkRule}\0${salt}`;
+        const trialText = salt === undefined ? this.text : `${this.text}\0${salt}`;
 
         return fastHash31(trialText);
     }

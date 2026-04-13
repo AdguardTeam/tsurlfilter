@@ -14,27 +14,29 @@ import {
     TooManyRulesError,
     TooManyUnsafeRulesError,
 } from '../../../src/errors/limitation-errors';
-import { RulesConverter } from '../../../src/filter-converter/rules-converter';
-import { type GroupedRules, RulesGroup } from '../../../src/filter-converter/rules-grouper';
-import { type ScannedFilter } from '../../../src/filter-converter/rules-scanner';
 import { type NetworkRule, NetworkRuleOption } from '../../../src/network-rule';
-import {
-    BadFilterConverter,
-    CspConverter,
-    RegularConverter,
-    RemoveHeaderConverter,
-    RemoveParamConverter,
-} from '../../../src/rule-converters';
 import { type ConvertedRules } from '../../../src/rule-converters/converted-rules';
-import { type Source } from '../../../src/source-map';
+import { CspConverter } from '../../../src/rule-converters/csp-converter';
+import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
+import { RemoveHeaderConverter } from '../../../src/rule-converters/remove-header-converter';
+import { RemoveParamConverter } from '../../../src/rule-converters/remove-param-converter';
+import { RulesConverter } from '../../../src/rule-converters/rules-converter';
+import { type GroupedRules, RulesGroup } from '../../../src/rule-converters/rules-grouper';
+import { type ScannedFilter } from '../../../src/rules-scanner';
+import { type Source } from '../../../src/ruleset/source-map';
 import { isSafeRule } from '../../../src/utils/is-safe-rule';
 import { createNetworkRuleMock } from '../../mocks/network-rule';
 
-vi.mock('../../../src/rule-converters', () => ({
-    BadFilterConverter: vi.fn(),
+vi.mock('../../../src/rule-converters/regular-rule-converter', () => ({
+    RegularRuleConverter: vi.fn(),
+}));
+vi.mock('../../../src/rule-converters/csp-converter', () => ({
     CspConverter: vi.fn(),
-    RegularConverter: vi.fn(),
+}));
+vi.mock('../../../src/rule-converters/remove-header-converter', () => ({
     RemoveHeaderConverter: vi.fn(),
+}));
+vi.mock('../../../src/rule-converters/remove-param-converter', () => ({
     RemoveParamConverter: vi.fn(),
 }));
 
@@ -43,9 +45,8 @@ vi.mock('../../../src/utils/is-safe-rule', () => ({
 }));
 
 // Import the mocked function
-const MockedBadFilterConverter = vi.mocked(BadFilterConverter);
+const MockedRuleConverter = vi.mocked(RegularRuleConverter);
 const MockedCspConverter = vi.mocked(CspConverter);
-const MockedRegularConverter = vi.mocked(RegularConverter);
 const MockedRemoveHeaderConverter = vi.mocked(RemoveHeaderConverter);
 const MockedRemoveParamConverter = vi.mocked(RemoveParamConverter);
 const isSafeRuleMocked = vi.mocked(isSafeRule);
@@ -141,7 +142,6 @@ describe('RulesConverter', () => {
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
 
@@ -213,14 +213,12 @@ describe('RulesConverter', () => {
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
             };
             const groupedRules2 = {
                 [RulesGroup.Regular]: [networkRule2, networkRule3],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules1], [2, groupedRules2]]);
 
@@ -285,7 +283,6 @@ describe('RulesConverter', () => {
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
 
@@ -324,7 +321,6 @@ describe('RulesConverter', () => {
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
 
@@ -357,7 +353,6 @@ describe('RulesConverter', () => {
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
 
@@ -399,7 +394,6 @@ describe('RulesConverter', () => {
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [], // badfilter rules are cleared
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
 
@@ -433,7 +427,6 @@ describe('RulesConverter', () => {
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
 
@@ -489,14 +482,12 @@ describe('RulesConverter', () => {
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
             };
             const groupedRules2 = {
                 [RulesGroup.Regular]: [networkRule2],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules1], [2, groupedRules2]]);
 
@@ -554,14 +545,12 @@ describe('RulesConverter', () => {
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
             };
             const groupedRules2 = {
                 [RulesGroup.Regular]: [networkRule2],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.BadFilter]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules1], [2, groupedRules2]]);
 
@@ -629,7 +618,7 @@ describe('RulesConverter', () => {
             );
 
             const regularConvertMock = vi.fn(async () => regularConverted);
-            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+            MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
                 this.convert = regularConvertMock;
             });
             const cspConvertMock = vi.fn(async () => cspConverted);
@@ -644,10 +633,6 @@ describe('RulesConverter', () => {
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = removeHeaderConvertMock;
             });
-            const badFilterConvertMock = vi.fn(async () => createConvertedRules());
-            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
-                this.convert = badFilterConvertMock;
-            });
 
             // @ts-expect-error Accessing private method for testing
             const result = await RulesConverter.convertRules(filterId, groupedRules, usedIds);
@@ -657,7 +642,6 @@ describe('RulesConverter', () => {
             expect(cspConvertMock).toHaveBeenCalledWith(filterId, [cspRule], usedIds);
             expect(removeParamConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
             expect(removeHeaderConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
-            expect(badFilterConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
             // Verify results are aggregated correctly
             expect(result.declarativeRules).toHaveLength(2);
             expect(result.declarativeRules).toEqual([
@@ -680,7 +664,7 @@ describe('RulesConverter', () => {
             // Mock all converters to return empty results
             const emptyResult = createConvertedRules();
             const regularConvertMock = vi.fn(async () => emptyResult);
-            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+            MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
                 this.convert = regularConvertMock;
             });
             const cspConvertMock = vi.fn(async () => emptyResult);
@@ -695,10 +679,6 @@ describe('RulesConverter', () => {
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = removeHeaderConvertMock;
             });
-            const badFilterConvertMock = vi.fn(async () => emptyResult);
-            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
-                this.convert = badFilterConvertMock;
-            });
 
             // @ts-expect-error Accessing private method for testing
             const result = await RulesConverter.convertRules(filterId, groupedRules, usedIds);
@@ -708,7 +688,6 @@ describe('RulesConverter', () => {
             expect(cspConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
             expect(removeParamConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
             expect(removeHeaderConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
-            expect(badFilterConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
 
             // Verify empty result
             expect(result.declarativeRules).toEqual([]);
@@ -724,7 +703,7 @@ describe('RulesConverter', () => {
                 [RulesGroup.Regular]: [createNetworkRuleMock()],
             });
 
-            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+            MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
@@ -736,19 +715,15 @@ describe('RulesConverter', () => {
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
-            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
-                this.convert = async () => createConvertedRules();
-            });
 
             // @ts-expect-error Accessing private method for testing
             await RulesConverter.convertRules(filterId, groupedRules, usedIds, options);
 
             // Verify converters were instantiated with resourcesPath
-            expect(RegularConverter).toHaveBeenCalledWith(options.resourcesPath);
+            expect(RegularRuleConverter).toHaveBeenCalledWith(options.resourcesPath);
             expect(CspConverter).toHaveBeenCalledWith(options.resourcesPath);
             expect(RemoveParamConverter).toHaveBeenCalledWith(options.resourcesPath);
             expect(RemoveHeaderConverter).toHaveBeenCalledWith(options.resourcesPath);
-            expect(BadFilterConverter).toHaveBeenCalledWith(options.resourcesPath);
         });
 
         it('should aggregate errors from all converters', async () => {
@@ -763,7 +738,7 @@ describe('RulesConverter', () => {
             const cspError = createConversionError(2);
             const generalError = new Error('General error');
 
-            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+            MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
                 this.convert = async () => createConvertedRules([], [], [regularError]);
             });
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
@@ -773,9 +748,6 @@ describe('RulesConverter', () => {
                 this.convert = async () => createConvertedRules();
             });
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
-                this.convert = async () => createConvertedRules();
-            });
-            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
             // @ts-expect-error Accessing private method for testing
@@ -801,7 +773,7 @@ describe('RulesConverter', () => {
                 [createSource(10, 30, filterId)],
             );
 
-            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+            MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
@@ -813,9 +785,6 @@ describe('RulesConverter', () => {
             });
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = async () => removeParamConverted;
-            });
-            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
-                this.convert = async () => createConvertedRules();
             });
 
             // @ts-expect-error Accessing private method for testing
@@ -835,7 +804,7 @@ describe('RulesConverter', () => {
             });
 
             const regularConvertMock = vi.fn(async () => createConvertedRules());
-            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+            MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
                 this.convert = regularConvertMock;
             });
             const cspConvertMock = vi.fn(async () => createConvertedRules());
@@ -850,10 +819,6 @@ describe('RulesConverter', () => {
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = removeHeaderConvertMock;
             });
-            const badFilterConvertMock = vi.fn(async () => createConvertedRules());
-            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
-                this.convert = badFilterConvertMock;
-            });
 
             // @ts-expect-error Accessing private method for testing
             await RulesConverter.convertRules(filterId, groupedRules, usedIds);
@@ -863,7 +828,6 @@ describe('RulesConverter', () => {
             expect(cspConvertMock).toHaveBeenCalledWith(filterId, expect.any(Array), usedIds);
             expect(removeParamConvertMock).toHaveBeenCalledWith(filterId, expect.any(Array), usedIds);
             expect(removeHeaderConvertMock).toHaveBeenCalledWith(filterId, expect.any(Array), usedIds);
-            expect(badFilterConvertMock).toHaveBeenCalledWith(filterId, expect.any(Array), usedIds);
         });
 
         it('should handle mixed successful and error conversions', async () => {
@@ -881,7 +845,7 @@ describe('RulesConverter', () => {
             const error = createConversionError(101);
             const errorResult = createConvertedRules([], [], [error]);
 
-            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+            MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
                 this.convert = async () => successfulResult;
             });
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
@@ -892,9 +856,6 @@ describe('RulesConverter', () => {
             });
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = async () => errorResult;
-            });
-            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
-                this.convert = async () => createConvertedRules();
             });
 
             // @ts-expect-error Accessing private method for testing
@@ -914,7 +875,6 @@ describe('RulesConverter', () => {
                 [RulesGroup.Csp]: [createNetworkRuleMock()],
                 [RulesGroup.RemoveParam]: [createNetworkRuleMock()],
                 [RulesGroup.RemoveHeader]: [createNetworkRuleMock()],
-                [RulesGroup.BadFilter]: [createNetworkRuleMock()],
             });
 
             // Create promises that we can control
@@ -922,16 +882,14 @@ describe('RulesConverter', () => {
             let cspResolve: (value: ConvertedRules) => void;
             let removeParamResolve: (value: ConvertedRules) => void;
             let removeHeaderResolve: (value: ConvertedRules) => void;
-            let badFilterResolve: (value: ConvertedRules) => void;
 
             const regularPromise = new Promise<ConvertedRules>((resolve) => { regularResolve = resolve; });
             const cspPromise = new Promise<ConvertedRules>((resolve) => { cspResolve = resolve; });
             const removeParamPromise = new Promise<ConvertedRules>((resolve) => { removeParamResolve = resolve; });
             const removeHeaderPromise = new Promise<ConvertedRules>((resolve) => { removeHeaderResolve = resolve; });
-            const badFilterPromise = new Promise<ConvertedRules>((resolve) => { badFilterResolve = resolve; });
 
             const regularConvertMock = vi.fn(async () => regularPromise);
-            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+            MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
                 this.convert = regularConvertMock;
             });
             const cspConvertMock = vi.fn(async () => cspPromise);
@@ -946,10 +904,6 @@ describe('RulesConverter', () => {
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = removeHeaderConvertMock;
             });
-            const badFilterConvertMock = vi.fn(async () => badFilterPromise);
-            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
-                this.convert = badFilterConvertMock;
-            });
 
             // @ts-expect-error Accessing private method for testing
             const resultPromise = RulesConverter.convertRules(filterId, groupedRules, usedIds);
@@ -959,20 +913,18 @@ describe('RulesConverter', () => {
             expect(cspConvertMock).toHaveBeenCalled();
             expect(removeParamConvertMock).toHaveBeenCalled();
             expect(removeHeaderConvertMock).toHaveBeenCalled();
-            expect(badFilterConvertMock).toHaveBeenCalled();
 
             // Resolve promises in different order to test parallel execution
             cspResolve!(createConvertedRules([createDeclarativeRule(2)], [createSource(2, 2, filterId)]));
             removeParamResolve!(createConvertedRules([createDeclarativeRule(3)], [createSource(3, 3, filterId)]));
             regularResolve!(createConvertedRules([createDeclarativeRule(1)], [createSource(1, 1, filterId)]));
-            badFilterResolve!(createConvertedRules([createDeclarativeRule(5)], [createSource(5, 5, filterId)]));
             removeHeaderResolve!(createConvertedRules([createDeclarativeRule(4)], [createSource(4, 4, filterId)]));
 
             const result = await resultPromise;
 
             // Results should be aggregated regardless of resolution order
-            expect(result.declarativeRules).toHaveLength(5);
-            expect(result.sourceMapValues).toHaveLength(5);
+            expect(result.declarativeRules).toHaveLength(4);
+            expect(result.sourceMapValues).toHaveLength(4);
             expect(result.errors).toEqual([]);
         });
 
@@ -983,7 +935,7 @@ describe('RulesConverter', () => {
                 [RulesGroup.Regular]: [createNetworkRuleMock()],
             });
 
-            MockedRegularConverter.mockImplementationOnce(function RegularConverterMock() {
+            MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
@@ -995,19 +947,15 @@ describe('RulesConverter', () => {
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
-            MockedBadFilterConverter.mockImplementationOnce(function BadFilterConverterMock() {
-                this.convert = async () => createConvertedRules();
-            });
 
             // @ts-expect-error Accessing private method for testing
             await RulesConverter.convertRules(filterId, groupedRules, usedIds);
 
             // Verify converters were instantiated with undefined resourcesPath
-            expect(RegularConverter).toHaveBeenCalledWith(undefined);
+            expect(RegularRuleConverter).toHaveBeenCalledWith(undefined);
             expect(CspConverter).toHaveBeenCalledWith(undefined);
             expect(RemoveParamConverter).toHaveBeenCalledWith(undefined);
             expect(RemoveHeaderConverter).toHaveBeenCalledWith(undefined);
-            expect(BadFilterConverter).toHaveBeenCalledWith(undefined);
         });
     });
 
@@ -1035,7 +983,6 @@ describe('RulesConverter', () => {
             // regularRule1 should be filtered out, regularRule2 should remain
             expect(groupedRules[RulesGroup.Regular]).toEqual([regularRule2]);
             // badfilter rules should be cleared
-            expect(groupedRules[RulesGroup.BadFilter]).toEqual([]);
         });
 
         it('should keep rules not negated by badfilter rules', () => {
@@ -1060,7 +1007,6 @@ describe('RulesConverter', () => {
             // Both rules should remain
             expect(groupedRules[RulesGroup.Regular]).toEqual([regularRule1, regularRule2]);
             // badfilter rules should be cleared
-            expect(groupedRules[RulesGroup.BadFilter]).toEqual([]);
         });
 
         it('should handle empty scanned filters array', () => {
@@ -1114,7 +1060,6 @@ describe('RulesConverter', () => {
             const groupedRules = result[0][1];
             // All rules should remain since there are no badfilter rules
             expect(groupedRules[RulesGroup.Regular]).toEqual([regularRule1, regularRule2]);
-            expect(groupedRules[RulesGroup.BadFilter]).toEqual([]);
         });
 
         it('should apply badfilter rules across multiple filters', () => {
@@ -1146,12 +1091,10 @@ describe('RulesConverter', () => {
             // Filter 1: regularRule1 should be filtered out, regularRule2 should remain
             const groupedRules1 = result[0][1];
             expect(groupedRules1[RulesGroup.Regular]).toEqual([regularRule2]);
-            expect(groupedRules1[RulesGroup.BadFilter]).toEqual([]);
 
             // Filter 2: regularRule3 should be filtered out
             const groupedRules2 = result[1][1];
             expect(groupedRules2[RulesGroup.Regular]).toEqual([]);
-            expect(groupedRules2[RulesGroup.BadFilter]).toEqual([]);
         });
 
         it('should handle different rule types correctly', () => {
@@ -1186,7 +1129,6 @@ describe('RulesConverter', () => {
             expect(groupedRules[RulesGroup.Csp]).toEqual([cspRule]);
             expect(groupedRules[RulesGroup.RemoveParam]).toEqual([removeParamRule]);
             // badfilter rules should be cleared
-            expect(groupedRules[RulesGroup.BadFilter]).toEqual([]);
         });
 
         it('should handle multiple badfilter rules affecting the same regular rule', () => {
@@ -1214,7 +1156,6 @@ describe('RulesConverter', () => {
             const groupedRules = result[0][1];
             // Regular rule should be filtered out (even though multiple badfilter rules affect it)
             expect(groupedRules[RulesGroup.Regular]).toEqual([]);
-            expect(groupedRules[RulesGroup.BadFilter]).toEqual([]);
         });
 
         it('should preserve filter IDs correctly', () => {

@@ -88,13 +88,19 @@ You MUST follow the following rules for EVERY task that you perform:
 
 ### I. Architecture
 
-1. **Two conversion entry points.** `convertStaticRuleSet()` converts rules
-   during extension assembly; `convertDynamicRuleSets()` converts rules
-   on-the-fly for dynamic rule updates. Both flow through
-   `FilterConverter` → `RulesScanner` → `RulesConverter` → per-type converters.
+1. **Two conversion flows.** The library exposes two distinct flows:
+   - **Simple flow**: `FilterConverter` → `Ruleset` — for external consumers
+     needing only `DeclarativeRule[]` from plain filter text (synchronous,
+     in-memory, no source maps).
+   - **Advanced flow**: `FilterConverterWithSourceMap` → `RulesetWithSourceMap`
+     — for extension internals requiring source maps, `$badfilter` cross-filter
+     application via `computeRulesToDisable()`, and full serialization.
 
-   **Rationale**: Static and dynamic rules have different lifecycle and
-   `$badfilter` handling requirements.
+   Both flows route through `RulesScanner` → `RulesConverter` → per-type
+   converters.
+
+   **Rationale**: Separates the concern of external consumers (simple `DeclarativeRule[]`
+   output) from internal extension machinery (source maps, hash maps, lazy loading).
 
 2. **Per-rule-type converters.** Each rule modifier that needs special
    conversion logic (CSP, remove-header, remove-param, `$badfilter`) has its

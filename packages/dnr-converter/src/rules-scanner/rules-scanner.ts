@@ -2,9 +2,8 @@ import { RuleCategory } from '@adguard/agtree';
 import { FilterListParser, type ParserOptions } from '@adguard/agtree/parser';
 
 import { MaxScannedRulesError } from '../errors/limitation-errors';
+import { type IFilter, type IFilterWithSource } from '../filter/types';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
-
-import { type Filter } from './types';
 
 /**
  * Interface that represents a scanned filter.
@@ -29,7 +28,7 @@ export interface ScannedFilter {
 /**
  * Interface that represents result of scanning a list of filters.
  */
-export interface ScannedFiltersWithErrors {
+interface ScannedFiltersWithErrors {
     /**
      * List of errors occurred during the scan.
      */
@@ -44,7 +43,7 @@ export interface ScannedFiltersWithErrors {
 /**
  * Interface that represents scanned rules with errors.
  */
-export interface ScannedRulesWithErrors {
+interface ScannedRulesWithErrors {
     /**
      * List of scanned {@link NetworkRule}.
      */
@@ -82,7 +81,7 @@ export class RulesScanner {
     /**
      * Scans the list of filters for network rules.
      *
-     * @param filters List of {@link Filter}.
+     * @param filters List of {@link IFilter}.
      * @param filterFn If this function is specified, it will be applied to each
      * rule after it has been parsed and transformed. This function is needed
      * for example to apply `$badfilter`: to exclude negated rules from the array
@@ -94,11 +93,11 @@ export class RulesScanner {
      *
      * @returns Result object of {@link ScannedFiltersWithErrors}.
      */
-    public static scanFilters(
-        filters: Filter[],
+    public static async scanFilters(
+        filters: IFilter[] | IFilterWithSource[],
         filterFn?: (r: NetworkRule) => boolean,
         maxNumberOfScannedNetworkRules?: number,
-    ): ScannedFiltersWithErrors {
+    ): Promise<ScannedFiltersWithErrors> {
         const result: ScannedFiltersWithErrors = {
             errors: [],
             filters: [],
@@ -107,7 +106,8 @@ export class RulesScanner {
         for (let i = 0; i < filters.length; i += 1) {
             const filter = filters[i];
 
-            const { errors, rules } = RulesScanner.scanRules(
+            // eslint-disable-next-line no-await-in-loop
+            const { errors, rules } = await RulesScanner.scanRules(
                 filter,
                 filterFn,
                 maxNumberOfScannedNetworkRules,
@@ -116,7 +116,7 @@ export class RulesScanner {
 
             result.errors = result.errors.concat(errors);
             result.filters.push({
-                id: filter.id,
+                id: filter.getId(),
                 rules,
                 badFilterRules,
             });
@@ -140,12 +140,13 @@ export class RulesScanner {
      *
      * @returns Result object of {@link ScannedRulesWithErrors}.
      */
-    private static scanRules(
-        filter: Filter,
+    private static async scanRules(
+        filter: IFilter | IFilterWithSource,
         filterFn?: (r: NetworkRule) => boolean,
         maxNumberOfScannedNetworkRules?: number,
-    ): ScannedRulesWithErrors {
-        const { id, content } = filter;
+    ): Promise<ScannedRulesWithErrors> {
+        const id = filter.getId();
+        const content = await filter.getContent();
 
         // Parse filter content into AST
         const ast = FilterListParser.parse(content, RulesScanner.PARSER_OPTIONS);

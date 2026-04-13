@@ -1,7 +1,7 @@
 import { type DeclarativeRule } from '../declarative-rule';
 import { type ConversionError } from '../errors/conversion-errors';
 import { type LimitationError } from '../errors/limitation-errors';
-import { type Source } from '../source-map';
+import { type Source } from '../ruleset/source-map';
 
 /**
  * Interface that contains converted rules along with source map values, errors, and limitations.
