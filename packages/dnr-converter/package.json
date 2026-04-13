@@ -48,6 +48,7 @@
         "test": "vitest run",
         "test:light": "vitest run --exclude \"**/*benchmark*.test.ts\"",
         "test:watch": "vitest run --watch",
+        "test:ci": "vitest run --no-cache --reporter default --reporter junit --outputFile=./tests-reports/dnr-converter.xml",
         "test:coverage": "vitest run --coverage",
         "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
         "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache",

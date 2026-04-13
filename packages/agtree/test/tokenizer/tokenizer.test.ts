@@ -118,9 +118,16 @@ describe('Tokenizer', () => {
         let calls = 0;
         tokenize('abc\ndef\nghi', (type, start, end, stop, skip, jump) => {
             calls += 1;
-            if (type === TokenType.Ident && start === 0) jump(4); // Jump to after \n
-            if (type === TokenType.Ident && start > 4) stop(); // Stop early
-            skip(); // Skip the last rule
+            if (type === TokenType.Ident && start === 0) {
+                // Jump to after \n
+                jump(4);
+            }
+            if (type === TokenType.Ident && start > 4) {
+                // Stop early
+                stop();
+            }
+            // Skip the last rule
+            skip();
         });
         expect(calls).toBeLessThan(5);
     });

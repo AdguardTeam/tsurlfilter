@@ -282,8 +282,11 @@ export class StringUtils {
                 (pattern[i] === SINGLE_QUOTE_MARKER || pattern[i] === DOUBLE_QUOTE_MARKER)
                 && pattern[i - 1] !== escapeCharacter
             ) {
-                if (!openQuote) openQuote = pattern[i];
-                else if (openQuote === pattern[i]) openQuote = null;
+                if (!openQuote) {
+                    openQuote = pattern[i];
+                } else if (openQuote === pattern[i]) {
+                    openQuote = null;
+                }
             } else if (pattern[i] === searchedCharacter && pattern[i - 1] !== escapeCharacter) {
                 // Unescaped character
                 if (!openQuote) {

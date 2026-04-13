@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+- Smoke test failure in Docker CI by adding `--ignore-scripts` to
+  `pnpm install` in `test/smoke/exports/test.sh` to prevent the root
+  `prepare` script from running (`.husky` is excluded via `.dockerignore`).
+
 ## [4.0.6] - 2026-03-26
 
 ### Changed
@@ -1650,7 +1658,7 @@ its setting [AdguardBrowserExtension#2584].
 
 ### Fixed
 
-- Fixed allowlist api rule generation and matching.
+- Allowlist api rule generation and matching.
 
 [0.0.57]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.57
 
@@ -1658,12 +1666,12 @@ its setting [AdguardBrowserExtension#2584].
 
 ### Fixed
 
-- Fixed simultaneous increase of package numbers for packages tsurlfilter and
+- Simultaneous increase of package numbers for packages tsurlfilter and
   tswebextension in the branch epic.
-- Fixed working with DNT-headers and GPC from stealth mode.
-- Fixed js and css injection error handling.
-- Fixed request events initialization.
-- Fixed memory leaks in the tests.
+- Working with DNT-headers and GPC from stealth mode.
+- JS and CSS injection error handling.
+- Request events initialization.
+- Memory leaks in the tests.
 
 ### Removed
 

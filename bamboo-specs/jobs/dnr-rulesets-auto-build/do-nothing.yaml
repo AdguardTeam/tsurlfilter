@@ -1,0 +1,32 @@
+key: NOTHING
+other:
+  clean-working-dir: true
+tasks:
+  - checkout:
+      force-clean-build: true
+  - script:
+      interpreter: SHELL
+      scripts:
+        - |-
+          set -ex
+
+          # Fix mixed logs
+          exec 2>&1
+
+          echo "Build and deployment is not supported on branch ${bamboo.planRepository.branchName}, skipping"
+
+          mkdir -p output/artifacts
+          touch output/artifacts/dnr-rulesets.tgz
+final-tasks:
+  - script:
+      interpreter: SHELL
+      scripts:
+        - "./bamboo-specs/scripts/cleanup.sh output/artifacts/dnr-rulesets.tgz"
+artifacts:
+  - name: dnr-rulesets.tgz
+    location: output/artifacts
+    pattern: dnr-rulesets.tgz
+    shared: true
+    required: true
+requirements:
+  - extension: 'true'

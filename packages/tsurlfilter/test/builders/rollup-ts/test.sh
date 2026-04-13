@@ -3,7 +3,7 @@
 echo "Staring to test a bundling with rollup-ts "
 
 # install other deps
-pnpm install
+pnpm install --ignore-scripts
 
 # pack @adguard/tsurlfilter
 curr_path="test/builders/rollup-ts"

@@ -102,6 +102,7 @@
         "docs": "typedoc src --out docs",
         "docs:mv3": "tsx tasks/generate-examples",
         "test": "vitest run",
+        "test:ci": "vitest run --no-cache --reporter default --reporter junit --outputFile=./tests-reports/tsurlfilter.xml",
         "test:light": "vitest run --exclude \"**/*benchmark*.test.ts\"",
         "test:watch": "vitest run --watch",
         "test:coverage": "vitest run --coverage",

@@ -1,0 +1,63 @@
+key: BUILD
+other:
+  clean-working-dir: true
+tasks:
+  - checkout:
+      force-clean-build: true
+  - script:
+      interpreter: SHELL
+      scripts:
+        - |-
+          set -ex
+
+          # Fix mixed logs
+          exec 2>&1
+
+          BRANCH="${bamboo.planRepository.branchName}"
+
+          # Deploy package from supported stable branches only.
+          # branch 'stable/dnr-rulesets-3.3' - for AdGuard API v3.1
+          # branch 'stable/dnr-rulesets-4.0' - for AdGuard browser extension v5.3.0.X
+          # branch 'stable/dnr-rulesets-4.1' - for AdGuard browser extension v5.3.1.X
+          if [ "$BRANCH" != "stable/dnr-rulesets-3.3" ] \
+              && [ "$BRANCH" != "stable/dnr-rulesets-4.0" ] \
+              && [ "$BRANCH" != "stable/dnr-rulesets-4.1" ]; then
+            echo "deployment is not supported on branch ${BRANCH}, skipping"
+            exit 0
+          fi
+
+          export DOCKER_BUILDKIT=1
+
+          docker build \
+            --file Dockerfile \
+            --progress plain \
+            --build-arg TEST_RUN_ID=${bamboo.buildNumber} \
+            --target dnr-rulesets-auto-build-output \
+            --output type=local,dest=output \
+            .
+
+          if [ -d output/modified ]; then
+            cp -R output/modified/. .
+          fi
+  - inject-variables:
+      file: output/artifacts/build.txt
+      scope: RESULT
+      namespace: inject
+  - any-task:
+      plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+      configuration:
+        commitMessage: 'skipci: Automatic increment build number during auto build [v${bamboo.inject.version}]'
+        selectedRepository: defaultRepository
+final-tasks:
+  - script:
+      interpreter: SHELL
+      scripts:
+        - "./bamboo-specs/scripts/cleanup.sh output/artifacts/dnr-rulesets.tgz"
+artifacts:
+  - name: dnr-rulesets.tgz
+    location: output/artifacts
+    pattern: dnr-rulesets.tgz
+    shared: true
+    required: true
+requirements:
+  - extension: 'true'

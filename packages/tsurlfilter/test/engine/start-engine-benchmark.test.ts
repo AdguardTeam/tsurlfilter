@@ -329,7 +329,9 @@ describe('Benchmarks', () => {
          * @returns Formatted bytes.
          */
         function formatBytes(b: number): string {
-            if (b === 0) return '0 Bytes';
+            if (b === 0) {
+                return '0 Bytes';
+            }
 
             const k = 1024;
             const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];

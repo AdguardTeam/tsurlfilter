@@ -25,5 +25,7 @@ Makefile
 # do not expose npmjs token
 .npmrc
 
-# SDD specs
-specs/.current/
+# Docker CI / test:ci outputs
+output/
+output-*
+**/tests-reports

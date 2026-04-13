@@ -7,6 +7,8 @@
         "build:txt": "tsx scripts/build-txt",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
         "test": "vitest run",
+        "test:ci": "vitest run --reporter default --reporter junit --outputFile=./tests-reports/logger.xml",
+        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test",
         "lint": "eslint --cache --ignore-path .gitignore . && tsc",
         "lint:code": "eslint --cache --ignore-path .gitignore .",
         "lint:types": "tsc",

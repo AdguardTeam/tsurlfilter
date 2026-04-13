@@ -72,6 +72,8 @@
         "lint:md": "markdownlint .",
         "precommit": "pnpm lint:types && pnpm lint && pnpm test",
         "test": "vitest run --no-cache",
+        "test:ci": "vitest run --no-cache --reporter default --reporter junit --outputFile=./tests-reports/agtree.xml",
+        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache",
         "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
         "tgz": "pnpm pack --out agtree.tgz"
     },

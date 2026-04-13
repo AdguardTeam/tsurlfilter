@@ -1,0 +1,43 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Dependencies (will be installed inside Docker)
+node_modules
+**/node_modules
+
+# Build cache
+.nx
+**/.nx
+
+# Build outputs (rebuilt inside Docker)
+**/dist
+**/*.tgz
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+
+# CI/CD (not needed inside Docker)
+# NOTE: only bamboo-specs/scripts/ is used at Docker build time (test helpers).
+# bamboo-specs/jobs/ contains Bamboo YAML includes and is NOT referenced in the Dockerfile.
+.github
+bamboo-specs/jobs
+
+# Git hooks (not needed inside Docker)
+.husky
+
+# Test outputs
+**/coverage
+**/tests-reports
+
+# Docker build output directories (created by bamboo scripts / local verification)
+output
+output-*
+
+# Misc
+*.log
+.DS_Store

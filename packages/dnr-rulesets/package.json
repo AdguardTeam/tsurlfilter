@@ -33,6 +33,8 @@
         "validate:assets": "tsx tasks/validate.ts",
         "clear": "rimraf ./dist && rimraf ./rollup.cache",
         "test": "vitest run",
+        "test:ci": "vitest run --reporter default --reporter junit --outputFile=./tests-reports/dnr-rulesets.xml",
+        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test",
         "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
         "test:coverage": "vitest run --coverage",
         "lint": "pnpm lint:code && pnpm lint:types",

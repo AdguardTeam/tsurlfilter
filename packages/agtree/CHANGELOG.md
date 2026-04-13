@@ -291,7 +291,7 @@ The version is the same as [3.0.0-alpha.5], just removed `alpha` channel.
 
 ### Fixed
 
-- Fixed missing children data in the deserializer for certain nodes.
+- Missing children data in the deserializer for certain nodes.
 - Add error messages for rules parsing errors.
 
 ## [2.3.0] - 2024-12-19

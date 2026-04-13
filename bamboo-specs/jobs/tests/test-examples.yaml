@@ -1,0 +1,56 @@
+key: TESTEXAMPLES
+other:
+  clean-working-dir: true
+tasks:
+  - checkout:
+      force-clean-build: true
+  - script:
+      interpreter: SHELL
+      scripts:
+        - |-
+          set -ex
+
+          # Fix mixed logs
+          exec 2>&1
+
+          export DOCKER_BUILDKIT=1
+
+          . ./bamboo-specs/scripts/helpers.sh
+
+          if [ "$branch" != "master" ] && ! is_root_affected \
+              && ! is_project_affected "@adguard/tswebextension" \
+              && ! is_project_affected "@adguard/api" \
+              && ! is_project_affected "@adguard/api-mv3" \
+              && ! is_project_affected "adguard-api-example" \
+              && ! is_project_affected "adguard-api-mv3-example" \
+              && ! is_project_affected "tswebextension-mv2" \
+              && ! is_project_affected "tswebextension-mv3"; then
+            echo "No changes in examples or their dependencies, skipping tests"
+            exit 0
+          fi
+
+          docker build \
+            --file Dockerfile \
+            --progress plain \
+            --build-arg TEST_RUN_ID=${bamboo.buildNumber} \
+            --target test-examples-output \
+            --output type=local,dest=output \
+            .
+final-tasks:
+  - script:
+      interpreter: SHELL
+      scripts:
+        - "./bamboo-specs/scripts/cleanup.sh output/artifacts/examples-adguard-api-extension.zip,output/artifacts/examples-adguard-api-mv3-extension.zip"
+artifacts:
+  - name: examples-adguard-api-extension.zip
+    location: output/artifacts
+    pattern: examples-adguard-api-extension.zip
+    shared: false
+    required: false
+  - name: examples-adguard-api-mv3-extension.zip
+    location: output/artifacts
+    pattern: examples-adguard-api-mv3-extension.zip
+    shared: false
+    required: false
+requirements:
+  - extension: 'true'

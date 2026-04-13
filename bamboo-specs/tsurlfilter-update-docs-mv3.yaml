@@ -4,10 +4,6 @@ plan:
   project-key: AJL
   key: TSURLFILTERUPDDOCSMV3
   name: tsurlfilter - update docs mv3
-variables:
-  dockerContainer: adguard/node-ssh:22.17--0
-  testTimeout: 600s
-
 stages:
   - Build:
       manual: false
@@ -17,10 +13,8 @@ stages:
 
 Build:
   key: TSURLFILTERDOCSMV3
-  docker:
-    image: "${bamboo.dockerContainer}"
-    volumes:
-       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  other:
+    clean-working-dir: true
   tasks:
     - checkout:
         force-clean-build: true
@@ -28,29 +22,57 @@ Build:
         interpreter: SHELL
         scripts:
           - |-
-            set -e
-            set -x
+            set -ex
 
             # Fix mixed logs
             exec 2>&1
 
-            ls -alt
-
-            branch="${bamboo.planRepository.branchName}"
+            BRANCH="${bamboo.planRepository.branchName}"
 
             # Only allow master and release/* branches.
-            if [ "$branch" != "master" ] && [[ "$branch" != release/* ]]
-            then
-              echo "tsurlfilter docs mv3 update is not supported on branch ${branch}."
-              exit 0;
+            if [ "$BRANCH" != "master" ] && [[ "$BRANCH" != release/* ]]; then
+              echo "tsurlfilter docs mv3 update is not supported on branch ${BRANCH}."
+              exit 0
             fi
 
-            # Set cache directory
-            pnpm config set store-dir ${bamboo.cachePnpm}
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh"
+            # Change detection: skip Docker build if no relevant files changed
+            # since the last documentation update. This runs outside Docker
+            # because .git is excluded from the Docker build context.
+            LAST_DOC_COMMIT=$(git log -1 --format="%H" -- \
+              packages/tsurlfilter/src/rules/declarative-converter/README.md 2>/dev/null || echo "")
+
+            if [ -n "$LAST_DOC_COMMIT" ]; then
+              echo "Last doc update commit: $LAST_DOC_COMMIT"
+              CHANGED_FILES=$(git diff --name-only "$LAST_DOC_COMMIT" HEAD -- \
+                'packages/tsurlfilter/src/' \
+                'packages/tsurlfilter/tasks/generate-examples.ts' \
+                'packages/tsurlfilter/src/rules/declarative-converter/readme.txt' 2>/dev/null || echo "")
+
+              if [ -z "$CHANGED_FILES" ]; then
+                echo "No changes detected in files that affect MV3 documentation since last update."
+                echo "Skipping documentation generation."
+                exit 0
+              fi
+
+              echo "Changes detected in the following files:"
+              echo "$CHANGED_FILES"
+            else
+              echo "No previous doc update found - proceeding with generation"
+            fi
+
+            export DOCKER_BUILDKIT=1
+
+            docker build \
+              --file Dockerfile \
+              --progress plain \
+              --build-arg TEST_RUN_ID=${bamboo.buildNumber} \
+              --target update-docs-mv3-output \
+              --output type=local,dest=output \
+              .
+
+            if [ -d output/modified ]; then
+              cp -R output/modified/. .
+            fi
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
