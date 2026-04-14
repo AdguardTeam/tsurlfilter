@@ -27,6 +27,8 @@ extensions.
     - [Simple flow: `FilterConverter` + `Ruleset`](#simple-flow-filterconverter--ruleset)
     - [Advanced flow: `FilterConverterWithSourceMap` + `RulesetWithSourceMap`](#advanced-flow-filterconverterwithsourcemap--rulesetwithsourcemap)
     - [`ConversionResult`](#conversionresult)
+    - [`IRuleSet` / `RuleSet`](#iruleset--ruleset)
+    - [`MetadataRuleSet`](#metadataruleset)
     - [`isSafeRule(rule)`](#issaferulerule)
     - [`DNR_CONVERTER_VERSION`](#dnr_converter_version)
 - [Documentation](#documentation)
@@ -278,6 +280,57 @@ Result returned by converter methods:
 | `errors` | `(ConversionError \| Error)[]` | Rules that could not be converted |
 | `limitations` | `LimitationError[]` | Warnings about exceeded limits |
 | `declarativeRulesToCancel` | `UpdateStaticRulesOptions[]?` | Static rule IDs to disable (from `computeRulesToDisable`) |
+
+### `MetadataRuleSet`
+
+```ts
+import { MetadataRuleSet, METADATA_RULESET_ID } from '@adguard/dnr-converter';
+```
+
+A specialized ruleset that stores checksums and additional properties for a
+collection of DNR rule sets. It serializes as a single-element JSON array
+containing a declarative rule with a `metadata` field, acting as a data
+carrier within serialized ruleset files (never matches real requests).
+
+`METADATA_RULESET_ID` is the constant `0`; the ruleset's string ID is always
+`"ruleset_0"`.
+
+**Checksum methods:**
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `getId()` | `string` | Always `"ruleset_0"` |
+| `setChecksum(ruleSetId, checksum)` | `void` | Store checksum for a rule set |
+| `getChecksum(ruleSetId)` | `string \| undefined` | Retrieve checksum, or `undefined` if not set |
+| `getRuleSetIds()` | `string[]` | All rule set IDs that have checksums |
+
+**Additional-property methods:**
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `setAdditionalProperty(key, value)` | `void` | Store an arbitrary JSON-serializable property |
+| `getAdditionalProperty(key)` | `unknown \| undefined` | Retrieve a property value |
+| `hasAdditionalProperty(key)` | `boolean` | Check whether a property exists |
+| `removeAdditionalProperty(key)` | `void` | Remove a property (no-op if missing) |
+
+**Serialization:**
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `serialize(pretty?)` | `string` | JSON string; `pretty=true` for human-readable output |
+| `MetadataRuleSet.deserialize(json)` | `MetadataRuleSet` | Reconstruct from a serialized string; throws on invalid input |
+
+```ts
+const meta = new MetadataRuleSet();
+meta.setChecksum('ruleset_1', 'abc123');
+meta.setAdditionalProperty('version', '2.0');
+
+const json = meta.serialize();
+const restored = MetadataRuleSet.deserialize(json);
+
+console.log(restored.getChecksum('ruleset_1')); // "abc123"
+console.log(restored.getAdditionalProperty('version')); // "2.0"
+```
 
 ### `isSafeRule(rule)`
 

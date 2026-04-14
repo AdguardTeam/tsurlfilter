@@ -6,6 +6,8 @@ import {
     RulesetWithSourceMap,
     type IRuleset,
     type IRulesetWithSourceMap,
+    MetadataRuleset,
+    METADATA_RULESET_ID,
     type IFilter,
     type IFilterWithSource,
     type ConversionResult,
@@ -26,6 +28,8 @@ expectType<typeof FilterConverter>(FilterConverter);
 expectType<typeof FilterConverterWithSourceMap>(FilterConverterWithSourceMap);
 expectType<typeof Ruleset>(Ruleset);
 expectType<typeof RulesetWithSourceMap>(RulesetWithSourceMap);
+expectType<typeof MetadataRuleset>(MetadataRuleset);
+expectType<0>(METADATA_RULESET_ID);
 
 // Verify type exports are accessible (no runtime assertions needed for types)
 type AssertIRuleset = IRuleset;

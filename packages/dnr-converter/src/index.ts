@@ -31,3 +31,4 @@ export {
     UnavailableFilterSourceError,
     UnavailableRulesetSourceError,
 } from './errors/unavailable-sources-errors';
+export { MetadataRuleset, METADATA_RULESET_ID } from './ruleset/metadata-ruleset';
