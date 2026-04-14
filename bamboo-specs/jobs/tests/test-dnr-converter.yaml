@@ -48,3 +48,5 @@ final-tasks:
       interpreter: SHELL
       scripts:
         - "./bamboo-specs/scripts/cleanup.sh"
+requirements:
+  - extension: 'true'
