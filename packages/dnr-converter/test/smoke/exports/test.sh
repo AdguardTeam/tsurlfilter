@@ -18,7 +18,7 @@ trap cleanup EXIT
 
 (cd ../../.. && pnpm pack --out "$curr_path/$adguard_dnr_converter")
 
-pnpm install
+pnpm install --ignore-scripts
 
 # unzip to @adguard/dnr-converter to node_modules
 adguard_dnr_converter_node_modules=$nm_path"/@adguard/dnr-converter"
