@@ -25,6 +25,7 @@ COPY packages/css-tokenizer/package.json ./packages/css-tokenizer/
 COPY packages/agtree/package.json ./packages/agtree/
 COPY packages/tsurlfilter/package.json ./packages/tsurlfilter/
 COPY packages/tswebextension/package.json ./packages/tswebextension/
+COPY packages/dnr-converter/package.json ./packages/dnr-converter/
 COPY packages/dnr-rulesets/package.json ./packages/dnr-rulesets/
 COPY packages/adguard-api/package.json ./packages/adguard-api/
 COPY packages/adguard-api-mv3/package.json ./packages/adguard-api-mv3/
