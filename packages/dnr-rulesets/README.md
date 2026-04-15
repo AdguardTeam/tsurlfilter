@@ -72,6 +72,7 @@ The list of available filters can be found by `filters` in [the metadata](https:
         - [Dandelion Sprout's Serbo-Croatian List](#dandelion-sprouts-serbo-croatian-list)
         - [IndianList](#indianlist)
         - [Macedonian adBlock Filters](#macedonian-adblock-filters)
+    - [Managing `validator-data.json`](#managing-validator-datajson)
     - [Development](#development)
         - [build:assets](#buildassets)
         - [build:lib](#buildlib)
@@ -755,6 +756,51 @@ Blocks ads and trackers on various Macedonian websites.
 
 - Filter ID: **254**
 - Path: `<filters-directory>/declarative/ruleset_254/ruleset_254.json`
+
+## Managing `validator-data.json`
+
+The file `tasks/validator-data.json` serves two purposes:
+
+1. **Post-build validation** (`pnpm validate:assets`): after a build, the
+   validator compares the newly generated ruleset IDs and metadata keys against
+   this file. If they differ, the build fails with an error asking to update
+   the file and the changelog.
+
+2. **Pre-build allowlist** (auto-builds): when the environment variable
+   `DNR_FILTER_KNOWN_ONLY=true` is set (used in CI auto-builds for stable
+   branches), only filter IDs listed in this file are downloaded. This prevents
+   newly added filters in the FiltersRegistry from leaking into older stable
+   builds.
+
+### When to update
+
+Update `validator-data.json` whenever filters are **added to or removed from**
+the registry. Typical scenarios:
+
+- A new filter is published in the FiltersRegistry.
+- An existing filter is removed or its ID changes.
+
+### How to update
+
+1. Run a full build to download the latest filters and generate rulesets:
+
+   ```bash
+   pnpm build:assets
+   ```
+
+2. Run validation — it will fail and print the added/removed ruleset IDs:
+
+   ```bash
+   pnpm validate:assets
+   ```
+
+3. Update `tasks/validator-data.json` with the new data. The easiest way is to
+   copy the output from the build into the file, keeping the JSON structure
+   with `version`, `rulesetIds`, and `rulesetMetadataKeys`.
+
+4. Bump the package version and update the changelog.
+
+5. Commit the updated `validator-data.json` along with the version bump.
 
 ## Development
 
