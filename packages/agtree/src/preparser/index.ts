@@ -78,6 +78,38 @@ export {
     findCosmeticSeparator,
 } from './cosmetic-separator';
 export { RuleClassifier, RuleKind } from './classifier';
+
+// CSS selector list preparser
+export {
+    SelectorListPreparser,
+    ChildKind,
+    COMBINATOR_DESCENDANT,
+    COMBINATOR_CHILD,
+    COMBINATOR_NEXT_SIBLING,
+    COMBINATOR_SUBSEQUENT_SIBLING,
+    CHILD_STRIDE,
+    CHILD_FIELD_KIND,
+    CHILD_FIELD_SOURCE_START,
+    CHILD_FIELD_SOURCE_END,
+    CHILD_FIELD_0,
+    CHILD_FIELD_1,
+    CHILD_FIELD_2,
+    CHILD_FIELD_3,
+    CHILD_FIELD_4,
+    CHILD_FIELD_5,
+    CHILD_FIELD_6,
+    CHILD_FIELD_7,
+    COMPLEX_STRIDE,
+    COMPLEX_FIELD_CHILD_COUNT,
+    COMPLEX_FIELD_SOURCE_START,
+    COMPLEX_FIELD_SOURCE_END,
+    SL_HEADER_SIZE,
+    SL_COUNT_OFFSET,
+    SL_FLAGS_OFFSET,
+    SL_MIN_DATA_SLOTS,
+    DEFAULT_MAX_COMPLEX,
+    DEFAULT_MAX_CHILDREN,
+} from './css/selector-list';
 export { RulePreparser } from './rule';
 export {
     AgentCommentPreparser,

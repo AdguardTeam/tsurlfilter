@@ -1,0 +1,36 @@
+/**
+ * @file CSS selector list preparser — public re-exports.
+ */
+
+export { SelectorListPreparser } from './selector-list';
+
+export {
+    NO_VALUE,
+    SL_HEADER_SIZE,
+    SL_COUNT_OFFSET,
+    SL_FLAGS_OFFSET,
+    SL_MIN_DATA_SLOTS,
+    COMPLEX_STRIDE,
+    COMPLEX_FIELD_CHILD_COUNT,
+    COMPLEX_FIELD_SOURCE_START,
+    COMPLEX_FIELD_SOURCE_END,
+    CHILD_STRIDE,
+    CHILD_FIELD_KIND,
+    CHILD_FIELD_SOURCE_START,
+    CHILD_FIELD_SOURCE_END,
+    CHILD_FIELD_0,
+    CHILD_FIELD_1,
+    CHILD_FIELD_2,
+    CHILD_FIELD_3,
+    CHILD_FIELD_4,
+    CHILD_FIELD_5,
+    CHILD_FIELD_6,
+    CHILD_FIELD_7,
+    ChildKind,
+    COMBINATOR_DESCENDANT,
+    COMBINATOR_CHILD,
+    COMBINATOR_NEXT_SIBLING,
+    COMBINATOR_SUBSEQUENT_SIBLING,
+    DEFAULT_MAX_COMPLEX,
+    DEFAULT_MAX_CHILDREN,
+} from './constants';
