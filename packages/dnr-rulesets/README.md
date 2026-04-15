@@ -18,12 +18,9 @@ The list of available filters can be found by `filters` in the metadata of:
         - [Injecting rulesets to the manifest object](#injecting-rulesets-to-the-manifest-object)
     - [Example](#example)
     - [Included filter lists](#included-filter-lists)
-    - [Development](#development)
-        - [build:assets](#buildassets)
-        - [build:lib](#buildlib)
-        - [build:cli](#buildcli)
-        - [build:docs](#builddocs)
-        - [build](#build)
+    - [Managing `validator-data.json`](#managing-validator-datajson)
+        - [When to update](#when-to-update)
+        - [How to update](#how-to-update)
 
 ## Basic usage
 
@@ -396,51 +393,48 @@ Example of usage: [adguard-api-mv3](../examples/adguard-api-mv3)
 
 See the list of included filters in [FILTERS.md](FILTERS.md).
 
-## Development
+## Managing `validator-data.json`
 
-### `build:assets`
+The file `tasks/validator-data.json` serves two purposes:
 
-Downloads original rules, converts it to DNR rule sets via [TSUrlFilter declarative-converter](../tsurlfilter/README.md#declarativeconverter) and generates extension manifest with predefined rules resources.
+1. **Post-build validation** (`pnpm validate:assets`): after a build, the
+   validator compares the newly generated ruleset IDs and metadata keys against
+   this file. If they differ, the build fails with an error asking to update
+   the file and the changelog.
 
-```bash
-pnpm build:assets
-```
+2. **Pre-build allowlist** (auto-builds): when the environment variable
+   `DNR_FILTER_KNOWN_ONLY=true` is set (used in CI auto-builds for stable
+   branches), only filter IDs listed in this file are downloaded.
+   This prevents newly added filters in the FiltersRegistry from leaking into
+   older stable builds.
 
-### `build:lib`
+### When to update
 
-Builds SDK to load DNR rule sets to the specified directory.
+Update `validator-data.json` whenever filters are **added to or removed from**
+the registry for a supported browser. Typical scenarios:
 
-```bash
-pnpm build:lib
-```
+- A new filter is published in the FiltersRegistry.
+- An existing filter is removed or its ID changes.
 
-### `build:cli`
+### How to update
 
-Builds CLI utility to load DNR rule sets to the specified directory, inject rulesets to the manifest object and can be used for local development for DNR rulesets.
+1. Run a full build to download the latest filters and generate rulesets:
 
-```bash
-pnpm build:cli
-```
+   ```bash
+   pnpm build:assets
+   ```
 
-### `build:docs`
+2. Run validation — it will fail and print the added/removed ruleset IDs:
 
-Generates [Included filter lists](#included-filter-lists) section.
+   ```bash
+   pnpm validate:assets
+   ```
 
-```bash
-pnpm build:docs
-```
+3. Update `tasks/validator-data.json` with the new data. The easiest way is to
+   copy the output from the build into the file, keeping the JSON structure
+   with per-browser entries (`chromium-mv3`, `opera-mv3`), each containing
+   `version`, `rulesetIds`, and `rulesetMetadataKeys`.
 
-### `build`
+4. Bump the package version and update the changelog.
 
-Clears `dist` folder and runs `build:assets`, `build:cli` and `build:lib` scripts.
-
-```bash
-pnpm build
-```
-
-### `watch`
-Watches for changes in the `dist/filters` folder and rebuilds DNR rulesets.
-
-```bash
-pnpm watch
-```
+5. Commit the updated `validator-data.json` along with the version bump.

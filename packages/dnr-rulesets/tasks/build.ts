@@ -14,6 +14,7 @@ import {
 import { startDownload } from '../common/filters-downloader';
 import { version } from '../package.json';
 import { getVersion, getVersionTimestampMs } from '../src/utils/version-utils';
+import { loadAllowedFilterIds } from './helpers';
 import { createLocalScriptRulesJs, createLocalScriptRulesJson } from './local-scripts';
 
 /**
@@ -83,7 +84,10 @@ const build = async (browser: BrowserFilters): Promise<void> => {
     const filtersDir = FILTERS_DIR.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
     const destRulesetsDir = DEST_RULESETS_DIR.replace(FILTERS_BROWSER_PLACEHOLDER, browser);
 
-    await startDownload(filtersDir, browser);
+    const allowedFilterIds = process.env.DNR_FILTER_KNOWN_ONLY === 'true'
+        ? loadAllowedFilterIds(browser)
+        : undefined;
+    await startDownload(filtersDir, browser, allowedFilterIds);
 
     await convertFilters(
         filtersDir,

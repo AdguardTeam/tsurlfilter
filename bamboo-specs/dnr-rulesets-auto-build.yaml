@@ -129,7 +129,7 @@ branch-overrides:
 
                   # Build dnr rulesets before tests to correct import
                   # dependencies from sibling packages.
-                  npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
+                  DNR_FILTER_KNOWN_ONLY=true npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
 
                   # Test dnr rulesets
                   npx lerna run test --scope @adguard/dnr-rulesets
