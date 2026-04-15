@@ -2,16 +2,13 @@ import { METADATA_RULESET_ID } from '@adguard/tsurlfilter/es/declarative-convert
 import { extractRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { DEST_RULESETS_DIR } from '../common/constants';
 import { version } from '../package.json';
+import { VALIDATOR_DATA_FILE_NAME } from './constants';
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
-
-/**
- * File name where old validator data is stored.
- */
-const OLD_VALIDATOR_DATA_FILE_NAME = 'old-validator-data.json';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Ruleset ids, metadata keys, and version.
@@ -103,7 +100,7 @@ const getOldValidatorData = async (): Promise<RulesetIdsAndMetadataKeys> => {
 
     try {
         const oldDataContent = await fs.promises.readFile(
-            path.join(__dirname, OLD_VALIDATOR_DATA_FILE_NAME),
+            path.join(__dirname, VALIDATOR_DATA_FILE_NAME),
             { encoding: 'utf-8' },
         );
         oldData = JSON.parse(oldDataContent);
@@ -140,7 +137,7 @@ const validateRulesets = async (newData: RulesetIdsAndMetadataKeys): Promise<voi
             messageParts.push(`Removed rulesets: ${removedRulesetIds.join(', ')}`);
         }
 
-        messageParts.push(`Consider updating changelog ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build`);
+        messageParts.push(`Consider updating changelog ${VALIDATOR_DATA_FILE_NAME} for the next build`);
 
         throw new Error(messageParts.join('\n'));
     }
@@ -159,7 +156,7 @@ const validateRulesets = async (newData: RulesetIdsAndMetadataKeys): Promise<voi
         }
 
         // eslint-disable-next-line max-len
-        messageParts.push(`Consider bumping package version, updating changelog and ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build`);
+        messageParts.push(`Consider bumping package version, updating changelog and ${VALIDATOR_DATA_FILE_NAME} for the next build`);
 
         throw new Error(messageParts.join('\n'));
     }

@@ -12,6 +12,7 @@ import {
 import { startDownload } from '../common/filters-downloader';
 import { version } from '../package.json';
 import { getVersion, getVersionTimestampMs } from '../src/utils/version-utils';
+import { loadAllowedFilterIds } from './helpers';
 import { createLocalScriptRulesJs, createLocalScriptRulesJson } from './local-scripts';
 
 /**
@@ -74,7 +75,10 @@ const removeFiltersMetadata = async (dir: string): Promise<void> => {
  * and then convert and save json to path specified in the manifest.
  */
 const build = async (): Promise<void> => {
-    await startDownload();
+    const allowedFilterIds = process.env.DNR_FILTER_KNOWN_ONLY === 'true'
+        ? loadAllowedFilterIds()
+        : undefined;
+    await startDownload(undefined, allowedFilterIds);
 
     await convertFilters(
         FILTERS_DIR,
