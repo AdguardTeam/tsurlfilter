@@ -46,54 +46,95 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm install --frozen-lockfile --ignore-scripts
 
 # ============================================================================
+# Stage: source-base
+# Root-level configs and scripts (rarely change). Used as the foundation for
+# both the per-level source stages below and the utility `source` stage.
+# ============================================================================
+FROM deps AS source-base
+
+# NOTE: This list must be kept in sync manually. If you add a new root-level
+# config file (e.g. .prettierrc, turbo.json, tsconfig.base.json), add it here
+# as well — otherwise the build may silently use wrong or missing configs.
+COPY nx.json lerna.json vitest.config.ts .eslintignore ./
+COPY scripts/ ./scripts/
+COPY bamboo-specs/scripts/ ./bamboo-specs/scripts/
+
+# ============================================================================
 # Stage: source
-# Cached until source code changes
+# Full source copy for utility stages that need all files
+# (increment-*, update-*, dnr-rulesets-auto-build).
+# The main test/build chain uses per-level source stages below instead.
+# ============================================================================
+FROM source-base AS source
+
+COPY packages/ ./packages/
+
+# ============================================================================
+# Build layers following the dependency hierarchy.
+# Source is copied just-in-time before each build step so that a change in a
+# higher-level package (e.g. tswebextension) does not invalidate the Docker
+# layer cache for lower-level packages (e.g. logger, agtree, tsurlfilter).
 #
-# TODO: if build times degrade noticeably, consider splitting COPY per package
-# instead of copying the entire tree. This would let each build layer cache
-# independently (e.g. a logger-only change wouldn't invalidate agtree/tsurlfilter).
-# See: https://docs.docker.com/build/cache/#order-your-layers
-# ============================================================================
-FROM deps AS source
-
-COPY . /tsurlfilter
-
-# ============================================================================
-# Build layers following the dependency hierarchy
-# Each layer builds packages at that level, inheriting from previous layers.
-# This matches the stage structure in tsurlfilter-tests.yaml and the
-# dependency tree in README.md:
-#   Layer 1 (built-css-tokenizer-and-logger): logger + css-tokenizer (leaf packages, no workspace deps)
-#   Layer 2 (built-agtree): agtree (depends on css-tokenizer)
-#   Layer 3 (built-tsurlfilter): tsurlfilter (depends on agtree, css-tokenizer)
-#   Layer 4 (built-tswebextension): tswebextension (depends on tsurlfilter, agtree, logger)
+# Dependency tree (see README.md for full details):
+#   source-leaf-packages:      logger + css-tokenizer + eslint-plugin (leaf packages, no workspace deps)
+#   source-with-agtree:        agtree (depends on css-tokenizer)
+#   source-with-tsurlfilter:   tsurlfilter (depends on agtree, css-tokenizer)
+#   source-with-tswebextension: tswebextension (depends on tsurlfilter, agtree, logger)
+#
+# Stages that need packages outside this chain (e.g. dnr-rulesets, adguard-api)
+# add their own COPY statements directly after FROM.
+# NOTE: If a package gains a new workspace dependency, update the corresponding
+# COPY blocks in the affected test/build stages manually.
 # ============================================================================
 
-FROM source AS built-css-tokenizer-and-logger
+FROM source-base AS source-leaf-packages
+COPY packages/logger/ ./packages/logger/
+COPY packages/css-tokenizer/ ./packages/css-tokenizer/
+COPY packages/eslint-plugin-logger-context/ ./packages/eslint-plugin-logger-context/
+
+FROM source-leaf-packages AS built-css-tokenizer-and-logger
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     npx lerna run build --scope @adguard/logger --scope @adguard/css-tokenizer
 
-FROM built-css-tokenizer-and-logger AS built-agtree
+FROM built-css-tokenizer-and-logger AS source-with-agtree
+COPY packages/agtree/ ./packages/agtree/
+
+FROM source-with-agtree AS built-agtree
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     npx lerna run build --scope @adguard/agtree
 
-FROM built-agtree AS built-tsurlfilter
+FROM built-agtree AS source-with-tsurlfilter
+COPY packages/tsurlfilter/ ./packages/tsurlfilter/
+
+FROM source-with-tsurlfilter AS built-tsurlfilter
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     npx lerna run build --scope @adguard/tsurlfilter
 
-FROM built-tsurlfilter AS built-tswebextension
+FROM built-tsurlfilter AS source-with-tswebextension
+COPY packages/tswebextension/ ./packages/tswebextension/
+
+FROM source-with-tswebextension AS built-tswebextension
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     npx lerna run build --scope @adguard/tswebextension
 
 # ============================================================================
+# Test stages
+#
+# Test stages must not be cached. The Bamboo JUnit parser rejects XML files
+# whose mtime predates the task start time. TEST_RUN_ID is written to /out/
+# so that the output directory always differs between builds — preventing
+# BuildKit from serving a cached COPY --from layer with stale timestamps.
+# For lint-only packages (no vitest), copy-test-reports.sh falls back to
+# skipped-tests.xml and touches it so its mtime is current.
+# ============================================================================
+
+# ============================================================================
 # Stage: test-logger
-# Runs lint + smoke + unit tests for @adguard/logger
-# IMPORTANT: Cannot be cached - JUnit parser rejects test results with
-# timestamps older than task start time. TEST_RUN_ID busts cache on every build.
+# Runs test:prod (lint + smoke + test:ci) for @adguard/logger
 # ============================================================================
 FROM built-css-tokenizer-and-logger AS test-logger
 
@@ -101,16 +142,13 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
     mkdir -p /out/tests-reports && \
+    echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
-      'cd packages/logger && mkdir -p tests-reports && pnpm lint && pnpm test:smoke && pnpm test:ci'; \
+      'cd packages/logger && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    if [ -d packages/logger/tests-reports ]; then \
-      cp -R packages/logger/tests-reports/. /out/tests-reports/ && \
-      find /out/tests-reports -name '*.xml' -exec touch {} +; \
-    fi; \
+    ./bamboo-specs/scripts/copy-test-reports.sh packages/logger; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -119,7 +157,7 @@ COPY --from=test-logger /out/ /
 
 # ============================================================================
 # Stage: test-css-tokenizer
-# Runs lint + unit tests for @adguard/css-tokenizer
+# Runs test:prod (lint + smoke + test:ci) for @adguard/css-tokenizer
 # ============================================================================
 FROM built-css-tokenizer-and-logger AS test-css-tokenizer
 
@@ -127,16 +165,13 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
     mkdir -p /out/tests-reports && \
+    echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
-      'cd packages/css-tokenizer && pnpm lint && pnpm test:ci'; \
+      'cd packages/css-tokenizer && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    if [ -d packages/css-tokenizer/tests-reports ]; then \
-      cp -R packages/css-tokenizer/tests-reports/. /out/tests-reports/ && \
-      find /out/tests-reports -name '*.xml' -exec touch {} +; \
-    fi; \
+    ./bamboo-specs/scripts/copy-test-reports.sh packages/css-tokenizer; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -144,8 +179,31 @@ FROM scratch AS test-css-tokenizer-output
 COPY --from=test-css-tokenizer /out/ /
 
 # ============================================================================
+# Stage: test-eslint-plugin-logger-context
+# Runs test:prod (lint) for @adguard/eslint-plugin-logger-context
+# ============================================================================
+FROM built-css-tokenizer-and-logger AS test-eslint-plugin-logger-context
+
+ARG TEST_RUN_ID
+
+RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
+    pnpm config set store-dir /pnpm-store && \
+    mkdir -p /out/tests-reports && \
+    echo "${TEST_RUN_ID}" > /out/.test-run-id && \
+    set +e; \
+    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+      'cd packages/eslint-plugin-logger-context && pnpm test:prod'; \
+    EXIT_CODE=$?; \
+    ./bamboo-specs/scripts/copy-test-reports.sh packages/eslint-plugin-logger-context eslint-plugin-logger-context; \
+    echo ${EXIT_CODE} > /out/exit-code.txt; \
+    exit 0
+
+FROM scratch AS test-eslint-plugin-logger-context-output
+COPY --from=test-eslint-plugin-logger-context /out/ /
+
+# ============================================================================
 # Stage: test-agtree
-# Runs lint + smoke + unit tests for @adguard/agtree
+# Runs test:prod (lint + smoke + test:ci) for @adguard/agtree
 # ============================================================================
 FROM built-agtree AS test-agtree
 
@@ -153,16 +211,13 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
     mkdir -p /out/tests-reports && \
+    echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
-      'cd packages/agtree && pnpm lint && pnpm test:smoke && pnpm test:ci'; \
+      'cd packages/agtree && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    if [ -d packages/agtree/tests-reports ]; then \
-      cp -R packages/agtree/tests-reports/. /out/tests-reports/ && \
-      find /out/tests-reports -name '*.xml' -exec touch {} +; \
-    fi; \
+    ./bamboo-specs/scripts/copy-test-reports.sh packages/agtree; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -171,7 +226,7 @@ COPY --from=test-agtree /out/ /
 
 # ============================================================================
 # Stage: test-tsurlfilter
-# Runs lint + smoke + test:ci for @adguard/tsurlfilter
+# Runs test:prod (lint + smoke + test:ci) for @adguard/tsurlfilter
 # ============================================================================
 FROM built-tsurlfilter AS test-tsurlfilter
 
@@ -179,16 +234,13 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
     mkdir -p /out/tests-reports && \
+    echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
-      'cd packages/tsurlfilter && pnpm lint && pnpm test:smoke && pnpm test:ci'; \
+      'cd packages/tsurlfilter && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    if [ -d packages/tsurlfilter/tests-reports ]; then \
-      cp -R packages/tsurlfilter/tests-reports/. /out/tests-reports/ && \
-      find /out/tests-reports -name '*.xml' -exec touch {} +; \
-    fi; \
+    ./bamboo-specs/scripts/copy-test-reports.sh packages/tsurlfilter; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -197,7 +249,7 @@ COPY --from=test-tsurlfilter /out/ /
 
 # ============================================================================
 # Stage: test-tswebextension
-# Runs lint + smoke + test:ci for @adguard/tswebextension
+# Runs test:prod (lint + smoke + test:ci) for @adguard/tswebextension
 # ============================================================================
 FROM built-tswebextension AS test-tswebextension
 
@@ -205,16 +257,13 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
     mkdir -p /out/tests-reports && \
+    echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
-      'cd packages/tswebextension && pnpm lint && pnpm test:smoke && pnpm test:ci'; \
+      'cd packages/tswebextension && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    if [ -d packages/tswebextension/tests-reports ]; then \
-      cp -R packages/tswebextension/tests-reports/. /out/tests-reports/ && \
-      find /out/tests-reports -name '*.xml' -exec touch {} +; \
-    fi; \
+    ./bamboo-specs/scripts/copy-test-reports.sh packages/tswebextension; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -223,25 +272,31 @@ COPY --from=test-tswebextension /out/ /
 
 # ============================================================================
 # Stage: test-dnr-rulesets
-# Runs lint + unit tests for @adguard/dnr-rulesets
+# Runs test:prod (lint + smoke + test:ci) for @adguard/dnr-rulesets
 # ============================================================================
 FROM built-tsurlfilter AS test-dnr-rulesets
+
+COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
 
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
-    npx lerna run build --scope @adguard/dnr-rulesets && \
     mkdir -p /out/tests-reports && \
+    echo "${TEST_RUN_ID}" > /out/.test-run-id && \
+    npx lerna run build --scope @adguard/dnr-rulesets; \
+    BUILD_EXIT=$?; \
+    if [ $BUILD_EXIT -ne 0 ]; then \
+      echo $BUILD_EXIT > /out/exit-code.txt; \
+      exit 0; \
+    fi; \
     set +e; \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
-      'cd packages/dnr-rulesets && pnpm lint && pnpm test:ci'; \
+      # Run assets validation last to prevent JUnit XML report missing
+      # if the validation fails
+      'cd packages/dnr-rulesets && pnpm test:prod && pnpm validate:assets'; \
     EXIT_CODE=$?; \
-    if [ -d packages/dnr-rulesets/tests-reports ]; then \
-      cp -R packages/dnr-rulesets/tests-reports/. /out/tests-reports/ && \
-      find /out/tests-reports -name '*.xml' -exec touch {} +; \
-    fi; \
+    ./bamboo-specs/scripts/copy-test-reports.sh packages/dnr-rulesets; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -255,11 +310,16 @@ COPY --from=test-dnr-rulesets /out/ /
 # ============================================================================
 FROM built-tswebextension AS test-examples
 
+COPY packages/adguard-api/ ./packages/adguard-api/
+COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
+COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/examples/ ./packages/examples/
+
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     npx lerna run build --scope @adguard/api --scope @adguard/api-mv3 && \
     npx lerna run build --scope tswebextension-mv2 --include-dependencies && \
     npx lerna run lint --scope tswebextension-mv2 && \
@@ -278,26 +338,60 @@ COPY --from=test-examples /out/ /
 
 # ============================================================================
 # Stage: test-adguard-api-mv3
-# Builds @adguard/api-mv3 and runs e2e tests
+# Builds @adguard/api-mv3, runs test:prod (lint + test:ci) for @adguard/api-mv3
 # ============================================================================
 FROM built-tswebextension AS test-adguard-api-mv3
+
+COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
+COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
 
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
-    npx lerna run build --scope @adguard/api-mv3 && \
-    mkdir -p /out && \
+    mkdir -p /out/tests-reports && \
+    echo "${TEST_RUN_ID}" > /out/.test-run-id && \
+    npx lerna run build --scope @adguard/api-mv3; \
+    BUILD_EXIT=$?; \
+    if [ $BUILD_EXIT -ne 0 ]; then \
+      echo $BUILD_EXIT > /out/exit-code.txt; \
+      exit 0; \
+    fi; \
     set +e; \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
-      'npx lerna run e2e --scope @adguard/api-mv3'; \
+      'cd packages/adguard-api-mv3 && pnpm test:prod'; \
     EXIT_CODE=$?; \
+    ./bamboo-specs/scripts/copy-test-reports.sh packages/adguard-api-mv3; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
 FROM scratch AS test-adguard-api-mv3-output
 COPY --from=test-adguard-api-mv3 /out/ /
+
+# ============================================================================
+# Stage: test-adguard-api
+# Runs test:prod (lint) for @adguard/api
+# ============================================================================
+FROM built-tswebextension AS test-adguard-api
+
+COPY packages/adguard-api/ ./packages/adguard-api/
+
+ARG TEST_RUN_ID
+
+RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
+    pnpm config set store-dir /pnpm-store && \
+    mkdir -p /out/tests-reports && \
+    echo "${TEST_RUN_ID}" > /out/.test-run-id && \
+    set +e; \
+    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+      'cd packages/adguard-api && pnpm test:prod'; \
+    EXIT_CODE=$?; \
+    ./bamboo-specs/scripts/copy-test-reports.sh packages/adguard-api adguard-api; \
+    echo ${EXIT_CODE} > /out/exit-code.txt; \
+    exit 0
+
+FROM scratch AS test-adguard-api-output
+COPY --from=test-adguard-api /out/ /
 
 # ============================================================================
 # Stage: build-logger
@@ -309,7 +403,7 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     cd packages/logger && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
@@ -329,7 +423,7 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     cd packages/css-tokenizer && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
@@ -349,7 +443,7 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     cd packages/agtree && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
@@ -369,7 +463,7 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     cd packages/tsurlfilter && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
@@ -389,7 +483,7 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     cd packages/tswebextension && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
@@ -405,11 +499,13 @@ COPY --from=build-tswebextension /out/ /
 # ============================================================================
 FROM built-tsurlfilter AS build-dnr-rulesets
 
+COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     npx lerna run build --scope @adguard/dnr-rulesets && \
     cd packages/dnr-rulesets && \
     pnpm tgz && \
@@ -430,7 +526,9 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
+    npx lerna run build --scope @adguard/eslint-plugin-logger-context && \
+    npx lerna run lint --scope @adguard/eslint-plugin-logger-context && \
     cd packages/eslint-plugin-logger-context && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
@@ -446,12 +544,16 @@ COPY --from=build-eslint-plugin-logger-context /out/ /
 # ============================================================================
 FROM built-tswebextension AS build-adguard-api
 
+COPY packages/adguard-api/ ./packages/adguard-api/
+COPY packages/examples/adguard-api/ ./packages/examples/adguard-api/
+
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     npx lerna run build --scope @adguard/api && \
+    npx lerna run lint --scope @adguard/api && \
     npx lerna run build --scope adguard-api-example --include-dependencies && \
     cd packages/adguard-api && \
     pnpm tgz && \
@@ -465,17 +567,22 @@ COPY --from=build-adguard-api /out/ /
 
 # ============================================================================
 # Stage: build-adguard-api-mv3
-# Builds @adguard/api-mv3, runs e2e, builds example, and packs .tgz
+# Builds @adguard/api-mv3, runs test:ci, builds example, and packs .tgz
 # ============================================================================
 FROM built-tswebextension AS build-adguard-api-mv3
+
+COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
+COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/examples/adguard-api-mv3/ ./packages/examples/adguard-api-mv3/
 
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     npx lerna run build --scope @adguard/api-mv3 && \
-    npx lerna run e2e --scope @adguard/api-mv3 && \
+    npx lerna run lint --scope @adguard/api-mv3 && \
+    npx lerna run test:ci --scope @adguard/api-mv3 && \
     npx lerna run build --scope @adguard/dnr-rulesets && \
     cd packages/examples/adguard-api-mv3 && \
     pnpm install --ignore-scripts && \
@@ -588,10 +695,10 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     touch /tmp/.pre-build-marker && \
     npx lerna run increment:auto-deploy --scope @adguard/dnr-rulesets && \
-    npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies && \
+    DNR_FILTER_KNOWN_ONLY=true npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies && \
     npx lerna run test --scope @adguard/dnr-rulesets && \
     cd packages/dnr-rulesets && \
     pnpm tgz && \
@@ -625,7 +732,7 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     touch /tmp/.pre-update-marker && \
     mkdir -p /out/modified && \
     set +e; \
@@ -658,7 +765,7 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     touch /tmp/.pre-update-marker && \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s ./bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh && \
     mkdir -p /out/modified && \

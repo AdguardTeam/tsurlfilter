@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
-import { program } from 'commander';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { program } from 'commander';
 
 import { version } from '../package.json';
 import { generateMD5Hash } from '../src/utils/checksum';

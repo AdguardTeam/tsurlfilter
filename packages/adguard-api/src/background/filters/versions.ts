@@ -16,9 +16,9 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Storage } from '../storage';
-import { filterVersionStorageDataValidator, FilterVersionData, FilterVersionStorageData } from '../schemas';
 import { Logger } from '../logger';
+import { FilterVersionData, FilterVersionStorageData, filterVersionStorageDataValidator } from '../schemas';
+import { Storage } from '../storage';
 
 // Filters versions data storage key for browser.storage.local
 export const FILTERS_VERSIONS_KEY = 'versions';

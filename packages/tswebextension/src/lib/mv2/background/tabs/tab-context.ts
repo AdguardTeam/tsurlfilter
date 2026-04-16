@@ -1,8 +1,8 @@
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../common/constants';
 import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
-import { isHttpOrWsRequest } from '../../../common/utils/url';
 import { TabContextCommon } from '../../../common/tabs/tab-context';
 import { type TabInfo } from '../../../common/tabs/tabs-api';
+import { isHttpOrWsRequest } from '../../../common/utils/url';
 import { type DocumentApi } from '../document-api';
 
 import { FrameMV2 } from './frame';

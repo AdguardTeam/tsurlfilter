@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
+import { copyWar, DEFAULT_WAR_PATH } from '@adguard/tswebextension/cli';
+
 import { buildRunner } from './build-runner';
 import { config } from './webpack.config';
-import { copyWar, DEFAULT_WAR_PATH } from '@adguard/tswebextension/cli';
 
 const build = async () => {
     try {

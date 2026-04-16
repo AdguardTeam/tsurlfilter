@@ -1,4 +1,5 @@
 import { type Configuration } from '@adguard/tswebextension/mv3';
+
 import { DEFAULT_EXTENSION_CONFIG } from '../../../scripts/constants';
 
 /**

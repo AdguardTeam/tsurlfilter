@@ -10,12 +10,11 @@
  * Schema:
  * - Buildtime:
  *  -- [tswebext]  Script to inject assistant from the URL provided by the extension.
- *  -- [tswebext]  Assistant controller script for interacting with the assistant. <--- current file.
- *  -- [tswebext]  Assistant messages listener on the content-script side.
+ *  -- [tswebext]  Assistant management script for interacting with the assistant. <--- current file.
  *  -- [extension] Entry point script for injecting the assistant
  * - Runtime:
  *  -- [tswebext] Content script injects into every new tab without the assistant.
- *  -- [tswebext] On-demand content script dynamically injects the assistant.
+ *  -- [tswebext] On-demand content script dynamically injects the assistant and creates a message listener.
  *  -- [tswebext] After injection, the content script interacts with the assistant.
  *
  * Reference code: ASSISTANT_INJECT.
@@ -23,10 +22,10 @@
 import browser from 'webextension-polyfill';
 
 import { MAIN_FRAME_ID } from './constants';
-import { EventChannel } from './utils/channels';
-import { MessageType } from './message-constants';
+import { MESSAGE_HANDLER_NAME, MessageType } from './message-constants';
 import { type FrameCommon } from './tabs/frame';
 import { type TabContextCommon } from './tabs/tab-context';
+import { EventChannel } from './utils/channels';
 
 /**
  * Data needed to determine whether the frame is an assistant frame.
@@ -103,6 +102,7 @@ export abstract class CommonAssistant {
 
         // After injection we can request opening it.
         await browser.tabs.sendMessage(tabId, {
+            handlerName: MESSAGE_HANDLER_NAME,
             type: MessageType.InitAssistant,
         });
     }
@@ -115,6 +115,7 @@ export abstract class CommonAssistant {
      */
     public static async closeAssistant(tabId: number): Promise<void> {
         await browser.tabs.sendMessage(tabId, {
+            handlerName: MESSAGE_HANDLER_NAME,
             type: MessageType.CloseAssistant,
         });
     }

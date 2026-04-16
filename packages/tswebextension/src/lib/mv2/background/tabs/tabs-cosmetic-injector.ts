@@ -1,8 +1,8 @@
 import browser, { type Tabs } from 'webextension-polyfill';
 
 import { MAIN_FRAME_ID } from '../../../common/constants';
-import { logger } from '../../../common/utils/logger';
 import { ContentType } from '../../../common/request-type';
+import { logger } from '../../../common/utils/logger';
 import { appContext } from '../app-context';
 import { CosmeticApi } from '../cosmetic-api';
 import { CosmeticFrameProcessor } from '../cosmetic-frame-processor';
@@ -10,8 +10,8 @@ import { type DocumentApi } from '../document-api';
 import { type EngineApi } from '../engine-api';
 
 import { FrameMV2 } from './frame';
-import { TabsApi } from './tabs-api';
 import { TabContext } from './tab-context';
+import { TabsApi } from './tabs-api';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.

@@ -16,10 +16,10 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Network } from '../network';
-import { Storage } from '../storage';
-import { metadataValidator, Metadata, FilterMetadata } from '../schemas';
 import { Logger } from '../logger';
+import { Network } from '../network';
+import { FilterMetadata, Metadata, metadataValidator } from '../schemas';
+import { Storage } from '../storage';
 
 // Metadata storage key for browser.storage.local
 export const METADATA_STORAGE_KEY = 'metadata';

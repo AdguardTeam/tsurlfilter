@@ -44,13 +44,34 @@ module.exports = {
         'jsdoc/multiline-blocks': ['error', { noSingleLineBlocks: true }],
         'import/prefer-default-export': 'off',
         'import-newlines/enforce': ['error', { items: 3, 'max-len': MAX_LINE_LENGTH }],
+        // Sort members of import statements, e.g. `import { B, A } from 'module';` -> `import { A, B } from 'module';`
+        // Note: imports themselves are sorted by import/order rule
+        'sort-imports': ['error', {
+            ignoreCase: true,
+            // Avoid conflict with import/order rule
+            ignoreDeclarationSort: true,
+            ignoreMemberSort: false,
+            memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+        }],
         // Split external and internal imports with an empty line
         'import/order': [
             'error',
             {
                 groups: [
-                    ['builtin', 'external'],
+                    'builtin',
+                    'external',
+                    'internal',
+                    'parent',
+                    'sibling',
+                    'index',
+                    'object',
                 ],
+                pathGroups: [
+                    // Place all our libraries after external
+                    { pattern: '@adguard/**', group: 'external', position: 'after' },
+                ],
+                pathGroupsExcludedImportTypes: [],
+                alphabetize: { order: 'asc', caseInsensitive: true },
                 'newlines-between': 'always',
             },
         ],

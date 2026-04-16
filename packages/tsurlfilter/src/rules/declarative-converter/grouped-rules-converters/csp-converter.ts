@@ -1,7 +1,7 @@
-import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
-import { type DeclarativeRule } from '../declarative-rule';
-import { type ConvertedRules } from '../converted-result';
 import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
+import { type ConvertedRules } from '../converted-result';
+import { type DeclarativeRule } from '../declarative-rule';
+import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 
 import { AbstractRuleConverter } from './abstract-rule-converter';
 

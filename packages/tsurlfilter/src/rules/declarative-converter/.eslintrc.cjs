@@ -16,6 +16,7 @@ module.exports = {
                     'parent',
                     'index',
                 ],
+                alphabetize: { order: 'asc', caseInsensitive: true },
                 'newlines-between': 'always',
                 warnOnUnassignedImports: false,
             },

@@ -1,8 +1,8 @@
 import {
-    describe,
     afterEach,
-    it,
+    describe,
     expect,
+    it,
     vi,
 } from 'vitest';
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { type MatchingResult, type CosmeticResult } from '@adguard/tsurlfilter';
+
+import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../../src/lib/common/constants';
 import { FrameMV3 } from '../../../../src/lib/mv3/tabs/frame';

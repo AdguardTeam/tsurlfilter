@@ -20,3 +20,20 @@ export enum DocumentLifecycle {
     Cached = 'cached',
     PendingDeletion = 'pending_deletion',
 }
+
+/**
+ * Firefox-specific frame ancestor info from webRequest.onBeforeRequest.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/onBeforeRequest#frameancestors
+ */
+export type FrameAncestor = {
+    /**
+     * The URL that the document was loaded from.
+     */
+    url: string;
+
+    /**
+     * The frameId of the document.
+     */
+    frameId: number;
+};

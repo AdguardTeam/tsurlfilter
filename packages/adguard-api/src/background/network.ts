@@ -16,10 +16,10 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { FiltersDownloader, type DefinedExpressions } from '@adguard/filters-downloader/browser';
+import { type DefinedExpressions, FiltersDownloader } from '@adguard/filters-downloader/browser';
 
+import { Configuration, Metadata, metadataValidator } from './schemas';
 import { UserAgent } from './utils';
-import { metadataValidator, Metadata, Configuration } from './schemas';
 
 /**
  * Network requests API

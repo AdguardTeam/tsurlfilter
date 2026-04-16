@@ -1,5 +1,6 @@
 import { TokenType } from '../../../src/common/enums/token-types';
 import { type TokenData } from '../../helpers/test-interfaces';
+
 import { type PseudoValues } from './test-creator';
 
 /**

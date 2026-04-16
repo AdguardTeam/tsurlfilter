@@ -1,4 +1,5 @@
 import { type WebRequest } from 'webextension-polyfill';
+
 import { type CosmeticResult } from '@adguard/tsurlfilter';
 
 import { SEMICOLON } from '../../../common/constants';

@@ -25,8 +25,8 @@
  * since the build is handled by Rollup, and the .d.ts files are adjusted by this script.
  */
 
-import path from 'node:path';
 import fs from 'node:fs';
+import path from 'node:path';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Project, SyntaxKind } from 'ts-morph';

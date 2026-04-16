@@ -3,14 +3,14 @@
  */
 
 // TODO: Remove deprecated packages
-import * as TsUrlFilterV1 from 'tsurlfilter-v1';
-import * as TsUrlFilterV2 from 'tsurlfilter-v2';
 import * as AGTreeV1 from 'agtree-v1';
 import * as AGTreeV2 from 'agtree-v2';
 import * as AGTreeV3 from 'agtree-v3';
+import * as TsUrlFilterV1 from 'tsurlfilter-v1';
+import * as TsUrlFilterV2 from 'tsurlfilter-v2';
 
-import { type ToolConfigs } from '../common/interfaces.js';
 import { RE_NL_SPLIT } from '../common/constants.js';
+import { type ToolConfigs } from '../common/interfaces.js';
 
 /**
  * Creates a benchmark function for the given TSURLFilter instance

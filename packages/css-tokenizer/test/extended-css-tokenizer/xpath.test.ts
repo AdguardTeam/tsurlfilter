@@ -1,11 +1,12 @@
 import { describe, test } from 'vitest';
 
-import { tokenizeExtended } from '../../src/extended-css-tokenizer';
-import { TokenType } from '../../src/common/enums/token-types';
 import { ExtendedCssPseudo } from '../../src/common/enums/extended-css-pseudos';
+import { TokenType } from '../../src/common/enums/token-types';
+import { tokenizeExtended } from '../../src/extended-css-tokenizer';
 import { testTokenization } from '../helpers/test-utils';
-import { createTests, type PseudoValues } from './helpers/test-creator';
+
 import { generateDelimStream } from './helpers/delim-generator';
+import { createTests, type PseudoValues } from './helpers/test-creator';
 
 const PSEUDO_NAMES = [
     ExtendedCssPseudo.Xpath,

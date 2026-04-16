@@ -1,6 +1,6 @@
 {
     "name": "@adguard/dnr-rulesets",
-    "version": "4.1.0",
+    "version": "4.2.0-beta",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
         "dist/**/*"
@@ -34,12 +34,13 @@
         "clear": "rimraf ./dist && rimraf ./rollup.cache",
         "test": "vitest run",
         "test:ci": "vitest run --reporter default --reporter junit --outputFile=./tests-reports/dnr-rulesets.xml",
-        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test",
+        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test:ci",
         "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
         "test:coverage": "vitest run --coverage",
-        "lint": "pnpm lint:code && pnpm lint:types",
+        "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
         "lint:code": "eslint --cache .",
         "lint:types": "tsc",
+        "lint:md": "markdownlint .",
         "increment:auto-deploy": "tsx tasks/auto-deploy-increment",
         "tgz": "pnpm pack --out dnr-rulesets.tgz"
     },
@@ -75,6 +76,8 @@
         "eslint-plugin-import-newlines": "catalog:",
         "eslint-plugin-jsdoc": "catalog:",
         "eslint-plugin-simple-import-sort": "^12.1.1",
+        "markdownlint": "catalog:",
+        "markdownlint-cli": "catalog:",
         "rimraf": "catalog:",
         "rollup": "catalog:",
         "rollup-plugin-copy": "^3.5.0",

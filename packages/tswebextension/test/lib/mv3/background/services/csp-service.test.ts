@@ -1,15 +1,16 @@
 import {
+    beforeEach,
     describe,
     expect,
-    beforeEach,
     it,
     vi,
 } from 'vitest';
+
 import { RequestType } from '@adguard/tsurlfilter';
 
+import { defaultFilteringLog } from '../../../../../src/lib/common/filtering-log';
 import { CspService } from '../../../../../src/lib/mv3/background/services/csp-service';
 import { SessionRuleId, SessionRulesApi } from '../../../../../src/lib/mv3/background/session-rules-api';
-import { defaultFilteringLog } from '../../../../../src/lib/common/filtering-log';
 import { tabsApi } from '../../../../../src/lib/mv3/tabs/tabs-api';
 
 vi.mock('../../../../../src/lib/common/filtering-log', () => ({
@@ -80,6 +81,7 @@ describe('CspService', () => {
             const context = {
                 eventId: 'test-event-id',
                 tabId: 1,
+                frameId: 0,
                 requestType: RequestType.CspReport,
                 thirdParty: true,
                 referrerUrl: 'https://example.com',
@@ -96,7 +98,12 @@ describe('CspService', () => {
                 },
             });
 
-            expect(vi.mocked(tabsApi.incrementTabBlockedRequestCount)).toHaveBeenCalledWith(1, 'https://example.com');
+            expect(vi.mocked(tabsApi.incrementTabBlockedRequestCount)).toHaveBeenCalledWith({
+                tabId: 1,
+                referrerUrl: 'https://example.com',
+                parentDocumentId: undefined,
+                frameAncestors: undefined,
+            });
         });
 
         it('should not log for first-party CSP reports', () => {

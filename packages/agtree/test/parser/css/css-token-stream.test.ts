@@ -1,4 +1,3 @@
-import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 import {
     describe,
@@ -6,6 +5,8 @@ import {
     test,
     vi,
 } from 'vitest';
+
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { END_OF_INPUT, ERROR_MESSAGES } from '../../../src/parser/css/constants';

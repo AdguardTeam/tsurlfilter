@@ -2,8 +2,9 @@
  * @file Parser for special uBO selectors.
  */
 
-import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
+
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 
 import { UboPseudoName } from '../../common/ubo-selector-common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';

@@ -1,8 +1,9 @@
 import zod from 'zod';
-import { conversionDataValidator, type ConversionData } from '@adguard/tsurlfilter';
 
-import { logger } from '../utils/logger';
+import { type ConversionData, conversionDataValidator } from '@adguard/tsurlfilter';
+
 import { IdbSingleton } from '../idb-singleton';
+import { logger } from '../utils/logger';
 
 /**
  * Validator for filter list with checksum.

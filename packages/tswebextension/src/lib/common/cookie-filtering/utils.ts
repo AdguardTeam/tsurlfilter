@@ -3,6 +3,7 @@ import browser from 'webextension-polyfill';
 import { logger } from '../utils/logger';
 
 import { ParsedCookie } from './parsed-cookie';
+
 import HttpHeadersItemType = browser.WebRequest.HttpHeadersItemType;
 
 /**

@@ -1,20 +1,20 @@
-import { type NetworkRule, type CookieModifier, NetworkRuleOption } from '@adguard/tsurlfilter';
+import { type CookieModifier, type NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
-import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
-import { defaultFilteringLog, FilteringEventType } from '../../../../common/filtering-log';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
+import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
+import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
+import { CookieUtils } from '../../../../common/cookie-filtering/utils';
+import { defaultFilteringLog, FilteringEventType } from '../../../../common/filtering-log';
+import { ContentType } from '../../../../common/request-type';
 import { createFrameMatchQuery } from '../../../../common/utils/create-frame-match-query';
-import { getDomain } from '../../../../common/utils/url';
-import { logger } from '../../../../common/utils/logger';
 import { findHeaderByName } from '../../../../common/utils/headers';
+import { logger } from '../../../../common/utils/logger';
 import { nanoid } from '../../../../common/utils/nanoid';
 import { getRuleTexts } from '../../../../common/utils/rule-text-provider';
-import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
-import { CookieUtils } from '../../../../common/cookie-filtering/utils';
-import { type RequestContext, requestContextStorage } from '../../request';
+import { getDomain } from '../../../../common/utils/url';
 import { tabsApi } from '../../../tabs/tabs-api';
 import { engineApi } from '../../engine-api';
-import { ContentType } from '../../../../common/request-type';
+import { type RequestContext, requestContextStorage } from '../../request';
 
 /**
  * Cookie filtering.

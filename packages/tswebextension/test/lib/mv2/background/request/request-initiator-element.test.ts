@@ -1,17 +1,18 @@
 import {
-    describe,
-    beforeEach,
     afterEach,
-    it,
+    beforeEach,
+    describe,
     expect,
+    it,
     vi,
 } from 'vitest';
+
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { CosmeticApi } from '../../../../../src/lib/mv2/background/cosmetic-api';
 import { hideRequestInitiatorElement, InitiatorTag } from '../../../../../src/lib';
-import { HIDING_STYLE } from '../../../../../src/lib/mv2/common/hidden-style';
 import { BACKGROUND_TAB_ID } from '../../../../../src/lib/common/constants';
+import { CosmeticApi } from '../../../../../src/lib/mv2/background/cosmetic-api';
+import { HIDING_STYLE } from '../../../../../src/lib/mv2/common/hidden-style';
 
 describe('Request Initiator Element', () => {
     beforeEach(() => {

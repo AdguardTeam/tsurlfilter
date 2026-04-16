@@ -1,10 +1,10 @@
-import { NetworkRuleOption, type NetworkRule, type RemoveParamModifier } from '@adguard/tsurlfilter';
+import { type NetworkRule, NetworkRuleOption, type RemoveParamModifier } from '@adguard/tsurlfilter';
 
-import { requestContextStorage } from '../request/request-context-storage';
 import { FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { nanoid } from '../../../common/utils/nanoid';
-import { getDomain } from '../../../common/utils/url';
 import { getRuleTexts, type RuleTextProvider } from '../../../common/utils/rule-text-provider';
+import { getDomain } from '../../../common/utils/url';
+import { requestContextStorage } from '../request/request-context-storage';
 
 /**
  * Params filtering service module.

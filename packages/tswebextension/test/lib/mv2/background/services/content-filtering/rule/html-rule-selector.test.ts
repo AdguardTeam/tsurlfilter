@@ -2,12 +2,13 @@
  * @vitest-environment jsdom
  */
 import { describe, expect, it } from 'vitest';
+
 import { RawRuleConverter } from '@adguard/agtree';
 
-import { createCosmeticRule } from '../../../../../../helpers/rule-creator';
 import {
     HtmlRuleSelector,
 } from '../../../../../../../src/lib/mv2/background/services/content-filtering/rule/html-rule-selector';
+import { createCosmeticRule } from '../../../../../../helpers/rule-creator';
 
 describe('Html rule selector', () => {
     it('checks simple cases', () => {

@@ -1,10 +1,10 @@
 import { CookieModifier } from '../../modifiers/cookie-modifier';
 import { HTTPMethod } from '../../modifiers/method-modifier';
+import type { RedirectModifier } from '../../modifiers/redirect-modifier';
 import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
 import { RemoveParamModifier } from '../../modifiers/remove-param-modifier';
 import { NetworkRuleOption } from '../network-rule';
 import { OPTIONS_DELIMITER } from '../network-rule-options';
-import type { RedirectModifier } from '../../modifiers/redirect-modifier';
 
 import { UnsupportedModifierError } from './errors/conversion-errors/unsupported-modifier-error';
 import { type NetworkRuleWithNodeAndText } from './network-rule-with-node-and-text';

@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import webpack, { Stats, Configuration } from 'webpack';
+import webpack, { Configuration, Stats } from 'webpack';
 
 type CompilerCallback = (err?: Error | null, stats?: Stats) => void;
 

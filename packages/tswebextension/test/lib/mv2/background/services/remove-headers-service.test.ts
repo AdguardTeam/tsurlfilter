@@ -1,22 +1,23 @@
 import {
+    beforeEach,
     describe,
     expect,
-    beforeEach,
     it,
 } from 'vitest';
-import { MatchingResult, RequestType, HTTPMethod } from '@adguard/tsurlfilter';
 
-import { createNetworkRule } from '../../../../helpers/rule-creator';
-import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
-import { mockEngineApi } from '../../../../helpers/mocks';
-import { getNetworkRuleFields } from '../helpers/rule-fields';
-import { RemoveHeadersService } from '../../../../../src/lib/mv2/background/services/remove-headers-service';
+import { HTTPMethod, MatchingResult, RequestType } from '@adguard/tsurlfilter';
+
+import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
+import { ContentType } from '../../../../../src/lib/common/request-type';
 import {
     type RequestContext,
     RequestContextState,
 } from '../../../../../src/lib/mv2/background/request/request-context-storage';
-import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
-import { ContentType } from '../../../../../src/lib/common/request-type';
+import { RemoveHeadersService } from '../../../../../src/lib/mv2/background/services/remove-headers-service';
+import { mockEngineApi } from '../../../../helpers/mocks';
+import { createNetworkRule } from '../../../../helpers/rule-creator';
+import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { getNetworkRuleFields } from '../helpers/rule-fields';
 
 describe('RemoveHeadersService', () => {
     const mockFilteringLog = new MockFilteringLog();

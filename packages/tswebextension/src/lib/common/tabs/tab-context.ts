@@ -1,5 +1,6 @@
-import browser, { type Tabs } from 'webextension-polyfill';
 import { identity } from 'lodash-es';
+import browser, { type Tabs } from 'webextension-polyfill';
+
 import { type NetworkRule } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../constants';

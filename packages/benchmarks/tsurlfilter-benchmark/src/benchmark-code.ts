@@ -8,8 +8,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type * as Tinybench from 'tinybench';
 
-import type * as TsUrlFilterV3 from './tsurlfilter/tsurlfilter-v3';
 import type * as TsUrlFilter from './tsurlfilter/tsurlfilter';
+import type * as TsUrlFilterV3 from './tsurlfilter/tsurlfilter-v3';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -180,7 +180,7 @@ export const benchmark = async ({
     const tsurlfilterEngine = await tsUrlFilterModule.Engine.createAsync({
         filters: [{
             id: 2,
-            text: rawFilterList,
+            content: rawFilterList,
             ignoreCosmetic,
         }],
     });
@@ -209,7 +209,7 @@ export const benchmark = async ({
         const engine = await tsUrlFilterModule.Engine.createAsync({
             filters: [{
                 id: 2,
-                text: rawFilterList,
+                content: rawFilterList,
                 ignoreCosmetic,
             }],
         });

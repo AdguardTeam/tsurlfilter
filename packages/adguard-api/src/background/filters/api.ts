@@ -16,15 +16,17 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 import { ConversionData, FilterList } from '@adguard/tswebextension';
-import { Network } from '../network';
-import { Storage } from '../storage';
-import { MetadataApi } from './metadata';
-import { VersionsApi } from './versions';
-import { FilterRulesApi } from './rules';
-import { BrowserUtils, I18n } from '../utils';
-import { FilterMetadata } from '../schemas';
-import { notifier, NotifierEventType } from '../notifier';
+
 import { Logger } from '../logger';
+import { Network } from '../network';
+import { notifier, NotifierEventType } from '../notifier';
+import { FilterMetadata } from '../schemas';
+import { Storage } from '../storage';
+import { BrowserUtils, I18n } from '../utils';
+
+import { MetadataApi } from './metadata';
+import { FilterRulesApi } from './rules';
+import { VersionsApi } from './versions';
 
 /**
  * Filter Api provides methods for managing filters data

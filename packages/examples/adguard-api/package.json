@@ -7,7 +7,8 @@
     "type": "module",
     "scripts": {
         "build": "rimraf build && tsx ./scripts/build/index.ts",
-        "lint": "eslint --cache --ignore-path .gitignore ."
+        "lint": "eslint --cache --ignore-path .gitignore . && pnpm lint:md",
+        "lint:md": "markdownlint ."
     },
     "dependencies": {
         "@adguard/api": "workspace:^",
@@ -34,6 +35,8 @@
         "eslint-plugin-jsdoc": "catalog:",
         "eslint-webpack-plugin": "catalog:",
         "html-webpack-plugin": "catalog:",
+        "markdownlint": "catalog:",
+        "markdownlint-cli": "catalog:",
         "rimraf": "catalog:",
         "stream-browserify": "catalog:",
         "swc-loader": "catalog:",

@@ -30,10 +30,6 @@ AdGuard API is a filtering library that provides the following features:
     - [`adguardApi.onRequestBlocked`](#adguardapionrequestblocked)
 - [Usage](#usage)
 - [Minimum supported browser versions](#minimum-supported-browser-versions)
-- [Development](#development)
-    - [Install dependencies](#install-dependencies)
-    - [Build](#build)
-    - [Lint](#lint)
 
 ## Installation
 
@@ -81,16 +77,19 @@ requests to a local "resource" using the `$redirect` rule modifier. You can use
 ## Required declarativeNetRequest API assets
 
 **IMPORTANT: To correct work of `$redirect` path should be `/web-accessible-resources/redirects`.**
-<br>
+
 If you are using `@adguard/dnr-rulesets` package, path to web accessible resources is
 built-in into converted rules with `$redirect` modifier and packed inside rulesets.
 
-<br>
 Because it should used via periodically updating from the remote in the runtime
 and passed as part of dynamic rules - `Configuration.rules`.
 
-AdGuard API MV3 requires prebuilt DNR rule sets to be able to filter web requests. You can use
-[@adguard/dnr-rulesets CLI](../dnr-rulesets/README.md) to download it. We also provide a extension example with scripts for loading DNR rulesets and patching manifest in the [examples/adguard-api-mv3](../examples/adguard-api-mv3/) directory.
+AdGuard API MV3 requires prebuilt DNR rule sets to be able to filter
+web requests. You can use
+[@adguard/dnr-rulesets CLI](../dnr-rulesets/README.md) to download it.
+We also provide a extension example with scripts for loading DNR
+rulesets and patching manifest in the
+[examples/adguard-api-mv3](../examples/adguard-api-mv3/) directory.
 
 ## Configuration
 
@@ -132,11 +131,18 @@ type Configuration = {
 - `documentBlockingPageUrl` (optional) - Redirect URL for blocking rules with
   `$document` modifier. If not specified, default browser page will be shown.
   Page will receive following query parameters:
-  - `url` - blocked URL
-  - `rule` - blocking rule that triggered on this URL
-  - `filterId` - ID of the filter that contains this rule (0 for user rules)
+    - `url` - blocked URL
+    - `rule` - blocking rule that triggered on this URL
+    - `filterId` - ID of the filter that contains this rule (0 for user rules)
 
-  Example: `chrome-extension://<extension_id>/blocking-page.html?url=https%3A%2F%2Fexample.net%2F&rule=example.net%24document&filterId=0`
+  Example:
+
+    ```text
+    chrome-extension://<extension_id>/blocking-page.html
+      ?url=https%3A%2F%2Fexample.net%2F
+      &rule=example.net%24document
+      &filterId=0
+    ```
 
 [filter-rules]: https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters
 
@@ -203,8 +209,13 @@ This allows you to pre-approve specific custom scriptlets or JS injection rules 
 
 See the MV3 example extension for a complete implementation:
 
-- **Extra scripts definition**: [`packages/examples/adguard-api-mv3/extension/src/extra-scripts.ts`](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/examples/adguard-api-mv3/extension/src/extra-scripts.ts)
-- **Build script usage**: [`packages/examples/adguard-api-mv3/scripts/build/build.ts`](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/examples/adguard-api-mv3/scripts/build/build.ts)
+- **Extra scripts definition**:
+  [`extension/src/extra-scripts.ts`][extra-scripts-example]
+- **Build script usage**:
+  [`scripts/build/build.ts`][build-script-example]
+
+[extra-scripts-example]: ../examples/adguard-api-mv3/extension/src/extra-scripts.ts
+[build-script-example]: ../examples/adguard-api-mv3/scripts/build/build.ts
 
 The build script uses the `AssetsLoader.extendLocalScriptRulesJs()` method to add
 extra pre-verified rules to `local_script_rules.js`:
@@ -222,21 +233,28 @@ await loader.extendLocalScriptRulesJs(
 
 ## Excluding Unsafe Rules for Chrome Web Store "Skip Review"
 
-Chrome Web Store provides a ["skip review" option](https://developer.chrome.com/docs/webstore/skip-review) for extensions that only use "safe" declarativeNetRequest rules. This allows your extension updates to be published instantly without manual review, significantly reducing update deployment time.
+Chrome Web Store provides a
+["skip review" option](https://developer.chrome.com/docs/webstore/skip-review)
+for extensions that only use "safe" declarativeNetRequest rules.
+This allows your extension updates to be published instantly without
+manual review, significantly reducing update deployment time.
 
 ### What are safe rules?
 
 According to Chrome's policy, only declarative rules with the following action types are considered "safe":
+
 - `block` - blocks network requests
 - `allow` - allows network requests
 - `allowAllRequests` - allows all requests from a domain
 - `upgradeScheme` - upgrades HTTP to HTTPS
 
-Rules with other action types (such as `redirect`, `modifyHeaders`, `removeHeaders`) are considered "unsafe" and require manual review.
+Rules with other action types (such as `redirect`, `modifyHeaders`,
+`removeHeaders`) are considered "unsafe" and require manual review.
 
 ### Why exclude unsafe rules?
 
 To qualify for the "skip review" option in Chrome Web Store:
+
 1. Your extension must only contain safe declarative rules
 2. Unsafe rules must be excluded from your rulesets during the build process
 3. This allows faster extension updates and reduces review queue time
@@ -244,6 +262,7 @@ To qualify for the "skip review" option in Chrome Web Store:
 ### How to exclude unsafe rules in your build process
 
 The `@adguard/dnr-rulesets` package provides the `excludeUnsafeRules` function that:
+
 - Scans all rulesets in your filters directory
 - Identifies and removes unsafe rules
 - Stores unsafe rules in metadata for reference
@@ -259,6 +278,7 @@ dnr-rulesets exclude-unsafe-rules ./extension/filters/declarative [options]
 ```
 
 **Options:**
+
 - `--prettify-json` (default: `true`) - Prettify JSON output
 - `--limit <number>` - Maximum number of unsafe rules allowed. Build fails if exceeded.
 
@@ -329,11 +349,14 @@ async function build() {
 
 ### Important Notes
 
-- **Call order matters**: Always run `excludeUnsafeRules` **after** loading rulesets and patching manifest. Prevent double call of `excludeUnsafeRules` in your build process since
-it will override unsafe rules from first call and all unsafe rules will be just
-deleted from rulesets.
+- **Call order matters**: Always run `excludeUnsafeRules` **after**
+  loading rulesets and patching manifest. Prevent double call of
+  `excludeUnsafeRules` in your build process since it will override
+  unsafe rules from first call and all unsafe rules will be just
+  deleted from rulesets.
 
-For a complete working example, see the [example extension build script](../examples/adguard-api-mv3/scripts/build/build.ts).
+For a complete working example, see the
+[example extension build script](../examples/adguard-api-mv3/scripts/build/build.ts).
 
 ## Static methods
 
@@ -412,11 +435,13 @@ const appliedConfiguration = await adguardApi.start(configuration);
 
 **Parameters:**
 
-- `configuration` - [API Configuration](#api-configuration)
+- `configuration` - [API Configuration](#configuration)
 
 **Returns:**
 
-A Promise, resolved with applied [API Configuration](#api-configuration) when api is initialized and filtering started
+A Promise, resolved with applied
+[API Configuration](#configuration) when api is initialized and
+filtering started
 
 ### `adguardApi.stop`
 
@@ -617,7 +642,8 @@ type RequestBlockingEvent = {
     requestType: ContentType;
 
     /**
-     * Assumed Filtering rule index, which has blocked this request. May not be provided if request is blocked by DNR rule.
+     * Assumed Filtering rule index, which has blocked this request.
+     * May not be provided if request is blocked by DNR rule.
      */
     assumedRuleIndex?: number;
 

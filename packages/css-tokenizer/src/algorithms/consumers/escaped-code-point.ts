@@ -2,10 +2,10 @@
  * @file Tokenizing logic for escaped code points
  */
 
-import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
 import { type TokenizerContext } from '../../common/context';
-import { isHexDigit } from '../definitions';
 import { ErrorMessage } from '../../common/enums/error-messages';
+import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
+import { isHexDigit } from '../definitions';
 
 export const MAX_HEX_DIGITS = 6;
 

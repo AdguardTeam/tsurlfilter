@@ -1,4 +1,4 @@
-import { openDB, type IDBPDatabase } from 'idb';
+import { type IDBPDatabase, openDB } from 'idb';
 
 import { logger } from './utils/logger';
 

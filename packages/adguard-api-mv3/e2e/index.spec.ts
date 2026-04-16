@@ -1,7 +1,7 @@
 import {
     describe,
-    it,
     expect,
+    it,
 } from 'vitest';
 
 describe('Adguard API MV3', () => {
@@ -10,7 +10,7 @@ describe('Adguard API MV3', () => {
      */
     it('Should not throw error on import outside of service worker', async () => {
         // eslint-disable-next-line import/extensions
-        const { AdguardApi } = await import('../dist/adguard-api');
+        const { AdguardApi } = await import('@adguard/api-mv3');
         const adguardApi = await AdguardApi.create();
 
         expect(adguardApi).toBeDefined();

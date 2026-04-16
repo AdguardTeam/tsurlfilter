@@ -73,8 +73,8 @@ You MUST follow the following rules for EVERY task that you perform:
 
 - You MUST verify your changes pass all static analysis checks before completing
   a task:
-  - `pnpm lint:types` to check for TypeScript errors
-  - `pnpm lint:code` to run ESLint
+    - `pnpm lint:types` to check for TypeScript errors
+    - `pnpm lint:code` to run ESLint
 
 - You MUST update or add unit tests for any changed code.
 

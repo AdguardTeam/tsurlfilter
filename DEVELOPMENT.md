@@ -97,6 +97,34 @@ pnpm build
 pnpm test:prod   # lint + smoke tests + full test suite (no cache)
 ```
 
+## CI Checks and `test:prod`
+
+Every package that is published or tested in CI exposes a `test:prod` script
+that is the single entry point for verifying a package is healthy. It runs the
+same ordered set of checks regardless of the package:
+
+```
+lint → test:smoke (where applicable) → test:ci
+```
+
+- **`lint`** — runs `lint:code` (ESLint) and `lint:types` (TypeScript) and,
+  where configured, `lint:md` (markdownlint).
+- **`test:smoke`** — imports the built package from ESM, CJS, and TypeScript
+  to verify that the published exports resolve correctly.
+- **`test:ci`** — runs the full Vitest suite and writes JUnit XML output for
+  CI reporting.
+
+Not every package needs all three steps — packages with no unit tests (e.g.
+`@adguard/api`, `@adguard/eslint-plugin-logger-context`) define `test:prod` as
+`pnpm lint` only. The key rule is: **every package must have `test:prod`**, and
+its Dockerfile stage must call it.
+
+Each package's Docker test stage invokes `pnpm test:prod` and the Bamboo job
+that drives it uses `is_project_affected` to decide whether to skip. That
+helper performs a **transitive** walk of `workspace:` dependencies, so a change
+in `@adguard/agtree` automatically triggers the `test-tsurlfilter` job without
+any extra conditions in the YAML.
+
 ## Common Tasks
 
 ### Adding or Updating a Shared Dependency

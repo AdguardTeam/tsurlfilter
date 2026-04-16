@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { Mutex } from '../../../../src/lib/mv3/utils/mutex';
 import { TimeoutError } from '../../../../src/lib/mv3/errors/timeout-error';
+import { Mutex } from '../../../../src/lib/mv3/utils/mutex';
 
 describe('Mutex', () => {
     it('should acquire lock immediately when unlocked', async () => {

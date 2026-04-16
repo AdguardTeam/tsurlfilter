@@ -1,36 +1,16 @@
-import zod from 'zod';
-import { Filter, type IFilter, RULESET_NAME_PREFIX } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
-import { FilterList } from '@adguard/tsurlfilter';
 
-import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
+import { FilterList } from '@adguard/tsurlfilter';
+import { Filter, type IFilter, RULESET_NAME_PREFIX } from '@adguard/tsurlfilter/es/declarative-converter';
+
 import { FiltersStorage } from '../../common/storage/filters';
+import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import { type ConfigurationMV3 } from './configuration';
 
 export type UpdateStaticFiltersResult = {
     errors: FailedEnableRuleSetsError[];
 };
-
-const loadFilterContentValidator = zod.function()
-    .args(zod.number())
-    .returns(
-        zod.promise(
-            zod.instanceof(FilterList),
-        ),
-    );
-
-/**
- * Lazy load filter content.
- *
- * @param filterId Filter identifier to load content for.
- *
- * @returns Promise that resolves to the filter content (see {@link FilterList})
- * or null if the filter is not found.
- *
- * @throws Error if the filter content cannot be loaded.
- */
-export type LoadFilterContent = zod.infer<typeof loadFilterContentValidator>;
 
 /**
  * FiltersApi knows how to enable or disable static rule sets (which were built
@@ -101,13 +81,11 @@ export default class FiltersApi {
      * Wraps static filters into {@link IFilter}.
      *
      * @param filtersIds List of filters ids.
-     * @param loadFilterContent Function to load filter content.
      *
      * @returns List of {@link IFilter} with a lazy content loading feature.
      */
     static createStaticFilters(
         filtersIds: ConfigurationMV3['staticFiltersIds'],
-        loadFilterContent: LoadFilterContent,
     ): IFilter[] {
         return filtersIds.map((filterId) => {
             const filterFromCache = this.filtersCache.get(filterId);
@@ -117,7 +95,7 @@ export default class FiltersApi {
 
             const filter = new Filter(
                 filterId,
-                { getContent: (): Promise<FilterList> => loadFilterContent(filterId) },
+                { getContent: (): Promise<FilterList> => FiltersApi.loadFilterContent(filterId) },
                 /**
                  * Static filters are trusted.
                  */

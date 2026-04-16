@@ -2,13 +2,14 @@
  * @file Tokenizing logic for strings
  */
 
+import { type TokenizerContext } from '../../common/context';
+import { CodePoint, ImaginaryCodePoint } from '../../common/enums/code-points';
+import { ErrorMessage } from '../../common/enums/error-messages';
+import { TokenType } from '../../common/enums/token-types';
 import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
 import { checkForValidEscape, isNewline } from '../definitions';
+
 import { consumeEscapedCodePoint } from './escaped-code-point';
-import { type TokenizerContext } from '../../common/context';
-import { TokenType } from '../../common/enums/token-types';
-import { ErrorMessage } from '../../common/enums/error-messages';
-import { CodePoint, ImaginaryCodePoint } from '../../common/enums/code-points';
 
 /**
  * § 4.3.5. Consume a string token

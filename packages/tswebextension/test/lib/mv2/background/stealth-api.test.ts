@@ -1,19 +1,20 @@
 import {
+    beforeEach,
     describe,
     expect,
-    beforeEach,
     it,
     vi,
 } from 'vitest';
+
 import { MatchingResult } from '@adguard/tsurlfilter';
 
-import { createNetworkRule } from '../../../helpers/rule-creator';
 import { type ConfigurationMV2Context } from '../../../../src/lib';
+import { defaultFilteringLog } from '../../../../src/lib/common/filtering-log';
 import { AppContext } from '../../../../src/lib/mv2/background/app-context';
 import { StealthService } from '../../../../src/lib/mv2/background/services/stealth-service';
 import { StealthApi } from '../../../../src/lib/mv2/background/stealth-api';
-import { defaultFilteringLog } from '../../../../src/lib/common/filtering-log';
 import { mockEngineApi } from '../../../helpers/mocks';
+import { createNetworkRule } from '../../../helpers/rule-creator';
 
 vi.mock('../../../../src/lib/mv2/background/app-context', async () => {
     const { MockAppContext } = await import('./mocks/mock-app-context');

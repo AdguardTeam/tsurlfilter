@@ -4,8 +4,8 @@
 
 import fetch from 'node-fetch';
 
-import { type ResourceConfigs, type Resource } from '../common/interfaces';
 import { EXCLAMATION_MARK, LINE_FEED, RE_NL_SPLIT } from '../common/constants';
+import { type Resource, type ResourceConfigs } from '../common/interfaces';
 
 /**
  * Helper function to fetch a file contents from a URL

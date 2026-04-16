@@ -6,13 +6,13 @@ import {
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
-import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import {
     ALLOWLIST_FILTER_ID,
     BLOCKING_TRUSTED_FILTER_ID,
     CUSTOM_FILTERS_START_ID,
     USER_FILTER_ID,
 } from '../../../../src/lib/common/constants';
+import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { createFilter } from '../helpers';
 
 describe('DynamicRulesApi', () => {

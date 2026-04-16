@@ -13,66 +13,68 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
 - [Idea](#idea)
 - [Installation](#installation)
 - [API description](#api-description)
-  - [Public properties](#public-properties)
-    - [`TSURLFILTER_VERSION`](#tsurlfilter_version)
-  - [Public classes](#public-classes)
-    - [Engine](#engine)
-      - [**Factory**](#factory)
-        - [**Sync mode**](#sync-mode)
-        - [**Async mode**](#async-mode)
-        - [Example](#example)
-      - [**matchRequest**](#matchrequest)
-      - [**matchFrame**](#matchframe)
-      - [Starting engine](#starting-engine)
-      - [Matching requests](#matching-requests)
-      - [Retrieving cosmetic data](#retrieving-cosmetic-data)
-    - [MatchingResult](#matchingresult)
-      - [**getBasicResult**](#getbasicresult)
-      - [**getDocumentBlockingResult**](#getdocumentblockingresult)
-      - [**getCosmeticOption**](#getcosmeticoption)
-      - [**Other rules**](#other-rules)
-    - [CosmeticResult](#cosmeticresult)
-      - [Applying cosmetic result - CSS](#applying-cosmetic-result---css)
-      - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
-    - [DnsEngine](#dnsengine)
-      - [**Constructor**](#constructor)
-      - [**match**](#match)
-      - [Matching hostname](#matching-hostname)
-    - [RuleSyntaxUtils](#rulesyntaxutils)
-      - [Public methods](#public-methods)
-    - [FilterList](#filterlist)
-      - [Key Features](#key-features)
-      - [Constructor](#constructor-1)
-      - [Conversion Data Structure](#conversion-data-structure)
-      - [Main Methods](#main-methods)
-        - [Getting Converted Content](#getting-converted-content)
-        - [Getting Rule Text](#getting-rule-text)
-        - [Getting Original Rule Text](#getting-original-rule-text)
-        - [Getting Converted Rule Original (Strict)](#getting-converted-rule-original-strict)
-        - [Restoring Original Content](#restoring-original-content)
-      - [Static Methods](#static-methods)
-      - [Usage Example](#usage-example)
-    - [DeclarativeFilterConverter](#declarativefilterconverter)
-      - [Public methods](#public-methods-1)
-      - [Example of use](#example-of-use)
-      - [Declarative converter documentation](#declarative-converter-documentation)
-      - [Problems](#problems)
+    - [Public properties](#public-properties)
+        - [`TSURLFILTER_VERSION`](#tsurlfilter_version)
+    - [Public classes](#public-classes)
+        - [Engine](#engine)
+            - [**Factory**](#factory)
+                - [**Sync mode**](#sync-mode)
+                - [**Async mode**](#async-mode)
+                - [Example](#example)
+            - [**matchRequest**](#matchrequest)
+            - [**matchFrame**](#matchframe)
+            - [Starting engine](#starting-engine)
+            - [Matching requests](#matching-requests)
+            - [Retrieving cosmetic data](#retrieving-cosmetic-data)
+        - [MatchingResult](#matchingresult)
+            - [**getBasicResult**](#getbasicresult)
+            - [**getDocumentBlockingResult**](#getdocumentblockingresult)
+            - [**getCosmeticOption**](#getcosmeticoption)
+            - [**Other rules**](#other-rules)
+        - [CosmeticResult](#cosmeticresult)
+            - [Applying cosmetic result - CSS](#applying-cosmetic-result---css)
+            - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
+        - [DnsEngine](#dnsengine)
+            - [**Constructor**](#constructor)
+            - [**match**](#match)
+            - [Matching hostname](#matching-hostname)
+        - [RuleSyntaxUtils](#rulesyntaxutils)
+            - [Public methods](#public-methods)
+        - [FilterList](#filterlist)
+            - [Key Features](#key-features)
+            - [Constructor](#constructor-1)
+            - [Conversion Data Structure](#conversion-data-structure)
+            - [Main Methods](#main-methods)
+                - [Getting Converted Content](#getting-converted-content)
+                - [Getting Rule Text](#getting-rule-text)
+                - [Getting Original Rule Text](#getting-original-rule-text)
+                - [Getting Converted Rule Original (Strict)](#getting-converted-rule-original-strict)
+                - [Restoring Original Content](#restoring-original-content)
+            - [Static Methods](#static-methods)
+            - [Usage Example](#usage-example)
+        - [DeclarativeFilterConverter](#declarativefilterconverter)
+            - [Public methods](#public-methods-1)
+            - [Example of use](#example-of-use)
+            - [Declarative converter documentation](#declarative-converter-documentation)
+            - [Problems](#problems)
 - [Converting filters to declarative rulesets](#converting-filters-to-declarative-rulesets)
-  - [API usage](#api-usage)
-  - [CLI usage](#cli-usage)
-    - [Extracting filters from rulesets](#extracting-filters-from-rulesets)
-- [Development](#development)
-  - [NPM scripts](#npm-scripts)
-  - [Excluding peerDependencies](#excluding-peerdependencies)
-  - [Git Hooks](#git-hooks)
+    - [API usage](#api-usage)
+    - [CLI usage](#cli-usage)
+        - [Extracting filters from rulesets](#extracting-filters-from-rulesets)
+- [Documentation](#documentation)
 
 ## <a id="idea"></a>Idea
 
 The idea is to have a single library that we can reuse for the following tasks:
 
 - Doing content blocking in our Chrome and Firefox extensions (obviously)
-- Using this library for parsing rules and converting to Safari-compatible content blocking lists (see [AdGuard for Safari](https://github.com/AdguardTeam/AdguardForSafari), [AdGuard for iOS](https://github.com/AdguardTeam/AdguardForiOS))
-- Using this library for validating and linting filter lists (see [FiltersRegistry](https://github.com/AdguardTeam/FiltersRegistry), [AdguardFilters](https://github.com/AdguardTeam/AdguardFilters))
+- Using this library for parsing rules and converting to Safari-compatible
+  content blocking lists
+  (see [AdGuard for Safari](https://github.com/AdguardTeam/AdguardForSafari),
+  [AdGuard for iOS](https://github.com/AdguardTeam/AdguardForiOS))
+- Using this library for validating and linting filter lists
+  (see [FiltersRegistry](https://github.com/AdguardTeam/FiltersRegistry),
+  [AdguardFilters](https://github.com/AdguardTeam/AdguardFilters))
 
 ## <a id="usage"></a>Installation
 
@@ -106,9 +108,21 @@ Engine is a main class of this library. It represents the filtering functionalit
 
 You can create engine via factories. There are two modes: sync and async.
 
-**Important**: The `content` field in `EngineFactoryOptions` accepts either a raw string or a `FilterList` instance. If you provide a string, it will be automatically wrapped in a `FilterList` and converted. If you provide a `FilterList` instance, you have full control over the conversion process by optionally providing conversion data to the `FilterList` constructor.
+**Important**: The `content` field in `EngineFactoryOptions` accepts either
+a raw string or a `FilterList` instance.
+If you provide a string, it will be automatically wrapped
+in a `FilterList` and converted.
+If you provide a `FilterList` instance, you have full control
+over the conversion process by optionally providing conversion data
+to the `FilterList` constructor.
 
-**Note**: `tsurlfilter` only supports AdGuard filter syntax. If you need to convert rules from other syntaxes (e.g., uBlock Origin, Adblock Plus), use the `FilterList` class which automatically converts rules to AdGuard format via `RawRuleConverter.convertToAdg()`. This conversion should be done at the filter list level before the engine processes the rules.
+**Note**: `tsurlfilter` only supports AdGuard filter syntax.
+If you need to convert rules from other syntaxes
+(e.g., uBlock Origin, Adblock Plus), use the `FilterList` class
+which automatically converts rules to AdGuard format
+via `RawRuleConverter.convertToAdg()`.
+This conversion should be done at the filter list level
+before the engine processes the rules.
 
 ###### **Sync mode**
 
@@ -226,7 +240,9 @@ const cosmeticResult = engine.getCosmeticResult(request, CosmeticOption.Cosmetic
 
 #### <a id="matching-result"></a>MatchingResult
 
-MatchingResult contains all the rules matching a web request, and provides methods that define how a web request should be processed
+MatchingResult contains all the rules matching a web request,
+and provides methods that define how a web request
+should be processed
 
 ##### **getBasicResult**
 
@@ -415,7 +431,8 @@ public static isRuleForUrl(ruleText: string, url: string): boolean;
 
 #### <a id="filter-list"></a>FilterList
 
-`FilterList` is a class that represents a converted filter list with efficient access to both converted and original rule content.
+`FilterList` is a class that represents a converted filter list
+with efficient access to both converted and original rule content.
 
 ##### Key Features
 
@@ -559,7 +576,8 @@ const filterList2 = new FilterList(converted, data);
 
 #### <a id="declarative-filter-converter"></a>DeclarativeFilterConverter
 
-Converts a list of IFilters to a single ruleset or to a list of rulesets. See `examples/manifest-v3/` for an example usage.
+Converts a list of IFilters to a single ruleset or to a list of rulesets.
+See `examples/manifest-v3/` for an example usage.
 
 ##### Public methods
 
@@ -674,7 +692,8 @@ let filterId = 0;
 
 ##### Declarative converter documentation
 
-For more information about the declarative converter, see the its [documentation](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/rules/declarative-converter/README.md).
+For more information about the declarative converter,
+see the its [documentation](src/rules/declarative-converter/README.md).
 
 ##### Problems
 
@@ -698,7 +717,9 @@ For more information about the declarative converter, see the its [documentation
 
 ## Converting filters to declarative rulesets
 
-This library provides a utility to convert AdGuard filter lists and metadata into declarative rulesets suitable for browser extensions or other use cases. This can be accessed both programmatically (API) and via the CLI.
+This library provides a utility to convert AdGuard filter lists and metadata
+into declarative rulesets suitable for browser extensions or other use cases.
+This can be accessed both programmatically (API) and via the CLI.
 
 ### API usage
 
@@ -710,7 +731,9 @@ import { convertFilters } from '@adguard/tsurlfilter/cli/convertFilters';
 // Example usage:
 await convertFilters(
   './filters',           // Path to directory containing filter files and metadata (e.g., filters.json)
-  './resources',         // Path to web-accessible resources (can be obtained via `@adguard/tswebextension` CLI's `war` command)
+  // Path to web-accessible resources
+  // (can be obtained via `@adguard/tswebextension` CLI's `war` command)
+  './resources',
   './build/rulesets',    // Destination directory for generated rulesets
   {
     debug: true,         // (optional) Print additional debug information
@@ -727,13 +750,17 @@ await convertFilters(
 
 **Parameters:**
 
-- `filtersAndMetadataDir` (string): Path to the directory with filter files and metadata (should contain e.g. `filters.json`).
+- `filtersAndMetadataDir` (string): Path to the directory with filter files
+  and metadata (should contain e.g. `filters.json`).
 - `resourcesDir` (string): Path to web-accessible resources (used for ruleset generation).
 - `destRulesetsDir` (string): Output directory for the resulting declarative rulesets.
 - `options` (object, optional):
     - `debug` (boolean): Print debug info to console (default: false).
     - `prettifyJson` (boolean): Prettify JSON output (default: true).
-    - `additionalProperties` (object): Additional properties to include in metadata ruleset. This field is not validated, but it must be JSON serializable. Validation should be performed by users.
+    - `additionalProperties` (object): Additional properties to include
+      in metadata ruleset. This field is not validated,
+      but it must be JSON serializable.
+      Validation should be performed by users.
 
 ### CLI usage
 
@@ -747,7 +774,8 @@ npx tsurlfilter convert <filtersAndMetadataDir> <resourcesDir> [destRulesetsDir]
 
 - `<filtersAndMetadataDir>`: Path to directory with filter files and metadata (should contain e.g. `filters.json`).
 - `<resourcesDir>`: Path to web-accessible resources.
-- `[destRulesetsDir]`: (Optional) Output directory for the resulting declarative rulesets. Defaults to `./build/rulesets` if omitted.
+- `[destRulesetsDir]`: (Optional) Output directory for the resulting
+  declarative rulesets. Defaults to `./build/rulesets` if omitted.
 
 **Options:**
 
@@ -772,7 +800,8 @@ npx tsurlfilter extract-filters <path-to-rulesets> <path-to-output>
 
 **Arguments:**
 
-- `<path-to-rulesets>`: Path to the directory containing the declarative rulesets (as generated by the `convert` command).
+- `<path-to-rulesets>`: Path to the directory containing the declarative
+  rulesets (as generated by the `convert` command).
 - `<path-to-output>`: Path to the file or directory where the extracted filters will be saved.
 
 **Example:**

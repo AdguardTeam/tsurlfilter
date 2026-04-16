@@ -1,14 +1,14 @@
 /* eslint-disable jsdoc/require-jsdoc */
 import {
+    beforeAll,
     describe,
     expect,
-    beforeAll,
     it,
 } from 'vitest';
 import browser from 'webextension-polyfill';
 
-import { BrowserStorage } from '../../../../src/lib/common/storage/core';
 import { createExtensionStorageDecorator, ExtensionStorage } from '../../../../src/lib/common/storage';
+import { BrowserStorage } from '../../../../src/lib/common/storage/core';
 
 describe('createExtensionStorageDecorator', () => {
     const key = 'test-key';

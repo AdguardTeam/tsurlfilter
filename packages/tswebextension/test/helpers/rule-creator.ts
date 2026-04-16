@@ -1,12 +1,14 @@
+import { isString } from 'lodash-es';
+
 import {
-    NetworkRuleType,
-    RuleCategory,
     type AnyCosmeticRule,
     type AnyRule,
     type NetworkRule as NetworkRuleNode,
+    NetworkRuleType,
+    RuleCategory,
 } from '@adguard/agtree';
-import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
 import { RuleGenerator } from '@adguard/agtree/generator';
+import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
 import {
     CosmeticRule,
     type IRule,
@@ -14,7 +16,6 @@ import {
     RULE_INDEX_NONE,
     RuleFactory,
 } from '@adguard/tsurlfilter';
-import { isString } from 'lodash-es';
 
 /**
  * Helper function to create a network rule from a string or a parsed node.

@@ -1,4 +1,5 @@
 import { getDomain } from 'tldts';
+
 import {
     type NetworkRule,
     NetworkRuleOption,
@@ -10,7 +11,7 @@ import { FilteringEventType, type FilteringLogInterface } from '../../../common/
 import { ContentType } from '../../../common/request-type';
 import { nanoid } from '../../../common/utils/nanoid';
 import { getRuleTexts, type RuleTextProvider } from '../../../common/utils/rule-text-provider';
-import { type RequestContextStorage, type RequestContext } from '../request';
+import { type RequestContext, type RequestContextStorage } from '../request';
 
 /**
  * Permissions Policy service.

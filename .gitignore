@@ -13,6 +13,9 @@ node_modules
 # Rollup cache
 .rollup.cache
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
 # IDEA files
 .idea
 

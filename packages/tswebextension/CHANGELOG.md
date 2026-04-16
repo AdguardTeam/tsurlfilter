@@ -5,13 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 4.1.0
+
+### Added
+
+- Correctly handle prerender speculative requests in Chromium-based browsers.
+
+### Changed
+
+- Reduced MV3 extension memory usage by unloading heavy ruleset metadata
+  (`badFilterRules`, `rulesHashMap`) after `configure()` completes. Metadata is
+  lazy-loaded from IndexedDB on demand and freed immediately after use.
+- Ruleset content (`sourceMap`, `declarativeRules`, `filterList`) is now also
+  unloaded when the declarative filtering log is disabled.
+- `RuleSetsLoaderApi` now provides lazy metadata loaders that read from IndexedDB
+  on demand instead of eagerly constructing heavy objects at ruleset creation time.
+- Updated [@adguard/tsurlfilter] to vX.X.X. <!-- TODO: update version before release -->
+- Updated [@adguard/assistant] to `v4.4.3`.
 
 ### Fixed
 
+- `StealthHelper.hideDocumentReferrer()` now returns
+  `document.location.origin` with a trailing slash to match the real
+  referrer format. [AdguardBrowserExtension#3393].
+- Use of invalid CSS selectors in element hiding rules affects all injected styles
+  [AdguardBrowserExtension#3329].
+- Blocked requests in cross-domain iframes were not counted in the extension badge
+  [AdguardBrowserExtension#3446].
+- MV3: prefetch requests (via Chrome's Speculation Rules API) matching `$document` rules no longer
+  incorrectly redirect to the document blocking page. Prefetch requests are now detected in
+  `webRequest.onBeforeRequest` via `details.documentId` (excluding prerender requests) and are
+  silently blocked without showing the blocking page [AdguardBrowserExtension#3414].
 - Smoke test failure in Docker CI by adding `--ignore-scripts` to
   `pnpm install` in `test/smoke/exports/test.sh` to prevent the root
   `prepare` script from running (`.husky` is excluded via `.dockerignore`).
+- "Block ads manual" doesn't work on tabs opened before the update [AdguardBrowserExtension#3452].
+
+[AdguardBrowserExtension#3393]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3393
+[AdguardBrowserExtension#3329]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3329
+[AdguardBrowserExtension#3414]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3414
+[AdguardBrowserExtension#3446]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3446
+[AdguardBrowserExtension#3452]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3452
 
 ## [4.0.6] - 2026-03-26
 
@@ -92,7 +126,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Use `filterList.getOriginalContent()` instead of `FilterListPreprocessor.getOriginalFilterListText()`.
 - **BREAKING: Configuration structure changes**:
     - **MV2**: Filters now use `content` and `conversionData` instead of `content` and `sourceMap`.
-    - **MV3**: Custom filters now use `content` and `conversionData` instead of `rawFilterList`, `sourceMap`, and `conversionMap`.
+    - **MV3**: Custom filters now use `content` and `conversionData`
+      instead of `rawFilterList`, `sourceMap`, and `conversionMap`.
 - **BREAKING: Renamed configuration property** `sourceMap` to `conversionData` across all filter configurations.
 - **BREAKING: Renamed property** `conversionMap` to `conversionData` in filter metadata.
 - Moved `rule-info.ts` from `content-script` directory to `common` directory for better reusability.
@@ -109,7 +144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Network rules with `$important` modifier are applied
   even if protection is disabled [AdguardBrowserExtension#3227].
-- Some requests are blocked in _Inverted allowlist_ mode even though
+- Some requests are blocked in *Inverted allowlist* mode even though
   there're no websites added to the Allowlist [AdguardBrowserExtension#3193].
 - Tracking protection rules are applied after filtering is disabled in MV3.
 - Blocked iframes are not collapsed on Firefox [AdguardBrowserExtension#3116].
@@ -507,7 +542,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remade JS rules injections in MV3:
     - use `chrome.scripting` API for injecting functions for script rules from the pre-built filters,
     - use script tag injection only for script rules manually added by users —
-      rules from _User rules_ and _Custom filters_.
+      rules from *User rules* and *Custom filters*.
 
 [2.4.0-alpha.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.8
 

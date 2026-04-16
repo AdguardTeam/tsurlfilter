@@ -1,18 +1,20 @@
 import browser from 'sinon-chrome';
 import {
     describe,
-    it,
     expect,
+    it,
     vi,
 } from 'vitest';
 import { type WebRequest } from 'webextension-polyfill';
+
 import { HTTPMethod } from '@adguard/tsurlfilter';
 
-import {
-    RequestEvents,
-    type OnBeforeRequestDetailsType,
-} from '../../../../../../src/lib/mv3/background/request/events/request-events';
+import { defaultFilteringLog, FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 import { DocumentLifecycle } from '../../../../../../src/lib/common/interfaces';
+import {
+    type OnBeforeRequestDetailsType,
+    RequestEvents,
+} from '../../../../../../src/lib/mv3/background/request/events/request-events';
 
 describe('Request Events', () => {
     const commonRequestData: OnBeforeRequestDetailsType = {
@@ -95,5 +97,162 @@ describe('Request Events', () => {
                 thirdParty: true,
             }),
         }));
+    });
+
+    describe('TabReload filtering log event', () => {
+        it('should NOT publish TabReload for prerender document requests', () => {
+            const filteringLogSpy = vi.spyOn(defaultFilteringLog, 'publishEvent');
+
+            const prerenderRequestDetails: OnBeforeRequestDetailsType = {
+                ...commonRequestData,
+                requestId: 'prerender-tab-reload-1',
+                originUrl: undefined,
+                tabId: 2,
+                documentLifecycle: DocumentLifecycle.Prerender,
+                timeStamp: Date.now(),
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(prerenderRequestDetails);
+
+            // Verify TabReload was NOT published for prerender request
+            const tabReloadCalls = filteringLogSpy.mock.calls.filter(
+                (call: unknown[]) => (call[0] as { type?: string })?.type === FilteringEventType.TabReload,
+            );
+            expect(tabReloadCalls).toHaveLength(0);
+
+            filteringLogSpy.mockRestore();
+        });
+
+        it('should publish TabReload for active document requests', () => {
+            const filteringLogSpy = vi.spyOn(defaultFilteringLog, 'publishEvent');
+
+            const activeRequestDetails: OnBeforeRequestDetailsType = {
+                ...commonRequestData,
+                requestId: 'active-tab-reload-1',
+                documentLifecycle: DocumentLifecycle.Active,
+                timeStamp: Date.now(),
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(activeRequestDetails);
+
+            // Verify TabReload WAS published for active request
+            const tabReloadCalls = filteringLogSpy.mock.calls.filter(
+                (call: unknown[]) => (call[0] as { type?: string })?.type === FilteringEventType.TabReload,
+            );
+            expect(tabReloadCalls.length).toBeGreaterThanOrEqual(1);
+
+            filteringLogSpy.mockRestore();
+        });
+
+        it('should publish TabReload for document requests without documentLifecycle (older browsers)', () => {
+            const filteringLogSpy = vi.spyOn(defaultFilteringLog, 'publishEvent');
+
+            const requestDetails: OnBeforeRequestDetailsType = {
+                ...commonRequestData,
+                requestId: 'no-lifecycle-tab-reload-1',
+                // documentLifecycle is undefined (older browser)
+                timeStamp: Date.now(),
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(requestDetails);
+
+            // Verify TabReload WAS published (backward compatibility)
+            const tabReloadCalls = filteringLogSpy.mock.calls.filter(
+                (call: unknown[]) => (call[0] as { type?: string })?.type === FilteringEventType.TabReload,
+            );
+            expect(tabReloadCalls.length).toBeGreaterThanOrEqual(1);
+
+            filteringLogSpy.mockRestore();
+        });
+
+        it('should NOT publish TabReload for prefetch document requests', () => {
+            const filteringLogSpy = vi.spyOn(defaultFilteringLog, 'publishEvent');
+
+            const prefetchRequestDetails: OnBeforeRequestDetailsType = {
+                ...commonRequestData,
+                requestId: 'prefetch-tab-reload-1',
+                documentLifecycle: DocumentLifecycle.Active,
+                documentId: 'some-doc-id',
+                timeStamp: Date.now(),
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(prefetchRequestDetails);
+
+            const tabReloadCalls = filteringLogSpy.mock.calls.filter(
+                (call: unknown[]) => (call[0] as { type?: string })?.type === FilteringEventType.TabReload,
+            );
+            expect(tabReloadCalls).toHaveLength(0);
+
+            filteringLogSpy.mockRestore();
+        });
+    });
+
+    describe('prefetch request detection', () => {
+        it('should set isPrefetchRequest=true for document request with documentId and active lifecycle', () => {
+            RequestEvents.init();
+            const listener = vi.fn();
+            RequestEvents.onBeforeRequest.addListener(listener);
+
+            const details: OnBeforeRequestDetailsType = {
+                ...commonRequestData,
+                requestId: 'prefetch-detect-1',
+                documentLifecycle: DocumentLifecycle.Active,
+                documentId: 'some-doc-id',
+                timeStamp: Date.now(),
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(details);
+
+            expect(listener).toHaveBeenCalledWith(expect.objectContaining({
+                context: expect.objectContaining({
+                    isPrefetchRequest: true,
+                }),
+            }));
+        });
+
+        it('should set isPrefetchRequest=false for document request without documentId', () => {
+            RequestEvents.init();
+            const listener = vi.fn();
+            RequestEvents.onBeforeRequest.addListener(listener);
+
+            const details: OnBeforeRequestDetailsType = {
+                ...commonRequestData,
+                requestId: 'no-docid-detect-1',
+                documentLifecycle: DocumentLifecycle.Active,
+                // no documentId
+                timeStamp: Date.now(),
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(details);
+
+            expect(listener).toHaveBeenCalledWith(expect.objectContaining({
+                context: expect.objectContaining({
+                    isPrefetchRequest: false,
+                }),
+            }));
+        });
+
+        it('should set isPrefetchRequest=false for prerender request even with documentId', () => {
+            RequestEvents.init();
+            const listener = vi.fn();
+            RequestEvents.onBeforeRequest.addListener(listener);
+
+            const details: OnBeforeRequestDetailsType = {
+                ...commonRequestData,
+                requestId: 'prerender-detect-1',
+                documentLifecycle: DocumentLifecycle.Prerender,
+                documentId: 'some-doc-id',
+                originUrl: undefined,
+                timeStamp: Date.now(),
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(details);
+
+            expect(listener).toHaveBeenCalledWith(expect.objectContaining({
+                context: expect.objectContaining({
+                    isPrefetchRequest: false,
+                }),
+            }));
+        });
     });
 });

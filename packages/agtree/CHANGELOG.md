@@ -32,6 +32,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Serializer and Deserializer APIs.
 - Bitwise platform enums (`GenericPlatform`, `SpecificPlatform`) and related helpers.
 
+## [4.1.0] - 2026-04-16
+
+### Added
+
+- Path-in-domain syntax support for cosmetic rules [#169].
+
+[#169]: https://github.com/AdguardTeam/tsurlfilter/issues/169
+
 ## [4.0.4] - 2026-03-26
 
 ### Fixed

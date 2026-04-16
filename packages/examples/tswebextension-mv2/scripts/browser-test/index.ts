@@ -1,22 +1,21 @@
 import { chromium } from 'playwright';
 
 import {
-    TESTCASES_BASE_URL,
     BUILD_PATH,
-    USER_DATA_PATH,
     DEFAULT_EXTENSION_CONFIG,
+    TESTCASES_BASE_URL,
+    USER_DATA_PATH,
 } from '../constants';
 
-import { getTestcases, getRuleText } from './requests';
+import { logTestResult, logTestTimeout } from './logger';
 import {
     addQunitListeners,
     setTsWebExtensionConfig,
     SetTsWebExtensionConfigArg,
     waitUntilTestsCompleted,
 } from './page-injections';
-
-import { logTestResult, logTestTimeout } from './logger';
 import { Product } from './product';
+import { getRuleText, getTestcases } from './requests';
 import { filterCompatibleTestcases } from './testcase';
 
 const TESTS_TIMEOUT_MS = 5 * 1000;

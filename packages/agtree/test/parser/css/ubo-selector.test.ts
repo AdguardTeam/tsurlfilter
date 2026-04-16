@@ -1,4 +1,3 @@
-import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 import {
     describe,
@@ -6,6 +5,8 @@ import {
     test,
     vi,
 } from 'vitest';
+
+import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 
 import { UboPseudoName } from '../../../src/common/ubo-selector-common';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';

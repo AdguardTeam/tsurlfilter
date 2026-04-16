@@ -4,11 +4,13 @@
  */
 
 import { type Message } from '../../message';
+import { MESSAGE_HANDLER_NAME } from '../../message-constants';
 
 /**
  * Base assistant message for open and close.
  */
 type AssistantMessage = {
+    handlerName: Message['handlerName'];
     type: Message['type'];
 };
 
@@ -21,4 +23,18 @@ type AssistantMessage = {
  */
 export const hasTypeField = (message: unknown): message is AssistantMessage => {
     return typeof message === 'object' && message !== null && 'type' in message;
+};
+
+/**
+ * Checks if the given message has a 'handlerName' field matching {@link MESSAGE_HANDLER_NAME}.
+ *
+ * @param message The message to check.
+ *
+ * @returns `true` if the message has the expected handlerName, otherwise `false`.
+ */
+export const isAssistantMessage = (message: unknown): message is AssistantMessage => {
+    return typeof message === 'object'
+        && message !== null
+        && 'handlerName' in message
+        && message.handlerName === MESSAGE_HANDLER_NAME;
 };

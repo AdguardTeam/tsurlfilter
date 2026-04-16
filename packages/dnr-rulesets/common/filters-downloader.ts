@@ -64,12 +64,16 @@ const downloadFilter = async (filter: FilterDTO, filtersDir: string) => {
  *
  * @param filtersDir Directory to save filters to.
  * @param browser Browser to download filters for. Defaults to `BrowserFilters.ChromiumMv3`.
+ * @param allowedFilterIds Optional set of filter IDs to download. If provided, only filters
+ * whose IDs are in this set will be downloaded; others are skipped and logged.
+ * If not provided, all filters from metadata are downloaded.
  *
- * @returns Promise that resolves the filters metadata.
+ * @returns Promise that resolves when all filters are downloaded.
  */
 export const startDownload = async (
     filtersDir: string,
     browser: BrowserFilters = BrowserFilters.ChromiumMv3,
+    allowedFilterIds?: Set<number>,
 ): Promise<void> => {
     console.log(`Starting filters download to ${filtersDir}...`);
 
@@ -82,6 +86,26 @@ export const startDownload = async (
 
     const i18nMetadataPathToSave = path.join(filtersDir, LOCAL_I18N_METADATA_FILE_NAME);
     await downloadI18nMetadata(i18nMetadataPathToSave, browser);
+
+    // If an allowlist is provided, filter metadata to only include known filters.
+    // This prevents unknown/new filters from being downloaded and included in the build.
+    if (allowedFilterIds) {
+        const skippedIds = metadata.filters
+            .filter(({ filterId }) => !allowedFilterIds.has(filterId))
+            .map(({ filterId }) => filterId);
+
+        if (skippedIds.length > 0) {
+            console.info(`Skipping filters not in old validator data for ${browser}: ${skippedIds.join(', ')}`);
+        }
+
+        metadata.filters = metadata.filters.filter(({ filterId }) => allowedFilterIds.has(filterId));
+
+        // Re-save filtered metadata so that convertFilters only sees allowed filters.
+        await fs.promises.writeFile(
+            metadataPathToSave,
+            JSON.stringify(metadata, null, '\t'),
+        );
+    }
 
     console.log(`Downloading filters resources to ${filtersDir}...`);
 

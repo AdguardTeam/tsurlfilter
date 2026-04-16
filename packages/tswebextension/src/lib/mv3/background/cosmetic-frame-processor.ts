@@ -1,20 +1,21 @@
 import { type CosmeticResult, type CosmeticRule, RequestType } from '@adguard/tsurlfilter';
 
-import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import {
-    type PrecalculateCosmeticProps,
+    type HandleMainFrameProps,
     type HandleSubFrameWithoutUrlProps,
     type HandleSubFrameWithUrlProps,
-    type HandleMainFrameProps,
+    type PrecalculateCosmeticProps,
 } from '../../common/cosmetic-frame-processor';
+import { DocumentLifecycle } from '../../common/interfaces';
+import { isHttpRequest } from '../../common/utils/url';
+import { type FrameMV3, type PreparedCosmeticResultMV3 } from '../tabs/frame';
 import { tabsApi } from '../tabs/tabs-api';
-import { type PreparedCosmeticResultMV3, type FrameMV3 } from '../tabs/frame';
 
 import { appContext } from './app-context';
+import { CosmeticApi } from './cosmetic-api';
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
-import { CosmeticApi } from './cosmetic-api';
 import { UserScriptsApi } from './user-scripts-api';
 
 /**
@@ -219,11 +220,11 @@ export class CosmeticFrameProcessor {
             frameId,
         } = props;
 
+        tabsApi.resetBlockedRequestsCount(tabId);
+
         if (!isHttpRequest(url)) {
             return;
         }
-
-        tabsApi.resetBlockedRequestsCount(tabId);
 
         const mainFrameRule = DocumentApi.matchFrame(url);
 
@@ -262,9 +263,19 @@ export class CosmeticFrameProcessor {
             frameId,
             url,
             parentDocumentId,
+            documentLifecycle,
+            isPrefetchRequest,
         } = props;
 
         const isMainFrame = frameId === MAIN_FRAME_ID;
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+
+        // Don't process prerender or prefetch (Speculation Rules API) requests
+        // further, because they should not reset the blocked counter or
+        // trigger cosmetic recalculation for the current page.
+        if (isMainFrame && (isPrerenderRequest || isPrefetchRequest)) {
+            return;
+        }
 
         if (isMainFrame) {
             CosmeticFrameProcessor.handleMainFrame({

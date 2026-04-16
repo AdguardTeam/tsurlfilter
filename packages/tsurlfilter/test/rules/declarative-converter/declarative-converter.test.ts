@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
-import { DeclarativeFilterConverter } from '../../../src/rules/declarative-converter/filter-converter';
+import { ResourceType, RuleActionType } from '../../../src/rules/declarative-converter/declarative-rule';
+import { UnsupportedModifierError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
 import {
-    MaxScannedRulesError,
-    TooManyRulesError,
-    TooManyUnsafeRulesError,
-} from '../../../src/rules/declarative-converter/errors/limitation-errors';
+    EmptyDomainsError,
+} from '../../../src/rules/declarative-converter/errors/conversion-errors/empty-domains-error';
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
     ResourcesPathError,
 } from '../../../src/rules/declarative-converter/errors/converter-options-errors';
-import { UnsupportedModifierError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
-import { ResourceType, RuleActionType } from '../../../src/rules/declarative-converter/declarative-rule';
 import {
-    EmptyDomainsError,
-} from '../../../src/rules/declarative-converter/errors/conversion-errors/empty-domains-error';
+    MaxScannedRulesError,
+    TooManyRulesError,
+    TooManyUnsafeRulesError,
+} from '../../../src/rules/declarative-converter/errors/limitation-errors';
+import { DeclarativeFilterConverter } from '../../../src/rules/declarative-converter/filter-converter';
 import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
 import { createNetworkRule } from '../../helpers/rule-creator';
@@ -366,16 +366,21 @@ describe('DeclarativeConverter', () => {
 
         const declarativeRules = await ruleSet.getDeclarativeRules();
 
-        // Since we combine removeparam rules into one.
-        expect(declarativeRules).toHaveLength(2);
+        // Rules are no longer merged because each has a unique
+        // param-aware urlFilter, enabling multi-hop redirect chaining.
+        expect(declarativeRules).toHaveLength(4);
 
-        let sources = await ruleSet.getRulesById(declarativeRules[0].id);
-        let originalRules = sources.map(({ sourceRule }) => sourceRule);
-        expect(originalRules).toEqual(expect.arrayContaining(rules));
-
-        sources = await ruleSet.getRulesById(declarativeRules[1].id);
-        originalRules = sources.map(({ sourceRule }) => sourceRule);
-        expect(originalRules).toEqual(expect.arrayContaining([additionalRule]));
+        // Each declarative rule maps back to its own source rule.
+        const allSources = await Promise.all(
+            declarativeRules.map((declRule) => ruleSet.getRulesById(declRule.id)),
+        );
+        for (const sources of allSources) {
+            const originalRules = sources.map(({ sourceRule }) => sourceRule);
+            expect(originalRules).toHaveLength(1);
+            expect([...rules, additionalRule]).toEqual(
+                expect.arrayContaining(originalRules),
+            );
+        }
     });
 
     it('returns badfilter sources', async () => {
@@ -392,7 +397,7 @@ describe('DeclarativeConverter', () => {
         const filter = createFilter(rules);
         const { ruleSet } = await converter.convertStaticRuleSet(filter);
 
-        const badFilterRules = ruleSet.getBadFilterRules();
+        const badFilterRules = await ruleSet.getBadFilterRules();
         expect(badFilterRules[0].ruleParts.text).toEqual(rulesToCancel[0]);
         expect(badFilterRules[1].ruleParts.text).toEqual(rulesToCancel[1]);
     });
@@ -1329,8 +1334,9 @@ describe('DeclarativeConverter', () => {
             ], []);
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
-            // 5 is because of 2 removeparam rules are converted into 1 declarative rule.
-            expect(declarativeRules).toHaveLength(5);
+            // 6 because removeparam rules are no longer merged (each has
+            // a unique param-aware urlFilter for multi-hop redirect chaining).
+            expect(declarativeRules).toHaveLength(6);
 
             // Function to bring more human readable error message.
             const checkForUniqueRule = (rules: typeof declarativeRules) => {

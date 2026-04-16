@@ -1,8 +1,8 @@
 import {
     describe,
     expect,
-    vi,
     test,
+    vi,
 } from 'vitest';
 
 import { companiesDbService } from '../../../src/lib/common/companies-db-service';

@@ -1,10 +1,11 @@
 import { expect } from 'vitest';
 
-import { getFormattedTokenName } from '../../src/utils/token-names';
 import { type TokenType } from '../../src/common/enums/token-types';
-import { type TokenData, type TokenTest } from './test-interfaces';
 import { tokenize } from '../../src/css-tokenizer';
 import { type tokenizeExtended } from '../../src/extended-css-tokenizer';
+import { getFormattedTokenName } from '../../src/utils/token-names';
+
+import { type TokenData, type TokenTest } from './test-interfaces';
 
 const SEPARATOR = ', ';
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import browser from 'webextension-polyfill';
 
-import { BrowserStorage } from '../../../../src/lib/common/storage/core';
 import { ExtensionStorage } from '../../../../src/lib/common/storage';
+import { BrowserStorage } from '../../../../src/lib/common/storage/core';
 
 describe('ExtensionStorage', () => {
     const key = 'test-key';

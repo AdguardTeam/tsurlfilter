@@ -1,10 +1,10 @@
-import { MessageType } from '../../common/message-constants';
-import { type GetCookieRulesPayloadValidator } from '../../common/message';
-import { sendAppMessage } from '../../common/content-script/send-app-message';
 import {
     CookieController as CommonCookieController,
     type OnRuleAppliedData,
 } from '../../common/content-script/cookie-controller';
+import { sendAppMessage } from '../../common/content-script/send-app-message';
+import { type GetCookieRulesPayloadValidator } from '../../common/message';
+import { MessageType } from '../../common/message-constants';
 import { type ContentScriptCookieRulesData } from '../background/messages-api';
 
 /**

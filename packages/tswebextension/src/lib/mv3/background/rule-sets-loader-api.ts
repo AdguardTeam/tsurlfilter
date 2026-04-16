@@ -1,16 +1,19 @@
+import { type IDBPDatabase } from 'idb';
+import browser from 'webextension-polyfill';
+
 import { fetchExtensionResourceText } from '@adguard/tsurlfilter';
 import {
     type IFilter,
-    type IRuleSet,
-    RuleSet,
     IndexedNetworkRuleWithHash,
-    RulesHashMap,
-    MetadataRuleSet,
+    type IRuleSet,
     METADATA_RULESET_ID,
+    MetadataRuleSet,
+    RuleSet,
+    type RuleSetMetadataProvider,
+    RulesHashMap,
+    type SerializedRuleSetData,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import { extractRuleSetId, getRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
-import browser from 'webextension-polyfill';
-import { type IDBPDatabase } from 'idb';
 
 import { IdbSingleton } from '../../common/idb-singleton';
 import { FiltersStorage } from '../../common/storage/filters';
@@ -418,8 +421,6 @@ export class RuleSetsLoaderApi {
                 unsafeRulesCount,
                 rulesCount,
                 unsafeRules,
-                ruleSetHashMapRaw,
-                badFilterRulesRaw,
             },
             ruleSetContentProvider,
         } = await RuleSet.deserialize(
@@ -430,13 +431,30 @@ export class RuleSetsLoaderApi {
             filterList,
         );
 
-        const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
-        const ruleSetHashMap = new RulesHashMap(sources);
-        // We don't need filter id and line index because this
-        // indexedRulesWithHash will be used only for matching $badfilter rules.
-        const badFilterRules = badFilterRulesRaw
-            .map((rawString) => IndexedNetworkRuleWithHash.createFromText(0, 0, rawString))
-            .flat();
+        // Lazy metadata loaders: read from IDB on demand to avoid
+        // keeping heavy badFilterRules and rulesHashMap in memory.
+        const loadMetadataFromIdb = async (): Promise<SerializedRuleSetData> => {
+            const raw = await RuleSetsLoaderApi.getValueFromIdb(
+                RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_METADATA, ruleSetId),
+            );
+            return JSON.parse(raw);
+        };
+
+        const metadataProvider: RuleSetMetadataProvider = {
+            loadBadFilterRules: async () => {
+                const { badFilterRulesRaw } = await loadMetadataFromIdb();
+                // We don't need filter id and line index because this
+                // indexedRulesWithHash will be used only for matching $badfilter rules.
+                return badFilterRulesRaw
+                    .map((rawString) => IndexedNetworkRuleWithHash.createFromText(0, 0, rawString))
+                    .flat();
+            },
+            loadRulesHashMap: async () => {
+                const { ruleSetHashMapRaw } = await loadMetadataFromIdb();
+                const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
+                return new RulesHashMap(sources);
+            },
+        };
 
         const ruleset = new RuleSet(
             ruleSetId,
@@ -444,8 +462,7 @@ export class RuleSetsLoaderApi {
             unsafeRulesCount,
             regexpRulesCount,
             ruleSetContentProvider,
-            badFilterRules,
-            ruleSetHashMap,
+            metadataProvider,
             unsafeRules,
         );
 

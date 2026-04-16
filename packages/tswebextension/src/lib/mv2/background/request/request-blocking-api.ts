@@ -1,14 +1,15 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
-import { RequestType, NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
+
+import { type NetworkRule, NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
 
 import { companiesDbService } from '../../../common/companies-db-service';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { getRuleTexts } from '../../../common/utils/rule-text-provider';
 import {
-    tabsApi,
+    documentBlockingService,
     engineApi,
     redirectsService,
-    documentBlockingService,
+    tabsApi,
 } from '../api';
 import { RuleUtils } from '../utils/rule-utils';
 
@@ -25,7 +26,9 @@ type RequestParams = Pick<
     'requestId' |
     'requestUrl' |
     'requestType' |
-    'contentType'
+    'contentType' |
+    'parentDocumentId' |
+    'frameAncestors'
 >;
 
 /**
@@ -34,6 +37,10 @@ type RequestParams = Pick<
 export type GetBlockingResponseParams = RequestParams & {
     rule: NetworkRule | null;
     popupRule: NetworkRule | null;
+    /**
+     * Indicates whether the request is a prerender request.
+     */
+    isPrerenderRequest?: boolean;
 };
 
 /**
@@ -142,6 +149,9 @@ export class RequestBlockingApi {
             requestUrl,
             requestId,
             referrerUrl,
+            isPrerenderRequest,
+            parentDocumentId,
+            frameAncestors,
         } = data;
 
         if (!rule) {
@@ -165,7 +175,12 @@ export class RequestBlockingApi {
                 // redirects should be considered as blocked for the tab blocked request count
                 // which is displayed on the extension badge
                 // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
-                tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+                tabsApi.incrementTabBlockedRequestCount({
+                    tabId,
+                    referrerUrl,
+                    parentDocumentId,
+                    frameAncestors,
+                });
                 return { redirectUrl };
             }
         }
@@ -201,6 +216,7 @@ export class RequestBlockingApi {
                     referrerUrl,
                     rule,
                     tabId,
+                    isPrerenderRequest,
                 });
             }
 

@@ -1,18 +1,20 @@
 import path from 'path';
-import { Configuration } from 'webpack';
+
+import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import { CleanWebpackPlugin } from 'clean-webpack-plugin';
-import {
-    BACKGROUND_PATH,
-    CONTENT_SCRIPT_PATH,
-    POPUP_PATH,
-    BUILD_PATH,
-    DOCUMENT_BLOCKING_PATH,
-    ASSISTANT_INJECT_PATH,
-} from '../constants';
+import { Configuration } from 'webpack';
 
 import { BuildOutput } from '../../constants';
+import {
+    ASSISTANT_INJECT_PATH,
+    BACKGROUND_PATH,
+    BUILD_PATH,
+    CONTENT_SCRIPT_PATH,
+    DOCUMENT_BLOCKING_PATH,
+    POPUP_PATH,
+} from '../constants';
+
 
 const isFFBuild = process.env.BROWSER === 'firefox';
 

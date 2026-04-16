@@ -24,8 +24,10 @@
  * At {@link RequestEvents.onErrorOccurred}, the blocked request url will be matched by {@link companiesDbService}
  * for collecting precise statistics of blocked requests.
  *
- * The specified {@link RequestContext} or frame context {@link Frame} will be removed from the storage
- * on {@link WebNavigation.onCommitted} after injection or {@link RequestEvents.onErrorOccurred} events.
+ * The specified {@link RequestContext} is removed from {@link requestContextStorage} on
+ * {@link RequestEvents.onCompleted} or {@link RequestEvents.onErrorOccurred}.
+ * Frame context {@link Frame} is removed from {@link TabContext} on
+ * {@link WebNavigation.onCompleted} or {@link WebNavigation.onErrorOccurred}.
  *
  *
  * Web Request API Event Handling:
@@ -105,7 +107,7 @@
  * if it's not created before,           │       onBeforeNavigate      │
  * and update main frame data with       │                             │
  * {@link updateMainFrameData}           └──────────────┬──────────────┘
- * and matches {@link CosmeticResult}                   │
+ * and matches {@link CosmeticResult}.                  │
  *                                                      │
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
@@ -145,33 +147,39 @@
  *                                       └─────────────────────────────┘.
  */
 import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
-import { RequestType, NetworkRuleOption } from '@adguard/tsurlfilter';
+
+import { NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
 
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { companiesDbService } from '../../common/companies-db-service';
-import { getRuleTexts } from '../../common/utils/rule-text-provider';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import { logger } from '../../common/utils/logger';
-import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
+import { DocumentLifecycle } from '../../common/interfaces';
 import { TabsApiCommon } from '../../common/tabs/tabs-api';
-import { tabsApi } from '../tabs/tabs-api';
+import { logger } from '../../common/utils/logger';
+import { getRuleTexts } from '../../common/utils/rule-text-provider';
+import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
 import { FrameMV3 } from '../tabs/frame';
+import { tabsApi } from '../tabs/tabs-api';
 
 import { CosmeticApi } from './cosmetic-api';
 import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
-import { type OnBeforeRequestDetailsType, RequestEvents } from './request/events/request-events';
+import { type RequestData } from './request/events/request-event';
+import {
+    type OnBeforeRequestDetailsType,
+    type OnErrorOccurredDetailsType,
+    RequestEvents,
+} from './request/events/request-events';
 import { RequestBlockingApi } from './request/request-blocking-api';
 import { requestContextStorage } from './request/request-context-storage';
-import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { CspService } from './services/csp-service';
+import { documentBlockingService } from './services/document-blocking-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { StealthService } from './services/stealth-service';
-import { documentBlockingService } from './services/document-blocking-service';
 
 /**
  * API for applying rules from background service by handling
@@ -258,9 +266,15 @@ export class WebRequestApi {
             contentType,
             timestamp,
             thirdParty,
+            parentDocumentId,
+            frameAncestors,
+            isPrefetchRequest,
         } = context;
 
-        const { parentFrameId } = details;
+        const {
+            parentFrameId,
+            documentLifecycle,
+        } = details;
 
         const isDocumentRequest = requestType === RequestType.Document;
 
@@ -373,6 +387,8 @@ export class WebRequestApi {
                 parentFrameId,
                 url: requestUrl,
                 timeStamp: timestamp,
+                documentLifecycle,
+                isPrefetchRequest,
             });
         }
 
@@ -392,7 +408,12 @@ export class WebRequestApi {
         // which is displayed on the extension badge
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
         if (response?.cancel || response?.redirectUrl !== undefined) {
-            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+            tabsApi.incrementTabBlockedRequestCount({
+                tabId,
+                referrerUrl,
+                parentDocumentId,
+                frameAncestors,
+            });
         }
     }
 
@@ -536,7 +557,10 @@ export class WebRequestApi {
             url,
             parentDocumentId,
             timeStamp,
+            documentLifecycle,
         } = details;
+
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
 
         /**
          * In some cases `onBeforeNavigate` might happen before Tabs API `onCreated`
@@ -547,8 +571,11 @@ export class WebRequestApi {
          *
          * We create tab context only for document requests (outermost frame),
          * because other types of requests can't have tab context.
+         *
+         * Skip tab context creation for prerender requests, as the tabId may not
+         * correspond to a real tab yet.
          */
-        if (TabsApiCommon.isDocumentLevelFrame(parentFrameId)) {
+        if (TabsApiCommon.isDocumentLevelFrame(parentFrameId) && !isPrerenderRequest) {
             tabsApi.createTabContextIfNotExists(tabId, url);
         }
 
@@ -578,6 +605,7 @@ export class WebRequestApi {
             url,
             timeStamp,
             parentDocumentId,
+            documentLifecycle,
         });
     }
 
@@ -591,13 +619,14 @@ export class WebRequestApi {
      */
     private static onErrorOccurred({
         details,
-    }: RequestData<WebRequest.OnErrorOccurredDetailsType>): void {
+    }: RequestData<OnErrorOccurredDetailsType>): void {
         const {
             tabId,
             requestId,
             url,
             type,
             error,
+            documentLifecycle,
         } = details;
 
         /**
@@ -622,6 +651,7 @@ export class WebRequestApi {
             referrerUrl,
             contentType,
             matchingResult,
+            isPrefetchRequest,
         } = context;
 
         // checking whether the matchingResult exists in the context guarantees
@@ -694,6 +724,8 @@ export class WebRequestApi {
             return;
         }
 
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+
         documentBlockingService.handleDocumentBlocking({
             eventId,
             requestUrl,
@@ -701,6 +733,8 @@ export class WebRequestApi {
             referrerUrl,
             rule,
             tabId,
+            isPrerenderRequest,
+            isPrefetchRequest,
         });
     }
 

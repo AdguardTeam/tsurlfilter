@@ -1,19 +1,21 @@
+import browser from 'webextension-polyfill';
+
+import { type FilteringLogEvent } from '@adguard/tswebextension';
 import {
-    TsWebExtension,
     Configuration,
-    MessageType,
-    MESSAGE_HANDLER_NAME,
     defaultFilteringLog,
     FilteringEventType,
     FilterList,
+    MESSAGE_HANDLER_NAME,
+    MessageType,
+    TsWebExtension,
 } from '@adguard/tswebextension/mv3';
-import browser from 'webextension-polyfill';
 
-import { Message } from '../message';
-import { StorageKeys, storage } from './storage';
-import { loadDefaultConfig } from './loadDefaultConfig';
 import { EXTENSION_INITIALIZED_EVENT } from '../common/constants';
-import { type FilteringLogEvent } from '@adguard/tswebextension';
+import { Message } from '../message';
+
+import { loadDefaultConfig } from './loadDefaultConfig';
+import { storage, StorageKeys } from './storage';
 
 declare global {
     interface Window {

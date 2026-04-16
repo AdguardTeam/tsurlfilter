@@ -1,14 +1,15 @@
-import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
 import { type WebRequest } from 'webextension-polyfill';
 
-import { findHeaderByName, removeHeader } from '../../../common/utils/headers';
-import { getHost, isThirdPartyRequest } from '../../../common/utils/url';
-import { FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
-import { getRuleTexts, type RuleTextProvider } from '../../../common/utils/rule-text-provider';
+import { type NetworkRule, NetworkRuleOption, StealthOptionName } from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter/es/request-type';
+
 import { type StealthConfig } from '../../../common/configuration';
-import { StealthHelper } from '../../../common/stealth-helper';
+import { FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { StealthActions } from '../../../common/stealth-actions';
+import { StealthHelper } from '../../../common/stealth-helper';
+import { findHeaderByName, removeHeader } from '../../../common/utils/headers';
+import { getRuleTexts, type RuleTextProvider } from '../../../common/utils/rule-text-provider';
+import { getHost, isThirdPartyRequest } from '../../../common/utils/url';
 import { type AppContext } from '../app-context';
 import { type RequestContext } from '../request';
 

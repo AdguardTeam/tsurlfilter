@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 5.0.0
+
+### Changed
+
+- **BREAKING: `IRuleSet.getBadFilterRules()` and `IRuleSet.getRulesHashMap()` are now async**
+  (return `Promise` instead of synchronous values). This enables lazy loading of heavy
+  metadata from the provider, significantly reducing memory usage.
+- Added `RuleSetMetadataProvider` type for lazy loading of `badFilterRules` and `rulesHashMap`.
+- Added `IRuleSet.unloadMetadata()` method to free heavy metadata (badFilterRules, rulesHashMap)
+  from memory. The metadata will be lazy-loaded from the provider on the next access.
+- `RuleSet` constructor now accepts `RuleSetMetadataProvider` instead of eager `badFilterRules`
+  and `rulesHashMap` parameters.
+
+### Fixed
+
+- `$removeparam` rules not stripping all tracking parameters
+  when multiple rules match the same URL in MV3 [AdguardBrowserExtension#3444].
+
+[AdguardBrowserExtension#3444]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3444
+
 ## [4.0.5] - 2026-03-26
 
 ### Changed

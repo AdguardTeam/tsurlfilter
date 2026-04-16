@@ -4,10 +4,9 @@ import type { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-has
 
 export enum RulesGroup {
     Regular = 0,
-    RemoveParam = 1,
-    RemoveHeader = 2,
-    Csp = 3,
-    BadFilter = 4,
+    RemoveHeader = 1,
+    Csp = 2,
+    BadFilter = 3,
 }
 
 export type GroupedRules = { [key in RulesGroup]: IndexedNetworkRuleWithHash[] };
@@ -27,10 +26,6 @@ export class DeclarativeRulesGrouper {
      */
     private static getRuleGroup(indexedNetworkRuleWithHash: IndexedNetworkRuleWithHash): RulesGroup {
         const { rule } = indexedNetworkRuleWithHash;
-
-        if (rule.rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
-            return RulesGroup.RemoveParam;
-        }
 
         if (rule.rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
             return RulesGroup.RemoveHeader;
@@ -56,7 +51,6 @@ export class DeclarativeRulesGrouper {
      */
     public static splitRulesByGroups(rules: IndexedNetworkRuleWithHash[]): GroupedRules {
         const rulesToProcess: GroupedRules = {
-            [RulesGroup.RemoveParam]: [],
             [RulesGroup.RemoveHeader]: [],
             [RulesGroup.BadFilter]: [],
             [RulesGroup.Regular]: [],

@@ -2,29 +2,30 @@
  * @vitest-environment jsdom
  */
 import {
+    afterEach,
+    beforeEach,
     describe,
     expect,
-    beforeEach,
-    afterEach,
     it,
     vi,
 } from 'vitest';
+
 import {
-    MatchingResult,
-    RequestType,
     CosmeticResult,
     HTTPMethod,
+    MatchingResult,
     type NetworkRule,
+    RequestType,
 } from '@adguard/tsurlfilter';
 
-import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
 import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
-import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
+import { ContentType } from '../../../../../../src/lib/common/request-type';
+import { contentFiltering } from '../../../../../../src/lib/mv2/background/api';
 import {
     ContentFiltering,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-filtering';
-import { contentFiltering } from '../../../../../../src/lib/mv2/background/api';
-import { ContentType } from '../../../../../../src/lib/common/request-type';
+import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
+import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
 
 describe('Content filtering', () => {
     const requestContext: RequestContext = {

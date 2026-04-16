@@ -1,12 +1,12 @@
-import { type Plugin, type RollupOptions } from 'rollup';
-import externals from 'rollup-plugin-node-externals';
+import commonjs from '@rollup/plugin-commonjs';
+import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
-import json from '@rollup/plugin-json';
-import cleanup from 'rollup-plugin-cleanup';
-import commonjs from '@rollup/plugin-commonjs';
-import dts from 'rollup-plugin-dts';
 import { omit } from 'lodash-es';
+import { type Plugin, type RollupOptions } from 'rollup';
+import cleanup from 'rollup-plugin-cleanup';
+import dts from 'rollup-plugin-dts';
+import externals from 'rollup-plugin-node-externals';
 
 const BUILD_DIST = 'dist';
 

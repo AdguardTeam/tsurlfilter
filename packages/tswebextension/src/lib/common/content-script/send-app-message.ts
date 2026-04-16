@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
 
-import { type MessageType, MESSAGE_HANDLER_NAME } from '../message-constants';
+import { MESSAGE_HANDLER_NAME, type MessageType } from '../message-constants';
 
 // TODO check if we can return typed message here
 /**

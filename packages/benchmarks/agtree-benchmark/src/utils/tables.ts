@@ -2,9 +2,9 @@
  * @file Write benchmark results to a markdown file
  */
 
+import { formatRFC7231 } from 'date-fns';
 import { writeFile } from 'fs/promises';
 import { markdownTable } from 'markdown-table';
-import { formatRFC7231 } from 'date-fns';
 import osName from 'os-name';
 
 import { EMPTY, LINE_FEED } from '../common/constants';

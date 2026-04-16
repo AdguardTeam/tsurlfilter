@@ -221,11 +221,11 @@ const appliedConfiguration = await adguardApi.start(configuration);
 
 **Parameters:**
 
-- `configuration` - [API Configuration](#api-configuration)
+- `configuration` - [API Configuration](#configuration)
 
 **Returns:**
 
-A Promise, resolved with applied [API Configuration](#api-configuration) when api is initialized and filtering started
+A Promise, resolved with applied [API Configuration](#configuration) when api is initialized and filtering started
 
 ### `adguardApi.stop`
 
@@ -483,7 +483,8 @@ adguardApi.onRequestBlocked.removeListener(
 
 ## Usage
 
-See full sample app project in [examples/adguard-api](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/examples/adguard-api)
+See full sample app project in
+[examples/adguard-api](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/examples/adguard-api)
 
 ```ts
 import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";

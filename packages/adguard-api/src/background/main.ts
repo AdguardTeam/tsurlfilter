@@ -17,19 +17,19 @@
  */
 
 import {
+    BasicFilterValidator,
+    createTsWebExtension,
+    EventChannel,
+    FilterList,
+    type MessageHandler,
     type TsWebExtension,
     type ConfigurationMV2 as TsWebExtensionConfiguration,
-    type MessageHandler,
-    EventChannel,
-    createTsWebExtension,
-    BasicFilterValidator,
-    FilterList,
 } from '@adguard/tswebextension';
 
-import { Network } from './network';
-import { Storage } from './storage';
+import { LF } from './constants';
 import { FiltersApi, FiltersUpdateService, LocaleDetectService } from './filters';
-import { Configuration, configurationValidator } from './schemas';
+import { Logger } from './logger';
+import { Network } from './network';
 import {
     DeleteFiltersEvent,
     DetectFiltersEvent,
@@ -37,9 +37,8 @@ import {
     NotifierEventType,
 } from './notifier';
 import { RequestBlockingLogger } from './request-blocking-logger';
-import { Logger } from './logger';
-
-import { LF } from './constants';
+import { Configuration, configurationValidator } from './schemas';
+import { Storage } from './storage';
 
 export const WEB_ACCESSIBLE_RESOURCES_PATH = 'adguard';
 

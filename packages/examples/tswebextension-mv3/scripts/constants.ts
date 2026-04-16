@@ -1,6 +1,6 @@
-import { Configuration } from '@adguard/tswebextension/mv3';
-import { FilterList } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
+import { FilterList } from '@adguard/tsurlfilter';
+import { Configuration } from '@adguard/tswebextension/mv3';
 
 // TODO: can be used as common for examples/tswebextension-mv2 as well
 export const TESTCASES_BASE_URL = 'https://testcases.agrd.dev';

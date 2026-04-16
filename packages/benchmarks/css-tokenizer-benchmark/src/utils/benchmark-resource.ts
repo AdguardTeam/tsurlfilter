@@ -5,7 +5,7 @@
 
 import Benchmark from 'benchmark';
 
-import { type TokenizerConfigs, type Resource, type TokenizerBenchResult } from '../common/interfaces';
+import { type Resource, type TokenizerBenchResult, type TokenizerConfigs } from '../common/interfaces';
 
 // Extend the Benchmark.Stats interface with a new property
 declare module 'benchmark' {

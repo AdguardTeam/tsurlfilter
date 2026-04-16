@@ -8,10 +8,11 @@
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
         "test": "vitest run",
         "test:ci": "vitest run --reporter default --reporter junit --outputFile=./tests-reports/logger.xml",
-        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test",
-        "lint": "eslint --cache --ignore-path .gitignore . && tsc",
+        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test:ci",
+        "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
         "lint:code": "eslint --cache --ignore-path .gitignore .",
         "lint:types": "tsc",
+        "lint:md": "markdownlint .",
         "test:smoke": "(cd tests/smoke/esm && pnpm test) && (cd tests/smoke/cjs && pnpm test) && (cd tests/smoke/typescript && pnpm test)",
         "tgz": "pnpm pack --out logger.tgz"
     },
@@ -59,11 +60,15 @@
         "eslint-config-airbnb-typescript": "catalog:",
         "eslint-plugin-import": "catalog:",
         "eslint-plugin-jsdoc": "catalog:",
+        "markdownlint": "catalog:",
+        "markdownlint-cli": "catalog:",
         "rimraf": "catalog:",
         "rollup": "catalog:",
         "tslib": "catalog:",
         "tsx": "catalog:",
         "typescript": "catalog:",
+        "markdownlint": "catalog:",
+        "markdownlint-cli": "catalog:",
         "vitest": "catalog:"
     }
 }

@@ -1,4 +1,3 @@
-import browser from 'webextension-polyfill';
 import {
     afterEach,
     beforeEach,
@@ -7,6 +6,7 @@ import {
     test,
     vi,
 } from 'vitest';
+import browser from 'webextension-polyfill';
 
 import { BrowserStorage } from '../../../../../src/lib/common/storage/core/browser-storage';
 

@@ -1,5 +1,6 @@
-import { hasToken, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
+
+import { hasToken, TokenType } from '@adguard/css-tokenizer';
 
 import { UboPseudoName } from '../../common/ubo-selector-common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';

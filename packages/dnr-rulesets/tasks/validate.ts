@@ -2,16 +2,13 @@ import { METADATA_RULESET_ID } from '@adguard/tsurlfilter/es/declarative-convert
 import { extractRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { BrowserFilters, DEST_RULESETS_DIR, FILTERS_BROWSER_PLACEHOLDER } from '../common/constants';
 import { version } from '../package.json';
+import { VALIDATOR_DATA_FILE_NAME } from './constants';
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
-
-/**
- * File name where old validator data is stored.
- */
-const OLD_VALIDATOR_DATA_FILE_NAME = 'old-validator-data.json';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Ruleset ids, metadata keys, and version.
@@ -108,7 +105,7 @@ const getAllOldValidatorData = async (): Promise<AllRulesetIdsAndMetadataKeys> =
 
     try {
         const oldDataContent = await fs.promises.readFile(
-            path.join(__dirname, OLD_VALIDATOR_DATA_FILE_NAME),
+            path.join(__dirname, VALIDATOR_DATA_FILE_NAME),
             { encoding: 'utf-8' },
         );
         oldData = JSON.parse(oldDataContent);
@@ -139,18 +136,20 @@ const validateRulesets = async (
     const addedRulesetIds = newData.rulesetIds.filter((id) => !oldData.rulesetIds.includes(id));
     const removedRulesetIds = oldData.rulesetIds.filter((id) => !newData.rulesetIds.includes(id));
 
+    // eslint-disable-next-line max-len
+    const RECOMMENDATION_MESSAGE = `Consider updating CHANGELOG.md and ${VALIDATOR_DATA_FILE_NAME} for the next build of ${browser} rulesets.\n`;
+
     if (addedRulesetIds.length > 0 || removedRulesetIds.length > 0) {
         const messageParts = [`Number of rulesets is changed comparing to the previous version (${oldData.version})`];
 
         if (addedRulesetIds.length > 0) {
-            messageParts.push(`Added rulesets: ${addedRulesetIds.join(', ')}`);
+            messageParts.push(`Added ruleset IDs: ${addedRulesetIds.join(', ')}`);
         }
         if (removedRulesetIds.length) {
-            messageParts.push(`Removed rulesets: ${removedRulesetIds.join(', ')}`);
+            messageParts.push(`Removed ruleset IDs: ${removedRulesetIds.join(', ')}`);
         }
 
-        // eslint-disable-next-line max-len
-        messageParts.push(`Consider updating changelog ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build of ${browser} rulesets`);
+        messageParts.push(RECOMMENDATION_MESSAGE);
 
         throw new Error(messageParts.join('\n'));
     }
@@ -169,10 +168,12 @@ const validateRulesets = async (
         }
 
         // eslint-disable-next-line max-len
-        messageParts.push(`Consider bumping package version, updating changelog and ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build of ${browser} rulesets`);
+        messageParts.push(`Consider bumping package version, updating CHANGELOG.md and ${VALIDATOR_DATA_FILE_NAME} for the next build of ${browser} rulesets.\n`);
 
         throw new Error(messageParts.join('\n'));
     }
+
+    console.log(`✅ Validation is ok for ${browser}`);
 };
 
 /**

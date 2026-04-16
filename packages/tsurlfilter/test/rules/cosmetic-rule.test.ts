@@ -1,12 +1,13 @@
 /* eslint-disable max-len */
-import { AdblockSyntaxError, CosmeticRuleType, RawRuleConverter } from '@adguard/agtree';
-import { type Source } from '@adguard/scriptlets';
 import {
     describe,
     expect,
     it,
     vi,
 } from 'vitest';
+
+import { AdblockSyntaxError, CosmeticRuleType, RawRuleConverter } from '@adguard/agtree';
+import { type Source } from '@adguard/scriptlets';
 
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';

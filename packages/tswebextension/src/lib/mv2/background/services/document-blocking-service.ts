@@ -1,13 +1,13 @@
-import { type WebRequest } from 'webextension-polyfill';
 import { getHostname } from 'tldts';
+import { type WebRequest } from 'webextension-polyfill';
 
 import {
-    type GetDocumentBlockingResponseParams,
     DocumentBlockingServiceCommon,
+    type GetDocumentBlockingResponseParams,
 } from '../../../common/document-blocking-service';
 import { type ConfigurationMV2 } from '../configuration';
-import { type TabsApi } from '../tabs/tabs-api';
 import { type EngineApi } from '../engine-api';
+import { type TabsApi } from '../tabs/tabs-api';
 import { browserDetectorMV2 } from '../utils/browser-detector';
 
 /**
@@ -91,6 +91,7 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
             tabId,
             rule,
             requestUrl,
+            isPrerenderRequest,
         } = data;
 
         // if request url is trusted, no redirect to blocking page
@@ -99,6 +100,14 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
         }
 
         this.logEvent(data);
+
+        // If the request is a prerender request, block it and wait for
+        // navigation to the prerendered page.
+        // The actual redirect to blocking page will happen when user navigates
+        // to the prerendered page.
+        if (isPrerenderRequest) {
+            return { cancel: true };
+        }
 
         // if documentBlockingPage is undefined, block request
         if (!this.documentBlockingPageUrl) {

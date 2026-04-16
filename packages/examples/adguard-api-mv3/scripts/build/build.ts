@@ -2,18 +2,19 @@ import path from 'path';
 
 import {
     AssetsLoader,
-    ManifestPatcher,
-    LOCAL_SCRIPT_RULES_JS_FILENAME,
     excludeUnsafeRules,
+    LOCAL_SCRIPT_RULES_JS_FILENAME,
+    ManifestPatcher,
 } from '@adguard/dnr-rulesets';
 import { copyWar } from '@adguard/tswebextension/cli';
 
-import { BUILD_PATH, BUILD_ZIP_FILE_NAME, WEB_ACCESSIBLE_RESOURCES_PATH } from '../constants';
+import { ENABLED_FILTERS_IDS } from '../../constants';
 import { extraScripts } from '../../extension/src/extra-scripts';
+import { BUILD_PATH, BUILD_ZIP_FILE_NAME, WEB_ACCESSIBLE_RESOURCES_PATH } from '../constants';
+
 import { buildRunner } from './build-runner';
 import { config } from './webpack.config';
 import { zipDirectory } from './zip-directory';
-import { ENABLED_FILTERS_IDS } from '../../constants';
 
 /**
  * Limit for sessionRules in browser is 5000, so we set

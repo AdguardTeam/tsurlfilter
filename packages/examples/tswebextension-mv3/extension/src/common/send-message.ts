@@ -1,5 +1,6 @@
-import { type MessageType } from '@adguard/tswebextension/mv3';
 import browser from 'webextension-polyfill';
+
+import { type MessageType } from '@adguard/tswebextension/mv3';
 
 import { Message } from '../message';
 

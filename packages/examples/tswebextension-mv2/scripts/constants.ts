@@ -1,14 +1,15 @@
 import path from 'node:path';
-import { type ConfigurationMV2 } from '@adguard/tswebextension';
-import { FilterList } from '@adguard/tsurlfilter';
 import { fileURLToPath } from 'node:url';
+
+import { FilterList } from '@adguard/tsurlfilter';
+import { type ConfigurationMV2 } from '@adguard/tswebextension';
+
+import { BuildOutput } from '../constants';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const __filename = fileURLToPath(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = path.dirname(__filename);
-
-import { BuildOutput } from '../constants';
 
 export const BUILD_PATH = path.join(__dirname, '../build');
 

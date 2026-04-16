@@ -1,17 +1,17 @@
-import { type NetworkRule, type ReplaceModifier, type CosmeticRule } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
+import { type CosmeticRule, type NetworkRule, type ReplaceModifier } from '@adguard/tsurlfilter';
 
 import { FilteringEventType, type FilteringLog } from '../../../../common/filtering-log';
-import { nanoid } from '../../../../common/utils/nanoid';
-import { getDomain } from '../../../../common/utils/url';
-import { getRuleTexts, type RuleTextProvider } from '../../../../common/utils/rule-text-provider';
-import { type RequestContext } from '../../request';
-import { logger } from '../../../../common/utils/logger';
 import { type RuleInfo } from '../../../../common/rule-info';
+import { logger } from '../../../../common/utils/logger';
+import { nanoid } from '../../../../common/utils/nanoid';
+import { getRuleTexts, type RuleTextProvider } from '../../../../common/utils/rule-text-provider';
+import { getDomain } from '../../../../common/utils/url';
+import { type RequestContext } from '../../request';
 
 import { documentParser } from './doc-parser';
-import { HtmlRuleSelector } from './rule/html-rule-selector';
 import { EntityHandler } from './entity-handler';
+import { HtmlRuleSelector } from './rule/html-rule-selector';
 
 export interface ContentStringFilterInterface {
     /**

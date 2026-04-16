@@ -3,8 +3,9 @@
  * Plugin for eslint that requires logger calls to start with a context tag,
  * e.g. "[ext.page-handler]:" or "[tsweb.WebRequestApi.onBeforeRequest]:".
  */
-import { requireLoggerContextRule } from './require-logger-context';
 import { name, version } from '../package.json';
+
+import { requireLoggerContextRule } from './require-logger-context';
 
 export default {
     meta: {

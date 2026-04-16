@@ -17,6 +17,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+
 import { version } from '../package.json';
 
 const PATH = '../dist';

@@ -1,11 +1,12 @@
 import browser from 'webextension-polyfill';
-import { NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
+
+import { type NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { type ConfigurationMV2 } from '../mv2/background/configuration';
-import { type ConfigurationMV3 } from '../mv3/background/configuration';
 import { type EngineApi as EngineApiMV2 } from '../mv2/background/engine-api';
-import { type EngineApi as EngineApiMV3 } from '../mv3/background/engine-api';
 import { type TabsApi as TabsApiMV2 } from '../mv2/background/tabs/tabs-api';
+import { type ConfigurationMV3 } from '../mv3/background/configuration';
+import { type EngineApi as EngineApiMV3 } from '../mv3/background/engine-api';
 import { type TabsApi as TabsApiMV3 } from '../mv3/tabs/tabs-api';
 
 import { defaultFilteringLog, FilteringEventType } from './filtering-log';
@@ -47,6 +48,17 @@ export type GetDocumentBlockingResponseParams = {
      * Rule which is applied to request.
      */
     rule: NetworkRule;
+
+    /**
+     * Indicates whether the request is a prerender request.
+     */
+    isPrerenderRequest?: boolean;
+
+    /**
+     * Indicates whether the request is a prefetch request
+     * (e.g. initiated by Chrome's Speculation Rules API).
+     */
+    isPrefetchRequest?: boolean;
 };
 
 /**

@@ -7,10 +7,10 @@ import {
     vi,
 } from 'vitest';
 
-import { hasToken } from '../../src/utils/has-token';
-import { tokenizeExtended } from '../../src/extended-css-tokenizer';
 import { TokenType } from '../../src/common/enums/token-types';
 import { type OnTokenCallback } from '../../src/common/types/function-prototypes';
+import { tokenizeExtended } from '../../src/extended-css-tokenizer';
+import { hasToken } from '../../src/utils/has-token';
 
 const SAMPLE_CSS = '{ color: red; }';
 

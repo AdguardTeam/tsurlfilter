@@ -1,10 +1,10 @@
+import browser from 'sinon-chrome';
 import {
     describe,
     expect,
     it,
     vi,
 } from 'vitest';
-import browser from 'sinon-chrome';
 
 import { ResourcesService } from '../../../../../src/lib/mv2/background/services/resources-service';
 

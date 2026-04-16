@@ -1,11 +1,11 @@
 /* eslint-disable no-console */
 import fs from 'fs';
-// eslint-disable-next-line import/no-extraneous-dependencies
+
 import archiver from 'archiver';
+// eslint-disable-next-line import/no-extraneous-dependencies
 
 /**
  * Asynchronously zips a directory and saves the archive to a specified output path.
- *
  * @param sourceDir - The source directory you want to zip.
  * @param outPath - The output path for the zip file.
  * @returns Promise that resolves when the archive has been finalized.

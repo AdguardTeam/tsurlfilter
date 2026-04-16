@@ -43,8 +43,7 @@ packages/adguard-api/
 │   │   ├── filters/           # Filter list management
 │   │   ├── schemas/           # Zod validation schemas
 │   │   └── utils/             # Utility functions
-│   ├── content-script/        # Content script entry points
-│   └── local_script_rules.json # Bundled local script rules
+│   └── content-script/        # Content script entry points
 ├── tasks/                     # Build scripts (build-txt)
 ├── constants.ts               # Shared build constants
 ├── dist/                      # Build output (gitignored)

@@ -1,16 +1,17 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
-import { RequestType, type HTTPMethod } from '@adguard/tsurlfilter';
 
-import { defaultFilteringLog, FilteringEventType } from '../../../../common/filtering-log';
-import { requestContextStorage, RequestContextState } from '../request-context-storage';
-import { tabsApi, type TabFrameRequestContextMV3 } from '../../../tabs/tabs-api';
-import { getRequestType } from '../../../../common/request-type';
+import { type HTTPMethod, RequestType } from '@adguard/tsurlfilter';
+
 import { MAIN_FRAME_ID } from '../../../../common/constants';
-import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
+import { defaultFilteringLog, FilteringEventType } from '../../../../common/filtering-log';
+import { DocumentLifecycle, type FrameAncestor } from '../../../../common/interfaces';
+import { getRequestType } from '../../../../common/request-type';
 import { nanoid } from '../../../../common/utils/nanoid';
-import { DocumentLifecycle } from '../../../../common/interfaces';
+import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
+import { type TabFrameRequestContextMV3, tabsApi } from '../../../tabs/tabs-api';
+import { RequestContextState, requestContextStorage } from '../request-context-storage';
 
-import { RequestEvent, type RequestData } from './request-event';
+import { type RequestData, RequestEvent } from './request-event';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
@@ -32,6 +33,29 @@ export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType &
      */
     parentDocumentId?: string;
 
+    /**
+     * The document lifecycle of the frame.
+     *
+     * Available from Chrome 106+.
+     *
+     * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle
+     */
+    documentLifecycle?: DocumentLifecycle;
+
+    /**
+     * Contains information for each document in the frame hierarchy up to the top-level document.
+     * The first element in the array contains information about the immediate parent of the document being requested,
+     * and the last element contains information about the top-level document.
+     * If the load is actually for the top-level document, then this array is empty.
+     *
+     * Available in Firefox only.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/onBeforeRequest#frameancestors
+     */
+    frameAncestors?: FrameAncestor[];
+};
+
+export type OnErrorOccurredDetailsType = WebRequest.OnErrorOccurredDetailsType & {
     /**
      * The document lifecycle of the frame.
      *
@@ -73,7 +97,7 @@ export class RequestEvents {
     >();
 
     public static onErrorOccurred = new RequestEvent<
-        WebRequest.OnErrorOccurredDetailsType,
+        OnErrorOccurredDetailsType,
         WebRequest.OnErrorOccurredOptions
     >();
 
@@ -182,6 +206,8 @@ export class RequestEvents {
             method,
             timeStamp,
             documentLifecycle,
+            parentDocumentId,
+            frameAncestors,
         } = details;
 
         let { url, frameId } = details;
@@ -226,18 +252,32 @@ export class RequestEvents {
          * we get only part of the request context to record only the tab and
          * frame information before calculating the request referrer.
          */
+
+        // Prefetch requests are main frame requests that have a `documentId` set,
+        // while normal main frame requests do not have a `documentId` set.
+        const isPrefetchRequest = isDocumentRequest
+            && !isPrerenderRequest
+            && !!details.documentId;
+
         const tabFrameRequestContext: TabFrameRequestContextMV3 = {
             requestUrl: url,
             requestType,
             requestId,
             frameId,
             tabId,
+            parentDocumentId,
+            frameAncestors,
+            isPrefetchRequest,
         };
 
-        // We do not check for exists request context here (as it was in MV2),
-        // because in MV3 $removeparam rules are applied by browser and does not
-        // require page reload after the applying.
-        if (isDocumentRequest) {
+        // Do not publish TabReload (filtering log reset) for:
+        // - prerender requests (not the final displayed document);
+        // - prefetch requests (belongs to a future navigation, page is not displayed yet).
+        //
+        // Note: We do not check for existing request context here (as in MV2),
+        // because in MV3 $removeparam rules are applied by the browser and do not
+        // require page reload after applying.
+        if (isDocumentRequest && !isPrerenderRequest && !isPrefetchRequest) {
             // dispatch filtering log reload event
             defaultFilteringLog.publishEvent({
                 type: FilteringEventType.TabReload,

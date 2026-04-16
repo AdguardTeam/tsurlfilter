@@ -2,10 +2,11 @@
  * @file Tokenizing logic for ident sequences
  */
 
+import { type TokenizerContext } from '../../common/context';
 import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
 import { checkForValidEscape, isIdentCodePoint } from '../definitions';
+
 import { consumeEscapedCodePoint } from './escaped-code-point';
-import { type TokenizerContext } from '../../common/context';
 
 /**
  * § 4.3.11. Consume an ident sequence

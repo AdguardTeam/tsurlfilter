@@ -1,5 +1,6 @@
-import { type CosmeticRule } from '@adguard/tsurlfilter';
 import { some } from 'lodash-es';
+
+import { type CosmeticRule } from '@adguard/tsurlfilter';
 
 type ScriptDomains = {
     permittedDomains: string[];

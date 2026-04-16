@@ -1636,7 +1636,7 @@ example 5
       }
     },
     "condition": {
-      "urlFilter": "||example.com^",
+      "urlFilter": "||example.com^*^test=",
       "resourceTypes": [
         "main_frame"
       ]
@@ -3598,9 +3598,11 @@ Allowlist rules are not supported
 <br/>
 Regexps, negation and allow-rules are not supported
 <br/>
-Rules with the same matching condition are combined into one, but only within
-the scope of one static filter or within the scope of all dynamic rules
-(custom filters and user rules).
+Each rule generates a param-aware urlFilter condition (e.g., ^utm_source=)
+so that Chrome DNR can chain multiple redirect hops, stripping one parameter
+per hop until all matching parameters are removed. Rules with different
+parameter names are no longer merged into a single DNR rule — this is by
+design, as merging would prevent multi-hop chaining across priority levels.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -3674,6 +3676,7 @@ $removeparam=utm_source
       }
     },
     "condition": {
+      "urlFilter": "^utm_source=",
       "resourceTypes": [
         "main_frame",
         "sub_frame"
@@ -3758,7 +3761,8 @@ $removeparam=/^(utm_content|utm_campaign|utm_referrer)=/
 ```
 example 10
 <br/>
-Group of similar remove param rules will be combined into one
+Each removeparam rule produces its own DNR rule with a param-aware urlFilter
+(e.g. ||testcases.adguard.com*^p1case1=) to enable multi-hop redirect chaining
 
 ```adblock
 ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
@@ -3779,8 +3783,50 @@ $xmlhttprequest,removeparam=p1case2
         "transform": {
           "queryTransform": {
             "removeParams": [
-              "p1case1",
-              "p2case1",
+              "p1case1"
+            ]
+          }
+        }
+      }
+    },
+    "condition": {
+      "urlFilter": "||testcases.adguard.com*^p1case1=",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    },
+    "priority": 101
+  },
+  {
+    "id": 1896587678,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "transform": {
+          "queryTransform": {
+            "removeParams": [
+              "p2case1"
+            ]
+          }
+        }
+      }
+    },
+    "condition": {
+      "urlFilter": "||testcases.adguard.com*^p2case1=",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    },
+    "priority": 101
+  },
+  {
+    "id": 783772031,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "transform": {
+          "queryTransform": {
+            "removeParams": [
               "P3Case1"
             ]
           }
@@ -3788,7 +3834,7 @@ $xmlhttprequest,removeparam=p1case2
       }
     },
     "condition": {
-      "urlFilter": "||testcases.adguard.com",
+      "urlFilter": "||testcases.adguard.com*^P3Case1=",
       "resourceTypes": [
         "xmlhttprequest"
       ]
@@ -3810,6 +3856,7 @@ $xmlhttprequest,removeparam=p1case2
       }
     },
     "condition": {
+      "urlFilter": "^p1case2=",
       "resourceTypes": [
         "xmlhttprequest"
       ]

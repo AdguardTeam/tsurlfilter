@@ -1,19 +1,20 @@
-import { type NetworkRule, type CookieModifier, NetworkRuleOption } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
 
+import { type CookieModifier, type NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
+
+import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
+import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
+import { FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
+import { ContentType } from '../../../../common/request-type';
 import { createFrameMatchQuery } from '../../../../common/utils/create-frame-match-query';
 import { findHeaderByName } from '../../../../common/utils/headers';
 import { logger } from '../../../../common/utils/logger';
 import { nanoid } from '../../../../common/utils/nanoid';
 import { getRuleTexts } from '../../../../common/utils/rule-text-provider';
-import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
-import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
-import { FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
-import { ContentType } from '../../../../common/request-type';
+import { type EngineApi } from '../../engine-api';
 import { type RequestContext, requestContextStorage } from '../../request/request-context-storage';
 import { type TabsApi } from '../../tabs/tabs-api';
-import { type EngineApi } from '../../engine-api';
 
 import CookieUtils from './utils';
 

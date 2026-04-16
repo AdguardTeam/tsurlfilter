@@ -99,16 +99,19 @@ const IMPORT_PLUGIN_RULES = {
         'error',
         {
             groups: [
-                // Built-in Node.js modules, e.g. 'path', 'fs'
                 'builtin',
-                // External packages
                 'external',
-                // Parent modules should be in the second place, e.g. `import { foo } from '../bar';`
+                'internal',
                 'parent',
-                // Sibling modules should be in the third place, e.g. `import { foo } from './bar';`
                 'sibling',
-                // All other imports should be in the last place
+                'index',
+                'object',
             ],
+            pathGroups: [
+                // Place all our libraries after external
+                { pattern: '@adguard/**', group: 'external', position: 'after' },
+            ],
+            pathGroupsExcludedImportTypes: [],
             alphabetize: { order: 'asc', caseInsensitive: true },
             'newlines-between': 'always',
         },

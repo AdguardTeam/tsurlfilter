@@ -1,4 +1,4 @@
-import { type PreparedCosmeticResultCommon, FrameCommon } from '../../../common/tabs/frame';
+import { FrameCommon, type PreparedCosmeticResultCommon } from '../../../common/tabs/frame';
 
 /**
  * Prepared cosmetic result for MV2.

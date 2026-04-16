@@ -1,13 +1,13 @@
 /**
  * @file Benchmark runner.
  */
-import { type Browser, type BrowserType } from 'playwright';
-import path from 'node:path';
 import { type ParserOptions } from '@adguard/agtree/parser';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { type Browser, type BrowserType } from 'playwright';
 
-import { type DownloadedFilterListResource } from './interfaces';
 import { benchmark, type BenchmarkArgs, type BenchmarkResult } from './benchmark-code';
+import { type DownloadedFilterListResource } from './interfaces';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

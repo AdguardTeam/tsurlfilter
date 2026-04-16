@@ -5,24 +5,24 @@
  * @note Usage: tsx benchmark.ts
  */
 
-import { buildSync } from 'esbuild';
-import { chromium, firefox, webkit } from 'playwright';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
 import { createConsola } from 'consola';
 import { Table } from 'console-table-printer';
+import { buildSync } from 'esbuild';
 import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chromium, firefox, webkit } from 'playwright';
 
-import { benchmarkConfig } from './config';
-import { type SystemSpecs, getSystemSpecs } from './helpers/system-specs';
-import { printBytesAsMegabytes } from './helpers/format-size';
-import { downloadFilterLists } from './helpers/filter-downloader';
-import { getMdFileContents } from './helpers/md-contents';
-import { runBenchmarkBrowser } from './benchmark-runner-browser';
-import { type FilterListBenchmarkResult } from './interfaces';
 import { type BenchmarkResult } from './benchmark-code';
+import { runBenchmarkBrowser } from './benchmark-runner-browser';
 import { runBenchmarkNode } from './benchmark-runner-node';
+import { benchmarkConfig } from './config';
+import { downloadFilterLists } from './helpers/filter-downloader';
+import { printBytesAsMegabytes } from './helpers/format-size';
 import { pathExists } from './helpers/fs';
+import { getMdFileContents } from './helpers/md-contents';
+import { getSystemSpecs, type SystemSpecs } from './helpers/system-specs';
+import { type FilterListBenchmarkResult } from './interfaces';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

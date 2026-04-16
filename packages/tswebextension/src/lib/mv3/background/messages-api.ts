@@ -1,20 +1,21 @@
-import { NetworkRuleOption } from '@adguard/tsurlfilter';
-import type browser from 'webextension-polyfill';
 import { getDomain } from 'tldts';
+import type browser from 'webextension-polyfill';
+
+import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../common/constants';
-import { MessageType } from '../../common/message-constants';
 import { type CookieRule } from '../../common/content-script/cookie-controller';
 import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
 import { defaultFilteringLog, FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import {
     getAssistantCreateRulePayloadValidator,
-    getSaveCookieLogEventPayloadValidator,
     getCookieRulesPayloadValidator,
     getCosmeticDataPayloadValidator,
+    getSaveCookieLogEventPayloadValidator,
     type Message,
     messageValidator,
 } from '../../common/message';
+import { MessageType } from '../../common/message-constants';
 import { ContentType } from '../../common/request-type';
 import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
 import { logger } from '../../common/utils/logger';
@@ -22,12 +23,12 @@ import { nanoid } from '../../common/utils/nanoid';
 import { getRuleTextsByIndex } from '../../common/utils/rule-text-provider';
 import { type TabsApi } from '../tabs/tabs-api';
 
-import { engineApi } from './engine-api';
 import { type TsWebExtension } from './app';
 import { appContext } from './app-context';
-import { CosmeticApi } from './cosmetic-api';
-import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { Assistant } from './assistant';
+import { CosmeticApi } from './cosmetic-api';
+import { engineApi } from './engine-api';
+import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
 export type ContentScriptCookieRulesData = {
     /**

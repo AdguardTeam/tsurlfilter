@@ -2,6 +2,8 @@
  * @file Tokenizer helpers for balanced pairs.
  */
 
+import { sprintf } from 'sprintf-js';
+
 import {
     getFormattedTokenName,
     type OnErrorCallback,
@@ -10,7 +12,6 @@ import {
     type TokenizerContextFunction,
     TokenType,
 } from '@adguard/css-tokenizer';
-import { sprintf } from 'sprintf-js';
 
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 

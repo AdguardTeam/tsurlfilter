@@ -1,5 +1,6 @@
-import { ADG_SCRIPTLET_MASK, QuoteType, QuoteUtils } from '@adguard/agtree';
 import { parse } from 'tldts';
+
+import { ADG_SCRIPTLET_MASK, QuoteType, QuoteUtils } from '@adguard/agtree';
 
 import { type CosmeticRuleParts, CosmeticRuleType } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';

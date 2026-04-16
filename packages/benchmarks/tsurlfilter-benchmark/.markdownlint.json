@@ -4,7 +4,8 @@
     },
     "line-length": {
         "stern": true,
-        "line_length": 120
+        "line_length": 120,
+        "tables": false
     },
     "no-multiple-blanks": {
         "maximum": 2
@@ -27,5 +28,8 @@
     },
     "emphasis-style": {
         "style": "asterisk"
+    },
+    "table-column-style": {
+        "style": "aligned"
     }
 }

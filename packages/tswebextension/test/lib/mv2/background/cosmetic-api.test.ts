@@ -5,12 +5,13 @@ import {
     test,
     vi,
 } from 'vitest';
+
 import { CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
-import { createCosmeticRule } from '../../../helpers/rule-creator';
+import { USER_FILTER_ID } from '../../../../src/lib/common/constants';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { localScriptRulesService } from '../../../../src/lib/mv2/background/services/local-script-rules-service';
-import { USER_FILTER_ID } from '../../../../src/lib/common/constants';
+import { createCosmeticRule } from '../../../helpers/rule-creator';
 
 import { getLocalScriptRulesFixture } from './fixtures/local-script-rules';
 

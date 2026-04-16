@@ -4,23 +4,24 @@ import {
     it,
     vi,
 } from 'vitest';
-import { TextEncoder, TextDecoder } from '@adguard/text-encoding';
+
+import { TextDecoder, TextEncoder } from '@adguard/text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
 
-import { MockFilteringLog } from '../../../../common/mocks';
+import {
+    type RequestContext,
+    RequestContextState,
+} from '../../../../../../src/lib/mv2/background/request/request-context-storage';
 import {
     DEFAULT_CHARSET,
     WIN_1251,
     WIN_1252,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/charsets';
+import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
 import {
     type ContentStringFilterInterface,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
-import {
-    type RequestContext,
-    RequestContextState,
-} from '../../../../../../src/lib/mv2/background/request/request-context-storage';
-import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
+import { MockFilteringLog } from '../../../../common/mocks';
 
 import { MockStreamFilter } from './mock-stream-filter';
 

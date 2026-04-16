@@ -1,14 +1,14 @@
 import {
+    afterEach,
+    beforeEach,
     describe,
     expect,
-    beforeEach,
-    afterEach,
     it,
     vi,
 } from 'vitest';
+
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
-import { createNetworkRule } from '../../../../helpers/rule-creator';
 import {
     documentBlockingService,
     engineApi,
@@ -17,6 +17,7 @@ import {
     tabsApi,
 } from '../../../../../src/lib';
 import { ContentType } from '../../../../../src/lib/common/request-type';
+import { createNetworkRule } from '../../../../helpers/rule-creator';
 
 vi.mock('../../../../../src/lib/mv2/background/api');
 
