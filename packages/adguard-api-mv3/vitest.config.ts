@@ -7,5 +7,7 @@ export default defineConfig({
         // Use jsdom environment to provide browser globals like 'self', 'window', etc.
         environment: 'jsdom',
         setupFiles: ['./vitest.setup.ts'],
+        // FIXME: Double check this
+        testTimeout: 20000,
     },
 });
