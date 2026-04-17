@@ -649,3 +649,249 @@ describe('User Story 6 — Error cases', () => {
         )).toThrow(AdblockSyntaxError);
     });
 });
+
+describe('Extended CSS pseudo-classes — generic handler', () => {
+    test(':contains(simple text)', () => {
+        p(':contains(some text)');
+        expect(SelectorListPreparser.complexCount(ctx.data, DATA_OFFSET)).toBe(1);
+        const c = child(0);
+        expect(c.kind).toBe(ChildKind.PseudoClassSelector);
+        expect(c.nameStr).toBe('contains');
+        expect(c.argStr).toBe('some text');
+    });
+
+    test(':contains() with nested parentheses', () => {
+        p(':contains(text with (nested) parens)');
+        const c = child(0);
+        expect(c.kind).toBe(ChildKind.PseudoClassSelector);
+        expect(c.nameStr).toBe('contains');
+        expect(c.argStr).toBe('text with (nested) parens');
+    });
+
+    test(':contains() with escaped parentheses', () => {
+        p(String.raw`:contains(text \( escaped \))`);
+        const c = child(0);
+        expect(c.nameStr).toBe('contains');
+        expect(c.argStr).toBe(String.raw`text \( escaped \)`);
+    });
+
+    test(':contains() with deeply nested parens', () => {
+        p(':contains(a(b(c(d))))');
+        const c = child(0);
+        expect(c.nameStr).toBe('contains');
+        expect(c.argStr).toBe('a(b(c(d)))');
+    });
+
+    test(':contains() with regex pattern including parens', () => {
+        p(':contains(/regex(pattern)/)');
+        const c = child(0);
+        expect(c.nameStr).toBe('contains');
+        expect(c.argStr).toBe('/regex(pattern)/');
+    });
+
+    test(':contains() quoted arg falls back to standard CSS scanning', () => {
+        p(":contains('quoted arg')");
+        const c = child(0);
+        expect(c.nameStr).toBe('contains');
+        expect(c.argStr).toBe("'quoted arg'");
+    });
+
+    test(':contains() double-quoted arg falls back to standard CSS scanning', () => {
+        p(':contains("double quoted")');
+        const c = child(0);
+        expect(c.nameStr).toBe('contains');
+        expect(c.argStr).toBe('"double quoted"');
+    });
+
+    test(':contains() empty argument', () => {
+        p(':contains()');
+        const c = child(0);
+        expect(c.nameStr).toBe('contains');
+        expect(c.f2).not.toBe(NO_VALUE);
+        expect(c.f2).toBe(c.f3);
+    });
+
+    test(':contains() whitespace-only argument trimmed to empty', () => {
+        p(':contains(   )');
+        const c = child(0);
+        expect(c.nameStr).toBe('contains');
+        expect(c.f2).toBe(c.f3);
+    });
+
+    test(':has-text() with regex pattern', () => {
+        p(':has-text(/regex(pattern)/)');
+        const c = child(0);
+        expect(c.nameStr).toBe('has-text');
+        expect(c.argStr).toBe('/regex(pattern)/');
+    });
+
+    test(':-abp-contains() recognized', () => {
+        p(':-abp-contains(something)');
+        const c = child(0);
+        expect(c.nameStr).toBe('-abp-contains');
+        expect(c.argStr).toBe('something');
+    });
+
+    test(':has-text() leading/trailing whitespace trimmed', () => {
+        p(':has-text(  trimmed  )');
+        const c = child(0);
+        expect(c.nameStr).toBe('has-text');
+        expect(c.argStr).toBe('trimmed');
+    });
+
+    test(':matches-css() with unquoted quote inside regex arg', () => {
+        p(String.raw`:matches-css(background-image: /^url\("data:image\/gif;base64.+/)`);
+        const c = child(0);
+        expect(c.nameStr).toBe('matches-css');
+        expect(c.argStr).toBe(String.raw`background-image: /^url\("data:image\/gif;base64.+/`);
+    });
+});
+
+describe('Extended CSS pseudo-classes — matches-css family', () => {
+    test(':matches-css() simple property', () => {
+        p(':matches-css(width:720px)');
+        const c = child(0);
+        expect(c.nameStr).toBe('matches-css');
+        expect(c.argStr).toBe('width:720px');
+    });
+
+    test(':matches-css() with nested url()', () => {
+        p(':matches-css(background-image:url(data:*))');
+        const c = child(0);
+        expect(c.nameStr).toBe('matches-css');
+        expect(c.argStr).toBe('background-image:url(data:*)');
+    });
+
+    test(':matches-css-before() recognized', () => {
+        p(':matches-css-before(content:*)');
+        const c = child(0);
+        expect(c.nameStr).toBe('matches-css-before');
+        expect(c.argStr).toBe('content:*');
+    });
+
+    test(':matches-css-after() recognized', () => {
+        p(':matches-css-after(content:*)');
+        const c = child(0);
+        expect(c.nameStr).toBe('matches-css-after');
+        expect(c.argStr).toBe('content:*');
+    });
+
+    test(':matches-property() recognized', () => {
+        p(':matches-property(value)');
+        const c = child(0);
+        expect(c.nameStr).toBe('matches-property');
+        expect(c.argStr).toBe('value');
+    });
+
+    test(':matches-attr() recognized', () => {
+        p(':matches-attr(value)');
+        const c = child(0);
+        expect(c.nameStr).toBe('matches-attr');
+        expect(c.argStr).toBe('value');
+    });
+});
+
+describe('Extended CSS pseudo-classes — xpath handler', () => {
+    test(':xpath() simple expression', () => {
+        p(':xpath(//div)');
+        const c = child(0);
+        expect(c.nameStr).toBe('xpath');
+        expect(c.argStr).toBe('//div');
+    });
+
+    test(':xpath() with parens inside double-quoted XPath string', () => {
+        p(':xpath(//div[@class="foo(bar)"])');
+        const c = child(0);
+        expect(c.nameStr).toBe('xpath');
+        expect(c.argStr).toBe('//div[@class="foo(bar)"]');
+    });
+
+    test(':xpath() with parens inside single-quoted XPath string', () => {
+        p(":xpath(//div[@class='foo(bar)'])");
+        const c = child(0);
+        expect(c.nameStr).toBe('xpath');
+        expect(c.argStr).toBe("//div[@class='foo(bar)']");
+    });
+
+    test(':xpath() with contains() inside XPath string', () => {
+        p(String.raw`:xpath(//*[contains(text(),"()(cc")])`);
+        const c = child(0);
+        expect(c.nameStr).toBe('xpath');
+        expect(c.argStr).toBe(String.raw`//*[contains(text(),"()(cc")]`);
+    });
+
+    test(':xpath() quoted arg falls back to standard CSS scanning', () => {
+        p(":xpath('//div')");
+        const c = child(0);
+        expect(c.nameStr).toBe('xpath');
+        expect(c.argStr).toBe("'//div'");
+    });
+
+    test(':xpath() leading/trailing whitespace trimmed', () => {
+        p(':xpath(  //div  )');
+        const c = child(0);
+        expect(c.nameStr).toBe('xpath');
+        expect(c.argStr).toBe('//div');
+    });
+});
+
+describe('Extended CSS pseudo-classes — complex selectors & errors', () => {
+    test('extended pseudo in compound: div:contains(text) > p', () => {
+        p('div:contains(text) > p');
+        expect(SelectorListPreparser.complexCount(ctx.data, DATA_OFFSET)).toBe(1);
+        expect(SelectorListPreparser.childCountInComplex(ctx.data, DATA_OFFSET, 0)).toBe(4);
+
+        const c0 = child(0);
+        expect(c0.kind).toBe(ChildKind.TypeSelector);
+        expect(c0.valueStr).toBe('div');
+
+        const c1 = child(1);
+        expect(c1.kind).toBe(ChildKind.PseudoClassSelector);
+        expect(c1.nameStr).toBe('contains');
+        expect(c1.argStr).toBe('text');
+
+        const c2 = child(2);
+        expect(c2.kind).toBe(ChildKind.SelectorCombinator);
+        expect(c2.f0).toBe(COMBINATOR_CHILD);
+
+        const c3 = child(3);
+        expect(c3.kind).toBe(ChildKind.TypeSelector);
+        expect(c3.valueStr).toBe('p');
+    });
+
+    test('multiple extended pseudo-classes chained', () => {
+        p(':has-text(foo):matches-css(width:100px)');
+        expect(SelectorListPreparser.childCountInComplex(ctx.data, DATA_OFFSET, 0)).toBe(2);
+
+        const c0 = child(0);
+        expect(c0.nameStr).toBe('has-text');
+        expect(c0.argStr).toBe('foo');
+
+        const c1 = child(1);
+        expect(c1.nameStr).toBe('matches-css');
+        expect(c1.argStr).toBe('width:100px');
+    });
+
+    test('standard pseudo-class :not() unaffected', () => {
+        p(':not(.foo)');
+        const c = child(0);
+        expect(c.kind).toBe(ChildKind.PseudoClassSelector);
+        expect(c.nameStr).toBe('not');
+        expect(c.argStr).toBe('.foo');
+    });
+
+    test('unknown pseudo-class uses standard CSS scanning', () => {
+        p(':custom-pseudo(arg)');
+        const c = child(0);
+        expect(c.nameStr).toBe('custom-pseudo');
+        expect(c.argStr).toBe('arg');
+    });
+
+    test('error: :contains() missing closing paren', () => {
+        expect(() => p(':contains(unclosed')).toThrow(AdblockSyntaxError);
+    });
+
+    test('error: :xpath() unmatched paren — missing outer )', () => {
+        expect(() => p(':xpath(//div[@class="foo(bar)"]')).toThrow(AdblockSyntaxError);
+    });
+});
