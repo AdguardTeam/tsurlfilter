@@ -3,8 +3,8 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import { scriptletsCompatibilityTableData } from '../../src/compatibility-tables/compatibility-table-data';
 import type { ScriptletDataSchema } from '../../src/compatibility-tables/schemas';
+import { scriptletsCompatibilityTableData } from '../../src/compatibility-tables/scriptlets-compatibility-table-data';
 
 const RESULTS_DIR = path.join(path.dirname(new URL(import.meta.url).pathname), 'results');
 const SCRIPTLETS_DIR = path.join(RESULTS_DIR, 'scriptlets');

@@ -8,14 +8,13 @@ import { type Modifier } from '../nodes';
 import { ModifierParser } from '../parser/misc/modifier-parser';
 import { defaultParserOptions } from '../parser/options';
 import { UNDERSCORE } from '../utils/constants';
-import { deepFreeze } from '../utils/deep-freeze';
 import { getErrorMessage } from '../utils/error';
 import { isValidNoopModifier } from '../utils/noop-modifier';
 import { isString } from '../utils/type-guards';
 import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from '../validator/constants';
 
 import { CompatibilityTableBase } from './base';
-import { modifiersCompatibilityTableData } from './compatibility-table-data';
+import { modifiersCompatibilityTableData } from './modifiers-compatibility-table-data';
 import { type Platform } from './platform';
 import { type ModifierDataSchema } from './schemas';
 import { type CompatibilityTable } from './types';
@@ -227,11 +226,6 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
         }
     }
 }
-
-/**
- * Deep freeze the compatibility table data to avoid accidental modifications.
- */
-deepFreeze(modifiersCompatibilityTableData);
 
 /**
  * Compatibility table instance for modifiers.

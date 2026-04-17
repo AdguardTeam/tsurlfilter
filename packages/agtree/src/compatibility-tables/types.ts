@@ -42,38 +42,3 @@ export interface CompatibilityTable<T> {
      */
     rows: Map<string, HybridCompatibilityTableRow<T>>;
 }
-
-/**
- * JSON-serializable compatibility table row.
- * Used for prebuilt compatibility data.
- *
- * @template T Type of the compatibility data.
- */
-export interface SerializableCompatibilityTableRow<T> {
-    /**
-     * Trie structure as JSON.
-     */
-    trie: unknown;
-
-    /**
-     * Flat map as array of [key, value] pairs.
-     */
-    flatMap: Array<[string, T]>;
-
-    /**
-     * Shared storage array.
-     */
-    shared: T[];
-}
-
-/**
- * JSON-serializable compatibility table.
- *
- * @template T Type of the compatibility data.
- */
-export interface SerializableCompatibilityTable<T> {
-    /**
-     * Array of [name, row] pairs.
-     */
-    rows: Array<[string, SerializableCompatibilityTableRow<T>]>;
-}

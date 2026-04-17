@@ -5,13 +5,12 @@
 import { sprintf } from 'sprintf-js';
 
 import { COLON, NEWLINE, SPACE } from '../utils/constants';
-import { deepFreeze } from '../utils/deep-freeze';
 import { isNull, isString, isUndefined } from '../utils/type-guards';
 import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from '../validator/constants';
 
 import { CompatibilityTableBase } from './base';
-import { redirectsCompatibilityTableData } from './compatibility-table-data';
 import { type Platform } from './platform';
+import { redirectsCompatibilityTableData } from './redirects-compatibility-table-data';
 import { type RedirectDataSchema } from './schemas';
 import { type CompatibilityTable } from './types';
 import { getResourceTypeModifier } from './utils/resource-type-helpers';
@@ -150,11 +149,6 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
         }
     }
 }
-
-/**
- * Deep freeze the compatibility table data to avoid accidental modifications.
- */
-deepFreeze(redirectsCompatibilityTableData);
 
 /**
  * Compatibility table instance for redirects.

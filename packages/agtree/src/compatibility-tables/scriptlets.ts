@@ -3,11 +3,9 @@
  * @file Compatibility tables for scriptlets.
  */
 
-import { deepFreeze } from '../utils/deep-freeze';
-
 import { CompatibilityTableBase } from './base';
-import { scriptletsCompatibilityTableData } from './compatibility-table-data';
 import { type ScriptletDataSchema } from './schemas';
+import { scriptletsCompatibilityTableData } from './scriptlets-compatibility-table-data';
 import { type ValidationContext } from './validators/types';
 
 /**
@@ -32,11 +30,6 @@ class ScriptletsCompatibilityTable extends CompatibilityTableBase<ScriptletDataS
         // TODO: implement scriptlet validation
     }
 }
-
-/**
- * Deep freeze the compatibility table data to avoid accidental modifications.
- */
-deepFreeze(scriptletsCompatibilityTableData);
 
 /**
  * Compatibility table instance for scriptlets.
