@@ -15,6 +15,11 @@ export {
     ScriptletInjectionAstParser,
 } from './cosmetic/scriptlet-injection';
 export {
+    SelectorListAstParser,
+    type SelectorListParseOptions,
+    SelectorListParser,
+} from './cosmetic/selector-list';
+export {
     SimpleCommentAstParser,
     PreprocessorCommentAstParser,
     HintCommentAstParser,
