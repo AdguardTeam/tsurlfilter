@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on demand instead of eagerly constructing heavy objects at ruleset creation time.
 - Updated [@adguard/tsurlfilter] to vX.X.X. <!-- TODO: update version before release -->
 - Updated [@adguard/assistant] to `v4.4.3`.
+- Updated [@adguard/scriptlets] to `v2.4.0-beta`.
 
 ### Fixed
 

@@ -128,8 +128,10 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
 # whose mtime predates the task start time. TEST_RUN_ID is written to /out/
 # so that the output directory always differs between builds — preventing
 # BuildKit from serving a cached COPY --from layer with stale timestamps.
-# For lint-only packages (no vitest), copy-test-reports.sh falls back to
-# skipped-tests.xml and touches it so its mtime is current.
+# However, on re-runs of the same build, TEST_RUN_ID (= buildNumber) is
+# identical, so Docker may serve cached output with old mtimes. CI job
+# scripts touch the extracted XML files after `docker build --output` to
+# ensure Bamboo always accepts them.
 # ============================================================================
 
 # ============================================================================

@@ -31,6 +31,9 @@ tasks:
             --target test-agtree-output \
             --output type=local,dest=output \
             .
+
+          # Refresh mtime so Bamboo JUnit parser accepts cached XML files on re-runs
+          find output/tests-reports -name '*.xml' -exec touch {} + 2>/dev/null || true
   - script:
       interpreter: SHELL
       scripts:

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from memory. The metadata will be lazy-loaded from the provider on the next access.
 - `RuleSet` constructor now accepts `RuleSetMetadataProvider` instead of eager `badFilterRules`
   and `rulesHashMap` parameters.
+- Updated [@adguard/scriptlets] to `v2.4.0-beta`.
 
 ### Fixed
 
