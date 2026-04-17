@@ -22,10 +22,11 @@ extensions.
 - [Installation](#installation)
     - [Peer dependencies](#peer-dependencies)
 - [API overview](#api-overview)
-    - [`IFilter` / `IFilterWithSource`](#ifilter--ifiltersource)
+    - [`IFilter`](#ifilter)
+    - [`Filter`](#filter)
     - [`ConverterOptions`](#converteroptions)
     - [Simple flow: `FilterConverter` + `Ruleset`](#simple-flow-filterconverter--ruleset)
-    - [Advanced flow: `FilterConverterWithSourceMap` + `RulesetWithSourceMap`](#advanced-flow-filterconverterwithsourcemap--rulesetwithsourcemap)
+    - [Advanced flow: `FilterConverter` with `withSourceMap: true` + `RulesetWithSourceMap`](#advanced-flow-filterconverter-with-keepsource-true--rulesetwithsourcemap)
     - [`ConversionResult`](#conversionresult)
     - [`IRuleSet` / `RuleSet`](#iruleset--ruleset)
     - [`MetadataRuleSet`](#metadataruleset)
@@ -108,36 +109,54 @@ The package requires [`@adguard/re2-wasm`](https://www.npmjs.com/package/@adguar
 
 ## API overview
 
-The library exposes **two conversion flows**:
+The library uses a single `FilterConverter` class with **two conversion modes**
+selected by the `withSourceMap` option:
 
-| | Simple flow | Advanced flow |
+| | Simple mode (default) | Advanced mode (`withSourceMap: true`) |
 | --- | --- | --- |
-| **Converter** | `FilterConverter` | `FilterConverterWithSourceMap` |
+| **Converter** | `FilterConverter` | `FilterConverter` |
 | **Ruleset** | `Ruleset` (sync, in-memory) | `RulesetWithSourceMap` (lazy-load, source map) |
-| **Input filter** | `IFilter` | `IFilterWithSource` |
+| **Input filter** | `IFilter` | `IFilter` |
 | **Use case** | When you only need `DeclarativeRule[]` output from plain filter text | When you need source maps, `$badfilter` cross-filter application, and serialization |
 
-### `IFilter` / `IFilterWithSource`
+### `IFilter`
 
 ```ts
-import type { IFilter, IFilterWithSource } from '@adguard/dnr-converter';
+import type { IFilter } from '@adguard/dnr-converter';
 ```
 
-**`IFilter`** — minimal interface for the simple flow:
-
-| Method | Type | Description |
-| --- | --- | --- |
-| `getId()` | `number` | Unique filter identifier |
-| `getContent()` | `string` | Full text of the filter list (one rule per line) |
-
-**`IFilterWithSource`** — extended interface for the advanced flow:
+Single interface used by both conversion flows:
 
 | Method | Type | Description |
 | --- | --- | --- |
 | `getId()` | `number` | Unique filter identifier |
 | `getContent()` | `Promise<string>` | Returns the full text of the filter list |
 | `getRuleByIndex(index)` | `Promise<string>` | Returns original rule text by character offset |
-| `unloadContent()` | `void` | Releases parsed content from memory |
+| `unloadContent()` | `void` | Releases loaded content from memory |
+
+### `Filter`
+
+The single concrete `IFilter` implementation shipped by the library supports two
+construction modes:
+
+- **Pre-loaded** (`new Filter(id, content: string)`) — accepts the filter text
+  directly as a string. `getContent()` resolves immediately; `unloadContent()`
+  is a no-op. Use for simple conversion or when content is already in memory.
+
+- **Lazy-loaded** (`new Filter(id, source: () => Promise<string>)`) —
+  accepts an async callback that fetches the content on demand. Supports promise
+  deduplication across concurrent callers, and `unloadContent()` releases the
+  cached content. Use with `withSourceMap: true` (advanced mode).
+
+```ts
+import { Filter } from '@adguard/dnr-converter';
+
+// Pre-loaded (simple mode)
+const filter = new Filter(1, '||example.com^');
+
+// Lazy-loaded (advanced mode with withSourceMap: true)
+const lazyFilter = new Filter(1, async () => fetchFilterText());
+```
 
 ### `ConverterOptions`
 
@@ -154,7 +173,8 @@ Configuration for the conversion process:
 | `maxNumberOfUnsafeRules` | `number?` | Maximum unsafe (dynamic) rules allowed. |
 | `maxNumberOfRegexpRules` | `number?` | Maximum rules using `regexFilter`. |
 | `combine` | `boolean?` | Merge all input filters into a single combined rule set. |
-| `badFilterRules` | `NetworkRule[]?` | Static `$badfilter` rules to apply at scan time (advanced flow only). |
+| `withSourceMap` | `boolean?` | When `true`, returns `RulesetWithSourceMap` instead of `Ruleset`. Enables source maps, `$badfilter` cross-filter support, and lazy loading. |
+| `badFilterRules` | `NetworkRule[]?` | Static `$badfilter` rules to apply at scan time (`withSourceMap: true` only). |
 
 ### Simple flow: `FilterConverter` + `Ruleset`
 
@@ -162,13 +182,9 @@ Use this flow when you only need `DeclarativeRule[]` output from plain filter
 text, without source maps or lazy loading.
 
 ```ts
-import { FilterConverter } from '@adguard/dnr-converter';
-import type { IFilter } from '@adguard/dnr-converter';
+import { FilterConverter, Filter } from '@adguard/dnr-converter';
 
-const filter: IFilter = {
-    getId: () => 1,
-    getContent: () => '||example.com^\n@@||example.com/path^',
-};
+const filter = new Filter(1, '||example.com^\n@@||example.com/path^');
 
 const converter = new FilterConverter();
 const [{ ruleSet, errors, limitations }] = await converter.convert([filter]);
@@ -197,7 +213,7 @@ const { Ruleset } = await import('@adguard/dnr-converter');
 const restored = Ruleset.deserialize(ruleSet.getId(), json);
 ```
 
-`Ruleset` (returned by the simple flow) implements `IRuleset`:
+`Ruleset` (returned by default, without `withSourceMap`) implements `IRuleset`:
 
 | Method | Returns | Description |
 | --- | --- | --- |
@@ -209,30 +225,20 @@ const restored = Ruleset.deserialize(ruleSet.getId(), json);
 | `serialize()` | `string` | JSON serialization of declarative rules |
 | `Ruleset.deserialize(id, json)` | `Ruleset` | Static: reconstruct from serialized JSON |
 
-### Advanced flow: `FilterConverterWithSourceMap` + `RulesetWithSourceMap`
+### Advanced flow: `FilterConverter` with `withSourceMap: true` + `RulesetWithSourceMap`
 
-Use this flow in browser extension internals when you need source maps,
+Use this mode in browser extension internals when you need source maps,
 `$badfilter` cross-filter application, serialization with hash maps, and lazy
-content loading.
-
-<!-- FIXME: Update this example once the `Filter` class is migrated to
-     dnr-converter (AG-52708). Replace the raw `IFilterWithSource` stub
-     with `new Filter(id, source)` and remove the manual method stubs. -->
+content loading. Pass `withSourceMap: true` in the options to get
+`RulesetWithSourceMap` results.
 
 ```ts
-import { FilterConverterWithSourceMap } from '@adguard/dnr-converter';
-import type { IFilterWithSource } from '@adguard/dnr-converter';
+import { Filter, FilterConverter } from '@adguard/dnr-converter';
 
-const filter: IFilterWithSource = {
-    getId: () => 1,
-    getContent: async () => '||example.com^\n@@||example.com/path^',
-    getRuleByIndex: async (_index) => '',
-    getConversionData: () => undefined,
-    unloadContent: () => {},
-};
+const filter = new Filter(1, async () => '||example.com^\n@@||example.com/path^');
 
-const converter = new FilterConverterWithSourceMap();
-const [{ ruleSet, errors }] = await converter.convert([filter]);
+const converter = new FilterConverter();
+const [{ ruleSet, errors }] = await converter.convert([filter], { withSourceMap: true });
 
 const declarativeRules = await ruleSet.getDeclarativeRules(); // Promise<DeclarativeRule[]>
 const sources = await ruleSet.getRulesById(declarativeRules[0].id);
@@ -242,7 +248,10 @@ console.log(sources[0].sourceRule); // '||example.com^'
 **Apply `$badfilter` from dynamic filters against static rule sets:**
 
 ```ts
-const [{ ruleSet: dynamicRuleSet }] = await converter.convert([dynamicFilter]);
+const [{ ruleSet: dynamicRuleSet }] = await converter.convert(
+    [dynamicFilter],
+    { withSourceMap: true },
+);
 const rulesToDisable = await converter.computeRulesToDisable(
     [dynamicRuleSet],
     [staticRuleSet],
@@ -250,7 +259,7 @@ const rulesToDisable = await converter.computeRulesToDisable(
 // rulesToDisable: UpdateStaticRulesOptions[]
 ```
 
-`RulesetWithSourceMap` (returned by the advanced flow) implements
+`RulesetWithSourceMap` (returned when `withSourceMap: true`) implements
 `IRulesetWithSourceMap`:
 
 | Method | Returns | Description |

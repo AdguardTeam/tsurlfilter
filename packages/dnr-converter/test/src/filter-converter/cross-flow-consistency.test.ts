@@ -1,57 +1,42 @@
 /**
- * Cross-flow consistency tests: verify that FilterConverter (simple) and
- * FilterConverterWithSourceMap (advanced) produce the same declarative rules
- * for equivalent input.
+ * Cross-flow consistency tests: verify that FilterConverter produces the same
+ * declarative rules in simple mode (withSourceMap omitted) and source-map mode
+ * (withSourceMap: true) for equivalent input.
  */
 import { describe, expect, it } from 'vitest';
 
-import { type IFilter, type IFilterWithSource } from '../../../src/filter/types';
+import { type IFilter } from '../../../src/filter/types';
 import { FilterConverter } from '../../../src/filter-converter/filter-converter';
-import { FilterConverterWithSourceMap } from '../../../src/filter-converter/filter-converter-with-source-map';
 
 /**
- * Creates a minimal IFilter (for the simple flow).
+ * Creates a test IFilter from an array of rule strings.
  *
  * @param rules Rule text strings.
  * @param filterId Filter list ID.
  *
  * @returns IFilter mock.
  */
-const makeSimpleFilter = (rules: string[], filterId = 0): IFilter => ({
-    getId: () => filterId,
-    getContent: () => rules.join('\n'),
-});
-
-/**
- * Creates an IFilterWithSource (for the advanced flow).
- *
- * @param rules Rule text strings.
- * @param filterId Filter list ID.
- *
- * @returns IFilterWithSource mock.
- */
-const makeAdvancedFilter = (rules: string[], filterId = 0): IFilterWithSource => {
+const makeFilter = (rules: string[], filterId = 0): IFilter => {
     const content = rules.join('\n');
     return {
         getId: () => filterId,
         getContent: async (): Promise<string> => content,
-        getConversionData: () => undefined,
         getRuleByIndex: async () => '',
         unloadContent: () => {},
     };
 };
 
 describe('Cross-flow consistency', () => {
-    const simpleConverter = new FilterConverter();
-    const advancedConverter = new FilterConverterWithSourceMap();
+    const converter = new FilterConverter();
 
     it('produces the same declarative rules for a single filter (per-filter mode)', async () => {
         const rules = ['||example.com^', '@@||example.net^', '||example.org^$document'];
         const filterId = 1;
 
-        const [simpleResult] = await simpleConverter.convert([makeSimpleFilter(rules, filterId)]);
-        const [advancedResult] = await advancedConverter.convert(
-            [makeAdvancedFilter(rules, filterId)],
+        const [simpleResult] = await converter.convert([makeFilter(rules, filterId)]);
+        const [advancedResult] = await converter.convert(
+            [makeFilter(rules, filterId)],
+            { withSourceMap: true },
         );
 
         const simpleRules = simpleResult.ruleSet.getDeclarativeRules();
@@ -64,13 +49,13 @@ describe('Cross-flow consistency', () => {
         const rules1 = ['||example.com^'];
         const rules2 = ['||example.net^'];
 
-        const [simpleResult] = await simpleConverter.convert(
-            [makeSimpleFilter(rules1, 1), makeSimpleFilter(rules2, 2)],
+        const [simpleResult] = await converter.convert(
+            [makeFilter(rules1, 1), makeFilter(rules2, 2)],
             { combine: true },
         );
-        const [advancedResult] = await advancedConverter.convert(
-            [makeAdvancedFilter(rules1, 1), makeAdvancedFilter(rules2, 2)],
-            { combine: true },
+        const [advancedResult] = await converter.convert(
+            [makeFilter(rules1, 1), makeFilter(rules2, 2)],
+            { combine: true, withSourceMap: true },
         );
 
         const simpleRules = simpleResult.ruleSet.getDeclarativeRules();
@@ -86,11 +71,11 @@ describe('Cross-flow consistency', () => {
             ['||d.com^', '||e.com^', '@@||f.com^'],
         ];
 
-        const simpleFilters = multiRules.map((r, i) => makeSimpleFilter(r, i + 1));
-        const advancedFilters = multiRules.map((r, i) => makeAdvancedFilter(r, i + 1));
+        const simpleFilters = multiRules.map((r, i) => makeFilter(r, i + 1));
+        const advancedFilters = multiRules.map((r, i) => makeFilter(r, i + 1));
 
-        const simpleResults = await simpleConverter.convert(simpleFilters);
-        const advancedResults = await advancedConverter.convert(advancedFilters);
+        const simpleResults = await converter.convert(simpleFilters);
+        const advancedResults = await converter.convert(advancedFilters, { withSourceMap: true });
 
         expect(simpleResults).toHaveLength(advancedResults.length);
 
@@ -106,9 +91,10 @@ describe('Cross-flow consistency', () => {
         const rules = ['||example.com^', '||example.net^'];
         const filterId = 5;
 
-        const [simpleResult] = await simpleConverter.convert([makeSimpleFilter(rules, filterId)]);
-        const [advancedResult] = await advancedConverter.convert(
-            [makeAdvancedFilter(rules, filterId)],
+        const [simpleResult] = await converter.convert([makeFilter(rules, filterId)]);
+        const [advancedResult] = await converter.convert(
+            [makeFilter(rules, filterId)],
+            { withSourceMap: true },
         );
 
         const simpleRules = simpleResult.ruleSet.getDeclarativeRules();

@@ -1,17 +1,16 @@
 /**
- * @file Defines the IFilter and IFilterWithSource interfaces for the DNR converter.
+ * @file Defines the IFilter interface for the DNR converter.
  */
 
 /**
- * Base interface for a filter list used in the simple conversion flow.
- * Suitable for callers that only need to supply a filter list id and its raw
- * text content.
+ * Interface for a filter list used in both the simple and advanced conversion
+ * flows. Implementations provide filter identity, asynchronous content loading,
+ * and optional source-map helpers.
  *
- * @template TContent Type returned by {@link getContent}. Defaults to `string`
- * for the simple synchronous flow; use `Promise<string>` for the advanced flow
- * with lazy loading and source-map support.
+ * Use {@link Filter} as the concrete implementation for both pre-loaded and
+ * lazy-loaded content.
  */
-export interface IFilter<TContent = string> {
+export interface IFilter {
     /**
      * Returns filter id.
      *
@@ -22,19 +21,15 @@ export interface IFilter<TContent = string> {
     /**
      * Returns the filter content.
      *
-     * @returns Filter content.
+     * @returns Promise resolving to filter content.
      */
-    getContent(): TContent;
-}
+    getContent(): Promise<string>;
 
-/**
- * Extended filter interface for the advanced conversion flow
- * ({@link FilterConverterWithSourceMap}) with source-map support and lazy
- * content loading.
- */
-export interface IFilterWithSource extends IFilter<Promise<string>> {
     /**
      * Returns original rule text by character offset.
+     *
+     * Optional: only invoked by the converter in the source-map flow
+     * (`withSourceMap: true`). Consumers of the simple flow may omit it.
      *
      * @param index Character offset of the rule's start in the original filter
      * text (i.e. `node.start` from the AGTree AST), **not** a line number or
@@ -42,14 +37,7 @@ export interface IFilterWithSource extends IFilter<Promise<string>> {
      *
      * @returns Original filtering rule at the given character offset.
      */
-    getRuleByIndex(index: number): Promise<string>;
-
-    /**
-     * Returns conversion data for the filter.
-     *
-     * @returns Conversion metadata or undefined if not available.
-     */
-    getConversionData(): string | undefined;
+    getRuleByIndex?(index: number): Promise<string>;
 
     /**
      * Unload filter content.

@@ -10,7 +10,7 @@ import {
 } from 'vitest';
 
 import { MaxScannedRulesError } from '../../../src/errors/limitation-errors/max-scanned-rules-error';
-import { type IFilterWithSource } from '../../../src/filter/types';
+import { type IFilter } from '../../../src/filter/types';
 import { NetworkRule, NetworkRuleOption } from '../../../src/network-rule';
 import { RulesScanner } from '../../../src/rules-scanner';
 import { createNetworkRuleMock } from '../../mocks/network-rule';
@@ -24,11 +24,10 @@ vi.mock('../../../src/network-rule', async () => ({
     NetworkRule: { parseFromNode: vi.fn() },
 }));
 
-const createFilter = (rules: string[] = [], id = 1): IFilterWithSource => ({
+const createFilter = (rules: string[] = [], id = 1): IFilter => ({
     getId: () => id,
     getRuleByIndex: async () => '',
     getContent: async () => rules.join('\n'),
-    getConversionData: () => undefined,
     unloadContent: () => {},
 });
 

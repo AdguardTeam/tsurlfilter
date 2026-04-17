@@ -88,13 +88,20 @@ You MUST follow the following rules for EVERY task that you perform:
 
 ### I. Architecture
 
-1. **Two conversion flows.** The library exposes two distinct flows:
-   - **Simple flow**: `FilterConverter` → `Ruleset` — for external consumers
-     needing only `DeclarativeRule[]` from plain filter text (synchronous,
-     in-memory, no source maps).
-   - **Advanced flow**: `FilterConverterWithSourceMap` → `RulesetWithSourceMap`
-     — for extension internals requiring source maps, `$badfilter` cross-filter
-     application via `computeRulesToDisable()`, and full serialization.
+1. **Two conversion flows.** The library exposes two distinct flows through
+   a single `FilterConverter` entry point, selected by the `withSourceMap`
+   option:
+   - **Simple flow** (`withSourceMap: false` or omitted): `FilterConverter`
+     → `Ruleset` — for external consumers needing only `DeclarativeRule[]`
+     from plain filter text (synchronous, in-memory, no source maps).
+   - **Advanced flow** (`withSourceMap: true`): `FilterConverter` →
+     `RulesetWithSourceMap` — for extension internals requiring source maps,
+     `$badfilter` cross-filter application via `computeRulesToDisable()`, and
+     full serialization.
+
+   The options type is a discriminated union
+   (`SimpleConverterOptions | SourceMapConverterOptions`); `badFilterRules`
+   is only accepted when `withSourceMap: true`.
 
    Both flows route through `RulesScanner` → `RulesConverter` → per-type
    converters.

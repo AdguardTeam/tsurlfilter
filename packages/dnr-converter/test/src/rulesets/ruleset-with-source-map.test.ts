@@ -7,7 +7,7 @@ import {
 } from 'vitest';
 
 import { type DeclarativeRule } from '../../../src/declarative-rule';
-import { type IFilterWithSource } from '../../../src/filter/types';
+import { type IFilter } from '../../../src/filter/types';
 import { NetworkRule, NetworkRuleOption } from '../../../src/network-rule';
 import { RulesConverter } from '../../../src/rule-converters/rules-converter';
 import { RulesScanner, type ScannedFilter } from '../../../src/rules-scanner';
@@ -26,9 +26,9 @@ import { createNetworkRuleMock } from '../../mocks/network-rule';
  * @param rules Array of rule text strings.
  * @param filterId Filter list ID.
  *
- * @returns IFilterWithSource mock.
+ * @returns IFilter mock.
  */
-const createFilter = (rules: string[], filterId = 0): IFilterWithSource => {
+const createFilter = (rules: string[], filterId = 0): IFilter => {
     const content = rules.join('\n');
 
     return {
@@ -47,7 +47,6 @@ const createFilter = (rules: string[], filterId = 0): IFilterWithSource => {
             throw new Error(`No rule at index ${index}`);
         },
         getContent: async (): Promise<string> => content,
-        getConversionData: () => undefined,
         unloadContent: () => {},
     };
 };
@@ -277,13 +276,13 @@ describe('RuleSet', () => {
 
         // Load content
         await ruleSet.getDeclarativeRules();
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(true);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'contentLoader')?.value.isLoaded()).toBe(true);
         expect(Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.size).toBeGreaterThan(0);
         expect(Object.getOwnPropertyDescriptor(ruleSet, 'sourceMap')?.value).not.toBeUndefined();
 
         // Unload content
         ruleSet.unloadContent();
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(false);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'contentLoader')?.value.isLoaded()).toBe(false);
         expect(Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.size).toBe(0);
         expect(Object.getOwnPropertyDescriptor(ruleSet, 'sourceMap')?.value).toBeUndefined();
     });
@@ -299,15 +298,15 @@ describe('RuleSet', () => {
 
         // Load content
         await ruleSet.getDeclarativeRules();
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(true);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'contentLoader')?.value.isLoaded()).toBe(true);
 
         // Unload content
         ruleSet.unloadContent();
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(false);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'contentLoader')?.value.isLoaded()).toBe(false);
 
         // Reload content after unloading
         await ruleSet.getDeclarativeRules();
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(true);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'contentLoader')?.value.isLoaded()).toBe(true);
     });
 
     it('waits for initialization before unloading', async () => {
@@ -346,7 +345,7 @@ describe('RuleSet', () => {
         await loadPromise;
 
         // Ensure that content is still correctly unloaded after the fetch completes
-        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(false);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'contentLoader')?.value.isLoaded()).toBe(false);
         expect(Object.getOwnPropertyDescriptor(ruleSet, 'sourceMap')?.value).toBeUndefined();
     });
 
@@ -361,9 +360,9 @@ describe('RuleSet', () => {
         await ruleSet.getDeclarativeRules();
 
         // Mock `unloadContent` for all filters
-        const unloadSpies: MockInstance<IFilterWithSource['unloadContent']>[] = [];
+        const unloadSpies: MockInstance<IFilter['unloadContent']>[] = [];
 
-        Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.forEach((filter: IFilterWithSource) => {
+        Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.forEach((filter: IFilter) => {
             const spy = vi.spyOn(filter, 'unloadContent');
             unloadSpies.push(spy);
         });

@@ -1,16 +1,16 @@
 import {
     DNR_CONVERTER_VERSION,
+    Filter,
     FilterConverter,
-    FilterConverterWithSourceMap,
+    MetadataRuleset,
     Ruleset,
     RulesetWithSourceMap,
-    MetadataRuleset,
 } from '@adguard/dnr-converter';
 import { ok } from 'node:assert';
 
 ok(typeof DNR_CONVERTER_VERSION === 'string');
+ok(typeof Filter === 'function');
 ok(typeof FilterConverter === 'function');
-ok(typeof FilterConverterWithSourceMap === 'function');
 ok(typeof Ruleset === 'function');
 ok(typeof RulesetWithSourceMap === 'function');
 ok(typeof MetadataRuleset === 'function');

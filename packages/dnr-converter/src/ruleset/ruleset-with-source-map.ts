@@ -7,10 +7,11 @@
 import * as v from 'valibot';
 
 import { type DeclarativeRule, DeclarativeRuleValidator } from '../declarative-rule';
-import { UnavailableRulesetSourceError } from '../errors/unavailable-sources-errors';
-import { type IFilterWithSource } from '../filter/types';
+import { UnavailableFilterSourceError, UnavailableRulesetSourceError } from '../errors/unavailable-sources-errors';
+import { type IFilter } from '../filter/types';
 import { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../utils/error';
+import { LazyLoader } from '../utils/lazy-loader';
 import { serializeJson } from '../utils/string';
 import { strictObjectByType } from '../utils/valibot';
 
@@ -21,8 +22,8 @@ import { type IBaseRuleset, type SourceRuleAndFilterId } from './types';
 
 /**
  * Extended rule set interface for the advanced conversion flow
- * ({@link FilterConverterWithSourceMap}) with source-map support, hash maps,
- * lazy loading, and full serialization.
+ * ({@link FilterConverter} with `withSourceMap: true`) with source-map support,
+ * hash maps, lazy loading, and full serialization.
  */
 export interface IRulesetWithSourceMap extends IBaseRuleset {
     /**
@@ -126,7 +127,7 @@ export interface IRulesetWithSourceMap extends IBaseRuleset {
  */
 export type RulesetContentProvider = {
     loadSourceMap: () => Promise<ISourceMap>;
-    loadFilterList: () => Promise<IFilterWithSource[]>;
+    loadFilterList: () => Promise<IFilter[]>;
     loadDeclarativeRules: () => Promise<DeclarativeRule[]>;
 };
 
@@ -273,12 +274,8 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
 
     /**
      * Keeps array of source filter lists.
-     *
-     * TODO: ? May it leads to memory leaks,
-     * because one FilterList with its content
-     * can be in the several RuleSet's at the same time ?
      */
-    private filterList: Map<number, IFilterWithSource> = new Map();
+    private filterList: Map<number, IFilter> = new Map();
 
     /**
      * The content provider of a rule set, is needed for lazy initialization.
@@ -288,14 +285,10 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     private readonly ruleSetContentProvider: RulesetContentProvider;
 
     /**
-     * Whether the content is loaded or not.
+     * Lazy loader wrapping the content-provider call. Handles caching,
+     * concurrent-call coalescing, and safe unload-during-load.
      */
-    private initialized: boolean = false;
-
-    /**
-     * Waiter for initialization, will be resolved when the content is loaded.
-     */
-    private initializerPromise: Promise<void> | undefined;
+    private readonly contentLoader: LazyLoader<void>;
 
     /**
      * Constructor of RulesetWithSourceMap.
@@ -327,6 +320,21 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         this.badFilterRules = badFilterRules;
         this.rulesHashMap = rulesHashMap;
         this.unsafeRules = unsafeRules;
+        this.contentLoader = new LazyLoader<void>(async () => {
+            const {
+                loadSourceMap,
+                loadFilterList,
+                loadDeclarativeRules,
+            } = this.ruleSetContentProvider;
+
+            this.sourceMap = await loadSourceMap();
+            this.declarativeRules = await loadDeclarativeRules();
+            // TODO: Find a better method to load filters (AG-42364)
+            const filtersList = await loadFilterList();
+            filtersList.forEach((filter: IFilter) => {
+                this.filterList.set(filter.getId(), filter);
+            });
+        });
     }
 
     /** @inheritdoc */
@@ -379,6 +387,16 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
                 throw new Error(`Not found filter list with id: ${filterId}`);
             }
 
+            // `getRuleByIndex` is optional on IFilter — only filters used in
+            // the source-map flow are expected to implement it. A filter
+            // without it cannot resolve source rules by index, which is a
+            // misconfiguration for this flow.
+            if (!filter.getRuleByIndex) {
+                // eslint-disable-next-line max-len
+                const msg = `Filter with id ${filterId} does not implement getRuleByIndex and cannot be used in the source-map flow`;
+                throw new UnavailableFilterSourceError(msg, filterId);
+            }
+
             const sourceRule = await filter.getRuleByIndex(sourceRuleIndex);
 
             return {
@@ -394,53 +412,51 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      * Run inner lazy deserialization from rule set content provider to load
      * data which is not needed on the creation of rule set:
      * the source map, filter list and declarative rules list.
+     *
+     * @returns Promise resolving when the content has been loaded.
      */
-    private async loadContent(): Promise<void> {
-        if (this.initialized) {
-            return;
-        }
-
-        if (this.initializerPromise) {
-            await this.initializerPromise;
-            return;
-        }
-
-        const initialize = async (): Promise<void> => {
-            const {
-                loadSourceMap,
-                loadFilterList,
-                loadDeclarativeRules,
-            } = this.ruleSetContentProvider;
-
-            this.sourceMap = await loadSourceMap();
-            this.declarativeRules = await loadDeclarativeRules();
-            // TODO: Find a better method to load filters (AG-42364)
-            const filtersList = await loadFilterList();
-            filtersList.forEach((filter: IFilterWithSource) => {
-                this.filterList.set(filter.getId(), filter);
-            });
-
-            this.initialized = true;
-        };
-
-        this.initializerPromise = initialize().finally(() => {
-            this.initializerPromise = undefined;
-        });
-        await this.initializerPromise;
+    private loadContent(): Promise<void> {
+        return this.contentLoader.get();
     }
 
     /** @inheritdoc */
     public unloadContent(): void {
-        // If content is not initialized, there is nothing to unload
-        if (!this.initialized && !this.initializerPromise) {
+        // Nothing to unload if content was never loaded and no load is pending.
+        // Both checks are required: if we only checked `isLoaded()` we would
+        // enter the clear branch below while a load is in flight and race
+        // with the producer writing to `sourceMap`, `filterList`, and
+        // `declarativeRules`.
+        if (!this.contentLoader.isLoaded() && !this.contentLoader.isLoading()) {
             return;
         }
 
-        // If initialization is in progress
-        if (this.initializerPromise) {
-            this.initializerPromise.finally(() => {
-                this.unloadContent();
-            });
+        // If a load is in flight, defer the full unload until it settles so
+        // we don't race with the producer writing to `sourceMap`, `filterList`,
+        // and `declarativeRules`.
+        //
+        // This defer-during-load dance is specific to `RulesetWithSourceMap`
+        // because the producer writes to multiple external fields on `this`.
+        // `Filter.unloadContent()` does not need it: `LazyLoader.reset()`
+        // already handles defer-during-load for its own cached value, and
+        // `Filter`'s only extra state (`ruleByOffset`) is rebuilt lazily on
+        // the next `getRuleByIndex()` call, so clearing it is always safe.
+        //
+        // Fire-and-forget is acceptable because the deferred unload has no
+        // observable consumers beyond ruleset state, and any producer error
+        // is surfaced to the caller of `loadContent()`.
+        if (this.contentLoader.isLoading()) {
+            this.contentLoader.get()
+                .finally(() => {
+                    this.unloadContent();
+                })
+                .catch(() => {
+                    // Empty on purpose. `.finally()` does not swallow
+                    // rejections — it re-throws the producer error into this
+                    // chain. Without `.catch()` that duplicate rejection
+                    // would bubble up as an unhandled rejection, because
+                    // nothing awaits this chain. The original error is still
+                    // delivered to whoever awaited `loadContent()`.
+                });
             return;
         }
 
@@ -453,8 +469,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         this.filterList.clear();
 
         // Mark the content as unloaded
-        this.initialized = false;
-        this.initializerPromise = undefined;
+        this.contentLoader.reset();
     }
 
     /** @inheritdoc */
@@ -548,7 +563,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      * a list of declarative rules, and a list of source filter IDs.
      * @param loadDeclarativeRules Loader for ruleset's declarative rules from
      * raw file as a string.
-     * @param filterList List of {@link IFilterWithSource}.
+     * @param filterList List of {@link IFilter}.
      *
      * @returns Deserialized rule set.
      *
@@ -560,7 +575,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         rawData: string,
         loadLazyData: () => Promise<string>,
         loadDeclarativeRules: () => Promise<string>,
-        filterList: IFilterWithSource[],
+        filterList: IFilter[],
     ): Promise<DeserializedRuleset> {
         let data: SerializedRulesetData;
 
@@ -616,7 +631,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
                 loadFilterList: async () => {
                     const { filterIds } = await getLazyData();
 
-                    return filterList.filter((filter: IFilterWithSource) => filterIds.includes(filter.getId()));
+                    return filterList.filter((filter: IFilter) => filterIds.includes(filter.getId()));
                 },
                 loadDeclarativeRules: async () => {
                     const rawFileContent = await loadDeclarativeRules();
@@ -736,8 +751,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         const metadataRule = createMetadataRule({
             metadata: this.getSerializedRuleSetData(unsafeRules),
             lazyMetadata: this.getSerializedRuleSetLazyData(),
-            rawFilterList: content,
-            conversionData: filter.getConversionData(),
+            filterContent: content,
         });
 
         // Insert metadata rule at the beginning of the rules array without

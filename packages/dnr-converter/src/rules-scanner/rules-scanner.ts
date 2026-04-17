@@ -2,7 +2,7 @@ import { RuleCategory } from '@adguard/agtree';
 import { FilterListParser, type ParserOptions } from '@adguard/agtree/parser';
 
 import { MaxScannedRulesError } from '../errors/limitation-errors';
-import { type IFilter, type IFilterWithSource } from '../filter/types';
+import { type IFilter } from '../filter/types';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 
 /**
@@ -94,7 +94,7 @@ export class RulesScanner {
      * @returns Result object of {@link ScannedFiltersWithErrors}.
      */
     public static async scanFilters(
-        filters: IFilter[] | IFilterWithSource[],
+        filters: IFilter[],
         filterFn?: (r: NetworkRule) => boolean,
         maxNumberOfScannedNetworkRules?: number,
     ): Promise<ScannedFiltersWithErrors> {
@@ -141,7 +141,7 @@ export class RulesScanner {
      * @returns Result object of {@link ScannedRulesWithErrors}.
      */
     private static async scanRules(
-        filter: IFilter | IFilterWithSource,
+        filter: IFilter,
         filterFn?: (r: NetworkRule) => boolean,
         maxNumberOfScannedNetworkRules?: number,
     ): Promise<ScannedRulesWithErrors> {

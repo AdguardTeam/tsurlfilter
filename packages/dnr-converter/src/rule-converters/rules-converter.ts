@@ -5,31 +5,30 @@
  * {@link RulesConverter.applyBadFilter} and checks for specified
  * limitations {@link RulesConverter.checkLimitations}.
  *
- * Note: FCWSM = FilterConverterWithSourceMap.
- *
  *                                                  Conversion
  *
- *       Two entry points        │                FilterConverter             │             RulesConverter
+ *       Single entry point      │                FilterConverter             │             RulesConverter
  *                               │                                            │
  *                               │       Perform the conversion at the        │      Perform the conversion at the
  *                               │       filter level.                        │      rules level.
  *                               │                                            │
- *  Simple conversion of filter  │       Validate options: resourcesPath,     │
- *  lists to declarative rules.  │       max rule counts, etc.                │
- * ┌─────────────────────────┐   │      ┌────────────────────────────────┐    │
- * │  FilterConverter        ├─┬─┼─────►│                                │    │
- * │     .convert()          │ │ │      │      checkConverterOptions()   │    │
- * └─────────────────────────┘ │ │  ┌───┤                                │    │
- *                             │ │  │   └────────────────────────────────┘    │
- *                             │ │  │                                         │
- *  Advanced conversion with   │ │  │    Parse filter text into NetworkRules. │
- *  source maps. FCWSM builds  │ │  │    FCWSM builds a skipNegatedRulesFn    │
- * ┌─────────────────────────┐ │ │  │    from options.badFilterRules to skip  │
- * │ FilterConverterWith-    │ │ │  │    rules negated by $badfilter during   │
- * │  SourceMap.convert()    ├─┘ │  │    scanning. For simple FilterConverter │
- * │                         │   │  │    no pre-filtering is applied.         │
- * └─────────────────────────┘   │  │   ┌────────────────────────────────┐    │
- *                               │  └──►│                                │    │
+ *  withSourceMap selects the    │       Validate options: resourcesPath,     │
+ *  conversion mode:             │       max rule counts, etc.                │
+ *  - false/omitted → Ruleset    │      ┌────────────────────────────────┐    │
+ *  - true → RulesetWithSourceMap│     ┌┤                                │    │
+ * ┌─────────────────────────┐   │     ││      checkConverterOptions()   │    │
+ * │  FilterConverter        ├───┼────►│┤                                │    │
+ * │     .convert()          │   │     │└────────────────────────────────┘    │
+ * └─────────────────────────┘   │     │                                      │
+ *                               │     │ Parse filter text into NetworkRules. │
+ *                               │     │ When withSourceMap is true and       │
+ *                               │     │ options.badFilterRules is provided,  │
+ *                               │     │ builds a skipNegatedRulesFn to skip  │
+ *                               │     │ rules negated by $badfilter during   │
+ *                               │     │ scanning. For simple mode            │
+ *                               │     │ no pre-filtering is applied.         │
+ *                               │     │┌────────────────────────────────┐    │
+ *                               │     └┤                                │    │
  *                               │      │   RulesScanner.scanFilters()   │    │
  *                               │  ┌───┤                                │    │
  *                               │  │   └────────────────────────────────┘    │  Filter rules affected by $badfilter
@@ -66,27 +65,29 @@
  *                               │   ┌────────────────────────────────────────┼───┤                                │
  *                               │   │                                        │   └────────────────────────────────┘
  *                               │   │   Wrap conversion output into a        │
- *                               │   │   RulesetWithSourceMap (FCWSM only).   │
- *                               │   │   FilterConverter creates a Ruleset    │
+ *                               │   │   RulesetWithSourceMap when            │
+ *                               │   │   withSourceMap is true.               │
+ *                               │   │   Otherwise creates a simple Ruleset   │
  *                               │   │   directly, without this step.         │
  *                               │   │  ┌────────────────────────────────┐    │
  *                               │   └─►│                                │    │
  *                               │      │    collectConvertedResult()    │    │
- *                               │      │        (FCWSM only)            │    │
+ *                               │      │    (withSourceMap: true only)  │    │
  *                               │      └────────────────────────────────┘    │
  *                               │                                            │
  *─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  ─ ─ ─ ─│
  *                               │                                            │
  *  Separate entry point, called │  Matches $badfilter rules from dynamic     │
  *  after convert() via          │  rulesets against all static rulesets and  │
- *  FCWSM.computeRulesToDisable().  returns the declarative rule IDs to       │
- *  Not part of the main         │  disable per static ruleset.               │
- *  conversion flow.             │ ┌────────────────────────────────────────┐ │
+ *  FilterConverter              │  returns the declarative rule IDs to       │
+ *  .computeRulesToDisable().    │  disable per static ruleset.               │
+ *  Not part of the main         │ ┌────────────────────────────────────────┐ │
+ *  conversion flow.             │ │                                        │ │
  * ┌─────────────────────────┐   │ │                                        │ │
- * │ FilterConverterWith-    ├───┼►│  collectDeclarativeRulesToCancel()     │ │
- * │  SourceMap              │   │ │        (FCWSM only)                    │ │
- * │  .computeRulesToDisable │   │ └────────────────────────────────────────┘ │
- * └─────────────────────────┘   │                                            │
+ * │ FilterConverter         ├───┼►│  collectDeclarativeRulesToCancel()     │ │
+ * │ .computeRulesToDisable  │   │ │  (withSourceMap: true rulesets only)   │ │
+ * └─────────────────────────┘   │ │                                        │ │
+ *                               │ └────────────────────────────────────────┘ │
  */
 /* eslint-enable jsdoc/require-description-complete-sentence */
 

@@ -5,18 +5,18 @@ import {
     NegativeNumberOfRulesError,
     ResourcesPathError,
 } from '../../../src/errors/converter-options-errors';
-import { type IFilterWithSource } from '../../../src/filter/types';
-import { FilterConverterWithSourceMap } from '../../../src/filter-converter/filter-converter-with-source-map';
+import { type IFilter } from '../../../src/filter/types';
+import { FilterConverter } from '../../../src/filter-converter/filter-converter';
 
 /**
- * Creates a test IFilterWithSource from an array of rule strings.
+ * Creates a test IFilter from an array of rule strings.
  *
  * @param rules Array of rule text strings.
  * @param filterId Filter list ID.
  *
- * @returns IFilterWithSource mock.
+ * @returns IFilter mock.
  */
-const createFilter = (rules: string[], filterId = 0): IFilterWithSource => {
+const createFilter = (rules: string[], filterId = 0): IFilter => {
     const content = rules.join('\n');
 
     return {
@@ -33,18 +33,18 @@ const createFilter = (rules: string[], filterId = 0): IFilterWithSource => {
             throw new Error(`No rule at index ${index}`);
         },
         getContent: async (): Promise<string> => content,
-        getConversionData: () => undefined,
         unloadContent: () => {},
     };
 };
 
-describe('FilterConverterWithSourceMap', () => {
-    const converter = new FilterConverterWithSourceMap();
+describe('FilterConverter (withSourceMap: true)', () => {
+    const converter = new FilterConverter();
+    const withSourceMapOptions = { withSourceMap: true } as const;
 
     describe('convert (per-filter mode)', () => {
         it('converts network rules to declarative rules', async () => {
             const filter = createFilter(['||example.org^']);
-            const [{ ruleSet, errors, limitations }] = await converter.convert([filter]);
+            const [{ ruleSet, errors, limitations }] = await converter.convert([filter], withSourceMapOptions);
 
             const declarativeRules = await ruleSet.getDeclarativeRules();
             expect(declarativeRules.length).toBeGreaterThanOrEqual(1);
@@ -56,9 +56,9 @@ describe('FilterConverterWithSourceMap', () => {
         it('assigns a rule set id based on filter id', async () => {
             const filterId = 42;
             const filter = createFilter(['||example.org^'], filterId);
-            const [{ ruleSet }] = await converter.convert([filter]);
+            const [{ ruleSet }] = await converter.convert([filter], withSourceMapOptions);
 
-            expect(ruleSet.getId()).toBe(FilterConverterWithSourceMap.getRuleSetId(filterId));
+            expect(ruleSet.getId()).toBe(FilterConverter.getRuleSetId(filterId));
         });
 
         it('handles empty lines in filter list', async () => {
@@ -70,7 +70,7 @@ describe('FilterConverterWithSourceMap', () => {
                 '',
                 '||example.net^',
             ]);
-            const [{ ruleSet }] = await converter.convert([filter]);
+            const [{ ruleSet }] = await converter.convert([filter], withSourceMapOptions);
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
             // Three valid network rules should produce 3 declarative rules
@@ -82,7 +82,7 @@ describe('FilterConverterWithSourceMap', () => {
                 '||example.com^',
                 '||example.net^',
             ]);
-            const [{ ruleSet }] = await converter.convert([filter]);
+            const [{ ruleSet }] = await converter.convert([filter], withSourceMapOptions);
 
             const declarativeRules = await ruleSet.getDeclarativeRules();
             expect(declarativeRules).toHaveLength(2);
@@ -97,7 +97,7 @@ describe('FilterConverterWithSourceMap', () => {
                 '||example.com^',
                 '@@||example.io^',
             ]);
-            const [{ ruleSet }] = await converter.convert([filter]);
+            const [{ ruleSet }] = await converter.convert([filter], withSourceMapOptions);
 
             expect(ruleSet.getRulesCount()).toStrictEqual(2);
         });
@@ -108,7 +108,7 @@ describe('FilterConverterWithSourceMap', () => {
                 // Unsupported modifier will produce a conversion error
                 '||example.org^$ping',
             ]);
-            const [{ ruleSet }] = await converter.convert([filter]);
+            const [{ ruleSet }] = await converter.convert([filter], withSourceMapOptions);
 
             // At least the valid rule should be converted
             expect(ruleSet.getRulesCount()).toBeGreaterThanOrEqual(1);
@@ -118,11 +118,11 @@ describe('FilterConverterWithSourceMap', () => {
             const filter1 = createFilter(['||example.com^'], 1);
             const filter2 = createFilter(['||example.net^'], 2);
 
-            const results = await converter.convert([filter1, filter2]);
+            const results = await converter.convert([filter1, filter2], withSourceMapOptions);
 
             expect(results).toHaveLength(2);
-            expect(results[0].ruleSet.getId()).toBe(FilterConverterWithSourceMap.getRuleSetId(1));
-            expect(results[1].ruleSet.getId()).toBe(FilterConverterWithSourceMap.getRuleSetId(2));
+            expect(results[0].ruleSet.getId()).toBe(FilterConverter.getRuleSetId(1));
+            expect(results[1].ruleSet.getId()).toBe(FilterConverter.getRuleSetId(2));
         });
     });
 
@@ -133,19 +133,19 @@ describe('FilterConverterWithSourceMap', () => {
 
             const [{ ruleSet }] = await converter.convert(
                 [filter1, filter2],
-                { combine: true },
+                { combine: true, withSourceMap: true },
             );
 
             const declarativeRules = await ruleSet.getDeclarativeRules();
             expect(declarativeRules).toHaveLength(2);
-            expect(ruleSet.getId()).toBe(FilterConverterWithSourceMap.COMBINED_RULESET_ID);
+            expect(ruleSet.getId()).toBe(FilterConverter.COMBINED_RULESET_ID);
         });
     });
 
     describe('computeRulesToDisable', () => {
         it('returns empty array when no static rulesets', async () => {
             const filter = createFilter(['||example.com^']);
-            const [{ ruleSet }] = await converter.convert([filter]);
+            const [{ ruleSet }] = await converter.convert([filter], withSourceMapOptions);
 
             const result = await converter.computeRulesToDisable([ruleSet], []);
 
@@ -155,11 +155,11 @@ describe('FilterConverterWithSourceMap', () => {
         it('applies $badfilter from static rulesets to dynamic rules', async () => {
             // Convert a static ruleset first
             const staticFilter = createFilter(['||example.com^'], 10);
-            const [{ ruleSet: staticRuleSet }] = await converter.convert([staticFilter]);
+            const [{ ruleSet: staticRuleSet }] = await converter.convert([staticFilter], withSourceMapOptions);
 
             // Dynamic filter with rules that might be negated
             const dynamicFilter = createFilter(['||example.net^'], 20);
-            const [{ ruleSet: dynamicRuleSet }] = await converter.convert([dynamicFilter]);
+            const [{ ruleSet: dynamicRuleSet }] = await converter.convert([dynamicFilter], withSourceMapOptions);
 
             const result = await converter.computeRulesToDisable([dynamicRuleSet], [staticRuleSet]);
 
@@ -177,7 +177,7 @@ describe('FilterConverterWithSourceMap', () => {
             ]);
             const [{ ruleSet, limitations }] = await converter.convert(
                 [filter],
-                { maxNumberOfRules: 2 },
+                { maxNumberOfRules: 2, withSourceMap: true },
             );
 
             const declarativeRules = await ruleSet.getDeclarativeRules();

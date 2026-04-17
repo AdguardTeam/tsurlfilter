@@ -21,7 +21,9 @@ const createFilter = (rules: string[], filterId = 0): IFilter => {
 
     return {
         getId: () => filterId,
-        getContent: () => content,
+        getContent: async () => content,
+        getRuleByIndex: async () => '',
+        unloadContent: () => {},
     };
 };
 

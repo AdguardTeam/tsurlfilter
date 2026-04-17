@@ -1,7 +1,6 @@
 export { DNR_CONVERTER_VERSION } from './version';
 export {
     type ConverterOptions,
-    FilterConverterWithSourceMap,
     FilterConverter,
 } from './filter-converter';
 export { isSafeRule } from './utils/is-safe-rule';
@@ -24,7 +23,8 @@ export {
     type SerializedRulesetLazyData,
 } from './ruleset/ruleset-with-source-map';
 export { type ConversionResult } from './filter-converter/conversion-result';
-export { type IFilter, type IFilterWithSource } from './filter/types';
+export { Filter } from './filter/filter';
+export { type IFilter } from './filter/types';
 export { type IRulesHashMap } from './ruleset/rules-hash-map';
 export { type ISourceMap } from './ruleset/source-map';
 export {
