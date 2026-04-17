@@ -1040,6 +1040,50 @@ export interface CssInjectionRuleBody extends Node {
 }
 
 /**
+ * Represents a single CSS property declaration.
+ *
+ * @example
+ * display: none !important
+ * ↑↑↑↑↑↑↑  ↑↑↑↑  ↑↑↑↑↑↑↑↑↑↑
+ * property  value  important
+ */
+export interface CssDeclaration extends Node {
+    type: 'CssDeclaration';
+
+    /**
+     * Property name.
+     */
+    property: Value;
+
+    /**
+     * Declaration value (raw, trimmed).
+     */
+    value: Value;
+
+    /**
+     * Whether the declaration has the `!important` flag.
+     */
+    important: boolean;
+}
+
+/**
+ * Represents an ordered list of CSS declarations.
+ *
+ * @example
+ * display: none; padding: 10px
+ * ↑↑↑↑↑↑↑↑↑↑↑↑↑  ↑↑↑↑↑↑↑↑↑↑↑↑↑
+ * declaration 1    declaration 2
+ */
+export interface CssDeclarationList extends Node {
+    type: 'CssDeclarationList';
+
+    /**
+     * Ordered list of declarations.
+     */
+    children: CssDeclaration[];
+}
+
+/**
  * Represents an element hiding rule body. There can even be several selectors in a rule,
  * but the best practice is to place the selectors in separate rules.
  */
