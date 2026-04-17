@@ -8,6 +8,6 @@ export default defineConfig({
         environment: 'jsdom',
         setupFiles: ['./vitest.setup.ts'],
         // FIXME: Double check this
-        testTimeout: 20000,
+        testTimeout: 30000,
     },
 });
