@@ -5,12 +5,13 @@
  * @note Usage: tsx benchmark.ts
  */
 
-import { createConsola } from 'consola';
-import { Table } from 'console-table-printer';
-import { buildSync } from 'esbuild';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { createConsola } from 'consola';
+import { Table } from 'console-table-printer';
+import { buildSync } from 'esbuild';
 import { chromium, firefox, webkit } from 'playwright';
 
 import { type BenchmarkResult } from './benchmark-code';

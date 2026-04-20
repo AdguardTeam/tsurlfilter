@@ -5,7 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 4.2.0
+## [4.2.0-beta.1] - 2026-04-17
+
+### Added
+
+- `ROList` filter list [AdguardBrowserExtension#3473].
+
+[4.2.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.0-beta.1
+[AdguardBrowserExtension#3473]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3473
+
+## [4.2.0-beta] - 2026-04-16
 
 ### Changed
 
@@ -23,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Smoke test failure in Docker CI by adding `--ignore-scripts` to
   `pnpm install` in `test/smoke/exports/test.sh`.
+
+[4.2.0-beta]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.0-beta
 
 ## [4.1.0] - 2026-02-25
 

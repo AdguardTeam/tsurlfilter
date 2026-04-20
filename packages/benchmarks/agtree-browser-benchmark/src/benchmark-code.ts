@@ -4,12 +4,14 @@
  * @file Benchmark code.
  */
 
-import type * as AGTree from '@adguard/agtree';
-import { type ParserOptions } from '@adguard/agtree/parser';
-import Benchmark from 'benchmark';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import Benchmark from 'benchmark';
 import ObjectSizeof from 'object-sizeof';
+
+import type * as AGTree from '@adguard/agtree';
+import { type ParserOptions } from '@adguard/agtree/parser';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

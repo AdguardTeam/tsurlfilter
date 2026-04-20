@@ -4,7 +4,6 @@
  * @see {@link https://github.com/stylelint/css-parser/issues/1}
  */
 
-import * as AdGuardCssTokenizer from '@adguard/css-tokenizer';
 import * as CssToolsCssTokenizer from '@csstools/css-tokenizer';
 import * as CssToolsTokenizer from '@csstools/tokenizer';
 import * as CssTree from 'css-tree';
@@ -16,6 +15,8 @@ import * as CssTree from 'css-tree';
 // @ts-ignore
 import * as cssLex from 'csslex';
 import * as parseCss from 'parse-css/parse-css';
+
+import * as AdGuardCssTokenizer from '@adguard/css-tokenizer';
 // Note: this is an ESM package, but we use esbuild to make a bundle on the fly before running the benchmark
 // so it works fine
 

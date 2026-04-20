@@ -1,10 +1,12 @@
 /**
  * @file Benchmark runner.
  */
-import { type ParserOptions } from '@adguard/agtree/parser';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import { type Browser, type BrowserType } from 'playwright';
+
+import { type ParserOptions } from '@adguard/agtree/parser';
 
 import { benchmark, type BenchmarkArgs, type BenchmarkResult } from './benchmark-code';
 import { type DownloadedFilterListResource } from './interfaces';

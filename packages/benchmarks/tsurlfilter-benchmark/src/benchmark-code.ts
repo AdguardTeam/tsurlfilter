@@ -6,6 +6,7 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import type * as Tinybench from 'tinybench';
 
 import type * as TsUrlFilter from './tsurlfilter/tsurlfilter';
