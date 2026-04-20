@@ -286,7 +286,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     mkdir -p /out/tests-reports && \
     echo "${TEST_RUN_ID}" > /out/.test-run-id && \
-    npx lerna run build --scope @adguard/dnr-rulesets; \
+    DNR_FILTER_KNOWN_ONLY=true npx lerna run build --scope @adguard/dnr-rulesets; \
     BUILD_EXIT=$?; \
     if [ $BUILD_EXIT -ne 0 ]; then \
       echo $BUILD_EXIT > /out/exit-code.txt; \

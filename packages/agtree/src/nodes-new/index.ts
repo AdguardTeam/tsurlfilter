@@ -1084,6 +1084,76 @@ export interface CssDeclarationList extends Node {
 }
 
 /**
+ * Represents the `{ ... }` block of a CSS qualified rule.
+ *
+ * Currently only contains a declaration list. In the future,
+ * CSS nesting may add nested rules here.
+ */
+export interface CssBlock extends Node {
+    type: 'CssBlock';
+
+    /**
+     * The declaration list inside the block.
+     */
+    declarationList: CssDeclarationList;
+}
+
+/**
+ * Represents a CSS qualified rule (style rule).
+ *
+ * @example
+ * div { color: red; }
+ * ↑↑↑   ↑↑↑↑↑↑↑↑↑↑↑
+ * prelude    block
+ */
+export interface CssRule extends Node {
+    type: 'CssRule';
+
+    /**
+     * The selector list prelude (or raw text if sub-parsing is disabled).
+     */
+    prelude: SelectorList | Raw;
+
+    /**
+     * The `{ ... }` declaration block, or a `Raw` node when `parseBlock: false`.
+     *
+     * When `parseBlock` is `false`, the `Raw` node contains the whitespace-trimmed
+     * declaration list text — the block body interior **without** the enclosing
+     * `{` and `}` characters. Use the `start`/`end` offsets on `CssBlock` (when
+     * fully parsed) to obtain the brace-inclusive source range.
+     */
+    block: CssBlock | Raw;
+}
+
+/**
+ * Parse options for the CSS rule parser.
+ */
+export interface CssRuleParseOptions {
+    /**
+     * Whether to include location info (start/end) in AST nodes.
+     *
+     * Defaults to `true`.
+     */
+    isLocIncluded?: boolean;
+
+    /**
+     * Whether to parse the selector list prelude into a SelectorList AST node.
+     * When `false`, the prelude is returned as a `Raw` node.
+     *
+     * Defaults to `true`.
+     */
+    parsePrelude?: boolean;
+
+    /**
+     * Whether to parse the block body into a CssBlock with CssDeclarationList.
+     * When `false`, the block is returned as a `Raw` node.
+     *
+     * Defaults to `true`.
+     */
+    parseBlock?: boolean;
+}
+
+/**
  * Represents an element hiding rule body. There can even be several selectors in a rule,
  * but the best practice is to place the selectors in separate rules.
  */
