@@ -2,10 +2,10 @@
  * @file Tokenizing logic for numbers
  */
 
-import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
-import { isDigit } from '../definitions';
 import { type TokenizerContext } from '../../common/context';
 import { CodePoint } from '../../common/enums/code-points';
+import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
+import { isDigit } from '../definitions';
 
 /**
  * § 4.3.12. Consume a number

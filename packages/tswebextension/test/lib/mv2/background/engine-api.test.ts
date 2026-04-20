@@ -1,22 +1,23 @@
+import browser from 'sinon-chrome';
 import {
-    describe,
-    expect,
-    beforeAll,
-    beforeEach,
     afterAll,
     afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
     it,
-    vi,
     type MockInstance,
+    vi,
 } from 'vitest';
-import browser from 'sinon-chrome';
-import { type CosmeticOption, Engine, CosmeticResult } from '@adguard/tsurlfilter';
+
+import { type CosmeticOption, CosmeticResult, Engine } from '@adguard/tsurlfilter';
 
 import { type MatchQuery } from '../../../../src/lib/common/interfaces';
-import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
-import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { stealthApi } from '../../../../src/lib/mv2/background/api';
+import { appContext } from '../../../../src/lib/mv2/background/app-context';
+import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 

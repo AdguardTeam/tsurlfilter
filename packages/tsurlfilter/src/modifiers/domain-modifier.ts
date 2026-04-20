@@ -1,6 +1,7 @@
+import { getPublicSuffix } from 'tldts';
+
 import { type DomainList } from '@adguard/agtree';
 import { defaultParserOptions, DomainListParser } from '@adguard/agtree/parser';
-import { getPublicSuffix } from 'tldts';
 
 import { WILDCARD } from '../common/constants';
 import { SimpleRegex } from '../rules/simple-regex';

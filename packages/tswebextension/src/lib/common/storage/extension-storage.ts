@@ -1,5 +1,5 @@
-import { PersistentValueContainer } from './persistent-value-container';
 import type { ExtendedStorageInterface } from './core/storage-interface';
+import { PersistentValueContainer } from './persistent-value-container';
 
 /**
  * API for storing persistent key-value data with debounced sync using a specified storage key.

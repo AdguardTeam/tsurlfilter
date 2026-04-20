@@ -1,8 +1,8 @@
 import {
+    afterEach,
+    beforeEach,
     describe,
     expect,
-    beforeEach,
-    afterEach,
     it,
     vi,
 } from 'vitest';
@@ -15,11 +15,11 @@ import {
     messagesApi,
     TsWebExtension,
 } from '../../../../src/lib';
-import { assistant, Assistant } from '../../../../src/lib/mv2/background/assistant';
 import { type Message } from '../../../../src/lib/common/message';
+import { assistant, Assistant } from '../../../../src/lib/mv2/background/assistant';
 
-import { MockAppContext } from './mocks/mock-app-context';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
+import { MockAppContext } from './mocks/mock-app-context';
 
 vi.mock('../../../../src/lib/mv2/background/ext-session-storage');
 vi.mock('../../../../src/lib/mv2/background/app-context', () => ({

@@ -1,10 +1,11 @@
 /**
  * @file Write benchmark results to a markdown file
  */
-import si from 'systeminformation';
 import { writeFile } from 'fs/promises';
-import { markdownTable } from 'markdown-table';
+
 import { formatRFC7231 } from 'date-fns';
+import { markdownTable } from 'markdown-table';
+import si from 'systeminformation';
 
 import { EMPTY, LINE_FEED } from '../common/constants';
 import { type ResourceBenchResult } from '../common/interfaces';

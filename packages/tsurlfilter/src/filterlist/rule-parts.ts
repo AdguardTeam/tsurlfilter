@@ -1,5 +1,6 @@
-import { NetworkRuleParser } from '@adguard/agtree';
 import isIp from 'is-ip';
+
+import { NetworkRuleParser } from '@adguard/agtree';
 
 import {
     CLOSE_SQUARE,

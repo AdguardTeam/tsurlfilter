@@ -1,5 +1,5 @@
-import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 import { type ConvertedRules } from '../converted-result';
+import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 
 import { AbstractRuleConverter } from './abstract-rule-converter';
 

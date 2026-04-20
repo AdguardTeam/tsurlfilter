@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'vitest';
+
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
-import { createCosmeticRule } from '../../../../helpers/rule-creator';
-import { TrustedTypesService } from '../../../../../src/lib/mv2/background/services/trusted-types-service';
 import { type RequestContext } from '../../../../../src/lib';
+import { TrustedTypesService } from '../../../../../src/lib/mv2/background/services/trusted-types-service';
+import { createCosmeticRule } from '../../../../helpers/rule-creator';
 
 /**
  * Expects that header is modified as expected.

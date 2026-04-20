@@ -1,10 +1,10 @@
+import browser from 'sinon-chrome';
 import {
     describe,
     expect,
     it,
     vi,
 } from 'vitest';
-import browser from 'sinon-chrome';
 
 import { RequestEvent } from '../../../../../../src/lib';
 

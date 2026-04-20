@@ -5,14 +5,15 @@
  * ! does some additional work before and after running Rollup.
  */
 
-import { type RollupOptions } from 'rollup';
-import typescript from '@rollup/plugin-typescript';
-import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import dtsPlugin from 'rollup-plugin-dts';
-import json from '@rollup/plugin-json';
-import path from 'path';
 import { readFileSync } from 'fs';
+import path from 'path';
+
+import commonjs from '@rollup/plugin-commonjs';
+import json from '@rollup/plugin-json';
+import resolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
+import { type RollupOptions } from 'rollup';
+import dtsPlugin from 'rollup-plugin-dts';
 
 // Common constants
 const ROOT_DIR = './';

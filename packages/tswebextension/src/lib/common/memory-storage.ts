@@ -1,4 +1,4 @@
-import { pick, merge } from 'lodash-es';
+import { merge, pick } from 'lodash-es';
 import { type Events, type Storage } from 'webextension-polyfill';
 
 /**

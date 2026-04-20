@@ -11,5 +11,6 @@
     "no-bare-urls": false,
     "ul-style": { "style": "dash" },
     "blanks-around-fences": { "list_items": false },
-    "emphasis-style": { "style": "asterisk" }
+    "emphasis-style": { "style": "asterisk" },
+    "table-column-style": { "style": "aligned" }
 }

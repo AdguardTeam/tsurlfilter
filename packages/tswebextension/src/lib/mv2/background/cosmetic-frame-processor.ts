@@ -1,15 +1,15 @@
 import { type MatchingResult, type NetworkRule, RequestType } from '@adguard/tsurlfilter';
 
-import { isHttpRequest } from '../../common/utils/url';
 import { LF, MAIN_FRAME_ID } from '../../common/constants';
 import {
-    type PrecalculateCosmeticProps,
+    type HandleMainFrameProps,
     type HandleSubFrameWithoutUrlProps,
     type HandleSubFrameWithUrlProps,
-    type HandleMainFrameProps,
+    type PrecalculateCosmeticProps,
 } from '../../common/cosmetic-frame-processor';
 import { DocumentLifecycle } from '../../common/interfaces';
 import { CssCapabilities } from '../../common/utils/css-capabilities';
+import { isHttpRequest } from '../../common/utils/url';
 
 import { documentApi, stealthApi } from './api';
 import { appContext } from './app-context';
@@ -162,11 +162,11 @@ export class CosmeticFrameProcessor {
             frameId,
         } = props;
 
+        this.tabsApi.resetBlockedRequestsCount(tabId);
+
         if (!isHttpRequest(url)) {
             return;
         }
-
-        this.tabsApi.resetBlockedRequestsCount(tabId);
 
         const mainFrameRule = documentApi.matchFrame(url);
 
@@ -259,11 +259,21 @@ export class CosmeticFrameProcessor {
             url,
             parentDocumentId,
             documentLifecycle,
+            isPrefetchRequest,
         } = props;
 
         // Prerender main frame request can have other that 0 id.
         const isMainFrame = (!parentDocumentId && documentLifecycle === DocumentLifecycle.Prerender)
             || frameId === MAIN_FRAME_ID;
+
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+
+        // Don't process prerender or prefetch requests
+        // further, because they should not reset the blocked counter or
+        // trigger cosmetic recalculation for the current page.
+        if (isMainFrame && (isPrerenderRequest || isPrefetchRequest)) {
+            return;
+        }
 
         if (isMainFrame) {
             this.handleMainFrame({

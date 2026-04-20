@@ -3,6 +3,7 @@
 Utility to load prebuilt AdGuard DNR rulesets for mv3 extensions.
 
 The list of available filters can be found by `filters` in the metadata of:
+
 - [Chromium MV3 filters](https://filters.adtidy.org/extension/chromium-mv3/filters.json),
 - [Opera MV3 filters](https://filters.adtidy.org/extension/opera-mv3/filters.json).
 
@@ -18,12 +19,9 @@ The list of available filters can be found by `filters` in the metadata of:
         - [Injecting rulesets to the manifest object](#injecting-rulesets-to-the-manifest-object)
     - [Example](#example)
     - [Included filter lists](#included-filter-lists)
-    - [Development](#development)
-        - [build:assets](#buildassets)
-        - [build:lib](#buildlib)
-        - [build:cli](#buildcli)
-        - [build:docs](#builddocs)
-        - [build](#build)
+    - [Managing `validator-data.json`](#managing-validator-datajson)
+        - [When to update](#when-to-update)
+        - [How to update](#how-to-update)
 
 ## Basic usage
 
@@ -53,6 +51,7 @@ Available commands:
 #### `load` command
 
 Downloads and saves DNR rulesets to the specified directory.
+
 ```bash
 dnr-rulesets load <path-to-output>
 ```
@@ -60,11 +59,14 @@ dnr-rulesets load <path-to-output>
 **Options for `load` command:**
 
 - `-l, --latest-filters` - download latest text filters instead of DNR rulesets (default: false)
-- `-b, --browser <browser>` - specify browser to load filters for (default: "chromium-mv3"). Available browsers: `chromium-mv3`, `opera-mv3`.
+- `-b, --browser <browser>` - specify browser to load filters for
+  (default: "chromium-mv3").
+  Available browsers: `chromium-mv3`, `opera-mv3`.
 
 #### `manifest` command
 
 Patches the extension manifest to include DNR rulesets.
+
 ```bash
 dnr-rulesets manifest <path-to-manifest> <path-to-filters> [options]
 ```
@@ -86,25 +88,32 @@ dnr-rulesets manifest <path-to-manifest> <path-to-filters> [options]
 #### `watch` command
 
 Watches for changes in the filter files and rebuilds DNR rulesets.
+
 ```bash
 dnr-rulesets watch <path-to-manifest> <path-to-resources> [options]
 ```
 
 **Arguments:**
+
 - `<path-to-manifest>` - path to the manifest.json file
-- `<path-to-resources>` - folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)
+- `<path-to-resources>` - folder with resources to build $redirect rules
+  (can be obtained via `@adguard/tswebextension war` command)
 
 **Options for `watch` command:**
 
 - `-p, --path-to-filters` - path to filters and i18n metadata file (default: `./filters` relative to manifest folder)
-- `-o, --output-path-for-rulesets` - output path for rulesets (default: `./filters/declarative` relative to manifest folder)
+- `-o, --output-path-for-rulesets` - output path for rulesets
+  (default: `./filters/declarative` relative to manifest folder)
 - `-f, --force-update` - force update rulesets with existing id (default: true)
-- `-i, --ids <ids...>` - filters ids to process, others will be ignored (default: [] - process all filters matched via `--filters-match`)
+- `-i, --ids <ids...>` - filters ids to process, others will be ignored
+  (default: [] - process all filters matched via `--filters-match`)
 - `-e, --enable <ids...>` - enable filters by default in manifest.json (default: [])
 - `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
 - `-m, --filters-match <match>` - filters files match glob pattern (default: "filter_+([0-9]).txt")
 - `-l, --latest-filters` - download latest text filters on first start before watch (default: false)
-- `-b, --browser <browser>` - specify browser to download latest filters for (default: "chromium-mv3"). See `--latest-filters` option. Available browsers: `chromium-mv3`, `opera-mv3`.
+- `-b, --browser <browser>` - specify browser to download latest filters for
+  (default: "chromium-mv3"). See `--latest-filters` option.
+  Available browsers: `chromium-mv3`, `opera-mv3`.
 - `-d, --debug` - enable extended logging during conversion (default: false)
 - `-j, --prettify-json` - prettify JSON output (default: true)
 
@@ -118,17 +127,21 @@ dnr-rulesets exclude-unsafe-rules <dir> [options]
 ```
 
 **Arguments:**
+
 - `<dir>`: Path to the folder containing rulesets to process.
 
 **Options:**
+
 - `-j, --prettify-json <bool>`: Prettify JSON output (`true` or `false`, default: `true`)
-- `-l, --limit <number>`: Limit the number of unsafe rules to exclude. If the number of unsafe rules exceeds this limit, the command will throw an error.
+- `-l, --limit <number>`: Limit the number of unsafe rules to exclude.
+  If the number of unsafe rules exceeds this limit,
+  the command will throw an error.
 
 **Example:**
+
 ```bash
 dnr-rulesets exclude-unsafe-rules ./filters/declarative --prettify-json false --limit 100
 ```
-
 
 **Note about array options**: For options that accept multiple values (`ids` and `enable`), use please following syntax:
 
@@ -157,9 +170,14 @@ You can also integrate functions for downloading and updating the manifest into 
     This method copies prebuilt assets to the specified output directory, including:
     - DNR rulesets in JSON format for all available filters
     - `filters_i18n.json` - translations file with filter names and descriptions
-    - `local_script_rules.js` - local script rules file in JS module format for
-    Manifest v3 extensions where it is highly recommended to provide local script rules. If not provided during build, all script rules (except scriptlets) will not be injected to ensure compliance with Chrome Web Store policies.
-    - `local_script_rules.json` - local script rules in JSON format for Manifest v2. If not provided, all script rules are treated as allowed. Should be provided in Firefox AMO according to their policies.
+    - `local_script_rules.js` - local script rules file in JS module format
+    for Manifest v3 extensions where it is highly recommended to provide
+    local script rules. If not provided during build, all script rules
+    (except scriptlets) will not be injected to ensure compliance with
+    Chrome Web Store policies.
+    - `local_script_rules.json` - local script rules in JSON format for
+    Manifest v2. If not provided, all script rules are treated as allowed.
+    Should be provided in Firefox AMO according to their policies.
 
     ```ts
     import { AssetsLoader, BrowserFilters } from '@adguard/dnr-rulesets';
@@ -248,7 +266,10 @@ You can also integrate functions for downloading and updating the manifest into 
     );
     ```
 
-    This method parses custom filtering rules, extracts JavaScript injection rules from them, and appends them to an existing `local_script_rules.js` file. It's useful for dynamically adding custom JS rules to your extension at build time.
+    This method parses custom filtering rules, extracts JavaScript
+    injection rules from them, and appends them to an existing
+    `local_script_rules.js` file. It's useful for dynamically adding
+    custom JS rules to your extension at build time.
 
     **Option B: Using `extendLocalScriptRulesJson`** (Manifest V2)
 
@@ -265,9 +286,18 @@ You can also integrate functions for downloading and updating the manifest into 
     );
     ```
 
-    This method parses custom filtering rules, extracts JavaScript injection rules with their domain configurations (both permitted and restricted domains), and merges them into an existing `local_script_rules.json` file. Use this method when you need to maintain domain-specific rule associations.
+    This method parses custom filtering rules, extracts JavaScript
+    injection rules with their domain configurations (both permitted and
+    restricted domains), and merges them into an existing
+    `local_script_rules.json` file. Use this method when you need to
+    maintain domain-specific rule associations.
 
-    > **Note:** The `extendLocalScriptRulesJs` and `extendLocalScriptRulesJson` methods are only available in the programmatic API and not in the CLI. These methods require programmatic access to parse and manipulate existing local script rule files, which is more suitable for build scripts and custom automation workflows rather than command-line usage.
+    > **Note:** The `extendLocalScriptRulesJs` and
+    > `extendLocalScriptRulesJson` methods are only available in the
+    > programmatic API and not in the CLI. These methods require
+    > programmatic access to parse and manipulate existing local script
+    > rule files, which is more suitable for build scripts and custom
+    > automation workflows rather than command-line usage.
 
 4. Patch extension manifest.
 
@@ -304,7 +334,6 @@ await excludeUnsafeRules('<path-to-rulesets-dir>', {
     limit: 100,         // optional
 });
 ```
-
 
 ### Output structure
 
@@ -395,6 +424,52 @@ Example of usage: [adguard-api-mv3](../examples/adguard-api-mv3)
 ## Included filter lists
 
 See the list of included filters in [FILTERS.md](FILTERS.md).
+
+## Managing `validator-data.json`
+
+The file `tasks/validator-data.json` serves two purposes:
+
+1. **Post-build validation** (`pnpm validate:assets`): after a build, the
+   validator compares the newly generated ruleset IDs and metadata keys against
+   this file. If they differ, the build fails with an error asking to update
+   the file and the changelog.
+
+2. **Pre-build allowlist** (auto-builds): when the environment variable
+   `DNR_FILTER_KNOWN_ONLY=true` is set (used in Docker/CI auto-builds for
+   stable branches), only filter IDs listed in this file are downloaded.
+   This prevents newly added filters in the FiltersRegistry from leaking into
+   older stable builds.
+
+### When to update
+
+Update `validator-data.json` whenever filters are **added to or removed from**
+the registry for a supported browser. Typical scenarios:
+
+- A new filter is published in the FiltersRegistry.
+- An existing filter is removed or its ID changes.
+
+### How to update
+
+1. Run a full build to download the latest filters and generate rulesets:
+
+   ```bash
+   pnpm build:assets
+   ```
+
+2. Run validation — it will fail and print the added/removed ruleset IDs:
+
+   ```bash
+   pnpm validate:assets
+   ```
+
+3. Update `tasks/validator-data.json` with the new data. The easiest way is to
+   copy the output from the build into the file, keeping the JSON structure
+   with per-browser entries (`chromium-mv3`, `opera-mv3`), each containing
+   `version`, `rulesetIds`, and `rulesetMetadataKeys`.
+
+4. Bump the package version and update the changelog.
+
+5. Commit the updated `validator-data.json` along with the version bump.
 
 ## Documentation
 

@@ -1,8 +1,9 @@
 import {
     type Configuration,
-    type TsWebExtension,
     FilterList,
+    type TsWebExtension,
 } from '@adguard/tswebextension/mv3';
+
 import { LogDetails } from './logger';
 
 declare global {

@@ -1,12 +1,12 @@
-import { type ScriptletData, type CosmeticRule } from '@adguard/tsurlfilter';
+import { type CosmeticRule, type ScriptletData } from '@adguard/tsurlfilter';
 
-import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
+import { BACKGROUND_TAB_ID } from '../../common/constants';
+import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl } from '../../common/utils/url';
-import { tabsApi } from '../tabs/tabs-api';
-import { BACKGROUND_TAB_ID } from '../../common/constants';
 import { type PreparedCosmeticResultMV3 } from '../tabs/frame';
+import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
@@ -194,6 +194,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             isAppStarted: false,
             areHitsStatsCollected: false,
             extCssRules: null,
+            nativeCssSelectors: null,
         };
 
         // if storage is not initialized, then app is not ready yet.
@@ -231,6 +232,11 @@ export class CosmeticApi extends CosmeticApiCommon {
                 // since minimum version of mv3 browser already supports :has()
                 isNativeHasSupported: true,
             },
+        );
+
+        data.nativeCssSelectors = CosmeticApi.getNativeCssSelectors(
+            cosmeticResult,
+            { isNativeHasSupported: true },
         );
 
         return data;

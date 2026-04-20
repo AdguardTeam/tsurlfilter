@@ -1,6 +1,6 @@
 {
     "name": "@adguard/api",
-    "version": "4.0.0",
+    "version": "4.0.1",
     "description": "This is a TypeScript library that implements AdGuard's extension API",
     "main": "dist/adguard-api.js",
     "files": [
@@ -27,9 +27,11 @@
         "postbuild": "pnpm types && tsx tasks/build-txt",
         "prepush": "pnpm build",
         "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
-        "lint": "pnpm lint:code && pnpm lint:types",
+        "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
         "lint:code": "eslint --cache --ignore-path .gitignore .",
         "lint:types": "tsc",
+        "lint:md": "markdownlint .",
+        "test:prod": "pnpm lint",
         "tgz": "pnpm pack --out adguard-api.tgz"
     },
     "author": "Adguard Software Ltd.",
@@ -57,7 +59,10 @@
         "eslint-config-airbnb-base": "catalog:",
         "eslint-config-airbnb-typescript": "catalog:",
         "eslint-plugin-import": "catalog:",
+        "eslint-plugin-import-newlines": "catalog:",
         "eslint-plugin-jsdoc": "catalog:",
+        "markdownlint": "catalog:",
+        "markdownlint-cli": "catalog:",
         "rollup": "catalog:",
         "tsx": "catalog:",
         "typescript": "catalog:"

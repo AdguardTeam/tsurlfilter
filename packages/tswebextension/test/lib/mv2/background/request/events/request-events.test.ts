@@ -1,14 +1,18 @@
+import browser from 'sinon-chrome';
 import {
     describe,
     expect,
+    it,
     test,
     vi,
 } from 'vitest';
-import browser from 'sinon-chrome';
 import { type WebRequest } from 'webextension-polyfill';
+
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 
 import { type RequestContext, RequestContextState, RequestEvents } from '../../../../../../src/lib';
+import { defaultFilteringLog, FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
+import { DocumentLifecycle } from '../../../../../../src/lib/common/interfaces';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 
 describe('Request Events', () => {
@@ -35,6 +39,7 @@ describe('Request Events', () => {
         method: HTTPMethod.GET,
         contentType: ContentType.Document,
         thirdParty: true,
+        isPrefetchRequest: false,
     };
 
     test('onBeforeRequest with prerender request', async () => {
@@ -60,6 +65,7 @@ describe('Request Events', () => {
             tabId: commonRequestData.tabId + 1,
             referrerUrl: commonRequestData.url,
             thirdParty: false,
+            isPrefetchRequest: false,
         };
 
         vi.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
@@ -80,6 +86,7 @@ describe('Request Events', () => {
             referrerUrl: 'https://example.org/',
             requestUrl: 'https://example.org/',
             thirdParty: false,
+            isPrefetchRequest: false,
         };
 
         browser.webRequest.onBeforeRequest.dispatch(requestDetails);
@@ -277,5 +284,98 @@ describe('Request Events', () => {
 
     test('onBeforeRedirect', () => {
         expect(browser.webRequest.onBeforeRedirect.addListener.calledOnce);
+    });
+
+    describe('prefetch request handling', () => {
+        it('should set isPrefetchRequest=true for document request with documentId and active lifecycle', () => {
+            RequestEvents.init();
+            const listener = vi.fn();
+            RequestEvents.onBeforeRequest.addListener(listener);
+
+            const details = {
+                ...commonRequestData,
+                requestId: 'prefetch-1',
+                timeStamp: Date.now(),
+                documentLifecycle: DocumentLifecycle.Active,
+                documentId: 'some-doc-id',
+                initiator: 'https://testcases.adguard.com',
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(details);
+
+            expect(listener).toHaveBeenCalledWith(expect.objectContaining({
+                context: expect.objectContaining({
+                    isPrefetchRequest: true,
+                }),
+            }));
+        });
+
+        it('should set isPrefetchRequest=false for document request without documentId', () => {
+            RequestEvents.init();
+            const listener = vi.fn();
+            RequestEvents.onBeforeRequest.addListener(listener);
+
+            const details = {
+                ...commonRequestData,
+                requestId: 'no-docid-1',
+                timeStamp: Date.now(),
+                documentLifecycle: DocumentLifecycle.Active,
+                // no documentId
+                initiator: 'https://testcases.adguard.com',
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(details);
+
+            expect(listener).toHaveBeenCalledWith(expect.objectContaining({
+                context: expect.objectContaining({
+                    isPrefetchRequest: false,
+                }),
+            }));
+        });
+
+        it('should set isPrefetchRequest=false for prerender request with documentId', () => {
+            RequestEvents.init();
+            const listener = vi.fn();
+            RequestEvents.onBeforeRequest.addListener(listener);
+
+            const details = {
+                ...commonRequestData,
+                requestId: 'prerender-docid-1',
+                timeStamp: Date.now(),
+                documentLifecycle: DocumentLifecycle.Prerender,
+                documentId: 'some-doc-id',
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(details);
+
+            expect(listener).toHaveBeenCalledWith(expect.objectContaining({
+                context: expect.objectContaining({
+                    isPrefetchRequest: false,
+                }),
+            }));
+        });
+
+        it('should NOT publish TabReload for prefetch document requests', () => {
+            RequestEvents.init();
+            const filteringLogSpy = vi.spyOn(defaultFilteringLog, 'publishEvent');
+
+            const details = {
+                ...commonRequestData,
+                requestId: 'prefetch-tab-reload-1',
+                timeStamp: Date.now(),
+                documentLifecycle: DocumentLifecycle.Active,
+                documentId: 'some-doc-id',
+                initiator: 'https://testcases.adguard.com',
+            };
+
+            browser.webRequest.onBeforeRequest.dispatch(details);
+
+            const tabReloadCalls = filteringLogSpy.mock.calls.filter(
+                (call: unknown[]) => (call[0] as { type?: string })?.type === FilteringEventType.TabReload,
+            );
+            expect(tabReloadCalls).toHaveLength(0);
+
+            filteringLogSpy.mockRestore();
+        });
     });
 });

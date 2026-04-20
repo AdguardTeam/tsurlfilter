@@ -8,6 +8,7 @@
     "files": [
         "dist",
         "!dist/build.txt",
+        "!dist/.tsbuildinfo",
         "src"
     ],
     "exports": {
@@ -19,10 +20,14 @@
     },
     "scripts": {
         "prebuild": "rimraf dist",
-        "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript && pnpm build:types",
+        "build": "pnpm prebuild && rolldown -c rolldown.config.ts && pnpm build:types",
         "postbuild": "tsx scripts/build-txt.ts",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
-        "lint": "eslint --cache --ignore-path .gitignore . && tsc",
+        "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
+        "lint:code": "eslint --cache --ignore-path .gitignore .",
+        "lint:types": "tsc",
+        "lint:md": "markdownlint .",
+        "test:prod": "pnpm lint",
         "tgz": "pnpm pack --out eslint-plugin-logger-context.tgz"
     },
     "keywords": [
@@ -45,10 +50,6 @@
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/eslint-plugin-logger-context#readme",
     "devDependencies": {
         "@adguard/logger": "workspace:^",
-        "@rollup/plugin-commonjs": "catalog:",
-        "@rollup/plugin-json": "catalog:",
-        "@rollup/plugin-node-resolve": "catalog:",
-        "@rollup/plugin-typescript": "catalog:",
         "@types/node": "catalog:",
         "@typescript-eslint/eslint-plugin": "catalog:",
         "@typescript-eslint/parser": "catalog:",
@@ -58,9 +59,10 @@
         "eslint-config-airbnb-typescript": "catalog:",
         "eslint-plugin-import": "catalog:",
         "eslint-plugin-jsdoc": "catalog:",
+        "markdownlint": "catalog:",
+        "markdownlint-cli": "catalog:",
         "rimraf": "catalog:",
-        "rollup": "catalog:",
-        "rollup-plugin-node-externals": "catalog:",
+        "rolldown": "catalog:",
         "tslib": "catalog:",
         "tsx": "catalog:",
         "typescript": "catalog:"

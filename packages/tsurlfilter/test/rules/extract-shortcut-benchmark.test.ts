@@ -1,9 +1,11 @@
 /* eslint-disable no-console, no-plusplus */
-import { NetworkRuleParser } from '@adguard/agtree';
 import console from 'node:console';
 import fs from 'node:fs';
 import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
+
+import { NetworkRuleParser } from '@adguard/agtree';
 
 import { EMPTY_STRING } from '../../src/common/constants';
 import { SimpleRegex } from '../../src/rules/simple-regex';

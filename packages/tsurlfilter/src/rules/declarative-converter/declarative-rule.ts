@@ -8,8 +8,8 @@
 
 import { z as zod } from 'zod';
 
-import { RequestType } from '../../request-type';
 import { HTTPMethod } from '../../modifiers/method-modifier';
+import { RequestType } from '../../request-type';
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-DomainType

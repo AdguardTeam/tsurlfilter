@@ -1,4 +1,4 @@
-import { NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
+import { type NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 /**
  * Utility functions for working with network rules.

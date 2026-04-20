@@ -1,8 +1,8 @@
-import { type NetworkRule, RuleFactory, createAllowlistRuleNode } from '@adguard/tsurlfilter';
 import { RuleGenerator } from '@adguard/agtree';
+import { createAllowlistRuleNode, type NetworkRule, RuleFactory } from '@adguard/tsurlfilter';
 
-import { ALLOWLIST_FILTER_ID } from './constants';
 import { type Configuration } from './configuration';
+import { ALLOWLIST_FILTER_ID } from './constants';
 
 /**
  * Configuration for the allowlist.

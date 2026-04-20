@@ -40,8 +40,8 @@ export class StealthHelper {
         }
 
         const returnCurrentOriginFunc = (): string => {
-            // Return the origin dynamically each time it's accessed
-            return document.location.origin;
+            // Return the origin with trailing slash to match real referrer format
+            return `${document.location.origin}/`;
         };
 
         // Protect getter from native code check (important!)

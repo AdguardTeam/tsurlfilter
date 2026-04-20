@@ -1,12 +1,13 @@
+import browser from 'sinon-chrome';
 import {
+    beforeEach,
     describe,
     expect,
-    beforeEach,
     it,
     vi,
 } from 'vitest';
-import browser from 'sinon-chrome';
 import polyfillBrowser from 'webextension-polyfill';
+
 import {
     HTTPMethod,
     MatchingResult,
@@ -14,11 +15,6 @@ import {
     RequestType,
 } from '@adguard/tsurlfilter';
 
-import { createNetworkRule } from '../../../../../helpers/rule-creator';
-import { MockFilteringLog } from '../../../../common/mocks/mock-filtering-log';
-import { getNetworkRuleFields } from '../../helpers/rule-fields';
-import { BrowserCookieApi } from '../../../../../../src/lib/common/cookie-filtering/browser-cookie-api';
-import { CookieFiltering } from '../../../../../../src/lib/mv2/background/services/cookie-filtering/cookie-filtering';
 import {
     engineApi,
     type RequestContext,
@@ -26,8 +22,13 @@ import {
     requestContextStorage,
     tabsApi,
 } from '../../../../../../src/lib';
-import { ContentType } from '../../../../../../src/lib/common/request-type';
+import { BrowserCookieApi } from '../../../../../../src/lib/common/cookie-filtering/browser-cookie-api';
 import { FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
+import { ContentType } from '../../../../../../src/lib/common/request-type';
+import { CookieFiltering } from '../../../../../../src/lib/mv2/background/services/cookie-filtering/cookie-filtering';
+import { createNetworkRule } from '../../../../../helpers/rule-creator';
+import { MockFilteringLog } from '../../../../common/mocks/mock-filtering-log';
+import { getNetworkRuleFields } from '../../helpers/rule-fields';
 
 import HttpHeaders = polyfillBrowser.WebRequest.HttpHeaders;
 

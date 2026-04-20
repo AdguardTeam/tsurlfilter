@@ -1,27 +1,28 @@
 import {
+    afterEach,
     describe,
     expect,
-    afterEach,
     it,
 } from 'vitest';
+
 import {
-    MatchingResult,
-    RequestType,
-    PERMISSIONS_POLICY_HEADER_NAME,
     HTTPMethod,
+    MatchingResult,
+    PERMISSIONS_POLICY_HEADER_NAME,
+    RequestType,
 } from '@adguard/tsurlfilter';
 
-import { createNetworkRule } from '../../../../helpers/rule-creator';
-import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
-import { mockEngineApi } from '../../../../helpers/mocks';
+import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
+import { ContentType } from '../../../../../src/lib/common/request-type';
 import {
     type RequestContext,
     RequestContextState,
     RequestContextStorage,
 } from '../../../../../src/lib/mv2/background/request/request-context-storage';
 import { PermissionsPolicyService } from '../../../../../src/lib/mv2/background/services/permissions-policy-service';
-import { ContentType } from '../../../../../src/lib/common/request-type';
-import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
+import { mockEngineApi } from '../../../../helpers/mocks';
+import { createNetworkRule } from '../../../../helpers/rule-creator';
+import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 
 describe('Permissions policy service', () => {
     const testUrl = 'https://example.org';

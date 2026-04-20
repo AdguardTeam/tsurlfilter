@@ -4,7 +4,8 @@
 
 import fetch from 'node-fetch';
 
-import { type ResourceConfigs, type Resource } from '../common/interfaces';
+import { type Resource, type ResourceConfigs } from '../common/interfaces';
+
 import { extractAdblockCss } from './extract-adblock-css';
 
 /**

@@ -2,12 +2,13 @@
  * @file Tokenizing logic for ident-like tokens
  */
 
-import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
-import { consumeIndentSequence } from './ident-sequence';
-import { consumeUrlToken } from './url-token';
 import { type TokenizerContext } from '../../common/context';
 import { CodePoint } from '../../common/enums/code-points';
 import { TokenType } from '../../common/enums/token-types';
+import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
+
+import { consumeIndentSequence } from './ident-sequence';
+import { consumeUrlToken } from './url-token';
 
 const URL_FUNCTION_HASH = 193422222; // getStringHash('url')
 

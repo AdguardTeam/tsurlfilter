@@ -6,8 +6,8 @@ packages:
 
 # default catalog
 catalog:
-  '@adguard/assistant': ^4.3.77
-  '@adguard/scriptlets': ^2.3.1
+  '@adguard/assistant': ^4.4.3
+  '@adguard/scriptlets': 2.4.0-beta
   '@rollup/plugin-alias': ^5.1.1
   '@rollup/plugin-commonjs': ^28.0.1
   '@rollup/plugin-json': ^6.1.0
@@ -31,7 +31,7 @@ catalog:
   '@vitest/coverage-v8': ^4.0.15
   '@vitest/expect': ^4.0.15
   archiver: ^7.0.1
-  axios: ^1.7.2
+  axios: ^1.15.0
   benchmark: ^2.1.4
   bowser: 2.11.0
   chalk: 4.1.2
@@ -73,6 +73,7 @@ catalog:
   react: ^17.0.2
   react-dom: ^17.0.2
   rimraf: ^6.0.1
+  rolldown: ^1.0.0-rc.1
   rollup: ^4.28.0
   rollup-plugin-cleanup: ^3.2.1
   rollup-plugin-dts: ^6.0.2

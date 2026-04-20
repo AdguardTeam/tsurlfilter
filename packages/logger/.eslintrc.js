@@ -35,6 +35,37 @@ module.exports = {
         'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
         'import/no-cycle': 'off',
         'import/export': 'off',
+        // Sort members of import statements, e.g. `import { B, A } from 'module';` -> `import { A, B } from 'module';`
+        // Note: imports themselves are sorted by import/order rule
+        'sort-imports': ['error', {
+            ignoreCase: true,
+            // Avoid conflict with import/order rule
+            ignoreDeclarationSort: true,
+            ignoreMemberSort: false,
+            memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+        }],
+        // Split external and internal imports with an empty line
+        'import/order': [
+            'error',
+            {
+                groups: [
+                    'builtin',
+                    'external',
+                    'internal',
+                    'parent',
+                    'sibling',
+                    'index',
+                    'object',
+                ],
+                pathGroups: [
+                    // Place all our libraries after external
+                    { pattern: '@adguard/**', group: 'external', position: 'after' },
+                ],
+                pathGroupsExcludedImportTypes: [],
+                alphabetize: { order: 'asc', caseInsensitive: true },
+                'newlines-between': 'always',
+            },
+        ],
 
         '@typescript-eslint/indent': ['error', 4, {
             SwitchCase: 1,

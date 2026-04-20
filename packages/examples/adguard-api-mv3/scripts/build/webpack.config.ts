@@ -1,16 +1,18 @@
-import path from 'path';
 import { createRequire } from 'module';
-import { Configuration } from 'webpack';
+import path from 'path';
+
+import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import { CleanWebpackPlugin } from 'clean-webpack-plugin';
+import { Configuration } from 'webpack';
+
 import {
+    ASSISTANT_INJECT,
     BACKGROUND_PATH,
-    CONTENT_SCRIPT,
-    POPUP_PATH,
     BLOCKING_PAGE_PATH,
     BUILD_PATH,
-    ASSISTANT_INJECT,
+    CONTENT_SCRIPT,
+    POPUP_PATH,
 } from '../constants';
 
 const require = createRequire(import.meta.url);

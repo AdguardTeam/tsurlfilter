@@ -1,4 +1,4 @@
-import { getHostname, getDomain } from 'tldts';
+import { getDomain, getHostname } from 'tldts';
 
 import { type CompaniesDbMin } from './schema';
 import { rawCompaniesDb } from './trackers-min';

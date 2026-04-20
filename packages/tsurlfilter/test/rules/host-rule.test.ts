@@ -1,7 +1,8 @@
-import { type HostRule as HostRuleNode } from '@adguard/agtree';
-import { RuleGenerator } from '@adguard/agtree/generator';
 import { isString } from 'lodash-es';
 import { describe, expect, it } from 'vitest';
+
+import { type HostRule as HostRuleNode } from '@adguard/agtree';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { HostRule as HostRuleOriginal } from '../../src/rules/host-rule';
 

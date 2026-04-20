@@ -1,8 +1,8 @@
 import { type Runtime } from 'webextension-polyfill';
 
 import { type FilteringLogEvent } from './filtering-log';
-import { type EventChannelInterface } from './utils/channels';
 import { type Message } from './message';
+import { type EventChannelInterface } from './utils/channels';
 
 export type MessageHandler = (
     message: Message,

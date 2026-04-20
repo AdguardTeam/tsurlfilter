@@ -1,4 +1,4 @@
-import { type NetworkRule, type CosmeticRule, RULE_INDEX_NONE } from '@adguard/tsurlfilter';
+import { type CosmeticRule, type NetworkRule, RULE_INDEX_NONE } from '@adguard/tsurlfilter';
 
 /**
  * Rule text provider interface for retrieving rule texts from the engine.

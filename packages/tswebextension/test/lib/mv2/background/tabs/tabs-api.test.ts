@@ -1,26 +1,27 @@
+import browser from 'sinon-chrome';
 import {
+    afterEach,
+    beforeEach,
     describe,
     expect,
-    beforeEach,
-    afterEach,
     it,
     vi,
 } from 'vitest';
-import browser from 'sinon-chrome';
 import { type ExtensionTypes } from 'webextension-polyfill';
+
 import { type NetworkRule } from '@adguard/tsurlfilter';
 
-import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
-import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
-import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
-import { appContext } from '../../../../../src/lib/mv2/background/app-context';
-import { stealthApi } from '../../../../../src/lib/mv2/background/api';
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../../../src/lib/common/constants';
-import { TabsApi } from '../../../../../src/lib/mv2/background/tabs/tabs-api';
-import { TabContext } from '../../../../../src/lib/mv2/background/tabs/tab-context';
-import { FrameMV2 } from '../../../../../src/lib/mv2/background/tabs/frame';
 import { Frames } from '../../../../../src/lib/common/tabs/frames';
 import { type TabInfo } from '../../../../../src/lib/common/tabs/tabs-api';
+import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
+import { stealthApi } from '../../../../../src/lib/mv2/background/api';
+import { appContext } from '../../../../../src/lib/mv2/background/app-context';
+import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
+import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
+import { FrameMV2 } from '../../../../../src/lib/mv2/background/tabs/frame';
+import { TabContext } from '../../../../../src/lib/mv2/background/tabs/tab-context';
+import { TabsApi } from '../../../../../src/lib/mv2/background/tabs/tabs-api';
 
 vi.mock('../../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../../src/lib/mv2/background/engine-api');
@@ -157,43 +158,263 @@ describe('TabsApi', () => {
     });
 
     describe('incrementTabBlockedRequestCount method', () => {
-        it('should increment tab context blocked request count', () => {
+        it('should increment count for same-domain request', () => {
             const tabId = 1;
             const url = 'https://example.org';
 
+            const frames = new Frames<FrameMV2>();
+            frames.set(MAIN_FRAME_ID, { url } as FrameMV2);
             const tabContext = {
                 info: { url },
+                frames,
                 incrementBlockedRequestCount: vi.fn(),
             } as unknown as TabContext;
             const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
 
             tabsApi.context.set(tabId, tabContext);
-            tabsApi.incrementTabBlockedRequestCount(tabId, url);
+            tabsApi.incrementTabBlockedRequestCount({
+                tabId,
+                referrerUrl: url,
+            });
 
             expect(tabContextIncrement).toBeCalled();
         });
 
-        it('should not increment tab context blocked request count if origin and referer domains are different', () => {
+        it('should not increment count if domains differ and frame is unknown', () => {
             const tabId = 1;
             const originUrl = 'https://example.org';
             const referrerUrl = 'https://ref.com';
 
+            const frames = new Frames<FrameMV2>();
+            frames.set(
+                MAIN_FRAME_ID,
+                {
+                    documentId: 'main-doc',
+                } as FrameMV2,
+            );
+
             const tabContext = {
                 info: { url: originUrl },
+                frames,
+                incrementBlockedRequestCount: vi.fn(),
+                getFrameContextByDocumentId: vi.fn().mockReturnValue(undefined),
+            } as unknown as TabContext;
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
+
+            tabsApi.context.set(tabId, tabContext);
+            tabsApi.incrementTabBlockedRequestCount({ tabId, referrerUrl });
+
+            expect(tabContextIncrement).not.toBeCalled();
+        });
+
+        it('should increment count for cross-domain iframe with parentDocumentId matching main frame', () => {
+            const tabId = 1;
+            const originUrl = 'https://example.org';
+            const referrerUrl = 'https://ads.thirdparty.com';
+            const mainDocId = 'MAIN-DOC';
+
+            const frames = new Frames<FrameMV2>();
+            frames.set(MAIN_FRAME_ID, { documentId: mainDocId } as FrameMV2);
+
+            const tabContext = {
+                info: { url: originUrl },
+                frames,
+                incrementBlockedRequestCount: vi.fn(),
+                getFrameContextByDocumentId: vi.fn().mockReturnValue(undefined),
+            } as unknown as TabContext;
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
+
+            tabsApi.context.set(tabId, tabContext);
+            // parentDocumentId points directly to main frame
+            tabsApi.incrementTabBlockedRequestCount({
+                tabId,
+                referrerUrl,
+                parentDocumentId: mainDocId,
+            });
+
+            expect(tabContextIncrement).toBeCalled();
+        });
+
+        it('should increment count for nested iframe chain leading to main frame (Chrome)', () => {
+            const tabId = 1;
+            const originUrl = 'https://example.org';
+            const referrerUrl = 'https://ads.thirdparty.com';
+            const mainDocId = 'MAIN-DOC';
+            const iframe1DocId = 'IFRAME1-DOC';
+            const iframe2DocId = 'IFRAME2-DOC';
+
+            const frames = new Frames<FrameMV2>();
+            frames.set(MAIN_FRAME_ID, { documentId: mainDocId } as FrameMV2);
+
+            const tabContext = {
+                info: { url: originUrl },
+                frames,
+                incrementBlockedRequestCount: vi.fn(),
+                getFrameContextByDocumentId: vi.fn().mockImplementation((docId: string) => {
+                    if (docId === iframe2DocId) {
+                        return { parentDocumentId: iframe1DocId } as FrameMV2;
+                    }
+                    if (docId === iframe1DocId) {
+                        return { parentDocumentId: mainDocId } as FrameMV2;
+                    }
+                    return undefined;
+                }),
+            } as unknown as TabContext;
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
+
+            tabsApi.context.set(tabId, tabContext);
+            // parentDocumentId of the request points to iframe2, which chains to iframe1, then to main
+            tabsApi.incrementTabBlockedRequestCount({
+                tabId,
+                referrerUrl,
+                parentDocumentId: iframe2DocId,
+            });
+
+            expect(tabContextIncrement).toBeCalled();
+        });
+
+        it('should not increment count when parentDocumentId chain does not reach main frame (Chrome)', () => {
+            const tabId = 1;
+            const originUrl = 'https://example.org';
+            const referrerUrl = 'https://ads.thirdparty.com';
+
+            const frames = new Frames<FrameMV2>();
+            frames.set(
+                MAIN_FRAME_ID,
+                {
+                    documentId: 'MAIN-DOC',
+                } as FrameMV2,
+            );
+
+            const tabContext = {
+                info: { url: originUrl },
+                frames,
+                incrementBlockedRequestCount: vi.fn(),
+                getFrameContextByDocumentId: vi.fn().mockReturnValue(undefined),
+            } as unknown as TabContext;
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
+
+            tabsApi.context.set(tabId, tabContext);
+            // parentDocumentId points to unknown document — not in current page
+            tabsApi.incrementTabBlockedRequestCount({
+                tabId,
+                referrerUrl,
+                parentDocumentId: 'UNKNOWN-DOC',
+            });
+
+            expect(tabContextIncrement).not.toBeCalled();
+        });
+
+        it('should increment count for cross-domain iframe with matching frameAncestors (Firefox)', () => {
+            const tabId = 1;
+            const originUrl = 'https://example.org';
+            const referrerUrl = 'https://ads.thirdparty.com';
+
+            const frames = new Frames<FrameMV2>();
+            frames.set(MAIN_FRAME_ID, { url: originUrl } as FrameMV2);
+
+            const tabContext = {
+                info: { url: originUrl },
+                frames,
                 incrementBlockedRequestCount: vi.fn(),
             } as unknown as TabContext;
             const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
 
             tabsApi.context.set(tabId, tabContext);
-            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+            // No parentDocumentId — Firefox fallback: top ancestor domain matches tab URL
+            tabsApi.incrementTabBlockedRequestCount({
+                tabId,
+                referrerUrl,
+                frameAncestors: [
+                    { url: 'https://ads.thirdparty.com/iframe.html', frameId: 5 },
+                    { url: 'https://example.org', frameId: 0 },
+                ],
+            });
+
+            expect(tabContextIncrement).toBeCalled();
+        });
+
+        it('should not increment count when frameAncestors top URL does not match (Firefox)', () => {
+            const tabId = 1;
+            const originUrl = 'https://example.org';
+            const referrerUrl = 'https://ads.thirdparty.com';
+
+            const frames = new Frames<FrameMV2>();
+            frames.set(MAIN_FRAME_ID, {} as FrameMV2);
+
+            const tabContext = {
+                info: { url: originUrl },
+                frames,
+                incrementBlockedRequestCount: vi.fn(),
+            } as unknown as TabContext;
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
+
+            tabsApi.context.set(tabId, tabContext);
+            // Top ancestor is from a different page — stale request
+            tabsApi.incrementTabBlockedRequestCount({
+                tabId,
+                referrerUrl,
+                frameAncestors: [
+                    { url: 'https://ads.thirdparty.com/iframe.html', frameId: 5 },
+                    { url: 'https://old-page.com', frameId: 0 },
+                ],
+            });
 
             expect(tabContextIncrement).not.toBeCalled();
         });
 
-        it('should not increment tab context blocked request count if tab context is not found', () => {
-            tabsApi.incrementTabBlockedRequestCount(1, '');
+        it('should not increment count without parentDocumentId or frameAncestors', () => {
+            const tabId = 1;
+            const originUrl = 'https://example.org';
+            const referrerUrl = 'https://ads.thirdparty.com';
+
+            const frames = new Frames<FrameMV2>();
+            frames.set(MAIN_FRAME_ID, {} as FrameMV2);
+
+            const tabContext = {
+                info: { url: originUrl },
+                frames,
+                incrementBlockedRequestCount: vi.fn(),
+            } as unknown as TabContext;
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
+
+            tabsApi.context.set(tabId, tabContext);
+            // Neither parentDocumentId nor frameAncestors
+            tabsApi.incrementTabBlockedRequestCount({ tabId, referrerUrl });
+
+            expect(tabContextIncrement).not.toBeCalled();
+        });
+
+        it('should not increment count if tab context is not found', () => {
+            tabsApi.incrementTabBlockedRequestCount({ tabId: 1, referrerUrl: '' });
 
             expect(TabContext.prototype.incrementBlockedRequestCount).not.toBeCalled();
+        });
+
+        it('should not leak count when mainFrame.url already changed but tabContext.info.url is stale', () => {
+            const tabId = 1;
+            // Simulate navigation: amazon.com -> example.org
+            // mainFrame.url is already updated to example.org (via onBeforeRequest),
+            // but tabContext.info.url still has the old amazon.com (tabs.onUpdated not yet fired).
+            const staleTabInfoUrl = 'https://amazon.com';
+            const newMainFrameUrl = 'https://example.org';
+            const staleReferrerUrl = 'https://amazon.com';
+
+            const frames = new Frames<FrameMV2>();
+            frames.set(MAIN_FRAME_ID, { url: newMainFrameUrl } as FrameMV2);
+
+            const tabContext = {
+                info: { url: staleTabInfoUrl },
+                frames,
+                incrementBlockedRequestCount: vi.fn(),
+            } as unknown as TabContext;
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
+
+            tabsApi.context.set(tabId, tabContext);
+            // Stale request from old page should NOT be counted
+            tabsApi.incrementTabBlockedRequestCount({ tabId, referrerUrl: staleReferrerUrl });
+
+            expect(tabContextIncrement).not.toBeCalled();
         });
     });
 

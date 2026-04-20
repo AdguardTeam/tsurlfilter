@@ -3,8 +3,8 @@
  */
 import { type Browser, type BrowserType } from 'playwright';
 
-import { type DownloadedFilterListResource } from './interfaces';
 import { benchmark, type BenchmarkArgs, type BenchmarkResult } from './benchmark-code';
+import { type DownloadedFilterListResource } from './interfaces';
 
 /**
  * Run the benchmark in the given browser.

@@ -4,12 +4,12 @@
 
 import path from 'path';
 
-import { resourceConfigs } from './config/resources';
 import { type ResourceBenchResult } from './common/interfaces';
-import { downloadResources } from './utils/resource-downloader';
-import { benchmarkResource } from './utils/benchmark-resource';
-import { printResourceResults, writeMdTable } from './utils/tables';
+import { resourceConfigs } from './config/resources';
 import { tokenizerConfigs } from './config/tokenizers';
+import { benchmarkResource } from './utils/benchmark-resource';
+import { downloadResources } from './utils/resource-downloader';
+import { printResourceResults, writeMdTable } from './utils/tables';
 
 const RESULTS_MD_FILE = './RESULTS.md';
 

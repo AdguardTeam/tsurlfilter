@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
-import path from 'path';
 import { fileURLToPath } from 'node:url';
+import path from 'path';
 
 import { copy } from 'fs-extra';
 

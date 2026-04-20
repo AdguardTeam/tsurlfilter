@@ -1,36 +1,36 @@
 {
     "name": "@adguard/api-mv3",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "This is a TypeScript library that implements AdGuard's extension API for MV3",
     "main": "dist/adguard-api.js",
     "files": [
         "dist/**/*"
     ],
-    "typings": "dist/types/background/index.d.ts",
     "exports": {
-        ".": "./dist/adguard-api.js",
-        "./content-script": "./dist/adguard-content.js",
-        "./assistant": "./dist/adguard-assistant.js"
-    },
-    "typesVersions": {
-        "*": {
-            "content-script": [
-                "dist/types/content-script/index.d.ts"
-            ],
-            "assistant": [
-                "dist/types/content-script/assistant.d.ts"
-            ]
+        ".": {
+            "types": "./dist/types/background/index.d.ts",
+            "default": "./dist/adguard-api.js"
+        },
+        "./content-script": {
+            "types": "./dist/types/content-script/index.d.ts",
+            "default": "./dist/adguard-content.js"
+        },
+        "./assistant": {
+            "types": "./dist/types/content-script/assistant.d.ts",
+            "default": "./dist/adguard-assistant.js"
         }
     },
     "scripts": {
-        "e2e": "vitest run",
+        "test:ci": "vitest run --reporter default --reporter junit --outputFile=./tests-reports/adguard-api-mv3.xml",
+        "test:prod": "pnpm lint && pnpm test:ci",
         "build": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
         "postbuild": "pnpm types && tsx tasks/build-txt",
         "prepush": "pnpm build",
         "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
-        "lint": "pnpm lint:code && pnpm lint:types",
+        "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
         "lint:code": "eslint --cache --ignore-path .gitignore .",
         "lint:types": "tsc",
+        "lint:md": "markdownlint .",
         "tgz": "pnpm pack --out adguard-api-mv3.tgz"
     },
     "author": "Adguard Software Ltd.",
@@ -57,6 +57,8 @@
         "eslint-plugin-import": "catalog:",
         "eslint-plugin-jsdoc": "catalog:",
         "jsdom": "^25.0.1",
+        "markdownlint": "catalog:",
+        "markdownlint-cli": "catalog:",
         "rollup": "catalog:",
         "rollup-plugin-copy": "^3.5.0",
         "tsx": "catalog:",

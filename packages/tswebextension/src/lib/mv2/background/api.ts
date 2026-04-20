@@ -6,27 +6,27 @@
 import { defaultFilteringLog } from '../../common/filtering-log';
 
 import { Allowlist } from './allowlist';
-import { EngineApi } from './engine-api';
-import { DocumentApi } from './document-api';
-import { TabsApi } from './tabs/tabs-api';
-import { MessagesApi } from './messages-api';
-import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
-import { StealthApi } from './stealth-api';
-import { appContext } from './app-context';
 import { TsWebExtension } from './app';
-import { ResourcesService } from './services/resources-service';
-import { RedirectsService } from './services/redirects/redirects-service';
-import { DocumentBlockingService } from './services/document-blocking-service';
-import { ParamsService } from './services/params-service';
-import { CspService } from './services/csp-service';
-import { RemoveHeadersService } from './services/remove-headers-service';
-import { PermissionsPolicyService } from './services/permissions-policy-service';
-import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
-import { requestContextStorage } from './request';
-import { extSessionStorage } from './ext-session-storage';
+import { appContext } from './app-context';
 import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
+import { DocumentApi } from './document-api';
+import { EngineApi } from './engine-api';
+import { extSessionStorage } from './ext-session-storage';
+import { MessagesApi } from './messages-api';
+import { requestContextStorage } from './request';
 import { ruleTextProvider } from './rule-text-provider-instance';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
+import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
+import { CspService } from './services/csp-service';
+import { DocumentBlockingService } from './services/document-blocking-service';
+import { ParamsService } from './services/params-service';
+import { PermissionsPolicyService } from './services/permissions-policy-service';
+import { RedirectsService } from './services/redirects/redirects-service';
+import { RemoveHeadersService } from './services/remove-headers-service';
+import { ResourcesService } from './services/resources-service';
+import { StealthApi } from './stealth-api';
+import { TabsApi } from './tabs/tabs-api';
+import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
 
 export const allowlist = new Allowlist();
 

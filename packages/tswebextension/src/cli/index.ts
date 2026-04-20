@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { fileURLToPath } from 'url';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { program } from 'commander';
 

@@ -6,9 +6,9 @@ import {
 } from 'vitest';
 import { type WebNavigation } from 'webextension-polyfill';
 
-import { WebRequestApi } from '../../../../src/lib/mv2/background/web-request-api';
-import { tabsApi, engineApi } from '../../../../src/lib/mv2/background/api';
 import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
+import { engineApi, tabsApi } from '../../../../src/lib/mv2/background/api';
+import { WebRequestApi } from '../../../../src/lib/mv2/background/web-request-api';
 
 vi.mock('../../../../src/lib/mv2/background/api');
 

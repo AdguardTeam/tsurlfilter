@@ -178,42 +178,43 @@
  *                                       │                             │
  *                                       └─────────────────────────────┘.
  */
-import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
+import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
+
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { type DocumentLifecycle } from '../../common/interfaces';
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { DocumentLifecycle } from '../../common/interfaces';
 import { findHeaderByName } from '../../common/utils/headers';
 import { logger } from '../../common/utils/logger';
-import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
+import { getDomain, isHttpOrWsRequest } from '../../common/utils/url';
 
 import {
-    tabsApi,
-    engineApi,
-    documentApi,
-    paramsService,
-    cspService,
-    stealthApi,
-    removeHeadersService,
-    permissionsPolicyService,
+    contentFiltering,
     cookieFiltering,
     cosmeticFrameProcessor,
-    contentFiltering,
+    cspService,
+    documentApi,
+    engineApi,
+    paramsService,
+    permissionsPolicyService,
+    removeHeadersService,
+    stealthApi,
+    tabsApi,
 } from './api';
 import { CosmeticApi } from './cosmetic-api';
-import { TrustedTypesService } from './services/trusted-types-service';
 import {
     hideRequestInitiatorElement,
-    RequestEvents,
-    type RequestData,
-    requestContextStorage,
     RequestBlockingApi,
+    requestContextStorage,
+    type RequestData,
+    RequestEvents,
 } from './request';
-import { SanitizeApi } from './sanitize-api';
-import { TabsApi } from './tabs';
 import { type OnBeforeRequestDetailsType } from './request/events/request-events';
+import { SanitizeApi } from './sanitize-api';
+import { TrustedTypesService } from './services/trusted-types-service';
+import { TabsApi } from './tabs';
 import { FrameMV2 } from './tabs/frame';
 import { browserDetectorMV2 } from './utils/browser-detector';
 
@@ -338,9 +339,15 @@ export class WebRequestApi {
             thirdParty,
             method,
             requestFrameId,
+            parentDocumentId,
+            frameAncestors,
         } = context;
 
-        const { parentFrameId } = details;
+        const {
+            parentFrameId,
+            documentId,
+            documentLifecycle,
+        } = details;
 
         const isDocumentRequest = requestType === RequestType.Document;
 
@@ -380,8 +387,8 @@ export class WebRequestApi {
                     parentFrameId,
                     url: requestUrl,
                     timeStamp: timestamp,
-                    documentId: details.documentId,
-                    parentDocumentId: details.parentDocumentId,
+                    documentId,
+                    parentDocumentId,
                 }));
             }
         }
@@ -446,7 +453,7 @@ export class WebRequestApi {
                 tabId,
                 frameId,
                 parentFrameId,
-                documentId: details.documentId,
+                documentId,
                 url: requestUrl,
                 timeStamp: timestamp,
             });
@@ -456,6 +463,8 @@ export class WebRequestApi {
          * For a $replace rule, response will be undefined since we need to get
          * the response in order to actually apply $replace rules to it.
          */
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+
         const response = RequestBlockingApi.getBlockingResponse({
             rule: matchingResult.getBasicResult(),
             popupRule: matchingResult.getPopupRule(),
@@ -466,6 +475,9 @@ export class WebRequestApi {
             requestType,
             contentType,
             tabId,
+            isPrerenderRequest,
+            parentDocumentId,
+            frameAncestors,
         });
 
         if (!response) {
@@ -483,7 +495,12 @@ export class WebRequestApi {
         }
 
         if (response?.cancel) {
-            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+            tabsApi.incrementTabBlockedRequestCount({
+                tabId,
+                referrerUrl,
+                parentDocumentId,
+                frameAncestors,
+            });
 
             const mainFrameUrl = tabsApi.getTabMainFrame(tabId)?.url;
 
@@ -603,6 +620,8 @@ export class WebRequestApi {
             requestFrameId,
             thirdParty,
             tabId,
+            parentDocumentId,
+            frameAncestors,
         } = context;
 
         const headerResult = matchingResult.getResponseHeadersResult(responseHeaders);
@@ -619,7 +638,12 @@ export class WebRequestApi {
         });
 
         if (response?.cancel) {
-            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+            tabsApi.incrementTabBlockedRequestCount({
+                tabId,
+                referrerUrl,
+                parentDocumentId,
+                frameAncestors,
+            });
 
             const mainFrameUrl = tabsApi.getTabMainFrame(tabId)?.url;
 
@@ -984,6 +1008,8 @@ export class WebRequestApi {
             eventId,
             referrerUrl,
             thirdParty,
+            parentDocumentId,
+            frameAncestors,
         } = context;
 
         /**
@@ -1012,7 +1038,12 @@ export class WebRequestApi {
                 },
             });
 
-            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+            tabsApi.incrementTabBlockedRequestCount({
+                tabId,
+                referrerUrl,
+                parentDocumentId,
+                frameAncestors,
+            });
 
             return { cancel: true };
         }

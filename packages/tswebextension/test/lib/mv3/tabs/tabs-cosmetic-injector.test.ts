@@ -1,29 +1,30 @@
+import chrome from 'sinon-chrome';
 import {
-    describe,
-    expect,
+    afterAll,
+    afterEach,
     beforeAll,
     beforeEach,
-    afterEach,
+    describe,
+    expect,
     it,
     vi,
-    afterAll,
 } from 'vitest';
-import chrome from 'sinon-chrome';
+
 import { CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
-import { ContentType } from '../../../../src/lib/common/request-type';
-import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
-import { TabsCosmeticInjector } from '../../../../src/lib/mv3/tabs/tabs-cosmetic-injector';
-import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
-import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
-import { createCosmeticRule } from '../../../helpers/rule-creator';
-import { appContext } from '../../../../src/lib/mv3/background/app-context';
-import { extSessionStorage } from '../../../../src/lib/mv3/background/ext-session-storage';
-import { UserScriptsApi } from '../../../../src/lib/mv3/background/user-scripts-api';
-import { type LocalScriptFunctionData } from '../../../../src/lib/mv3/background';
-import { localScriptRulesService } from '../../../../src/lib/mv3/background/services/local-script-rules-service';
-import { CosmeticFrameProcessor } from '../../../../src/lib/mv3/background/cosmetic-frame-processor';
 import { CUSTOM_FILTERS_START_ID, USER_FILTER_ID } from '../../../../src/lib/common/constants';
+import { ContentType } from '../../../../src/lib/common/request-type';
+import { type LocalScriptFunctionData } from '../../../../src/lib/mv3/background';
+import { appContext } from '../../../../src/lib/mv3/background/app-context';
+import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
+import { CosmeticFrameProcessor } from '../../../../src/lib/mv3/background/cosmetic-frame-processor';
+import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
+import { extSessionStorage } from '../../../../src/lib/mv3/background/ext-session-storage';
+import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
+import { localScriptRulesService } from '../../../../src/lib/mv3/background/services/local-script-rules-service';
+import { UserScriptsApi } from '../../../../src/lib/mv3/background/user-scripts-api';
+import { TabsCosmeticInjector } from '../../../../src/lib/mv3/tabs/tabs-cosmetic-injector';
+import { createCosmeticRule } from '../../../helpers/rule-creator';
 
 vi.mock('../../../../src/lib/mv3/background/engine-api');
 vi.mock('../../../../src/lib/mv3/background/app-context');

@@ -1,8 +1,10 @@
 import browser, { type Tabs } from 'webextension-polyfill';
-import { type RequestType, type NetworkRule } from '@adguard/tsurlfilter';
+
+import { type NetworkRule, type RequestType } from '@adguard/tsurlfilter';
 
 import { type DocumentApi } from '../../mv2/background/document-api';
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../constants';
+import { type FrameAncestor } from '../interfaces';
 import { EventChannel } from '../utils/channels';
 import { logger } from '../utils/logger';
 import { getDomain } from '../utils/url';
@@ -51,6 +53,50 @@ export type TabFrameRequestContextCommon = {
      * Request type.
      */
     requestType: RequestType;
+
+    /**
+     * The UUID of the parent document owning the frame that sent the request.
+     *
+     * Available in Chrome 106+. Not available in Firefox.
+     */
+    parentDocumentId?: string;
+
+    /**
+     * Array of frame ancestors for the request.
+     *
+     * Available in Firefox. Not available in Chromium-based browsers.
+     */
+    frameAncestors?: FrameAncestor[];
+
+    /**
+     * Whether this is a speculative prefetch request (Chrome's Speculation Rules API).
+     */
+    isPrefetchRequest?: boolean;
+};
+
+/**
+ * Parameters for incrementing the blocked request count on a tab.
+ */
+export type IncrementBlockedCountParams = {
+    /**
+     * Tab ID.
+     */
+    tabId: number;
+
+    /**
+     * Request initiator URL.
+     */
+    referrerUrl: string;
+
+    /**
+     * Parent document ID of the request (Chromium 106+).
+     */
+    parentDocumentId?: string;
+
+    /**
+     * Frame ancestors of the request (Firefox).
+     */
+    frameAncestors?: FrameAncestor[];
 };
 
 /**
@@ -540,35 +586,133 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     }
 
     /**
-     * Increments tab context blocked request count.
+     * Checks if the referrer URL belongs to the same domain as the main frame URL.
      *
-     * @param tabId Tab ID.
-     * @param referrerUrl Request initiator url.
+     * @param mainFrameUrl Main frame URL.
+     * @param referrerUrl Referrer URL.
+     *
+     * @returns True if both URLs share the same domain.
      */
-    public incrementTabBlockedRequestCount(tabId: number, referrerUrl: string): void {
+    private static isSameDomain(mainFrameUrl: string | undefined, referrerUrl: string): boolean {
+        return !!mainFrameUrl
+            && !!referrerUrl
+            && getDomain(mainFrameUrl) === getDomain(referrerUrl);
+    }
+
+    /**
+     * Checks if the top-level frame ancestor's URL domain matches
+     * the main frame's URL domain.
+     *
+     * Used as Firefox fallback when parentDocumentId is not available.
+     *
+     * @param mainFrameUrl Main frame URL of the tab.
+     * @param frameAncestors Frame ancestors from the request (Firefox-specific).
+     *
+     * @returns True if the top ancestor URL matches the main frame URL domain.
+     */
+    private static isSameDomainByAncestors(
+        mainFrameUrl: string | undefined,
+        frameAncestors: FrameAncestor[] | undefined,
+    ): boolean {
+        if (!frameAncestors || frameAncestors.length === 0) {
+            return false;
+        }
+
+        const topAncestor = frameAncestors[frameAncestors.length - 1];
+
+        return TabsApiCommon.isSameDomain(mainFrameUrl, topAncestor.url);
+    }
+
+    /**
+     * Checks if the given document ID belongs to the current page by walking up
+     * the parentDocumentId chain from stored frames until the main frame is reached.
+     *
+     * @param tabContext Tab context containing frames and document ID mappings.
+     * @param startDocumentId The document ID to start the chain walk from.
+     *
+     * @returns True if the chain leads to the main frame's document ID.
+     */
+    private static isDescendantOfMainFrame(
+        tabContext: TabContextCommon<FrameCommon>,
+        startDocumentId: string,
+    ): boolean {
+        const mainFrame = tabContext.frames.get(MAIN_FRAME_ID);
+        const mainDocumentId = mainFrame?.documentId;
+
+        if (!mainDocumentId) {
+            return false;
+        }
+
+        let currentDocId: string | undefined = startDocumentId;
+        const visited = new Set<string>();
+
+        while (currentDocId) {
+            if (currentDocId === mainDocumentId) {
+                return true;
+            }
+
+            if (visited.has(currentDocId)) {
+                break;
+            }
+            visited.add(currentDocId);
+
+            const frame = tabContext.getFrameContextByDocumentId(currentDocId);
+            currentDocId = frame?.parentDocumentId;
+        }
+
+        return false;
+    }
+
+    /**
+     * Increments the blocked request count for a tab if the request belongs
+     * to the current page. A request is considered part of the current page if:
+     * - its referrer URL has the same domain as the tab URL (same-domain check);
+     * - its parentDocumentId chain leads to the main frame (Chromium 106+);
+     * - the top-level frame ancestor URL matches the tab URL (Firefox fallback).
+     *
+     * @param params Blocked request parameters.
+     * @param params.tabId Tab ID.
+     * @param params.referrerUrl Request initiator URL.
+     * @param params.parentDocumentId Parent document ID of the request (Chromium 106+).
+     * @param params.frameAncestors Frame ancestors of the request (Firefox).
+     */
+    public incrementTabBlockedRequestCount({
+        tabId,
+        referrerUrl,
+        parentDocumentId,
+        frameAncestors,
+    }: IncrementBlockedCountParams): void {
         const tabContext = this.context.get(tabId);
 
         if (!tabContext) {
             return;
         }
 
-        const tabUrl = tabContext.info?.url;
-
-        /**
-         * Only increment count for requests that are initiated from the same domain as the tab.
-         *
-         * This prevents count 'leaks' when moving between main frames due to async nature of
-         * {@link browser.webRequest.onBeforeRequest} and {@link browser.tabs.onUpdated} events.
-         */
-        if (
-            !tabUrl
-            || !referrerUrl
-            || getDomain(tabUrl) !== getDomain(referrerUrl)
-        ) {
+        // Use mainFrame.url because the counter is reset in onBeforeRequest
+        // (where mainFrame.url is already updated), but tabContext.info.url
+        // only updates later via tabs.onUpdated — stale requests from the
+        // previous page can slip in between these two events.
+        const mainFrame = tabContext.frames.get(MAIN_FRAME_ID);
+        if (!mainFrame) {
             return;
         }
 
-        tabContext.incrementBlockedRequestCount();
+        const mainFrameUrl = mainFrame.url;
+
+        if (TabsApiCommon.isSameDomain(mainFrameUrl, referrerUrl)) {
+            tabContext.incrementBlockedRequestCount();
+            return;
+        }
+
+        if (parentDocumentId) {
+            // Chromium-based browsers: parentDocumentId is available.
+            if (TabsApiCommon.isDescendantOfMainFrame(tabContext, parentDocumentId)) {
+                tabContext.incrementBlockedRequestCount();
+            }
+        } else if (TabsApiCommon.isSameDomainByAncestors(mainFrameUrl, frameAncestors)) {
+            // Firefox: no parentDocumentId.
+            tabContext.incrementBlockedRequestCount();
+        }
     }
 
     /**

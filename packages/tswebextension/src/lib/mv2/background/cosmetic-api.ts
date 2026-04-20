@@ -1,13 +1,13 @@
 import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
 import { USER_FILTER_ID } from '../../common/constants';
-import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
+import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { CssCapabilities } from '../../common/utils/css-capabilities';
 import { logger } from '../../common/utils/logger';
 
-import { appContext } from './app-context';
 import { engineApi, tabsApi } from './api';
+import { appContext } from './app-context';
 import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { TabsApi } from './tabs/tabs-api';
@@ -174,6 +174,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             isAppStarted: false,
             areHitsStatsCollected: false,
             extCssRules: null,
+            nativeCssSelectors: null,
         };
 
         // if storage is not initialized, then app is not ready yet.
@@ -215,6 +216,11 @@ export class CosmeticApi extends CosmeticApiCommon {
                 areHitsStatsCollected,
                 isNativeHasSupported,
             },
+        );
+
+        data.nativeCssSelectors = CosmeticApi.getNativeCssSelectors(
+            cosmeticResult,
+            { isNativeHasSupported },
         );
 
         return data;

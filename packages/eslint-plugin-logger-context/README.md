@@ -29,6 +29,7 @@ module.exports = {
 ```
 
 **Example of correct usage:**
+
 ```js
 logger.info('[module.page-handler]: some message');
 ```

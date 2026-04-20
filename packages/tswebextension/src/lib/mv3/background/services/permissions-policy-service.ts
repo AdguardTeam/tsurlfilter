@@ -1,4 +1,5 @@
 import { getDomain } from 'tldts';
+
 import {
     type NetworkRule,
     NetworkRuleOption,
@@ -11,7 +12,7 @@ import { ContentType } from '../../../common/request-type';
 import { nanoid } from '../../../common/utils/nanoid';
 import { getRuleTexts } from '../../../common/utils/rule-text-provider';
 import { engineApi } from '../engine-api';
-import { requestContextStorage, type RequestContext } from '../request';
+import { type RequestContext, requestContextStorage } from '../request';
 
 /**
  * Permissions Policy service.

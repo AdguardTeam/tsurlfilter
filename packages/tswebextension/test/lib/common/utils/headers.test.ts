@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
     findHeaderByName,
-    hasHeaderByName,
     hasHeader,
+    hasHeaderByName,
     removeHeader,
 } from '../../../../src/lib/common/utils/headers';
 

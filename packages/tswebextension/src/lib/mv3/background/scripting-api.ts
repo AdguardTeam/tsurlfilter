@@ -1,5 +1,5 @@
-import { type ScriptletData } from '@adguard/tsurlfilter';
 import { type Source } from '@adguard/scriptlets';
+import { type ScriptletData } from '@adguard/tsurlfilter';
 
 import { appContext } from './app-context';
 import { type LocalScriptFunction } from './services/local-script-rules-service';

@@ -1,13 +1,13 @@
 import {
+    beforeEach,
     describe,
     expect,
-    beforeEach,
     it,
     vi,
 } from 'vitest';
 
-import { ResourcesService } from '../../../../../src/lib/mv2/background/services/resources-service';
 import { RedirectsService } from '../../../../../src/lib/mv2/background/services/redirects/redirects-service';
+import { ResourcesService } from '../../../../../src/lib/mv2/background/services/resources-service';
 
 vi.mock('../../../../../src/lib/mv2/background/services/resources-service', async () => {
     return import('../mocks/resources-service-mock');

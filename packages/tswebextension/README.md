@@ -5,112 +5,111 @@ TypeScript library that wraps webextension api for tsurlfilter library.
 Table of content:
 
 - [TSWebExtension](#tswebextension)
-  - [Browser compatibility](#browser-compatibility)
-  - [Install](#install)
-  - [Usage](#usage)
-  - [CLI](#cli)
-  - [Side effects](#side-effects)
-  - [API](#api)
-    - [configuration](#configuration)
-      - [TSWEBEXTENSION\_VERSION](#tswebextension_version)
-      - [EXTENDED\_CSS\_VERSION](#extended_css_version)
-      - [filters (MV2 only)](#filters-mv2-only)
-        - [filterId](#filterid)
-        - [content](#content)
-        - [trusted](#trusted)
-      - [staticFiltersIds (MV3 only)](#staticfiltersids-mv3-only)
-      - [customFilters (MV3 only)](#customfilters-mv3-only)
-        - [filterId](#filterid-1)
-        - [content](#content-1)
-        - [conversionData](#conversiondata)
-      - [filtersPath (MV3 only)](#filterspath-mv3-only)
-      - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
-      - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
-      - [allowlist](#allowlist)
-      - [trustedDomains](#trusteddomains)
-      - [userrules (MV2)](#userrules-mv2)
-        - [content](#content-2)
-        - [conversionData](#conversiondata-1)
-      - [userrules (MV3)](#userrules-mv3)
-        - [content](#content-3)
-        - [conversionData](#conversiondata-2)
-      - [verbose (deprecated)](#verbose-deprecated)
-      - [logLevel](#loglevel)
-      - [settings](#settings)
-        - [allowlistInverted](#allowlistinverted)
-        - [allowlistEnabled](#allowlistenabled)
-        - [collectStats](#collectstats)
-        - [debugScriptlets](#debugscriptlets)
-        - [stealthModeEnabled](#stealthmodeenabled)
-        - [filteringEnabled](#filteringenabled)
-        - [documentBlockingPageUrl](#documentblockingpageurl)
-        - [assistantUrl](#assistanturl)
-        - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
-        - [hideDocumentReferrerScriptUrl (MV3 only)](#hidedocumentreferrerscripturl-mv3-only)
-        - [stealthConfig](#stealthconfig)
-          - [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
-          - [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
-          - [selfDestructThirdPartyCookies](#selfdestructthirdpartycookies)
-          - [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime)
-          - [hideReferrer](#hidereferrer)
-          - [hideSearchQueries](#hidesearchqueries)
-          - [blockChromeClientData](#blockchromeclientdata)
-          - [sendDoNotTrack](#senddonottrack)
-          - [blockWebRTC](#blockwebrtc)
-    - [TsWebExtension](#tswebextension-1)
-      - [Properties](#properties)
-        - [configuration](#configuration-1)
-        - [onFilteringLogEvent](#onfilteringlogevent)
-        - [isStarted](#isstarted)
-      - [Methods](#methods)
-        - [initStorage()](#initstorage)
-        - [start()](#start)
-        - [configure()](#configure)
-        - [stop()](#stop)
-        - [openAssistant()](#openassistant)
-        - [closeAssistant()](#closeassistant)
-        - [getRulesCount()](#getrulescount)
-        - [retrieveRuleNode](#retrieverulenode)
-        - [getMessageHandler()](#getmessagehandler)
-        - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
-        - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
-        - [setDebugScriptlets()](#setdebugscriptlets)
-        - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
-        - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
-        - [setSelfDestructThirdPartyCookies() (MV2 only)](#setselfdestructthirdpartycookies-mv2-only)
-        - [setSelfDestructFirstPartyCookiesTime() (MV2 only)](#setselfdestructfirstpartycookiestime-mv2-only)
-        - [setSelfDestructThirdPartyCookiesTime() (MV2 only)](#setselfdestructthirdpartycookiestime-mv2-only)
-        - [setHideReferrer() (MV2 only)](#sethidereferrer-mv2-only)
-        - [setHideSearchQueries() (MV2 only)](#sethidesearchqueries-mv2-only)
-        - [setBlockChromeClientData() (MV2 only)](#setblockchromeclientdata-mv2-only)
-        - [setSendDoNotTrack() (MV2 only)](#setsenddonottrack-mv2-only)
-        - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
-  - [Utilities](#utilities)
-    - [getFilterName](#getfiltername)
-    - [isUserScriptsApiEnabled](#isuserscriptsapienabled)
-  - [Filtering Log API (MV2 only)](#filtering-log-api-mv2-only)
-    - [events](#events)
-      - [sendRequest](#sendrequest)
-      - [tabReload](#tabreload)
-      - [applyBasicRule](#applybasicrule)
-      - [applyCosmeticRule](#applycosmeticrule)
-      - [applyCspRule](#applycsprule)
-      - [receiveResponse](#receiveresponse)
-      - [cookie](#cookie)
-      - [removeHeader](#removeheader)
-      - [removeParam](#removeparam)
-      - [replaceRuleApply](#replaceruleapply)
-      - [contentFilteringStart](#contentfilteringstart)
-      - [contentFilteringFinish](#contentfilteringfinish)
-      - [stealthAction](#stealthaction)
-      - [stealthAllowlistAction](#stealthallowlistaction)
-      - [JsInject](#jsinject)
-    - [properties](#properties-1)
-      - [onLogEvent](#onlogevent)
-    - [methods](#methods-1)
-      - [addEventListener()](#addeventlistener)
-      - [publishEvent()](#publishevent)
-  - [Development](#development)
+    - [Browser compatibility](#browser-compatibility)
+    - [Install](#install)
+    - [Usage](#usage)
+    - [CLI](#cli)
+    - [Side effects](#side-effects)
+    - [API](#api)
+        - [configuration](#configuration)
+            - [TSWEBEXTENSION\_VERSION](#tswebextension_version)
+            - [EXTENDED\_CSS\_VERSION](#extended_css_version)
+            - [filters (MV2 only)](#filters-mv2-only)
+                - [filterId](#filterid)
+                - [content](#content)
+                - [trusted](#trusted)
+            - [staticFiltersIds (MV3 only)](#staticfiltersids-mv3-only)
+            - [customFilters (MV3 only)](#customfilters-mv3-only)
+                - [filterId](#filterid-1)
+                - [content](#content-1)
+                - [conversionData](#conversiondata)
+            - [filtersPath (MV3 only)](#filterspath-mv3-only)
+            - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
+            - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
+            - [allowlist](#allowlist)
+            - [trustedDomains](#trusteddomains)
+            - [userrules (MV2)](#userrules-mv2)
+                - [content](#content-2)
+                - [conversionData](#conversiondata-1)
+            - [userrules (MV3)](#userrules-mv3)
+                - [content](#content-3)
+                - [conversionData](#conversiondata-2)
+            - [verbose (deprecated)](#verbose-deprecated)
+            - [logLevel](#loglevel)
+            - [settings](#settings)
+                - [allowlistInverted](#allowlistinverted)
+                - [allowlistEnabled](#allowlistenabled)
+                - [collectStats](#collectstats)
+                - [debugScriptlets](#debugscriptlets)
+                - [stealthModeEnabled](#stealthmodeenabled)
+                - [filteringEnabled](#filteringenabled)
+                - [documentBlockingPageUrl](#documentblockingpageurl)
+                - [assistantUrl](#assistanturl)
+                - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
+                - [hideDocumentReferrerScriptUrl (MV3 only)](#hidedocumentreferrerscripturl-mv3-only)
+                - [stealthConfig](#stealthconfig)
+                    - [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
+                    - [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
+                    - [selfDestructThirdPartyCookies](#selfdestructthirdpartycookies)
+                    - [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime)
+                    - [hideReferrer](#hidereferrer)
+                    - [hideSearchQueries](#hidesearchqueries)
+                    - [blockChromeClientData](#blockchromeclientdata)
+                    - [sendDoNotTrack](#senddonottrack)
+                    - [blockWebRTC](#blockwebrtc)
+        - [TsWebExtension](#tswebextension-1)
+            - [Properties](#properties)
+                - [configuration](#configuration-1)
+                - [onFilteringLogEvent](#onfilteringlogevent)
+                - [isStarted](#isstarted)
+            - [Methods](#methods)
+                - [initStorage()](#initstorage)
+                - [start()](#start)
+                - [configure()](#configure)
+                - [stop()](#stop)
+                - [openAssistant()](#openassistant)
+                - [closeAssistant()](#closeassistant)
+                - [getRulesCount()](#getrulescount)
+                - [retrieveRuleNode](#retrieverulenode)
+                - [getMessageHandler()](#getmessagehandler)
+                - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
+                - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
+                - [setDebugScriptlets()](#setdebugscriptlets)
+                - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
+                - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
+                - [setSelfDestructThirdPartyCookies() (MV2 only)](#setselfdestructthirdpartycookies-mv2-only)
+                - [setSelfDestructFirstPartyCookiesTime() (MV2 only)](#setselfdestructfirstpartycookiestime-mv2-only)
+                - [setSelfDestructThirdPartyCookiesTime() (MV2 only)](#setselfdestructthirdpartycookiestime-mv2-only)
+                - [setHideReferrer() (MV2 only)](#sethidereferrer-mv2-only)
+                - [setHideSearchQueries() (MV2 only)](#sethidesearchqueries-mv2-only)
+                - [setBlockChromeClientData() (MV2 only)](#setblockchromeclientdata-mv2-only)
+                - [setSendDoNotTrack() (MV2 only)](#setsenddonottrack-mv2-only)
+                - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
+    - [Utilities](#utilities)
+        - [getFilterName](#getfiltername)
+        - [isUserScriptsApiEnabled](#isuserscriptsapienabled)
+    - [Filtering Log API (MV2 only)](#filtering-log-api-mv2-only)
+        - [events](#events)
+            - [sendRequest](#sendrequest)
+            - [tabReload](#tabreload)
+            - [applyBasicRule](#applybasicrule)
+            - [applyCosmeticRule](#applycosmeticrule)
+            - [applyCspRule](#applycsprule)
+            - [receiveResponse](#receiveresponse)
+            - [cookie](#cookie)
+            - [removeHeader](#removeheader)
+            - [removeParam](#removeparam)
+            - [replaceRuleApply](#replaceruleapply)
+            - [contentFilteringStart](#contentfilteringstart)
+            - [contentFilteringFinish](#contentfilteringfinish)
+            - [stealthAction](#stealthaction)
+            - [stealthAllowlistAction](#stealthallowlistaction)
+            - [JsInject](#jsinject)
+        - [properties](#properties-1)
+            - [onLogEvent](#onlogevent)
+        - [methods](#methods-1)
+            - [addEventListener()](#addeventlistener)
+            - [publishEvent()](#publishevent)
 
 ## Browser compatibility
 
@@ -153,7 +152,8 @@ const build = async () => {
 };
 ```
 
-If path is not defined, the resources will be loaded to `build/war` relative to your current working directory by default
+If path is not defined, the resources will be loaded to `build/war`
+relative to your current working directory by default
 
 ## CLI
 
@@ -187,11 +187,21 @@ In this project, the `sideEffects` field is defined as follows in the `package.j
 ]
 ```
 
-This configuration indicates that the specified files have side effects and should not be tree-shaken by the bundler. These files will modifying the global scope, which are essential for the correct functioning of the application.
+This configuration indicates that the specified files have side effects
+and should not be tree-shaken by the bundler. These files will modifying
+the global scope, which are essential for the correct functioning of the
+application.
 
-By explicitly listing these files, we ensure that they are included in the final bundle, even if they do not have any direct imports or exports that are used elsewhere in the codebase.
+By explicitly listing these files, we ensure that they are included
+in the final bundle, even if they do not have any direct imports or
+exports that are used elsewhere in the codebase.
 
-In the content script, we need access to `@adguard/assistant` only when the user clicks 'block ad manually'. Therefore, we marked files with `@adguard/assistant` as side effects. We also added a required field to the configuration object to ensure the assistant is bundled inside the final extension, allowing `tswebextension` to load it on-demand.
+In the content script, we need access to `@adguard/assistant` only
+when the user clicks 'block ad manually'. Therefore, we marked files
+with `@adguard/assistant` as side effects. We also added a required
+field to the configuration object to ensure the assistant is bundled
+inside the final extension, allowing `tswebextension` to load it
+on-demand.
 
 Same approach with dynamic injecting we use for stealth options GPC and Hide
 Document Referrer. Handlers for these options will dynamically register content
@@ -199,10 +209,12 @@ scripts via `scripting.registerContentScript`.
 
 ## API
 
-The main idea of the library is to provide a common interface for different browsers and manifest versions.
+The main idea of the library is to provide a common interface
+for different browsers and manifest versions
 via [Configuration](#configuration) object.
 
-[TsWebExtension](#tswebextension-1) class provides a set of methods for filtering content from the extension's background context.
+[TsWebExtension](#tswebextension-1) class provides a set of methods
+for filtering content from the extension's background context.
 
 MV2 submodule also provides a set of methods for [filtering log management](#filtering-log-api-mv2-only).
 
@@ -303,7 +315,9 @@ Enables matching declarative rules for filtering log.
 
 type: `string[]`
 
-List of hostnames or domains of sites, which should be excluded from blocking or which should be included in blocking depending on the value of [allowlistInverted](#allowlistinverted) setting value.
+List of hostnames or domains of sites, which should be excluded
+from blocking or which should be included in blocking depending
+on the value of [allowlistInverted](#allowlistinverted) setting value.
 
 #### trustedDomains
 
@@ -355,7 +369,8 @@ Optional flag responsible for logging. Defaults to true. Will be removed in the 
 
 type: `string | undefined`
 
-Optional flag that sets logging level, defaults to 'error'. Available levels: 'error', 'warn', 'info', 'debug', 'trace'.
+Optional flag that sets logging level, defaults to 'error'.
+Available levels: 'error', 'warn', 'info', 'debug', 'trace'.
 
 #### settings
 
@@ -367,13 +382,17 @@ Settings configuration object.
 
 type: `boolean`
 
-If this flag is true, the application will work ONLY with domains from the [allowlist](#allowlist), otherwise it will work everywhere EXCLUDING domains from the list.
+If this flag is true, the application will work ONLY with domains
+from the [allowlist](#allowlist), otherwise it will work everywhere
+EXCLUDING domains from the list.
 
 ##### allowlistEnabled
 
 type: `boolean`
 
-Flag specifying [allowlist](#allowlist) enable state. We don't use allowlist array length condition for calculate enable state, because it's not cover case with empty list in inverted mode.
+Flag specifying [allowlist](#allowlist) enable state. We don't use
+allowlist array length condition for calculate enable state,
+because it's not cover case with empty list in inverted mode.
 
 ##### collectStats
 
@@ -421,7 +440,8 @@ Path to the content script that set GPC Signal. Necessary for `Do Not Track` ste
 
 type: `string`
 
-Path to the content script that hides the document referrer. Necessary for `Hide Search Queries` stealth option.
+Path to the content script that hides the document referrer.
+Necessary for `Hide Search Queries` stealth option.
 
 ##### stealthConfig
 
@@ -433,7 +453,9 @@ Stealth mode configuration object.
 
 type: `boolean`
 
-Should the application set a fixed lifetime from [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime) for first-party cookies.
+Should the application set a fixed lifetime
+from [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
+for first-party cookies.
 
 ###### selfDestructFirstPartyCookiesTime
 
@@ -445,7 +467,9 @@ Time in minutes to delete first-party cookies.
 
 type: `boolean`
 
-Should the application set a fixed lifetime from [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime) for third-party cookies.
+Should the application set a fixed lifetime
+from [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime)
+for third-party cookies.
 
 ###### selfDestructThirdPartyCookiesTime
 
@@ -457,19 +481,24 @@ Time in minutes to delete third-party cookies.
 
 type: `boolean`
 
-Should the application hide the origin referrer in third-party requests by replacing the referrer url with the request url.
+Should the application hide the origin referrer in third-party
+requests by replacing the referrer url with the request url.
 
 ###### hideSearchQueries
 
 type: `boolean`
 
-Should the application hide the original referrer from the search page containing the search query in third-party queries, replacing the referrer url with the request url.
+Should the application hide the original referrer from the search
+page containing the search query in third-party queries, replacing
+the referrer url with the request url.
 
 ###### blockChromeClientData
 
 type: `boolean`
 
-For Google Chrome, it removes the 'X-Client-Data' header from the requests, which contains information about the browser version and modifications.
+For Google Chrome, it removes the 'X-Client-Data' header from
+the requests, which contains information about the browser version
+and modifications.
 
 ###### sendDoNotTrack
 
@@ -517,7 +546,9 @@ Is app started.
 
 type: `() => Promise<void>`
 
-Initialize app persistent data. This method called as soon as possible and allows access to the actual context before the app is started.
+Initialize app persistent data. This method called as soon
+as possible and allows access to the actual context before
+the app is started.
 
 ##### start()
 
@@ -535,13 +566,25 @@ Updates the configuration.
 
 Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
 
-**MV3 Error Handling:** When using Manifest V3, the `ConfigurationResult` returned by `configure()` and `start()` contains multiple fields with errors and limitations that **must be checked**:
+**MV3 Error Handling:** When using Manifest V3,
+the `ConfigurationResult` returned by `configure()` and `start()`
+contains multiple fields with errors and limitations
+that **must be checked**:
 
-- **`staticFiltersStatus.errors`**: Array of `FailedEnableRuleSetsError` instances if `browser.declarativeNetRequest.updateEnabledRulesets` fails. The browser does not update or enable any rulesets if any single ruleset is not found.
-- **`dynamicRules.errors`**: Array of conversion errors that occurred during dynamic rules conversion (custom filters, user rules, allowlist).
-- **`dynamicRules.limitations`**: Array of limitation errors if dynamic rules were truncated due to browser limits.
+- **`staticFiltersStatus.errors`**: Array of
+  `FailedEnableRuleSetsError` instances if
+  `browser.declarativeNetRequest.updateEnabledRulesets` fails.
+  The browser does not update or enable any rulesets if any single
+  ruleset is not found.
+- **`dynamicRules.errors`**: Array of conversion errors that occurred
+  during dynamic rules conversion (custom filters, user rules,
+  allowlist).
+- **`dynamicRules.limitations`**: Array of limitation errors if dynamic
+  rules were truncated due to browser limits.
 
-**These errors are not thrown** but returned in the result. **You must check these fields for critical errors and handle them appropriately** (e.g., throw, log, notify the user).
+**These errors are not thrown** but returned in the result.
+**You must check these fields for critical errors and handle them
+appropriately** (e.g., throw, log, notify the user).
 
 ```ts
 const result = await tsWebExtension.configure(configuration);
@@ -594,7 +637,8 @@ Retrieves rule node from engine by filter id and rule index.
 
 type: `() => MessageHandlerMV2 | MessageHandlerMV3`
 
-Returns a message handler that will listen to internal messages, for example: message for get computed css for content-script.
+Returns a message handler that will listen to internal messages,
+for example: message for get computed css for content-script.
 
 ##### setFilteringEnabled() (MV2 only)
 
@@ -637,7 +681,8 @@ Throws error if [configuration](#configuration) is not set.
 
 type: `(isSelfDestructFirstPartyCookies: boolean) => void`
 
-Updates [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies) stealth config value without re-initialization of engine.
+Updates [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
+stealth config value without re-initialization of engine.
 
 Throws error if [configuration](#configuration) is not set.
 
@@ -645,7 +690,8 @@ Throws error if [configuration](#configuration) is not set.
 
 type: `(isSelfDestructThirdPartyCookies: boolean) => void`
 
-Updates [selfDestructThirdPartyCookies](#selfdestructthirdpartycookies) stealth config value without re-initialization of engine.
+Updates [selfDestructThirdPartyCookies](#selfdestructthirdpartycookies)
+stealth config value without re-initialization of engine.
 
 Throws error if [configuration](#configuration) is not set.
 
@@ -653,7 +699,8 @@ Throws error if [configuration](#configuration) is not set.
 
 type: `(selfDestructFirstPartyCookiesTime: number) => void`
 
-Updates [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime) stealth config value without re-initialization of engine.
+Updates [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
+stealth config value without re-initialization of engine.
 
 Throws error if [configuration](#configuration) is not set.
 
@@ -661,7 +708,8 @@ Throws error if [configuration](#configuration) is not set.
 
 type: `(selfDestructThirdPartyCookiesTime: number) => void`
 
-Updates [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime) stealth config value without re-initialization of engine.
+Updates [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime)
+stealth config value without re-initialization of engine.
 
 Throws error if [configuration](#configuration) is not set.
 
@@ -721,7 +769,8 @@ import { getFilterName, isUserScriptsApiEnabled } from '@adguard/tswebextension/
 
 type: `(filterId: number) => string`
 
-For the specified filter identifier the filter file name is generated with an extension, in which the text filter rules should be saved.
+For the specified filter identifier the filter file name is generated
+with an extension, in which the text filter rules should be saved.
 
 ### isUserScriptsApiEnabled
 

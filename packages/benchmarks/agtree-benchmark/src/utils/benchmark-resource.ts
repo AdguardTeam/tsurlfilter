@@ -5,7 +5,8 @@
 
 import Benchmark from 'benchmark';
 
-import { type ToolConfigs, type Resource, type ToolBenchResult } from '../common/interfaces';
+import { type Resource, type ToolBenchResult, type ToolConfigs } from '../common/interfaces';
+
 import { noConsoleWrapper } from './no-console';
 
 // Extend the Benchmark.Stats interface with a new property

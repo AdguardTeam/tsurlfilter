@@ -2,8 +2,8 @@
  * @file hasToken function
  */
 import { type TokenType } from '../common/enums/token-types';
-import { tokenizeExtended } from '../extended-css-tokenizer';
 import { type TokenizerFunction } from '../common/types/function-prototypes';
+import { tokenizeExtended } from '../extended-css-tokenizer';
 
 /**
  * Checks if the given raw string contains any of the specified tokens.

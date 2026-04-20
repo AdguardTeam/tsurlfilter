@@ -1,16 +1,17 @@
 import browser from 'webextension-polyfill';
+
+import { LogLevel } from '@adguard/logger';
+import { FilterList } from '@adguard/tsurlfilter';
 import {
     Filter,
-    METADATA_RULESET_ID,
-    RULESET_NAME_PREFIX,
     type IFilter,
     type IRuleSet,
+    METADATA_RULESET_ID,
+    RULESET_NAME_PREFIX,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterList } from '@adguard/tsurlfilter';
-import { LogLevel } from '@adguard/logger';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 
-import { type MessageHandler, type AppInterface } from '../../common/app';
+import { type AppInterface, type MessageHandler } from '../../common/app';
 import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
@@ -20,22 +21,22 @@ import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 
 import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
+import { assistant, Assistant } from './assistant';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
-import FiltersApi, { type LoadFilterContent, type UpdateStaticFiltersResult } from './filters-api';
+import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import { MessagesApi } from './messages-api';
 import { RequestEvents } from './request/events/request-events';
 import { RuleSetsLoaderApi } from './rule-sets-loader-api';
+import { CspService } from './services/csp-service';
 import { documentBlockingService } from './services/document-blocking-service';
 import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
-import { WebRequestApi } from './web-request-api';
-import { assistant, Assistant } from './assistant';
 import { SessionRulesApi } from './session-rules-api';
-import { CspService } from './services/csp-service';
+import { WebRequestApi } from './web-request-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
@@ -368,7 +369,7 @@ export class TsWebExtension implements AppInterface<
                 customFilters,
                 filtersIdsToEnable,
                 filtersIdsToDisable,
-            } = await TsWebExtension.getFiltersUpdateInfo(configuration, FiltersApi.loadFilterContent);
+            } = await TsWebExtension.getFiltersUpdateInfo(configuration);
 
             // Update list of enabled static filters
             res.staticFiltersStatus = await FiltersApi.updateFiltering(
@@ -486,6 +487,22 @@ export class TsWebExtension implements AppInterface<
 
             // Update rulesets in declarative filtering log.
             declarativeFilteringLog.finishUpdate(ruleSets, configuration.declarativeLogEnabled);
+
+            // Free heavy metadata (badFilterRules, rulesHashMap) from all
+            // rulesets (both static and dynamic) since they are only needed
+            // during conversion above. They will be lazy-loaded from IDB if needed again.
+            for (const ruleSet of ruleSets) {
+                ruleSet.unloadMetadata();
+            }
+
+            // If declarative log is disabled, also unload content
+            // (sourceMap, declarativeRules, filterList) from all rulesets
+            // since it is only needed for the filtering log.
+            if (!configuration.declarativeLogEnabled) {
+                for (const ruleSet of ruleSets) {
+                    ruleSet.unloadContent();
+                }
+            }
 
             res.staticFilters = staticRuleSets;
         } else {
@@ -712,18 +729,15 @@ export class TsWebExtension implements AppInterface<
      * Extract configuration update info from already parsed configuration.
      *
      * @param parsedConfiguration Already parsed {@link ConfigurationMV3}.
-     * @param loadFilterContent Lazy load filter content function.
      *
      * @returns Item of {@link FiltersUpdateInfo}.
      */
     private static async getFiltersUpdateInfo(
         parsedConfiguration: ConfigurationMV3,
-        loadFilterContent: LoadFilterContent,
     ): Promise<FiltersUpdateInfo> {
         // Wrap filters to tsurlfilter.IFilter
         const staticFilters = FiltersApi.createStaticFilters(
             parsedConfiguration.staticFiltersIds,
-            loadFilterContent,
         );
         const customFilters = FiltersApi.createCustomFilters(
             parsedConfiguration.customFilters,

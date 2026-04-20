@@ -1,7 +1,7 @@
 import * as z from 'zod';
 
-import { serializeJson } from '../../utils/misc';
 import { isNonEmptyArray } from '../../utils/guards';
+import { serializeJson } from '../../utils/misc';
 import { getRuleSetId } from '../declarative-converter-utils';
 
 import { createMetadataRule, type MetadataRule } from './metadata-rule';

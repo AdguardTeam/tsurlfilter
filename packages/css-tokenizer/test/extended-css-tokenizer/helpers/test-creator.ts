@@ -1,5 +1,5 @@
 import { TokenType } from '../../../src/common/enums/token-types';
-import { type TokenTest, type TokenData } from '../../helpers/test-interfaces';
+import { type TokenData, type TokenTest } from '../../helpers/test-interfaces';
 import { addAsProp } from '../../helpers/test-utils';
 
 /**

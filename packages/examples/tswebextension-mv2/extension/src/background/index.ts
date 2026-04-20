@@ -1,13 +1,14 @@
 import browser, { Events } from 'webextension-polyfill';
+
 import {
     type ConfigurationMV2,
+    createTsWebExtension,
     FilterList,
     MESSAGE_HANDLER_NAME,
-    createTsWebExtension,
 } from '@adguard/tswebextension';
 
-import { MessageTypes } from '../common/message-types';
 import { BuildOutput } from '../../../constants';
+import { MessageTypes } from '../common/message-types';
 
 const tsWebExtension = createTsWebExtension('war');
 

@@ -19,8 +19,8 @@
 import zod from 'zod';
 
 import { filterMetadataValidator } from './filter';
-import { tagMetadataValidator } from './tag';
 import { groupMetadataValidator } from './group';
+import { tagMetadataValidator } from './tag';
 
 /**
  * Metadata runtime validator

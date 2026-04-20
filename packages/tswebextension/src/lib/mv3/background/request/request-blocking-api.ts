@@ -1,10 +1,11 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
-import { RequestType, NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
 
-import { tabsApi } from '../../tabs/tabs-api';
+import { type NetworkRule, NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
+
 import { companiesDbService } from '../../../common/companies-db-service';
+import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { getRuleTexts } from '../../../common/utils/rule-text-provider';
-import { FilteringEventType, defaultFilteringLog } from '../../../common/filtering-log';
+import { tabsApi } from '../../tabs/tabs-api';
 import { engineApi } from '../engine-api';
 
 import { type RequestContext } from './request-context-storage';
@@ -189,6 +190,8 @@ export class RequestBlockingApi {
             responseHeaders,
             tabId,
             referrerUrl,
+            parentDocumentId,
+            frameAncestors,
         } = context;
 
         if (!matchingResult || !responseHeaders) {
@@ -199,7 +202,12 @@ export class RequestBlockingApi {
 
         if (rule) {
             RequestBlockingApi.logRuleApplying(context, rule);
-            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+            tabsApi.incrementTabBlockedRequestCount({
+                tabId,
+                referrerUrl,
+                parentDocumentId,
+                frameAncestors,
+            });
         }
     }
 

@@ -1,17 +1,18 @@
 import browser from 'webextension-polyfill';
+
 import {
-    RequestType,
     type CosmeticRule,
     type NetworkRule,
     NetworkRuleOption,
+    RequestType,
 } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog } from '../../../../common/filtering-log';
 import { type RuleTextProvider } from '../../../../common/utils/rule-text-provider';
 import { type RequestContext } from '../../request';
 
-import { ContentStringFilter } from './content-string-filter';
 import { ContentStream } from './content-stream';
+import { ContentStringFilter } from './content-string-filter';
 
 /**
  * Content filtering module.

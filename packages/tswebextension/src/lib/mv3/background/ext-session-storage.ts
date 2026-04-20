@@ -1,7 +1,7 @@
 import browser from 'webextension-polyfill';
 
+import { createExtensionStorageDecorator, ExtensionStorage } from '../../common/storage';
 import { BrowserStorage, MemoryStorage } from '../../common/storage/core';
-import { ExtensionStorage, createExtensionStorageDecorator } from '../../common/storage';
 
 import { type ConfigurationMV3Context } from './configuration';
 

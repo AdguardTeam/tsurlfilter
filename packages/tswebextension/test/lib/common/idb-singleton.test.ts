@@ -1,15 +1,15 @@
+import * as idb from 'idb';
 import {
-    describe,
-    it,
-    expect,
-    beforeEach,
     afterEach,
+    beforeEach,
+    describe,
+    expect,
+    it,
     vi,
 } from 'vitest';
-import * as idb from 'idb';
 
-import { logger } from '../../../src/lib/common/utils/logger';
 import { IdbSingleton } from '../../../src/lib/common/idb-singleton';
+import { logger } from '../../../src/lib/common/utils/logger';
 
 vi.mock('idb', { spy: true });
 

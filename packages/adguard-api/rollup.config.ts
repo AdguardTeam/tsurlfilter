@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/require-file-overview */
-import swc from '@rollup/plugin-swc';
-import resolve from '@rollup/plugin-node-resolve';
 import json from '@rollup/plugin-json';
+import resolve from '@rollup/plugin-node-resolve';
+import swc from '@rollup/plugin-swc';
 
 const OUTPUT_PATH = 'dist';
 

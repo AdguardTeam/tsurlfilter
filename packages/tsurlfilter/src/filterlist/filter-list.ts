@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-loop-func */
-import { RawRuleConverter } from '@adguard/agtree';
 import { z as zod } from 'zod';
+
+import { RawRuleConverter } from '@adguard/agtree';
 
 import { EMPTY_STRING, LF } from '../common/constants';
 import { findNextLineBreakIndex } from '../utils/string-utils';

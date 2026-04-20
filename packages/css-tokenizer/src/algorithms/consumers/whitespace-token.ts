@@ -2,9 +2,9 @@
  * @file Tokenizing logic for whitespace
  */
 
-import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
 import { type TokenizerContext } from '../../common/context';
 import { TokenType } from '../../common/enums/token-types';
+import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
 
 /**
  * § 4.3.1. Consume a token (whitespace)

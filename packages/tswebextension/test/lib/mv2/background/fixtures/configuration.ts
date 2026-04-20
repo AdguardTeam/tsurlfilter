@@ -1,5 +1,5 @@
-import { type ConfigurationMV2 } from '../../../../../src/lib/mv2/background/configuration';
 import { LF } from '../../../../../src/lib/common/constants';
+import { type ConfigurationMV2 } from '../../../../../src/lib/mv2/background/configuration';
 
 export const getConfigurationMv2Fixture = (): ConfigurationMV2 => ({
     filters: [

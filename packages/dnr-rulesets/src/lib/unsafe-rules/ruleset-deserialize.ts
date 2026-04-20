@@ -6,6 +6,7 @@ import {
     IndexedNetworkRuleWithHash,
     IRuleSet,
     RuleSet,
+    type RuleSetMetadataProvider,
     RulesHashMap,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
@@ -69,11 +70,17 @@ export async function loadRulesetAndFilter(
         filters,
     );
 
-    const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
-    const ruleSetHashMap = new RulesHashMap(sources);
-    const badFilterRules = badFilterRulesRaw
-        .map((rawString: string) => IndexedNetworkRuleWithHash.createFromText(0, 0, rawString))
-        .flat();
+    const metadataProvider: RuleSetMetadataProvider = {
+        loadBadFilterRules: async () => {
+            return badFilterRulesRaw
+                .map((rawString: string) => IndexedNetworkRuleWithHash.createFromText(0, 0, rawString))
+                .flat();
+        },
+        loadRulesHashMap: async () => {
+            const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
+            return new RulesHashMap(sources);
+        },
+    };
 
     const ruleSet = new RuleSet(
         ruleSetId,
@@ -81,8 +88,7 @@ export async function loadRulesetAndFilter(
         unsafeRulesCount,
         regexpRulesCount,
         ruleSetContentProvider,
-        badFilterRules,
-        ruleSetHashMap,
+        metadataProvider,
     );
 
     console.log(`Loaded ruleset with ID ${id} from ${rulesetPath}`);

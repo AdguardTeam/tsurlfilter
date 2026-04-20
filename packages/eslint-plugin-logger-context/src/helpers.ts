@@ -1,4 +1,4 @@
-import type { TSESTree, TSESLint } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 
 /**
  * Traverses up the AST to find enclosing class, method, and function names.

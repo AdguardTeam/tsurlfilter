@@ -1,5 +1,5 @@
-import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import { FilterList } from '@adguard/tsurlfilter';
+import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
 export const createFilter = (
     rules: string[],

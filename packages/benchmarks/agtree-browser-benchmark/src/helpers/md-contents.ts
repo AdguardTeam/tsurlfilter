@@ -4,10 +4,11 @@
 import { formatRFC7231 } from 'date-fns';
 import { markdownTable } from 'markdown-table';
 
-import { type SystemSpecs } from './system-specs';
-import { printBytesAsMegabytes } from './format-size';
 import { type FilterListBenchmarkResult } from '../interfaces';
+
 import { EMPTY } from './constants';
+import { printBytesAsMegabytes } from './format-size';
+import { type SystemSpecs } from './system-specs';
 
 /**
  * Get the markdown file contents from the benchmark results.

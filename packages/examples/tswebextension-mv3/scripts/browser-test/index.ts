@@ -1,23 +1,24 @@
 import { chromium } from 'playwright';
 
 import {
+    EXTENSION_INITIALIZED_EVENT,
+} from '../../extension/src/common/constants';
+import { BUILD_PATH, USER_DATA_PATH } from '../build/constants';
+import {
     DEFAULT_EXTENSION_CONFIG,
     TESTCASES_BASE_URL,
 } from '../constants';
-import {
-    EXTENSION_INITIALIZED_EVENT,
-} from '../../extension/src/common/constants';
+
+import { logTestResult, logTestTimeout } from './logger';
 import {
     addQunitListeners,
     setTsWebExtensionConfig,
     SetTsWebExtensionConfigArg,
     waitUntilExtensionInitialized,
 } from './page-injections';
-import { getTestcases, getRuleText } from './requests';
-import { filterCompatibleTestcases } from './testcase';
-import { logTestResult, logTestTimeout } from './logger';
 import { Product } from './product';
-import { BUILD_PATH, USER_DATA_PATH } from '../build/constants';
+import { getRuleText, getTestcases } from './requests';
+import { filterCompatibleTestcases } from './testcase';
 
 const TESTS_TIMEOUT_MS = 5 * 1000;
 const TESTS_TIMEOUT_CODE = 'tests_timeout';

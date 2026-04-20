@@ -2,6 +2,7 @@
 /* eslint-disable max-len */
 // pnpm vitest bench network-engine
 import { readFileSync } from 'node:fs';
+
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
 import { bench, describe } from 'vitest';
 

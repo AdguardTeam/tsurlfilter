@@ -1,11 +1,12 @@
+import browser from 'webextension-polyfill';
+
 import {
+    type ConversionResult,
     DeclarativeFilterConverter,
     type IFilter,
-    type ConversionResult,
     type IRuleSet,
     type UpdateStaticRulesOptions,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import browser from 'webextension-polyfill';
 
 import { logger } from '../../common/utils/logger';
 

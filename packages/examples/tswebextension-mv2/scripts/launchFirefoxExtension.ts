@@ -1,5 +1,6 @@
-import webExt from 'web-ext';
 import { firefox } from 'playwright';
+import webExt from 'web-ext';
+
 import { BUILD_PATH } from './constants';
 
 /**

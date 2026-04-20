@@ -1,8 +1,9 @@
 import { type WebRequest } from 'webextension-polyfill';
-import { type MatchingResult, type HTTPMethod } from '@adguard/tsurlfilter';
 
-import { type ContentType } from '../../../common/request-type';
+import { type HTTPMethod, type MatchingResult } from '@adguard/tsurlfilter';
+
 import { type ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
+import { type ContentType } from '../../../common/request-type';
 import { type TabFrameRequestContextMV3 } from '../../tabs/tabs-api';
 
 export const enum RequestContextState {
@@ -47,6 +48,7 @@ export type RequestContext = TabFrameRequestContextMV3 & {
      * Filtering data from {@link EngineApi.matchRequest}.
      */
     matchingResult?: MatchingResult | null;
+
 };
 
 /**
@@ -105,16 +107,11 @@ export class RequestContextStorage {
     }
 
     /**
-     * Removes non document/subdocument request context from the map by request id.
+     * Removes request context from the map by request id.
      *
      * @param requestId Request id.
      */
     public delete(requestId: string): void {
-        const context = this.requestMap.get(requestId);
-        if (!context) {
-            return;
-        }
-
         this.requestMap.delete(requestId);
     }
 

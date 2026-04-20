@@ -9,10 +9,10 @@ import { RuleConverter } from '@adguard/agtree/converter';
 import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { getErrorMessage } from '../../common/error';
+import { NO_LIST_ID } from '../../filterlist/rule-list';
 import { fastHash, fastHash31 } from '../../utils/string-utils';
 import { NetworkRule } from '../network-rule';
 import { IndexedRule, type IRule } from '../rule';
-import { NO_LIST_ID } from '../../filterlist/rule-list';
 
 import { NetworkRuleWithNodeAndText } from './network-rule-with-node-and-text';
 

@@ -97,12 +97,21 @@
 /* eslint-enable jsdoc/require-description-complete-sentence */
 /* eslint-enable jsdoc/no-multi-asterisks */
 
-import punycode from 'punycode/punycode.js';
 import { getRedirectFilename } from '@adguard/scriptlets/redirects';
+import punycode from 'punycode/punycode.js';
 
-import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
+import { getErrorMessage } from '../../../common/error';
+import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
+import { HTTPMethod } from '../../../modifiers/method-modifier';
+import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../modifiers/permissions-modifier';
+import { type RedirectModifier } from '../../../modifiers/redirect-modifier';
+import { type RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
 import { type RequestType } from '../../../request-type';
+import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
+import type { IRule } from '../../rule';
+import { SimpleRegex } from '../../simple-regex';
+import { type ConvertedRules } from '../converted-result';
 import {
     DECLARATIVE_REQUEST_METHOD_MAP,
     DECLARATIVE_RESOURCE_TYPES_MAP,
@@ -126,21 +135,12 @@ import {
     UnsupportedModifierError,
     UnsupportedRegexpError,
 } from '../errors/conversion-errors';
-import { type ConvertedRules } from '../converted-result';
-import type { IRule } from '../../rule';
+import { EmptyDomainsError } from '../errors/conversion-errors/empty-domains-error';
 import { ResourcesPathError } from '../errors/converter-options-errors';
-import { type RedirectModifier } from '../../../modifiers/redirect-modifier';
-import { type RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier';
-import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
-import { HTTPMethod } from '../../../modifiers/method-modifier';
-import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../modifiers/permissions-modifier';
-import { SimpleRegex } from '../../simple-regex';
 import { type IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
-import { EmptyDomainsError } from '../errors/conversion-errors/empty-domains-error';
-import { re2Validator } from '../re2-regexp/re2-validator';
-import { getErrorMessage } from '../../../common/error';
 import { type NetworkRuleWithNodeAndText } from '../network-rule-with-node-and-text';
+import { re2Validator } from '../re2-regexp/re2-validator';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -347,7 +347,7 @@ export abstract class AbstractRuleConverter {
                          * In case if param is encoded URI we need to decode it first:
                          * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014.
                          */
-                        removeParams: [decodeURIComponent(value)],
+                        removeParams: [AbstractRuleConverter.decodeRemoveParamValue(value, rule)],
                     },
                 },
             };
@@ -551,6 +551,84 @@ export abstract class AbstractRuleConverter {
     }
 
     /**
+     * Characters that have special meaning in Chrome DNR urlFilter syntax.
+     * If a $removeparam param name contains any of these, we cannot safely
+     * embed it as a urlFilter token and must skip the augmentation.
+     */
+    private static readonly URL_FILTER_SPECIAL_CHARS = /[|*^]/;
+
+    /**
+     * Decodes a $removeparam value.
+     *
+     * @param value $removeparam value.
+     * @param rule Network rule.
+     *
+     * @returns Decoded value.
+     *
+     * @throws {UnsupportedModifierError} If the value cannot be decoded.
+     */
+    private static readonly decodeRemoveParamValue = (value: string, rule: NetworkRule): string => {
+        try {
+            return decodeURIComponent(value);
+        } catch {
+            throw new UnsupportedModifierError(
+                'Network rule with $removeparam modifier contains value that cannot be decoded',
+                rule,
+            );
+        }
+    };
+
+    /**
+     * Builds a param-aware urlFilter token for a $removeparam rule.
+     *
+     * For a rule like `$removeparam=utm_source` this method
+     * returns the string `^utm_source=` where the caret acts
+     * as a DNR separator matching query delimiters.
+     *
+     * Returns `null` when augmentation should be skipped:
+     * - empty param value (strip-all-params rule).
+     * - negation (`~param`).
+     * - regex (`/pattern/`).
+     * - whitespace-only param name.
+     * - param name contains urlFilter special characters (`|`, `*`, `^`).
+     *
+     * @param rule Network rule with RemoveParam option enabled.
+     *
+     * @returns A urlFilter token string, or null if augmentation should
+     * be skipped.
+     */
+    private static getRemoveParamToken(rule: NetworkRule): string | null {
+        const advancedModifier = rule.getAdvancedModifier();
+        if (!advancedModifier) {
+            return null;
+        }
+
+        const removeParamModifier = advancedModifier as RemoveParamModifier;
+        const value = removeParamModifier.getValue();
+
+        // Skip augmentation for strip-all, negation, and regex params.
+        if (!value || value.startsWith('~') || value.startsWith('/')) {
+            return null;
+        }
+
+        // Decode URI-encoded param names (same as getRedirectAction does).
+        const decoded = AbstractRuleConverter.decodeRemoveParamValue(value, rule);
+
+        // Whitespace-only param names cannot form a useful urlFilter token.
+        if (!decoded || decoded.trim() === '') {
+            return null;
+        }
+
+        // If the decoded param name contains urlFilter special characters,
+        // we cannot safely embed it — fall back to non-augmented behavior.
+        if (AbstractRuleConverter.URL_FILTER_SPECIAL_CHARS.test(decoded)) {
+            return null;
+        }
+
+        return `^${decoded}=`;
+    }
+
+    /**
      * Rule condition.
      *
      * @param rule Network rule.
@@ -573,6 +651,22 @@ export abstract class AbstractRuleConverter {
                     ? pattern.substring(2)
                     : pattern;
                 condition.urlFilter = AbstractRuleConverter.prepareASCII(patternWithoutVerticals);
+            }
+        }
+
+        // For $removeparam rules with a specific named parameter, append
+        // a param-aware token to urlFilter so that the rule only matches
+        // when the target parameter is present in the URL query string.
+        // This enables Chrome DNR to chain multiple redirect hops,
+        // stripping one parameter per hop until all are removed.
+        if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+            const paramToken = AbstractRuleConverter.getRemoveParamToken(rule);
+            if (paramToken !== null) {
+                if (condition.urlFilter) {
+                    condition.urlFilter += `*${paramToken}`;
+                } else if (!condition.regexFilter) {
+                    condition.urlFilter = paramToken;
+                }
             }
         }
 

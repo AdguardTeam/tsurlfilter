@@ -4,9 +4,10 @@
 
 import { isBOM, isWhitespace } from '../algorithms/definitions';
 import { getCodePointsArrayHash } from '../utils/djb2';
+
 import { CodePoint, ImaginaryCodePoint } from './enums/code-points';
 import { type TokenType } from './enums/token-types';
-import { type OnTokenCallback, type OnErrorCallback, type TokenizerContextFunction } from './types/function-prototypes';
+import { type OnErrorCallback, type OnTokenCallback, type TokenizerContextFunction } from './types/function-prototypes';
 
 /**
  * Context of the tokenizer which is shared between all the functions

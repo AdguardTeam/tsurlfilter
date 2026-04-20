@@ -1,9 +1,9 @@
-import { type FilteringLog, defaultFilteringLog } from '../../common/filtering-log';
-import { isHttpOrWsRequest } from '../../common/utils/url';
+import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../common/constants';
+import { defaultFilteringLog, type FilteringLog } from '../../common/filtering-log';
 import { TabContextCommon } from '../../common/tabs/tab-context';
 import { type TabInfo } from '../../common/tabs/tabs-api';
+import { isHttpOrWsRequest } from '../../common/utils/url';
 import { DocumentApi } from '../background/document-api';
-import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../common/constants';
 
 import { FrameMV3 } from './frame';
 

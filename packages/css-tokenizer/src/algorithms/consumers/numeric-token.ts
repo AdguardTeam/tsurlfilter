@@ -2,13 +2,14 @@
  * @file Tokenizing logic for numeric tokens
  */
 
+import { type TokenizerContext } from '../../common/context';
+import { CodePoint } from '../../common/enums/code-points';
+import { TokenType } from '../../common/enums/token-types';
 import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
+import { checkForIdentStart } from '../definitions';
+
 import { consumeIndentSequence } from './ident-sequence';
 import { consumeNumber } from './number';
-import { type TokenizerContext } from '../../common/context';
-import { checkForIdentStart } from '../definitions';
-import { TokenType } from '../../common/enums/token-types';
-import { CodePoint } from '../../common/enums/code-points';
 
 /**
  * § 4.3.3. Consume a numeric token

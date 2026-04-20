@@ -5,14 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [4.2.0-beta.1] - 2026-04-17
+
+### Added
+
+- `ROList` filter list [AdguardBrowserExtension#3473].
+
+[4.2.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.0-beta.1
+[AdguardBrowserExtension#3473]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3473
+
+## [4.2.0-beta] - 2026-04-16
+
+### Changed
+
+- Updated tsurlfilter to v5.0.0
+
+### Added
+
+- Support for `DNR_FILTER_KNOWN_ONLY` environment variable in the auto-build
+  process. When set to `'true'`, only filters whose IDs are listed in
+  `validator-data.json` are downloaded and included in the build, preventing
+  newly added filters from leaking into older stable branches (to maintain build
+  reproducibility).
 
 ### Fixed
 
 - Smoke test failure in Docker CI by adding `--ignore-scripts` to
   `pnpm install` in `test/smoke/exports/test.sh`.
 
-## [4.1.0] - 2026-02-XX
+[4.2.0-beta]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.0-beta
+
+## [4.1.0] - 2026-02-25
 
 ### Changed
 
@@ -24,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New option `-b, --browser` for `load` command to specify for which browser to load filters.
 - New option `-b, --browser` for `watch` command to specify for which browser to download latest filters.
 
-[4.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.1.0
+[4.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.1.20260225164826
 
 ## [4.0.20260217160105] - 2026-02-17
 
@@ -41,8 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **BREAKING:** Updated [@adguard/tsurlfilter] to v4.0.0 with `FilterList` API.
-  - Ruleset metadata now uses `conversionData` instead of `conversionMap`.
-  - `conversionData` structure: `{ originals: string[], conversions: Record<number, number> }`.
+    - Ruleset metadata now uses `conversionData` instead of `conversionMap`.
+    - `conversionData` structure: `{ originals: string[], conversions: Record<number, number> }`.
 
 [4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.0.0
 

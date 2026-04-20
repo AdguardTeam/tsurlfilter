@@ -2,8 +2,9 @@
  * @file CSS token stream.
  */
 
-import { getFormattedTokenName, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
+
+import { getFormattedTokenName, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
 
 import {
     ABP_EXT_CSS_PREFIX,

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import './app.css';
 
-import { Message } from '../message';
-import { sendMessage } from '../common/send-message';
 import { ConfigResponse } from '../background';
+import { sendMessage } from '../common/send-message';
+import { Message } from '../message';
 
 const filtersList = [ 1, 2, 3, 4, 9, 14 ];
 

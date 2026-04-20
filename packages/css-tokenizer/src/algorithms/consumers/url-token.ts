@@ -2,13 +2,14 @@
  * @file Tokenizing logic for URLs
  */
 
-import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
-import { checkForValidEscape, isNonPrintableCodePoint, isWhitespace } from '../definitions';
-import { consumeEscapedCodePoint } from './escaped-code-point';
 import { type TokenizerContext } from '../../common/context';
 import { CodePoint } from '../../common/enums/code-points';
-import { TokenType } from '../../common/enums/token-types';
 import { ErrorMessage } from '../../common/enums/error-messages';
+import { TokenType } from '../../common/enums/token-types';
+import { type TokenizerContextFunction } from '../../common/types/function-prototypes';
+import { checkForValidEscape, isNonPrintableCodePoint, isWhitespace } from '../definitions';
+
+import { consumeEscapedCodePoint } from './escaped-code-point';
 
 /**
  * § 4.3.14. Consume the remnants of a bad url

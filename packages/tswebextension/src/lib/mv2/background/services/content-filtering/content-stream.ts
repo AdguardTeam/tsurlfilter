@@ -1,21 +1,22 @@
-import TextEncoding from '@adguard/text-encoding';
 import { type WebRequest } from 'webextension-polyfill';
+
+import TextEncoding from '@adguard/text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
 
-import { type RequestContext } from '../../request';
 import { FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
 import { logger } from '../../../../common/utils/logger';
+import { type RequestContext } from '../../request';
 
-import { type ContentStringFilterInterface } from './content-string-filter';
 import {
     DEFAULT_CHARSET,
     LATIN_1,
-    SUPPORTED_CHARSETS,
-    WIN_1252,
-    parseCharsetFromHtml,
     parseCharsetFromCss,
     parseCharsetFromHeader,
+    parseCharsetFromHtml,
+    SUPPORTED_CHARSETS,
+    WIN_1252,
 } from './charsets';
+import { type ContentStringFilterInterface } from './content-string-filter';
 
 // Do not destruct inside import, because it somehow breaks build in browser
 // extension via "ReferenceError: TextDecoder is not defined".

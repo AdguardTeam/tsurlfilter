@@ -2,6 +2,7 @@
  * @file Helper functions to download filter lists.
  */
 import { type DownloadedFilterListResource, type FilterListResource } from '../interfaces';
+
 import { fetchFile } from './fetch-file';
 
 /**

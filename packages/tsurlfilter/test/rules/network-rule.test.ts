@@ -1,5 +1,4 @@
 /* eslint-disable max-len */
-import { AdblockSyntaxError } from '@adguard/agtree';
 import {
     afterAll,
     afterEach,
@@ -8,6 +7,8 @@ import {
     it,
     vi,
 } from 'vitest';
+
+import { AdblockSyntaxError } from '@adguard/agtree';
 
 import { HTTPMethod } from '../../src/modifiers/method-modifier';
 import { StealthOptionName } from '../../src/modifiers/stealth-modifier';

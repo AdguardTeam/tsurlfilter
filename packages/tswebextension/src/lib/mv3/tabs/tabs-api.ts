@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
 
-import { type TabInfo, TabsApiCommon, type TabFrameRequestContextCommon } from '../../common/tabs/tabs-api';
+import { type TabFrameRequestContextCommon, type TabInfo, TabsApiCommon } from '../../common/tabs/tabs-api';
 import { isHttpOrWsRequest } from '../../common/utils/url';
 import { DocumentApi } from '../background/document-api';
 

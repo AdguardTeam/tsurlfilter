@@ -17,13 +17,14 @@
  */
 
 import {
+    FilterList,
+    LF,
+    type LocalScriptFunctionData,
+    type MessageHandler,
     TsWebExtension,
     type Configuration as TsWebExtensionConfiguration,
-    type MessageHandler,
-    LF,
-    FilterList,
-    type LocalScriptFunctionData,
 } from '@adguard/tswebextension/mv3';
+
 import { type Configuration, configurationValidator } from './configuration';
 import { RequestBlockingLogger } from './request-blocking-logger';
 

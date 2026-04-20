@@ -1,9 +1,9 @@
-import { StringLineReader } from '../../filterlist/reader/string-line-reader';
 import { FilterList } from '../../filterlist/filter-list';
+import { StringLineReader } from '../../filterlist/reader/string-line-reader';
 
-import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
-import { type IFilter } from './filter';
 import { MaxScannedRulesError } from './errors/limitation-errors';
+import { type IFilter } from './filter';
+import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 
 /**
  * IFilterScanner describes a method that should return indexed network rules

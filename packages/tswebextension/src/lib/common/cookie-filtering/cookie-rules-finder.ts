@@ -1,4 +1,4 @@
-import { type NetworkRule, NetworkRuleOption, type CookieModifier } from '@adguard/tsurlfilter';
+import { type CookieModifier, type NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 /**
  * Cookie rules manager class.

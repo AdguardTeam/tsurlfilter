@@ -26,6 +26,7 @@ import { CssInjectionRuleConverter } from './css';
 import { ElementHidingRuleConverter } from './element-hiding';
 import { HeaderRemovalRuleConverter } from './header-removal';
 import { HtmlRuleConverter } from './html';
+import { convertPathInDomainToModifier } from './path-converter';
 import { AdgCosmeticRuleModifierConverter } from './rule-modifiers/adg';
 import { UboCosmeticRuleModifierConverter } from './rule-modifiers/ubo';
 import { ScriptletRuleConverter } from './scriptlet';
@@ -105,10 +106,12 @@ export class CosmeticRuleConverter extends RuleConverterBase {
             }
         }
 
-        if (
-            (subconverterResult.result.length > 1 || subconverterResult.isConverted)
-            || (convertedModifiers && convertedModifiers.isConverted)
-        ) {
+        // Track if any conversion happened
+        const wasConverted = subconverterResult.result.length > 1
+            || subconverterResult.isConverted
+            || (convertedModifiers && convertedModifiers.isConverted);
+
+        if (wasConverted) {
             // Add modifier list to the subconverter result rules
             subconverterResult.result.forEach((subconverterRule) => {
                 if (convertedModifiers && subconverterRule.category === RuleCategory.Cosmetic) {
@@ -116,8 +119,33 @@ export class CosmeticRuleConverter extends RuleConverterBase {
                     subconverterRule.modifiers = convertedModifiers.result;
                 }
             });
+        }
 
-            return subconverterResult;
+        // Apply path-in-domain conversion to all rules
+        const rulesToProcess = wasConverted ? subconverterResult.result : [rule];
+        const finalRules: AnyRule[] = [];
+        let pathConversionHappened = false;
+
+        for (const ruleToProcess of rulesToProcess) {
+            if (ruleToProcess.category === RuleCategory.Cosmetic) {
+                const pathConversionResult = convertPathInDomainToModifier(
+                    ruleToProcess as AnyCosmeticRule,
+                );
+
+                if (pathConversionResult) {
+                    finalRules.push(...pathConversionResult.result);
+                    pathConversionHappened = true;
+                } else {
+                    finalRules.push(ruleToProcess);
+                }
+            } else {
+                finalRules.push(ruleToProcess);
+            }
+        }
+
+        // Return result with combined conversion status
+        if (wasConverted || pathConversionHappened) {
+            return createNodeConversionResult(finalRules, true);
         }
 
         return createNodeConversionResult([rule], false);

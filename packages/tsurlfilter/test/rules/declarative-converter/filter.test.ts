@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { Filter } from '../../../src/rules/declarative-converter';
 import { FilterList } from '../../../src/filterlist/filter-list';
+import { Filter } from '../../../src/rules/declarative-converter';
 import { findNextLineBreakIndex } from '../../../src/utils/string-utils';
 
 describe('Filter', () => {

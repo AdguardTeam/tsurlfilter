@@ -1,4 +1,4 @@
-import { type WebRequest, type Events } from 'webextension-polyfill';
+import { type Events, type WebRequest } from 'webextension-polyfill';
 
 import { type RequestContext } from '../request-context-storage';
 

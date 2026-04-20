@@ -1,8 +1,8 @@
 import { NetworkRuleOption } from '../network-rule';
 
 import type { IFilter } from './filter';
-import type { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { FilterScanner } from './filter-scanner';
+import type { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 
 /**
  * This is an intermediate type required for conversion from filter to ruleset.
