@@ -6,3 +6,9 @@ adg_os_any|adg_ext_any|adg_safari_any:
     - google-ima.js
   description: Mocks the IMA SDK of Google.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#google-ima3
+
+ubo_any:
+  name: google-ima.js
+  aliases:
+    - google-ima3
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#google-imajs-

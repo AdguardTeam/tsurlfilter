@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- uBO scriptlet compatibility mapping for `google-ima3`, enabling
+  ADG→UBO and UBO→ADG conversion of `google-ima3`/`google-ima` scriptlet rules
+  ([FiltersCompiler#274]).
 - New `Platform` class replacing bitwise platform enums with hierarchical
   `ProductCode`/`PlatformType` structure.
 - Trie-based storage for compatibility table data with wildcard query support.
@@ -31,6 +34,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Serializer and Deserializer APIs.
 - Bitwise platform enums (`GenericPlatform`, `SpecificPlatform`) and related helpers.
+
+[FiltersCompiler#274]: https://github.com/AdguardTeam/FiltersCompiler/issues/274
 
 ## [4.1.0] - 2026-04-16
 

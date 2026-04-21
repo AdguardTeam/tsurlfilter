@@ -157,6 +157,20 @@ describe('Scriptlet conversion', () => {
                     "example.org#%#//scriptlet('ubo-prevent-canvas', '2d')",
                 ],
             },
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/274
+            {
+                actual: 'example.org##+js(google-ima)',
+                expected: [
+                    "example.org#%#//scriptlet('ubo-google-ima')",
+                ],
+            },
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/274 (exception)
+            {
+                actual: 'example.org#@#+js(google-ima)',
+                expected: [
+                    "example.org#@%#//scriptlet('ubo-google-ima')",
+                ],
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
         });
@@ -307,6 +321,20 @@ describe('Scriptlet conversion', () => {
             {
                 actual: "example.com#%#//scriptlet('set-local-storage-item', 'mode', '$remove$')",
                 expected: ['example.com##+js(set-local-storage-item, mode, $remove$)'],
+            },
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/274
+            {
+                actual: "example.org#%#//scriptlet('google-ima3')",
+                expected: [
+                    'example.org##+js(google-ima)',
+                ],
+            },
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/274 (exception)
+            {
+                actual: "example.org#@%#//scriptlet('google-ima3')",
+                expected: [
+                    'example.org#@#+js(google-ima)',
+                ],
             },
             // Should not convert already uBO scriptlet
             {
