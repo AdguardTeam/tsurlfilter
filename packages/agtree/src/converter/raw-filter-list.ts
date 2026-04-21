@@ -5,8 +5,8 @@
  */
 
 import { FilterListGenerator } from '../generator/filterlist-generator';
-import { FilterListParser } from '../parser/filterlist-parser';
-import { defaultParserOptions } from '../parser/options';
+import { FilterListParser } from '../parser-legacy/filterlist-parser';
+import { defaultParserOptions } from '../parser-legacy/options';
 
 import { BaseConverter } from './base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';

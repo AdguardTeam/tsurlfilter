@@ -3,8 +3,8 @@
  */
 
 import { type AppList } from '../../nodes';
-import { AppListParser } from '../../parser/misc/app-list-parser';
-import { defaultParserOptions } from '../../parser/options';
+import { AppListParser } from '../../parser-legacy/misc/app-list-parser';
+import { defaultParserOptions } from '../../parser-legacy/options';
 import { DOT, WILDCARD } from '../../utils/constants';
 
 import { type ValidationContext, type Validator } from './types';

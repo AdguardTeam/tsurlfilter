@@ -3,8 +3,8 @@
  */
 
 import { type DomainList } from '../../nodes';
-import { DomainListParser } from '../../parser/misc/domain-list-parser';
-import { defaultParserOptions } from '../../parser/options';
+import { DomainListParser } from '../../parser-legacy/misc/domain-list-parser';
+import { defaultParserOptions } from '../../parser-legacy/options';
 import { PIPE, WILDCARD } from '../../utils/constants';
 import { DomainUtils } from '../../utils/domain';
 

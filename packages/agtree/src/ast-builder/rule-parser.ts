@@ -1,0 +1,292 @@
+/**
+ * @file High-level RuleParser — public API wrapping the full pipeline.
+ *
+ * Owns the tokenizer buffers and parser context, reusing them across
+ * calls for optimal performance.
+ */
+
+import { ProductCode } from '../compatibility-tables/platform';
+import {
+    type AnyCommentRule,
+    type ElementHidingRule,
+    type EmptyRule,
+    type JsInjectionRule,
+    type NetworkRule,
+    RuleCategory,
+    type ScriptletInjectionRule,
+} from '../nodes-new';
+import { createParserContext, initParserContext } from '../parser/context';
+import type { ParserContext } from '../parser/context';
+import {
+    CR_FLAG_BODY_ADG_SCRIPTLET,
+    CR_FLAG_BODY_UBO_SCRIPTLET,
+    CR_FLAGS_OFFSET,
+    CR_SEP_KIND_ABP_SNIPPET,
+    CR_SEP_KIND_ADG_JS,
+    CR_SEP_KIND_MASK,
+    CR_SEP_KIND_SHIFT,
+} from '../parser/cosmetic/constants';
+import { RuleKind, RuleParser } from '../parser/rule';
+import { Tokenizer } from '../tokenizer/tokenizer';
+import { AdblockSyntax } from '../utils/adblockers';
+
+import type { ParserCapacity } from './capacity';
+import { CommentAstBuilder } from './comment/comment';
+import { ElementHidingAstBuilder } from './cosmetic/element-hiding';
+import { JsInjectionAstBuilder } from './cosmetic/js-injection';
+import { ScriptletInjectionAstBuilder } from './cosmetic/scriptlet-injection';
+import { NetworkRuleAstBuilder } from './network/network-rule';
+import type { ParseOptions } from './options';
+
+/**
+ * Default maximum number of tokens per rule.
+ * Handles both network and comment rules with varying complexity.
+ */
+const DEFAULT_TOKEN_CAPACITY = 1024;
+
+/**
+ * Default maximum number of children (modifiers, hints, or agents) per rule.
+ * Supports complex network rules with many modifiers or multi-agent comments.
+ */
+const DEFAULT_CHILDREN_CAPACITY = 64;
+
+/**
+ * The set of rule types that this parser currently produces.
+ */
+// TODO: Use AnyRule from nodes.ts
+export type AnyParsedRule =
+    | EmptyRule
+    | AnyCommentRule
+    | NetworkRule
+    | ElementHidingRule
+    | ScriptletInjectionRule
+    | JsInjectionRule;
+
+/**
+ * High-level parser for adblock rules.
+ *
+ * Wraps the three-step pipeline (tokenize → parse → build AST) and
+ * reuses internal buffers for performance. Automatically determines whether
+ * the input is a comment, network, cosmetic, or empty rule.
+ *
+ * Supported cosmetic rule types:
+ * - Element hiding (##, #@#, #?#, #@?#)
+ * - Scriptlet injection (ADG #%#//scriptlet, UBO ##+js, ABP #$#)
+ * - JS injection (ADG #%# without //scriptlet prefix).
+ *
+ * @example
+ * ```typescript
+ * const parser = new RuleParser();
+ * const ast = parser.parse('||example.org^$script');   // NetworkRule
+ * const cmt = parser.parse('! Title: My List');        // MetadataCommentRule
+ * const emp = parser.parse('');                        // EmptyRule
+ * ```
+ */
+export class RuleParserPipeline {
+    /**
+     * Tokenizer instance.
+     */
+    private tokenizer: Tokenizer;
+
+    /**
+     * Parser context.
+     */
+    private ctx: ParserContext;
+
+    /**
+     * Creates a new rule parser.
+     *
+     * @param capacity Optional capacity configuration.
+     */
+    constructor(capacity?: ParserCapacity) {
+        const tokenCap = capacity?.tokenCapacity ?? DEFAULT_TOKEN_CAPACITY;
+        const itemCap = capacity?.itemCapacity ?? DEFAULT_CHILDREN_CAPACITY;
+        this.tokenizer = new Tokenizer(tokenCap);
+        this.ctx = createParserContext(tokenCap, itemCap);
+    }
+
+    /**
+     * Parse an adblock rule string into an AST node.
+     *
+     * @param source Rule source string.
+     * @param options Parsing options (location, raws).
+     *
+     * @returns Parsed rule AST node.
+     *
+     * @throws For unsupported cosmetic rule types.
+     */
+    public parse(source: string, options?: ParseOptions): AnyParsedRule {
+        if (source.trim().length === 0) {
+            const result: EmptyRule = {
+                type: 'EmptyRule',
+                category: RuleCategory.Empty,
+                syntax: AdblockSyntax.Common,
+            };
+
+            if (options?.includeRaws) {
+                result.raws = { text: source };
+            }
+
+            if (options?.isLocIncluded) {
+                result.start = 0;
+                result.end = source.length;
+            }
+
+            return result;
+        }
+
+        this.tokenizer.setSource(source);
+        initParserContext(this.ctx, source, this.tokenizer);
+
+        // eslint-disable-next-line max-len
+        const kind = RuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options?.parseUboSpecificRules ?? true);
+
+        switch (kind) {
+            case RuleKind.Comment:
+                return CommentAstBuilder.parse(source, this.ctx.data, 0, options);
+
+            case RuleKind.Network:
+                return NetworkRuleAstBuilder.parse(source, this.ctx.data, 0, options);
+
+            case RuleKind.Cosmetic: {
+                const { data, maxMods, maxDomains } = this.ctx;
+                return RuleParserPipeline.dispatchCosmetic(source, data, 0, maxMods, maxDomains, options);
+            }
+
+            default:
+                throw new Error(`Unknown rule kind: ${kind}`);
+        }
+    }
+
+    /**
+     * Dispatch cosmetic rules to the correct AST builder based on integer
+     * flags in the data buffer. No string operations — all dispatch
+     * decisions use bit flags from `data[CR_FLAGS_OFFSET]`.
+     *
+     * @param source Source string.
+     * @param data Parsed data buffer.
+     * @param dataOffset Offset within `data` where the cosmetic rule header starts.
+     * @param maxMods Maximum modifier capacity used during parsing.
+     * @param maxDomains Maximum domain capacity used during parsing.
+     * @param options Parse options.
+     *
+     * @returns Parsed cosmetic rule AST node.
+     */
+    // eslint-disable-next-line no-bitwise
+    private static dispatchCosmetic(
+        source: string,
+        data: Int32Array,
+        dataOffset: number,
+        maxMods: number,
+        maxDomains: number,
+        options?: ParseOptions,
+    ): ElementHidingRule | ScriptletInjectionRule | JsInjectionRule {
+        // Read flags set by the parser — all dispatch is integer-only
+        // eslint-disable-next-line no-bitwise
+        const flags = data[dataOffset + CR_FLAGS_OFFSET];
+        // eslint-disable-next-line no-bitwise
+        const sepKind = (flags >>> CR_SEP_KIND_SHIFT) & CR_SEP_KIND_MASK;
+
+        // #%# / #@%# — ADG scriptlet or JS injection
+        if (sepKind === CR_SEP_KIND_ADG_JS) {
+            // eslint-disable-next-line no-bitwise
+            if (flags & CR_FLAG_BODY_ADG_SCRIPTLET) {
+                // eslint-disable-next-line max-len
+                return ScriptletInjectionAstBuilder.parse(source, data, dataOffset, maxMods, maxDomains, ProductCode.Adg, options);
+            }
+            return JsInjectionAstBuilder.parse(source, data, dataOffset, maxMods, options);
+        }
+
+        // #$# / #@$# — ABP snippet injection
+        if (sepKind === CR_SEP_KIND_ABP_SNIPPET) {
+            if (options?.parseAbpSpecificRules === false) {
+                throw new Error('ABP snippet rules are disabled by parseAbpSpecificRules option');
+            }
+            // eslint-disable-next-line max-len
+            return ScriptletInjectionAstBuilder.parse(source, data, dataOffset, maxMods, maxDomains, ProductCode.Abp, options);
+        }
+
+        // ## / #@# / #?# / #@?# — element hiding or uBO scriptlet
+        // (sepKind === CR_SEP_KIND_ELEMENT_HIDING, which is 0 / default)
+        // eslint-disable-next-line no-bitwise
+        if (flags & CR_FLAG_BODY_UBO_SCRIPTLET) {
+            if (options?.parseUboSpecificRules === false) {
+                throw new Error('uBO scriptlet rules are disabled by parseUboSpecificRules option');
+            }
+            // eslint-disable-next-line max-len
+            return ScriptletInjectionAstBuilder.parse(source, data, dataOffset, maxMods, maxDomains, ProductCode.Ubo, options);
+        }
+
+        // Default: element hiding
+        return ElementHidingAstBuilder.parse(source, data, dataOffset, maxMods, options);
+    }
+
+    /**
+     * Parse a sub-range of an already-tokenized context into a rule AST node.
+     *
+     * The caller must have already run the tokenizer and `initParserContext`
+     * so that `ctx` is fully populated. This method runs the structural parser
+     * over the specified token range and builds the AST.
+     *
+     * @param ctx Parser context with tokenizer output already loaded.
+     * @param startTi Inclusive start token index.
+     * @param endTi Exclusive end token index.
+     * @param dataOffset Offset within ctx.data to write structural data.
+     * @param options Parsing options (location, raws).
+     *
+     * @returns Parsed rule AST node.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public parseRange(
+        ctx: ParserContext,
+        startTi: number,
+        endTi: number,
+        dataOffset: number,
+        options?: ParseOptions,
+    ): AnyParsedRule {
+        const kind = RuleParser.parse(
+            ctx,
+            startTi,
+            endTi,
+            dataOffset,
+            options?.parseUboSpecificRules ?? true,
+        );
+
+        const ruleStart = startTi > 0 ? ctx.ends[startTi - 1] : ctx.sourceStart;
+        const ruleEnd = endTi > 0 ? ctx.ends[endTi - 1] : ctx.sourceStart;
+
+        switch (kind) {
+            case RuleKind.Comment: {
+                const result = CommentAstBuilder.parse(ctx.source, ctx.data, dataOffset, options);
+                if (options?.isLocIncluded) {
+                    result.start = ruleStart;
+                    result.end = ruleEnd;
+                }
+                return result;
+            }
+
+            case RuleKind.Network: {
+                const result = NetworkRuleAstBuilder.parse(ctx.source, ctx.data, dataOffset, options);
+                if (options?.isLocIncluded) {
+                    result.start = ruleStart;
+                    result.end = ruleEnd;
+                }
+                return result;
+            }
+
+            case RuleKind.Cosmetic: {
+                const { source: src, maxMods, maxDomains } = ctx;
+                // eslint-disable-next-line max-len
+                const result = RuleParserPipeline.dispatchCosmetic(src, ctx.data, dataOffset, maxMods, maxDomains, options);
+                if (options?.isLocIncluded) {
+                    result.start = ruleStart;
+                    result.end = ruleEnd;
+                }
+                return result;
+            }
+
+            default:
+                throw new Error(`Unknown rule kind: ${kind}`);
+        }
+    }
+}

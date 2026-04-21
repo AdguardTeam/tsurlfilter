@@ -26,8 +26,14 @@ import {
     type SimpleSelector,
     type Value,
 } from '../../nodes';
-import { AdgHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
-import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+// eslint-disable-next-line max-len
+import {
+    AdgHtmlFilteringBodyParser,
+} from '../../parser-legacy/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
+// eslint-disable-next-line max-len
+import {
+    UboHtmlFilteringBodyParser,
+} from '../../parser-legacy/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { EMPTY, EQUALS } from '../../utils/constants';
 import { RegExpUtils } from '../../utils/regexp';

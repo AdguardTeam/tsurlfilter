@@ -3,7 +3,7 @@
  */
 
 import { CosmeticRuleSeparator, type CssInjectionRule } from '../../nodes';
-import { CssTokenStream } from '../../parser/css/css-token-stream';
+import { CssTokenStream } from '../../parser-legacy/css/css-token-stream';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { clone } from '../../utils/clone';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';

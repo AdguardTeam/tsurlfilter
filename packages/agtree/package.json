@@ -35,8 +35,8 @@
             "import": "./dist/index.js"
         },
         "./parser": {
-            "types": "./dist/types/parser/index.d.ts",
-            "import": "./dist/parser/index.js"
+            "types": "./dist/types/parser-legacy/index.d.ts",
+            "import": "./dist/parser-legacy/index.js"
         },
         "./generator": {
             "types": "./dist/types/generator/index.d.ts",

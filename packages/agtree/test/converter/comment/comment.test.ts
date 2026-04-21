@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CommentRuleConverter } from '../../../src/converter/comment';
 import { type CommentRule } from '../../../src/nodes';
-import { CommentParser } from '../../../src/parser/comment/comment-parser';
+import { CommentParser } from '../../../src/parser-legacy/comment/comment-parser';
 
 describe('CommentRuleConverter', () => {
     describe('convertToAdg', () => {

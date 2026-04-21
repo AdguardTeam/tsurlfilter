@@ -3,13 +3,14 @@
  */
 
 // Parser (legacy)
-export { RuleParser } from './parser/rule-parser';
+export { RuleParser } from './parser-legacy/rule-parser';
 export { RuleGenerator } from './generator/rule-generator';
-export { type OnParseError, defaultParserOptions, type ParserOptions } from './parser/options';
+export { type OnParseError, defaultParserOptions, type ParserOptions } from './parser-legacy/options';
 
 // New pipeline parser (supports element hiding and other cosmetic rules)
-export { RuleParser as RuleParserNew } from './parser-new/rule-parser';
-export type { PreparserParseOptions } from './parser-new/options';
+export { RuleParserPipeline } from './ast-builder/rule-parser';
+export type { ParseOptions } from './ast-builder/options';
+export type { ParserCapacity } from './ast-builder/capacity';
 
 export {
     type Agent,
@@ -65,27 +66,27 @@ export {
     type AnyNetworkRule,
 } from './nodes';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
-export { AgentCommentParser } from './parser/comment/agent-comment-parser';
-export { AgentParser } from './parser/comment/agent-parser';
-export { CommentParser } from './parser/comment/comment-parser';
-export { ConfigCommentParser } from './parser/comment/config-comment-parser';
-export { CosmeticRuleParser } from './parser/cosmetic/cosmetic-rule-parser';
-export { AppListParser } from './parser/misc/app-list-parser';
-export { DomainListParser } from './parser/misc/domain-list-parser';
-export { MethodListParser } from './parser/misc/method-list-parser';
-export { StealthOptionListParser } from './parser/misc/stealth-option-list-parser';
-export { FilterListParser } from './parser/filterlist-parser';
-export { HintCommentParser } from './parser/comment/hint-comment-parser';
-export { HintParser } from './parser/comment/hint-parser';
-export { LogicalExpressionParser } from './parser/misc/logical-expression-parser';
-export { MetadataCommentParser } from './parser/comment/metadata-comment-parser';
-export { ModifierListParser } from './parser/misc/modifier-list';
-export { ModifierParser } from './parser/misc/modifier-parser';
-export { NetworkRuleParser } from './parser/network/network-rule-parser';
+export { AgentCommentParser } from './parser-legacy/comment/agent-comment-parser';
+export { AgentParser } from './parser-legacy/comment/agent-parser';
+export { CommentParser } from './parser-legacy/comment/comment-parser';
+export { ConfigCommentParser } from './parser-legacy/comment/config-comment-parser';
+export { CosmeticRuleParser } from './parser-legacy/cosmetic/cosmetic-rule-parser';
+export { AppListParser } from './parser-legacy/misc/app-list-parser';
+export { DomainListParser } from './parser-legacy/misc/domain-list-parser';
+export { MethodListParser } from './parser-legacy/misc/method-list-parser';
+export { StealthOptionListParser } from './parser-legacy/misc/stealth-option-list-parser';
+export { FilterListParser } from './parser-legacy/filterlist-parser';
+export { HintCommentParser } from './parser-legacy/comment/hint-comment-parser';
+export { HintParser } from './parser-legacy/comment/hint-parser';
+export { LogicalExpressionParser } from './parser-legacy/misc/logical-expression-parser';
+export { MetadataCommentParser } from './parser-legacy/comment/metadata-comment-parser';
+export { ModifierListParser } from './parser-legacy/misc/modifier-list';
+export { ModifierParser } from './parser-legacy/misc/modifier-parser';
+export { NetworkRuleParser } from './parser-legacy/network/network-rule-parser';
 export { NotImplementedError } from './errors/not-implemented-error';
-export { ParameterListParser } from './parser/misc/parameter-list-parser';
-export { HostRuleParser } from './parser/network/host-rule-parser';
-export { PreProcessorCommentParser } from './parser/comment/preprocessor-parser';
+export { ParameterListParser } from './parser-legacy/misc/parameter-list-parser';
+export { HostRuleParser } from './parser-legacy/network/host-rule-parser';
+export { PreProcessorCommentParser } from './parser-legacy/comment/preprocessor-parser';
 export { RuleConversionError } from './errors/rule-conversion-error';
 
 // Validator
@@ -140,7 +141,7 @@ export {
 } from './converter/data/css';
 
 // CSS utilities
-export { CssTokenStream } from './parser/css/css-token-stream';
+export { CssTokenStream } from './parser-legacy/css/css-token-stream';
 
 export {
     Platform,

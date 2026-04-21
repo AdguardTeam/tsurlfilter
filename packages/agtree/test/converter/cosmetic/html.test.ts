@@ -4,8 +4,8 @@ import { createNodeConversionResult } from '../../../src/converter/base-interfac
 import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
 import { NotImplementedError } from '../../../src/errors/not-implemented-error';
 import { type HtmlFilteringRule } from '../../../src/nodes';
-import { defaultParserOptions, type ParserOptions } from '../../../src/parser/options';
-import { RuleParser } from '../../../src/parser/rule-parser';
+import { defaultParserOptions, type ParserOptions } from '../../../src/parser-legacy/options';
+import { RuleParser } from '../../../src/parser-legacy/rule-parser';
 
 /**
  * Invalid test data interface.

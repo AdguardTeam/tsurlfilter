@@ -3,8 +3,8 @@ import { describe, expect, test } from 'vitest';
 
 import { Platform } from '../../src/compatibility-tables';
 import { type Modifier } from '../../src/nodes';
-import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-items-parser';
-import { ModifierParser } from '../../src/parser/misc/modifier-parser';
+import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser-legacy/misc/list-items-parser';
+import { ModifierParser } from '../../src/parser-legacy/misc/modifier-parser';
 import { StringUtils } from '../../src/utils/string';
 import { modifierValidator } from '../../src/validator';
 import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';

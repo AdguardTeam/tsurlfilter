@@ -10,7 +10,7 @@ import {
     type Modifier,
     type ModifierList,
 } from '../../../nodes';
-import { DomainListParser } from '../../../parser';
+import { DomainListParser } from '../../../parser-legacy';
 import { clone } from '../../../utils/clone';
 import {
     ADG_APP_MODIFIER,

@@ -3,8 +3,8 @@
  */
 
 import { type StealthOptionList } from '../../nodes';
-import { StealthOptionListParser } from '../../parser/misc/stealth-option-list-parser';
-import { defaultParserOptions } from '../../parser/options';
+import { StealthOptionListParser } from '../../parser-legacy/misc/stealth-option-list-parser';
+import { defaultParserOptions } from '../../parser-legacy/options';
 
 import { type ValidationContext, type Validator } from './types';
 

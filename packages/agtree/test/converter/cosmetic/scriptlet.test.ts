@@ -7,7 +7,7 @@ import {
 
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
 import { type ScriptletInjectionRule } from '../../../src/nodes';
-import { RuleParser } from '../../../src/parser/rule-parser';
+import { RuleParser } from '../../../src/parser-legacy/rule-parser';
 
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {

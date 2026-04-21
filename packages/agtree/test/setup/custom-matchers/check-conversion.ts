@@ -11,8 +11,8 @@ import { type BaseConverter } from '../../../src/converter/base-interfaces/base-
 import { type NodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
 import { RuleGenerator } from '../../../src/generator';
 import { type AnyRule } from '../../../src/nodes';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { RuleParser } from '../../../src/parser/rule-parser';
+import { defaultParserOptions } from '../../../src/parser-legacy/options';
+import { RuleParser } from '../../../src/parser-legacy/rule-parser';
 import { getErrorMessage } from '../../../src/utils/error';
 import { everyRefsAreDifferent } from '../../helpers/refs';
 

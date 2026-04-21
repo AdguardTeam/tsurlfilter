@@ -18,7 +18,7 @@ import {
     type ParameterList,
     type ScriptletInjectionRule,
 } from '../../nodes';
-import { DomainListParser } from '../../parser';
+import { DomainListParser } from '../../parser-legacy';
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
     ADG_DOMAINS_MODIFIER,

@@ -1,0 +1,75 @@
+/* eslint-disable no-bitwise */
+
+/**
+ * @file Modifier parser — creates Modifier AST nodes from parsed data.
+ *
+ * Delegates value node creation to {@link ValueAstBuilder}.
+ */
+
+import type { Modifier } from '../../nodes-new';
+import {
+    MODIFIER_FIELD_FLAGS,
+    MODIFIER_FIELD_NAME_END,
+    MODIFIER_FIELD_NAME_START,
+    MODIFIER_FIELD_VALUE_END,
+    MODIFIER_FIELD_VALUE_START,
+    MODIFIER_FLAG_NEGATED,
+    MODIFIER_RECORD_STRIDE,
+    NO_VALUE,
+    NR_MODIFIER_RECORDS_OFFSET,
+} from '../../parser/network/network-rule';
+
+import { ValueAstBuilder } from './value';
+
+/**
+ * Parser for Modifier AST nodes.
+ *
+ * Delegates value node creation to {@link ValueAstBuilder}.
+ */
+export class ModifierAstBuilder {
+    /**
+     * Builds a Modifier AST node from parsed data at the given index.
+     *
+     * @param source Original source string.
+     * @param data Preparsed data buffer.
+     * @param idx Modifier index (0-based).
+     * @param isLocIncluded Whether to include location info.
+     * @param recordsOffset Buffer offset where records begin (default: network rule offset).
+     *
+     * @returns Modifier AST node.
+     */
+    public static parse(
+        source: string,
+        data: Int32Array,
+        idx: number,
+        isLocIncluded: boolean,
+        recordsOffset: number = NR_MODIFIER_RECORDS_OFFSET,
+    ): Modifier {
+        const base = recordsOffset + idx * MODIFIER_RECORD_STRIDE;
+
+        const nameStart = data[base + MODIFIER_FIELD_NAME_START];
+        const nameEnd = data[base + MODIFIER_FIELD_NAME_END];
+        const modFlags = data[base + MODIFIER_FIELD_FLAGS];
+        const valStart = data[base + MODIFIER_FIELD_VALUE_START];
+        const valEnd = data[base + MODIFIER_FIELD_VALUE_END];
+
+        const name = ValueAstBuilder.parse(source, nameStart, nameEnd, isLocIncluded);
+
+        const modifier: Modifier = {
+            type: 'Modifier',
+            name,
+            exception: (modFlags & MODIFIER_FLAG_NEGATED) !== 0,
+        };
+
+        if (valStart !== NO_VALUE) {
+            modifier.value = ValueAstBuilder.parse(source, valStart, valEnd, isLocIncluded);
+        }
+
+        if (isLocIncluded) {
+            modifier.start = nameStart;
+            modifier.end = valStart !== NO_VALUE ? valEnd : nameEnd;
+        }
+
+        return modifier;
+    }
+}

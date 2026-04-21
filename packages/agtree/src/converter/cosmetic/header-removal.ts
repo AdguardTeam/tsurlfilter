@@ -13,7 +13,10 @@ import {
     type PseudoClassSelector,
     RuleCategory,
 } from '../../nodes';
-import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
+// eslint-disable-next-line max-len
+import {
+    UboHtmlFilteringBodyParser,
+} from '../../parser-legacy/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { EMPTY, UBO_RESPONSEHEADER_FN } from '../../utils/constants';
 import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_START } from '../../utils/regexp';

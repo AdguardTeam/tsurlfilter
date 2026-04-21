@@ -5,7 +5,7 @@
  */
 
 import { RuleGenerator } from '../generator';
-import { RuleParser } from '../parser/rule-parser';
+import { RuleParser } from '../parser-legacy/rule-parser';
 
 import { BaseConverter } from './base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';

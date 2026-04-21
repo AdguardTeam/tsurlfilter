@@ -1,5 +1,5 @@
 import { type AnyExpressionNode, OperatorValue } from '../../nodes';
-import { NodeType } from '../../parser/misc/logical-expression-parser';
+import { NodeType } from '../../parser-legacy/misc/logical-expression-parser';
 import { BaseGenerator } from '../base-generator';
 
 /**

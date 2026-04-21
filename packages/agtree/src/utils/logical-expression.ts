@@ -3,7 +3,7 @@
  */
 
 import { type AnyExpressionNode, type ExpressionVariableNode, OperatorValue } from '../nodes';
-import { NodeType } from '../parser/misc/logical-expression-parser';
+import { NodeType } from '../parser-legacy/misc/logical-expression-parser';
 
 const ERROR_PREFIX = {
     UNEXPECTED_NODE_TYPE: 'Unexpected node type',

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { FilterListConverter } from '../../src/converter/filter-list';
 import { FilterListGenerator } from '../../src/generator/filterlist-generator';
-import { FilterListParser } from '../../src/parser/filterlist-parser';
+import { FilterListParser } from '../../src/parser-legacy/filterlist-parser';
 import { NEWLINE } from '../../src/utils/constants';
 
 describe('FilterListConverter', () => {

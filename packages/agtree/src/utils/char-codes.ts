@@ -2,7 +2,7 @@
  * @file Common character codes used throughout the parser pipeline.
  *
  * Centralizes character code constants to avoid duplication across
- * tokenizer, preparser, and AST parser modules.
+ * tokenizer, parser, and AST parser modules.
  */
 
 /**

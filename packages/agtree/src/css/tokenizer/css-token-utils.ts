@@ -42,7 +42,7 @@ export function isCssIdentPart(type: number): boolean {
 
 /**
  * Whether `type` can appear inside a CSS identifier run as recognized by the
- * preparser: any {@link isCssIdentPart ident-part} token or `Escaped`.
+ * parser: any {@link isCssIdentPart ident-part} token or `Escaped`.
  *
  * @param type Token type value.
  *

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { NetworkRuleConverter } from '../../../src/converter/network';
 import { RuleConversionError } from '../../../src/errors/rule-conversion-error';
-import { NetworkRuleParser } from '../../../src/parser/network/network-rule-parser';
+import { NetworkRuleParser } from '../../../src/parser-legacy/network/network-rule-parser';
 
 describe('NetworkRuleConverter', () => {
     describe('convertToAdg', () => {

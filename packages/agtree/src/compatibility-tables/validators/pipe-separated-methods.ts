@@ -3,8 +3,8 @@
  */
 
 import { type MethodList } from '../../nodes';
-import { MethodListParser } from '../../parser/misc/method-list-parser';
-import { defaultParserOptions } from '../../parser/options';
+import { MethodListParser } from '../../parser-legacy/misc/method-list-parser';
+import { defaultParserOptions } from '../../parser-legacy/options';
 
 import { type ValidationContext, type Validator } from './types';
 

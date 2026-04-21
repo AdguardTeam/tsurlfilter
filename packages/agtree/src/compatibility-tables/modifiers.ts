@@ -5,8 +5,8 @@
 import { sprintf } from 'sprintf-js';
 
 import { type Modifier } from '../nodes';
-import { ModifierParser } from '../parser/misc/modifier-parser';
-import { defaultParserOptions } from '../parser/options';
+import { ModifierParser } from '../parser-legacy/misc/modifier-parser';
+import { defaultParserOptions } from '../parser-legacy/options';
 import { UNDERSCORE } from '../utils/constants';
 import { getErrorMessage } from '../utils/error';
 import { isValidNoopModifier } from '../utils/noop-modifier';
