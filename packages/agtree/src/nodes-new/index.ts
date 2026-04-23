@@ -1126,6 +1126,102 @@ export interface CssRule extends Node {
 }
 
 /**
+ * Represents the prelude (parameters/condition) of a CSS at-rule.
+ *
+ * Currently stores the prelude as raw text. May be extended in the future
+ * to contain parsed media query children.
+ *
+ * @example
+ * ```text
+ * @media (min-width: 400px) { ... }
+ *        ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+ *        prelude
+ * ```
+ */
+export interface CssAtRulePrelude extends Node {
+    type: 'CssAtRulePrelude';
+
+    /**
+     * The raw prelude text.
+     */
+    value: string;
+}
+
+/**
+ * Represents a CSS at-rule (e.g., `\@media`, `\@supports`, `\@charset`).
+ *
+ * Block at-rules have a non-null `block` (e.g., `\@media screen { ... }`).
+ * Statement at-rules have `block: null` (e.g., `\@charset "UTF-8";`).
+ *
+ * @example
+ * ```text
+ * @media (min-width: 400px) { div { color: red; } }
+ *  ↑↑↑↑↑ ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+ *  name  prelude            block
+ * ```
+ */
+export interface CssAtRule extends Node {
+    type: 'CssAtRule';
+
+    /**
+     * The at-rule name (e.g., `'media'`, `'supports'`, `'charset'`).
+     */
+    name: Value;
+
+    /**
+     * The at-rule prelude (parameters/condition), or `null` if absent.
+     * When `parsePrelude` is `false`, this is a `Raw` node.
+     */
+    prelude: CssAtRulePrelude | Raw | null;
+
+    /**
+     * The block body, or `null` for statement at-rules.
+     * When `parseBlock` is `false`, this is a `Raw` node.
+     */
+    block: CssBlock | Raw | null;
+}
+
+/**
+ * Parse options for the CSS at-rule parser.
+ */
+export interface CssAtRuleParseOptions {
+    /**
+     * Whether to include location info (start/end) in AST nodes.
+     *
+     * Defaults to `true`.
+     */
+    isLocIncluded?: boolean;
+
+    /**
+     * Whether to parse the prelude into a CssAtRulePrelude node.
+     * When `false`, the prelude is returned as a `Raw` node.
+     *
+     * Defaults to `true`.
+     */
+    parsePrelude?: boolean;
+
+    /**
+     * Whether to parse the block body into a CssBlock.
+     * When `false`, the block is returned as a `Raw` node.
+     *
+     * Defaults to `true`.
+     */
+    parseBlock?: boolean;
+
+    /**
+     * Whether to parse qualified rules inside the block (selectors and declarations).
+     * Only meaningful when `parseBlock` is `true`.
+     *
+     * When `false` and the block has content, the block body is returned as a `Raw` node.
+     * When `false` and the block is empty (`{ }`), a `CssBlock` with an empty
+     * `CssDeclarationList` is returned (there is no content to preserve as raw text).
+     *
+     * Defaults to `true`.
+     */
+    parseBlockRules?: boolean;
+}
+
+/**
  * Parse options for the CSS rule parser.
  */
 export interface CssRuleParseOptions {

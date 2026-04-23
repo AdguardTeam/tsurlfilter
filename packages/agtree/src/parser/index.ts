@@ -162,3 +162,25 @@ export {
     LE_KIND_OR,
     LE_KIND_PAR,
 } from './misc/logical-expression';
+
+export {
+    CssAtRuleParser,
+    AT_HEADER_SIZE,
+    AT_MIN_DATA_SLOTS,
+    AT_NO_VALUE,
+    AT_SOURCE_START,
+    AT_NAME_SOURCE_START,
+    AT_NAME_SOURCE_END,
+    AT_NAME_START_TI,
+    AT_NAME_END_TI,
+    AT_PRELUDE_SOURCE_START,
+    AT_PRELUDE_SOURCE_END,
+    AT_PRELUDE_START_TI,
+    AT_PRELUDE_END_TI,
+    AT_OPEN_BRACE_POS,
+    AT_OPEN_BRACE_TI,
+    AT_CLOSE_BRACE_POS,
+    AT_CLOSE_BRACE_TI,
+    AT_BLOCK_START_TI,
+    AT_BLOCK_END_TI,
+} from './css/atrule';

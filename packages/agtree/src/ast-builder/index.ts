@@ -32,3 +32,7 @@ export {
 export { RuleParserPipeline as RuleParser, type AnyParsedRule } from './rule-parser';
 export { LogicalExpressionAstBuilder } from './misc/logical-expression';
 export { ParameterListAstBuilder } from './misc/parameter-list';
+export {
+    CssAtRuleAstBuilder,
+    CssAtRulePipelineParser,
+} from './cosmetic/atrule';
