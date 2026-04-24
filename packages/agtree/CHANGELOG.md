@@ -35,8 +35,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Serializer and Deserializer APIs.
 - Bitwise platform enums (`GenericPlatform`, `SpecificPlatform`) and related helpers.
 
-[FiltersCompiler#274]: https://github.com/AdguardTeam/FiltersCompiler/issues/274
-
 ## 4.1.1
 
 ### Added
