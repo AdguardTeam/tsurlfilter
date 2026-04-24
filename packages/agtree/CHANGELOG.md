@@ -37,9 +37,19 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [FiltersCompiler#274]: https://github.com/AdguardTeam/FiltersCompiler/issues/274
 
-## [4.1.0] - 2026-04-16
+## 4.1.1
 
 ### Added
+
+- uBO scriptlet compatibility mapping for `google-ima3`, enabling
+  ADG→UBO and UBO→ADG conversion of `google-ima3`/`google-ima` scriptlet rules
+  ([FiltersCompiler#274]).
+
+[FiltersCompiler#274]: https://github.com/AdguardTeam/FiltersCompiler/issues/274
+
+## [4.1.0-beta.0] - 2026-04-21
+
+## Added
 
 - Path-in-domain syntax support for cosmetic rules [#169].
 
