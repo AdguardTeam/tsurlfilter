@@ -126,5 +126,46 @@ describe('FiltersApi', () => {
             expect(result.errors).toHaveLength(0);
             expect(mockUpdateEnabledRulesets).not.toHaveBeenCalled();
         });
+
+        it('collects error when disable batch rejects', async () => {
+            const testError = new Error('Cannot disable');
+            mockUpdateEnabledRulesets.mockRejectedValueOnce(testError);
+
+            const result = await FiltersApi.updateFiltering([1, 2], []);
+
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0]).toBeInstanceOf(FailedEnableRuleSetsError);
+            expect(result.errors[0].enableRulesetIds).toEqual([]);
+            expect(result.errors[0].disableRulesetIds).toEqual([
+                `${RULESET_NAME_PREFIX}1`,
+                `${RULESET_NAME_PREFIX}2`,
+            ]);
+            expect(result.errors[0].cause).toBe(testError);
+        });
+
+        it('collects disable error but still enables remaining rulesets', async () => {
+            const disableError = new Error('Cannot disable');
+            mockUpdateEnabledRulesets
+                .mockRejectedValueOnce(disableError) // disable call fails
+                .mockResolvedValueOnce(undefined)     // enable filter 2 succeeds
+                .mockResolvedValueOnce(undefined);    // enable filter 3 succeeds
+
+            const result = await FiltersApi.updateFiltering([1], [2, 3]);
+
+            // Only the disable failure is reported
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0]).toBeInstanceOf(FailedEnableRuleSetsError);
+            expect(result.errors[0].disableRulesetIds).toEqual([`${RULESET_NAME_PREFIX}1`]);
+            expect(result.errors[0].enableRulesetIds).toEqual([]);
+            expect(result.errors[0].cause).toBe(disableError);
+            // 1 disable call + 2 enable calls
+            expect(mockUpdateEnabledRulesets).toHaveBeenCalledTimes(3);
+            expect(mockUpdateEnabledRulesets).toHaveBeenCalledWith({
+                enableRulesetIds: [`${RULESET_NAME_PREFIX}2`],
+            });
+            expect(mockUpdateEnabledRulesets).toHaveBeenCalledWith({
+                enableRulesetIds: [`${RULESET_NAME_PREFIX}3`],
+            });
+        });
     });
 });

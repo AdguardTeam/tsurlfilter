@@ -58,9 +58,20 @@ export default class FiltersApi {
 
         // Disable rulesets in a single batch call first.
         if (disableRulesetIds.length > 0) {
-            await browser.declarativeNetRequest.updateEnabledRulesets({
-                disableRulesetIds,
-            });
+            try {
+                await browser.declarativeNetRequest.updateEnabledRulesets({
+                    disableRulesetIds,
+                });
+            } catch (e) {
+                const msg = 'Cannot disable rule sets';
+                const err = new FailedEnableRuleSetsError(
+                    msg,
+                    [],
+                    disableRulesetIds,
+                    e instanceof Error ? e : new Error(String(e)),
+                );
+                res.errors.push(err);
+            }
         }
 
         // Enable rulesets one-by-one so that one bad ruleset does not
