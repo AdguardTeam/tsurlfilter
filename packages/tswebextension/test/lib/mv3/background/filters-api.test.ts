@@ -147,8 +147,8 @@ describe('FiltersApi', () => {
             const disableError = new Error('Cannot disable');
             mockUpdateEnabledRulesets
                 .mockRejectedValueOnce(disableError) // disable call fails
-                .mockResolvedValueOnce(undefined)     // enable filter 2 succeeds
-                .mockResolvedValueOnce(undefined);    // enable filter 3 succeeds
+                .mockResolvedValueOnce(undefined) // enable filter 2 succeeds
+                .mockResolvedValueOnce(undefined); // enable filter 3 succeeds
 
             const result = await FiltersApi.updateFiltering([1], [2, 3]);
 
