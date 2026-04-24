@@ -27,15 +27,18 @@ export default class FiltersApi {
     /**
      * Enables or disables the provided rule set identifiers.
      *
+     * Disables are applied in a single batch call first, then each ruleset
+     * is enabled individually so that one invalid ruleset does not prevent
+     * the others from being enabled (the browser rejects the entire batch
+     * when any single ruleset in the request is not found).
+     *
      * @param disableFiltersIds Rule sets to disable.
      * @param enableFiltersIds Rule sets to enable.
      *
      * @returns Promise resolved with result of updating {@link UpdateStaticFiltersResult}.
      *
-     * @note If browser.declarativeNetRequest.updateEnabledRulesets fails,
-     * the error will be caught and returned in the result rather than thrown.
-     * The browser does not update and even not enable any rulesets if any
-     * single ruleset in the request is not found.
+     * @note Errors for individual rulesets are collected and returned in
+     * the result rather than thrown.
      */
     static async updateFiltering(
         disableFiltersIds: number[],
@@ -48,21 +51,39 @@ export default class FiltersApi {
         const enableRulesetIds = enableFiltersIds?.map((filterId) => `${RULESET_NAME_PREFIX}${filterId}`) || [];
         const disableRulesetIds = disableFiltersIds?.map((filterId) => `${RULESET_NAME_PREFIX}${filterId}`) || [];
 
-        try {
+        // Nothing to do — skip the API call entirely.
+        if (disableRulesetIds.length === 0 && enableRulesetIds.length === 0) {
+            return res;
+        }
+
+        // Disable rulesets in a single batch call first.
+        if (disableRulesetIds.length > 0) {
             await browser.declarativeNetRequest.updateEnabledRulesets({
-                enableRulesetIds,
                 disableRulesetIds,
             });
-        } catch (e) {
-            const msg = 'Cannot change list of enabled rule sets';
-            const err = new FailedEnableRuleSetsError(
-                msg,
-                enableRulesetIds,
-                disableRulesetIds,
-                e as Error,
-            );
-            res.errors.push(err);
         }
+
+        // Enable rulesets one-by-one so that one bad ruleset does not
+        // block all the others.
+        const enableResults = await Promise.allSettled(
+            enableRulesetIds.map((rulesetId) => browser.declarativeNetRequest.updateEnabledRulesets({
+                enableRulesetIds: [rulesetId],
+            })),
+        );
+
+        enableResults.forEach((result, index) => {
+            if (result.status === 'rejected') {
+                const rulesetId = enableRulesetIds[index];
+                const msg = 'Cannot enable rule set';
+                const err = new FailedEnableRuleSetsError(
+                    msg,
+                    [rulesetId],
+                    [],
+                    result.reason instanceof Error ? result.reason : new Error(String(result.reason)),
+                );
+                res.errors.push(err);
+            }
+        });
 
         return res;
     }
