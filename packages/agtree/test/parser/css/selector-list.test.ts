@@ -30,6 +30,7 @@ import {
     COMBINATOR_DESCENDANT,
     COMBINATOR_NEXT_SIBLING,
     COMBINATOR_SUBSEQUENT_SIBLING,
+    DEFAULT_MAX_CHILDREN,
     DEFAULT_MAX_COMPLEX,
     NO_VALUE,
     SelectorListParser,
@@ -893,5 +894,73 @@ describe('Extended CSS pseudo-classes — complex selectors & errors', () => {
 
     test('error: :xpath() unmatched paren — missing outer )', () => {
         expect(() => p(':xpath(//div[@class="foo(bar)"]')).toThrow(AdblockSyntaxError);
+    });
+});
+
+describe('ADG double-quote escaping (isAdg)', () => {
+    /**
+     * Helper that parses with isAdg=true.
+     *
+     * @param source CSS selector string.
+     */
+    function pAdg(source: string): void {
+        tokenizer.setSource(source);
+        initParserContext(ctx, source, tokenizer);
+        SelectorListParser.parse(ctx, 0, ctx.tokenCount, DATA_OFFSET, DEFAULT_MAX_COMPLEX, DEFAULT_MAX_CHILDREN, true);
+    }
+
+    test('"" in middle of double-quoted attribute value', () => {
+        pAdg('[attr="value with "" quotes"]');
+        expect(SelectorListParser.complexCount(ctx.data, DATA_OFFSET)).toBe(1);
+        const c = child(0);
+        expect(c.kind).toBe(ChildKind.AttributeSelector);
+        // name = "attr"
+        expect(ctx.source.slice(c.f0, c.f1)).toBe('attr');
+        // operator = "="
+        expect(ctx.source.slice(c.f2, c.f3)).toBe('=');
+        // value = 'value with "" quotes' (raw offsets include "")
+        expect(ctx.source.slice(c.f4, c.f5)).toBe('value with "" quotes');
+    });
+
+    test('"" at beginning of double-quoted attribute value', () => {
+        pAdg('[attr=""" value with quotes"]');
+        const c = child(0);
+        expect(c.kind).toBe(ChildKind.AttributeSelector);
+        expect(ctx.source.slice(c.f4, c.f5)).toBe('"" value with quotes');
+    });
+
+    test('"" at end of double-quoted attribute value', () => {
+        pAdg('[attr="value with quotes """]');
+        const c = child(0);
+        expect(c.kind).toBe(ChildKind.AttributeSelector);
+        expect(ctx.source.slice(c.f4, c.f5)).toBe('value with quotes ""');
+    });
+
+    test('"" in attribute pattern inside value', () => {
+        pAdg('[attr="[attr=""test""]"]');
+        const c = child(0);
+        expect(c.kind).toBe(ChildKind.AttributeSelector);
+        expect(ctx.source.slice(c.f4, c.f5)).toBe('[attr=""test""]');
+    });
+
+    test('"" in single-quoted value is NOT escaped (no effect)', () => {
+        // isAdg should NOT affect single-quoted values
+        pAdg("[attr='value with \"\" quotes']");
+        const c = child(0);
+        expect(c.kind).toBe(ChildKind.AttributeSelector);
+        expect(ctx.source.slice(c.f4, c.f5)).toBe('value with "" quotes');
+    });
+
+    test('normal double-quoted value works with isAdg=true', () => {
+        pAdg('[attr="normal value"]');
+        const c = child(0);
+        expect(c.kind).toBe(ChildKind.AttributeSelector);
+        expect(ctx.source.slice(c.f4, c.f5)).toBe('normal value');
+    });
+
+    test('isAdg=false (default) does not handle "" — throws on malformed token sequence', () => {
+        // With isAdg=false, the parser reads [attr="value with "], stops at first "
+        // then hits remaining ' quotes"]' which isn't valid at top level → throw
+        expect(() => p('[attr="value with "" quotes"]')).toThrow();
     });
 });

@@ -8,7 +8,7 @@
  * operator, optional value (quoted or unquoted), and optional case flag.
  */
 
-import { cssIdentSequenceLength, cssStringLength } from '../../../css/tokenizer/css-token-mapping';
+import { cssIdentSequenceLength } from '../../../css/tokenizer/css-token-mapping';
 import { isCssWhitespace } from '../../../css/tokenizer/css-token-utils';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { TokenType } from '../../../tokenizer/token-types';
@@ -70,6 +70,8 @@ function skipWsTokens(types: Uint8Array, ti: number, endTi: number): number {
  * @param dataOffset Base offset within `ctx.data` for selector-list data.
  * @param maxComplex Maximum complex selector capacity (used to locate child array).
  * @param childIndex Index of the child record to write.
+ * @param isAdg When `true`, treat two consecutive `Quote` tokens as an ADG `""` escape
+ *   inside double-quoted attribute values.
  *
  * @returns Token index of the first token after the consumed `]`.
  */
@@ -80,6 +82,7 @@ export function handleAttributeSelector(
     dataOffset: number,
     maxComplex: number,
     childIndex: number,
+    isAdg = false,
 ): number {
     const {
         types, ends, source, sourceStart, data,
@@ -163,14 +166,60 @@ export function handleAttributeSelector(
         }
 
         // Parse value: quoted string or unquoted ident
-        const strLen = cssStringLength(types, i, endTi);
-        if (strLen > 0) {
-            // Quoted value: exclude surrounding quotes
+        if (types[i] === TokenType.Quote || types[i] === TokenType.Apostrophe) {
+            const openingQuote = types[i];
             const rawStart = tokenStart(ctx, i);
-            const rawEnd = ends[i + strLen - 1];
-            valueStart = rawStart + 1; // exclude opening quote
-            valueEnd = rawEnd - 1; // exclude closing quote
-            i += strLen;
+            let j = i + 1;
+
+            if (isAdg && openingQuote === TokenType.Quote) {
+                // ADG mode: inside double-quoted value, two consecutive Quote
+                // tokens are an escaped " — keep scanning
+                while (j < endTi) {
+                    if (types[j] === TokenType.Quote) {
+                        // Check for "" escape: if next token is also Quote, skip both
+                        if (j + 1 < endTi && types[j + 1] === TokenType.Quote) {
+                            j += 2; // skip the "" pair
+                            continue;
+                        }
+                        // Single Quote = closing quote
+                        break;
+                    }
+                    if (types[j] === TokenType.LineBreak) {
+                        break;
+                    }
+                    j += 1;
+                }
+            } else {
+                // Standard CSS string scanning (original logic)
+                while (j < endTi) {
+                    if (types[j] === openingQuote) {
+                        break;
+                    }
+                    if (types[j] === TokenType.LineBreak) {
+                        break;
+                    }
+                    j += 1;
+                }
+            }
+
+            if (j >= endTi || types[j] !== openingQuote) {
+                if (isAdg) {
+                    throw new AdblockSyntaxError(
+                        'Unterminated string in attribute selector value',
+                        rawStart,
+                        ends[j > 0 ? j - 1 : i],
+                    );
+                }
+                // Standard path: consume to end so the ] check produces the familiar
+                // "Missing ] in attribute selector" error (matches legacy behavior).
+                valueStart = rawStart + 1;
+                valueEnd = j > 0 && j <= endTi ? ends[j - 1] - 1 : rawStart + 1;
+                i = endTi;
+            } else {
+                valueStart = rawStart + 1; // exclude opening quote
+                valueEnd = ends[j] - 1; // exclude closing quote
+                i = j + 1; // consume closing quote
+            }
         } else {
             const identLen = cssIdentSequenceLength(types, i, endTi, source, ends, sourceStart);
             if (identLen === 0) {

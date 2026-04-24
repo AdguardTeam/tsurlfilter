@@ -10,6 +10,7 @@ import {
     type AnyCommentRule,
     type ElementHidingRule,
     type EmptyRule,
+    type HtmlFilteringRule,
     type JsInjectionRule,
     type NetworkRule,
     RuleCategory,
@@ -22,9 +23,11 @@ import {
     CR_FLAG_BODY_UBO_SCRIPTLET,
     CR_FLAGS_OFFSET,
     CR_SEP_KIND_ABP_SNIPPET,
+    CR_SEP_KIND_ADG_HTML_FILTERING,
     CR_SEP_KIND_ADG_JS,
     CR_SEP_KIND_MASK,
     CR_SEP_KIND_SHIFT,
+    CR_SEP_KIND_UBO_HTML_FILTERING,
 } from '../parser/cosmetic/constants';
 import { RuleKind, RuleParser } from '../parser/rule';
 import { Tokenizer } from '../tokenizer/tokenizer';
@@ -33,6 +36,7 @@ import { AdblockSyntax } from '../utils/adblockers';
 import type { ParserCapacity } from './capacity';
 import { CommentAstBuilder } from './comment/comment';
 import { ElementHidingAstBuilder } from './cosmetic/element-hiding';
+import { HtmlFilteringAstBuilder } from './cosmetic/html-filtering';
 import { JsInjectionAstBuilder } from './cosmetic/js-injection';
 import { ScriptletInjectionAstBuilder } from './cosmetic/scriptlet-injection';
 import { NetworkRuleAstBuilder } from './network/network-rule';
@@ -60,7 +64,8 @@ export type AnyParsedRule =
     | NetworkRule
     | ElementHidingRule
     | ScriptletInjectionRule
-    | JsInjectionRule;
+    | JsInjectionRule
+    | HtmlFilteringRule;
 
 /**
  * High-level parser for adblock rules.
@@ -139,7 +144,7 @@ export class RuleParserPipeline {
         initParserContext(this.ctx, source, this.tokenizer);
 
         // eslint-disable-next-line max-len
-        const kind = RuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options?.parseUboSpecificRules ?? true);
+        const kind = RuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options?.parseUboSpecificRules ?? true, options?.parseHtmlFilteringRuleBodies ?? false);
 
         switch (kind) {
             case RuleKind.Comment:
@@ -180,7 +185,7 @@ export class RuleParserPipeline {
         maxMods: number,
         maxDomains: number,
         options?: ParseOptions,
-    ): ElementHidingRule | ScriptletInjectionRule | JsInjectionRule {
+    ): ElementHidingRule | ScriptletInjectionRule | JsInjectionRule | HtmlFilteringRule {
         // Read flags set by the parser — all dispatch is integer-only
         // eslint-disable-next-line no-bitwise
         const flags = data[dataOffset + CR_FLAGS_OFFSET];
@@ -195,6 +200,16 @@ export class RuleParserPipeline {
                 return ScriptletInjectionAstBuilder.parse(source, data, dataOffset, maxMods, maxDomains, ProductCode.Adg, options);
             }
             return JsInjectionAstBuilder.parse(source, data, dataOffset, maxMods, options);
+        }
+
+        // $$ / $@$ — ADG HTML filtering
+        if (sepKind === CR_SEP_KIND_ADG_HTML_FILTERING) {
+            return HtmlFilteringAstBuilder.parse(source, data, dataOffset, maxMods, options);
+        }
+
+        // ## / #@# with ^ prefix — uBO HTML filtering
+        if (sepKind === CR_SEP_KIND_UBO_HTML_FILTERING) {
+            return HtmlFilteringAstBuilder.parse(source, data, dataOffset, maxMods, options);
         }
 
         // #$# / #@$# — ABP snippet injection
@@ -250,6 +265,7 @@ export class RuleParserPipeline {
             endTi,
             dataOffset,
             options?.parseUboSpecificRules ?? true,
+            options?.parseHtmlFilteringRuleBodies ?? false,
         );
 
         const ruleStart = startTi > 0 ? ctx.ends[startTi - 1] : ctx.sourceStart;

@@ -81,6 +81,8 @@ export class SelectorListParser {
      * @param dataOffset Offset within `ctx.data` to start writing.
      * @param maxComplex Maximum supported complex selectors (default 8).
      * @param maxChildren Maximum supported child records (default 64).
+     * @param isAdg When `true`, treat two consecutive `Quote` tokens as an ADG `""` escape
+     *   inside double-quoted attribute values.
      *
      * @throws {AdblockSyntaxError} On any structural syntax error.
      */
@@ -91,6 +93,7 @@ export class SelectorListParser {
         dataOffset: number,
         maxComplex: number = DEFAULT_MAX_COMPLEX,
         maxChildren: number = DEFAULT_MAX_CHILDREN,
+        isAdg = false,
     ): void {
         const {
             types,
@@ -338,7 +341,7 @@ export class SelectorListParser {
 
             // Attribute selector
             if (tt === TokenType.OpenSquare) {
-                const nextTi = handleAttributeSelector(ctx, ti, endTi, dataOffset, maxComplex, totalChildCount);
+                const nextTi = handleAttributeSelector(ctx, ti, endTi, dataOffset, maxComplex, totalChildCount, isAdg);
                 complexSourceEnd = ends[nextTi - 1];
                 totalChildCount += 1;
                 childCountInComplex += 1;

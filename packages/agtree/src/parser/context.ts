@@ -11,7 +11,7 @@
 import { TokenType } from '../tokenizer/token-types';
 import type { Tokenizer } from '../tokenizer/tokenizer';
 
-import { SCRIPTLET_BODY_DATA_CAPACITY, UBO_MODIFIER_RECORD_STRIDE } from './cosmetic/constants';
+import { HF_MIN_DATA_SLOTS, SCRIPTLET_BODY_DATA_CAPACITY, UBO_MODIFIER_RECORD_STRIDE } from './cosmetic/constants';
 import { MODIFIER_RECORD_STRIDE, NR_MODIFIER_RECORDS_OFFSET } from './network/constants';
 
 /**
@@ -131,6 +131,7 @@ export function createParserContext(
             // eslint-disable-next-line max-len
             NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MAX_MODIFIER_RECORD_STRIDE + domainCapacity * DOMAIN_RECORD_STRIDE + SCRIPTLET_BODY_DATA_CAPACITY,
             CM_PREP_MIN_DATA_SLOTS,
+            HF_MIN_DATA_SLOTS,
         )),
         maxMods: modifierCapacity,
         maxDomains: domainCapacity,

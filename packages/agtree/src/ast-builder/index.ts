@@ -14,6 +14,7 @@ export {
     type ElementHidingParseOptions,
 } from './cosmetic/element-hiding';
 export { JsInjectionAstBuilder } from './cosmetic/js-injection';
+export { HtmlFilteringAstBuilder } from './cosmetic/html-filtering';
 export {
     ScriptletInjectionAstBuilder,
 } from './cosmetic/scriptlet-injection';

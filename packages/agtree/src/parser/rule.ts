@@ -5,10 +5,13 @@
  * matching comment, network, or cosmetic parser.
  */
 
+import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { TokenType } from '../tokenizer/token-types';
+
 import { RuleClassifier, RuleKind } from './classifier';
 import { CommentParser } from './comment/classifier';
 import type { ParserContext } from './context';
-import { regionEquals, tokenStart } from './context';
+import { regionEquals, skipWs, tokenStart } from './context';
 import {
     CR_BODY_END,
     CR_BODY_START,
@@ -17,22 +20,19 @@ import {
     CR_FLAG_BODY_UBO_SCRIPTLET,
     CR_FLAGS_OFFSET,
     CR_SEP_KIND_ABP_SNIPPET,
+    CR_SEP_KIND_ADG_HTML_FILTERING,
     CR_SEP_KIND_ADG_JS,
+    CR_SEP_KIND_ELEMENT_HIDING,
     CR_SEP_KIND_SHIFT,
+    CR_SEP_KIND_UBO_HTML_FILTERING,
 } from './cosmetic/constants';
 import { parseCommonCosmeticHeader } from './cosmetic/cosmetic-common';
 import { ElementHidingParser } from './cosmetic/element-hiding';
+import { AdgHtmlFilteringParser, UboHtmlFilteringParser } from './cosmetic/html-filtering';
 import { ScriptletBodyParser } from './cosmetic/scriptlet-body';
 import { NetworkRuleParser } from './network/network-rule';
 
 export { RuleKind } from './classifier';
-
-// Character codes used for separator classification
-const CHAR_HASH = 0x23; // #
-const CHAR_QUESTION = 0x3F; // ?
-const CHAR_AT = 0x40; // @
-const CHAR_DOLLAR = 0x24; // $
-const CHAR_PERCENT = 0x25; // %
 
 // Body prefix strings for zero-allocation charCode comparison via regionEquals
 const ADG_SCRIPTLET_PREFIX = '//scriptlet';
@@ -82,84 +82,63 @@ function detectUboScriptletPrefix(source: string, bodyStart: number): boolean {
 }
 
 /**
- * Checks whether the cosmetic separator starting at `sepStart` in `source`
- * is an element hiding separator (##, #@#, #?#, #@?#).
+ * Classify a cosmetic separator into a `CR_SEP_KIND_*` constant using
+ * token types from the adblock tokenizer.
  *
- * Element hiding separators start with `#` and the character after `#`
- * (or `#@`) is `#` or `?` — never `$` or `%`.
+ * Token patterns: `##`/`#@#`/`#?#`/`#@?#` → EH(0); `#$#`/`#@$#` → ABP(1);
+ * `#%#`/`#@%#` → ADG-JS(2); `$$`/`$@$` → ADG-HTML(3).
  *
- * @param source Source string.
- * @param sepStart Source index where the separator starts.
+ * @param types Token types buffer.
+ * @param sepTi Token index where the separator starts.
  *
- * @returns True if the separator is element-hiding.
+ * @returns A `CR_SEP_KIND_*` constant, or -1 if unrecognised.
  */
-function isElementHidingSep(source: string, sepStart: number): boolean {
-    if (source.charCodeAt(sepStart) !== CHAR_HASH) {
-        return false; // must start with #
-    }
-    const c1 = source.charCodeAt(sepStart + 1);
-    // ## or #?#
-    if (c1 === CHAR_HASH || c1 === CHAR_QUESTION) {
-        return true;
-    }
-    // #@# or #@?#
-    if (c1 === CHAR_AT) {
-        const c2 = source.charCodeAt(sepStart + 2);
-        return c2 === CHAR_HASH || c2 === CHAR_QUESTION;
-    }
-    return false;
-}
+function classifyCosmeticSepKind(types: Uint8Array, sepTi: number): number {
+    const t0 = types[sepTi];
 
-/**
- * Checks whether the cosmetic separator starting at `sepStart` is
- * an ABP snippet separator (#$# or #@$#).
- *
- * @param source Source string.
- * @param sepStart Source index where the separator starts.
- *
- * @returns True if the separator is ABP snippet.
- */
-function isAbpSnippetSep(source: string, sepStart: number): boolean {
-    if (source.charCodeAt(sepStart) !== CHAR_HASH) {
-        return false;
+    // $$ or $@$
+    if (t0 === TokenType.DollarSign) {
+        return CR_SEP_KIND_ADG_HTML_FILTERING;
     }
-    const c1 = source.charCodeAt(sepStart + 1);
-    // #$#
-    if (c1 === CHAR_DOLLAR) {
-        return source.charCodeAt(sepStart + 2) === CHAR_HASH;
-    }
-    // #@$#
-    if (c1 === CHAR_AT) {
-        return source.charCodeAt(sepStart + 2) === CHAR_DOLLAR
-            && source.charCodeAt(sepStart + 3) === CHAR_HASH;
-    }
-    return false;
-}
 
-/**
- * Checks whether the cosmetic separator starting at `sepStart` is
- * an ADG JS injection separator (#%# or #@%#).
- *
- * @param source Source string.
- * @param sepStart Source index where the separator starts.
- *
- * @returns True if the separator is ADG JS injection.
- */
-function isAdgJsInjectionSep(source: string, sepStart: number): boolean {
-    if (source.charCodeAt(sepStart) !== CHAR_HASH) {
-        return false;
+    // All #-based separators: t0 must be HashMark
+    const t1 = types[sepTi + 1];
+
+    // ## or #?# → element hiding
+    if (t1 === TokenType.HashMark || t1 === TokenType.QuestionMark) {
+        return CR_SEP_KIND_ELEMENT_HIDING;
     }
-    const c1 = source.charCodeAt(sepStart + 1);
-    // #%#
-    if (c1 === CHAR_PERCENT) {
-        return source.charCodeAt(sepStart + 2) === CHAR_HASH;
+
+    // #$# → ABP snippet, #%# → ADG JS
+    if (t1 === TokenType.DollarSign) {
+        return CR_SEP_KIND_ABP_SNIPPET;
     }
-    // #@%#
-    if (c1 === CHAR_AT) {
-        return source.charCodeAt(sepStart + 2) === CHAR_PERCENT
-            && source.charCodeAt(sepStart + 3) === CHAR_HASH;
+    if (t1 === TokenType.Percent) {
+        return CR_SEP_KIND_ADG_JS;
     }
-    return false;
+
+    // #@... variants: look at t2
+    if (t1 === TokenType.AtSign) {
+        const t2 = types[sepTi + 2];
+        if (t2 === TokenType.HashMark || t2 === TokenType.QuestionMark) {
+            return CR_SEP_KIND_ELEMENT_HIDING;
+        }
+        if (t2 === TokenType.DollarSign) {
+            // #@$# → ABP snippet, #@$?# → element hiding (extended CSS)
+            const t3 = types[sepTi + 3];
+            if (t3 === TokenType.HashMark) {
+                return CR_SEP_KIND_ABP_SNIPPET;
+            }
+            if (t3 === TokenType.QuestionMark) {
+                return CR_SEP_KIND_ELEMENT_HIDING;
+            }
+        }
+        if (t2 === TokenType.Percent) {
+            return CR_SEP_KIND_ADG_JS;
+        }
+    }
+
+    return -1;
 }
 
 /**
@@ -182,12 +161,14 @@ export class RuleParser {
      * capacity.  Equals the largest of all sub-parsers:
      *   - {@link NetworkRuleParser.MIN_DATA_SLOTS} = 325
      *   - {@link CommentParser.MIN_DATA_SLOTS}    = 167
-     *   - {@link ElementHidingParser.MIN_DATA_SLOTS} = 34.
+     *   - {@link ElementHidingParser.MIN_DATA_SLOTS} = 35
+     *   - {@link AdgHtmlFilteringParser.MIN_DATA_SLOTS} = 737.
      */
     public static readonly MIN_DATA_SLOTS = Math.max(
         NetworkRuleParser.MIN_DATA_SLOTS,
         CommentParser.MIN_DATA_SLOTS,
         ElementHidingParser.MIN_DATA_SLOTS,
+        AdgHtmlFilteringParser.MIN_DATA_SLOTS,
     ) as number;
 
     /**
@@ -198,11 +179,10 @@ export class RuleParser {
      * @param endTi Exclusive end token index. Defaults to ctx.tokenCount.
      * @param dataOffset Offset within ctx.data to write output. Defaults to 0.
      * @param parseUboSpecificRules Whether to detect uBO modifiers (default true).
+     * @param parseHtmlFilteringRuleBodies Whether to parse HTML filtering bodies (default false).
      *
      * @returns The {@link RuleKind} of the rule, so the caller can dispatch
      *   to the correct AST parser.
-     *
-     * @throws If the rule is a non-element-hiding cosmetic rule (not yet implemented).
      */
     public static parse(
         ctx: ParserContext,
@@ -210,6 +190,7 @@ export class RuleParser {
         endTi = ctx.tokenCount,
         dataOffset = 0,
         parseUboSpecificRules = true,
+        parseHtmlFilteringRuleBodies = false,
     ): RuleKind {
         const classified = RuleClassifier.classify(ctx, startTi, endTi);
         const kind = RuleClassifier.ruleKind(classified);
@@ -225,66 +206,121 @@ export class RuleParser {
 
             case RuleKind.Cosmetic: {
                 const sepTokenIndex = RuleClassifier.cosmeticSepIndex(classified);
-                const sepStart = tokenStart(ctx, sepTokenIndex);
+                const sepKind = classifyCosmeticSepKind(ctx.types, sepTokenIndex);
 
-                if (isElementHidingSep(ctx.source, sepStart)) {
-                    ElementHidingParser.parse(ctx, classified, parseUboSpecificRules);
-                    // Sub-kind 0 (element-hiding) is default, no need to OR it.
-                    // Detect +js( or script:inject( prefix using charCode comparison
-                    if (detectUboScriptletPrefix(ctx.source, ctx.data[CR_BODY_START])) {
-                        ctx.data[CR_FLAGS_OFFSET] |= CR_FLAG_BODY_UBO_SCRIPTLET;
-                        // Pre-compute UBO scriptlet parameter boundaries
-                        const bodyEndTi = ctx.tokenCount;
-                        ScriptletBodyParser.parseUbo(
+                switch (sepKind) {
+                    case CR_SEP_KIND_ELEMENT_HIDING: {
+                        // Peek at first body token BEFORE invoking ElementHidingParser.
+                        // If it is ^ this is a uBO HTML filtering rule — ElementHidingParser
+                        // must NOT be called because it would attempt to CSS-parse "^…".
+                        // skipWs advances past the single optional whitespace token that
+                        // follows the separator (same logic as parseCommonCosmeticHeader).
+                        const sepTokCount = RuleClassifier.cosmeticSepTokenCount(classified);
+                        const peekTi = skipWs(ctx, sepTokenIndex + sepTokCount);
+
+                        if (peekTi < ctx.tokenCount
+                            && ctx.types[peekTi] === TokenType.Caret) {
+                            // uBO HTML filtering rule
+                            if (parseHtmlFilteringRuleBodies) {
+                                // Dedicated parser handles header + ^ skip + responseheader detection
+                                UboHtmlFilteringParser.parse(ctx, classified, parseUboSpecificRules);
+                            } else {
+                                // Raw mode: populate header and adjust body start past ^
+                                if (!parseUboSpecificRules) {
+                                    parseCommonCosmeticHeader(ctx, classified, 'uBO HTML filtering rule');
+                                    const msg = 'Parsing uBO-specific rules is disabled,'
+                                        + " but the rule uses uBO HTML filtering syntax ('^')";
+                                    throw new AdblockSyntaxError(
+                                        msg,
+                                        tokenStart(ctx, peekTi),
+                                        ctx.ends[peekTi],
+                                    );
+                                }
+                                parseCommonCosmeticHeader(ctx, classified, 'uBO HTML filtering rule');
+                                // eslint-disable-next-line no-bitwise
+                                ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_UBO_HTML_FILTERING << CR_SEP_KIND_SHIFT;
+                                const newBodyTi = skipWs(ctx, peekTi + 1); // skip ^ then optional ws
+                                if (newBodyTi >= ctx.tokenCount) {
+                                    throw new AdblockSyntaxError(
+                                        'Empty uBO HTML filtering rule body after ^',
+                                        ctx.data[CR_BODY_START],
+                                        ctx.data[CR_BODY_END],
+                                    );
+                                }
+                                ctx.data[CR_BODY_START] = tokenStart(ctx, newBodyTi);
+                                ctx.data[CR_BODY_START_TI] = newBodyTi;
+                            }
+                            return RuleKind.Cosmetic;
+                        }
+
+                        // No ^: normal element hiding / scriptlet flow
+                        ElementHidingParser.parse(ctx, classified, parseUboSpecificRules);
+                        // Detect +js( or script:inject( prefix
+                        if (detectUboScriptletPrefix(ctx.source, ctx.data[CR_BODY_START])) {
+                            // eslint-disable-next-line no-bitwise
+                            ctx.data[CR_FLAGS_OFFSET] |= CR_FLAG_BODY_UBO_SCRIPTLET;
+                            ScriptletBodyParser.parseUbo(
+                                ctx,
+                                ctx.data[CR_BODY_START_TI],
+                                ctx.tokenCount,
+                                ctx.data[CR_BODY_START],
+                                ctx.data[CR_BODY_END],
+                            );
+                        }
+                        return RuleKind.Cosmetic;
+                    }
+
+                    case CR_SEP_KIND_ABP_SNIPPET: {
+                        parseCommonCosmeticHeader(ctx, classified, 'ABP snippet rule');
+                        // eslint-disable-next-line no-bitwise
+                        ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ABP_SNIPPET << CR_SEP_KIND_SHIFT;
+                        ScriptletBodyParser.parseAbp(
                             ctx,
                             ctx.data[CR_BODY_START_TI],
-                            bodyEndTi,
+                            ctx.tokenCount,
                             ctx.data[CR_BODY_START],
                             ctx.data[CR_BODY_END],
                         );
+                        return RuleKind.Cosmetic;
                     }
-                    return RuleKind.Cosmetic;
-                }
 
-                if (isAbpSnippetSep(ctx.source, sepStart)) {
-                    parseCommonCosmeticHeader(ctx, classified, 'ABP snippet rule');
-                    ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ABP_SNIPPET << CR_SEP_KIND_SHIFT;
-                    // Pre-compute ABP snippet parameter boundaries
-                    const bodyEndTi = ctx.tokenCount;
-                    ScriptletBodyParser.parseAbp(
-                        ctx,
-                        ctx.data[CR_BODY_START_TI],
-                        bodyEndTi,
-                        ctx.data[CR_BODY_START],
-                        ctx.data[CR_BODY_END],
-                    );
-                    return RuleKind.Cosmetic;
-                }
-
-                if (isAdgJsInjectionSep(ctx.source, sepStart)) {
-                    parseCommonCosmeticHeader(ctx, classified, 'ADG JS injection rule');
-                    ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ADG_JS << CR_SEP_KIND_SHIFT;
-                    // Detect //scriptlet prefix using charCode comparison
-                    if (detectAdgScriptletPrefix(ctx.source, ctx.data[CR_BODY_START])) {
-                        ctx.data[CR_FLAGS_OFFSET] |= CR_FLAG_BODY_ADG_SCRIPTLET;
-                        // Pre-compute ADG scriptlet parameter boundaries
-                        const bodyEndTi = ctx.tokenCount;
-                        ScriptletBodyParser.parseAdg(
-                            ctx,
-                            ctx.data[CR_BODY_START_TI],
-                            bodyEndTi,
-                            ctx.data[CR_BODY_START],
-                            ctx.data[CR_BODY_END],
-                        );
+                    case CR_SEP_KIND_ADG_JS: {
+                        parseCommonCosmeticHeader(ctx, classified, 'ADG JS injection rule');
+                        // eslint-disable-next-line no-bitwise
+                        ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ADG_JS << CR_SEP_KIND_SHIFT;
+                        if (detectAdgScriptletPrefix(ctx.source, ctx.data[CR_BODY_START])) {
+                            // eslint-disable-next-line no-bitwise
+                            ctx.data[CR_FLAGS_OFFSET] |= CR_FLAG_BODY_ADG_SCRIPTLET;
+                            ScriptletBodyParser.parseAdg(
+                                ctx,
+                                ctx.data[CR_BODY_START_TI],
+                                ctx.tokenCount,
+                                ctx.data[CR_BODY_START],
+                                ctx.data[CR_BODY_END],
+                            );
+                        }
+                        return RuleKind.Cosmetic;
                     }
-                    return RuleKind.Cosmetic;
-                }
 
-                // Other cosmetic types not yet implemented
-                const sepTokCount = RuleClassifier.cosmeticSepTokenCount(classified);
-                const sepEnd = ctx.ends[sepTokenIndex + sepTokCount - 1];
-                const sep = ctx.source.slice(sepStart, sepEnd);
-                throw new Error(`Cosmetic separator '${sep}' is not yet implemented in the new pipeline`);
+                    case CR_SEP_KIND_ADG_HTML_FILTERING: {
+                        if (parseHtmlFilteringRuleBodies) {
+                            AdgHtmlFilteringParser.parse(ctx, classified);
+                        } else {
+                            parseCommonCosmeticHeader(ctx, classified, 'ADG HTML filtering rule');
+                            // eslint-disable-next-line no-bitwise
+                            ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ADG_HTML_FILTERING << CR_SEP_KIND_SHIFT;
+                        }
+                        return RuleKind.Cosmetic;
+                    }
+
+                    default: {
+                        const sepTokCount = RuleClassifier.cosmeticSepTokenCount(classified);
+                        const sepStart = tokenStart(ctx, sepTokenIndex);
+                        const sepEnd = ctx.ends[sepTokenIndex + sepTokCount - 1];
+                        const sep = ctx.source.slice(sepStart, sepEnd);
+                        throw new Error(`Cosmetic separator '${sep}' is not yet implemented in the new pipeline`);
+                    }
+                }
             }
 
             default:

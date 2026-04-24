@@ -27,4 +27,11 @@ export interface ParseOptions {
      * Defaults to `true`.
      */
     parseAbpSpecificRules?: boolean;
+
+    /**
+     * Whether to parse HTML filtering rule bodies with the CSS selector list
+     * parser. When false, body is stored as raw start/end offsets.
+     * Defaults to `false`.
+     */
+    parseHtmlFilteringRuleBodies?: boolean;
 }

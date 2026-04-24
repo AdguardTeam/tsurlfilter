@@ -1,5 +1,7 @@
 /* eslint-disable no-bitwise, jsdoc/require-description-complete-sentence */
 
+import { SL_MIN_DATA_SLOTS } from '../css/selector-list/constants';
+
 /**
  * @file Cosmetic rule parser data layout constants.
  *
@@ -283,3 +285,65 @@ export const EH_MAX_UBO_MODS = 4;
  *         EH_MAX_UBO_MODS(4) × UBO_MODIFIER_RECORD_STRIDE(7) = 35.
  */
 export const EH_MIN_DATA_SLOTS = CR_MODIFIER_RECORDS_OFFSET + EH_MAX_UBO_MODS * UBO_MODIFIER_RECORD_STRIDE;
+
+// ---------------------------------------------------------------------------
+// HTML filtering sub-kind constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Cosmetic sub-kind: ADG HTML filtering ($$, $@$).
+ */
+export const CR_SEP_KIND_ADG_HTML_FILTERING = 3;
+
+/**
+ * Cosmetic sub-kind: uBO HTML filtering (## / #@# with ^ body prefix).
+ */
+export const CR_SEP_KIND_UBO_HTML_FILTERING = 4;
+
+// ---------------------------------------------------------------------------
+// HTML filtering body-type flags (bit 12)
+// ---------------------------------------------------------------------------
+
+/**
+ * Cosmetic rule flag bit: body is a uBO `responseheader(...)` rule.
+ * Only set when sub-kind is CR_SEP_KIND_UBO_HTML_FILTERING.
+ */
+export const CR_FLAG_BODY_UBO_RESPONSEHEADER = 1 << 12;
+
+// ---------------------------------------------------------------------------
+// HTML filtering responseheader data layout
+// ---------------------------------------------------------------------------
+// When CR_FLAG_BODY_UBO_RESPONSEHEADER is set, the following offsets
+// (relative to dataOffset) store function name and argument boundaries.
+
+/**
+ * Buffer offset: responseheader function name start.
+ */
+export const HF_FN_NAME_START = 7;
+
+/**
+ * Buffer offset: responseheader function name end (exclusive).
+ */
+export const HF_FN_NAME_END = 8;
+
+/**
+ * Buffer offset: responseheader argument start (trimmed).
+ */
+export const HF_ARG_START = 9;
+
+/**
+ * Buffer offset: responseheader argument end (trimmed, exclusive).
+ */
+export const HF_ARG_END = 10;
+
+/**
+ * Number of reserved slots for responseheader data (after CR header).
+ */
+export const HF_RESPONSEHEADER_SLOTS = 4;
+
+/**
+ * Minimum `ctx.data` slots required by {@link HtmlFilteringParser}.
+ * Layout: CR header ({@link CR_MODIFIER_RECORDS_OFFSET}) + {@link SL_MIN_DATA_SLOTS}.
+ * Also covers responseheader case: CR header (7) + 4 = 11 (fits within the total).
+ */
+export const HF_MIN_DATA_SLOTS = CR_MODIFIER_RECORDS_OFFSET + SL_MIN_DATA_SLOTS;
