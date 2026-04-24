@@ -43,6 +43,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Path-in-domain syntax support for cosmetic rules [#169].
 
+[4.1.0-beta.0]:https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.1.0-beta.0
 [#169]: https://github.com/AdguardTeam/tsurlfilter/issues/169
 
 ## [4.0.4] - 2026-03-26
