@@ -572,10 +572,10 @@ contains multiple fields with errors and limitations
 that **must be checked**:
 
 - **`staticFiltersStatus.errors`**: Array of
-  `FailedEnableRuleSetsError` instances if
-  `browser.declarativeNetRequest.updateEnabledRulesets` fails.
-  The browser does not update or enable any rulesets if any single
-  ruleset is not found.
+  `FailedEnableRuleSetsError` instances. Each ruleset is enabled
+  individually so that one invalid ruleset does not prevent the
+  others from being enabled. Errors can originate from both
+  enable and disable failures.
 - **`dynamicRules.errors`**: Array of conversion errors that occurred
   during dynamic rules conversion (custom filters, user rules,
   allowlist).
