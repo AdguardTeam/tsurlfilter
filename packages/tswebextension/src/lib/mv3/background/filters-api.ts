@@ -39,6 +39,11 @@ export default class FiltersApi {
      *
      * @note Errors for individual rulesets are collected and returned in
      * the result rather than thrown.
+     * @note If the disable batch fails, enables still proceed. This is
+     * intentional — a disable failure should not block unrelated enables.
+     * However, callers that disable rulesets to free up rule budget before
+     * enabling new ones should be aware that a disable failure may cause
+     * subsequent enables to exceed Chrome's static rule limit.
      */
     static async updateFiltering(
         disableFiltersIds: number[],
@@ -74,27 +79,29 @@ export default class FiltersApi {
             }
         }
 
-        // Enable rulesets one-by-one so that one bad ruleset does not
+        // Enable rulesets independently so that one bad ruleset does not
         // block all the others.
-        const enableResults = await Promise.allSettled(
-            enableRulesetIds.map((rulesetId) => browser.declarativeNetRequest.updateEnabledRulesets({
-                enableRulesetIds: [rulesetId],
-            })),
-        );
+        if (enableRulesetIds.length > 0) {
+            const enableResults = await Promise.allSettled(
+                enableRulesetIds.map((rulesetId) => browser.declarativeNetRequest.updateEnabledRulesets({
+                    enableRulesetIds: [rulesetId],
+                })),
+            );
 
-        enableResults.forEach((result, index) => {
-            if (result.status === 'rejected') {
-                const rulesetId = enableRulesetIds[index];
-                const msg = 'Cannot enable rule set';
-                const err = new FailedEnableRuleSetsError(
-                    msg,
-                    [rulesetId],
-                    [],
-                    result.reason instanceof Error ? result.reason : new Error(String(result.reason)),
-                );
-                res.errors.push(err);
-            }
-        });
+            enableResults.forEach((result, index) => {
+                if (result.status === 'rejected') {
+                    const rulesetId = enableRulesetIds[index];
+                    const msg = 'Cannot enable rule set';
+                    const err = new FailedEnableRuleSetsError(
+                        msg,
+                        [rulesetId],
+                        [],
+                        result.reason instanceof Error ? result.reason : new Error(String(result.reason)),
+                    );
+                    res.errors.push(err);
+                }
+            });
+        }
 
         return res;
     }

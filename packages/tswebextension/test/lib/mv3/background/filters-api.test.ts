@@ -25,7 +25,7 @@ describe('FiltersApi', () => {
         };
     });
 
-    describe('updateFiltering - one-by-one enabling', () => {
+    describe('updateFiltering - independent enabling', () => {
         it('enables all rulesets successfully with no errors', async () => {
             const result = await FiltersApi.updateFiltering([], [1, 2, 3]);
 
@@ -90,7 +90,7 @@ describe('FiltersApi', () => {
             });
         });
 
-        it('applies disables first, then enables one-by-one', async () => {
+        it('applies disables first, then enables independently', async () => {
             const callArgs: unknown[] = [];
             mockUpdateEnabledRulesets.mockImplementation((arg: unknown) => {
                 callArgs.push(arg);
@@ -100,7 +100,9 @@ describe('FiltersApi', () => {
             const result = await FiltersApi.updateFiltering([1], [2, 3]);
 
             expect(result.errors).toHaveLength(0);
-            // 1 disable call + 2 enable calls
+            // Ordering is deterministic: the disable `await` completes before
+            // `Array.map` runs synchronously, pushing all enable args in
+            // iteration order. `Promise.allSettled` preserves that order.
             expect(callArgs).toHaveLength(3);
             expect(callArgs[0]).toEqual({
                 disableRulesetIds: [`${RULESET_NAME_PREFIX}1`],
@@ -166,6 +168,25 @@ describe('FiltersApi', () => {
             expect(mockUpdateEnabledRulesets).toHaveBeenCalledWith({
                 enableRulesetIds: [`${RULESET_NAME_PREFIX}3`],
             });
+        });
+
+        it('collects enable error when disable succeeds and one enable fails', async () => {
+            const enableError = new Error('Ruleset not found');
+            mockUpdateEnabledRulesets
+                .mockResolvedValueOnce(undefined) // disable filter 1 succeeds
+                .mockResolvedValueOnce(undefined) // enable filter 2 succeeds
+                .mockRejectedValueOnce(enableError); // enable filter 3 fails
+
+            const result = await FiltersApi.updateFiltering([1], [2, 3]);
+
+            // Only the enable failure for filter 3 is reported
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0]).toBeInstanceOf(FailedEnableRuleSetsError);
+            expect(result.errors[0].enableRulesetIds).toEqual([`${RULESET_NAME_PREFIX}3`]);
+            expect(result.errors[0].disableRulesetIds).toEqual([]);
+            expect(result.errors[0].cause).toBe(enableError);
+            // 1 disable call + 2 enable calls
+            expect(mockUpdateEnabledRulesets).toHaveBeenCalledTimes(3);
         });
     });
 });
