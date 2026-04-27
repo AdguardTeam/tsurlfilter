@@ -6,6 +6,7 @@ import { type IRuleList } from '../filterlist/rule-list';
 import { RuleCategory } from '../filterlist/rule-parts';
 import { RuleStorage } from '../filterlist/rule-storage';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
+import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { Request } from '../request';
 import { RequestType } from '../request-type';
 import { type NetworkRule } from '../rules/network-rule';
@@ -351,5 +352,60 @@ export class Engine {
      */
     public retrieveOriginalRuleText(filterId: number, ruleIndex: number): string | null {
         return this.ruleStorage.retrieveOriginalRuleText(filterId, ruleIndex);
+    }
+
+    /**
+     * Evaluates `$removeparam` rules against the given URL and returns a
+     * sanitized URL with matching query parameters removed.
+     *
+     * This is intended for URLs updated via the History API
+     * (`pushState`/`replaceState`) where no real network request is made.
+     * A synthetic request with {@link RequestType.Document} is used for
+     * rule matching.
+     *
+     * @param url Absolute URL to sanitize (must start with `http` or `https`).
+     * @param sourceUrl The page URL (origin) where the History API call
+     * happened. Used for domain matching and third-party detection.
+     * Pass an empty string if unknown.
+     *
+     * @returns The sanitized URL if any parameters were removed, or `null`
+     * if no `$removeparam` rules matched or the URL was not modified.
+     */
+    public getRemoveParamUrl(url: string, sourceUrl: string): string | null {
+        let request: Request;
+
+        try {
+            request = new Request(url, sourceUrl || null, RequestType.Document);
+        } catch (e) {
+            // If the URL is invalid (e.g., not http/https), return null
+            // rather than throwing — the URL cannot be sanitized.
+            return null;
+        }
+
+        const matchingResult = this.matchRequest(request);
+        const removeParamRules = matchingResult.getRemoveParamRules();
+
+        if (removeParamRules.length === 0) {
+            return null;
+        }
+
+        const purgedUrl = removeParamRules.reduce((currentUrl: string, rule) => {
+            if (rule.isAllowlist()) {
+                return currentUrl;
+            }
+
+            const modifier = rule.getAdvancedModifier();
+            if (modifier && RemoveParamModifier.isRemoveParamModifier(modifier)) {
+                return modifier.removeParameters(currentUrl);
+            }
+
+            return currentUrl;
+        }, url);
+
+        if (purgedUrl === url) {
+            return null;
+        }
+
+        return purgedUrl;
     }
 }
