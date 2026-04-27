@@ -273,7 +273,12 @@ export class TsWebExtension implements AppInterface<
         await DynamicRulesApi.removeAllRules();
 
         const disableFiltersIds = await FiltersApi.getEnabledRuleSets();
-        await FiltersApi.updateFiltering(disableFiltersIds);
+        const { errors } = await FiltersApi.updateFiltering(disableFiltersIds);
+        if (errors.length > 0) {
+            errors.forEach((e) => {
+                logger.error(`[tsweb.TsWebExtension.removeAllFilteringRules]: ${e.message}`, e);
+            });
+        }
 
         await StealthService.clearAll();
         await CspService.clearAll();
