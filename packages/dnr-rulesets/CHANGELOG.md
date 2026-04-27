@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- 4.2.0-beta.2 is the same as 4.2.0-beta.1, just a new build with latest filters -->
 
+## [4.2.1] - 2026-04-24
+
+### Changed
+
+- Updated [@adguard/scriptlets] to `v2.4.2`.
+- Updated [@adguard/tsurlfilter] to `v5.0.1`.
+
+[4.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.1
+
 ## [4.2.0-beta.1] - 2026-04-17
 
 ### Added
@@ -20,7 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated tsurlfilter to v5.0.0
+- Updated [@adguard/tsurlfilter] to `v5.0.0-beta.1`.
+- Updated [@adguard/scriptlets] to `v2.4.0-beta`.
 
 ### Added
 
