@@ -13,6 +13,7 @@ export {
     ElementHidingAstBuilder,
     type ElementHidingParseOptions,
 } from './cosmetic/element-hiding';
+export { CssInjectionAstBuilder } from './cosmetic/css-injection';
 export { JsInjectionAstBuilder } from './cosmetic/js-injection';
 export { HtmlFilteringAstBuilder } from './cosmetic/html-filtering';
 export {

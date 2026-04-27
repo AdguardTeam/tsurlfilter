@@ -1012,16 +1012,24 @@ export interface CssInjectionRuleBody extends Node {
     /**
      * CSS selector list.
      *
+     * Currently always a `Raw` node containing the raw selector text.
+     * In a future version, full sub-parsing may produce a `SelectorList`
+     * AST node instead.
+     *
      * @example
      * section:has(> .ad) { display: none; }
      * ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
      * section:has(> .ad), article > p[advert] { display: none; }
      * ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
      */
-    selectorList: Value;
+    selectorList: SelectorList | Raw;
 
     /**
      * Declaration list.
+     *
+     * Currently always a `Raw` node containing the raw declaration text.
+     * In a future version, full sub-parsing may produce a
+     * `CssDeclarationList` AST node instead.
      *
      * @example
      * section:has(> .ad) { display: none; }
@@ -1031,7 +1039,7 @@ export interface CssInjectionRuleBody extends Node {
      * div[ad] { padding-top: 10px; padding-bottom: 10px; }
      *           ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
      */
-    declarationList?: Value;
+    declarationList?: CssDeclarationList | Raw;
 
     /**
      * Remove flag.

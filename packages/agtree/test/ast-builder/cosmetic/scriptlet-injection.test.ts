@@ -445,7 +445,7 @@ describe('RuleParser — ABP snippet injection rules', () => {
         test('parseAbpSpecificRules=false throws', () => {
             expect(() => {
                 parser.parse('example.com#$#snippet0 arg0', { parseAbpSpecificRules: false });
-            }).toThrow(/ABP snippet rules are disabled/i);
+            }).toThrow(/ABP.*rules.*disabled|ABP-specific/i);
         });
     });
 });

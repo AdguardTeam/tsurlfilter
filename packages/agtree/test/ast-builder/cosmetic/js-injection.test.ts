@@ -117,7 +117,7 @@ describe('RuleParser — ADG JS injection rules', () => {
         test('parseAbpSpecificRules=false throws for #$#', () => {
             expect(() => {
                 parser.parse('example.com#$#snippet0', { parseAbpSpecificRules: false });
-            }).toThrow(/ABP snippet rules are disabled/i);
+            }).toThrow(/ABP.*rules.*disabled|ABP-specific/i);
         });
     });
 

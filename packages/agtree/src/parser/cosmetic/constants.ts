@@ -347,3 +347,113 @@ export const HF_RESPONSEHEADER_SLOTS = 4;
  * Also covers responseheader case: CR header (7) + 4 = 11 (fits within the total).
  */
 export const HF_MIN_DATA_SLOTS = CR_MODIFIER_RECORDS_OFFSET + SL_MIN_DATA_SLOTS;
+
+// ---------------------------------------------------------------------------
+// AdGuard CSS injection sub-kind
+// ---------------------------------------------------------------------------
+
+/**
+ * Cosmetic sub-kind: ADG CSS injection (#$#, #@$#, #$?#, #@$?#).
+ */
+export const CR_SEP_KIND_ADG_CSS_INJECTION = 5;
+
+// ---------------------------------------------------------------------------
+// CSS injection body data layout (written at CR_MODIFIER_RECORDS_OFFSET)
+// ---------------------------------------------------------------------------
+
+/**
+ * CSS injection body flags.
+ * Bit 0: has @media wrapper.
+ * Bit 1: has `remove: true` declaration.
+ */
+export const CSS_INJ_FLAGS = 0;
+
+/**
+ * CSS injection flag: body starts with `@media`.
+ */
+export const CSS_INJ_FLAG_HAS_MEDIA = 1;
+
+/**
+ * CSS injection flag: declaration list contains `remove: true`.
+ */
+export const CSS_INJ_FLAG_REMOVE = 1 << 1;
+
+/**
+ * Media query list source start (-1 if no @media).
+ */
+export const CSS_INJ_MEDIA_QUERY_START = 1;
+
+/**
+ * Media query list source end (-1 if no @media).
+ */
+export const CSS_INJ_MEDIA_QUERY_END = 2;
+
+/**
+ * `@media` `{` token index (-1 if no @media).
+ */
+export const CSS_INJ_MEDIA_OPEN_BRACE_TI = 3;
+
+/**
+ * `@media` `}` token index (-1 if no @media).
+ */
+export const CSS_INJ_MEDIA_CLOSE_BRACE_TI = 4;
+
+/**
+ * Selector list source start.
+ */
+export const CSS_INJ_SL_SOURCE_START = 5;
+
+/**
+ * Selector list source end.
+ */
+export const CSS_INJ_SL_SOURCE_END = 6;
+
+/**
+ * Selector list start token index.
+ */
+export const CSS_INJ_SL_START_TI = 7;
+
+/**
+ * Selector list end token index (exclusive).
+ */
+export const CSS_INJ_SL_END_TI = 8;
+
+/**
+ * Rule `{` token index.
+ */
+export const CSS_INJ_OPEN_BRACE_TI = 9;
+
+/**
+ * Rule `}` token index.
+ */
+export const CSS_INJ_CLOSE_BRACE_TI = 10;
+
+/**
+ * Declaration list source start.
+ */
+export const CSS_INJ_DL_SOURCE_START = 11;
+
+/**
+ * Declaration list source end.
+ */
+export const CSS_INJ_DL_SOURCE_END = 12;
+
+/**
+ * Declaration list start token index.
+ */
+export const CSS_INJ_DL_START_TI = 13;
+
+/**
+ * Declaration list end token index (exclusive).
+ */
+export const CSS_INJ_DL_END_TI = 14;
+
+/**
+ * Number of fixed header slots for CSS injection body data.
+ */
+export const CSS_INJ_HEADER_SIZE = 15;
+
+/**
+ * Minimum `ctx.data` slots for AdgCssInjectionParser (header only).
+ */
+export const CSS_INJ_MIN_DATA_SLOTS = CSS_INJ_HEADER_SIZE;

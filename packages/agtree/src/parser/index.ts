@@ -67,6 +67,26 @@ export {
     DOMAIN_FIELD_VALUE_END,
     DOMAIN_FIELD_FLAGS,
     DOMAIN_FLAG_EXCEPTION,
+    CR_SEP_KIND_ADG_CSS_INJECTION,
+    CSS_INJ_FLAGS,
+    CSS_INJ_FLAG_HAS_MEDIA,
+    CSS_INJ_FLAG_REMOVE,
+    CSS_INJ_MEDIA_QUERY_START,
+    CSS_INJ_MEDIA_QUERY_END,
+    CSS_INJ_MEDIA_OPEN_BRACE_TI,
+    CSS_INJ_MEDIA_CLOSE_BRACE_TI,
+    CSS_INJ_SL_SOURCE_START,
+    CSS_INJ_SL_SOURCE_END,
+    CSS_INJ_SL_START_TI,
+    CSS_INJ_SL_END_TI,
+    CSS_INJ_OPEN_BRACE_TI,
+    CSS_INJ_CLOSE_BRACE_TI,
+    CSS_INJ_DL_SOURCE_START,
+    CSS_INJ_DL_SOURCE_END,
+    CSS_INJ_DL_START_TI,
+    CSS_INJ_DL_END_TI,
+    CSS_INJ_HEADER_SIZE,
+    CSS_INJ_MIN_DATA_SLOTS,
 } from './cosmetic/constants';
 export {
     type NetworkRuleParseResult,
@@ -112,6 +132,7 @@ export {
     DEFAULT_MAX_CHILDREN,
 } from './css/selector-list';
 export { RuleParser } from './rule';
+export type { RuleParserOptions } from './rule';
 export {
     AgentCommentParser,
     HintCommentParser,
@@ -125,6 +146,7 @@ export {
 } from './comment';
 export { NetworkRuleParser } from './network/network-rule';
 export { ElementHidingParser } from './cosmetic/element-hiding';
+export { AdgCssInjectionParser } from './cosmetic/css-injection';
 export { DomainListParser } from './misc/domain-list';
 export { ModifierListParser } from './misc/modifier-list';
 export { ModifierParser } from './misc/modifier';

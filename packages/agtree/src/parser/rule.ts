@@ -11,7 +11,12 @@ import { TokenType } from '../tokenizer/token-types';
 import { RuleClassifier, RuleKind } from './classifier';
 import { CommentParser } from './comment/classifier';
 import type { ParserContext } from './context';
-import { regionEquals, skipWs, tokenStart } from './context';
+import {
+    regionEquals,
+    scriptletBodyDataOffset,
+    skipWs,
+    tokenStart,
+} from './context';
 import {
     CR_BODY_END,
     CR_BODY_START,
@@ -20,6 +25,7 @@ import {
     CR_FLAG_BODY_UBO_SCRIPTLET,
     CR_FLAGS_OFFSET,
     CR_SEP_KIND_ABP_SNIPPET,
+    CR_SEP_KIND_ADG_CSS_INJECTION,
     CR_SEP_KIND_ADG_HTML_FILTERING,
     CR_SEP_KIND_ADG_JS,
     CR_SEP_KIND_ELEMENT_HIDING,
@@ -27,6 +33,7 @@ import {
     CR_SEP_KIND_UBO_HTML_FILTERING,
 } from './cosmetic/constants';
 import { parseCommonCosmeticHeader } from './cosmetic/cosmetic-common';
+import { AdgCssInjectionParser } from './cosmetic/css-injection';
 import { ElementHidingParser } from './cosmetic/element-hiding';
 import { AdgHtmlFilteringParser, UboHtmlFilteringParser } from './cosmetic/html-filtering';
 import { ScriptletBodyParser } from './cosmetic/scriptlet-body';
@@ -85,8 +92,12 @@ function detectUboScriptletPrefix(source: string, bodyStart: number): boolean {
  * Classify a cosmetic separator into a `CR_SEP_KIND_*` constant using
  * token types from the adblock tokenizer.
  *
- * Token patterns: `##`/`#@#`/`#?#`/`#@?#` → EH(0); `#$#`/`#@$#` → ABP(1);
- * `#%#`/`#@%#` → ADG-JS(2); `$$`/`$@$` → ADG-HTML(3).
+ * Token patterns: `##`/`#@#`/`#?#`/`#@?#` → EH(0); `#$#`/`#@$#` → ABP(1) (ambiguous);
+ * `#$?#`/`#@$?#` → ADG-CSS(5); `#%#`/`#@%#` → ADG-JS(2); `$$`/`$@$` → ADG-HTML(3).
+ *
+ * For `#$#` and `#@$#`, returns `CR_SEP_KIND_ABP_SNIPPET` as the initial
+ * classification; the body parser then promotes to `CR_SEP_KIND_ADG_CSS_INJECTION`
+ * if a top-level brace is found.
  *
  * @param types Token types buffer.
  * @param sepTi Token index where the separator starts.
@@ -109,9 +120,12 @@ function classifyCosmeticSepKind(types: Uint8Array, sepTi: number): number {
         return CR_SEP_KIND_ELEMENT_HIDING;
     }
 
-    // #$# → ABP snippet, #%# → ADG JS
+    // #$?# → always CSS injection (extended CSS); #$# → ambiguous (ABP or CSS injection)
     if (t1 === TokenType.DollarSign) {
-        return CR_SEP_KIND_ABP_SNIPPET;
+        if (types[sepTi + 2] === TokenType.QuestionMark) {
+            return CR_SEP_KIND_ADG_CSS_INJECTION; // #$?#
+        }
+        return CR_SEP_KIND_ABP_SNIPPET; // #$# (resolved by body parser)
     }
     if (t1 === TokenType.Percent) {
         return CR_SEP_KIND_ADG_JS;
@@ -124,13 +138,12 @@ function classifyCosmeticSepKind(types: Uint8Array, sepTi: number): number {
             return CR_SEP_KIND_ELEMENT_HIDING;
         }
         if (t2 === TokenType.DollarSign) {
-            // #@$# → ABP snippet, #@$?# → element hiding (extended CSS)
             const t3 = types[sepTi + 3];
             if (t3 === TokenType.HashMark) {
-                return CR_SEP_KIND_ABP_SNIPPET;
+                return CR_SEP_KIND_ABP_SNIPPET; // #@$# (resolved by body parser)
             }
             if (t3 === TokenType.QuestionMark) {
-                return CR_SEP_KIND_ELEMENT_HIDING;
+                return CR_SEP_KIND_ADG_CSS_INJECTION; // #@$?#
             }
         }
         if (t2 === TokenType.Percent) {
@@ -139,6 +152,24 @@ function classifyCosmeticSepKind(types: Uint8Array, sepTi: number): number {
     }
 
     return -1;
+}
+
+/**
+ * Options for RuleParser.parse().
+ */
+export interface RuleParserOptions {
+    /**
+     * Whether to detect uBO modifiers (default true).
+     */
+    parseUboSpecificRules?: boolean;
+    /**
+     * Whether to detect ABP-specific rules (default true).
+     */
+    parseAbpSpecificRules?: boolean;
+    /**
+     * Whether to invoke HTML filtering sub-parsers on HTML filtering bodies (default false).
+     */
+    parseHtmlFilteringRuleBodies?: boolean;
 }
 
 /**
@@ -178,20 +209,32 @@ export class RuleParser {
      * @param startTi Inclusive start token index. Defaults to 0.
      * @param endTi Exclusive end token index. Defaults to ctx.tokenCount.
      * @param dataOffset Offset within ctx.data to write output. Defaults to 0.
-     * @param parseUboSpecificRules Whether to detect uBO modifiers (default true).
-     * @param parseHtmlFilteringRuleBodies Whether to parse HTML filtering bodies (default false).
+     * @param options Parsing options or a boolean (legacy: parseUboSpecificRules).
      *
      * @returns The {@link RuleKind} of the rule, so the caller can dispatch
      *   to the correct AST parser.
+     *
+     * @throws If the rule is a non-supported cosmetic rule type.
      */
     public static parse(
         ctx: ParserContext,
         startTi = 0,
         endTi = ctx.tokenCount,
         dataOffset = 0,
-        parseUboSpecificRules = true,
-        parseHtmlFilteringRuleBodies = false,
+        options: RuleParserOptions | boolean = true,
     ): RuleKind {
+        // Backward-compatible: boolean = parseUboSpecificRules
+        let parseUboSpecificRules = true;
+        let parseAbpSpecificRules = true;
+        let parseHtmlFilteringRuleBodies = false;
+        if (typeof options === 'boolean') {
+            parseUboSpecificRules = options;
+        } else {
+            parseUboSpecificRules = options.parseUboSpecificRules ?? true;
+            parseAbpSpecificRules = options.parseAbpSpecificRules ?? true;
+            parseHtmlFilteringRuleBodies = options.parseHtmlFilteringRuleBodies ?? false;
+        }
+
         const classified = RuleClassifier.classify(ctx, startTi, endTi);
         const kind = RuleClassifier.ruleKind(classified);
 
@@ -271,16 +314,58 @@ export class RuleParser {
                     }
 
                     case CR_SEP_KIND_ABP_SNIPPET: {
-                        parseCommonCosmeticHeader(ctx, classified, 'ABP snippet rule');
+                        // #$# / #@$# — ambiguous: CSS injection if body has braces, else ABP snippet.
+                        parseCommonCosmeticHeader(ctx, classified, 'CSS injection rule');
+
+                        const bodyStartTi = ctx.data[CR_BODY_START_TI];
+
+                        const parsed = AdgCssInjectionParser.parse(
+                            ctx,
+                            bodyStartTi,
+                            ctx.tokenCount,
+                            scriptletBodyDataOffset(ctx),
+                            false, // not required — fall back to ABP if no brace found
+                        );
+
+                        if (parsed) {
+                            // CSS injection block found
+                            // eslint-disable-next-line no-bitwise
+                            ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ADG_CSS_INJECTION << CR_SEP_KIND_SHIFT;
+                            return RuleKind.Cosmetic;
+                        }
+
+                        // No brace found: treat as ABP snippet.
+                        // Throw an ABP-specific disablement error rather than a CSS-injection
+                        // syntax error — the rule is a genuine ABP snippet, not malformed CSS.
+                        if (!parseAbpSpecificRules) {
+                            throw new Error(
+                                'ABP-specific rules are disabled by the parseAbpSpecificRules option',
+                            );
+                        }
                         // eslint-disable-next-line no-bitwise
                         ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ABP_SNIPPET << CR_SEP_KIND_SHIFT;
                         ScriptletBodyParser.parseAbp(
                             ctx,
-                            ctx.data[CR_BODY_START_TI],
+                            bodyStartTi,
                             ctx.tokenCount,
                             ctx.data[CR_BODY_START],
                             ctx.data[CR_BODY_END],
                         );
+                        return RuleKind.Cosmetic;
+                    }
+
+                    case CR_SEP_KIND_ADG_CSS_INJECTION: {
+                        // #$?# / #@$?# — always CSS injection (extended CSS, required braces).
+                        parseCommonCosmeticHeader(ctx, classified, 'CSS injection rule');
+                        AdgCssInjectionParser.parse(
+                            ctx,
+                            ctx.data[CR_BODY_START_TI],
+                            ctx.tokenCount,
+                            scriptletBodyDataOffset(ctx),
+                            true, // required — must have braces
+                        );
+                        // eslint-disable-next-line no-bitwise
+                        ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ADG_CSS_INJECTION << CR_SEP_KIND_SHIFT;
                         return RuleKind.Cosmetic;
                     }
 

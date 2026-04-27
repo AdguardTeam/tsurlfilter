@@ -8,6 +8,7 @@
 import { ProductCode } from '../compatibility-tables/platform';
 import {
     type AnyCommentRule,
+    type CssInjectionRule,
     type ElementHidingRule,
     type EmptyRule,
     type HtmlFilteringRule,
@@ -23,6 +24,7 @@ import {
     CR_FLAG_BODY_UBO_SCRIPTLET,
     CR_FLAGS_OFFSET,
     CR_SEP_KIND_ABP_SNIPPET,
+    CR_SEP_KIND_ADG_CSS_INJECTION,
     CR_SEP_KIND_ADG_HTML_FILTERING,
     CR_SEP_KIND_ADG_JS,
     CR_SEP_KIND_MASK,
@@ -35,6 +37,7 @@ import { AdblockSyntax } from '../utils/adblockers';
 
 import type { ParserCapacity } from './capacity';
 import { CommentAstBuilder } from './comment/comment';
+import { CssInjectionAstBuilder } from './cosmetic/css-injection';
 import { ElementHidingAstBuilder } from './cosmetic/element-hiding';
 import { HtmlFilteringAstBuilder } from './cosmetic/html-filtering';
 import { JsInjectionAstBuilder } from './cosmetic/js-injection';
@@ -63,6 +66,7 @@ export type AnyParsedRule =
     | AnyCommentRule
     | NetworkRule
     | ElementHidingRule
+    | CssInjectionRule
     | ScriptletInjectionRule
     | JsInjectionRule
     | HtmlFilteringRule;
@@ -144,7 +148,7 @@ export class RuleParserPipeline {
         initParserContext(this.ctx, source, this.tokenizer);
 
         // eslint-disable-next-line max-len
-        const kind = RuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options?.parseUboSpecificRules ?? true, options?.parseHtmlFilteringRuleBodies ?? false);
+        const kind = RuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options);
 
         switch (kind) {
             case RuleKind.Comment:
@@ -185,7 +189,7 @@ export class RuleParserPipeline {
         maxMods: number,
         maxDomains: number,
         options?: ParseOptions,
-    ): ElementHidingRule | ScriptletInjectionRule | JsInjectionRule | HtmlFilteringRule {
+    ): ElementHidingRule | CssInjectionRule | ScriptletInjectionRule | JsInjectionRule | HtmlFilteringRule {
         // Read flags set by the parser — all dispatch is integer-only
         // eslint-disable-next-line no-bitwise
         const flags = data[dataOffset + CR_FLAGS_OFFSET];
@@ -200,6 +204,11 @@ export class RuleParserPipeline {
                 return ScriptletInjectionAstBuilder.parse(source, data, dataOffset, maxMods, maxDomains, ProductCode.Adg, options);
             }
             return JsInjectionAstBuilder.parse(source, data, dataOffset, maxMods, options);
+        }
+
+        // #$# / #@$# / #$?# / #@$?# — ADG CSS injection (body contains CSS block)
+        if (sepKind === CR_SEP_KIND_ADG_CSS_INJECTION) {
+            return CssInjectionAstBuilder.parse(source, data, dataOffset, maxMods, maxDomains, options);
         }
 
         // $$ / $@$ — ADG HTML filtering
@@ -264,8 +273,7 @@ export class RuleParserPipeline {
             startTi,
             endTi,
             dataOffset,
-            options?.parseUboSpecificRules ?? true,
-            options?.parseHtmlFilteringRuleBodies ?? false,
+            options,
         );
 
         const ruleStart = startTi > 0 ? ctx.ends[startTi - 1] : ctx.sourceStart;
