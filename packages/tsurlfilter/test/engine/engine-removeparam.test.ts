@@ -189,7 +189,7 @@ describe('Engine.getRemoveParamUrl', () => {
         )).toBeNull();
     });
 
-    it('handles allowlist for one param without blocking another', () => {
+    it('keeps allowlisted removeparam rule scoped while still applying other matching removeparam rules', () => {
         const rules = [
             '||example.com^$removeparam=track',
             '||example.com^$removeparam=ref',
