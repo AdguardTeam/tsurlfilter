@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of in a single atomic batch. This prevents one invalid ruleset from
   blocking all others from being enabled.
 
+### Fixed
+
+- Updated README documentation for `staticFiltersStatus.errors` to accurately
+  describe individual ruleset enabling and disable-failure error provenance.
+- `TsWebExtension.removeAllFilteringRules()` now logs errors returned by
+  `FiltersApi.updateFiltering()` instead of silently discarding them.
+
 ## 4.1.0
 
 ### Added
