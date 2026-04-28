@@ -181,11 +181,27 @@ export function tokenStart(ctx: ParserContext, ti: number): number {
  *
  * @param ctx Parser context.
  * @param ti Current token index.
+ * @param end Exclusive upper bound (defaults to `ctx.tokenCount`).
  *
  * @returns Token index after optional whitespace.
  */
-export function skipWs(ctx: ParserContext, ti: number): number {
-    return ti < ctx.tokenCount && ctx.types[ti] === TokenType.Whitespace ? ti + 1 : ti;
+export function skipWs(ctx: ParserContext, ti: number, end?: number): number {
+    return ti < (end ?? ctx.tokenCount) && ctx.types[ti] === TokenType.Whitespace ? ti + 1 : ti;
+}
+
+/**
+ * Skip a single trailing whitespace token when scanning backward.
+ * The tokenizer groups consecutive whitespace into one token,
+ * so skipping one Whitespace token is sufficient.
+ *
+ * @param ctx Parser context.
+ * @param ti Current token index (scanning backward from here).
+ * @param low Inclusive lower bound — will not skip below this index.
+ *
+ * @returns Token index after optional backward whitespace skip.
+ */
+export function skipWsBack(ctx: ParserContext, ti: number, low: number): number {
+    return ti >= low && ctx.types[ti] === TokenType.Whitespace ? ti - 1 : ti;
 }
 
 /**
@@ -267,6 +283,37 @@ export function regionEquals(source: string, start: number, end: number, target:
 
     for (let i = 0; i < len; i += 1) {
         if (source.charCodeAt(start + i) !== target.charCodeAt(i)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Returns `true` when the source substring `[start, end)` equals `target`
+ * under ASCII case-insensitive comparison, without allocating a slice.
+ *
+ * **Important**: `target` MUST be all-lowercase for correct results, because
+ * the comparison folds only the source character to lowercase via `| 0x20`.
+ *
+ * @param source Source string.
+ * @param start Start index (inclusive).
+ * @param end End index (exclusive).
+ * @param target Lowercase string to compare against.
+ *
+ * @returns Whether the region equals `target` (case-insensitive, ASCII only).
+ */
+export function regionEqualsCI(source: string, start: number, end: number, target: string): boolean {
+    const len = end - start;
+
+    if (len !== target.length) {
+        return false;
+    }
+
+    for (let i = 0; i < len; i += 1) {
+        // eslint-disable-next-line no-bitwise
+        if ((source.charCodeAt(start + i) | 0x20) !== target.charCodeAt(i)) {
             return false;
         }
     }

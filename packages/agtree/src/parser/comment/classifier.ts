@@ -14,7 +14,7 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
-import { skipWs, tokenStart } from '../context';
+import { skipWs, skipWsBack, tokenStart } from '../context';
 import { LE_BUFFER_SIZE } from '../misc/logical-expression';
 
 import { AgentCommentParser } from './agent';
@@ -68,11 +68,7 @@ export class CommentParser {
 
         // Agent: starts with `[` and last significant token is `]`
         if (t0 === TokenType.OpenSquare) {
-            let last = endTi - 1;
-
-            while (last > ti && types[last] === TokenType.Whitespace) {
-                last -= 1;
-            }
+            const last = skipWsBack(ctx, endTi - 1, ti + 1);
 
             if (types[last] === TokenType.CloseSquare) {
                 AgentCommentParser.parse(ctx, startTi, endTi, dataOffset);

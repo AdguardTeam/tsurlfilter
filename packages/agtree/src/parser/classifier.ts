@@ -17,7 +17,7 @@
 import { TokenType } from '../tokenizer/token-types';
 
 import type { ParserContext } from './context';
-import { skipWs } from './context';
+import { skipWs, skipWsBack } from './context';
 import { cosmeticSepStartIndex, cosmeticSepTokenCount, findCosmeticSeparator } from './cosmetic-separator';
 
 export const enum RuleKind {
@@ -86,11 +86,7 @@ export class RuleClassifier {
         // 4. Agent comment: `[…]` — starts with `[`, last significant token is `]`
         //    Rules like `[$adg-modifier]##selector` are caught by the cosmetic check above.
         if (ti < endTi && types[ti] === TokenType.OpenSquare) {
-            let last = endTi - 1;
-
-            while (last > ti && types[last] === TokenType.Whitespace) {
-                last -= 1;
-            }
+            const last = skipWsBack(ctx, endTi - 1, ti + 1);
 
             if (types[last] === TokenType.CloseSquare) {
                 return RuleClassifier.pack(RuleKind.Comment, 0, 0);

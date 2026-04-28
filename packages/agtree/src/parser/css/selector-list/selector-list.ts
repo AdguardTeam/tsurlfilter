@@ -20,7 +20,6 @@
 import { cssIdentSequenceLength } from '../../../css/tokenizer/css-token-mapping';
 import { isCssIdentStart, isCssWhitespace } from '../../../css/tokenizer/css-token-utils';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import { CHAR_GREATER_THAN } from '../../../tokenizer/char-codes';
 import { TokenType } from '../../../tokenizer/token-types';
 import type { ParserContext } from '../../context';
 import { tokenStart } from '../../context';
@@ -152,10 +151,7 @@ export class SelectorListParser {
                 if (
                     nextTt === TokenType.PlusSign
                     || nextTt === TokenType.Tilde
-                    || (
-                        nextTt === TokenType.Symbol
-                        && source.charCodeAt(ti > 0 ? ends[ti - 1] : sourceStart) === CHAR_GREATER_THAN
-                    )
+                    || nextTt === TokenType.GreaterThan
                 ) {
                     continue;
                 }
@@ -365,10 +361,7 @@ export class SelectorListParser {
             if (
                 tt === TokenType.PlusSign
                 || tt === TokenType.Tilde
-                || (
-                    tt === TokenType.Symbol
-                    && source.charCodeAt(tokenStart(ctx, ti)) === CHAR_GREATER_THAN
-                )
+                || tt === TokenType.GreaterThan
             ) {
                 if (lastChildKind === -1) {
                     throw new AdblockSyntaxError(

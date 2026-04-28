@@ -141,13 +141,15 @@ describe('Tokenizer', () => {
             expect(tokens[1]).toEqual({ type: TokenType.Symbol, value: '\\' });
         });
 
-        test('symbol fallback for non-mapped ASCII characters', () => {
+        test('greater-than, less-than, and backtick have dedicated types', () => {
             const input = '<>`';
             const t = tokenize(input);
             const tokens = extractTokens(t);
-            tokens.forEach((tok) => {
-                expect(tok.type).toBe(TokenType.Symbol);
-            });
+            expect(tokens).toEqual([
+                { type: TokenType.LessThan, value: '<' },
+                { type: TokenType.GreaterThan, value: '>' },
+                { type: TokenType.Backtick, value: '`' },
+            ]);
         });
 
         test('non-ASCII characters as symbols', () => {

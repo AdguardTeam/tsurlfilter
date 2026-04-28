@@ -9,16 +9,9 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
-import { skipUntil } from '../context';
+import { regionEquals, skipUntil } from '../context';
 
 import { isPotentialNetModifier } from './shared';
-
-const CHAR_R = 114;
-const CHAR_E = 101;
-const CHAR_P = 112;
-const CHAR_L = 108;
-const CHAR_A = 97;
-const CHAR_C = 99;
 
 /**
  * Parsers for modifier values.
@@ -100,14 +93,7 @@ export class ValueParser {
      * @returns `true` if the region equals "replace".
      */
     public static isReplaceName(source: string, start: number, end: number): boolean {
-        return (end - start) === 7
-            && source.charCodeAt(start) === CHAR_R
-            && source.charCodeAt(start + 1) === CHAR_E
-            && source.charCodeAt(start + 2) === CHAR_P
-            && source.charCodeAt(start + 3) === CHAR_L
-            && source.charCodeAt(start + 4) === CHAR_A
-            && source.charCodeAt(start + 5) === CHAR_C
-            && source.charCodeAt(start + 6) === CHAR_E;
+        return regionEquals(source, start, end, 'replace');
     }
 
     /**

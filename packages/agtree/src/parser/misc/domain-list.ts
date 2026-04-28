@@ -11,7 +11,12 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
-import { domainRecordsOffset, skipWs, tokenStart } from '../context';
+import {
+    domainRecordsOffset,
+    skipWs,
+    skipWsBack,
+    tokenStart,
+} from '../context';
 import {
     CR_DOMAIN_COUNT,
     DOMAIN_FIELD_FLAGS,
@@ -116,10 +121,7 @@ export class DomainListParser {
             }
 
             // Trim trailing whitespace from item
-            let lastNonWsTi = itemEndTi - 1;
-            while (lastNonWsTi >= itemStartTi && types[lastNonWsTi] === TokenType.Whitespace) {
-                lastNonWsTi -= 1;
-            }
+            const lastNonWsTi = skipWsBack(ctx, itemEndTi - 1, itemStartTi);
 
             if (lastNonWsTi < itemStartTi) {
                 throw new Error('Domain list contains empty item');

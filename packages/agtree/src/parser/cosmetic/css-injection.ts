@@ -17,6 +17,7 @@ import type { ParserContext } from '../context';
 import {
     lastNonWs,
     regionEquals,
+    regionEqualsCI,
     skipWs,
     tokenStart,
 } from '../context';
@@ -267,17 +268,8 @@ function matchAtMedia(ctx: ParserContext, ti: number, endTi: number): number {
     const identStart = ends[ti]; // ident starts where @ ends
     const identEnd = ends[identTi];
 
-    // Case-insensitive comparison for "media"
-    if (identEnd - identStart !== MEDIA_KEYWORD.length) {
+    if (!regionEqualsCI(source, identStart, identEnd, MEDIA_KEYWORD)) {
         return 0;
-    }
-
-    for (let i = 0; i < MEDIA_KEYWORD.length; i += 1) {
-        // eslint-disable-next-line no-bitwise
-        const c = source.charCodeAt(identStart + i) | 0x20; // toLower
-        if (c !== MEDIA_KEYWORD.charCodeAt(i)) {
-            return 0;
-        }
     }
 
     return 2; // consumed AtSign + Letter

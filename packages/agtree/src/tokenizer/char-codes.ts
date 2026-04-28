@@ -168,6 +168,11 @@ export const CHAR_LESS_THAN = '<'.charCodeAt(0);
 export const CHAR_GREATER_THAN = '>'.charCodeAt(0);
 
 /**
+ * Backtick: `` ` `` (U+0060).
+ */
+export const CHAR_BACKTICK = '`'.charCodeAt(0);
+
+/**
  * Digit zero character (`0`).
  */
 export const CHAR_ZERO = '0'.charCodeAt(0);

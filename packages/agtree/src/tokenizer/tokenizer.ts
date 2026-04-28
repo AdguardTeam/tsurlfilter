@@ -54,6 +54,7 @@ import {
     CHAR_ASTERISK,
     CHAR_AT_SIGN,
     CHAR_BACKSLASH,
+    CHAR_BACKTICK,
     CHAR_CARET,
     CHAR_CARRIAGE_RETURN,
     CHAR_CLOSE_BRACE,
@@ -66,7 +67,9 @@ import {
     CHAR_EQUALS_SIGN,
     CHAR_EXCLAMATION_MARK,
     CHAR_FORM_FEED,
+    CHAR_GREATER_THAN,
     CHAR_HASHMARK,
+    CHAR_LESS_THAN,
     CHAR_LINE_FEED,
     CHAR_OPEN_BRACE,
     CHAR_OPEN_PAREN,
@@ -248,6 +251,9 @@ export class Tokenizer {
             DISPATCH[CHAR_DOLLAR_SIGN] = TokenType.DollarSign;
             DISPATCH[CHAR_QUESTION_MARK] = TokenType.QuestionMark;
             DISPATCH[CHAR_PERCENT] = TokenType.Percent;
+            DISPATCH[CHAR_GREATER_THAN] = TokenType.GreaterThan;
+            DISPATCH[CHAR_LESS_THAN] = TokenType.LessThan;
+            DISPATCH[CHAR_BACKTICK] = TokenType.Backtick;
             DISPATCH[45] = ACT_HYPHEN; // `-`
             DISPATCH[95] = ACT_UNDERSCORE; // `_`
 

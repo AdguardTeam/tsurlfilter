@@ -17,8 +17,6 @@
 import {
     CHAR_CARRIAGE_RETURN,
     CHAR_FORM_FEED,
-    CHAR_GREATER_THAN,
-    CHAR_LESS_THAN,
     CHAR_LINE_FEED,
     CHAR_LOWER_A,
     CHAR_LOWER_E,
@@ -743,15 +741,11 @@ export function cssFunctionLength(
  * Number of adblock tokens that form a CSS `<!--` (CDO) token starting at
  * `offset`.
  *
- * Matches: `Symbol(<)` + `ExclamationMark` + `Hyphen` + `Hyphen`.
- * The `<` must be verified via source text since `Symbol` is a catch-all.
+ * Matches: `LessThan` + `ExclamationMark` + `Hyphen` + `Hyphen`.
  *
  * @param types Token type buffer.
  * @param offset Start index.
  * @param tokenCount Total valid tokens.
- * @param source Source string.
- * @param ends Token end-offset buffer.
- * @param initialOffset Start offset of token 0 in source.
  *
  * @returns 4 if CDO found, 0 otherwise.
  */
@@ -759,19 +753,11 @@ export function cssCdoLength(
     types: Uint8Array,
     offset: number,
     tokenCount: number,
-    source: string,
-    ends: Uint32Array,
-    initialOffset: number,
 ): number {
     if (offset + 3 >= tokenCount) {
         return 0;
     }
-    if (types[offset] !== TokenType.Symbol) {
-        return 0;
-    }
-    // Verify it's '<'
-    const start = tokenStart(ends, offset, initialOffset);
-    if (source.charCodeAt(start) !== CHAR_LESS_THAN) {
+    if (types[offset] !== TokenType.LessThan) {
         return 0;
     }
     if (
@@ -788,15 +774,11 @@ export function cssCdoLength(
  * Number of adblock tokens that form a CSS `-->` (CDC) token starting at
  * `offset`.
  *
- * Matches: `Hyphen` + `Hyphen` + `Symbol(>)`.
- * The `>` must be verified via source text since `Symbol` is a catch-all.
+ * Matches: `Hyphen` + `Hyphen` + `GreaterThan`.
  *
  * @param types Token type buffer.
  * @param offset Start index.
  * @param tokenCount Total valid tokens.
- * @param source Source string.
- * @param ends Token end-offset buffer.
- * @param initialOffset Start offset of token 0 in source.
  *
  * @returns 3 if CDC found, 0 otherwise.
  */
@@ -804,9 +786,6 @@ export function cssCdcLength(
     types: Uint8Array,
     offset: number,
     tokenCount: number,
-    source: string,
-    ends: Uint32Array,
-    initialOffset: number,
 ): number {
     if (offset + 2 >= tokenCount) {
         return 0;
@@ -814,12 +793,7 @@ export function cssCdcLength(
     if (types[offset] !== TokenType.Hyphen || types[offset + 1] !== TokenType.Hyphen) {
         return 0;
     }
-    if (types[offset + 2] !== TokenType.Symbol) {
-        return 0;
-    }
-    // Verify it's '>'
-    const start = tokenStart(ends, offset + 2, initialOffset);
-    if (source.charCodeAt(start) !== CHAR_GREATER_THAN) {
+    if (types[offset + 2] !== TokenType.GreaterThan) {
         return 0;
     }
     return 3;

@@ -203,6 +203,21 @@ export const enum TokenType {
      * Percent: `%`.
      */
     Percent = 35,
+
+    /**
+     * Greater-than: `>`.
+     */
+    GreaterThan = 36,
+
+    /**
+     * Less-than: `<`.
+     */
+    LessThan = 37,
+
+    /**
+     * Backtick: `` ` ``.
+     */
+    Backtick = 38,
 }
 
 /**
@@ -254,6 +269,9 @@ const TOKEN_NAMES: Record<TokenType, string> = {
     [TokenType.NonAscii]: 'non-ascii',
     [TokenType.Symbol]: 'symbol',
     [TokenType.Underscore]: 'underscore',
+    [TokenType.GreaterThan]: 'greater-than',
+    [TokenType.LessThan]: 'less-than',
+    [TokenType.Backtick]: 'backtick',
 };
 
 /**

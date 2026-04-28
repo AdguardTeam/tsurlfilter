@@ -1,10 +1,10 @@
-/* eslint-disable no-bitwise, no-param-reassign */
+/* eslint-disable no-param-reassign */
 
 /**
  * @file Scriptlet body parser.
  *
  * Pre-computes parameter boundaries for ADG, UBO, and ABP scriptlet bodies.
- * All scanning uses charCode operations on the source string — zero heap
+ * All scanning uses token-type checks on the tokenizer output — zero heap
  * allocations. The output is written to ctx.data starting at a computed
  * offset after domain records.
  *
@@ -24,16 +24,7 @@ import { sprintf } from 'sprintf-js';
 
 import { AbpSnippetInjectionBodyCommon } from '../../common/abp-snippet-injection-body-common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import {
-    CHAR_BACKSLASH,
-    CHAR_CLOSE_PAREN,
-    CHAR_COMMA,
-    CHAR_DOUBLE_QUOTE,
-    CHAR_OPEN_PAREN,
-    CHAR_SEMICOLON,
-    CHAR_SINGLE_QUOTE,
-    CHAR_SPACE,
-} from '../../utils/char-codes';
+import { TokenType } from '../../tokenizer/token-types';
 import {
     ADG_SCRIPTLET_MASK,
     CLOSE_PARENTHESIS,
@@ -42,16 +33,14 @@ import {
     UBO_SCRIPTLET_MASK_LEGACY,
 } from '../../utils/constants';
 import type { ParserContext } from '../context';
-import { regionEquals, scriptletBodyDataOffset } from '../context';
-import { NO_VALUE } from '../network/constants';
 import {
-    findUnescaped,
-    findUnescapedBack,
-    findUnescapedOutsideStrings,
-    isQuote,
+    regionEquals,
+    scriptletBodyDataOffset,
     skipWs,
     skipWsBack,
-} from '../scan-utils';
+    tokenStart,
+} from '../context';
+import { NO_VALUE } from '../network/constants';
 
 import { SCRIPTLET_BODY_DATA_CAPACITY } from './constants';
 
@@ -85,7 +74,7 @@ const UBO_ERRORS = {
  * Scriptlet body parser.
  *
  * Pre-computes parameter boundaries for ADG, UBO, and ABP scriptlet bodies
- * using charCode operations on the source string. Writes results to ctx.data
+ * using token-type checks on the tokenizer output. Writes results to ctx.data
  * at the scriptlet body data offset (after domain records).
  */
 export class ScriptletBodyParser {
@@ -105,45 +94,69 @@ export class ScriptletBodyParser {
         bodyStart: number,
         bodyEnd: number,
     ): void {
-        const { source, data } = ctx;
+        const {
+            source, data, types, ends,
+        } = ctx;
         const base = scriptletBodyDataOffset(ctx);
         const limit = base + SCRIPTLET_BODY_DATA_CAPACITY;
-        let di = base; // data index (write cursor)
+        let di = base;
 
-        let i = skipWs(source, bodyStart, bodyEnd);
+        // Skip leading whitespace tokens
+        let ti = skipWs(ctx, bodyStartTi, bodyEndTi);
 
         // Validate //scriptlet mask
-        if (!regionEquals(source, i, i + ADG_SCRIPTLET_MASK.length, ADG_SCRIPTLET_MASK)) {
-            throw new AdblockSyntaxError(ADG_ERRORS.NO_SCRIPTLET_MASK, i, bodyEnd);
+        const maskStart = tokenStart(ctx, ti);
+        if (!regionEquals(source, maskStart, maskStart + ADG_SCRIPTLET_MASK.length, ADG_SCRIPTLET_MASK)) {
+            throw new AdblockSyntaxError(ADG_ERRORS.NO_SCRIPTLET_MASK, maskStart, bodyEnd);
         }
-        i += ADG_SCRIPTLET_MASK.length;
+
+        // Advance past the mask tokens
+        const maskEnd = maskStart + ADG_SCRIPTLET_MASK.length;
+        while (ti < bodyEndTi && ends[ti] <= maskEnd) {
+            ti += 1;
+        }
 
         // No whitespace after mask
-        if (source.charCodeAt(i) === CHAR_SPACE) {
-            throw new AdblockSyntaxError(ADG_ERRORS.WHITESPACE_AFTER_MASK, i, bodyEnd);
+        if (ti < bodyEndTi && types[ti] === TokenType.Whitespace) {
+            throw new AdblockSyntaxError(ADG_ERRORS.WHITESPACE_AFTER_MASK, tokenStart(ctx, ti), bodyEnd);
         }
 
         // Opening paren
-        if (source.charCodeAt(i) !== CHAR_OPEN_PAREN) {
-            throw new AdblockSyntaxError(ADG_ERRORS.NO_OPENING_PARENTHESIS, i, bodyEnd);
+        if (ti >= bodyEndTi || types[ti] !== TokenType.OpenParen) {
+            throw new AdblockSyntaxError(
+                ADG_ERRORS.NO_OPENING_PARENTHESIS,
+                ti < bodyEndTi ? tokenStart(ctx, ti) : bodyEnd,
+                bodyEnd,
+            );
         }
-        const openParen = i;
+        const openParenTi = ti;
+        ti += 1;
 
-        // Find closing paren (scan backward from body end)
-        const closeParen = skipWsBack(source, bodyEnd - 1, openParen + 1);
-        if (
-            source.charCodeAt(closeParen) !== CHAR_CLOSE_PAREN
-            || source.charCodeAt(closeParen - 1) === CHAR_BACKSLASH
-        ) {
-            throw new AdblockSyntaxError(ADG_ERRORS.NO_CLOSING_PARENTHESIS, openParen, bodyEnd);
+        // Find closing paren — scan backward from end, skip trailing whitespace
+        const closeParenTi = skipWsBack(ctx, bodyEndTi - 1, openParenTi + 1);
+        if (types[closeParenTi] !== TokenType.CloseParen) {
+            throw new AdblockSyntaxError(
+                ADG_ERRORS.NO_CLOSING_PARENTHESIS,
+                tokenStart(ctx, openParenTi),
+                bodyEnd,
+            );
+        }
+        // Check not escaped
+        if (closeParenTi > 0 && types[closeParenTi - 1] === TokenType.Escaped) {
+            throw new AdblockSyntaxError(
+                ADG_ERRORS.NO_CLOSING_PARENTHESIS,
+                tokenStart(ctx, openParenTi),
+                bodyEnd,
+            );
         }
 
         // Write snippetCallCount = 1
         data[di] = 1;
         di += 1;
 
-        // Check for empty call
-        if (skipWs(source, openParen + 1, closeParen) === closeParen) {
+        // Check for empty call — skip whitespace inside parens
+        const innerTi = skipWs(ctx, ti, closeParenTi);
+        if (innerTi === closeParenTi) {
             data[di] = 0; // paramCount = 0
             return;
         }
@@ -152,59 +165,80 @@ export class ScriptletBodyParser {
         const paramCountSlot = di;
         di += 1;
         let paramCount = 0;
-        let detectedQuote = 0; // char code of first detected quote, for consistency
+        let detectedQuoteType = 0; // 0 = none, else TokenType.Apostrophe or TokenType.Quote
 
-        i = skipWs(source, openParen + 1, closeParen);
+        ti = innerTi;
 
-        while (i < closeParen) {
-            i = skipWs(source, i, closeParen);
+        while (ti < closeParenTi) {
+            // Skip whitespace
+            ti = skipWs(ctx, ti, closeParenTi);
 
             // Expect comma before non-first param
             if (paramCount > 0) {
-                if (source.charCodeAt(i) !== CHAR_COMMA) {
+                if (types[ti] !== TokenType.Comma) {
                     throw new AdblockSyntaxError(
-                        sprintf(ADG_ERRORS.EXPECTED_COMMA, source[i]),
-                        i,
+                        sprintf(ADG_ERRORS.EXPECTED_COMMA, source[tokenStart(ctx, ti)]),
+                        tokenStart(ctx, ti),
                         bodyEnd,
                     );
                 }
-                i += 1; // eat comma
-                i = skipWs(source, i, closeParen);
+                ti += 1; // eat comma
+                // Skip whitespace after comma
+                ti = skipWs(ctx, ti, closeParenTi);
             }
 
-            const cc = source.charCodeAt(i);
-            if (cc === CHAR_SINGLE_QUOTE || cc === CHAR_DOUBLE_QUOTE) {
+            const tt = types[ti];
+            if (tt === TokenType.Apostrophe || tt === TokenType.Quote) {
                 // Enforce consistent quoting
-                if (detectedQuote === 0) {
-                    detectedQuote = cc;
-                } else if (detectedQuote !== cc) {
-                    throw new AdblockSyntaxError(ADG_ERRORS.NO_INCONSISTENT_QUOTES, i, bodyEnd);
+                if (detectedQuoteType === 0) {
+                    detectedQuoteType = tt;
+                } else if (detectedQuoteType !== tt) {
+                    throw new AdblockSyntaxError(ADG_ERRORS.NO_INCONSISTENT_QUOTES, tokenStart(ctx, ti), bodyEnd);
                 }
 
-                // Find closing quote
-                const closeQuote = findUnescaped(source, cc, i + 1, bodyEnd);
-                if (closeQuote === -1) {
-                    throw new AdblockSyntaxError(ADG_ERRORS.NO_UNCLOSED_PARAMETER, i, bodyEnd);
+                const quoteStart = tokenStart(ctx, ti);
+                ti += 1; // past opening quote
+
+                // Find closing quote (same type), skip escaped tokens
+                let closeQuoteTi = -1;
+                let scanTi = ti;
+                while (scanTi < bodyEndTi) {
+                    if (types[scanTi] === TokenType.Escaped) {
+                        scanTi += 1;
+                        continue;
+                    }
+                    if (types[scanTi] === tt) {
+                        closeQuoteTi = scanTi;
+                        break;
+                    }
+                    scanTi += 1;
+                }
+
+                if (closeQuoteTi === -1) {
+                    throw new AdblockSyntaxError(ADG_ERRORS.NO_UNCLOSED_PARAMETER, quoteStart, bodyEnd);
                 }
 
                 // Write param boundary (including quotes)
                 if (di + 1 >= limit) {
                     throw new AdblockSyntaxError(
                         'Scriptlet body data buffer overflow: too many parameters',
-                        i,
+                        quoteStart,
                         bodyEnd,
                     );
                 }
-                data[di] = i;
-                data[di + 1] = closeQuote + 1;
+                data[di] = quoteStart;
+                data[di + 1] = ends[closeQuoteTi];
                 di += 2;
                 paramCount += 1;
 
-                i = skipWs(source, closeQuote + 1, closeParen);
+                ti = closeQuoteTi + 1;
+
+                // Skip whitespace after closing quote
+                ti = skipWs(ctx, ti, closeParenTi);
             } else {
                 throw new AdblockSyntaxError(
-                    sprintf(ADG_ERRORS.EXPECTED_QUOTE, source[i]),
-                    i,
+                    sprintf(ADG_ERRORS.EXPECTED_QUOTE, source[tokenStart(ctx, ti)]),
+                    tokenStart(ctx, ti),
                     bodyEnd,
                 );
             }
@@ -230,178 +264,227 @@ export class ScriptletBodyParser {
         bodyStart: number,
         bodyEnd: number,
     ): void {
-        const { source, data } = ctx;
+        const {
+            source, data, types, ends,
+        } = ctx;
         const base = scriptletBodyDataOffset(ctx);
         const limit = base + SCRIPTLET_BODY_DATA_CAPACITY;
         let di = base;
 
-        let i = skipWs(source, bodyStart, bodyEnd);
+        // Skip leading whitespace tokens
+        let ti = skipWs(ctx, bodyStartTi, bodyEndTi);
 
         // Detect mask (+js or script:inject)
+        const maskStart = tokenStart(ctx, ti);
         let maskLen = 0;
-        if (regionEquals(source, i, i + UBO_SCRIPTLET_MASK.length, UBO_SCRIPTLET_MASK)) {
+        if (regionEquals(source, maskStart, maskStart + UBO_SCRIPTLET_MASK.length, UBO_SCRIPTLET_MASK)) {
             maskLen = UBO_SCRIPTLET_MASK.length;
         } else if (regionEquals(
             source,
-            i,
-            i + UBO_SCRIPTLET_MASK_LEGACY.length,
+            maskStart,
+            maskStart + UBO_SCRIPTLET_MASK_LEGACY.length,
             UBO_SCRIPTLET_MASK_LEGACY,
         )) {
             maskLen = UBO_SCRIPTLET_MASK_LEGACY.length;
         }
         if (maskLen === 0) {
-            throw new AdblockSyntaxError(UBO_ERRORS.NO_SCRIPTLET_MASK, i, bodyEnd);
+            throw new AdblockSyntaxError(UBO_ERRORS.NO_SCRIPTLET_MASK, maskStart, bodyEnd);
         }
-        i += maskLen;
+
+        // Advance past the mask tokens
+        const maskEnd = maskStart + maskLen;
+        while (ti < bodyEndTi && ends[ti] <= maskEnd) {
+            ti += 1;
+        }
 
         // No whitespace after mask
-        if (source.charCodeAt(i) === CHAR_SPACE) {
-            throw new AdblockSyntaxError(UBO_ERRORS.WHITESPACE_AFTER_MASK, i, bodyEnd);
+        if (ti < bodyEndTi && types[ti] === TokenType.Whitespace) {
+            throw new AdblockSyntaxError(UBO_ERRORS.WHITESPACE_AFTER_MASK, tokenStart(ctx, ti), bodyEnd);
         }
 
         // Opening paren
-        if (source.charCodeAt(i) !== CHAR_OPEN_PAREN) {
-            throw new AdblockSyntaxError(UBO_ERRORS.NO_OPENING_PARENTHESIS, i, bodyEnd);
+        if (ti >= bodyEndTi || types[ti] !== TokenType.OpenParen) {
+            throw new AdblockSyntaxError(
+                UBO_ERRORS.NO_OPENING_PARENTHESIS,
+                ti < bodyEndTi ? tokenStart(ctx, ti) : bodyEnd,
+                bodyEnd,
+            );
         }
-        const openParen = i;
+        const openParenTi = ti;
+        ti += 1;
 
-        // Find closing paren
-        const closeParen = skipWsBack(source, bodyEnd - 1, openParen + 1);
-        if (
-            source.charCodeAt(closeParen) !== CHAR_CLOSE_PAREN
-            || source.charCodeAt(closeParen - 1) === CHAR_BACKSLASH
-        ) {
-            throw new AdblockSyntaxError(UBO_ERRORS.NO_CLOSING_PARENTHESIS, openParen, bodyEnd);
+        // Find closing paren — scan backward from end, skip trailing whitespace
+        const closeParenTi = skipWsBack(ctx, bodyEndTi - 1, openParenTi + 1);
+        if (types[closeParenTi] !== TokenType.CloseParen) {
+            throw new AdblockSyntaxError(
+                UBO_ERRORS.NO_CLOSING_PARENTHESIS,
+                tokenStart(ctx, openParenTi),
+                bodyEnd,
+            );
+        }
+        // Check not escaped
+        if (closeParenTi > 0 && types[closeParenTi - 1] === TokenType.Escaped) {
+            throw new AdblockSyntaxError(
+                UBO_ERRORS.NO_CLOSING_PARENTHESIS,
+                tokenStart(ctx, openParenTi),
+                bodyEnd,
+            );
         }
 
         // Write snippetCallCount = 1
         data[di] = 1;
         di += 1;
 
-        // Empty call check
-        if (skipWs(source, openParen + 1, closeParen) === closeParen) {
+        // Empty call check — skip whitespace inside parens
+        const innerTi = skipWs(ctx, ti, closeParenTi);
+        if (innerTi === closeParenTi) {
             data[di] = 0;
             return;
         }
 
-        // Parse UBO parameter list inside (openParen+1 .. closeParen)
-        const innerStart = openParen + 1;
-        const innerEnd = closeParen;
-
-        di = ScriptletBodyParser.parseUboParamList(source, data, di, innerStart, innerEnd, limit);
+        // Parse UBO parameter list inside parens using token indices
+        di = ScriptletBodyParser.parseUboParamListTokens(ctx, data, di, innerTi, closeParenTi, limit);
 
         // Validate first param is not null (scriptlet name required)
-        // paramCount is at base+1, first param start is at base+2
         const pc = data[base + 1];
         if (pc > 0 && data[base + 2] === NO_VALUE) {
-            throw new AdblockSyntaxError(UBO_ERRORS.NO_SCRIPTLET_NAME, openParen, bodyEnd);
+            throw new AdblockSyntaxError(UBO_ERRORS.NO_SCRIPTLET_NAME, tokenStart(ctx, openParenTi), bodyEnd);
         }
     }
 
     /**
-     * Preparse a UBO-style comma-separated parameter list.
+     * Preparse a UBO-style comma-separated parameter list using token indices.
      *
-     * @param source Source string.
+     * @param ctx Parser context.
      * @param data Output data buffer.
      * @param di Current write offset in data.
-     * @param start Inner content start (after open paren).
-     * @param end Inner content end (before close paren).
+     * @param startTi First token index inside parens (after leading ws).
+     * @param endTi Token index of closing paren (exclusive boundary).
      * @param limit Exclusive upper bound of the scriptlet data region in `data`.
      *
      * @returns Updated data write offset.
      */
-    private static parseUboParamList(
-        source: string,
+    private static parseUboParamListTokens(
+        ctx: ParserContext,
         data: Int32Array,
         di: number,
-        start: number,
-        end: number,
+        startTi: number,
+        endTi: number,
         limit: number,
     ): number {
+        const { types, ends } = ctx;
         const paramCountSlot = di;
         di += 1;
         let paramCount = 0;
-        let offset = start;
+        let ti = startTi;
         let extraNull = false;
 
-        while (offset < end) {
-            offset = skipWs(source, offset, end);
-            const paramStart = offset;
-            let paramEnd = offset;
+        while (ti < endTi) {
+            // Skip leading whitespace
+            ti = skipWs(ctx, ti, endTi);
+            if (ti >= endTi) {
+                break;
+            }
 
-            const cc = source.charCodeAt(offset);
+            const paramStartOffset = tokenStart(ctx, ti);
+            let paramEndOffset = paramStartOffset;
+            const tt = types[ti];
 
-            if (isQuote(cc)) {
-                // Find closing quote
-                const closeQuote = findUnescaped(source, cc, offset + 1, end);
+            if (tt === TokenType.Apostrophe || tt === TokenType.Quote || tt === TokenType.Backtick) {
+                // Quoted parameter — find matching close quote
+                const quoteType = tt;
+                const quoteTi = ti;
+                ti += 1;
+                let closeQuoteTi = -1;
 
-                if (closeQuote !== -1) {
-                    // Check what follows the closing quote
-                    const nextSep = skipWs(source, closeQuote + 1, end);
+                while (ti < endTi) {
+                    if (types[ti] === TokenType.Escaped) {
+                        ti += 1;
+                        continue;
+                    }
+                    if (types[ti] === quoteType) {
+                        closeQuoteTi = ti;
+                        break;
+                    }
+                    ti += 1;
+                }
 
-                    if (nextSep === end) {
-                        // Param extends to trimmed end
-                        paramEnd = skipWsBack(source, end - 1, paramStart) + 1;
-                        offset = end;
-                    } else if (source.charCodeAt(nextSep) === CHAR_COMMA) {
-                        paramEnd = closeQuote + 1;
-                        offset = nextSep + 1;
-                    } else {
-                        // Quote is not a proper delimiter — search for comma
-                        const commaBeforeQuote = findUnescapedBack(
-                            source,
-                            CHAR_COMMA,
-                            closeQuote,
-                            paramStart + 1,
-                        );
-                        if (commaBeforeQuote !== -1) {
-                            paramEnd = skipWsBack(source, commaBeforeQuote - 1, paramStart) + 1;
-                            offset = commaBeforeQuote + 1;
-                        } else {
-                            const commaAfterQuote = findUnescaped(
-                                source,
-                                CHAR_COMMA,
-                                closeQuote,
-                                end,
-                            );
-                            if (commaAfterQuote !== -1) {
-                                paramEnd = skipWsBack(source, commaAfterQuote - 1, paramStart) + 1;
-                                offset = commaAfterQuote + 1;
-                            } else {
-                                paramEnd = skipWsBack(source, end - 1, paramStart) + 1;
-                                offset = end;
+                if (closeQuoteTi >= 0) {
+                    // Found closing quote — check what follows
+                    const afterTi = skipWs(ctx, closeQuoteTi + 1, endTi);
+
+                    if (afterTi >= endTi || types[afterTi] === TokenType.Comma) {
+                        paramEndOffset = ends[closeQuoteTi];
+                        ti = afterTi;
+                        if (ti < endTi && types[ti] === TokenType.Comma) {
+                            ti += 1; // eat comma
+                            // Trailing comma → extra null
+                            if (skipWs(ctx, ti, endTi) >= endTi) {
+                                extraNull = true;
                             }
+                        }
+                    } else {
+                        // Quote is not a proper delimiter — search for comma from opening quote
+                        let commaTi = quoteTi;
+                        while (commaTi < endTi && types[commaTi] !== TokenType.Comma) {
+                            commaTi += 1;
+                        }
+                        if (commaTi < endTi) {
+                            // Trim trailing whitespace before comma
+                            const trimTi = skipWsBack(ctx, commaTi - 1, quoteTi + 1);
+                            paramEndOffset = ends[trimTi];
+                            ti = commaTi + 1;
+                        } else {
+                            // No comma found — param extends to end
+                            const trimTi = skipWsBack(ctx, endTi - 1, quoteTi + 1);
+                            paramEndOffset = ends[trimTi];
+                            ti = endTi;
                         }
                     }
                 } else {
                     // No closing quote — param extends to end
-                    paramEnd = skipWsBack(source, end - 1, paramStart) + 1;
-                    offset = end;
+                    const trimTi = skipWsBack(ctx, endTi - 1, quoteTi + 1);
+                    paramEndOffset = ends[trimTi];
+                    ti = endTi;
                 }
             } else {
                 // Unquoted parameter — find next unescaped comma
-                const nextComma = findUnescaped(source, CHAR_COMMA, offset, end);
+                let commaTi = ti;
+                while (commaTi < endTi) {
+                    if (types[commaTi] === TokenType.Escaped) {
+                        commaTi += 1;
+                        continue;
+                    }
+                    if (types[commaTi] === TokenType.Comma) {
+                        break;
+                    }
+                    commaTi += 1;
+                }
 
-                if (nextComma === -1) {
-                    paramEnd = skipWsBack(source, end - 1, paramStart) + 1;
-                    offset = end;
-                } else {
-                    paramEnd = skipWsBack(source, nextComma - 1, paramStart) + 1;
-                    offset = nextComma + 1;
+                if (commaTi < endTi) {
+                    // Trim trailing whitespace before comma
+                    const trimTi = skipWsBack(ctx, commaTi - 1, ti + 1);
+                    paramEndOffset = trimTi >= ti ? ends[trimTi] : paramStartOffset;
+                    ti = commaTi + 1;
 
                     // Trailing comma → extra null
-                    if (skipWs(source, end - 1, end) === nextComma) {
+                    if (skipWs(ctx, ti, endTi) >= endTi) {
                         extraNull = true;
                     }
+                } else {
+                    // No comma — param extends to trimmed end
+                    const trimTi = skipWsBack(ctx, endTi - 1, ti + 1);
+                    paramEndOffset = trimTi >= ti ? ends[trimTi] : paramStartOffset;
+                    ti = endTi;
                 }
             }
 
             if (di + 1 >= limit) {
                 throw new RangeError('Scriptlet body data buffer overflow: too many parameters');
             }
-            if (paramStart < paramEnd) {
-                data[di] = paramStart;
-                data[di + 1] = paramEnd;
+            if (paramStartOffset < paramEndOffset) {
+                data[di] = paramStartOffset;
+                data[di + 1] = paramEndOffset;
             } else {
                 data[di] = NO_VALUE;
                 data[di + 1] = NO_VALUE;
@@ -440,34 +523,45 @@ export class ScriptletBodyParser {
         bodyStart: number,
         bodyEnd: number,
     ): void {
-        const { source, data } = ctx;
+        const { data } = ctx;
         const base = scriptletBodyDataOffset(ctx);
         const limit = base + SCRIPTLET_BODY_DATA_CAPACITY;
 
-        // Reserve slot for snippetCallCount
         const callCountSlot = base;
         let di = base + 1;
         let callCount = 0;
 
-        let offset = skipWs(source, bodyStart, bodyEnd);
+        // Skip leading whitespace
+        let ti = skipWs(ctx, bodyStartTi, bodyEndTi);
 
-        while (offset < bodyEnd) {
-            offset = skipWs(source, offset, bodyEnd);
-            const callStart = offset;
-
-            // Find next unescaped semicolon outside strings/regexes
-            let semiIdx = findUnescapedOutsideStrings(source, CHAR_SEMICOLON, offset, bodyEnd);
-            if (semiIdx === -1) {
-                semiIdx = bodyEnd;
+        while (ti < bodyEndTi) {
+            // Skip whitespace between calls
+            ti = skipWs(ctx, ti, bodyEndTi);
+            if (ti >= bodyEndTi) {
+                break;
             }
 
-            const callEnd = Math.max(skipWsBack(source, semiIdx - 1, callStart) + 1, callStart);
+            const callStartTi = ti;
+
+            // Find next unescaped semicolon outside strings/regexes
+            const semiTi = ScriptletBodyParser.findUnescapedSemicolonOutsideStrings(ctx, ti, bodyEndTi);
+            const callEndTi = semiTi === -1 ? bodyEndTi : semiTi;
+
+            // Trim trailing whitespace from call
+            const trimmedCallEndTi = skipWsBack(ctx, callEndTi - 1, callStartTi) + 1;
 
             // Parse space-separated params for this call
-            di = ScriptletBodyParser.parseAbpParamList(source, data, di, callStart, callEnd, limit);
+            di = ScriptletBodyParser.parseAbpParamListTokens(
+                ctx,
+                data,
+                di,
+                callStartTi,
+                trimmedCallEndTi,
+                limit,
+            );
             callCount += 1;
 
-            offset = semiIdx + 1;
+            ti = semiTi === -1 ? bodyEndTi : semiTi + 1;
         }
 
         if (callCount === 0) {
@@ -482,68 +576,139 @@ export class ScriptletBodyParser {
     }
 
     /**
-     * Preparse an ABP-style space-separated parameter list (single snippet call).
+     * Find next unescaped semicolon that is not inside a string or regex
+     * literal, using token types.
      *
-     * @param source Source string.
+     * @param ctx Parser context.
+     * @param startTi Start token index.
+     * @param endTi End token index (exclusive).
+     *
+     * @returns Token index of the semicolon, or -1 if not found.
+     */
+    private static findUnescapedSemicolonOutsideStrings(
+        ctx: ParserContext,
+        startTi: number,
+        endTi: number,
+    ): number {
+        const { types } = ctx;
+        let ti = startTi;
+
+        while (ti < endTi) {
+            const tt = types[ti];
+
+            if (tt === TokenType.Escaped) {
+                ti += 1;
+                continue;
+            }
+
+            if (tt === TokenType.Semicolon) {
+                return ti;
+            }
+
+            // String literal — skip to closing quote
+            if (tt === TokenType.Apostrophe || tt === TokenType.Quote || tt === TokenType.Backtick) {
+                const quoteType = tt;
+                ti += 1;
+                while (ti < endTi) {
+                    if (types[ti] === TokenType.Escaped) {
+                        ti += 1;
+                        continue;
+                    }
+                    if (types[ti] === quoteType) {
+                        break;
+                    }
+                    ti += 1;
+                }
+                ti += 1; // past closing quote
+                continue;
+            }
+
+            // Regex literal (slash-delimited)
+            if (tt === TokenType.Slash) {
+                ti += 1;
+                while (ti < endTi) {
+                    if (types[ti] === TokenType.Escaped) {
+                        ti += 1;
+                        continue;
+                    }
+                    if (types[ti] === TokenType.Slash) {
+                        break;
+                    }
+                    ti += 1;
+                }
+                ti += 1; // past closing slash
+                continue;
+            }
+
+            ti += 1;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Preparse an ABP-style space-separated parameter list using token indices.
+     *
+     * @param ctx Parser context.
      * @param data Output data buffer.
      * @param di Current write offset in data.
-     * @param start Call start offset.
-     * @param end Call end offset.
+     * @param startTi Start token index.
+     * @param endTi End token index (exclusive, after trimming).
      * @param limit Exclusive upper bound of the scriptlet data region in `data`.
      *
      * @returns Updated data write offset.
      */
-    private static parseAbpParamList(
-        source: string,
+    private static parseAbpParamListTokens(
+        ctx: ParserContext,
         data: Int32Array,
         di: number,
-        start: number,
-        end: number,
+        startTi: number,
+        endTi: number,
         limit: number,
     ): number {
+        const { types, ends } = ctx;
         const paramCountSlot = di;
         di += 1;
         let paramCount = 0;
-        let offset = start;
+        let ti = startTi;
 
-        while (offset < end) {
-            offset = skipWs(source, offset, end);
+        while (ti < endTi) {
+            // Skip whitespace
+            ti = skipWs(ctx, ti, endTi);
+            if (ti >= endTi) {
+                break;
+            }
 
-            if (source.charCodeAt(offset) === CHAR_SPACE || offset === end) {
-                // Null parameter
-                if (di + 1 >= limit) {
-                    throw new RangeError('Scriptlet body data buffer overflow: too many parameters');
-                }
+            const paramStartTi = ti;
+            const paramStartOffset = tokenStart(ctx, ti);
+
+            // Find next unescaped space outside strings
+            const sepTi = ScriptletBodyParser.findUnescapedSpaceOutsideStrings(ctx, ti, endTi);
+            const paramEndTi = sepTi === -1 ? endTi : sepTi;
+
+            // Trim trailing whitespace from param
+            const trimEndTi = skipWsBack(ctx, paramEndTi - 1, paramStartTi);
+
+            const paramEndOffset = trimEndTi >= paramStartTi ? ends[trimEndTi] : paramStartOffset;
+
+            if (di + 1 >= limit) {
+                throw new RangeError('Scriptlet body data buffer overflow: too many parameters');
+            }
+            if (paramStartOffset < paramEndOffset) {
+                data[di] = paramStartOffset;
+                data[di + 1] = paramEndOffset;
+            } else {
                 data[di] = NO_VALUE;
                 data[di + 1] = NO_VALUE;
-                di += 2;
-                paramCount += 1;
-                offset += 1;
-            } else {
-                const paramStart = offset;
-                const nextSep = findUnescapedOutsideStrings(source, CHAR_SPACE, offset, end);
-
-                let paramEnd: number;
-                if (nextSep !== -1) {
-                    paramEnd = skipWsBack(source, nextSep - 1, paramStart) + 1;
-                    offset = nextSep + 1;
-                } else {
-                    paramEnd = skipWsBack(source, end - 1, paramStart) + 1;
-                    offset = end;
-                }
-
-                if (di + 1 >= limit) {
-                    throw new RangeError('Scriptlet body data buffer overflow: too many parameters');
-                }
-                data[di] = paramStart;
-                data[di + 1] = paramEnd;
-                di += 2;
-                paramCount += 1;
             }
+            di += 2;
+            paramCount += 1;
+
+            ti = sepTi === -1 ? endTi : sepTi + 1;
         }
 
         // Trailing space → extra null
-        if (end > start && source.charCodeAt(end - 1) === CHAR_SPACE) {
+        if (endTi > startTi && types[endTi - 1] === TokenType.Whitespace) {
             if (di + 1 >= limit) {
                 throw new RangeError('Scriptlet body data buffer overflow: too many parameters');
             }
@@ -555,5 +720,74 @@ export class ScriptletBodyParser {
 
         data[paramCountSlot] = paramCount;
         return di;
+    }
+
+    /**
+     * Find next unescaped whitespace token that is not inside a string or
+     * regex literal, using token types.
+     *
+     * @param ctx Parser context.
+     * @param startTi Start token index.
+     * @param endTi End token index (exclusive).
+     *
+     * @returns Token index of the whitespace token, or -1 if not found.
+     */
+    private static findUnescapedSpaceOutsideStrings(
+        ctx: ParserContext,
+        startTi: number,
+        endTi: number,
+    ): number {
+        const { types } = ctx;
+        let ti = startTi;
+
+        while (ti < endTi) {
+            const tt = types[ti];
+
+            if (tt === TokenType.Escaped) {
+                ti += 1;
+                continue;
+            }
+
+            if (tt === TokenType.Whitespace) {
+                return ti;
+            }
+
+            if (tt === TokenType.Apostrophe || tt === TokenType.Quote || tt === TokenType.Backtick) {
+                const quoteType = tt;
+                ti += 1;
+                while (ti < endTi) {
+                    if (types[ti] === TokenType.Escaped) {
+                        ti += 1;
+                        continue;
+                    }
+                    if (types[ti] === quoteType) {
+                        break;
+                    }
+                    ti += 1;
+                }
+                ti += 1;
+                continue;
+            }
+
+            if (tt === TokenType.Slash) {
+                ti += 1;
+                while (ti < endTi) {
+                    if (types[ti] === TokenType.Escaped) {
+                        ti += 1;
+                        continue;
+                    }
+                    if (types[ti] === TokenType.Slash) {
+                        break;
+                    }
+                    ti += 1;
+                }
+                ti += 1;
+                continue;
+            }
+
+            ti += 1;
+        }
+
+        return -1;
     }
 }

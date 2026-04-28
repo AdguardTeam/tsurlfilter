@@ -134,7 +134,7 @@ export class ParameterListParser {
             return;
         }
 
-        const { types, ends, source } = ctx;
+        const { types, ends } = ctx;
 
         // Parse separator-delimited segments in [startTi, endTi)
         let paramCount = 0;
@@ -153,16 +153,13 @@ export class ParameterListParser {
             // Check if parameter starts with a quote
             if (pFirstTi < endTi) {
                 const firstType = types[pFirstTi];
-                const firstCharCode = pFirstTi < ctx.tokenCount
-                    ? source.charCodeAt(tokenStart(ctx, pFirstTi))
-                    : 0;
 
                 // Detect quote type
                 if (firstType === TokenType.Apostrophe) {
                     quoteType = 1; // single
                 } else if (firstType === TokenType.Quote) {
                     quoteType = 2; // double
-                } else if (firstType === TokenType.Symbol && firstCharCode === 0x60) {
+                } else if (firstType === TokenType.Backtick) {
                     quoteType = 3; // backtick
                 }
 
@@ -183,8 +180,7 @@ export class ParameterListParser {
                         // Check for matching closing quote
                         const isMatch = (quoteType === 1 && tt === TokenType.Apostrophe)
                             || (quoteType === 2 && tt === TokenType.Quote)
-                            || (quoteType === 3 && tt === TokenType.Symbol
-                                && source.charCodeAt(tokenStart(ctx, ti)) === 0x60);
+                            || (quoteType === 3 && tt === TokenType.Backtick);
 
                         if (isMatch) {
                             closeQuoteTi = ti;
