@@ -184,10 +184,12 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
+import { patchHistoryForRemoveParam } from '../../common/content-script/remove-param-main-world';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { DocumentLifecycle } from '../../common/interfaces';
 import { findHeaderByName } from '../../common/utils/headers';
 import { logger } from '../../common/utils/logger';
+import { getRemoveParamDescriptors } from '../../common/utils/remove-param-rules';
 import { getDomain, isHttpOrWsRequest } from '../../common/utils/url';
 
 import {
@@ -814,6 +816,52 @@ export class WebRequestApi {
     }
 
     /**
+     * Injects $removeparam History API patches into the main world if matching
+     * rules exist for the frame's document URL.
+     *
+     * @param details Event details.
+     */
+    private static injectRemoveParam(
+        details: WebNavigation.OnCommittedDetailsType,
+    ): void {
+        const { tabId, frameId, url } = details;
+
+        if (!url || !url.startsWith('http')) {
+            return;
+        }
+
+        if (WebRequestApi.isAssistantFrame(tabId, details)) {
+            return;
+        }
+
+        const tabContext = tabsApi.getTabContext(tabId);
+        if (!tabContext || !tabContext.info.url) {
+            return;
+        }
+
+        const descriptors = getRemoveParamDescriptors({
+            requestUrl: url,
+            frameUrl: tabContext.info.url,
+            frameRule: tabContext.mainFrameRule,
+            engineApi,
+        });
+
+        if (!descriptors) {
+            return;
+        }
+
+        const json = JSON.stringify(descriptors);
+        const scriptText = `;(${patchHistoryForRemoveParam.toString()})(${json});`;
+
+        TabsApi.injectScript(tabId, frameId, scriptText).catch((e) => {
+            logger.error(
+                '[tsweb.WebRequestApi.injectRemoveParam]: failed to inject removeparam script:',
+                e,
+            );
+        });
+    }
+
+    /**
      * On before navigate web navigation event handler.
      *
      * @param details Event details.
@@ -920,6 +968,7 @@ export class WebRequestApi {
         );
 
         WebRequestApi.injectCosmetic(details);
+        WebRequestApi.injectRemoveParam(details);
     }
 
     /**

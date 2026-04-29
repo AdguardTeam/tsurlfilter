@@ -153,10 +153,12 @@ import { NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { companiesDbService } from '../../common/companies-db-service';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
+import { patchHistoryForRemoveParam } from '../../common/content-script/remove-param-main-world';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { DocumentLifecycle } from '../../common/interfaces';
 import { TabsApiCommon } from '../../common/tabs/tabs-api';
 import { logger } from '../../common/utils/logger';
+import { getRemoveParamDescriptors } from '../../common/utils/remove-param-rules';
 import { getRuleTexts } from '../../common/utils/rule-text-provider';
 import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
 import { FrameMV3 } from '../tabs/frame';
@@ -838,6 +840,55 @@ export class WebRequestApi {
         // events do not support async listeners.
         CosmeticApi.applyCosmeticRules(tabId, frameId, true).catch((e) => {
             logger.error('[tsweb.WebRequestApi.onCommitted]: error on cosmetics injection: ', e);
+        });
+
+        WebRequestApi.injectRemoveParam(tabId, frameId, details.url);
+    }
+
+    /**
+     * Injects $removeparam History API patches into the main world if matching
+     * rules exist for the frame's document URL.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param url Document URL of the committed frame.
+     */
+    private static injectRemoveParam(
+        tabId: number,
+        frameId: number,
+        url: string,
+    ): void {
+        if (!url || !url.startsWith('http')) {
+            return;
+        }
+
+        const tabContext = tabsApi.getTabContext(tabId);
+        if (!tabContext || !tabContext.info.url) {
+            return;
+        }
+
+        const descriptors = getRemoveParamDescriptors({
+            requestUrl: url,
+            frameUrl: tabContext.info.url,
+            frameRule: tabContext.mainFrameRule,
+            engineApi,
+        });
+
+        if (!descriptors) {
+            return;
+        }
+
+        chrome.scripting.executeScript({
+            target: { tabId, frameIds: [frameId] },
+            func: patchHistoryForRemoveParam,
+            args: [descriptors],
+            injectImmediately: true,
+            world: 'MAIN',
+        }).catch((e) => {
+            logger.error(
+                '[tsweb.WebRequestApi.injectRemoveParam]: failed to inject removeparam script:',
+                e,
+            );
         });
     }
 

@@ -21,7 +21,6 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
         assistantUrl: '/assistant-inject.js',
         gpcScriptUrl: '/gpc.js',
         hideDocumentReferrerScriptUrl: '/hide-document-referrer.js',
-        removeParamScriptUrl: '/remove-param.js',
         stealth: {
             blockChromeClientData: true,
             hideReferrer: true,

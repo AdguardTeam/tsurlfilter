@@ -9,12 +9,11 @@ import {
 
 import {
     patchHistoryForRemoveParam,
-    REMOVEPARAM_CONFIG_TYPE,
     REMOVEPARAM_LOG_TYPE,
-    type RemoveParamDescriptorData,
 } from '../../../../src/lib/common/content-script/remove-param-main-world';
+import { type RemoveParamDescriptor } from '../../../../src/lib/common/message';
 
-describe('patchHistoryForRemoveParam (inline mode)', () => {
+describe('patchHistoryForRemoveParam', () => {
     let savePushState: typeof window.history.pushState;
     let saveReplaceState: typeof window.history.replaceState;
     let postedMessages: { type: string; [key: string]: unknown }[];
@@ -43,31 +42,16 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
         vi.restoreAllMocks();
     });
 
-    it('patches History API on init', () => {
+    it('does not patch History API when descriptors are empty', () => {
         const prePatch = window.history.pushState;
-        patchHistoryForRemoveParam();
+        patchHistoryForRemoveParam([]);
 
-        expect(window.history.pushState).not.toBe(prePatch);
+        expect(window.history.pushState).toBe(prePatch);
     });
 
-    it('unpatches History API when empty config is received', () => {
-        patchHistoryForRemoveParam();
-        const patchedPush = window.history.pushState;
-
-        // Send empty config
-        const event = new MessageEvent('message', {
-            data: { type: REMOVEPARAM_CONFIG_TYPE, descriptors: [] },
-        });
-        window.dispatchEvent(event);
-
-        // Should no longer be the patched function
-        expect(window.history.pushState).not.toBe(patchedPush);
-    });
-
-    it('removes named parameter after config is received', () => {
-        patchHistoryForRemoveParam();
-
-        const descriptors: RemoveParamDescriptorData[] = [
+    it('patches History API when descriptors are provided', () => {
+        const prePatch = window.history.pushState;
+        const descriptors: RemoveParamDescriptor[] = [
             {
                 value: 'utm_source',
                 isAllowlist: false,
@@ -79,25 +63,36 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
             },
         ];
 
-        // Send config
-        window.dispatchEvent(new MessageEvent('message', {
-            data: { type: REMOVEPARAM_CONFIG_TYPE, descriptors },
-        }));
+        patchHistoryForRemoveParam(descriptors);
+
+        expect(window.history.pushState).not.toBe(prePatch);
+    });
+
+    it('removes named parameter', () => {
+        const descriptors: RemoveParamDescriptor[] = [
+            {
+                value: 'utm_source',
+                isAllowlist: false,
+                isImportant: false,
+                filterId: 1,
+                ruleIndex: 0,
+                ruleText: '||example.com^$removeparam=utm_source',
+                advancedModifier: 'utm_source',
+            },
+        ];
+
+        patchHistoryForRemoveParam(descriptors);
 
         const url = 'https://example.com/page?utm_source=google&safe=1';
         window.history.pushState({}, '', url);
 
-        // The patched method should have called replaceState with cleaned URL
-        // We verify via the log message posted
         const logMsg = postedMessages.find((m) => m.type === REMOVEPARAM_LOG_TYPE);
         expect(logMsg).toBeDefined();
         expect(logMsg?.cleanedUrl).toBe('https://example.com/page?safe=1');
     });
 
     it('removes all parameters with bare removeparam', () => {
-        patchHistoryForRemoveParam();
-
-        const descriptors: RemoveParamDescriptorData[] = [
+        const descriptors: RemoveParamDescriptor[] = [
             {
                 value: '',
                 isAllowlist: false,
@@ -109,9 +104,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
             },
         ];
 
-        window.dispatchEvent(new MessageEvent('message', {
-            data: { type: REMOVEPARAM_CONFIG_TYPE, descriptors },
-        }));
+        patchHistoryForRemoveParam(descriptors);
 
         window.history.pushState({}, '', 'https://example.com/page?a=1&b=2');
 
@@ -121,12 +114,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
     });
 
     it('skips allowlisted parameters', () => {
-        patchHistoryForRemoveParam();
-
-        // When both blocking and allowlist rules exist for the same param,
-        // MatchingResult.getRemoveParamRules() in the background filters out
-        // the blocking rule. Only the allowlist descriptor is sent.
-        const descriptors: RemoveParamDescriptorData[] = [
+        const descriptors: RemoveParamDescriptor[] = [
             {
                 value: 'utm_source',
                 isAllowlist: true,
@@ -138,9 +126,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
             },
         ];
 
-        window.dispatchEvent(new MessageEvent('message', {
-            data: { type: REMOVEPARAM_CONFIG_TYPE, descriptors },
-        }));
+        patchHistoryForRemoveParam(descriptors);
 
         window.history.pushState({}, '', 'https://example.com/page?utm_source=google');
 
@@ -150,9 +136,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
     });
 
     it('skips URLs without query parameters', () => {
-        patchHistoryForRemoveParam();
-
-        const descriptors: RemoveParamDescriptorData[] = [
+        const descriptors: RemoveParamDescriptor[] = [
             {
                 value: 'utm_source',
                 isAllowlist: false,
@@ -164,9 +148,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
             },
         ];
 
-        window.dispatchEvent(new MessageEvent('message', {
-            data: { type: REMOVEPARAM_CONFIG_TYPE, descriptors },
-        }));
+        patchHistoryForRemoveParam(descriptors);
 
         window.history.pushState({}, '', 'https://example.com/page');
 
@@ -174,39 +156,8 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
         expect(logMsg).toBeUndefined();
     });
 
-    it('processes buffered URLs when config arrives', () => {
-        patchHistoryForRemoveParam();
-
-        // Push BEFORE config arrives
-        window.history.pushState({}, '', 'https://example.com/page?utm_source=google&safe=1');
-
-        // Now send config
-        const descriptors: RemoveParamDescriptorData[] = [
-            {
-                value: 'utm_source',
-                isAllowlist: false,
-                isImportant: false,
-                filterId: 1,
-                ruleIndex: 0,
-                ruleText: '||example.com^$removeparam=utm_source',
-                advancedModifier: 'utm_source',
-            },
-        ];
-
-        window.dispatchEvent(new MessageEvent('message', {
-            data: { type: REMOVEPARAM_CONFIG_TYPE, descriptors },
-        }));
-
-        // Buffered URL should have been processed
-        const logMsg = postedMessages.find((m) => m.type === REMOVEPARAM_LOG_TYPE);
-        expect(logMsg).toBeDefined();
-        expect(logMsg?.cleanedUrl).toBe('https://example.com/page?safe=1');
-    });
-
     it('handles negated removeparam (~param)', () => {
-        patchHistoryForRemoveParam();
-
-        const descriptors: RemoveParamDescriptorData[] = [
+        const descriptors: RemoveParamDescriptor[] = [
             {
                 value: '~safe',
                 isAllowlist: false,
@@ -218,9 +169,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
             },
         ];
 
-        window.dispatchEvent(new MessageEvent('message', {
-            data: { type: REMOVEPARAM_CONFIG_TYPE, descriptors },
-        }));
+        patchHistoryForRemoveParam(descriptors);
 
         window.history.pushState({}, '', 'https://example.com/page?utm=1&safe=keep&fbclid=abc');
 
@@ -231,9 +180,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
     });
 
     it('handles regex removeparam', () => {
-        patchHistoryForRemoveParam();
-
-        const descriptors: RemoveParamDescriptorData[] = [
+        const descriptors: RemoveParamDescriptor[] = [
             {
                 value: '/^utm_/',
                 isAllowlist: false,
@@ -245,9 +192,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
             },
         ];
 
-        window.dispatchEvent(new MessageEvent('message', {
-            data: { type: REMOVEPARAM_CONFIG_TYPE, descriptors },
-        }));
+        patchHistoryForRemoveParam(descriptors);
 
         window.history.pushState({}, '', 'https://example.com/page?utm_source=g&utm_medium=c&safe=1');
 
@@ -257,9 +202,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
     });
 
     it('preserves hash fragment with bare removeparam', () => {
-        patchHistoryForRemoveParam();
-
-        const descriptors: RemoveParamDescriptorData[] = [
+        const descriptors: RemoveParamDescriptor[] = [
             {
                 value: '',
                 isAllowlist: false,
@@ -271,9 +214,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
             },
         ];
 
-        window.dispatchEvent(new MessageEvent('message', {
-            data: { type: REMOVEPARAM_CONFIG_TYPE, descriptors },
-        }));
+        patchHistoryForRemoveParam(descriptors);
 
         window.history.pushState({}, '', 'https://example.com/page?a=1&b=2#section');
 
@@ -283,9 +224,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
     });
 
     it('keeps value-less parameter matching negated descriptor', () => {
-        patchHistoryForRemoveParam();
-
-        const descriptors: RemoveParamDescriptorData[] = [
+        const descriptors: RemoveParamDescriptor[] = [
             {
                 value: '~safe',
                 isAllowlist: false,
@@ -297,9 +236,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
             },
         ];
 
-        window.dispatchEvent(new MessageEvent('message', {
-            data: { type: REMOVEPARAM_CONFIG_TYPE, descriptors },
-        }));
+        patchHistoryForRemoveParam(descriptors);
 
         window.history.pushState({}, '', 'https://example.com/page?noval&safe=1');
 
@@ -309,9 +246,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
     });
 
     it('preserves hash fragment with named removeparam', () => {
-        patchHistoryForRemoveParam();
-
-        const descriptors: RemoveParamDescriptorData[] = [
+        const descriptors: RemoveParamDescriptor[] = [
             {
                 value: 'utm_source',
                 isAllowlist: false,
@@ -323,9 +258,7 @@ describe('patchHistoryForRemoveParam (inline mode)', () => {
             },
         ];
 
-        window.dispatchEvent(new MessageEvent('message', {
-            data: { type: REMOVEPARAM_CONFIG_TYPE, descriptors },
-        }));
+        patchHistoryForRemoveParam(descriptors);
 
         window.history.pushState({}, '', 'https://example.com/page?utm_source=g&safe=1#anchor');
 

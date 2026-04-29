@@ -1,42 +1,29 @@
-import { type RemoveParamDescriptor } from '../message';
 import { MessageType } from '../message-constants';
 
-import { REMOVEPARAM_CONFIG_TYPE, REMOVEPARAM_LOG_TYPE } from './remove-param-main-world';
+import { REMOVEPARAM_LOG_TYPE } from './remove-param-main-world';
 import { sendAppMessage } from './send-app-message';
 
 /**
- * Initializes the `$removeparam` content-script support.
- *
- * 1. Sends a one-time {@link MessageType.GetRemoveParamRules} message to the
- *    background to fetch applicable rule descriptors for the current page.
- * 2. Posts the descriptors to the main world via {@link REMOVEPARAM_CONFIG_TYPE}
- *    so the patched History API methods can apply parameter removal locally.
- * 3. Listens for {@link REMOVEPARAM_LOG_TYPE} events from the main world and
- *    forwards them to the background as {@link MessageType.LogRemoveParamEvent}
- *    messages (fire-and-forget).
+ * Whether the log relay has already been initialized.
  */
-export function initRemoveParam(): void {
-    // Fetch rules from background and post config to main world.
-    sendAppMessage({
-        type: MessageType.GetRemoveParamRules,
-        payload: { documentUrl: document.location.href },
-    })
-        .then((descriptors: RemoveParamDescriptor[] | null) => {
-            window.postMessage({
-                type: REMOVEPARAM_CONFIG_TYPE,
-                descriptors: descriptors || [],
-            }, '*');
-        })
-        .catch(() => {
-            // Extension may be shutting down — send empty config so main world
-            // can unpatch and release resources.
-            window.postMessage({
-                type: REMOVEPARAM_CONFIG_TYPE,
-                descriptors: [],
-            }, '*');
-        });
+let initialized = false;
 
-    // Listen for log events from the main world.
+/**
+ * Initializes the `$removeparam` log-relay listener in the isolated world.
+ *
+ * Listens for {@link REMOVEPARAM_LOG_TYPE} events posted from the main world
+ * (where `patchHistoryForRemoveParam` runs) and forwards them to the
+ * background as {@link MessageType.LogRemoveParamEvent} messages
+ * (fire-and-forget).
+ *
+ * Safe to call multiple times — only the first call registers the listener.
+ */
+export function initRemoveParamLogRelay(): void {
+    if (initialized) {
+        return;
+    }
+    initialized = true;
+
     window.addEventListener('message', (event: MessageEvent) => {
         if (event.data?.type !== REMOVEPARAM_LOG_TYPE) {
             return;

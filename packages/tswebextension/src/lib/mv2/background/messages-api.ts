@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { type Runtime } from 'webextension-polyfill';
 
-import { NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
+import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { type CookieRule } from '../../common/content-script/cookie-controller';
@@ -11,19 +11,17 @@ import {
     getAssistantCreateRulePayloadValidator,
     getCookieRulesPayloadValidator,
     getExtendedCssPayloadValidator,
-    getRemoveParamRulesPayloadValidator,
     getSaveCookieLogEventPayloadValidator,
     logRemoveParamEventPayloadValidator,
     type Message,
     messageValidator,
     processShouldCollapsePayloadValidator,
-    type RemoveParamDescriptor,
 } from '../../common/message';
 import { MessageType } from '../../common/message-constants';
 import { ContentType } from '../../common/request-type';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
-import { getRuleTexts, getRuleTextsByIndex } from '../../common/utils/rule-text-provider';
+import { getRuleTextsByIndex } from '../../common/utils/rule-text-provider';
 import { getDomain } from '../../common/utils/url';
 
 import { cookieFiltering, engineApi } from './api';
@@ -103,9 +101,6 @@ export class MessagesApi {
             }
             case MessageType.SaveCssHitsStats: {
                 return this.handleSaveCssHitsStats(sender, message.payload);
-            }
-            case MessageType.GetRemoveParamRules: {
-                return this.handleGetRemoveParamRules(sender, message.payload);
             }
             case MessageType.LogRemoveParamEvent: {
                 return this.handleLogRemoveParamEvent(sender, message.payload);
@@ -373,71 +368,6 @@ export class MessagesApi {
         }
 
         return published;
-    }
-
-    /**
-     * Handles {@link MessageType.GetRemoveParamRules} messages by returning
-     * serialized `$removeparam` rule descriptors for the current page.
-     *
-     * @param sender Tab which sent the message.
-     * @param payload Message payload containing the document URL.
-     *
-     * @returns Array of rule descriptors, or null on failure.
-     */
-    private handleGetRemoveParamRules(
-        sender: Runtime.MessageSender,
-        payload?: unknown,
-    ): RemoveParamDescriptor[] | null {
-        if (!payload || !sender?.tab?.id) {
-            return null;
-        }
-
-        const res = getRemoveParamRulesPayloadValidator.safeParse(payload);
-        if (!res.success) {
-            logger.error(
-                '[tsweb.MessagesApi.handleGetRemoveParamRules]: cannot parse payload: ',
-                payload,
-                res.error,
-            );
-            return null;
-        }
-
-        const tabId = sender.tab.id;
-        const tabContext = this.tabsApi.getTabContext(tabId);
-        if (!tabContext || !tabContext.info.url) {
-            return null;
-        }
-
-        const matchQuery = {
-            requestUrl: res.data.documentUrl,
-            frameUrl: tabContext.info.url,
-            requestType: RequestType.Document,
-            frameRule: tabContext.mainFrameRule,
-        };
-
-        const matchingResult = engineApi.matchRequest(matchQuery);
-        if (!matchingResult) {
-            return null;
-        }
-
-        const removeParamRules = matchingResult.getRemoveParamRules();
-        if (removeParamRules.length === 0) {
-            return null;
-        }
-
-        return removeParamRules.map((rule) => {
-            const { appliedRuleText } = getRuleTexts(rule, engineApi);
-            const modifierValue = rule.getAdvancedModifierValue();
-            return {
-                value: modifierValue || '',
-                isAllowlist: rule.isAllowlist(),
-                isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
-                filterId: rule.getFilterListId(),
-                ruleIndex: rule.getIndex(),
-                ruleText: appliedRuleText,
-                advancedModifier: modifierValue,
-            };
-        });
     }
 
     /**

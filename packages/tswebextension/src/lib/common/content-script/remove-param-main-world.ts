@@ -4,37 +4,20 @@
  * `history.replaceState` in the **main world** to support `$removeparam`
  * rules applied via the History API.
  *
- * Rules are received once from the isolated-world content script via
- * `window.postMessage`. Parameter removal is applied locally without
- * messaging the background for each navigation.
+ * Descriptors are passed directly as a function argument from the background
+ * (MV3 via `chrome.scripting.executeScript({ args })`, MV2 via JSON embed
+ * in the serialized function body).
  *
  * This function has **no module imports** so that it can be serialized via
  * `.toString()` for inline `<script>` injection in MV2.
  */
 
-/**
- * `postMessage` type for $removeparam config (isolated world → main world).
- */
-export const REMOVEPARAM_CONFIG_TYPE = '__adg_removeparam_config';
+import { type RemoveParamDescriptor } from '../message';
 
 /**
  * `postMessage` type for $removeparam log events (main world → isolated world).
  */
 export const REMOVEPARAM_LOG_TYPE = '__adg_removeparam_log';
-
-/**
- * Descriptor data shape used inside the main-world function.
- * Mirrors the serialized `RemoveParamDescriptor` from the background.
- */
-export interface RemoveParamDescriptorData {
-    value: string;
-    isAllowlist: boolean;
-    isImportant: boolean;
-    filterId: number;
-    ruleIndex: number;
-    ruleText: string;
-    advancedModifier: string | null;
-}
 
 /**
  * Patches `history.pushState` and `history.replaceState` so that every
@@ -43,21 +26,20 @@ export interface RemoveParamDescriptorData {
  *
  * The patched methods work as follows:
  * 1. Call the original method immediately (SPA behaviour is preserved).
- * 2. If rules are loaded and the URL contains query parameters, apply
- *    parameter removal synchronously.
+ * 2. If the URL contains query parameters, apply parameter removal synchronously.
  * 3. If the URL changed, call `replaceState` to update the address bar
  *    and post a log event to the isolated world.
- * 4. If rules have not yet arrived, buffer the URL for later processing.
  *
  * **Important**: every constant and helper referenced inside the function
  * body is declared as a local variable so that
  * `Function.prototype.toString()` produces a self-contained IIFE for MV2
  * injection.
+ *
+ * @param rawDescriptors Array of serialized rule descriptors to apply.
+ * Passed directly from the background (MV3 via `args`, MV2 via JSON embed).
  */
-export function patchHistoryForRemoveParam(): void {
-    // Constants are duplicated here (not imported) for serialization safety.
-    const CONFIG_TYPE = '__adg_removeparam_config';
-    const LOG_TYPE = '__adg_removeparam_log';
+export function patchHistoryForRemoveParam(rawDescriptors: RemoveParamDescriptor[]): void {
+    const LOG_TYPE: typeof REMOVEPARAM_LOG_TYPE = '__adg_removeparam_log';
 
     const originalPushState = window.history.pushState.bind(window.history);
     const originalReplaceState = window.history.replaceState.bind(window.history);
@@ -78,7 +60,6 @@ export function patchHistoryForRemoveParam(): void {
     }
 
     let descriptors: Descriptor[] | null = null;
-    let buffer: { state: unknown; title: string; url: string }[] = [];
 
     /**
      * Escapes characters with special meaning inside a regular expression.
@@ -355,66 +336,31 @@ export function patchHistoryForRemoveParam(): void {
                 return;
             }
 
-            if (descriptors === null) {
-                // Rules haven't arrived yet — buffer for later
-                buffer.push({ state, title, url: absoluteUrl });
-                return;
-            }
-
             processUrl(state, title, absoluteUrl);
         };
     }
 
+    // Parse descriptors immediately
+    if (!rawDescriptors || rawDescriptors.length === 0) {
+        return;
+    }
+
+    descriptors = rawDescriptors.map((d: RemoveParamDescriptor) => {
+        const { regex, isNegated } = parseValue(d.value);
+        return {
+            valueRegExp: regex,
+            value: d.value,
+            isAllowlist: d.isAllowlist,
+            isImportant: d.isImportant,
+            isNegated,
+            filterId: d.filterId,
+            ruleIndex: d.ruleIndex,
+            ruleText: d.ruleText,
+            advancedModifier: d.advancedModifier,
+        };
+    });
+
     // Patch immediately so we capture all navigations
     window.history.pushState = createPatchedMethod(originalPushState);
     window.history.replaceState = createPatchedMethod(originalReplaceState);
-
-    // Listen for config from isolated world (one-time)
-    /**
-     * Handler for the config message from the isolated-world content script.
-     *
-     * @param event MessageEvent from the isolated world.
-     */
-    const configHandler = (event: MessageEvent): void => {
-        if (event.data?.type !== CONFIG_TYPE) {
-            return;
-        }
-
-        window.removeEventListener('message', configHandler);
-
-        const rawDescriptors = event.data.descriptors;
-
-        if (!Array.isArray(rawDescriptors) || rawDescriptors.length === 0) {
-            // No rules for this site — restore original methods
-            window.history.pushState = originalPushState;
-            window.history.replaceState = originalReplaceState;
-            buffer = [];
-            descriptors = [];
-            return;
-        }
-
-        // Parse descriptors
-        descriptors = rawDescriptors.map((d: RemoveParamDescriptorData) => {
-            const { regex, isNegated } = parseValue(d.value);
-            return {
-                valueRegExp: regex,
-                value: d.value,
-                isAllowlist: d.isAllowlist,
-                isImportant: d.isImportant,
-                isNegated,
-                filterId: d.filterId,
-                ruleIndex: d.ruleIndex,
-                ruleText: d.ruleText,
-                advancedModifier: d.advancedModifier,
-            };
-        });
-
-        // Process buffered URLs
-        for (const item of buffer) {
-            processUrl(item.state, item.title, item.url);
-        }
-        buffer = [];
-    };
-
-    window.addEventListener('message', configHandler);
 }

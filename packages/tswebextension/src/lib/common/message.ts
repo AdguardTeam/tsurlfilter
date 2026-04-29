@@ -110,7 +110,7 @@ export type GetAssistantCreateRulePayloadValidator = z.infer<typeof getAssistant
 /**
  * Serialized representation of a single $removeparam rule.
  */
-export const removeParamDescriptorValidator = z.object({
+const removeParamDescriptorValidator = z.object({
     value: z.string(),
     isAllowlist: z.boolean(),
     isImportant: z.boolean(),
@@ -121,19 +121,7 @@ export const removeParamDescriptorValidator = z.object({
 }).strict();
 
 /**
- * {@link MessageType.GetRemoveParamRules} Message payload validation schema.
- */
-export const getRemoveParamRulesPayloadValidator = z.object({
-    documentUrl: z.string(),
-}).strict();
-
-/**
- * {@link MessageType.GetRemoveParamRules} Message payload type.
- */
-export type GetRemoveParamRulesPayload = z.infer<typeof getRemoveParamRulesPayloadValidator>;
-
-/**
- * {@link MessageType.GetRemoveParamRules} response type.
+ * Serialized representation of a single $removeparam rule.
  */
 export type RemoveParamDescriptor = z.infer<typeof removeParamDescriptorValidator>;
 

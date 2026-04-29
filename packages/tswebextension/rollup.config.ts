@@ -30,7 +30,6 @@ const entryPointsWithSideEffects = {
     'content-script.mv3': 'src/lib/mv3/content-script/index.ts',
     'gpc.mv3': 'src/lib/mv3/content-script/gpc.ts',
     'hide-document-referrer.mv3': 'src/lib/mv3/content-script/hide-document-referrer.ts',
-    'remove-param.mv3': 'src/lib/mv3/content-script/remove-param.ts',
 };
 
 const entryPoints = {

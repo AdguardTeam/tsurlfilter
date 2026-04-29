@@ -249,7 +249,6 @@ export class AdguardApi {
                 gpcScriptUrl: 'whatever',
                 // Related stealth option is disabled
                 hideDocumentReferrerScriptUrl: 'whatever',
-                removeParamScriptUrl: 'whatever',
                 filteringEnabled: this.configuration.filteringEnabled,
                 documentBlockingPageUrl: this.configuration.documentBlockingPageUrl,
                 debugScriptlets: false,
