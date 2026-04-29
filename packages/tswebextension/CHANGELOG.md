@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+- Hit marker text leaking into `::before`/`::after` pseudo-elements for
+  CSS inject rules (`#$#`). Native injection now uses a non-inheriting
+  `--adguard-hit` custom property (`@property`) instead of `content:`
+  [AdguardBrowserExtension#1486].
+
+[AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
+
 ## [4.1.1] - 2026-04-24
 
 ### Changed
