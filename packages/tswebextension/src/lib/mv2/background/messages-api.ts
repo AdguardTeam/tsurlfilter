@@ -21,6 +21,7 @@ import { MessageType } from '../../common/message-constants';
 import { ContentType } from '../../common/request-type';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
+import { publishRemoveParamEvents } from '../../common/utils/remove-param-log';
 import { getRuleTextsByIndex } from '../../common/utils/rule-text-provider';
 import { getDomain } from '../../common/utils/url';
 
@@ -397,41 +398,11 @@ export class MessagesApi {
             return false;
         }
 
-        const tabId = sender.tab.id;
-        const { url, appliedDescriptors } = res.data;
-
-        for (const desc of appliedDescriptors) {
-            const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(
-                desc.filterId,
-                desc.ruleIndex,
-                engineApi,
-            );
-
-            this.filteringLog.publishEvent({
-                type: FilteringEventType.RemoveParam,
-                data: {
-                    removeParam: true,
-                    eventId: nanoid(),
-                    tabId,
-                    requestUrl: url,
-                    frameUrl: url,
-                    frameDomain: getDomain(url) || '',
-                    requestType: ContentType.Document,
-                    filterId: desc.filterId,
-                    ruleIndex: desc.ruleIndex,
-                    appliedRuleText,
-                    originalRuleText,
-                    timestamp: Date.now(),
-                    isAllowlist: desc.isAllowlist,
-                    isImportant: desc.isImportant,
-                    isDocumentLevel: false,
-                    isCsp: false,
-                    isCookie: false,
-                    advancedModifier: desc.advancedModifier,
-                },
-            });
-        }
-
-        return appliedDescriptors.length > 0;
+        return publishRemoveParamEvents(
+            sender.tab.id,
+            res.data,
+            this.filteringLog,
+            engineApi,
+        );
     }
 }

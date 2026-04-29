@@ -25,7 +25,7 @@ export function initRemoveParamLogRelay(): void {
     initialized = true;
 
     window.addEventListener('message', (event: MessageEvent) => {
-        if (event.data?.type !== REMOVEPARAM_LOG_TYPE) {
+        if (event.data?.type !== REMOVEPARAM_LOG_TYPE && event.source !== window) {
             return;
         }
 
