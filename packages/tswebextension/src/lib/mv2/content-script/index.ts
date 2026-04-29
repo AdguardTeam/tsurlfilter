@@ -1,7 +1,7 @@
 // Import directly from files to avoid side effects of tree shaking.
 // If import from '../../common', entire tsurlfilter will be in the package.
 import { CookieController, type CookieRule } from '../../common/content-script/cookie-controller';
-import { initRemoveParamBridge } from '../../common/content-script/remove-param-handler';
+import { initRemoveParam } from '../../common/content-script/remove-param-handler';
 import { patchHistoryForRemoveParam } from '../../common/content-script/remove-param-main-world';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { MessageType } from '../../common/message-constants';
@@ -72,6 +72,6 @@ removeParamScript.textContent = `;(${patchHistoryForRemoveParam.toString()})();`
 (document.head || document.documentElement).appendChild(removeParamScript);
 removeParamScript.remove();
 
-// Start the isolated-world bridge that forwards main-world requests to
-// the background and posts back cleaned URLs.
-initRemoveParamBridge();
+// Start the isolated-world handler that fetches $removeparam rules from
+// the background and posts the config into the main-world script.
+initRemoveParam();

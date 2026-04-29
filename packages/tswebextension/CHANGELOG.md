@@ -10,10 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `$removeparam` support for SPA navigations via `history.pushState` /
-  `history.replaceState`. A main-world content script patches the History API
-  and communicates with an isolated-world bridge to apply filtering rules.
-  On MV2 the script is injected inline; on MV3 it is registered through
-  `chrome.scripting.registerContentScripts` with `world: 'MAIN'`. [CoreLibs#2071]
+  `history.replaceState`. The content script fetches matching `$removeparam`
+  rule descriptors from the background once, then forwards them to a main-world
+  script that patches the History API and applies parameter removal locally,
+  no per-navigation round-trip is needed. Supports plain-value and regex
+  modifiers with allowlist / `$important` priority. On MV2 the main-world
+  function is injected inline; on MV3 it is registered through
+  `chrome.scripting.registerContentScripts` with `world: 'MAIN'`.
+  [CoreLibs#2071]
 
 ### Fixed
 

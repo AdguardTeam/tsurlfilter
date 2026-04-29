@@ -108,13 +108,56 @@ export const getAssistantCreateRulePayloadValidator = z.object({
 export type GetAssistantCreateRulePayloadValidator = z.infer<typeof getAssistantCreateRulePayloadValidator>;
 
 /**
- * {@link MessageType.GetRemoveParamUrl} Message payload validation schema.
+ * Serialized representation of a single $removeparam rule.
  */
-export const getRemoveParamUrlPayloadValidator = z.object({
-    url: z.string(),
+export const removeParamDescriptorValidator = z.object({
+    value: z.string(),
+    isAllowlist: z.boolean(),
+    isImportant: z.boolean(),
+    filterId: z.number(),
+    ruleIndex: z.number(),
+    ruleText: z.string(),
+    advancedModifier: z.string().nullable(),
 }).strict();
 
 /**
- * {@link MessageType.GetRemoveParamUrl} Message payload type.
+ * {@link MessageType.GetRemoveParamRules} Message payload validation schema.
  */
-export type GetRemoveParamUrlPayload = z.infer<typeof getRemoveParamUrlPayloadValidator>;
+export const getRemoveParamRulesPayloadValidator = z.object({
+    documentUrl: z.string(),
+}).strict();
+
+/**
+ * {@link MessageType.GetRemoveParamRules} Message payload type.
+ */
+export type GetRemoveParamRulesPayload = z.infer<typeof getRemoveParamRulesPayloadValidator>;
+
+/**
+ * {@link MessageType.GetRemoveParamRules} response type.
+ */
+export type RemoveParamDescriptor = z.infer<typeof removeParamDescriptorValidator>;
+
+/**
+ * Applied descriptor for log reporting (subset of RemoveParamDescriptor).
+ */
+export const appliedRemoveParamDescriptorValidator = z.object({
+    filterId: z.number(),
+    ruleIndex: z.number(),
+    ruleText: z.string(),
+    isAllowlist: z.boolean(),
+    isImportant: z.boolean(),
+    advancedModifier: z.string().nullable(),
+}).strict();
+
+/**
+ * {@link MessageType.LogRemoveParamEvent} Message payload validation schema.
+ */
+export const logRemoveParamEventPayloadValidator = z.object({
+    url: z.string(),
+    appliedDescriptors: z.array(appliedRemoveParamDescriptorValidator),
+}).strict();
+
+/**
+ * {@link MessageType.LogRemoveParamEvent} Message payload type.
+ */
+export type LogRemoveParamEventPayload = z.infer<typeof logRemoveParamEventPayloadValidator>;

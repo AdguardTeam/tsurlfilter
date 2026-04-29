@@ -23,5 +23,6 @@ export enum MessageType {
     CloseAssistant = 'closeAssistant',
     AssistantCreateRule = 'assistantCreateRule',
     SaveCssHitsStats = 'saveCssHitsStats',
-    GetRemoveParamUrl = 'getRemoveParamUrl',
+    GetRemoveParamRules = 'getRemoveParamRules',
+    LogRemoveParamEvent = 'logRemoveParamEvent',
 }

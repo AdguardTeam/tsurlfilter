@@ -8,7 +8,7 @@ import {
     vi,
 } from 'vitest';
 
-// Mock sendAppMessage before importing initRemoveParamBridge
+// Mock sendAppMessage before importing initRemoveParam
 const { mockSendAppMessage } = vi.hoisted(() => ({
     mockSendAppMessage: vi.fn(),
 }));
@@ -18,10 +18,10 @@ vi.mock('../../../../src/lib/common/content-script/send-app-message', () => ({
 
 // These imports must come after vi.mock() to ensure the mock is applied.
 import { MessageType } from '../../../../src/lib/common/message-constants';
-import { initRemoveParamBridge } from '../../../../src/lib/common/content-script/remove-param-handler';
+import { initRemoveParam } from '../../../../src/lib/common/content-script/remove-param-handler';
 import {
-    REMOVEPARAM_REQUEST_TYPE,
-    REMOVEPARAM_RESPONSE_TYPE,
+    REMOVEPARAM_CONFIG_TYPE,
+    REMOVEPARAM_LOG_TYPE,
 } from '../../../../src/lib/common/content-script/remove-param-main-world';
 /* eslint-enable import/order, import/first */
 
@@ -36,7 +36,7 @@ async function postAndWait(data: unknown): Promise<void> {
     await new Promise((resolve) => { setTimeout(resolve, 50); });
 }
 
-describe('initRemoveParamBridge', () => {
+describe('initRemoveParam', () => {
     let postMessageSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
@@ -48,116 +48,131 @@ describe('initRemoveParamBridge', () => {
         postMessageSpy.mockRestore();
     });
 
-    it('adds a message event listener on init', () => {
-        const addSpy = vi.spyOn(window, 'addEventListener');
-        initRemoveParamBridge();
-        expect(addSpy).toHaveBeenCalledWith('message', expect.any(Function));
-        addSpy.mockRestore();
+    it('fetches rules from background on init and posts config to main world', async () => {
+        const descriptors = [
+            {
+                value: 'utm_source',
+                isAllowlist: false,
+                isImportant: false,
+                filterId: 1,
+                ruleIndex: 0,
+                ruleText: '||example.com^$removeparam=utm_source',
+                advancedModifier: 'utm_source',
+            },
+        ];
+        mockSendAppMessage.mockResolvedValue(descriptors);
+        initRemoveParam();
+
+        // Wait for the async init to complete
+        await new Promise((resolve) => { setTimeout(resolve, 50); });
+
+        expect(mockSendAppMessage).toHaveBeenCalledWith({
+            type: MessageType.GetRemoveParamRules,
+            payload: { documentUrl: document.location.href },
+        });
+
+        expect(postMessageSpy).toHaveBeenCalledWith(
+            {
+                type: REMOVEPARAM_CONFIG_TYPE,
+                descriptors,
+            },
+            '*',
+        );
     });
 
-    it('forwards request to background and posts response back', async () => {
-        const cleanedUrl = 'https://example.com/page';
-        mockSendAppMessage.mockResolvedValue(cleanedUrl);
-        initRemoveParamBridge();
+    it('posts empty config when background returns null', async () => {
+        mockSendAppMessage.mockResolvedValue(null);
+        initRemoveParam();
+
+        await new Promise((resolve) => { setTimeout(resolve, 50); });
+
+        expect(postMessageSpy).toHaveBeenCalledWith(
+            {
+                type: REMOVEPARAM_CONFIG_TYPE,
+                descriptors: [],
+            },
+            '*',
+        );
+    });
+
+    it('posts empty config when background rejects', async () => {
+        mockSendAppMessage.mockRejectedValue(new Error('channel broken'));
+        initRemoveParam();
+
+        await new Promise((resolve) => { setTimeout(resolve, 50); });
+
+        expect(postMessageSpy).toHaveBeenCalledWith(
+            {
+                type: REMOVEPARAM_CONFIG_TYPE,
+                descriptors: [],
+            },
+            '*',
+        );
+    });
+
+    it('forwards log events from main world to background', async () => {
+        mockSendAppMessage.mockResolvedValue([]);
+        initRemoveParam();
+
+        await new Promise((resolve) => { setTimeout(resolve, 50); });
+
+        // Reset to track only log messages
+        mockSendAppMessage.mockReset();
+        mockSendAppMessage.mockResolvedValue(undefined);
+
+        const appliedDescriptors = [
+            {
+                filterId: 1,
+                ruleIndex: 0,
+                ruleText: '||example.com^$removeparam=utm_source',
+                isAllowlist: false,
+                isImportant: false,
+                advancedModifier: 'utm_source',
+            },
+        ];
 
         await postAndWait({
-            type: REMOVEPARAM_REQUEST_TYPE,
-            url: 'https://example.com/page?utm_source=test',
-            requestId: 1,
+            type: REMOVEPARAM_LOG_TYPE,
+            originalUrl: 'https://example.com/page?utm_source=test',
+            appliedDescriptors,
         });
 
         expect(mockSendAppMessage).toHaveBeenCalledWith({
-            type: MessageType.GetRemoveParamUrl,
-            payload: { url: 'https://example.com/page?utm_source=test' },
-        });
-
-        // The handler should have posted a response back.
-        expect(postMessageSpy).toHaveBeenCalledWith(
-            {
-                type: REMOVEPARAM_RESPONSE_TYPE,
-                cleanedUrl,
-                requestId: 1,
+            type: MessageType.LogRemoveParamEvent,
+            payload: {
+                url: 'https://example.com/page?utm_source=test',
+                appliedDescriptors,
             },
-            '*',
-        );
+        });
     });
 
-    it('posts null cleanedUrl when background returns null', async () => {
-        mockSendAppMessage.mockResolvedValue(null);
-        initRemoveParamBridge();
+    it('ignores log events with invalid data', async () => {
+        mockSendAppMessage.mockResolvedValue([]);
+        initRemoveParam();
 
+        await new Promise((resolve) => { setTimeout(resolve, 50); });
+
+        mockSendAppMessage.mockReset();
+
+        // Missing appliedDescriptors
         await postAndWait({
-            type: REMOVEPARAM_REQUEST_TYPE,
-            url: 'https://example.com/page?safe=1',
-            requestId: 2,
+            type: REMOVEPARAM_LOG_TYPE,
+            originalUrl: 'https://example.com/page',
         });
 
-        expect(postMessageSpy).toHaveBeenCalledWith(
-            {
-                type: REMOVEPARAM_RESPONSE_TYPE,
-                cleanedUrl: null,
-                requestId: 2,
-            },
-            '*',
-        );
+        expect(mockSendAppMessage).not.toHaveBeenCalled();
     });
 
     it('ignores messages with unrelated type', async () => {
-        initRemoveParamBridge();
+        mockSendAppMessage.mockResolvedValue([]);
+        initRemoveParam();
 
-        await postAndWait({ type: 'some-other-type', url: 'https://example.com' });
+        await new Promise((resolve) => { setTimeout(resolve, 50); });
 
-        expect(mockSendAppMessage).not.toHaveBeenCalled();
-    });
+        mockSendAppMessage.mockReset();
 
-    it('ignores messages without type', async () => {
-        initRemoveParamBridge();
-
-        await postAndWait({ url: 'https://example.com' });
+        await postAndWait({ type: 'some-other-type' });
 
         expect(mockSendAppMessage).not.toHaveBeenCalled();
-    });
-
-    it('ignores messages with non-string url', async () => {
-        initRemoveParamBridge();
-
-        await postAndWait({
-            type: REMOVEPARAM_REQUEST_TYPE,
-            url: 12345,
-            requestId: 3,
-        });
-
-        expect(mockSendAppMessage).not.toHaveBeenCalled();
-    });
-
-    it('ignores messages with non-number requestId', async () => {
-        initRemoveParamBridge();
-
-        await postAndWait({
-            type: REMOVEPARAM_REQUEST_TYPE,
-            url: 'https://example.com/page?a=1',
-            requestId: 'bad',
-        });
-
-        expect(mockSendAppMessage).not.toHaveBeenCalled();
-    });
-
-    it('silently handles sendAppMessage rejection', async () => {
-        mockSendAppMessage.mockRejectedValue(new Error('channel broken'));
-        initRemoveParamBridge();
-
-        // Should not throw
-        await postAndWait({
-            type: REMOVEPARAM_REQUEST_TYPE,
-            url: 'https://example.com/page?utm=1',
-            requestId: 4,
-        });
-
-        expect(mockSendAppMessage).toHaveBeenCalled();
-        // No response should be posted since the promise rejected.
-        const responseCalls = postMessageSpy.mock.calls.filter(
-            ([data]: [unknown]) => (data as Record<string, unknown>)?.type === REMOVEPARAM_RESPONSE_TYPE,
-        );
-        expect(responseCalls).toHaveLength(0);
     });
 });

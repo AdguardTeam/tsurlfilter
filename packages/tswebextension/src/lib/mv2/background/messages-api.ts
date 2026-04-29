@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { type Runtime } from 'webextension-polyfill';
 
-import { NetworkRuleOption } from '@adguard/tsurlfilter';
+import { NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { type CookieRule } from '../../common/content-script/cookie-controller';
@@ -11,15 +11,16 @@ import {
     getAssistantCreateRulePayloadValidator,
     getCookieRulesPayloadValidator,
     getExtendedCssPayloadValidator,
-    getRemoveParamUrlPayloadValidator,
+    getRemoveParamRulesPayloadValidator,
     getSaveCookieLogEventPayloadValidator,
+    logRemoveParamEventPayloadValidator,
     type Message,
     messageValidator,
     processShouldCollapsePayloadValidator,
+    type RemoveParamDescriptor,
 } from '../../common/message';
 import { MessageType } from '../../common/message-constants';
 import { ContentType } from '../../common/request-type';
-import { getRemoveParamUrl } from '../../common/utils/get-remove-param-url';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
 import { getRuleTexts, getRuleTextsByIndex } from '../../common/utils/rule-text-provider';
@@ -103,8 +104,11 @@ export class MessagesApi {
             case MessageType.SaveCssHitsStats: {
                 return this.handleSaveCssHitsStats(sender, message.payload);
             }
-            case MessageType.GetRemoveParamUrl: {
-                return this.handleGetRemoveParamUrl(sender, message.payload);
+            case MessageType.GetRemoveParamRules: {
+                return this.handleGetRemoveParamRules(sender, message.payload);
+            }
+            case MessageType.LogRemoveParamEvent: {
+                return this.handleLogRemoveParamEvent(sender, message.payload);
             }
             default:
         }
@@ -372,27 +376,26 @@ export class MessagesApi {
     }
 
     /**
-     * Handles {@link MessageType.GetRemoveParamUrl} messages by validating the
-     * payload, resolving the tab context, and delegating to the shared
-     * {@link getRemoveParamUrl} utility.
+     * Handles {@link MessageType.GetRemoveParamRules} messages by returning
+     * serialized `$removeparam` rule descriptors for the current page.
      *
      * @param sender Tab which sent the message.
-     * @param payload Message payload containing the URL to evaluate.
+     * @param payload Message payload containing the document URL.
      *
-     * @returns Purged URL string, or null if no rules matched or URL unchanged.
+     * @returns Array of rule descriptors, or null on failure.
      */
-    private handleGetRemoveParamUrl(
+    private handleGetRemoveParamRules(
         sender: Runtime.MessageSender,
         payload?: unknown,
-    ): string | null {
+    ): RemoveParamDescriptor[] | null {
         if (!payload || !sender?.tab?.id) {
             return null;
         }
 
-        const res = getRemoveParamUrlPayloadValidator.safeParse(payload);
+        const res = getRemoveParamRulesPayloadValidator.safeParse(payload);
         if (!res.success) {
             logger.error(
-                '[tsweb.MessagesApi.handleGetRemoveParamUrl]: cannot parse payload: ',
+                '[tsweb.MessagesApi.handleGetRemoveParamRules]: cannot parse payload: ',
                 payload,
                 res.error,
             );
@@ -401,12 +404,78 @@ export class MessagesApi {
 
         const tabId = sender.tab.id;
         const tabContext = this.tabsApi.getTabContext(tabId);
-        if (!tabContext) {
+        if (!tabContext || !tabContext.info.url) {
             return null;
         }
 
-        return getRemoveParamUrl(res.data.url, tabContext, engineApi, (rule, url) => {
-            const { appliedRuleText, originalRuleText } = getRuleTexts(rule, engineApi);
+        const matchQuery = {
+            requestUrl: res.data.documentUrl,
+            frameUrl: tabContext.info.url,
+            requestType: RequestType.Document,
+            frameRule: tabContext.mainFrameRule,
+        };
+
+        const matchingResult = engineApi.matchRequest(matchQuery);
+        if (!matchingResult) {
+            return null;
+        }
+
+        const removeParamRules = matchingResult.getRemoveParamRules();
+        if (removeParamRules.length === 0) {
+            return null;
+        }
+
+        return removeParamRules.map((rule) => {
+            const { appliedRuleText } = getRuleTexts(rule, engineApi);
+            const modifierValue = rule.getAdvancedModifierValue();
+            return {
+                value: modifierValue || '',
+                isAllowlist: rule.isAllowlist(),
+                isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                filterId: rule.getFilterListId(),
+                ruleIndex: rule.getIndex(),
+                ruleText: appliedRuleText,
+                advancedModifier: modifierValue,
+            };
+        });
+    }
+
+    /**
+     * Handles {@link MessageType.LogRemoveParamEvent} messages by publishing
+     * filtering log events for each applied `$removeparam` rule.
+     *
+     * @param sender Tab which sent the message.
+     * @param payload Message payload with URL and applied descriptors.
+     *
+     * @returns True if events were published.
+     */
+    private handleLogRemoveParamEvent(
+        sender: Runtime.MessageSender,
+        payload?: unknown,
+    ): boolean {
+        if (!payload || !sender?.tab?.id) {
+            return false;
+        }
+
+        const res = logRemoveParamEventPayloadValidator.safeParse(payload);
+        if (!res.success) {
+            logger.error(
+                '[tsweb.MessagesApi.handleLogRemoveParamEvent]: cannot parse payload: ',
+                payload,
+                res.error,
+            );
+            return false;
+        }
+
+        const tabId = sender.tab.id;
+        const { url, appliedDescriptors } = res.data;
+
+        for (const desc of appliedDescriptors) {
+            const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(
+                desc.filterId,
+                desc.ruleIndex,
+                engineApi,
+            );
 
             this.filteringLog.publishEvent({
                 type: FilteringEventType.RemoveParam,
@@ -418,19 +487,21 @@ export class MessagesApi {
                     frameUrl: url,
                     frameDomain: getDomain(url) || '',
                     requestType: ContentType.Document,
-                    filterId: rule.getFilterListId(),
-                    ruleIndex: rule.getIndex(),
+                    filterId: desc.filterId,
+                    ruleIndex: desc.ruleIndex,
                     appliedRuleText,
                     originalRuleText,
                     timestamp: Date.now(),
-                    isAllowlist: rule.isAllowlist(),
-                    isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
-                    isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
-                    isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
-                    isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
-                    advancedModifier: rule.getAdvancedModifierValue(),
+                    isAllowlist: desc.isAllowlist,
+                    isImportant: desc.isImportant,
+                    isDocumentLevel: false,
+                    isCsp: false,
+                    isCookie: false,
+                    advancedModifier: desc.advancedModifier,
                 },
             });
-        });
+        }
+
+        return appliedDescriptors.length > 0;
     }
 }
