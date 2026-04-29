@@ -310,6 +310,15 @@ export const CR_SEP_KIND_UBO_HTML_FILTERING = 4;
  */
 export const CR_FLAG_BODY_UBO_RESPONSEHEADER = 1 << 12;
 
+/**
+ * Cosmetic rule flag bit: body contains `:style()` or `:remove()` modifier
+ * (uBO CSS injection). Only set when sub-kind is CR_SEP_KIND_ELEMENT_HIDING.
+ *
+ * When set, the AST builder dispatcher routes to
+ * `UboCssInjectionAstBuilder` instead of `ElementHidingAstBuilder`.
+ */
+export const CR_FLAG_BODY_UBO_CSS_INJECTION = 1 << 13;
+
 // ---------------------------------------------------------------------------
 // HTML filtering responseheader data layout
 // ---------------------------------------------------------------------------

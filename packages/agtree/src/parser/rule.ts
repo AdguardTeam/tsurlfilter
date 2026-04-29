@@ -5,6 +5,7 @@
  * matching comment, network, or cosmetic parser.
  */
 
+import { UboPseudoName } from '../common/ubo-selector-common';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { TokenType } from '../tokenizer/token-types';
 
@@ -22,8 +23,11 @@ import {
     CR_BODY_START,
     CR_BODY_START_TI,
     CR_FLAG_BODY_ADG_SCRIPTLET,
+    CR_FLAG_BODY_UBO_CSS_INJECTION,
     CR_FLAG_BODY_UBO_SCRIPTLET,
+    CR_FLAG_HAS_UBO_MODS,
     CR_FLAGS_OFFSET,
+    CR_MODIFIER_COUNT_OFFSET,
     CR_SEP_KIND_ABP_SNIPPET,
     CR_SEP_KIND_ADG_CSS_INJECTION,
     CR_SEP_KIND_ADG_HTML_FILTERING,
@@ -31,6 +35,10 @@ import {
     CR_SEP_KIND_ELEMENT_HIDING,
     CR_SEP_KIND_SHIFT,
     CR_SEP_KIND_UBO_HTML_FILTERING,
+    CR_UBO_MODS_OFFSET,
+    UBO_MOD_FIELD_NAME_END,
+    UBO_MOD_FIELD_NAME_START,
+    UBO_MODIFIER_RECORD_STRIDE,
 } from './cosmetic/constants';
 import { parseCommonCosmeticHeader } from './cosmetic/cosmetic-common';
 import { AdgCssInjectionParser } from './cosmetic/css-injection';
@@ -298,6 +306,31 @@ export class RuleParser {
 
                         // No ^: normal element hiding / scriptlet flow
                         ElementHidingParser.parse(ctx, classified, parseUboSpecificRules);
+
+                        // After ElementHidingParser.parse() the uBO modifier records
+                        // (if any) live at CR_UBO_MODS_OFFSET with stride
+                        // UBO_MODIFIER_RECORD_STRIDE. If any record is :style or
+                        // :remove, mark this rule as uBO CSS injection so the AST
+                        // builder dispatcher routes to UboCssInjectionAstBuilder.
+                        // eslint-disable-next-line no-bitwise
+                        const hasUboMods = (ctx.data[CR_FLAGS_OFFSET] & CR_FLAG_HAS_UBO_MODS) !== 0;
+                        if (hasUboMods) {
+                            const uboModCount = ctx.data[CR_MODIFIER_COUNT_OFFSET];
+                            for (let i = 0; i < uboModCount; i += 1) {
+                                const base = CR_UBO_MODS_OFFSET + i * UBO_MODIFIER_RECORD_STRIDE;
+                                const nameStart = ctx.data[base + UBO_MOD_FIELD_NAME_START];
+                                const nameEnd = ctx.data[base + UBO_MOD_FIELD_NAME_END];
+                                if (
+                                    regionEquals(ctx.source, nameStart, nameEnd, UboPseudoName.Style)
+                                    || regionEquals(ctx.source, nameStart, nameEnd, UboPseudoName.Remove)
+                                ) {
+                                    // eslint-disable-next-line no-bitwise
+                                    ctx.data[CR_FLAGS_OFFSET] |= CR_FLAG_BODY_UBO_CSS_INJECTION;
+                                    return RuleKind.Cosmetic;
+                                }
+                            }
+                        }
+
                         // Detect +js( or script:inject( prefix
                         if (detectUboScriptletPrefix(ctx.source, ctx.data[CR_BODY_START])) {
                             // eslint-disable-next-line no-bitwise

@@ -216,7 +216,7 @@ export class ElementHidingParser {
         let curModBit = 0;
         let curModNameStart = 0;
         let curModNameEnd = 0;
-        let curModValueStart = 0;
+        let curModValueStartTi = 0;
         let curModSrcStart = 0;
         let curModException = 0;
         let curModNotCount = 0;
@@ -247,14 +247,25 @@ export class ElementHidingParser {
                     data[base + UBO_MOD_FIELD_NAME_END] = curModNameEnd;
                     data[base + UBO_MOD_FIELD_FLAGS] = curModException ? MODIFIER_FLAG_NEGATED : 0;
 
-                    // Value is between the opening paren and this closing paren
-                    const valueEnd = tokenStart(ctx, ti);
-                    if (curModValueStart < valueEnd) {
-                        data[base + UBO_MOD_FIELD_VALUE_START] = curModValueStart;
-                        data[base + UBO_MOD_FIELD_VALUE_END] = valueEnd;
-                    } else {
+                    // Value is between the opening paren and this closing paren.
+                    // Trim by skipping Whitespace tokens at the value's token-range
+                    // boundaries (FR-013). Token-based trimming is one Uint8Array
+                    // read per skip — much faster than scanning chars.
+                    let firstValTi = curModValueStartTi;
+                    let lastValTi = ti - 1; // token immediately before the closing paren
+                    while (firstValTi <= lastValTi && types[firstValTi] === TokenType.Whitespace) {
+                        firstValTi += 1;
+                    }
+                    while (lastValTi >= firstValTi && types[lastValTi] === TokenType.Whitespace) {
+                        lastValTi -= 1;
+                    }
+                    if (firstValTi > lastValTi) {
+                        // Empty or whitespace-only :style() / :remove() / etc.
                         data[base + UBO_MOD_FIELD_VALUE_START] = NO_VALUE;
                         data[base + UBO_MOD_FIELD_VALUE_END] = NO_VALUE;
+                    } else {
+                        data[base + UBO_MOD_FIELD_VALUE_START] = tokenStart(ctx, firstValTi);
+                        data[base + UBO_MOD_FIELD_VALUE_END] = ends[lastValTi];
                     }
 
                     // Source range includes closing paren (and all :not() closing parens)
@@ -324,13 +335,6 @@ export class ElementHidingParser {
                 }
 
                 if (modBit !== 0) {
-                    // Reject :style() and :remove() - these require CssInjectionRule, not ElementHidingRule
-                    if (modBit === UBO_MOD_BIT_STYLE || modBit === UBO_MOD_BIT_REMOVE) {
-                        const modName = source.slice(identStart, identEnd);
-                        throw new Error(
-                            `uBO CSS injection (:${modName}) is not yet implemented in the new pipeline`,
-                        );
-                    }
                     // FR-007: reject duplicates
                     if (seenMask & modBit) {
                         throw new Error(
@@ -411,7 +415,7 @@ export class ElementHidingParser {
                             curModException = exception;
                             curModNotCount = notCount;
                             curModDepth = depth + 1; // depth after the modifier's ( is opened
-                            curModValueStart = ends[identEndTi]; // after OpenParen
+                            curModValueStartTi = identEndTi + 1; // first token after OpenParen
                             curModOpen = true;
 
                             // Skip ident span and OpenParen token
@@ -433,7 +437,7 @@ export class ElementHidingParser {
                         curModException = 0;
                         curModNotCount = 0;
                         curModDepth = depth + 1; // depth after the modifier's ( is opened
-                        curModValueStart = ends[identEndTi]; // after OpenParen
+                        curModValueStartTi = identEndTi + 1; // first token after OpenParen
                         curModOpen = true;
 
                         // Skip ident span and OpenParen token

@@ -19,6 +19,7 @@ export { HtmlFilteringAstBuilder } from './cosmetic/html-filtering';
 export {
     ScriptletInjectionAstBuilder,
 } from './cosmetic/scriptlet-injection';
+export { UboCssInjectionAstBuilder } from './cosmetic/ubo-css-injection';
 export {
     SelectorListAstBuilder,
     type SelectorListParseOptions,

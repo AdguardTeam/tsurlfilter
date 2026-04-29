@@ -20,6 +20,14 @@ export interface DeclarationListParseOptions {
      * Defaults to `true`.
      */
     isLocIncluded?: boolean;
+
+    /**
+     * Whether to include raw source text on AST nodes.
+     *
+     * Defaults to `false`. Currently reserved for forward compatibility;
+     * the declaration list builder does not yet populate `.raw` on child nodes.
+     */
+    includeRaws?: boolean;
 }
 
 /**

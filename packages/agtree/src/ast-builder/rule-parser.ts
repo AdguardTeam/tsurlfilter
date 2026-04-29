@@ -21,6 +21,7 @@ import { createParserContext, initParserContext } from '../parser/context';
 import type { ParserContext } from '../parser/context';
 import {
     CR_FLAG_BODY_ADG_SCRIPTLET,
+    CR_FLAG_BODY_UBO_CSS_INJECTION,
     CR_FLAG_BODY_UBO_SCRIPTLET,
     CR_FLAGS_OFFSET,
     CR_SEP_KIND_ABP_SNIPPET,
@@ -42,6 +43,7 @@ import { ElementHidingAstBuilder } from './cosmetic/element-hiding';
 import { HtmlFilteringAstBuilder } from './cosmetic/html-filtering';
 import { JsInjectionAstBuilder } from './cosmetic/js-injection';
 import { ScriptletInjectionAstBuilder } from './cosmetic/scriptlet-injection';
+import { UboCssInjectionAstBuilder } from './cosmetic/ubo-css-injection';
 import { NetworkRuleAstBuilder } from './network/network-rule';
 import type { ParseOptions } from './options';
 
@@ -239,6 +241,12 @@ export class RuleParserPipeline {
             }
             // eslint-disable-next-line max-len
             return ScriptletInjectionAstBuilder.parse(source, data, dataOffset, maxMods, maxDomains, ProductCode.Ubo, options);
+        }
+
+        // ## / #@# / #?# / #@?# with :style() or :remove() body — uBO CSS injection
+        // eslint-disable-next-line no-bitwise
+        if (flags & CR_FLAG_BODY_UBO_CSS_INJECTION) {
+            return UboCssInjectionAstBuilder.parse(source, data, dataOffset, maxMods, maxDomains, options);
         }
 
         // Default: element hiding

@@ -34,4 +34,24 @@ export interface ParseOptions {
      * Defaults to `false`.
      */
     parseHtmlFilteringRuleBodies?: boolean;
+
+    /**
+     * Whether to parse CSS injection rule selector lists into fully-parsed
+     * `SelectorList` AST nodes via the CSS pipeline parsers. When `false`
+     * (default), the selector list is returned as a `Raw` node containing
+     * the cleaned selector text.
+     *
+     * Defaults to `false`.
+     */
+    parseCssSelectorList?: boolean;
+
+    /**
+     * Whether to parse CSS injection rule declaration lists into fully-parsed
+     * `CssDeclarationList` AST nodes via the CSS pipeline parsers. When
+     * `false` (default), the declaration list is returned as a `Raw` node
+     * containing the raw declaration text.
+     *
+     * Defaults to `false`.
+     */
+    parseCssDeclarationList?: boolean;
 }

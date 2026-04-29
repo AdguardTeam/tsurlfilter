@@ -249,10 +249,14 @@ export class ElementHidingAstBuilder {
 
             const modName = source.slice(nameStart, nameEnd);
 
-            // TODO: implement CssInjectionRule for :style()/:remove()
+            // Defensive guard: rules containing :style()/:remove() are routed
+            // to UboCssInjectionAstBuilder by the dispatcher. Reaching this
+            // branch means a dispatcher bug (the CR_FLAG_BODY_UBO_CSS_INJECTION
+            // flag was not set when it should have been).
             if (modName === UboPseudoName.Style || modName === UboPseudoName.Remove) {
                 throw new Error(
-                    `:${modName}() is not yet implemented in the new parser pipeline`,
+                    `Internal error: :${modName}() reached ElementHidingAstBuilder; `
+                    + 'expected UboCssInjectionAstBuilder dispatch (CR_FLAG_BODY_UBO_CSS_INJECTION not set).',
                 );
             }
 
