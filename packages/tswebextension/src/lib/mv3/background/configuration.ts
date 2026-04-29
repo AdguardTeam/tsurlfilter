@@ -39,6 +39,14 @@ export const settingsConfigMV3 = settingsConfigValidator.extend({
      * by the tswebextension when the stealth option is enabled/disabled.
      */
     hideDocumentReferrerScriptUrl: zod.string(),
+
+    /**
+     * Path to the main-world content script that patches History API methods
+     * for `$removeparam` support.
+     * This content script will be dynamically registered and unregistered
+     * by the tswebextension when filtering is enabled/disabled.
+     */
+    removeParamScriptUrl: zod.string(),
 });
 
 export type SettingsConfigMV3 = zod.infer<typeof settingsConfigMV3>;

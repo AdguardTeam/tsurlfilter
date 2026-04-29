@@ -10,7 +10,8 @@
         "dist/content-script.js",
         "dist/content-script.mv3.js",
         "dist/gpc.mv3.js",
-        "dist/hide-document-referrer.mv3.js"
+        "dist/hide-document-referrer.mv3.js",
+        "dist/remove-param.mv3.js"
     ],
     "exports": {
         ".": {
@@ -30,6 +31,9 @@
         },
         "./mv3/hide-document-referrer": {
             "default": "./dist/hide-document-referrer.mv3.js"
+        },
+        "./mv3/remove-param": {
+            "default": "./dist/remove-param.mv3.js"
         },
         "./mv3/content-script": {
             "default": "./dist/content-script.mv3.js"

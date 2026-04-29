@@ -106,3 +106,15 @@ export const getAssistantCreateRulePayloadValidator = z.object({
  * {@link MessageType.InitAssistant} Message payload type.
  */
 export type GetAssistantCreateRulePayloadValidator = z.infer<typeof getAssistantCreateRulePayloadValidator>;
+
+/**
+ * {@link MessageType.GetRemoveParamUrl} Message payload validation schema.
+ */
+export const getRemoveParamUrlPayloadValidator = z.object({
+    url: z.string(),
+}).strict();
+
+/**
+ * {@link MessageType.GetRemoveParamUrl} Message payload type.
+ */
+export type GetRemoveParamUrlPayload = z.infer<typeof getRemoveParamUrlPayloadValidator>;

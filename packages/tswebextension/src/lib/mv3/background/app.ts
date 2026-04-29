@@ -34,6 +34,7 @@ import { RuleSetsLoaderApi } from './rule-sets-loader-api';
 import { CspService } from './services/csp-service';
 import { documentBlockingService } from './services/document-blocking-service';
 import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
+import { RemoveParamService } from './services/remove-param-service';
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { SessionRulesApi } from './session-rules-api';
 import { WebRequestApi } from './web-request-api';
@@ -277,6 +278,7 @@ export class TsWebExtension implements AppInterface<
 
         await StealthService.clearAll();
         await CspService.clearAll();
+        await RemoveParamService.clearAll();
 
         const removedRules = await SessionRulesApi.removeAllRules();
 
@@ -362,6 +364,11 @@ export class TsWebExtension implements AppInterface<
             declarativeFilteringLog.startUpdate();
 
             res.stealthResult = await StealthService.applySettings(configuration.settings);
+
+            await RemoveParamService.setRemoveParamScript(
+                true,
+                configuration.settings.removeParamScriptUrl,
+            );
 
             // Extract filters info from configuration and wrap them into IFilters.
             const {

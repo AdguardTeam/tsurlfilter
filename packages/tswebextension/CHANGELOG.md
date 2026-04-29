@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- `$removeparam` support for SPA navigations via `history.pushState` /
+  `history.replaceState`. A main-world content script patches the History API
+  and communicates with an isolated-world bridge to apply filtering rules.
+  On MV2 the script is injected inline; on MV3 it is registered through
+  `chrome.scripting.registerContentScripts` with `world: 'MAIN'`.
+  [CoreLibs#2071](https://github.com/AdguardTeam/CoreLibs/issues/2071)
+
 ## [4.1.1] - 2026-04-24
 
 ### Changed

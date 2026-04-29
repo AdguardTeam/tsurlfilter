@@ -11,16 +11,18 @@ import {
     getAssistantCreateRulePayloadValidator,
     getCookieRulesPayloadValidator,
     getCosmeticDataPayloadValidator,
+    getRemoveParamUrlPayloadValidator,
     getSaveCookieLogEventPayloadValidator,
     type Message,
     messageValidator,
 } from '../../common/message';
 import { MessageType } from '../../common/message-constants';
 import { ContentType } from '../../common/request-type';
+import { getRemoveParamUrl } from '../../common/utils/get-remove-param-url';
 import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
-import { getRuleTextsByIndex } from '../../common/utils/rule-text-provider';
+import { getRuleTexts, getRuleTextsByIndex } from '../../common/utils/rule-text-provider';
 import { type TabsApi } from '../tabs/tabs-api';
 
 import { type TsWebExtension } from './app';
@@ -114,6 +116,9 @@ export class MessagesApi {
             }
             case MessageType.SaveCssHitsStats: {
                 return this.handleSaveCssHitsStats(sender, message.payload);
+            }
+            case MessageType.GetRemoveParamUrl: {
+                return this.handleGetRemoveParamUrl(sender, message.payload);
             }
             default: {
                 logger.error('[tsweb.MessagesApi.handleMessage]: did not found handler for message');
@@ -384,5 +389,68 @@ export class MessagesApi {
         });
 
         return true;
+    }
+
+    /**
+     * Handles {@link MessageType.GetRemoveParamUrl} messages by validating the
+     * payload, resolving the tab context, and delegating to the shared
+     * {@link getRemoveParamUrl} utility.
+     *
+     * @param sender Tab which sent the message.
+     * @param payload Message payload containing the URL to evaluate.
+     *
+     * @returns Purged URL string, or null if no rules matched or URL unchanged.
+     */
+    private handleGetRemoveParamUrl(
+        sender: browser.Runtime.MessageSender,
+        payload?: unknown,
+    ): string | null {
+        if (!payload || !sender?.tab?.id) {
+            return null;
+        }
+
+        const res = getRemoveParamUrlPayloadValidator.safeParse(payload);
+        if (!res.success) {
+            logger.error(
+                '[tsweb.MessagesApi.handleGetRemoveParamUrl]: cannot parse payload: ',
+                payload,
+                res.error,
+            );
+            return null;
+        }
+
+        const tabId = sender.tab.id;
+        const tabContext = this.tabsApi.getTabContext(tabId);
+        if (!tabContext) {
+            return null;
+        }
+
+        return getRemoveParamUrl(res.data.url, tabContext, engineApi, (rule, url) => {
+            const { appliedRuleText, originalRuleText } = getRuleTexts(rule, engineApi);
+
+            this.filteringLog.publishEvent({
+                type: FilteringEventType.RemoveParam,
+                data: {
+                    removeParam: true,
+                    eventId: nanoid(),
+                    tabId,
+                    requestUrl: url,
+                    frameUrl: url,
+                    frameDomain: getDomain(url) || '',
+                    requestType: ContentType.Document,
+                    filterId: rule.getFilterListId(),
+                    ruleIndex: rule.getIndex(),
+                    appliedRuleText,
+                    originalRuleText,
+                    timestamp: Date.now(),
+                    isAllowlist: rule.isAllowlist(),
+                    isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                    isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                    isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                    isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                    advancedModifier: rule.getAdvancedModifierValue(),
+                },
+            });
+        });
     }
 }

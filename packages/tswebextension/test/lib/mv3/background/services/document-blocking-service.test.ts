@@ -69,6 +69,7 @@ describe('DocumentBlockingService', () => {
             stealthModeEnabled: false,
             gpcScriptUrl: '/gpc.js',
             hideDocumentReferrerScriptUrl: '/hide-referrer.js',
+            removeParamScriptUrl: '/remove-param.js',
             stealth: {
                 blockChromeClientData: false,
                 hideReferrer: false,
