@@ -13,8 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `history.replaceState`. A main-world content script patches the History API
   and communicates with an isolated-world bridge to apply filtering rules.
   On MV2 the script is injected inline; on MV3 it is registered through
-  `chrome.scripting.registerContentScripts` with `world: 'MAIN'`.
-  [CoreLibs#2071](https://github.com/AdguardTeam/CoreLibs/issues/2071)
+  `chrome.scripting.registerContentScripts` with `world: 'MAIN'`. [CoreLibs#2071]
 
 ### Fixed
 
@@ -24,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [AdguardBrowserExtension#1486].
 
 [AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
+[CoreLibs#2071]: https://github.com/AdguardTeam/CoreLibs/issues/2071
 
 ## [4.1.1] - 2026-04-24
 
