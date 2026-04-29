@@ -251,9 +251,12 @@ COPY --from=test-tsurlfilter /out/ /
 
 # ============================================================================
 # Stage: test-tswebextension
-# Runs test:prod (lint + smoke + test:ci) for @adguard/tswebextension
+# Runs test:prod (lint + smoke + test:ci + test:e2e) for @adguard/tswebextension
 # ============================================================================
 FROM built-tswebextension AS test-tswebextension
+
+# Install Playwright Chromium browser and its system dependencies for e2e tests
+RUN cd packages/tswebextension && npx playwright install --with-deps chromium
 
 ARG TEST_RUN_ID
 

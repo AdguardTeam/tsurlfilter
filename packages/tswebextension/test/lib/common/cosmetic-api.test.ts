@@ -463,9 +463,12 @@ describe('CosmeticApiCommon', () => {
                 });
 
                 // Native CSS with hit marker
-                expect(cssText).toBe('.simple { display: none !important; content: \'adguard0%3B0\' !important; }');
+                // eslint-disable-next-line max-len
+                expect(cssText).toBe("@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }\r\n.simple { display: none !important; --adguard-hit: 'adguard0%3B0' !important; }");
 
-                // Extended CSS with hit marker
+                // Extended CSS with legacy `content:` hit marker (no
+                // @property preamble — see HitMarkerStrategy split for
+                // AG-265).
                 expect(extCssRules).toEqual([
                     'div:has(> a) { display: none !important; content: \'adguard0%3B1\' !important; }',
                 ]);
@@ -486,8 +489,10 @@ describe('CosmeticApiCommon', () => {
                 });
 
                 // Both selectors in native CSS with hit markers
-                const expectedCss = '.simple { display: none !important; content: \'adguard0%3B0\' !important; }\r\n'
-                    + 'div:has(> a) { display: none !important; content: \'adguard0%3B1\' !important; }';
+                // eslint-disable-next-line max-len
+                const expectedCss = "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }\r\n"
+                    + '.simple { display: none !important; --adguard-hit: \'adguard0%3B0\' !important; }\r\n'
+                    + 'div:has(> a) { display: none !important; --adguard-hit: \'adguard0%3B1\' !important; }';
                 expect(cssText).toBe(expectedCss);
 
                 // Extended CSS should be null
