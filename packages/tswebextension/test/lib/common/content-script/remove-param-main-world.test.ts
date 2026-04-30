@@ -266,4 +266,37 @@ describe('patchHistoryForRemoveParam', () => {
         expect(logMsg).toBeDefined();
         expect(logMsg?.cleanedUrl).toBe('https://example.com/page?safe=1#anchor');
     });
+
+    it('applies multiple descriptors cumulatively', () => {
+        const descriptors: RemoveParamDescriptor[] = [
+            {
+                value: 'utm_source',
+                isAllowlist: false,
+                isImportant: false,
+                filterId: 1,
+                ruleIndex: 0,
+                ruleText: '||example.com^$removeparam=utm_source',
+                advancedModifier: 'utm_source',
+            },
+            {
+                value: 'utm_medium',
+                isAllowlist: false,
+                isImportant: false,
+                filterId: 1,
+                ruleIndex: 1,
+                ruleText: '||example.com^$removeparam=utm_medium',
+                advancedModifier: 'utm_medium',
+            },
+        ];
+
+        patchHistoryForRemoveParam(descriptors);
+
+        window.history.pushState({}, '', 'https://example.com/page?utm_source=g&utm_medium=c&safe=1');
+
+        const logMsg = postedMessages.find((m) => m.type === REMOVEPARAM_LOG_TYPE);
+        expect(logMsg).toBeDefined();
+        expect(logMsg?.cleanedUrl).toBe('https://example.com/page?safe=1');
+        // Both descriptors should be in the applied list
+        expect(logMsg?.appliedDescriptors).toHaveLength(2);
+    });
 });

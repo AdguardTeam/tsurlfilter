@@ -26,12 +26,17 @@ import {
 /* eslint-enable import/order, import/first */
 
 /**
- * Dispatches a postMessage event and waits for the async handler to settle.
+ * Dispatches a MessageEvent simulating a same-window postMessage and waits
+ * for the async handler to settle.
+ *
+ * Note: jsdom does not set `event.source` on postMessage, so we dispatch
+ * a synthetic MessageEvent with `source: window` to match production behavior.
  *
  * @param data Message data to post.
  */
 async function postAndWait(data: unknown): Promise<void> {
-    window.postMessage(data, '*');
+    const event = new MessageEvent('message', { data, source: window });
+    window.dispatchEvent(event);
     // Yield to let the event listener and its async work run.
     await new Promise((resolve) => { setTimeout(resolve, 50); });
 }

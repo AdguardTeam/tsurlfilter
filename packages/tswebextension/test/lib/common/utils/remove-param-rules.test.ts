@@ -115,4 +115,54 @@ describe('getRemoveParamDescriptors', () => {
             advancedModifier: null,
         });
     });
+
+    it('returns multiple descriptors when multiple rules match', () => {
+        const mockRules = [
+            {
+                getAdvancedModifierValue: vi.fn().mockReturnValue('utm_source'),
+                isAllowlist: vi.fn().mockReturnValue(false),
+                isOptionEnabled: vi.fn().mockReturnValue(false),
+                getFilterListId: vi.fn().mockReturnValue(1),
+                getIndex: vi.fn().mockReturnValue(0),
+                getText: vi.fn().mockReturnValue('||example.com^$removeparam=utm_source'),
+            },
+            {
+                getAdvancedModifierValue: vi.fn().mockReturnValue('utm_medium'),
+                isAllowlist: vi.fn().mockReturnValue(false),
+                isOptionEnabled: vi.fn().mockReturnValue(true),
+                getFilterListId: vi.fn().mockReturnValue(2),
+                getIndex: vi.fn().mockReturnValue(5),
+                getText: vi.fn().mockReturnValue('||example.com^$removeparam=utm_medium,important'),
+            },
+        ];
+        const mockMatchingResult = {
+            getRemoveParamRules: vi.fn().mockReturnValue(mockRules),
+        };
+        const mockEngineApi = {
+            matchRequest: vi.fn().mockReturnValue(mockMatchingResult),
+            retrieveRuleText: vi.fn((_, idx) => mockRules[idx === 0 ? 0 : 1]!.getText()),
+            retrieveOriginalRuleText: vi.fn().mockReturnValue(null),
+        };
+
+        const result = getRemoveParamDescriptors({
+            requestUrl: 'https://example.com/?utm_source=g&utm_medium=c',
+            frameUrl: 'https://example.com/',
+            frameRule: null,
+            engineApi: mockEngineApi,
+        });
+
+        expect(result).toHaveLength(2);
+        expect(result![0]).toMatchObject({
+            value: 'utm_source',
+            isImportant: false,
+            filterId: 1,
+            ruleIndex: 0,
+        });
+        expect(result![1]).toMatchObject({
+            value: 'utm_medium',
+            isImportant: true,
+            filterId: 2,
+            ruleIndex: 5,
+        });
+    });
 });
