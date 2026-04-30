@@ -5,22 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## Unreleased <!-- release/browser-extension-v5.5 -->
 
-### Changed
+### Added
 
-- `FiltersApi.updateFiltering()` now enables static rulesets individually
-  instead of in a single atomic batch. This prevents one invalid ruleset from
-  blocking all others from being enabled.
+- New `FilteringEventType.PopupBlocked` filtering log event (with matching
+  `PopupBlockedEvent` / `PopupBlockedEventData` types) dispatched when
+  `$popup` modifier rule is applied [AdguardBrowserExtension#1686].
 
 ### Fixed
 
-- Updated README documentation for `staticFiltersStatus.errors` to accurately
-  describe individual ruleset enabling and disable-failure error provenance.
 - `TsWebExtension.removeAllFilteringRules()` now logs errors returned by
   `FiltersApi.updateFiltering()` instead of silently discarding them.
+- Hit marker text leaking into `::before`/`::after` pseudo-elements for
+  CSS inject rules (`#$#`). Native injection now uses a non-inheriting
+  `--adguard-hit` custom property (`@property`) instead of `content:`
+  [AdguardBrowserExtension#1486].
 
-## 4.1.0
+[AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
+[AdguardBrowserExtension#1686]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
+
+## [4.1.1] - 2026-04-24
+
+### Changed
+
+- Updated [@adguard/scriptlets] to `v2.4.2`.
+
+[4.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v4.1.1
+
+## [v4.1.0-beta.1] - 2026-04-17
 
 ### Added
 
@@ -35,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unloaded when the declarative filtering log is disabled.
 - `RuleSetsLoaderApi` now provides lazy metadata loaders that read from IndexedDB
   on demand instead of eagerly constructing heavy objects at ruleset creation time.
-- Updated [@adguard/tsurlfilter] to vX.X.X. <!-- TODO: update version before release -->
+- Updated [@adguard/tsurlfilter] to `v5.0.0-beta.1`.
 - Updated [@adguard/assistant] to `v4.4.3`.
 - Updated [@adguard/scriptlets] to `v2.4.0-beta`.
 
@@ -57,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `prepare` script from running (`.husky` is excluded via `.dockerignore`).
 - "Block ads manual" doesn't work on tabs opened before the update [AdguardBrowserExtension#3452].
 
+[v4.1.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v4.1.0-beta.1
 [AdguardBrowserExtension#3393]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3393
 [AdguardBrowserExtension#3329]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3329
 [AdguardBrowserExtension#3414]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3414

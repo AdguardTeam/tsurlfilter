@@ -62,6 +62,18 @@ export type GetHeadersResponseParams = RequestParams & {
  */
 export class RequestBlockingApi {
     /**
+     * Set of tab ids for which `closeTab` has already been invoked
+     * but `browser.tabs.remove` has not yet resolved.
+     *
+     * Without this guard, a redirect (e.g. http→https) or any other extra
+     * navigation that arrives on the popup tab within the
+     * {@link tabsApi.isNewPopupTab} window would trigger `closeTab` again,
+     * publishing a duplicate `PopupBlocked` event and queueing a second
+     * `tabs.remove` call for an already-closing tab.
+     */
+    private static readonly closingPopupTabs = new Set<number>();
+
+    /**
      * In some cases request blocking breaks images and frames on page.
      * We match rule from content-script and decide if DOM element should be hidden via css.
      *
@@ -126,8 +138,27 @@ export class RequestBlockingApi {
         data: RequestParams,
         appliedRule: NetworkRule | null,
     ): WebRequest.BlockingResponse {
-        RequestBlockingApi.logRuleApplying(data, appliedRule);
-        browser.tabs.remove(data.tabId);
+        // Skip if this popup tab is already being closed. The popup tab can
+        // produce additional `onBeforeRequest` events (e.g. when the server
+        // returns a 301 redirect like http://evilsite.com/ → https://...) before
+        // `browser.tabs.remove` resolves, which would otherwise duplicate the
+        // filtering-log entry.
+        if (RequestBlockingApi.closingPopupTabs.has(data.tabId)) {
+            return { cancel: true };
+        }
+        RequestBlockingApi.closingPopupTabs.add(data.tabId);
+
+        // Publish a dedicated `PopupBlocked` event with the real popup tabId.
+        // Browser extension filtering log decides where to attach the entry —
+        // typically the background page — since the popup tab is removed
+        // immediately after this call and would otherwise have no UI surface
+        // to render the entry under.
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
+        RequestBlockingApi.publishPopupBlockedEvent(data, appliedRule);
+
+        browser.tabs.remove(data.tabId).finally(() => {
+            RequestBlockingApi.closingPopupTabs.delete(data.tabId);
+        });
 
         return { cancel: true };
     }
@@ -290,6 +321,63 @@ export class RequestBlockingApi {
                 isAllowlist: appliedRule.isAllowlist(),
                 isImportant: appliedRule.isOptionEnabled(NetworkRuleOption.Important),
                 isDocumentLevel: appliedRule.isDocumentLevelAllowlistRule(),
+                isCsp: appliedRule.isOptionEnabled(NetworkRuleOption.Csp),
+                isCookie: appliedRule.isOptionEnabled(NetworkRuleOption.Cookie),
+                advancedModifier: appliedRule.getAdvancedModifierValue(),
+            },
+        });
+    }
+
+    /**
+     * Publishes a {@link FilteringEventType.PopupBlocked} event for a tab
+     * that is being closed by a `$popup` modifier rule.
+     *
+     * The event carries the real popup `tabId`. Consumers decide where to
+     * attach the entry (typically the background page) since the popup tab
+     * is removed immediately after the event is published.
+     *
+     * @param data Data for the popup request being blocked.
+     * @param appliedRule Network rule that was applied to the request.
+     */
+    private static publishPopupBlockedEvent(
+        data: RequestParams,
+        appliedRule: NetworkRule | null,
+    ): void {
+        const {
+            tabId,
+            eventId,
+            requestId,
+            referrerUrl,
+            requestUrl,
+            contentType,
+        } = data;
+
+        if (!appliedRule) {
+            return;
+        }
+
+        const companyCategoryName = companiesDbService.match(requestUrl);
+        const { appliedRuleText, originalRuleText } = getRuleTexts(appliedRule, engineApi);
+
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.PopupBlocked,
+            data: {
+                tabId,
+                eventId,
+                requestType: contentType,
+                frameUrl: referrerUrl,
+                requestId,
+                requestUrl,
+                companyCategoryName,
+                filterId: appliedRule.getFilterListId(),
+                ruleIndex: appliedRule.getIndex(),
+                appliedRuleText,
+                originalRuleText,
+                isAllowlist: appliedRule.isAllowlist(),
+                isImportant: appliedRule.isOptionEnabled(NetworkRuleOption.Important),
+                isDocumentLevel: appliedRule.isDocumentLevelAllowlistRule(),
+                // TODO: we should simplify events like this and exclude unused fields
+                // e.g. isCsp, isCookie, isAllowlist if we already know that this is $popup rule
                 isCsp: appliedRule.isOptionEnabled(NetworkRuleOption.Csp),
                 isCookie: appliedRule.isOptionEnabled(NetworkRuleOption.Cookie),
                 advancedModifier: appliedRule.getAdvancedModifierValue(),

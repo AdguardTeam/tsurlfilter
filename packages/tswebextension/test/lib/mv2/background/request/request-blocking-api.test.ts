@@ -6,6 +6,7 @@ import {
     it,
     vi,
 } from 'vitest';
+import browser from 'webextension-polyfill';
 
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
@@ -16,10 +17,34 @@ import {
     RequestBlockingApi,
     tabsApi,
 } from '../../../../../src/lib';
+import { defaultFilteringLog } from '../../../../../src/lib/common/filtering-log';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 
 vi.mock('../../../../../src/lib/mv2/background/api');
+
+vi.mock('../../../../../src/lib/common/filtering-log', () => ({
+    defaultFilteringLog: {
+        publishEvent: vi.fn(),
+    },
+    FilteringEventType: {
+        ApplyBasicRule: 'ApplyBasicRule',
+        PopupBlocked: 'PopupBlocked',
+    },
+}));
+
+vi.mock('../../../../../src/lib/common/utils/rule-text-provider', () => ({
+    getRuleTexts: vi.fn(() => ({
+        appliedRuleText: '||example.com^$popup',
+        originalRuleText: '||example.com^$popup',
+    })),
+}));
+
+vi.mock('../../../../../src/lib/common/companies-db-service', () => ({
+    companiesDbService: {
+        match: vi.fn(() => null),
+    },
+}));
 
 /**
  * Returns simple data object for {@link RequestBlockingApi.getBlockingResponse} method
@@ -141,6 +166,8 @@ describe('Request Blocking Api - getBlockingResponse', () => {
     describe('tab is new', () => {
         beforeEach(() => {
             vi.spyOn(tabsApi, 'isNewPopupTab').mockReturnValue(true);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            vi.spyOn(browser.tabs, 'remove' as any).mockResolvedValue(undefined);
         });
 
         afterEach(() => {
@@ -473,5 +500,133 @@ describe('Request Blocking Api - getBlockingResponse', () => {
             const response = RequestBlockingApi.getBlockingResponse(data);
             expect(response).toEqual({ cancel: true });
         });
+    });
+});
+
+describe('Request Blocking Api - closeTab publishes PopupBlocked event (AG-3736)', () => {
+    let tabsRemoveSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+        vi.spyOn(tabsApi, 'isNewPopupTab').mockReturnValue(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tabsRemoveSpy = vi.spyOn(browser.tabs, 'remove' as any).mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        vi.resetAllMocks();
+    });
+
+    it('publishes PopupBlocked for $popup rule with the real tabId, removes the actual tab', () => {
+        const TAB_ID = 42;
+        const data = {
+            ...getGetBlockingResponseParamsData(
+                ['||example.com^$popup'],
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            ),
+            tabId: TAB_ID,
+        };
+
+        RequestBlockingApi.getBlockingResponse(data);
+
+        // The actual tab should be removed.
+        expect(tabsRemoveSpy).toHaveBeenCalledWith(TAB_ID);
+
+        // The filtering log event must be PopupBlocked and carry the real tabId.
+        // The consumer (e.g. browser extension) is responsible for attaching it
+        // to the background page.
+        expect(defaultFilteringLog.publishEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'PopupBlocked',
+                data: expect.objectContaining({
+                    tabId: TAB_ID,
+                }),
+            }),
+        );
+        expect(defaultFilteringLog.publishEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'ApplyBasicRule',
+            }),
+        );
+    });
+
+    it('publishes PopupBlocked for $all rule with the real tabId, removes the actual tab', () => {
+        const TAB_ID = 7;
+        const data = {
+            ...getGetBlockingResponseParamsData(
+                ['||example.com^$all'],
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            ),
+            tabId: TAB_ID,
+        };
+
+        RequestBlockingApi.getBlockingResponse(data);
+
+        expect(tabsRemoveSpy).toHaveBeenCalledWith(TAB_ID);
+        expect(defaultFilteringLog.publishEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'PopupBlocked',
+                data: expect.objectContaining({
+                    tabId: TAB_ID,
+                }),
+            }),
+        );
+    });
+
+    it('publishes PopupBlocked for explicit $popup,$document rule with the real tabId, removes the actual tab', () => {
+        const TAB_ID = 15;
+        const data = {
+            ...getGetBlockingResponseParamsData(
+                ['||example.com^$popup,document', '||example.com^'],
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            ),
+            tabId: TAB_ID,
+        };
+
+        RequestBlockingApi.getBlockingResponse(data);
+
+        expect(tabsRemoveSpy).toHaveBeenCalledWith(TAB_ID);
+        expect(defaultFilteringLog.publishEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'PopupBlocked',
+                data: expect.objectContaining({
+                    tabId: TAB_ID,
+                }),
+            }),
+        );
+    });
+
+    it('does not publish duplicate PopupBlocked event during redirect race', () => {
+        const TAB_ID = 99;
+        let resolveRemove: () => void;
+        tabsRemoveSpy.mockImplementation(() => new Promise<void>((resolve) => {
+            resolveRemove = resolve;
+        }));
+
+        const data = {
+            ...getGetBlockingResponseParamsData(
+                ['||example.com^$popup'],
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            ),
+            tabId: TAB_ID,
+        };
+
+        RequestBlockingApi.getBlockingResponse(data);
+        expect(tabsRemoveSpy).toHaveBeenCalledTimes(1);
+        expect(defaultFilteringLog.publishEvent).toHaveBeenCalledTimes(1);
+
+        // Simulate a second onBeforeRequest arriving before tabs.remove resolves.
+        RequestBlockingApi.getBlockingResponse(data);
+        expect(tabsRemoveSpy).toHaveBeenCalledTimes(1);
+        expect(defaultFilteringLog.publishEvent).toHaveBeenCalledTimes(1);
+
+        resolveRemove!();
     });
 });

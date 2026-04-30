@@ -29,11 +29,10 @@ interface CssHitsCounterOptions {
 }
 
 /**
- * Class represents collecting css style hits process.
- *
- * During applying css styles to element we add special 'content:' attribute
- *  e.g.: ".selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}".
- * After the style is applied we parse this "content" attribute and call provided via constructor callback function.
+ * Collects CSS hits. Markers are injected by the cosmetic emitter as the
+ * `--adguard-hit` custom property (see `CosmeticApiCommon`); the reader
+ * probes each element's computed style and reports matches via the
+ * callback passed to the constructor.
  */
 export class CssHitsCounter {
     /**
@@ -47,11 +46,14 @@ export class CssHitsCounter {
     private static readonly CSS_HITS_BATCH_SIZE = 25;
 
     /**
-     * In order to find elements hidden by AdGuard we look for a `:content` pseudo-class
-     * with values starting with this prefix. Filter information will be
-     * encoded in this value as well.
+     * Marker value prefix; encodes as `adguard<id>%3B<idx>`.
      */
-    private static readonly CONTENT_ATTR_PREFIX = 'adguard';
+    private static readonly MARKER_PREFIX = 'adguard';
+
+    /**
+     * Custom property carrying the marker (see `CosmeticApiCommon`).
+     */
+    private static readonly MARKER_PROPERTY_NAME = '--adguard-hit';
 
     /**
      * We delay countAllCssHits function if it was called too frequently from mutationObserver.
@@ -119,21 +121,32 @@ export class CssHitsCounter {
     }
 
     /**
-     * Callback used to collect statistics of elements affected by extended css rules.
+     * ExtendedCss callback: reads the legacy `content:` marker from the
+     * parsed rule object, reports a hit, and clears the marker so it
+     * never reaches the DOM.
      *
-     * @param affectedEl Affected element.
+     * The ExtendedCss path was *not* affected by AG-265 — its rules are
+     * applied imperatively, never inserted as a stylesheet, so the
+     * `content:` marker cannot leak. Reading from the parsed object is
+     * required because ExtendedCss invokes this callback **before**
+     * `setStyleToElement` writes anything to the node, so computed
+     * style is not yet populated. After parsing, the marker declaration
+     * is blanked to prevent any visible flash on rules that do not also
+     * hide the element.
      *
-     * @returns Affected element.
+     * @param affectedEl Affected element from ExtendedCss.
+     *
+     * @returns The same affected element, unchanged.
      */
     public countAffectedByExtendedCss(affectedEl: IAffectedElement): IAffectedElement {
         if (affectedEl && affectedEl.rules && affectedEl.rules.length > 0) {
-            const result = [];
+            const result: ICountedElement[] = [];
 
             for (const rule of affectedEl.rules) {
                 if (rule.style && rule.style.content) {
                     const ruleInfo = ElementUtils.parseExtendedStyleInfo(
                         rule.style.content,
-                        CssHitsCounter.CONTENT_ATTR_PREFIX,
+                        CssHitsCounter.MARKER_PREFIX,
                     );
                     if (ruleInfo === null) {
                         continue;
@@ -151,7 +164,8 @@ export class CssHitsCounter {
                             element,
                         });
 
-                        // clear style content to avoid duplicate counting
+                        // clear style content to avoid duplicate counting and
+                        // to prevent the marker text from being painted.
                         rule.style.content = '';
                     }
                 }
@@ -212,8 +226,8 @@ export class CssHitsCounter {
     /**
      * Main calculation function.
      * 1. Selects sub collection from elements.
-     * 2. For each element from sub collection: retrieves calculated css 'content'
-     * attribute and if it contains 'adguard'
+     * 2. For each element from sub collection: retrieves the computed
+     * `--adguard-hit` custom property value and if it contains 'adguard'
      * marker then retrieves rule text and filter identifier.
      * 3. Starts next task with some delay.
      *
@@ -419,15 +433,19 @@ export class CssHitsCounter {
     }
 
     /**
-     * Function retrieves css hits data from element style content attribute contains data injected with AdGuard.
+     * Reads the `--adguard-hit` marker from an element's computed style (AG-265).
      *
-     * @param element Element to check.
+     * @param element Element to probe.
      *
-     * @returns Basic rule info (filterId and ruleIndex only) or null.
+     * @returns Rule info or `null` if no marker is present.
      */
     private static getCssHitData(element: Element): RuleInfoBasic | null {
-        const style = getComputedStyle(element);
-        return ElementUtils.parseInfo(style.content, CssHitsCounter.CONTENT_ATTR_PREFIX);
+        const value = getComputedStyle(element)
+            .getPropertyValue(CssHitsCounter.MARKER_PROPERTY_NAME);
+        if (!value) {
+            return null;
+        }
+        return ElementUtils.parseInfo(value, CssHitsCounter.MARKER_PREFIX);
     }
 
     /**

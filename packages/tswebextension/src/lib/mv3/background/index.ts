@@ -73,6 +73,8 @@ export {
     type ApplyPermissionsRuleEvent,
     type DeclarativeRuleEvent,
     type DeclarativeRuleInfo,
+    type PopupBlockedEvent,
+    type PopupBlockedEventData,
 } from '../../common/filtering-log';
 export { BACKGROUND_TAB_ID, LF } from '../../common/constants';
 export { ContentType } from '../../common/request-type';

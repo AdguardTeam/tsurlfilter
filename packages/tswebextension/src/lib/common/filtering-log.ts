@@ -27,10 +27,20 @@ export enum FilteringEventType {
     StealthAllowlistAction = 'stealthAllowlistAction', // TODO: Add in MV3
     JsInject = 'jsInject',
     CspReportBlocked = 'cspReportBlocked', // TODO: Add in MV3
+
     /**
      * Used only in unpacked MV3.
      */
     MatchedDeclarativeRule = 'matchedDeclarativeRule',
+
+    /**
+     * Dispatched when a tab is closed by a `$popup` modifier rule.
+     *
+     * Carries the real popup tabId so consumers can decide where to attach
+     * the entry (e.g. to the background page, since the original tab is
+     * being removed immediately after the event is published).
+     */
+    PopupBlocked = 'popupBlocked',
 }
 
 /**
@@ -175,6 +185,28 @@ export type ApplyBasicRuleEventData = {
 export type ApplyBasicRuleEvent = {
     type: FilteringEventType.ApplyBasicRule;
     data: ApplyBasicRuleEventData;
+};
+
+/**
+ * {@link PopupBlockedEvent} Event data.
+ *
+ * Shape mirrors {@link ApplyBasicRuleEventData} so existing UI rendering for
+ * blocked requests can be reused without changes.
+ */
+export type PopupBlockedEventData = ApplyBasicRuleEventData;
+
+/**
+ * Dispatched by `RequestBlockingApi.closeTab` (MV2 and MV3) when a tab is
+ * closed by a `$popup` modifier rule.
+ *
+ * The `tabId` in the data is the real popup tabId (the tab that is about to
+ * be removed). Consumers are expected to decide where to attach the resulting
+ * filtering log entry — typically the background page — since the original
+ * tab no longer exists by the time the user opens the filtering log.
+ */
+export type PopupBlockedEvent = {
+    type: FilteringEventType.PopupBlocked;
+    data: PopupBlockedEventData;
 };
 
 /**
@@ -483,6 +515,7 @@ export type FilteringLogEvent =
     | ReceiveResponseEvent
     | JsInjectEvent
     | CspReportBlockedEvent
+    | PopupBlockedEvent
     | DeclarativeRuleEvent;
 
 /**

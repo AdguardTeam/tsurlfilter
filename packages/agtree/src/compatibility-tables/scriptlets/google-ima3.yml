@@ -7,3 +7,9 @@ adg_os_any|adg_ext_any:
     - ubo-google-ima.js
     - google-ima.js
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#google-ima3
+
+ubo_any:
+  name: google-ima.js
+  aliases:
+    - google-ima3
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#google-imajs-
