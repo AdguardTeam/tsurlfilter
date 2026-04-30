@@ -5,19 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## Unreleased <!-- release/browser-extension-v5.5 -->
 
 ### Added
 
 - `$removeparam` support for SPA navigations via `history.pushState` /
-  `history.replaceState`. The content script fetches matching `$removeparam`
-  rule descriptors from the background once, then forwards them to a main-world
-  script that patches the History API and applies parameter removal locally,
-  no per-navigation round-trip is needed. Supports plain-value and regex
-  modifiers with allowlist / `$important` priority. On MV2 the main-world
-  function is injected inline; on MV3 it is registered through
-  `chrome.scripting.registerContentScripts` with `world: 'MAIN'`.
-  [CoreLibs#2071]
+  `history.replaceState`. Supports plain-value and regex
+  modifiers with allowlist / `$important` priority [CoreLibs#2071].
+- New `FilteringEventType.PopupBlocked` filtering log event (with matching
+  `PopupBlockedEvent` / `PopupBlockedEventData` types) dispatched when
+  `$popup` modifier rule is applied [AdguardBrowserExtension#1686].
 
 ### Fixed
 
@@ -26,8 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--adguard-hit` custom property (`@property`) instead of `content:`
   [AdguardBrowserExtension#1486].
 
-[AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
 [CoreLibs#2071]: https://github.com/AdguardTeam/CoreLibs/issues/2071
+[AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
+[AdguardBrowserExtension#1686]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
 
 ## [4.1.1] - 2026-04-24
 
