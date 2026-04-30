@@ -19,6 +19,7 @@
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
+import type { StructuralParser } from '../types';
 
 import { CM_KIND, CommentKind } from './types';
 
@@ -112,7 +113,7 @@ export function matchMetadataHeader(source: string, start: number): string | nul
 /**
  * Parser for metadata comment rules (`! Header: value`).
  */
-export class MetadataCommentParser {
+export class MetadataCommentParser implements StructuralParser {
     /**
      * Fills `ctx.data` with metadata structural indices.
      *

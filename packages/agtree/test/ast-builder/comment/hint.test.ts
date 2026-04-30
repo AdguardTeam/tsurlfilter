@@ -275,12 +275,6 @@ describe('CommentAstBuilder — hint comments', () => {
                 ],
             });
         });
-
-        test('includeRaws adds raws.text', () => {
-            const source = '!+ NOT_OPTIMIZED PLATFORM(windows)';
-            const result = parseCommentRule(source, { includeRaws: true });
-            expect(result.raws).toEqual({ text: source });
-        });
     });
 
     describe('edge cases', () => {

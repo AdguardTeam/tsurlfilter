@@ -12,11 +12,6 @@ export interface ParseOptions {
     isLocIncluded?: boolean;
 
     /**
-     * Whether to include raw text on the root node.
-     */
-    includeRaws?: boolean;
-
-    /**
      * Whether to parse uBlock Origin-specific rules (uBO modifiers in cosmetic rules).
      * Defaults to `true`.
      */
@@ -54,4 +49,16 @@ export interface ParseOptions {
      * Defaults to `false`.
      */
     parseCssDeclarationList?: boolean;
+
+    /**
+     * When `true`, cosmetic rules are returned as `InvalidRule` nodes.
+     * Defaults to `false`.
+     */
+    ignoreCosmetic?: boolean;
+
+    /**
+     * When `true`, network rules are returned as `InvalidRule` nodes.
+     * Defaults to `false`.
+     */
+    ignoreNetwork?: boolean;
 }

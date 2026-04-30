@@ -16,7 +16,7 @@ import {
     NR_MODIFIER_RECORDS_OFFSET,
     NR_PATTERN_END_OFFSET,
     NR_PATTERN_START_OFFSET,
-} from '../../parser/network/network-rule';
+} from '../../parser/network/constants';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ModifierListAstBuilder } from '../misc/modifier-list';
 import { ValueAstBuilder } from '../misc/value';
@@ -75,12 +75,6 @@ export class NetworkRuleAstBuilder {
             pattern,
             modifiers,
         };
-
-        if (options.includeRaws) {
-            result.raws = {
-                text: source,
-            };
-        }
 
         if (options.isLocIncluded) {
             result.start = 0;

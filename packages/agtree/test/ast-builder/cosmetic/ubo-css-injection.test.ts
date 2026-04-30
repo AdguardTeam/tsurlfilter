@@ -229,14 +229,10 @@ describe('UboCssInjectionAstBuilder — error cases', () => {
 });
 
 describe('UboCssInjectionAstBuilder — parseUboSpecificRules: false', () => {
-    test('with parseUboSpecificRules: false, :style() rule becomes ElementHidingRule', () => {
-        const ast = parser.parse('##body:style(padding: 0;)', { parseUboSpecificRules: false });
-
-        expect(ast.type).toBe('ElementHidingRule');
-        // Whole body is the selector
-        expect((ast as { body: { selectorList: { value: string } } }).body.selectorList.value).toBe(
-            'body:style(padding: 0;)',
-        );
+    test('with parseUboSpecificRules: false, :style() rule throws', () => {
+        expect(() => {
+            parser.parse('##body:style(padding: 0;)', { parseUboSpecificRules: false });
+        }).toThrow(/uBO-specific rules is disabled/);
     });
 });
 
@@ -286,39 +282,5 @@ describe('UboCssInjectionAstBuilder — CSS sub-parsing options', () => {
 
         expect(ast.body.selectorList.type).toBe('SelectorList');
         expect(ast.body.declarationList?.type).toBe('CssDeclarationList');
-    });
-
-    test('includeRaws with Raw fallback nodes sets .raw on selectorList and declarationList', () => {
-        const ast = parser.parse('##body:style(padding: 0;)', {
-            includeRaws: true,
-        }) as CssInjectionRule;
-
-        // Raw nodes should have .raw populated
-        expect(ast.body.selectorList.type).toBe('Raw');
-        expect((ast.body.selectorList as Raw).raw).toBe('body:style(padding: 0;)');
-        expect(ast.body.declarationList?.type).toBe('Raw');
-        expect((ast.body.declarationList as Raw).raw).toBe('padding: 0;');
-    });
-
-    test('includeRaws with parseCssSelectorList does not throw', () => {
-        const ast = parser.parse('##body:style(padding: 0;)', {
-            includeRaws: true,
-            parseCssSelectorList: true,
-        }) as CssInjectionRule;
-
-        expect(ast.body.selectorList.type).toBe('SelectorList');
-        // separator should still have .raw
-        expect(ast.separator.raw).toBe('##');
-    });
-
-    test('includeRaws with parseCssDeclarationList does not throw', () => {
-        const ast = parser.parse('##body:style(padding: 0;)', {
-            includeRaws: true,
-            parseCssDeclarationList: true,
-        }) as CssInjectionRule;
-
-        expect(ast.body.declarationList?.type).toBe('CssDeclarationList');
-        // separator should still have .raw
-        expect(ast.separator.raw).toBe('##');
     });
 });

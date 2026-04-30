@@ -25,6 +25,7 @@ import {
     DOMAIN_FLAG_EXCEPTION,
     DOMAIN_RECORD_STRIDE,
 } from '../cosmetic/constants';
+import type { StructuralParser } from '../types';
 
 /**
  * Preparsing for domain lists (comma or pipe separated).
@@ -32,7 +33,12 @@ import {
  * Scans token stream for separator tokens, handles regex domains with embedded
  * separators inside [], {}, (), and writes domain records to ctx.data.
  */
-export class DomainListParser {
+export class DomainListParser implements StructuralParser {
+    /**
+     * Minimum number of `ctx.data` slots for default capacity (64 modifiers, 128 domains).
+     */
+    public static readonly MIN_DATA_SLOTS = 7 + 64 * 7 + 128 * DOMAIN_RECORD_STRIDE;
+
     /**
      * Preparse a domain list from the token stream.
      *

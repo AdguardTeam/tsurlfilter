@@ -28,6 +28,7 @@ import {
     NO_VALUE,
     NR_MODIFIER_RECORDS_OFFSET,
 } from '../network/constants';
+import type { RecordParser } from '../types';
 
 import { ValueParser } from './value';
 
@@ -38,7 +39,12 @@ type ModifierBounds = { nameStart: number; nameEnd: number; valueStart: number; 
  *
  * Delegates value parsing to {@link ValueParser}.
  */
-export class ModifierParser {
+export class ModifierParser implements RecordParser {
+    /**
+     * Minimum number of `ctx.data` slots needed for a single modifier record.
+     */
+    public static readonly MIN_DATA_SLOTS = NR_MODIFIER_RECORDS_OFFSET + MODIFIER_RECORD_STRIDE;
+
     /**
      * Returns `true` if the modifier at `idx` is negated (`~`).
      *

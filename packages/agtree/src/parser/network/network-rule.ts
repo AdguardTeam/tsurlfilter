@@ -29,9 +29,9 @@ import type { ParserContext } from '../context';
 import { regionEquals, skipWs, tokenStart } from '../context';
 import { ModifierListParser } from '../misc/modifier-list';
 import { isPotentialNetModifier } from '../misc/shared';
+import type { StructuralParser } from '../types';
 
 import {
-    MODIFIER_RECORD_STRIDE,
     NO_VALUE,
     NR_FLAG_EXCEPTION,
     NR_FLAGS_OFFSET,
@@ -41,73 +41,11 @@ import {
     NR_PATTERN_END_OFFSET,
     NR_PATTERN_START_OFFSET,
     NR_SEPARATOR_INDEX_OFFSET,
-} from './constants';
-
-/**
- * Re-export constants for convenience.
- *
- * Constants are defined in `constants.ts` (not here) to avoid circular dependencies:
- * - `network-rule.ts` imports `ModifierListParser` from `misc/modifier-list.ts`
- * - `modifier.ts` needs `NR_MODIFIER_RECORDS_OFFSET` to calculate modifier offsets
- * - `network-rule.ts` needs `MODIFIER_RECORD_STRIDE` to allocate buffer capacity.
- *
- * Having constants in a separate dependency-free file allows all parsers to
- * safely import the shared buffer layout without creating cycles.
- */
-export {
-    NR_FLAGS_OFFSET,
-    NR_PATTERN_START_OFFSET,
-    NR_PATTERN_END_OFFSET,
-    NR_SEPARATOR_INDEX_OFFSET,
-    NR_MODIFIER_COUNT_OFFSET,
-    NR_MODIFIER_RECORDS_OFFSET,
-    NR_FLAG_EXCEPTION,
-    MODIFIER_RECORD_STRIDE,
-    MODIFIER_FIELD_NAME_START,
-    MODIFIER_FIELD_NAME_END,
-    MODIFIER_FIELD_FLAGS,
-    MODIFIER_FIELD_VALUE_START,
-    MODIFIER_FIELD_VALUE_END,
-    MODIFIER_FLAG_NEGATED,
-    NO_VALUE,
-    NR_MIN_DATA_SLOTS,
 } from './constants';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Result Type
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-/**
- * Reusable result structure for network rule preparsing.
- *
- * **IMPORTANT**: The `data` buffer is overwritten on each call.
- * Same reuse semantics as TokenizeResult.
- */
-export type NetworkRuleParseResult = {
-    /**
-     * Reusable buffer storing structural data (mutated in-place).
-     */
-    data: Int32Array;
-
-    /**
-     * 0 = success, 1 = overflow (too many modifiers for buffer capacity).
-     */
-    status: 0 | 1;
-};
-
-/**
- * Creates a pre-allocated NetworkRuleParseResult.
- *
- * @param modifierCapacity Maximum number of modifiers supported (default: 64).
- *
- * @returns Pre-allocated result structure ready for reuse.
- */
-export function createNetworkRuleParseResult(modifierCapacity = 64): NetworkRuleParseResult {
-    return {
-        data: new Int32Array(NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MODIFIER_RECORD_STRIDE),
-        status: 0,
-    };
-}
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Network Rule Parser
@@ -119,7 +57,7 @@ export function createNetworkRuleParseResult(modifierCapacity = 64): NetworkRule
  * Top of the parser chain. Delegates to
  * {@link ModifierListParser} → modifier parser → value parser.
  */
-export class NetworkRuleParser {
+export class NetworkRuleParser implements StructuralParser {
     /**
      * Minimum `ctx.data` slots required by this parser with the default
      * modifier capacity.

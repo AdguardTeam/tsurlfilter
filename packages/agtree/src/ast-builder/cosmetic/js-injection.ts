@@ -59,7 +59,7 @@ export class JsInjectionAstBuilder {
         maxMods: number,
         options: ParseOptions = {},
     ): JsInjectionRule {
-        const { isLocIncluded = false, includeRaws = false } = options;
+        const { isLocIncluded = false } = options;
 
         // Read flags
         const flags = data[dataOffset + CR_FLAGS_OFFSET];
@@ -107,10 +107,6 @@ export class JsInjectionAstBuilder {
         if (isLocIncluded) {
             separator.start = sepSourceStart;
             separator.end = sepSourceEnd;
-        }
-
-        if (includeRaws) {
-            separator.raw = source.slice(sepSourceStart, sepSourceEnd);
         }
 
         // Read body boundaries — body is raw JS, no sub-parsing

@@ -12,6 +12,7 @@ import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { regionEquals, tokenStart } from '../context';
 import { MODIFIER_FLAG_NEGATED, NO_VALUE } from '../network/constants';
+import type { CosmeticBodyParser } from '../types';
 
 import {
     CR_BODY_START_TI,
@@ -56,9 +57,19 @@ function skipPseudoName(types: Uint8Array, startTi: number, limit: number): numb
 }
 
 /**
+ * Options accepted by {@link ElementHidingParser.parse}.
+ */
+export interface ElementHidingParserOptions {
+    /**
+     * Whether to detect uBO modifiers in the rule body. Defaults to `true`.
+     */
+    parseUboSpecificRules?: boolean;
+}
+
+/**
  * Element hiding cosmetic rule parser.
  */
-export class ElementHidingParser {
+export class ElementHidingParser implements CosmeticBodyParser<ElementHidingParserOptions> {
     /**
      * Minimum `ctx.data` slots required by this parser with the default
      * uBO modifier capacity.
@@ -72,15 +83,16 @@ export class ElementHidingParser {
      *
      * @param ctx Parser context.
      * @param classified Packed classifier result (separator kind + index).
-     * @param parseUboSpecificRules Whether to detect uBO modifiers (default true).
+     * @param options Parser options.
      *
      * @throws {Error} If body is empty or structure is invalid.
      */
     public static parse(
         ctx: ParserContext,
         classified: number,
-        parseUboSpecificRules = true,
+        options?: ElementHidingParserOptions,
     ): void {
+        const parseUboSpecificRules = options?.parseUboSpecificRules ?? true;
         // Write common header (flags, sep, domains, bodyStart, bodyEnd, modCount, bodyStartTi)
         parseCommonCosmeticHeader(ctx, classified, 'Element hiding rule');
 

@@ -17,7 +17,7 @@ import {
     MODIFIER_RECORD_STRIDE,
     NO_VALUE,
     NR_MODIFIER_RECORDS_OFFSET,
-} from '../../parser/network/network-rule';
+} from '../../parser/network/constants';
 
 import { ValueAstBuilder } from './value';
 

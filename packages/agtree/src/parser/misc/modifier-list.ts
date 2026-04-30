@@ -9,7 +9,8 @@
 
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
-import { NR_MODIFIER_COUNT_OFFSET } from '../network/constants';
+import { MODIFIER_RECORD_STRIDE, NR_MODIFIER_COUNT_OFFSET, NR_MODIFIER_RECORDS_OFFSET } from '../network/constants';
+import type { StructuralParser } from '../types';
 
 import { ModifierParser } from './modifier';
 
@@ -18,7 +19,12 @@ import { ModifierParser } from './modifier';
  *
  * Delegates individual modifier parsing to {@link ModifierParser}.
  */
-export class ModifierListParser {
+export class ModifierListParser implements StructuralParser {
+    /**
+     * Minimum number of `ctx.data` slots for a modifier list with default capacity (64 modifiers).
+     */
+    public static readonly MIN_DATA_SLOTS = NR_MODIFIER_RECORDS_OFFSET + 64 * MODIFIER_RECORD_STRIDE;
+
     /**
      * Returns the number of modifiers in the parsed rule.
      *
@@ -70,10 +76,16 @@ export class ModifierListParser {
      *
      * @param ctx Parser context.
      * @param startTi Token index at the first modifier (after the `$` separator).
-     * @param recordsOffset Buffer offset where modifier records should be written (defaults to network offset).
-     * @param dataOffset Offset within ctx.data where header fields are written (defaults to 0).
+     * @param recordsOffset Buffer offset where modifier records should be written.
+     * @param headerOffset Offset within `ctx.data` where the modifier-list
+     *   header fields (count) are written.
      */
-    public static parse(ctx: ParserContext, startTi: number, recordsOffset?: number, dataOffset = 0): void {
+    public static parse(
+        ctx: ParserContext,
+        startTi: number,
+        recordsOffset: number,
+        headerOffset: number,
+    ): void {
         const { types, tokenCount, maxMods } = ctx;
         let currentTi = startTi;
         let modCount = 0;
@@ -100,6 +112,6 @@ export class ModifierListParser {
             ctx.status = 1;
         }
 
-        ctx.data[dataOffset + NR_MODIFIER_COUNT_OFFSET] = modCount;
+        ctx.data[headerOffset + NR_MODIFIER_COUNT_OFFSET] = modCount;
     }
 }

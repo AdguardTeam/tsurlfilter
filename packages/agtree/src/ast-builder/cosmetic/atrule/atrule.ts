@@ -207,6 +207,10 @@ export class CssAtRuleAstBuilder {
                         bodyDataOffset,
                         DEFAULT_MAX_DECLARATIONS,
                     );
+                    if (ctx.status === 1) {
+                        // eslint-disable-next-line max-len
+                        throw new Error('Parser data buffer overflow: declaration list too large for current capacity');
+                    }
 
                     const declarationList: CssDeclarationList = DeclarationListAstBuilder.parse(
                         source,

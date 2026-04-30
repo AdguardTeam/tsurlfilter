@@ -79,7 +79,7 @@ export class HtmlFilteringAstBuilder {
         maxMods: number,
         options: ParseOptions = {},
     ): HtmlFilteringRule {
-        const { isLocIncluded = false, includeRaws = false } = options;
+        const { isLocIncluded = false } = options;
 
         // Read flags
         const flags = data[dataOffset + CR_FLAGS_OFFSET];
@@ -134,10 +134,6 @@ export class HtmlFilteringAstBuilder {
         if (isLocIncluded) {
             separator.start = sepSourceStart;
             separator.end = sepSourceEnd;
-        }
-
-        if (includeRaws) {
-            separator.raw = source.slice(sepSourceStart, sepSourceEnd);
         }
 
         // Read body boundaries

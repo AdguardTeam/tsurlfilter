@@ -26,6 +26,7 @@ import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { TokenType } from '../../../tokenizer/token-types';
 import type { ParserContext } from '../../context';
 import { tokenStart } from '../../context';
+import type { StructuralParser } from '../../types';
 
 import {
     CR_CLOSE_BRACE_SOURCE_POS,
@@ -52,7 +53,7 @@ import {
  *
  * Writes all output to `ctx.data` with zero heap allocations.
  */
-export class CssRuleParser {
+export class CssRuleParser implements StructuralParser {
     /**
      * Minimum `ctx.data` capacity required for the default configuration.
      */

@@ -10,6 +10,7 @@
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
+import type { BufferedParser } from '../types';
 
 // ---------------------------------------------------------------------------
 // Buffer layout  (relative indices inside the supplied Int32Array)
@@ -89,7 +90,12 @@ export const PL_BUFFER_SIZE = PL_HEADER + PL_MAX_PARAMS * PL_STRIDE;
  * and passing the inner token range together with the corresponding source
  * bounds.
  */
-export class ParameterListParser {
+export class ParameterListParser implements BufferedParser {
+    /**
+     * Minimum number of `ctx.data` slots required by this parser.
+     */
+    public static readonly MIN_DATA_SLOTS = PL_BUFFER_SIZE;
+
     /**
      * Parses a token sequence `[startTi, endTi)` separated by the given token type
      * and writes results to `buf`.
@@ -306,25 +312,24 @@ export class ParameterListParser {
         endTi: number,
         separator: TokenType,
     ): boolean {
-        const { types, source } = ctx;
+        const { types } = ctx;
 
-        // Map separator token type to its character
-        let sepChar = ',';
+        // Map separator token type to its char code (zero allocation)
+        let sepCode = 0x2C; // ','
         if (separator === TokenType.Semicolon) {
-            sepChar = ';';
+            sepCode = 0x3B; // ';'
         } else if (separator === TokenType.Whitespace) {
-            sepChar = ' ';
+            sepCode = 0x20; // ' '
         }
 
         for (let ti = startTi; ti < endTi; ti += 1) {
             if (types[ti] === TokenType.Escaped) {
                 const start = tokenStart(ctx, ti);
                 const end = ctx.ends[ti];
-                const escapedText = source.slice(start, end);
-                // Check if the escaped token contains the separator character
-                // (e.g., "\," contains ",")
-                if (escapedText.includes(sepChar)) {
-                    return true;
+                for (let pos = start; pos < end; pos += 1) {
+                    if (ctx.source.charCodeAt(pos) === sepCode) {
+                        return true;
+                    }
                 }
             }
         }

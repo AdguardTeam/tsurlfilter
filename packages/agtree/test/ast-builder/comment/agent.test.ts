@@ -421,12 +421,6 @@ describe('CommentAstBuilder — agent comments', () => {
                 ],
             });
         });
-
-        test('includeRaws adds raws.text', () => {
-            const source = '[Adblock Plus 2.0; AdGuard]';
-            const result = parseCommentRule(source, { includeRaws: true });
-            expect(result.raws).toEqual({ text: source });
-        });
     });
 
     describe('error cases', () => {

@@ -27,6 +27,7 @@ import {
 } from '../context';
 import { LogicalExpressionParser } from '../misc/logical-expression';
 import { ParameterListParser } from '../misc/parameter-list';
+import type { StructuralParser } from '../types';
 
 import { CM_KIND, CommentKind } from './types';
 
@@ -67,7 +68,7 @@ const SAFARI_CB_AFFINITY_DIRECTIVE = 'safari_cb_affinity';
 /**
  * Parser for preprocessor comment rules (`!#directive[ params]`).
  */
-export class PreprocessorCommentParser {
+export class PreprocessorCommentParser implements StructuralParser {
     /**
      * Fills `ctx.data` with preprocessor structural indices.
      *

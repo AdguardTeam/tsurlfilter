@@ -24,6 +24,7 @@ import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { TokenType } from '../../../tokenizer/token-types';
 import type { ParserContext } from '../../context';
 import { tokenStart } from '../../context';
+import type { StructuralParser } from '../../types';
 
 import {
     AT_BLOCK_END_TI,
@@ -51,7 +52,7 @@ import {
  * Identifies the at-sign, name, prelude, and block boundaries of a CSS
  * at-rule. Writes all output to `ctx.data` with zero heap allocations.
  */
-export class CssAtRuleParser {
+export class CssAtRuleParser implements StructuralParser {
     /**
      * Minimum `ctx.data` capacity required for the default configuration.
      */

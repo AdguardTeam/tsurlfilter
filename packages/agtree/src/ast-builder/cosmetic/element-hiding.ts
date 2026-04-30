@@ -52,11 +52,6 @@ export interface ElementHidingParseOptions {
      * Whether to include location info (start/end) in AST nodes.
      */
     isLocIncluded?: boolean;
-
-    /**
-     * Whether to include raw text in AST nodes.
-     */
-    includeRaws?: boolean;
 }
 
 /**
@@ -81,7 +76,7 @@ export class ElementHidingAstBuilder {
         maxMods: number,
         options: ElementHidingParseOptions = {},
     ): ElementHidingRule {
-        const { isLocIncluded = false, includeRaws = false } = options;
+        const { isLocIncluded = false } = options;
 
         // Read flags
         const flags = data[dataOffset + CR_FLAGS_OFFSET];
@@ -115,10 +110,6 @@ export class ElementHidingAstBuilder {
         if (isLocIncluded) {
             separator.start = sepSourceStart;
             separator.end = sepSourceEnd;
-        }
-
-        if (includeRaws) {
-            separator.raw = source.slice(sepSourceStart, sepSourceEnd);
         }
 
         // Read body start and end (precomputed and trimmed by parser)
@@ -168,7 +159,7 @@ export class ElementHidingAstBuilder {
             selectorList.end = bodyEnd;
         }
 
-        if (includeRaws || hasUboMods) {
+        if (hasUboMods) {
             selectorList.raw = source.slice(bodyStart, bodyEnd);
         }
 

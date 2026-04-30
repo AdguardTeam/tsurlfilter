@@ -408,14 +408,5 @@ describe('parseNetworkRule', () => {
             expect(ast.pattern.start).toBeDefined();
             expect(ast.pattern.end).toBeDefined();
         });
-
-        test('builds AST with raws', () => {
-            const source = '||example.org^$script';
-            const d = parse(source);
-            const ast = NetworkRuleAstBuilder.parse(source, d, 0, { includeRaws: true });
-
-            expect(ast.raws).toBeDefined();
-            expect(ast.raws!.text).toBe(source);
-        });
     });
 });

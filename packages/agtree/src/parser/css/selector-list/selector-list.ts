@@ -23,6 +23,7 @@ import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { TokenType } from '../../../tokenizer/token-types';
 import type { ParserContext } from '../../context';
 import { tokenStart } from '../../context';
+import type { StructuralParser } from '../../types';
 
 import { handleAttributeSelector } from './attribute-selector';
 import { handleClassSelector } from './class-selector';
@@ -57,7 +58,7 @@ import { handleTypeSelector } from './type-selector';
  * as adblock tokens. Writes all output to `ctx.data` with zero heap
  * allocations.
  */
-export class SelectorListParser {
+export class SelectorListParser implements StructuralParser {
     /**
      * Minimum `ctx.data` capacity required for the default configuration.
      */

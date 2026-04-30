@@ -156,14 +156,12 @@ describe('RuleParser — uBO selector modifiers', () => {
     });
 
     describe('parseUboSpecificRules=false disables detection', () => {
-        test('modifiers remain in selector when disabled', () => {
-            const ast = parser.parse('##:matches-path(/page) .ad', {
-                parseUboSpecificRules: false,
-            }) as any;
-
-            expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.body.selectorList.value).toBe(':matches-path(/page) .ad');
-            expect(ast.modifiers).toBeUndefined();
+        test('throws when uBO modifier syntax is used with disabled option', () => {
+            expect(() => {
+                parser.parse('##:matches-path(/page) .ad', {
+                    parseUboSpecificRules: false,
+                });
+            }).toThrow(/uBO-specific rules is disabled/);
         });
     });
 
@@ -200,7 +198,7 @@ describe('RuleParser — uBO selector modifiers', () => {
             expect(rule.slice(sel.start, sel.end)).toBe(sel.raw);
         });
 
-        test('selectorList.raw is set even without includeRaws when uBO mods present', () => {
+        test('selectorList.raw is set when uBO mods present', () => {
             const ast = parser.parse('##.ad:matches-path(/page)') as any;
             const sel = ast.body.selectorList;
 

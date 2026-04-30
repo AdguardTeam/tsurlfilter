@@ -16,6 +16,7 @@ import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { skipWs, skipWsBack, tokenStart } from '../context';
 import { LE_BUFFER_SIZE } from '../misc/logical-expression';
+import type { StructuralParser } from '../types';
 
 import { AgentCommentParser } from './agent';
 import { HintCommentParser } from './hint';
@@ -33,7 +34,7 @@ export { CommentKind };
  * `CommentParser.parse(ctx)` to fill `ctx.data` with the comment's
  * structural indices. Read `ctx.data[0]` to get the `CommentKind`.
  */
-export class CommentParser {
+export class CommentParser implements StructuralParser {
     /**
      * Minimum `ctx.data` slots required by this classifier (and any comment
      * sub-parser it dispatches to) with the default capacity.
@@ -132,10 +133,12 @@ export class CommentParser {
      * Returns the `CommentKind` written into `ctx.data` by `parse`.
      *
      * @param ctx Parser context after `parse` has been called.
+     * @param dataOffset Offset within `ctx.data` where the comment record
+     *   was written. Defaults to `0`.
      *
      * @returns The comment kind.
      */
-    public static kind(ctx: ParserContext): CommentKind {
-        return ctx.data[0] as CommentKind;
+    public static kind(ctx: ParserContext, dataOffset = 0): CommentKind {
+        return ctx.data[dataOffset] as CommentKind;
     }
 }

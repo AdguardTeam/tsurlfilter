@@ -178,12 +178,6 @@ describe('CommentAstBuilder — preprocessor comments', () => {
                 },
             });
         });
-
-        test('includeRaws adds raws.text', () => {
-            const source = '!#safari_cb_affinity(content_blockers)';
-            const result = parseCommentRule(source, { includeRaws: true });
-            expect(result.raws).toEqual({ text: source });
-        });
     });
 
     describe('!#if — logical expression integration', () => {

@@ -13,6 +13,7 @@
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
+import type { StructuralParser } from '../types';
 
 import { CM_KIND, CommentKind } from './types';
 
@@ -44,7 +45,7 @@ export const AGENT_FIELD_END = 1;
 /**
  * Parser for adblock agent comment rules (`[Agent1; Agent2]`).
  */
-export class AgentCommentParser {
+export class AgentCommentParser implements StructuralParser {
     /**
      * Fills `ctx.data` with agent structural indices.
      *

@@ -88,10 +88,6 @@ export {
     CSS_INJ_HEADER_SIZE,
     CSS_INJ_MIN_DATA_SLOTS,
 } from './cosmetic/constants';
-export {
-    type NetworkRuleParseResult,
-    createNetworkRuleParseResult,
-} from './network/network-rule';
 
 export {
     cosmeticSepTokenCount,

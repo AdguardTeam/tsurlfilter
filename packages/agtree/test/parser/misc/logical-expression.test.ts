@@ -630,4 +630,14 @@ describe('LogicalExpressionParser', () => {
                 .toEqual('(((adguard)) && !adguard_ext_safari) && ((adguard_ext_android) || (adguard_ext_chromium && (!adguard_ext_firefox)))');
         });
     });
+
+    describe('overflow', () => {
+        test('throws when exceeding LE_MAX_NODES', () => {
+            // Build an expression with >32 nodes: each "a || b" uses 3 nodes.
+            // 17 variables joined by || produces 17 var-nodes + 16 or-nodes = 33 nodes.
+            const vars = Array.from({ length: 17 }, (_, i) => String.fromCharCode(97 + i));
+            const expr = vars.join(' || ');
+            expect(() => parse(expr)).toThrow(/maximum number of nodes/);
+        });
+    });
 });

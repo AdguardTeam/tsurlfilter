@@ -14,7 +14,7 @@ import {
     NO_VALUE,
     NR_MODIFIER_COUNT_OFFSET,
     NR_MODIFIER_RECORDS_OFFSET,
-} from '../../parser/network/network-rule';
+} from '../../parser/network/constants';
 
 import { ModifierAstBuilder } from './modifier';
 

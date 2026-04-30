@@ -20,7 +20,8 @@ import { consumeCssIdentRun, isCssIdentStart, isCssWhitespace } from '../../../c
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { TokenType } from '../../../tokenizer/token-types';
 import type { ParserContext } from '../../context';
-import { tokenStart } from '../../context';
+import { regionEqualsCI, tokenStart } from '../../context';
+import type { StructuralParser } from '../../types';
 
 import {
     DECL_FIELD_DECL_END,
@@ -43,7 +44,7 @@ import {
  * encoded as adblock tokens. Writes all output to `ctx.data` with zero
  * heap allocations.
  */
-export class DeclarationListParser {
+export class DeclarationListParser implements StructuralParser {
     /**
      * Minimum `ctx.data` capacity required for the default configuration.
      */
@@ -110,13 +111,11 @@ export class DeclarationListParser {
                 );
             }
 
-            // Capacity check
+            // Capacity check: signal status=1 and bail rather than throw.
             if (declCount >= maxDeclarations) {
-                throw new AdblockSyntaxError(
-                    `Too many declarations (max ${maxDeclarations})`,
-                    tokenStart(ctx, ti),
-                    ends[ti],
-                );
+                ctx.status = 1;
+                ctx.data[dataOffset] = declCount;
+                return;
             }
 
             // --- Consume property name ---
@@ -203,9 +202,10 @@ export class DeclarationListParser {
                 // Last token must be an ident (isCssIdentStart is sufficient as
                 // a leading check since we only care about the word 'important')
                 if (isCssIdentStart(types[lastTi])) {
-                    const identText = source.slice(tokenStart(ctx, lastTi), ends[lastTi]);
+                    const identStart = tokenStart(ctx, lastTi);
+                    const identEnd = ends[lastTi];
 
-                    if (identText.toLowerCase() === 'important') {
+                    if (regionEqualsCI(source, identStart, identEnd, 'important')) {
                         // Find previous non-ws token
                         let prevTi = lastTi - 1;
                         while (prevTi >= trimmedStartTi && isCssWhitespace(types[prevTi])) {

@@ -12,6 +12,8 @@ import {
     type ElementHidingRule,
     type EmptyRule,
     type HtmlFilteringRule,
+    type InvalidRule,
+    type InvalidRuleError,
     type JsInjectionRule,
     type NetworkRule,
     RuleCategory,
@@ -65,6 +67,7 @@ const DEFAULT_CHILDREN_CAPACITY = 64;
 // TODO: Use AnyRule from nodes.ts
 export type AnyParsedRule =
     | EmptyRule
+    | InvalidRule
     | AnyCommentRule
     | NetworkRule
     | ElementHidingRule
@@ -72,6 +75,46 @@ export type AnyParsedRule =
     | ScriptletInjectionRule
     | JsInjectionRule
     | HtmlFilteringRule;
+
+/**
+ * Creates an InvalidRule node for a rule that was intentionally skipped
+ * by the `ignoreCosmetic` or `ignoreNetwork` option.
+ *
+ * @param source Rule source text.
+ * @param message Error message describing why the rule was ignored.
+ * @param options Parse options (for location and raws).
+ * @param start Source start offset (default 0).
+ * @param end Source end offset (default source.length).
+ *
+ * @returns InvalidRule AST node.
+ */
+function createIgnoredRule(
+    source: string,
+    message: string,
+    options?: ParseOptions,
+    start = 0,
+    end = source.length,
+): InvalidRule {
+    const error: InvalidRuleError = {
+        type: 'InvalidRuleError',
+        name: 'RuleIgnoredError',
+        message,
+    };
+    const result: InvalidRule = {
+        type: 'InvalidRule',
+        category: RuleCategory.Invalid,
+        syntax: AdblockSyntax.Common,
+        raw: source.slice(start, end),
+        error,
+    };
+    if (options?.isLocIncluded) {
+        error.start = start;
+        error.end = end;
+        result.start = start;
+        result.end = end;
+    }
+    return result;
+}
 
 /**
  * High-level parser for adblock rules.
@@ -134,10 +177,6 @@ export class RuleParserPipeline {
                 syntax: AdblockSyntax.Common,
             };
 
-            if (options?.includeRaws) {
-                result.raws = { text: source };
-            }
-
             if (options?.isLocIncluded) {
                 result.start = 0;
                 result.end = source.length;
@@ -152,6 +191,21 @@ export class RuleParserPipeline {
         // eslint-disable-next-line max-len
         const kind = RuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options);
 
+        // Structural overflow signalled by the parser is unrecoverable at
+        // the AST-builder level (the `ctx.data` region was truncated).
+        // Surface it as an explicit error so callers fail loudly rather
+        // than silently producing a half-built AST.
+        if (this.ctx.status === 1) {
+            throw new Error('Parser data buffer overflow: rule too large for current capacity');
+        }
+
+        if (kind === RuleKind.Network && options?.ignoreNetwork) {
+            return createIgnoredRule(source, 'Network rules are ignored by the ignoreNetwork option', options);
+        }
+        if (kind === RuleKind.Cosmetic && options?.ignoreCosmetic) {
+            return createIgnoredRule(source, 'Cosmetic rules are ignored by the ignoreCosmetic option', options);
+        }
+
         switch (kind) {
             case RuleKind.Comment:
                 return CommentAstBuilder.parse(source, this.ctx.data, 0, options);
@@ -161,7 +215,7 @@ export class RuleParserPipeline {
 
             case RuleKind.Cosmetic: {
                 const { data, maxMods, maxDomains } = this.ctx;
-                return RuleParserPipeline.dispatchCosmetic(source, data, 0, maxMods, maxDomains, options);
+                return RuleParserPipeline.dispatchCosmetic(source, data, 0, maxMods, maxDomains, options, this.ctx);
             }
 
             default:
@@ -180,6 +234,8 @@ export class RuleParserPipeline {
      * @param maxMods Maximum modifier capacity used during parsing.
      * @param maxDomains Maximum domain capacity used during parsing.
      * @param options Parse options.
+     * @param ctx Optional parser context forwarded to builders that can
+     *   perform direct token-based sub-parsing without re-tokenization.
      *
      * @returns Parsed cosmetic rule AST node.
      */
@@ -191,6 +247,7 @@ export class RuleParserPipeline {
         maxMods: number,
         maxDomains: number,
         options?: ParseOptions,
+        ctx?: ParserContext,
     ): ElementHidingRule | CssInjectionRule | ScriptletInjectionRule | JsInjectionRule | HtmlFilteringRule {
         // Read flags set by the parser — all dispatch is integer-only
         // eslint-disable-next-line no-bitwise
@@ -210,7 +267,7 @@ export class RuleParserPipeline {
 
         // #$# / #@$# / #$?# / #@$?# — ADG CSS injection (body contains CSS block)
         if (sepKind === CR_SEP_KIND_ADG_CSS_INJECTION) {
-            return CssInjectionAstBuilder.parse(source, data, dataOffset, maxMods, maxDomains, options);
+            return CssInjectionAstBuilder.parse(source, data, dataOffset, maxMods, maxDomains, options, ctx);
         }
 
         // $$ / $@$ — ADG HTML filtering
@@ -284,8 +341,22 @@ export class RuleParserPipeline {
             options,
         );
 
+        // Surface structural overflow loudly (see RuleParserPipeline.parse).
+        if (ctx.status === 1) {
+            throw new Error('Parser data buffer overflow: rule too large for current capacity');
+        }
+
         const ruleStart = startTi > 0 ? ctx.ends[startTi - 1] : ctx.sourceStart;
         const ruleEnd = endTi > 0 ? ctx.ends[endTi - 1] : ctx.sourceStart;
+
+        if (kind === RuleKind.Network && options?.ignoreNetwork) {
+            // eslint-disable-next-line max-len
+            return createIgnoredRule(ctx.source, 'Network rules are ignored by the ignoreNetwork option', options, ruleStart, ruleEnd);
+        }
+        if (kind === RuleKind.Cosmetic && options?.ignoreCosmetic) {
+            // eslint-disable-next-line max-len
+            return createIgnoredRule(ctx.source, 'Cosmetic rules are ignored by the ignoreCosmetic option', options, ruleStart, ruleEnd);
+        }
 
         switch (kind) {
             case RuleKind.Comment: {
@@ -309,7 +380,7 @@ export class RuleParserPipeline {
             case RuleKind.Cosmetic: {
                 const { source: src, maxMods, maxDomains } = ctx;
                 // eslint-disable-next-line max-len
-                const result = RuleParserPipeline.dispatchCosmetic(src, ctx.data, dataOffset, maxMods, maxDomains, options);
+                const result = RuleParserPipeline.dispatchCosmetic(src, ctx.data, dataOffset, maxMods, maxDomains, options, ctx);
                 if (options?.isLocIncluded) {
                     result.start = ruleStart;
                     result.end = ruleEnd;

@@ -21,6 +21,7 @@ import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { IDENT_START_MASK, TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { skipWs, tokenStart } from '../context';
+import type { BufferedParser } from '../types';
 
 // Buffer layout constants
 
@@ -153,7 +154,12 @@ interface ParseCursor {
  * buffer with a flat node-tree, then use the static accessor methods to
  * inspect individual nodes without allocating any objects.
  */
-export class LogicalExpressionParser {
+export class LogicalExpressionParser implements BufferedParser {
+    /**
+     * Minimum number of buffer slots required for the logical expression node-tree.
+     */
+    public static readonly MIN_DATA_SLOTS = LE_BUFFER_SIZE;
+
     /**
      * Parses the logical expression in token sub-range `[startTi, endTi)` of
      * the parser context and writes a flat node-tree into `buf`.
@@ -304,6 +310,13 @@ export class LogicalExpressionParser {
         left: number,
         right: number,
     ): number {
+        if (cursor.count >= LE_MAX_NODES) {
+            throw new AdblockSyntaxError(
+                `Logical expression exceeds the maximum number of nodes (${LE_MAX_NODES})`,
+                srcStart,
+                srcEnd,
+            );
+        }
         const idx = cursor.count;
         const base = LE_HEADER + idx * LE_STRIDE;
         buf[base + LE_KIND] = kind;

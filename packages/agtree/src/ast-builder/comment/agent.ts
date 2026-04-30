@@ -147,10 +147,6 @@ export class AgentCommentAstBuilder {
             children,
         };
 
-        if (options.includeRaws) {
-            result.raws = { text: source };
-        }
-
         if (options.isLocIncluded) {
             result.start = 0;
             result.end = source.length;

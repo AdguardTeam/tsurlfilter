@@ -33,14 +33,6 @@ export interface SelectorListParseOptions {
      * Defaults to `true` to match the behaviour of the old SelectorListParser.
      */
     isLocIncluded?: boolean;
-
-    /**
-     * Whether to include raw source text on AST nodes.
-     *
-     * Defaults to `false`. Currently reserved for forward compatibility;
-     * the selector list builder does not yet populate `.raw` on child nodes.
-     */
-    includeRaws?: boolean;
 }
 
 /**

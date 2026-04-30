@@ -271,12 +271,6 @@ describe('CommentAstBuilder — metadata comments', () => {
                 },
             });
         });
-
-        test('includeRaws adds raws.text', () => {
-            const source = '! Title: FilterList Title';
-            const result = parseCommentRule(source, { includeRaws: true });
-            expect(result.raws).toEqual({ text: source });
-        });
     });
 
     describe('non-metadata falls back to SimpleCommentRule', () => {

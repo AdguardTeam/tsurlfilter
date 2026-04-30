@@ -22,7 +22,6 @@ export class RuleCategorizer {
             const node = CosmeticRuleParser.parse(rawRule, {
                 ...defaultParserOptions,
                 isLocIncluded: false,
-                includeRaws: false,
             });
 
             // If rule cannot be recognized as a cosmetic rule, return null.

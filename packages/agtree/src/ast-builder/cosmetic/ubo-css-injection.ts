@@ -121,7 +121,6 @@ export class UboCssInjectionAstBuilder {
     ): CssInjectionRule {
         const {
             isLocIncluded = false,
-            includeRaws = false,
             parseCssSelectorList = false,
             parseCssDeclarationList = false,
         } = options;
@@ -158,9 +157,6 @@ export class UboCssInjectionAstBuilder {
         if (isLocIncluded) {
             separator.start = sepSourceStart;
             separator.end = sepSourceEnd;
-        }
-        if (includeRaws) {
-            separator.raw = source.slice(sepSourceStart, sepSourceEnd);
         }
 
         // --- walk uBO modifier records, segregate by name ---
@@ -227,9 +223,6 @@ export class UboCssInjectionAstBuilder {
                         mediaQueryListNode.start = valueStart;
                         mediaQueryListNode.end = valueEnd;
                     }
-                    if (includeRaws) {
-                        mediaQueryListNode.raw = mqValue;
-                    }
                     break;
                 }
 
@@ -273,7 +266,6 @@ export class UboCssInjectionAstBuilder {
             bodyStart,
             bodyEnd,
             isLocIncluded,
-            includeRaws,
             source,
             parseCssSelectorList,
         );
@@ -285,7 +277,6 @@ export class UboCssInjectionAstBuilder {
                 styleValueStart,
                 styleValueEnd,
                 isLocIncluded,
-                includeRaws,
                 parseCssDeclarationList,
             );
         }
@@ -350,7 +341,6 @@ export class UboCssInjectionAstBuilder {
      * @param bodyStart Start offset of the body in the source.
      * @param bodyEnd End offset of the body in the source.
      * @param isLocIncluded Whether to include location info.
-     * @param includeRaws Whether to include raw text.
      * @param source Source string.
      * @param parseCss Whether to sub-parse into a `SelectorList` node.
      *
@@ -361,7 +351,6 @@ export class UboCssInjectionAstBuilder {
         bodyStart: number,
         bodyEnd: number,
         isLocIncluded: boolean,
-        includeRaws: boolean,
         source: string,
         parseCss: boolean,
     ): SelectorList | Raw {
@@ -373,9 +362,6 @@ export class UboCssInjectionAstBuilder {
             if (isLocIncluded) {
                 node.start = bodyStart;
                 node.end = bodyEnd;
-            }
-            if (includeRaws) {
-                node.raw = source.slice(bodyStart, bodyEnd);
             }
             return node;
         }
@@ -398,7 +384,7 @@ export class UboCssInjectionAstBuilder {
             DEFAULT_MAX_COMPLEX,
             bodyStart,
             bodyEnd,
-            { isLocIncluded, includeRaws },
+            { isLocIncluded },
         );
     }
 
@@ -414,7 +400,6 @@ export class UboCssInjectionAstBuilder {
      * @param valueStart Start offset of the declaration list value, or NO_VALUE.
      * @param valueEnd End offset of the declaration list value, or NO_VALUE.
      * @param isLocIncluded Whether to include location info.
-     * @param includeRaws Whether to include raw text.
      * @param parseCss Whether to sub-parse into a `CssDeclarationList` node.
      *
      * @returns Raw or CssDeclarationList node for the declaration list.
@@ -424,7 +409,6 @@ export class UboCssInjectionAstBuilder {
         valueStart: number,
         valueEnd: number,
         isLocIncluded: boolean,
-        includeRaws: boolean,
         parseCss: boolean,
     ): CssDeclarationList | Raw {
         if (valueStart === NO_VALUE || valueEnd === NO_VALUE) {
@@ -441,9 +425,6 @@ export class UboCssInjectionAstBuilder {
                 node.start = valueStart;
                 node.end = valueEnd;
             }
-            if (includeRaws) {
-                node.raw = source.slice(valueStart, valueEnd);
-            }
             return node;
         }
 
@@ -458,6 +439,9 @@ export class UboCssInjectionAstBuilder {
         initParserContext(ctx, declText, tokenizer);
 
         DeclarationListParser.parse(ctx, 0, ctx.tokenCount, 0, DEFAULT_MAX_DECLARATIONS);
+        if (ctx.status === 1) {
+            throw new Error('Parser data buffer overflow: declaration list too large for current capacity');
+        }
 
         return DeclarationListAstBuilder.parse(
             declText,
@@ -466,7 +450,7 @@ export class UboCssInjectionAstBuilder {
             DEFAULT_MAX_DECLARATIONS,
             valueStart,
             valueEnd,
-            { isLocIncluded, includeRaws },
+            { isLocIncluded },
         );
     }
 }

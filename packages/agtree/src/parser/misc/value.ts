@@ -10,6 +10,7 @@
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { regionEquals, skipUntil } from '../context';
+import type { CursorParser } from '../types';
 
 import { isPotentialNetModifier } from './shared';
 
@@ -18,7 +19,7 @@ import { isPotentialNetModifier } from './shared';
  *
  * Provides static methods for standard and replace modifier value parsing.
  */
-export class ValueParser {
+export class ValueParser implements CursorParser {
     /**
      * Standard modifier value parsing.
      * Advances to next comma, consuming commas that are NOT modifier separators.

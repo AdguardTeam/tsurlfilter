@@ -435,8 +435,10 @@ describe('DeclarationListParser', () => {
     });
 
     describe('Capacity overflow', () => {
-        test('throws when exceeding maxDeclarations', () => {
-            expect(() => p('a: 1; b: 2', 1)).toThrow(AdblockSyntaxError);
+        test('signals ctx.status=1 when exceeding maxDeclarations', () => {
+            ctx.status = 0;
+            p('a: 1; b: 2', 1);
+            expect(ctx.status).toBe(1);
         });
     });
 });

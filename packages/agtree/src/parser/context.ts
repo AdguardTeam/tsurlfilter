@@ -11,7 +11,12 @@
 import { TokenType } from '../tokenizer/token-types';
 import type { Tokenizer } from '../tokenizer/tokenizer';
 
-import { HF_MIN_DATA_SLOTS, SCRIPTLET_BODY_DATA_CAPACITY, UBO_MODIFIER_RECORD_STRIDE } from './cosmetic/constants';
+import {
+    CR_MODIFIER_RECORDS_OFFSET,
+    HF_MIN_DATA_SLOTS,
+    SCRIPTLET_BODY_DATA_CAPACITY,
+    UBO_MODIFIER_RECORD_STRIDE,
+} from './cosmetic/constants';
 import { MODIFIER_RECORD_STRIDE, NR_MODIFIER_RECORDS_OFFSET } from './network/constants';
 
 /**
@@ -102,7 +107,20 @@ export interface ParserContext {
     maxDomains: number;
 
     /**
-     * Parse status: 0 = success, 1 = overflow.
+     * Parse status code:
+     *
+     *   - `0` — Success. The structural data in `data` is complete.
+     *   - `1` — Recoverable overflow. A structural parser ran out of
+     *           buffer capacity (modifiers, domains, declarations, or
+     *           scriptlet parameters). The data already written remains
+     *           usable, but is truncated. Callers may either treat the
+     *           result as a parse error or re-parse with larger
+     *           capacities (`createParserContext(_, modifierCapacity,
+     *           domainCapacity, _)`).
+     *
+     * Parsers MUST NOT throw for overflow; they MUST set this field to
+     * `1` and return early. Lexical or semantic syntax errors are still
+     * reported via thrown {@link AdblockSyntaxError}s.
      */
     status: 0 | 1;
 }
@@ -261,6 +279,24 @@ export function domainRecordsOffset(ctx: ParserContext): number {
  */
 export function scriptletBodyDataOffset(ctx: ParserContext): number {
     return domainRecordsOffset(ctx) + ctx.maxDomains * DOMAIN_RECORD_STRIDE;
+}
+
+/**
+ * Computes the offset where the cosmetic body's selector-list region
+ * begins in `ctx.data`. This is the data offset passed to
+ * {@link SelectorListParser.parse} when invoked from a cosmetic body
+ * parser (e.g. ADG/uBO HTML filtering). It currently coincides with the
+ * cosmetic modifier-records region; the accessor exists so callers do
+ * not depend on that constant directly.
+ *
+ * @param _ctx Parser context (currently unused, reserved for future
+ *   layout changes).
+ *
+ * @returns Selector list data offset within `ctx.data`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function selectorListDataOffset(_ctx: ParserContext): number {
+    return CR_MODIFIER_RECORDS_OFFSET;
 }
 
 /**

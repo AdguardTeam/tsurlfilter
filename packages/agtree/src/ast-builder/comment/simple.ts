@@ -49,10 +49,6 @@ export class SimpleCommentAstBuilder {
             text,
         };
 
-        if (options.includeRaws) {
-            result.raws = { text: source };
-        }
-
         if (options.isLocIncluded) {
             result.start = 0;
             result.end = source.length;

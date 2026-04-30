@@ -7,6 +7,7 @@
  * and JS injection parsers. Zero heap allocations.
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
 import { RuleClassifier } from '../classifier';
 import type { ParserContext } from '../context';
@@ -119,7 +120,14 @@ export function parseCommonCosmeticHeader(
         const savedTokenCount = ctx.tokenCount;
         try {
             ctx.tokenCount = closeBracketTi;
-            ModifierListParser.parse(ctx, 2, CR_MODIFIER_RECORDS_OFFSET);
+            ModifierListParser.parse(ctx, 2, CR_MODIFIER_RECORDS_OFFSET, 0);
+            if (ctx.status === 1) {
+                throw new AdblockSyntaxError(
+                    'Too many modifiers in AdGuard modifier list',
+                    tokenStart(ctx, 1),
+                    ctx.ends[closeBracketTi],
+                );
+            }
             ctx.tokenCount = savedTokenCount;
         } catch (e) {
             ctx.tokenCount = savedTokenCount;

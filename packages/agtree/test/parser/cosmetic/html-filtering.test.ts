@@ -65,7 +65,7 @@ function parseUbo(source: string, parseUboSpecificRules = true): void {
     tokenizer.setSource(source);
     initParserContext(ctx, source, tokenizer);
     const classified = RuleClassifier.classify(ctx, 0, ctx.tokenCount);
-    UboHtmlFilteringParser.parse(ctx, classified, parseUboSpecificRules);
+    UboHtmlFilteringParser.parse(ctx, classified, { parseUboSpecificRules });
 }
 
 /**

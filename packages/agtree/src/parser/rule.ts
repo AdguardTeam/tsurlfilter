@@ -34,7 +34,6 @@ import {
     CR_SEP_KIND_ADG_JS,
     CR_SEP_KIND_ELEMENT_HIDING,
     CR_SEP_KIND_SHIFT,
-    CR_SEP_KIND_UBO_HTML_FILTERING,
     CR_UBO_MODS_OFFSET,
     UBO_MOD_FIELD_NAME_END,
     UBO_MOD_FIELD_NAME_START,
@@ -46,6 +45,8 @@ import { ElementHidingParser } from './cosmetic/element-hiding';
 import { AdgHtmlFilteringParser, UboHtmlFilteringParser } from './cosmetic/html-filtering';
 import { ScriptletBodyParser } from './cosmetic/scriptlet-body';
 import { NetworkRuleParser } from './network/network-rule';
+import { resolveRuleParserOptions, type RuleParserOptions } from './options';
+import type { RootParser } from './types';
 
 export { RuleKind } from './classifier';
 
@@ -162,23 +163,8 @@ function classifyCosmeticSepKind(types: Uint8Array, sepTi: number): number {
     return -1;
 }
 
-/**
- * Options for RuleParser.parse().
- */
-export interface RuleParserOptions {
-    /**
-     * Whether to detect uBO modifiers (default true).
-     */
-    parseUboSpecificRules?: boolean;
-    /**
-     * Whether to detect ABP-specific rules (default true).
-     */
-    parseAbpSpecificRules?: boolean;
-    /**
-     * Whether to invoke HTML filtering sub-parsers on HTML filtering bodies (default false).
-     */
-    parseHtmlFilteringRuleBodies?: boolean;
-}
+// Re-export for backward compatibility; canonical home is `./options`.
+export { type RuleParserOptions } from './options';
 
 /**
  * Top-level rule parser.
@@ -194,7 +180,7 @@ export interface RuleParserOptions {
  * // ctx.data is now populated; use `kind` to pick the correct AST parser.
  * ```
  */
-export class RuleParser {
+export class RuleParser implements RootParser<RuleParserOptions> {
     /**
      * Minimum `ctx.data` slots required by this parser with the default
      * capacity.  Equals the largest of all sub-parsers:
@@ -217,7 +203,7 @@ export class RuleParser {
      * @param startTi Inclusive start token index. Defaults to 0.
      * @param endTi Exclusive end token index. Defaults to ctx.tokenCount.
      * @param dataOffset Offset within ctx.data to write output. Defaults to 0.
-     * @param options Parsing options or a boolean (legacy: parseUboSpecificRules).
+     * @param options Parsing options object. See {@link RuleParserOptions}.
      *
      * @returns The {@link RuleKind} of the rule, so the caller can dispatch
      *   to the correct AST parser.
@@ -229,19 +215,15 @@ export class RuleParser {
         startTi = 0,
         endTi = ctx.tokenCount,
         dataOffset = 0,
-        options: RuleParserOptions | boolean = true,
+        options?: RuleParserOptions,
     ): RuleKind {
-        // Backward-compatible: boolean = parseUboSpecificRules
-        let parseUboSpecificRules = true;
-        let parseAbpSpecificRules = true;
-        let parseHtmlFilteringRuleBodies = false;
-        if (typeof options === 'boolean') {
-            parseUboSpecificRules = options;
-        } else {
-            parseUboSpecificRules = options.parseUboSpecificRules ?? true;
-            parseAbpSpecificRules = options.parseAbpSpecificRules ?? true;
-            parseHtmlFilteringRuleBodies = options.parseHtmlFilteringRuleBodies ?? false;
-        }
+        const {
+            parseUboSpecificRules,
+            parseAbpSpecificRules,
+            parseHtmlFilteringRuleBodies,
+            ignoreCosmetic,
+            ignoreNetwork,
+        } = resolveRuleParserOptions(options);
 
         const classified = RuleClassifier.classify(ctx, startTi, endTi);
         const kind = RuleClassifier.ruleKind(classified);
@@ -252,10 +234,18 @@ export class RuleParser {
                 return RuleKind.Comment;
 
             case RuleKind.Network:
+                if (ignoreNetwork) {
+                    ctx.data[dataOffset] = 0;
+                    return RuleKind.Network;
+                }
                 NetworkRuleParser.parse(ctx, startTi, endTi, dataOffset);
                 return RuleKind.Network;
 
             case RuleKind.Cosmetic: {
+                if (ignoreCosmetic) {
+                    ctx.data[dataOffset] = 0;
+                    return RuleKind.Cosmetic;
+                }
                 const sepTokenIndex = RuleClassifier.cosmeticSepIndex(classified);
                 const sepKind = classifyCosmeticSepKind(ctx.types, sepTokenIndex);
 
@@ -271,41 +261,24 @@ export class RuleParser {
 
                         if (peekTi < ctx.tokenCount
                             && ctx.types[peekTi] === TokenType.Caret) {
-                            // uBO HTML filtering rule
-                            if (parseHtmlFilteringRuleBodies) {
-                                // Dedicated parser handles header + ^ skip + responseheader detection
-                                UboHtmlFilteringParser.parse(ctx, classified, parseUboSpecificRules);
-                            } else {
-                                // Raw mode: populate header and adjust body start past ^
-                                if (!parseUboSpecificRules) {
-                                    parseCommonCosmeticHeader(ctx, classified, 'uBO HTML filtering rule');
-                                    const msg = 'Parsing uBO-specific rules is disabled,'
-                                        + " but the rule uses uBO HTML filtering syntax ('^')";
-                                    throw new AdblockSyntaxError(
-                                        msg,
-                                        tokenStart(ctx, peekTi),
-                                        ctx.ends[peekTi],
-                                    );
-                                }
-                                parseCommonCosmeticHeader(ctx, classified, 'uBO HTML filtering rule');
-                                // eslint-disable-next-line no-bitwise
-                                ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_UBO_HTML_FILTERING << CR_SEP_KIND_SHIFT;
-                                const newBodyTi = skipWs(ctx, peekTi + 1); // skip ^ then optional ws
-                                if (newBodyTi >= ctx.tokenCount) {
-                                    throw new AdblockSyntaxError(
-                                        'Empty uBO HTML filtering rule body after ^',
-                                        ctx.data[CR_BODY_START],
-                                        ctx.data[CR_BODY_END],
-                                    );
-                                }
-                                ctx.data[CR_BODY_START] = tokenStart(ctx, newBodyTi);
-                                ctx.data[CR_BODY_START_TI] = newBodyTi;
-                            }
+                            // uBO HTML filtering rule. The dedicated parser
+                            // handles header writing, the `^` skip, the
+                            // `responseheader(...)` detection, and the
+                            // disabled-uBO error symmetrically. When
+                            // `parseHtmlFilteringRuleBodies` is false we
+                            // pass `onlyHeader: true` so the body's CSS
+                            // selector list is left unparsed.
+                            UboHtmlFilteringParser.parse(ctx, classified, {
+                                parseUboSpecificRules,
+                                onlyHeader: !parseHtmlFilteringRuleBodies,
+                            });
                             return RuleKind.Cosmetic;
                         }
 
                         // No ^: normal element hiding / scriptlet flow
-                        ElementHidingParser.parse(ctx, classified, parseUboSpecificRules);
+                        // Always run modifier detection so we can throw
+                        // symmetrically when parseUboSpecificRules is disabled.
+                        ElementHidingParser.parse(ctx, classified, { parseUboSpecificRules: true });
 
                         // After ElementHidingParser.parse() the uBO modifier records
                         // (if any) live at CR_UBO_MODS_OFFSET with stride
@@ -314,6 +287,13 @@ export class RuleParser {
                         // builder dispatcher routes to UboCssInjectionAstBuilder.
                         // eslint-disable-next-line no-bitwise
                         const hasUboMods = (ctx.data[CR_FLAGS_OFFSET] & CR_FLAG_HAS_UBO_MODS) !== 0;
+                        if (hasUboMods && !parseUboSpecificRules) {
+                            throw new AdblockSyntaxError(
+                                'Parsing uBO-specific rules is disabled, but the rule uses uBO modifier syntax',
+                                ctx.data[CR_BODY_START],
+                                ctx.data[CR_BODY_END],
+                            );
+                        }
                         if (hasUboMods) {
                             const uboModCount = ctx.data[CR_MODIFIER_COUNT_OFFSET];
                             for (let i = 0; i < uboModCount; i += 1) {
@@ -335,13 +315,7 @@ export class RuleParser {
                         if (detectUboScriptletPrefix(ctx.source, ctx.data[CR_BODY_START])) {
                             // eslint-disable-next-line no-bitwise
                             ctx.data[CR_FLAGS_OFFSET] |= CR_FLAG_BODY_UBO_SCRIPTLET;
-                            ScriptletBodyParser.parseUbo(
-                                ctx,
-                                ctx.data[CR_BODY_START_TI],
-                                ctx.tokenCount,
-                                ctx.data[CR_BODY_START],
-                                ctx.data[CR_BODY_END],
-                            );
+                            ScriptletBodyParser.parse(ctx, classified);
                         }
                         return RuleKind.Cosmetic;
                     }
@@ -371,19 +345,15 @@ export class RuleParser {
                         // Throw an ABP-specific disablement error rather than a CSS-injection
                         // syntax error — the rule is a genuine ABP snippet, not malformed CSS.
                         if (!parseAbpSpecificRules) {
-                            throw new Error(
+                            throw new AdblockSyntaxError(
                                 'ABP-specific rules are disabled by the parseAbpSpecificRules option',
+                                ctx.data[CR_BODY_START],
+                                ctx.data[CR_BODY_END],
                             );
                         }
                         // eslint-disable-next-line no-bitwise
                         ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ABP_SNIPPET << CR_SEP_KIND_SHIFT;
-                        ScriptletBodyParser.parseAbp(
-                            ctx,
-                            bodyStartTi,
-                            ctx.tokenCount,
-                            ctx.data[CR_BODY_START],
-                            ctx.data[CR_BODY_END],
-                        );
+                        ScriptletBodyParser.parse(ctx, classified);
                         return RuleKind.Cosmetic;
                     }
 
@@ -409,13 +379,7 @@ export class RuleParser {
                         if (detectAdgScriptletPrefix(ctx.source, ctx.data[CR_BODY_START])) {
                             // eslint-disable-next-line no-bitwise
                             ctx.data[CR_FLAGS_OFFSET] |= CR_FLAG_BODY_ADG_SCRIPTLET;
-                            ScriptletBodyParser.parseAdg(
-                                ctx,
-                                ctx.data[CR_BODY_START_TI],
-                                ctx.tokenCount,
-                                ctx.data[CR_BODY_START],
-                                ctx.data[CR_BODY_END],
-                            );
+                            ScriptletBodyParser.parse(ctx, classified);
                         }
                         return RuleKind.Cosmetic;
                     }

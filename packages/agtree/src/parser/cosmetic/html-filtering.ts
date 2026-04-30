@@ -14,8 +14,9 @@ import { isCssWhitespace } from '../../css/tokenizer/css-token-utils';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
-import { regionEquals, tokenStart } from '../context';
+import { regionEquals, selectorListDataOffset, tokenStart } from '../context';
 import { SelectorListParser } from '../css/selector-list';
+import type { CosmeticBodyParser } from '../types';
 
 import {
     CR_BODY_END,
@@ -23,7 +24,6 @@ import {
     CR_BODY_START_TI,
     CR_FLAG_BODY_UBO_RESPONSEHEADER,
     CR_FLAGS_OFFSET,
-    CR_MODIFIER_RECORDS_OFFSET,
     CR_SEP_KIND_ADG_HTML_FILTERING,
     CR_SEP_KIND_SHIFT,
     CR_SEP_KIND_UBO_HTML_FILTERING,
@@ -39,12 +39,6 @@ import { parseCommonCosmeticHeader } from './cosmetic-common';
  * String constant for responseheader function name comparison.
  */
 const RESPONSEHEADER = 'responseheader';
-
-/**
- * Data offset where SelectorListParser writes its data.
- * Starts right after the cosmetic header.
- */
-const SL_DATA_OFFSET = CR_MODIFIER_RECORDS_OFFSET;
 
 /**
  * Skip whitespace and line-break tokens forward.
@@ -189,7 +183,7 @@ function tryParseResponseHeader(
  * Invokes `SelectorListParser` with `isAdg=true` to handle the `""`
  * escape convention in double-quoted attribute selector values.
  */
-export class AdgHtmlFilteringParser {
+export class AdgHtmlFilteringParser implements CosmeticBodyParser {
     /**
      * Minimum `ctx.data` slots required by this parser.
      */
@@ -210,7 +204,7 @@ export class AdgHtmlFilteringParser {
             ctx,
             bodyStartTi,
             ctx.tokenCount,
-            SL_DATA_OFFSET,
+            selectorListDataOffset(ctx),
             undefined,
             undefined,
             true, // isAdg
@@ -219,12 +213,32 @@ export class AdgHtmlFilteringParser {
 }
 
 /**
+ * Options accepted by {@link UboHtmlFilteringParser.parse}.
+ */
+export interface UboHtmlFilteringParserOptions {
+    /**
+     * Whether uBO-specific rules are allowed. When `false`, the parser
+     * throws on any rule that uses uBO HTML filtering syntax. Defaults to `true`.
+     */
+    parseUboSpecificRules?: boolean;
+
+    /**
+     * When `true`, only the cosmetic header is written and the parser
+     * exits after marking the sub-kind and advancing past the leading
+     * `^` (and `responseheader(...)` if present). The CSS selector list
+     * is NOT parsed. Used by {@link RuleParser} when
+     * `parseHtmlFilteringRuleBodies` is `false`. Defaults to `false`.
+     */
+    onlyHeader?: boolean;
+}
+
+/**
  * Parser for uBO HTML filtering rules (## / #@# with ^ body prefix).
  *
  * Skips past the leading `^`, then either detects `responseheader(...)`
  * or falls through to `SelectorListParser.parse()` for CSS selectors.
  */
-export class UboHtmlFilteringParser {
+export class UboHtmlFilteringParser implements CosmeticBodyParser<UboHtmlFilteringParserOptions> {
     /**
      * Minimum `ctx.data` slots required by this parser.
      */
@@ -235,13 +249,16 @@ export class UboHtmlFilteringParser {
      *
      * @param ctx Parser context.
      * @param classified Packed classifier result.
-     * @param parseUboSpecificRules Whether uBO-specific rules are allowed.
+     * @param options Parser options.
      */
     public static parse(
         ctx: ParserContext,
         classified: number,
-        parseUboSpecificRules = true,
+        options?: UboHtmlFilteringParserOptions,
     ): void {
+        const parseUboSpecificRules = options?.parseUboSpecificRules ?? true;
+        const onlyHeader = options?.onlyHeader ?? false;
+
         parseCommonCosmeticHeader(ctx, classified, 'uBO HTML filtering rule');
 
         const { types, ends } = ctx;
@@ -288,12 +305,16 @@ export class UboHtmlFilteringParser {
             return;
         }
 
+        if (onlyHeader) {
+            return;
+        }
+
         // Regular uBO HTML filtering: parse body as CSS selector list
         SelectorListParser.parse(
             ctx,
             bodyStartTi,
             ctx.tokenCount,
-            SL_DATA_OFFSET,
+            selectorListDataOffset(ctx),
         );
     }
 }

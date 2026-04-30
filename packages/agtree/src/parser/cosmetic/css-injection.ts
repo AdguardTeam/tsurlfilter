@@ -21,6 +21,7 @@ import {
     skipWs,
     tokenStart,
 } from '../context';
+import type { StructuralParser } from '../types';
 
 import {
     CSS_INJ_CLOSE_BRACE_TI,
@@ -291,7 +292,7 @@ function matchAtMedia(ctx: ParserContext, ti: number, endTi: number): number {
  * allows the caller to fall back to ABP snippet parsing **without a
  * separate disambiguation scan** (no double work).
  */
-export class AdgCssInjectionParser {
+export class AdgCssInjectionParser implements StructuralParser {
     /**
      * Minimum ctx.data slots required.
      */

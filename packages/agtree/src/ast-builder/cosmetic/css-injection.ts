@@ -7,16 +7,18 @@
  * for ADG CSS injection rules (#$#, #@$#, #$?#, #@$?#).
  */
 
-import { CosmeticRuleType, RuleCategory } from '../../nodes-new';
 import type {
     CssInjectionRule,
     CssInjectionRuleBody,
     DomainList,
     ModifierList,
     Raw,
+    SelectorList,
     Value,
 } from '../../nodes-new';
+import { CosmeticRuleType, RuleCategory } from '../../nodes-new';
 import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
+import type { ParserContext } from '../../parser/context';
 import {
     CR_BODY_END,
     CR_BODY_START,
@@ -29,22 +31,33 @@ import {
     CR_SEP_LEN_MASK,
     CR_SEP_LEN_SHIFT,
     CR_SEP_SOURCE_START,
+    CSS_INJ_DL_END_TI,
     CSS_INJ_DL_SOURCE_END,
     CSS_INJ_DL_SOURCE_START,
+    CSS_INJ_DL_START_TI,
     CSS_INJ_FLAG_HAS_MEDIA,
     CSS_INJ_FLAG_REMOVE,
     CSS_INJ_FLAGS,
     CSS_INJ_MEDIA_QUERY_END,
     CSS_INJ_MEDIA_QUERY_START,
+    CSS_INJ_SL_END_TI,
     CSS_INJ_SL_SOURCE_END,
     CSS_INJ_SL_SOURCE_START,
+    CSS_INJ_SL_START_TI,
     DOMAIN_RECORD_STRIDE,
 } from '../../parser/cosmetic/constants';
+import { DeclarationListParser } from '../../parser/css/declaration-list';
+import { DEFAULT_MAX_DECLARATIONS } from '../../parser/css/declaration-list/constants';
+import { SelectorListParser } from '../../parser/css/selector-list';
+import { DEFAULT_MAX_COMPLEX } from '../../parser/css/selector-list/constants';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { COMMA } from '../../utils/constants';
 import { DomainListAstBuilder } from '../misc/domain-list';
 import { ModifierListAstBuilder } from '../misc/modifier-list';
 import { type ParseOptions } from '../options';
+
+import { DeclarationListAstBuilder } from './declaration-list/declaration-list';
+import { SelectorListAstBuilder } from './selector-list/selector-list';
 
 /**
  * CSS injection cosmetic rule AST builder.
@@ -63,6 +76,10 @@ export class CssInjectionAstBuilder {
      * @param maxMods Maximum number of modifiers (for computing domain offset).
      * @param maxDomains Maximum number of domains (for computing CSS injection data offset).
      * @param options Parse options.
+     * @param ctx Optional parser context. When provided together with
+     *   `parseCssSelectorList` or `parseCssDeclarationList` options, the
+     *   corresponding CSS sub-parsers are invoked directly on the existing
+     *   token arrays — no re-tokenization.
      *
      * @returns CssInjectionRule AST node.
      */
@@ -73,8 +90,13 @@ export class CssInjectionAstBuilder {
         maxMods: number,
         maxDomains: number,
         options: ParseOptions = {},
+        ctx?: ParserContext,
     ): CssInjectionRule {
-        const { isLocIncluded = false, includeRaws = false } = options;
+        const {
+            isLocIncluded = false,
+            parseCssSelectorList = false,
+            parseCssDeclarationList = false,
+        } = options;
 
         // Read flags
         const flags = data[dataOffset + CR_FLAGS_OFFSET];
@@ -124,10 +146,6 @@ export class CssInjectionAstBuilder {
             separator.end = sepSourceEnd;
         }
 
-        if (includeRaws) {
-            separator.raw = source.slice(sepSourceStart, sepSourceEnd);
-        }
-
         // Read body boundaries (precomputed and trimmed by cosmetic header parser)
         const bodyStart = data[dataOffset + CR_BODY_START];
         const bodyEnd = data[dataOffset + CR_BODY_END];
@@ -139,15 +157,38 @@ export class CssInjectionAstBuilder {
         const hasMedia = (injFlags & CSS_INJ_FLAG_HAS_MEDIA) !== 0;
         const hasRemove = (injFlags & CSS_INJ_FLAG_REMOVE) !== 0;
 
-        // Build body node — selectorList is always present as Raw
+        // Read ALL CSS injection header values into locals BEFORE any sub-parser
+        // call that may overwrite ctx.data (sub-parsers write from offset 0).
+        const slSourceStart = data[injBase + CSS_INJ_SL_SOURCE_START];
+        const slSourceEnd = data[injBase + CSS_INJ_SL_SOURCE_END];
+        const slStartTi = data[injBase + CSS_INJ_SL_START_TI];
+        const slEndTi = data[injBase + CSS_INJ_SL_END_TI];
+        const dlSourceStart = data[injBase + CSS_INJ_DL_SOURCE_START];
+        const dlSourceEnd = data[injBase + CSS_INJ_DL_SOURCE_END];
+        const dlStartTi = data[injBase + CSS_INJ_DL_START_TI];
+        const dlEndTi = data[injBase + CSS_INJ_DL_END_TI];
+
+        // Build selectorList — sub-parse when requested and ctx is available.
+        let selectorList: SelectorList | Raw;
+        if (parseCssSelectorList && ctx) {
+            SelectorListParser.parse(ctx, slStartTi, slEndTi, 0, DEFAULT_MAX_COMPLEX);
+            selectorList = SelectorListAstBuilder.parse(
+                source,
+                ctx.data,
+                0,
+                DEFAULT_MAX_COMPLEX,
+                slSourceStart,
+                slSourceEnd,
+                { isLocIncluded },
+            );
+        } else {
+            selectorList = CssInjectionAstBuilder.buildRaw(source, slSourceStart, slSourceEnd, isLocIncluded);
+        }
+
+        // Build body node
         const body: CssInjectionRuleBody = {
             type: 'CssInjectionRuleBody',
-            selectorList: CssInjectionAstBuilder.buildRaw(
-                source,
-                data[injBase + CSS_INJ_SL_SOURCE_START],
-                data[injBase + CSS_INJ_SL_SOURCE_END],
-                isLocIncluded,
-            ),
+            selectorList,
         };
 
         // Media query list — kept as Value (not Raw) because there is no
@@ -168,23 +209,32 @@ export class CssInjectionAstBuilder {
                 mediaQueryList.end = mqEnd;
             }
 
-            if (includeRaws) {
-                mediaQueryList.raw = source.slice(mqStart, mqEnd);
-            }
-
             body.mediaQueryList = mediaQueryList;
         }
 
-        // Declaration list (Raw) or remove flag — mutually exclusive
+        // Declaration list or remove flag — mutually exclusive.
+        // When remove: true, skip declaration parsing entirely.
         if (hasRemove) {
             body.remove = true;
-        } else {
-            body.declarationList = CssInjectionAstBuilder.buildRaw(
+        } else if (parseCssDeclarationList && ctx) {
+            // Sub-parse via the CSS pipeline using the existing token arrays.
+            // ctx.data was potentially overwritten by SelectorListParser above,
+            // but dlStartTi/dlEndTi/dlSourceStart/dlSourceEnd are already in locals.
+            DeclarationListParser.parse(ctx, dlStartTi, dlEndTi, 0, DEFAULT_MAX_DECLARATIONS);
+            if (ctx.status === 1) {
+                throw new Error('Parser data buffer overflow: declaration list too large for current capacity');
+            }
+            body.declarationList = DeclarationListAstBuilder.parse(
                 source,
-                data[injBase + CSS_INJ_DL_SOURCE_START],
-                data[injBase + CSS_INJ_DL_SOURCE_END],
-                isLocIncluded,
+                ctx.data,
+                0,
+                DEFAULT_MAX_DECLARATIONS,
+                dlSourceStart,
+                dlSourceEnd,
+                { isLocIncluded },
             );
+        } else {
+            body.declarationList = CssInjectionAstBuilder.buildRaw(source, dlSourceStart, dlSourceEnd, isLocIncluded);
         }
 
         if (isLocIncluded) {

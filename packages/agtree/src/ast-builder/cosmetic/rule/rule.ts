@@ -140,6 +140,9 @@ export class CssRuleAstBuilder {
                 dlDataOffset,
                 maxDeclarations,
             );
+            if (ctx.status === 1) {
+                throw new Error('Parser data buffer overflow: declaration list too large for current capacity');
+            }
 
             // Pass shifted boundary so CssDeclarationList.start/end are absolute.
             const declarationList: CssDeclarationList = DeclarationListAstBuilder.parse(

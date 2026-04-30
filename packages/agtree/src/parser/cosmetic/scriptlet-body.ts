@@ -41,8 +41,20 @@ import {
     tokenStart,
 } from '../context';
 import { NO_VALUE } from '../network/constants';
+import type { CosmeticBodyParser } from '../types';
 
-import { SCRIPTLET_BODY_DATA_CAPACITY } from './constants';
+import {
+    CR_BODY_END,
+    CR_BODY_START,
+    CR_BODY_START_TI,
+    CR_FLAG_BODY_ADG_SCRIPTLET,
+    CR_FLAG_BODY_UBO_SCRIPTLET,
+    CR_FLAGS_OFFSET,
+    CR_SEP_KIND_ABP_SNIPPET,
+    CR_SEP_KIND_MASK,
+    CR_SEP_KIND_SHIFT,
+    SCRIPTLET_BODY_DATA_CAPACITY,
+} from './constants';
 
 // ---------------------------------------------------------------------------
 // Error message constants (same as the AST parser used to emit)
@@ -77,7 +89,53 @@ const UBO_ERRORS = {
  * using token-type checks on the tokenizer output. Writes results to ctx.data
  * at the scriptlet body data offset (after domain records).
  */
-export class ScriptletBodyParser {
+export class ScriptletBodyParser implements CosmeticBodyParser {
+    /**
+     * Dispatches to the correct scriptlet flavor parser based on the
+     * cosmetic flags already written into `ctx.data` by the rule
+     * dispatcher. The dispatcher MUST set one of:
+     *
+     *   - `CR_FLAG_BODY_ADG_SCRIPTLET`
+     *   - `CR_FLAG_BODY_UBO_SCRIPTLET`
+     *   - `CR_SEP_KIND_ABP_SNIPPET` packed into the sep-kind bits.
+     *
+     * Before invoking this method. Body bounds are read from `ctx.data`..
+     *
+     * @param ctx Parser context.
+     * @param _classified Packed classifier result. Currently unused; kept
+     *   for {@link CosmeticBodyParser} contract conformance.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-bitwise
+    public static parse(ctx: ParserContext, _classified: number): void {
+        const flags = ctx.data[CR_FLAGS_OFFSET];
+        // eslint-disable-next-line no-bitwise
+        const sepKind = (flags >>> CR_SEP_KIND_SHIFT) & CR_SEP_KIND_MASK;
+        const bodyStartTi = ctx.data[CR_BODY_START_TI];
+        const bodyStart = ctx.data[CR_BODY_START];
+        const bodyEnd = ctx.data[CR_BODY_END];
+        const bodyEndTi = ctx.tokenCount;
+
+        // eslint-disable-next-line no-bitwise
+        if ((flags & CR_FLAG_BODY_ADG_SCRIPTLET) !== 0) {
+            ScriptletBodyParser.parseAdg(ctx, bodyStartTi, bodyEndTi, bodyStart, bodyEnd);
+            return;
+        }
+        // eslint-disable-next-line no-bitwise
+        if ((flags & CR_FLAG_BODY_UBO_SCRIPTLET) !== 0) {
+            ScriptletBodyParser.parseUbo(ctx, bodyStartTi, bodyEndTi, bodyStart, bodyEnd);
+            return;
+        }
+        if (sepKind === CR_SEP_KIND_ABP_SNIPPET) {
+            ScriptletBodyParser.parseAbp(ctx, bodyStartTi, bodyEndTi, bodyStart, bodyEnd);
+            return;
+        }
+        throw new AdblockSyntaxError(
+            'ScriptletBodyParser.parse: no scriptlet flavor flag set on ctx.data[CR_FLAGS_OFFSET]',
+            bodyStart,
+            bodyEnd,
+        );
+    }
+
     /**
      * Preparse an ADG scriptlet body: `//scriptlet('name', 'arg0', ...)`.
      *
@@ -87,7 +145,7 @@ export class ScriptletBodyParser {
      * @param bodyStart Source offset where body starts.
      * @param bodyEnd Source offset where body ends.
      */
-    public static parseAdg(
+    private static parseAdg(
         ctx: ParserContext,
         bodyStartTi: number,
         bodyEndTi: number,
@@ -220,11 +278,10 @@ export class ScriptletBodyParser {
 
                 // Write param boundary (including quotes)
                 if (di + 1 >= limit) {
-                    throw new AdblockSyntaxError(
-                        'Scriptlet body data buffer overflow: too many parameters',
-                        quoteStart,
-                        bodyEnd,
-                    );
+                    // Overflow: signal status=1 and bail without throwing.
+                    data[paramCountSlot] = paramCount;
+                    ctx.status = 1;
+                    return;
                 }
                 data[di] = quoteStart;
                 data[di + 1] = ends[closeQuoteTi];
@@ -257,7 +314,7 @@ export class ScriptletBodyParser {
      * @param bodyStart Source offset where body starts.
      * @param bodyEnd Source offset where body ends.
      */
-    public static parseUbo(
+    private static parseUbo(
         ctx: ParserContext,
         bodyStartTi: number,
         bodyEndTi: number,
@@ -480,7 +537,10 @@ export class ScriptletBodyParser {
             }
 
             if (di + 1 >= limit) {
-                throw new RangeError('Scriptlet body data buffer overflow: too many parameters');
+                // Overflow inside parseUboParamListTokens: signal status=1 and bail.
+                data[paramCountSlot] = paramCount;
+                ctx.status = 1;
+                return di;
             }
             if (paramStartOffset < paramEndOffset) {
                 data[di] = paramStartOffset;
@@ -495,7 +555,9 @@ export class ScriptletBodyParser {
 
         if (extraNull) {
             if (di + 1 >= limit) {
-                throw new RangeError('Scriptlet body data buffer overflow: too many parameters');
+                data[paramCountSlot] = paramCount;
+                ctx.status = 1;
+                return di;
             }
             data[di] = NO_VALUE;
             data[di + 1] = NO_VALUE;
@@ -516,7 +578,7 @@ export class ScriptletBodyParser {
      * @param bodyStart Source offset where body starts.
      * @param bodyEnd Source offset where body ends.
      */
-    public static parseAbp(
+    private static parseAbp(
         ctx: ParserContext,
         bodyStartTi: number,
         bodyEndTi: number,
@@ -692,7 +754,10 @@ export class ScriptletBodyParser {
             const paramEndOffset = trimEndTi >= paramStartTi ? ends[trimEndTi] : paramStartOffset;
 
             if (di + 1 >= limit) {
-                throw new RangeError('Scriptlet body data buffer overflow: too many parameters');
+                // Overflow inside parseAbpParamListTokens: signal status=1 and bail.
+                data[paramCountSlot] = paramCount;
+                ctx.status = 1;
+                return di;
             }
             if (paramStartOffset < paramEndOffset) {
                 data[di] = paramStartOffset;
@@ -710,7 +775,9 @@ export class ScriptletBodyParser {
         // Trailing space → extra null
         if (endTi > startTi && types[endTi - 1] === TokenType.Whitespace) {
             if (di + 1 >= limit) {
-                throw new RangeError('Scriptlet body data buffer overflow: too many parameters');
+                data[paramCountSlot] = paramCount;
+                ctx.status = 1;
+                return di;
             }
             data[di] = NO_VALUE;
             data[di + 1] = NO_VALUE;

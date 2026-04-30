@@ -478,7 +478,7 @@ describe('ScriptletBodyParser — buffer overflow protection', () => {
 
         test('64 params — exceeds capacity, throws', () => {
             expect(() => parser.parse(buildAdgRule(64))).toThrow(
-                /buffer overflow/i,
+                /buffer overflow|too large for current capacity/i,
             );
         });
     });
@@ -490,7 +490,7 @@ describe('ScriptletBodyParser — buffer overflow protection', () => {
 
         test('64 params — exceeds capacity, throws', () => {
             expect(() => parser.parse(buildUboRule(64))).toThrow(
-                /buffer overflow/i,
+                /buffer overflow|too large for current capacity/i,
             );
         });
     });
@@ -502,7 +502,7 @@ describe('ScriptletBodyParser — buffer overflow protection', () => {
 
         test('64 space-separated tokens — exceeds capacity, throws', () => {
             expect(() => parser.parse(buildAbpRule(64))).toThrow(
-                /buffer overflow/i,
+                /buffer overflow|too large for current capacity/i,
             );
         });
     });
@@ -512,7 +512,7 @@ describe('ScriptletBodyParser — buffer overflow protection', () => {
         test('5 calls with 14 params each — exceeds capacity, throws', () => {
             const call = Array.from({ length: 14 }, (_, i) => `p${i}`).join(' ');
             const rule = `example.com#$#${Array(5).fill(call).join('; ')}`;
-            expect(() => parser.parse(rule)).toThrow(/buffer overflow/i);
+            expect(() => parser.parse(rule)).toThrow(/buffer overflow|too large for current capacity/i);
         });
     });
 });

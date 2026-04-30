@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
-import type { CssInjectionRule } from '../../../src/nodes-new';
+import type { CssDeclarationList, CssInjectionRule, SelectorList } from '../../../src/nodes-new';
 
 const parser = new RuleParserPipeline();
 
@@ -227,20 +227,6 @@ describe('RuleParser — ADG CSS injection rules', () => {
         });
     });
 
-    describe('includeRaws', () => {
-        test('separator gets .raw', () => {
-            const ast = parser.parse('#$#body { padding: 0; }', { includeRaws: true }) as CssInjectionRule;
-            expect(ast.separator.raw).toBe('#$#');
-        });
-
-        test('mediaQueryList gets .raw', () => {
-            const rule = '#$#@media (min-height: 1024px) { body { padding: 0; } }';
-            const ast = parser.parse(rule, { includeRaws: true }) as CssInjectionRule;
-            expect(ast.body.mediaQueryList).toBeDefined();
-            expect(ast.body.mediaQueryList!.raw).toBe('(min-height: 1024px)');
-        });
-    });
-
     describe('dispatch correctness', () => {
         test('#$# with braces produces CssInjectionRule, not ElementHidingRule', () => {
             const ast = parser.parse('#$#body { padding: 0; }');
@@ -266,5 +252,148 @@ describe('RuleParser — ADG CSS injection rules', () => {
             const ast = parser.parse('example.com#%#let a = 2;');
             expect(ast.type).toBe('JsInjectionRule');
         });
+    });
+});
+
+describe('RuleParser — ADG CSS injection: parseCssSelectorList', () => {
+    test('default: selectorList is Raw', () => {
+        const selectorList = 'body';
+        const declarationList = 'padding: 0;';
+        const ast = parser.parse(`#$#${selectorList} { ${declarationList} }`) as CssInjectionRule;
+
+        expect(ast.body.selectorList).toEqual({ type: 'Raw', value: selectorList });
+    });
+
+    test('parseCssSelectorList: true → simple type selector', () => {
+        const selectorList = 'body';
+        const declarationList = 'padding: 0;';
+        const ast = parser.parse(`#$#${selectorList} { ${declarationList} }`, {
+            parseCssSelectorList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.selectorList.type).toBe('SelectorList');
+        const sl = ast.body.selectorList as SelectorList;
+        expect(sl.children).toHaveLength(1);
+        expect(sl.children[0].type).toBe('ComplexSelector');
+    });
+
+    test('parseCssSelectorList: true → compound selector', () => {
+        const selectorList = 'div.class';
+        const declarationList = 'color: red;';
+        const ast = parser.parse(`#$#${selectorList} { ${declarationList} }`, {
+            parseCssSelectorList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.selectorList.type).toBe('SelectorList');
+        const sl = ast.body.selectorList as SelectorList;
+        expect(sl.children).toHaveLength(1);
+        // compound selector: div + .class = 2 simple selectors in the ComplexSelector
+        expect(sl.children[0].children).toHaveLength(2);
+    });
+
+    test('parseCssSelectorList: true → complex selector with combinator', () => {
+        const selectorList = 'div.class > span';
+        const declarationList = 'color: red;';
+        const ast = parser.parse(`#$#${selectorList} { ${declarationList} }`, {
+            parseCssSelectorList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.selectorList.type).toBe('SelectorList');
+        const sl = ast.body.selectorList as SelectorList;
+        expect(sl.children).toHaveLength(1);
+        // complex: two compound selectors joined by combinator = at least 3 children
+        expect(sl.children[0].children.length).toBeGreaterThanOrEqual(3);
+    });
+
+    test('parseCssSelectorList: true with @media wrapper', () => {
+        const selectorList = 'body';
+        const declarationList = 'padding: 0;';
+        const ast = parser.parse(`#$#@media (max-width: 768px) { ${selectorList} { ${declarationList} } }`, {
+            parseCssSelectorList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.selectorList.type).toBe('SelectorList');
+        expect(ast.body.mediaQueryList).toBeDefined();
+        expect(ast.body.mediaQueryList!.value).toBe('(max-width: 768px)');
+    });
+});
+
+describe('RuleParser — ADG CSS injection: parseCssDeclarationList', () => {
+    test('default: declarationList is Raw', () => {
+        const selectorList = 'body';
+        const declarationList = 'padding: 0;';
+        const ast = parser.parse(`#$#${selectorList} { ${declarationList} }`) as CssInjectionRule;
+
+        expect(ast.body.declarationList).toEqual({ type: 'Raw', value: declarationList });
+    });
+
+    test('parseCssDeclarationList: true → single property', () => {
+        const selectorList = 'body';
+        const declarationList = 'padding: 0;';
+        const ast = parser.parse(`#$#${selectorList} { ${declarationList} }`, {
+            parseCssDeclarationList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.declarationList?.type).toBe('CssDeclarationList');
+        const dl = ast.body.declarationList as CssDeclarationList;
+        expect(dl.children).toHaveLength(1);
+        expect(dl.children[0].property.value).toBe('padding');
+        expect(dl.children[0].value.value).toBe('0');
+    });
+
+    test('parseCssDeclarationList: true → property with !important', () => {
+        const selectorList = 'body';
+        const declarationList = 'padding: 0 !important;';
+        const ast = parser.parse(`#$#${selectorList} { ${declarationList} }`, {
+            parseCssDeclarationList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.declarationList?.type).toBe('CssDeclarationList');
+        const dl = ast.body.declarationList as CssDeclarationList;
+        expect(dl.children).toHaveLength(1);
+        expect(dl.children[0].property.value).toBe('padding');
+        expect(dl.children[0].important).toBe(true);
+    });
+
+    test('remove: true with parseCssDeclarationList: true → no declarationList', () => {
+        const selectorList = 'body';
+        const declarationList = 'remove: true;';
+        const ast = parser.parse(`#$#${selectorList} { ${declarationList} }`, {
+            parseCssDeclarationList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.remove).toBe(true);
+        expect(ast.body.declarationList).toBeUndefined();
+    });
+
+    test('parseCssDeclarationList: true with @media wrapper', () => {
+        const selectorList = 'body';
+        const declarationList = 'padding: 0;';
+        const ast = parser.parse(`#$#@media (max-width: 768px) { ${selectorList} { ${declarationList} } }`, {
+            parseCssDeclarationList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.declarationList?.type).toBe('CssDeclarationList');
+        const dl = ast.body.declarationList as CssDeclarationList;
+        expect(dl.children).toHaveLength(1);
+        expect(dl.children[0].property.value).toBe('padding');
+    });
+
+    test('both options enabled produce typed nodes with correct values', () => {
+        const selectorList = 'body';
+        const declarationList = 'padding: 0;';
+        const ast = parser.parse(`#$#${selectorList} { ${declarationList} }`, {
+            parseCssSelectorList: true,
+            parseCssDeclarationList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.selectorList.type).toBe('SelectorList');
+        const sl = ast.body.selectorList as SelectorList;
+        expect(sl.children).toHaveLength(1);
+
+        expect(ast.body.declarationList?.type).toBe('CssDeclarationList');
+        const dl = ast.body.declarationList as CssDeclarationList;
+        expect(dl.children).toHaveLength(1);
+        expect(dl.children[0].property.value).toBe('padding');
     });
 });

@@ -169,12 +169,6 @@ describe('CommentAstBuilder — simple comments', () => {
                 },
             });
         });
-
-        test('includeRaws adds raws.text', () => {
-            const source = '! This is just a comment';
-            const result = parseCommentRule(source, { includeRaws: true });
-            expect(result.raws).toEqual({ text: source });
-        });
     });
 
     describe('syntax detection', () => {

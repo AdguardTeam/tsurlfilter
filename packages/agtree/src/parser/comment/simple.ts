@@ -14,6 +14,7 @@
 
 import type { ParserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
+import type { StructuralParser } from '../types';
 
 import { CM_KIND, CommentKind } from './types';
 
@@ -35,7 +36,7 @@ export const CM_SIMPLE_TEXT_END_OFFSET = 3;
 /**
  * Parser for simple comment rules (`! Text` and `# text`).
  */
-export class SimpleCommentParser {
+export class SimpleCommentParser implements StructuralParser {
     /**
      * Fills `ctx.data` with simple-comment structural indices.
      *
