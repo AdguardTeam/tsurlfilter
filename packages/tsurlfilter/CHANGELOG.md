@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Replaced `NetworkRuleOption` and `NetworkRuleGroupOptions` enums with
+  `{ lo, hi }` two-word bitfield type aliases and const objects, supporting
+  up to 62 independent flag bits (previously limited to 31). No behavioral
+  changes.
+
 ## [v5.0.1] - 2026-04-24
 
 ### Changed
