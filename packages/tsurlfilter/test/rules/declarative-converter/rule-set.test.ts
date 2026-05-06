@@ -88,6 +88,7 @@ describe('RuleSet', () => {
         const ruleSet = await createRuleSet(content);
 
         expect(ruleSet.getRulesCount()).toStrictEqual(2);
+        expect(ruleSet.getChromeRulesCount()).toStrictEqual(3);
         expect(await ruleSet.getBadFilterRules()).toHaveLength(1);
     });
 

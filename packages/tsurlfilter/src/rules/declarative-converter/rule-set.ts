@@ -44,6 +44,15 @@ export interface IRuleSet {
     getRulesCount(): number;
 
     /**
+     * Number of rules Chrome charges against the static rule budget for this
+     * ruleset. This includes the metadata rule (ID=1) that is always present
+     * on disk but not counted by {@link IRuleSet.getRulesCount}.
+     *
+     * @returns Rules count as Chrome accounts it (getRulesCount() + 1).
+     */
+    getChromeRulesCount(): number;
+
+    /**
      * Number of converted declarative unsafe rules.
      *
      * @returns Number of converted declarative unsafe rules.
@@ -368,6 +377,11 @@ export class RuleSet implements IRuleSet {
     /** @inheritdoc */
     public getRulesCount(): number {
         return this.rulesCount;
+    }
+
+    /** @inheritdoc */
+    public getChromeRulesCount(): number {
+        return this.rulesCount + 1;
     }
 
     /** @inheritdoc */
