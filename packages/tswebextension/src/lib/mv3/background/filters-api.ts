@@ -1,5 +1,6 @@
 import browser from 'webextension-polyfill';
 
+import { getErrorMessage } from '@adguard/logger';
 import { FilterList } from '@adguard/tsurlfilter';
 import { Filter, type IFilter, RULESET_NAME_PREFIX } from '@adguard/tsurlfilter/es/declarative-converter';
 
@@ -73,7 +74,7 @@ export default class FiltersApi {
                     msg,
                     [],
                     disableRulesetIds,
-                    e instanceof Error ? e : new Error(String(e)),
+                    e instanceof Error ? e : new Error(getErrorMessage(e)),
                 );
                 res.errors.push(err);
             }
@@ -96,7 +97,7 @@ export default class FiltersApi {
                         msg,
                         [rulesetId],
                         [],
-                        result.reason instanceof Error ? result.reason : new Error(String(result.reason)),
+                        result.reason instanceof Error ? result.reason : new Error(getErrorMessage(result.reason)),
                     );
                     res.errors.push(err);
                 }
