@@ -20,6 +20,12 @@ import { type RemoveParamDescriptor } from '../message';
 export const REMOVEPARAM_LOG_TYPE = '__adg_removeparam_log';
 
 /**
+ * `postMessage` type for $removeparam descriptor update events
+ * (isolated world → main world).
+ */
+export const REMOVEPARAM_UPDATE_TYPE = '__adg_removeparam_update';
+
+/**
  * Patches `history.pushState` and `history.replaceState` so that every
  * History API navigation has `$removeparam` rules applied locally using
  * pre-loaded rule descriptors.
@@ -37,12 +43,21 @@ export const REMOVEPARAM_LOG_TYPE = '__adg_removeparam_log';
  *
  * @param rawDescriptors Array of serialized rule descriptors to apply.
  * Passed directly from the background (MV3 via `args`, MV2 via JSON embed).
+ * @param nonce Random token for authenticating postMessage events.
  */
-export function patchHistoryForRemoveParam(rawDescriptors: RemoveParamDescriptor[]): void {
+export function patchHistoryForRemoveParam(rawDescriptors: RemoveParamDescriptor[], nonce: string): void {
     const LOG_TYPE: typeof REMOVEPARAM_LOG_TYPE = '__adg_removeparam_log';
 
-    const originalPushState = window.history.pushState.bind(window.history);
-    const originalReplaceState = window.history.replaceState.bind(window.history);
+    const proto = History.prototype;
+    const pushStateDesc = Object.getOwnPropertyDescriptor(proto, 'pushState');
+    const replaceStateDesc = Object.getOwnPropertyDescriptor(proto, 'replaceState');
+
+    if (!pushStateDesc?.value || !replaceStateDesc?.value) {
+        return;
+    }
+
+    const originalPushState: typeof window.history.pushState = pushStateDesc.value;
+    const originalReplaceState: typeof window.history.replaceState = replaceStateDesc.value;
 
     /**
      * Parsed descriptor used internally.
@@ -288,42 +303,41 @@ export function patchHistoryForRemoveParam(rawDescriptors: RemoveParamDescriptor
         }
 
         if (result.cleanedUrl !== absoluteUrl && window.location.href === absoluteUrl) {
-            originalReplaceState(state, title, result.cleanedUrl);
+            originalReplaceState.call(window.history, state, title, result.cleanedUrl);
         }
 
         // Post log event to isolated world (fire-and-forget)
         window.postMessage({
             type: LOG_TYPE,
+            nonce,
             cleanedUrl: result.cleanedUrl,
             originalUrl: absoluteUrl,
-            appliedDescriptors: result.applied.map((d) => ({
-                filterId: d.filterId,
-                ruleIndex: d.ruleIndex,
-                ruleText: d.ruleText,
-                isAllowlist: d.isAllowlist,
-                isImportant: d.isImportant,
-                advancedModifier: d.advancedModifier,
-            })),
+            appliedDescriptors: result.applied,
         }, '*');
     }
 
     /**
-     * Creates a patched version of a History API method.
+     * Creates a patched version of a History API method that preserves the
+     * native method's observable properties (name, length, toString) to
+     * reduce detectability.
      *
      * @param originalMethod The original `pushState` or `replaceState`.
+     * @param methodName The name of the method being patched.
      *
      * @returns A replacement function with the same signature.
      */
     function createPatchedMethod(
         originalMethod: typeof window.history.pushState,
+        methodName: string,
     ): typeof window.history.pushState {
-        return function patchedHistoryMethod(
+        const patched = function patchedHistoryMethod(
+            this: History,
             state: unknown,
             title: string,
             url?: string | URL | null,
         ): void {
             // Always call the original method first to preserve SPA behaviour.
-            originalMethod(state, title, url);
+            originalMethod.call(this, state, title, url);
 
             if (!url) {
                 return;
@@ -338,6 +352,15 @@ export function patchHistoryForRemoveParam(rawDescriptors: RemoveParamDescriptor
 
             processUrl(state, title, absoluteUrl);
         };
+
+        // Match the native method's observable properties.
+        Object.defineProperty(patched, 'name', { value: methodName, configurable: true });
+        Object.defineProperty(patched, 'length', {
+            value: originalMethod.length,
+            configurable: true,
+        });
+
+        return patched;
     }
 
     // Parse descriptors immediately
@@ -361,6 +384,54 @@ export function patchHistoryForRemoveParam(rawDescriptors: RemoveParamDescriptor
     });
 
     // Patch immediately so we capture all navigations
-    window.history.pushState = createPatchedMethod(originalPushState);
-    window.history.replaceState = createPatchedMethod(originalReplaceState);
+    Object.defineProperty(proto, 'pushState', {
+        ...pushStateDesc,
+        value: createPatchedMethod(originalPushState, 'pushState'),
+    });
+
+    Object.defineProperty(proto, 'replaceState', {
+        ...replaceStateDesc,
+        value: createPatchedMethod(originalReplaceState, 'replaceState'),
+    });
+
+    // Local constant for the update type (same self-contained pattern as LOG_TYPE).
+    const UPDATE_TYPE: typeof REMOVEPARAM_UPDATE_TYPE = '__adg_removeparam_update';
+
+    // Listen for descriptor updates from the isolated-world relay.
+    window.addEventListener('message', (event: MessageEvent) => {
+        if (event.source !== window) {
+            return;
+        }
+
+        const { data } = event;
+        if (
+            !data
+            || typeof data !== 'object'
+            || data.type !== UPDATE_TYPE
+            || data.nonce !== nonce
+        ) {
+            return;
+        }
+
+        const rawDescs: RemoveParamDescriptor[] = data.descriptors;
+        if (!rawDescs || rawDescs.length === 0) {
+            descriptors = null;
+            return;
+        }
+
+        descriptors = rawDescs.map((d: RemoveParamDescriptor) => {
+            const { regex, isNegated } = parseValue(d.value);
+            return {
+                valueRegExp: regex,
+                value: d.value,
+                isAllowlist: d.isAllowlist,
+                isImportant: d.isImportant,
+                isNegated,
+                filterId: d.filterId,
+                ruleIndex: d.ruleIndex,
+                ruleText: d.ruleText,
+                advancedModifier: d.advancedModifier,
+            };
+        });
+    });
 }

@@ -127,15 +127,13 @@ export type RemoveParamDescriptor = z.infer<typeof removeParamDescriptorValidato
 
 /**
  * Applied descriptor for log reporting (subset of RemoveParamDescriptor).
+ *
+ * Uses `.passthrough()` to allow extra internal fields (e.g. `valueRegExp`,
+ * `isNegated`) sent by the main-world script without failing validation.
  */
-export const appliedRemoveParamDescriptorValidator = z.object({
-    filterId: z.number(),
-    ruleIndex: z.number(),
-    ruleText: z.string(),
-    isAllowlist: z.boolean(),
-    isImportant: z.boolean(),
-    advancedModifier: z.string().nullable(),
-}).strict();
+export const appliedRemoveParamDescriptorValidator = removeParamDescriptorValidator
+    .omit({ value: true })
+    .passthrough();
 
 /**
  * {@link MessageType.LogRemoveParamEvent} Message payload validation schema.

@@ -27,10 +27,10 @@ export function publishRemoveParamEvents(
 ): boolean {
     const { url, appliedDescriptors } = payload;
 
-    for (const desc of appliedDescriptors) {
+    for (const descriptor of appliedDescriptors) {
         const { appliedRuleText, originalRuleText } = getRuleTextsByIndex(
-            desc.filterId,
-            desc.ruleIndex,
+            descriptor.filterId,
+            descriptor.ruleIndex,
             ruleTextProvider,
         );
 
@@ -44,17 +44,17 @@ export function publishRemoveParamEvents(
                 frameUrl: url,
                 frameDomain: getDomain(url) || '',
                 requestType: ContentType.Document,
-                filterId: desc.filterId,
-                ruleIndex: desc.ruleIndex,
+                filterId: descriptor.filterId,
+                ruleIndex: descriptor.ruleIndex,
                 appliedRuleText,
                 originalRuleText,
                 timestamp: Date.now(),
-                isAllowlist: desc.isAllowlist,
-                isImportant: desc.isImportant,
+                isAllowlist: descriptor.isAllowlist,
+                isImportant: descriptor.isImportant,
                 isDocumentLevel: false,
                 isCsp: false,
                 isCookie: false,
-                advancedModifier: desc.advancedModifier,
+                advancedModifier: descriptor.advancedModifier,
             },
         });
     }

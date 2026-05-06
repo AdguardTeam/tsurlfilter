@@ -1,6 +1,9 @@
 import { type Source } from '@adguard/scriptlets';
 import { type ScriptletData } from '@adguard/tsurlfilter';
 
+import { patchHistoryForRemoveParam } from '../../common/content-script/remove-param-main-world';
+import { type RemoveParamDescriptor } from '../../common/message';
+
 import { appContext } from './app-context';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
 
@@ -69,6 +72,21 @@ export type ExecuteCombinedScriptParams = ExecuteTarget & {
      * Combined script text to be injected.
      */
     scriptText: string;
+};
+
+/**
+ * Parameters for executing the $removeparam History API patch.
+ */
+export type ExecuteRemoveParamParams = ExecuteTarget & {
+    /**
+     * Removeparam descriptors built from matching rules.
+     */
+    descriptors: RemoveParamDescriptor[];
+
+    /**
+     * Random nonce for authenticating postMessage events.
+     */
+    nonce: string;
 };
 
 /**
@@ -244,6 +262,35 @@ export class ScriptingApi {
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
             func: scriptFunction,
+            injectImmediately: true,
+            world: 'MAIN',
+        });
+    }
+
+    /**
+     * Injects the $removeparam History API patch into the main world.
+     *
+     * This executes a bundled extension function that monkey-patches
+     * history.pushState/replaceState to strip matched query parameters
+     * on SPA navigations. The descriptors are structured data (not code)
+     * built from the filtering engine.
+     *
+     * @param params Parameters for executing the removeparam patch.
+     * @param params.tabId The ID of the tab.
+     * @param params.frameId The ID of the frame.
+     * @param params.descriptors Removeparam descriptors from matching rules.
+     * @param params.nonce Random token for postMessage authentication.
+     */
+    public static async executeRemoveParam({
+        tabId,
+        frameId,
+        descriptors,
+        nonce,
+    }: ExecuteRemoveParamParams): Promise<void> {
+        await chrome.scripting.executeScript({
+            target: { tabId, frameIds: [frameId] },
+            func: patchHistoryForRemoveParam,
+            args: [descriptors, nonce],
             injectImmediately: true,
             world: 'MAIN',
         });

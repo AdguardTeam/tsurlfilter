@@ -184,7 +184,11 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
-import { patchHistoryForRemoveParam } from '../../common/content-script/remove-param-main-world';
+import {
+    patchHistoryForRemoveParam,
+    REMOVEPARAM_UPDATE_TYPE,
+} from '../../common/content-script/remove-param-main-world';
+import { initRemoveParamRelay } from '../../common/content-script/remove-param-relay';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { DocumentLifecycle } from '../../common/interfaces';
 import { findHeaderByName } from '../../common/utils/headers';
@@ -251,6 +255,12 @@ type OnBeforeNavigateDetailsType = WebNavigation.OnBeforeNavigateDetailsType & {
  */
 export class WebRequestApi {
     /**
+     * Tracks tabs that have an active $removeparam injection, mapping
+     * tabId to the nonce used for that injection.
+     */
+    private static removeParamInjections = new Map<number, string>();
+
+    /**
      * Adds listeners to web request events.
      */
     public static start(): void {
@@ -272,10 +282,16 @@ export class WebRequestApi {
         // TODO: remove this when Opera bug is fixed.
         browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommittedOperaHook);
         browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommitted);
+        browser.webNavigation.onHistoryStateUpdated.addListener(
+            WebRequestApi.onHistoryStateUpdated,
+        );
         browser.webNavigation.onBeforeNavigate.addListener(WebRequestApi.onBeforeNavigate);
         browser.webNavigation.onDOMContentLoaded.addListener(WebRequestApi.onDomContentLoaded);
         browser.webNavigation.onCompleted.addListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onErrorOccurred.addListener(WebRequestApi.deleteFrameContext);
+
+        // Clean up $removeparam injection tracking when a tab is closed.
+        browser.tabs.onRemoved.addListener(WebRequestApi.onTabRemoved);
     }
 
     /**
@@ -291,11 +307,18 @@ export class WebRequestApi {
         RequestEvents.onCompleted.removeListener(WebRequestApi.onCompleted);
 
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
+        browser.webNavigation.onHistoryStateUpdated.removeListener(
+            WebRequestApi.onHistoryStateUpdated,
+        );
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommittedOperaHook);
         browser.webNavigation.onBeforeNavigate.removeListener(WebRequestApi.onBeforeNavigate);
         browser.webNavigation.onDOMContentLoaded.removeListener(WebRequestApi.onDomContentLoaded);
         browser.webNavigation.onCompleted.removeListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onErrorOccurred.removeListener(WebRequestApi.deleteFrameContext);
+
+        browser.tabs.onRemoved.removeListener(WebRequestApi.onTabRemoved);
+
+        WebRequestApi.removeParamInjections.clear();
     }
 
     /**
@@ -816,6 +839,79 @@ export class WebRequestApi {
     }
 
     /**
+     * Re-injects $removeparam patches when SPA navigation changes the URL
+     * via History API, ensuring path-scoped rules are re-evaluated.
+     *
+     * @param details Navigation event details.
+     */
+    private static onHistoryStateUpdated(
+        details: WebNavigation.OnCommittedDetailsType,
+    ): void {
+        const { tabId, frameId, url } = details;
+
+        if (frameId !== MAIN_FRAME_ID) {
+            return;
+        }
+
+        const existingNonce = WebRequestApi.removeParamInjections.get(tabId);
+
+        if (existingNonce) {
+            WebRequestApi.sendDescriptorUpdate(tabId, frameId, url, existingNonce);
+        } else {
+            WebRequestApi.injectRemoveParam(details);
+        }
+    }
+
+    /**
+     * Sends updated $removeparam descriptors to an already-injected tab via
+     * `browser.tabs.sendMessage`, avoiding full script re-injection.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param url Current URL after the History API navigation.
+     * @param nonce The nonce of the existing injection.
+     */
+    private static sendDescriptorUpdate(
+        tabId: number,
+        frameId: number,
+        url: string,
+        nonce: string,
+    ): void {
+        if (!url || !url.startsWith('http')) {
+            return;
+        }
+
+        const tabContext = tabsApi.getTabContext(tabId);
+        if (!tabContext || !tabContext.info.url) {
+            return;
+        }
+
+        const descriptors = getRemoveParamDescriptors({
+            requestUrl: url,
+            frameUrl: tabContext.info.url,
+            frameRule: tabContext.mainFrameRule,
+            engineApi,
+        });
+
+        browser.tabs.sendMessage(tabId, {
+            type: REMOVEPARAM_UPDATE_TYPE,
+            nonce,
+            descriptors: descriptors || [],
+        }, { frameId }).catch((e: unknown) => {
+            logger.error('[tsweb.WebRequestApi.sendDescriptorUpdate]: failed to send descriptor update:', e);
+        });
+    }
+
+    /**
+     * Cleans up $removeparam injection tracking when a tab is closed.
+     *
+     * @param tabId The id of the closed tab.
+     */
+    private static onTabRemoved(tabId: number): void {
+        WebRequestApi.removeParamInjections.delete(tabId);
+    }
+
+    /**
      * Injects $removeparam History API patches into the main world if matching
      * rules exist for the frame's document URL.
      *
@@ -827,6 +923,10 @@ export class WebRequestApi {
         const { tabId, frameId, url } = details;
 
         if (!url || !url.startsWith('http')) {
+            return;
+        }
+
+        if (frameId !== MAIN_FRAME_ID) {
             return;
         }
 
@@ -850,14 +950,27 @@ export class WebRequestApi {
             return;
         }
 
+        const nonce = crypto.randomUUID();
+
+        WebRequestApi.removeParamInjections.set(tabId, nonce);
+
         const json = JSON.stringify(descriptors);
-        const scriptText = `;(${patchHistoryForRemoveParam.toString()})(${json});`;
+        const nonceJson = JSON.stringify(nonce);
+        const scriptText = `;(${patchHistoryForRemoveParam.toString()})(${json}, ${nonceJson});`;
 
         TabsApi.injectScript(tabId, frameId, scriptText).catch((e) => {
-            logger.error(
-                '[tsweb.WebRequestApi.injectRemoveParam]: failed to inject removeparam script:',
-                e,
-            );
+            logger.error('[tsweb.WebRequestApi.injectRemoveParam]: failed to inject removeparam script:', e);
+        });
+
+        // Inject the log relay in the isolated world with the same nonce.
+        const relayScript = `;(${initRemoveParamRelay.toString()})(${nonceJson});`;
+        browser.tabs.executeScript(tabId, {
+            code: relayScript,
+            frameId,
+            runAt: 'document_start',
+            matchAboutBlank: true,
+        }).catch((e) => {
+            logger.error('[tsweb.WebRequestApi.injectRemoveParam]: failed to inject removeparam log relay:', e);
         });
     }
 
@@ -911,6 +1024,11 @@ export class WebRequestApi {
 
         if (cosmeticFrameProcessor.shouldSkipRecalculation(tabId, frameId, url, timeStamp)) {
             return;
+        }
+
+        // A new navigation invalidates any existing $removeparam injection.
+        if (frameId === MAIN_FRAME_ID) {
+            WebRequestApi.removeParamInjections.delete(tabId);
         }
 
         /**
