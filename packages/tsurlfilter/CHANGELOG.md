@@ -19,8 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   up to 62 independent flag bits (previously limited to 31). No behavioral
   changes.
 
-
-
 ## [v5.0.1] - 2026-04-24
 
 ### Changed
