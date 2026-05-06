@@ -14,7 +14,12 @@ import { HTTPMethod } from '../../src/modifiers/method-modifier';
 import { StealthOptionName } from '../../src/modifiers/stealth-modifier';
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
-import { type NetworkRule, NetworkRuleGroupOptions, NetworkRuleOption } from '../../src/rules/network-rule';
+import {
+    type NetworkRule,
+    NetworkRuleGroupOptions,
+    NetworkRuleOption,
+    OptionFlags,
+} from '../../src/rules/network-rule';
 import { createNetworkRule } from '../helpers/rule-creator';
 
 describe('NetworkRule constructor', () => {
@@ -455,7 +460,7 @@ describe('NetworkRule constructor', () => {
      */
     function checkModifier(name: string, option: NetworkRuleOption, enabled: boolean, allowlist = false): void {
         let ruleText = `||example.org^$${name}`;
-        if (allowlist || (option & NetworkRuleGroupOptions.AllowlistOnly) === option) {
+        if (allowlist || OptionFlags.has(option, NetworkRuleGroupOptions.AllowlistOnly)) {
             ruleText = `@@${ruleText}`;
         }
 

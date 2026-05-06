@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased <!-- release/browser-extension-v5.5 -->
 
+### Changed
+
+- Updated [@adguard/extended-css] to `v2.2.0`.
+
 ### Added
 
 - New `FilteringEventType.PopupBlocked` filtering log event (with matching
