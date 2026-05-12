@@ -20,7 +20,7 @@ import { consumeCssIdentRun, isCssIdentStart, isCssWhitespace } from '../../../c
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { TokenType } from '../../../tokenizer/token-types';
 import type { ParserContext } from '../../context';
-import { regionEqualsCI, tokenStart } from '../../context';
+import { CTX_STATUS_OVERFLOW, regionEqualsCI, tokenStart } from '../../context';
 import type { StructuralParser } from '../../types';
 
 import {
@@ -111,9 +111,9 @@ export class DeclarationListParser implements StructuralParser {
                 );
             }
 
-            // Capacity check: signal status=1 and bail rather than throw.
+            // Capacity check: signal status and bail rather than throw.
             if (declCount >= maxDeclarations) {
-                ctx.status = 1;
+                ctx.status = CTX_STATUS_OVERFLOW;
                 ctx.data[dataOffset] = declCount;
                 return;
             }

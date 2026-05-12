@@ -30,4 +30,14 @@ export interface ParserCapacity {
      * @default 128
      */
     secondaryCapacity?: number;
+
+    /**
+     * Whether buffers may grow dynamically on overflow (up to hard caps).
+     *
+     * When `false`, overflow sets `status = 1` and the pipeline parser throws.
+     * When `true` (default), buffers grow automatically up to the hard caps.
+     *
+     * @default true
+     */
+    grow?: boolean;
 }

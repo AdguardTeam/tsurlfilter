@@ -7,8 +7,10 @@
  * individual modifier to {@link ModifierParser}.
  */
 
+import { REGION_MODIFIERS } from '../../errors/capacity-overflow-error';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
+import { CTX_STATUS_HARD_CAP, CTX_STATUS_OVERFLOW, growCtxRegion } from '../context';
 import { MODIFIER_RECORD_STRIDE, NR_MODIFIER_COUNT_OFFSET, NR_MODIFIER_RECORDS_OFFSET } from '../network/constants';
 import type { StructuralParser } from '../types';
 
@@ -86,11 +88,30 @@ export class ModifierListParser implements StructuralParser {
         recordsOffset: number,
         headerOffset: number,
     ): void {
-        const { types, tokenCount, maxMods } = ctx;
+        const { types, tokenCount } = ctx;
+        let { maxMods } = ctx;
         let currentTi = startTi;
         let modCount = 0;
 
-        while (currentTi < tokenCount && modCount < maxMods) {
+        while (currentTi < tokenCount) {
+            // Grow if the buffer is full but there are still tokens to consume.
+            if (modCount >= maxMods) {
+                if (!ctx.grow) {
+                    ctx.status = CTX_STATUS_OVERFLOW;
+                    break;
+                }
+                const requested = Math.max(modCount + 1, maxMods * 2);
+                if (!growCtxRegion(ctx, REGION_MODIFIERS, requested)) {
+                    ctx.overflowRegion = REGION_MODIFIERS;
+                    ctx.status = CTX_STATUS_HARD_CAP;
+                    break;
+                }
+                maxMods = ctx.maxMods;
+                // recordsOffset is passed as a parameter and equals NR_MODIFIER_RECORDS_OFFSET
+                // (a fixed constant). Growing modifiers does NOT shift the modifier record start
+                // offset, so recordsOffset remains valid.
+            }
+
             const nextTi = ModifierParser.parse(ctx, currentTi, modCount, recordsOffset);
 
             // ModifierParser.parse returns -1 if it can't start a modifier
@@ -105,11 +126,6 @@ export class ModifierListParser implements StructuralParser {
             if (currentTi < tokenCount && types[currentTi] === TokenType.Comma) {
                 currentTi += 1;
             }
-        }
-
-        // Overflow: more modifiers than buffer capacity
-        if (currentTi < tokenCount && modCount >= maxMods) {
-            ctx.status = 1;
         }
 
         ctx.data[headerOffset + NR_MODIFIER_COUNT_OFFSET] = modCount;

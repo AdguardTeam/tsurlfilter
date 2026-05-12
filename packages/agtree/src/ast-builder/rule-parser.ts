@@ -7,6 +7,20 @@
 
 import { ProductCode } from '../compatibility-tables/platform';
 import {
+    CapacityOverflowError,
+    REGION_DOMAINS,
+    REGION_MODIFIERS,
+    REGION_SCRIPTLET_BODY,
+    REGION_TOKENS,
+} from '../errors/capacity-overflow-error';
+import type { CapacityRegion } from '../errors/capacity-overflow-error';
+import {
+    MAX_DOMAIN_CAPACITY,
+    MAX_MODIFIER_CAPACITY,
+    MAX_SCRIPTLET_BODY_CAPACITY,
+    MAX_TOKEN_CAPACITY,
+} from '../limits';
+import {
     type AnyCommentRule,
     type CssInjectionRule,
     type ElementHidingRule,
@@ -19,7 +33,14 @@ import {
     RuleCategory,
     type ScriptletInjectionRule,
 } from '../nodes-new';
-import { createParserContext, initParserContext } from '../parser/context';
+import {
+    createParserContext,
+    CTX_STATUS_HARD_CAP,
+    CTX_STATUS_OK,
+    CTX_STATUS_OVERFLOW,
+    initParserContext,
+    resetCtxData,
+} from '../parser/context';
 import type { ParserContext } from '../parser/context';
 import {
     CR_FLAG_BODY_ADG_SCRIPTLET,
@@ -60,6 +81,43 @@ const DEFAULT_TOKEN_CAPACITY = 1024;
  * Supports complex network rules with many modifiers or multi-agent comments.
  */
 const DEFAULT_CHILDREN_CAPACITY = 64;
+
+/**
+ * Default maximum number of domains per cosmetic rule.
+ * Handles common real-world filter lists.
+ */
+const DEFAULT_DOMAIN_CAPACITY = 128;
+
+/**
+ * Error message emitted when the token buffer reaches the hard cap with growth disabled.
+ */
+const ERR_TOKEN_BUFFER_OVERFLOW = 'Parser token buffer overflow: rule too large for current capacity';
+
+/**
+ * Error message emitted when the data buffer overflows after a successful tokenizer pass.
+ */
+const ERR_DATA_BUFFER_OVERFLOW = 'Parser data buffer overflow: rule too large for current capacity';
+
+/**
+ * Get the hard cap for a given capacity region.
+ *
+ * @param region The overflow region.
+ *
+ * @returns The corresponding hard cap constant.
+ */
+function hardCapForRegion(region: CapacityRegion): number {
+    switch (region) {
+        case REGION_TOKENS: return MAX_TOKEN_CAPACITY;
+        case REGION_MODIFIERS: return MAX_MODIFIER_CAPACITY;
+        case REGION_DOMAINS: return MAX_DOMAIN_CAPACITY;
+        case REGION_SCRIPTLET_BODY: return MAX_SCRIPTLET_BODY_CAPACITY;
+        default: {
+            // Exhaustiveness guard: TypeScript will error here if CapacityRegion gains a new member.
+            const unhandled: never = region;
+            throw new Error(`Unhandled capacity region: ${unhandled}`);
+        }
+    }
+}
 
 /**
  * The set of rule types that this parser currently produces.
@@ -148,6 +206,26 @@ export class RuleParserPipeline {
     private ctx: ParserContext;
 
     /**
+     * Whether buffers may grow dynamically on overflow.
+     */
+    private grow: boolean;
+
+    /**
+     * Default modifier capacity (used by {@link reset} to restore original size).
+     */
+    private defaultItemCap: number;
+
+    /**
+     * Default domain capacity (used by {@link reset} to restore original size).
+     */
+    private defaultDomainCap: number;
+
+    /**
+     * Default scriptlet body capacity (used by {@link reset} to restore original size).
+     */
+    private defaultScriptletCap: number;
+
+    /**
      * Creates a new rule parser.
      *
      * @param capacity Optional capacity configuration.
@@ -155,8 +233,31 @@ export class RuleParserPipeline {
     constructor(capacity?: ParserCapacity) {
         const tokenCap = capacity?.tokenCapacity ?? DEFAULT_TOKEN_CAPACITY;
         const itemCap = capacity?.itemCapacity ?? DEFAULT_CHILDREN_CAPACITY;
+        const domainCap = capacity?.secondaryCapacity ?? DEFAULT_DOMAIN_CAPACITY;
+        this.grow = capacity?.grow ?? true;
+        this.defaultItemCap = itemCap;
+        this.defaultDomainCap = domainCap;
         this.tokenizer = new Tokenizer(tokenCap);
-        this.ctx = createParserContext(tokenCap, itemCap);
+        const scriptletCap = undefined; // use default (SCRIPTLET_BODY_DATA_CAPACITY)
+        this.ctx = createParserContext(tokenCap, itemCap, domainCap, scriptletCap, this.grow);
+        this.defaultScriptletCap = this.ctx.maxScriptletBody;
+    }
+
+    /**
+     * Release any extra memory that was grown during previous parses and
+     * reset internal state so the parser is ready for a new filter list.
+     *
+     * After calling this method, the parser's tokenizer and context buffers
+     * shrink back to their constructor-supplied default capacities. Call this
+     * at filter-list boundaries to prevent unbounded memory growth when
+     * processing rules with unusually large domain/modifier lists.
+     *
+     * It is safe to call this method at any time — including before the first
+     * parse or multiple times in a row.
+     */
+    public reset(): void {
+        this.tokenizer.reset();
+        resetCtxData(this.ctx, this.defaultItemCap, this.defaultDomainCap, this.defaultScriptletCap);
     }
 
     /**
@@ -185,18 +286,42 @@ export class RuleParserPipeline {
             return result;
         }
 
-        this.tokenizer.setSource(source);
+        this.tokenizer.source = source;
+        this.tokenizer.offset = 0;
+        this.tokenizer.tokenize();
+
+        // If the tokenizer didn't reach the end of the source, the buffer
+        // was exhausted. Grow and retokenize from scratch (offset = 0) until
+        // the full source is consumed or we hit the hard cap.
+        while (this.tokenizer.offset < source.length) {
+            if (!this.grow) {
+                throw new Error(ERR_TOKEN_BUFFER_OVERFLOW);
+            }
+            const requested = Math.min(this.tokenizer.types.length * 2, MAX_TOKEN_CAPACITY);
+            if (requested <= this.tokenizer.types.length) {
+                throw new CapacityOverflowError(REGION_TOKENS, requested, MAX_TOKEN_CAPACITY);
+            }
+            this.tokenizer.growCapacity(requested);
+            this.tokenizer.offset = 0;
+            this.tokenizer.tokenize();
+        }
+
         initParserContext(this.ctx, source, this.tokenizer);
 
         // eslint-disable-next-line max-len
         const kind = RuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options);
 
-        // Structural overflow signalled by the parser is unrecoverable at
-        // the AST-builder level (the `ctx.data` region was truncated).
-        // Surface it as an explicit error so callers fail loudly rather
-        // than silently producing a half-built AST.
-        if (this.ctx.status === 1) {
-            throw new Error('Parser data buffer overflow: rule too large for current capacity');
+        // Surface structural overflow.
+        if (this.ctx.status === CTX_STATUS_HARD_CAP) {
+            const { overflowRegion } = this.ctx;
+            this.ctx.status = CTX_STATUS_OK;
+            this.ctx.overflowRegion = undefined;
+            const region = overflowRegion ?? REGION_TOKENS;
+            throw new CapacityOverflowError(region, hardCapForRegion(region) + 1, hardCapForRegion(region));
+        }
+        if (this.ctx.status === CTX_STATUS_OVERFLOW) {
+            this.ctx.status = CTX_STATUS_OK;
+            throw new Error(ERR_DATA_BUFFER_OVERFLOW);
         }
 
         if (kind === RuleKind.Network && options?.ignoreNetwork) {
@@ -342,8 +467,16 @@ export class RuleParserPipeline {
         );
 
         // Surface structural overflow loudly (see RuleParserPipeline.parse).
-        if (ctx.status === 1) {
-            throw new Error('Parser data buffer overflow: rule too large for current capacity');
+        if (ctx.status === CTX_STATUS_HARD_CAP) {
+            const { overflowRegion } = ctx;
+            ctx.status = CTX_STATUS_OK;
+            ctx.overflowRegion = undefined;
+            const region = overflowRegion ?? REGION_TOKENS;
+            throw new CapacityOverflowError(region, hardCapForRegion(region) + 1, hardCapForRegion(region));
+        }
+        if (ctx.status === CTX_STATUS_OVERFLOW) {
+            ctx.status = CTX_STATUS_OK;
+            throw new Error(ERR_DATA_BUFFER_OVERFLOW);
         }
 
         const ruleStart = startTi > 0 ? ctx.ends[startTi - 1] : ctx.sourceStart;

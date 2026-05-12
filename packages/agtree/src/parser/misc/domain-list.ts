@@ -9,10 +9,14 @@
  * Zero allocations: only writes integer offsets into ctx.data.
  */
 
+import { REGION_DOMAINS } from '../../errors/capacity-overflow-error';
 import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import {
+    CTX_STATUS_HARD_CAP,
+    CTX_STATUS_OVERFLOW,
     domainRecordsOffset,
+    growCtxRegion,
     skipWs,
     skipWsBack,
     tokenStart,
@@ -65,7 +69,7 @@ export class DomainListParser implements StructuralParser {
             return;
         }
 
-        const recordsOffset = domainRecordsOffset(ctx);
+        let recordsOffset = domainRecordsOffset(ctx);
 
         while (itemStartTi < endTi) {
             // Find the end of this item (next separator or endTi)
@@ -154,9 +158,22 @@ export class DomainListParser implements StructuralParser {
 
             // Check capacity
             if (domainCount >= ctx.maxDomains) {
-                ctx.status = 1;
-                ctx.data[CR_DOMAIN_COUNT] = domainCount;
-                return;
+                if (!ctx.grow) {
+                    ctx.status = CTX_STATUS_OVERFLOW;
+                    ctx.data[CR_DOMAIN_COUNT] = domainCount;
+                    return;
+                }
+                const requested = Math.max(domainCount + 1, ctx.maxDomains * 2);
+                if (!growCtxRegion(ctx, REGION_DOMAINS, requested)) {
+                    ctx.overflowRegion = REGION_DOMAINS;
+                    ctx.status = CTX_STATUS_HARD_CAP;
+                    ctx.data[CR_DOMAIN_COUNT] = domainCount;
+                    return;
+                }
+                // ctx.data was replaced; recompute the (unchanged) domain region offset.
+                // (Growing domains does NOT shift the domain start — only modifier growth
+                // would do that — so domainRecordsOffset(ctx) returns the same value.)
+                recordsOffset = domainRecordsOffset(ctx);
             }
 
             // Write domain record

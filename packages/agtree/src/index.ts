@@ -66,6 +66,16 @@ export {
     type AnyNetworkRule,
 } from './nodes';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
+export {
+    CapacityOverflowError,
+    type CapacityRegion,
+} from './errors/capacity-overflow-error';
+export {
+    MAX_DOMAIN_CAPACITY,
+    MAX_MODIFIER_CAPACITY,
+    MAX_SCRIPTLET_BODY_CAPACITY,
+    MAX_TOKEN_CAPACITY,
+} from './limits';
 export { AgentCommentParser } from './parser-legacy/comment/agent-comment-parser';
 export { AgentParser } from './parser-legacy/comment/agent-parser';
 export { CommentParser } from './parser-legacy/comment/comment-parser';

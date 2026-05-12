@@ -48,6 +48,8 @@
  * A separate `IS_IDENT_CHAR` byte map accelerates the inner loop that extends
  * identifier runs.
  */
+import { growUint32, growUint8 } from '../buffer-growth';
+
 import {
     CHAR_AND_SIGN,
     CHAR_APOSTROPHE,
@@ -151,6 +153,12 @@ export class Tokenizer {
     private capacity: number;
 
     /**
+     * Capacity supplied to the constructor. Used by {@link reset} to shrink
+     * grown buffers back to their initial size.
+     */
+    private defaultCapacity: number;
+
+    /**
      * Number of valid token entries written into {@link types} and {@link ends}
      * by the most recent {@link tokenize} call.
      */
@@ -186,6 +194,7 @@ export class Tokenizer {
         this.source = '';
         this.offset = 0;
         this.capacity = capacity;
+        this.defaultCapacity = capacity;
 
         this.tokenCount = 0;
         this.types = new Uint8Array(capacity);
@@ -423,6 +432,44 @@ export class Tokenizer {
 
         this.offset = offset;
         this.tokenCount = tokenCount;
+    }
+
+    /**
+     * Grow `types` and `ends` to `newCapacity` (in number of tokens).
+     *
+     * Already-tokenized entries at indices `0 .. TokenCount - 1` are
+     * preserved; `offset` is unchanged so a subsequent {@link tokenize}
+     * call resumes from where scanning stopped.
+     *
+     * No-op when `newCapacity <= this.capacity`.
+     *
+     * @param newCapacity New buffer length (in tokens).
+     */
+    public growCapacity(newCapacity: number): void {
+        if (newCapacity <= this.capacity) {
+            return;
+        }
+        this.types = growUint8(this.types, newCapacity);
+        this.ends = growUint32(this.ends, newCapacity);
+        this.capacity = newCapacity;
+    }
+
+    /**
+     * Release any extra memory grown during previous parses.
+     *
+     * Shrinks `types` and `ends` back to the capacity supplied to the
+     * constructor and resets `tokenCount`, `offset`, and `source`. No-op
+     * if the buffers were never grown.
+     */
+    public reset(): void {
+        if (this.capacity !== this.defaultCapacity) {
+            this.types = new Uint8Array(this.defaultCapacity);
+            this.ends = new Uint32Array(this.defaultCapacity);
+            this.capacity = this.defaultCapacity;
+        }
+        this.tokenCount = 0;
+        this.offset = 0;
+        this.source = '';
     }
 
     /**

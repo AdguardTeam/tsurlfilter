@@ -24,6 +24,7 @@ import { sprintf } from 'sprintf-js';
 
 import { AbpSnippetInjectionBodyCommon } from '../../common/abp-snippet-injection-body-common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { REGION_SCRIPTLET_BODY } from '../../errors/capacity-overflow-error';
 import { TokenType } from '../../tokenizer/token-types';
 import {
     ADG_SCRIPTLET_MASK,
@@ -34,6 +35,9 @@ import {
 } from '../../utils/constants';
 import type { ParserContext } from '../context';
 import {
+    CTX_STATUS_HARD_CAP,
+    CTX_STATUS_OVERFLOW,
+    growCtxRegion,
     regionEquals,
     scriptletBodyDataOffset,
     skipWs,
@@ -53,7 +57,6 @@ import {
     CR_SEP_KIND_ABP_SNIPPET,
     CR_SEP_KIND_MASK,
     CR_SEP_KIND_SHIFT,
-    SCRIPTLET_BODY_DATA_CAPACITY,
 } from './constants';
 
 // ---------------------------------------------------------------------------
@@ -152,11 +155,10 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
         bodyStart: number,
         bodyEnd: number,
     ): void {
-        const {
-            source, data, types, ends,
-        } = ctx;
+        const { source, types, ends } = ctx;
+        let { data } = ctx;
         const base = scriptletBodyDataOffset(ctx);
-        const limit = base + SCRIPTLET_BODY_DATA_CAPACITY;
+        let limit = base + ctx.maxScriptletBody;
         let di = base;
 
         // Skip leading whitespace tokens
@@ -278,10 +280,23 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
 
                 // Write param boundary (including quotes)
                 if (di + 1 >= limit) {
-                    // Overflow: signal status=1 and bail without throwing.
-                    data[paramCountSlot] = paramCount;
-                    ctx.status = 1;
-                    return;
+                    if (!ctx.grow) {
+                        data[paramCountSlot] = paramCount;
+                        ctx.status = CTX_STATUS_OVERFLOW;
+                        return;
+                    }
+                    const relativeSlot = di - base;
+                    const requested = Math.max(ctx.maxScriptletBody * 2, relativeSlot + 4);
+                    if (!growCtxRegion(ctx, REGION_SCRIPTLET_BODY, requested)) {
+                        data[paramCountSlot] = paramCount;
+                        ctx.overflowRegion = REGION_SCRIPTLET_BODY;
+                        ctx.status = CTX_STATUS_HARD_CAP;
+                        return;
+                    }
+                    // base is unchanged; only limit and data need updating.
+                    data = ctx.data;
+                    limit = base + ctx.maxScriptletBody;
+                    di = base + relativeSlot;
                 }
                 data[di] = quoteStart;
                 data[di + 1] = ends[closeQuoteTi];
@@ -321,11 +336,9 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
         bodyStart: number,
         bodyEnd: number,
     ): void {
-        const {
-            source, data, types, ends,
-        } = ctx;
+        const { source, types, ends } = ctx;
+        let { data } = ctx;
         const base = scriptletBodyDataOffset(ctx);
-        const limit = base + SCRIPTLET_BODY_DATA_CAPACITY;
         let di = base;
 
         // Skip leading whitespace tokens
@@ -400,9 +413,10 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
         }
 
         // Parse UBO parameter list inside parens using token indices
-        di = ScriptletBodyParser.parseUboParamListTokens(ctx, data, di, innerTi, closeParenTi, limit);
+        di = ScriptletBodyParser.parseUboParamListTokens(ctx, base, di, innerTi, closeParenTi);
 
         // Validate first param is not null (scriptlet name required)
+        data = ctx.data;
         const pc = data[base + 1];
         if (pc > 0 && data[base + 2] === NO_VALUE) {
             throw new AdblockSyntaxError(UBO_ERRORS.NO_SCRIPTLET_NAME, tokenStart(ctx, openParenTi), bodyEnd);
@@ -413,23 +427,23 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
      * Preparse a UBO-style comma-separated parameter list using token indices.
      *
      * @param ctx Parser context.
-     * @param data Output data buffer.
+     * @param base Base offset of the scriptlet data region in `data`.
      * @param di Current write offset in data.
      * @param startTi First token index inside parens (after leading ws).
      * @param endTi Token index of closing paren (exclusive boundary).
-     * @param limit Exclusive upper bound of the scriptlet data region in `data`.
      *
      * @returns Updated data write offset.
      */
     private static parseUboParamListTokens(
         ctx: ParserContext,
-        data: Int32Array,
+        base: number,
         di: number,
         startTi: number,
         endTi: number,
-        limit: number,
     ): number {
         const { types, ends } = ctx;
+        let { data } = ctx;
+        let limit = base + ctx.maxScriptletBody;
         const paramCountSlot = di;
         di += 1;
         let paramCount = 0;
@@ -537,10 +551,22 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
             }
 
             if (di + 1 >= limit) {
-                // Overflow inside parseUboParamListTokens: signal status=1 and bail.
+                // Overflow inside parseUboParamListTokens: grow or bail.
                 data[paramCountSlot] = paramCount;
-                ctx.status = 1;
-                return di;
+                if (!ctx.grow) {
+                    ctx.status = CTX_STATUS_OVERFLOW;
+                    return di;
+                }
+                const relativeSlot = di - base;
+                const requested = Math.max(ctx.maxScriptletBody * 2, relativeSlot + 4);
+                if (!growCtxRegion(ctx, REGION_SCRIPTLET_BODY, requested)) {
+                    ctx.overflowRegion = REGION_SCRIPTLET_BODY;
+                    ctx.status = CTX_STATUS_HARD_CAP;
+                    return di;
+                }
+                data = ctx.data;
+                limit = base + ctx.maxScriptletBody;
+                di = base + relativeSlot;
             }
             if (paramStartOffset < paramEndOffset) {
                 data[di] = paramStartOffset;
@@ -555,9 +581,22 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
 
         if (extraNull) {
             if (di + 1 >= limit) {
+                // Overflow on trailing null: grow or bail.
                 data[paramCountSlot] = paramCount;
-                ctx.status = 1;
-                return di;
+                if (!ctx.grow) {
+                    ctx.status = CTX_STATUS_OVERFLOW;
+                    return di;
+                }
+                const relativeSlot = di - base;
+                const requested = Math.max(ctx.maxScriptletBody * 2, relativeSlot + 4);
+                if (!growCtxRegion(ctx, REGION_SCRIPTLET_BODY, requested)) {
+                    ctx.overflowRegion = REGION_SCRIPTLET_BODY;
+                    ctx.status = CTX_STATUS_HARD_CAP;
+                    return di;
+                }
+                data = ctx.data;
+                limit = base + ctx.maxScriptletBody;
+                di = base + relativeSlot;
             }
             data[di] = NO_VALUE;
             data[di + 1] = NO_VALUE;
@@ -585,9 +624,8 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
         bodyStart: number,
         bodyEnd: number,
     ): void {
-        const { data } = ctx;
+        let { data } = ctx;
         const base = scriptletBodyDataOffset(ctx);
-        const limit = base + SCRIPTLET_BODY_DATA_CAPACITY;
 
         const callCountSlot = base;
         let di = base + 1;
@@ -615,12 +653,13 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
             // Parse space-separated params for this call
             di = ScriptletBodyParser.parseAbpParamListTokens(
                 ctx,
-                data,
+                base,
                 di,
                 callStartTi,
                 trimmedCallEndTi,
-                limit,
             );
+            // Refresh data reference in case growth occurred inside parseAbpParamListTokens.
+            data = ctx.data;
             callCount += 1;
 
             ti = semiTi === -1 ? bodyEndTi : semiTi + 1;
@@ -712,23 +751,23 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
      * Preparse an ABP-style space-separated parameter list using token indices.
      *
      * @param ctx Parser context.
-     * @param data Output data buffer.
+     * @param base Base offset of the scriptlet data region in `data`.
      * @param di Current write offset in data.
      * @param startTi Start token index.
      * @param endTi End token index (exclusive, after trimming).
-     * @param limit Exclusive upper bound of the scriptlet data region in `data`.
      *
      * @returns Updated data write offset.
      */
     private static parseAbpParamListTokens(
         ctx: ParserContext,
-        data: Int32Array,
+        base: number,
         di: number,
         startTi: number,
         endTi: number,
-        limit: number,
     ): number {
         const { types, ends } = ctx;
+        let { data } = ctx;
+        let limit = base + ctx.maxScriptletBody;
         const paramCountSlot = di;
         di += 1;
         let paramCount = 0;
@@ -754,10 +793,22 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
             const paramEndOffset = trimEndTi >= paramStartTi ? ends[trimEndTi] : paramStartOffset;
 
             if (di + 1 >= limit) {
-                // Overflow inside parseAbpParamListTokens: signal status=1 and bail.
+                // Overflow inside parseAbpParamListTokens: grow or bail.
                 data[paramCountSlot] = paramCount;
-                ctx.status = 1;
-                return di;
+                if (!ctx.grow) {
+                    ctx.status = CTX_STATUS_OVERFLOW;
+                    return di;
+                }
+                const relativeSlot = di - base;
+                const requested = Math.max(ctx.maxScriptletBody * 2, relativeSlot + 4);
+                if (!growCtxRegion(ctx, REGION_SCRIPTLET_BODY, requested)) {
+                    ctx.overflowRegion = REGION_SCRIPTLET_BODY;
+                    ctx.status = CTX_STATUS_HARD_CAP;
+                    return di;
+                }
+                data = ctx.data;
+                limit = base + ctx.maxScriptletBody;
+                di = base + relativeSlot;
             }
             if (paramStartOffset < paramEndOffset) {
                 data[di] = paramStartOffset;
@@ -775,9 +826,22 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
         // Trailing space → extra null
         if (endTi > startTi && types[endTi - 1] === TokenType.Whitespace) {
             if (di + 1 >= limit) {
+                // Overflow on trailing null: grow or bail.
                 data[paramCountSlot] = paramCount;
-                ctx.status = 1;
-                return di;
+                if (!ctx.grow) {
+                    ctx.status = CTX_STATUS_OVERFLOW;
+                    return di;
+                }
+                const relativeSlot = di - base;
+                const requested = Math.max(ctx.maxScriptletBody * 2, relativeSlot + 4);
+                if (!growCtxRegion(ctx, REGION_SCRIPTLET_BODY, requested)) {
+                    ctx.overflowRegion = REGION_SCRIPTLET_BODY;
+                    ctx.status = CTX_STATUS_HARD_CAP;
+                    return di;
+                }
+                data = ctx.data;
+                limit = base + ctx.maxScriptletBody;
+                di = base + relativeSlot;
             }
             data[di] = NO_VALUE;
             data[di + 1] = NO_VALUE;

@@ -471,13 +471,16 @@ describe('ScriptletBodyParser — buffer overflow protection', () => {
         return `example.com#$#${params}`;
     };
 
+    // Use grow:false so that overflow still throws (legacy behaviour).
+    const noGrowParser = new RuleParserPipeline({ grow: false });
+
     describe('ADG scriptlet', () => {
         test('63 params — within capacity, does not throw', () => {
-            expect(() => parser.parse(buildAdgRule(63))).not.toThrow();
+            expect(() => noGrowParser.parse(buildAdgRule(63))).not.toThrow();
         });
 
-        test('64 params — exceeds capacity, throws', () => {
-            expect(() => parser.parse(buildAdgRule(64))).toThrow(
+        test('64 params — exceeds capacity (grow:false), throws', () => {
+            expect(() => noGrowParser.parse(buildAdgRule(64))).toThrow(
                 /buffer overflow|too large for current capacity/i,
             );
         });
@@ -485,11 +488,11 @@ describe('ScriptletBodyParser — buffer overflow protection', () => {
 
     describe('UBO scriptlet', () => {
         test('63 params — within capacity, does not throw', () => {
-            expect(() => parser.parse(buildUboRule(63))).not.toThrow();
+            expect(() => noGrowParser.parse(buildUboRule(63))).not.toThrow();
         });
 
-        test('64 params — exceeds capacity, throws', () => {
-            expect(() => parser.parse(buildUboRule(64))).toThrow(
+        test('64 params — exceeds capacity (grow:false), throws', () => {
+            expect(() => noGrowParser.parse(buildUboRule(64))).toThrow(
                 /buffer overflow|too large for current capacity/i,
             );
         });
@@ -497,11 +500,11 @@ describe('ScriptletBodyParser — buffer overflow protection', () => {
 
     describe('ABP snippet (single call)', () => {
         test('63 space-separated tokens — within capacity, does not throw', () => {
-            expect(() => parser.parse(buildAbpRule(63))).not.toThrow();
+            expect(() => noGrowParser.parse(buildAbpRule(63))).not.toThrow();
         });
 
-        test('64 space-separated tokens — exceeds capacity, throws', () => {
-            expect(() => parser.parse(buildAbpRule(64))).toThrow(
+        test('64 space-separated tokens — exceeds capacity (grow:false), throws', () => {
+            expect(() => noGrowParser.parse(buildAbpRule(64))).toThrow(
                 /buffer overflow|too large for current capacity/i,
             );
         });
@@ -509,10 +512,10 @@ describe('ScriptletBodyParser — buffer overflow protection', () => {
 
     describe('ABP snippet (multiple calls)', () => {
         // 5 calls × (1 paramCount slot + 14 params × 2) = 5 × 29 = 145, plus 1 callCount = 146 > 128
-        test('5 calls with 14 params each — exceeds capacity, throws', () => {
+        test('5 calls with 14 params each — exceeds capacity (grow:false), throws', () => {
             const call = Array.from({ length: 14 }, (_, i) => `p${i}`).join(' ');
             const rule = `example.com#$#${Array(5).fill(call).join('; ')}`;
-            expect(() => parser.parse(rule)).toThrow(/buffer overflow|too large for current capacity/i);
+            expect(() => noGrowParser.parse(rule)).toThrow(/buffer overflow|too large for current capacity/i);
         });
     });
 });

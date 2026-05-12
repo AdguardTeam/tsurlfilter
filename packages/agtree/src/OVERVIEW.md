@@ -145,7 +145,7 @@ ParserContext {
   ends:       Uint32Array  — token ends  (from tokenizer)
   tokenCount: number
   data:       Int32Array   — output: structural indices
-  status:     0 | 1        — 0 = success, 1 = capacity overflow
+  status:     0 | 1 | 2    — 0 = success, 1 = capacity overflow (grow:false), 2 = hard-cap overflow
   maxDomains: number       — maximum domain records
   maxMods:    number       — maximum modifier records
 }
@@ -291,11 +291,14 @@ contributors **must** follow all of them when adding or modifying parsers.
    arrays, or produce strings. All output goes into the pre-allocated
    `ctx.data` buffer.
 
-2. **Fixed-size buffers — no dynamic growth.**
-   Every buffer is allocated once at construction time with a capacity decided
-   by the caller. If a rule exceeds the buffer, set `ctx.status = 1` and
-   stop. Do NOT reallocate or grow. The removed `growDomainCapacity()` was
-   the last violation of this rule.
+2. **Buffers grow on demand up to a hard cap.**
+   Buffers are allocated at construction with a caller-chosen capacity. If a
+   rule exceeds the buffer and `grow` is `true` (the default), `growCtxRegion`
+   doubles the affected region up to the hard cap defined in `src/limits.ts`.
+   When the hard cap is reached `ctx.status = 2` and `ctx.overflowRegion` are
+   set; the pipeline parser then throws `CapacityOverflowError`. When
+   `grow: false`, the old behaviour is preserved: `ctx.status = 1` is set and a
+   generic error is thrown.
 
 3. **No static singletons for pipeline parsers.**
    Classes that own a `Tokenizer` and `ParserContext` (`RuleParser`,
@@ -306,9 +309,12 @@ contributors **must** follow all of them when adding or modifying parsers.
 
 4. **Capacity overflow signals via `ctx.status`, not exceptions.**
    When the number of records exceeds the allocated capacity (e.g., too many
-   domains or modifiers), set `ctx.status = 1` and return. Pipeline parsers
-   may then inspect `ctx.status` and throw or return an error node in tolerant
-   mode.
+   domains or modifiers), structural parsers call `growCtxRegion(ctx, region,
+   newCap)` if `ctx.grow` is `true`. On success parsing continues normally. If
+   growth is disabled or the hard cap is reached, set `ctx.status = 1` or `2`
+   (respectively) and return immediately. Pipeline parsers inspect `ctx.status`
+   after each structural parse and throw accordingly — `CapacityOverflowError`
+   for `status === 2`, a generic `Error` for `status === 1`.
 
 5. **Options objects are immutable pass-throughs.**
    No parser or builder may mutate the `options` argument. Pass it by
@@ -359,13 +365,29 @@ The three-stage pipeline has two consumer-facing tiers:
 
 ```typescript
 interface ParserCapacity {
-    tokenCapacity?:    number;   // max tokens per rule    (default 1024)
-    itemCapacity?:     number;   // max primary records    (default varies)
-    secondaryCapacity?: number;  // max secondary records  (default varies)
+    tokenCapacity?:     number;   // max tokens per rule    (default 1024)
+    itemCapacity?:      number;   // max primary records    (default varies)
+    secondaryCapacity?: number;   // max secondary records  (default varies)
+    grow?:              boolean;  // auto-grow buffers up to hard cap (default true)
 }
 
 // Usage:
 const parser = new RuleParser({ tokenCapacity: 2048, itemCapacity: 128 });
+// Disable auto-growth (legacy behaviour — throws on overflow):
+const strictParser = new RuleParser({ grow: false });
+```
+
+### `reset()` — release grown memory
+
+After parsing a large rule, call `parser.reset()` to shrink all buffers back
+to their construction-time defaults and release any memory acquired by
+auto-growth:
+
+```typescript
+const parser = new RuleParser();   // default capacities
+parser.parse(massiveRule);         // buffers may have grown
+parser.reset();                    // shrink back & free grown memory
+parser.parse(smallRule);           // next parse starts with compact buffers
 ```
 
 ### `ParseOptions` — parse-time flags

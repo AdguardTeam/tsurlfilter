@@ -8,7 +8,8 @@ describe('cosmetic-common modifier list overflow', () => {
     test('throws on modifier list overflow (FR-005)', () => {
         const tokenizer = new Tokenizer(1024);
         // maxMods=1 means only 1 modifier fits; [$a,b] has 2 comma-separated modifiers.
-        const ctx = createParserContext(1024, 1);
+        // grow=false preserves the legacy throw-on-overflow behaviour.
+        const ctx = createParserContext(1024, 1, undefined, undefined, false);
         const source = '[$a,b]example.com##.ad';
         tokenizer.setSource(source);
         initParserContext(ctx, source, tokenizer);

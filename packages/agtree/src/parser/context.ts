@@ -8,6 +8,9 @@
  * chaining ergonomic while staying allocation-free.
  */
 
+import type { CapacityRegion, GrowableRegion } from '../errors/capacity-overflow-error';
+import { REGION_DOMAINS, REGION_MODIFIERS, REGION_SCRIPTLET_BODY } from '../errors/capacity-overflow-error';
+import { MAX_DOMAIN_CAPACITY, MAX_MODIFIER_CAPACITY, MAX_SCRIPTLET_BODY_CAPACITY } from '../limits';
 import { TokenType } from '../tokenizer/token-types';
 import type { Tokenizer } from '../tokenizer/tokenizer';
 
@@ -18,6 +21,25 @@ import {
     UBO_MODIFIER_RECORD_STRIDE,
 } from './cosmetic/constants';
 import { MODIFIER_RECORD_STRIDE, NR_MODIFIER_RECORDS_OFFSET } from './network/constants';
+
+/**
+ * Parse status: success — structural data in `data` is complete.
+ */
+export const CTX_STATUS_OK = 0;
+
+/**
+ * Parse status: recoverable overflow (`grow === false`). A structural parser
+ * ran out of buffer capacity. The data already written remains usable but is
+ * truncated.
+ */
+export const CTX_STATUS_OVERFLOW = 1;
+
+/**
+ * Parse status: hard-cap overflow. Growth required would exceed the module
+ * hard cap. The pipeline parser will throw {@link CapacityOverflowError}
+ * and clear this to {@link CTX_STATUS_OK}.
+ */
+export const CTX_STATUS_HARD_CAP = 2;
 
 /**
  * Maximum modifier record stride across all rule types.
@@ -107,22 +129,60 @@ export interface ParserContext {
     maxDomains: number;
 
     /**
+     * Maximum number of Int32 slots for the scriptlet body region.
+     */
+    maxScriptletBody: number;
+
+    /**
+     * Whether buffers may grow dynamically on overflow (up to the hard caps
+     * defined in `src/limits.ts`). When `false` the parser preserves the
+     * legacy behaviour: structural parsers set `status = 1` and bail.
+     */
+    grow: boolean;
+
+    /**
+     * The region that most recently triggered hard-cap overflow.
+     * Set by structural parsers before writing `status = 2`. Cleared by the
+     * pipeline parser after throwing {@link CapacityOverflowError}.
+     */
+    overflowRegion?: CapacityRegion;
+
+    /**
      * Parse status code:
      *
      *   - `0` — Success. The structural data in `data` is complete.
-     *   - `1` — Recoverable overflow. A structural parser ran out of
-     *           buffer capacity (modifiers, domains, declarations, or
-     *           scriptlet parameters). The data already written remains
-     *           usable, but is truncated. Callers may either treat the
-     *           result as a parse error or re-parse with larger
-     *           capacities (`createParserContext(_, modifierCapacity,
-     *           domainCapacity, _)`).
+     *   - `1` — Recoverable overflow (`grow === false`). A structural parser
+     *           ran out of buffer capacity. The data already written remains
+     *           usable but is truncated.
+     *   - `2` — Hard-cap overflow. The growth required would exceed the module
+     *           hard cap. The pipeline parser will throw
+     *           {@link CapacityOverflowError} and clear this to `0`.
      *
-     * Parsers MUST NOT throw for overflow; they MUST set this field to
-     * `1` and return early. Lexical or semantic syntax errors are still
-     * reported via thrown {@link AdblockSyntaxError}s.
+     * Parsers MUST NOT throw for overflow; they MUST set this field and return
+     * early. Lexical or semantic syntax errors are still reported via thrown
+     * {@link AdblockSyntaxError}s.
      */
-    status: 0 | 1;
+    status: 0 | 1 | 2;
+}
+
+/**
+ * Compute the total `ctx.data` length needed for given capacity triple.
+ *
+ * @param maxMods Maximum modifier records.
+ * @param maxDomains Maximum domain records.
+ * @param maxScriptletBody Maximum scriptlet body slots.
+ *
+ * @returns Required `Int32Array` length.
+ */
+function computeDataLength(maxMods: number, maxDomains: number, maxScriptletBody: number): number {
+    return Math.max(
+        NR_MODIFIER_RECORDS_OFFSET
+            + maxMods * MAX_MODIFIER_RECORD_STRIDE
+            + maxDomains * DOMAIN_RECORD_STRIDE
+            + maxScriptletBody,
+        CM_PREP_MIN_DATA_SLOTS,
+        HF_MIN_DATA_SLOTS,
+    );
 }
 
 /**
@@ -131,6 +191,8 @@ export interface ParserContext {
  * @param tokenCapacity Maximum number of tokens.
  * @param modifierCapacity Maximum number of modifiers.
  * @param domainCapacity Maximum number of domains.
+ * @param scriptletBodyCapacity Maximum scriptlet body Int32 slots.
+ * @param grow Whether buffers may grow dynamically on overflow.
  *
  * @returns A new ParserContext ready for use.
  */
@@ -138,6 +200,8 @@ export function createParserContext(
     tokenCapacity = DEFAULT_TOKEN_CAPACITY,
     modifierCapacity = DEFAULT_MODIFIER_CAPACITY,
     domainCapacity = DEFAULT_DOMAIN_CAPACITY,
+    scriptletBodyCapacity = SCRIPTLET_BODY_DATA_CAPACITY,
+    grow = true,
 ): ParserContext {
     return {
         source: '',
@@ -145,16 +209,132 @@ export function createParserContext(
         types: new Uint8Array(tokenCapacity),
         ends: new Uint32Array(tokenCapacity),
         tokenCount: 0,
-        data: new Int32Array(Math.max(
-            // eslint-disable-next-line max-len
-            NR_MODIFIER_RECORDS_OFFSET + modifierCapacity * MAX_MODIFIER_RECORD_STRIDE + domainCapacity * DOMAIN_RECORD_STRIDE + SCRIPTLET_BODY_DATA_CAPACITY,
-            CM_PREP_MIN_DATA_SLOTS,
-            HF_MIN_DATA_SLOTS,
-        )),
+        data: new Int32Array(computeDataLength(modifierCapacity, domainCapacity, scriptletBodyCapacity)),
         maxMods: modifierCapacity,
         maxDomains: domainCapacity,
-        status: 0,
+        maxScriptletBody: scriptletBodyCapacity,
+        grow,
+        status: CTX_STATUS_OK,
     };
+}
+
+/**
+ * Grow one of the three growable regions of `ctx.data` and update
+ * `ctx.maxMods` / `ctx.maxDomains` / `ctx.maxScriptletBody` accordingly.
+ *
+ * The function reallocates `ctx.data` to a new `Int32Array`, copies the
+ * already-written header + earlier regions into their correct positions in
+ * the new layout, and updates the capacity fields on `ctx`.
+ *
+ * Regions are written sequentially:
+ *  modifier records → domain records → scriptlet body.
+ *
+ * Growing a region that comes before another shifts the later regions to
+ * higher offsets; the copy logic handles this correctly.
+ *
+ * @param ctx Parser context whose `data` buffer will be reallocated.
+ * @param region Which region to grow ({@link REGION_MODIFIERS}, {@link REGION_DOMAINS},
+ *   or {@link REGION_SCRIPTLET_BODY}).
+ * @param newCapacity Desired new capacity (records for mod/domain; slots for scriptlet).
+ *
+ * @returns `true` on success; `false` if `newCapacity` exceeds the hard cap
+ *          (caller should then set `ctx.overflowRegion` and `ctx.status = 2`).
+ */
+export function growCtxRegion(
+    ctx: ParserContext,
+    region: GrowableRegion,
+    newCapacity: number,
+): boolean {
+    let hardCap: number;
+    if (region === REGION_MODIFIERS) {
+        hardCap = MAX_MODIFIER_CAPACITY;
+    } else if (region === REGION_DOMAINS) {
+        hardCap = MAX_DOMAIN_CAPACITY;
+    } else {
+        hardCap = MAX_SCRIPTLET_BODY_CAPACITY;
+    }
+
+    if (newCapacity > hardCap) {
+        return false;
+    }
+
+    const oldMaxMods = ctx.maxMods;
+    const oldMaxDomains = ctx.maxDomains;
+    const oldMaxScriptlet = ctx.maxScriptletBody;
+
+    const newMaxMods = region === REGION_MODIFIERS ? newCapacity : oldMaxMods;
+    const newMaxDomains = region === REGION_DOMAINS ? newCapacity : oldMaxDomains;
+    const newMaxScriptlet = region === REGION_SCRIPTLET_BODY ? newCapacity : oldMaxScriptlet;
+
+    const oldData = ctx.data;
+    const newData = new Int32Array(computeDataLength(newMaxMods, newMaxDomains, newMaxScriptlet));
+
+    // Copy header (always at offsets [0, NR_MODIFIER_RECORDS_OFFSET)).
+    for (let i = 0; i < NR_MODIFIER_RECORDS_OFFSET; i += 1) {
+        newData[i] = oldData[i];
+    }
+
+    // Copy modifier records (start offset is fixed at NR_MODIFIER_RECORDS_OFFSET).
+    const modSlots = oldMaxMods * MAX_MODIFIER_RECORD_STRIDE;
+    newData.set(
+        oldData.subarray(NR_MODIFIER_RECORDS_OFFSET, NR_MODIFIER_RECORDS_OFFSET + modSlots),
+        NR_MODIFIER_RECORDS_OFFSET,
+    );
+
+    // Copy domain records — offset shifts when maxMods grew.
+    const oldDomainStart = NR_MODIFIER_RECORDS_OFFSET + oldMaxMods * MAX_MODIFIER_RECORD_STRIDE;
+    const newDomainStart = NR_MODIFIER_RECORDS_OFFSET + newMaxMods * MAX_MODIFIER_RECORD_STRIDE;
+    const domSlots = oldMaxDomains * DOMAIN_RECORD_STRIDE;
+    newData.set(oldData.subarray(oldDomainStart, oldDomainStart + domSlots), newDomainStart);
+
+    // Copy scriptlet body region — offset shifts when maxMods or maxDomains grew.
+    const oldScriptletStart = oldDomainStart + oldMaxDomains * DOMAIN_RECORD_STRIDE;
+    const newScriptletStart = newDomainStart + newMaxDomains * DOMAIN_RECORD_STRIDE;
+    newData.set(
+        oldData.subarray(oldScriptletStart, oldScriptletStart + oldMaxScriptlet),
+        newScriptletStart,
+    );
+
+    ctx.data = newData;
+    ctx.maxMods = newMaxMods;
+    ctx.maxDomains = newMaxDomains;
+    ctx.maxScriptletBody = newMaxScriptlet;
+    return true;
+}
+
+/**
+ * Shrink `ctx.data` back to the supplied default capacities.
+ *
+ * Called by pipeline-parser `reset()` methods. If the current capacities
+ * already match the defaults, only counters are cleared (no reallocation).
+ *
+ * @param ctx Parser context to reset.
+ * @param defaultMaxMods Default modifier capacity.
+ * @param defaultMaxDomains Default domain capacity.
+ * @param defaultMaxScriptlet Default scriptlet body capacity.
+ */
+export function resetCtxData(
+    ctx: ParserContext,
+    defaultMaxMods: number,
+    defaultMaxDomains: number,
+    defaultMaxScriptlet: number,
+): void {
+    if (
+        ctx.maxMods === defaultMaxMods
+        && ctx.maxDomains === defaultMaxDomains
+        && ctx.maxScriptletBody === defaultMaxScriptlet
+    ) {
+        // Nothing grew — just clear counters.
+        ctx.status = CTX_STATUS_OK;
+        ctx.tokenCount = 0;
+        return;
+    }
+    ctx.data = new Int32Array(computeDataLength(defaultMaxMods, defaultMaxDomains, defaultMaxScriptlet));
+    ctx.maxMods = defaultMaxMods;
+    ctx.maxDomains = defaultMaxDomains;
+    ctx.maxScriptletBody = defaultMaxScriptlet;
+    ctx.status = CTX_STATUS_OK;
+    ctx.tokenCount = 0;
 }
 
 /**
@@ -176,7 +356,7 @@ export function initParserContext(
     ctx.types = tokens.types;
     ctx.ends = tokens.ends;
     ctx.tokenCount = tokens.tokenCount;
-    ctx.status = 0;
+    ctx.status = CTX_STATUS_OK;
 }
 
 /**
