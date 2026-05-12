@@ -77,14 +77,14 @@ npmjs 4.1.X:
   tasks: *tasks
   requirements: *requirements
 
-  # for AdGuard browser extension v5.4.2.X
-  npmjs 4.2.X:
-    docker: *docker
-    # run auto-deploy only after successful build for dnr-rulesets v4.2.X
-    triggers:
-      - build-success:
-          # git branch name `stable/dnr-rulesets-4.2`, '/' is replaced with '-'
-          # in Bamboo
-          branch: stable-dnr-rulesets-4.2
-    tasks: *tasks
-    requirements: *requirements
+# for AdGuard browser extension v5.4.2.X
+npmjs 4.2.X:
+  docker: *docker
+  # run auto-deploy only after successful build for dnr-rulesets v4.2.X
+  triggers:
+    - build-success:
+        # git branch name `stable/dnr-rulesets-4.2`, '/' is replaced with '-'
+        # in Bamboo
+        branch: stable-dnr-rulesets-4.2
+  tasks: *tasks
+  requirements: *requirements
