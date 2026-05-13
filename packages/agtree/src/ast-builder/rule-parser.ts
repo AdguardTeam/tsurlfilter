@@ -30,6 +30,7 @@ import {
     type InvalidRuleError,
     type JsInjectionRule,
     type NetworkRule,
+    NodeType,
     RuleCategory,
     type ScriptletInjectionRule,
 } from '../nodes-new';
@@ -154,12 +155,12 @@ function createIgnoredRule(
     end = source.length,
 ): InvalidRule {
     const error: InvalidRuleError = {
-        type: 'InvalidRuleError',
+        type: NodeType.InvalidRuleError,
         name: 'RuleIgnoredError',
         message,
     };
     const result: InvalidRule = {
-        type: 'InvalidRule',
+        type: NodeType.InvalidRule,
         category: RuleCategory.Invalid,
         syntax: AdblockSyntax.Common,
         raw: source.slice(start, end),
@@ -273,7 +274,7 @@ export class RuleParserPipeline {
     public parse(source: string, options?: ParseOptions): AnyParsedRule {
         if (source.trim().length === 0) {
             const result: EmptyRule = {
-                type: 'EmptyRule',
+                type: NodeType.EmptyRule,
                 category: RuleCategory.Empty,
                 syntax: AdblockSyntax.Common,
             };

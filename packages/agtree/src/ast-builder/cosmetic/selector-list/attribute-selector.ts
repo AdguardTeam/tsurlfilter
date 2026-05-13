@@ -14,6 +14,7 @@ import type {
     AttributeSelectorWithValue,
     Value,
 } from '../../../nodes-new';
+import { NodeType } from '../../../nodes-new';
 import {
     CHILD_FIELD_0,
     CHILD_FIELD_1,
@@ -64,7 +65,7 @@ export function buildAttributeSelector(
     // No operator → attribute presence selector: [attr]
     if (data[base + CHILD_FIELD_2] === NO_VALUE) {
         const node: AttributeSelectorWithoutValue = {
-            type: 'AttributeSelector',
+            type: NodeType.AttributeSelector,
             name,
         };
 
@@ -93,7 +94,7 @@ export function buildAttributeSelector(
     const value = ValueAstBuilder.parse(source, valueStart, valueEnd, isLocIncluded);
 
     const node: AttributeSelectorWithValue = {
-        type: 'AttributeSelector',
+        type: NodeType.AttributeSelector,
         name,
         operator,
         value,

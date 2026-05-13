@@ -16,6 +16,7 @@ import type {
     Raw,
     SelectorList,
 } from '../../../nodes-new';
+import { NodeType } from '../../../nodes-new';
 import type { ParserContext } from '../../../parser/context';
 import { DeclarationListParser } from '../../../parser/css/declaration-list';
 import { DEFAULT_MAX_DECLARATIONS } from '../../../parser/css/declaration-list/constants';
@@ -115,7 +116,7 @@ export class CssRuleAstBuilder {
         } else {
             // source.slice uses local (unshifted) offsets; metadata positions are shifted.
             const rawPrelude: Raw = {
-                type: 'Raw',
+                type: NodeType.Raw,
                 value: source.slice(slSourceStart, slSourceEnd),
             };
             if (isLocIncluded) {
@@ -156,7 +157,7 @@ export class CssRuleAstBuilder {
             );
 
             const cssBlock: CssBlock = {
-                type: 'CssBlock',
+                type: NodeType.CssBlock,
                 declarationList,
             };
             if (isLocIncluded) {
@@ -167,7 +168,7 @@ export class CssRuleAstBuilder {
         } else {
             // source.slice uses local (unshifted) offsets; metadata positions are shifted.
             const rawBlock: Raw = {
-                type: 'Raw',
+                type: NodeType.Raw,
                 value: source.slice(dlSourceStart, dlSourceEnd),
             };
             if (isLocIncluded) {
@@ -179,7 +180,7 @@ export class CssRuleAstBuilder {
 
         // --- Build CssRule ---
         const result: CssRule = {
-            type: 'CssRule',
+            type: NodeType.CssRule,
             prelude,
             block,
         };

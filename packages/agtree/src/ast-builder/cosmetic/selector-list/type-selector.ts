@@ -5,6 +5,7 @@
  */
 
 import type { TypeSelector } from '../../../nodes-new';
+import { NodeType } from '../../../nodes-new';
 import {
     CHILD_FIELD_0,
     CHILD_FIELD_1,
@@ -29,7 +30,7 @@ export function buildTypeSelector(
     isLocIncluded: boolean,
 ): TypeSelector {
     const node: TypeSelector = {
-        type: 'TypeSelector',
+        type: NodeType.TypeSelector,
         value: source.slice(data[base + CHILD_FIELD_0], data[base + CHILD_FIELD_1]),
     };
 

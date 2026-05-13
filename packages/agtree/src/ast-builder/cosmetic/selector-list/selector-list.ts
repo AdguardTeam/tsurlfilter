@@ -13,6 +13,7 @@ import type {
     SelectorList,
     SimpleSelector,
 } from '../../../nodes-new';
+import { NodeType } from '../../../nodes-new';
 import { SelectorListParser } from '../../../parser/css/selector-list';
 import { CHILD_FIELD_KIND, ChildKind, DEFAULT_MAX_COMPLEX } from '../../../parser/css/selector-list/constants';
 
@@ -108,7 +109,7 @@ export class SelectorListAstBuilder {
             }
 
             const complexNode: ComplexSelector = {
-                type: 'ComplexSelector',
+                type: NodeType.ComplexSelector,
                 children,
             };
 
@@ -121,7 +122,7 @@ export class SelectorListAstBuilder {
         }
 
         const node: SelectorList = {
-            type: 'SelectorList',
+            type: NodeType.SelectorList,
             children: complexSelectors,
         };
 

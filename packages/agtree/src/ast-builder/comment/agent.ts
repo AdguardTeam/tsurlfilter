@@ -10,6 +10,7 @@ import {
     type Agent,
     type AgentCommentRule,
     CommentRuleType,
+    NodeType,
     RuleCategory,
 } from '../../nodes-new';
 import {
@@ -99,7 +100,7 @@ export class AgentCommentAstBuilder {
         const name = ValueAstBuilder.parse(source, nameStart, nameEnd, isLoc);
         const syntax = getAdblockSyntax(source.slice(nameStart, nameEnd));
 
-        const result: Agent = { type: 'Agent', adblock: name, syntax };
+        const result: Agent = { type: NodeType.Agent, adblock: name, syntax };
 
         if (versionStart !== -1) {
             result.version = ValueAstBuilder.parse(source, versionStart, versionEnd, isLoc);

@@ -5,6 +5,7 @@
  */
 
 import type { PseudoClassSelector } from '../../../nodes-new';
+import { NodeType } from '../../../nodes-new';
 import {
     CHILD_FIELD_0,
     CHILD_FIELD_1,
@@ -42,7 +43,7 @@ export function buildPseudoClassSelector(
     const argStart = data[base + CHILD_FIELD_2];
 
     const node: PseudoClassSelector = {
-        type: 'PseudoClassSelector',
+        type: NodeType.PseudoClassSelector,
         name: ValueAstBuilder.parse(source, nameStart, nameEnd, isLocIncluded),
     };
 

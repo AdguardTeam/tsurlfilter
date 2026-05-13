@@ -5,6 +5,7 @@
  */
 
 import type { ClassSelector } from '../../../nodes-new';
+import { NodeType } from '../../../nodes-new';
 import {
     CHILD_FIELD_0,
     CHILD_FIELD_1,
@@ -32,7 +33,7 @@ export function buildClassSelector(
     isLocIncluded: boolean,
 ): ClassSelector {
     const node: ClassSelector = {
-        type: 'ClassSelector',
+        type: NodeType.ClassSelector,
         value: source.slice(data[base + CHILD_FIELD_0], data[base + CHILD_FIELD_1]),
     };
 

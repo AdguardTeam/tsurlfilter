@@ -5,7 +5,7 @@
  * the parameter list parser into a {@link ParameterList} AST node.
  */
 
-import { type Parameter, type ParameterList } from '../../nodes-new';
+import { NodeType, type Parameter, type ParameterList } from '../../nodes-new';
 import {
     PL_COUNT,
     PL_FLAG_TRANSFORM,
@@ -41,7 +41,7 @@ export class ParameterListAstBuilder {
         const listEnd = buf[PL_LIST_END];
 
         const result: ParameterList = {
-            type: 'ParameterList',
+            type: NodeType.ParameterList,
             children: [],
         };
 
@@ -90,7 +90,7 @@ export class ParameterListAstBuilder {
                 }
 
                 const node: Parameter = {
-                    type: 'Parameter',
+                    type: NodeType.Parameter,
                     value,
                     quoteType,
                 };

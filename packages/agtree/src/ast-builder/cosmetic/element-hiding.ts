@@ -7,7 +7,12 @@
  */
 
 import { UboPseudoName } from '../../common/ubo-selector-common';
-import { CosmeticRuleType, RuleCategory } from '../../nodes-new';
+import {
+    CosmeticRuleType,
+    ListNodeType,
+    NodeType,
+    RuleCategory,
+} from '../../nodes-new';
 import type {
     ElementHidingRule,
     ElementHidingRuleBody,
@@ -103,7 +108,7 @@ export class ElementHidingAstBuilder {
         const separatorValue = source.slice(sepSourceStart, sepSourceEnd);
 
         const separator: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: separatorValue,
         };
 
@@ -150,7 +155,7 @@ export class ElementHidingAstBuilder {
         }
 
         const selectorList: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: selectorListValue,
         };
 
@@ -164,7 +169,7 @@ export class ElementHidingAstBuilder {
         }
 
         const body: ElementHidingRuleBody = {
-            type: 'ElementHidingRuleBody',
+            type: NodeType.ElementHidingRuleBody,
             selectorList,
         };
 
@@ -181,7 +186,7 @@ export class ElementHidingAstBuilder {
             exception,
             modifiers,
             domains: domains || {
-                type: 'DomainList',
+                type: ListNodeType.DomainList,
                 separator: ',',
                 children: [],
             },
@@ -254,7 +259,7 @@ export class ElementHidingAstBuilder {
             const isException = (modFlags & MODIFIER_FLAG_NEGATED) !== 0;
 
             const nameNode: Value = {
-                type: 'Value',
+                type: NodeType.Value,
                 value: modName,
             };
 
@@ -264,14 +269,14 @@ export class ElementHidingAstBuilder {
             }
 
             const modifier: Modifier = {
-                type: 'Modifier',
+                type: NodeType.Modifier,
                 name: nameNode,
                 exception: isException || undefined,
             };
 
             if (valueStart !== NO_VALUE && valueEnd !== NO_VALUE) {
                 const valueNode: Value = {
-                    type: 'Value',
+                    type: NodeType.Value,
                     value: source.slice(valueStart, valueEnd),
                 };
 
@@ -312,7 +317,7 @@ export class ElementHidingAstBuilder {
         cleanedSelector = cleanedSelector.trim();
 
         const modifierList: ModifierList = {
-            type: 'ModifierList',
+            type: NodeType.ModifierList,
             children,
         };
 

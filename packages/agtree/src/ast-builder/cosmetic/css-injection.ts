@@ -16,7 +16,12 @@ import type {
     SelectorList,
     Value,
 } from '../../nodes-new';
-import { CosmeticRuleType, RuleCategory } from '../../nodes-new';
+import {
+    CosmeticRuleType,
+    ListNodeType,
+    NodeType,
+    RuleCategory,
+} from '../../nodes-new';
 import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
 import type { ParserContext } from '../../parser/context';
 import {
@@ -114,7 +119,7 @@ export class CssInjectionAstBuilder {
             COMMA,
             isLocIncluded,
         ) || {
-            type: 'DomainList',
+            type: ListNodeType.DomainList,
             separator: COMMA,
             children: [],
         };
@@ -137,7 +142,7 @@ export class CssInjectionAstBuilder {
         const sepSourceEnd = sepSourceStart + sepLen;
 
         const separator: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: source.slice(sepSourceStart, sepSourceEnd),
         };
 
@@ -187,7 +192,7 @@ export class CssInjectionAstBuilder {
 
         // Build body node
         const body: CssInjectionRuleBody = {
-            type: 'CssInjectionRuleBody',
+            type: NodeType.CssInjectionRuleBody,
             selectorList,
         };
 
@@ -200,7 +205,7 @@ export class CssInjectionAstBuilder {
             const mqEnd = data[injBase + CSS_INJ_MEDIA_QUERY_END];
 
             const mediaQueryList: Value = {
-                type: 'Value',
+                type: NodeType.Value,
                 value: source.slice(mqStart, mqEnd),
             };
 
@@ -279,7 +284,7 @@ export class CssInjectionAstBuilder {
         isLocIncluded: boolean,
     ): Raw {
         const node: Raw = {
-            type: 'Raw',
+            type: NodeType.Raw,
             value: source.slice(start, end),
         };
 

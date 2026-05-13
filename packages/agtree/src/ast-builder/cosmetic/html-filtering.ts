@@ -7,7 +7,12 @@
  * for ADG ($$, $@$) and uBO (## / #@# with ^ body prefix) HTML filtering rules.
  */
 
-import { CosmeticRuleType, RuleCategory } from '../../nodes-new';
+import {
+    CosmeticRuleType,
+    ListNodeType,
+    NodeType,
+    RuleCategory,
+} from '../../nodes-new';
 import type {
     ComplexSelector,
     DomainList,
@@ -104,7 +109,7 @@ export class HtmlFilteringAstBuilder {
             ',',
             isLocIncluded,
         ) || {
-            type: 'DomainList',
+            type: ListNodeType.DomainList,
             separator: ',',
             children: [],
         };
@@ -127,7 +132,7 @@ export class HtmlFilteringAstBuilder {
         const sepSourceEnd = sepSourceStart + sepLen;
 
         const separator: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: source.slice(sepSourceStart, sepSourceEnd),
         };
 
@@ -167,7 +172,7 @@ export class HtmlFilteringAstBuilder {
         } else {
             // Raw mode: body is a plain Value
             const bodyValue: Value = {
-                type: 'Value',
+                type: NodeType.Value,
                 value: source.slice(bodyStart, bodyEnd),
             };
 
@@ -231,7 +236,7 @@ export class HtmlFilteringAstBuilder {
         );
 
         const body: HtmlFilteringRuleBody = {
-            type: 'HtmlFilteringRuleBody',
+            type: NodeType.HtmlFilteringRuleBody,
             selectorList,
         };
 
@@ -273,7 +278,7 @@ export class HtmlFilteringAstBuilder {
         const argEnd = data[dataOffset + HF_ARG_END];
 
         const nameNode: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: source.slice(fnNameStart, fnNameEnd),
         };
 
@@ -283,7 +288,7 @@ export class HtmlFilteringAstBuilder {
         }
 
         const argNode: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: source.slice(argStart, argEnd),
         };
 
@@ -293,7 +298,7 @@ export class HtmlFilteringAstBuilder {
         }
 
         const pseudoClassSelector: PseudoClassSelector = {
-            type: 'PseudoClassSelector',
+            type: NodeType.PseudoClassSelector,
             name: nameNode,
             argument: argNode,
         };
@@ -304,7 +309,7 @@ export class HtmlFilteringAstBuilder {
         }
 
         const complexSelector: ComplexSelector = {
-            type: 'ComplexSelector',
+            type: NodeType.ComplexSelector,
             children: [pseudoClassSelector],
         };
 
@@ -314,7 +319,7 @@ export class HtmlFilteringAstBuilder {
         }
 
         const selectorList: SelectorList = {
-            type: 'SelectorList',
+            type: NodeType.SelectorList,
             children: [complexSelector],
         };
 
@@ -324,7 +329,7 @@ export class HtmlFilteringAstBuilder {
         }
 
         const body: HtmlFilteringRuleBody = {
-            type: 'HtmlFilteringRuleBody',
+            type: NodeType.HtmlFilteringRuleBody,
             selectorList,
         };
 

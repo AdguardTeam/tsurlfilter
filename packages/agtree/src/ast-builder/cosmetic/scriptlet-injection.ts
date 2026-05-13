@@ -11,7 +11,12 @@
  */
 
 import { ProductCode, type SpecificProductCode } from '../../compatibility-tables/platform';
-import { CosmeticRuleType, RuleCategory } from '../../nodes-new';
+import {
+    CosmeticRuleType,
+    ListNodeType,
+    NodeType,
+    RuleCategory,
+} from '../../nodes-new';
 import type {
     DomainList,
     ModifierList,
@@ -93,7 +98,7 @@ export class ScriptletInjectionAstBuilder {
             ',',
             isLocIncluded,
         ) || {
-            type: 'DomainList',
+            type: ListNodeType.DomainList,
             separator: ',',
             children: [],
         };
@@ -116,7 +121,7 @@ export class ScriptletInjectionAstBuilder {
         const sepSourceEnd = sepSourceStart + sepLen;
 
         const separator: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: source.slice(sepSourceStart, sepSourceEnd),
         };
 
@@ -199,7 +204,7 @@ export class ScriptletInjectionAstBuilder {
         isLocIncluded: boolean,
     ): ScriptletInjectionRuleBody {
         const result: ScriptletInjectionRuleBody = {
-            type: 'ScriptletInjectionRuleBody',
+            type: NodeType.ScriptletInjectionRuleBody,
             children: [],
         };
 
@@ -218,7 +223,7 @@ export class ScriptletInjectionAstBuilder {
         }
 
         const parameterList: ParameterList = {
-            type: 'ParameterList',
+            type: NodeType.ParameterList,
             children: [],
         };
 
@@ -235,7 +240,7 @@ export class ScriptletInjectionAstBuilder {
                 const raw = source.slice(pStart, pEnd);
                 const quoteType = QuoteUtils.getStringQuoteType(raw);
                 const param: Parameter = {
-                    type: 'Parameter',
+                    type: NodeType.Parameter,
                     value: quoteType !== QuoteType.None ? QuoteUtils.removeQuotesAndUnescape(raw) : raw,
                     quoteType,
                 };
@@ -289,7 +294,7 @@ export class ScriptletInjectionAstBuilder {
         isLocIncluded: boolean,
     ): ScriptletInjectionRuleBody {
         const result: ScriptletInjectionRuleBody = {
-            type: 'ScriptletInjectionRuleBody',
+            type: NodeType.ScriptletInjectionRuleBody,
             children: [],
         };
 
@@ -307,7 +312,7 @@ export class ScriptletInjectionAstBuilder {
             di += 1;
 
             const parameterList: ParameterList = {
-                type: 'ParameterList',
+                type: NodeType.ParameterList,
                 children: [],
             };
 
@@ -324,7 +329,7 @@ export class ScriptletInjectionAstBuilder {
                     const raw = source.slice(pStart, pEnd);
                     const quoteType = QuoteUtils.getStringQuoteType(raw);
                     const param: Parameter = {
-                        type: 'Parameter',
+                        type: NodeType.Parameter,
                         value: quoteType !== QuoteType.None ? QuoteUtils.removeQuotesAndUnescape(raw) : raw,
                         quoteType,
                     };

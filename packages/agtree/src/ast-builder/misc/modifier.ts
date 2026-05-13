@@ -6,6 +6,7 @@
  * Delegates value node creation to {@link ValueAstBuilder}.
  */
 
+import { NodeType } from '../../nodes-new';
 import type { Modifier } from '../../nodes-new';
 import {
     MODIFIER_FIELD_FLAGS,
@@ -56,7 +57,7 @@ export class ModifierAstBuilder {
         const name = ValueAstBuilder.parse(source, nameStart, nameEnd, isLocIncluded);
 
         const modifier: Modifier = {
-            type: 'Modifier',
+            type: NodeType.Modifier,
             name,
             exception: (modFlags & MODIFIER_FLAG_NEGATED) !== 0,
         };

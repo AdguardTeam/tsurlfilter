@@ -20,6 +20,7 @@ import type {
     Raw,
     Value,
 } from '../../../nodes-new';
+import { NodeType } from '../../../nodes-new';
 import type { ParserContext } from '../../../parser/context';
 import { CssAtRuleParser } from '../../../parser/css/atrule';
 import { AT_HEADER_SIZE, AT_NO_VALUE } from '../../../parser/css/atrule/constants';
@@ -90,7 +91,7 @@ export class CssAtRuleAstBuilder {
 
         // --- Build name node ---
         const name: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: source.slice(nameSourceStart, nameSourceEnd),
         };
         if (isLocIncluded) {
@@ -105,7 +106,7 @@ export class CssAtRuleAstBuilder {
             prelude = null;
         } else if (parsePrelude) {
             const atRulePrelude: CssAtRulePrelude = {
-                type: 'CssAtRulePrelude',
+                type: NodeType.CssAtRulePrelude,
                 value: source.slice(preludeSourceStart, preludeSourceEnd),
             };
             if (isLocIncluded) {
@@ -115,7 +116,7 @@ export class CssAtRuleAstBuilder {
             prelude = atRulePrelude;
         } else {
             const rawPrelude: Raw = {
-                type: 'Raw',
+                type: NodeType.Raw,
                 value: source.slice(preludeSourceStart, preludeSourceEnd),
             };
             if (isLocIncluded) {
@@ -134,7 +135,7 @@ export class CssAtRuleAstBuilder {
         } else if (!parseBlock) {
             // Return block body as raw text (between `{` and `}`).
             const rawBlock: Raw = {
-                type: 'Raw',
+                type: NodeType.Raw,
                 value: source.slice(openBracePos + 1, closeBracePos),
             };
             if (isLocIncluded) {
@@ -180,17 +181,17 @@ export class CssAtRuleAstBuilder {
                         );
 
                         // innerRule.block is a CssBlock — extract its declarationList.
-                        declarationList = innerRule.block.type === 'CssBlock'
+                        declarationList = innerRule.block.type === NodeType.CssBlock
                             ? innerRule.block.declarationList
-                            : { type: 'CssDeclarationList', children: [] };
+                            : { type: NodeType.CssDeclarationList, children: [] };
                     } catch {
                         // Sub-parser does not support this inner rule
                         // (e.g., pseudo-element selectors like `::after`).
-                        declarationList = { type: 'CssDeclarationList', children: [] };
+                        declarationList = { type: NodeType.CssDeclarationList, children: [] };
                     }
 
                     const cssBlock: CssBlock = {
-                        type: 'CssBlock',
+                        type: NodeType.CssBlock,
                         declarationList,
                     };
                     if (isLocIncluded) {
@@ -223,7 +224,7 @@ export class CssAtRuleAstBuilder {
                     );
 
                     const cssBlock: CssBlock = {
-                        type: 'CssBlock',
+                        type: NodeType.CssBlock,
                         declarationList,
                     };
                     if (isLocIncluded) {
@@ -240,7 +241,7 @@ export class CssAtRuleAstBuilder {
                 const rawEnd = ctx.ends[blockEndTi - 1];
 
                 const rawBlock: Raw = {
-                    type: 'Raw',
+                    type: NodeType.Raw,
                     value: source.slice(rawStart, rawEnd),
                 };
                 if (isLocIncluded) {
@@ -251,7 +252,7 @@ export class CssAtRuleAstBuilder {
             } else {
                 // parseBlockRules=false, empty block — CssBlock with no declarations.
                 const declarationList: CssDeclarationList = {
-                    type: 'CssDeclarationList',
+                    type: NodeType.CssDeclarationList,
                     children: [],
                 };
                 if (isLocIncluded) {
@@ -260,7 +261,7 @@ export class CssAtRuleAstBuilder {
                 }
 
                 const cssBlock: CssBlock = {
-                    type: 'CssBlock',
+                    type: NodeType.CssBlock,
                     declarationList,
                 };
                 if (isLocIncluded) {
@@ -273,7 +274,7 @@ export class CssAtRuleAstBuilder {
 
         // --- Build CssAtRule node ---
         const result: CssAtRule = {
-            type: 'CssAtRule',
+            type: NodeType.CssAtRule,
             name,
             prelude,
             block,

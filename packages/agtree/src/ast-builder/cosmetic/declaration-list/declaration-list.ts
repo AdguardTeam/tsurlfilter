@@ -7,6 +7,7 @@
  */
 
 import type { CssDeclaration, CssDeclarationList, Value } from '../../../nodes-new';
+import { NodeType } from '../../../nodes-new';
 import { DeclarationListParser } from '../../../parser/css/declaration-list';
 import { DEFAULT_MAX_DECLARATIONS } from '../../../parser/css/declaration-list/constants';
 
@@ -67,12 +68,12 @@ export class DeclarationListAstBuilder {
             const fullDeclEnd = DeclarationListParser.declEnd(data, dataOffset, i);
 
             const property: Value = {
-                type: 'Value',
+                type: NodeType.Value,
                 value: source.slice(propStart, propEnd),
             };
 
             const value: Value = {
-                type: 'Value',
+                type: NodeType.Value,
                 value: source.slice(valStart, valEnd),
             };
 
@@ -84,7 +85,7 @@ export class DeclarationListAstBuilder {
             }
 
             const declaration: CssDeclaration = {
-                type: 'CssDeclaration',
+                type: NodeType.CssDeclaration,
                 property,
                 value,
                 important: imp === 1,
@@ -99,7 +100,7 @@ export class DeclarationListAstBuilder {
         }
 
         const result: CssDeclarationList = {
-            type: 'CssDeclarationList',
+            type: NodeType.CssDeclarationList,
             children,
         };
 

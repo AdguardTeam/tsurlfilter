@@ -5,6 +5,7 @@
  */
 
 import type { SelectorCombinator, SelectorCombinatorValue } from '../../../nodes-new';
+import { NodeType } from '../../../nodes-new';
 import {
     CHILD_FIELD_0,
     CHILD_FIELD_SOURCE_END,
@@ -43,7 +44,7 @@ export function buildSelectorCombinator(
     isLocIncluded: boolean,
 ): SelectorCombinator {
     const node: SelectorCombinator = {
-        type: 'SelectorCombinator',
+        type: NodeType.SelectorCombinator,
         value: COMBINATOR_VALUES[data[base + CHILD_FIELD_0]],
     };
 

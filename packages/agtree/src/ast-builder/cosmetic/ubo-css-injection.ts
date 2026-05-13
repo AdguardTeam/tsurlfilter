@@ -14,7 +14,12 @@
  */
 
 import { UboPseudoName } from '../../common/ubo-selector-common';
-import { CosmeticRuleType, RuleCategory } from '../../nodes-new';
+import {
+    CosmeticRuleType,
+    ListNodeType,
+    NodeType,
+    RuleCategory,
+} from '../../nodes-new';
 import type {
     CssDeclarationList,
     CssInjectionRule,
@@ -144,14 +149,14 @@ export class UboCssInjectionAstBuilder {
             COMMA,
             isLocIncluded,
         ) || {
-            type: 'DomainList',
+            type: ListNodeType.DomainList,
             separator: COMMA,
             children: [],
         };
 
         // --- separator ---
         const separator: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: source.slice(sepSourceStart, sepSourceEnd),
         };
         if (isLocIncluded) {
@@ -185,19 +190,19 @@ export class UboCssInjectionAstBuilder {
             switch (modName) {
                 case UboPseudoName.MatchesPath: {
                     const isException = (modFlags & MODIFIER_FLAG_NEGATED) !== 0;
-                    const nameNode: Value = { type: 'Value', value: modName };
+                    const nameNode: Value = { type: NodeType.Value, value: modName };
                     if (isLocIncluded) {
                         nameNode.start = nameStart;
                         nameNode.end = nameEnd;
                     }
                     const modifier: Modifier = {
-                        type: 'Modifier',
+                        type: NodeType.Modifier,
                         name: nameNode,
                         exception: isException || undefined,
                     };
                     if (valueStart !== NO_VALUE && valueEnd !== NO_VALUE) {
                         const valueNode: Value = {
-                            type: 'Value',
+                            type: NodeType.Value,
                             value: source.slice(valueStart, valueEnd),
                         };
                         if (isLocIncluded) {
@@ -218,7 +223,7 @@ export class UboCssInjectionAstBuilder {
                     const mqValue = valueStart !== NO_VALUE && valueEnd !== NO_VALUE
                         ? source.slice(valueStart, valueEnd)
                         : '';
-                    mediaQueryListNode = { type: 'Value', value: mqValue };
+                    mediaQueryListNode = { type: NodeType.Value, value: mqValue };
                     if (isLocIncluded && valueStart !== NO_VALUE) {
                         mediaQueryListNode.start = valueStart;
                         mediaQueryListNode.end = valueEnd;
@@ -282,7 +287,7 @@ export class UboCssInjectionAstBuilder {
         }
 
         const body: CssInjectionRuleBody = {
-            type: 'CssInjectionRuleBody',
+            type: NodeType.CssInjectionRuleBody,
             selectorList,
         };
         if (mediaQueryListNode) {
@@ -302,7 +307,7 @@ export class UboCssInjectionAstBuilder {
         let modifiers: ModifierList | undefined;
         if (matchesPathModifiers.length > 0) {
             modifiers = {
-                type: 'ModifierList',
+                type: NodeType.ModifierList,
                 children: matchesPathModifiers,
             };
             if (isLocIncluded) {
@@ -356,7 +361,7 @@ export class UboCssInjectionAstBuilder {
     ): SelectorList | Raw {
         if (!parseCss || cleanedSelector.length === 0) {
             const node: Raw = {
-                type: 'Raw',
+                type: NodeType.Raw,
                 value: cleanedSelector,
             };
             if (isLocIncluded) {
@@ -413,12 +418,12 @@ export class UboCssInjectionAstBuilder {
     ): CssDeclarationList | Raw {
         if (valueStart === NO_VALUE || valueEnd === NO_VALUE) {
             // Empty declarations: always a Raw node, even if sub-parsing requested.
-            return { type: 'Raw', value: '' };
+            return { type: NodeType.Raw, value: '' };
         }
 
         if (!parseCss) {
             const node: Raw = {
-                type: 'Raw',
+                type: NodeType.Raw,
                 value: source.slice(valueStart, valueEnd),
             };
             if (isLocIncluded) {

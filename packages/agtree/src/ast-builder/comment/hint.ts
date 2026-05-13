@@ -8,6 +8,7 @@ import {
     CommentRuleType,
     type Hint,
     type HintCommentRule,
+    NodeType,
     type ParameterList,
     RuleCategory,
 } from '../../nodes-new';
@@ -114,7 +115,7 @@ export class HintCommentAstBuilder {
             const name = ValueAstBuilder.parse(source, nameStart, nameEnd, options.isLocIncluded ?? false);
 
             const hint: Hint = {
-                type: 'Hint',
+                type: NodeType.Hint,
                 name,
             };
 

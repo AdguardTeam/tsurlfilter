@@ -11,6 +11,7 @@ import {
     type ExpressionOperatorNode,
     type ExpressionParenthesisNode,
     type ExpressionVariableNode,
+    NodeType,
     OperatorValue,
 } from '../../nodes-new';
 import {
@@ -82,7 +83,7 @@ export class LogicalExpressionAstBuilder {
 
         if (kind === LE_KIND_VAR) {
             const node: ExpressionVariableNode = {
-                type: 'Variable',
+                type: NodeType.Variable,
                 name: source.slice(srcStart, srcEnd),
             };
 
@@ -98,7 +99,7 @@ export class LogicalExpressionAstBuilder {
             const child = LogicalExpressionAstBuilder.buildNode(source, buf, leftIdx, isLocIncluded);
 
             const node: ExpressionOperatorNode = {
-                type: 'Operator',
+                type: NodeType.Operator,
                 operator: OperatorValue.Not,
                 left: child,
             };
@@ -116,7 +117,7 @@ export class LogicalExpressionAstBuilder {
             const right = LogicalExpressionAstBuilder.buildNode(source, buf, rightIdx, isLocIncluded);
 
             const node: ExpressionOperatorNode = {
-                type: 'Operator',
+                type: NodeType.Operator,
                 operator: kind === LE_KIND_AND ? OperatorValue.And : OperatorValue.Or,
                 left,
                 right,
@@ -134,7 +135,7 @@ export class LogicalExpressionAstBuilder {
             const inner = LogicalExpressionAstBuilder.buildNode(source, buf, leftIdx, isLocIncluded);
 
             const node: ExpressionParenthesisNode = {
-                type: 'Parenthesis',
+                type: NodeType.Parenthesis,
                 expression: inner,
             };
 

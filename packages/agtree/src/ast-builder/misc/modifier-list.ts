@@ -4,6 +4,7 @@
  * Delegates individual modifier parsing to {@link ModifierAstBuilder}.
  */
 
+import { NodeType } from '../../nodes-new';
 import type { Modifier, ModifierList } from '../../nodes-new';
 import {
     MODIFIER_FIELD_NAME_END,
@@ -56,7 +57,7 @@ export class ModifierListAstBuilder {
         }
 
         const modifiers: ModifierList = {
-            type: 'ModifierList',
+            type: NodeType.ModifierList,
             children,
         };
 

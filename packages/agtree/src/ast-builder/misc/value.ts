@@ -2,7 +2,7 @@
  * @file Value parser — creates Value AST nodes from source indices.
  */
 
-import { type Value } from '../../nodes-new';
+import { NodeType, type Value } from '../../nodes-new';
 
 /**
  * Parser for Value AST nodes.
@@ -25,7 +25,7 @@ export class ValueAstBuilder {
         isLocIncluded: boolean,
     ): Value {
         const node: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: source.slice(start, end),
         };
 

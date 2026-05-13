@@ -7,7 +7,12 @@
  * for ADG raw JS injection rules (`#%#<code>` without `//scriptlet` prefix).
  */
 
-import { CosmeticRuleType, RuleCategory } from '../../nodes-new';
+import {
+    CosmeticRuleType,
+    ListNodeType,
+    NodeType,
+    RuleCategory,
+} from '../../nodes-new';
 import type {
     DomainList,
     JsInjectionRule,
@@ -77,7 +82,7 @@ export class JsInjectionAstBuilder {
             ',',
             isLocIncluded,
         ) || {
-            type: 'DomainList',
+            type: ListNodeType.DomainList,
             separator: ',',
             children: [],
         };
@@ -100,7 +105,7 @@ export class JsInjectionAstBuilder {
         const sepSourceEnd = sepSourceStart + sepLen;
 
         const separator: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: source.slice(sepSourceStart, sepSourceEnd),
         };
 
@@ -115,7 +120,7 @@ export class JsInjectionAstBuilder {
         const bodyValue = source.slice(bodyStart, bodyEnd);
 
         const body: Value = {
-            type: 'Value',
+            type: NodeType.Value,
             value: bodyValue,
         };
 

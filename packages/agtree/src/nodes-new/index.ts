@@ -263,6 +263,56 @@ export const CosmeticRuleSeparator = {
 export type CosmeticRuleSeparator = typeof CosmeticRuleSeparator[keyof typeof CosmeticRuleSeparator];
 
 /**
+ * Represents all possible AST sub-node type discriminators.
+ *
+ * Rule-level types are covered by separate const-objects:
+ * {@link CommentRuleType}, {@link CosmeticRuleType}, {@link NetworkRuleType}.
+ * List types are covered by {@link ListNodeType} and {@link ListItemNodeType}.
+ */
+export const NodeType = {
+    Value: 'Value',
+    Raw: 'Raw',
+    Parameter: 'Parameter',
+    ParameterList: 'ParameterList',
+    Variable: 'Variable',
+    Operator: 'Operator',
+    Parenthesis: 'Parenthesis',
+    FilterList: 'FilterList',
+    InvalidRuleError: 'InvalidRuleError',
+    InvalidRule: 'InvalidRule',
+    EmptyRule: 'EmptyRule',
+    ConfigNode: 'ConfigNode',
+    Agent: 'Agent',
+    Hint: 'Hint',
+    Modifier: 'Modifier',
+    ModifierList: 'ModifierList',
+    HostnameList: 'HostnameList',
+    UboSelector: 'UboSelector',
+    CssInjectionRuleBody: 'CssInjectionRuleBody',
+    ElementHidingRuleBody: 'ElementHidingRuleBody',
+    ScriptletInjectionRuleBody: 'ScriptletInjectionRuleBody',
+    HtmlFilteringRuleBody: 'HtmlFilteringRuleBody',
+    CssDeclaration: 'CssDeclaration',
+    CssDeclarationList: 'CssDeclarationList',
+    CssBlock: 'CssBlock',
+    CssRule: 'CssRule',
+    CssAtRulePrelude: 'CssAtRulePrelude',
+    CssAtRule: 'CssAtRule',
+    TypeSelector: 'TypeSelector',
+    ClassSelector: 'ClassSelector',
+    IdSelector: 'IdSelector',
+    AttributeSelector: 'AttributeSelector',
+    PseudoClassSelector: 'PseudoClassSelector',
+    SelectorCombinator: 'SelectorCombinator',
+    ComplexSelector: 'ComplexSelector',
+    SelectorList: 'SelectorList',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type NodeType = typeof NodeType[keyof typeof NodeType];
+
+/**
  * Represents a basic node in the AST.
  */
 export interface Node {
@@ -335,7 +385,7 @@ export const defaultLocation: Location = {
  * Represents a basic value node in the AST.
  */
 export interface Value<T = string> extends Node {
-    type: 'Value';
+    type: typeof NodeType.Value;
 
     /**
      * Value of the node.
@@ -347,7 +397,7 @@ export interface Value<T = string> extends Node {
  * Represents a raw value node.
  */
 export interface Raw extends Node {
-    type: 'Raw';
+    type: typeof NodeType.Raw;
 
     /**
      * Value of the node.
@@ -362,7 +412,7 @@ export interface Raw extends Node {
  * and metadata about the quote style used in the source.
  */
 export interface Parameter extends Node {
-    type: 'Parameter';
+    type: typeof NodeType.Parameter;
 
     /**
      * Unquoted, unescaped parameter value (clean JS string).
@@ -379,7 +429,7 @@ export interface Parameter extends Node {
  * Represents a list of parameters.
  */
 export interface ParameterList extends Node {
-    type: 'ParameterList';
+    type: typeof NodeType.ParameterList;
 
     /**
      * List of parameters.
@@ -393,7 +443,7 @@ export interface ParameterList extends Node {
  * Represents a logical expression variable node in the AST.
  */
 export interface ExpressionVariableNode extends Node {
-    type: 'Variable';
+    type: typeof NodeType.Variable;
     name: string;
 }
 
@@ -401,7 +451,7 @@ export interface ExpressionVariableNode extends Node {
  * Represents a logical expression operator node in the AST.
  */
 export interface ExpressionOperatorNode extends Node {
-    type: 'Operator';
+    type: typeof NodeType.Operator;
     operator: OperatorValue;
     left: AnyExpressionNode;
     right?: AnyExpressionNode;
@@ -411,7 +461,7 @@ export interface ExpressionOperatorNode extends Node {
  * Represents a logical expression parenthesis node in the AST.
  */
 export interface ExpressionParenthesisNode extends Node {
-    type: 'Parenthesis';
+    type: typeof NodeType.Parenthesis;
     expression: AnyExpressionNode;
 }
 
@@ -419,7 +469,7 @@ export interface ExpressionParenthesisNode extends Node {
  * Represents a filter list (list of rules).
  */
 export interface FilterList extends Node {
-    type: 'FilterList';
+    type: typeof NodeType.FilterList;
 
     /**
      * List of rules.
@@ -460,7 +510,7 @@ export interface RuleBase extends Node {
 }
 
 export interface InvalidRuleError extends Node {
-    type: 'InvalidRuleError';
+    type: typeof NodeType.InvalidRuleError;
 
     /**
      * Error name.
@@ -477,7 +527,7 @@ export interface InvalidRuleError extends Node {
  * Represents an invalid rule (used by tolerant mode).
  */
 export interface InvalidRule extends RuleBase {
-    type: 'InvalidRule';
+    type: typeof NodeType.InvalidRule;
 
     /**
      * Category of the adblock rule.
@@ -502,7 +552,7 @@ export interface EmptyRule extends RuleBase {
     /**
      * Type of the adblock rule (should be always present).
      */
-    type: 'EmptyRule';
+    type: typeof NodeType.EmptyRule;
 
     /**
      * Category of the adblock rule.
@@ -593,7 +643,7 @@ export interface MetadataCommentRule extends CommentBase {
  * ```
  */
 export interface ConfigNode extends Node {
-    type: 'ConfigNode';
+    type: typeof NodeType.ConfigNode;
     value: object;
 }
 
@@ -680,8 +730,7 @@ export interface PreProcessorCommentRule extends CommentBase {
  * Represents an adblock agent.
  */
 export interface Agent extends Node {
-    // TODO: use enum
-    type: 'Agent';
+    type: typeof NodeType.Agent;
 
     /**
      * Adblock name.
@@ -731,7 +780,7 @@ export interface AgentCommentRule extends RuleBase {
  * the name would be `PLATFORM` and the params would be `["windows", "mac"]`.
  */
 export interface Hint extends Node {
-    type: 'Hint';
+    type: typeof NodeType.Hint;
 
     /**
      * Hint name.
@@ -789,7 +838,7 @@ export interface HintCommentRule extends RuleBase {
  * then the list of modifiers will be `script,domain=example.com`.
  */
 export interface ModifierList extends Node {
-    type: 'ModifierList';
+    type: typeof NodeType.ModifierList;
 
     /**
      * List of modifiers.
@@ -808,6 +857,8 @@ export interface ModifierList extends Node {
  * `domain` and the value property will be `example.com`.
  */
 export interface Modifier extends Node {
+    type: typeof NodeType.Modifier;
+
     /**
      * Modifier name.
      */
@@ -995,7 +1046,7 @@ export interface StealthOptionList extends Node {
  * Represents a CSS injection body.
  */
 export interface CssInjectionRuleBody extends Node {
-    type: 'CssInjectionRuleBody';
+    type: typeof NodeType.CssInjectionRuleBody;
 
     /**
      * Media query, if any.
@@ -1056,7 +1107,7 @@ export interface CssInjectionRuleBody extends Node {
  * property  value  important
  */
 export interface CssDeclaration extends Node {
-    type: 'CssDeclaration';
+    type: typeof NodeType.CssDeclaration;
 
     /**
      * Property name.
@@ -1083,7 +1134,7 @@ export interface CssDeclaration extends Node {
  * declaration 1    declaration 2
  */
 export interface CssDeclarationList extends Node {
-    type: 'CssDeclarationList';
+    type: typeof NodeType.CssDeclarationList;
 
     /**
      * Ordered list of declarations.
@@ -1098,7 +1149,7 @@ export interface CssDeclarationList extends Node {
  * CSS nesting may add nested rules here.
  */
 export interface CssBlock extends Node {
-    type: 'CssBlock';
+    type: typeof NodeType.CssBlock;
 
     /**
      * The declaration list inside the block.
@@ -1115,7 +1166,7 @@ export interface CssBlock extends Node {
  * prelude    block
  */
 export interface CssRule extends Node {
-    type: 'CssRule';
+    type: typeof NodeType.CssRule;
 
     /**
      * The selector list prelude (or raw text if sub-parsing is disabled).
@@ -1147,7 +1198,7 @@ export interface CssRule extends Node {
  * ```
  */
 export interface CssAtRulePrelude extends Node {
-    type: 'CssAtRulePrelude';
+    type: typeof NodeType.CssAtRulePrelude;
 
     /**
      * The raw prelude text.
@@ -1169,7 +1220,7 @@ export interface CssAtRulePrelude extends Node {
  * ```
  */
 export interface CssAtRule extends Node {
-    type: 'CssAtRule';
+    type: typeof NodeType.CssAtRule;
 
     /**
      * The at-rule name (e.g., `'media'`, `'supports'`, `'charset'`).
@@ -1262,7 +1313,7 @@ export interface CssRuleParseOptions {
  * but the best practice is to place the selectors in separate rules.
  */
 export interface ElementHidingRuleBody extends Node {
-    type: 'ElementHidingRuleBody';
+    type: typeof NodeType.ElementHidingRuleBody;
 
     /**
      * Element hiding rule selector(s).
@@ -1274,7 +1325,7 @@ export interface ElementHidingRuleBody extends Node {
  * Represents a scriptlet injection rule body.
  */
 export interface ScriptletInjectionRuleBody extends Node {
-    type: 'ScriptletInjectionRuleBody';
+    type: typeof NodeType.ScriptletInjectionRuleBody;
 
     /**
      * List of scriptlets (list of parameter lists).
@@ -1288,7 +1339,7 @@ export interface ScriptletInjectionRuleBody extends Node {
  * @see {@link https://www.w3.org/TR/selectors-4/#type-selectors}
  */
 export interface TypeSelector extends Node {
-    type: 'TypeSelector';
+    type: typeof NodeType.TypeSelector;
 
     /**
      * Value of the type selector.
@@ -1302,7 +1353,7 @@ export interface TypeSelector extends Node {
  * @see {@link https://www.w3.org/TR/selectors-4/#class-html}
  */
 export interface ClassSelector extends Node {
-    type: 'ClassSelector';
+    type: typeof NodeType.ClassSelector;
 
     /**
      * Value of the class selector (without dot).
@@ -1316,7 +1367,7 @@ export interface ClassSelector extends Node {
  * @see {@link https://www.w3.org/TR/selectors-4/#id-selectors}
  */
 export interface IdSelector extends Node {
-    type: 'IdSelector';
+    type: typeof NodeType.IdSelector;
 
     /**
      * Value of the ID selector (without hash).
@@ -1330,7 +1381,7 @@ export interface IdSelector extends Node {
  * @see {@link https://www.w3.org/TR/selectors-4/#attribute-selectors}
  */
 export interface AttributeSelectorWithoutValue extends Node {
-    type: 'AttributeSelector';
+    type: typeof NodeType.AttributeSelector;
 
     /**
      * Name of the attribute selector.
@@ -1343,14 +1394,32 @@ export interface AttributeSelectorWithoutValue extends Node {
  *
  * @see {@link https://www.w3.org/TR/selectors-4/#attribute-selectors}
  */
-export type AttributeSelectorOperatorValue = '=' | '~=' | '|=' | '^=' | '$=' | '*=';
+export const AttributeSelectorOperatorValue = {
+    Exact: '=',
+    Includes: '~=',
+    DashMatch: '|=',
+    Prefix: '^=',
+    Suffix: '$=',
+    Substring: '*=',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare, max-len
+export type AttributeSelectorOperatorValue = typeof AttributeSelectorOperatorValue[keyof typeof AttributeSelectorOperatorValue];
 
 /**
  * Represents CSS attribute selector flag values.
  *
  * @see {@link https://www.w3.org/TR/selectors-4/#attribute-selectors}
  */
-export type AttributeSelectorFlagValue = 'i' | 's';
+export const AttributeSelectorFlagValue = {
+    CaseInsensitive: 'i',
+    CaseSensitive: 's',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type AttributeSelectorFlagValue = typeof AttributeSelectorFlagValue[keyof typeof AttributeSelectorFlagValue];
 
 /**
  * Represents an attribute selector with value.
@@ -1358,7 +1427,7 @@ export type AttributeSelectorFlagValue = 'i' | 's';
  * @see {@link https://www.w3.org/TR/selectors-4/#attribute-selectors}
  */
 export interface AttributeSelectorWithValue extends Node {
-    type: 'AttributeSelector';
+    type: typeof NodeType.AttributeSelector;
 
     /**
      * Name of the attribute selector.
@@ -1396,7 +1465,7 @@ export type AttributeSelector =
  * @see {@link https://www.w3.org/TR/selectors-4/#pseudo-classes}
  */
 export interface PseudoClassSelector extends Node {
-    type: 'PseudoClassSelector';
+    type: typeof NodeType.PseudoClassSelector;
 
     /**
      * Name of the pseudo-class selector.
@@ -1428,7 +1497,16 @@ export type SimpleSelector =
  *
  * @see {@link https://www.w3.org/TR/selectors-4/#combinators}
  */
-export type SelectorCombinatorValue = ' ' | '>' | '+' | '~';
+export const SelectorCombinatorValue = {
+    Descendant: ' ',
+    Child: '>',
+    NextSibling: '+',
+    SubsequentSibling: '~',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type SelectorCombinatorValue = typeof SelectorCombinatorValue[keyof typeof SelectorCombinatorValue];
 
 /**
  * Represents selector combinators.
@@ -1436,7 +1514,7 @@ export type SelectorCombinatorValue = ' ' | '>' | '+' | '~';
  * @see {@link https://www.w3.org/TR/selectors-4/#combinators}
  */
 export interface SelectorCombinator extends Node {
-    type: 'SelectorCombinator';
+    type: typeof NodeType.SelectorCombinator;
 
     /**
      * Value of the combinator.
@@ -1450,7 +1528,7 @@ export interface SelectorCombinator extends Node {
  * @see {@link https://www.w3.org/TR/selectors-4/#complex}
  */
 export interface ComplexSelector extends Node {
-    type: 'ComplexSelector';
+    type: typeof NodeType.ComplexSelector;
 
     /**
      * List of simple selectors and combinators that form a complex selector.
@@ -1464,7 +1542,7 @@ export interface ComplexSelector extends Node {
  * @see {@link https://www.w3.org/TR/selectors-4/#selector-list}
  */
 export interface SelectorList extends Node {
-    type: 'SelectorList';
+    type: typeof NodeType.SelectorList;
 
     /**
      * List of complex selectors separated by commas.
@@ -1476,7 +1554,7 @@ export interface SelectorList extends Node {
  * Represents an HTML filtering rule body.
  */
 export interface HtmlFilteringRuleBody extends Node {
-    type: 'HtmlFilteringRuleBody';
+    type: typeof NodeType.HtmlFilteringRuleBody;
 
     /**
      * CSS selector list.
@@ -1636,6 +1714,15 @@ export interface ScriptletInjectionRule extends CosmeticRule {
  */
 export interface HtmlFilteringRule extends CosmeticRule {
     type: typeof CosmeticRuleType.HtmlFilteringRule;
+
+    /**
+     * Body of the HTML filtering rule.
+     *
+     * - When `parseHtmlFilteringRuleBodies` is `false` (the default), the body is a
+     *   {@link Value} node containing the raw, unparsed body text.
+     * - When `parseHtmlFilteringRuleBodies` is `true`, the body is a
+     *   {@link HtmlFilteringRuleBody} node with a fully parsed CSS selector list.
+     */
     body: Value | HtmlFilteringRuleBody;
 }
 
@@ -1752,7 +1839,7 @@ export interface HostnameList extends Node {
     /**
      * Type of the node.
      */
-    type: 'HostnameList';
+    type: typeof NodeType.HostnameList;
 
     /**
      * List of hostnames.
@@ -1814,7 +1901,7 @@ export interface UboSelector extends Node {
     /**
      * Node type.
      */
-    type: 'UboSelector';
+    type: typeof NodeType.UboSelector;
 
     /**
      * Selector string cleaned from uBO specific syntax.
