@@ -113,6 +113,28 @@ describe('parseNetworkRule', () => {
             expect(ModifierParser.getValue(source, d, 0)).toBe('/regex$/');
         });
 
+        test('$ at end of modifier value is not a separator', () => {
+            const source = '||example.com^$removeparam=id$';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('id$');
+        });
+
+        test('escaped $ inside regex modifier value', () => {
+            const source = '||example.com^$removeparam=/^id\\$$/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||example.com^');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/^id\\$$/');
+        });
+
         test('pattern-only rule with $', () => {
             const source = '||example.org/path$value';
             const d = parse(source);
