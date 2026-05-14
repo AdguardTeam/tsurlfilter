@@ -8,11 +8,17 @@ import { CommentRuleType, type MetadataCommentRule, RuleCategory } from '../../n
 import {
     CM_META_HEADER_END_OFFSET,
     CM_META_HEADER_START_OFFSET,
+    CM_META_MARKER_IS_HASH,
     CM_META_MARKER_OFFSET,
     CM_META_VALUE_END_OFFSET,
     CM_META_VALUE_START_OFFSET,
 } from '../../parser/comment/metadata';
-import { AdblockSyntax } from '../../utils/adblockers';
+import {
+    SYNTAX_ADG,
+    SYNTAX_ALL,
+    SYNTAX_UBO,
+    type SyntaxFlags,
+} from '../../utils/syntax-flags';
 import { ValueAstBuilder } from '../misc/value';
 import type { ParseOptions } from '../options';
 
@@ -43,6 +49,7 @@ export class MetadataCommentAstBuilder {
         const valueEnd = data[dataOffset + CM_META_VALUE_END_OFFSET];
 
         const isLoc = options.isLocIncluded ?? false;
+        const isHash = data[dataOffset + CM_META_MARKER_IS_HASH] === 1;
         const marker = ValueAstBuilder.parse(source, markerStart, markerStart + 1, isLoc);
         const header = ValueAstBuilder.parse(source, headerStart, headerEnd, isLoc);
         const value = ValueAstBuilder.parse(source, valueStart, valueEnd, isLoc);
@@ -50,7 +57,7 @@ export class MetadataCommentAstBuilder {
         const result: MetadataCommentRule = {
             type: CommentRuleType.MetadataCommentRule,
             category: RuleCategory.Comment,
-            syntax: AdblockSyntax.Common,
+            syntax: isHash ? (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags : SYNTAX_ALL,
             marker,
             header,
             value,

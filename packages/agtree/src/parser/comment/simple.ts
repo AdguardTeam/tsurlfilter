@@ -9,9 +9,11 @@
  * [0] KIND - CommentKind.Simple
  * [1] MARKER_START - Source offset of ! or # marker
  * [2] TEXT_START - Start of text (after marker + whitespace)
- * [3] TEXT_END - End of text (trailing whitespace trimmed).
+ * [3] TEXT_END - End of text (trailing whitespace trimmed)
+ * [4] MARKER_IS_HASH - 1 if marker is `#`, 0 if `!`.
  */
 
+import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { lastNonWs, skipWs, tokenStart } from '../context';
 import type { StructuralParser } from '../types';
@@ -34,6 +36,11 @@ export const CM_SIMPLE_TEXT_START_OFFSET = 2;
 export const CM_SIMPLE_TEXT_END_OFFSET = 3;
 
 /**
+ * Buffer offset: 1 if the marker character is `#`, 0 if `!`.
+ */
+export const CM_SIMPLE_MARKER_IS_HASH = 4;
+
+/**
  * Parser for simple comment rules (`! Text` and `# text`).
  */
 export class SimpleCommentParser implements StructuralParser {
@@ -51,6 +58,7 @@ export class SimpleCommentParser implements StructuralParser {
         let ti = skipWs(ctx, startTi);
 
         // Marker: single `!` or `#` character
+        const markerTi = ti;
         const markerStart = tokenStart(ctx, ti);
 
         ti += 1;
@@ -70,6 +78,7 @@ export class SimpleCommentParser implements StructuralParser {
         data[dataOffset + CM_SIMPLE_MARKER_OFFSET] = markerStart;
         data[dataOffset + CM_SIMPLE_TEXT_START_OFFSET] = textStart;
         data[dataOffset + CM_SIMPLE_TEXT_END_OFFSET] = textEnd;
+        data[dataOffset + CM_SIMPLE_MARKER_IS_HASH] = ctx.types[markerTi] === TokenType.HashMark ? 1 : 0;
     }
 
     /**

@@ -43,7 +43,12 @@ import {
 } from '../../parser/cosmetic/constants';
 import { NO_VALUE } from '../../parser/network/constants';
 import { QuoteType, QuoteUtils } from '../../utils';
-import { AdblockSyntax } from '../../utils/adblockers';
+import {
+    SYNTAX_ABP,
+    SYNTAX_ADG,
+    SYNTAX_UBO,
+    type SyntaxFlags,
+} from '../../utils/syntax-flags';
 import { DomainListAstBuilder } from '../misc/domain-list';
 import { ModifierListAstBuilder } from '../misc/modifier-list';
 import type { ParseOptions } from '../options';
@@ -138,22 +143,22 @@ export class ScriptletInjectionAstBuilder {
         const scriptletDataOffset = domainRecordsOffset + maxDomains * DOMAIN_RECORD_STRIDE;
 
         // Determine syntax and build body from pre-computed parameter boundaries
-        let syntax: AdblockSyntax;
+        let syntax: SyntaxFlags;
         let body: ScriptletInjectionRuleBody;
 
         switch (syntaxHint) {
             case ProductCode.Adg:
-                syntax = AdblockSyntax.Adg;
+                syntax = SYNTAX_ADG;
                 // eslint-disable-next-line max-len
                 body = ScriptletInjectionAstBuilder.buildSingleCallBody(source, data, scriptletDataOffset, bodyStart, bodyEnd, isLocIncluded);
                 break;
             case ProductCode.Ubo:
-                syntax = AdblockSyntax.Ubo;
+                syntax = SYNTAX_UBO;
                 // eslint-disable-next-line max-len
                 body = ScriptletInjectionAstBuilder.buildSingleCallBody(source, data, scriptletDataOffset, bodyStart, bodyEnd, isLocIncluded);
                 break;
             case ProductCode.Abp:
-                syntax = AdblockSyntax.Abp;
+                syntax = SYNTAX_ABP;
                 // eslint-disable-next-line max-len
                 body = ScriptletInjectionAstBuilder.buildMultiCallBody(source, data, scriptletDataOffset, bodyStart, bodyEnd, isLocIncluded);
                 break;

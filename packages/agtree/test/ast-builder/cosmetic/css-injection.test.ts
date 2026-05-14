@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import type { CssDeclarationList, CssInjectionRule, SelectorList } from '../../../src/nodes-new';
+import { SYNTAX_ADG } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
 
@@ -12,7 +13,7 @@ describe('RuleParser — ADG CSS injection rules', () => {
 
             expect(ast.type).toBe('CssInjectionRule');
             expect(ast.category).toBe('Cosmetic');
-            expect(ast.syntax).toBe('AdGuard');
+            expect(ast.syntax).toBe(SYNTAX_ADG);
             expect(ast.exception).toBe(false);
             expect(ast.separator.value).toBe('#$#');
             expect(ast.domains.children).toHaveLength(0);

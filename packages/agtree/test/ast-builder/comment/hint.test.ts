@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { QuoteType } from '../../../src/utils/quotes';
+import { SYNTAX_ADG } from '../../../src/utils/syntax-flags';
 import { parseCommentRule } from '../../helpers/parse-helpers';
 
 describe('CommentAstBuilder — hint comments', () => {
@@ -11,7 +12,7 @@ describe('CommentAstBuilder — hint comments', () => {
                 start: 0,
                 end: 15,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 children: [
                     {
                         type: 'Hint',
@@ -34,7 +35,7 @@ describe('CommentAstBuilder — hint comments', () => {
                 start: 0,
                 end: 16,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 children: [
                     {
                         type: 'Hint',
@@ -57,7 +58,7 @@ describe('CommentAstBuilder — hint comments', () => {
                 start: 0,
                 end: 24,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 children: [
                     {
                         type: 'Hint',
@@ -91,7 +92,7 @@ describe('CommentAstBuilder — hint comments', () => {
                 start: 0,
                 end: 15,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 children: [
                     {
                         type: 'Hint',
@@ -118,7 +119,7 @@ describe('CommentAstBuilder — hint comments', () => {
                 start: 0,
                 end: 29,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 children: [
                     {
                         type: 'Hint',
@@ -158,7 +159,7 @@ describe('CommentAstBuilder — hint comments', () => {
                 start: 0,
                 end: 48,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 children: [
                     {
                         type: 'Hint',
@@ -263,7 +264,7 @@ describe('CommentAstBuilder — hint comments', () => {
             expect(parseCommentRule('!+ NOT_OPTIMIZED')).toEqual({
                 type: 'HintCommentRule',
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 children: [
                     {
                         type: 'Hint',

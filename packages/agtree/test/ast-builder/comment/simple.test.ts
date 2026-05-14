@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { SYNTAX_ADG, SYNTAX_ALL, SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 import { parseCommentRule } from '../../helpers/parse-helpers';
 
 describe('CommentAstBuilder — simple comments', () => {
@@ -9,7 +10,7 @@ describe('CommentAstBuilder — simple comments', () => {
                 type: 'CommentRule',
                 start: 0,
                 end: 24,
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 marker: {
                     type: 'Value',
@@ -31,7 +32,7 @@ describe('CommentAstBuilder — simple comments', () => {
                 type: 'CommentRule',
                 start: 0,
                 end: 24,
-                syntax: 'Common',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
                 category: 'Comment',
                 marker: {
                     type: 'Value',
@@ -141,7 +142,7 @@ describe('CommentAstBuilder — simple comments', () => {
         test('! This is just a comment — no loc, no raws by default', () => {
             expect(parseCommentRule('! This is just a comment')).toEqual({
                 type: 'CommentRule',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 marker: {
                     type: 'Value',
@@ -157,7 +158,7 @@ describe('CommentAstBuilder — simple comments', () => {
         test('# This is just a comment — no loc, no raws by default', () => {
             expect(parseCommentRule('# This is just a comment')).toEqual({
                 type: 'CommentRule',
-                syntax: 'Common',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
                 category: 'Comment',
                 marker: {
                     type: 'Value',
@@ -176,7 +177,7 @@ describe('CommentAstBuilder — simple comments', () => {
             const result = parseCommentRule('! AdGuard comment');
             expect(result).toMatchObject({
                 type: 'CommentRule',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
             });
         });
 
@@ -184,7 +185,7 @@ describe('CommentAstBuilder — simple comments', () => {
             const result = parseCommentRule('# some comment');
             expect(result).toMatchObject({
                 type: 'CommentRule',
-                syntax: 'Common',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
             });
         });
     });

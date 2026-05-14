@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import type { ElementHidingRule } from '../../../src/nodes-new';
+import { SYNTAX_ALL } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
 
@@ -13,7 +14,7 @@ describe('RuleParser — element hiding rules', () => {
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
                 category: 'Cosmetic',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 exception: false,
                 start: 0,
                 end: 17,

@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'vitest';
 
-import { AdblockSyntax } from '../../../src/utils/adblockers';
+import {
+    SYNTAX_ABP,
+    SYNTAX_ADG,
+    SYNTAX_ALL,
+    SYNTAX_UBO,
+} from '../../../src/utils/syntax-flags';
 import { parseCommentRule } from '../../helpers/parse-helpers';
 
 describe('CommentAstBuilder — agent comments', () => {
@@ -10,7 +15,7 @@ describe('CommentAstBuilder — agent comments', () => {
                 type: 'AgentCommentRule',
                 start: 0,
                 end: 9,
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 children: [
                     {
@@ -23,7 +28,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 8,
                             value: 'AdBlock',
                         },
-                        syntax: AdblockSyntax.Abp,
+                        syntax: SYNTAX_ABP,
                     },
                 ],
             });
@@ -34,7 +39,7 @@ describe('CommentAstBuilder — agent comments', () => {
                 type: 'AgentCommentRule',
                 start: 0,
                 end: 9,
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 children: [
                     {
@@ -47,7 +52,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 8,
                             value: 'AdGuard',
                         },
-                        syntax: AdblockSyntax.Adg,
+                        syntax: SYNTAX_ADG,
                     },
                 ],
             });
@@ -58,7 +63,7 @@ describe('CommentAstBuilder — agent comments', () => {
                 type: 'AgentCommentRule',
                 start: 0,
                 end: 8,
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 children: [
                     {
@@ -71,7 +76,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 7,
                             value: 'uBlock',
                         },
-                        syntax: AdblockSyntax.Ubo,
+                        syntax: SYNTAX_UBO,
                     },
                 ],
             });
@@ -82,7 +87,7 @@ describe('CommentAstBuilder — agent comments', () => {
                 type: 'AgentCommentRule',
                 start: 0,
                 end: 15,
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 children: [
                     {
@@ -95,7 +100,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 14,
                             value: 'uBlock Origin',
                         },
-                        syntax: AdblockSyntax.Ubo,
+                        syntax: SYNTAX_UBO,
                     },
                 ],
             });
@@ -106,7 +111,7 @@ describe('CommentAstBuilder — agent comments', () => {
                 type: 'AgentCommentRule',
                 start: 0,
                 end: 18,
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 children: [
                     {
@@ -125,7 +130,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 17,
                             value: '2.0',
                         },
-                        syntax: AdblockSyntax.Abp,
+                        syntax: SYNTAX_ABP,
                     },
                 ],
             });
@@ -136,7 +141,7 @@ describe('CommentAstBuilder — agent comments', () => {
                 type: 'AgentCommentRule',
                 start: 0,
                 end: 21,
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 children: [
                     {
@@ -155,7 +160,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 20,
                             value: '1.0.0',
                         },
-                        syntax: AdblockSyntax.Ubo,
+                        syntax: SYNTAX_UBO,
                     },
                 ],
             });
@@ -166,7 +171,7 @@ describe('CommentAstBuilder — agent comments', () => {
                 type: 'AgentCommentRule',
                 start: 0,
                 end: 27,
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 children: [
                     {
@@ -185,7 +190,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 17,
                             value: '2.0',
                         },
-                        syntax: AdblockSyntax.Abp,
+                        syntax: SYNTAX_ABP,
                     },
                     {
                         type: 'Agent',
@@ -197,7 +202,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 26,
                             value: 'AdGuard',
                         },
-                        syntax: AdblockSyntax.Adg,
+                        syntax: SYNTAX_ADG,
                     },
                 ],
             });
@@ -208,7 +213,7 @@ describe('CommentAstBuilder — agent comments', () => {
                 type: 'AgentCommentRule',
                 start: 0,
                 end: 36,
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 children: [
                     {
@@ -227,7 +232,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 17,
                             value: '2.0',
                         },
-                        syntax: AdblockSyntax.Abp,
+                        syntax: SYNTAX_ABP,
                     },
                     {
                         type: 'Agent',
@@ -245,7 +250,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 35,
                             value: '1.0.1.10',
                         },
-                        syntax: AdblockSyntax.Adg,
+                        syntax: SYNTAX_ADG,
                     },
                 ],
             });
@@ -258,7 +263,7 @@ describe('CommentAstBuilder — agent comments', () => {
                 type: 'AgentCommentRule',
                 start: 0,
                 end: 55,
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 children: [
                     {
@@ -277,7 +282,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 17,
                             value: '3.1',
                         },
-                        syntax: AdblockSyntax.Abp,
+                        syntax: SYNTAX_ABP,
                     },
                     {
                         type: 'Agent',
@@ -295,7 +300,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 30,
                             value: '1.4',
                         },
-                        syntax: AdblockSyntax.Adg,
+                        syntax: SYNTAX_ADG,
                     },
                     {
                         type: 'Agent',
@@ -313,7 +318,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 54,
                             value: '1.0.15.0',
                         },
-                        syntax: AdblockSyntax.Ubo,
+                        syntax: SYNTAX_UBO,
                     },
                 ],
             });
@@ -329,7 +334,7 @@ describe('CommentAstBuilder — agent comments', () => {
                 type: 'AgentCommentRule',
                 start: 0,
                 end: 67,
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 children: [
                     {
@@ -348,7 +353,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 17,
                             value: '3.1',
                         },
-                        syntax: AdblockSyntax.Abp,
+                        syntax: SYNTAX_ABP,
                     },
                     {
                         type: 'Agent',
@@ -366,7 +371,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 32,
                             value: '1.4',
                         },
-                        syntax: AdblockSyntax.Adg,
+                        syntax: SYNTAX_ADG,
                     },
                     {
                         type: 'Agent',
@@ -384,7 +389,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             end: 62,
                             value: '1.0.15.0',
                         },
-                        syntax: AdblockSyntax.Ubo,
+                        syntax: SYNTAX_UBO,
                     },
                 ],
             });
@@ -395,7 +400,7 @@ describe('CommentAstBuilder — agent comments', () => {
         test('[Adblock Plus 2.0; AdGuard] — no loc, no raws by default', () => {
             expect(parseCommentRule('[Adblock Plus 2.0; AdGuard]')).toEqual({
                 type: 'AgentCommentRule',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 category: 'Comment',
                 children: [
                     {
@@ -408,7 +413,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             type: 'Value',
                             value: '2.0',
                         },
-                        syntax: AdblockSyntax.Abp,
+                        syntax: SYNTAX_ABP,
                     },
                     {
                         type: 'Agent',
@@ -416,7 +421,7 @@ describe('CommentAstBuilder — agent comments', () => {
                             type: 'Value',
                             value: 'AdGuard',
                         },
-                        syntax: AdblockSyntax.Adg,
+                        syntax: SYNTAX_ADG,
                     },
                 ],
             });

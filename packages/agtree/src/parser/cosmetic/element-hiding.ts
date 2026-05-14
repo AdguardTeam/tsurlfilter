@@ -16,6 +16,7 @@ import type { CosmeticBodyParser } from '../types';
 
 import {
     CR_BODY_START_TI,
+    CR_FLAG_BODY_ABP_CSS_INJECTION,
     CR_FLAG_HAS_ADG_MODS,
     CR_FLAG_HAS_UBO_MODS,
     CR_FLAGS_OFFSET,
@@ -135,6 +136,53 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         // Update modifier count if uBO modifiers were found
         if (uboModCount > 0) {
             ctx.data[CR_MODIFIER_COUNT_OFFSET] = uboModCount;
+        }
+
+        // ABP CSS injection detection: if no product-specific modifiers were
+        // found, check whether the body matches the ABP CSS injection pattern:
+        //   selector { declarations }
+        //
+        // Requirements for a positive match:
+        //   1. Body ends with a CloseBrace token (ignoring trailing whitespace)
+        //   2. There is a top-level OpenBrace (outside square brackets) that is
+        //      not the very first non-whitespace token (there must be a selector)
+        //   3. The OpenBrace has the matching CloseBrace at the end
+        if (uboModCount === 0 && !hasAdgMods) {
+            const { types } = ctx;
+            const endTi = ctx.tokenCount;
+
+            // Find last non-whitespace token — must be CloseBrace
+            let lastNonWsTi = endTi - 1;
+            while (lastNonWsTi > bodyStartTi && types[lastNonWsTi] === TokenType.Whitespace) {
+                lastNonWsTi -= 1;
+            }
+
+            if (lastNonWsTi > bodyStartTi && types[lastNonWsTi] === TokenType.CloseBrace) {
+                // Scan for the matching top-level OpenBrace
+                let bracketDepth = 0;
+                for (let ti = bodyStartTi; ti < lastNonWsTi; ti += 1) {
+                    const tt = types[ti];
+                    if (tt === TokenType.OpenSquare) {
+                        bracketDepth += 1;
+                    } else if (tt === TokenType.CloseSquare) {
+                        bracketDepth -= 1;
+                    } else if (bracketDepth === 0 && tt === TokenType.OpenBrace) {
+                        // Ensure there is selector content before the brace
+                        // (at least one non-whitespace token before it)
+                        let hasSelectorBefore = false;
+                        for (let si = bodyStartTi; si < ti; si += 1) {
+                            if (types[si] !== TokenType.Whitespace) {
+                                hasSelectorBefore = true;
+                                break;
+                            }
+                        }
+                        if (hasSelectorBefore) {
+                            ctx.data[CR_FLAGS_OFFSET] |= CR_FLAG_BODY_ABP_CSS_INJECTION;
+                        }
+                        break;
+                    }
+                }
+            }
         }
     }
 

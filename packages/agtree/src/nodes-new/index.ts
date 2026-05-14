@@ -1,6 +1,6 @@
-import { type AdblockSyntax } from '../utils/adblockers';
 import { type COMMA_DOMAIN_LIST_SEPARATOR, type PIPE_MODIFIER_SEPARATOR } from '../utils/constants';
 import { type QuoteType } from '../utils/quotes';
+import { type SyntaxFlags } from '../utils/syntax-flags';
 
 export const OperatorValue = {
     Not: '!',
@@ -483,10 +483,10 @@ export interface FilterList extends Node {
  */
 export interface RuleBase extends Node {
     /**
-     * Syntax of the adblock rule. If we are not able to determine the syntax of the rule,
-     * we should use `AdblockSyntax.Common` as the value.
+     * Syntax bitflags indicating which products support this rule's syntax.
+     * Use helpers like `hasProduct(rule.syntax, SYNTAX_ADG)` to check.
      */
-    syntax: AdblockSyntax;
+    syntax: SyntaxFlags;
 
     /**
      * Category of the adblock rule.
@@ -745,7 +745,7 @@ export interface Agent extends Node {
     /**
      * Needed for network rules modifier validation.
      */
-    syntax: AdblockSyntax;
+    syntax: SyntaxFlags;
 }
 
 /**
@@ -819,7 +819,7 @@ export interface HintCommentRule extends RuleBase {
     /**
      * Currently only AdGuard supports hints.
      */
-    syntax: AdblockSyntax;
+    syntax: SyntaxFlags;
 
     /**
      * List of hints.
@@ -1769,10 +1769,9 @@ export interface NetworkRuleBase extends RuleBase {
     type: NetworkRuleType;
 
     /**
-     * Syntax of the adblock rule. If we are not able to determine the syntax of the rule,
-     * we should use `AdblockSyntax.Common` as the value.
+     * Syntax bitflags indicating which products support this rule's syntax.
      */
-    syntax: AdblockSyntax;
+    syntax: SyntaxFlags;
 }
 
 /**

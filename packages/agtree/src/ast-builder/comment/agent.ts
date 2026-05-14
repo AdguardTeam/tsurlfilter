@@ -21,7 +21,7 @@ import {
     CM_AGENT_RECORDS_OFFSET,
 } from '../../parser/comment/agent';
 import { CHAR_SPACE, CHAR_TAB } from '../../tokenizer/char-codes';
-import { AdblockSyntax } from '../../utils/adblockers';
+import { SYNTAX_ALL } from '../../utils/syntax-flags';
 import { ValueAstBuilder } from '../misc/value';
 import type { ParseOptions } from '../options';
 
@@ -144,7 +144,7 @@ export class AgentCommentAstBuilder {
         const result: AgentCommentRule = {
             type: CommentRuleType.AgentCommentRule,
             category: RuleCategory.Comment,
-            syntax: AdblockSyntax.Common,
+            syntax: SYNTAX_ALL,
             children,
         };
 

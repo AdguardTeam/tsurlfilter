@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
+import { SYNTAX_ADG, SYNTAX_ALL } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
 
@@ -11,7 +12,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
 
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 exception: false,
                 modifiers: {
                     type: 'ModifierList',
@@ -45,7 +46,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
 
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 modifiers: {
                     type: 'ModifierList',
                     children: [
@@ -69,7 +70,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
 
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 modifiers: {
                     type: 'ModifierList',
                     children: [
@@ -98,7 +99,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
 
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 modifiers: {
                     type: 'ModifierList',
                     children: [
@@ -135,7 +136,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
 
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 exception: true,
                 modifiers: {
                     type: 'ModifierList',
@@ -160,7 +161,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
 
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 separator: {
                     value: '#?#',
                 },
@@ -187,7 +188,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
 
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
             });
             expect((ast as any).modifiers).toBeUndefined();
         });
@@ -199,7 +200,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
 
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 modifiers: {
                     type: 'ModifierList',
                     children: [
@@ -225,7 +226,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
 
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 modifiers: {
                     type: 'ModifierList',
                     children: [
@@ -248,7 +249,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
 
             expect(ast).toMatchObject({
                 type: 'ElementHidingRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 modifiers: {
                     type: 'ModifierList',
                     children: [
