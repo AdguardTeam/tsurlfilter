@@ -1,4 +1,4 @@
-FROM adguard/node-ssh:22.17--0 AS base
+FROM adguard/node-ssh:22.22--0 AS base
 SHELL ["/bin/bash", "-lc"]
 
 RUN npm install -g pnpm@10.7.0
