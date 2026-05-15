@@ -1,13 +1,13 @@
 import { type NetworkRule as NetworkRuleNode, RuleGenerator } from '@adguard/agtree';
 
 import { type RequestMethod, type ResourceType } from '../../src/declarative-rule';
-import { type HttpHeaderMatcher, type NetworkRule, type NetworkRuleOption } from '../../src/network-rule';
+import { type HttpHeaderMatcher, type Rule } from '../../src/rule/rule';
 import { fastHash, fastHash31 } from '../../src/utils/string';
 
 /**
- * Options for creating a NetworkRule mock.
+ * Options for creating a Rule mock.
  */
-interface CreateNetworkRuleMockOptions {
+interface CreateRuleMockOptions {
     /**
      * The filter list ID to be returned by the mock. Defaults to `1`.
      */
@@ -44,24 +44,24 @@ interface CreateNetworkRuleMockOptions {
     priority?: number;
 
     /**
-     * Mocks `NetworkRule.isFilteringDisabled` method to return this value. Defaults to `false`.
+     * Mocks `Rule.isFilteringDisabled` method to return this value. Defaults to `false`.
      */
     isFilteringDisabled?: boolean;
 
     /**
-     * Mocks `NetworkRule.isRegexRule` method to return this value. Defaults to `false`.
+     * Mocks `Rule.isRegexRule` method to return this value. Defaults to `false`.
      */
     isRegexRule?: boolean;
 
     /**
      * Mocks enabled options for the rule. Defaults to `[]`.
      */
-    enabledOptions?: NetworkRuleOption[];
+    enabledOptions?: string[];
 
     /**
      * Mocks disabled options for the rule. Defaults to `[]`.
      */
-    disabledOptions?: NetworkRuleOption[];
+    disabledOptions?: string[];
 
     /**
      * Mocks permitted domains for the rule. Defaults to `null`.
@@ -129,7 +129,7 @@ interface CreateNetworkRuleMockOptions {
     requestHeaderNameToRemove?: string | null;
 
     /**
-     * Mocks `NetworkRule.getRuleTextHash` method for the rule.
+     * Mocks `Rule.getRuleTextHash` method for the rule.
      * Defaults to actual implementation that hashes text generated from the {@link node}.
      *
      * @param salt Optional salt value.
@@ -146,17 +146,17 @@ interface CreateNetworkRuleMockOptions {
      *
      * @returns `true` if this rule negates the specified rule, `false` otherwise.
      */
-    negatesBadfilter?: (rule: NetworkRule) => boolean;
+    negatesBadfilter?: (rule: Rule) => boolean;
 }
 
 /**
- * Creates a mock of NetworkRule for testing purposes.
+ * Creates a mock of Rule for testing purposes.
  *
  * @param options Options for creating the mock.
  *
- * @returns A mock NetworkRule object.
+ * @returns A mock Rule object.
  */
-export function createNetworkRuleMock(options: CreateNetworkRuleMockOptions = {}): NetworkRule {
+export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
     const {
         filterListId = 1,
         index = 1,
@@ -192,56 +192,63 @@ export function createNetworkRuleMock(options: CreateNetworkRuleMockOptions = {}
         responseHeaderNameToRemove = null,
         requestHeaderNameToRemove = null,
         getRuleTextHash = (salt?: number) => {
-            const textOfNetworkRule = RuleGenerator.generate(node);
+            const textOfRule = RuleGenerator.generate(node);
 
             // Append a null-char to not collide with legitimate rule text.
-            const trialText = salt === undefined ? textOfNetworkRule : `${textOfNetworkRule}\0${salt}`;
+            const trialText = salt === undefined ? textOfRule : `${textOfRule}\0${salt}`;
 
             return fastHash31(trialText);
         },
         negatesBadfilter = () => false,
     } = options;
 
-    const enabledOptionsSet = new Set(enabledOptions);
-    const disabledOptionsSet = new Set(disabledOptions);
+    const enabledOptionsSet = new Set<string>(enabledOptions);
+    const disabledOptionsSet = new Set<string>(disabledOptions);
 
-    // @ts-expect-error Implementing only required members for test purposes
+    // Derive removeHeaderName / removeHeaderIsRequestType from the two legacy
+    // options so getApplicableHeaderName() behaves consistently.
+    const removeHeaderIsRequestType = requestHeaderNameToRemove !== null;
+    const removeHeaderName = requestHeaderNameToRemove ?? responseHeaderNameToRemove ?? null;
+
     return {
         filterListId,
-        getFilterListId: () => filterListId,
         index,
-        getIndex: () => index,
         node,
-        getNode: () => node,
         pattern,
-        getPattern: () => pattern,
         allowlist,
-        isAllowlist: () => allowlist,
         hash,
-        getHash: () => hash,
         priority,
-        getPriority: () => priority,
+        enabledModifiers: enabledOptionsSet as ReadonlySet<string>,
+        disabledModifiers: disabledOptionsSet as ReadonlySet<string>,
+        permittedDomains,
+        restrictedDomains,
+        permittedToDomains,
+        restrictedToDomains,
+        denyAllowDomains,
+        permittedResourceTypes,
+        restrictedResourceTypes,
+        permittedMethods: permittedMethods ?? null,
+        restrictedMethods: restrictedMethods ?? null,
+        advancedModifierName: null as string | null,
+        advancedModifierValue,
+        headerMatcher: headerModifierMatcher,
+        removeHeaderName,
+        removeHeaderIsRequestType,
+        isRedirectRuleModifier: false,
         isFilteringDisabled: () => isFilteringDisabled,
         isRegexRule: () => isRegexRule,
-        isOptionEnabled: (option: NetworkRuleOption) => enabledOptionsSet.has(option),
-        isOptionDisabled: (option: NetworkRuleOption) => disabledOptionsSet.has(option),
-        getPermittedDomains: () => permittedDomains,
-        getRestrictedDomains: () => restrictedDomains,
-        getPermittedToDomains: () => permittedToDomains,
-        getRestrictedToDomains: () => restrictedToDomains,
-        getDenyAllowDomains: () => denyAllowDomains,
-        getPermittedResourceTypes: () => permittedResourceTypes,
-        getRestrictedResourceTypes: () => restrictedResourceTypes,
-        getPermittedMethods: () => permittedMethods,
-        getRestrictedMethods: () => restrictedMethods,
-        getAdvancedModifierValue: () => advancedModifierValue,
-        getHeaderModifierMatcher: () => headerModifierMatcher,
+        isModifierEnabled: (modifier: string) => enabledOptionsSet.has(modifier),
+        isModifierDisabled: (modifier: string) => disabledOptionsSet.has(modifier),
+        isSingleModifierEnabled: (modifier: string) => (
+            enabledOptionsSet.size === 1 && enabledOptionsSet.has(modifier)
+        ),
+        getText: () => RuleGenerator.generate(node),
+        getTextHash: getRuleTextHash,
         getApplicableHeaderName: (isRequestHeader: boolean) => (
             isRequestHeader
                 ? requestHeaderNameToRemove
                 : responseHeaderNameToRemove
         ),
-        getRuleTextHash,
         negatesBadfilter,
-    };
+    } as unknown as Rule;
 }

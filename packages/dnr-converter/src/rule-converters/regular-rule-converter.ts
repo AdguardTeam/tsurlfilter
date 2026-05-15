@@ -2,7 +2,7 @@
 /* eslint-disable jsdoc/no-multi-asterisks */
 /* eslint-disable max-len */
 /**
- * @file Describes how to convert one {@link NetworkRule} into one or many {@link DeclarativeRule}.
+ * @file Describes how to convert one {@link Rule} into one or many {@link DeclarativeRule}.
  *
  *      Heir classes                                        RuleConverter
  *
@@ -10,7 +10,7 @@
  *    *override layer*        │              *protected layer*          │              *private layer*
  *                            │                                         │
  *                            │                                         │
- * Subclasses should define   │    Converts a set of {@link NetworkRule}│
+ * Subclasses should define   │    Converts a set of {@link Rule}│
  * the logic in this method.  │    into {@link DeclarativeRule} while   │
  *                            │    handling errors.                     │
  *  ┌─────────────────────┐   │   ┌───────────────────────────┐         │
@@ -26,7 +26,7 @@
  *                            │   │                           │         │                       │
  *                            │   └───────────────────────────┘         │                       │
  *                            │   Transforms a single                   │                       │
- *                            │   {@link NetworkRule} into one.         │     ┌─────────────────▼────────────────────┐
+ *                            │   {@link Rule} into one.         │     ┌─────────────────▼────────────────────┐
  *                            │   or several {@link DeclarativeRule}    │     │                                      │
  *                            │                                         │  ┌──┤      private getAction()             │
  *                            │                                         │  │  │                                      │
@@ -56,7 +56,7 @@
  *                            │                                         │  │
  *                            │                                         │  │  ┌────────────────────────────────────┐
  *                            │                                         │  └──►                                    │
- *                            │                                         │     │  public NetworkRule.getPriority()  │
+ *                            │                                         │     │  public Rule.getPriority()  │
  *                            │                                         │  ┌──┤                                    │
  *                            │                                         │  │  └────────────────────────────────────┘
  *                            │                                         │  │  Generates the priority of
@@ -117,8 +117,10 @@ import {
     UnsupportedRegexpError,
 } from '../errors/conversion-errors';
 import { ResourcesPathError } from '../errors/converter-options-errors';
-import { type NetworkRule, NetworkRuleOption } from '../network-rule';
 import { re2Validator } from '../re2-regexp/re2-validator';
+import { OPTION_NAMES } from '../rule/option-names';
+import { type Rule } from '../rule/rule';
+import { RuleDeclarativeValidator } from '../rule/rule-validator';
 import { getErrorMessage } from '../utils/error';
 import {
     isRegexPattern,
@@ -134,7 +136,7 @@ import { type ConvertedRules } from './converted-rules';
  */
 
 /**
- * Contains the generic logic for converting a {@link NetworkRule} into a {@link DeclarativeRule}.
+ * Contains the generic logic for converting a {@link Rule} into a {@link DeclarativeRule}.
  *
  * Descendant classes can override the {@link RegularRuleConverter.convert}
  * method to add post-processing logic (e.g. grouping similar rules).
@@ -168,14 +170,14 @@ export class RegularRuleConverter {
     }
 
     /**
-     * Checks if {@link NetworkRule} can be converted to {@link RuleActionType.AllowAllRequests}.
+     * Checks if {@link Rule} can be converted to {@link RuleActionType.AllowAllRequests}.
      *
-     * @param rule {@link NetworkRule} to check.
+     * @param rule {@link Rule} to check.
      *
      * @returns Is rule compatible with {@link RuleActionType.AllowAllRequests}.
      */
-    private static isCompatibleWithAllowAllRequests(rule: NetworkRule): boolean {
-        const types = rule.getPermittedResourceTypes();
+    private static isCompatibleWithAllowAllRequests(rule: Rule): boolean {
+        const types = rule.permittedResourceTypes;
 
         if (types.some((type) => !RegularRuleConverter.ALLOW_ALL_REQUEST_COMPATIBLE_RESOURCE_TYPES.has(type))) {
             return false;
@@ -185,21 +187,21 @@ export class RegularRuleConverter {
     }
 
     /**
-     * Retrieves the redirect action for the provided {@link NetworkRule}.
+     * Retrieves the redirect action for the provided {@link Rule}.
      *
-     * @param rule {@link NetworkRule} to get action for.
+     * @param rule {@link Rule} to get action for.
      *
      * @returns Redirect action, which describes where and how the request should be redirected.
      *
      * @throws Error {@link ResourcesPathError} when a network rule has
      * a `$redirect` modifier and no path to web-accessible resources is specified.
      */
-    private getRedirectAction(rule: NetworkRule): Redirect | null {
-        if (!rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
+    private getRedirectAction(rule: Rule): Redirect | null {
+        if (!rule.isModifierEnabled(OPTION_NAMES.REDIRECT)) {
             return null;
         }
 
-        const value = rule.getAdvancedModifierValue();
+        const value = rule.advancedModifierValue;
         if (!value) {
             return null;
         }
@@ -216,18 +218,18 @@ export class RegularRuleConverter {
     }
 
     /**
-     * Retrieves the remove param redirect action for the provided {@link NetworkRule}.
+     * Retrieves the remove param redirect action for the provided {@link Rule}.
      *
-     * @param rule {@link NetworkRule} to get action for.
+     * @param rule {@link Rule} to get action for.
      *
      * @returns Redirect action, which describes where and how the request should be redirected.
      */
-    private static getRemoveParamRedirectAction(rule: NetworkRule): Redirect | null {
-        if (!rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+    private static getRemoveParamRedirectAction(rule: Rule): Redirect | null {
+        if (!rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
             return null;
         }
 
-        const value = rule.getAdvancedModifierValue();
+        const value = rule.advancedModifierValue;
         if (value === null) {
             return null;
         }
@@ -252,13 +254,13 @@ export class RegularRuleConverter {
     /**
      * Returns rule modify headers action.
      *
-     * @param rule {@link NetworkRule} to get action for.
+     * @param rule {@link Rule} to get action for.
      *
      * @returns Modify headers action, which describes which
      * headers should be changed: added, set or deleted.
      */
-    private static getModifyHeadersAction(rule: NetworkRule): RuleActionHeaders | null {
-        if (!rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
+    private static getModifyHeadersAction(rule: Rule): RuleActionHeaders | null {
+        if (!rule.isModifierEnabled(OPTION_NAMES.REMOVEHEADER)) {
             return null;
         }
 
@@ -288,12 +290,12 @@ export class RegularRuleConverter {
     /**
      * Returns rule modify headers action with removing Cookie headers from response and request.
      *
-     * @param rule {@link NetworkRule} to get action for.
+     * @param rule {@link Rule} to get action for.
      *
      * @returns Add headers action, which describes which headers should be added.
      */
-    private static getRemovingCookieHeadersAction(rule: NetworkRule): RuleActionHeaders | null {
-        if (!rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
+    private static getRemovingCookieHeadersAction(rule: Rule): RuleActionHeaders | null {
+        if (!rule.isModifierEnabled(OPTION_NAMES.COOKIE)) {
             return null;
         }
 
@@ -312,16 +314,16 @@ export class RegularRuleConverter {
     /**
      * Returns rule modify headers action with adding CSP headers to response.
      *
-     * @param rule {@link NetworkRule} to get action for.
+     * @param rule {@link Rule} to get action for.
      *
      * @returns Add headers action, which describes what headers should be added.
      */
-    private static getAddingCspHeadersAction(rule: NetworkRule): ModifyHeaderInfo | null {
-        if (!rule.isOptionEnabled(NetworkRuleOption.Csp)) {
+    private static getAddingCspHeadersAction(rule: Rule): ModifyHeaderInfo | null {
+        if (!rule.isModifierEnabled(OPTION_NAMES.CSP)) {
             return null;
         }
 
-        const cspHeaderValue = rule.getAdvancedModifierValue();
+        const cspHeaderValue = rule.advancedModifierValue;
         if (!cspHeaderValue) {
             return null;
         }
@@ -336,16 +338,16 @@ export class RegularRuleConverter {
     /**
      * Returns rule modify headers action with adding Permissions headers to response.
      *
-     * @param rule {@link NetworkRule} to get action for.
+     * @param rule {@link Rule} to get action for.
      *
      * @returns Add headers action, which describes what headers should be added.
      */
-    private static getAddingPermissionsHeadersAction(rule: NetworkRule): ModifyHeaderInfo | null {
-        if (!rule.isOptionEnabled(NetworkRuleOption.Permissions)) {
+    private static getAddingPermissionsHeadersAction(rule: Rule): ModifyHeaderInfo | null {
+        if (!rule.isModifierEnabled(OPTION_NAMES.PERMISSIONS)) {
             return null;
         }
 
-        const permissionsHeaderValue = rule.getAdvancedModifierValue();
+        const permissionsHeaderValue = rule.advancedModifierValue;
         if (!permissionsHeaderValue) {
             return null;
         }
@@ -358,16 +360,16 @@ export class RegularRuleConverter {
     }
 
     /**
-     * Retrieves the action for the provided {@link NetworkRule}.
+     * Retrieves the action for the provided {@link Rule}.
      *
-     * @param rule {@link NetworkRule} to get action for.
+     * @param rule {@link Rule} to get action for.
      *
      * @returns The action of a rule that describes what should be done with the request.
      *
      * @throws Error {@link ResourcesPathError} when specified an empty path to the web accessible resources.
      */
-    private getAction(rule: NetworkRule): RuleAction {
-        if (rule.isAllowlist()) {
+    private getAction(rule: Rule): RuleAction {
+        if (rule.allowlist) {
             if (rule.isFilteringDisabled() && RegularRuleConverter.isCompatibleWithAllowAllRequests(rule)) {
                 return { type: RuleActionType.AllowAllRequests };
             }
@@ -375,7 +377,7 @@ export class RegularRuleConverter {
             return { type: RuleActionType.Allow };
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.REDIRECT)) {
             const redirectAction = this.getRedirectAction(rule);
             if (redirectAction) {
                 return {
@@ -385,7 +387,7 @@ export class RegularRuleConverter {
             }
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
             const removeParamRedirectAction = RegularRuleConverter.getRemoveParamRedirectAction(rule);
             if (removeParamRedirectAction) {
                 return {
@@ -395,7 +397,7 @@ export class RegularRuleConverter {
             }
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.REMOVEHEADER)) {
             const modifyHeadersAction = RegularRuleConverter.getModifyHeadersAction(rule);
 
             if (modifyHeadersAction?.requestHeaders) {
@@ -413,7 +415,7 @@ export class RegularRuleConverter {
             }
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.CSP)) {
             const headersAction = RegularRuleConverter.getAddingCspHeadersAction(rule);
             if (headersAction) {
                 return {
@@ -423,7 +425,7 @@ export class RegularRuleConverter {
             }
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.Permissions)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.PERMISSIONS)) {
             const headersAction = RegularRuleConverter.getAddingPermissionsHeadersAction(rule);
             if (headersAction) {
                 return {
@@ -433,7 +435,7 @@ export class RegularRuleConverter {
             }
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.COOKIE)) {
             const removeCookieHeaders = RegularRuleConverter.getRemovingCookieHeadersAction(rule);
             if (removeCookieHeaders) {
                 const { responseHeaders, requestHeaders } = removeCookieHeaders;
@@ -450,17 +452,17 @@ export class RegularRuleConverter {
     }
 
     /**
-     * Retrieves the condition for the provided {@link NetworkRule}.
+     * Retrieves the condition for the provided {@link Rule}.
      *
-     * @param rule {@link NetworkRule} to get condition for.
+     * @param rule {@link Rule} to get condition for.
      *
      * @returns A rule condition that describes to which request the declarative rule should be applied.
      */
-    private static getCondition(rule: NetworkRule): RuleCondition {
+    private static getCondition(rule: Rule): RuleCondition {
         const condition: RuleCondition = {};
 
         // set `urlFilter` or `regexFilter` depending on the pattern type
-        const pattern = rule.getPattern();
+        const { pattern } = rule;
         if (pattern) {
             if (rule.isRegexRule()) {
                 condition.regexFilter = prepareASCII(removeSlashes(pattern));
@@ -474,14 +476,14 @@ export class RegularRuleConverter {
         }
 
         // set `domainType`
-        if (rule.isOptionEnabled(NetworkRuleOption.ThirdParty)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.THIRD_PARTY)) {
             condition.domainType = DomainType.ThirdParty;
-        } else if (rule.isOptionDisabled(NetworkRuleOption.ThirdParty)) {
+        } else if (rule.isModifierDisabled(OPTION_NAMES.THIRD_PARTY)) {
             condition.domainType = DomainType.FirstParty;
         }
 
         // set `initiatorDomains`
-        const permittedDomains = rule.getPermittedDomains()?.filter((domain) => (
+        const permittedDomains = rule.permittedDomains?.filter((domain) => (
             !domain.includes(MASK_ANY_CHARACTER)
             && !isRegexPattern(domain)
         ));
@@ -490,20 +492,20 @@ export class RegularRuleConverter {
         }
 
         // set `excludedInitiatorDomains`
-        const excludedDomains = rule.getRestrictedDomains();
+        const excludedDomains = rule.restrictedDomains;
         if (excludedDomains && excludedDomains.length > 0) {
             condition.excludedInitiatorDomains = toASCII(excludedDomains);
         }
 
         // set `requestDomains`
-        const permittedToDomains = rule.getPermittedToDomains();
+        const { permittedToDomains } = rule;
         if (permittedToDomains && permittedToDomains.length > 0) {
             condition.requestDomains = toASCII(permittedToDomains);
         }
 
         // Can be specified `$to` or `$denyallow`, but not together.
-        const denyAllowDomains = rule.getDenyAllowDomains();
-        const restrictedToDomains = rule.getRestrictedToDomains();
+        const { denyAllowDomains } = rule;
+        const { restrictedToDomains } = rule;
 
         // set `excludedRequestDomains`
         if (denyAllowDomains && denyAllowDomains.length !== 0) {
@@ -513,7 +515,7 @@ export class RegularRuleConverter {
         }
 
         // set `excludedResourceTypes`
-        const restrictedResourceTypes = rule.getRestrictedResourceTypes();
+        const { restrictedResourceTypes } = rule;
         const hasExcludedResourceTypes = restrictedResourceTypes.length !== 0;
         if (hasExcludedResourceTypes) {
             // Deep copy to drop reference linking
@@ -529,19 +531,19 @@ export class RegularRuleConverter {
         }
 
         // set `resourceTypes`
-        const permittedResourceTypes = rule.getPermittedResourceTypes();
+        const { permittedResourceTypes } = rule;
         if (!hasExcludedResourceTypes && permittedResourceTypes.length !== 0) {
             condition.resourceTypes = permittedResourceTypes;
         }
 
         // set `requestMethods`
-        const permittedMethods = rule.getPermittedMethods();
+        const { permittedMethods } = rule;
         if (permittedMethods && permittedMethods.length !== 0) {
             condition.requestMethods = permittedMethods;
         }
 
         // set `excludedRequestMethods`
-        const restrictedMethods = rule.getRestrictedMethods();
+        const { restrictedMethods } = rule;
         if (restrictedMethods && restrictedMethods.length !== 0) {
             condition.excludedRequestMethods = restrictedMethods;
         }
@@ -550,7 +552,7 @@ export class RegularRuleConverter {
          * Set `isUrlFilterCaseSensitive` if the `$match-case` modifier is specified,
          * because by default this option is false, so no need to specify it everywhere.
          */
-        if (rule.isOptionEnabled(NetworkRuleOption.MatchCase)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.MATCH_CASE)) {
             condition.isUrlFilterCaseSensitive = true;
         }
 
@@ -560,7 +562,7 @@ export class RegularRuleConverter {
          * to document requests, so adding {@link ResourceType.MainFrame}
          * ensures the rules are correctly applied.
          */
-        if (rule.isOptionEnabled(NetworkRuleOption.Popup)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.POPUP)) {
             condition.resourceTypes = condition.resourceTypes || [];
             if (!condition.resourceTypes.includes(ResourceType.MainFrame)) {
                 condition.resourceTypes.push(ResourceType.MainFrame);
@@ -576,18 +578,18 @@ export class RegularRuleConverter {
              * other types, so that it works not only for document requests, but
              * also for all other types of requests.
              */
-            const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
-                || rule.isOptionEnabled(NetworkRuleOption.Csp)
-                || rule.isOptionEnabled(NetworkRuleOption.Cookie)
-                || rule.isOptionEnabled(NetworkRuleOption.To)
-                || rule.isOptionEnabled(NetworkRuleOption.Method);
+            const shouldMatchAllResourcesTypes = rule.isModifierEnabled(OPTION_NAMES.REMOVEHEADER)
+                || rule.isModifierEnabled(OPTION_NAMES.CSP)
+                || rule.isModifierEnabled(OPTION_NAMES.COOKIE)
+                || rule.isModifierEnabled(OPTION_NAMES.TO)
+                || rule.isModifierEnabled(OPTION_NAMES.METHOD);
 
             /**
              * `$permissions` and `$removeparam` modifiers must be applied only to `document` content-type
              * ({@link ResourceType.MainFrame} and {@link ResourceType.SubFrame}) if they don't have resource types.
              */
-            const shouldMatchOnlyDocument = rule.isOptionEnabled(NetworkRuleOption.RemoveParam)
-                || rule.isOptionEnabled(NetworkRuleOption.Permissions);
+            const shouldMatchOnlyDocument = rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)
+                || rule.isModifierEnabled(OPTION_NAMES.PERMISSIONS);
 
             if (shouldMatchAllResourcesTypes) {
                 condition.resourceTypes = [
@@ -600,8 +602,11 @@ export class RegularRuleConverter {
                     ResourceType.Object,
                     ResourceType.XmlHttpRequest,
                     ResourceType.Ping,
+                    ResourceType.CspReport,
                     ResourceType.Media,
                     ResourceType.WebSocket,
+                    ResourceType.WebTransport,
+                    ResourceType.WebBundle,
                     ResourceType.Other,
                 ];
             } else if (shouldMatchOnlyDocument) {
@@ -610,8 +615,8 @@ export class RegularRuleConverter {
         }
 
         // set response headers
-        if (rule.isOptionEnabled(NetworkRuleOption.Header)) {
-            const headerModifierMatcher = rule.getHeaderModifierMatcher();
+        if (rule.isModifierEnabled(OPTION_NAMES.HEADER)) {
+            const headerModifierMatcher = rule.headerMatcher;
             if (headerModifierMatcher) {
                 const headerInfo: HeaderInfo = { header: headerModifierMatcher.header };
 
@@ -619,7 +624,7 @@ export class RegularRuleConverter {
                 // DNR does not support regex in the header info values field
                 // as of 14 November 2025 https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#type-HeaderInfo
                 const { value } = headerModifierMatcher;
-                if (typeof value === 'string') {
+                if (typeof value === 'string' && !headerModifierMatcher.isRegExp) {
                     headerInfo.values = [value];
                 }
 
@@ -631,10 +636,10 @@ export class RegularRuleConverter {
     }
 
     /**
-     * Converts the {@link NetworkRule} into a {@link DeclarativeRule}.
+     * Converts the {@link Rule} into a {@link DeclarativeRule}.
      *
      * @param id Rule ID.
-     * @param rule {@link NetworkRule} to convert.
+     * @param rule {@link Rule} to convert.
      *
      * @returns Converted {@link DeclarativeRule}.
      *
@@ -645,7 +650,7 @@ export class RegularRuleConverter {
      */
     protected async convertRule(
         id: number,
-        rule: NetworkRule,
+        rule: Rule,
     ): Promise<DeclarativeRule> {
         // Build declarative rule
         const declarativeRule: DeclarativeRule = {
@@ -655,7 +660,7 @@ export class RegularRuleConverter {
         };
 
         // Set calculated priority
-        declarativeRule.priority = rule.getPriority();
+        declarativeRule.priority = rule.priority;
 
         // Validate created declarative rule and throw error if not valid
         const conversionErr = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
@@ -677,7 +682,7 @@ export class RegularRuleConverter {
      *
      * @see {@link https://github.com/google/re2/wiki/Syntax}.
      *
-     * @param rule The original {@link NetworkRule}.
+     * @param rule The original {@link Rule}.
      * @param declarativeRule The converted {@link DeclarativeRule}.
      *
      * @returns Different errors:
@@ -688,7 +693,7 @@ export class RegularRuleConverter {
      *   while the original rule has non-empty domains.
      */
     private static async checkRuleApplication(
-        rule: NetworkRule,
+        rule: Rule,
         declarativeRule: DeclarativeRule,
     ): Promise<ConversionError | null> {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
@@ -699,11 +704,11 @@ export class RegularRuleConverter {
         }
 
         // Check for empty initiator domains if original rule has permitted domains
-        const permittedDomains = rule.getPermittedDomains();
+        const { permittedDomains } = rule;
         if (permittedDomains && permittedDomains.length > 0) {
             const { initiatorDomains } = declarativeRule.condition;
             if (!initiatorDomains || initiatorDomains.length === 0) {
-                const ruleText = RuleGenerator.generate(rule.getNode());
+                const ruleText = RuleGenerator.generate(rule.node);
                 const msg = `Conversion initiatorDomains is empty, but original rule's domains not: "${ruleText}"`;
                 return new EmptyDomainsError(msg, rule, declarativeRule);
             }
@@ -714,7 +719,7 @@ export class RegularRuleConverter {
             try {
                 await re2Validator.isRegexSupported(regexFilter);
             } catch (e) {
-                const ruleText = RuleGenerator.generate(rule.getNode());
+                const ruleText = RuleGenerator.generate(rule.node);
                 const message = `Regex is unsupported in rule: "${ruleText}"`;
                 return new UnsupportedRegexpError(
                     message,
@@ -733,7 +738,7 @@ export class RegularRuleConverter {
      * conversion errors - returns it, otherwise adds information about
      * the original rule, packages it into a new error and returns it.
      *
-     * @param index Index of {@link NetworkRule}.
+     * @param index Index of {@link Rule}.
      * @param id Identifier of the desired declarative rule.
      * @param error Captured error.
      *
@@ -755,11 +760,11 @@ export class RegularRuleConverter {
     }
 
     /**
-     * Converts the provided list of {@link NetworkRule} into {@link DeclarativeRule},
+     * Converts the provided list of {@link Rule} into {@link DeclarativeRule},
      * collecting source rule identifiers for declarative rules and catching conversion errors.
      *
      * @param filterListId Filter list ID.
-     * @param rules List of {@link NetworkRule}.
+     * @param rules List of {@link Rule}.
      * @param usedIds Set with already used IDs to exclude duplications in IDs.
      * Since we use hash of the rule text to generate ID, we need to ensure that
      * the ID is unique for the whole ruleset (especially when we convert
@@ -770,7 +775,7 @@ export class RegularRuleConverter {
      */
     protected async convertRules(
         filterListId: number,
-        rules: NetworkRule[],
+        rules: Rule[],
         usedIds: Set<number>,
     ): Promise<ConvertedRules> {
         const res: ConvertedRules = {
@@ -779,11 +784,18 @@ export class RegularRuleConverter {
             sourceMapValues: [],
         };
 
-        await Promise.all(rules.map(async (rule: NetworkRule) => {
-            const index = rule.getIndex();
+        await Promise.all(rules.map(async (rule: Rule) => {
+            const { index } = rule;
             const id = RegularRuleConverter.generateId(rule, usedIds);
 
             try {
+                // Validate rule can be converted to DNR format
+                const shouldConvert = RuleDeclarativeValidator.shouldConvertRule(rule);
+                if (!shouldConvert) {
+                    // Rule doesn't require conversion (e.g. $elemhide-only rules)
+                    return;
+                }
+
                 // Convert rule and collect source map value
                 const converted = await this.convertRule(id, rule);
                 res.sourceMapValues.push({
@@ -877,19 +889,19 @@ export class RegularRuleConverter {
     /**
      * Creates unique ID for rule via adding salt to the hash of the rule if found duplicate ID.
      *
-     * @param rule {@link NetworkRule} to generate ID for.
+     * @param rule {@link Rule} to generate ID for.
      * @param usedIds Set with already used IDs to exclude duplications in IDs.
      *
      * @returns Unique ID for the rule.
      */
-    private static generateId(rule: NetworkRule, usedIds: Set<number>): number {
-        let id = rule.getRuleTextHash();
+    private static generateId(rule: Rule, usedIds: Set<number>): number {
+        let id = rule.getTextHash();
 
         // While the ID is already used, we add salt to the hash of the rule
         let salt = 0;
         while (usedIds.has(id)) {
             salt += 1;
-            id = rule.getRuleTextHash(salt);
+            id = rule.getTextHash(salt);
         }
 
         usedIds.add(id);
@@ -898,14 +910,14 @@ export class RegularRuleConverter {
     }
 
     /**
-     * Converts provided bunch of {@link NetworkRule} to {@link DeclarativeRule}
+     * Converts provided bunch of {@link Rule} to {@link DeclarativeRule}
      * via generating source map for it and catching errors of conversations.
      *
      * Subclasses can override this method to add post-processing logic
      * (e.g. grouping similar rules via {@link RegularRuleConverter.groupConvertedRules}).
      *
      * @param filterListId Filter list ID.
-     * @param rules List of {@link NetworkRule}.
+     * @param rules List of {@link Rule}.
      * @param usedIds Set with already used IDs to exclude duplications in IDs.
      *
      * @returns Object of {@link ConvertedRules} which containing
@@ -913,7 +925,7 @@ export class RegularRuleConverter {
      */
     public async convert(
         filterListId: number,
-        rules: NetworkRule[],
+        rules: Rule[],
         usedIds: Set<number>,
     ): Promise<ConvertedRules> {
         return this.convertRules(filterListId, rules, usedIds);

@@ -1,55 +1,56 @@
 import { describe, expect, it } from 'vitest';
 
-import { type NetworkRule, NetworkRuleOption } from '../../../src/network-rule';
+import { OPTION_NAMES } from '../../../src/rule/option-names';
+import { type Rule } from '../../../src/rule/rule';
 import { RulesGroup, RulesGrouper } from '../../../src/rule-converters/rules-grouper';
 
 describe('RulesGrouper', () => {
-    const getMockedNetworkRule = (enabledOptions: NetworkRuleOption[]): NetworkRule => {
+    const getMockedRule = (enabledModifiers: string[]): Rule => {
         return {
-            isOptionEnabled: (option: NetworkRuleOption): boolean => {
-                return enabledOptions.includes(option);
+            isModifierEnabled: (modifier: string): boolean => {
+                return enabledModifiers.includes(modifier);
             },
-        } as unknown as NetworkRule;
+        } as unknown as Rule;
     };
 
     describe('getRuleGroup', () => {
         it('should return RemoveParam group for rules with RemoveParam option', () => {
-            const rule = getMockedNetworkRule([NetworkRuleOption.RemoveParam]);
+            const rule = getMockedRule([OPTION_NAMES.REMOVEPARAM]);
             // @ts-expect-error Accessing private method for testing purposes
             const group = RulesGrouper.getRuleGroup(rule);
             expect(group).toBe(RulesGroup.RemoveParam);
         });
 
         it('should return RemoveHeader group for rules with RemoveHeader option', () => {
-            const rule = getMockedNetworkRule([NetworkRuleOption.RemoveHeader]);
+            const rule = getMockedRule([OPTION_NAMES.REMOVEHEADER]);
             // @ts-expect-error Accessing private method for testing purposes
             const group = RulesGrouper.getRuleGroup(rule);
             expect(group).toBe(RulesGroup.RemoveHeader);
         });
 
         it('should return Csp group for rules with Csp option', () => {
-            const rule = getMockedNetworkRule([NetworkRuleOption.Csp]);
+            const rule = getMockedRule([OPTION_NAMES.CSP]);
             // @ts-expect-error Accessing private method for testing purposes
             const group = RulesGrouper.getRuleGroup(rule);
             expect(group).toBe(RulesGroup.Csp);
         });
 
         it('should return BadFilter group for rules with Badfilter option', () => {
-            const rule = getMockedNetworkRule([NetworkRuleOption.Badfilter]);
+            const rule = getMockedRule([OPTION_NAMES.BADFILTER]);
             // @ts-expect-error Accessing private method for testing purposes
             const group = RulesGrouper.getRuleGroup(rule);
             expect(group).toBe(RulesGroup.BadFilter);
         });
 
         it('should return Regular group for rules with no special options', () => {
-            const rule = getMockedNetworkRule([NetworkRuleOption.NotSet]);
+            const rule = getMockedRule(['']);
             // @ts-expect-error Accessing private method for testing purposes
             const group = RulesGrouper.getRuleGroup(rule);
             expect(group).toBe(RulesGroup.Regular);
         });
 
         it('should return Regular group for rules with other options like Redirect', () => {
-            const rule = getMockedNetworkRule([NetworkRuleOption.Redirect]);
+            const rule = getMockedRule([OPTION_NAMES.REDIRECT]);
             // @ts-expect-error Accessing private method for testing purposes
             const group = RulesGrouper.getRuleGroup(rule);
             expect(group).toBe(RulesGroup.Regular);
@@ -70,7 +71,7 @@ describe('RulesGrouper', () => {
         });
 
         it('should group single rule correctly', () => {
-            const removeParamRule = getMockedNetworkRule([NetworkRuleOption.RemoveParam]);
+            const removeParamRule = getMockedRule([OPTION_NAMES.REMOVEPARAM]);
             const result = RulesGrouper.groupRules([removeParamRule]);
 
             expect(result).toEqual({
@@ -83,8 +84,8 @@ describe('RulesGrouper', () => {
         });
 
         it('should group multiple rules of same type correctly', () => {
-            const removeParamRule1 = getMockedNetworkRule([NetworkRuleOption.RemoveParam]);
-            const removeParamRule2 = getMockedNetworkRule([NetworkRuleOption.RemoveParam]);
+            const removeParamRule1 = getMockedRule([OPTION_NAMES.REMOVEPARAM]);
+            const removeParamRule2 = getMockedRule([OPTION_NAMES.REMOVEPARAM]);
             const result = RulesGrouper.groupRules([removeParamRule1, removeParamRule2]);
 
             expect(result).toEqual({
@@ -97,11 +98,11 @@ describe('RulesGrouper', () => {
         });
 
         it('should group mixed rules correctly', () => {
-            const removeParamRule = getMockedNetworkRule([NetworkRuleOption.RemoveParam]);
-            const removeHeaderRule = getMockedNetworkRule([NetworkRuleOption.RemoveHeader]);
-            const cspRule = getMockedNetworkRule([NetworkRuleOption.Csp]);
-            const regularRule = getMockedNetworkRule([NetworkRuleOption.Important]);
-            const regularRule2 = getMockedNetworkRule([NetworkRuleOption.NotSet]);
+            const removeParamRule = getMockedRule([OPTION_NAMES.REMOVEPARAM]);
+            const removeHeaderRule = getMockedRule([OPTION_NAMES.REMOVEHEADER]);
+            const cspRule = getMockedRule([OPTION_NAMES.CSP]);
+            const regularRule = getMockedRule([OPTION_NAMES.IMPORTANT]);
+            const regularRule2 = getMockedRule(['']);
 
             const result = RulesGrouper.groupRules([
                 removeParamRule,
@@ -121,10 +122,10 @@ describe('RulesGrouper', () => {
         });
 
         it('should preserve order of rules within groups', () => {
-            const regularRule1 = getMockedNetworkRule([NetworkRuleOption.Important]);
-            const removeParamRule = getMockedNetworkRule([NetworkRuleOption.RemoveParam]);
-            const regularRule2 = getMockedNetworkRule([NetworkRuleOption.NotSet]);
-            const regularRule3 = getMockedNetworkRule([NetworkRuleOption.ThirdParty]);
+            const regularRule1 = getMockedRule([OPTION_NAMES.IMPORTANT]);
+            const removeParamRule = getMockedRule([OPTION_NAMES.REMOVEPARAM]);
+            const regularRule2 = getMockedRule(['']);
+            const regularRule3 = getMockedRule([OPTION_NAMES.THIRD_PARTY]);
 
             const result = RulesGrouper.groupRules([
                 regularRule1,
@@ -143,17 +144,17 @@ describe('RulesGrouper', () => {
         });
 
         it('should handle rules with combined options correctly', () => {
-            const combinedRule1 = getMockedNetworkRule([
-                NetworkRuleOption.RemoveParam,
-                NetworkRuleOption.Important,
+            const combinedRule1 = getMockedRule([
+                OPTION_NAMES.REMOVEPARAM,
+                OPTION_NAMES.IMPORTANT,
             ]);
-            const combinedRule2 = getMockedNetworkRule([
-                NetworkRuleOption.RemoveHeader,
-                NetworkRuleOption.ThirdParty,
+            const combinedRule2 = getMockedRule([
+                OPTION_NAMES.REMOVEHEADER,
+                OPTION_NAMES.THIRD_PARTY,
             ]);
-            const combinedRule3 = getMockedNetworkRule([
-                NetworkRuleOption.Important,
-                NetworkRuleOption.ThirdParty,
+            const combinedRule3 = getMockedRule([
+                OPTION_NAMES.IMPORTANT,
+                OPTION_NAMES.THIRD_PARTY,
             ]);
 
             const result = RulesGrouper.groupRules([

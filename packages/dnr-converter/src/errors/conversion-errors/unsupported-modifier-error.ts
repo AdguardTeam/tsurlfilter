@@ -1,23 +1,23 @@
-import { type NetworkRule } from '../../network-rule';
+import { type Rule } from '../../rule/rule';
 
 /**
  * Describes an error when a source network rule contains some of the unsupported modifiers.
  */
 export class UnsupportedModifierError extends Error {
     /**
-     * {@link NetworkRule} related to this error.
+     * {@link Rule} related to this error.
      */
-    public networkRule: NetworkRule;
+    public rule: Rule;
 
     /**
      * Describes an error when a source network rule contains some of the unsupported modifiers.
      *
      * @param message Message of error.
-     * @param networkRule {@link NetworkRule}.
+     * @param rule {@link Rule}.
      */
     constructor(
         message: string,
-        networkRule: NetworkRule,
+        rule: Rule,
     ) {
         super(message);
 
@@ -28,6 +28,6 @@ export class UnsupportedModifierError extends Error {
         // to avoid issues with name being overwritten in some environments
         this.name = this.constructor.name;
 
-        this.networkRule = networkRule;
+        this.rule = rule;
     }
 }

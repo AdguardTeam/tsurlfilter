@@ -1,4 +1,4 @@
-import { type NetworkRule } from '../network-rule';
+import { type Rule } from '../rule/rule';
 
 /**
  * Options common to both conversion modes (simple and source-map).
@@ -73,7 +73,7 @@ export interface SourceMapConverterOptions extends BaseFilterConverterOptions {
      *
      * Only valid in source-map mode (enforced by the discriminated union).
      */
-    badFilterRules?: NetworkRule[];
+    badFilterRules?: Rule[];
 }
 
 /**

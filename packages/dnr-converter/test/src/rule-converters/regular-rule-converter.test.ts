@@ -24,11 +24,12 @@ import {
     UnsupportedRegexpError,
 } from '../../../src/errors/conversion-errors';
 import { ResourcesPathError } from '../../../src/errors/converter-options-errors';
-import { type NetworkRule, NetworkRuleOption } from '../../../src/network-rule';
 import { re2Validator } from '../../../src/re2-regexp/re2-validator';
+import { OPTION_NAMES } from '../../../src/rule/option-names';
+import { type Rule } from '../../../src/rule/rule';
 import { type ConvertedRules } from '../../../src/rule-converters';
 import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
-import { createNetworkRuleMock } from '../../mocks/network-rule';
+import { createRuleMock } from '../../mocks/rule';
 
 vi.mock('@adguard/scriptlets/redirects', () => ({
     getRedirectFilename: vi.fn((value) => `wrapped(${value})`),
@@ -50,7 +51,7 @@ class TestConverter extends RegularRuleConverter {
      * Just a stub method to satisfy abstract class requirements.
      *
      * @param filterListId Filter list ID.
-     * @param rules List of {@link NetworkRule}.
+     * @param rules List of {@link Rule}.
      * @param usedIds Set with already used IDs to exclude duplications in IDs.
      *
      * @throws Method not implemented error.
@@ -60,7 +61,7 @@ class TestConverter extends RegularRuleConverter {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         filterListId: number,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        rules: NetworkRule[],
+        rules: Rule[],
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         usedIds: Set<number>,
     ): Promise<ConvertedRules> {
@@ -85,7 +86,7 @@ describe('RuleConverter', () => {
         const expectedMessage = `Non-categorized error during a conversion rule (index - ${index}, id - ${id})`;
 
         it('should return conversion error as-is', () => {
-            const conversionError = new UnsupportedModifierError('Test unsupported modifier error', {} as NetworkRule);
+            const conversionError = new UnsupportedModifierError('Test unsupported modifier error', {} as Rule);
             // @ts-expect-error Accessing private member for test purposes
             const error = RegularRuleConverter.catchConversionError(index, id, conversionError);
 
@@ -114,27 +115,27 @@ describe('RuleConverter', () => {
     describe('generateId', () => {
         it('should generate unique ID', () => {
             const usedIds = new Set<number>();
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 getRuleTextHash(salt) {
                     return salt ?? 1;
                 },
             });
 
             // @ts-expect-error Accessing private member for test purposes
-            const id1 = RegularRuleConverter.generateId(networkRule, usedIds);
+            const id1 = RegularRuleConverter.generateId(rule, usedIds);
             expect(id1).toBe(1);
             expect(usedIds.has(id1)).toBe(true);
             expect(usedIds.size).toBe(1);
 
             // @ts-expect-error Accessing private member for test purposes
-            const id2 = RegularRuleConverter.generateId(networkRule, usedIds);
+            const id2 = RegularRuleConverter.generateId(rule, usedIds);
             expect(id2).not.toBe(id1);
             expect(id2).toBe(2);
             expect(usedIds.has(id2)).toBe(true);
             expect(usedIds.size).toBe(2);
 
             // @ts-expect-error Accessing private member for test purposes
-            const id3 = RegularRuleConverter.generateId(networkRule, usedIds);
+            const id3 = RegularRuleConverter.generateId(rule, usedIds);
             expect(id3).not.toBe(id1);
             expect(id3).not.toBe(id2);
             expect(id3).toBe(3);
@@ -145,21 +146,21 @@ describe('RuleConverter', () => {
 
     describe('isCompatibleWithAllowAllRequests', () => {
         it('returns true if rule contains only main_frame and/or sub_frame resource types', () => {
-            const networkRule1 = createNetworkRuleMock({
+            const networkRule1 = createRuleMock({
                 permittedResourceTypes: [ResourceType.MainFrame, ResourceType.SubFrame],
             });
             // @ts-expect-error Accessing private member for test purposes
             const result1 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule1);
             expect(result1).toBe(true);
 
-            const networkRule2 = createNetworkRuleMock({
+            const networkRule2 = createRuleMock({
                 permittedResourceTypes: [ResourceType.MainFrame],
             });
             // @ts-expect-error Accessing private member for test purposes
             const result2 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule2);
             expect(result2).toBe(true);
 
-            const networkRule3 = createNetworkRuleMock({
+            const networkRule3 = createRuleMock({
                 permittedResourceTypes: [ResourceType.SubFrame],
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -168,28 +169,28 @@ describe('RuleConverter', () => {
         });
 
         it('returns false if rule contains other resource types', () => {
-            const networkRule1 = createNetworkRuleMock({
+            const networkRule1 = createRuleMock({
                 permittedResourceTypes: [ResourceType.Script],
             });
             // @ts-expect-error Accessing private member for test purposes
             const result1 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule1);
             expect(result1).toBe(false);
 
-            const networkRule2 = createNetworkRuleMock({
+            const networkRule2 = createRuleMock({
                 permittedResourceTypes: [ResourceType.MainFrame, ResourceType.Script],
             });
             // @ts-expect-error Accessing private member for test purposes
             const result2 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule2);
             expect(result2).toBe(false);
 
-            const networkRule3 = createNetworkRuleMock({
+            const networkRule3 = createRuleMock({
                 permittedResourceTypes: [ResourceType.SubFrame, ResourceType.Script],
             });
             // @ts-expect-error Accessing private member for test purposes
             const result3 = RegularRuleConverter.isCompatibleWithAllowAllRequests(networkRule3);
             expect(result3).toBe(false);
 
-            const networkRule4 = createNetworkRuleMock({
+            const networkRule4 = createRuleMock({
                 permittedResourceTypes: [ResourceType.MainFrame, ResourceType.SubFrame, ResourceType.Script],
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -198,7 +199,7 @@ describe('RuleConverter', () => {
         });
 
         it('returns true if rule has no permitted resource types defined', () => {
-            const networkRule3 = createNetworkRuleMock({
+            const networkRule3 = createRuleMock({
                 permittedResourceTypes: [],
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -209,19 +210,19 @@ describe('RuleConverter', () => {
 
     describe('checkRuleApplication', () => {
         it('returns EmptyResourcesError if resource types are empty', async () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             const declarativeRule: DeclarativeRule = {
                 id: 2,
                 condition: { resourceTypes: [] },
                 action: { type: RuleActionType.Block },
             };
             // @ts-expect-error Accessing private member for test purposes
-            const result = await RegularRuleConverter.checkRuleApplication(networkRule, declarativeRule);
+            const result = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
             expect(result).toBeInstanceOf(EmptyResourcesError);
         });
 
         it('returns EmptyDomainsError if permitted domains exists and initiator domains are empty', async () => {
-            const networkRule1 = createNetworkRuleMock({
+            const networkRule1 = createRuleMock({
                 permittedDomains: ['example.com'],
             });
             const declarativeRule1: DeclarativeRule = {
@@ -233,7 +234,7 @@ describe('RuleConverter', () => {
             const result1 = await RegularRuleConverter.checkRuleApplication(networkRule1, declarativeRule1);
             expect(result1).toBeInstanceOf(EmptyDomainsError);
 
-            const networkRule2 = createNetworkRuleMock({
+            const networkRule2 = createRuleMock({
                 permittedDomains: ['example.com'],
             });
             const declarativeRule2: DeclarativeRule = {
@@ -251,21 +252,21 @@ describe('RuleConverter', () => {
                 throw new Error('Unsupported regexp');
             });
 
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             const declarativeRule: DeclarativeRule = {
                 id: 1,
                 condition: { regexFilter: '/some-regex/' },
                 action: { type: RuleActionType.Block },
             };
             // @ts-expect-error Accessing private member for test purposes
-            const result = await RegularRuleConverter.checkRuleApplication(networkRule, declarativeRule);
+            const result = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
             expect(result).toBeInstanceOf(UnsupportedRegexpError);
         });
 
         it('returns null if no issues found', async () => {
             vi.spyOn(re2Validator, 'isRegexSupported').mockResolvedValueOnce(true);
 
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 permittedDomains: ['example.com'],
             });
             const declarativeRule: DeclarativeRule = {
@@ -278,43 +279,43 @@ describe('RuleConverter', () => {
                 action: { type: RuleActionType.Block },
             };
             // @ts-expect-error Accessing private member for test purposes
-            const result = await RegularRuleConverter.checkRuleApplication(networkRule, declarativeRule);
+            const result = await RegularRuleConverter.checkRuleApplication(rule, declarativeRule);
             expect(result).toBeNull();
         });
     });
 
     describe('getAction', () => {
         it('returns AllowAllRequests action if compatible', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 allowlist: true,
                 isFilteringDisabled: true,
                 permittedResourceTypes: [ResourceType.MainFrame, ResourceType.SubFrame],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = converter.getAction(networkRule);
+            const action = converter.getAction(rule);
             expect(action).toEqual({ type: RuleActionType.AllowAllRequests });
         });
 
         it('returns Allow action if rule is allowlisted', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 allowlist: true,
                 isFilteringDisabled: false,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = converter.getAction(networkRule);
+            const action = converter.getAction(rule);
             expect(action).toEqual({ type: RuleActionType.Allow });
         });
 
         it('uses getRedirectAction if Redirect option is enabled', () => {
             // @ts-expect-error Accessing private member for test purposes
             const getRedirectActionSpy = vi.spyOn(converter, 'getRedirectAction').mockReturnValueOnce({});
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Redirect],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REDIRECT],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result = converter.getAction(networkRule);
+            const result = converter.getAction(rule);
             expect(getRedirectActionSpy).toHaveBeenCalledTimes(1);
-            expect(getRedirectActionSpy).toHaveBeenCalledWith(networkRule);
+            expect(getRedirectActionSpy).toHaveBeenCalledWith(rule);
             expect(result).toEqual({
                 type: RuleActionType.Redirect,
                 redirect: {},
@@ -324,13 +325,13 @@ describe('RuleConverter', () => {
         it('returns Block action if Redirect option is enabled but couldn\'t generate action', () => {
             // @ts-expect-error Accessing private member for test purposes
             const getRedirectActionSpy = vi.spyOn(converter, 'getRedirectAction').mockReturnValueOnce(null);
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Redirect],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REDIRECT],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result = converter.getAction(networkRule);
+            const result = converter.getAction(rule);
             expect(getRedirectActionSpy).toHaveBeenCalledTimes(1);
-            expect(getRedirectActionSpy).toHaveBeenCalledWith(networkRule);
+            expect(getRedirectActionSpy).toHaveBeenCalledWith(rule);
             expect(result).toEqual({ type: RuleActionType.Block });
         });
 
@@ -339,13 +340,13 @@ describe('RuleConverter', () => {
                 // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getRemoveParamRedirectAction')
                 .mockReturnValueOnce({} as any);
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveParam],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result = converter.getAction(networkRule);
+            const result = converter.getAction(rule);
             expect(getRemoveParamRedirectActionSpy).toHaveBeenCalledTimes(1);
-            expect(getRemoveParamRedirectActionSpy).toHaveBeenCalledWith(networkRule);
+            expect(getRemoveParamRedirectActionSpy).toHaveBeenCalledWith(rule);
             expect(result).toEqual({
                 type: RuleActionType.Redirect,
                 redirect: {},
@@ -357,13 +358,13 @@ describe('RuleConverter', () => {
                 // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getRemoveParamRedirectAction')
                 .mockReturnValueOnce(null as any);
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveParam],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result = converter.getAction(networkRule);
+            const result = converter.getAction(rule);
             expect(getRemoveParamRedirectActionSpy).toHaveBeenCalledTimes(1);
-            expect(getRemoveParamRedirectActionSpy).toHaveBeenCalledWith(networkRule);
+            expect(getRemoveParamRedirectActionSpy).toHaveBeenCalledWith(rule);
             expect(result).toEqual({ type: RuleActionType.Block });
         });
 
@@ -384,8 +385,8 @@ describe('RuleConverter', () => {
                 requestHeaders,
                 responseHeaders,
             } as any);
-            const networkRule1 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveHeader],
+            const networkRule1 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEHEADER],
             });
             // @ts-expect-error Accessing private member for test purposes
             const result1 = converter.getAction(networkRule1);
@@ -400,8 +401,8 @@ describe('RuleConverter', () => {
             getRemoveParamRedirectActionSpy.mockReturnValueOnce({
                 responseHeaders,
             } as any);
-            const networkRule2 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveHeader],
+            const networkRule2 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEHEADER],
             });
             // @ts-expect-error Accessing private member for test purposes
             const result2 = converter.getAction(networkRule2);
@@ -418,13 +419,13 @@ describe('RuleConverter', () => {
                 // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getModifyHeadersAction')
                 .mockReturnValueOnce(null as any);
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveHeader],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEHEADER],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result = converter.getAction(networkRule);
+            const result = converter.getAction(rule);
             expect(getRemoveParamRedirectActionSpy).toHaveBeenCalledTimes(1);
-            expect(getRemoveParamRedirectActionSpy).toHaveBeenCalledWith(networkRule);
+            expect(getRemoveParamRedirectActionSpy).toHaveBeenCalledWith(rule);
             expect(result).toEqual({ type: RuleActionType.Block });
         });
 
@@ -433,13 +434,13 @@ describe('RuleConverter', () => {
                 // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getAddingCspHeadersAction')
                 .mockReturnValueOnce({} as any);
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Csp],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.CSP],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result = converter.getAction(networkRule);
+            const result = converter.getAction(rule);
             expect(getAddingCspHeadersActionSpy).toHaveBeenCalledTimes(1);
-            expect(getAddingCspHeadersActionSpy).toHaveBeenCalledWith(networkRule);
+            expect(getAddingCspHeadersActionSpy).toHaveBeenCalledWith(rule);
             expect(result).toEqual({
                 type: RuleActionType.ModifyHeaders,
                 responseHeaders: [{}],
@@ -451,13 +452,13 @@ describe('RuleConverter', () => {
                 // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getAddingCspHeadersAction')
                 .mockReturnValueOnce(null as any);
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Csp],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.CSP],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result = converter.getAction(networkRule);
+            const result = converter.getAction(rule);
             expect(getAddingCspHeadersActionSpy).toHaveBeenCalledTimes(1);
-            expect(getAddingCspHeadersActionSpy).toHaveBeenCalledWith(networkRule);
+            expect(getAddingCspHeadersActionSpy).toHaveBeenCalledWith(rule);
             expect(result).toEqual({ type: RuleActionType.Block });
         });
 
@@ -466,13 +467,13 @@ describe('RuleConverter', () => {
                 // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getAddingPermissionsHeadersAction')
                 .mockReturnValueOnce({} as any);
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Permissions],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.PERMISSIONS],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result = converter.getAction(networkRule);
+            const result = converter.getAction(rule);
             expect(getAddingPermissionsHeadersActionSpy).toHaveBeenCalledTimes(1);
-            expect(getAddingPermissionsHeadersActionSpy).toHaveBeenCalledWith(networkRule);
+            expect(getAddingPermissionsHeadersActionSpy).toHaveBeenCalledWith(rule);
             expect(result).toEqual({
                 type: RuleActionType.ModifyHeaders,
                 responseHeaders: [{}],
@@ -484,13 +485,13 @@ describe('RuleConverter', () => {
                 // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getAddingPermissionsHeadersAction')
                 .mockReturnValueOnce(null as any);
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Permissions],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.PERMISSIONS],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result = converter.getAction(networkRule);
+            const result = converter.getAction(rule);
             expect(getAddingPermissionsHeadersActionSpy).toHaveBeenCalledTimes(1);
-            expect(getAddingPermissionsHeadersActionSpy).toHaveBeenCalledWith(networkRule);
+            expect(getAddingPermissionsHeadersActionSpy).toHaveBeenCalledWith(rule);
             expect(result).toEqual({ type: RuleActionType.Block });
         });
 
@@ -511,8 +512,8 @@ describe('RuleConverter', () => {
                 requestHeaders,
                 responseHeaders,
             } as any);
-            const networkRule1 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Cookie],
+            const networkRule1 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.COOKIE],
             });
             // @ts-expect-error Accessing private member for test purposes
             const result1 = converter.getAction(networkRule1);
@@ -528,8 +529,8 @@ describe('RuleConverter', () => {
             getRemovingCookieHeadersActionSpy.mockReturnValueOnce({
                 requestHeaders,
             } as any);
-            const networkRule2 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Cookie],
+            const networkRule2 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.COOKIE],
             });
             // @ts-expect-error Accessing private member for test purposes
             const result2 = converter.getAction(networkRule2);
@@ -544,8 +545,8 @@ describe('RuleConverter', () => {
             getRemovingCookieHeadersActionSpy.mockReturnValueOnce({
                 responseHeaders,
             } as any);
-            const networkRule3 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Cookie],
+            const networkRule3 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.COOKIE],
             });
             // @ts-expect-error Accessing private member for test purposes
             const result3 = converter.getAction(networkRule3);
@@ -558,8 +559,8 @@ describe('RuleConverter', () => {
 
             // Case 4: None of the headers provided
             getRemovingCookieHeadersActionSpy.mockReturnValueOnce({} as any);
-            const networkRule4 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Cookie],
+            const networkRule4 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.COOKIE],
             });
             // @ts-expect-error Accessing private member for test purposes
             const result4 = converter.getAction(networkRule4);
@@ -574,43 +575,43 @@ describe('RuleConverter', () => {
                 .spyOn(RegularRuleConverter, 'getRemovingCookieHeadersAction')
                 .mockReturnValueOnce(null as any);
 
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Cookie],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.COOKIE],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const result = converter.getAction(networkRule);
+            const result = converter.getAction(rule);
             expect(getRemovingCookieHeadersActionSpy).toHaveBeenCalledTimes(1);
-            expect(getRemovingCookieHeadersActionSpy).toHaveBeenCalledWith(networkRule);
+            expect(getRemovingCookieHeadersActionSpy).toHaveBeenCalledWith(rule);
             expect(result).toEqual({ type: RuleActionType.Block });
         });
 
         it('returns Block action by default', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = converter.getAction(networkRule);
+            const action = converter.getAction(rule);
             expect(action).toEqual({ type: RuleActionType.Block });
         });
     });
 
     describe('getRedirectAction', () => {
         it('returns null if option is not enabled', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = converter.getRedirectAction(networkRule);
+            const action = converter.getRedirectAction(rule);
             expect(action).toBeNull();
         });
 
         it('returns null if advanced modifier value is empty or null', () => {
-            const networkRule1 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Redirect],
+            const networkRule1 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REDIRECT],
                 advancedModifierValue: null,
             });
             // @ts-expect-error Accessing private member for test purposes
             const action1 = converter.getRedirectAction(networkRule1);
             expect(action1).toBeNull();
 
-            const networkRule2 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Redirect],
+            const networkRule2 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REDIRECT],
                 advancedModifierValue: '',
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -620,23 +621,23 @@ describe('RuleConverter', () => {
 
         it('throws ResourcesPathError if web accessible resources path is empty', () => {
             const converterWithoutWar = new TestConverter();
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Redirect],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REDIRECT],
                 advancedModifierValue: 'redirect-file.html',
             });
             expect(() => {
                 // @ts-expect-error Accessing private member for test purposes
-                converterWithoutWar.getRedirectAction(networkRule);
+                converterWithoutWar.getRedirectAction(rule);
             }).toThrow(ResourcesPathError);
         });
 
         it('correctly generates redirect action', () => {
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Redirect],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REDIRECT],
                 advancedModifierValue: 'redirect-file.html',
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = converter.getRedirectAction(networkRule);
+            const action = converter.getRedirectAction(rule);
             expect(action).toEqual({
                 extensionPath: `${webAccessibleResourcesPath}/wrapped(redirect-file.html)`,
             });
@@ -645,29 +646,29 @@ describe('RuleConverter', () => {
 
     describe('getRemoveParamRedirectAction', () => {
         it('returns null if option is not enabled', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getRemoveParamRedirectAction(networkRule);
+            const action = RegularRuleConverter.getRemoveParamRedirectAction(rule);
             expect(action).toBeNull();
         });
 
         it('returns null if advanced modifier value is null', () => {
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveParam],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
                 advancedModifierValue: null,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getRemoveParamRedirectAction(networkRule);
+            const action = RegularRuleConverter.getRemoveParamRedirectAction(rule);
             expect(action).toBeNull();
         });
 
         it('returns correct query removal if advanced modifier value is empty', () => {
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveParam],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
                 advancedModifierValue: '',
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getRemoveParamRedirectAction(networkRule);
+            const action = RegularRuleConverter.getRemoveParamRedirectAction(rule);
             expect(action).toEqual({
                 transform: {
                     query: '',
@@ -677,8 +678,8 @@ describe('RuleConverter', () => {
 
         it('returns correct query removal if advanced modifier value is provided', () => {
             // Case 1: Decoding URI component is not needed
-            const networkRule1 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveParam],
+            const networkRule1 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
                 advancedModifierValue: 'param',
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -692,8 +693,8 @@ describe('RuleConverter', () => {
             });
 
             // Case 1: Decoding URI component is not needed
-            const networkRule2 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveParam],
+            const networkRule2 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
                 advancedModifierValue: 'param$@',
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -710,17 +711,17 @@ describe('RuleConverter', () => {
 
     describe('getModifyHeadersAction', () => {
         it('returns null if option is not enabled', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getModifyHeadersAction(networkRule);
+            const action = RegularRuleConverter.getModifyHeadersAction(rule);
             expect(action).toBeNull();
         });
 
         it('returns request headers if both (response and request) or only (request) headers provided', () => {
             const requestHeaderNameToRemove = 'Test-Request-Header';
             const responseHeaderNameToRemove = 'Test-Response-Header';
-            const networkRule1 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveHeader],
+            const networkRule1 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEHEADER],
                 requestHeaderNameToRemove,
                 responseHeaderNameToRemove,
             });
@@ -733,8 +734,8 @@ describe('RuleConverter', () => {
                 }],
             });
 
-            const networkRule2 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveHeader],
+            const networkRule2 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEHEADER],
                 requestHeaderNameToRemove,
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -749,12 +750,12 @@ describe('RuleConverter', () => {
 
         it('returns response headers if only response headers provided', () => {
             const responseHeaderNameToRemove = 'Test-Response-Header';
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveHeader],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEHEADER],
                 responseHeaderNameToRemove,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getModifyHeadersAction(networkRule);
+            const action = RegularRuleConverter.getModifyHeadersAction(rule);
             expect(action).toEqual({
                 responseHeaders: [{
                     header: responseHeaderNameToRemove,
@@ -764,29 +765,29 @@ describe('RuleConverter', () => {
         });
 
         it('returns null if neither request nor response headers provided', () => {
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveHeader],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEHEADER],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getModifyHeadersAction(networkRule);
+            const action = RegularRuleConverter.getModifyHeadersAction(rule);
             expect(action).toBeNull();
         });
     });
 
     describe('getRemovingCookieHeadersAction', () => {
         it('returns null if option is not enabled', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getRemovingCookieHeadersAction(networkRule);
+            const action = RegularRuleConverter.getRemovingCookieHeadersAction(rule);
             expect(action).toBeNull();
         });
 
         it('returns correct headers to remove cookies', () => {
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Cookie],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.COOKIE],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getRemovingCookieHeadersAction(networkRule);
+            const action = RegularRuleConverter.getRemovingCookieHeadersAction(rule);
             expect(action).toEqual({
                 requestHeaders: [{
                     header: 'Cookie',
@@ -802,23 +803,23 @@ describe('RuleConverter', () => {
 
     describe('getAddingCspHeadersAction', () => {
         it('returns null if option is not enabled', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getAddingCspHeadersAction(networkRule);
+            const action = RegularRuleConverter.getAddingCspHeadersAction(rule);
             expect(action).toBeNull();
         });
 
         it('returns null if advanced modifier value is empty or null', () => {
-            const networkRule1 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Csp],
+            const networkRule1 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.CSP],
                 advancedModifierValue: null,
             });
             // @ts-expect-error Accessing private member for test purposes
             const action1 = RegularRuleConverter.getAddingCspHeadersAction(networkRule1);
             expect(action1).toBeNull();
 
-            const networkRule2 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Csp],
+            const networkRule2 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.CSP],
                 advancedModifierValue: '',
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -828,12 +829,12 @@ describe('RuleConverter', () => {
 
         it('returns correct header to add CSP', () => {
             const testCspValue = "default-src 'self'";
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Csp],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.CSP],
                 advancedModifierValue: testCspValue,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getAddingCspHeadersAction(networkRule);
+            const action = RegularRuleConverter.getAddingCspHeadersAction(rule);
             expect(action).toEqual({
                 operation: HeaderOperation.Append,
                 header: CSP_HEADER_NAME,
@@ -844,23 +845,23 @@ describe('RuleConverter', () => {
 
     describe('getAddingPermissionsHeadersAction', () => {
         it('returns null if option is not enabled', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getAddingPermissionsHeadersAction(networkRule);
+            const action = RegularRuleConverter.getAddingPermissionsHeadersAction(rule);
             expect(action).toBeNull();
         });
 
         it('returns null if advanced modifier value is empty or null', () => {
-            const networkRule1 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Permissions],
+            const networkRule1 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.PERMISSIONS],
                 advancedModifierValue: null,
             });
             // @ts-expect-error Accessing private member for test purposes
             const action1 = RegularRuleConverter.getAddingPermissionsHeadersAction(networkRule1);
             expect(action1).toBeNull();
 
-            const networkRule2 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Permissions],
+            const networkRule2 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.PERMISSIONS],
                 advancedModifierValue: '',
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -870,12 +871,12 @@ describe('RuleConverter', () => {
 
         it('returns correct header to add Permissions Policy', () => {
             const testPermissionsValue = 'geolocation=(self)';
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Permissions],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.PERMISSIONS],
                 advancedModifierValue: testPermissionsValue,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getAddingPermissionsHeadersAction(networkRule);
+            const action = RegularRuleConverter.getAddingPermissionsHeadersAction(rule);
             expect(action).toEqual({
                 header: PERMISSIONS_POLICY_HEADER_NAME,
                 operation: HeaderOperation.Append,
@@ -886,60 +887,60 @@ describe('RuleConverter', () => {
 
     describe('getCondition', () => {
         it('correctly specifies urlFilter', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 pattern: 'example.com/path',
                 isRegexRule: false,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.urlFilter).toBe('asciiPrepared(example.com/path)');
         });
 
         it('removes || from ||* prefix from urlFilter', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 pattern: '||*example.com/path',
                 isRegexRule: false,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.urlFilter).toBe('asciiPrepared(*example.com/path)');
         });
 
         it('correctly specifies regexFilter', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 pattern: '/some-regex-pattern/',
                 isRegexRule: true,
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.regexFilter).toBe('asciiPrepared(removedSlashes(/some-regex-pattern/))');
         });
 
         it('correctly specifies domainType (third-party)', () => {
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.ThirdParty],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.THIRD_PARTY],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.domainType).toBe(DomainType.ThirdParty);
         });
 
         it('correctly specifies domainType (first-party)', () => {
-            const networkRule = createNetworkRuleMock({
-                disabledOptions: [NetworkRuleOption.ThirdParty],
+            const rule = createRuleMock({
+                disabledOptions: [OPTION_NAMES.THIRD_PARTY],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.domainType).toBe(DomainType.FirstParty);
         });
 
         it('should skip initiatorDomains if permitted domains are not specified or empty', () => {
-            const networkRule1 = createNetworkRuleMock();
+            const networkRule1 = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.initiatorDomains).toBeUndefined();
 
-            const networkRule2 = createNetworkRuleMock({
+            const networkRule2 = createRuleMock({
                 permittedDomains: [],
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -948,21 +949,21 @@ describe('RuleConverter', () => {
         });
 
         it('correctly specifies initiatorDomains by skipping regex permitted domains', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 permittedDomains: ['example.com', '/.*\\.example\\.org/'],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.initiatorDomains).toEqual(['example.com']);
         });
 
         it('should skip excludedInitiatorDomains if restricted domains are not specified or empty', () => {
-            const networkRule1 = createNetworkRuleMock();
+            const networkRule1 = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.excludedInitiatorDomains).toBeUndefined();
 
-            const networkRule2 = createNetworkRuleMock({
+            const networkRule2 = createRuleMock({
                 restrictedDomains: [],
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -971,21 +972,21 @@ describe('RuleConverter', () => {
         });
 
         it('correctly specifies excludedInitiatorDomains', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 restrictedDomains: ['example.com'],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.excludedInitiatorDomains).toEqual(['example.com']);
         });
 
         it('should skip requestDomains if permitted to domains are not specified or empty', () => {
-            const networkRule1 = createNetworkRuleMock();
+            const networkRule1 = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.requestDomains).toBeUndefined();
 
-            const networkRule2 = createNetworkRuleMock({
+            const networkRule2 = createRuleMock({
                 permittedToDomains: [],
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -994,16 +995,16 @@ describe('RuleConverter', () => {
         });
 
         it('correctly specifies requestDomains', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 permittedToDomains: ['example.com'],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.requestDomains).toEqual(['example.com']);
         });
 
         it('correctly specifies excludedRequestDomains if both (deny allow and restricted to) or only provided', () => {
-            const networkRule1 = createNetworkRuleMock({
+            const networkRule1 = createRuleMock({
                 denyAllowDomains: ['example1.com'],
                 restrictedToDomains: ['example2.com'],
             });
@@ -1011,7 +1012,7 @@ describe('RuleConverter', () => {
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.excludedRequestDomains).toEqual(['example1.com']);
 
-            const networkRule2 = createNetworkRuleMock({
+            const networkRule2 = createRuleMock({
                 denyAllowDomains: ['example1.com'],
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -1020,23 +1021,23 @@ describe('RuleConverter', () => {
         });
 
         it('correctly specifies excludedRequestDomains if only restricted domains are specified', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 restrictedToDomains: ['example.com'],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.excludedRequestDomains).toEqual(['example.com']);
         });
 
         it('should skip excludedResourceTypes if restricted resource types are empty', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.excludedResourceTypes).toBeUndefined();
         });
 
         it('correctly specifies excludedResourceTypes', () => {
-            const networkRule1 = createNetworkRuleMock({
+            const networkRule1 = createRuleMock({
                 restrictedResourceTypes: [ResourceType.Font, ResourceType.Image],
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -1047,7 +1048,7 @@ describe('RuleConverter', () => {
                 ResourceType.MainFrame,
             ]);
 
-            const networkRule2 = createNetworkRuleMock({
+            const networkRule2 = createRuleMock({
                 restrictedResourceTypes: [ResourceType.MainFrame, ResourceType.Image],
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -1059,104 +1060,104 @@ describe('RuleConverter', () => {
         });
 
         it('should skip resourceTypes if permitted resource types are empty', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.resourceTypes).toBeUndefined();
         });
 
         it('should skip resourceTypes if excludedResourceTypes already specified', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 restrictedResourceTypes: [ResourceType.Media],
                 permittedResourceTypes: [ResourceType.Font],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.resourceTypes).toBeUndefined();
         });
 
         it('correctly specifies resourceTypes', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 permittedResourceTypes: [ResourceType.Font, ResourceType.Image],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.resourceTypes).toEqual([ResourceType.Font, ResourceType.Image]);
         });
 
         it('should skip requestMethods if permitted methods are empty', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.requestMethods).toBeUndefined();
         });
 
         it('correctly specifies requestMethods', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 permittedMethods: [RequestMethod.Get, RequestMethod.Connect],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.requestMethods).toEqual([RequestMethod.Get, RequestMethod.Connect]);
         });
 
         it('should skip excludedRequestMethods if restricted methods are empty', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.excludedRequestMethods).toBeUndefined();
         });
 
         it('correctly specifies excludedRequestMethods', () => {
-            const networkRule = createNetworkRuleMock({
+            const rule = createRuleMock({
                 restrictedMethods: [RequestMethod.Get, RequestMethod.Connect],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.excludedRequestMethods).toEqual([RequestMethod.Get, RequestMethod.Connect]);
         });
 
         it('should skip isUrlFilterCaseSensitive if match case option is not enabled', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.isUrlFilterCaseSensitive).toBeUndefined();
         });
 
         it('correctly specifies isUrlFilterCaseSensitive', () => {
-            const networkRule = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.MatchCase],
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.MATCH_CASE],
             });
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.isUrlFilterCaseSensitive).toBe(true);
         });
 
         it('skips ResourceType.MainFrame in resourceTypes if popup option is not enabled', () => {
-            const networkRule = createNetworkRuleMock();
+            const rule = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
-            const condition = RegularRuleConverter.getCondition(networkRule);
+            const condition = RegularRuleConverter.getCondition(rule);
             expect(condition.resourceTypes).toBeUndefined();
         });
 
         it('correctly specifies ResourceType.MainFrame in resourceTypes if popup option is enabled', () => {
-            const networkRule1 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Popup],
+            const networkRule1 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.POPUP],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.resourceTypes).toEqual([ResourceType.MainFrame]);
 
-            const networkRule2 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Popup],
+            const networkRule2 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.POPUP],
                 permittedResourceTypes: [ResourceType.Font],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.resourceTypes).toEqual([ResourceType.Font, ResourceType.MainFrame]);
 
-            const networkRule3 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Popup],
+            const networkRule3 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.POPUP],
                 permittedResourceTypes: [ResourceType.MainFrame, ResourceType.Font],
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -1167,43 +1168,43 @@ describe('RuleConverter', () => {
         it('correctly specifies all resourceTypes for different options', () => {
             const allResourceTypes = Object.values(ResourceType);
 
-            const networkRule1 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveHeader],
+            const networkRule1 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEHEADER],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.resourceTypes).toEqual(allResourceTypes);
 
-            const networkRule2 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Csp],
+            const networkRule2 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.CSP],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.resourceTypes).toEqual(allResourceTypes);
 
-            const networkRule3 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Cookie],
+            const networkRule3 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.COOKIE],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition3 = RegularRuleConverter.getCondition(networkRule3);
             expect(condition3.resourceTypes).toEqual(allResourceTypes);
 
-            const networkRule4 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.To],
+            const networkRule4 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.TO],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition4 = RegularRuleConverter.getCondition(networkRule4);
             expect(condition4.resourceTypes).toEqual(allResourceTypes);
 
-            const networkRule5 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Method],
+            const networkRule5 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.METHOD],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition5 = RegularRuleConverter.getCondition(networkRule5);
             expect(condition5.resourceTypes).toEqual(allResourceTypes);
 
-            const networkRule6 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Header],
+            const networkRule6 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.HEADER],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition6 = RegularRuleConverter.getCondition(networkRule6);
@@ -1213,22 +1214,22 @@ describe('RuleConverter', () => {
         it('correctly specifies document resourceTypes for different options', () => {
             const documentResourceTypes = [ResourceType.MainFrame, ResourceType.SubFrame];
 
-            const networkRule1 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.RemoveParam],
+            const networkRule1 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition1 = RegularRuleConverter.getCondition(networkRule1);
             expect(condition1.resourceTypes).toEqual(documentResourceTypes);
 
-            const networkRule2 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Permissions],
+            const networkRule2 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.PERMISSIONS],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition2 = RegularRuleConverter.getCondition(networkRule2);
             expect(condition2.resourceTypes).toEqual(documentResourceTypes);
 
-            const networkRule3 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Header],
+            const networkRule3 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.HEADER],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition3 = RegularRuleConverter.getCondition(networkRule3);
@@ -1236,10 +1237,12 @@ describe('RuleConverter', () => {
         });
 
         it('correctly specifies responseHeaders', () => {
-            const networkRule1 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Header],
+            const networkRule1 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.HEADER],
                 headerModifierMatcher: {
                     header: 'Test-Header',
+                    value: null,
+                    isRegExp: false,
                 },
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -1248,11 +1251,12 @@ describe('RuleConverter', () => {
                 header: 'Test-Header',
             }]);
 
-            const networkRule2 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Header],
+            const networkRule2 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.HEADER],
                 headerModifierMatcher: {
                     header: 'Test-Header',
                     value: null,
+                    isRegExp: false,
                 },
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -1261,11 +1265,12 @@ describe('RuleConverter', () => {
                 header: 'Test-Header',
             }]);
 
-            const networkRule3 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Header],
+            const networkRule3 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.HEADER],
                 headerModifierMatcher: {
                     header: 'Test-Header',
                     value: 'Header-Value',
+                    isRegExp: false,
                 },
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -1275,19 +1280,20 @@ describe('RuleConverter', () => {
                 values: ['Header-Value'],
             }]);
 
-            const networkRule4 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Header],
+            const networkRule4 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.HEADER],
                 headerModifierMatcher: null,
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition4 = RegularRuleConverter.getCondition(networkRule4);
             expect(condition4.responseHeaders).toBeUndefined();
 
-            const networkRule5 = createNetworkRuleMock({
-                enabledOptions: [NetworkRuleOption.Header],
+            const networkRule5 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.HEADER],
                 headerModifierMatcher: {
                     header: 'Test-Header',
-                    value: /regexp/,
+                    value: 'regexp',
+                    isRegExp: true,
                 },
             });
             // @ts-expect-error Accessing private member for test purposes
@@ -1301,10 +1307,10 @@ describe('RuleConverter', () => {
     describe('convertRule', () => {
         const id = 1;
         const priority = 999;
-        const networkRule = createNetworkRuleMock({ priority });
+        const rule = createRuleMock({ priority });
 
         it('should throw an conversion error if it\'s not applicable', async () => {
-            const regexNetworkRule = createNetworkRuleMock({
+            const regexRule = createRuleMock({
                 priority,
                 pattern: '/regex-pattern/',
                 isRegexRule: true,
@@ -1314,13 +1320,13 @@ describe('RuleConverter', () => {
             });
             await expect(async () => {
                 // @ts-expect-error Accessing private member for test purposes
-                await converter.convertRule(id, regexNetworkRule);
+                await converter.convertRule(id, regexRule);
             }).rejects.toThrowError(UnsupportedRegexpError);
         });
 
         it('correctly converts rule', async () => {
             // @ts-expect-error Accessing private member for test purposes
-            const result = await converter.convertRule(id, networkRule);
+            const result = await converter.convertRule(id, rule);
             expect(result).toEqual({
                 id,
                 priority,
@@ -1333,7 +1339,7 @@ describe('RuleConverter', () => {
     describe('convertRules', () => {
         it('should return empty result for empty rules array', async () => {
             const filterListId = 1;
-            const rules: NetworkRule[] = [];
+            const rules: Rule[] = [];
             const usedIds = new Set<number>();
 
             // @ts-expect-error Accessing protected member for test purposes
@@ -1348,11 +1354,11 @@ describe('RuleConverter', () => {
 
         it('should successfully convert multiple valid rules', async () => {
             const filterListId = 1;
-            const rule1 = createNetworkRuleMock({
+            const rule1 = createRuleMock({
                 index: 0,
                 getRuleTextHash: (salt?: number) => (salt ? 100 + salt : 100),
             });
-            const rule2 = createNetworkRuleMock({
+            const rule2 = createRuleMock({
                 index: 1,
                 getRuleTextHash: (salt?: number) => (salt ? 200 + salt : 200),
             });
@@ -1407,15 +1413,15 @@ describe('RuleConverter', () => {
 
         it('should handle conversion errors and continue processing other rules', async () => {
             const filterListId = 1;
-            const rule1 = createNetworkRuleMock({
+            const rule1 = createRuleMock({
                 index: 0,
                 getRuleTextHash: (salt?: number) => (salt ? 100 + salt : 100),
             });
-            const rule2 = createNetworkRuleMock({
+            const rule2 = createRuleMock({
                 index: 1,
                 getRuleTextHash: (salt?: number) => (salt ? 200 + salt : 200),
             });
-            const rule3 = createNetworkRuleMock({
+            const rule3 = createRuleMock({
                 index: 2,
                 getRuleTextHash: (salt?: number) => (salt ? 300 + salt : 300),
             });
@@ -1467,7 +1473,7 @@ describe('RuleConverter', () => {
 
         it('should handle non-conversion errors and wrap them', async () => {
             const filterListId = 1;
-            const rule1 = createNetworkRuleMock({
+            const rule1 = createRuleMock({
                 index: 0,
                 getRuleTextHash: (salt?: number) => (salt ? 100 + salt : 100),
             });
@@ -1497,11 +1503,11 @@ describe('RuleConverter', () => {
 
         it('should generate unique IDs when hash collisions occur', async () => {
             const filterListId = 1;
-            const rule1 = createNetworkRuleMock({
+            const rule1 = createRuleMock({
                 index: 0,
                 getRuleTextHash: (salt?: number) => (salt ? 100 + salt : 100),
             });
-            const rule2 = createNetworkRuleMock({
+            const rule2 = createRuleMock({
                 index: 1,
                 getRuleTextHash: (salt?: number) => (salt ? 100 + salt : 100), // Same hash as rule1
             });
@@ -1542,7 +1548,7 @@ describe('RuleConverter', () => {
 
         it('should preserve existing used IDs and avoid collisions', async () => {
             const filterListId = 1;
-            const rule1 = createNetworkRuleMock({
+            const rule1 = createRuleMock({
                 index: 0,
                 getRuleTextHash: (salt?: number) => (salt ? 100 + salt : 100),
             });
@@ -1574,15 +1580,15 @@ describe('RuleConverter', () => {
 
         it('should handle mixed success and error scenarios correctly', async () => {
             const filterListId = 42;
-            const rule1 = createNetworkRuleMock({
+            const rule1 = createRuleMock({
                 index: 10,
                 getRuleTextHash: (salt?: number) => (salt ? 1000 + salt : 1000),
             });
-            const rule2 = createNetworkRuleMock({
+            const rule2 = createRuleMock({
                 index: 11,
                 getRuleTextHash: (salt?: number) => (salt ? 2000 + salt : 2000),
             });
-            const rule3 = createNetworkRuleMock({
+            const rule3 = createRuleMock({
                 index: 12,
                 getRuleTextHash: (salt?: number) => (salt ? 3000 + salt : 3000),
             });

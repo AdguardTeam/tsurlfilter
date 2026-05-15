@@ -28,7 +28,7 @@
  * │  FilterConverter        ├───┼────►│┤                                │    │
  * │     .convert()          │   │     │└────────────────────────────────┘    │
  * └─────────────────────────┘   │     │                                      │
- *                               │     │ Parse filter text into NetworkRules. │
+ *                               │     │ Parse filter text into Rules. │
  *                               │     │ When withSourceMap is true and       │
  *                               │     │ options.badFilterRules is provided,  │
  *                               │     │ builds a skipNegatedRulesFn to skip  │
@@ -105,7 +105,7 @@ import {
     ResourcesPathError,
 } from '../errors/converter-options-errors';
 import { type IFilter } from '../filter/types';
-import { type NetworkRule } from '../network-rule';
+import { type Rule } from '../rule/rule';
 import { type ConvertedRules } from '../rule-converters';
 import { RulesConverter } from '../rule-converters/rules-converter';
 import { RulesScanner, type ScannedFilter } from '../rules-scanner';
@@ -168,7 +168,7 @@ export class FilterConverter {
      * because we have double check for maxNumberOfRules on the converted DNR
      * rules.
      */
-    private static readonly SCANNED_NETWORK_RULES_MULTIPLICATOR = 1.1;
+    private static readonly SCANNED_RULES_MULTIPLICATOR = 1.1;
 
     /**
      * Converts the provided list of filters into declarative rule sets with
@@ -211,7 +211,7 @@ export class FilterConverter {
      */
     public convert(
         filters: IFilter[],
-        options: BaseFilterConverterOptions & { withSourceMap: boolean; badFilterRules?: NetworkRule[] },
+        options: BaseFilterConverterOptions & { withSourceMap: boolean; badFilterRules?: Rule[] },
     ): Promise<ConversionResult<IRuleset | IRulesetWithSourceMap>[]>;
 
     /**
@@ -291,7 +291,7 @@ export class FilterConverter {
         const scannedLimit = options?.maxNumberOfRules
             ? Math.ceil(
                 options.maxNumberOfRules
-                * FilterConverter.SCANNED_NETWORK_RULES_MULTIPLICATOR,
+                * FilterConverter.SCANNED_RULES_MULTIPLICATOR,
             )
             : undefined;
 
@@ -371,15 +371,15 @@ export class FilterConverter {
         filters: IFilter[],
         options: SourceMapConverterOptions,
     ): Promise<ConversionResult<IRulesetWithSourceMap>[]> {
-        let skipNegatedRulesFn: ((r: NetworkRule) => boolean) | undefined;
+        let skipNegatedRulesFn: ((r: Rule) => boolean) | undefined;
 
         if (options?.badFilterRules && options.badFilterRules.length > 0) {
-            const badFilterHashMap = FilterConverter.buildNetworkRulesBadFilterHashMap(
+            const badFilterHashMap = FilterConverter.buildRulesBadFilterHashMap(
                 options.badFilterRules,
             );
 
-            skipNegatedRulesFn = (r: NetworkRule): boolean => {
-                const fastMatched = badFilterHashMap.get(r.getHash());
+            skipNegatedRulesFn = (r: Rule): boolean => {
+                const fastMatched = badFilterHashMap.get(r.hash);
 
                 if (!fastMatched) {
                     return true;
@@ -398,7 +398,7 @@ export class FilterConverter {
         const scannedLimit = options?.maxNumberOfRules
             ? Math.ceil(
                 options.maxNumberOfRules
-                * FilterConverter.SCANNED_NETWORK_RULES_MULTIPLICATOR,
+                * FilterConverter.SCANNED_RULES_MULTIPLICATOR,
             )
             : undefined;
 
@@ -467,7 +467,7 @@ export class FilterConverter {
         filterList: IFilter[],
         scannedFilters: ScannedFilter[],
         convertedRules: ConvertedRules,
-        badFilterRules: NetworkRule[],
+        badFilterRules: Rule[],
     ): ConversionResult<IRulesetWithSourceMap> {
         const {
             sourceMapValues,
@@ -485,9 +485,9 @@ export class FilterConverter {
         const listOfRulesWithHash = scannedFilters
             .flatMap(({ id, rules }) => {
                 return rules.map((r) => ({
-                    hash: r.getHash(),
+                    hash: r.hash,
                     source: {
-                        sourceRuleIndex: r.getIndex(),
+                        sourceRuleIndex: r.index,
                         filterId: id,
                     },
                 }));
@@ -524,13 +524,13 @@ export class FilterConverter {
      *
      * @returns Dictionary with all $badfilter rules indexed by hash.
      */
-    private static buildNetworkRulesBadFilterHashMap(
-        badFilterRules: NetworkRule[],
-    ): Map<number, NetworkRule[]> {
-        const result: Map<number, NetworkRule[]> = new Map();
+    private static buildRulesBadFilterHashMap(
+        badFilterRules: Rule[],
+    ): Map<number, Rule[]> {
+        const result: Map<number, Rule[]> = new Map();
 
         badFilterRules.forEach((r) => {
-            const hash = r.getHash();
+            const { hash } = r;
             const existing = result.get(hash);
             if (existing) {
                 existing.push(r);
@@ -556,7 +556,7 @@ export class FilterConverter {
      * the provided badFilterRule.
      */
     private static async checkFastMatchedRulesCanBeCancelled(
-        badFilterRule: NetworkRule,
+        badFilterRule: Rule,
         staticRuleSet: IRulesetWithSourceMap,
         fastMatchedRulesByHash: SourceRuleIdxAndFilterId[],
     ): Promise<number[]> {
@@ -587,14 +587,14 @@ export class FilterConverter {
                 throw new Error(`Not found sources for declarative rule with id "${id}": ${getErrorMessage(e)}`);
             }
 
-            const networkRules = matchedSourceRules
+            const rules = matchedSourceRules
                 .flatMap((source) => {
-                    return RulesetWithSourceMap.getNetworkRuleBySourceRule(source);
+                    return RulesetWithSourceMap.getRuleBySourceRule(source);
                 });
 
             // NOTE: Here we use .some but not .every to simplify first
             // version of applying $badfilter rules.
-            const someRulesMatched = networkRules
+            const someRulesMatched = rules
                 .flat()
                 .some((rule) => badFilterRule.negatesBadfilter(rule));
 
@@ -618,7 +618,7 @@ export class FilterConverter {
      */
     private static async collectDeclarativeRulesToCancel(
         staticRuleSets: IRulesetWithSourceMap[],
-        dynamicBadFilterRules: NetworkRule[],
+        dynamicBadFilterRules: Rule[],
     ): Promise<Pick<ConversionResult<IRulesetWithSourceMap>, 'errors' | 'declarativeRulesToCancel'>> {
         const declarativeRulesToCancel: UpdateStaticRulesOptions[] = [];
 
@@ -632,7 +632,7 @@ export class FilterConverter {
             for (let j = 0; j < dynamicBadFilterRules.length; j += 1) {
                 const badFilterRule = dynamicBadFilterRules[j];
                 const hashMap = staticRuleSet.getRulesHashMap();
-                const fastMatchedRulesByHash = hashMap.findRules(badFilterRule.getHash());
+                const fastMatchedRulesByHash = hashMap.findRules(badFilterRule.hash);
 
                 if (fastMatchedRulesByHash.length === 0) {
                     continue;

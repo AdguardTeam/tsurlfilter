@@ -1,4 +1,5 @@
-import { type NetworkRule, NetworkRuleOption } from '../network-rule';
+import { OPTION_NAMES } from '../rule/option-names';
+import { type Rule } from '../rule/rule';
 
 /**
  * Rule groups for declarative rules.
@@ -35,35 +36,35 @@ export enum RulesGroup {
 
 /**
  * Object that contains grouped rules where key is {@link RulesGroup}
- * and value is an array of {@link NetworkRule}.
+ * and value is an array of {@link Rule}.
  */
-export type GroupedRules = Record<RulesGroup, NetworkRule[]>;
+export type GroupedRules = Record<RulesGroup, Rule[]>;
 
 /**
- * Utility class to group list of {@link NetworkRule} into {@link GroupedRules}.
+ * Utility class to group list of {@link Rule} into {@link GroupedRules}.
  */
 export class RulesGrouper {
     /**
      * Returns group for provided `rule`.
      *
-     * @param rule {@link NetworkRule} to get group for.
+     * @param rule {@link Rule} to get group for.
      *
      * @returns Rule group ({@link RulesGroup}).
      */
-    private static getRuleGroup(rule: NetworkRule): RulesGroup {
-        if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+    private static getRuleGroup(rule: Rule): RulesGroup {
+        if (rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
             return RulesGroup.RemoveParam;
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.REMOVEHEADER)) {
             return RulesGroup.RemoveHeader;
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.CSP)) {
             return RulesGroup.Csp;
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
+        if (rule.isModifierEnabled(OPTION_NAMES.BADFILTER)) {
             return RulesGroup.BadFilter;
         }
 
@@ -71,13 +72,13 @@ export class RulesGrouper {
     }
 
     /**
-     * Groups the list of {@link NetworkRule} into {@link GroupedRules}.
+     * Groups the list of {@link Rule} into {@link GroupedRules}.
      *
-     * @param rules List of {@link NetworkRule} to group.
+     * @param rules List of {@link Rule} to group.
      *
      * @returns Grouped result of {@link GroupedRules}.
      */
-    public static groupRules(rules: NetworkRule[]): GroupedRules {
+    public static groupRules(rules: Rule[]): GroupedRules {
         const groupedRules: GroupedRules = {
             [RulesGroup.RemoveParam]: [],
             [RulesGroup.RemoveHeader]: [],

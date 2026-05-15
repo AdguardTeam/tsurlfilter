@@ -32,6 +32,7 @@ extensions.
     - [`MetadataRuleSet`](#metadataruleset)
     - [`isSafeRule(rule)`](#issaferulerule)
     - [`DNR_CONVERTER_VERSION`](#dnr_converter_version)
+    - [Network rule types](#network-rule-types)
 - [Documentation](#documentation)
 
 ## Key concepts
@@ -371,6 +372,34 @@ console.log(DNR_CONVERTER_VERSION); // e.g. "0.0.1"
 ```
 
 A string constant with the current library version.
+
+### Network rule types
+
+The package re-exports several types related to network rule parsing and
+validation:
+
+```ts
+import {
+    NetworkRule,
+    NetworkRuleOption,
+    HttpHeaderMatcher,
+    NetworkRuleDeclarativeValidator,
+} from '@adguard/dnr-converter';
+```
+
+- **`NetworkRule`** — parsed network rule with accessors for domains, resource
+  types, methods, advanced modifier values, priority, and option flags.
+  Create instances via `NetworkRule.createFromText(filterListId, index, text)`.
+- **`NetworkRuleOption`** — bit-flag enum of all supported network rule
+  modifiers (e.g. `ThirdParty`, `Important`, `Redirect`, `Csp`).
+- **`HttpHeaderMatcher`** — type describing the parsed `$header` modifier
+  value.
+- **`NetworkRuleDeclarativeValidator`** — static helper that checks whether a
+  `NetworkRule` can be converted to a DNR rule. Call
+  `NetworkRuleDeclarativeValidator.shouldConvertNetworkRule(rule)` — returns
+  `true` if the rule is convertible, `false` if it should be silently skipped,
+  or throws `UnsupportedModifierError` if the rule uses an unsupported
+  modifier.
 
 ## Documentation
 

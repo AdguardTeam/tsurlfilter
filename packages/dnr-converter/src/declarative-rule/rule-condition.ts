@@ -41,12 +41,7 @@ export enum RequestMethod {
 /**
  * Enum that represents resource type of the network request.
  *
- * Note: `'csp_report'`, `'webtransport'` and `'webbundle'`
- * is currently not used, thats why they are not specified here.
- *
  * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#type-ResourceType}
- *
- * @todo Add `'csp_report'` handler similar to AG-24613 but in declarative way.
  */
 export enum ResourceType {
     MainFrame = 'main_frame',
@@ -58,11 +53,11 @@ export enum ResourceType {
     Object = 'object',
     XmlHttpRequest = 'xmlhttprequest',
     Ping = 'ping',
-    // CspReport = 'csp_report',
+    CspReport = 'csp_report',
     Media = 'media',
     WebSocket = 'websocket',
-    // WebTransport = 'webtransport',
-    // WebBundle = 'webbundle',
+    WebTransport = 'webtransport',
+    WebBundle = 'webbundle',
     Other = 'other',
 }
 

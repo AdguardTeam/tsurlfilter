@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/require-description-complete-sentence  */
 /**
- * @file Describes the conversion process from {@link NetworkRule}
+ * @file Describes the conversion process from {@link Rule}
  * to declarative rules {@link DeclarativeRule} via applying `$badfilter` rules
  * {@link RulesConverter.applyBadFilter} and checks for specified
  * limitations {@link RulesConverter.checkLimitations}.
@@ -20,7 +20,7 @@
  * │  FilterConverter        ├───┼────►│┤                                │    │
  * │     .convert()          │   │     │└────────────────────────────────┘    │
  * └─────────────────────────┘   │     │                                      │
- *                               │     │ Parse filter text into NetworkRules. │
+ *                               │     │ Parse filter text into Rules. │
  *                               │     │ When withSourceMap is true and       │
  *                               │     │ options.badFilterRules is provided,  │
  *                               │     │ builds a skipNegatedRulesFn to skip  │
@@ -100,7 +100,7 @@ import {
     TooManyUnsafeRulesError,
 } from '../errors/limitation-errors';
 import { type FilterConverterOptions } from '../filter-converter/filter-converter-options';
-import { type NetworkRule } from '../network-rule';
+import { type Rule } from '../rule/rule';
 import { type ScannedFilter } from '../rules-scanner';
 import { type Source } from '../ruleset/source-map';
 import { isSafeRule } from '../utils/is-safe-rule';
@@ -119,7 +119,7 @@ import { type GroupedRules, RulesGroup, RulesGrouper } from './rules-grouper';
 type FiltersIdsWithGroupedRules = [number, GroupedRules][];
 
 /**
- * Class that converts list of {@link NetworkRule} into list of {@link DeclarativeRule}.
+ * Class that converts list of {@link Rule} into list of {@link DeclarativeRule}.
  */
 export class RulesConverter {
     /**
@@ -560,7 +560,7 @@ export class RulesConverter {
      * @returns Result tuple of {@link FiltersIdsWithGroupedRules}.
      */
     private static applyBadFilter(scannedFilters: ScannedFilter[]): FiltersIdsWithGroupedRules {
-        let allBadFilterRules: NetworkRule[] = [];
+        let allBadFilterRules: Rule[] = [];
 
         // Group rules
         const filterIdsWithGroupedRules = scannedFilters.map(({ id, rules }) => {
@@ -572,7 +572,7 @@ export class RulesConverter {
         });
 
         // Define filter function
-        const filterByBadFilterFn = (ruleToTest: NetworkRule): boolean => {
+        const filterByBadFilterFn = (ruleToTest: Rule): boolean => {
             for (const rule of allBadFilterRules) {
                 if (rule.negatesBadfilter(ruleToTest)) {
                     return false;

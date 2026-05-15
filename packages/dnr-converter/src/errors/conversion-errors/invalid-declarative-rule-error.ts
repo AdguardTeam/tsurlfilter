@@ -1,14 +1,14 @@
 import { type DeclarativeRule } from '../../declarative-rule';
-import { type NetworkRule } from '../../network-rule';
+import { type Rule } from '../../rule/rule';
 
 /**
  * Describes abstract error when declarative rule is invalid.
  */
 export abstract class InvalidDeclarativeRuleError extends Error {
     /**
-     * {@link NetworkRule} that is invalid.
+     * {@link Rule} that is invalid.
      */
-    public networkRule: NetworkRule;
+    public rule: Rule;
 
     /**
      * {@link DeclarativeRule} that is invalid.
@@ -24,12 +24,12 @@ export abstract class InvalidDeclarativeRuleError extends Error {
      * Describes abstract error when declarative rule is invalid.
      *
      * @param message Message of error.
-     * @param networkRule {@link NetworkRule}.
+     * @param rule {@link Rule}.
      * @param declarativeRule {@link DeclarativeRule}.
      */
     constructor(
         message: string,
-        networkRule: NetworkRule,
+        rule: Rule,
         declarativeRule: DeclarativeRule,
     ) {
         super(message);
@@ -42,6 +42,6 @@ export abstract class InvalidDeclarativeRuleError extends Error {
         this.name = this.constructor.name;
 
         this.declarativeRule = declarativeRule;
-        this.networkRule = networkRule;
+        this.rule = rule;
     }
 }

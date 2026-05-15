@@ -1,5 +1,5 @@
 import { type DeclarativeRule } from '../../declarative-rule';
-import { type NetworkRule } from '../../network-rule';
+import { type Rule } from '../../rule/rule';
 
 import { InvalidDeclarativeRuleError } from './invalid-declarative-rule-error';
 
@@ -14,17 +14,17 @@ export class UnsupportedRegexpError extends InvalidDeclarativeRuleError {
      * Describes an error when the converted rule contains an unsupported RE2 regexp syntax error.
      *
      * @param message Message of error.
-     * @param networkRule {@link NetworkRule}.
+     * @param rule {@link Rule}.
      * @param declarativeRule {@link DeclarativeRule}.
      * @param reason Describes a reason of the error.
      */
     constructor(
         message: string,
-        networkRule: NetworkRule,
+        rule: Rule,
         declarativeRule: DeclarativeRule,
         reason?: string,
     ) {
-        super(message, networkRule, declarativeRule);
+        super(message, rule, declarativeRule);
 
         // For proper work of the "instanceof" operator
         Object.setPrototypeOf(this, UnsupportedRegexpError.prototype);

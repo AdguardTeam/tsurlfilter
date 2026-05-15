@@ -1,6 +1,6 @@
 import { CSP_HEADER_NAME } from '../constants';
 import { type DeclarativeRule, type ModifyHeaderInfo } from '../declarative-rule';
-import { type NetworkRule } from '../network-rule';
+import { type Rule } from '../rule/rule';
 
 import { type ConvertedRules } from './converted-rules';
 import { RegularRuleConverter } from './regular-rule-converter';
@@ -112,18 +112,18 @@ export class CspConverter extends RegularRuleConverter {
     }
 
     /**
-     * Converts {@link NetworkRule} grouped by `$csp` into {@link DeclarativeRule}.
+     * Converts {@link Rule} grouped by `$csp` into {@link DeclarativeRule}.
      * For each rule looks for similar rules and groups them into a new rule.
      *
      * @param filterListId Filter list ID.
-     * @param rules List of {@link NetworkRule}.
+     * @param rules List of {@link Rule}.
      * @param usedIds Set with already used IDs to exclude duplications in IDs.
      *
      * @returns Converted {@link ConvertedRules}.
      */
     public async convert(
         filterListId: number,
-        rules: NetworkRule[],
+        rules: Rule[],
         usedIds: Set<number>,
     ): Promise<ConvertedRules> {
         const converted = await this.convertRules(filterListId, rules, usedIds);

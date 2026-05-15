@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { type DeclarativeRule, RuleActionType } from '../../../src/declarative-rule';
-import { type NetworkRule } from '../../../src/network-rule';
+import { type Rule } from '../../../src/rule/rule';
 import { RemoveParamConverter } from '../../../src/rule-converters';
 import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
 
@@ -209,7 +209,7 @@ describe('RemoveParamConverter', () => {
             const groupConvertedRulesSpy = vi.spyOn(RegularRuleConverter, 'groupConvertedRules');
 
             const filterListId = 1;
-            const rules: NetworkRule[] = [];
+            const rules: Rule[] = [];
             const usedIds = new Set<number>();
             await removeParamConverter.convert(filterListId, rules, usedIds);
 

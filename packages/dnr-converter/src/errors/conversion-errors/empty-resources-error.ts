@@ -1,5 +1,5 @@
 import { type DeclarativeRule } from '../../declarative-rule';
-import { type NetworkRule } from '../../network-rule';
+import { type Rule } from '../../rule/rule';
 
 import { InvalidDeclarativeRuleError } from './invalid-declarative-rule-error';
 
@@ -13,15 +13,15 @@ export class EmptyResourcesError extends InvalidDeclarativeRuleError {
      * Describes error when converted rule contains empty list of resources types.
      *
      * @param message Message of error.
-     * @param networkRule {@link NetworkRule}.
+     * @param rule {@link Rule}.
      * @param declarativeRule {@link DeclarativeRule}.
      */
     constructor(
         message: string,
-        networkRule: NetworkRule,
+        rule: Rule,
         declarativeRule: DeclarativeRule,
     ) {
-        super(message, networkRule, declarativeRule);
+        super(message, rule, declarativeRule);
 
         // For proper work of the "instanceof" operator
         Object.setPrototypeOf(this, EmptyResourcesError.prototype);

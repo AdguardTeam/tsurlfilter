@@ -9,24 +9,24 @@ import {
     UnsupportedModifierError,
     UnsupportedRegexpError,
 } from '../../../src/errors/conversion-errors';
-import { type NetworkRule } from '../../../src/network-rule';
+import { type Rule } from '../../../src/rule/rule';
 
 describe('Conversion Errors', () => {
     const message = 'Test error message';
-    const networkRule = {} as NetworkRule;
+    const rule = {} as Rule;
     const declarativeRule = {} as DeclarativeRule;
     const reason = 'Test reason';
 
     describe('EmptyDomainsError', () => {
         it('should create an instance correctly', () => {
-            const error = new EmptyDomainsError(message, networkRule, declarativeRule);
+            const error = new EmptyDomainsError(message, rule, declarativeRule);
 
             expect(error).toBeInstanceOf(EmptyDomainsError);
             expect(error).toBeInstanceOf(InvalidDeclarativeRuleError); // inherited
             expect(error).toBeInstanceOf(Error); // inherited
             expect(error.name).toBe('EmptyDomainsError');
             expect(error.message).toBe(message);
-            expect(error.networkRule).toBe(networkRule);
+            expect(error.rule).toBe(rule);
             expect(error.declarativeRule).toBe(declarativeRule);
             expect(error.reason).toBeUndefined();
             expect(error.cause).toBeUndefined();
@@ -36,14 +36,14 @@ describe('Conversion Errors', () => {
 
     describe('EmptyResourcesError', () => {
         it('should create an instance correctly', () => {
-            const error = new EmptyResourcesError(message, networkRule, declarativeRule);
+            const error = new EmptyResourcesError(message, rule, declarativeRule);
 
             expect(error).toBeInstanceOf(EmptyResourcesError);
             expect(error).toBeInstanceOf(InvalidDeclarativeRuleError); // inherited
             expect(error).toBeInstanceOf(Error); // inherited
             expect(error.name).toBe('EmptyResourcesError');
             expect(error.message).toBe(message);
-            expect(error.networkRule).toBe(networkRule);
+            expect(error.rule).toBe(rule);
             expect(error.declarativeRule).toBe(declarativeRule);
             expect(error.reason).toBeUndefined();
             expect(error.cause).toBeUndefined();
@@ -53,13 +53,13 @@ describe('Conversion Errors', () => {
 
     describe('UnsupportedModifierError', () => {
         it('should create an instance correctly', () => {
-            const error = new UnsupportedModifierError(message, networkRule);
+            const error = new UnsupportedModifierError(message, rule);
 
             expect(error).toBeInstanceOf(UnsupportedModifierError);
             expect(error).toBeInstanceOf(Error); // inherited
             expect(error.name).toBe('UnsupportedModifierError');
             expect(error.message).toBe(message);
-            expect(error.networkRule).toBe(networkRule);
+            expect(error.rule).toBe(rule);
             expect(error.cause).toBeUndefined();
             expect(error.stack).toBeDefined();
         });
@@ -67,14 +67,14 @@ describe('Conversion Errors', () => {
 
     describe('UnsupportedRegexpError', () => {
         it('should create an instance correctly', () => {
-            const error = new UnsupportedRegexpError(message, networkRule, declarativeRule, reason);
+            const error = new UnsupportedRegexpError(message, rule, declarativeRule, reason);
 
             expect(error).toBeInstanceOf(UnsupportedRegexpError);
             expect(error).toBeInstanceOf(InvalidDeclarativeRuleError); // inherited
             expect(error).toBeInstanceOf(Error); // inherited
             expect(error.name).toBe('UnsupportedRegexpError');
             expect(error.message).toBe(message);
-            expect(error.networkRule).toBe(networkRule);
+            expect(error.rule).toBe(rule);
             expect(error.declarativeRule).toBe(declarativeRule);
             expect(error.reason).toBe(reason);
             expect(error.cause).toBeUndefined();
@@ -85,10 +85,10 @@ describe('Conversion Errors', () => {
     describe('isConversionError', () => {
         it('returns true for ConversionError instances', () => {
             const errors = [
-                new EmptyDomainsError(message, networkRule, declarativeRule),
-                new EmptyResourcesError(message, networkRule, declarativeRule),
-                new UnsupportedModifierError(message, networkRule),
-                new UnsupportedRegexpError(message, networkRule, declarativeRule, reason),
+                new EmptyDomainsError(message, rule, declarativeRule),
+                new EmptyResourcesError(message, rule, declarativeRule),
+                new UnsupportedModifierError(message, rule),
+                new UnsupportedRegexpError(message, rule, declarativeRule, reason),
             ];
 
             for (const error of errors) {
@@ -102,16 +102,16 @@ describe('Conversion Errors', () => {
                 { message },
                 {
                     message,
-                    networkRule,
+                    rule,
                 },
                 {
                     message,
-                    networkRule,
+                    rule,
                     declarativeRule,
                 },
                 {
                     message,
-                    networkRule,
+                    rule,
                     declarativeRule,
                     reason,
                 },

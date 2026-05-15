@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { type DeclarativeRule, HeaderOperation, RuleActionType } from '../../../src/declarative-rule';
-import { type NetworkRule } from '../../../src/network-rule';
+import { type Rule } from '../../../src/rule/rule';
 import { RemoveHeaderConverter } from '../../../src/rule-converters';
 import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
 
@@ -478,7 +478,7 @@ describe('RemoveHeaderConverter', () => {
             const groupConvertedRulesSpy = vi.spyOn(RegularRuleConverter, 'groupConvertedRules');
 
             const filterListId = 1;
-            const rules: NetworkRule[] = [];
+            const rules: Rule[] = [];
             const usedIds = new Set<number>();
             await removeHeaderConverter.convert(filterListId, rules, usedIds);
 

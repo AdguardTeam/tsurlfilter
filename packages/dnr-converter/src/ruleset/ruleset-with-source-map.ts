@@ -9,7 +9,7 @@ import * as v from 'valibot';
 import { type DeclarativeRule, DeclarativeRuleValidator } from '../declarative-rule';
 import { UnavailableFilterSourceError, UnavailableRulesetSourceError } from '../errors/unavailable-sources-errors';
 import { type IFilter } from '../filter/types';
-import { NetworkRule } from '../network-rule';
+import { Rule } from '../rule/rule';
 import { getErrorMessage } from '../utils/error';
 import { LazyLoader } from '../utils/lazy-loader';
 import { serializeJson } from '../utils/string';
@@ -44,7 +44,7 @@ export interface IRulesetWithSourceMap extends IBaseRuleset {
      *
      * @returns List of network rules with `$badfilter` option.
      */
-    getBadFilterRules(): NetworkRule[];
+    getBadFilterRules(): Rule[];
 
     /**
      * Returns dictionary with hashes of all ruleset's source rules.
@@ -270,7 +270,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     /**
      * List of network rules with $badfilter option.
      */
-    private badFilterRules: NetworkRule[];
+    private badFilterRules: Rule[];
 
     /**
      * Keeps array of source filter lists.
@@ -308,7 +308,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         unsafeRulesCount: number,
         regexpRulesCount: number,
         ruleSetContentProvider: RulesetContentProvider,
-        badFilterRules: NetworkRule[],
+        badFilterRules: Rule[],
         rulesHashMap: IRulesHashMap,
         unsafeRules?: DeclarativeRule[],
     ) {
@@ -489,7 +489,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     }
 
     /** @inheritdoc */
-    public getBadFilterRules(): NetworkRule[] {
+    public getBadFilterRules(): Rule[] {
         return this.badFilterRules;
     }
 
@@ -529,15 +529,15 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      *
      * @param source Source rule and filter id.
      *
-     * @returns List of {@link NetworkRule | network rules}.
+     * @returns List of {@link Rule | network rules}.
      */
-    public static getNetworkRuleBySourceRule(
+    public static getRuleBySourceRule(
         source: SourceRuleAndFilterId,
-    ): NetworkRule[] {
+    ): Rule[] {
         const { sourceRule, filterId } = source;
 
         try {
-            return NetworkRule.createFromText(
+            return Rule.createFromText(
                 filterId,
                 // We don't need line index because this rule
                 // will be used only for matching $badfilter rules.
@@ -673,7 +673,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
             unsafeRulesCount: this.unsafeRulesCount,
             rulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
-            badFilterRulesRaw: this.badFilterRules.map((r) => r.text),
+            badFilterRulesRaw: this.badFilterRules.map((r) => r.getText()),
             unsafeRules,
         };
     }

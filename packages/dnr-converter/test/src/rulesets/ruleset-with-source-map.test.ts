@@ -8,7 +8,8 @@ import {
 
 import { type DeclarativeRule } from '../../../src/declarative-rule';
 import { type IFilter } from '../../../src/filter/types';
-import { NetworkRule, NetworkRuleOption } from '../../../src/network-rule';
+import { OPTION_NAMES } from '../../../src/rule/option-names';
+import { Rule } from '../../../src/rule/rule';
 import { RulesConverter } from '../../../src/rule-converters/rules-converter';
 import { RulesScanner, type ScannedFilter } from '../../../src/rules-scanner';
 import { type HashWithSource, RulesHashMap } from '../../../src/ruleset/rules-hash-map';
@@ -18,7 +19,7 @@ import {
     type SerializedRulesetData,
 } from '../../../src/ruleset/ruleset-with-source-map';
 import { SourceMap } from '../../../src/ruleset/source-map';
-import { createNetworkRuleMock } from '../../mocks/network-rule';
+import { createRuleMock } from '../../mocks/rule';
 
 /**
  * Creates a test IFilter from an array of rule strings.
@@ -94,9 +95,9 @@ const createRuleSet = async (contentLines: string[], filterId = 0): Promise<Rule
     const listOfRulesWithHash: HashWithSource[] = filters
         .flatMap(({ id, rules }) => {
             return rules.map((r) => ({
-                hash: r.getHash(),
+                hash: r.hash,
                 source: {
-                    sourceRuleIndex: r.getIndex(),
+                    sourceRuleIndex: r.index,
                     filterId: id,
                 },
             }));
@@ -128,9 +129,9 @@ describe('RuleSet', () => {
     });
 
     it('returns bad filter rules from constructor', () => {
-        const badFilterRule = createNetworkRuleMock({
+        const badFilterRule = createRuleMock({
             pattern: '||evil.com^',
-            enabledOptions: [NetworkRuleOption.Badfilter],
+            enabledOptions: [OPTION_NAMES.BADFILTER],
         });
 
         const ruleSetContent: RulesetContentProvider = {
@@ -175,7 +176,7 @@ describe('RuleSet', () => {
         expect(originalRules[0].sourceRule).toStrictEqual(content[sourceRuleIndex]);
 
         const declarativeRulesIds = await ruleSet.getDeclarativeRulesIdsBySourceRuleIndex({
-            sourceRuleIndex: scannedFilter.rules[0]?.getIndex(),
+            sourceRuleIndex: scannedFilter.rules[0]?.index,
             filterId,
         });
         expect(declarativeRulesIds[0]).toStrictEqual(declarativeRule.id);
@@ -194,7 +195,7 @@ describe('RuleSet', () => {
 
         const scannedFilters = await createScannedFilters(content, filterId);
         const [scannedFilter] = scannedFilters;
-        const badFilterRuleIndex = scannedFilter.rules[2].getIndex();
+        const badFilterRuleIndex = scannedFilter.rules[2].index;
 
         const ruleSet = await createRuleSet(content, filterId);
 
@@ -227,7 +228,7 @@ describe('RuleSet', () => {
         const ruleSetHashMap = new RulesHashMap(sources);
         const badFilterRules = badFilterRulesRaw
             .flatMap(
-                (rawString) => NetworkRule.createFromText(
+                (rawString) => Rule.createFromText(
                     filterId,
                     badFilterRuleIndex,
                     rawString,
@@ -246,8 +247,8 @@ describe('RuleSet', () => {
 
         // check $badfilter rules
         expect(deserializedRuleSet.getBadFilterRules()).toHaveLength(ruleSet.getBadFilterRules().length);
-        expect(deserializedRuleSet.getBadFilterRules()[0].text)
-            .toEqual(ruleSet.getBadFilterRules()[0].text);
+        expect(deserializedRuleSet.getBadFilterRules()[0].getText())
+            .toEqual(ruleSet.getBadFilterRules()[0].getText());
 
         // check declarative rules
         const d1 = await ruleSet.getDeclarativeRules();
@@ -259,7 +260,7 @@ describe('RuleSet', () => {
 
         // check source map works
         const [dRuleId] = await deserializedRuleSet.getDeclarativeRulesIdsBySourceRuleIndex({
-            sourceRuleIndex: scannedFilter.rules[1]?.getIndex(),
+            sourceRuleIndex: scannedFilter.rules[1]?.index,
             filterId,
         });
         expect(d2.find((d) => d.id === dRuleId)).toStrictEqual(d1[1]);
@@ -396,19 +397,19 @@ describe('RuleSet', () => {
         expect(ruleSet.getId()).toBe('ruleSetId');
     });
 
-    describe('getNetworkRuleBySourceRule', () => {
+    describe('getRuleBySourceRule', () => {
         it('returns network rules for valid source rule', () => {
-            const rules = RulesetWithSourceMap.getNetworkRuleBySourceRule({
+            const rules = RulesetWithSourceMap.getRuleBySourceRule({
                 sourceRule: '||example.com^',
                 filterId: 1,
             });
 
             expect(rules).toHaveLength(1);
-            expect(rules[0].getPattern()).toBe('||example.com^');
+            expect(rules[0].pattern).toBe('||example.com^');
         });
 
         it('returns empty array for invalid source rule', () => {
-            const rules = RulesetWithSourceMap.getNetworkRuleBySourceRule({
+            const rules = RulesetWithSourceMap.getRuleBySourceRule({
                 sourceRule: '!this is a comment, not a rule',
                 filterId: 1,
             });
@@ -417,7 +418,7 @@ describe('RuleSet', () => {
         });
 
         it('returns empty array for cosmetic rules', () => {
-            const rules = RulesetWithSourceMap.getNetworkRuleBySourceRule({
+            const rules = RulesetWithSourceMap.getRuleBySourceRule({
                 sourceRule: '##.ad-banner',
                 filterId: 1,
             });

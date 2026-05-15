@@ -14,7 +14,8 @@ import {
     TooManyRulesError,
     TooManyUnsafeRulesError,
 } from '../../../src/errors/limitation-errors';
-import { type NetworkRule, NetworkRuleOption } from '../../../src/network-rule';
+import { OPTION_NAMES } from '../../../src/rule/option-names';
+import { type Rule } from '../../../src/rule/rule';
 import { type ConvertedRules } from '../../../src/rule-converters/converted-rules';
 import { CspConverter } from '../../../src/rule-converters/csp-converter';
 import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
@@ -25,7 +26,7 @@ import { type GroupedRules, RulesGroup } from '../../../src/rule-converters/rule
 import { type ScannedFilter } from '../../../src/rules-scanner';
 import { type Source } from '../../../src/ruleset/source-map';
 import { isSafeRule } from '../../../src/utils/is-safe-rule';
-import { createNetworkRuleMock } from '../../mocks/network-rule';
+import { createRuleMock } from '../../mocks/rule';
 
 vi.mock('../../../src/rule-converters/regular-rule-converter', () => ({
     RegularRuleConverter: vi.fn(),
@@ -56,8 +57,8 @@ const { MIN_DECLARATIVE_RULE_ID, MAX_DECLARATIVE_RULE_ID } = RulesConverter;
 
 const createScannedFilter = (
     id: number,
-    rules: NetworkRule[] = [],
-    badFilterRules: NetworkRule[] = [],
+    rules: Rule[] = [],
+    badFilterRules: Rule[] = [],
 ): ScannedFilter => ({
     id,
     rules,
@@ -87,7 +88,7 @@ const createSource = (
 
 const createConversionError = (declarativeRuleId: number): ConversionError => {
     const declarativeRule = createDeclarativeRule(declarativeRuleId);
-    const networkRule = createNetworkRuleMock();
+    const rule = createRuleMock();
 
     /**
      * Just for testing purposes.
@@ -96,7 +97,7 @@ const createConversionError = (declarativeRuleId: number): ConversionError => {
 
     return new TestInvalidDeclarativeRuleError(
         'Test conversion error',
-        networkRule,
+        rule,
         declarativeRule,
     );
 };
@@ -122,8 +123,8 @@ describe('RulesConverter', () => {
 
     describe('convert', () => {
         it('should successfully convert single filter with basic rules', async () => {
-            const networkRule1 = createNetworkRuleMock({ pattern: 'example.com' });
-            const networkRule2 = createNetworkRuleMock({ pattern: 'test.com' });
+            const networkRule1 = createRuleMock({ pattern: 'example.com' });
+            const networkRule2 = createRuleMock({ pattern: 'test.com' });
 
             const scannedFilters = [
                 createScannedFilter(1, [networkRule1, networkRule2], []),
@@ -192,9 +193,9 @@ describe('RulesConverter', () => {
         });
 
         it('should convert multiple filters and aggregate results', async () => {
-            const networkRule1 = createNetworkRuleMock({ pattern: 'example.com' });
-            const networkRule2 = createNetworkRuleMock({ pattern: 'test.com' });
-            const networkRule3 = createNetworkRuleMock({ pattern: 'another.com' });
+            const networkRule1 = createRuleMock({ pattern: 'example.com' });
+            const networkRule2 = createRuleMock({ pattern: 'test.com' });
+            const networkRule3 = createRuleMock({ pattern: 'another.com' });
 
             const scannedFilters = [
                 createScannedFilter(1, [networkRule1], []),
@@ -262,8 +263,8 @@ describe('RulesConverter', () => {
         });
 
         it('should pass converter options to convertRules and checkLimitations', async () => {
-            const networkRule = createNetworkRuleMock({ pattern: 'example.com' });
-            const scannedFilters = [createScannedFilter(1, [networkRule], [])];
+            const rule = createRuleMock({ pattern: 'example.com' });
+            const scannedFilters = [createScannedFilter(1, [rule], [])];
             const options = {
                 resourcesPath: '/path/to/resources',
                 maxNumberOfRules: 100,
@@ -279,7 +280,7 @@ describe('RulesConverter', () => {
             const checkRulesHaveCorrectIdsSpy = vi.spyOn(RulesConverter as any, 'checkRulesHaveCorrectIds');
 
             const groupedRules = {
-                [RulesGroup.Regular]: [networkRule],
+                [RulesGroup.Regular]: [rule],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
@@ -307,8 +308,8 @@ describe('RulesConverter', () => {
         });
 
         it('should throw error when rules have non-unique identifiers', async () => {
-            const networkRule = createNetworkRuleMock({ pattern: 'example.com' });
-            const scannedFilters = [createScannedFilter(1, [networkRule], [])];
+            const rule = createRuleMock({ pattern: 'example.com' });
+            const scannedFilters = [createScannedFilter(1, [rule], [])];
 
             // Mock the private methods
             const applyBadFilterSpy = vi.spyOn(RulesConverter as any, 'applyBadFilter');
@@ -317,7 +318,7 @@ describe('RulesConverter', () => {
             const checkRulesHaveUniqueIdsSpy = vi.spyOn(RulesConverter as any, 'checkRulesHaveUniqueIds');
 
             const groupedRules = {
-                [RulesGroup.Regular]: [networkRule],
+                [RulesGroup.Regular]: [rule],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
@@ -338,8 +339,8 @@ describe('RulesConverter', () => {
         });
 
         it('should throw error when rules have incorrect identifiers', async () => {
-            const networkRule = createNetworkRuleMock({ pattern: 'example.com' });
-            const scannedFilters = [createScannedFilter(1, [networkRule], [])];
+            const rule = createRuleMock({ pattern: 'example.com' });
+            const scannedFilters = [createScannedFilter(1, [rule], [])];
 
             // Mock the private methods
             const applyBadFilterSpy = vi.spyOn(RulesConverter as any, 'applyBadFilter');
@@ -349,7 +350,7 @@ describe('RulesConverter', () => {
             const checkRulesHaveCorrectIdsSpy = vi.spyOn(RulesConverter as any, 'checkRulesHaveCorrectIds');
 
             const groupedRules = {
-                [RulesGroup.Regular]: [networkRule],
+                [RulesGroup.Regular]: [rule],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
@@ -371,10 +372,10 @@ describe('RulesConverter', () => {
         });
 
         it('should apply badfilter rules correctly', async () => {
-            const regularRule = createNetworkRuleMock({ pattern: 'example.com' });
-            const badFilterRule = createNetworkRuleMock({
+            const regularRule = createRuleMock({ pattern: 'example.com' });
+            const badFilterRule = createRuleMock({
                 pattern: 'example.com',
-                enabledOptions: [NetworkRuleOption.Badfilter],
+                enabledOptions: [OPTION_NAMES.BADFILTER],
             });
 
             const scannedFilters = [
@@ -411,8 +412,8 @@ describe('RulesConverter', () => {
         });
 
         it('should enforce limitations and return limitation errors', async () => {
-            const networkRule = createNetworkRuleMock({ pattern: 'example.com' });
-            const scannedFilters = [createScannedFilter(1, [networkRule], [])];
+            const rule = createRuleMock({ pattern: 'example.com' });
+            const scannedFilters = [createScannedFilter(1, [rule], [])];
             const options = { maxNumberOfRules: 1 };
 
             // Mock the private methods
@@ -423,7 +424,7 @@ describe('RulesConverter', () => {
             const checkRulesHaveCorrectIdsSpy = vi.spyOn(RulesConverter as any, 'checkRulesHaveCorrectIds');
 
             const groupedRules = {
-                [RulesGroup.Regular]: [networkRule],
+                [RulesGroup.Regular]: [rule],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
@@ -462,8 +463,8 @@ describe('RulesConverter', () => {
         });
 
         it('should aggregate errors from multiple filters', async () => {
-            const networkRule1 = createNetworkRuleMock({ pattern: 'example.com' });
-            const networkRule2 = createNetworkRuleMock({ pattern: 'test.com' });
+            const networkRule1 = createRuleMock({ pattern: 'example.com' });
+            const networkRule2 = createRuleMock({ pattern: 'test.com' });
 
             const scannedFilters = [
                 createScannedFilter(1, [networkRule1], []),
@@ -525,8 +526,8 @@ describe('RulesConverter', () => {
         });
 
         it('should maintain unique IDs set across multiple filter conversions', async () => {
-            const networkRule1 = createNetworkRuleMock({ pattern: 'example.com' });
-            const networkRule2 = createNetworkRuleMock({ pattern: 'test.com' });
+            const networkRule1 = createRuleMock({ pattern: 'example.com' });
+            const networkRule2 = createRuleMock({ pattern: 'test.com' });
 
             const scannedFilters = [
                 createScannedFilter(1, [networkRule1], []),
@@ -599,8 +600,8 @@ describe('RulesConverter', () => {
             const filterId = 1;
             const usedIds = new Set<number>();
 
-            const regularRule = createNetworkRuleMock({ pattern: 'example.com' });
-            const cspRule = createNetworkRuleMock({ pattern: 'test.com' });
+            const regularRule = createRuleMock({ pattern: 'example.com' });
+            const cspRule = createRuleMock({ pattern: 'test.com' });
 
             const groupedRules = createGroupedRules({
                 [RulesGroup.Regular]: [regularRule],
@@ -700,7 +701,7 @@ describe('RulesConverter', () => {
             const usedIds = new Set<number>();
             const options = { resourcesPath: '/path/to/resources' };
             const groupedRules = createGroupedRules({
-                [RulesGroup.Regular]: [createNetworkRuleMock()],
+                [RulesGroup.Regular]: [createRuleMock()],
             });
 
             MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
@@ -730,8 +731,8 @@ describe('RulesConverter', () => {
             const filterId = 4;
             const usedIds = new Set<number>();
             const groupedRules = createGroupedRules({
-                [RulesGroup.Regular]: [createNetworkRuleMock()],
-                [RulesGroup.Csp]: [createNetworkRuleMock()],
+                [RulesGroup.Regular]: [createRuleMock()],
+                [RulesGroup.Csp]: [createRuleMock()],
             });
 
             const regularError = createConversionError(1);
@@ -762,7 +763,7 @@ describe('RulesConverter', () => {
         it('should handle single rule group conversion', async () => {
             const filterId = 5;
             const usedIds = new Set<number>();
-            const removeParamRule = createNetworkRuleMock({ pattern: 'param.com' });
+            const removeParamRule = createRuleMock({ pattern: 'param.com' });
 
             const groupedRules = createGroupedRules({
                 [RulesGroup.RemoveParam]: [removeParamRule],
@@ -799,8 +800,8 @@ describe('RulesConverter', () => {
             const filterId = 6;
             const usedIds = new Set([1, 2, 3]);
             const groupedRules = createGroupedRules({
-                [RulesGroup.Regular]: [createNetworkRuleMock()],
-                [RulesGroup.Csp]: [createNetworkRuleMock()],
+                [RulesGroup.Regular]: [createRuleMock()],
+                [RulesGroup.Csp]: [createRuleMock()],
             });
 
             const regularConvertMock = vi.fn(async () => createConvertedRules());
@@ -834,8 +835,8 @@ describe('RulesConverter', () => {
             const filterId = 7;
             const usedIds = new Set<number>();
             const groupedRules = createGroupedRules({
-                [RulesGroup.Regular]: [createNetworkRuleMock()],
-                [RulesGroup.RemoveHeader]: [createNetworkRuleMock()],
+                [RulesGroup.Regular]: [createRuleMock()],
+                [RulesGroup.RemoveHeader]: [createRuleMock()],
             });
 
             const successfulResult = createConvertedRules(
@@ -871,10 +872,10 @@ describe('RulesConverter', () => {
             const filterId = 8;
             const usedIds = new Set<number>();
             const groupedRules = createGroupedRules({
-                [RulesGroup.Regular]: [createNetworkRuleMock()],
-                [RulesGroup.Csp]: [createNetworkRuleMock()],
-                [RulesGroup.RemoveParam]: [createNetworkRuleMock()],
-                [RulesGroup.RemoveHeader]: [createNetworkRuleMock()],
+                [RulesGroup.Regular]: [createRuleMock()],
+                [RulesGroup.Csp]: [createRuleMock()],
+                [RulesGroup.RemoveParam]: [createRuleMock()],
+                [RulesGroup.RemoveHeader]: [createRuleMock()],
             });
 
             // Create promises that we can control
@@ -932,7 +933,7 @@ describe('RulesConverter', () => {
             const filterId = 9;
             const usedIds = new Set<number>();
             const groupedRules = createGroupedRules({
-                [RulesGroup.Regular]: [createNetworkRuleMock()],
+                [RulesGroup.Regular]: [createRuleMock()],
             });
 
             MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
@@ -961,11 +962,11 @@ describe('RulesConverter', () => {
 
     describe('applyBadFilter', () => {
         it('should filter out rules negated by badfilter rules', () => {
-            const regularRule1 = createNetworkRuleMock({ pattern: 'example.com' });
-            const regularRule2 = createNetworkRuleMock({ pattern: 'test.com' });
-            const badFilterRule = createNetworkRuleMock({
+            const regularRule1 = createRuleMock({ pattern: 'example.com' });
+            const regularRule2 = createRuleMock({ pattern: 'test.com' });
+            const badFilterRule = createRuleMock({
                 pattern: 'example.com',
-                enabledOptions: [NetworkRuleOption.Badfilter],
+                enabledOptions: [OPTION_NAMES.BADFILTER],
                 negatesBadfilter: (rule) => rule === regularRule1,
             });
 
@@ -986,11 +987,11 @@ describe('RulesConverter', () => {
         });
 
         it('should keep rules not negated by badfilter rules', () => {
-            const regularRule1 = createNetworkRuleMock({ pattern: 'example.com' });
-            const regularRule2 = createNetworkRuleMock({ pattern: 'test.com' });
-            const badFilterRule = createNetworkRuleMock({
+            const regularRule1 = createRuleMock({ pattern: 'example.com' });
+            const regularRule2 = createRuleMock({ pattern: 'test.com' });
+            const badFilterRule = createRuleMock({
                 pattern: 'different.com',
-                enabledOptions: [NetworkRuleOption.Badfilter],
+                enabledOptions: [OPTION_NAMES.BADFILTER],
             });
 
             const scannedFilters = [
@@ -1044,8 +1045,8 @@ describe('RulesConverter', () => {
         });
 
         it('should handle filters with no badfilter rules', () => {
-            const regularRule1 = createNetworkRuleMock({ pattern: 'example.com' });
-            const regularRule2 = createNetworkRuleMock({ pattern: 'test.com' });
+            const regularRule1 = createRuleMock({ pattern: 'example.com' });
+            const regularRule2 = createRuleMock({ pattern: 'test.com' });
 
             const scannedFilters = [
                 createScannedFilter(1, [regularRule1, regularRule2], []),
@@ -1063,18 +1064,18 @@ describe('RulesConverter', () => {
         });
 
         it('should apply badfilter rules across multiple filters', () => {
-            const regularRule1 = createNetworkRuleMock({ pattern: 'example.com' });
-            const regularRule2 = createNetworkRuleMock({ pattern: 'test.com' });
-            const regularRule3 = createNetworkRuleMock({ pattern: 'another.com' });
+            const regularRule1 = createRuleMock({ pattern: 'example.com' });
+            const regularRule2 = createRuleMock({ pattern: 'test.com' });
+            const regularRule3 = createRuleMock({ pattern: 'another.com' });
 
-            const badFilterRule1 = createNetworkRuleMock({
+            const badFilterRule1 = createRuleMock({
                 pattern: 'example.com',
-                enabledOptions: [NetworkRuleOption.Badfilter],
+                enabledOptions: [OPTION_NAMES.BADFILTER],
                 negatesBadfilter: (rule) => rule === regularRule1,
             });
-            const badFilterRule2 = createNetworkRuleMock({
+            const badFilterRule2 = createRuleMock({
                 pattern: 'another.com',
-                enabledOptions: [NetworkRuleOption.Badfilter],
+                enabledOptions: [OPTION_NAMES.BADFILTER],
                 negatesBadfilter: (rule) => rule === regularRule3,
             });
 
@@ -1098,18 +1099,18 @@ describe('RulesConverter', () => {
         });
 
         it('should handle different rule types correctly', () => {
-            const regularRule = createNetworkRuleMock({ pattern: 'example.com' });
-            const cspRule = createNetworkRuleMock({
+            const regularRule = createRuleMock({ pattern: 'example.com' });
+            const cspRule = createRuleMock({
                 pattern: 'test.com',
-                enabledOptions: [NetworkRuleOption.Csp],
+                enabledOptions: [OPTION_NAMES.CSP],
             });
-            const removeParamRule = createNetworkRuleMock({
+            const removeParamRule = createRuleMock({
                 pattern: 'param.com',
-                enabledOptions: [NetworkRuleOption.RemoveParam],
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
             });
-            const badFilterRule = createNetworkRuleMock({
+            const badFilterRule = createRuleMock({
                 pattern: 'example.com',
-                enabledOptions: [NetworkRuleOption.Badfilter],
+                enabledOptions: [OPTION_NAMES.BADFILTER],
                 negatesBadfilter: (rule) => rule === regularRule,
             });
 
@@ -1132,15 +1133,15 @@ describe('RulesConverter', () => {
         });
 
         it('should handle multiple badfilter rules affecting the same regular rule', () => {
-            const regularRule = createNetworkRuleMock({ pattern: 'example.com' });
-            const badFilterRule1 = createNetworkRuleMock({
+            const regularRule = createRuleMock({ pattern: 'example.com' });
+            const badFilterRule1 = createRuleMock({
                 pattern: 'example.com',
-                enabledOptions: [NetworkRuleOption.Badfilter],
+                enabledOptions: [OPTION_NAMES.BADFILTER],
                 negatesBadfilter: (rule) => rule === regularRule,
             });
-            const badFilterRule2 = createNetworkRuleMock({
+            const badFilterRule2 = createRuleMock({
                 pattern: 'example.com',
-                enabledOptions: [NetworkRuleOption.Badfilter],
+                enabledOptions: [OPTION_NAMES.BADFILTER],
                 negatesBadfilter: (rule) => rule === regularRule,
             });
 
@@ -1159,9 +1160,9 @@ describe('RulesConverter', () => {
         });
 
         it('should preserve filter IDs correctly', () => {
-            const regularRule1 = createNetworkRuleMock({ pattern: 'example.com' });
-            const regularRule2 = createNetworkRuleMock({ pattern: 'test.com' });
-            const regularRule3 = createNetworkRuleMock({ pattern: 'another.com' });
+            const regularRule1 = createRuleMock({ pattern: 'example.com' });
+            const regularRule2 = createRuleMock({ pattern: 'test.com' });
+            const regularRule3 = createRuleMock({ pattern: 'another.com' });
 
             const scannedFilters = [
                 createScannedFilter(100, [regularRule1], []),

@@ -6,23 +6,24 @@ import {
     describe,
     expect,
     it,
+    type MockInstance,
     vi,
 } from 'vitest';
 
 import { MaxScannedRulesError } from '../../../src/errors/limitation-errors/max-scanned-rules-error';
 import { type IFilter } from '../../../src/filter/types';
-import { NetworkRule, NetworkRuleOption } from '../../../src/network-rule';
+import { OPTION_NAMES } from '../../../src/rule/option-names';
+import { Rule } from '../../../src/rule/rule';
 import { RulesScanner } from '../../../src/rules-scanner';
-import { createNetworkRuleMock } from '../../mocks/network-rule';
+import { createRuleMock } from '../../mocks/rule';
 
-vi.mock('@adguard/agtree/parser', () => ({
-    FilterListParser: { parse: vi.fn() },
-}));
-
-vi.mock('../../../src/network-rule', async () => ({
-    ...(await vi.importActual('../../../src/network-rule')),
-    NetworkRule: { parseFromNode: vi.fn() },
-}));
+vi.mock('@adguard/agtree/parser', async () => {
+    const actual = await vi.importActual('@adguard/agtree/parser');
+    return {
+        ...actual,
+        FilterListParser: { parse: vi.fn() },
+    };
+});
 
 const createFilter = (rules: string[] = [], id = 1): IFilter => ({
     getId: () => id,
@@ -32,15 +33,16 @@ const createFilter = (rules: string[] = [], id = 1): IFilter => ({
 });
 
 const parserMock = vi.mocked(FilterListParser.parse);
-const parseFromNodeMock = vi.mocked(NetworkRule.parseFromNode);
+let parseFromNodeMock: MockInstance<typeof Rule.parseFromNode>;
 
 describe('RulesScanner', () => {
     beforeEach(() => {
+        parseFromNodeMock = vi.spyOn(Rule, 'parseFromNode');
         vi.clearAllMocks();
     });
 
     afterEach(() => {
-        vi.resetAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('scanFilters', () => {
@@ -55,7 +57,7 @@ describe('RulesScanner', () => {
                 }],
             };
             parserMock.mockReturnValueOnce(mockAst1 as any);
-            const mockRule1 = createNetworkRuleMock({
+            const mockRule1 = createRuleMock({
                 filterListId: 1,
                 pattern: filter1Rule1,
                 index: 0,
@@ -72,7 +74,7 @@ describe('RulesScanner', () => {
                 }],
             };
             parserMock.mockReturnValueOnce(mockAst2 as any);
-            const mockRule2 = createNetworkRuleMock({
+            const mockRule2 = createRuleMock({
                 filterListId: 2,
                 pattern: filter2Rule1,
                 index: 0,
@@ -116,13 +118,13 @@ describe('RulesScanner', () => {
                 ],
             };
             parserMock.mockReturnValue(mockAst as any);
-            const mockRule1 = createNetworkRuleMock({
+            const mockRule1 = createRuleMock({
                 filterListId: 1,
                 pattern: filterRule1,
                 index: 0,
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule1]);
-            const mockRule2 = createNetworkRuleMock({
+            const mockRule2 = createRuleMock({
                 filterListId: 1,
                 pattern: filterRule2,
                 index: 14,
@@ -162,17 +164,17 @@ describe('RulesScanner', () => {
                 ],
             };
             parserMock.mockReturnValue(mockAst as any);
-            const mockRule1 = createNetworkRuleMock({
+            const mockRule1 = createRuleMock({
                 filterListId: 1,
                 pattern: filterRule1,
                 enabledOptions: [],
                 index: 0,
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule1]);
-            const mockRule2 = createNetworkRuleMock({
+            const mockRule2 = createRuleMock({
                 filterListId: 1,
                 pattern: filterRule2,
-                enabledOptions: [NetworkRuleOption.Badfilter],
+                enabledOptions: [OPTION_NAMES.BADFILTER],
                 index: 14,
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule2]);
@@ -218,7 +220,7 @@ describe('RulesScanner', () => {
             });
         });
 
-        it('should handle NetworkRule creation errors', async () => {
+        it('should handle Rule creation errors', async () => {
             const filterRule = '||example.com^';
             const filter = createFilter([filterRule]);
             const mockAst = {
@@ -230,12 +232,12 @@ describe('RulesScanner', () => {
             };
             parserMock.mockReturnValue(mockAst as any);
             parseFromNodeMock.mockImplementation(() => {
-                throw new Error('NetworkRule creation failed');
+                throw new Error('Rule creation failed');
             });
 
             const result = await RulesScanner.scanFilters([filter]);
             expect(result).toEqual({
-                errors: [new Error('NetworkRule creation failed')],
+                errors: [new Error('Rule creation failed')],
                 filters: [{
                     id: 1,
                     rules: [],
@@ -244,7 +246,7 @@ describe('RulesScanner', () => {
             });
         });
 
-        it('should handle unknown errors during NetworkRule creation', async () => {
+        it('should handle unknown errors during Rule creation', async () => {
             const filterRule = '||example.com^';
             const filter = createFilter([filterRule]);
             const mockAst = {
@@ -300,19 +302,19 @@ describe('RulesScanner', () => {
                 ],
             };
             parserMock.mockReturnValue(mockAst as any);
-            const mockRule1 = createNetworkRuleMock({
+            const mockRule1 = createRuleMock({
                 filterListId: 1,
                 pattern: filterRule1,
                 index: 0,
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule1]);
-            const mockRule2 = createNetworkRuleMock({
+            const mockRule2 = createRuleMock({
                 filterListId: 1,
                 pattern: filterRule2,
                 index: 15,
             });
             parseFromNodeMock.mockReturnValueOnce([mockRule2]);
-            const mockRule3 = createNetworkRuleMock({
+            const mockRule3 = createRuleMock({
                 filterListId: 1,
                 pattern: filterRule3,
                 index: 30,
