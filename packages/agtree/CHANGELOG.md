@@ -7,12 +7,23 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## 4.1.0
+## 4.1.1
+
+### Added
+
+- uBO scriptlet compatibility mapping for `google-ima3`, enabling
+  ADG→UBO and UBO→ADG conversion of `google-ima3`/`google-ima` scriptlet rules
+  ([FiltersCompiler#274]).
+
+[FiltersCompiler#274]: https://github.com/AdguardTeam/FiltersCompiler/issues/274
+
+## [4.1.0-beta.0] - 2026-04-21
 
 ## Added
 
 - Path-in-domain syntax support for cosmetic rules [#169].
 
+[4.1.0-beta.0]:https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.1.0-beta.0
 [#169]: https://github.com/AdguardTeam/tsurlfilter/issues/169
 
 ## [4.0.4] - 2026-03-26

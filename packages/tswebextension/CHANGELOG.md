@@ -5,7 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 4.1.0
+## [4.1.2] - 2026-05-13
+
+### Fixed
+
+- Fixed false-negative CSS selector validation for comma-containing selectors
+  (e.g., `IMG[alt="Reklama"], .l-box--99.l-box > .text-center`). The browser's
+  `CSS.supports('selector(A, B)')` fails for top-level commas; the validator now
+  splits such selectors and validates each part individually.
+
+[4.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v4.1.2
+
+## [4.1.1] - 2026-04-24
+
+### Changed
+
+- Updated [@adguard/scriptlets] to `v2.4.2`.
+
+[4.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v4.1.1
+
+## [v4.1.0-beta.1] - 2026-04-17
 
 ### Added
 
@@ -20,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unloaded when the declarative filtering log is disabled.
 - `RuleSetsLoaderApi` now provides lazy metadata loaders that read from IndexedDB
   on demand instead of eagerly constructing heavy objects at ruleset creation time.
-- Updated [@adguard/tsurlfilter] to vX.X.X. <!-- TODO: update version before release -->
+- Updated [@adguard/tsurlfilter] to `v5.0.0-beta.1`.
 - Updated [@adguard/assistant] to `v4.4.3`.
 - Updated [@adguard/scriptlets] to `v2.4.0-beta`.
 
@@ -42,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `prepare` script from running (`.husky` is excluded via `.dockerignore`).
 - "Block ads manual" doesn't work on tabs opened before the update [AdguardBrowserExtension#3452].
 
+[v4.1.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v4.1.0-beta.1
 [AdguardBrowserExtension#3393]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3393
 [AdguardBrowserExtension#3329]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3329
 [AdguardBrowserExtension#3414]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3414

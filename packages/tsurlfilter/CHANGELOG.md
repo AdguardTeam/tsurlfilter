@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 5.0.0
+## [v5.0.1] - 2026-04-24
+
+### Changed
+
+- Updated [@adguard/scriptlets] to `v2.4.2`.
+
+[v5.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v5.0.1
+
+## [v5.0.0-beta.1] - 2026-04-17
 
 ### Changed
 
@@ -24,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$removeparam` rules not stripping all tracking parameters
   when multiple rules match the same URL in MV3 [AdguardBrowserExtension#3444].
 
+[v5.0.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v5.0.0-beta.1
 [AdguardBrowserExtension#3444]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3444
 
 ## [4.0.5] - 2026-03-26
