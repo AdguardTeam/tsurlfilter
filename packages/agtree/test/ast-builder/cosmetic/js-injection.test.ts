@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import type { JsInjectionRule } from '../../../src/nodes-new';
+import { SYNTAX_ADG } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
 
@@ -13,7 +14,7 @@ describe('RuleParser — ADG JS injection rules', () => {
 
             expect(ast.type).toBe('JsInjectionRule');
             expect(ast.category).toBe('Cosmetic');
-            expect(ast.syntax).toBe('AdGuard');
+            expect(ast.syntax).toBe(SYNTAX_ADG);
             expect(ast.exception).toBe(false);
             expect(ast.body.type).toBe('Value');
             expect(ast.body.value).toBe('let a = 2;');

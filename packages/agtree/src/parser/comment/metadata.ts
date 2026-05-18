@@ -11,7 +11,8 @@
  * [2] HEADER_START - Start of header name
  * [3] HEADER_END - End of header name
  * [4] VALUE_START - Start of value (after colon)
- * [5] VALUE_END - End of value.
+ * [5] VALUE_END - End of value
+ * [6] MARKER_IS_HASH - 1 if marker is `#`, 0 if `!`.
  *
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#special-comments}
  */
@@ -47,6 +48,11 @@ export const CM_META_VALUE_START_OFFSET = 4;
  * Buffer offset: end of value.
  */
 export const CM_META_VALUE_END_OFFSET = 5;
+
+/**
+ * Buffer offset: 1 if the marker character is `#`, 0 if `!`.
+ */
+export const CM_META_MARKER_IS_HASH = 6;
 
 /**
  * Known metadata header names (lowercase for comparison).
@@ -131,6 +137,7 @@ export class MetadataCommentParser implements StructuralParser {
         // Skip leading whitespace, then consume marker
         let ti = skipWs(ctx, startTi);
 
+        const markerTi = ti;
         const markerStart = tokenStart(ctx, ti);
 
         // skip `!` or `#`
@@ -212,6 +219,7 @@ export class MetadataCommentParser implements StructuralParser {
         data[dataOffset + CM_META_HEADER_END_OFFSET] = headerEnd;
         data[dataOffset + CM_META_VALUE_START_OFFSET] = valueStart;
         data[dataOffset + CM_META_VALUE_END_OFFSET] = valueEnd;
+        data[dataOffset + CM_META_MARKER_IS_HASH] = ctx.types[markerTi] === TokenType.HashMark ? 1 : 0;
     }
 
     /**

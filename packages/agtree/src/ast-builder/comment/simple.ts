@@ -6,11 +6,17 @@
 
 import { type CommentRule, CommentRuleType, RuleCategory } from '../../nodes-new';
 import {
+    CM_SIMPLE_MARKER_IS_HASH,
     CM_SIMPLE_MARKER_OFFSET,
     CM_SIMPLE_TEXT_END_OFFSET,
     CM_SIMPLE_TEXT_START_OFFSET,
 } from '../../parser/comment/simple';
-import { AdblockSyntax } from '../../utils/adblockers';
+import {
+    SYNTAX_ADG,
+    SYNTAX_ALL,
+    SYNTAX_UBO,
+    type SyntaxFlags,
+} from '../../utils/syntax-flags';
 import { ValueAstBuilder } from '../misc/value';
 import type { ParseOptions } from '../options';
 
@@ -37,6 +43,7 @@ export class SimpleCommentAstBuilder {
         const markerStart = data[dataOffset + CM_SIMPLE_MARKER_OFFSET];
         const textStart = data[dataOffset + CM_SIMPLE_TEXT_START_OFFSET];
         const textEnd = data[dataOffset + CM_SIMPLE_TEXT_END_OFFSET];
+        const isHash = data[dataOffset + CM_SIMPLE_MARKER_IS_HASH] === 1;
 
         const marker = ValueAstBuilder.parse(source, markerStart, markerStart + 1, options.isLocIncluded ?? false);
         const text = ValueAstBuilder.parse(source, textStart, textEnd, options.isLocIncluded ?? false);
@@ -44,7 +51,7 @@ export class SimpleCommentAstBuilder {
         const result: CommentRule = {
             type: CommentRuleType.CommentRule,
             category: RuleCategory.Comment,
-            syntax: AdblockSyntax.Common,
+            syntax: isHash ? (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags : SYNTAX_ALL,
             marker,
             text,
         };

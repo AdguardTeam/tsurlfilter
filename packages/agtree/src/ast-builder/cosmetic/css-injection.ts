@@ -55,8 +55,8 @@ import { DeclarationListParser } from '../../parser/css/declaration-list';
 import { DEFAULT_MAX_DECLARATIONS } from '../../parser/css/declaration-list/constants';
 import { SelectorListParser } from '../../parser/css/selector-list';
 import { DEFAULT_MAX_COMPLEX } from '../../parser/css/selector-list/constants';
-import { AdblockSyntax } from '../../utils/adblockers';
 import { COMMA } from '../../utils/constants';
+import { SYNTAX_ADG } from '../../utils/syntax-flags';
 import { DomainListAstBuilder } from '../misc/domain-list';
 import { ModifierListAstBuilder } from '../misc/modifier-list';
 import { type ParseOptions } from '../options';
@@ -251,7 +251,7 @@ export class CssInjectionAstBuilder {
         const rule: CssInjectionRule = {
             category: RuleCategory.Cosmetic,
             type: CosmeticRuleType.CssInjectionRule,
-            syntax: AdblockSyntax.Adg,
+            syntax: SYNTAX_ADG,
             exception,
             modifiers,
             domains,

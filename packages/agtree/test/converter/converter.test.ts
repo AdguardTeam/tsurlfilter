@@ -849,7 +849,7 @@ describe('Converter integration tests', () => {
                 // does not supported natively by any browser
                 {
                     actual: '#?#*:contains(foo)',
-                    expected: ['##*:contains(foo)'],
+                    expected: ["##*:has-text('foo')"],
                     shouldConvert: true,
                 },
                 {

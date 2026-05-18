@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import type { CssInjectionRule, Raw } from '../../../src/nodes-new';
+import { SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
 
@@ -10,7 +11,7 @@ describe('UboCssInjectionAstBuilder — :style() rules', () => {
         const ast = parser.parse('##body:style(padding: 0;)') as CssInjectionRule;
 
         expect(ast.type).toBe('CssInjectionRule');
-        expect(ast.syntax).toBe('UblockOrigin');
+        expect(ast.syntax).toBe(SYNTAX_UBO);
         expect(ast.exception).toBe(false);
         expect(ast.body.type).toBe('CssInjectionRuleBody');
         expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'body' });
@@ -23,7 +24,7 @@ describe('UboCssInjectionAstBuilder — :style() rules', () => {
         const ast = parser.parse('example.com##h1:style(background-color: blue !important)') as CssInjectionRule;
 
         expect(ast.type).toBe('CssInjectionRule');
-        expect(ast.syntax).toBe('UblockOrigin');
+        expect(ast.syntax).toBe(SYNTAX_UBO);
         expect(ast.domains.children).toHaveLength(1);
         expect(ast.domains.children[0].value).toBe('example.com');
         expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'h1' });
@@ -79,7 +80,7 @@ describe('UboCssInjectionAstBuilder — :remove() rules', () => {
         const ast = parser.parse('##.ads:remove()') as CssInjectionRule;
 
         expect(ast.type).toBe('CssInjectionRule');
-        expect(ast.syntax).toBe('UblockOrigin');
+        expect(ast.syntax).toBe(SYNTAX_UBO);
         expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: '.ads' });
         expect(ast.body.declarationList).toBeUndefined();
         expect(ast.body.remove).toBe(true);
@@ -159,7 +160,7 @@ describe('UboCssInjectionAstBuilder — complex rule', () => {
         const ast = parser.parse(src) as CssInjectionRule;
 
         expect(ast.exception).toBe(true);
-        expect(ast.syntax).toBe('UblockOrigin');
+        expect(ast.syntax).toBe(SYNTAX_UBO);
         expect(ast.domains.children).toHaveLength(2);
         expect(ast.domains.children[0].value).toBe('example.com');
         expect(ast.domains.children[1].value).toBe('example.net');

@@ -33,7 +33,7 @@ import {
     CR_SEP_LEN_SHIFT,
     CR_SEP_SOURCE_START,
 } from '../../parser/cosmetic/constants';
-import { AdblockSyntax } from '../../utils/adblockers';
+import { SYNTAX_ADG } from '../../utils/syntax-flags';
 import { DomainListAstBuilder } from '../misc/domain-list';
 import { ModifierListAstBuilder } from '../misc/modifier-list';
 import { type ParseOptions } from '../options';
@@ -133,7 +133,7 @@ export class JsInjectionAstBuilder {
         const rule: JsInjectionRule = {
             category: RuleCategory.Cosmetic,
             type: CosmeticRuleType.JsInjectionRule,
-            syntax: AdblockSyntax.Adg,
+            syntax: SYNTAX_ADG,
             exception,
             modifiers,
             domains,

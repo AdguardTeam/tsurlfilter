@@ -59,8 +59,8 @@ import { SelectorListParser } from '../../parser/css/selector-list';
 import { DEFAULT_MAX_COMPLEX } from '../../parser/css/selector-list/constants';
 import { MODIFIER_FLAG_NEGATED, NO_VALUE } from '../../parser/network/constants';
 import { Tokenizer } from '../../tokenizer/tokenizer';
-import { AdblockSyntax } from '../../utils/adblockers';
 import { COMMA } from '../../utils/constants';
+import { SYNTAX_UBO } from '../../utils/syntax-flags';
 import { DomainListAstBuilder } from '../misc/domain-list';
 import { type ParseOptions } from '../options';
 
@@ -320,7 +320,7 @@ export class UboCssInjectionAstBuilder {
         const rule: CssInjectionRule = {
             category: RuleCategory.Cosmetic,
             type: CosmeticRuleType.CssInjectionRule,
-            syntax: AdblockSyntax.Ubo,
+            syntax: SYNTAX_UBO,
             exception,
             modifiers,
             domains,

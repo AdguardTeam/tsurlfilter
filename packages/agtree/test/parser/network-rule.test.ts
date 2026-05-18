@@ -113,7 +113,7 @@ describe('parseNetworkRule', () => {
             expect(ModifierParser.getValue(source, d, 0)).toBe('/regex$/');
         });
 
-        test('$ at end of modifier value is not a separator', () => {
+        test('$ at end of non-regex modifier value is not a separator', () => {
             const source = '||example.com^$removeparam=id$';
             const d = parse(source);
 
@@ -133,6 +133,18 @@ describe('parseNetworkRule', () => {
             expect(ModifierListParser.getCount(d)).toBe(1);
             expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
             expect(ModifierParser.getValue(source, d, 0)).toBe('/^id\\$$/');
+        });
+
+        test('complex regex with $ end anchor in modifier value', () => {
+            // Real-world rule: $ at end is a regex end anchor, not a rule separator
+            const source = '||www.amazon.$removeparam=/^[a-z_]{1,20}=[a-zA-Z0-9._-]{80,}$/';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(NetworkRuleParser.getPattern(source, d)).toBe('||www.amazon.');
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('removeparam');
+            expect(ModifierParser.getValue(source, d, 0)).toBe('/^[a-z_]{1,20}=[a-zA-Z0-9._-]{80,}$/');
         });
 
         test('pattern-only rule with $', () => {

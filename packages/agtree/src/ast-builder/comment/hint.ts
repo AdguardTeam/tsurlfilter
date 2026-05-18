@@ -24,7 +24,7 @@ import {
 import { createParserContext, initParserContext } from '../../parser/context';
 import { ParameterListParser as ParameterListStage2Parser, PL_BUFFER_SIZE } from '../../parser/misc/parameter-list';
 import { Tokenizer } from '../../tokenizer/tokenizer';
-import { AdblockSyntax } from '../../utils/adblockers';
+import { SYNTAX_ADG } from '../../utils/syntax-flags';
 import { ParameterListAstBuilder } from '../misc/parameter-list';
 import { ValueAstBuilder } from '../misc/value';
 import type { ParseOptions } from '../options';
@@ -139,7 +139,7 @@ export class HintCommentAstBuilder {
         const result: HintCommentRule = {
             type: CommentRuleType.HintCommentRule,
             category: RuleCategory.Comment,
-            syntax: AdblockSyntax.Adg,
+            syntax: SYNTAX_ADG,
             children,
         };
 

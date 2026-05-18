@@ -319,6 +319,13 @@ export const CR_FLAG_BODY_UBO_RESPONSEHEADER = 1 << 12;
  */
 export const CR_FLAG_BODY_UBO_CSS_INJECTION = 1 << 13;
 
+/**
+ * Cosmetic rule flag bit: body is ABP CSS injection (element hiding separator
+ * with a CSS declaration block body, e.g., `##div { color: red; }`).
+ * Only set when sub-kind is CR_SEP_KIND_ELEMENT_HIDING.
+ */
+export const CR_FLAG_BODY_ABP_CSS_INJECTION = 1 << 14;
+
 // ---------------------------------------------------------------------------
 // HTML filtering responseheader data layout
 // ---------------------------------------------------------------------------

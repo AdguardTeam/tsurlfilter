@@ -1,4 +1,4 @@
-import { getAdblockSyntax } from '../../common/agent-common';
+import { getAdblockSyntaxLegacy } from '../../common/agent-common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { type Agent, type Value } from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
@@ -87,7 +87,7 @@ export class AgentParser extends BaseParser {
 
                 name = ValueParser.parse(parsedNamePart, options, baseOffset + nameStartIndex);
                 version = ValueParser.parse(part, options, baseOffset + offset);
-                syntax = getAdblockSyntax(parsedNamePart);
+                syntax = getAdblockSyntaxLegacy(parsedNamePart);
             } else {
                 nameEndIndex = partEnd;
             }
@@ -100,7 +100,7 @@ export class AgentParser extends BaseParser {
         if (isUndefined(name)) {
             const parsedNamePart = raw.slice(nameStartIndex, nameEndIndex);
             name = ValueParser.parse(parsedNamePart, options, baseOffset + nameStartIndex);
-            syntax = getAdblockSyntax(parsedNamePart);
+            syntax = getAdblockSyntaxLegacy(parsedNamePart);
         }
 
         // Agent name cannot be empty

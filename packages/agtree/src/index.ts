@@ -124,6 +124,17 @@ export {
     UBO_SCRIPTLET_MASK,
 } from './utils/constants';
 export { AdblockSyntax, AdblockProduct, getHumanReadableProductName } from './utils/adblockers';
+export {
+    hasAllProducts,
+    hasProduct,
+    isUnknown,
+    SYNTAX_ABP,
+    SYNTAX_ADG,
+    SYNTAX_ALL,
+    SYNTAX_UBO,
+    SYNTAX_UNKNOWN,
+} from './utils/syntax-flags';
+export type { SyntaxFlags } from './utils/syntax-flags';
 export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './utils/cosmetic-rule-separator';
 export { DomainUtils } from './utils/domain';
 export { type VariableTable, LogicalExpressionUtils } from './utils/logical-expression';

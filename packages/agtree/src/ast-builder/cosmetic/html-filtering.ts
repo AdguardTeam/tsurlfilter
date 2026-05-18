@@ -46,7 +46,7 @@ import {
     HF_FN_NAME_START,
 } from '../../parser/cosmetic/constants';
 import { DEFAULT_MAX_COMPLEX } from '../../parser/css/selector-list/constants';
-import { AdblockSyntax } from '../../utils/adblockers';
+import { SYNTAX_ADG, SYNTAX_UBO } from '../../utils/syntax-flags';
 import { DomainListAstBuilder } from '../misc/domain-list';
 import { ModifierListAstBuilder } from '../misc/modifier-list';
 import type { ParseOptions } from '../options';
@@ -95,8 +95,8 @@ export class HtmlFilteringAstBuilder {
 
         // Determine syntax from sep-kind
         const syntax = sepKind === CR_SEP_KIND_ADG_HTML_FILTERING
-            ? AdblockSyntax.Adg
-            : AdblockSyntax.Ubo;
+            ? SYNTAX_ADG
+            : SYNTAX_UBO;
 
         // Read domain count and parse domains
         const domainCount = data[dataOffset + CR_DOMAIN_COUNT];

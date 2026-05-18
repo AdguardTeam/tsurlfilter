@@ -17,7 +17,7 @@ import {
     NR_PATTERN_END_OFFSET,
     NR_PATTERN_START_OFFSET,
 } from '../../parser/network/constants';
-import { AdblockSyntax } from '../../utils/adblockers';
+import { SYNTAX_ALL } from '../../utils/syntax-flags';
 import { ModifierListAstBuilder } from '../misc/modifier-list';
 import { ValueAstBuilder } from '../misc/value';
 import type { ParseOptions } from '../options';
@@ -70,7 +70,7 @@ export class NetworkRuleAstBuilder {
         const result: NetworkRule = {
             type: NetworkRuleType.NetworkRule,
             category: RuleCategory.Network,
-            syntax: AdblockSyntax.Common,
+            syntax: SYNTAX_ALL,
             exception: (flags & NR_FLAG_EXCEPTION) !== 0,
             pattern,
             modifiers,

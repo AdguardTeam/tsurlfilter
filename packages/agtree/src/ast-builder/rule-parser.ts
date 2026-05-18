@@ -58,7 +58,7 @@ import {
 } from '../parser/cosmetic/constants';
 import { RuleKind, RuleParser } from '../parser/rule';
 import { Tokenizer } from '../tokenizer/tokenizer';
-import { AdblockSyntax } from '../utils/adblockers';
+import { SYNTAX_ALL, SYNTAX_UNKNOWN } from '../utils/syntax-flags';
 
 import type { ParserCapacity } from './capacity';
 import { CommentAstBuilder } from './comment/comment';
@@ -162,7 +162,7 @@ function createIgnoredRule(
     const result: InvalidRule = {
         type: NodeType.InvalidRule,
         category: RuleCategory.Invalid,
-        syntax: AdblockSyntax.Common,
+        syntax: SYNTAX_UNKNOWN,
         raw: source.slice(start, end),
         error,
     };
@@ -276,7 +276,7 @@ export class RuleParserPipeline {
             const result: EmptyRule = {
                 type: NodeType.EmptyRule,
                 category: RuleCategory.Empty,
-                syntax: AdblockSyntax.Common,
+                syntax: SYNTAX_ALL,
             };
 
             if (options?.isLocIncluded) {

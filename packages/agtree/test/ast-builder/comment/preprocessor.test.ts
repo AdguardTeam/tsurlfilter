@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { SYNTAX_ADG, SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 import { parseCommentRule } from '../../helpers/parse-helpers';
 
 describe('CommentAstBuilder — preprocessor comments', () => {
@@ -10,7 +11,7 @@ describe('CommentAstBuilder — preprocessor comments', () => {
                 start: 0,
                 end: 7,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
                 name: {
                     type: 'Value',
                     start: 2,
@@ -26,7 +27,7 @@ describe('CommentAstBuilder — preprocessor comments', () => {
                 start: 0,
                 end: 29,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
                 name: {
                     type: 'Value',
                     start: 2,
@@ -48,7 +49,7 @@ describe('CommentAstBuilder — preprocessor comments', () => {
                 start: 0,
                 end: 14,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
                 name: {
                     type: 'Value',
                     start: 2,
@@ -75,7 +76,7 @@ describe('CommentAstBuilder — preprocessor comments', () => {
                 start: 0,
                 end: 19,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
                 name: {
                     type: 'Value',
                     start: 2,
@@ -102,7 +103,7 @@ describe('CommentAstBuilder — preprocessor comments', () => {
                 start: 0,
                 end: 12,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
                 name: {
                     type: 'Value',
                     start: 2,
@@ -126,7 +127,7 @@ describe('CommentAstBuilder — preprocessor comments', () => {
                 start: 0,
                 end: 38,
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 name: {
                     type: 'Value',
                     start: 2,
@@ -155,7 +156,7 @@ describe('CommentAstBuilder — preprocessor comments', () => {
             expect(parseCommentRule('!#endif')).toEqual({
                 type: 'PreProcessorCommentRule',
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
                 name: {
                     type: 'Value',
                     value: 'endif',
@@ -167,7 +168,7 @@ describe('CommentAstBuilder — preprocessor comments', () => {
             expect(parseCommentRule('!#include ../sections/ads.txt')).toEqual({
                 type: 'PreProcessorCommentRule',
                 category: 'Comment',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
                 name: {
                     type: 'Value',
                     value: 'include',

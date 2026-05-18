@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
+import { SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
 
@@ -10,7 +11,7 @@ describe('RuleParser — uBO selector modifiers', () => {
             const ast = parser.parse('##:matches-path(/page) .ad') as any;
 
             expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
             expect(ast.body.selectorList.value).toBe('.ad');
             expect(ast.modifiers).toBeDefined();
             expect(ast.modifiers.children).toHaveLength(1);
@@ -23,7 +24,7 @@ describe('RuleParser — uBO selector modifiers', () => {
             const ast = parser.parse('example.com##:matches-path(/page) .ad') as any;
 
             expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
             expect(ast.body.selectorList.value).toBe('.ad');
             expect(ast.modifiers.children[0].name.value).toBe('matches-path');
             expect(ast.modifiers.children[0].value.value).toBe('/page');
@@ -34,7 +35,7 @@ describe('RuleParser — uBO selector modifiers', () => {
             const ast = parser.parse('##.ad:matches-path(/page)') as any;
 
             expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
             expect(ast.body.selectorList.value).toBe('.ad');
             expect(ast.modifiers.children[0].name.value).toBe('matches-path');
             expect(ast.modifiers.children[0].value.value).toBe('/page');
@@ -44,7 +45,7 @@ describe('RuleParser — uBO selector modifiers', () => {
             const ast = parser.parse('##:matches-path(/\\/(sub1|sub2)\\/page/) .ad') as any;
 
             expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
             expect(ast.body.selectorList.value).toBe('.ad');
             expect(ast.modifiers.children[0].name.value).toBe('matches-path');
             expect(ast.modifiers.children[0].value.value).toBe('/\\/(sub1|sub2)\\/page/');
@@ -56,7 +57,7 @@ describe('RuleParser — uBO selector modifiers', () => {
             const ast = parser.parse('##:matches-media((min-width: 1024px)) .ad') as any;
 
             expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
             expect(ast.body.selectorList.value).toBe('.ad');
             expect(ast.modifiers.children).toHaveLength(1);
             expect(ast.modifiers.children[0].name.value).toBe('matches-media');
@@ -69,7 +70,7 @@ describe('RuleParser — uBO selector modifiers', () => {
             const ast = parser.parse('##:not(:matches-path(/exclude)) .foo') as any;
 
             expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
             expect(ast.body.selectorList.value).toBe('.foo');
             expect(ast.modifiers.children).toHaveLength(1);
             expect(ast.modifiers.children[0].name.value).toBe('matches-path');
@@ -81,7 +82,7 @@ describe('RuleParser — uBO selector modifiers', () => {
             const ast = parser.parse('##:not(:not(:matches-path(/path))) .foo') as any;
 
             expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
             expect(ast.body.selectorList.value).toBe('.foo');
             expect(ast.modifiers.children[0].name.value).toBe('matches-path');
             expect(ast.modifiers.children[0].value.value).toBe('/path');
@@ -92,7 +93,7 @@ describe('RuleParser — uBO selector modifiers', () => {
             const ast = parser.parse('##:not(:not(:not(:matches-path(/path)))) .foo') as any;
 
             expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
             expect(ast.body.selectorList.value).toBe('.foo');
             expect(ast.modifiers.children[0].name.value).toBe('matches-path');
             expect(ast.modifiers.children[0].value.value).toBe('/path');
@@ -106,7 +107,7 @@ describe('RuleParser — uBO selector modifiers', () => {
             const ast = parser.parse('##:matches-path(/page):matches-media((min-width: 1024px)) .ad') as any;
 
             expect(ast.type).toBe('ElementHidingRule');
-            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
             expect(ast.body.selectorList.value).toBe('.ad');
             expect(ast.modifiers.children).toHaveLength(2);
             expect(ast.modifiers.children[0].name.value).toBe('matches-path');

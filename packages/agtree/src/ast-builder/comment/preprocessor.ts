@@ -14,7 +14,7 @@ import {
     CM_PREP_PL_DATA_OFFSET,
 } from '../../parser/comment/preprocessor';
 import { regionEquals } from '../../parser/context';
-import { AdblockSyntax } from '../../utils/adblockers';
+import { SYNTAX_ADG, SYNTAX_UBO, type SyntaxFlags } from '../../utils/syntax-flags';
 import { LogicalExpressionAstBuilder } from '../misc/logical-expression';
 import { ParameterListAstBuilder } from '../misc/parameter-list';
 import { ValueAstBuilder } from '../misc/value';
@@ -22,6 +22,29 @@ import type { ParseOptions } from '../options';
 
 const IF_DIRECTIVE = 'if';
 const SAFARI_CB_AFFINITY_DIRECTIVE = 'safari_cb_affinity';
+
+/**
+ * Explicit compatibility table for preprocessor directives.
+ *
+ * Maps directive names to their syntax bitflags. Directives not in this table
+ * default to `SYNTAX_ADG | SYNTAX_UBO` since the `!#` prefix itself is only
+ * recognized by AdGuard and uBlock Origin.
+ *
+ * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#pre-processor-directives
+ * @see https://github.com/nickspaargaren/no-google/wiki/AdGuard-Specific-Syntax#pre-processor-directives
+ */
+const DIRECTIVE_SYNTAX: ReadonlyMap<string, SyntaxFlags> = new Map([
+    // Conditional compilation — both ADG and UBO
+    ['if', (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags],
+    ['else', (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags],
+    ['endif', (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags],
+
+    // File inclusion — both ADG and UBO
+    ['include', (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags],
+
+    // AdGuard-only directives
+    ['safari_cb_affinity', SYNTAX_ADG],
+]);
 
 /**
  * Builds {@link PreProcessorCommentRule} AST nodes from parsed data.
@@ -56,10 +79,17 @@ export class PreprocessorCommentAstBuilder {
 
         const name = ValueAstBuilder.parse(source, nameStart, nameEnd, options.isLocIncluded ?? false);
 
+        // Look up directive syntax from the explicit compatibility table.
+        // Default to ADG | UBO for any directive not in the table, since the
+        // `!#` prefix itself is only recognized by AdGuard and uBlock Origin.
+        const directiveName = source.slice(nameStart, nameEnd);
+        const syntax: SyntaxFlags = DIRECTIVE_SYNTAX.get(directiveName)
+            ?? (SYNTAX_ADG | SYNTAX_UBO) as SyntaxFlags;
+
         const result: PreProcessorCommentRule = {
             type: CommentRuleType.PreProcessorCommentRule,
             category: RuleCategory.Comment,
-            syntax: AdblockSyntax.Adg,
+            syntax,
             name,
         };
 

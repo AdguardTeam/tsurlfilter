@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import type { HtmlFilteringRule } from '../../../src/nodes-new';
+import { SYNTAX_ADG, SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
 
@@ -16,7 +17,7 @@ describe('RuleParser — HTML filtering rules', () => {
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
                 category: 'Cosmetic',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 exception: false,
                 start: 0,
                 end: 31,
@@ -47,7 +48,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 exception: false,
                 separator: {
                     type: 'Value',
@@ -67,7 +68,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 exception: true,
                 separator: {
                     type: 'Value',
@@ -91,7 +92,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 exception: false,
                 domains: {
                     type: 'DomainList',
@@ -135,7 +136,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 exception: true,
                 separator: {
                     type: 'Value',
@@ -162,7 +163,7 @@ describe('RuleParser — HTML filtering rules', () => {
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
                 category: 'Cosmetic',
-                syntax: 'UblockOrigin',
+                syntax: SYNTAX_UBO,
                 exception: false,
                 start: 0,
                 end: 27,
@@ -193,7 +194,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'UblockOrigin',
+                syntax: SYNTAX_UBO,
                 exception: true,
                 separator: {
                     type: 'Value',
@@ -217,7 +218,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'UblockOrigin',
+                syntax: SYNTAX_UBO,
                 exception: false,
                 domains: {
                     type: 'DomainList',
@@ -253,7 +254,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'UblockOrigin',
+                syntax: SYNTAX_UBO,
                 exception: true,
                 separator: {
                     type: 'Value',
@@ -273,7 +274,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'UblockOrigin',
+                syntax: SYNTAX_UBO,
                 exception: false,
                 body: {
                     type: 'Value',
@@ -302,7 +303,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 exception: false,
                 body: {
                     type: 'HtmlFilteringRuleBody',
@@ -345,7 +346,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 body: {
                     type: 'HtmlFilteringRuleBody',
                     selectorList: {
@@ -379,7 +380,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 domains: {
                     type: 'DomainList',
                     children: [{
@@ -408,7 +409,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
                 body: {
                     type: 'HtmlFilteringRuleBody',
                     selectorList: {
@@ -446,7 +447,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'UblockOrigin',
+                syntax: SYNTAX_UBO,
                 exception: false,
                 body: {
                     type: 'HtmlFilteringRuleBody',
@@ -485,7 +486,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'UblockOrigin',
+                syntax: SYNTAX_UBO,
                 domains: {
                     type: 'DomainList',
                     children: [{
@@ -510,7 +511,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'UblockOrigin',
+                syntax: SYNTAX_UBO,
                 exception: true,
                 body: {
                     type: 'HtmlFilteringRuleBody',
@@ -528,7 +529,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'UblockOrigin',
+                syntax: SYNTAX_UBO,
                 exception: false,
                 body: {
                     type: 'HtmlFilteringRuleBody',
@@ -561,7 +562,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'UblockOrigin',
+                syntax: SYNTAX_UBO,
                 domains: {
                     type: 'DomainList',
                     children: [{
@@ -599,7 +600,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'AdGuard',
+                syntax: SYNTAX_ADG,
             });
             expect(ast).not.toHaveProperty('start');
             expect(ast).not.toHaveProperty('end');
@@ -612,7 +613,7 @@ describe('RuleParser — HTML filtering rules', () => {
 
             expect(ast).toMatchObject({
                 type: 'HtmlFilteringRule',
-                syntax: 'UblockOrigin',
+                syntax: SYNTAX_UBO,
             });
             expect(ast).not.toHaveProperty('start');
             expect(ast).not.toHaveProperty('end');

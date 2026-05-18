@@ -173,17 +173,54 @@ export class CosmeticRuleConverter extends RuleConverterBase {
             case CosmeticRuleType.HtmlFilteringRule:
                 return HtmlRuleConverter.convertToUbo(rule);
             case CosmeticRuleType.ElementHidingRule: {
-                // Check if the rule is a simple hiding rule
-                // TODO: Handle elemhide rules with extended CSS pseudos even if type is not marked explicitly
-                const isElementHidingRule = (
-                    rule.separator.value === CosmeticRuleSeparator.ElementHidingException
-                    || rule.separator.value === CosmeticRuleSeparator.ElementHiding
-                );
+                const elemHideResult = ElementHidingRuleConverter.convertToUbo(rule);
 
-                if (isElementHidingRule && !rule.modifiers) {
-                    return createNodeConversionResult([rule], false);
+                // If no modifiers to convert, return the sub-converter result directly.
+                // ElementHidingRuleConverter.convertToUbo() already handles
+                // selector conversion and separator normalization.
+                if (!rule.modifiers) {
+                    return elemHideResult;
                 }
-                break;
+
+                // For rules with modifiers, apply modifier conversion on top
+                let convertedModifiers: ConversionResult<{
+                    modifierList: ModifierList;
+                    domains?: DomainList;
+                }> | undefined;
+
+                if (rule.syntax === AdblockSyntax.Abp) {
+                    throw new RuleConversionError('ABP does not support cosmetic rule modifiers');
+                } else if (rule.syntax === AdblockSyntax.Adg) {
+                    convertedModifiers = UboCosmeticRuleModifierConverter.convertFromAdg(rule.modifiers);
+                }
+
+                const wasConverted = elemHideResult.isConverted || (convertedModifiers?.isConverted ?? false);
+
+                // Use converted rule if available, otherwise clone original
+                const result = elemHideResult.isConverted
+                    ? elemHideResult.result[0]
+                    : clone(rule);
+
+                if (convertedModifiers?.isConverted) {
+                    result.modifiers = convertedModifiers.result.modifierList;
+
+                    if (convertedModifiers.result.domains) {
+                        result.domains = convertedModifiers.result.domains;
+                        result.domains.separator = COMMA;
+                    }
+                }
+
+                // Separator normalization is already handled by
+                // ElementHidingRuleConverter.convertToUbo() when elemHideResult.isConverted,
+                // but we still need it for the clone(rule) path.
+                if (!elemHideResult.isConverted) {
+                    result.syntax = AdblockSyntax.Ubo;
+                    result.separator.value = rule.exception
+                        ? CosmeticRuleSeparator.ElementHidingException
+                        : CosmeticRuleSeparator.ElementHiding;
+                }
+
+                return createNodeConversionResult([result], wasConverted);
             }
             case CosmeticRuleType.ScriptletInjectionRule:
                 return ScriptletRuleConverter.convertToUbo(rule);

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { SYNTAX_ADG, SYNTAX_ALL, SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 import { parseCommentRule } from '../../helpers/parse-helpers';
 
 describe('CommentAstBuilder — metadata comments', () => {
@@ -10,7 +11,7 @@ describe('CommentAstBuilder — metadata comments', () => {
                 start: 0,
                 end: 25,
                 category: 'Comment',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 marker: {
                     type: 'Value',
                     start: 0,
@@ -38,7 +39,7 @@ describe('CommentAstBuilder — metadata comments', () => {
                 start: 0,
                 end: 25,
                 category: 'Comment',
-                syntax: 'Common',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
                 marker: {
                     type: 'Value',
                     start: 0,
@@ -66,7 +67,7 @@ describe('CommentAstBuilder — metadata comments', () => {
                 start: 0,
                 end: 25,
                 category: 'Comment',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 marker: {
                     type: 'Value',
                     start: 0,
@@ -94,7 +95,7 @@ describe('CommentAstBuilder — metadata comments', () => {
                 start: 0,
                 end: 24,
                 category: 'Comment',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 marker: {
                     type: 'Value',
                     start: 0,
@@ -124,7 +125,7 @@ describe('CommentAstBuilder — metadata comments', () => {
                 start: 0,
                 end: 57,
                 category: 'Comment',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 marker: {
                     type: 'Value',
                     start: 0,
@@ -152,7 +153,7 @@ describe('CommentAstBuilder — metadata comments', () => {
                 start: 0,
                 end: 27,
                 category: 'Comment',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 marker: {
                     type: 'Value',
                     start: 0,
@@ -180,7 +181,7 @@ describe('CommentAstBuilder — metadata comments', () => {
                 start: 0,
                 end: 27,
                 category: 'Comment',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 marker: {
                     type: 'Value',
                     start: 0,
@@ -208,7 +209,7 @@ describe('CommentAstBuilder — metadata comments', () => {
                 start: 0,
                 end: 24,
                 category: 'Comment',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 marker: {
                     type: 'Value',
                     start: 0,
@@ -236,7 +237,7 @@ describe('CommentAstBuilder — metadata comments', () => {
             expect(parseCommentRule('! Title: FilterList Title')).toEqual({
                 type: 'MetadataCommentRule',
                 category: 'Comment',
-                syntax: 'Common',
+                syntax: SYNTAX_ALL,
                 marker: {
                     type: 'Value',
                     value: '!',
@@ -256,7 +257,7 @@ describe('CommentAstBuilder — metadata comments', () => {
             expect(parseCommentRule('# Title: FilterList Title')).toEqual({
                 type: 'MetadataCommentRule',
                 category: 'Comment',
-                syntax: 'Common',
+                syntax: SYNTAX_ADG | SYNTAX_UBO,
                 marker: {
                     type: 'Value',
                     value: '#',

@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import type { ScriptletInjectionRule } from '../../../src/nodes-new';
 import { QuoteType } from '../../../src/utils/quotes';
+import { SYNTAX_ABP, SYNTAX_ADG, SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
 
@@ -14,7 +15,7 @@ describe('RuleParser — ADG scriptlet injection rules', () => {
 
             expect(ast.type).toBe('ScriptletInjectionRule');
             expect(ast.category).toBe('Cosmetic');
-            expect(ast.syntax).toBe('AdGuard');
+            expect(ast.syntax).toBe(SYNTAX_ADG);
             expect(ast.exception).toBe(false);
             expect(ast.body.type).toBe('ScriptletInjectionRuleBody');
             expect(ast.body.children).toHaveLength(1);
@@ -185,7 +186,7 @@ describe('RuleParser — UBO scriptlet injection rules', () => {
             const ast = parser.parse(rule) as ScriptletInjectionRule;
 
             expect(ast.type).toBe('ScriptletInjectionRule');
-            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
             expect(ast.exception).toBe(false);
             expect(ast.separator.value).toBe('##');
             expect(ast.body.children).toHaveLength(1);
@@ -288,7 +289,7 @@ describe('RuleParser — UBO scriptlet injection rules', () => {
             const ast = parser.parse(rule) as ScriptletInjectionRule;
 
             expect(ast.type).toBe('ScriptletInjectionRule');
-            expect(ast.syntax).toBe('UblockOrigin');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
             expect(ast.body.children[0].children[0]).toMatchObject({
                 type: 'Parameter',
                 quoteType: QuoteType.None,
@@ -370,7 +371,7 @@ describe('RuleParser — ABP snippet injection rules', () => {
             const ast = parser.parse(rule) as ScriptletInjectionRule;
 
             expect(ast.type).toBe('ScriptletInjectionRule');
-            expect(ast.syntax).toBe('AdblockPlus');
+            expect(ast.syntax).toBe(SYNTAX_ABP);
             expect(ast.exception).toBe(false);
             expect(ast.separator.value).toBe('#$#');
             expect(ast.body.children).toHaveLength(1);

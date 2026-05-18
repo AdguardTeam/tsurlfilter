@@ -11,6 +11,7 @@ import { describe, expect, test } from 'vitest';
 import { RuleParserPipeline } from '../../src/ast-builder/rule-parser';
 import { createParserContext, initParserContext } from '../../src/parser/context';
 import { Tokenizer } from '../../src/tokenizer/tokenizer';
+import { SYNTAX_ADG, SYNTAX_UBO } from '../../src/utils/syntax-flags';
 
 const TOKEN_CAPACITY = 1024;
 const pipeline = new RuleParserPipeline();
@@ -94,7 +95,7 @@ describe('RuleParserPipeline.parseRange — cosmetic rules', () => {
 
         if (result.type === 'ScriptletInjectionRule') {
             expect(result.exception).toBe(false);
-            expect(result.syntax).toBe('AdGuard');
+            expect(result.syntax).toBe(SYNTAX_ADG);
         }
     });
 
@@ -108,7 +109,7 @@ describe('RuleParserPipeline.parseRange — cosmetic rules', () => {
 
         if (result.type === 'ScriptletInjectionRule') {
             expect(result.exception).toBe(false);
-            expect(result.syntax).toBe('UblockOrigin');
+            expect(result.syntax).toBe(SYNTAX_UBO);
         }
     });
 

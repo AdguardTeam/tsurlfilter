@@ -25,6 +25,7 @@ import {
     CR_BODY_END,
     CR_BODY_START,
     CR_DOMAIN_COUNT,
+    CR_FLAG_BODY_ABP_CSS_INJECTION,
     CR_FLAG_EXCEPTION,
     CR_FLAG_HAS_ADG_MODS,
     CR_FLAG_HAS_UBO_MODS,
@@ -45,7 +46,13 @@ import {
     UBO_MODIFIER_RECORD_STRIDE,
 } from '../../parser/cosmetic/constants';
 import { MODIFIER_FLAG_NEGATED, NO_VALUE } from '../../parser/network/constants';
-import { AdblockSyntax } from '../../utils/adblockers';
+import {
+    SYNTAX_ABP,
+    SYNTAX_ADG,
+    SYNTAX_ALL,
+    SYNTAX_UBO,
+    type SyntaxFlags,
+} from '../../utils/syntax-flags';
 import { DomainListAstBuilder } from '../misc/domain-list';
 import { ModifierListAstBuilder } from '../misc/modifier-list';
 
@@ -123,7 +130,7 @@ export class ElementHidingAstBuilder {
 
         // Build uBO modifiers and reconstruct cleaned selector if needed
         let modifiers: ModifierList | undefined;
-        let syntax: AdblockSyntax = AdblockSyntax.Common;
+        let syntax: SyntaxFlags = SYNTAX_ALL;
         let selectorListValue: string;
 
         if (hasUboMods) {
@@ -139,7 +146,7 @@ export class ElementHidingAstBuilder {
             const uboResult = ElementHidingAstBuilder.buildUboModifiers(source, data, uboModCount, bodyStart, bodyEnd, isLocIncluded, dataOffset);
             modifiers = uboResult.modifierList;
             selectorListValue = uboResult.cleanedSelector;
-            syntax = AdblockSyntax.Ubo;
+            syntax = SYNTAX_UBO;
         } else if (hasAdgMods) {
             modifiers = ModifierListAstBuilder.parse(
                 source,
@@ -149,9 +156,12 @@ export class ElementHidingAstBuilder {
                 dataOffset + CR_MODIFIER_RECORDS_OFFSET,
             );
             selectorListValue = bodyEnd > bodyStart ? source.slice(bodyStart, bodyEnd) : '';
-            syntax = AdblockSyntax.Adg;
+            syntax = SYNTAX_ADG;
         } else {
             selectorListValue = bodyEnd > bodyStart ? source.slice(bodyStart, bodyEnd) : '';
+            if ((flags & CR_FLAG_BODY_ABP_CSS_INJECTION) !== 0) {
+                syntax = SYNTAX_ABP;
+            }
         }
 
         const selectorList: Value = {
