@@ -34,3 +34,4 @@ export {
 export { MetadataRuleset, METADATA_RULESET_ID } from './ruleset/metadata-ruleset';
 export { type HttpHeaderMatcher, Rule } from './rule/rule';
 export { RuleDeclarativeValidator } from './rule/rule-validator';
+export { METADATA_FILENAME, LAZY_METADATA_FILENAME } from './ruleset/filenames';
