@@ -219,9 +219,9 @@ describe('RuleParser — AdGuard rule modifiers', () => {
         });
 
         // eslint-disable-next-line max-len
-        test.skip('[$domain] with regex containing quantifier braces - [$domain=/example\\d{1,}\\.(com|org)/]##.ad', () => {
-            // TODO: The value parser's isPotentialNetModifier heuristic may split
-            // on the comma inside {1,} — needs investigation
+        test('[$domain] with regex containing quantifier braces - [$domain=/example\\d{1,}\\.(com|org)/]##.ad', () => {
+            // Previously skipped: the value parser's isPotentialNetModifier heuristic may split
+            // on the comma inside {1,}
             const ast = parser.parse('[$domain=/example\\d{1,}\\.(com|org)/]##.ad');
 
             expect(ast).toMatchObject({
@@ -261,6 +261,33 @@ describe('RuleParser — AdGuard rule modifiers', () => {
                             type: 'Modifier',
                             name: { type: 'Value', value: 'path' },
                             value: { type: 'Value', value: '/page' },
+                        },
+                    ],
+                },
+                body: {
+                    selectorList: {
+                        value: '.ad',
+                    },
+                },
+            });
+        });
+
+        // eslint-disable-next-line max-len
+        test('[$path] with complex regex containing character classes and $ anchor', () => {
+            // Real-world pattern: ] inside character class and $ as regex anchor
+            // should not break modifier block parsing
+            // eslint-disable-next-line max-len
+            const ast = parser.parse('[$path=/^[a-z0-9]{5,}\\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\\.(cfd|sbs|shop)$/]##.ad');
+
+            expect(ast).toMatchObject({
+                type: 'ElementHidingRule',
+                syntax: SYNTAX_ADG,
+                modifiers: {
+                    type: 'ModifierList',
+                    children: [
+                        {
+                            type: 'Modifier',
+                            name: { type: 'Value', value: 'path' },
                         },
                     ],
                 },
