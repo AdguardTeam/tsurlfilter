@@ -342,4 +342,161 @@ describe('CssSelectorConverter', () => {
             expect(conversionResult.result).toBe(expected);
         });
     });
+    describe('convertToUbo', () => {
+        test.each([
+            // Non-affected selectors pass through unchanged
+            {
+                actual: 'div',
+                expected: 'div',
+                shouldConvert: false,
+            },
+            {
+                actual: 'div.ad',
+                expected: 'div.ad',
+                shouldConvert: false,
+            },
+            {
+                actual: 'div:has(> span)',
+                expected: 'div:has(> span)',
+                shouldConvert: false,
+            },
+
+            // :contains(test) → :has-text('test') — no quotes in argument
+            {
+                actual: 'div:contains(test)',
+                expected: "div:has-text('test')",
+                shouldConvert: true,
+            },
+
+            // Nested in :has()
+            {
+                actual: 'main:has(> div:contains(test))',
+                expected: "main:has(> div:has-text('test'))",
+                shouldConvert: true,
+            },
+
+            // Unpaired single quote — must be escaped
+            {
+                actual: "main:has(> div:contains(te'st))",
+                expected: String.raw`main:has(> div:has-text('te\'st'))`,
+                shouldConvert: true,
+            },
+
+            // Odd number of single quotes (3) — all escaped
+            {
+                actual: "main:has(> div:contains(t'e's't))",
+                expected: String.raw`main:has(> div:has-text('t\'e\'s\'t'))`,
+                shouldConvert: true,
+            },
+
+            // Paired single quotes — still quoted and escaped (always quote)
+            {
+                actual: "main:has(> div:contains(t'es't))",
+                expected: String.raw`main:has(> div:has-text('t\'es\'t'))`,
+                shouldConvert: true,
+            },
+
+            // Mixed escaped and unescaped quotes
+            {
+                actual: String.raw`main:has(> div:contains(t'e's\'t))`,
+                expected: String.raw`main:has(> div:has-text('t\'e\'s\'t'))`,
+                shouldConvert: true,
+            },
+
+            // Already single-quoted — preserved as-is
+            {
+                actual: "div:contains('already quoted')",
+                expected: "div:has-text('already quoted')",
+                shouldConvert: true,
+            },
+
+            // Double-quoted — re-quoted to single quotes
+            {
+                actual: 'div:contains("double quoted")',
+                expected: "div:has-text('double quoted')",
+                shouldConvert: true,
+            },
+
+            // Multiple :contains() in one selector
+            {
+                actual: 'div:has(> span:contains(hello)):has(> p:contains(world))',
+                expected: "div:has(> span:has-text('hello')):has(> p:has-text('world'))",
+                shouldConvert: true,
+            },
+
+            // Empty argument
+            {
+                actual: 'div:contains()',
+                expected: "div:has-text('')",
+                shouldConvert: true,
+            },
+
+            // Regex-like argument with inner single quotes escaped
+            {
+                actual: 'div:contains(/reg[ex]/)',
+                expected: "div:has-text('/reg[ex]/')",
+                shouldConvert: true,
+            },
+
+            // Deeply nested
+            {
+                actual: 'div:has(:not(:contains(x)))',
+                expected: "div:has(:not(:has-text('x')))",
+                shouldConvert: true,
+            },
+
+            // Nested parentheses inside :contains() argument — the extended
+            // tokenizer tracks balance internally, so inner parens do NOT
+            // terminate the argument early.
+            {
+                actual: 'div:contains(foo(bar))',
+                expected: "div:has-text('foo(bar)')",
+                shouldConvert: true,
+            },
+            {
+                actual: 'div:contains(:not(x))',
+                expected: "div:has-text(':not(x)')",
+                shouldConvert: true,
+            },
+            {
+                actual: 'div:contains(a(b(c)))',
+                expected: "div:has-text('a(b(c))')",
+                shouldConvert: true,
+            },
+
+            // :-abp-contains(test) → :has-text('test')
+            {
+                actual: 'div:-abp-contains(test)',
+                expected: "div:has-text('test')",
+                shouldConvert: true,
+            },
+
+            // :-abp-contains with unpaired quote
+            {
+                actual: "div:-abp-contains(te'st)",
+                expected: String.raw`div:has-text('te\'st')`,
+                shouldConvert: true,
+            },
+
+            // :-abp-contains already single-quoted
+            {
+                actual: "div:-abp-contains('already quoted')",
+                expected: "div:has-text('already quoted')",
+                shouldConvert: true,
+            },
+
+            // Mixed :contains and :-abp-contains
+            {
+                actual: 'div:has(> span:contains(hello)):has(> p:-abp-contains(world))',
+                expected: "div:has(> span:has-text('hello')):has(> p:has-text('world'))",
+                shouldConvert: true,
+            },
+        ])('should convert "$actual" to "$expected"', ({ actual, expected, shouldConvert }) => {
+            const conversionResult = CssSelectorConverter.convertToUbo(actual);
+
+            expect(conversionResult).toHaveProperty('isConverted');
+            expect(conversionResult.isConverted).toBe(shouldConvert);
+            expect(conversionResult.result).toBe(expected);
+        });
+    });
 });

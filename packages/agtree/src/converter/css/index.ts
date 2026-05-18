@@ -1,6 +1,6 @@
 import { sprintf } from 'sprintf-js';
 
-import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
+import { getFormattedTokenName, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
 
 import { CssTokenStream } from '../../parser-legacy/css/css-token-stream';
 import { QuoteUtils } from '../../utils';
@@ -12,6 +12,7 @@ import {
     EQUALS,
     OPEN_PARENTHESIS,
 } from '../../utils/constants';
+import { QuoteType } from '../../utils/quotes';
 import { BaseConverter } from '../base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result';
 import { ABP_EXT_CSS_PREFIX, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css';
@@ -54,7 +55,7 @@ const PSEUDO_ELEMENT_NAMES = new Set<string>([
 /**
  * CSS selector converter.
  *
- * @todo Implement `convertToUbo` and `convertToAbp`.
+ * @todo Implement `convertToAbp`.
  */
 export class CssSelectorConverter extends BaseConverter {
     /**
@@ -238,5 +239,91 @@ export class CssSelectorConverter extends BaseConverter {
 
         const convertedSelectorList = converted.join(EMPTY);
         return createConversionResult(convertedSelectorList, stream.source !== convertedSelectorList);
+    }
+
+    /**
+     * Converts Extended CSS elements to uBlock Origin-compatible ones.
+     *
+     * Specifically, this renames `:contains()` to `:has-text()` and wraps the
+     * argument in single quotes, escaping any inner single quotes. This is
+     * necessary because uBO uses CSSTree which follows the CSS spec and rejects
+     * unpaired quotes inside pseudo-class arguments.
+     *
+     * @param selectorList Selector list string to convert.
+     *
+     * @returns An object which follows the {@link ConversionResult} interface.
+     */
+    public static convertToUbo(selectorList: string): ConversionResult<string> {
+        const parts: string[] = [];
+        let isConverted = false;
+
+        // State for detecting `:contains(` sequences and collecting arguments.
+        // prevWasColon — the previous token was a Colon (potential pseudo start)
+        // insideContains — when true, we are inside a :contains() argument;
+        //   tokenizeExtended's handleRegularExtendedCssPseudo handler tracks
+        //   parenthesis balance internally and emits inner content (including
+        //   nested parens like `foo(bar)`) as Delim tokens. Only the matching
+        //   CloseParenthesis for the :contains() call itself reaches our
+        //   callback, so no explicit balance tracking is needed here.
+        // argStart — the source offset where the current :contains() argument
+        //   content begins (right after the function opening parenthesis)
+        let prevWasColon = false;
+        let insideContains = false;
+        let argStart = 0;
+
+        tokenizeExtended(selectorList, (type, start, end) => {
+            if (insideContains) {
+                if (type === TokenType.CloseParenthesis) {
+                    insideContains = false;
+
+                    // Extract raw argument, quote it, and emit
+                    const rawArg = selectorList.slice(argStart, start);
+                    const quotedArg = QuoteUtils.setStringQuoteType(
+                        rawArg,
+                        QuoteType.Single,
+                    );
+
+                    parts.push(quotedArg);
+                    parts.push(CLOSE_PARENTHESIS);
+                    return;
+                }
+
+                // Still inside the argument — do nothing, the raw text will
+                // be extracted as a whole slice when the argument ends.
+                return;
+            }
+
+            if (type === TokenType.Colon) {
+                prevWasColon = true;
+                parts.push(selectorList.slice(start, end));
+                return;
+            }
+
+            if (
+                prevWasColon
+                && type === TokenType.Function
+                && (
+                    selectorList.slice(start, end - 1) === PseudoClasses.Contains
+                    || selectorList.slice(start, end - 1) === PseudoClasses.AbpContains
+                )
+            ) {
+                // Entering :contains( or :-abp-contains( — replace with :has-text(
+                // The colon was already pushed; replace the function name.
+                parts.push(PseudoClasses.HasText);
+                parts.push(OPEN_PARENTHESIS);
+
+                insideContains = true;
+                argStart = end; // right after the opening parenthesis
+                isConverted = true;
+                prevWasColon = false;
+                return;
+            }
+
+            prevWasColon = false;
+            parts.push(selectorList.slice(start, end));
+        });
+
+        const result = parts.join(EMPTY);
+        return createConversionResult(result, isConverted);
     }
 }
