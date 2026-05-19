@@ -230,7 +230,7 @@ export class StealthApi {
         try {
             if (isWebRTCDisabled) {
                 await browser.privacy.network.webRTCIPHandlingPolicy.set({
-                    value: 'disable_non_proxied_udp',
+                    value: 'default_public_interface_only',
                     scope: 'regular',
                 });
             } else {
@@ -242,19 +242,13 @@ export class StealthApi {
             logger.error('[tsweb.StealthApi.handleBlockWebRTC]: error updating privacy.network settings: ', e);
         }
 
-        // privacy.network.peerConnectionEnabled is currently only supported in Firefox
+        // privacy.network.peerConnectionEnabled is currently only supported in Firefox.
+        // Always clear it to migrate away from the old behavior that set it to false.
         if (typeof browser.privacy.network.peerConnectionEnabled === 'object') {
             try {
-                if (isWebRTCDisabled) {
-                    await browser.privacy.network.peerConnectionEnabled.set({
-                        value: false,
-                        scope: 'regular',
-                    });
-                } else {
-                    await browser.privacy.network.peerConnectionEnabled.clear({
-                        scope: 'regular',
-                    });
-                }
+                await browser.privacy.network.peerConnectionEnabled.clear({
+                    scope: 'regular',
+                });
             } catch (e) {
                 logger.error('[tsweb.StealthApi.handleBlockWebRTC]: error updating privacy.network settings: ', e);
             }
