@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   up to 62 independent flag bits (previously limited to 31). No behavioral
   changes.
 
+### Fixed
+
+- Expanded wildcard TLD domains in DNR conversion for `$domain` and `$to`
+  modifiers [AdguardTeam/tsurlfilter#189].
+
+[AdguardTeam/tsurlfilter#189]: https://github.com/AdguardTeam/tsurlfilter/issues/189
+
 ## [v5.0.1] - 2026-04-24
 
 ### Changed

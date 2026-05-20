@@ -7,6 +7,7 @@ import {
 
 import { CSP_HEADER_NAME } from '../../../src/modifiers/csp-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../src/modifiers/permissions-modifier';
+import { POPULAR_TLDS } from '../../../src/rules/declarative-converter/constants/popular-tlds';
 import { ResourceType } from '../../../src/rules/declarative-converter/declarative-rule';
 import { type InvalidDeclarativeRuleError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
 import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
@@ -257,6 +258,115 @@ describe('DeclarativeRulesConverter', () => {
 
             },
         });
+    });
+
+    it('expands all popular TLDs once for a wildcard $domain modifier', async () => {
+        const filterId = 0;
+
+        const filter = await createScannedFilter(
+            filterId,
+            ['||*/httpbin/anything/test-case-2.json$domain=testcases.agrd.*'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = await DeclarativeRulesConverter.convert([filter]);
+
+        const initiatorDomains = declarativeRule.condition.initiatorDomains ?? [];
+        const expectedInitiatorDomains = POPULAR_TLDS.map((tld) => `testcases.agrd.${tld}`);
+
+        expect(initiatorDomains).toEqual(expect.arrayContaining([
+            'testcases.agrd.com',
+            'testcases.agrd.co.uk',
+        ]));
+        expect([...initiatorDomains].sort()).toEqual([...expectedInitiatorDomains].sort());
+    });
+
+    it('expands multiple wildcard TLD domains in $domain modifiers', async () => {
+        const filterId = 0;
+
+        const filter = await createScannedFilter(
+            filterId,
+            ['||*/httpbin/anything/test-case-2.json$domain=testcases.agrd.*|pages.*'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = await DeclarativeRulesConverter.convert([filter]);
+
+        const initiatorDomains = declarativeRule.condition.initiatorDomains ?? [];
+
+        expect(initiatorDomains).toEqual(expect.arrayContaining([
+            'testcases.agrd.com',
+            'testcases.agrd.co.uk',
+            'pages.com',
+            'pages.co.uk',
+        ]));
+        expect(initiatorDomains).toHaveLength(POPULAR_TLDS.length * 2);
+    });
+
+    it('expands negated wildcard TLD domains in $domain modifiers', async () => {
+        const filterId = 0;
+
+        const filter = await createScannedFilter(
+            filterId,
+            ['||ads.example.org^$domain=~trusted.*'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = await DeclarativeRulesConverter.convert([filter]);
+
+        const excludedInitiatorDomains = declarativeRule.condition.excludedInitiatorDomains ?? [];
+
+        expect(excludedInitiatorDomains).toEqual(expect.arrayContaining([
+            'trusted.com',
+            'trusted.co.uk',
+        ]));
+        expect(excludedInitiatorDomains).toHaveLength(POPULAR_TLDS.length);
+    });
+
+    it('keeps concrete domains and deduplicates expanded wildcard TLD domains', async () => {
+        const filterId = 0;
+
+        const filter = await createScannedFilter(
+            filterId,
+            ['||ad.js$domain=specific.com|wild.com|wild.*|~evil.*'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = await DeclarativeRulesConverter.convert([filter]);
+
+        const initiatorDomains = declarativeRule.condition.initiatorDomains ?? [];
+        const excludedInitiatorDomains = declarativeRule.condition.excludedInitiatorDomains ?? [];
+
+        expect(initiatorDomains).toEqual(expect.arrayContaining([
+            'specific.com',
+            'wild.com',
+            'wild.co.uk',
+        ]));
+        expect(initiatorDomains.filter((domain) => domain === 'wild.com')).toHaveLength(1);
+        expect(initiatorDomains).toHaveLength(POPULAR_TLDS.length + 1);
+        expect(excludedInitiatorDomains).toEqual(expect.arrayContaining([
+            'evil.com',
+            'evil.co.uk',
+        ]));
+    });
+
+    it('converts wildcard TLD domains to ASCII after expansion', async () => {
+        const filterId = 0;
+        const filter = await createScannedFilter(
+            filterId,
+            ['||example.org/ad.js$domain=münchen.*'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = await DeclarativeRulesConverter.convert([filter]);
+
+        expect(declarativeRule.condition.initiatorDomains).toContain('xn--mnchen-3ya.com');
+        expect(declarativeRule.condition.initiatorDomains).not.toContain('münchen.com');
     });
 
     it('converts rules with specified request types', async () => {
@@ -1764,6 +1874,50 @@ describe('DeclarativeRulesConverter', () => {
                     resourceTypes: allResourcesTypes,
                 },
             });
+        });
+
+        it('expands wildcard TLD domains in $to modifiers', async () => {
+            const filterId = 0;
+            const filter = await createScannedFilter(
+                filterId,
+                ['/ads$to=tracker.*|specific.com'],
+            );
+
+            const {
+                declarativeRules,
+            } = await DeclarativeRulesConverter.convert([filter]);
+
+            const requestDomains = declarativeRules[0].condition.requestDomains ?? [];
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(requestDomains).toEqual(expect.arrayContaining([
+                'tracker.com',
+                'tracker.co.uk',
+                'specific.com',
+            ]));
+            expect(requestDomains).toHaveLength(POPULAR_TLDS.length + 1);
+        });
+
+        it('expands negated wildcard TLD domains in $to modifiers', async () => {
+            const filterId = 0;
+            const filter = await createScannedFilter(
+                filterId,
+                ['/ads$to=~safe.*|tracker.com'],
+            );
+
+            const {
+                declarativeRules,
+            } = await DeclarativeRulesConverter.convert([filter]);
+
+            const excludedRequestDomains = declarativeRules[0].condition.excludedRequestDomains ?? [];
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.requestDomains).toEqual(['tracker.com']);
+            expect(excludedRequestDomains).toEqual(expect.arrayContaining([
+                'safe.com',
+                'safe.co.uk',
+            ]));
+            expect(excludedRequestDomains).toHaveLength(POPULAR_TLDS.length);
         });
     });
 
