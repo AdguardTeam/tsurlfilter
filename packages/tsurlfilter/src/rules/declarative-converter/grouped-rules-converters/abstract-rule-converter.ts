@@ -100,6 +100,7 @@
 import { getRedirectFilename } from '@adguard/scriptlets/redirects';
 import punycode from 'punycode/punycode.js';
 
+import { DOT, WILDCARD } from '../../../common/constants';
 import { getErrorMessage } from '../../../common/error';
 import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
 import { HTTPMethod } from '../../../modifiers/method-modifier';
@@ -111,6 +112,7 @@ import { type RequestType } from '../../../request-type';
 import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import type { IRule } from '../../rule';
 import { SimpleRegex } from '../../simple-regex';
+import { POPULAR_TLDS } from '../constants/popular-tlds';
 import { type ConvertedRules } from '../converted-result';
 import {
     DECLARATIVE_REQUEST_METHOD_MAP,
@@ -141,6 +143,8 @@ import { type IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-ha
 import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
 import { type NetworkRuleWithNodeAndText } from '../network-rule-with-node-and-text';
 import { re2Validator } from '../re2-regexp/re2-validator';
+
+const WILDCARD_TLD = `${DOT}${WILDCARD}`;
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -268,6 +272,58 @@ export abstract class AbstractRuleConverter {
         return strings.map((s) => {
             return AbstractRuleConverter.prepareASCII(s);
         });
+    }
+
+    /**
+     * Checks whether a domain uses wildcard TLD syntax.
+     *
+     * @param domain Domain to check.
+     *
+     * @returns True when domain ends with `.*` and has a non-empty prefix.
+     */
+    private static isWildcardTldDomain(domain: string): boolean {
+        return domain.length > WILDCARD_TLD.length
+            && domain.endsWith(WILDCARD_TLD);
+    }
+
+    /**
+     * Expands wildcard TLD domain into concrete popular TLD domains.
+     *
+     * @param domain Wildcard TLD domain.
+     *
+     * @returns Expanded domain list.
+     */
+    private static expandWildcardTldDomain(domain: string): string[] {
+        const domainPrefix = domain.slice(0, -WILDCARD_TLD.length);
+
+        return POPULAR_TLDS.map((tld) => `${domainPrefix}.${tld}`);
+    }
+
+    /**
+     * Prepares domains for DNR condition arrays.
+     *
+     * @param domains Domains from network rule modifier.
+     *
+     * @returns ASCII-only unique domains supported by DNR.
+     */
+    private static prepareDeclarativeDomains(domains: string[] | null | undefined): string[] {
+        const expandedDomains = domains?.flatMap((domain) => {
+            if (SimpleRegex.isRegexPattern(domain)) {
+                return [];
+            }
+
+            if (AbstractRuleConverter.isWildcardTldDomain(domain)) {
+                return AbstractRuleConverter.expandWildcardTldDomain(domain);
+            }
+
+            if (domain.includes(SimpleRegex.MASK_ANY_CHARACTER)) {
+                return [];
+            }
+
+            return [domain];
+        }) ?? [];
+
+        return [...new Set(AbstractRuleConverter.toASCII(expandedDomains))];
     }
 
     /**
@@ -678,33 +734,30 @@ export abstract class AbstractRuleConverter {
         }
 
         // set initiatorDomains
-        const permittedDomains = rule.getPermittedDomains()?.filter((d) => {
-            // Wildcard and regex domains are not supported by declarative converter
-            return !d.includes(SimpleRegex.MASK_ANY_CHARACTER) && !SimpleRegex.isRegexPattern(d);
-        });
-        if (permittedDomains && permittedDomains.length > 0) {
-            condition.initiatorDomains = this.toASCII(permittedDomains);
+        const permittedDomains = AbstractRuleConverter.prepareDeclarativeDomains(rule.getPermittedDomains());
+        if (permittedDomains.length > 0) {
+            condition.initiatorDomains = permittedDomains;
         }
 
         // set excludedInitiatorDomains
-        const excludedDomains = rule.getRestrictedDomains();
-        if (excludedDomains && excludedDomains.length > 0) {
-            condition.excludedInitiatorDomains = this.toASCII(excludedDomains);
+        const excludedDomains = AbstractRuleConverter.prepareDeclarativeDomains(rule.getRestrictedDomains());
+        if (excludedDomains.length > 0) {
+            condition.excludedInitiatorDomains = excludedDomains;
         }
 
-        const permittedToDomains = rule.getPermittedToDomains();
-        if (permittedToDomains && permittedToDomains.length > 0) {
-            condition.requestDomains = this.toASCII(permittedToDomains);
+        const permittedToDomains = AbstractRuleConverter.prepareDeclarativeDomains(rule.getPermittedToDomains());
+        if (permittedToDomains.length > 0) {
+            condition.requestDomains = permittedToDomains;
         }
 
         // Can be specified $to or $denyallow, but not together.
-        const denyAllowDomains = rule.getDenyAllowDomains();
-        const restrictedToDomains = rule.getRestrictedToDomains();
+        const denyAllowDomains = AbstractRuleConverter.prepareDeclarativeDomains(rule.getDenyAllowDomains());
+        const restrictedToDomains = AbstractRuleConverter.prepareDeclarativeDomains(rule.getRestrictedToDomains());
 
-        if (denyAllowDomains && denyAllowDomains.length !== 0) {
-            condition.excludedRequestDomains = this.toASCII(denyAllowDomains);
-        } else if (restrictedToDomains && restrictedToDomains.length !== 0) {
-            condition.excludedRequestDomains = this.toASCII(restrictedToDomains);
+        if (denyAllowDomains.length !== 0) {
+            condition.excludedRequestDomains = denyAllowDomains;
+        } else if (restrictedToDomains.length !== 0) {
+            condition.excludedRequestDomains = restrictedToDomains;
         }
 
         // set excludedResourceTypes

@@ -1189,11 +1189,31 @@ describe('DeclarativeConverter', () => {
             expect(errors[0]).toStrictEqual(err);
         });
 
-        it('returns error if initiatorDomains is empty, but original rule has domains', async () => {
+        it('converts wildcard TLD-only $domain rules without EmptyDomainsError', async () => {
             const filter = createFilter(['$script,xmlhttprequest,third-party,domain=clickndownload.*|clicknupload.*']);
             const { ruleSet, errors } = await converter.convertStaticRuleSet(filter);
             const declarativeRules = await ruleSet.getDeclarativeRules();
-            expect(declarativeRules).toHaveLength(0); // wildcard domains are not supported
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(
+                expect.arrayContaining([
+                    'clickndownload.com',
+                    'clickndownload.co.uk',
+                    'clicknupload.com',
+                    'clicknupload.co.uk',
+                ]),
+            );
+        });
+
+        it('returns error if initiatorDomains is empty after filtering unsupported domains', async () => {
+            const filter = createFilter([
+                String.raw`$script,xmlhttprequest,third-party,domain=/clickndownload\.(com|net)/`,
+            ]);
+            const { ruleSet, errors } = await converter.convertStaticRuleSet(filter);
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
             expect(errors[0]).toBeInstanceOf(EmptyDomainsError);
         });
