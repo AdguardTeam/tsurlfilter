@@ -1,6 +1,13 @@
 /**
  * Popular TLD suffixes used to expand wildcard TLD domains for DNR.
  *
+ * Source: manually curated from the IANA Root Zone Database
+ * (https://www.iana.org/domains/root/db). "Popular" means broad practical
+ * coverage for filter rules: common generic TLDs, commonly registered ccTLDs,
+ * common new gTLDs, and compound public suffixes seen in domain modifiers. This
+ * is not a ranked list or a full public suffix list; update it manually when
+ * wildcard TLD coverage needs to change.
+ *
  * Keep values lowercase, ASCII, and without a leading dot.
  */
 export const POPULAR_TLDS = [
