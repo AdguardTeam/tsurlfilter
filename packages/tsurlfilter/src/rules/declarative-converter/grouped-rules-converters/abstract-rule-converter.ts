@@ -312,6 +312,7 @@ export abstract class AbstractRuleConverter {
                 return [];
             }
 
+            // DNR supports concrete domains only, so expand just the `.*` TLD wildcard form.
             if (AbstractRuleConverter.isWildcardTldDomain(domain)) {
                 return AbstractRuleConverter.expandWildcardTldDomain(domain);
             }
