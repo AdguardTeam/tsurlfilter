@@ -3,7 +3,6 @@
  */
 
 import { CosmeticRuleSeparator, type ElementHidingRule } from '../../nodes';
-import { CssTokenStream } from '../../parser-legacy/css/css-token-stream';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { clone } from '../../utils/clone';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
@@ -30,13 +29,12 @@ export class ElementHidingRuleConverter extends RuleConverterBase {
     public static convertToAdg(rule: ElementHidingRule): NodeConversionResult<ElementHidingRule> {
         const separator = rule.separator.value;
         let convertedSeparator = separator;
-        const stream = new CssTokenStream(rule.body.selectorList.value);
-        const convertedSelectorList = CssSelectorConverter.convertToAdg(stream);
+        const convertedSelectorList = CssSelectorConverter.convertToAdg(rule.body.selectorList.value);
 
         // Change the separator if the rule contains ExtendedCSS elements,
         // but do not force non-extended CSS separator if the rule does not contain any ExtendedCSS selectors,
         // because sometimes we use it to force executing ExtendedCSS library.
-        if (stream.hasAnySelectorExtendedCssNodeStrict()) {
+        if (convertedSelectorList.hasExtendedCss) {
             convertedSeparator = rule.exception
                 ? CosmeticRuleSeparator.ExtendedElementHidingException
                 : CosmeticRuleSeparator.ExtendedElementHiding;

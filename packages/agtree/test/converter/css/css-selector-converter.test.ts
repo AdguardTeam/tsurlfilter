@@ -491,6 +491,41 @@ describe('CssSelectorConverter', () => {
                 expected: "div:has(> span:has-text('hello')):has(> p:has-text('world'))",
                 shouldConvert: true,
             },
+
+            // Parentheses inside double-quoted argument
+            {
+                actual: 'div:contains("a)b")',
+                expected: "div:has-text('a)b')",
+                shouldConvert: true,
+            },
+
+            // Parentheses inside single-quoted argument
+            {
+                actual: "div:contains('foo(bar)')",
+                expected: "div:has-text('foo(bar)')",
+                shouldConvert: true,
+            },
+
+            // Escaped quote inside argument
+            {
+                actual: String.raw`div:contains("a\"b")`,
+                expected: String.raw`div:has-text('a"b')`,
+                shouldConvert: true,
+            },
+
+            // Nested function-like text inside double-quoted string
+            {
+                actual: 'div:contains("url(test)")',
+                expected: "div:has-text('url(test)')",
+                shouldConvert: true,
+            },
+
+            // Escaped closing paren (not inside quotes)
+            {
+                actual: String.raw`div:contains(a\)b)`,
+                expected: String.raw`div:has-text('a\)b')`,
+                shouldConvert: true,
+            },
         ])('should convert "$actual" to "$expected"', ({ actual, expected, shouldConvert }) => {
             const conversionResult = CssSelectorConverter.convertToUbo(actual);
 
