@@ -160,7 +160,8 @@ example.org##.banner
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
-! Doesn't support regexps and any tld domains
+! Doesn't support regexps and wildcard domains except exact wildcard TLD
+! domains such as example.*, which are expanded to popular TLDs.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -282,6 +283,10 @@ page$domain=targetdomain.com|~example.org
 
 ! ## $to
 ! <b>Status</b>: supported
+! <br/>
+! <b>MV3 notes:</b>
+! <br/>
+! Wildcard TLD domains such as tracker.* are expanded to popular TLDs.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
