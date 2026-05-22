@@ -95,7 +95,13 @@
 import { RuleGenerator } from '@adguard/agtree/generator';
 import { getRedirectFilename } from '@adguard/scriptlets/redirects';
 
-import { CSP_HEADER_NAME, MASK_ANY_CHARACTER, PERMISSIONS_POLICY_HEADER_NAME } from '../constants';
+import {
+    CSP_HEADER_NAME,
+    MASK_ANY_CHARACTER,
+    MASK_NEGATE_CHARACTER,
+    MASK_REGEX_RULE,
+    PERMISSIONS_POLICY_HEADER_NAME,
+} from '../constants';
 import {
     type DeclarativeRule,
     DomainType,
@@ -153,6 +159,13 @@ export class RegularRuleConverter {
         ResourceType.MainFrame,
         ResourceType.SubFrame,
     ]);
+
+    /**
+     * Characters that have special meaning in Chrome DNR urlFilter syntax.
+     * If a $removeparam param name contains any of these, we cannot safely
+     * embed it as a urlFilter token and must skip the augmentation.
+     */
+    private static readonly URL_FILTER_SPECIAL_CHARS = /[|*^]/;
 
     /**
      * String path to web accessible resources, relative to the extension root dir.
@@ -249,6 +262,54 @@ export class RegularRuleConverter {
                 },
             },
         };
+    }
+
+    /**
+     * Builds a param-aware urlFilter token for a $removeparam rule.
+     *
+     * For a rule like `$removeparam=utm_source` this method
+     * returns the string `^utm_source=` where the caret acts
+     * as a DNR separator matching query delimiters.
+     *
+     * Returns `null` when augmentation should be skipped:
+     * - empty or null param value (strip-all-params rule).
+     * - negation (`~param`).
+     * - regex (`/pattern/`).
+     * - whitespace-only param name.
+     * - value cannot be URI-decoded.
+     * - param name contains urlFilter special characters (`|`, `*`, `^`).
+     *
+     * @param rule Rule with $removeparam modifier enabled.
+     *
+     * @returns A urlFilter token string, or null if augmentation should be skipped.
+     */
+    private static getRemoveParamToken(rule: Rule): string | null {
+        const value = rule.advancedModifierValue;
+
+        // Skip augmentation for strip-all, negation, and regex params.
+        if (!value || value.startsWith(MASK_NEGATE_CHARACTER) || value.startsWith(MASK_REGEX_RULE)) {
+            return null;
+        }
+
+        let decoded: string;
+        try {
+            decoded = decodeURIComponent(value);
+        } catch {
+            return null;
+        }
+
+        // Whitespace-only param names cannot form a useful urlFilter token.
+        if (!decoded || decoded.trim() === '') {
+            return null;
+        }
+
+        // If the decoded param name contains urlFilter special characters,
+        // we cannot safely embed it — fall back to non-augmented behavior.
+        if (RegularRuleConverter.URL_FILTER_SPECIAL_CHARS.test(decoded)) {
+            return null;
+        }
+
+        return `^${decoded}=`;
     }
 
     /**
@@ -472,6 +533,22 @@ export class RegularRuleConverter {
                     ? pattern.substring(2)
                     : pattern;
                 condition.urlFilter = prepareASCII(patternWithoutVerticals);
+            }
+        }
+
+        // For $removeparam rules with a specific named parameter, append
+        // a param-aware token to urlFilter so that the rule only matches
+        // when the target parameter is present in the URL query string.
+        // This enables Chrome DNR to chain multiple redirect hops,
+        // stripping one parameter per hop until all are removed.
+        if (rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
+            const paramToken = RegularRuleConverter.getRemoveParamToken(rule);
+            if (paramToken !== null) {
+                if (condition.urlFilter) {
+                    condition.urlFilter += `*${paramToken}`;
+                } else if (!condition.regexFilter) {
+                    condition.urlFilter = paramToken;
+                }
             }
         }
 

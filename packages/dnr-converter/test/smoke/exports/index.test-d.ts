@@ -20,6 +20,7 @@ import {
     type SourceRuleAndFilterId,
     type UpdateStaticRulesOptions,
 } from '@adguard/dnr-converter';
+import { convertFilters, generateMD5Hash, type ConvertFiltersOptions } from '@adguard/dnr-converter/cli';
 import { expectType } from 'tsd';
 
 expectType<string>(DNR_CONVERTER_VERSION);
@@ -44,5 +45,14 @@ type AssertSerializedRuleset = SerializedRuleset;
 type AssertDeserializedRuleset = DeserializedRuleset;
 type AssertSerializedRulesetData = SerializedRulesetData;
 type AssertSerializedRulesetLazyData = SerializedRulesetLazyData;
+
+expectType<(
+    filtersAndMetadataDir: string,
+    resourcesDir: string,
+    destRulesetsDir: string,
+    options?: ConvertFiltersOptions,
+) => Promise<void>>(convertFilters);
+
+expectType<(input: string) => string>(generateMD5Hash);
 
 console.log('Smoke test passed in exports/index.test-d.ts');

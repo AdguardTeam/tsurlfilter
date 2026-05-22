@@ -7,6 +7,7 @@
     },
     "include": [
         "src/**/*.ts",
+        "cli/**/*.ts",
         "test/**/*.ts",
         "tasks/**/*.ts",
         "**/.eslintrc.cjs",

@@ -69,11 +69,15 @@ const mainConfig = {
  */
 const typesConfig = {
     ...commonConfig,
+    input: [
+        'src/index.ts',
+        'cli/index.ts',
+    ],
     output: {
         ...commonOutputConfig,
         dir: `${OUTPUT_PATH}/types`,
         preserveModules: true,
-        preserveModulesRoot: 'src',
+        preserveModulesRoot: '.',
     },
     plugins: [
         // Generate d.ts files
@@ -82,9 +86,36 @@ const typesConfig = {
 };
 
 /**
+ * Rollup CLI configuration.
+ */
+const cliConfig = {
+    input: 'cli/index.ts',
+    output: {
+        ...commonOutputConfig,
+        file: `${OUTPUT_PATH}/cli.js`,
+        banner: '#!/usr/bin/env node',
+    },
+    cache: false,
+    plugins: [
+        externals(),
+        resolve({
+            preferBuiltins: false,
+            extensions: ['.js', '.ts'],
+        }),
+        json(),
+        swc(),
+        commonjs({ sourceMap: false }),
+    ],
+    watch: {
+        include: 'cli/**',
+    },
+};
+
+/**
  * Rollup configuration.
  */
 export default [
     mainConfig,
+    cliConfig,
     typesConfig,
 ];

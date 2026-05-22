@@ -16,6 +16,11 @@ export const PERMISSIONS_POLICY_HEADER_NAME = 'Permissions-Policy';
 export const MASK_REGEX_RULE = '/';
 
 /**
+ * Negation character used in modifier values (e.g. `$removeparam=~param`).
+ */
+export const MASK_NEGATE_CHARACTER = '~';
+
+/**
  * This is a wildcard character. It is used to represent "any set of characters".
  * This can also be an empty string or a string of any length.
  */

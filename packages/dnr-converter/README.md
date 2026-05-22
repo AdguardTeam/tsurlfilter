@@ -33,6 +33,9 @@ extensions.
     - [`isSafeRule(rule)`](#issaferulerule)
     - [`DNR_CONVERTER_VERSION`](#dnr_converter_version)
     - [Network rule types](#network-rule-types)
+- [CLI](#cli)
+    - [Commands](#commands)
+    - [Programmatic API](#programmatic-api)
 - [Documentation](#documentation)
 
 ## Key concepts
@@ -400,6 +403,77 @@ import {
   `true` if the rule is convertible, `false` if it should be silently skipped,
   or throws `UnsupportedModifierError` if the rule uses an unsupported
   modifier.
+
+## CLI
+
+The package ships a `dnr-converter` command-line tool for converting filter
+lists to DNR rulesets and extracting filter content back from compiled rulesets.
+
+### Commands
+
+#### `convert`
+
+Converts AdGuard filter lists from a metadata directory into DNR rulesets.
+
+```bash
+dnr-converter convert \
+  ./filters \
+  ./resources \
+  ./dist/rulesets
+```
+
+**Arguments:**
+
+| Argument | Description | Default |
+| --- | --- | --- |
+| `<filters_and_metadata_dir>` | Directory containing `filters.json` and filter list files | *(required)* |
+| `<resources_dir>` | Directory with redirect resources | *(required)* |
+| `[dest_rule_sets_dir]` | Output directory for generated rulesets | `./build/rulesets` |
+
+**Options:**
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `--debug` | Enable debug logging | `false` |
+| `--prettify-json <bool>` | Pretty-print JSON output files | `true` |
+| `--additional-properties <json>` | Additional properties to include in the metadata ruleset as JSON string | `{}` |
+
+The `filters.json` metadata file must be an array of filter metadata objects
+each with at minimum `filterId` and `name` fields.
+
+#### `extract-filters`
+
+Extracts original filter list content that was embedded in compiled DNR rulesets
+by the `convert` command.
+
+```bash
+dnr-converter extract-filters \
+  ./dist/rulesets \
+  ./extracted-filters
+```
+
+**Arguments:**
+
+| Argument | Description |
+| --- | --- |
+| `<path-to-rulesets>` | Directory containing compiled ruleset files |
+| `<path-to-output>` | Directory to write extracted filter files |
+
+### Programmatic API
+
+The CLI logic is also available as a programmatic API via the
+`@adguard/dnr-converter/cli` subpath export:
+
+```ts
+import { convertFilters, generateMD5Hash, type ConvertFiltersOptions } from '@adguard/dnr-converter/cli';
+
+await convertFilters(
+    './filters',
+    './resources',
+    './dist/rulesets',
+    { debug: true, prettifyJson: true },
+);
+```
 
 ## Documentation
 
