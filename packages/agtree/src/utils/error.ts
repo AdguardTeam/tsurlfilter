@@ -49,3 +49,17 @@ function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
 export function getErrorMessage(error: unknown): string {
     return toErrorWithMessage(error).message;
 }
+
+/**
+ * Normalises an unknown thrown value to an `Error` instance.
+ *
+ * If the value is already an `Error` it is returned as-is;
+ * otherwise it is wrapped with `new Error(String(value))`.
+ *
+ * @param error The value caught in a `catch` block.
+ *
+ * @returns An `Error` instance.
+ */
+export function asError(error: unknown): Error {
+    return error instanceof Error ? error : new Error(String(error));
+}

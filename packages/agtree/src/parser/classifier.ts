@@ -68,7 +68,7 @@ export class RuleClassifier {
 
         // 2. Cosmetic separator scan (must happen before the #-comment check so
         //    that ## / #@# / … are correctly classified as cosmetic, not comment)
-        const sep = findCosmeticSeparator(types, endTi);
+        const sep = findCosmeticSeparator(types, endTi, startTi);
 
         if (sep !== -1) {
             return RuleClassifier.pack(

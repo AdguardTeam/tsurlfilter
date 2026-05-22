@@ -13,11 +13,6 @@ export const OperatorValue = {
 export type OperatorValue = typeof OperatorValue[keyof typeof OperatorValue];
 
 /**
- * Represents possible new line types.
- */
-export type NewLine = 'crlf' | 'lf' | 'cr';
-
-/**
  * Represents any kind of logical expression node.
  */
 export type AnyExpressionNode =
@@ -492,21 +487,6 @@ export interface RuleBase extends Node {
      * Category of the adblock rule.
      */
     category: RuleCategory;
-
-    /**
-     * Raw data of the rule.
-     */
-    raws?: {
-        /**
-         * Original rule text.
-         */
-        text?: string;
-
-        /**
-         * Newline character used in the rule (if any).
-         */
-        nl?: NewLine;
-    };
 }
 
 export interface InvalidRuleError extends Node {

@@ -12,6 +12,15 @@ export { RuleParserPipeline } from './ast-builder/rule-parser';
 export type { ParseOptions } from './ast-builder/options';
 export type { ParserCapacity } from './ast-builder/capacity';
 
+// Filter list scanner and pipeline
+export { FilterListScanner, FilterListPipeline } from './filter-list';
+export type {
+    ScanCallback,
+    EmptyLineCallback,
+    ScanErrorCallback,
+    ScannedRuleInfo,
+    FilterListParseOptions,
+} from './filter-list';
 export {
     type Agent,
     type AgentCommentRule,

@@ -55,7 +55,6 @@ import {
     type ModifierList,
     type NetworkRule,
     NetworkRuleType,
-    type NewLine,
     type Node,
     NodeType,
     type Parameter,
@@ -134,7 +133,7 @@ function copyNodeBase(source: Node, target: Node): void {
 }
 
 /**
- * Copies `RuleBase` fields (`syntax`, `category`, `raws`) onto a target rule.
+ * Copies `RuleBase` fields (`syntax`, `category`) onto a target rule.
  * Also delegates to {@link copyNodeBase} for the shared `Node` fields.
  *
  * @param source Source rule to read from.
@@ -143,16 +142,6 @@ function copyNodeBase(source: Node, target: Node): void {
 function copyRuleBase(source: RuleBase, target: RuleBase): void {
     target.syntax = source.syntax;
     target.category = source.category;
-    if (source.raws !== undefined) {
-        const raws: { text?: string; nl?: NewLine } = {};
-        if (source.raws.text !== undefined) {
-            raws.text = source.raws.text;
-        }
-        if (source.raws.nl !== undefined) {
-            raws.nl = source.raws.nl;
-        }
-        target.raws = raws;
-    }
     copyNodeBase(source, target);
 }
 

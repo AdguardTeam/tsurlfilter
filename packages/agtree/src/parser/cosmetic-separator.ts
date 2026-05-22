@@ -24,6 +24,15 @@ const SEP_COUNT_SHIFT = 24;
 const SEP_IDX_MASK = 0x00ff_ffff;
 
 /**
+ * Maximum number of tokens in any cosmetic separator.
+ * The longest separator is `#@$?#` — five tokens.
+ * The main scan loop uses this as a lookahead bound: when `i <= tokenCount -
+ * MAX_SEP_TOKEN_COUNT`, all reads up to `types[i + 4]` are safe without
+ * per-step bounds checks.
+ */
+const MAX_SEP_TOKEN_COUNT = 5;
+
+/**
  * Unpacks the separator token count from a packed separator value.
  *
  * @param packed Packed value returned by `findCosmeticSeparator`.
@@ -54,10 +63,11 @@ export function cosmeticSepStartIndex(packed: number): number {
  *
  * @param types Token type array from the tokenizer.
  * @param tokenCount Number of valid tokens in `types`.
+ * @param startTi Inclusive start token index for the search. Defaults to 0.
  *
  * @returns Packed `(sepTokenCount << 24 | startTokenIndex)`, or `-1`.
  */
-export function findCosmeticSeparator(types: Uint8Array, tokenCount: number): number {
+export function findCosmeticSeparator(types: Uint8Array, tokenCount: number, startTi = 0): number {
     const HM = TokenType.HashMark;
     const DS = TokenType.DollarSign;
     const AT = TokenType.AtSign;
@@ -66,9 +76,9 @@ export function findCosmeticSeparator(types: Uint8Array, tokenCount: number): nu
 
     const SH = SEP_COUNT_SHIFT;
 
-    // Main loop: safe to read up to i + 4 (requires tokenCount >= 5)
-    let i = 0;
-    const mainEnd = tokenCount - 5;
+    // Main loop: safe to read up to i + 4 (all separators span ≤ MAX_SEP_TOKEN_COUNT tokens)
+    let i = startTi;
+    const mainEnd = tokenCount - MAX_SEP_TOKEN_COUNT;
 
     for (; i <= mainEnd; i += 1) {
         const t0 = types[i];
