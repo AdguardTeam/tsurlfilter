@@ -32,3 +32,6 @@ Makefile
 output/
 output-*
 **/tests-reports
+
+# Bamboo variable injection files (generated during CI runs)
+bamboo-inject-*.txt
