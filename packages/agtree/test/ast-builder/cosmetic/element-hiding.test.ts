@@ -42,7 +42,7 @@ describe('RuleParser — element hiding rules', () => {
                 body: {
                     type: 'ElementHidingRuleBody',
                     selectorList: {
-                        type: 'Value',
+                        type: 'Raw',
                         value: '.ads',
                         start: 13,
                         end: 17,
@@ -68,7 +68,7 @@ describe('RuleParser — element hiding rules', () => {
                 body: {
                     type: 'ElementHidingRuleBody',
                     selectorList: {
-                        type: 'Value',
+                        type: 'Raw',
                         value: '.ads',
                         start: 14,
                         end: 18,
@@ -110,7 +110,7 @@ describe('RuleParser — element hiding rules', () => {
                 body: {
                     type: 'ElementHidingRuleBody',
                     selectorList: {
-                        type: 'Value',
+                        type: 'Raw',
                         value: '.banner',
                         start: 26,
                         end: 33,
@@ -139,7 +139,7 @@ describe('RuleParser — element hiding rules', () => {
                 body: {
                     type: 'ElementHidingRuleBody',
                     selectorList: {
-                        type: 'Value',
+                        type: 'Raw',
                         value: '.popup',
                         start: 2,
                         end: 8,
@@ -163,7 +163,7 @@ describe('RuleParser — element hiding rules', () => {
                 body: {
                     type: 'ElementHidingRuleBody',
                     selectorList: {
-                        type: 'Value',
+                        type: 'Raw',
                         value: 'div:has(> .ad)',
                         start: 14,
                         end: 28,
@@ -187,7 +187,7 @@ describe('RuleParser — element hiding rules', () => {
                 body: {
                     type: 'ElementHidingRuleBody',
                     selectorList: {
-                        type: 'Value',
+                        type: 'Raw',
                         value: 'div:has(> .ad)',
                         start: 15,
                         end: 29,
@@ -204,7 +204,7 @@ describe('RuleParser — element hiding rules', () => {
                 body: {
                     type: 'ElementHidingRuleBody',
                     selectorList: {
-                        type: 'Value',
+                        type: 'Raw',
                         value: '.ads',
                     },
                 },
@@ -219,7 +219,7 @@ describe('RuleParser — element hiding rules', () => {
                 body: {
                     type: 'ElementHidingRuleBody',
                     selectorList: {
-                        type: 'Value',
+                        type: 'Raw',
                         value: 'div[id="foo,bar"]',
                     },
                 },
@@ -234,7 +234,7 @@ describe('RuleParser — element hiding rules', () => {
                 body: {
                     type: 'ElementHidingRuleBody',
                     selectorList: {
-                        type: 'Value',
+                        type: 'Raw',
                         value: '.class1,.class2',
                     },
                 },
@@ -267,7 +267,7 @@ describe('RuleParser — element hiding rules', () => {
                 body: {
                     type: 'ElementHidingRuleBody',
                     selectorList: {
-                        type: 'Value',
+                        type: 'Raw',
                         value: '.ads',
                     },
                 },

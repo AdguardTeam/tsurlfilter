@@ -13,6 +13,73 @@ export const OperatorValue = {
 export type OperatorValue = typeof OperatorValue[keyof typeof OperatorValue];
 
 /**
+ * Hints about what semantic content a Value or Raw node holds.
+ * Optional metadata — nodes are valid without it.
+ *
+ * - Use on {@link Value} for terminal leaf data to indicate what the string represents.
+ * - Use on {@link Raw} to indicate what sub-parser could further decompose the content.
+ */
+export const ValueKind = {
+    /**
+     * Simple identifier (modifier name, header name, agent name, CSS property, etc.).
+     */
+    Identifier: 'Identifier',
+
+    /**
+     * Regular expression pattern: /pattern/flags.
+     */
+    Regex: 'Regex',
+
+    /**
+     * URL/network matching pattern (wildcards, anchors like ||, ^).
+     */
+    Pattern: 'Pattern',
+
+    /**
+     * Domain list string (sub-parseable into DomainList node).
+     */
+    DomainList: 'DomainList',
+
+    /**
+     * Content Security Policy directive string.
+     */
+    Csp: 'Csp',
+
+    /**
+     * CSS selector text (sub-parseable into SelectorList).
+     */
+    CssSelector: 'CssSelector',
+
+    /**
+     * CSS declaration value (e.g., "none !important").
+     *
+     * Reserved for future use — currently not assigned by any parser
+     * or ast-builder in this codebase. Intended for CSS property-value nodes
+     * (e.g., style-attribute injection) once sub-parsing is extended there.
+     */
+    CssValue: 'CssValue',
+
+    /**
+     * CSS declaration list text (sub-parseable into CssDeclarationList).
+     */
+    CssDeclaration: 'CssDeclaration',
+
+    /**
+     * JavaScript source code.
+     */
+    JavaScript: 'JavaScript',
+
+    /**
+     * Resource identifier (redirect target, scriptlet name, etc.).
+     */
+    Resource: 'Resource',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type ValueKind = typeof ValueKind[keyof typeof ValueKind];
+
+/**
  * Represents any kind of logical expression node.
  */
 export type AnyExpressionNode =
@@ -377,7 +444,12 @@ export const defaultLocation: Location = {
 };
 
 /**
- * Represents a basic value node in the AST.
+ * Represents a terminal string value that will not be further parsed within
+ * the AST pipeline. The `kind` field provides an optional semantic hint
+ * about the content type.
+ *
+ * Use `Value` for leaf data: identifiers, markers, regex patterns, resource
+ * names, and other content that has no further decomposition step.
  */
 export interface Value<T = string> extends Node {
     type: typeof NodeType.Value;
@@ -386,10 +458,21 @@ export interface Value<T = string> extends Node {
      * Value of the node.
      */
     value: T;
+
+    /**
+     * Optional semantic hint about the content type.
+     */
+    kind?: ValueKind;
 }
 
 /**
- * Represents a raw value node.
+ * Represents source text that could be further decomposed by a sub-parser.
+ * The `kind` field indicates what type of content it holds and which parser
+ * could process it.
+ *
+ * Use `Raw` when a sub-parser exists but was not invoked (due to options
+ * or parsing stage). Consumers can check `kind` to determine what further
+ * parsing is possible.
  */
 export interface Raw extends Node {
     type: typeof NodeType.Raw;
@@ -398,6 +481,12 @@ export interface Raw extends Node {
      * Value of the node.
      */
     value: string;
+
+    /**
+     * Semantic hint about what the raw text represents.
+     * Indicates which sub-parser could further decompose this content.
+     */
+    kind?: ValueKind;
 }
 
 /**
@@ -851,8 +940,10 @@ export interface Modifier extends Node {
 
     /**
      * Modifier value (optional).
+     * - {@link Value} with a `kind` for terminal values (regex, resource names, plain values).
+     * - {@link Raw} with a `kind` for values that can be sub-parsed (domain list, CSP).
      */
-    value?: Value;
+    value?: Value | Raw;
 }
 
 /**
@@ -1304,8 +1395,9 @@ export interface ElementHidingRuleBody extends Node {
 
     /**
      * Element hiding rule selector(s).
+     * Stored as {@link Raw} because a CSS selector parser could further decompose it.
      */
-    selectorList: Value;
+    selectorList: Raw;
 }
 
 /**
@@ -1706,11 +1798,11 @@ export interface HtmlFilteringRule extends CosmeticRule {
      * Body of the HTML filtering rule.
      *
      * - When `parseHtmlFilteringRuleBodies` is `false` (the default), the body is a
-     *   {@link Value} node containing the raw, unparsed body text.
+     *   {@link Raw} node containing the raw, unparsed body text.
      * - When `parseHtmlFilteringRuleBodies` is `true`, the body is a
      *   {@link HtmlFilteringRuleBody} node with a fully parsed CSS selector list.
      */
-    body: Value | HtmlFilteringRuleBody;
+    body: Raw | HtmlFilteringRuleBody;
 }
 
 /**
@@ -1726,7 +1818,10 @@ export interface HtmlFilteringRule extends CosmeticRule {
  */
 export interface JsInjectionRule extends CosmeticRule {
     type: typeof CosmeticRuleType.JsInjectionRule;
-    body: Value;
+    /**
+     * Body of the JS injection rule. Raw because it is unparsed JavaScript source code.
+     */
+    body: Raw;
 }
 
 /**

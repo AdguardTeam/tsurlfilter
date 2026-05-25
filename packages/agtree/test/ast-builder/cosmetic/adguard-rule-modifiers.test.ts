@@ -53,7 +53,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
                         {
                             type: 'Modifier',
                             name: { type: 'Value', value: 'domain' },
-                            value: { type: 'Value', value: 'example.com' },
+                            value: { type: 'Raw', value: 'example.com' },
                         },
                     ],
                 },
@@ -82,7 +82,7 @@ describe('RuleParser — AdGuard rule modifiers', () => {
                         {
                             type: 'Modifier',
                             name: { type: 'Value', value: 'domain' },
-                            value: { type: 'Value', value: 'example.com' },
+                            value: { type: 'Raw', value: 'example.com' },
                         },
                     ],
                 },

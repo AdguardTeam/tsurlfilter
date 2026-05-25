@@ -8,9 +8,10 @@
  */
 
 import type { NetworkRule } from '../../nodes-new';
-import { NetworkRuleType, RuleCategory } from '../../nodes-new';
+import { NetworkRuleType, RuleCategory, ValueKind } from '../../nodes-new';
 import {
     NR_FLAG_EXCEPTION,
+    NR_FLAG_PATTERN_REGEX,
     NR_FLAGS_OFFSET,
     NR_MODIFIER_COUNT_OFFSET,
     NR_MODIFIER_RECORDS_OFFSET,
@@ -55,7 +56,10 @@ export class NetworkRuleAstBuilder {
         const isLoc = options.isLocIncluded ?? false;
 
         // Build pattern Value node
-        const pattern = ValueAstBuilder.parse(source, patternStart, patternEnd, isLoc);
+        const patternKind = (flags & NR_FLAG_PATTERN_REGEX) !== 0
+            ? ValueKind.Regex
+            : ValueKind.Pattern;
+        const pattern = ValueAstBuilder.parse(source, patternStart, patternEnd, isLoc, patternKind);
 
         // Build modifier list (chains to modifier → value parsers)
         const modifiers = ModifierListAstBuilder.parse(

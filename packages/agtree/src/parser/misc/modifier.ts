@@ -18,6 +18,8 @@ import {
     tokenStart,
 } from '../context';
 import {
+    MOD_KIND_REGEX,
+    MOD_KIND_UNKNOWN,
     MODIFIER_FIELD_FLAGS,
     MODIFIER_FIELD_NAME_END,
     MODIFIER_FIELD_NAME_START,
@@ -25,11 +27,14 @@ import {
     MODIFIER_FIELD_VALUE_START,
     MODIFIER_FLAG_NEGATED,
     MODIFIER_RECORD_STRIDE,
+    MODIFIER_VALUE_KIND_SHIFT,
     NO_VALUE,
     NR_MODIFIER_RECORDS_OFFSET,
 } from '../network/constants';
 import type { RecordParser } from '../types';
 
+import { getModifierValueKind } from './modifier-kind';
+import { isRegexLiteral } from './regex-literal';
 import { ValueParser } from './value';
 
 type ModifierBounds = { nameStart: number; nameEnd: number; valueStart: number; valueEnd: number };
@@ -193,6 +198,7 @@ export class ModifierParser implements RecordParser {
         // Check what follows the name
         let valStart = NO_VALUE;
         let valEnd = NO_VALUE;
+        let valTokenStartTi = tokenCount; // Token index at start of value
 
         if (ti >= tokenCount || types[ti] === TokenType.Comma) {
             // No value — modifier is complete
@@ -201,6 +207,7 @@ export class ModifierParser implements RecordParser {
             ti = skipWs(ctx, ti);
 
             // Value starts here
+            valTokenStartTi = ti;
             const valTokenStart = ti;
             valStart = ti < tokenCount
                 ? tokenStart(ctx, ti)
@@ -221,6 +228,20 @@ export class ModifierParser implements RecordParser {
             // Unexpected token after name — skip to next comma for robustness
             ti = skipUntil(ctx, ti, tokenCount, TokenType.Comma);
         }
+
+        // Determine value kind from modifier name and value format
+        let valueKind = valStart !== NO_VALUE
+            ? getModifierValueKind(ctx.source, nameStartIdx, nameEndIdx)
+            : MOD_KIND_UNKNOWN;
+
+        // If name-based kind is unknown but value looks like a regex literal,
+        // delegate detection to the shared isRegexLiteral helper.
+        if (valueKind === MOD_KIND_UNKNOWN && valStart !== NO_VALUE
+            && isRegexLiteral(types, valTokenStartTi, ti)) {
+            valueKind = MOD_KIND_REGEX;
+        }
+
+        modFlags |= (valueKind << MODIFIER_VALUE_KIND_SHIFT);
 
         ctx.data[modBase + MODIFIER_FIELD_NAME_START] = nameStartIdx;
         ctx.data[modBase + MODIFIER_FIELD_NAME_END] = nameEndIdx;

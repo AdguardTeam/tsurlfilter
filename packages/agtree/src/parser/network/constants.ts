@@ -57,6 +57,11 @@ export const NR_MODIFIER_RECORDS_OFFSET = 5;
 export const NR_FLAG_EXCEPTION = 1;
 
 /**
+ * Rule flag bit: pattern is a regex literal (delimited by `/`).
+ */
+export const NR_FLAG_PATTERN_REGEX = 1 << 1;
+
+/**
  * Record size: number of Int32Array slots per modifier.
  */
 export const MODIFIER_RECORD_STRIDE = 5;
@@ -90,6 +95,53 @@ export const MODIFIER_FIELD_VALUE_END = 4;
  * Modifier flag bit: negated modifier (starts with ~).
  */
 export const MODIFIER_FLAG_NEGATED = 1;
+
+/*
+ * MODIFIER_FIELD_FLAGS bit layout:
+ *
+ *   bit  0      : MODIFIER_FLAG_NEGATED  — modifier is negated (~name)
+ *   bits 1..4   : value kind             — MODIFIER_VALUE_KIND_SHIFT=1, MASK=0x0F
+ *                                          (16 possible kind values)
+ *   bits 5..31  : reserved
+ *
+ * Composition example:
+ *   modFlags = MODIFIER_FLAG_NEGATED | (MOD_KIND_DOMAIN_LIST << MODIFIER_VALUE_KIND_SHIFT);
+ */
+
+/**
+ * Bit shift for modifier value kind (bits 1-4 of MODIFIER_FIELD_FLAGS).
+ */
+export const MODIFIER_VALUE_KIND_SHIFT = 1;
+
+/**
+ * Bit mask for extracting modifier value kind (4 bits → 16 values).
+ */
+export const MODIFIER_VALUE_KIND_MASK = 0x0F;
+
+/**
+ * Modifier value kind: unset / unknown.
+ */
+export const MOD_KIND_UNKNOWN = 0;
+
+/**
+ * Modifier value kind: regex pattern (/pattern/flags).
+ */
+export const MOD_KIND_REGEX = 1;
+
+/**
+ * Modifier value kind: domain list (pipe or comma separated).
+ */
+export const MOD_KIND_DOMAIN_LIST = 2;
+
+/**
+ * Modifier value kind: CSP directive.
+ */
+export const MOD_KIND_CSP = 3;
+
+/**
+ * Modifier value kind: resource name (redirect target).
+ */
+export const MOD_KIND_RESOURCE = 4;
 
 /**
  * Sentinel value for absent data (-1).

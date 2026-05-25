@@ -28,12 +28,14 @@ import { TokenType } from '../../tokenizer/token-types';
 import type { ParserContext } from '../context';
 import { regionEquals, skipWs, tokenStart } from '../context';
 import { ModifierListParser } from '../misc/modifier-list';
+import { isRegexLiteral } from '../misc/regex-literal';
 import { isPotentialNetModifier } from '../misc/shared';
 import type { StructuralParser } from '../types';
 
 import {
     NO_VALUE,
     NR_FLAG_EXCEPTION,
+    NR_FLAG_PATTERN_REGEX,
     NR_FLAGS_OFFSET,
     NR_MIN_DATA_SLOTS,
     NR_MODIFIER_COUNT_OFFSET,
@@ -198,6 +200,12 @@ export class NetworkRuleParser implements StructuralParser {
         }
 
         d[dataOffset + NR_FLAGS_OFFSET] = flags;
+        // Detect regex pattern: delegate to the shared isRegexLiteral helper.
+        const patternStartTi = ti;
+        const patternEndTi = sepTi !== -1 ? sepTi : endTi;
+        if (isRegexLiteral(types, patternStartTi, patternEndTi)) {
+            d[dataOffset + NR_FLAGS_OFFSET] = flags | NR_FLAG_PATTERN_REGEX;
+        }
         d[dataOffset + NR_PATTERN_START_OFFSET] = patternStartIdx;
         d[dataOffset + NR_PATTERN_END_OFFSET] = patternEndIdx;
         d[dataOffset + NR_SEPARATOR_INDEX_OFFSET] = separatorSourceIdx;

@@ -33,7 +33,7 @@ describe('RuleParser — HTML filtering rules', () => {
                     end: 2,
                 },
                 body: {
-                    type: 'Value',
+                    type: 'Raw',
                     value: 'script[tag-content="adblock"]',
                     start: 2,
                     end: 31,
@@ -55,7 +55,7 @@ describe('RuleParser — HTML filtering rules', () => {
                     value: '$$',
                 },
                 body: {
-                    type: 'Value',
+                    type: 'Raw',
                     value: 'div[custom_attr]',
                 },
             });
@@ -77,7 +77,7 @@ describe('RuleParser — HTML filtering rules', () => {
                     end: 3,
                 },
                 body: {
-                    type: 'Value',
+                    type: 'Raw',
                     value: 'script[tag-content="adblock"]',
                     start: 3,
                     end: 32,
@@ -121,7 +121,7 @@ describe('RuleParser — HTML filtering rules', () => {
                     end: 26,
                 },
                 body: {
-                    type: 'Value',
+                    type: 'Raw',
                     value: 'script[tag-content="adblock"]',
                     start: 26,
                     end: 55,
@@ -145,7 +145,7 @@ describe('RuleParser — HTML filtering rules', () => {
                     end: 27,
                 },
                 body: {
-                    type: 'Value',
+                    type: 'Raw',
                     value: 'script[tag-content="adblock"]',
                     start: 27,
                     end: 56,
@@ -179,7 +179,7 @@ describe('RuleParser — HTML filtering rules', () => {
                     end: 2,
                 },
                 body: {
-                    type: 'Value',
+                    type: 'Raw',
                     value: 'script:has-text(adblock)',
                     start: 3,
                     end: 27,
@@ -203,7 +203,7 @@ describe('RuleParser — HTML filtering rules', () => {
                     end: 3,
                 },
                 body: {
-                    type: 'Value',
+                    type: 'Raw',
                     value: 'script:has-text(adblock)',
                     start: 4,
                     end: 28,
@@ -241,7 +241,7 @@ describe('RuleParser — HTML filtering rules', () => {
                     value: '##',
                 },
                 body: {
-                    type: 'Value',
+                    type: 'Raw',
                     value: 'script:has-text(adblock)',
                 },
             });
@@ -261,7 +261,7 @@ describe('RuleParser — HTML filtering rules', () => {
                     value: '#@#',
                 },
                 body: {
-                    type: 'Value',
+                    type: 'Raw',
                     value: 'script:has-text(adblock)',
                 },
             });
@@ -277,7 +277,7 @@ describe('RuleParser — HTML filtering rules', () => {
                 syntax: SYNTAX_UBO,
                 exception: false,
                 body: {
-                    type: 'Value',
+                    type: 'Raw',
                     value: 'responseheader(Test)',
                 },
             });

@@ -16,7 +16,7 @@ describe('RuleParser — ADG JS injection rules', () => {
             expect(ast.category).toBe('Cosmetic');
             expect(ast.syntax).toBe(SYNTAX_ADG);
             expect(ast.exception).toBe(false);
-            expect(ast.body.type).toBe('Value');
+            expect(ast.body.type).toBe('Raw');
             expect(ast.body.value).toBe('let a = 2;');
         });
 

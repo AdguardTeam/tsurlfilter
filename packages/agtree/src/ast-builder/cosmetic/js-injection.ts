@@ -12,11 +12,13 @@ import {
     ListNodeType,
     NodeType,
     RuleCategory,
+    ValueKind,
 } from '../../nodes-new';
 import type {
     DomainList,
     JsInjectionRule,
     ModifierList,
+    Raw,
     Value,
 } from '../../nodes-new';
 import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
@@ -119,9 +121,10 @@ export class JsInjectionAstBuilder {
         const bodyEnd = data[dataOffset + CR_BODY_END];
         const bodyValue = source.slice(bodyStart, bodyEnd);
 
-        const body: Value = {
-            type: NodeType.Value,
+        const body: Raw = {
+            type: NodeType.Raw,
             value: bodyValue,
+            kind: ValueKind.JavaScript,
         };
 
         if (isLocIncluded) {

@@ -75,6 +75,20 @@ import {
 } from '../nodes-new';
 
 /**
+ * Type guard that narrows a `Value | Raw` union to `Raw`.
+ *
+ * Prefer this over `as Raw` casts after a discriminator check — it is
+ * reusable and keeps the surrounding code free of type assertions.
+ *
+ * @param node Node to test.
+ *
+ * @returns `true` if `node` is a {@link Raw} node.
+ */
+function isRaw(node: Value | Raw): node is Raw {
+    return node.type === NodeType.Raw;
+}
+
+/**
  * A JSON-compatible value: primitive, array, or plain-object literal.
  * Used to constrain the type of `ConfigNode.value`.
  */
@@ -248,7 +262,9 @@ export function cloneModifier(node: Modifier): Modifier {
         result.exception = node.exception;
     }
     if (node.value !== undefined) {
-        result.value = cloneValue(node.value);
+        result.value = isRaw(node.value)
+            ? cloneRaw(node.value)
+            : cloneValue(node.value);
     }
     copyNodeBase(node, result);
     return result;
@@ -613,7 +629,7 @@ export function cloneUboSelector(node: UboSelector): UboSelector {
 export function cloneElementHidingRuleBody(node: ElementHidingRuleBody): ElementHidingRuleBody {
     const result: ElementHidingRuleBody = {
         type: node.type,
-        selectorList: cloneValue(node.selectorList),
+        selectorList: cloneRaw(node.selectorList),
     };
     copyNodeBase(node, result);
     return result;
@@ -996,7 +1012,7 @@ export function cloneScriptletInjectionRule(
 /**
  * Clones an `HtmlFilteringRule` node.
  *
- * The body can be either a `Value` (raw unparsed body) or a
+ * The body can be either a `Raw` (raw unparsed body) or a
  * `HtmlFilteringRuleBody` (fully parsed CSS selector list).
  *
  * @param node HtmlFilteringRule to clone.
@@ -1004,8 +1020,8 @@ export function cloneScriptletInjectionRule(
  * @returns Cloned HtmlFilteringRule.
  */
 export function cloneHtmlFilteringRule(node: HtmlFilteringRule): HtmlFilteringRule {
-    const body: HtmlFilteringRule['body'] = node.body.type === NodeType.Value
-        ? cloneValue(node.body as Value)
+    const body: HtmlFilteringRule['body'] = node.body.type === NodeType.Raw
+        ? cloneRaw(node.body as Raw)
         : cloneHtmlFilteringRuleBody(node.body as HtmlFilteringRuleBody);
 
     const result: HtmlFilteringRule = {
@@ -1039,7 +1055,7 @@ export function cloneJsInjectionRule(node: JsInjectionRule): JsInjectionRule {
         exception: node.exception,
         domains: cloneDomainList(node.domains),
         separator: cloneValue(node.separator),
-        body: cloneValue(node.body),
+        body: cloneRaw(node.body),
     };
     if (node.modifiers !== undefined) {
         result.modifiers = cloneModifierList(node.modifiers);

@@ -6,9 +6,13 @@
  * Delegates value node creation to {@link ValueAstBuilder}.
  */
 
-import { NodeType } from '../../nodes-new';
+import { NodeType, ValueKind } from '../../nodes-new';
 import type { Modifier } from '../../nodes-new';
 import {
+    MOD_KIND_CSP,
+    MOD_KIND_DOMAIN_LIST,
+    MOD_KIND_REGEX,
+    MOD_KIND_RESOURCE,
     MODIFIER_FIELD_FLAGS,
     MODIFIER_FIELD_NAME_END,
     MODIFIER_FIELD_NAME_START,
@@ -16,6 +20,8 @@ import {
     MODIFIER_FIELD_VALUE_START,
     MODIFIER_FLAG_NEGATED,
     MODIFIER_RECORD_STRIDE,
+    MODIFIER_VALUE_KIND_MASK,
+    MODIFIER_VALUE_KIND_SHIFT,
     NO_VALUE,
     NR_MODIFIER_RECORDS_OFFSET,
 } from '../../parser/network/constants';
@@ -54,7 +60,10 @@ export class ModifierAstBuilder {
         const valStart = data[base + MODIFIER_FIELD_VALUE_START];
         const valEnd = data[base + MODIFIER_FIELD_VALUE_END];
 
-        const name = ValueAstBuilder.parse(source, nameStart, nameEnd, isLocIncluded);
+        const rawKindBits = (modFlags >>> MODIFIER_VALUE_KIND_SHIFT) & MODIFIER_VALUE_KIND_MASK;
+
+        // Modifier name is always a plain identifier
+        const name = ValueAstBuilder.parse(source, nameStart, nameEnd, isLocIncluded, ValueKind.Identifier);
 
         const modifier: Modifier = {
             type: NodeType.Modifier,
@@ -63,7 +72,17 @@ export class ModifierAstBuilder {
         };
 
         if (valStart !== NO_VALUE) {
-            modifier.value = ValueAstBuilder.parse(source, valStart, valEnd, isLocIncluded);
+            // Domain lists and CSP directives are sub-parseable → use Raw
+            if (rawKindBits === MOD_KIND_DOMAIN_LIST || rawKindBits === MOD_KIND_CSP) {
+                const valueKind = rawKindBits === MOD_KIND_DOMAIN_LIST
+                    ? ValueKind.DomainList
+                    : ValueKind.Csp;
+                modifier.value = ValueAstBuilder.parseRaw(source, valStart, valEnd, isLocIncluded, valueKind);
+            } else {
+                // All other values (identifiers, regex, resource, unknown) → Value
+                const valueKind = ModifierAstBuilder.bitsToValueKind(rawKindBits);
+                modifier.value = ValueAstBuilder.parse(source, valStart, valEnd, isLocIncluded, valueKind);
+            }
         }
 
         if (isLocIncluded) {
@@ -72,5 +91,18 @@ export class ModifierAstBuilder {
         }
 
         return modifier;
+    }
+
+    /**
+     * Maps raw kind bits from the binary buffer to a {@link ValueKind} enum value.
+     *
+     * @param bits Kind bits read from modifier flags.
+     *
+     * @returns Corresponding ValueKind, or undefined if unknown.
+     */
+    private static bitsToValueKind(bits: number): ValueKind | undefined {
+        if (bits === MOD_KIND_REGEX) { return ValueKind.Regex; }
+        if (bits === MOD_KIND_RESOURCE) { return ValueKind.Resource; }
+        return undefined;
     }
 }

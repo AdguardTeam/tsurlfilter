@@ -297,10 +297,10 @@ describe('cloneDomainList', () => {
 // ─── Cosmetic rule bodies ─────────────────────────────────────────────────────
 
 describe('cloneElementHidingRuleBody', () => {
-    it('clones body with selectorList Value', () => {
+    it('clones body with selectorList Raw', () => {
         const original = {
             type: NodeType.ElementHidingRuleBody,
-            selectorList: { type: NodeType.Value, value: '.ads' },
+            selectorList: { type: NodeType.Raw, value: '.ads' },
         };
         const result = cloneElementHidingRuleBody(original);
 
@@ -624,7 +624,7 @@ describe('cloneElementHidingRule', () => {
             separator: { type: NodeType.Value, value: '##' },
             body: {
                 type: NodeType.ElementHidingRuleBody,
-                selectorList: { type: NodeType.Value, value: '.ads' },
+                selectorList: { type: NodeType.Raw, value: '.ads' },
             },
             modifiers: {
                 type: NodeType.ModifierList,
@@ -655,7 +655,7 @@ describe('cloneElementHidingRule', () => {
             separator: { type: NodeType.Value, value: '##' },
             body: {
                 type: NodeType.ElementHidingRuleBody,
-                selectorList: { type: NodeType.Value, value: '.ads' },
+                selectorList: { type: NodeType.Raw, value: '.ads' },
             },
         };
         const result = cloneElementHidingRule(original);
@@ -674,7 +674,7 @@ describe('cloneElementHidingRule', () => {
             separator: { type: NodeType.Value, value: '##' },
             body: {
                 type: NodeType.ElementHidingRuleBody,
-                selectorList: { type: NodeType.Value, value: '.ads' },
+                selectorList: { type: NodeType.Raw, value: '.ads' },
             },
         };
         const result = cloneElementHidingRule(original);
@@ -752,7 +752,7 @@ describe('cloneScriptletInjectionRule', () => {
 });
 
 describe('cloneHtmlFilteringRule', () => {
-    it('clones with Value body (raw mode)', () => {
+    it('clones with Raw body (raw mode)', () => {
         const original = {
             type: CosmeticRuleType.HtmlFilteringRule,
             category: RuleCategory.Cosmetic,
@@ -760,7 +760,7 @@ describe('cloneHtmlFilteringRule', () => {
             exception: false,
             domains: makeDomainList(),
             separator: { type: NodeType.Value, value: '$$' },
-            body: { type: NodeType.Value, value: 'script[detect]' },
+            body: { type: NodeType.Raw, value: 'script[detect]' },
         };
         const result = cloneHtmlFilteringRule(original);
 
@@ -778,7 +778,7 @@ describe('cloneJsInjectionRule', () => {
             exception: false,
             domains: makeDomainList(),
             separator: { type: NodeType.Value, value: '#%#' },
-            body: { type: NodeType.Value, value: 'let a = 2;' },
+            body: { type: NodeType.Raw, value: 'let a = 2;' },
         };
         const result = cloneJsInjectionRule(original);
 
@@ -924,7 +924,7 @@ describe('cloneRule', () => {
             separator: { type: NodeType.Value, value: '##' },
             body: {
                 type: NodeType.ElementHidingRuleBody,
-                selectorList: { type: NodeType.Value, value: '.ads' },
+                selectorList: { type: NodeType.Raw, value: '.ads' },
             },
         };
         const result = cloneRule(original);

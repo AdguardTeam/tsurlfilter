@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import type { CssDeclarationList, CssInjectionRule, SelectorList } from '../../../src/nodes-new';
+import { ValueKind } from '../../../src/nodes-new';
 import { SYNTAX_ADG } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();
@@ -18,8 +19,9 @@ describe('RuleParser — ADG CSS injection rules', () => {
             expect(ast.separator.value).toBe('#$#');
             expect(ast.domains.children).toHaveLength(0);
             expect(ast.body.type).toBe('CssInjectionRuleBody');
-            expect(ast.body.selectorList).toEqual({ type: 'Raw', value: 'body' });
-            expect(ast.body.declarationList).toEqual({ type: 'Raw', value: 'padding: 0;' });
+            expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'body', kind: ValueKind.CssSelector });
+            // eslint-disable-next-line max-len
+            expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'padding: 0;', kind: ValueKind.CssDeclaration });
             expect(ast.body.mediaQueryList).toBeUndefined();
             expect(ast.body.remove).toBeUndefined();
         });
@@ -30,8 +32,9 @@ describe('RuleParser — ADG CSS injection rules', () => {
             expect(ast.type).toBe('CssInjectionRule');
             expect(ast.exception).toBe(true);
             expect(ast.separator.value).toBe('#@$#');
-            expect(ast.body.selectorList).toEqual({ type: 'Raw', value: 'body' });
-            expect(ast.body.declarationList).toEqual({ type: 'Raw', value: 'padding: 0;' });
+            expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'body', kind: ValueKind.CssSelector });
+            // eslint-disable-next-line max-len
+            expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'padding: 0;', kind: ValueKind.CssDeclaration });
         });
 
         test('with domains: example.com,~example.net#$#body { padding: 0; }', () => {
@@ -43,8 +46,9 @@ describe('RuleParser — ADG CSS injection rules', () => {
             expect(ast.exception).toBe(false);
             expect(ast.domains.children).toHaveLength(2);
             expect(ast.separator.value).toBe('#$#');
-            expect(ast.body.selectorList).toEqual({ type: 'Raw', value: 'body' });
-            expect(ast.body.declarationList).toEqual({ type: 'Raw', value: 'padding: 0;' });
+            expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'body', kind: ValueKind.CssSelector });
+            // eslint-disable-next-line max-len
+            expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'padding: 0;', kind: ValueKind.CssDeclaration });
         });
 
         test('domains + exception: example.com,~example.net#@$#body { padding: 0; }', () => {
@@ -69,8 +73,9 @@ describe('RuleParser — ADG CSS injection rules', () => {
             expect(ast.body.mediaQueryList!.value).toBe(
                 '(min-height: 1024px) and (max-height: 1920px)',
             );
-            expect(ast.body.selectorList).toEqual({ type: 'Raw', value: 'body' });
-            expect(ast.body.declarationList).toEqual({ type: 'Raw', value: 'padding: 0;' });
+            expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'body', kind: ValueKind.CssSelector });
+            // eslint-disable-next-line max-len
+            expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'padding: 0;', kind: ValueKind.CssDeclaration });
         });
 
         test('with domains + @media', () => {
@@ -84,7 +89,7 @@ describe('RuleParser — ADG CSS injection rules', () => {
             expect(ast.body.mediaQueryList!.value).toBe(
                 '(min-height: 1024px) and (max-height: 1920px)',
             );
-            expect(ast.body.selectorList).toEqual({ type: 'Raw', value: 'body' });
+            expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'body', kind: ValueKind.CssSelector });
         });
     });
 
@@ -96,11 +101,13 @@ describe('RuleParser — ADG CSS injection rules', () => {
 
             expect(ast.type).toBe('CssInjectionRule');
             expect(ast.separator.value).toBe('#$?#');
-            expect(ast.body.selectorList).toEqual({
+            expect(ast.body.selectorList).toMatchObject({
                 type: 'Raw',
                 value: 'body:-abp-has(.ad)',
+                kind: ValueKind.CssSelector,
             });
-            expect(ast.body.declarationList).toEqual({ type: 'Raw', value: 'padding: 0;' });
+            // eslint-disable-next-line max-len
+            expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'padding: 0;', kind: ValueKind.CssDeclaration });
         });
 
         test('exception: #@$?#body:-abp-has(.ad) { padding: 0; }', () => {
@@ -120,9 +127,10 @@ describe('RuleParser — ADG CSS injection rules', () => {
 
             expect(ast.type).toBe('CssInjectionRule');
             expect(ast.body.mediaQueryList).toBeDefined();
-            expect(ast.body.selectorList).toEqual({
+            expect(ast.body.selectorList).toMatchObject({
                 type: 'Raw',
                 value: 'body:-abp-has(.ad)',
+                kind: ValueKind.CssSelector,
             });
         });
 
@@ -166,7 +174,7 @@ describe('RuleParser — ADG CSS injection rules', () => {
             expect(ast.type).toBe('CssInjectionRule');
             expect(ast.body.remove).toBe(true);
             expect(ast.body.declarationList).toBeUndefined();
-            expect(ast.body.selectorList).toEqual({ type: 'Raw', value: '.ads' });
+            expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: '.ads', kind: ValueKind.CssSelector });
         });
 
         test('extended CSS remove rule', () => {
@@ -262,7 +270,7 @@ describe('RuleParser — ADG CSS injection: parseCssSelectorList', () => {
         const declarationList = 'padding: 0;';
         const ast = parser.parse(`#$#${selectorList} { ${declarationList} }`) as CssInjectionRule;
 
-        expect(ast.body.selectorList).toEqual({ type: 'Raw', value: selectorList });
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: selectorList, kind: ValueKind.CssSelector });
     });
 
     test('parseCssSelectorList: true → simple type selector', () => {
@@ -325,7 +333,8 @@ describe('RuleParser — ADG CSS injection: parseCssDeclarationList', () => {
         const declarationList = 'padding: 0;';
         const ast = parser.parse(`#$#${selectorList} { ${declarationList} }`) as CssInjectionRule;
 
-        expect(ast.body.declarationList).toEqual({ type: 'Raw', value: declarationList });
+        // eslint-disable-next-line max-len
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: declarationList, kind: ValueKind.CssDeclaration });
     });
 
     test('parseCssDeclarationList: true → single property', () => {

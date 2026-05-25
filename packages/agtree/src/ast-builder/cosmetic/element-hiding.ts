@@ -12,12 +12,14 @@ import {
     ListNodeType,
     NodeType,
     RuleCategory,
+    ValueKind,
 } from '../../nodes-new';
 import type {
     ElementHidingRule,
     ElementHidingRuleBody,
     Modifier,
     ModifierList,
+    Raw,
     Value,
 } from '../../nodes-new';
 import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
@@ -164,9 +166,10 @@ export class ElementHidingAstBuilder {
             }
         }
 
-        const selectorList: Value = {
-            type: NodeType.Value,
+        const selectorList: Raw = {
+            type: NodeType.Raw,
             value: selectorListValue,
+            kind: ValueKind.CssSelector,
         };
 
         if (isLocIncluded) {

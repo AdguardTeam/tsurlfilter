@@ -21,6 +21,7 @@ import {
     ListNodeType,
     NodeType,
     RuleCategory,
+    ValueKind,
 } from '../../nodes-new';
 import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
 import type { ParserContext } from '../../parser/context';
@@ -187,7 +188,13 @@ export class CssInjectionAstBuilder {
                 { isLocIncluded },
             );
         } else {
-            selectorList = CssInjectionAstBuilder.buildRaw(source, slSourceStart, slSourceEnd, isLocIncluded);
+            selectorList = CssInjectionAstBuilder.buildRaw(
+                source,
+                slSourceStart,
+                slSourceEnd,
+                isLocIncluded,
+                ValueKind.CssSelector,
+            );
         }
 
         // Build body node
@@ -239,7 +246,13 @@ export class CssInjectionAstBuilder {
                 { isLocIncluded },
             );
         } else {
-            body.declarationList = CssInjectionAstBuilder.buildRaw(source, dlSourceStart, dlSourceEnd, isLocIncluded);
+            body.declarationList = CssInjectionAstBuilder.buildRaw(
+                source,
+                dlSourceStart,
+                dlSourceEnd,
+                isLocIncluded,
+                ValueKind.CssDeclaration,
+            );
         }
 
         if (isLocIncluded) {
@@ -274,6 +287,7 @@ export class CssInjectionAstBuilder {
      * @param start Source start offset.
      * @param end Source end offset.
      * @param isLocIncluded Whether to include location info.
+     * @param kind Optional semantic kind to attach to the node.
      *
      * @returns Raw AST node.
      */
@@ -282,11 +296,16 @@ export class CssInjectionAstBuilder {
         start: number,
         end: number,
         isLocIncluded: boolean,
+        kind?: ValueKind,
     ): Raw {
         const node: Raw = {
             type: NodeType.Raw,
             value: source.slice(start, end),
         };
+
+        if (kind !== undefined) {
+            node.kind = kind;
+        }
 
         if (isLocIncluded) {
             node.start = start;

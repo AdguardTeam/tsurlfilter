@@ -12,6 +12,7 @@ import {
     ListNodeType,
     NodeType,
     RuleCategory,
+    ValueKind,
 } from '../../nodes-new';
 import type {
     ComplexSelector,
@@ -20,6 +21,7 @@ import type {
     HtmlFilteringRuleBody,
     ModifierList,
     PseudoClassSelector,
+    Raw,
     SelectorList,
     Value,
 } from '../../nodes-new';
@@ -147,7 +149,7 @@ export class HtmlFilteringAstBuilder {
 
         // Build body
         const parseBody = options.parseHtmlFilteringRuleBodies === true;
-        let body: Value | HtmlFilteringRuleBody;
+        let body: Raw | HtmlFilteringRuleBody;
 
         if (parseBody) {
             if (isResponseHeader) {
@@ -170,10 +172,11 @@ export class HtmlFilteringAstBuilder {
                 );
             }
         } else {
-            // Raw mode: body is a plain Value
-            const bodyValue: Value = {
-                type: NodeType.Value,
+            // Raw mode: body is a Raw node with CSS selector kind
+            const bodyValue: Raw = {
+                type: NodeType.Raw,
                 value: source.slice(bodyStart, bodyEnd),
+                kind: ValueKind.CssSelector,
             };
 
             if (isLocIncluded) {
