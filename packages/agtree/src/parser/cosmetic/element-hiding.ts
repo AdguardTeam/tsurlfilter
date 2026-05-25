@@ -227,7 +227,7 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                 return true;
             }
 
-            // Also check for :not( wrapping :matches-path()
+            // Also check for :not( wrapping :matches-path() or :matches-media()
             if (regionEquals(source, identStart, identEnd, 'not')) {
                 // Look ahead inside :not() for a uBO modifier candidate
                 for (let j = identEndTi + 1; j < endTi; j += 1) {
@@ -236,7 +236,10 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                         if (innerEndTi > j + 1 && innerEndTi < endTi && types[innerEndTi] === TokenType.OpenParen) {
                             const iStart = ends[j];
                             const iEnd = ends[innerEndTi - 1];
-                            if (regionEquals(source, iStart, iEnd, UboPseudoName.MatchesPath)) {
+                            if (
+                                regionEquals(source, iStart, iEnd, UboPseudoName.MatchesPath)
+                                || regionEquals(source, iStart, iEnd, UboPseudoName.MatchesMedia)
+                            ) {
                                 return true;
                             }
                         }
@@ -404,8 +407,8 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
                     if (depth > 0) {
                         // Nested modifier
-                        if (modBit === UBO_MOD_BIT_MATCHES_PATH) {
-                            // FR-004: :matches-path() can be inside :not() wrappers
+                        if (modBit === UBO_MOD_BIT_MATCHES_PATH || modBit === UBO_MOD_BIT_MATCHES_MEDIA) {
+                            // FR-004: :matches-path() / :matches-media() can be inside :not() wrappers
                             // Walk backwards to find and validate :not() wrappers
                             let exception = 0;
                             let notCount = 0;
@@ -424,15 +427,17 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
                                 // Expect OpenParen
                                 if (jt !== TokenType.OpenParen) {
+                                    const modName = source.slice(identStart, identEnd);
                                     throw new Error(
-                                        'Negated :matches-path() cannot be preceded by other tokens inside :not()',
+                                        `Negated :${modName}() cannot be preceded by other tokens inside :not()`,
                                     );
                                 }
 
                                 // Before OpenParen should be Letter token for 'not'
                                 if (j < 2 || types[j - 1] !== TokenType.Letter) {
+                                    const modName = source.slice(identStart, identEnd);
                                     throw new Error(
-                                        ':matches-path() can only be nested inside :not()',
+                                        `:${modName}() can only be nested inside :not()`,
                                     );
                                 }
 
@@ -441,15 +446,17 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
                                 if (!regionEquals(source, wrapNameStart, wrapNameEnd, 'not')) {
                                     const fn = source.slice(wrapNameStart, wrapNameEnd);
+                                    const modName = source.slice(identStart, identEnd);
                                     throw new Error(
-                                        `:matches-path() can only be nested inside :not(), found :${fn}()`,
+                                        `:${modName}() can only be nested inside :not(), found :${fn}()`,
                                     );
                                 }
 
                                 // Before Ident should be Colon
                                 if (j < 3 || types[j - 2] !== TokenType.Colon) {
+                                    const modName = source.slice(identStart, identEnd);
                                     throw new Error(
-                                        'Expected colon before :not() wrapping :matches-path()',
+                                        `Expected colon before :not() wrapping :${modName}()`,
                                     );
                                 }
 
@@ -462,8 +469,9 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
 
                             // Another modifier already open is not allowed
                             if (curModOpen) {
+                                const modName = source.slice(identStart, identEnd);
                                 throw new Error(
-                                    ':matches-path() cannot be nested inside another uBO modifier',
+                                    `:${modName}() cannot be nested inside another uBO modifier`,
                                 );
                             }
 

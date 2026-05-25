@@ -2,6 +2,7 @@ import type { CssInjectionRuleBody } from '../../nodes';
 import {
     CLOSE_CURLY_BRACKET,
     CSS_MEDIA_MARKER,
+    CSS_NOT_PSEUDO,
     EMPTY,
     OPEN_CURLY_BRACKET,
     SPACE,
@@ -28,7 +29,20 @@ export class AdgCssInjectionGenerator extends BaseGenerator {
         const result: string[] = [];
 
         if (node.mediaQueryList) {
-            result.push(CSS_MEDIA_MARKER, SPACE, node.mediaQueryList.value, SPACE, OPEN_CURLY_BRACKET, SPACE);
+            if (node.mediaQueryNegated) {
+                result.push(
+                    CSS_MEDIA_MARKER,
+                    SPACE,
+                    CSS_NOT_PSEUDO,
+                    SPACE,
+                    node.mediaQueryList.value,
+                    SPACE,
+                    OPEN_CURLY_BRACKET,
+                    SPACE,
+                );
+            } else {
+                result.push(CSS_MEDIA_MARKER, SPACE, node.mediaQueryList.value, SPACE, OPEN_CURLY_BRACKET, SPACE);
+            }
         }
 
         result.push(node.selectorList.value, SPACE, OPEN_CURLY_BRACKET, SPACE);

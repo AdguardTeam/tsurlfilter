@@ -4,6 +4,7 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import {
     CLOSE_PARENTHESIS,
     COLON,
+    CSS_NOT_PSEUDO,
     EMPTY,
     OPEN_PARENTHESIS,
     SPACE,
@@ -49,11 +50,23 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
                     result = AdgCssInjectionGenerator.generate(node.body);
                 } else if (node.syntax === AdblockSyntax.Ubo) {
                     if (node.body.mediaQueryList) {
-                        result += COLON;
-                        result += UboPseudoName.MatchesMedia;
-                        result += OPEN_PARENTHESIS;
-                        result += node.body.mediaQueryList.value;
-                        result += CLOSE_PARENTHESIS;
+                        if (node.body.mediaQueryNegated) {
+                            result += COLON;
+                            result += CSS_NOT_PSEUDO;
+                            result += OPEN_PARENTHESIS;
+                            result += COLON;
+                            result += UboPseudoName.MatchesMedia;
+                            result += OPEN_PARENTHESIS;
+                            result += node.body.mediaQueryList.value;
+                            result += CLOSE_PARENTHESIS;
+                            result += CLOSE_PARENTHESIS;
+                        } else {
+                            result += COLON;
+                            result += UboPseudoName.MatchesMedia;
+                            result += OPEN_PARENTHESIS;
+                            result += node.body.mediaQueryList.value;
+                            result += CLOSE_PARENTHESIS;
+                        }
                         result += SPACE;
                     }
 

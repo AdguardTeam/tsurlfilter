@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
+import { AdgCssInjectionGenerator } from '../../../src/generator/css/adg-css-injection-generator';
+import type { CssInjectionRuleBody } from '../../../src/nodes';
 import type { CssInjectionRule, Raw } from '../../../src/nodes-new';
 import { SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 
@@ -283,5 +285,71 @@ describe('UboCssInjectionAstBuilder — CSS sub-parsing options', () => {
 
         expect(ast.body.selectorList.type).toBe('SelectorList');
         expect(ast.body.declarationList?.type).toBe('CssDeclarationList');
+    });
+});
+
+describe('UboCssInjectionAstBuilder — negated :matches-media()', () => {
+    test(':not(:matches-media()) + :style() sets mediaQueryNegated', () => {
+        const ast = parser.parse(
+            '##body:not(:matches-media((min-width: 750px))):style(color: red)',
+        ) as CssInjectionRule;
+
+        expect(ast.type).toBe('CssInjectionRule');
+        expect(ast.body.mediaQueryList).toMatchObject({
+            type: 'Value',
+            value: '(min-width: 750px)',
+        });
+        expect(ast.body.mediaQueryNegated).toBe(true);
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'body' });
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color: red' });
+    });
+
+    test('non-negated :matches-media() does NOT set mediaQueryNegated', () => {
+        const ast = parser.parse(
+            '##body:matches-media((min-width: 750px)):style(color: red)',
+        ) as CssInjectionRule;
+
+        expect(ast.body.mediaQueryList?.value).toBe('(min-width: 750px)');
+        expect(ast.body.mediaQueryNegated).toBeFalsy();
+    });
+
+    test('double :not(:not(:matches-media())) cancels negation', () => {
+        const ast = parser.parse(
+            '##body:not(:not(:matches-media((min-width: 750px)))):style(color: red)',
+        ) as CssInjectionRule;
+
+        expect(ast.body.mediaQueryList?.value).toBe('(min-width: 750px)');
+        expect(ast.body.mediaQueryNegated).toBeFalsy();
+    });
+
+    test('triple :not(:not(:not(:matches-media()))) is negated', () => {
+        const ast = parser.parse(
+            '##body:not(:not(:not(:matches-media((min-width: 750px))))):style(color: red)',
+        ) as CssInjectionRule;
+
+        expect(ast.body.mediaQueryList?.value).toBe('(min-width: 750px)');
+        expect(ast.body.mediaQueryNegated).toBe(true);
+    });
+});
+
+describe('UboCssInjectionAstBuilder — AdGuard generator for negated :matches-media()', () => {
+    test('AdGuard generator emits @media not ... for negated', () => {
+        const ast = parser.parse(
+            '##body:not(:matches-media((min-width: 750px))):style(color: red)',
+        ) as CssInjectionRule;
+
+        const output = AdgCssInjectionGenerator.generate(ast.body as unknown as CssInjectionRuleBody);
+
+        expect(output).toBe('@media not (min-width: 750px) { body { color: red } }');
+    });
+
+    test('AdGuard generator emits @media ... for non-negated', () => {
+        const ast = parser.parse(
+            '##body:matches-media((min-width: 750px)):style(color: red)',
+        ) as CssInjectionRule;
+
+        const output = AdgCssInjectionGenerator.generate(ast.body as unknown as CssInjectionRuleBody);
+
+        expect(output).toBe('@media (min-width: 750px) { body { color: red } }');
     });
 });

@@ -341,6 +341,7 @@ export class CosmeticRuleParser extends BaseParser {
             const selectorList = uboSelector.selector;
             let declarationList: Value | undefined;
             let mediaQueryList: Value | undefined;
+            let mediaQueryNegated = false;
             let remove = false;
 
             for (const modifier of uboSelector.modifiers.children) {
@@ -360,6 +361,7 @@ export class CosmeticRuleParser extends BaseParser {
 
                     case UboPseudoName.MatchesMedia:
                         mediaQueryList = modifier.value;
+                        mediaQueryNegated = modifier.exception ?? false;
                         break;
 
                     default:
@@ -377,6 +379,7 @@ export class CosmeticRuleParser extends BaseParser {
                 selectorList,
                 declarationList,
                 mediaQueryList,
+                mediaQueryNegated: mediaQueryNegated || undefined,
                 remove,
             };
 

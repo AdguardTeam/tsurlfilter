@@ -168,4 +168,29 @@ describe('CosmeticRuleParser', () => {
             expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
         });
     });
+
+    describe('CosmeticRuleParser.generate - negated :matches-media() round-trip', () => {
+        test.each<{ actual: string; expected: string }>([
+            {
+                actual: 'example.com##body:not(:matches-media((min-width: 750px))):style(color: red)',
+                expected: 'example.com##:not(:matches-media((min-width: 750px))) body:style(color: red)',
+            },
+            {
+                actual: 'example.com##body:matches-media((min-width: 750px)):style(color: red)',
+                expected: 'example.com##:matches-media((min-width: 750px)) body:style(color: red)',
+            },
+            {
+                actual: 'example.com##body:not(:not(:matches-media((min-width: 750px)))):style(color: red)',
+                expected: 'example.com##:matches-media((min-width: 750px)) body:style(color: red)',
+            },
+        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
+            const ruleNode = CosmeticRuleParser.parse(actual, { parseUboSpecificRules: true });
+
+            if (ruleNode === null) {
+                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
+            }
+
+            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
+        });
+    });
 });

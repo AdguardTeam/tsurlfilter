@@ -102,6 +102,56 @@ describe('RuleParser — uBO selector modifiers', () => {
     });
 
     describe('multiple modifiers', () => {
+        test(':not(:matches-media()) wrapping — single :not() negates :matches-media()', () => {
+            const ast = parser.parse('##:not(:matches-media((min-width: 1024px))) .ad') as any;
+
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.syntax).toBe(SYNTAX_UBO);
+            expect(ast.body.selectorList.value).toBe('.ad');
+            expect(ast.modifiers.children).toHaveLength(1);
+            expect(ast.modifiers.children[0].name.value).toBe('matches-media');
+            expect(ast.modifiers.children[0].value.value).toBe('(min-width: 1024px)');
+            expect(ast.modifiers.children[0].exception).toBe(true);
+        });
+
+        test(':not(:matches-media()) wrapping — double :not() cancels negation', () => {
+            const ast = parser.parse('##:not(:not(:matches-media((min-width: 1024px)))) .ad') as any;
+
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.modifiers.children[0].name.value).toBe('matches-media');
+            expect(ast.modifiers.children[0].value.value).toBe('(min-width: 1024px)');
+            expect(ast.modifiers.children[0].exception).toBeUndefined();
+        });
+
+        test(':not(:matches-media()) wrapping — triple :not() negates :matches-media()', () => {
+            const ast = parser.parse('##:not(:not(:not(:matches-media((min-width: 1024px))))) .ad') as any;
+
+            expect(ast.type).toBe('ElementHidingRule');
+            expect(ast.modifiers.children[0].name.value).toBe('matches-media');
+            expect(ast.modifiers.children[0].value.value).toBe('(min-width: 1024px)');
+            expect(ast.modifiers.children[0].exception).toBe(true);
+        });
+
+        test(':not(:matches-media()) wrapping — :matches-media() inside :any() still throws', () => {
+            expect(() => {
+                parser.parse('##:any(:matches-media((min-width: 1024px))):style(color: red)');
+            }).toThrow('can only be nested inside :not()');
+        });
+
+        test(':not(:matches-media()) wrapping — motivating real-world rule with both negated modifiers', () => {
+            const rule = 'dawn.fi##:not(:matches-path(/^/$/)) .header'
+                + ':not(:matches-media((min-width: 750px))) + div[class]'
+                + ' + div[class] .mobile-top-ad:style(margin: -10px auto !important)';
+            const ast = parser.parse(rule) as any;
+
+            expect(ast.type).toBe('CssInjectionRule');
+            expect(ast.modifiers.children).toHaveLength(1);
+            expect(ast.modifiers.children[0].name.value).toBe('matches-path');
+            expect(ast.modifiers.children[0].exception).toBe(true);
+            expect(ast.body.mediaQueryList?.value).toBe('(min-width: 750px)');
+            expect(ast.body.mediaQueryNegated).toBe(true);
+        });
+
         // eslint-disable-next-line max-len
         test(':matches-path() + :matches-media() - ##:matches-path(/page):matches-media((min-width: 1024px)) .ad', () => {
             const ast = parser.parse('##:matches-path(/page):matches-media((min-width: 1024px)) .ad') as any;
@@ -140,12 +190,6 @@ describe('RuleParser — uBO selector modifiers', () => {
             expect(() => {
                 parser.parse('##:matches-path(/a):matches-path(/b) .ad');
             }).toThrow('Duplicate uBO modifier');
-        });
-
-        test(':matches-media() nested inside pseudo-class throws', () => {
-            expect(() => {
-                parser.parse('##:not(:matches-media((min-width: 1024px))) .ad');
-            }).toThrow('cannot be nested');
         });
 
         test(':style() not at end throws', () => {

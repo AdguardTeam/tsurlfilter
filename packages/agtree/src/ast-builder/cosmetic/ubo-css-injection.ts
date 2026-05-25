@@ -168,6 +168,7 @@ export class UboCssInjectionAstBuilder {
         const matchesPathModifiers: Modifier[] = [];
         const srcRanges: Array<[number, number]> = [];
         let mediaQueryListNode: Value | undefined;
+        let mediaQueryNegated = false;
         let styleValueStart = NO_VALUE;
         let styleValueEnd = NO_VALUE;
         let remove = false;
@@ -228,6 +229,7 @@ export class UboCssInjectionAstBuilder {
                         mediaQueryListNode.start = valueStart;
                         mediaQueryListNode.end = valueEnd;
                     }
+                    mediaQueryNegated = (modFlags & MODIFIER_FLAG_NEGATED) !== 0;
                     break;
                 }
 
@@ -292,6 +294,9 @@ export class UboCssInjectionAstBuilder {
         };
         if (mediaQueryListNode) {
             body.mediaQueryList = mediaQueryListNode;
+            if (mediaQueryNegated) {
+                body.mediaQueryNegated = true;
+            }
         }
         if (declarationList) {
             body.declarationList = declarationList;

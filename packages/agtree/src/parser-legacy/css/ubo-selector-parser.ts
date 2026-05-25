@@ -403,12 +403,12 @@ export class UboSelectorParser extends BaseParser {
                         //  - `:not(:matches-path(...):matches-path(...))`,
                         //  - `:not(:matches-path(...) div)`,
                         // etc.
-                        if (fn === UboPseudoName.MatchesPath) {
+                        if (fn === UboPseudoName.MatchesPath || fn === UboPseudoName.MatchesMedia) {
                             if (uboModifierStack.length > 0) {
                                 throw new AdblockSyntaxError(
                                     sprintf(
                                         ERROR_MESSAGES.PSEUDO_CANNOT_BE_NESTED,
-                                        formatPseudoName(UboPseudoName.MatchesPath),
+                                        formatPseudoName(fn),
                                         formatPseudoName(uboModifierStack[uboModifierStack.length - 1].name),
                                         formatPseudoName(CSS_NOT_PSEUDO),
                                     ),
@@ -438,7 +438,7 @@ export class UboSelectorParser extends BaseParser {
                                         throw new AdblockSyntaxError(
                                             sprintf(
                                                 ERROR_MESSAGES.PSEUDO_CANNOT_BE_NESTED,
-                                                formatPseudoName(UboPseudoName.MatchesPath),
+                                                formatPseudoName(fn),
                                                 formatPseudoName(wrapperFnName),
                                                 formatPseudoName(CSS_NOT_PSEUDO),
                                             ),
@@ -457,7 +457,7 @@ export class UboSelectorParser extends BaseParser {
                                                 ERROR_MESSAGES.EXPECTED_BUT_GOT_BEFORE,
                                                 getFormattedTokenName(TokenType.Colon),
                                                 got,
-                                                formatPseudoName(UboPseudoName.MatchesPath, CSS_NOT_PSEUDO),
+                                                formatPseudoName(fn, CSS_NOT_PSEUDO),
                                             ),
                                             // eslint-disable-next-line no-unsafe-optional-chaining
                                             baseOffset + tokens[j - 1]?.start || 0,
@@ -471,7 +471,7 @@ export class UboSelectorParser extends BaseParser {
                                     throw new AdblockSyntaxError(
                                         sprintf(
                                             ERROR_MESSAGES.NEGATED_UBO_MODIFIER_CANNOT_BE_PRECEDED_BY,
-                                            formatPseudoName(UboPseudoName.MatchesPath),
+                                            formatPseudoName(fn),
                                             getFormattedTokenName(tokens[j].type),
                                         ),
                                         baseOffset + tokens[j].start,

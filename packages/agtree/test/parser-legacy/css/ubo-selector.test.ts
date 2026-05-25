@@ -617,17 +617,19 @@ describe('UboSelectorParser', () => {
                 },
             },
 
-            // only :matches-path() can be nested and only within :not()
+            // :matches-media() can only be nested within :not(), not within other pseudo-classes
             {
                 actual: 'div:has(:matches-media((min-width: 1000px)))',
-                //               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                //           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         sprintf(
-                            ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED,
+                            ERROR_MESSAGES.PSEUDO_CANNOT_BE_NESTED,
                             formatPseudoName(UboPseudoName.MatchesMedia),
+                            formatPseudoName('has'),
+                            formatPseudoName(CSS_NOT_PSEUDO),
                         ),
-                        ...context.toTuple(context.getRangeFor(':matches-media((min-width: 1000px)))')),
+                        ...context.toTuple(context.getRangeFor(':has(:matches-media((min-width: 1000px)))')),
                     );
                 },
             },
@@ -637,8 +639,10 @@ describe('UboSelectorParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         sprintf(
-                            ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED,
+                            ERROR_MESSAGES.PSEUDO_CANNOT_BE_NESTED,
                             formatPseudoName(UboPseudoName.MatchesMedia),
+                            formatPseudoName(UboPseudoName.MatchesMedia),
+                            formatPseudoName(CSS_NOT_PSEUDO),
                         ),
                         ...context.toTuple(context.getRangeFor(':matches-media((min-width: 1000px)))')),
                     );

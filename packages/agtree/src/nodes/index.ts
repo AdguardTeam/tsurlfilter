@@ -989,6 +989,13 @@ export interface CssInjectionRuleBody extends Node {
     mediaQueryList?: Value;
 
     /**
+     * Whether the media query is negated (inverted).
+     * Corresponds to `:not(:matches-media(...))` in uBO syntax or `@media not (...)` in AdGuard syntax.
+     * When absent or `false`, the query is positive.
+     */
+    mediaQueryNegated?: boolean;
+
+    /**
      * CSS selector list.
      *
      * @example
