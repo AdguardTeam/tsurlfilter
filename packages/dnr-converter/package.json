@@ -55,6 +55,7 @@
         "start": "rollup -c rollup.config.ts --configPlugin typescript -w",
         "build": "rimraf dist && rollup -c rollup.config.ts --configPlugin typescript",
         "postbuild": "tsx tasks/build-txt.ts",
+        "docs:examples": "tsx tasks/generate-examples.ts",
         "test": "vitest run",
         "test:light": "vitest run --exclude \"**/*benchmark*.test.ts\"",
         "test:watch": "vitest run --watch",

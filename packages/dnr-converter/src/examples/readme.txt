@@ -1,6 +1,7 @@
 ! # Description
-! This file contains examples of converting filter rules to new MV3 declarative
-! rules and describes some MV3-specific limitations of the converted rules.
+! This file contains examples of converting filter rules to DNR (Declarative
+! Net Request) rules using @adguard/dnr-converter, and describes MV3-specific
+! limitations of the converted rules.
 ! For a full description of each modifier, see the knowledgebase https://adguard.com/kb/general/ad-filtering/create-own-filters.
 
 ! <br />
@@ -8,7 +9,7 @@
 !
 ! # MV3 specific limitations
 ! ## $badfilter
-! In current implementation rules with `$badfilter` works across all filters.
+! In the current implementation, rules with `$badfilter` work across all filters.
 ! From these three filters:
 ! ```adblock
 ! !filter 1
@@ -26,7 +27,7 @@
 ! ||example.org^$badfilter
 ! ```
 !
-! Output result will contain only one rule:
+! The output will contain only one rule:
 ! ```json
 ! {
 !   "id": "<ruleId>",
@@ -44,13 +45,13 @@
 ! display this in the declarative filtering log, as declarative rules are canceled.
 !
 ! ### Problem 1
-! But current algorithm not covers rules with `$domain` instersections, for example,
+! But the current algorithm does not cover rules with `$domain` intersections, for example,
 ! for these two rules:
 ! ```adblock
 ! /some$domain=example.com|example.org
 ! /some$domain=example.com,badfilter
 ! ```
-! rule with `$badfilter` will fully negated first rule and output array of
+! A rule with `$badfilter` will fully negate the first rule and the output array of
 ! declarative rules will be empty.
 !
 ! ### Problem 2
@@ -66,7 +67,7 @@
 ! for other parameters.
 !
 ! ## allowrules
-! Allowrules currently are not supported for these modifiers:
+! Allowlist rules are currently not supported for these modifiers:
 ! 1. some specific exceptions: `$genericblock`, `$jsinject`, `$urlblock`, `$content`, `$stealth`.
 ! 1. `$redirect`
 ! 1. `$removeparam`
@@ -74,7 +75,7 @@
 ! 1. `$csp`
 !
 ! ## $document
-! During convertion process exception with $document modificator is expanded
+! During the conversion process, the exception with the `$document` modifier is expanded
 ! into `$elemhide,content,urlblock,jsinject` of which:
 ! - `$content` - not supported in the MV3,
 ! - `$elemhide` - supported,
@@ -130,7 +131,7 @@ example.org##.banner
 *$script,domain=a.com|b.com,denyallow=x.com|y.com
 
 ! ## $domain
-! <b>Status</b>: partial supported
+! <b>Status</b>: partially supported
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
@@ -146,9 +147,9 @@ example.org##.banner
 ||baddomain.com^$domain=~example.org
 ! example 4
 ||baddomain.com^$domain=example.org|~foo.example.org
-! example 5
+! example 5 (regexp syntax — not supported in MV3; output reflects current parser behavior only)
 ||baddomain.com^$domain=/(^\\|.+\\.)example\\.(com\\|org)\\$/
-! example 6
+! example 6 (regexp syntax — not supported in MV3; output reflects current parser behavior only)
 ||baddomain.com^$domain=~a.com|~b.*|~/(^\\|.+\\.)c\\.(com\\|org)\\$/
 ! example 7
 *$cookie,domain=example.org|example.com
@@ -432,8 +433,8 @@ page$domain=targetdomain.com|~example.org
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
-! In current implementation it works across all filters, but it not covers
-! rules with $domain instersections.
+! In the current implementation, it works across all filters, but it does not cover
+! rules with `$domain` intersections.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -628,7 +629,7 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
 $removeheader=location,domain=example.com
 
 ! ## $removeparam
-! <b>Status</b>: partial supported
+! <b>Status</b>: partially supported
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
@@ -645,7 +646,7 @@ $removeheader=location,domain=example.com
 ! <b>Examples:</b>
 ! <br/>
 ! example 1.
-! skip rules with a negation, or regexp or the rule is a allowlist
+! skip rules with a negation, or regexp, or the rule is an allowlist
 ||example.org^$removeparam
 ! example 2
 $removeparam=~param

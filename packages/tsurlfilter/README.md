@@ -693,7 +693,10 @@ let filterId = 0;
 ##### Declarative converter documentation
 
 For more information about the declarative converter,
-see the its [documentation](src/rules/declarative-converter/README.md).
+see the [`@adguard/dnr-converter`](https://www.npmjs.com/package/@adguard/dnr-converter) package
+and its [conversion examples][examples].
+
+[examples]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/dnr-converter/src/examples/README.md
 
 ##### Problems
 

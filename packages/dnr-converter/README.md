@@ -61,14 +61,8 @@ extensions.
 
 ### Supported rule types
 
-<!-- TODO: This section should be updated once the full extraction of the DNR
-converter from `@adguard/tsurlfilter` is complete. The `RegularConverter` class
-is currently a thin stub; the full modifier support will mirror what is described
-in the tsurlfilter declarative-converter readme.txt once extracted. -->
-
-The converter is being extracted from the `tsurlfilter` package and aims to
-support virtually all adblock network rule modifiers. The known MV3 limitations
-(inherent to the Declarative Net Request API) are:
+The converter supports virtually all adblock network rule modifiers. The known
+MV3 limitations (inherent to the Declarative Net Request API) are:
 
 **Supported modifiers** (with MV3 notes):
 - Basic blocking/allowing rules, `$third-party`, `$domain` (no regexps / `.*`
@@ -80,7 +74,6 @@ support virtually all adblock network rule modifiers. The known MV3 limitations
   not supported; rules with identical conditions are combined only within the
   same filter, not across filters
 - `$badfilter` — partial: does not handle `$domain` intersections correctly
-  (see [MV3 limitations][mv3-limitations-url])
 
 **Not yet supported / not convertible to DNR**:
 - `$popup`, `$redirect-rule`, `$referrerpolicy` — not yet implemented
@@ -91,7 +84,8 @@ support virtually all adblock network rule modifiers. The known MV3 limitations
   not yet implemented
 - `$webrtc` — deprecated and not supported
 
-[mv3-limitations-url]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/rules/declarative-converter/readme.txt
+For detailed conversion examples with output, see
+[Conversion Examples](src/examples/README.md).
 
 ## Installation
 
@@ -378,28 +372,24 @@ A string constant with the current library version.
 
 ### Network rule types
 
-The package re-exports several types related to network rule parsing and
-validation:
+The package exports types related to network rule parsing and validation:
 
 ```ts
 import {
-    NetworkRule,
-    NetworkRuleOption,
+    Rule,
     HttpHeaderMatcher,
-    NetworkRuleDeclarativeValidator,
+    RuleDeclarativeValidator,
 } from '@adguard/dnr-converter';
 ```
 
-- **`NetworkRule`** — parsed network rule with accessors for domains, resource
+- **`Rule`** — parsed network rule with accessors for domains, resource
   types, methods, advanced modifier values, priority, and option flags.
-  Create instances via `NetworkRule.createFromText(filterListId, index, text)`.
-- **`NetworkRuleOption`** — bit-flag enum of all supported network rule
-  modifiers (e.g. `ThirdParty`, `Important`, `Redirect`, `Csp`).
+  Create instances via `Rule.createFromText(filterListId, index, text)`.
 - **`HttpHeaderMatcher`** — type describing the parsed `$header` modifier
   value.
-- **`NetworkRuleDeclarativeValidator`** — static helper that checks whether a
-  `NetworkRule` can be converted to a DNR rule. Call
-  `NetworkRuleDeclarativeValidator.shouldConvertNetworkRule(rule)` — returns
+- **`RuleDeclarativeValidator`** — static helper that checks whether a
+  `Rule` can be converted to a DNR rule. Call
+  `RuleDeclarativeValidator.shouldConvertRule(rule)` — returns
   `true` if the rule is convertible, `false` if it should be silently skipped,
   or throws `UnsupportedModifierError` if the rule uses an unsupported
   modifier.
@@ -479,4 +469,6 @@ await convertFilters(
 
 - [Changelog](CHANGELOG.md)
 - [Development](DEVELOPMENT.md)
+- [Migration from tsurlfilter](MIGRATION.md)
+- [Conversion Examples](src/examples/README.md)
 - [LLM agent rules](AGENTS.md)

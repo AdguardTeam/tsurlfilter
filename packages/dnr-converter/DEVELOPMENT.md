@@ -131,6 +131,32 @@ After changing schemas:
 1. Update the corresponding types and validators.
 2. Run `pnpm build && pnpm test:prod` to verify nothing regressed.
 
+### Regenerating Conversion Examples
+
+The `src/examples/README.md` file is auto-generated from `src/examples/readme.txt`.
+After modifying the source file or changing conversion behavior:
+
+1. Build the package: `pnpm build`
+2. Regenerate: `pnpm docs:examples`
+3. Review the diff in `src/examples/README.md`
+4. Commit both `readme.txt` changes and the regenerated `README.md`
+
+### CLI Development
+
+The CLI lives in `cli/` and is built as a separate Rollup entry point
+(`dist/cli.js`). It uses `commander` for argument parsing.
+
+To test CLI commands locally after building:
+
+```bash
+pnpm build
+node dist/cli.js convert ./test/fixtures/filters ./test/fixtures/resources ./tmp/output
+```
+
+The CLI programmatic API is exported via the `@adguard/dnr-converter/cli`
+subpath. Changes to the CLI should be reflected in both the README CLI
+section and the subpath export types.
+
 ### Downstream Impact
 
 `@adguard/dnr-converter` may be consumed by other packages or tools. After
@@ -186,5 +212,8 @@ pnpm --filter @adguard/dnr-converter lint:types
 
 - [README.md](README.md) — package overview and public API documentation
 - [CHANGELOG.md](CHANGELOG.md) — release history
-- [AGENTS.md](../../AGENTS.md) — monorepo-wide code guidelines and contribution rules
+- [MIGRATION.md](MIGRATION.md) — migration guide from tsurlfilter
+- [Conversion Examples](src/examples/README.md) — auto-generated modifier examples
+- [AGENTS.md](AGENTS.md) — package-specific LLM agent rules
+- [Root AGENTS.md](../../AGENTS.md) — monorepo-wide code guidelines
 - [Root DEVELOPMENT.md](../../DEVELOPMENT.md) — monorepo-wide development guide

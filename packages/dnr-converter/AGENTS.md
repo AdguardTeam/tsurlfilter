@@ -28,25 +28,38 @@ converting both static rulesets (for extension assembly) and dynamic rules
 
 ```text
 packages/dnr-converter/
+├── cli/
+│   ├── index.ts                # CLI entry point (commander-based)
+│   ├── convert-filters.ts      # CLI convert command implementation
+│   ├── extract-filters.ts      # CLI extract-filters command implementation
+│   └── utils.ts                # CLI utilities (hashing, etc.)
 ├── src/
 │   ├── index.ts                # Public API entry point
 │   ├── version.ts              # Library version constant
 │   ├── constants.ts            # Shared constants
-│   ├── network-rule.ts         # Network rule representation (migrated from tsurlfilter)
-│   ├── source-map.ts           # Source mapping for converted rules
 │   ├── declarative-rule/       # Valibot schemas for DNR rule structures
 │   ├── errors/                 # Error types (conversion, options, limitations)
+│   ├── filter/                 # Filter class (IFilter implementation)
 │   ├── filter-converter/       # Top-level converter: scanning, grouping, orchestration
 │   ├── re2-regexp/             # RE2 regex validation (WASM and Node extensions)
+│   ├── rule/                   # Network rule representation, priority, badfilter, validator
 │   ├── rule-converters/        # Per-rule-type converters (CSP, remove-header, etc.)
+│   ├── rules-scanner/          # Rule scanning and categorization
+│   ├── ruleset/                # Ruleset, RulesetWithSourceMap, MetadataRuleset, source map
 │   └── utils/                  # Shared utilities (error handling, string ops)
+├── src/examples/
+│   ├── readme.txt              # Source file for conversion examples
+│   └── README.md               # Auto-generated examples documentation
 ├── test/                       # Tests (mirrors src/ structure) + mocks + smoke tests
-├── tasks/                      # Build scripts (build-txt)
+├── tasks/
+│   ├── build-txt.ts            # Build metadata script (postbuild)
+│   └── generate-examples.ts    # Example generation script (docs:examples)
 ├── dist/                       # Build output (gitignored)
 ├── rollup.config.ts            # Rollup build config
 ├── vitest.config.ts            # Vitest config
 ├── .eslintrc.cjs               # ESLint config
 ├── tsconfig*.json              # TypeScript configs (base, build, main)
+├── MIGRATION.md                # Migration guide from tsurlfilter
 └── package.json
 ```
 
@@ -64,6 +77,8 @@ packages/dnr-converter/
 - `pnpm lint` — run ESLint and TypeScript type checking
 - `pnpm lint:code` — run ESLint only
 - `pnpm lint:types` — run TypeScript type checking only
+- `pnpm docs:examples` — regenerate conversion examples in
+  `src/examples/README.md`
 
 ## Contribution Instructions
 
