@@ -11,6 +11,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- Added `walker` module (`src/walker/`) with high-performance, explicitly typed
+  depth-first AST traversal: `walk()`, `find()`, `findLast()`, `findAll()`.
+  Supports `enter`/`leave` hooks, `WalkAction.Skip`/`WalkAction.Stop` control,
+  `reverse` traversal, `Set<string>` node-type filtering, and a typed `context`
+  object.
 - uBO scriptlet compatibility mapping for `google-ima3`, enabling
   ADG→UBO and UBO→ADG conversion of `google-ima3`/`google-ima` scriptlet rules
   ([FiltersCompiler#274]).

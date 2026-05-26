@@ -49,6 +49,10 @@
         "./utils": {
             "types": "./dist/types/utils/index.d.ts",
             "import": "./dist/utils/index.js"
+        },
+        "./walker": {
+            "types": "./dist/types/walker/index.d.ts",
+            "import": "./dist/walker/index.js"
         }
     },
     "files": [

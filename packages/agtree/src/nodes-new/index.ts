@@ -1994,3 +1994,56 @@ export interface UboSelector extends Node {
      */
     modifiers?: ModifierList;
 }
+
+/**
+ * Union of every concrete AST node type.
+ *
+ * Used by the walker module and any consumer that handles nodes uniformly.
+ * When adding a new concrete node interface, add it here to maintain
+ * exhaustiveness guarantees in the walker's dispatch switch.
+ */
+export type AnyNode =
+    | Value
+    | Raw
+    | Parameter
+    | ParameterList
+    | ExpressionVariableNode
+    | ExpressionOperatorNode
+    | ExpressionParenthesisNode
+    | FilterList
+    | InvalidRuleError
+    | ConfigNode
+    | Agent
+    | Hint
+    | ModifierList
+    | Modifier
+    | DomainList
+    | AppList
+    | MethodList
+    | StealthOptionList
+    | ListItem<typeof ListItemNodeType.App>
+    | ListItem<typeof ListItemNodeType.Domain>
+    | ListItem<typeof ListItemNodeType.Method>
+    | ListItem<typeof ListItemNodeType.StealthOption>
+    | CssInjectionRuleBody
+    | CssDeclaration
+    | CssDeclarationList
+    | CssBlock
+    | CssRule
+    | CssAtRulePrelude
+    | CssAtRule
+    | ElementHidingRuleBody
+    | ScriptletInjectionRuleBody
+    | HtmlFilteringRuleBody
+    | TypeSelector
+    | ClassSelector
+    | IdSelector
+    | AttributeSelectorWithoutValue
+    | AttributeSelectorWithValue
+    | PseudoClassSelector
+    | SelectorCombinator
+    | ComplexSelector
+    | SelectorList
+    | HostnameList
+    | UboSelector
+    | AnyRule;
