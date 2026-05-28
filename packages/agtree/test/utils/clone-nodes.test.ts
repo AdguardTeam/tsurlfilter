@@ -51,6 +51,7 @@ import {
     cloneParameterList,
     clonePreProcessorCommentRule,
     cloneRaw,
+    cloneRawRule,
     cloneRule,
     cloneScriptletInjectionRule,
     cloneScriptletInjectionRuleBody,
@@ -864,6 +865,52 @@ describe('cloneEmptyRule', () => {
     });
 });
 
+describe('cloneRawRule', () => {
+    it('clones a RawRule (no location)', () => {
+        const original = {
+            type: NodeType.RawRule,
+            category: RuleCategory.Raw,
+            syntax: TEST_SYNTAX,
+            raw: '||example.com^',
+        };
+        const result = cloneRawRule(original);
+
+        expect(result).toEqual(original);
+        expect(result).not.toBe(original);
+    });
+
+    it('clones a RawRule with location fields', () => {
+        const original = {
+            type: NodeType.RawRule,
+            category: RuleCategory.Raw,
+            syntax: TEST_SYNTAX,
+            raw: 'example.org##.ad',
+            start: 0,
+            end: 16,
+        };
+        const result = cloneRawRule(original);
+
+        expect(result).toEqual(original);
+        expect(result).not.toBe(original);
+        expect(result.start).toBe(0);
+        expect(result.end).toBe(16);
+    });
+
+    it('clones a RawRule with kind field', () => {
+        const original = {
+            type: NodeType.RawRule,
+            category: RuleCategory.Raw,
+            syntax: TEST_SYNTAX,
+            raw: '||example.com^',
+            kind: RuleCategory.Network as typeof RuleCategory.Network,
+        };
+        const result = cloneRawRule(original);
+
+        expect(result).toEqual(original);
+        expect(result.kind).toBe(RuleCategory.Network);
+    });
+});
+
 describe('cloneInvalidRule', () => {
     it('clones an InvalidRule with referential isolation on error', () => {
         const original = {
@@ -959,6 +1006,21 @@ describe('cloneRule', () => {
 
         expect(result).toEqual(original);
         expect(result.type === NodeType.InvalidRule && result.error).not.toBe(original.error);
+    });
+
+    it('dispatches RawRule', () => {
+        const original = {
+            type: NodeType.RawRule,
+            category: RuleCategory.Raw,
+            syntax: TEST_SYNTAX,
+            raw: '||example.com^',
+            start: 0,
+            end: 14,
+        };
+        const result = cloneRule(original);
+
+        expect(result).toEqual(original);
+        expect(result).not.toBe(original);
     });
 });
 

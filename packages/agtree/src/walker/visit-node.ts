@@ -132,6 +132,7 @@ export function visitNodeChildren(node: AnyWalkNode, visitChild: VisitChildFn, r
         case NodeType.Parameter:
         case NodeType.Variable:
         case NodeType.InvalidRuleError:
+        case NodeType.RawRule:
         case NodeType.EmptyRule:
         case NodeType.ConfigNode:
         case NodeType.CssAtRulePrelude:

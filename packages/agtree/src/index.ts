@@ -52,6 +52,7 @@ export {
     type HintCommentRule,
     type HtmlFilteringRule,
     type HtmlFilteringRuleBody,
+    type InvalidRule,
     type SelectorList,
     type SelectorCombinatorValue,
     type JsInjectionRule,

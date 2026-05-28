@@ -2,7 +2,14 @@ import { describe, expect, test } from 'vitest';
 
 import { FilterListPipeline } from '../../src/filter-list/pipeline';
 import type { FilterListParseOptions } from '../../src/filter-list/types';
-import { type InvalidRule, NodeType } from '../../src/nodes-new';
+import {
+    CommentRuleType,
+    CosmeticRuleType,
+    NetworkRuleType,
+    NodeType,
+    type RawRule,
+    RuleCategory,
+} from '../../src/nodes-new';
 
 describe('FilterListPipeline', () => {
     const pipeline = new FilterListPipeline();
@@ -13,9 +20,9 @@ describe('FilterListPipeline', () => {
 
         expect(ast.type).toBe(NodeType.FilterList);
         expect(ast.children).toHaveLength(3);
-        expect(ast.children[0].type).toBe('CommentRule');
-        expect(ast.children[1].type).toBe('NetworkRule');
-        expect(ast.children[2].type).toBe('ElementHidingRule');
+        expect(ast.children[0].type).toBe(CommentRuleType.CommentRule);
+        expect(ast.children[1].type).toBe(NetworkRuleType.NetworkRule);
+        expect(ast.children[2].type).toBe(CosmeticRuleType.ElementHidingRule);
     });
 
     test('produces EmptyRule for empty lines', () => {
@@ -23,9 +30,9 @@ describe('FilterListPipeline', () => {
         const ast = pipeline.parse(source);
 
         expect(ast.children).toHaveLength(3);
-        expect(ast.children[0].type).toBe('NetworkRule');
+        expect(ast.children[0].type).toBe(NetworkRuleType.NetworkRule);
         expect(ast.children[1].type).toBe(NodeType.EmptyRule);
-        expect(ast.children[2].type).toBe('NetworkRule');
+        expect(ast.children[2].type).toBe(NetworkRuleType.NetworkRule);
     });
 
     test('trailing newline produces trailing EmptyRule', () => {
@@ -33,7 +40,7 @@ describe('FilterListPipeline', () => {
         const ast = pipeline.parse(source);
 
         expect(ast.children).toHaveLength(2);
-        expect(ast.children[0].type).toBe('NetworkRule');
+        expect(ast.children[0].type).toBe(NetworkRuleType.NetworkRule);
         expect(ast.children[1].type).toBe(NodeType.EmptyRule);
     });
 
@@ -64,9 +71,9 @@ describe('FilterListPipeline', () => {
         const ast = pipeline.parse(source, { tolerant: true, parseUboSpecificRules: false });
 
         expect(ast.children).toHaveLength(3);
-        expect(ast.children[0].type).toBe('NetworkRule');
+        expect(ast.children[0].type).toBe(NetworkRuleType.NetworkRule);
         expect(ast.children[1].type).toBe(NodeType.InvalidRule);
-        expect(ast.children[2].type).toBe('CommentRule');
+        expect(ast.children[2].type).toBe(CommentRuleType.CommentRule);
     });
 
     test('strict mode throws on syntax error', () => {
@@ -76,24 +83,26 @@ describe('FilterListPipeline', () => {
         }).toThrow();
     });
 
-    test('ignoreNetwork produces InvalidRule for network rules', () => {
+    test('ignoreNetwork produces RawRule for network rules', () => {
         const source = '||example.com^\n! comment';
         const ast = pipeline.parse(source, { ignoreNetwork: true });
 
         expect(ast.children).toHaveLength(2);
-        expect(ast.children[0].type).toBe(NodeType.InvalidRule);
-        expect((ast.children[0] as InvalidRule).error.name).toBe('RuleIgnoredError');
-        expect(ast.children[1].type).toBe('CommentRule');
+        expect(ast.children[0].type).toBe(NodeType.RawRule);
+        expect((ast.children[0] as RawRule).raw).toBe('||example.com^');
+        expect((ast.children[0] as RawRule).kind).toBe(RuleCategory.Network);
+        expect(ast.children[1].type).toBe(CommentRuleType.CommentRule);
     });
 
-    test('ignoreCosmetic produces InvalidRule for cosmetic rules', () => {
+    test('ignoreCosmetic produces RawRule for cosmetic rules', () => {
         const source = 'example.org##.ad\n! comment';
         const ast = pipeline.parse(source, { ignoreCosmetic: true });
 
         expect(ast.children).toHaveLength(2);
-        expect(ast.children[0].type).toBe(NodeType.InvalidRule);
-        expect((ast.children[0] as InvalidRule).error.name).toBe('RuleIgnoredError');
-        expect(ast.children[1].type).toBe('CommentRule');
+        expect(ast.children[0].type).toBe(NodeType.RawRule);
+        expect((ast.children[0] as RawRule).raw).toBe('example.org##.ad');
+        expect((ast.children[0] as RawRule).kind).toBe(RuleCategory.Cosmetic);
+        expect(ast.children[1].type).toBe(CommentRuleType.CommentRule);
     });
 
     test('reset() allows reuse after parsing', () => {
@@ -103,7 +112,7 @@ describe('FilterListPipeline', () => {
 
         const ast = pipeline.parse('||example.com^');
         expect(ast.children).toHaveLength(1);
-        expect(ast.children[0].type).toBe('NetworkRule');
+        expect(ast.children[0].type).toBe(NetworkRuleType.NetworkRule);
     });
 
     test('source with only newlines produces all EmptyRules', () => {
@@ -124,7 +133,7 @@ describe('FilterListPipeline', () => {
 
         expect(ast.children).toHaveLength(1000);
         for (const child of ast.children) {
-            expect(child.type).toBe('NetworkRule');
+            expect(child.type).toBe(NetworkRuleType.NetworkRule);
         }
     });
 
@@ -148,11 +157,11 @@ describe('FilterListPipeline', () => {
         // 5 children: comment, network, element-hiding, empty, network
         // (no trailing newline since join('\n') doesn't add one)
         expect(ast.children).toHaveLength(5);
-        expect(ast.children[0].type).toBe('CommentRule');
-        expect(ast.children[1].type).toBe('NetworkRule');
-        expect(ast.children[2].type).toBe('ElementHidingRule');
+        expect(ast.children[0].type).toBe(CommentRuleType.CommentRule);
+        expect(ast.children[1].type).toBe(NetworkRuleType.NetworkRule);
+        expect(ast.children[2].type).toBe(CosmeticRuleType.ElementHidingRule);
         expect(ast.children[3].type).toBe(NodeType.EmptyRule);
-        expect(ast.children[4].type).toBe('NetworkRule');
+        expect(ast.children[4].type).toBe(NetworkRuleType.NetworkRule);
     });
 
     describe('oversized rule behavior (grow:false)', () => {
@@ -172,7 +181,7 @@ describe('FilterListPipeline', () => {
 
             expect(ast.children).toHaveLength(2);
             expect(ast.children[0].type).toBe(NodeType.InvalidRule);
-            expect(ast.children[1].type).toBe('CommentRule');
+            expect(ast.children[1].type).toBe(CommentRuleType.CommentRule);
         });
 
         test('strict mode: oversized rule throws', () => {

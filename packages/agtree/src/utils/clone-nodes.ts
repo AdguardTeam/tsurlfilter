@@ -61,6 +61,7 @@ import {
     type ParameterList,
     type PreProcessorCommentRule,
     type Raw,
+    type RawRule,
     type RuleBase,
     RuleCategory,
     type ScriptletInjectionRule,
@@ -1082,6 +1083,27 @@ function cloneHostnameList(node: HostnameList): HostnameList {
 }
 
 /**
+ * Clones a `RawRule` node.
+ *
+ * @param node RawRule to clone.
+ *
+ * @returns Cloned RawRule.
+ */
+export function cloneRawRule(node: RawRule): RawRule {
+    const result: RawRule = {
+        type: node.type,
+        category: node.category,
+        syntax: node.syntax,
+        raw: node.raw,
+    };
+    if (node.kind !== undefined) {
+        result.kind = node.kind;
+    }
+    copyRuleBase(node, result);
+    return result;
+}
+
+/**
  * Clones an `EmptyRule` node.
  *
  * @param node EmptyRule to clone.
@@ -1181,6 +1203,8 @@ export function cloneRule(rule: AnyRule): AnyRule {
     switch (rule.category) {
         case RuleCategory.Empty:
             return cloneEmptyRule(rule as EmptyRule);
+        case RuleCategory.Raw:
+            return cloneRawRule(rule as RawRule);
         case RuleCategory.Invalid:
             return cloneInvalidRule(rule as InvalidRule);
         case RuleCategory.Comment:

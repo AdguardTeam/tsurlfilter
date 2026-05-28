@@ -22,6 +22,7 @@ import {
     type InvalidRule,
     type InvalidRuleError,
     NodeType,
+    type RawRule,
     RuleCategory,
 } from '../nodes-new';
 import type { ParserContext } from '../parser/context';
@@ -162,18 +163,18 @@ export class FilterListPipeline {
         if (kind === RuleKind.Network && options?.ignoreNetwork) {
             return FilterListPipeline.createIgnoredRule(
                 source,
-                'Network rules are ignored by the ignoreNetwork option',
                 ruleStart,
                 ruleEnd,
+                RuleCategory.Network,
                 options,
             );
         }
         if (kind === RuleKind.Cosmetic && options?.ignoreCosmetic) {
             return FilterListPipeline.createIgnoredRule(
                 source,
-                'Cosmetic rules are ignored by the ignoreCosmetic option',
                 ruleStart,
                 ruleEnd,
+                RuleCategory.Cosmetic,
                 options,
             );
         }
@@ -364,35 +365,26 @@ export class FilterListPipeline {
      * Create an ignored rule (for `ignoreNetwork` / `ignoreCosmetic` options).
      *
      * @param source Full source string.
-     * @param message Reason for ignoring.
      * @param start Source start offset.
      * @param end Source end offset.
+     * @param kind The rule kind detected before parsing was skipped.
      * @param options Parse options.
      *
-     * @returns InvalidRule AST node with `RuleIgnoredError` name.
+     * @returns RawRule AST node.
      */
     private static createIgnoredRule(
         source: string,
-        message: string,
         start: number,
         end: number,
+        kind: typeof RuleCategory.Network | typeof RuleCategory.Cosmetic,
         options?: FilterListParseOptions,
-    ): InvalidRule {
-        const errNode: InvalidRuleError = {
-            type: NodeType.InvalidRuleError,
-            name: 'RuleIgnoredError',
-            message,
-        };
-        if (options?.isLocIncluded) {
-            errNode.start = start;
-            errNode.end = end;
-        }
-        const result: InvalidRule = {
-            type: NodeType.InvalidRule,
-            category: RuleCategory.Invalid,
+    ): RawRule {
+        const result: RawRule = {
+            type: NodeType.RawRule,
+            category: RuleCategory.Raw,
             syntax: SYNTAX_UNKNOWN,
             raw: source.slice(start, end),
-            error: errNode,
+            kind,
         };
         if (options?.isLocIncluded) {
             result.start = start;

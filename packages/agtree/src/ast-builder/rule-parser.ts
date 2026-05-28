@@ -27,10 +27,10 @@ import {
     type EmptyRule,
     type HtmlFilteringRule,
     type InvalidRule,
-    type InvalidRuleError,
     type JsInjectionRule,
     type NetworkRule,
     NodeType,
+    type RawRule,
     RuleCategory,
     type ScriptletInjectionRule,
 } from '../nodes-new';
@@ -126,6 +126,7 @@ function hardCapForRegion(region: CapacityRegion): number {
 // TODO: Use AnyRule from nodes.ts
 export type AnyParsedRule =
     | EmptyRule
+    | RawRule
     | InvalidRule
     | AnyCommentRule
     | NetworkRule
@@ -136,39 +137,32 @@ export type AnyParsedRule =
     | HtmlFilteringRule;
 
 /**
- * Creates an InvalidRule node for a rule that was intentionally skipped
+ * Creates a RawRule node for a rule that was intentionally skipped
  * by the `ignoreCosmetic` or `ignoreNetwork` option.
  *
  * @param source Rule source text.
- * @param message Error message describing why the rule was ignored.
- * @param options Parse options (for location and raws).
+ * @param kind The rule kind detected before parsing was skipped.
+ * @param options Parse options (for location).
  * @param start Source start offset (default 0).
  * @param end Source end offset (default source.length).
  *
- * @returns InvalidRule AST node.
+ * @returns RawRule AST node.
  */
 function createIgnoredRule(
     source: string,
-    message: string,
+    kind: typeof RuleCategory.Network | typeof RuleCategory.Cosmetic,
     options?: ParseOptions,
     start = 0,
     end = source.length,
-): InvalidRule {
-    const error: InvalidRuleError = {
-        type: NodeType.InvalidRuleError,
-        name: 'RuleIgnoredError',
-        message,
-    };
-    const result: InvalidRule = {
-        type: NodeType.InvalidRule,
-        category: RuleCategory.Invalid,
+): RawRule {
+    const result: RawRule = {
+        type: NodeType.RawRule,
+        category: RuleCategory.Raw,
         syntax: SYNTAX_UNKNOWN,
         raw: source.slice(start, end),
-        error,
+        kind,
     };
     if (options?.isLocIncluded) {
-        error.start = start;
-        error.end = end;
         result.start = start;
         result.end = end;
     }
@@ -326,10 +320,10 @@ export class RuleParserPipeline {
         }
 
         if (kind === RuleKind.Network && options?.ignoreNetwork) {
-            return createIgnoredRule(source, 'Network rules are ignored by the ignoreNetwork option', options);
+            return createIgnoredRule(source, RuleCategory.Network, options);
         }
         if (kind === RuleKind.Cosmetic && options?.ignoreCosmetic) {
-            return createIgnoredRule(source, 'Cosmetic rules are ignored by the ignoreCosmetic option', options);
+            return createIgnoredRule(source, RuleCategory.Cosmetic, options);
         }
 
         switch (kind) {
@@ -484,12 +478,10 @@ export class RuleParserPipeline {
         const ruleEnd = endTi > 0 ? ctx.ends[endTi - 1] : ctx.sourceStart;
 
         if (kind === RuleKind.Network && options?.ignoreNetwork) {
-            // eslint-disable-next-line max-len
-            return createIgnoredRule(ctx.source, 'Network rules are ignored by the ignoreNetwork option', options, ruleStart, ruleEnd);
+            return createIgnoredRule(ctx.source, RuleCategory.Network, options, ruleStart, ruleEnd);
         }
         if (kind === RuleKind.Cosmetic && options?.ignoreCosmetic) {
-            // eslint-disable-next-line max-len
-            return createIgnoredRule(ctx.source, 'Cosmetic rules are ignored by the ignoreCosmetic option', options, ruleStart, ruleEnd);
+            return createIgnoredRule(ctx.source, RuleCategory.Cosmetic, options, ruleStart, ruleEnd);
         }
 
         switch (kind) {

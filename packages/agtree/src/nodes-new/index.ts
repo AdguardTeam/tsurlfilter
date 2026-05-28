@@ -92,6 +92,7 @@ export type AnyExpressionNode =
  */
 export type AnyRule =
     | EmptyRule
+    | RawRule
     | AnyCommentRule
     | AnyCosmeticRule
     | AnyNetworkRule
@@ -177,6 +178,12 @@ export const RuleCategory = {
      * response header filtering rules, etc.
      */
     Network: 'Network',
+
+    /**
+     * Raw rules — parsing was available but intentionally not called (e.g. via `ignoreCosmetic` /
+     * `ignoreNetwork` options). The original source text is preserved verbatim.
+     */
+    Raw: 'Raw',
 } as const;
 
 // intentionally naming the variable the same as the type
@@ -333,6 +340,11 @@ export type CosmeticRuleSeparator = typeof CosmeticRuleSeparator[keyof typeof Co
  */
 export const NodeType = {
     Value: 'Value',
+    /**
+     * Raw inline-value node (e.g. an unquoted token in a rule body).
+     * Not to be confused with {@link RawRule} (`NodeType.RawRule`), which is
+     * a rule-level node for intentionally unparsed rules.
+     */
     Raw: 'Raw',
     Parameter: 'Parameter',
     ParameterList: 'ParameterList',
@@ -342,6 +354,7 @@ export const NodeType = {
     FilterList: 'FilterList',
     InvalidRuleError: 'InvalidRuleError',
     InvalidRule: 'InvalidRule',
+    RawRule: 'RawRule',
     EmptyRule: 'EmptyRule',
     ConfigNode: 'ConfigNode',
     Agent: 'Agent',
@@ -612,6 +625,34 @@ export interface InvalidRule extends RuleBase {
      * Error details.
      */
     error: InvalidRuleError;
+}
+
+/**
+ * Represents a raw (intentionally unparsed) rule.
+ *
+ * Produced when `ignoreCosmetic` or `ignoreNetwork` is set — the rule was
+ * recognised and could be parsed, but parsing was deliberately skipped.
+ * The verbatim source text is preserved in `raw` for round-trip fidelity.
+ */
+export interface RawRule extends RuleBase {
+    type: typeof NodeType.RawRule;
+
+    /**
+     * Category of the adblock rule.
+     */
+    category: typeof RuleCategory.Raw;
+
+    /**
+     * Verbatim source text of the rule.
+     */
+    raw: string;
+
+    /**
+     * The rule kind that was detected by the classifier before parsing was
+     * skipped. Consumers can use this to distinguish skipped network rules
+     * from skipped cosmetic rules without re-running the classifier.
+     */
+    kind?: typeof RuleCategory.Network | typeof RuleCategory.Cosmetic;
 }
 
 /**
