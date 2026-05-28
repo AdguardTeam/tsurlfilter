@@ -1,6 +1,6 @@
 import { parse } from 'tldts';
 
-import { ADG_SCRIPTLET_MASK, QuoteType, QuoteUtils } from '@adguard/agtree';
+import { ADG_SCRIPTLET_MASK } from '@adguard/agtree';
 
 import { type CosmeticRuleParts, CosmeticRuleType } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';
@@ -99,53 +99,44 @@ export class CosmeticLookupTable {
             if (!CosmeticLookupTable.isScriptletRule(ruleParts)) {
                 // Store all non-scriptlet rules by their content.
                 this.addAllowlistRule(ruleParts.text.slice(ruleParts.contentStart, ruleParts.contentEnd), storageIdx);
+                return;
             }
 
             /*
-             * Get scriptlet name and arguments (if any).
-             * For example:
-             * - //scriptlet('log', 'arg') -> ['log', 'arg']
-             * - //scriptlet('')           -> ['']
-             * - //scriptlet()             -> ['']
+             * Retrieve the full CosmeticRule to reuse its already-parsed scriptletParams.
+             * This avoids a second parser that could diverge from the AGTree-based parsing
+             * used for blocking rules. The scriptletParams are populated from the AST during
+             * CosmeticRule construction, correctly handling commas inside quoted arguments.
              */
-            const params = ruleParts.text
-                .slice(
-                    // +1 to skip the space after the scriptlet mask
-                    ruleParts.contentStart + ADG_SCRIPTLET_MASK.length + 1,
-                    // -1 to skip the closing parenthesis
-                    ruleParts.contentEnd - 1,
-                )
-                .split(',')
-                .map((p) => QuoteUtils.removeQuotesAndUnescape(p.trim()));
+            const cosmeticRule = this.ruleStorage.retrieveCosmeticRule(storageIdx);
+            if (!cosmeticRule) {
+                return;
+            }
+
+            const { scriptletParams } = cosmeticRule;
 
             /*
-             * If only one parameter is specified, it means only scriptlet name is specified.
-             * In this case we can allowlist scriptlet by name. For example:
+             * If only the scriptlet name is specified (no arguments), allowlist by name.
+             * For example:
              * - #@%#//scriptlet('set-cookie')
              * Also, there are two special cases here:
              * - #@%#//scriptlet('')
              * - #@%#//scriptlet()
              * See https://github.com/AdguardTeam/Scriptlets/issues/377 for more details.
              */
-            if (params[0] !== undefined && params.length === 1) {
-                this.addAllowlistRule(params[0], storageIdx);
+            if (scriptletParams.args.length === 0) {
+                this.addAllowlistRule(scriptletParams.name ?? '', storageIdx);
                 return;
             }
 
             /*
-             * If more than one parameter is specified, it means scriptlet name and arguments are specified.
-             * In this case we can allowlist scriptlet by content. For example:
+             * If arguments are specified, allowlist by normalized scriptlet content.
+             * For example:
              * - #@%#//scriptlet('log', 'arg')
-             * But we should use normalized scriptlet content for better matching.
-             * For example, //scriptlet('log', 'arg') can be matched by //scriptlet("log", "arg").
-             * In other words, here we normalize //scriptlet("log", "arg") to //scriptlet('log', 'arg').
+             * Uses scriptletParams.toString() for consistent normalization
+             * with the blocking rule's key (built from the AST path in CosmeticRule).
              */
-            this.addAllowlistRule(
-                // TODO: Move ScriptletParams from cosmetic-rule.ts to a common file and reuse it here
-                // eslint-disable-next-line max-len
-                `${ADG_SCRIPTLET_MASK}(${params.map((p) => QuoteUtils.setStringQuoteType(p, QuoteType.Single)).join(', ')})`,
-                storageIdx,
-            );
+            this.addAllowlistRule(scriptletParams.toString(), storageIdx);
 
             return;
         }

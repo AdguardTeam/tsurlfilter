@@ -494,6 +494,69 @@ describe('Test cosmetic engine - JS rules', () => {
                 getRawRuleIndex(rawFilterListLocal, genericSetStorageScriptletRule),
             );
         });
+
+        it('allowlists scriptlet whose argument contains a comma', () => {
+            const blockingRule = "example.org#%#//scriptlet('set-cookie', 'name', 'yes, ok')";
+            const exceptionRule = "example.org#@%#//scriptlet('set-cookie', 'name', 'yes, ok')";
+            const rulesLocal = [blockingRule, exceptionRule];
+            const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
+
+            const result = cosmeticEngine.match(
+                createRequest('https://example.org'),
+                CosmeticOption.CosmeticOptionAll,
+            );
+
+            expect(result.JS.specific.length).toBe(0);
+            expect(result.JS.generic.length).toBe(0);
+        });
+
+        it('does not allowlist when comma-containing args differ', () => {
+            const blockingRule = "example.org#%#//scriptlet('set-cookie', 'name', 'yes, ok')";
+            const exceptionRule = "example.org#@%#//scriptlet('set-cookie', 'name', 'no, bad')";
+            const rulesLocal = [blockingRule, exceptionRule];
+            const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
+
+            const result = cosmeticEngine.match(
+                createRequest('https://example.org'),
+                CosmeticOption.CosmeticOptionAll,
+            );
+
+            expect(result.JS.specific.length).toBe(1);
+            expect(result.JS.specific[0].getContent()).toContain('set-cookie');
+        });
+
+        it('allowlists scriptlet by name when argument has a comma', () => {
+            const blockingRule = "example.org#%#//scriptlet('set-cookie', 'name', 'a,b')";
+            const exceptionRule = "#@%#//scriptlet('set-cookie')";
+            const rulesLocal = [blockingRule, exceptionRule];
+            const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
+
+            const result = cosmeticEngine.match(
+                createRequest('https://example.org'),
+                CosmeticOption.CosmeticOptionAll,
+            );
+
+            expect(result.JS.specific.length).toBe(0);
+            expect(result.JS.generic.length).toBe(0);
+        });
+
+        // AG-54615: real-world rule with regex arg containing escaped commas
+        it('allowlists trusted-replace-node-text with regex arg containing commas', () => {
+            // eslint-disable-next-line max-len
+            const blockingRule = String.raw`[$domain=/(\\d+)?dizipal(\\d+)?\\.com/]#%#//scriptlet('trusted-replace-node-text', 'script', 'playAdd', '/manageAds\(video_urls\[activeItem\]\, video_seconds\[activeItem\]\, ad_urls\[activeItem]\,true\);/', 'playVideo();')`;
+            // eslint-disable-next-line max-len
+            const exceptionRule = String.raw`[$domain=/(\\d+)?dizipal(\\d+)?\\.com/]#@%#//scriptlet('trusted-replace-node-text', 'script', 'playAdd', '/manageAds\(video_urls\[activeItem\]\, video_seconds\[activeItem\]\, ad_urls\[activeItem]\,true\);/', 'playVideo();')`;
+            const rulesLocal = [blockingRule, exceptionRule];
+            const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rulesLocal.join('\n'))]);
+
+            const result = cosmeticEngine.match(
+                createRequest('https://dizipal123.com'),
+                CosmeticOption.CosmeticOptionAll,
+            );
+
+            expect(result.JS.specific.length).toBe(0);
+            expect(result.JS.generic.length).toBe(0);
+        });
     });
 });
 
