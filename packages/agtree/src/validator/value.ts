@@ -1,4 +1,6 @@
-import { isKnownValidator, validate } from '../compatibility-tables/validators';
+import { type Platform } from '../compatibility-tables/platform';
+import { redirectResourceTable } from '../compatibility-tables/redirect-resource-bridge';
+import { isRegisteredValidator, REDIRECT_RESOURCE_VALIDATOR_NAME, validate } from '../compatibility-tables/validators';
 import { ValidationContext, type ValidationIssue } from '../compatibility-tables/validators/types';
 import { type Modifier } from '../nodes';
 import { isString } from '../utils/type-guards';
@@ -210,6 +212,7 @@ const formatIssueAsError = (issue: ValidationIssue, modifierName: string, modifi
  * @param modifier Modifier AST node.
  * @param valueFormat Value format for the modifier.
  * @param valueFormatFlags Optional; RegExp flags for the value format.
+ * @param platform Optional platform for platform-aware validators (e.g. `redirect_resource`).
  *
  * @returns Validation result.
  */
@@ -217,11 +220,32 @@ export const validateValue = (
     modifier: Modifier,
     valueFormat: string,
     valueFormatFlags?: string | null,
+    platform?: Platform,
 ): ValidationResult => {
     const modifierName = modifier.name.value;
     const modifierValue = modifier.value?.value;
 
-    if (isKnownValidator(valueFormat)) {
+    // Platform-aware redirect resource validator — handled directly to avoid
+    // circular dependency through validators/index.ts.
+    if (valueFormat === REDIRECT_RESOURCE_VALIDATOR_NAME) {
+        if (!modifierValue) {
+            return getValueRequiredValidationResult(modifierName);
+        }
+        if (platform !== undefined) {
+            // Platform available: perform full platform-aware validation.
+            const tempCtx = new ValidationContext();
+            redirectResourceTable.validate(modifierValue, tempCtx, platform);
+            if (!tempCtx.valid) {
+                return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`);
+            }
+            return { valid: true };
+        }
+        // No platform context: fail closed rather than silently accepting
+        // cross-platform values — a uBO-only redirect must not pass ADG validation.
+        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`);
+    }
+
+    if (isRegisteredValidator(valueFormat)) {
         const ctx = new ValidationContext();
         validate(valueFormat, modifierValue ?? '', ctx);
 

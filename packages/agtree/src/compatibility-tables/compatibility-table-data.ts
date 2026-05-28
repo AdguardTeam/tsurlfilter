@@ -172,7 +172,7 @@ const getModifiersCompatibilityTableData = (dir: string) => {
 
         const valueFormatTrimmed = valueFormat.trim();
 
-        if (!valueFormatTrimmed && KNOWN_VALIDATORS.has(valueFormatTrimmed)) {
+        if (!valueFormatTrimmed || KNOWN_VALIDATORS.has(valueFormatTrimmed)) {
             return data;
         }
 

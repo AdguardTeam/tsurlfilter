@@ -16,10 +16,11 @@ import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from '../validator/
 import { CompatibilityTableBase } from './base';
 import { modifiersCompatibilityTableData } from './modifiers-compatibility-table-data';
 import { type Platform } from './platform';
+import { redirectResourceTable } from './redirect-resource-bridge';
 import { type ModifierDataSchema } from './schemas';
 import { type CompatibilityTable } from './types';
-import { isKnownValidator, validate } from './validators';
-import { type ValidationContext } from './validators/types';
+import { isRegisteredValidator, REDIRECT_RESOURCE_VALIDATOR_NAME, validate } from './validators';
+import { ValidationContext } from './validators/types';
 
 /**
  * Transforms the name of the modifier to a normalized form.
@@ -159,6 +160,7 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
                 specificBlockerData.valueFormat,
                 specificBlockerData.valueFormatFlags,
                 ctx,
+                platform,
             );
             return;
         }
@@ -190,6 +192,7 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
      * @param valueFormat Value format for the modifier.
      * @param valueFormatFlags Optional; RegExp flags for the value format.
      * @param ctx Validation context to collect issues into.
+     * @param platform Optional platform to validate against.
      */
     // eslint-disable-next-line class-methods-use-this
     private validateValue(
@@ -197,12 +200,31 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
         valueFormat: string,
         valueFormatFlags: string | null | undefined,
         ctx: ValidationContext,
+        platform?: Platform,
     ): void {
         const modifierName = modifier.name.value;
         const modifierValue = modifier.value?.value ?? '';
 
-        if (isKnownValidator(valueFormat)) {
-            validate(valueFormat, modifierValue, ctx);
+        // Platform-aware redirect resource validator — handled directly to avoid
+        // circular dependency through validators/index.ts → redirect-resource.ts → redirects.ts.
+        if (valueFormat === REDIRECT_RESOURCE_VALIDATOR_NAME) {
+            const tempCtx = new ValidationContext();
+            redirectResourceTable.validate(modifierValue, tempCtx, platform);
+            if (tempCtx.issues) {
+                const node = modifier.value ?? modifier;
+                for (const issue of tempCtx.issues) {
+                    if (issue.type === 'error') {
+                        ctx.addErrorFromNode(issue.messageId, node);
+                    } else {
+                        ctx.addWarningFromNode(issue.messageId, node);
+                    }
+                }
+            }
+            return;
+        }
+
+        if (isRegisteredValidator(valueFormat)) {
+            validate(valueFormat, modifierValue, ctx, platform);
             return;
         }
 

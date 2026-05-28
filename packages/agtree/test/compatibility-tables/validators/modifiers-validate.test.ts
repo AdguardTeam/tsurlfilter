@@ -57,8 +57,6 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
             'header=set-cookie:/foo\\, bar\\$/',
             'hls=\\/video^?*&source=video_ads',
             'jsonprune=\\$..[one\\, "two three"]',
-            'redirect=noopjs',
-            'redirect-rule=noopmp4-1s',
             'removeheader=link',
             'removeheader=request:user-agent',
             'removeparam=cb',
@@ -68,6 +66,33 @@ describe('ModifiersCompatibilityTable.validate — value validation', () => {
         ])('%s is valid', (raw) => {
             const ctx = validateModifier(raw);
             expect(ctx.valid).toBe(true);
+        });
+    });
+
+    describe('redirect_resource validator', () => {
+        describe('valid redirect values', () => {
+            test.each([
+                ['redirect=noopjs', Platform.AdgOsWindows],
+                ['redirect=noop.js', Platform.AdgOsWindows],
+                ['redirect=noopjs', Platform.UboExtChrome],
+                ['redirect=noop.js:99', Platform.UboExtChrome],
+                ['redirect-rule=noopjs', Platform.AdgOsWindows],
+                ['redirect-rule=noopmp4-1s', Platform.AdgOsWindows],
+            ] as const)('%s is valid for platform', (raw, platform) => {
+                const ctx = validateModifier(raw, platform);
+                expect(ctx.valid).toBe(true);
+            });
+        });
+
+        describe('invalid redirect values', () => {
+            test.each([
+                ['redirect=nonexistent', Platform.AdgOsWindows],
+                ['redirect=hd-main.js', Platform.AdgOsWindows],
+                ['redirect-rule=nonexistent', Platform.AdgOsWindows],
+            ] as const)('%s is invalid for platform', (raw, platform) => {
+                const ctx = validateModifier(raw, platform);
+                expect(ctx.valid).toBe(false);
+            });
         });
     });
 

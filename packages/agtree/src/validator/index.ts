@@ -115,7 +115,7 @@ const validateForSpecificProduct = (
             throw new Error(`${SOURCE_DATA_ERROR_PREFIX.NO_VALUE_FORMAT_FOR_ASSIGNABLE}: '${modifierName}'`);
         }
 
-        return validateValue(modifier, specificBlockerData.valueFormat, specificBlockerData.valueFormatFlags);
+        return validateValue(modifier, specificBlockerData.valueFormat, specificBlockerData.valueFormatFlags, platform);
     }
 
     if (modifier?.value) {
