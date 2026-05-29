@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { generateMD5Hash } from '@adguard/tsurlfilter/cli';
+import { generateMD5Hash } from '@adguard/dnr-converter/cli';
 import {
     afterAll,
     afterEach,

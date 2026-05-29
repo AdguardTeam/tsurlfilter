@@ -37,7 +37,7 @@ Before working on `dnr-rulesets`, build the workspace packages it depends on:
 
 ```bash
 pnpm --filter @adguard/agtree build
-pnpm --filter @adguard/tsurlfilter build
+pnpm --filter @adguard/dnr-converter build
 pnpm --filter @adguard/logger build
 ```
 

@@ -323,6 +323,7 @@ COPY --from=test-tswebextension /out/ /
 FROM built-tsurlfilter AS test-dnr-rulesets
 
 COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/dnr-converter/ ./packages/dnr-converter/
 
 ARG TEST_RUN_ID
 
@@ -359,6 +360,7 @@ FROM built-tswebextension AS test-examples
 COPY packages/adguard-api/ ./packages/adguard-api/
 COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
 COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/dnr-converter/ ./packages/dnr-converter/
 COPY packages/examples/ ./packages/examples/
 
 ARG TEST_RUN_ID
@@ -390,6 +392,7 @@ FROM built-tswebextension AS test-adguard-api-mv3
 
 COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
 COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/dnr-converter/ ./packages/dnr-converter/
 
 ARG TEST_RUN_ID
 
@@ -546,6 +549,7 @@ COPY --from=build-tswebextension /out/ /
 FROM built-tsurlfilter AS build-dnr-rulesets
 
 COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/dnr-converter/ ./packages/dnr-converter/
 
 ARG TEST_RUN_ID
 
@@ -619,6 +623,7 @@ FROM built-tswebextension AS build-adguard-api-mv3
 
 COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
 COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/dnr-converter/ ./packages/dnr-converter/
 COPY packages/examples/adguard-api-mv3/ ./packages/examples/adguard-api-mv3/
 
 ARG TEST_RUN_ID

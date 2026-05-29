@@ -10,7 +10,7 @@ export const RULESET_NAME_PREFIX = 'ruleset_';
 /**
  * Extension for ruleset files.
  */
-const RULESET_FILE_EXT = '.json';
+export const RULESET_FILE_EXT = '.json';
 
 /**
  * Path separator (forward slash, browser-safe).

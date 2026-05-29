@@ -1175,15 +1175,15 @@ importers:
       '@adguard/agtree':
         specifier: workspace:^
         version: link:../agtree
+      '@adguard/dnr-converter':
+        specifier: workspace:^
+        version: link:../dnr-converter
       '@adguard/logger':
         specifier: workspace:^
         version: link:../logger
       '@adguard/re2-wasm':
         specifier: 1.2.0
         version: 1.2.0
-      '@adguard/tsurlfilter':
-        specifier: workspace:^
-        version: link:../tsurlfilter
       axios:
         specifier: 'catalog:'
         version: 1.15.0

@@ -24,11 +24,7 @@
 					999
 				]
 			},
-			"conversionData": {
-				"conversions": {},
-				"originals": []
-			},
-			"rawFilterList": "||example.com/ad.js$redirect=noopjs"
+			"filterContent": "||example.com/ad.js$redirect=noopjs"
 		}
 	},
 	{

@@ -1,19 +1,20 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { generateMD5Hash } from '@adguard/tsurlfilter/cli';
 import {
-    DeclarativeRule,
-    IRuleSet,
+    type DeclarativeRule,
+    type IRulesetWithSourceMap,
+    isSafeRule,
     METADATA_RULESET_ID,
-    MetadataRuleSet,
-} from '@adguard/tsurlfilter/es/declarative-converter';
+    MetadataRuleset,
+} from '@adguard/dnr-converter';
 import {
     extractRuleSetId,
+    generateMD5Hash,
+    getRuleSetId,
     getRuleSetPath,
-    isSafeRule,
     RULESET_FILE_EXT,
-} from '@adguard/tsurlfilter/es/declarative-converter-utils';
+} from '@adguard/dnr-converter/cli';
 import { ensureDir } from 'fs-extra';
 
 import { findFiles } from '../../utils/find-files';
@@ -48,7 +49,7 @@ interface ExcludeUnsafeRulesOptions {
  *
  * @returns A promise that resolves to an array of rulesets.
  */
-async function scanFolder(dirPath: string): Promise<IRuleSet[]> {
+async function scanFolder(dirPath: string): Promise<IRulesetWithSourceMap[]> {
     await ensureDir(dirPath);
 
     const rulesetsPaths = await findFiles(
@@ -101,7 +102,7 @@ async function updateMetadataRuleset(
         { encoding: 'utf-8' },
     );
 
-    const metadataRuleset = MetadataRuleSet.deserialize(rawMetadataRuleset);
+    const metadataRuleset = MetadataRuleset.deserialize(rawMetadataRuleset);
 
     // Update each checksum in the metadata ruleset instead of recreating whole
     // ruleset to keep all additional properties not touched by this operation.
@@ -185,7 +186,7 @@ export async function excludeUnsafeRules(params: ExcludeUnsafeRulesOptions): Pro
     await Promise.all(tasks);
 
     await updateMetadataRuleset(
-        getRuleSetPath(METADATA_RULESET_ID, dir),
+        getRuleSetPath(getRuleSetId(METADATA_RULESET_ID), dir),
         checksums,
         prettifyJson,
     );

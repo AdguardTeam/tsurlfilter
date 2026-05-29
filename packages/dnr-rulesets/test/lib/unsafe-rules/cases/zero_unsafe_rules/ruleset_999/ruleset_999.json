@@ -24,11 +24,7 @@
 					999
 				]
 			},
-			"conversionData": {
-				"conversions": {},
-				"originals": []
-			},
-			"rawFilterList": "example.com"
+			"filterContent": "example.com"
 		}
 	},
 	{

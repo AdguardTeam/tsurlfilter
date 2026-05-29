@@ -10,9 +10,11 @@ import {
 
 import {
     ensureDir,
+    extractRuleSetId,
     findFiles,
     generateMD5Hash,
     getIdFromFilterName,
+    getRuleSetId,
     getRuleSetPath,
 } from '../../cli/utils';
 
@@ -66,6 +68,46 @@ describe('CLI utils', () => {
         it('does nothing if directory exists', async () => {
             fs.mkdirSync(tmpDir, { recursive: true });
             await expect(ensureDir(tmpDir)).resolves.toBeUndefined();
+        });
+    });
+
+    describe('getRuleSetId', () => {
+        it('returns correct ruleset ID for numeric filter ID', () => {
+            expect(getRuleSetId(42)).toBe('ruleset_42');
+        });
+
+        it('returns correct ruleset ID for string filter ID', () => {
+            expect(getRuleSetId('0')).toBe('ruleset_0');
+        });
+
+        it('returns correct ruleset ID for zero', () => {
+            expect(getRuleSetId(0)).toBe('ruleset_0');
+        });
+    });
+
+    describe('extractRuleSetId', () => {
+        it('extracts numeric ID from a full path', () => {
+            expect(extractRuleSetId('path/to/ruleset_42.json')).toBe(42);
+        });
+
+        it('extracts numeric ID from just the filename', () => {
+            expect(extractRuleSetId('ruleset_3')).toBe(3);
+        });
+
+        it('extracts numeric ID from filename without extension', () => {
+            expect(extractRuleSetId('path/to/ruleset_7')).toBe(7);
+        });
+
+        it('returns null for non-matching name', () => {
+            expect(extractRuleSetId('ruleset_invalid')).toBeNull();
+        });
+
+        it('returns null for empty string', () => {
+            expect(extractRuleSetId('')).toBeNull();
+        });
+
+        it('returns null for string without ruleset prefix', () => {
+            expect(extractRuleSetId('some_42')).toBeNull();
         });
     });
 

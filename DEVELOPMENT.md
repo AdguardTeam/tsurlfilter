@@ -42,7 +42,7 @@ workspace dependencies automatically:
 npx lerna run build
 
 # Build a specific package with its dependencies
-npx lerna run build --scope=@adguard/tsurlfilter
+npx lerna run build --scope=@adguard/dnr-converter
 ```
 
 Lerna + Nx respect the dependency tree and cache build outputs.

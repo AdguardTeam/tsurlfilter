@@ -2,12 +2,14 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const FILTER_PREFIX = 'filter_';
+export {
+    getRuleSetId,
+    getRuleSetPath,
+    extractRuleSetId,
+    RULESET_FILE_EXT,
+} from '../src/utils/ruleset-utils';
 
-/**
- * Ruleset file extension.
- */
-const RULESET_FILE_EXT = '.json';
+const FILTER_PREFIX = 'filter_';
 
 /**
  * Generates an MD5 hash from a given input string.
@@ -35,18 +37,6 @@ export const getIdFromFilterName = (filterName: string): number | null => {
     }
 
     return parseInt(match[1], 10);
-};
-
-/**
- * Gets the filesystem path for a ruleset file.
- *
- * @param ruleSetId Rule set ID string (e.g. "ruleset_1").
- * @param destRulesetsPath Base directory for rulesets.
- *
- * @returns Full path to the ruleset JSON file.
- */
-export const getRuleSetPath = (ruleSetId: string, destRulesetsPath: string): string => {
-    return path.join(destRulesetsPath, ruleSetId, `${ruleSetId}${RULESET_FILE_EXT}`);
 };
 
 /**

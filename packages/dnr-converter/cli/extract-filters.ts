@@ -6,28 +6,12 @@ import path from 'node:path';
 import { METADATA_RULESET_ID, MetadataRuleset } from '../src/index';
 
 import { LOCAL_METADATA_FILE_NAME } from './convert-filters';
-import { ensureDir, findFiles } from './utils';
-
-/**
- * Ruleset file extension.
- */
-const RULESET_FILE_EXT = '.json';
-
-/**
- * Extracts a ruleset ID number from a file path.
- *
- * @param filePath The path to the ruleset file.
- *
- * @returns The extracted ruleset ID or null if not found.
- */
-const extractRuleSetId = (filePath: string): number | null => {
-    const basename = path.basename(filePath, RULESET_FILE_EXT);
-    const match = basename.match(/^ruleset_(\d+)$/);
-    if (!match) {
-        return null;
-    }
-    return parseInt(match[1], 10);
-};
+import {
+    ensureDir,
+    extractRuleSetId,
+    findFiles,
+    RULESET_FILE_EXT,
+} from './utils';
 
 /**
  * Extractor class for extracting text filters from rulesets.

@@ -1,5 +1,5 @@
-import { METADATA_RULESET_ID } from '@adguard/tsurlfilter/es/declarative-converter';
-import { extractRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
+import { METADATA_RULESET_ID } from '@adguard/dnr-converter';
+import { extractRuleSetId, getRuleSetId, getRuleSetPath } from '@adguard/dnr-converter/cli';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -67,7 +67,7 @@ const getValidatorData = async (destDir: string): Promise<RulesetIdsAndMetadataK
         rulesetIds.push(id);
     });
 
-    const ruleSetPath = getRuleSetPath(rulesetIds[0], destDir);
+    const ruleSetPath = getRuleSetPath(getRuleSetId(rulesetIds[0]), destDir);
 
     try {
         const rawRuleSetContent = await fs.promises.readFile(
