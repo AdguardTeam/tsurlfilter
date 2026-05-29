@@ -79,8 +79,9 @@ COPY packages/ ./packages/
 # Dependency tree (see README.md for full details):
 #   source-leaf-packages:      logger + css-tokenizer + eslint-plugin (leaf packages, no workspace deps)
 #   source-with-agtree:        agtree (depends on css-tokenizer)
+#   source-with-dnr-converter: dnr-converter (depends on agtree, logger)
 #   source-with-tsurlfilter:   tsurlfilter (depends on agtree, css-tokenizer)
-#   source-with-tswebextension: tswebextension (depends on tsurlfilter, agtree, logger)
+#   source-with-tswebextension: tswebextension (depends on tsurlfilter, dnr-converter, agtree, logger)
 #
 # Stages that need packages outside this chain (e.g. dnr-rulesets, adguard-api)
 # add their own COPY statements directly after FROM.
@@ -106,7 +107,15 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     npx lerna run build --scope @adguard/agtree
 
-FROM built-agtree AS source-with-tsurlfilter
+FROM built-agtree AS source-with-dnr-converter
+COPY packages/dnr-converter/ ./packages/dnr-converter/
+
+FROM source-with-dnr-converter AS built-dnr-converter
+RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
+    pnpm config set store-dir /pnpm-store && \
+    npx lerna run build --scope @adguard/dnr-converter
+
+FROM built-dnr-converter AS source-with-tsurlfilter
 COPY packages/tsurlfilter/ ./packages/tsurlfilter/
 
 FROM source-with-tsurlfilter AS built-tsurlfilter

@@ -15,10 +15,10 @@ export {
     TooManyUnsafeRulesError,
     TooManyRulesError,
     UnavailableFilterSourceError,
-    UnavailableRuleSetSourceError,
+    UnavailableRulesetSourceError,
     ResourceType,
     RULESET_NAME_PREFIX,
-} from '@adguard/tsurlfilter/es/declarative-converter';
+} from '@adguard/dnr-converter';
 
 // re-exports to prevent collision, when both tsurlfilter and tswebextension are imported
 export {

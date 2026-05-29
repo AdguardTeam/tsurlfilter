@@ -2,9 +2,9 @@ import browser from 'webextension-polyfill';
 
 import {
     type DeclarativeRule,
-    type IRuleSet,
+    type IRulesetWithSourceMap,
     type UpdateStaticRulesOptions,
-} from '@adguard/tsurlfilter/es/declarative-converter';
+} from '@adguard/dnr-converter';
 
 import { logger } from '../../common/utils/logger';
 
@@ -125,7 +125,7 @@ export class SessionRulesApi {
      * @returns Resolved promise when the session rules are updated.
      */
     public static async updateSessionRules(
-        enabledStaticRuleSets: IRuleSet[],
+        enabledStaticRuleSets: IRulesetWithSourceMap[],
         declarativeRulesToCancel?: UpdateStaticRulesOptions[] | undefined,
     ): Promise<void> {
         const rulesToCancel = new Map<string, number[]>(
@@ -220,7 +220,10 @@ export class SessionRulesApi {
         // The rules with IDs listed in options.removeRuleIds are first removed,
         // and then the rules given in options.addRules are added
         return chrome.declarativeNetRequest.updateSessionRules({
-            addRules: unsafeRulesFromEnabledRulesets as chrome.declarativeNetRequest.Rule[],
+            // dnr-converter uses PascalCase enum member names (Block, Redirect, …)
+            // while @types/chrome uses UPPER_SNAKE_CASE (BLOCK, REDIRECT, …).
+            // Runtime values are identical, so the cast is safe.
+            addRules: unsafeRulesFromEnabledRulesets as unknown as chrome.declarativeNetRequest.Rule[],
             removeRuleIds,
         });
     }

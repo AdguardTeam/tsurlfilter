@@ -1,12 +1,13 @@
 import browser from 'webextension-polyfill';
 
+import { Filter, type IFilter, RULESET_NAME_PREFIX } from '@adguard/dnr-converter';
 import { FilterList } from '@adguard/tsurlfilter';
-import { Filter, type IFilter, RULESET_NAME_PREFIX } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { FiltersStorage } from '../../common/storage/filters';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import { type ConfigurationMV3 } from './configuration';
+import { type ITrustedFilter, TrustedFilter } from './trusted-filter';
 
 export type UpdateStaticFiltersResult = {
     errors: FailedEnableRuleSetsError[];
@@ -95,11 +96,11 @@ export default class FiltersApi {
 
             const filter = new Filter(
                 filterId,
-                { getContent: (): Promise<FilterList> => FiltersApi.loadFilterContent(filterId) },
-                /**
-                 * Static filters are trusted.
-                 */
-                true,
+                async (): Promise<string> => {
+                    const f = await FiltersApi.loadFilterContent(filterId);
+
+                    return f.getContent();
+                },
             );
 
             this.filtersCache.set(filterId, filter);
@@ -109,18 +110,16 @@ export default class FiltersApi {
     }
 
     /**
-     * Wraps custom filter into {@link IFilter}.
+     * Wraps custom filter into {@link ITrustedFilter}.
      *
      * @param customFilters List of custom filters.
      *
-     * @returns List of {@link IFilter} with a lazy content loading feature.
+     * @returns List of {@link ITrustedFilter} with a lazy content loading feature.
      */
-    static createCustomFilters(customFilters: ConfigurationMV3['customFilters']): IFilter[] {
-        return customFilters.map((f) => new Filter(
+    static createCustomFilters(customFilters: ConfigurationMV3['customFilters']): ITrustedFilter[] {
+        return customFilters.map((f) => new TrustedFilter(
             f.filterId,
-            {
-                getContent: () => Promise.resolve(new FilterList(f.content, f.conversionData)),
-            },
+            async () => new FilterList(f.content, f.conversionData).getContent(),
             f.trusted,
         ));
     }

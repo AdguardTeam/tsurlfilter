@@ -25,7 +25,7 @@ export {
 export { type ConversionResult } from './filter-converter/conversion-result';
 export { Filter } from './filter/filter';
 export { type IFilter } from './filter/types';
-export { type IRulesHashMap } from './ruleset/rules-hash-map';
+export { type IRulesHashMap, RulesHashMap, type HashWithSource } from './ruleset/rules-hash-map';
 export { type ISourceMap } from './ruleset/source-map';
 export {
     UnavailableFilterSourceError,
@@ -34,3 +34,30 @@ export {
 export { MetadataRuleset, METADATA_RULESET_ID } from './ruleset/metadata-ruleset';
 export { type HttpHeaderMatcher, Rule } from './rule/rule';
 export { RuleDeclarativeValidator } from './rule/rule-validator';
+export { type DeclarativeRule, ResourceType } from './declarative-rule';
+export {
+    type ConversionError,
+    EmptyResourcesError,
+    UnsupportedModifierError,
+    UnsupportedRegexpError,
+    InvalidDeclarativeRuleError,
+} from './errors/conversion-errors';
+export {
+    type ConverterOptionsError,
+    EmptyOrNegativeNumberOfRulesError,
+    NegativeNumberOfRulesError,
+    ResourcesPathError,
+} from './errors/converter-options-errors';
+export {
+    type LimitationError,
+    MaxScannedRulesError,
+    TooManyRegexpRulesError,
+    TooManyUnsafeRulesError,
+    TooManyRulesError,
+} from './errors/limitation-errors';
+export {
+    RULESET_NAME_PREFIX,
+    getRuleSetId,
+    getRuleSetPath,
+    extractRuleSetId,
+} from './utils/ruleset-utils';

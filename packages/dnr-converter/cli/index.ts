@@ -7,7 +7,7 @@ import { DNR_CONVERTER_VERSION } from '../src/index';
 
 import { convertFilters, LOCAL_METADATA_FILE_NAME } from './convert-filters';
 import { Extractor } from './extract-filters';
-import { generateMD5Hash } from './utils';
+import { generateMD5Hash, getIdFromFilterName } from './utils';
 
 export const DEFAULT_DEST_RULE_SETS_DIR = './build/rulesets';
 
@@ -90,5 +90,5 @@ if (isRunningViaCli) {
 }
 
 // For API-like usage, export the convertFilters function and generateMD5Hash.
-export { convertFilters, generateMD5Hash };
+export { convertFilters, generateMD5Hash, getIdFromFilterName };
 export type { ConvertFiltersOptions } from './convert-filters';

@@ -1,26 +1,27 @@
 import { type IDBPDatabase } from 'idb';
 import browser from 'webextension-polyfill';
 
-import { fetchExtensionResourceText } from '@adguard/tsurlfilter';
 import {
+    extractRuleSetId,
+    getRuleSetId,
+    getRuleSetPath,
     type IFilter,
-    IndexedNetworkRuleWithHash,
-    type IRuleSet,
+    type IRulesetWithSourceMap,
     METADATA_RULESET_ID,
-    MetadataRuleSet,
-    RuleSet,
-    type RuleSetMetadataProvider,
+    MetadataRuleset,
+    Rule,
+    RulesetWithSourceMap,
     RulesHashMap,
-    type SerializedRuleSetData,
-} from '@adguard/tsurlfilter/es/declarative-converter';
-import { extractRuleSetId, getRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
+} from '@adguard/dnr-converter';
+import { fetchExtensionResourceText, FilterList } from '@adguard/tsurlfilter';
 
 import { IdbSingleton } from '../../common/idb-singleton';
 import { FiltersStorage } from '../../common/storage/filters';
 import { logger } from '../../common/utils/logger';
 
 /**
- * RuleSetsLoaderApi is responsible for creating {@link IRuleSet} instances from provided rule set IDs and paths.
+ * RuleSetsLoaderApi is responsible for creating {@link IRulesetWithSourceMap} instances
+ * from provided rule set IDs and paths.
  * It supports lazy loading, meaning the rule set contents are loaded only upon request.
  * This class implements a two-layer caching strategy to optimize performance:
  * ## Caching Architecture:
@@ -31,7 +32,7 @@ import { logger } from '../../common/utils/logger';
  *
  * 2. **In-Memory Cache**: Fast access layer for frequently accessed data within a session
  *    - `idbChecksumsCache`: Caches checksums from IDB with composite keys `<ruleSetsPath>_<ruleSetId>`
- *    - `ruleSetsCache`: Caches fully created IRuleSet instances
+ *    - `ruleSetsCache`: Caches fully created IRulesetWithSourceMap instances
  *    - `metadataRulesetsCache`: Caches metadata rule sets by path
  *
  * ## Cache Synchronization:
@@ -43,7 +44,7 @@ import { logger } from '../../common/utils/logger';
  * - Initializing the rule sets loader to prepare it for fetching rule sets.
  * - Fetching checksums of rule sets from disk (source of truth).
  * - Synchronizing rule sets with IDB when checksums change.
- * - Creating new {@link IRuleSet} instances with lazy loading capabilities.
+ * - Creating new {@link IRulesetWithSourceMap} instances with lazy loading capabilities.
  *
  * @example
  * ```typescript
@@ -86,13 +87,13 @@ export class RuleSetsLoaderApi {
     /**
      * Cache of metadata rule sets.
      */
-    private static metadataRulesetsCache: Record<string, MetadataRuleSet> = {};
+    private static metadataRulesetsCache: Record<string, MetadataRuleset> = {};
 
     /**
      * Cache for already created rulesets. Needed to avoid multiple loading
      * of the same ruleset.
      */
-    private static ruleSetsCache: Map<string, IRuleSet>;
+    private static ruleSetsCache: Map<string, IRulesetWithSourceMap>;
 
     /**
      * Path to rule sets cache directory to invalidate it when path changes.
@@ -234,7 +235,7 @@ export class RuleSetsLoaderApi {
                         browser.runtime.getURL(metadataRulesetPath),
                     );
                     // eslint-disable-next-line max-len
-                    RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath] = MetadataRuleSet.deserialize(rawMetadataRuleset);
+                    RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath] = MetadataRuleset.deserialize(rawMetadataRuleset);
                 }
 
                 this.isInitialized = true;
@@ -313,6 +314,16 @@ export class RuleSetsLoaderApi {
                 const parsedRuleSet = JSON.parse(rawRuleSet);
                 const { metadata } = parsedRuleSet[0];
 
+                const { filterContent } = metadata;
+
+                // TODO: AG-53262 — Measure cold start time after migration
+                // from rawFilterList+conversionData → filterContent.
+                // FilterList.prepare() now runs at runtime (was build-time).
+                // Could add ~100-200ms per 100k+ line filter on first start.
+                const filterList = new FilterList(filterContent);
+                const rawFilterList = filterList.getContent();
+                const conversionData = filterList.getConversionData();
+
                 const db = await RuleSetsLoaderApi.getOpenedDb(RuleSetsLoaderApi.DB_STORE_NAME);
                 const tx = db.transaction(RuleSetsLoaderApi.DB_STORE_NAME, 'readwrite');
                 const store = tx.objectStore(RuleSetsLoaderApi.DB_STORE_NAME);
@@ -339,8 +350,6 @@ export class RuleSetsLoaderApi {
                 await Promise.all(puts);
 
                 await tx.done;
-
-                const { rawFilterList, conversionData } = metadata;
 
                 await FiltersStorage.setMultiple({
                     [ruleSetIdNumber]: {
@@ -371,21 +380,21 @@ export class RuleSetsLoaderApi {
 
     /**
      * If the rule set with the provided ID is already loaded, it will
-     * be returned from the cache. Otherwise, it will create a new {@link IRuleSet}
+     * be returned from the cache. Otherwise, it will create a new {@link IRulesetWithSourceMap}
      * from the provided ID and list of {@link IFilter|filters} with lazy
      * loading of this rule set contents.
      *
      * @param ruleSetId Rule set id.
      * @param filterList List of all available {@link IFilter|filters}.
      *
-     * @returns New {@link IRuleSet}.
+     * @returns New {@link IRulesetWithSourceMap}.
      *
      * @throws If initialization fails or the rule set with the provided ID is not found or invalid.
      */
     public async createRuleSet(
         ruleSetId: string,
         filterList: IFilter[],
-    ): Promise<IRuleSet> {
+    ): Promise<IRulesetWithSourceMap> {
         const ruleSetIdNumber = extractRuleSetId(ruleSetId);
 
         if (ruleSetIdNumber === null) {
@@ -421,9 +430,11 @@ export class RuleSetsLoaderApi {
                 unsafeRulesCount,
                 rulesCount,
                 unsafeRules,
+                badFilterRulesRaw,
+                ruleSetHashMapRaw,
             },
             ruleSetContentProvider,
-        } = await RuleSet.deserialize(
+        } = await RulesetWithSourceMap.deserialize(
             ruleSetId,
             rawData,
             loadLazyData,
@@ -431,38 +442,24 @@ export class RuleSetsLoaderApi {
             filterList,
         );
 
-        // Lazy metadata loaders: read from IDB on demand to avoid
-        // keeping heavy badFilterRules and rulesHashMap in memory.
-        const loadMetadataFromIdb = async (): Promise<SerializedRuleSetData> => {
-            const raw = await RuleSetsLoaderApi.getValueFromIdb(
-                RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_METADATA, ruleSetId),
-            );
-            return JSON.parse(raw);
-        };
+        // Build badFilterRules and rulesHashMap eagerly from the already-loaded
+        // metadata. With the new API these are plain fields (not lazy providers).
+        // We don't need filterId / ruleIndex because these Rule instances are
+        // used only for $badfilter matching, not for source attribution.
+        const badFilterRules = badFilterRulesRaw
+            .flatMap((rawString) => Rule.createFromText(0, 0, rawString));
 
-        const metadataProvider: RuleSetMetadataProvider = {
-            loadBadFilterRules: async () => {
-                const { badFilterRulesRaw } = await loadMetadataFromIdb();
-                // We don't need filter id and line index because this
-                // indexedRulesWithHash will be used only for matching $badfilter rules.
-                return badFilterRulesRaw
-                    .map((rawString) => IndexedNetworkRuleWithHash.createFromText(0, 0, rawString))
-                    .flat();
-            },
-            loadRulesHashMap: async () => {
-                const { ruleSetHashMapRaw } = await loadMetadataFromIdb();
-                const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
-                return new RulesHashMap(sources);
-            },
-        };
+        const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
+        const rulesHashMap = new RulesHashMap(sources);
 
-        const ruleset = new RuleSet(
+        const ruleset = new RulesetWithSourceMap(
             ruleSetId,
             rulesCount,
             unsafeRulesCount,
             regexpRulesCount,
             ruleSetContentProvider,
-            metadataProvider,
+            badFilterRules,
+            rulesHashMap,
             unsafeRules,
         );
 

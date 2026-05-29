@@ -120,6 +120,7 @@ import { SourceMap, type SourceRuleIdxAndFilterId } from '../ruleset/source-map'
 import { type SourceRuleAndFilterId, type UpdateStaticRulesOptions } from '../ruleset/types';
 import { getErrorMessage } from '../utils/error';
 import { isSafeRule } from '../utils/is-safe-rule';
+import { getRuleSetId } from '../utils/ruleset-utils';
 
 import { type ConversionResult } from './conversion-result';
 import {
@@ -158,7 +159,7 @@ export class FilterConverter {
      * @returns Rule set ID string.
      */
     public static getRuleSetId(filterId: number): string {
-        return `ruleset_${filterId}`;
+        return getRuleSetId(filterId);
     }
 
     /**

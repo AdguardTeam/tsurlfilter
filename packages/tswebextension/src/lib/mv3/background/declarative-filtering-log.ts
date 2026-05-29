@@ -1,4 +1,4 @@
-import { type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
+import { type IRulesetWithSourceMap } from '@adguard/dnr-converter';
 
 import { type DeclarativeRuleInfo, defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
@@ -23,7 +23,7 @@ class DeclarativeFilteringLog {
     /**
      * Stores list of rulesets to extract rule info when needed.
      */
-    private sourceRulesets: IRuleSet[] = [];
+    private sourceRulesets: IRulesetWithSourceMap[] = [];
 
     /**
      * Is there an active listener for declarativeNetRequest.onRuleMatchedDebug or not.
@@ -70,12 +70,12 @@ class DeclarativeFilteringLog {
      * Used to prevent getting rule info during rule set updates.
      * Also, you can specify whether to enable declarative logging after update.
      *
-     * @param ruleSets List of {@link IRuleSet}.
+     * @param ruleSets List of {@link IRulesetWithSourceMap}.
      * @param enableLog Should we enable declarative logging after update.
      *
      * @throws Error if no update is in progress.
      */
-    public finishUpdate(ruleSets: IRuleSet[], enableLog: boolean): void {
+    public finishUpdate(ruleSets: IRulesetWithSourceMap[], enableLog: boolean): void {
         this.sourceRulesets = ruleSets;
         this.mutex.unlock();
 
