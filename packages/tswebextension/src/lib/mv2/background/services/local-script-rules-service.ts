@@ -24,6 +24,14 @@ export type LocalScriptRules = {
  */
 export class LocalScriptRulesService {
     /**
+     * Default registered script text used for CSP and Trusted Types testing.
+     * This script is always added to the local scripts collection to help
+     * distinguish between scriptlets, local script rules, and user-added
+     * script rules.
+     */
+    public static readonly DEFAULT_SCRIPT_TEXT = 'console.log(Date.now(), "default registered script")';
+
+    /**
      * If {@link setLocalScriptRules} was called (for example, it should be
      * called in Firefox AMO), this set will contain a list of prebuilt JSON
      * with scriptlets and JS rules allowed to run.
@@ -36,10 +44,20 @@ export class LocalScriptRulesService {
     /**
      * Saves local script rules to object.
      *
+     * The default registered script is always added to the collection
+     * to support CSP and Trusted Types testing on testcases.agrd.dev.
+     *
      * @param json JSON object with pre-build JS rules.
      */
     setLocalScriptRules(json: LocalScriptRules): void {
         this.localScripts = new Map(Object.entries(json.rules));
+
+        // Make sure that the default registered script is always added to the map.
+        if (!this.localScripts.has(LocalScriptRulesService.DEFAULT_SCRIPT_TEXT)) {
+            this.localScripts.set(LocalScriptRulesService.DEFAULT_SCRIPT_TEXT, [
+                { permittedDomains: [], restrictedDomains: [] },
+            ]);
+        }
     }
 
     /**

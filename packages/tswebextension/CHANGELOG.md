@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Default registered script is always added to localScriptRules [#167].
 - New `FilteringEventType.PopupBlocked` filtering log event (with matching
   `PopupBlockedEvent` / `PopupBlockedEventData` types) dispatched when
   `$popup` modifier rule is applied [AdguardBrowserExtension#1686].
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
 [AdguardBrowserExtension#1686]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
+[#167]: https://github.com/AdguardTeam/tsurlfilter/issues/167
 
 ## [4.1.1] - 2026-04-24
 

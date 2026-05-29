@@ -67,6 +67,14 @@ export type LocalScriptFunctionData = {
  */
 export class LocalScriptRulesService {
     /**
+     * Default registered script text used for CSP and Trusted Types testing.
+     * This script is always added to the local scripts collection to help
+     * distinguish between scriptlets, local script rules, and user-added
+     * script rules.
+     */
+    public static readonly DEFAULT_SCRIPT_TEXT = 'console.log(Date.now(), "default registered script")';
+
+    /**
      * When {@link setLocalScriptRules} is called, this holds a list of prebuilt JS rules
      * allowed to run. If it is never called, this remains undefined.
      */
@@ -75,10 +83,22 @@ export class LocalScriptRulesService {
     /**
      * Stores prebuilt JS rules in memory for later use.
      *
+     * The default registered script is always added to the collection
+     * to support CSP and Trusted Types testing on testcases.agrd.dev.
+     *
      * @param localScriptRules A map of script text to their corresponding functions.
      */
     public setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
-        this.localScripts = localScriptRules;
+        this.localScripts = {
+            ...localScriptRules,
+            // Make sure that the default registered script is always added to
+            // the map. This is a default registered script that is used on
+            // testcases.agrd.dev for CSP tests.
+            [LocalScriptRulesService.DEFAULT_SCRIPT_TEXT]: (): void => {
+                // eslint-disable-next-line no-console
+                console.log(Date.now(), 'default registered script');
+            },
+        };
     }
 
     /**
