@@ -73,6 +73,7 @@ export {
     type ApplyPermissionsRuleEvent,
     type DeclarativeRuleEvent,
     type DeclarativeRuleInfo,
+    type UrlTransformEvent,
     type PopupBlockedEvent,
     type PopupBlockedEventData,
 } from '../../common/filtering-log';

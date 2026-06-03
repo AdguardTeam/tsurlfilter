@@ -106,6 +106,7 @@ import { BadFilterRulesConverter } from './grouped-rules-converters/bad-filter-c
 import { CspRulesConverter } from './grouped-rules-converters/csp-converter';
 import { RegularRulesConverter } from './grouped-rules-converters/regular-converter';
 import { RemoveHeaderRulesConverter } from './grouped-rules-converters/remove-header-converter';
+import { UrlTransformRulesConverter } from './grouped-rules-converters/url-transform-converter';
 import type { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type ScannedFilter } from './network-rules-scanner';
 import { DeclarativeRulesGrouper, type GroupedRules, RulesGroup } from './rules-grouper';
@@ -140,6 +141,7 @@ export class DeclarativeRulesConverter {
         [RulesGroup.Csp]: CspRulesConverter,
         [RulesGroup.RemoveHeader]: RemoveHeaderRulesConverter,
         [RulesGroup.BadFilter]: BadFilterRulesConverter,
+        [RulesGroup.Urltransform]: UrlTransformRulesConverter,
     };
 
     /**

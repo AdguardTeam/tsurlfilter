@@ -54,6 +54,7 @@
     1. [$removeheader](#advanced_capabilities__$removeheader)
     1. [$removeparam](#advanced_capabilities__$removeparam)
     1. [$replace](#advanced_capabilities__$replace)
+    1. [$urltransform](#advanced_capabilities__$urltransform)
     1. [noop](#advanced_capabilities__noop)
     1. [$empty](#advanced_capabilities__$empty)
     1. [$mp4](#advanced_capabilities__$mp4)
@@ -933,7 +934,21 @@ example 13
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 1353025509,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "regexFilter": "banner\\d+",
+      "initiatorDomains": [
+        "targetdomain.com"
+      ]
+    },
+    "priority": 201
+  }
+]
 
 ```
 example 14
@@ -4284,6 +4299,145 @@ example 4
 
 ```json
 []
+
+```
+<a name="advanced_capabilities__$urltransform"></a>
+## $urltransform
+<b>Status</b>: supported
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Converted to DNR redirect rules with regexSubstitution. Full-URL replacements
+are passed through directly. Path-only replacements are wrapped so the origin
+is preserved. Multi-stage pipelines (multiple substitutions separated by `|`)
+produce one DNR rule per stage.
+<br/>
+<b>Examples:</b>
+<br/>
+example 1
+full-URL replacement: redirect from old.example.com to new.example.net
+
+```adblock
+||old.example.com^$urltransform=/^https:\/\/old\.example\.com\/(.*)/https:\/\/new.example.net\/\$1/
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+  {
+    "id": 1149502163,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "https:\\/\\/new.example.net\\/\\1"
+      }
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ],
+      "requestDomains": [
+        "old.example.com"
+      ],
+      "regexFilter": "^https:\\/\\/old\\.example\\.com\\/(.*)"
+    },
+    "priority": 2
+  }
+]
+
+```
+example 2
+path-only replacement: rewrite /old/ to /new/ while preserving origin
+
+```adblock
+||example.org^$urltransform=/\/old\//\/new\//
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+  {
+    "id": 1009789837,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1/new/\\2"
+      }
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ],
+      "requestDomains": [
+        "example.org"
+      ],
+      "regexFilter": "^(https?://[^/]+)/old/(.*)"
+    },
+    "priority": 2
+  }
+]
+
+```
+example 3
+allowlist rule disables urltransform
+
+```adblock
+@@||example.com^$urltransform
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+  {
+    "id": 1781897823,
+    "action": {
+      "type": "allow"
+    },
+    "condition": {
+      "urlFilter": "||example.com^",
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 100002
+  }
+]
 
 ```
 <a name="advanced_capabilities__noop"></a>

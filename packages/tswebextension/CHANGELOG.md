@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support of `$urltransform` modifier [tsurlfilter#111].
 - `$removeparam` support for SPA navigations via `history.pushState` /
   `history.replaceState`. Supports plain-value and regex
   modifiers with allowlist / `$important` priority [tsurlfilter#188].
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [AdguardBrowserExtension#1486].
 
 [tsurlfilter#188]: https://github.com/AdguardTeam/tsurlfilter/issues/188
+[tsurlfilter#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
 [AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
 [AdguardBrowserExtension#1686]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
 

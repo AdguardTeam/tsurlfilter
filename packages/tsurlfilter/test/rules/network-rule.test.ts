@@ -514,6 +514,72 @@ describe('NetworkRule constructor', () => {
         checkModifier('all', NetworkRuleOption.Popup, true);
     });
 
+    describe('$urltransform modifier compatibility', () => {
+        const URLTRANSFORM_RULE = String.raw`||example.org^$urltransform=/\/old\//\/new\/`;
+
+        it('parses $urltransform with $method', () => {
+            const rule = createNetworkRule(`${URLTRANSFORM_RULE},method=get`, 0);
+            expect(rule.isOptionEnabled(NetworkRuleOption.Urltransform)).toBe(true);
+            expect(rule.isOptionEnabled(NetworkRuleOption.Method)).toBe(true);
+        });
+
+        it('parses $urltransform with $to', () => {
+            const rule = createNetworkRule(`${URLTRANSFORM_RULE},to=example.com`, 0);
+            expect(rule.isOptionEnabled(NetworkRuleOption.Urltransform)).toBe(true);
+            expect(rule.isOptionEnabled(NetworkRuleOption.To)).toBe(true);
+        });
+
+        it('parses $urltransform with $popup', () => {
+            const rule = createNetworkRule(`${URLTRANSFORM_RULE},popup`, 0);
+            expect(rule.isOptionEnabled(NetworkRuleOption.Urltransform)).toBe(true);
+            expect(rule.isOptionEnabled(NetworkRuleOption.Popup)).toBe(true);
+        });
+
+        it('parses $urltransform with $method and $to combined', () => {
+            const rule = createNetworkRule(`${URLTRANSFORM_RULE},method=get,to=example.com`, 0);
+            expect(rule.isOptionEnabled(NetworkRuleOption.Urltransform)).toBe(true);
+            expect(rule.isOptionEnabled(NetworkRuleOption.Method)).toBe(true);
+            expect(rule.isOptionEnabled(NetworkRuleOption.To)).toBe(true);
+        });
+
+        it('path-only $urltransform matches any method', () => {
+            const rule = createNetworkRule('||example.org^$urltransform=/X/Y/', 0);
+            const getReq = new Request('https://example.org/', 'https://example.org/', RequestType.Document, HTTPMethod.GET);
+            const postReq = new Request('https://example.org/', 'https://example.org/', RequestType.Document, HTTPMethod.POST);
+
+            expect(rule.match(getReq)).toBe(true);
+            expect(rule.match(postReq)).toBe(true);
+        });
+
+        it('full-URL mode $urltransform defaults to GET-only when no $method is specified', () => {
+            const rule = createNetworkRule(
+                String.raw`||example.org^$urltransform=/^https:\/\/example.org/https:\/\/other.org/`,
+                0,
+            );
+            const getReq = new Request('https://example.org/', 'https://example.org/', RequestType.Document, HTTPMethod.GET);
+            const postReq = new Request('https://example.org/', 'https://example.org/', RequestType.Document, HTTPMethod.POST);
+            const putReq = new Request('https://example.org/', 'https://example.org/', RequestType.Document, HTTPMethod.PUT);
+
+            expect(rule.match(getReq)).toBe(true);
+            expect(rule.match(postReq)).toBe(false);
+            expect(rule.match(putReq)).toBe(false);
+        });
+
+        it('full-URL mode $urltransform respects explicit $method modifier', () => {
+            const rule = createNetworkRule(
+                String.raw`||example.org^$urltransform=/^https:\/\/example.org/https:\/\/other.org/,method=get|post`,
+                0,
+            );
+            const getReq = new Request('https://example.org/', 'https://example.org/', RequestType.Document, HTTPMethod.GET);
+            const postReq = new Request('https://example.org/', 'https://example.org/', RequestType.Document, HTTPMethod.POST);
+            const putReq = new Request('https://example.org/', 'https://example.org/', RequestType.Document, HTTPMethod.PUT);
+
+            expect(rule.match(getReq)).toBe(true);
+            expect(rule.match(postReq)).toBe(true);
+            expect(rule.match(putReq)).toBe(false);
+        });
+    });
+
     /**
      * Checks if a network rule matches the given request type.
      *

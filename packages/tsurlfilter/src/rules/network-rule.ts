@@ -14,7 +14,7 @@ import { DnsRewriteModifier } from '../modifiers/dns/dnsrewrite-modifier';
 import { DnsTypeModifier } from '../modifiers/dns/dnstype-modifier';
 import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
 import { HeaderModifier, type HttpHeaderMatcher, type HttpHeadersItem } from '../modifiers/header-modifier';
-import { type HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
+import { HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
 import { PermissionsModifier } from '../modifiers/permissions-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
@@ -22,6 +22,7 @@ import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { StealthModifier } from '../modifiers/stealth-modifier';
 import { ToModifier } from '../modifiers/to-modifier';
+import { UrlTransformModifier } from '../modifiers/url-transform-modifier';
 import { type IValueListModifier } from '../modifiers/value-list-modifier';
 import { type Request } from '../request';
 import { RequestType } from '../request-type';
@@ -217,6 +218,11 @@ export const NetworkRuleOption = {
      * $header modifier.
      */
     Header: OptionFlags.createOption(31),
+
+    /**
+     * $urltransform modifier.
+     */
+    Urltransform: OptionFlags.createOption(32),
 } as const;
 
 /**
@@ -347,6 +353,23 @@ export const NetworkRuleGroupOptions = {
         NetworkRuleOption.MatchCase,
         NetworkRuleOption.Badfilter,
     ),
+
+    /**
+     * Urltransform compatible modifiers.
+     *
+     * $urltransform rules are compatible only with content type modifiers
+     * ($subdocument, $script, $stylesheet, etc) and this list of modifiers.
+     */
+    UrlTransformCompatibleOptions: OptionFlags.combine(
+        NetworkRuleOption.Urltransform,
+        NetworkRuleOption.ThirdParty,
+        NetworkRuleOption.Important,
+        NetworkRuleOption.MatchCase,
+        NetworkRuleOption.Badfilter,
+        NetworkRuleOption.To,
+        NetworkRuleOption.Method,
+        NetworkRuleOption.Popup,
+    ),
 } as const;
 
 /**
@@ -471,6 +494,7 @@ export class NetworkRule implements IRule {
         NetworkRuleOption.ThirdParty,
         NetworkRuleOption.MatchCase,
         NetworkRuleOption.DnsRewrite,
+        NetworkRuleOption.Urltransform,
     );
 
     /**
@@ -618,6 +642,7 @@ export class NetworkRule implements IRule {
         NetworkRule.OPTIONS.DNSREWRITE,
         NetworkRule.OPTIONS.DNSTYPE,
         NetworkRule.OPTIONS.CTAG,
+        NetworkRule.OPTIONS.URLTRANSFORM,
     ]);
 
     /**
@@ -963,6 +988,20 @@ export class NetworkRule implements IRule {
             || this.isOptionEnabled(NetworkRuleOption.Permissions)
         ) {
             if (!this.matchRequestTypeExplicit(request.requestType)) {
+                return false;
+            }
+        }
+
+        // Origin-changing (full-URL mode) $urltransform rules default to
+        // GET-only when no explicit $method modifier is set.
+        if (
+            this.isOptionEnabled(NetworkRuleOption.Urltransform)
+            && !this.isOptionEnabled(NetworkRuleOption.Method)
+            && request.method !== undefined
+            && request.method !== HTTPMethod.GET
+        ) {
+            const modifier = this.getAdvancedModifier();
+            if (modifier instanceof UrlTransformModifier && modifier.isFullUrlMode()) {
                 return false;
             }
         }
@@ -1792,6 +1831,11 @@ export class NetworkRule implements IRule {
                 this.setOptionEnabled(NetworkRuleOption.Replace, true);
                 this.advancedModifier = new ReplaceModifier(optionValue);
                 break;
+            // $urltransform
+            case OPTIONS.URLTRANSFORM:
+                this.setOptionEnabled(NetworkRuleOption.Urltransform, true);
+                this.advancedModifier = new UrlTransformModifier(optionValue);
+                break;
             // $cookie
             case OPTIONS.COOKIE:
                 this.setOptionEnabled(NetworkRuleOption.Cookie, true);
@@ -2073,6 +2117,8 @@ export class NetworkRule implements IRule {
     private validateOptions(): void {
         if (this.advancedModifier instanceof RemoveParamModifier) {
             this.validateRemoveParamRule();
+        } else if (this.advancedModifier instanceof UrlTransformModifier) {
+            this.validateUrlTransformRule();
         } else if (this.advancedModifier instanceof RemoveHeaderModifier) {
             this.validateRemoveHeaderRule();
         } else if (this.advancedModifier instanceof PermissionsModifier) {
@@ -2142,6 +2188,23 @@ export class NetworkRule implements IRule {
             NetworkRuleGroupOptions.RemoveParamCompatibleOptions,
         )) {
             throw new SyntaxError('$removeparam rules are not compatible with some other modifiers');
+        }
+    }
+
+    /**
+     * $urltransform rules are not compatible with any other modifiers except
+     * $domain, $third-party, $important, $match-case, $badfilter,
+     * $to, $method, $popup, $denyallow
+     * and permitted content type modifiers ($script, $stylesheet, etc).
+     * The rules with any other modifiers are considered invalid
+     * and will be discarded.
+     */
+    private validateUrlTransformRule(): void {
+        if (!OptionFlags.equals(
+            OptionFlags.or(this.enabledOptions, NetworkRuleGroupOptions.UrlTransformCompatibleOptions),
+            NetworkRuleGroupOptions.UrlTransformCompatibleOptions,
+        )) {
+            throw new SyntaxError('$urltransform rules are not compatible with some other modifiers');
         }
     }
 

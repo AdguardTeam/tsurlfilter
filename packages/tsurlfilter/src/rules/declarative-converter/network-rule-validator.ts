@@ -8,6 +8,7 @@ import { OPTIONS_DELIMITER } from '../network-rule-options';
 
 import { UnsupportedModifierError } from './errors/conversion-errors/unsupported-modifier-error';
 import { type NetworkRuleWithNodeAndText } from './network-rule-with-node-and-text';
+import { convertUrlTransformToDnr } from './url-transform-converter';
 
 /**
  * @typedef {import('../../engine/matching-result').MatchingResult} MatchingResult
@@ -334,6 +335,52 @@ export class NetworkRuleDeclarativeValidator {
         );
     };
 
+    /**
+     * Checks if the $urltransform rule can be converted to DNR.
+     * Rejects rules with decode pipeline stages (b64/pct).
+     * RE2 validation is handled later by checkDeclarativeRuleApplicable.
+     *
+     * @param r Network rule.
+     * @param name Modifier's name.
+     *
+     * @returns Error or null.
+     */
+    private static checkUrlTransformModifierFn(
+        r: NetworkRuleWithNodeAndText,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        name: string,
+    ): UnsupportedModifierError | null {
+        // Allowlist rules are handled normally (become allow rules)
+        if (r.rule.isAllowlist()) {
+            return null;
+        }
+
+        const value = r.rule.getAdvancedModifierValue();
+        if (!value) {
+            return new UnsupportedModifierError(
+                'Network rule with empty $urltransform value is not supported',
+                r.rule,
+            );
+        }
+
+        try {
+            const results = convertUrlTransformToDnr(value);
+            if (results.length === 0) {
+                return new UnsupportedModifierError(
+                    'Network rule with $urltransform modifier produced no DNR conversion results',
+                    r.rule,
+                );
+            }
+        } catch (e: unknown) {
+            return new UnsupportedModifierError(
+                `Network rule with $urltransform modifier is not convertible to DNR: ${(e as Error).message}`,
+                r.rule,
+            );
+        }
+
+        return null;
+    }
+
     private static optionsValidators: NetworkRuleValidators = {
         // Supported
         ThirdParty: { name: '$third-party' },
@@ -402,6 +449,11 @@ export class NetworkRuleDeclarativeValidator {
         // Desktop modifiers only.
         Network: { name: '$network', notSupported: true },
         Extension: { name: '$extension', notSupported: true },
+        // $urltransform is conditionally supported in DNR.
+        Urltransform: {
+            name: '$urltransform',
+            customChecks: [NetworkRuleDeclarativeValidator.checkUrlTransformModifierFn],
+        },
     };
 
     /**

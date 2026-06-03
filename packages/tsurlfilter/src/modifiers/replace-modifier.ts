@@ -1,7 +1,5 @@
-import { SimpleRegex } from '../rules/simple-regex';
-import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
-
 import { type IAdvancedModifier } from './advanced-modifier';
+import { parseRegexSubstitution } from './parse-regex-substitution';
 
 /**
  * Replace modifier class.
@@ -23,46 +21,10 @@ export class ReplaceModifier implements IAdvancedModifier {
      * @param value Replace modifier value.
      */
     constructor(value: string) {
-        const parsed = ReplaceModifier.parseReplaceOption(value);
+        const parsed = parseRegexSubstitution(value);
 
         this.replaceOption = parsed.optionText;
         this.replaceApply = parsed.apply;
-    }
-
-    /**
-     * Parses replace option.
-     *
-     * @param option Replace option.
-     *
-     * @returns Parsed replace option.
-     */
-    private static parseReplaceOption(option: string): { apply: (input: string) => string; optionText: string } {
-        if (!option) {
-            return {
-                apply: (x: string): string => x,
-                optionText: '',
-            };
-        }
-
-        const parts = splitByDelimiterWithEscapeCharacter(option, '/', '\\', true);
-
-        let modifiers = (parts[2] || '');
-        if (modifiers.indexOf('g') < 0) {
-            modifiers += 'g';
-        }
-
-        const pattern = new RegExp(parts[0], modifiers);
-
-        // unescape replacement alias
-        let replacement = parts[1].replace(/\\\$/g, '$');
-        replacement = SimpleRegex.unescapeSpecials(replacement);
-
-        const apply = (input: string): string => input.replace(pattern, replacement);
-
-        return {
-            apply,
-            optionText: option,
-        };
     }
 
     /**

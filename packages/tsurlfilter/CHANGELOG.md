@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added support for `UrlTransformModifier` [#111].
+
 ### Changed
 
+- Added MV3 `$urltransform` test coverage for ignored `/g` flag behavior and
+  single-winner priority handling when multiple redirect rules match.
+- Replaced wildcard re-export of `url-transform-modifier` in the public API
+  barrel with an explicit `UrlTransformModifier` export.
 - Replaced `NetworkRuleOption` and `NetworkRuleGroupOptions` enums with
   `{ lo, hi }` two-word bitfield type aliases and const objects, supporting
   up to 62 independent flag bits (previously limited to 31). No behavioral
@@ -23,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [AdguardBrowserExtension#3533]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3533
 [#189]: https://github.com/AdguardTeam/tsurlfilter/issues/189
+[#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
 
 ## [v5.0.1] - 2026-04-24
 
@@ -1104,23 +1113,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [1.0.73]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.73
 
-## [1.0.70] - 2023-01-19
+## [1.0.68] - 2023-01-19
 
 ### Changed
 
 - Updated [@adguard/scriptlets] to `v1.8.2`.
-
-[1.0.70]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.70
-
-## [1.0.68] - 2022-12-28
-
-### Added
-
-- Simple support of `$hls` modifier — just for compiler validation.
-
-### Changed
-
-- Removed unnecessary brackets for unknown pseudo-class validation error.
 
 [1.0.68]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.68
 

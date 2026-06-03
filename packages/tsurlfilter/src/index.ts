@@ -22,6 +22,7 @@ export * from './modifiers/remove-header-modifier';
 export * from './modifiers/remove-param-modifier';
 export * from './modifiers/cookie-modifier';
 export * from './modifiers/replace-modifier';
+export { UrlTransformModifier, B64_KEYWORD, PCT_KEYWORD } from './modifiers/url-transform-modifier';
 export { PERMISSIONS_POLICY_HEADER_NAME } from './modifiers/permissions-modifier';
 export { CSP_HEADER_NAME } from './modifiers/csp-modifier';
 export * from './utils/logger';

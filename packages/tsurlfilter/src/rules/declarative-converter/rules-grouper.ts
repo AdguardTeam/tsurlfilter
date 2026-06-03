@@ -7,6 +7,7 @@ export enum RulesGroup {
     RemoveHeader = 1,
     Csp = 2,
     BadFilter = 3,
+    Urltransform = 4,
 }
 
 export type GroupedRules = { [key in RulesGroup]: IndexedNetworkRuleWithHash[] };
@@ -39,6 +40,10 @@ export class DeclarativeRulesGrouper {
             return RulesGroup.BadFilter;
         }
 
+        if (rule.rule.isOptionEnabled(NetworkRuleOption.Urltransform)) {
+            return RulesGroup.Urltransform;
+        }
+
         return RulesGroup.Regular;
     }
 
@@ -55,6 +60,7 @@ export class DeclarativeRulesGrouper {
             [RulesGroup.BadFilter]: [],
             [RulesGroup.Regular]: [],
             [RulesGroup.Csp]: [],
+            [RulesGroup.Urltransform]: [],
         };
 
         // Categorizing rule groups

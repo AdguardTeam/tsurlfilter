@@ -7,7 +7,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## 4.1.1
+## [4.1.2] - Unreleased
+
+### Added
+
+- $urltransform modifier support [AGLint#249].
+
+[AGLint#249]: https://github.com/AdguardTeam/AGLint/issues/249
+[4.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.1.2
+
+## [4.1.1] - 2026-04-24
 
 ### Added
 
@@ -16,6 +25,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   ([FiltersCompiler#274]).
 
 [FiltersCompiler#274]: https://github.com/AdguardTeam/FiltersCompiler/issues/274
+[4.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.1.1
 
 ## [4.1.0-beta.0] - 2026-04-21
 

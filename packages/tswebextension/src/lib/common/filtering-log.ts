@@ -20,6 +20,7 @@ export enum FilteringEventType {
     Cookie = 'cookie',
     RemoveHeader = 'removeHeader',
     RemoveParam = 'removeParam',
+    UrlTransform = 'urlTransform',
     ReplaceRuleApply = 'replaceRuleApply',
     ContentFilteringStart = 'contentFilteringStart',
     ContentFilteringFinish = 'contentFilteringFinish',
@@ -349,6 +350,27 @@ export type RemoveParamEvent = {
 };
 
 /**
+ * {@link UrlTransformEvent} Event data.
+ */
+export type UrlTransformEventData = {
+    tabId: number;
+    requestUrl: string;
+    frameUrl: string;
+    frameDomain: string;
+    requestType: ContentType;
+    timestamp: number;
+} & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
+
+/**
+ * Dispatched by UrlTransformService manifest v2 module on URL transform rule
+ * apply in WebRequestApi.onBeforeRequest event handler.
+ */
+export type UrlTransformEvent = {
+    type: FilteringEventType.UrlTransform;
+    data: UrlTransformEventData;
+};
+
+/**
  * {@link ReplaceRuleApplyEvent} Event data.
  */
 export type ReplaceRuleApplyEventData = {
@@ -501,6 +523,7 @@ export type FilteringLogEvent =
     | CookieEvent
     | RemoveHeaderEvent
     | RemoveParamEvent
+    | UrlTransformEvent
     | ReplaceRuleApplyEvent
     | ContentFilteringStartEvent
     | ContentFilteringFinishEvent

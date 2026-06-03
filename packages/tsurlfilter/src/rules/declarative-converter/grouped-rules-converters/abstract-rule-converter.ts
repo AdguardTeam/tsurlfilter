@@ -143,6 +143,7 @@ import { type IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-ha
 import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
 import { type NetworkRuleWithNodeAndText } from '../network-rule-with-node-and-text';
 import { re2Validator } from '../re2-regexp/re2-validator';
+import { convertUrlTransformToDnr } from '../url-transform-converter';
 
 const WILDCARD_TLD = `${DOT}${WILDCARD}`;
 
@@ -604,6 +605,21 @@ export abstract class AbstractRuleConverter {
             }
         }
 
+        if (rule.isOptionEnabled(NetworkRuleOption.Urltransform)) {
+            const urlTransformValue = rule.getAdvancedModifierValue();
+            if (urlTransformValue) {
+                const dnrResults = convertUrlTransformToDnr(urlTransformValue);
+                if (dnrResults.length > 0) {
+                    return {
+                        type: RuleActionType.REDIRECT,
+                        redirect: {
+                            regexSubstitution: dnrResults[0].regexSubstitution,
+                        },
+                    };
+                }
+            }
+        }
+
         return { type: RuleActionType.BLOCK };
     }
 
@@ -824,7 +840,8 @@ export abstract class AbstractRuleConverter {
                 || rule.isOptionEnabled(NetworkRuleOption.Csp)
                 || rule.isOptionEnabled(NetworkRuleOption.Cookie)
                 || rule.isOptionEnabled(NetworkRuleOption.To)
-                || rule.isOptionEnabled(NetworkRuleOption.Method);
+                || rule.isOptionEnabled(NetworkRuleOption.Method)
+                || rule.isOptionEnabled(NetworkRuleOption.Urltransform);
 
             /**
              * $permissions and $removeparam modifiers must be applied only
@@ -930,6 +947,36 @@ export abstract class AbstractRuleConverter {
     }
 
     /**
+     * Extracts a domain from a URL pattern that starts with `||`.
+     * For example, `||example.org^` returns `example.org`.
+     * Returns null if the pattern doesn't start with `||` or doesn't
+     * contain a recognizable domain.
+     *
+     * @param pattern The URL pattern string.
+     *
+     * @returns The extracted domain or null.
+     */
+    protected static extractDomainFromPattern(pattern: string): string | null {
+        if (!pattern.startsWith('||')) {
+            return null;
+        }
+
+        // Extract domain portion after "||"
+        const afterPrefix = pattern.substring(2);
+
+        // Find the end of the domain (marked by ^, /, *, or end of string)
+        const domainEnd = afterPrefix.search(/[\^/*]/);
+        const domain = domainEnd === -1 ? afterPrefix : afterPrefix.substring(0, domainEnd);
+
+        // Skip empty results or wildcard patterns
+        if (domain.length === 0 || domain.includes('*')) {
+            return null;
+        }
+
+        return domain;
+    }
+
+    /**
      * Verifies whether the converted declarative rule passes the regular expression (regexp) validation.
      *
      * Additionally, it checks whether the rule contains resource types.
@@ -949,7 +996,7 @@ export abstract class AbstractRuleConverter {
      * - {@link EmptyDomainsError} if the declarative rule has empty domains
      * while the original rule has non-empty domains.
      */
-    private static async checkDeclarativeRuleApplicable(
+    protected static async checkDeclarativeRuleApplicable(
         networkRule: NetworkRuleWithNodeAndText,
         declarativeRule: DeclarativeRule,
     ): Promise<ConversionError | null> {
@@ -1066,6 +1113,7 @@ export abstract class AbstractRuleConverter {
 
             // For each converted declarative rule save it's source.
             converted.forEach((dRule) => {
+                usedIds.add(dRule.id);
                 res.sourceMapValues.push({
                     declarativeRuleId: dRule.id,
                     sourceRuleIndex: index,

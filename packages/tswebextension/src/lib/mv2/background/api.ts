@@ -25,6 +25,7 @@ import { RedirectsService } from './services/redirects/redirects-service';
 import { RemoveHeadersService } from './services/remove-headers-service';
 import { RemoveParamInjectionService } from './services/remove-param-injection-service';
 import { ResourcesService } from './services/resources-service';
+import { UrlTransformService } from './services/url-transform-service';
 import { StealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
 import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
@@ -56,6 +57,8 @@ export const resourcesService = new ResourcesService(() => {
 export const redirectsService = new RedirectsService(resourcesService);
 
 export const paramsService = new ParamsService(defaultFilteringLog, engineApi);
+
+export const urlTransformService = new UrlTransformService(defaultFilteringLog, engineApi);
 
 export const cspService = new CspService(defaultFilteringLog, engineApi);
 
