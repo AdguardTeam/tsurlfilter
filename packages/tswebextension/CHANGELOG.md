@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `$removeparam` support for SPA navigations via `history.pushState` /
+  `history.replaceState`. Supports plain-value and regex
+  modifiers with allowlist / `$important` priority [tsurlfilter#188].
 - New `FilteringEventType.PopupBlocked` filtering log event (with matching
   `PopupBlockedEvent` / `PopupBlockedEventData` types) dispatched when
   `$popup` modifier rule is applied [AdguardBrowserExtension#1686].
@@ -27,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--adguard-hit` custom property (`@property`) instead of `content:`
   [AdguardBrowserExtension#1486].
 
+[tsurlfilter#188]: https://github.com/AdguardTeam/tsurlfilter/issues/188
 [AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
 [AdguardBrowserExtension#1686]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
 

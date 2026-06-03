@@ -23,6 +23,7 @@ import { ParamsService } from './services/params-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { RedirectsService } from './services/redirects/redirects-service';
 import { RemoveHeadersService } from './services/remove-headers-service';
+import { RemoveParamInjectionService } from './services/remove-param-injection-service';
 import { ResourcesService } from './services/resources-service';
 import { StealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
@@ -69,6 +70,12 @@ export const permissionsPolicyService = new PermissionsPolicyService(
 export const cookieFiltering = new CookieFiltering(defaultFilteringLog, engineApi, tabsApi);
 
 export const contentFiltering = new ContentFiltering(engineApi);
+
+export const removeParamInjectionService = new RemoveParamInjectionService(
+    tabsApi,
+    engineApi,
+    defaultFilteringLog,
+);
 
 /**
  * Creates new instance of {@link TsWebExtension}.

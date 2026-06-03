@@ -34,6 +34,7 @@ import { RuleSetsLoaderApi } from './rule-sets-loader-api';
 import { CspService } from './services/csp-service';
 import { documentBlockingService } from './services/document-blocking-service';
 import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
+import { removeParamInjectionService } from './services/remove-param-injection-service';
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { SessionRulesApi } from './session-rules-api';
 import { WebRequestApi } from './web-request-api';
@@ -155,6 +156,9 @@ export class TsWebExtension implements AppInterface<
 
             // Start handle request events.
             WebRequestApi.start();
+
+            // Start $removeparam injection tracking.
+            removeParamInjectionService.start();
 
             // Start handle onRuleMatchedDebug event.
             declarativeFilteringLog.start();
@@ -303,6 +307,9 @@ export class TsWebExtension implements AppInterface<
 
         // Stop handle request events.
         WebRequestApi.stop();
+
+        // Stop $removeparam injection tracking.
+        removeParamInjectionService.stop();
 
         // Remove tabs listeners and clear context storage
         tabsApi.stop();

@@ -6,6 +6,7 @@ import { type FilteringLog, type FilteringLogEvent } from '../../common/filterin
 import { type EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
 
+import { removeParamInjectionService } from './api';
 import { type AppContext } from './app-context';
 import { assistant, Assistant } from './assistant';
 import { type ConfigurationMV2, type ConfigurationMV2Context, configurationMV2Validator } from './configuration';
@@ -156,6 +157,7 @@ export class TsWebExtension implements AppInterface<
         await this.tabCosmeticInjector.processOpenTabs();
         await this.tabsApi.start();
         WebRequestApi.start();
+        removeParamInjectionService.start();
         Assistant.setAssistantUrl(configuration.settings.assistantUrl);
 
         await WebRequestApi.flushMemoryCache();
@@ -169,6 +171,7 @@ export class TsWebExtension implements AppInterface<
      */
     public async stop(): Promise<void> {
         WebRequestApi.stop();
+        removeParamInjectionService.stop();
         this.tabsApi.stop();
         this.isStarted = false;
     }

@@ -200,6 +200,7 @@ import {
     paramsService,
     permissionsPolicyService,
     removeHeadersService,
+    removeParamInjectionService,
     stealthApi,
     tabsApi,
 } from './api';
@@ -865,6 +866,11 @@ export class WebRequestApi {
             return;
         }
 
+        // A new navigation invalidates any existing $removeparam injection.
+        if (frameId === MAIN_FRAME_ID) {
+            removeParamInjectionService.invalidateTab(tabId);
+        }
+
         /**
          * Set in the beginning to let other events know that cosmetic result
          * will be calculated in this event to avoid double calculation.
@@ -920,6 +926,7 @@ export class WebRequestApi {
         );
 
         WebRequestApi.injectCosmetic(details);
+        removeParamInjectionService.injectRemoveParam(details.tabId, details.frameId, details.url);
     }
 
     /**

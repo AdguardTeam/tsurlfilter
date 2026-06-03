@@ -152,7 +152,7 @@ import { NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
 
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { companiesDbService } from '../../common/companies-db-service';
-import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
+import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { DocumentLifecycle } from '../../common/interfaces';
 import { TabsApiCommon } from '../../common/tabs/tabs-api';
@@ -179,6 +179,7 @@ import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { CspService } from './services/csp-service';
 import { documentBlockingService } from './services/document-blocking-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
+import { removeParamInjectionService } from './services/remove-param-injection-service';
 import { StealthService } from './services/stealth-service';
 
 /**
@@ -583,6 +584,12 @@ export class WebRequestApi {
             return;
         }
 
+        // A new navigation invalidates any existing $removeparam injection
+        // for this tab — the page context is being replaced.
+        if (frameId === MAIN_FRAME_ID) {
+            removeParamInjectionService.invalidateTab(tabId);
+        }
+
         /**
          * Set in the beginning to let other events know that cosmetic result
          * will be calculated in this event to avoid double calculation.
@@ -839,6 +846,8 @@ export class WebRequestApi {
         CosmeticApi.applyCosmeticRules(tabId, frameId, true).catch((e) => {
             logger.error('[tsweb.WebRequestApi.onCommitted]: error on cosmetics injection: ', e);
         });
+
+        removeParamInjectionService.injectRemoveParam(tabId, frameId, details.url);
     }
 
     /**
