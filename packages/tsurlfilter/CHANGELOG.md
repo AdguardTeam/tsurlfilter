@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v6.0.0] - 2026-XX-XX
+
+### Removed
+
+- Declarative converter (`@adguard/tsurlfilter/es/declarative-converter`
+  sub-path export) — moved to the dedicated `@adguard/dnr-converter` package.
+- Declarative converter utilities
+  (`@adguard/tsurlfilter/es/declarative-converter-utils` sub-path export) —
+  moved to `@adguard/dnr-converter`.
+- CLI (`tsurlfilter` bin and `@adguard/tsurlfilter/cli` export) — the
+  `dnr-converter` binary from `@adguard/dnr-converter` replaces it.
+- `@adguard/re2-wasm` peer dependency (was only required by the old declarative
+  converter).
+
 ## [v5.0.1] - 2026-04-24
 
 ### Changed

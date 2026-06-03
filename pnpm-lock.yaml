@@ -1834,18 +1834,12 @@ importers:
       '@adguard/logger':
         specifier: workspace:^
         version: link:../logger
-      '@adguard/re2-wasm':
-        specifier: 1.2.0
-        version: 1.2.0
       '@adguard/scriptlets':
         specifier: 'catalog:'
         version: 2.4.2
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
-      commander:
-        specifier: 'catalog:'
-        version: 12.1.0
       is-cidr:
         specifier: 4.0.2
         version: 4.0.2

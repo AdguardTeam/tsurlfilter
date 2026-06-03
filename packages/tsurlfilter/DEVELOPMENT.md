@@ -53,7 +53,7 @@ IIFE), and builds metadata.
 
 ### Running Locally
 
-The package is a library and CLI with no dev server. Use watch mode for
+The package is a library with no dev server. Use watch mode for
 iterative development:
 
 ```bash
@@ -115,24 +115,9 @@ Build output goes to `dist/`:
 - `dist/es/` — ESM bundles (main + subpath entries)
 - `dist/tsurlfilter.umd.js` — UMD bundle
 - `dist/tsurlfilter.iife.js` — IIFE bundle
-- `dist/cli.js` — CLI binary
 - `dist/types/` — TypeScript declarations
 
 ## Common Tasks
-
-### Using the CLI
-
-After building, run the CLI:
-
-```bash
-node packages/tsurlfilter/dist/cli.js --help
-```
-
-Or via the `bin` entry:
-
-```bash
-npx tsurlfilter --help
-```
 
 ### Adding a New Rule Modifier
 
@@ -140,16 +125,6 @@ npx tsurlfilter --help
 2. Register it in the engine's matching logic.
 3. Add tests in `test/` mirroring the source structure.
 4. Run `pnpm build && pnpm test:prod`.
-
-### Modifying the Declarative Converter
-
-The declarative converter in `src/rules/` translates filter rules to Chrome's
-DNR format. It is consumed by `@adguard/dnr-rulesets`.
-
-1. Make changes in `src/rules/declarative-converter/`.
-2. Export new API through `src/rules/declarative-converter/index.ts`.
-3. Add tests and run `pnpm build && pnpm test:prod`.
-4. Verify `@adguard/dnr-rulesets` still works.
 
 ### Downstream Impact
 

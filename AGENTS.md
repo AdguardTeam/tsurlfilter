@@ -68,6 +68,8 @@ graph TD
     logger --> tswebextension
     logger --> dnr-rulesets
     logger --> dnr-converter
+    dnr-converter --> tswebextension
+    dnr-converter --> dnr-rulesets
     tswebextension --> api
     tswebextension --> api-mv3
 ```

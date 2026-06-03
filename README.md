@@ -39,7 +39,7 @@ logger call formatting).
 | Package | Description |
 |---|---|
 | [`@adguard/tswebextension`][tswebextensionreadme] | Wraps the browser WebExtension API to integrate `tsurlfilter` into MV2 and MV3 extensions. |
-| [`@adguard/tsurlfilter`][tsurlfilterreadme] | Content blocking engine — parses AdGuard rules, matches requests, and provides a declarative converter. |
+| [`@adguard/tsurlfilter`][tsurlfilterreadme] | Content blocking engine — parses AdGuard rules, matches requests, and applies filtering logic. |
 | [`@adguard/agtree`][agtreereadme] | Universal adblock filter list parser, converter, and validator producing a detailed AST. |
 | [`@adguard/dnr-converter`][dnrconverterreadme] | Converts adblock-style filtering rules into rules compatible with the Declarative Net Request (DNR) API. |
 | [`@adguard/dnr-rulesets`][dnrrulesetsreadme] | CLI and library for building and loading prebuilt AdGuard DNR rulesets for MV3 extensions. |
@@ -89,6 +89,8 @@ graph TD
     logger --> tswebextension
     logger --> dnr-rulesets
     logger --> dnr-converter
+    dnr-converter --> tswebextension
+    dnr-converter --> dnr-rulesets
     tswebextension --> api
     tswebextension --> api-mv3
 ```

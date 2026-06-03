@@ -807,28 +807,32 @@ FROM scratch AS update-companiesdb-output
 COPY --from=update-companiesdb /out/ /
 
 # ============================================================================
-# Stage: update-docs-mv3
-# Runs the tsurlfilter MV3 docs update
+# Stage: dnr-converter-update-docs-mv3
+# Regenerates dnr-converter examples docs and fails the build if the generated
+# README.md differs from the committed version (i.e. docs are stale).
 # ============================================================================
-FROM source AS update-docs-mv3
+FROM source AS dnr-converter-update-docs-mv3
 
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
-    touch /tmp/.pre-update-marker && \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s ./bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh && \
-    mkdir -p /out/modified && \
-    find . -newer /tmp/.pre-update-marker -type f \
-      -not -path './.git/*' \
-      -not -path './node_modules/*' \
-      -not -path './**/node_modules/*' \
-      -not -path './**/dist/*' \
-      | sed 's|^\./||' | while IFS= read -r f; do \
-        mkdir -p "/out/modified/$(dirname "$f")"; \
-        cp "$f" "/out/modified/$f"; \
-      done
+    touch /tmp/.pre-docs-marker && \
+    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c '\
+      pnpm install && \
+      npx lerna run build,docs:examples --scope @adguard/dnr-converter --include-dependencies \
+    ' && \
+    if find packages/dnr-converter/src/examples/README.md -newer /tmp/.pre-docs-marker | grep -q .; then \
+      echo ""; \
+      echo "============================================"; \
+      echo "Examples docs are stale."; \
+      echo "Run: pnpm --filter @adguard/dnr-converter docs:examples"; \
+      echo "Then commit the updated README.md."; \
+      echo "============================================"; \
+      exit 1; \
+    fi
 
-FROM scratch AS update-docs-mv3-output
-COPY --from=update-docs-mv3 /out/ /
+FROM scratch AS dnr-converter-update-docs-mv3-output
+COPY --from=dnr-converter-update-docs-mv3 /out/ /
+

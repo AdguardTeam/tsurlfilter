@@ -1,0 +1,57 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: DNRCONVERTERDOCSMV3
+  name: dnr-converter - check docs up-to-date
+stages:
+  - Build:
+      manual: false
+      final: false
+      jobs:
+        - Build
+
+Build:
+  key: DNRCONVERTERDOCSMV3
+  other:
+    clean-working-dir: true
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -ex
+
+            # Fix mixed logs
+            exec 2>&1
+
+            export DOCKER_BUILDKIT=1
+
+            docker build \
+              --file Dockerfile \
+              --progress plain \
+              --build-arg TEST_RUN_ID=${bamboo.buildNumber} \
+              --target dnr-converter-update-docs-mv3-output \
+              --output type=local,dest=output \
+              .
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/cleanup.sh"
+  requirements:
+    - extension: 'true'
+
+branches:
+  create: for-pull-request
+  delete:
+    after-deleted-days: '1'
+    after-inactive-days: '5'
+  link-to-jira: true
+
+labels: [ ]
+
+other:
+  concurrent-build-plugin: system-default
