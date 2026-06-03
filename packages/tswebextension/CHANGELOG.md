@@ -30,11 +30,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   CSS inject rules (`#$#`). Native injection now uses a non-inheriting
   `--adguard-hit` custom property (`@property`) instead of `content:`
   [AdguardBrowserExtension#1486].
+- Memory leak during rapid page navigations that could cause extension OOM when a
+  page refreshes repeatedly [AdguardBrowserExtension#3547].
 
 [tsurlfilter#188]: https://github.com/AdguardTeam/tsurlfilter/issues/188
 [tsurlfilter#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
 [AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
 [AdguardBrowserExtension#1686]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
+[AdguardBrowserExtension#3547]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3547
 
 ## [4.1.2] - 2026-05-13
 
