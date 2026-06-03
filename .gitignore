@@ -36,3 +36,6 @@ output-*
 # Local experiment/scratch dirs
 .sdd/
 experiments/
+
+# Bamboo variable injection files (generated during CI runs)
+bamboo-inject-*.txt

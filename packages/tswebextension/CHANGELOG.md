@@ -30,6 +30,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
 [AdguardBrowserExtension#1686]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
 
+## [4.1.2] - 2026-05-13
+
+### Fixed
+
+- Fixed false-negative CSS selector validation for comma-containing selectors
+  (e.g., `IMG[alt="Reklama"], .l-box--99.l-box > .text-center`). The browser's
+  `CSS.supports('selector(A, B)')` fails for top-level commas; the validator now
+  splits such selectors and validates each part individually.
+
+[4.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v4.1.2
+
 ## [4.1.1] - 2026-04-24
 
 ### Changed

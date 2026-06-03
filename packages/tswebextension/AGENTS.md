@@ -61,7 +61,10 @@ packages/tswebextension/
 ## Build And Test Commands
 
 - `pnpm build` — full build: clean dist, emit types, bundle via Rollup, build
-  metadata
+  metadata. **Note:** this does NOT rebuild upstream dependencies
+  (`@adguard/tsurlfilter`, `@adguard/agtree`, etc.). If you get stale-artifact
+  type errors, rebuild from the repo root:
+  `npx lerna run build --scope=@adguard/tswebextension --include-dependencies`
 - `pnpm test` — run all tests via Vitest (mv2 + mv3 + common projects)
 - `pnpm test:mv2` — run MV2 tests only
 - `pnpm test:mv3` — run MV3 tests only
@@ -78,8 +81,11 @@ packages/tswebextension/
 
 You MUST follow the following rules for EVERY task that you perform:
 
-- You MUST build the package first (`pnpm build`), then run `pnpm test:prod`
-  which includes lint, smoke tests, and the full test suite.
+- You MUST build the package first using
+  `npx lerna run build --scope=@adguard/tswebextension --include-dependencies`
+  (from the repo root). This rebuilds upstream deps (`tsurlfilter`, `agtree`,
+  etc.) and avoids stale-artifact type errors. Then run `pnpm test:prod` which
+  includes lint, smoke tests, and the full test suite.
 
 - You MUST verify your changes pass `pnpm lint` before completing a task.
 
