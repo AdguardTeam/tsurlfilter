@@ -5,7 +5,7 @@ import {
     getRuleSetId,
     getRuleSetPath,
     RULESET_NAME_PREFIX,
-} from '../../..';
+} from '../../../src/utils/ruleset-utils';
 
 describe('ruleset-utils', () => {
     describe('RULESET_NAME_PREFIX', () => {

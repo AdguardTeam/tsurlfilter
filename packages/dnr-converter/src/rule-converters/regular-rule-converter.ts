@@ -769,7 +769,7 @@ export class RegularRuleConverter {
      * - {@link EmptyDomainsError} if the declarative rule has empty domains
      *   while the original rule has non-empty domains.
      */
-    private static async checkRuleApplication(
+    protected static async checkRuleApplication(
         rule: Rule,
         declarativeRule: DeclarativeRule,
     ): Promise<ConversionError | null> {

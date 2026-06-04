@@ -59,6 +59,7 @@ export const OPTION_NAMES = Object.freeze({
     CTAG: 'ctag',
     HEADER: 'header',
     METHOD: 'method',
+    URLTRANSFORM: 'urltransform',
     TO: 'to',
     PERMISSIONS: 'permissions',
     ALL: 'all',

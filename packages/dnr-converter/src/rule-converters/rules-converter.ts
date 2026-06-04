@@ -255,10 +255,15 @@ export class RulesConverter {
                 return null;
             }
 
+            const rules = groupsRules[key];
+            if (!rules || rules.length === 0) {
+                return null;
+            }
+
             const converter = new RulesConverter.CONVERTERS[key](options?.resourcesPath);
             return converter.convert(
                 filterId,
-                groupsRules[key],
+                rules,
                 usedIds,
             );
         }));

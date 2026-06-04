@@ -71,6 +71,10 @@ export class RulesGrouper {
             return RulesGroup.BadFilter;
         }
 
+        if (rule.isModifierEnabled(OPTION_NAMES.URLTRANSFORM)) {
+            return RulesGroup.UrlTransform;
+        }
+
         return RulesGroup.Regular;
     }
 
@@ -88,6 +92,7 @@ export class RulesGrouper {
             [RulesGroup.BadFilter]: [],
             [RulesGroup.Regular]: [],
             [RulesGroup.Csp]: [],
+            [RulesGroup.UrlTransform]: [],
         };
 
         for (let i = 0; i < rules.length; i += 1) {

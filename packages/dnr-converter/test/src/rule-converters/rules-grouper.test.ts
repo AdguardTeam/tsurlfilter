@@ -67,6 +67,7 @@ describe('RulesGrouper', () => {
                 [RulesGroup.Regular]: [],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.BadFilter]: [],
+                [RulesGroup.UrlTransform]: [],
             });
         });
 
@@ -80,6 +81,7 @@ describe('RulesGrouper', () => {
                 [RulesGroup.Regular]: [],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.BadFilter]: [],
+                [RulesGroup.UrlTransform]: [],
             });
         });
 
@@ -94,6 +96,7 @@ describe('RulesGrouper', () => {
                 [RulesGroup.Regular]: [],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.BadFilter]: [],
+                [RulesGroup.UrlTransform]: [],
             });
         });
 
@@ -118,6 +121,7 @@ describe('RulesGrouper', () => {
                 [RulesGroup.Csp]: [cspRule],
                 [RulesGroup.Regular]: [regularRule, regularRule2],
                 [RulesGroup.BadFilter]: [],
+                [RulesGroup.UrlTransform]: [],
             });
         });
 
@@ -140,6 +144,7 @@ describe('RulesGrouper', () => {
                 [RulesGroup.Csp]: [],
                 [RulesGroup.Regular]: [regularRule1, regularRule2, regularRule3],
                 [RulesGroup.BadFilter]: [],
+                [RulesGroup.UrlTransform]: [],
             });
         });
 
@@ -170,6 +175,7 @@ describe('RulesGrouper', () => {
                 [RulesGroup.Csp]: [],
                 [RulesGroup.Regular]: [combinedRule3],
                 [RulesGroup.BadFilter]: [],
+                [RulesGroup.UrlTransform]: [],
             });
         });
     });

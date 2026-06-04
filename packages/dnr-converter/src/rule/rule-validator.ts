@@ -363,6 +363,9 @@ export class RuleDeclarativeValidator {
             name: '$header',
             customChecks: [RuleDeclarativeValidator.checkHeaderModifierFn],
         },
+        [OPTION_NAMES.URLTRANSFORM]: {
+            name: '$urltransform',
+        },
 
         // Not supported yet.
         [OPTION_NAMES.GENERICBLOCK]: { name: '$genericblock', notSupported: true },

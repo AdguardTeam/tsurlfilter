@@ -146,3 +146,81 @@ const TAB = '\t';
 export function serializeJson(data: unknown, pretty?: boolean): string {
     return JSON.stringify(data, null, pretty ? TAB : undefined);
 }
+
+/**
+ * Splits the string by the delimiter, ignoring escaped delimiters
+ * and without tokenizing.
+ *
+ * @param string String to split.
+ * @param delimiter Delimiter.
+ * @param escapeCharacter Escape character.
+ * @param preserveEmptyTokens If true, preserve empty parts.
+ * @param shouldUnescape If true, unescape characters.
+ *
+ * @returns Array of string parts.
+ */
+export function splitByDelimiterWithEscapeCharacter(
+    string: string,
+    delimiter: string,
+    escapeCharacter: string,
+    preserveEmptyTokens: boolean,
+    shouldUnescape = true,
+): string[] {
+    if (!string) {
+        return [];
+    }
+
+    if (string.startsWith(delimiter)) {
+        // eslint-disable-next-line no-param-reassign
+        string = string.substring(1);
+    }
+
+    let words: string[] = [];
+
+    if (!string.includes(escapeCharacter)) {
+        words = string.split(delimiter);
+        if (!preserveEmptyTokens) {
+            words = words.filter((word) => !!word);
+        }
+
+        return words;
+    }
+
+    let chars: string[] = [];
+
+    const makeWord = () => {
+        const word = chars.join('');
+        words.push(word);
+        chars = [];
+    };
+
+    for (let i = 0; i < string.length; i += 1) {
+        const char = string.charAt(i);
+        const isLastChar = i === (string.length - 1);
+        if (char === delimiter) {
+            const isEscapedChar = i > 0 && string[i - 1] === escapeCharacter;
+            if (isEscapedChar) {
+                if (shouldUnescape) {
+                    chars.splice(chars.length - 1, 1);
+                }
+                chars.push(char);
+            } else {
+                makeWord();
+            }
+            if (isLastChar) {
+                makeWord();
+            }
+        } else if (isLastChar) {
+            chars.push(char);
+            makeWord();
+        } else {
+            chars.push(char);
+        }
+    }
+
+    if (!preserveEmptyTokens) {
+        words = words.filter((word) => !!word);
+    }
+
+    return words;
+}

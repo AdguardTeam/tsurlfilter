@@ -1,5 +1,14 @@
-import { B64_KEYWORD, PCT_KEYWORD } from '../../modifiers/url-transform-modifier';
-import { splitByDelimiterWithEscapeCharacter } from '../../utils/string-utils';
+import { splitByDelimiterWithEscapeCharacter } from './utils/string';
+
+/**
+ * Keyword for Base64 decode transform.
+ */
+const B64_KEYWORD = 'b64';
+
+/**
+ * Keyword for percent-decode transform.
+ */
+const PCT_KEYWORD = 'pct';
 
 /**
  * Parsed parts of a `/pattern/replacement/flags` substitution string.
@@ -410,9 +419,9 @@ const DECODE_KEYWORDS = new Set([B64_KEYWORD, PCT_KEYWORD]);
  *
  * @param value The raw modifier value (e.g. `/pattern/repl/flags` or pipeline).
  *
- * @throws Error if the value contains unsupported decode stages.
- *
  * @returns Array of DNR conversion results, one per pipeline stage.
+ *
+ * @throws Error if the value contains unsupported decode stages.
  */
 export function convertUrlTransformToDnr(value: string): UrlTransformDnrResult[] {
     const stages = splitPipeline(value);

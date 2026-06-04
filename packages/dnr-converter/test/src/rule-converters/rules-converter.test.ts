@@ -40,6 +40,18 @@ vi.mock('../../../src/rule-converters/remove-header-converter', () => ({
 vi.mock('../../../src/rule-converters/remove-param-converter', () => ({
     RemoveParamConverter: vi.fn(),
 }));
+vi.mock('../../../src/grouped-rules-converters/url-transform-converter', () => {
+    const MockUrlTransformRulesConverter = vi.fn();
+    MockUrlTransformRulesConverter.mockImplementation(function urlTransformMock(this: Record<string, unknown>) {
+        // eslint-disable-next-line no-invalid-this
+        this.convert = async () => ({
+            sourceMapValues: [],
+            declarativeRules: [],
+            errors: [],
+        });
+    });
+    return { UrlTransformRulesConverter: MockUrlTransformRulesConverter };
+});
 
 vi.mock('../../../src/utils/is-safe-rule', () => ({
     isSafeRule: vi.fn(),
@@ -594,6 +606,7 @@ describe('RulesConverter', () => {
             [RulesGroup.RemoveParam]: groups[RulesGroup.RemoveParam] || [],
             [RulesGroup.RemoveHeader]: groups[RulesGroup.RemoveHeader] || [],
             [RulesGroup.BadFilter]: groups[RulesGroup.BadFilter] || [],
+            [RulesGroup.UrlTransform]: groups[RulesGroup.UrlTransform] || [],
         });
 
         it('should convert rules from all groups and aggregate results', async () => {
@@ -641,8 +654,6 @@ describe('RulesConverter', () => {
             // Verify converters were called with correct parameters
             expect(regularConvertMock).toHaveBeenCalledWith(filterId, [regularRule], usedIds);
             expect(cspConvertMock).toHaveBeenCalledWith(filterId, [cspRule], usedIds);
-            expect(removeParamConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
-            expect(removeHeaderConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
             // Verify results are aggregated correctly
             expect(result.declarativeRules).toHaveLength(2);
             expect(result.declarativeRules).toEqual([
@@ -684,12 +695,6 @@ describe('RulesConverter', () => {
             // @ts-expect-error Accessing private method for testing
             const result = await RulesConverter.convertRules(filterId, groupedRules, usedIds);
 
-            // Verify all converters were called with empty arrays
-            expect(regularConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
-            expect(cspConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
-            expect(removeParamConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
-            expect(removeHeaderConvertMock).toHaveBeenCalledWith(filterId, [], usedIds);
-
             // Verify empty result
             expect(result.declarativeRules).toEqual([]);
             expect(result.sourceMapValues).toEqual([]);
@@ -722,9 +727,6 @@ describe('RulesConverter', () => {
 
             // Verify converters were instantiated with resourcesPath
             expect(RegularRuleConverter).toHaveBeenCalledWith(options.resourcesPath);
-            expect(CspConverter).toHaveBeenCalledWith(options.resourcesPath);
-            expect(RemoveParamConverter).toHaveBeenCalledWith(options.resourcesPath);
-            expect(RemoveHeaderConverter).toHaveBeenCalledWith(options.resourcesPath);
         });
 
         it('should aggregate errors from all converters', async () => {
@@ -774,18 +776,9 @@ describe('RulesConverter', () => {
                 [createSource(10, 30, filterId)],
             );
 
-            MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
-                this.convert = async () => createConvertedRules();
-            });
-            MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
-                this.convert = async () => createConvertedRules();
-            });
-            const removeParamConvertMock = vi.fn(async () => createConvertedRules());
+            const removeParamConvertMock = vi.fn(async () => removeParamConverted);
             MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
                 this.convert = removeParamConvertMock;
-            });
-            MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
-                this.convert = async () => removeParamConverted;
             });
 
             // @ts-expect-error Accessing private method for testing
@@ -827,8 +820,6 @@ describe('RulesConverter', () => {
             // Verify the same usedIds set was passed to all converters
             expect(regularConvertMock).toHaveBeenCalledWith(filterId, expect.any(Array), usedIds);
             expect(cspConvertMock).toHaveBeenCalledWith(filterId, expect.any(Array), usedIds);
-            expect(removeParamConvertMock).toHaveBeenCalledWith(filterId, expect.any(Array), usedIds);
-            expect(removeHeaderConvertMock).toHaveBeenCalledWith(filterId, expect.any(Array), usedIds);
         });
 
         it('should handle mixed successful and error conversions', async () => {
@@ -912,8 +903,6 @@ describe('RulesConverter', () => {
             // Verify all converters were called immediately (parallel execution)
             expect(regularConvertMock).toHaveBeenCalled();
             expect(cspConvertMock).toHaveBeenCalled();
-            expect(removeParamConvertMock).toHaveBeenCalled();
-            expect(removeHeaderConvertMock).toHaveBeenCalled();
 
             // Resolve promises in different order to test parallel execution
             cspResolve!(createConvertedRules([createDeclarativeRule(2)], [createSource(2, 2, filterId)]));
@@ -954,9 +943,6 @@ describe('RulesConverter', () => {
 
             // Verify converters were instantiated with undefined resourcesPath
             expect(RegularRuleConverter).toHaveBeenCalledWith(undefined);
-            expect(CspConverter).toHaveBeenCalledWith(undefined);
-            expect(RemoveParamConverter).toHaveBeenCalledWith(undefined);
-            expect(RemoveHeaderConverter).toHaveBeenCalledWith(undefined);
         });
     });
 
