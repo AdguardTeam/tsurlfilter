@@ -9,7 +9,12 @@ import { logger } from '../../common/utils/logger';
 import { removeParamInjectionService } from './api';
 import { type AppContext } from './app-context';
 import { assistant, Assistant } from './assistant';
-import { type ConfigurationMV2, type ConfigurationMV2Context, configurationMV2Validator } from './configuration';
+import {
+    type ConfigurationMV2,
+    type ConfigurationMV2Context,
+    configurationMV2Validator,
+    type ConfigurationResultMV2,
+} from './configuration';
 import { type EngineApi } from './engine-api';
 import { type ExtSessionStorage } from './ext-session-storage';
 import { type MessagesApi } from './messages-api';
@@ -28,7 +33,7 @@ import { WebRequestApi } from './web-request-api';
 export class TsWebExtension implements AppInterface<
     ConfigurationMV2,
     ConfigurationMV2Context,
-    void
+    ConfigurationResultMV2
 > {
     /**
      * Fires on filtering log event.
@@ -137,9 +142,13 @@ export class TsWebExtension implements AppInterface<
      *
      * @param configuration App configuration.
      *
+     * @returns Conversion errors from filter list processing.
+     *
      * @throws Error if configuration is not valid.
      */
-    public async start(configuration: ConfigurationMV2): Promise<void> {
+    public async start(
+        configuration: ConfigurationMV2,
+    ): Promise<ConfigurationResultMV2> {
         if (!this.appContext.startTimeMs) {
             this.appContext.startTimeMs = Date.now();
         }
@@ -153,7 +162,7 @@ export class TsWebExtension implements AppInterface<
         RequestEvents.init();
         await this.redirectsService.start();
         this.documentBlockingService.configure(configuration);
-        await this.engineApi.startEngine(configuration);
+        const result = await this.engineApi.startEngine(configuration);
         await this.tabCosmeticInjector.processOpenTabs();
         await this.tabsApi.start();
         WebRequestApi.start();
@@ -164,6 +173,10 @@ export class TsWebExtension implements AppInterface<
         await this.stealthApi.updateWebRtcPrivacyPermissions();
 
         this.isStarted = true;
+
+        return {
+            conversionErrors: result.conversionErrors,
+        };
     }
 
     /**
@@ -186,9 +199,13 @@ export class TsWebExtension implements AppInterface<
      *
      * @param configuration App configuration.
      *
+     * @returns Conversion errors from filter list processing.
+     *
      * @throws Error if app is not started or configuration is not valid.
      */
-    public async configure(configuration: ConfigurationMV2): Promise<void> {
+    public async configure(
+        configuration: ConfigurationMV2,
+    ): Promise<ConfigurationResultMV2> {
         if (!this.isStarted) {
             throw new Error('App is not started!');
         }
@@ -200,11 +217,15 @@ export class TsWebExtension implements AppInterface<
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
         this.documentBlockingService.configure(configuration);
-        await this.engineApi.startEngine(configuration);
+        const result = await this.engineApi.startEngine(configuration);
         await this.tabsApi.updateCurrentTabsMainFrameRules();
 
         await WebRequestApi.flushMemoryCache();
         await this.stealthApi.updateWebRtcPrivacyPermissions();
+
+        return {
+            conversionErrors: result.conversionErrors,
+        };
     }
 
     /**

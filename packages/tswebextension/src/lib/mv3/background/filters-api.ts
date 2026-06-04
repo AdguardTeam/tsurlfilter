@@ -119,7 +119,7 @@ export default class FiltersApi {
         return customFilters.map((f) => new Filter(
             f.filterId,
             {
-                getContent: () => Promise.resolve(new FilterList(f.content, f.conversionData)),
+                getContent: () => Promise.resolve(new FilterList(f.content, f.filterId, f.conversionData)),
             },
             f.trusted,
         ));
@@ -143,7 +143,7 @@ export default class FiltersApi {
                 throw new Error(`Filter with id ${filterId} not found`);
             }
 
-            return new FilterList(result.rawFilterList, result.conversionData);
+            return new FilterList(result.rawFilterList, filterId, result.conversionData);
         } catch (e) {
             throw new Error(`Failed to load filter content: ${e}`);
         }

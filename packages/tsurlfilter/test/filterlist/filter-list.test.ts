@@ -193,4 +193,50 @@ describe('FilterList', () => {
         expect(list.getOriginalRuleText(-1)).toBeNull();
         expect(list.getOriginalRuleText(100)).toBeNull();
     });
+
+    it('should capture a conversion error when RawRuleConverter.convertToAdg throws', () => {
+        // '##^:has-text()' is an HTML-filtering rule that the converter rejects because
+        // the has-text pseudo-class requires at least one argument.
+        const badRule = '##^:has-text()';
+        const list = new FilterList(badRule);
+
+        const errors = list.getConversionErrors();
+
+        expect(errors).toHaveLength(1);
+        expect(errors[0].rule).toBe(badRule);
+        expect(errors[0].offset).toBe(0);
+        expect(errors[0].message).toContain('has-text');
+        // No filterId supplied → falls back to FILTER_LIST_ID_NONE (-1)
+        expect(errors[0].filterId).toBe(-1);
+
+        // The bad rule must still be present verbatim in the converted content
+        // (the converter keeps it as-is when it throws).
+        expect(list.getContent()).toBe(badRule);
+    });
+
+    it('should propagate filterId to every FilterListConversionError', () => {
+        const FILTER_ID = 42;
+        const list = new FilterList(
+            ['##^:has-text()', '##^:min-text-length(abc)'].join('\n'),
+            FILTER_ID,
+        );
+
+        const errors = list.getConversionErrors();
+
+        expect(errors).toHaveLength(2);
+        errors.forEach((err) => {
+            expect(err.filterId).toBe(FILTER_ID);
+        });
+    });
+
+    it('should work with single-argument constructor (no filterId, no conversionData)', () => {
+        const original = '||example.com^';
+        const list = new FilterList(original);
+
+        // The list should still prepare and convert correctly
+        expect(list.getContent()).toEqual(original);
+
+        // No errors for valid rules
+        expect(list.getConversionErrors()).toHaveLength(0);
+    });
 });

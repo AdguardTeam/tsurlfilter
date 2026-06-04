@@ -37,4 +37,9 @@ export { StealthOptionName, STEALTH_MODE_FILTER_ID } from './modifiers/stealth-m
 export { NETWORK_RULE_OPTIONS, OPTIONS_DELIMITER } from './rules/network-rule-options';
 export { StringRuleList } from './filterlist/string-rule-list';
 export { createAllowlistRuleNode } from './rules/allowlist';
-export { FilterList, type ConversionData, conversionDataValidator } from './filterlist/filter-list';
+export {
+    FilterList,
+    type ConversionData,
+    conversionDataValidator,
+    type FilterListConversionError,
+} from './filterlist/filter-list';

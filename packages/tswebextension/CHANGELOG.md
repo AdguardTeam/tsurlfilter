@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `TsWebExtension.start()` and `TsWebExtension.configure()` now return
+  `{ conversionErrors: FilterListConversionError[] }` instead of `void`,
+  surfacing filter list rule conversion errors to callers.
 - Updated [@adguard/extended-css] to `v2.2.0`.
 - WebRTC IP handling policy changed from `disable_non_proxied_udp` to
   `default_public_interface_only` to reduce VoIP breakage while still

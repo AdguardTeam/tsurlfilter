@@ -10,9 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for `UrlTransformModifier` [#111].
+- `FilterListConversionError` interface, `FilterList.getConversionErrors()`
+  and `Engine.getConversionErrors()` methods.
 
 ### Changed
 
+- **BREAKING: `FilterList`** - constructor signature changed from
+  `(content, data?)` to `(content, filterId?, data?)`.
 - Added MV3 `$urltransform` test coverage for ignored `/g` flag behavior and
   single-winner priority handling when multiple redirect rules match.
 - Replaced wildcard re-export of `url-transform-modifier` in the public API

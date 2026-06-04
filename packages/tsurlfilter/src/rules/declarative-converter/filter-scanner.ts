@@ -37,7 +37,7 @@ export class FilterScanner implements IFilterScanner {
      */
     constructor(filter: string | FilterList, filterId: number) {
         if (typeof filter === 'string') {
-            this.filter = new FilterList(filter);
+            this.filter = new FilterList(filter, filterId);
         } else {
             this.filter = filter;
         }
