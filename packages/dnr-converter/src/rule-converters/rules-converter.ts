@@ -110,7 +110,6 @@ import { type ConvertedRules } from './converted-rules';
 import { CspConverter } from './csp-converter';
 import { RegularRuleConverter } from './regular-rule-converter';
 import { RemoveHeaderConverter } from './remove-header-converter';
-import { RemoveParamConverter } from './remove-param-converter';
 import { type GroupedRules, RulesGroup, RulesGrouper } from './rules-grouper';
 
 /**
@@ -147,7 +146,6 @@ export class RulesConverter {
     private static readonly CONVERTERS = {
         [RulesGroup.Regular]: RegularRuleConverter,
         [RulesGroup.Csp]: CspConverter,
-        [RulesGroup.RemoveParam]: RemoveParamConverter,
         [RulesGroup.RemoveHeader]: RemoveHeaderConverter,
         [RulesGroup.UrlTransform]: UrlTransformRulesConverter,
     };

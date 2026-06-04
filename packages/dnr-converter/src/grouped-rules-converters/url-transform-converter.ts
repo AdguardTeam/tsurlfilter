@@ -1,6 +1,8 @@
 import { type DeclarativeRule, type RequestMethod, RuleActionType } from '../declarative-rule';
+import { isConversionError } from '../errors/conversion-errors';
 import { OPTION_NAMES } from '../rule/option-names';
 import { type Rule } from '../rule/rule';
+import { RuleDeclarativeValidator } from '../rule/rule-validator';
 import { type ConvertedRules } from '../rule-converters/converted-rules';
 import { RegularRuleConverter } from '../rule-converters/regular-rule-converter';
 import { convertUrlTransformToDnr, isFullUrlPattern, parseUrlTransformParts } from '../url-transform-converter';
@@ -20,7 +22,50 @@ import { convertUrlTransformToDnr, isFullUrlPattern, parseUrlTransformParts } fr
  */
 export class UrlTransformRulesConverter extends RegularRuleConverter {
     /**
+     * Generates a unique ID for a rule using its text hash.
+     *
+     * @param rule The rule to generate an ID for.
+     * @param usedIds Set of already-used IDs to avoid collisions.
+     *
+     * @returns A unique ID.
+     */
+    private static getUniqueId(rule: Rule, usedIds: Set<number>): number {
+        let id = rule.getTextHash();
+        let salt = 0;
+        while (usedIds.has(id)) {
+            salt += 1;
+            id = rule.getTextHash(salt);
+        }
+        usedIds.add(id);
+        return id;
+    }
+
+    /**
+     * Wraps an error into a {@link ConversionError} if needed.
+     *
+     * @param index The rule index.
+     * @param id The rule ID.
+     * @param error The caught error.
+     *
+     * @returns The wrapped error.
+     */
+    private static wrapError(index: number, id: number, error: unknown): Error {
+        if (isConversionError(error)) {
+            return error;
+        }
+        if (error instanceof Error) {
+            return error;
+        }
+        return new Error(`Error converting rule at index ${index}`);
+    }
+
+    /**
      * Converts rules grouped by $urltransform into declarative rules.
+     *
+     * Overrides the parent to handle multi-stage pipelines:
+     * for each $urltransform rule, the base conversion produces one
+     * declarative rule, and additional pipeline stages generate
+     * extra rules with sequential IDs and their own source map entries.
      *
      * @param filterId Filter id.
      * @param rules List of rules.
@@ -33,7 +78,82 @@ export class UrlTransformRulesConverter extends RegularRuleConverter {
         rules: Rule[],
         usedIds: Set<number>,
     ): Promise<ConvertedRules> {
-        return this.convertRules(filterId, rules, usedIds);
+        const res: ConvertedRules = {
+            declarativeRules: [],
+            errors: [],
+            sourceMapValues: [],
+        };
+
+        for (const rule of rules) {
+            const { index } = rule;
+            const baseId = UrlTransformRulesConverter.getUniqueId(rule, usedIds);
+
+            try {
+                // Validate rule can be converted to DNR format
+                if (!RuleDeclarativeValidator.shouldConvertRule(rule)) {
+                    continue;
+                }
+
+                const urlTransformValue = rule.advancedModifierValue;
+                const isUrlTransform = !rule.allowlist
+                    && !!urlTransformValue
+                    && rule.isModifierEnabled(OPTION_NAMES.URLTRANSFORM);
+
+                let dnrResults: ReturnType<typeof convertUrlTransformToDnr> | null = null;
+                if (isUrlTransform) {
+                    dnrResults = convertUrlTransformToDnr(urlTransformValue!);
+                }
+
+                // Perform generic conversion (action, condition, priority, validation).
+                // eslint-disable-next-line no-await-in-loop
+                const baseRule = await super.convertRule(baseId, rule);
+
+                // Skip urltransform post-processing for allowlist rules or when no DNR results
+                if (!isUrlTransform || !dnrResults || dnrResults.length === 0) {
+                    res.sourceMapValues.push({
+                        declarativeRuleId: baseRule.id,
+                        sourceRuleIndex: index,
+                        filterId,
+                    });
+                    res.declarativeRules.push(baseRule);
+                    continue;
+                }
+
+                // Fix the action: set redirect with regexSubstitution from DNR conversion
+                baseRule.action = {
+                    type: RuleActionType.Redirect,
+                    redirect: { regexSubstitution: dnrResults[0].regexSubstitution },
+                };
+
+                // Apply urltransform-specific post-processing
+                UrlTransformRulesConverter.applyDomainScope(baseRule, rule);
+                UrlTransformRulesConverter.applyMethodDefault(baseRule, rule, urlTransformValue!);
+                UrlTransformRulesConverter.applyRegexFilter(baseRule, dnrResults);
+
+                // Build all pipeline stages
+                const allRules = UrlTransformRulesConverter.buildPipelineStages(baseId, baseRule, dnrResults);
+
+                // Validate all stages against DNR constraints
+                // eslint-disable-next-line no-await-in-loop
+                await UrlTransformRulesConverter.validateAllStages(allRules, rule);
+
+                // Add source map entries for all pipeline stages
+                for (let stageIdx = 0; stageIdx < allRules.length; stageIdx += 1) {
+                    const stageRule = allRules[stageIdx];
+                    res.sourceMapValues.push({
+                        declarativeRuleId: stageRule.id,
+                        sourceRuleIndex: index,
+                        filterId,
+                    });
+                    res.declarativeRules.push(stageRule);
+                }
+            } catch (e) {
+                const err = UrlTransformRulesConverter.wrapError(index, baseId, e);
+                res.errors.push(err);
+            }
+        }
+
+        return res;
     }
 
     /**
@@ -76,25 +196,19 @@ export class UrlTransformRulesConverter extends RegularRuleConverter {
             return baseRule;
         }
 
+        // Fix the action: set redirect with regexSubstitution from DNR conversion
+        baseRule.action = {
+            type: RuleActionType.Redirect,
+            redirect: { regexSubstitution: dnrResults[0].regexSubstitution },
+        };
+
         // Post-process the base declarative rule.
         UrlTransformRulesConverter.applyDomainScope(baseRule, rule);
         UrlTransformRulesConverter.applyMethodDefault(baseRule, rule, urlTransformValue);
         UrlTransformRulesConverter.applyRegexFilter(baseRule, dnrResults);
 
-        const allRules = UrlTransformRulesConverter.buildPipelineStages(id, baseRule, dnrResults);
-        await UrlTransformRulesConverter.validateAllStages(allRules, rule);
+        await UrlTransformRulesConverter.validateAllStages([baseRule], rule);
 
-        // Return the single rule if there's no pipeline, or all pipeline stages
-        if (allRules.length === 1) {
-            return baseRule;
-        }
-
-        // Override convertRules behavior: when we have pipeline stages,
-        // we need to return multiple rules. Since convertRule returns a single
-        // DeclarativeRule, we handle this by throwing a special marker that
-        // convertRules can catch. However, to keep things simple, we return
-        // the base rule and rely on buildPipelineStages having been called.
-        // The pipeline stages will be handled by the overridden convert method.
         return baseRule;
     }
 

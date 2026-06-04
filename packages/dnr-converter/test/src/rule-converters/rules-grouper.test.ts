@@ -14,11 +14,11 @@ describe('RulesGrouper', () => {
     };
 
     describe('getRuleGroup', () => {
-        it('should return RemoveParam group for rules with RemoveParam option', () => {
+        it('should return Regular group for rules with RemoveParam option (no longer merged)', () => {
             const rule = getMockedRule([OPTION_NAMES.REMOVEPARAM]);
             // @ts-expect-error Accessing private method for testing purposes
             const group = RulesGrouper.getRuleGroup(rule);
-            expect(group).toBe(RulesGroup.RemoveParam);
+            expect(group).toBe(RulesGroup.Regular);
         });
 
         it('should return RemoveHeader group for rules with RemoveHeader option', () => {
@@ -62,9 +62,8 @@ describe('RulesGrouper', () => {
             const result = RulesGrouper.groupRules([]);
 
             expect(result).toEqual({
-                [RulesGroup.RemoveParam]: [],
-                [RulesGroup.RemoveHeader]: [],
                 [RulesGroup.Regular]: [],
+                [RulesGroup.RemoveHeader]: [],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.BadFilter]: [],
                 [RulesGroup.UrlTransform]: [],
@@ -76,9 +75,8 @@ describe('RulesGrouper', () => {
             const result = RulesGrouper.groupRules([removeParamRule]);
 
             expect(result).toEqual({
-                [RulesGroup.RemoveParam]: [removeParamRule],
+                [RulesGroup.Regular]: [removeParamRule],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.Regular]: [],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.BadFilter]: [],
                 [RulesGroup.UrlTransform]: [],
@@ -91,9 +89,8 @@ describe('RulesGrouper', () => {
             const result = RulesGrouper.groupRules([removeParamRule1, removeParamRule2]);
 
             expect(result).toEqual({
-                [RulesGroup.RemoveParam]: [removeParamRule1, removeParamRule2],
+                [RulesGroup.Regular]: [removeParamRule1, removeParamRule2],
                 [RulesGroup.RemoveHeader]: [],
-                [RulesGroup.Regular]: [],
                 [RulesGroup.Csp]: [],
                 [RulesGroup.BadFilter]: [],
                 [RulesGroup.UrlTransform]: [],
@@ -116,10 +113,9 @@ describe('RulesGrouper', () => {
             ]);
 
             expect(result).toEqual({
-                [RulesGroup.RemoveParam]: [removeParamRule],
+                [RulesGroup.Regular]: [removeParamRule, regularRule, regularRule2],
                 [RulesGroup.RemoveHeader]: [removeHeaderRule],
                 [RulesGroup.Csp]: [cspRule],
-                [RulesGroup.Regular]: [regularRule, regularRule2],
                 [RulesGroup.BadFilter]: [],
                 [RulesGroup.UrlTransform]: [],
             });
@@ -139,10 +135,9 @@ describe('RulesGrouper', () => {
             ]);
 
             expect(result).toEqual({
-                [RulesGroup.RemoveParam]: [removeParamRule],
+                [RulesGroup.Regular]: [regularRule1, removeParamRule, regularRule2, regularRule3],
                 [RulesGroup.RemoveHeader]: [],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.Regular]: [regularRule1, regularRule2, regularRule3],
                 [RulesGroup.BadFilter]: [],
                 [RulesGroup.UrlTransform]: [],
             });
@@ -170,10 +165,9 @@ describe('RulesGrouper', () => {
 
             // Should prioritize special options over regular ones
             expect(result).toEqual({
-                [RulesGroup.RemoveParam]: [combinedRule1],
+                [RulesGroup.Regular]: [combinedRule1, combinedRule3],
                 [RulesGroup.RemoveHeader]: [combinedRule2],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.Regular]: [combinedRule3],
                 [RulesGroup.BadFilter]: [],
                 [RulesGroup.UrlTransform]: [],
             });

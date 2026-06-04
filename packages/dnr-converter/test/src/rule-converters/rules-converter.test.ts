@@ -20,7 +20,6 @@ import { type ConvertedRules } from '../../../src/rule-converters/converted-rule
 import { CspConverter } from '../../../src/rule-converters/csp-converter';
 import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
 import { RemoveHeaderConverter } from '../../../src/rule-converters/remove-header-converter';
-import { RemoveParamConverter } from '../../../src/rule-converters/remove-param-converter';
 import { RulesConverter } from '../../../src/rule-converters/rules-converter';
 import { type GroupedRules, RulesGroup } from '../../../src/rule-converters/rules-grouper';
 import { type ScannedFilter } from '../../../src/rules-scanner';
@@ -36,9 +35,6 @@ vi.mock('../../../src/rule-converters/csp-converter', () => ({
 }));
 vi.mock('../../../src/rule-converters/remove-header-converter', () => ({
     RemoveHeaderConverter: vi.fn(),
-}));
-vi.mock('../../../src/rule-converters/remove-param-converter', () => ({
-    RemoveParamConverter: vi.fn(),
 }));
 vi.mock('../../../src/grouped-rules-converters/url-transform-converter', () => {
     const MockUrlTransformRulesConverter = vi.fn();
@@ -61,7 +57,6 @@ vi.mock('../../../src/utils/is-safe-rule', () => ({
 const MockedRuleConverter = vi.mocked(RegularRuleConverter);
 const MockedCspConverter = vi.mocked(CspConverter);
 const MockedRemoveHeaderConverter = vi.mocked(RemoveHeaderConverter);
-const MockedRemoveParamConverter = vi.mocked(RemoveParamConverter);
 const isSafeRuleMocked = vi.mocked(isSafeRule);
 
 // @ts-expect-error Accessing private constants for testing
@@ -153,7 +148,6 @@ describe('RulesConverter', () => {
             const groupedRules = {
                 [RulesGroup.Regular]: [networkRule1, networkRule2],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
@@ -224,13 +218,11 @@ describe('RulesConverter', () => {
             const groupedRules1 = {
                 [RulesGroup.Regular]: [networkRule1],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             const groupedRules2 = {
                 [RulesGroup.Regular]: [networkRule2, networkRule3],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules1], [2, groupedRules2]]);
@@ -294,7 +286,6 @@ describe('RulesConverter', () => {
             const groupedRules = {
                 [RulesGroup.Regular]: [rule],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
@@ -332,7 +323,6 @@ describe('RulesConverter', () => {
             const groupedRules = {
                 [RulesGroup.Regular]: [rule],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
@@ -364,7 +354,6 @@ describe('RulesConverter', () => {
             const groupedRules = {
                 [RulesGroup.Regular]: [rule],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
@@ -405,7 +394,6 @@ describe('RulesConverter', () => {
             const groupedRules = {
                 [RulesGroup.Regular]: [], // badfilter removed the regular rule
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
@@ -438,7 +426,6 @@ describe('RulesConverter', () => {
             const groupedRules = {
                 [RulesGroup.Regular]: [rule],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules]]);
@@ -493,13 +480,11 @@ describe('RulesConverter', () => {
             const groupedRules1 = {
                 [RulesGroup.Regular]: [networkRule1],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             const groupedRules2 = {
                 [RulesGroup.Regular]: [networkRule2],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules1], [2, groupedRules2]]);
@@ -556,13 +541,11 @@ describe('RulesConverter', () => {
             const groupedRules1 = {
                 [RulesGroup.Regular]: [networkRule1],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             const groupedRules2 = {
                 [RulesGroup.Regular]: [networkRule2],
                 [RulesGroup.Csp]: [],
-                [RulesGroup.RemoveParam]: [],
                 [RulesGroup.RemoveHeader]: [],
             };
             applyBadFilterSpy.mockReturnValue([[1, groupedRules1], [2, groupedRules2]]);
@@ -603,7 +586,6 @@ describe('RulesConverter', () => {
         ): GroupedRules => ({
             [RulesGroup.Regular]: groups[RulesGroup.Regular] || [],
             [RulesGroup.Csp]: groups[RulesGroup.Csp] || [],
-            [RulesGroup.RemoveParam]: groups[RulesGroup.RemoveParam] || [],
             [RulesGroup.RemoveHeader]: groups[RulesGroup.RemoveHeader] || [],
             [RulesGroup.BadFilter]: groups[RulesGroup.BadFilter] || [],
             [RulesGroup.UrlTransform]: groups[RulesGroup.UrlTransform] || [],
@@ -638,10 +620,6 @@ describe('RulesConverter', () => {
             const cspConvertMock = vi.fn(async () => cspConverted);
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
                 this.convert = cspConvertMock;
-            });
-            const removeParamConvertMock = vi.fn(async () => createConvertedRules());
-            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
-                this.convert = removeParamConvertMock;
             });
             const removeHeaderConvertMock = vi.fn(async () => createConvertedRules());
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
@@ -683,10 +661,7 @@ describe('RulesConverter', () => {
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
                 this.convert = cspConvertMock;
             });
-            const removeParamConvertMock = vi.fn(async () => emptyResult);
-            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
-                this.convert = removeParamConvertMock;
-            });
+
             const removeHeaderConvertMock = vi.fn(async () => emptyResult);
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = removeHeaderConvertMock;
@@ -715,9 +690,7 @@ describe('RulesConverter', () => {
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
-            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
-                this.convert = async () => createConvertedRules();
-            });
+
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
@@ -747,9 +720,7 @@ describe('RulesConverter', () => {
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
                 this.convert = async () => createConvertedRules([], [], [cspError, generalError]);
             });
-            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
-                this.convert = async () => createConvertedRules();
-            });
+
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
@@ -760,66 +731,6 @@ describe('RulesConverter', () => {
             expect(result.errors).toContain(regularError);
             expect(result.errors).toContain(cspError);
             expect(result.errors).toContain(generalError);
-        });
-
-        it('should handle single rule group conversion', async () => {
-            const filterId = 5;
-            const usedIds = new Set<number>();
-            const removeParamRule = createRuleMock({ pattern: 'param.com' });
-
-            const groupedRules = createGroupedRules({
-                [RulesGroup.RemoveParam]: [removeParamRule],
-            });
-
-            const removeParamConverted = createConvertedRules(
-                [createDeclarativeRule(10, 'param.com')],
-                [createSource(10, 30, filterId)],
-            );
-
-            const removeParamConvertMock = vi.fn(async () => removeParamConverted);
-            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
-                this.convert = removeParamConvertMock;
-            });
-
-            // @ts-expect-error Accessing private method for testing
-            const result = await RulesConverter.convertRules(filterId, groupedRules, usedIds);
-
-            expect(removeParamConvertMock).toHaveBeenCalledWith(filterId, [removeParamRule], usedIds);
-            expect(result.declarativeRules).toEqual([createDeclarativeRule(10, 'param.com')]);
-            expect(result.sourceMapValues).toEqual([createSource(10, 30, filterId)]);
-        });
-
-        it('should maintain usedIds set across converter calls', async () => {
-            const filterId = 6;
-            const usedIds = new Set([1, 2, 3]);
-            const groupedRules = createGroupedRules({
-                [RulesGroup.Regular]: [createRuleMock()],
-                [RulesGroup.Csp]: [createRuleMock()],
-            });
-
-            const regularConvertMock = vi.fn(async () => createConvertedRules());
-            MockedRuleConverter.mockImplementationOnce(function RuleConverterMock() {
-                this.convert = regularConvertMock;
-            });
-            const cspConvertMock = vi.fn(async () => createConvertedRules());
-            MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
-                this.convert = cspConvertMock;
-            });
-            const removeParamConvertMock = vi.fn(async () => createConvertedRules());
-            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
-                this.convert = removeParamConvertMock;
-            });
-            const removeHeaderConvertMock = vi.fn(async () => createConvertedRules());
-            MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
-                this.convert = removeHeaderConvertMock;
-            });
-
-            // @ts-expect-error Accessing private method for testing
-            await RulesConverter.convertRules(filterId, groupedRules, usedIds);
-
-            // Verify the same usedIds set was passed to all converters
-            expect(regularConvertMock).toHaveBeenCalledWith(filterId, expect.any(Array), usedIds);
-            expect(cspConvertMock).toHaveBeenCalledWith(filterId, expect.any(Array), usedIds);
         });
 
         it('should handle mixed successful and error conversions', async () => {
@@ -843,9 +754,7 @@ describe('RulesConverter', () => {
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
-            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
-                this.convert = async () => createConvertedRules();
-            });
+
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = async () => errorResult;
             });
@@ -865,19 +774,16 @@ describe('RulesConverter', () => {
             const groupedRules = createGroupedRules({
                 [RulesGroup.Regular]: [createRuleMock()],
                 [RulesGroup.Csp]: [createRuleMock()],
-                [RulesGroup.RemoveParam]: [createRuleMock()],
                 [RulesGroup.RemoveHeader]: [createRuleMock()],
             });
 
             // Create promises that we can control
             let regularResolve: (value: ConvertedRules) => void;
             let cspResolve: (value: ConvertedRules) => void;
-            let removeParamResolve: (value: ConvertedRules) => void;
             let removeHeaderResolve: (value: ConvertedRules) => void;
 
             const regularPromise = new Promise<ConvertedRules>((resolve) => { regularResolve = resolve; });
             const cspPromise = new Promise<ConvertedRules>((resolve) => { cspResolve = resolve; });
-            const removeParamPromise = new Promise<ConvertedRules>((resolve) => { removeParamResolve = resolve; });
             const removeHeaderPromise = new Promise<ConvertedRules>((resolve) => { removeHeaderResolve = resolve; });
 
             const regularConvertMock = vi.fn(async () => regularPromise);
@@ -888,10 +794,7 @@ describe('RulesConverter', () => {
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
                 this.convert = cspConvertMock;
             });
-            const removeParamConvertMock = vi.fn(async () => removeParamPromise);
-            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
-                this.convert = removeParamConvertMock;
-            });
+
             const removeHeaderConvertMock = vi.fn(async () => removeHeaderPromise);
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = removeHeaderConvertMock;
@@ -906,15 +809,14 @@ describe('RulesConverter', () => {
 
             // Resolve promises in different order to test parallel execution
             cspResolve!(createConvertedRules([createDeclarativeRule(2)], [createSource(2, 2, filterId)]));
-            removeParamResolve!(createConvertedRules([createDeclarativeRule(3)], [createSource(3, 3, filterId)]));
             regularResolve!(createConvertedRules([createDeclarativeRule(1)], [createSource(1, 1, filterId)]));
             removeHeaderResolve!(createConvertedRules([createDeclarativeRule(4)], [createSource(4, 4, filterId)]));
 
             const result = await resultPromise;
 
             // Results should be aggregated regardless of resolution order
-            expect(result.declarativeRules).toHaveLength(4);
-            expect(result.sourceMapValues).toHaveLength(4);
+            expect(result.declarativeRules).toHaveLength(3);
+            expect(result.sourceMapValues).toHaveLength(3);
             expect(result.errors).toEqual([]);
         });
 
@@ -931,9 +833,7 @@ describe('RulesConverter', () => {
             MockedCspConverter.mockImplementationOnce(function CspConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
-            MockedRemoveParamConverter.mockImplementationOnce(function RemoveParamConverterMock() {
-                this.convert = async () => createConvertedRules();
-            });
+
             MockedRemoveHeaderConverter.mockImplementationOnce(function RemoveHeaderConverterMock() {
                 this.convert = async () => createConvertedRules();
             });
@@ -1090,10 +990,6 @@ describe('RulesConverter', () => {
                 pattern: 'test.com',
                 enabledOptions: [OPTION_NAMES.CSP],
             });
-            const removeParamRule = createRuleMock({
-                pattern: 'param.com',
-                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
-            });
             const badFilterRule = createRuleMock({
                 pattern: 'example.com',
                 enabledOptions: [OPTION_NAMES.BADFILTER],
@@ -1101,7 +997,7 @@ describe('RulesConverter', () => {
             });
 
             const scannedFilters = [
-                createScannedFilter(1, [regularRule, cspRule, removeParamRule, badFilterRule], [badFilterRule]),
+                createScannedFilter(1, [regularRule, cspRule, badFilterRule], [badFilterRule]),
             ];
 
             // @ts-expect-error Accessing private method for testing
@@ -1114,7 +1010,6 @@ describe('RulesConverter', () => {
             expect(groupedRules[RulesGroup.Regular]).toEqual([]);
             // Other rule types should remain
             expect(groupedRules[RulesGroup.Csp]).toEqual([cspRule]);
-            expect(groupedRules[RulesGroup.RemoveParam]).toEqual([removeParamRule]);
             // badfilter rules should be cleared
         });
 

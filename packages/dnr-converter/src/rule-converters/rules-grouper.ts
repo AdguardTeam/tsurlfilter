@@ -6,25 +6,21 @@ import { type Rule } from '../rule/rule';
  */
 export enum RulesGroup {
     /**
-     * Regular rules.
+     * Regular rules (also handles `$removeparam` — no longer merged,
+     * each rule produces its own DNR rule with a param-aware urlFilter
+     * for multi-hop redirect chaining).
      */
     Regular = 0,
 
     /**
-     * FIXME: Should be deleted with converter
-     * `$removeparam` rules.
-     */
-    RemoveParam = 1,
-
-    /**
      * `$removeheader` rules.
      */
-    RemoveHeader = 2,
+    RemoveHeader = 1,
 
     /**
      * `$csp` rules.
      */
-    Csp = 3,
+    Csp = 2,
 
     /**
      * `$badfilter` rules.
@@ -32,9 +28,12 @@ export enum RulesGroup {
      * These rules are not converted to declarative rules, but are used
      * to negate other rules during the conversion process.
      */
-    BadFilter = 4,
+    BadFilter = 3,
 
-    UrlTransform = 5,
+    /**
+     * `$urltransform` rules.
+     */
+    UrlTransform = 4,
 }
 
 /**
@@ -55,10 +54,6 @@ export class RulesGrouper {
      * @returns Rule group ({@link RulesGroup}).
      */
     private static getRuleGroup(rule: Rule): RulesGroup {
-        if (rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
-            return RulesGroup.RemoveParam;
-        }
-
         if (rule.isModifierEnabled(OPTION_NAMES.REMOVEHEADER)) {
             return RulesGroup.RemoveHeader;
         }
@@ -87,7 +82,6 @@ export class RulesGrouper {
      */
     public static groupRules(rules: Rule[]): GroupedRules {
         const groupedRules: GroupedRules = {
-            [RulesGroup.RemoveParam]: [],
             [RulesGroup.RemoveHeader]: [],
             [RulesGroup.BadFilter]: [],
             [RulesGroup.Regular]: [],
