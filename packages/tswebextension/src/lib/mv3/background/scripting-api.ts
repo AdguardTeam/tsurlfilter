@@ -44,6 +44,16 @@ export type ExecuteScriptFuncParams = ExecuteTarget & {
      * The script function to be executed.
      */
     scriptFunction: LocalScriptFunction;
+
+    /**
+     * Optional arguments to pass to the script function.
+     */
+    args?: unknown[];
+
+    /**
+     * The execution world for the script. Defaults to `'MAIN'`.
+     */
+    world?: 'MAIN' | 'ISOLATED';
 };
 
 /**
@@ -185,6 +195,8 @@ export class ScriptingApi {
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
      * @param params.scriptFunction The script function to be executed.
+     * @param params.args Optional arguments to pass to the script function.
+     * @param params.world The execution world. Defaults to `'MAIN'`.
      *
      * @returns Promise that resolves when the script is executed.
      */
@@ -192,6 +204,8 @@ export class ScriptingApi {
         tabId,
         frameId,
         scriptFunction,
+        args,
+        world = 'MAIN',
     }: ExecuteScriptFuncParams): Promise<void> {
         /**
          * This is STEP 4.2: Apply JS functions from pre-built filters — via chrome.scripting API.
@@ -244,8 +258,9 @@ export class ScriptingApi {
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
             func: scriptFunction,
+            args: args ?? [],
             injectImmediately: true,
-            world: 'MAIN',
+            world,
         });
     }
 }

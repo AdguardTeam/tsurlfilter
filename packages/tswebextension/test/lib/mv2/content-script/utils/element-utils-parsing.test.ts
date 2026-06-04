@@ -25,6 +25,12 @@ describe('Element utils - parsing', () => {
         expect(result).not.toBeNull();
         expect(result?.filterId).toBe(0);
         expect(result?.ruleIndex).toBe(1);
+
+        // Encoded-semicolon form as produced by the new emitter (AG-265).
+        result = ElementUtils.parseInfo("'adguard7%3B42'", 'adguard');
+        expect(result).not.toBeNull();
+        expect(result?.filterId).toBe(7);
+        expect(result?.ruleIndex).toBe(42);
     });
 
     it('checks parseExtendedStyleInfo', () => {

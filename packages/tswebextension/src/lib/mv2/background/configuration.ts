@@ -1,5 +1,7 @@
 import * as z from 'zod';
 
+import { type FilterListConversionError } from '@adguard/tsurlfilter';
+
 import { basicFilterValidator, configurationValidator } from '../../common/configuration';
 
 /**
@@ -44,3 +46,10 @@ export type ConfigurationMV2 = z.infer<typeof configurationMV2Validator>;
 export type ConfigurationMV2Context =
     & Omit<ConfigurationMV2, 'filters' | 'allowlist' | 'userrules' | 'trustedDomains'>
     & { filters: number[] };
+
+/**
+ * Configuration result type for MV2 returned by {@link EngineApi.startEngine}.
+ */
+export type ConfigurationResultMV2 = {
+    conversionErrors: readonly FilterListConversionError[];
+};

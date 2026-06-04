@@ -4,6 +4,8 @@ import { z as zod } from 'zod';
 import { RawRuleConverter } from '@adguard/agtree';
 
 import { EMPTY_STRING, LF } from '../common/constants';
+import { getErrorMessage } from '../common/error';
+import { FILTER_LIST_ID_NONE } from '../rules/rule';
 import { findNextLineBreakIndex } from '../utils/string-utils';
 
 /**
@@ -39,6 +41,31 @@ export const conversionDataValidator = zod.object({
 export type ConversionData = zod.infer<typeof conversionDataValidator>;
 
 /**
+ * Represents an error that occurred during raw rule conversion in the filter list.
+ */
+export interface FilterListConversionError {
+    /**
+     * The original rule text that failed to convert.
+     */
+    rule: string;
+
+    /**
+     * The byte offset of the rule in the original content.
+     */
+    offset: number;
+
+    /**
+     * The error message.
+     */
+    message: string;
+
+    /**
+     * The filter ID associated with the error.
+     */
+    filterId: number;
+}
+
+/**
  * FilterList is a class that represents a (converted) filter list.
  * It is designed to provide `O(1)` access to the original filtering rules.
  */
@@ -61,13 +88,26 @@ export class FilterList {
     private prepared: boolean;
 
     /**
+     * Filter list identifier, used to tag conversion errors.
+     */
+    private filterId: number;
+
+    /**
+     * Errors that occurred during raw rule conversion.
+     */
+    private errors: FilterListConversionError[] = [];
+
+    /**
      * Creates a new FilterList instance.
      *
      * @param content Filter list content.
+     * @param filterId Optional filter list identifier. Used to tag conversion errors so callers
+     * can trace an error back to its source filter list.
      * @param data Optional conversion data. If not provided, the filter list will be prepared.
      * If provided, this class trusts the data and does not prepare the filter list.
      */
-    constructor(content: string, data?: ConversionData) {
+    constructor(content: string, filterId?: number, data?: ConversionData) {
+        this.filterId = filterId ?? FILTER_LIST_ID_NONE;
         if (data !== undefined) {
             this.prepared = true;
             this.content = content;
@@ -85,7 +125,7 @@ export class FilterList {
      * @returns Empty converted filter list.
      */
     public static createEmpty(): FilterList {
-        return new FilterList(EMPTY_STRING, FilterList.createEmptyConversionData());
+        return new FilterList(EMPTY_STRING, FILTER_LIST_ID_NONE, FilterList.createEmptyConversionData());
     }
 
     /**
@@ -116,6 +156,15 @@ export class FilterList {
      */
     public getConversionData(): ConversionData {
         return this.data;
+    }
+
+    /**
+     * Returns errors that occurred during raw rule conversion.
+     *
+     * @returns Array of conversion errors.
+     */
+    public getConversionErrors(): readonly FilterListConversionError[] {
+        return this.errors;
     }
 
     /**
@@ -167,7 +216,14 @@ export class FilterList {
                 } else {
                     convertedBuffer += line + lineBreak;
                 }
-            } catch {
+            } catch (e) {
+                this.errors.push({
+                    rule: line,
+                    offset,
+                    message: getErrorMessage(e),
+                    filterId: this.filterId,
+                });
+
                 convertedBuffer += line + lineBreak;
             }
 

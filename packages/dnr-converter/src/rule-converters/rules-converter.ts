@@ -100,6 +100,7 @@ import {
     TooManyUnsafeRulesError,
 } from '../errors/limitation-errors';
 import { type FilterConverterOptions } from '../filter-converter/filter-converter-options';
+import { UrlTransformRulesConverter } from '../grouped-rules-converters/url-transform-converter';
 import { type Rule } from '../rule/rule';
 import { type ScannedFilter } from '../rules-scanner';
 import { type Source } from '../ruleset/source-map';
@@ -148,6 +149,7 @@ export class RulesConverter {
         [RulesGroup.Csp]: CspConverter,
         [RulesGroup.RemoveParam]: RemoveParamConverter,
         [RulesGroup.RemoveHeader]: RemoveHeaderConverter,
+        [RulesGroup.UrlTransform]: UrlTransformRulesConverter,
     };
 
     /**

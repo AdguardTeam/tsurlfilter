@@ -170,6 +170,11 @@ You MUST follow the following rules for EVERY task that you perform:
    schema incompatibility. The version is pinned in `pnpm-workspace.yaml`
    catalogs.
 
+5. **Do not split logger calls.** Keep the entire log message in a single
+   expression (e.g. a template literal) rather than splitting it across
+   multiple lines with string concatenation. This makes log messages easier
+   to grep for in the codebase.
+
 ### III. Testing Discipline
 
 1. **Vitest** is the test runner for all packages. Each package has its own

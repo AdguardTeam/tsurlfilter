@@ -23,7 +23,9 @@ import { ParamsService } from './services/params-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { RedirectsService } from './services/redirects/redirects-service';
 import { RemoveHeadersService } from './services/remove-headers-service';
+import { RemoveParamInjectionService } from './services/remove-param-injection-service';
 import { ResourcesService } from './services/resources-service';
+import { UrlTransformService } from './services/url-transform-service';
 import { StealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
 import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
@@ -56,6 +58,8 @@ export const redirectsService = new RedirectsService(resourcesService);
 
 export const paramsService = new ParamsService(defaultFilteringLog, engineApi);
 
+export const urlTransformService = new UrlTransformService(defaultFilteringLog, engineApi);
+
 export const cspService = new CspService(defaultFilteringLog, engineApi);
 
 export const removeHeadersService = new RemoveHeadersService(defaultFilteringLog, engineApi);
@@ -69,6 +73,12 @@ export const permissionsPolicyService = new PermissionsPolicyService(
 export const cookieFiltering = new CookieFiltering(defaultFilteringLog, engineApi, tabsApi);
 
 export const contentFiltering = new ContentFiltering(engineApi);
+
+export const removeParamInjectionService = new RemoveParamInjectionService(
+    tabsApi,
+    engineApi,
+    defaultFilteringLog,
+);
 
 /**
  * Creates new instance of {@link TsWebExtension}.

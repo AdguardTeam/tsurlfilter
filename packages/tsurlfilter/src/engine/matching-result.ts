@@ -52,6 +52,15 @@ export class MatchingResult {
     public readonly replaceRules: NetworkRule[] | null;
 
     /**
+     * Set of rules modifying the request URL.
+     * See $urltransform modifier.
+     *
+     * Note: $urltransform rules should be applied BEFORE $removeparam rules
+     * by the consumer (e.g. tswebextension).
+     */
+    public readonly urlTransformRules: NetworkRule[] | null;
+
+    /**
      * Set of rules redirecting request
      * See $redirect and $redirect-rule modifiers.
      */
@@ -119,6 +128,7 @@ export class MatchingResult {
         this.cspRules = null;
         this.cookieRules = null;
         this.replaceRules = null;
+        this.urlTransformRules = null;
         this.removeParamRules = null;
         this.removeHeaderRules = null;
         this.redirectRules = null;
@@ -177,6 +187,10 @@ export class MatchingResult {
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Replace)) {
                 (this.replaceRules ??= []).push(rule);
+                continue;
+            }
+            if (rule.isOptionEnabled(NetworkRuleOption.Urltransform)) {
+                (this.urlTransformRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
@@ -467,6 +481,25 @@ export class MatchingResult {
 
         return MatchingResult.filterAdvancedModifierRules(
             this.replaceRules,
+            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()),
+        );
+    }
+
+    /**
+     * Returns an array of urltransform rules.
+     *
+     * Note: $urltransform rules should be applied BEFORE $removeparam rules
+     * by the consumer (e.g. tswebextension).
+     *
+     * @returns An array of urltransform rules.
+     */
+    public getUrlTransformRules(): NetworkRule[] {
+        if (!this.urlTransformRules) {
+            return [];
+        }
+
+        return MatchingResult.filterAdvancedModifierRules(
+            this.urlTransformRules,
             (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()),
         );
     }

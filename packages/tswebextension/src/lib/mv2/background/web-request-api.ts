@@ -63,6 +63,7 @@
  *                                                      │                │
  * If the request is neither blocked                    │                │
  * nor redirected, apply the                            │                │
+ * $urltransform rules, then                            │                │
  * $removeparam rules.                                  │                │
  * In Firefox, if the request                           │                │
  * is not blocked,                                      │                │
@@ -200,8 +201,10 @@ import {
     paramsService,
     permissionsPolicyService,
     removeHeadersService,
+    removeParamInjectionService,
     stealthApi,
     tabsApi,
+    urlTransformService,
 } from './api';
 import { CosmeticApi } from './cosmetic-api';
 import {
@@ -482,8 +485,31 @@ export class WebRequestApi {
 
         if (!response) {
             /**
+             * Apply $urltransform rules first.
+             * $urltransform rules are applied after URL blocking rules
+             * but before $removeparam rules.
+             */
+            const transformResult = urlTransformService.getTransformedUrl(requestId);
+
+            if (transformResult.url) {
+                // For full-URL mode transforms that change the origin,
+                // increment the blocked request count (similar to $redirect).
+                if (transformResult.isOriginChanged) {
+                    tabsApi.incrementTabBlockedRequestCount({
+                        tabId,
+                        referrerUrl,
+                        parentDocumentId,
+                        frameAncestors,
+                    });
+                }
+
+                return { redirectUrl: transformResult.url };
+            }
+
+            /**
              * Strip url by $removeparam rules.
-             * $removeparam rules are applied after URL blocking rules.
+             * $removeparam rules are applied after URL blocking rules
+             * and after $urltransform rules.
              *
              * @see {@link https://github.com/AdguardTeam/CoreLibs/issues/1462}
              */
@@ -865,6 +891,11 @@ export class WebRequestApi {
             return;
         }
 
+        // A new navigation invalidates any existing $removeparam injection.
+        if (frameId === MAIN_FRAME_ID) {
+            removeParamInjectionService.invalidateTab(tabId);
+        }
+
         /**
          * Set in the beginning to let other events know that cosmetic result
          * will be calculated in this event to avoid double calculation.
@@ -920,6 +951,7 @@ export class WebRequestApi {
         );
 
         WebRequestApi.injectCosmetic(details);
+        removeParamInjectionService.injectRemoveParam(details.tabId, details.frameId, details.url);
     }
 
     /**

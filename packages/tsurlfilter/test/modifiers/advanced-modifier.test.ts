@@ -3,10 +3,14 @@ import { describe, expect, it } from 'vitest';
 
 import { CookieModifier } from '../../src/modifiers/cookie-modifier';
 import { CspModifier } from '../../src/modifiers/csp-modifier';
+import { HTTPMethod } from '../../src/modifiers/method-modifier';
 import { RedirectModifier } from '../../src/modifiers/redirect-modifier';
 import { RemoveHeaderModifier } from '../../src/modifiers/remove-header-modifier';
 import { RemoveParamModifier } from '../../src/modifiers/remove-param-modifier';
 import { ReplaceModifier } from '../../src/modifiers/replace-modifier';
+import { UrlTransformModifier } from '../../src/modifiers/url-transform-modifier';
+import { Request } from '../../src/request';
+import { RequestType } from '../../src/request-type';
 import { NetworkRuleOption } from '../../src/rules/network-rule';
 import { createNetworkRule } from '../helpers/rule-creator';
 
@@ -519,5 +523,113 @@ describe('NetworkRule - mv3 validity', () => {
 
         const mv3BadModifier2 = new RemoveHeaderModifier('content-type', false);
         expect(mv3BadModifier2.isValid).toBeFalsy();
+    });
+});
+
+describe('NetworkRule - urltransform rules', () => {
+    it('works if urltransform modifier is correctly parsed', () => {
+        const optionText = '/\\/old\\//\\/new\\//';
+        const rule = createNetworkRule(`||example.org^$urltransform=${optionText}`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(UrlTransformModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(optionText);
+    });
+
+    it('works if urltransform modifier is correctly parsed in regexp rule', () => {
+        const optionText = '/\\/old\\//\\/new\\//i';
+        const rule = createNetworkRule(`/.*/$urltransform=${optionText},domain=example.org`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(UrlTransformModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(optionText);
+    });
+
+    it('works if empty urltransform modifier is correctly parsed for allowlist', () => {
+        const rule = createNetworkRule('@@||example.org^$urltransform', 0);
+        expect(rule).toBeTruthy();
+        expect(rule.isAllowlist()).toBe(true);
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(UrlTransformModifier);
+        expect(rule.getAdvancedModifierValue()).toBe('');
+    });
+
+    it('works if urltransform with capture groups is parsed', () => {
+        const optionText = '/(pref\\/).*\\/(suf)/\\$1\\$2/i';
+        const rule = createNetworkRule(`||example.org^$urltransform=${optionText}`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(UrlTransformModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(optionText);
+    });
+
+    it('works if urltransform is compatible with third-party and important', () => {
+        const rule = createNetworkRule('||example.org^$urltransform=/X/Y/,third-party,important', 0);
+        expect(rule).toBeTruthy();
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(UrlTransformModifier);
+    });
+
+    it('works if urltransform is compatible with domain modifier', () => {
+        const rule = createNetworkRule('||example.org^$urltransform=/X/Y/,domain=example.com', 0);
+        expect(rule).toBeTruthy();
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(UrlTransformModifier);
+    });
+
+    it('does not throw if urltransform is combined with replace', () => {
+        // Since both are advanced modifiers, the second one overwrites advancedModifier.
+        // The Urltransform bit is still set in enabledOptions though.
+        // Currently, $replace does not have a compatibility validator, so this doesn't throw.
+        // This test documents the current behavior.
+        const rule = createNetworkRule('||example.org^$urltransform=/X/Y/,replace=/A/B/', 0);
+        // advancedModifier is overwritten by ReplaceModifier
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(ReplaceModifier);
+    });
+
+    it('applies urltransform with ^ and \\$ anchors from testcases rule', () => {
+        // Testcases rule: ||httpbin.agrd.dev^$urltransform=/^\/status\/500\$/\/status\/200/
+        const rule = createNetworkRule(
+            '||httpbin.agrd.dev^$urltransform=/^\\/status\\/500\\$/\\/status\\/200/',
+            0,
+        );
+        expect(rule).toBeTruthy();
+        const modifier = rule.getAdvancedModifier() as UrlTransformModifier;
+        expect(modifier).toBeInstanceOf(UrlTransformModifier);
+        // Exact path match: /status/500 → /status/200
+        expect(modifier.applyToUrl('https://httpbin.agrd.dev/status/500'))
+            .toBe('https://httpbin.agrd.dev/status/200');
+        // $ anchor prevents matching /status/500/extra
+        expect(modifier.applyToUrl('https://httpbin.agrd.dev/status/500/extra'))
+            .toBe('https://httpbin.agrd.dev/status/500/extra');
+        // ^ anchor prevents matching /prefix/status/500
+        expect(modifier.applyToUrl('https://httpbin.agrd.dev/prefix/status/500'))
+            .toBe('https://httpbin.agrd.dev/prefix/status/500');
+    });
+
+    it('throws if urltransform is combined with removeparam', () => {
+        // removeparam has a compatibility validator that detects the Urltransform bit
+        expect(() => {
+            createNetworkRule('||example.org^$urltransform=/X/Y/,removeparam=p1', 0);
+        }).toThrow();
+    });
+
+    it('marks rule as unsafe', () => {
+        const rule = createNetworkRule('||example.org^$urltransform=/X/Y/', 0);
+        expect(rule.isUnsafe()).toBe(true);
+    });
+
+    it('origin-changing rule does not match POST requests by default', () => {
+        // Testcases rule_2: ||example.org^$urltransform=/^https:\/\/example.org/https:\/\/httpbin.agrd.dev/
+        const rule = createNetworkRule(
+            '||example.org^$urltransform=/^https:\\/\\/example.org/https:\\/\\/httpbin.agrd.dev/',
+            0,
+        );
+        const modifier = rule.getAdvancedModifier() as UrlTransformModifier;
+
+        // The modifier itself transforms URLs correctly
+        expect(modifier.applyToUrl('https://example.org/status/200'))
+            .toBe('https://httpbin.agrd.dev/status/200');
+
+        // But the rule should only match GET requests by default
+        const getReq = new Request('https://example.org/status/200', 'https://testcases.agrd.dev/', RequestType.XmlHttpRequest, HTTPMethod.GET);
+        const postReq = new Request('https://example.org/post', 'https://testcases.agrd.dev/', RequestType.XmlHttpRequest, HTTPMethod.POST);
+
+        expect(rule.match(getReq)).toBe(true);
+        expect(rule.match(postReq)).toBe(false);
     });
 });

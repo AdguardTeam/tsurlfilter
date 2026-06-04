@@ -1,0 +1,35 @@
+define: &common_props
+  description: |-
+    Rules with the `$urltransform` modifier are intended to transform the URL
+    of a request by applying a regular expression-based find/replace on the
+    path and query portion of the URL. The origin (scheme + host + port)
+    cannot be changed.
+  assignable: true
+  negatable: false
+  value_optional: true
+  # TODO: Add a custom validator to validate inner regexps.
+  value_format: |-
+    (?xi)
+      ^
+        \/
+          # the regexp to match by
+          (.+)
+        # separator
+        \/
+          # replacement
+          (.*)?
+        \/
+          # flags
+          ([gimuy]*)?
+      $
+
+adg_os_any:
+  name: urltransform
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#urltransform-modifier
+  <<: *common_props
+
+adg_ext_any:
+  name: urltransform
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#urltransform-modifier
+  <<: *common_props
+

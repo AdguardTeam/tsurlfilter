@@ -11,6 +11,7 @@ export enum RulesGroup {
     Regular = 0,
 
     /**
+     * FIXME: Should be deleted with converter
      * `$removeparam` rules.
      */
     RemoveParam = 1,
@@ -32,6 +33,8 @@ export enum RulesGroup {
      * to negate other rules during the conversion process.
      */
     BadFilter = 4,
+
+    UrlTransform = 5,
 }
 
 /**

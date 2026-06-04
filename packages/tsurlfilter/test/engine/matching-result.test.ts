@@ -1507,3 +1507,67 @@ describe('getResponseHeadersResult', () => {
         expect(headersResult).toMatchNetworkRule(createNetworkRule('||example.org$header=$header=etag:y,important', 0));
     });
 });
+
+describe('MatchingResult constructor handling urltransform rules', () => {
+    it('works if urltransform rules are found', () => {
+        const rules = [
+            createNetworkRule('||example.org^$urltransform=/\\/old\\//\\/new\\//', 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getUrlTransformRules();
+        expect(found.length).toBe(1);
+    });
+
+    it('works if allowlisted urltransform filter with same option is omitted', () => {
+        const ruleTexts = [
+            '||example.org^$urltransform=/X/Y/',
+            '||example.org^$urltransform=/A/B/',
+            '@@||example.org^$urltransform=/X/Y/',
+        ];
+
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getUrlTransformRules();
+        // /X/Y/ is allowlisted by the specific allowlist rule, /A/B/ remains as blocking
+        expect(found.length).toBe(2);
+        expect(found.filter((x) => x.getAdvancedModifier()?.getValue() === '/A/B/')).toHaveLength(1);
+        expect(found.filter((x) => x.getAdvancedModifier()?.getValue() === '/X/Y/')).toHaveLength(1);
+    });
+
+    it('works if @@||example.org^$urltransform disables all urltransform rules', () => {
+        const allowlistRule = '@@||example.org^$urltransform';
+        const ruleTexts = [
+            '||example.org^$urltransform=/X/Y/',
+            allowlistRule,
+        ];
+
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
+        const result = new MatchingResult(rules, null);
+
+        const found = result.getUrlTransformRules();
+        expect(found.length).toBe(1);
+        expect(found[0].isAllowlist()).toBe(true);
+    });
+
+    it('does not interfere with removeparam rules', () => {
+        const rules = [
+            createNetworkRule('||example.org^$urltransform=/X/Y/', 0),
+            createNetworkRule('||example.org^$removeparam=p1', 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getUrlTransformRules().length).toBe(1);
+        expect(result.getRemoveParamRules().length).toBe(1);
+    });
+
+    it('returns empty array when no urltransform rules', () => {
+        const rules = [
+            createNetworkRule('||example.org^', 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getUrlTransformRules()).toEqual([]);
+    });
+});
