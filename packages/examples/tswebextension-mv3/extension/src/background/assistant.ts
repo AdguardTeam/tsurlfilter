@@ -1,4 +1,4 @@
-import { FilterList } from '@adguard/tswebextension/mv3';
+import { FilterList, USER_FILTER_ID } from '@adguard/tswebextension/mv3';
 
 import { appState, logger, TS_WEB_EXTENSION } from './state';
 import { storage, StorageKeys } from './storage';
@@ -12,6 +12,7 @@ export const subscribeAssistantCreateRule = () => {
             try {
                 const originalContent = new FilterList(
                     appState.config!.userrules.content,
+                    USER_FILTER_ID,
                     appState.config!.userrules.conversionData,
                 ).getOriginalContent();
 
@@ -19,7 +20,11 @@ export const subscribeAssistantCreateRule = () => {
                     ? originalContent + '\n' + rule
                     : rule;
 
-                const updatedList = new FilterList(updatedContent);
+                const updatedList = new FilterList(
+                    updatedContent,
+                    USER_FILTER_ID,
+                    appState.config!.userrules.conversionData,
+                );
 
                 appState.config!.userrules = {
                     content: updatedList.getContent(),

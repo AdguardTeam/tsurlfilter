@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
 
-import { FilterList } from '@adguard/tswebextension/mv3';
+import { FilterList, USER_FILTER_ID } from '@adguard/tswebextension/mv3';
 
 import { Message } from '../message';
 
@@ -23,6 +23,7 @@ export const handleExampleMessage = async (message: ExampleMessage) => {
                 filters: cfg.staticFiltersIds,
                 rules: new FilterList(
                     cfg.userrules.content,
+                    USER_FILTER_ID,
                     cfg.userrules.conversionData,
                 ).getOriginalContent(),
             };
