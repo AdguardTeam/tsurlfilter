@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `dnr-converter` binary from `@adguard/dnr-converter` replaces it.
 - `@adguard/re2-wasm` peer dependency (was only required by the old declarative
   converter).
+
 ## [Unreleased]
 
 ### Added
