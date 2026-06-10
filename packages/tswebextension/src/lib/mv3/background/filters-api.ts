@@ -117,11 +117,19 @@ export default class FiltersApi {
      * @returns List of {@link ITrustedFilter} with a lazy content loading feature.
      */
     static createCustomFilters(customFilters: ConfigurationMV3['customFilters']): ITrustedFilter[] {
-        return customFilters.map((f) => new TrustedFilter(
-            f.filterId,
-            async () => new FilterList(f.content, f.conversionData).getContent(),
-            f.trusted,
-        ));
+        return customFilters.map((f) => {
+            const filterList = new FilterList(
+                f.content,
+                f.filterId,
+                f.conversionData,
+            );
+            return new TrustedFilter(
+                f.filterId,
+                filterList.getContent(),
+                f.trusted,
+                filterList.getConversionErrors(),
+            );
+        });
     }
 
     /**

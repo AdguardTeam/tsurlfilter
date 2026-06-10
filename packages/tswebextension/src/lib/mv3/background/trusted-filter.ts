@@ -4,9 +4,10 @@
  */
 
 import { Filter, type IFilter } from '@adguard/dnr-converter';
+import { type FilterListConversionError } from '@adguard/tsurlfilter';
 
 /**
- * Extends {@link IFilter} with a trust flag.
+ * Extends {@link IFilter} with a trust flag and access to conversion errors.
  *
  * Trusted filters (e.g. custom filters explicitly marked as trusted by the
  * user) are allowed to execute JS rules and unsafe cosmetic rules.
@@ -19,13 +20,20 @@ export interface ITrustedFilter extends IFilter {
      * @returns `true` if JS / unsafe rules should be applied.
      */
     isTrusted(): boolean;
+
+    /**
+     * Returns conversion errors that occurred during FilterList preparation.
+     *
+     * @returns Array of conversion errors.
+     */
+    getConversionErrors(): readonly FilterListConversionError[];
 }
 
 /**
  * Concrete implementation of {@link ITrustedFilter}.
  *
- * Wraps the lazy-loaded {@link Filter} from `@adguard/dnr-converter` and
- * adds a per-instance trust flag.
+ * Wraps the pre-loaded {@link Filter} from `@adguard/dnr-converter` and
+ * adds a per-instance trust flag and conversion errors.
  */
 export class TrustedFilter extends Filter implements ITrustedFilter {
     /**
@@ -34,19 +42,36 @@ export class TrustedFilter extends Filter implements ITrustedFilter {
     private readonly trusted: boolean;
 
     /**
-     * Creates a lazy-loaded TrustedFilter.
+     * Conversion errors from FilterList preparation.
+     */
+    private readonly conversionErrors: readonly FilterListConversionError[];
+
+    /**
+     * Creates a pre-loaded TrustedFilter.
      *
      * @param id Numeric filter identifier.
-     * @param getSource Zero-argument async callback that resolves to filter content.
+     * @param content Pre-loaded filter content (one rule per line).
      * @param trusted Whether the filter is trusted by the user.
+     * @param conversionErrors Conversion errors that occurred during FilterList preparation.
      */
-    constructor(id: number, getSource: () => Promise<string>, trusted: boolean) {
-        super(id, getSource);
+    constructor(
+        id: number,
+        content: string,
+        trusted: boolean,
+        conversionErrors?: readonly FilterListConversionError[],
+    ) {
+        super(id, content);
         this.trusted = trusted;
+        this.conversionErrors = conversionErrors ?? [];
     }
 
     /** @inheritdoc */
     public isTrusted(): boolean {
         return this.trusted;
+    }
+
+    /** @inheritdoc */
+    public getConversionErrors(): readonly FilterListConversionError[] {
+        return this.conversionErrors;
     }
 }

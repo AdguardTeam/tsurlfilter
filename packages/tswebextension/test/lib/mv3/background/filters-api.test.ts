@@ -13,7 +13,7 @@ describe('FiltersApi', () => {
             // to verify the error carries the correct filterId through the
             // entire chain:
             //   CustomFilterMV3 → FiltersApi.createCustomFilters() →
-            //   Filter.getContent() → FilterList.getConversionErrors()
+            //   TrustedFilter.getConversionErrors()
             const customFilters: CustomFilterMV3[] = [
                 {
                     filterId: CUSTOM_FILTER_ID,
@@ -27,10 +27,7 @@ describe('FiltersApi', () => {
             expect(filters).toHaveLength(1);
             expect(filters[0].getId()).toBe(CUSTOM_FILTER_ID);
 
-            // Trigger lazy content loading
-            const filterList = await filters[0].getContent();
-
-            const errors = filterList.getConversionErrors();
+            const errors = filters[0].getConversionErrors();
 
             expect(errors).toHaveLength(1);
             expect(errors[0].filterId).toBe(CUSTOM_FILTER_ID);
@@ -55,14 +52,13 @@ describe('FiltersApi', () => {
             expect(filters[0].getId()).toBe(CUSTOM_FILTER_ID);
             expect(filters[0].isTrusted()).toBe(false);
 
-            const filterList = await filters[0].getContent();
-
             // Valid rule → no conversion errors
-            const errors = filterList.getConversionErrors();
+            const errors = filters[0].getConversionErrors();
             expect(errors).toHaveLength(0);
 
             // Content should still be correct
-            expect(filterList.getContent()).toBe('||example.com^');
+            const content = await filters[0].getContent();
+            expect(content).toBe('||example.com^');
         });
 
         it('should assign distinct filterIds to each custom filter', async () => {
@@ -83,11 +79,8 @@ describe('FiltersApi', () => {
 
             expect(filters).toHaveLength(2);
 
-            const list1 = await filters[0].getContent();
-            const list2 = await filters[1].getContent();
-
-            const errors1 = list1.getConversionErrors();
-            const errors2 = list2.getConversionErrors();
+            const errors1 = filters[0].getConversionErrors();
+            const errors2 = filters[1].getConversionErrors();
 
             expect(errors1).toHaveLength(1);
             expect(errors1[0].filterId).toBe(10);

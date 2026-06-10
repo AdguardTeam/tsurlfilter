@@ -7,7 +7,7 @@ import {
     convertUrlTransformToDnr,
     countCaptureGroups,
     parseUrlTransformParts,
-} from '../../../src/rules/declarative-converter/url-transform-converter';
+} from '../../src/url-transform-converter';
 
 describe('parseUrlTransformParts', () => {
     it('parses full-URL pattern with single capture group', () => {
@@ -298,7 +298,7 @@ describe('convertUrlTransformToDnr', () => {
     });
 
     it('converts Case 5: path-only with ^ and \\$ anchors (script)', () => {
-        // ||httpbin.agrd.dev^$script,urltransform=/^\/status\/502$/\/status\/200/
+        // ||httpbin.agrd.dev^$script,urltransform=/^\/status\/502\$/\/status\/200/
         // (same transform as Case 1 but with an explicit $script modifier —
         //  modifier handling is in the converter, but transform itself is the same)
         const results = convertUrlTransformToDnr(
