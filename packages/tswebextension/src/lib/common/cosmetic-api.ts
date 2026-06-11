@@ -628,10 +628,6 @@ export class CosmeticApiCommon {
         } = params;
 
         for (const scriptRule of appliedScriptRules) {
-            if (scriptRule.isGeneric()) {
-                continue;
-            }
-
             const ruleType = scriptRule.getType();
             const { appliedRuleText, originalRuleText } = getRuleTexts(scriptRule, engineApi);
 
