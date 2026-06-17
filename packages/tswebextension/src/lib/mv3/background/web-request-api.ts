@@ -295,8 +295,20 @@ export class WebRequestApi {
 
         const isDocumentOrSubDocumentRequest = isDocumentRequest || requestType === RequestType.SubDocument;
 
+        /**
+         * Speculative (prefetch/prerender) main-frame requests must not touch the
+         * frame's cosmetic state, because cosmetic recalculation is skipped for
+         * them in `CosmeticFrameProcessor.handleFrame`. Resetting the frame context
+         * here would clear the already-prepared cosmetic result and refresh the
+         * frame timestamp, so the subsequent real navigation would be wrongly
+         * treated as a duplicate by `shouldSkipRecalculation` (within
+         * `SAME_FRAME_THRESHOLD_MS`), leaving the frame without cosmetics.
+         */
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
+        const isSpeculativeMainFrame = frameId === MAIN_FRAME_ID && (isPrerenderRequest || !!isPrefetchRequest);
+
         let skipPrecalculation = true;
-        if (isDocumentOrSubDocumentRequest) {
+        if (isDocumentOrSubDocumentRequest && !isSpeculativeMainFrame) {
             skipPrecalculation = CosmeticFrameProcessor.shouldSkipRecalculation(
                 tabId,
                 frameId,
@@ -578,6 +590,24 @@ export class WebRequestApi {
          */
         if (TabsApiCommon.isDocumentLevelFrame(parentFrameId) && !isPrerenderRequest) {
             tabsApi.createTabContextIfNotExists(tabId, url);
+        }
+
+        /**
+         * Same reasoning as in `onBeforeRequest`: a speculative (prerender)
+         * main-frame navigation must not touch the current page's state.
+         * Cosmetic recalculation is skipped for prerenders in
+         * `CosmeticFrameProcessor.handleFrame`, so resetting the frame context
+         * here would clear the prepared cosmetic result and refresh the frame
+         * timestamp, making the subsequent real navigation be wrongly skipped
+         * by `shouldSkipRecalculation` (within `SAME_FRAME_THRESHOLD_MS`).
+         * The `$removeparam` invalidation below must not run either, since
+         * a prerender does not replace the current page context.
+         *
+         * Note: prefetch requests do not need a guard here because they are
+         * plain network fetches and do not emit `webNavigation` events.
+         */
+        if (frameId === MAIN_FRAME_ID && isPrerenderRequest) {
+            return;
         }
 
         if (CosmeticFrameProcessor.shouldSkipRecalculation(tabId, frameId, url, timeStamp)) {

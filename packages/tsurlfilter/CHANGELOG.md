@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `{ lo, hi }` two-word bitfield type aliases and const objects, supporting
   up to 62 independent flag bits (previously limited to 31). No behavioral
   changes.
+- Updated [@adguard/assistant] to `v4.4.12`.
 
 ### Fixed
 

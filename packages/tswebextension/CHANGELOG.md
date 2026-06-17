@@ -31,18 +31,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Firefox freezes when playing Douyin videos, triggered by custom filter rule all.txt [AdguardBrowserExtension#3525].
+- Sites loading-slowly in Firefox 118 when AdGuard extension is enabled [AdguardBrowserExtension#2524].
 - Hit marker text leaking into `::before`/`::after` pseudo-elements for
   CSS inject rules (`#$#`). Native injection now uses a non-inheriting
   `--adguard-hit` custom property (`@property`) instead of `content:`
   [AdguardBrowserExtension#1486].
 - Memory leak during rapid page navigations that could cause extension OOM when a
   page refreshes repeatedly [AdguardBrowserExtension#3547].
+- Filtering log now includes generic (domain-less) scriptlet rules in `JsInject`
+  events instead of silently skipping them [AdguardBrowserExtension#2895].
+- Element hiding rules not being applied on fast page reload in MV3
+  [AdguardBrowserExtension#3537].
 
 [tsurlfilter#188]: https://github.com/AdguardTeam/tsurlfilter/issues/188
 [tsurlfilter#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
 [AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
 [AdguardBrowserExtension#1686]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
+[AdguardBrowserExtension#2895]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2895
 [AdguardBrowserExtension#3547]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3547
+[AdguardBrowserExtension#2524]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2524
+[AdguardBrowserExtension#3525]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3525
+[AdguardBrowserExtension#3537]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3537
 
 ## [4.1.2] - 2026-05-13
 
