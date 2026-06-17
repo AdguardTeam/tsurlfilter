@@ -12,10 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AdGuard Mail Tracking Protection filter list (ID 25) to `chromium-mv3` and
-  `opera-mv3` rulesets [AG-55361].
+  `opera-mv3` rulesets.
 
 [4.2.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.2
-[AG-55361]: https://jira.int.agrd.dev/browse/AG-55361
 
 ## [4.2.1] - 2026-04-24
 
