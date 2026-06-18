@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { FilterList } from '../../../src/filterlist/filter-list';
-import { Filter } from '../../../src/rules/declarative-converter';
+import { Filter, UnavailableFilterSourceError } from '../../../src/rules/declarative-converter';
 import { findNextLineBreakIndex } from '../../../src/utils/string-utils';
 
 describe('Filter', () => {
@@ -31,6 +31,41 @@ describe('Filter', () => {
         const loadedContent = await filter.getContent();
 
         expect(loadedContent.getOriginalContent()).toStrictEqual(text);
+    });
+
+    it('returns an empty filter list without throwing when the source is empty', async () => {
+        const filter = new Filter(
+            1,
+            { getContent: async () => new FilterList('') },
+            true,
+        );
+
+        const loadedContent = await filter.getContent();
+
+        expect(loadedContent.getContent()).toBe('');
+    });
+
+    it('throws UnavailableFilterSourceError when the source fails to load', async () => {
+        expect.assertions(3);
+
+        const cause = new Error('source failure');
+        const filter = new Filter(
+            42,
+            {
+                getContent: async () => {
+                    throw cause;
+                },
+            },
+            true,
+        );
+
+        try {
+            await filter.getContent();
+        } catch (e) {
+            expect(e).toBeInstanceOf(UnavailableFilterSourceError);
+            expect((e as UnavailableFilterSourceError).filterId).toBe(42);
+            expect((e as UnavailableFilterSourceError).cause).toBe(cause);
+        }
     });
 
     it('returns original rule by index', async () => {
