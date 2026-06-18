@@ -467,7 +467,12 @@ the registry for a supported browser. Typical scenarios:
    with per-browser entries (`chromium-mv3`, `opera-mv3`), each containing
    `version`, `rulesetIds`, and `rulesetMetadataKeys`.
 
-4. Bump the package version and update the changelog.
+4. Bump the package version — at least the **minor** version, not just the
+   patch. Filter list versions are timestamp-based (e.g.
+   `4.2.20260617150056`), so a patch bump (e.g. `4.2.3`) would be
+   semver-less than the current stable filter list version. Bumping the
+   minor version (e.g. `4.3.0`) ensures the package version stays greater
+   than any filter list version. Then update the changelog.
 
 5. Commit the updated `validator-data.json` along with the version bump.
 

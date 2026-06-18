@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
 
-import { type IFilter, UnavailableFilterSourceError } from '@adguard/dnr-converter';
+import { type IFilter } from '@adguard/dnr-converter';
 import {
     CompatibilityTypes,
     type CosmeticOption,
@@ -160,6 +160,8 @@ export class EngineApi {
          */
         try {
             const userrules = await userRulesFilter.getContent();
+            // User rules can be empty (e.g. on a fresh install); in that case
+            // the resolved content is simply empty and we skip adding it.
             if (userrules.length > 0) {
                 // Note: rules are already converted at the extension side
                 lists.push({
@@ -172,17 +174,7 @@ export class EngineApi {
             }
         } catch (e) {
             const filterId = userRulesFilter.getId();
-
-            // This dirty hack is needed since Filter check inside itself
-            // for empty loaded content.
-            if (e instanceof UnavailableFilterSourceError
-                && e.cause instanceof Error
-                && e.cause.message.includes('Loaded empty content')) {
-                // User rules can be empty, so just log a trace message and continue.
-                logger.trace(`[tsweb.EngineApi.startEngine]: user rules filter ${filterId} is empty: `, e);
-            } else {
-                logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for user rules filter ${filterId} due to: `, e);
-            }
+            logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for user rules filter ${filterId} due to: `, e);
         }
 
         if (allowlistRulesList) {

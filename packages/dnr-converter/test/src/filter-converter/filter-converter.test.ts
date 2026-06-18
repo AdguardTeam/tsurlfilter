@@ -5,6 +5,8 @@ import {
     NegativeNumberOfRulesError,
     ResourcesPathError,
 } from '../../../src/errors/converter-options-errors';
+import { UnavailableFilterSourceError } from '../../../src/errors/unavailable-sources-errors';
+import { Filter } from '../../../src/filter/filter';
 import { type IFilter } from '../../../src/filter/types';
 import { FilterConverter } from '../../../src/filter-converter/filter-converter';
 
@@ -102,6 +104,53 @@ describe('FilterConverter', () => {
             const declarativeRules = ruleSet.getDeclarativeRules();
             expect(declarativeRules).toHaveLength(2);
             expect(ruleSet.getId()).toBe(FilterConverter.COMBINED_RULESET_ID);
+        });
+    });
+
+    describe('empty filters (fresh install)', () => {
+        // Reproduces AG-55141: on a fresh install the user rules (0), allowlist
+        // (100) and blocking-page trusted domains (-10) dynamic filters are all
+        // empty. They must convert to zero rules without producing errors.
+        it('converts empty filters to zero rules without errors', async () => {
+            const userRules = createFilter([], 0);
+            const allowlist = createFilter([], 100);
+            const trustedDomains = createFilter([], -10);
+
+            const [{ ruleSet, errors }] = await converter.convert(
+                [allowlist, trustedDomains, userRules],
+                { combine: true },
+            );
+            const declarativeRules = ruleSet.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(ruleSet.getRulesCount()).toBe(0);
+            expect(declarativeRules).toHaveLength(0);
+        });
+
+        it('converts non-empty filters while ignoring empty ones, without errors', async () => {
+            const emptyUserRules = createFilter([], 0);
+            const allowlist = createFilter(['||example.org^'], 100);
+
+            const [{ ruleSet, errors }] = await converter.convert(
+                [allowlist, emptyUserRules],
+                { combine: true },
+            );
+            const declarativeRules = ruleSet.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules.length).toBeGreaterThan(0);
+        });
+
+        it('rejects with UnavailableFilterSourceError when a filter source is genuinely unavailable', async () => {
+            const failingFilter = new Filter(
+                100,
+                async () => {
+                    throw new Error('source failure');
+                },
+            );
+
+            await expect(converter.convert([failingFilter], { combine: true }))
+                .rejects.toThrow(UnavailableFilterSourceError);
         });
     });
 

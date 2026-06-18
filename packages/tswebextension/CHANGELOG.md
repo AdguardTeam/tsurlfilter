@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Migrated DNR conversion imports from `@adguard/tsurlfilter/es/declarative-converter`
   to `@adguard/dnr-converter`.
+- Removed the `UnavailableFilterSourceError` "empty content" workaround in
+  `EngineApi.startEngine()`, since empty user-rules filters now resolve to empty
+  content instead of throwing (AG-55141).
 - `TsWebExtension.start()` and `TsWebExtension.configure()` now return
   `{ conversionErrors: FilterListConversionError[] }` instead of `void`,
   surfacing filter list rule conversion errors to callers.

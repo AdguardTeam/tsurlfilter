@@ -11,3 +11,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial release.
+- Regression tests covering conversion of empty filters to zero rules without
+  errors, and rejection on genuinely unavailable filter sources (AG-55141).
