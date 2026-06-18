@@ -99,6 +99,16 @@ You MUST follow the following rules for EVERY task that you perform:
 - You MUST NOT modify auto-generated sections (e.g. "Included filter lists" in
   `README.md`). Use `pnpm build:docs` to regenerate them instead.
 
+- When a new filter list is added to `dnr-rulesets`, you MUST bump at least
+  the minor version of the package, not just the patch version. Filter list
+  versions are timestamp-based (e.g. `4.2.20260617150056`), so a patch bump
+  (e.g. `4.2.3`) would be semver-less than the current stable filter list
+  version. Bumping the minor version (e.g. `4.3.0`) ensures the package
+  version stays greater than any filter list version. You MUST also update
+  `tasks/validator-data.json` so that `pnpm validate:assets` passes — see the
+  "Managing `validator-data.json`" section in `README.md` for the full
+  procedure.
+
 ## Code Guidelines
 
 ### I. Architecture
