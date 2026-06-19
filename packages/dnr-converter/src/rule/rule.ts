@@ -159,11 +159,29 @@ const REMOVEPARAM_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
 /**
  * Modifier names that are compatible with `$permissions`.
  * Ported from tsurlfilter's `PermissionsCompatibleOptions`.
+ *
+ * `$permissions` is compatible with `$important`, `$badfilter`, `$domain`,
+ * and all content-type modifiers (`$subdocument`, `$script`, `$stylesheet`,
+ * etc.). This mirrors the runtime behavior of tsurlfilter's `NetworkRule`,
+ * which tracks content-type and `$domain` modifiers separately from the
+ * option bitmask used by `validatePermissionsRule`.
  */
 const PERMISSIONS_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
     OPTION_NAMES.PERMISSIONS,
     OPTION_NAMES.IMPORTANT,
     OPTION_NAMES.BADFILTER,
+    OPTION_NAMES.DOMAIN,
+    OPTION_NAMES.SUBDOCUMENT,
+    OPTION_NAMES.SCRIPT,
+    OPTION_NAMES.IMAGE,
+    OPTION_NAMES.STYLESHEET,
+    OPTION_NAMES.OBJECT,
+    OPTION_NAMES.XMLHTTPREQUEST,
+    OPTION_NAMES.MEDIA,
+    OPTION_NAMES.FONT,
+    OPTION_NAMES.WEBSOCKET,
+    OPTION_NAMES.OTHER,
+    OPTION_NAMES.PING,
 ]);
 
 /**

@@ -692,7 +692,7 @@ describe('RuleConverter', () => {
                 },
             });
 
-            // Case 1: Decoding URI component is not needed
+            // Case 2: Decoding URI component is not needed
             const networkRule2 = createRuleMock({
                 enabledOptions: [OPTION_NAMES.REMOVEPARAM],
                 advancedModifierValue: 'param$@',
@@ -706,6 +706,76 @@ describe('RuleConverter', () => {
                     },
                 },
             });
+        });
+
+        it('splits pipe-separated values into multiple removeParams', () => {
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
+                advancedModifierValue: 'utm_source|utm_medium',
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const action = RegularRuleConverter.getRemoveParamRedirectAction(rule);
+            expect(action).toEqual({
+                transform: {
+                    queryTransform: {
+                        removeParams: ['utm_source', 'utm_medium'],
+                    },
+                },
+            });
+        });
+
+        it('splits pipe-separated values with URI encoding', () => {
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
+                advancedModifierValue: 'utm_source|utm_medium|fbclid$@',
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const action = RegularRuleConverter.getRemoveParamRedirectAction(rule);
+            expect(action).toEqual({
+                transform: {
+                    queryTransform: {
+                        removeParams: ['utm_source', 'utm_medium', decodeURIComponent('fbclid$@')],
+                    },
+                },
+            });
+        });
+
+        it('handles single value unchanged (no pipe)', () => {
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
+                advancedModifierValue: 'fbclid',
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const action = RegularRuleConverter.getRemoveParamRedirectAction(rule);
+            expect(action).toEqual({
+                transform: {
+                    queryTransform: {
+                        removeParams: ['fbclid'],
+                    },
+                },
+            });
+        });
+
+        it('returns null if a param value cannot be URI-decoded', () => {
+            // `%zz` is not valid percent-encoding, so decodeURIComponent() throws.
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
+                advancedModifierValue: '%zz',
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const action = RegularRuleConverter.getRemoveParamRedirectAction(rule);
+            expect(action).toBeNull();
+        });
+
+        it('returns null if any pipe-separated segment cannot be URI-decoded', () => {
+            // Second segment contains invalid percent-encoding.
+            const rule = createRuleMock({
+                enabledOptions: [OPTION_NAMES.REMOVEPARAM],
+                advancedModifierValue: 'utm_source|%zz',
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const action = RegularRuleConverter.getRemoveParamRedirectAction(rule);
+            expect(action).toBeNull();
         });
     });
 

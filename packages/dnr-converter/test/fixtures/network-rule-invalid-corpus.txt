@@ -62,8 +62,8 @@
 ! === $removeparam with incompatible modifier $redirect ===
 ||example.com^$removeparam=utm,redirect=noopjs
 
-! === $permissions with incompatible content-type $script ===
-||example.com^$permissions=camera=(),script
+! === $permissions with incompatible modifier $third-party ===
+||example.com^$permissions=camera=(),third-party
 
 ! === $header combined with request-side $removeheader ===
 ||example.com^$header=set-cookie,removeheader=request:set-cookie

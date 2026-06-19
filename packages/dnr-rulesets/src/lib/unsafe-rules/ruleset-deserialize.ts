@@ -57,9 +57,10 @@ export async function loadRulesetAndFilter(
         data: {
             regexpRulesCount,
             unsafeRulesCount,
-            rulesCount,
+            safeRulesCount,
             ruleSetHashMapRaw,
             badFilterRulesRaw,
+            unsafeRules,
         },
         ruleSetContentProvider,
     } = await RulesetWithSourceMap.deserialize(
@@ -81,12 +82,13 @@ export async function loadRulesetAndFilter(
 
     const ruleSet = new RulesetWithSourceMap(
         ruleSetId,
-        rulesCount,
+        safeRulesCount,
         unsafeRulesCount,
         regexpRulesCount,
         ruleSetContentProvider,
         badFilterRules,
         rulesHashMap,
+        unsafeRules,
     );
 
     console.log(`Loaded ruleset with ID ${id} from ${rulesetPath}`);

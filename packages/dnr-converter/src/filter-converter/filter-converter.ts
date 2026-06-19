@@ -497,12 +497,13 @@ export class FilterConverter {
         const rulesHashMap = new RulesHashMap(listOfRulesWithHash);
 
         const unsafeRulesCount = declarativeRules.filter((r) => !isSafeRule(r)).length;
+        const safeRulesCount = declarativeRules.length - unsafeRulesCount;
 
         const regexRulesCount = declarativeRules.filter((r) => RulesConverter.isRegexRule(r)).length;
 
         const ruleSet = new RulesetWithSourceMap(
             ruleSetId,
-            declarativeRules.length,
+            safeRulesCount,
             unsafeRulesCount,
             regexRulesCount,
             ruleSetContent,

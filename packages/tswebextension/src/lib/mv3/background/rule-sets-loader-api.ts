@@ -428,7 +428,7 @@ export class RuleSetsLoaderApi {
             data: {
                 regexpRulesCount,
                 unsafeRulesCount,
-                rulesCount,
+                safeRulesCount,
                 unsafeRules,
                 badFilterRulesRaw,
                 ruleSetHashMapRaw,
@@ -454,7 +454,7 @@ export class RuleSetsLoaderApi {
 
         const ruleset = new RulesetWithSourceMap(
             ruleSetId,
-            rulesCount,
+            safeRulesCount,
             unsafeRulesCount,
             regexpRulesCount,
             ruleSetContentProvider,

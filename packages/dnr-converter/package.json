@@ -1,6 +1,6 @@
 {
     "name": "@adguard/dnr-converter",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "description": "A converter that transforms adblock-style filtering rules into rules compatible with the Declarative Net Request (DNR) API.",
     "main": "dist/index.js",
     "module": "dist/index.js",

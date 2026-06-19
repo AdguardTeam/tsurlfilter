@@ -40,6 +40,8 @@ const mainConfig = {
     output: {
         ...commonOutputConfig,
         dir: OUTPUT_PATH,
+        preserveModules: true,
+        preserveModulesRoot: 'src',
     },
     plugins: [
         // Register NodeJS built-in modules as external

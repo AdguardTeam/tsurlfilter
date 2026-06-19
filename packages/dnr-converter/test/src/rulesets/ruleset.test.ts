@@ -40,10 +40,25 @@ describe('Ruleset (simple)', () => {
             expect(rs.getId()).toBe('rs-1');
         });
 
-        it('returns rules count from declarativeRules length', () => {
+        it('returns safe rules count (excludes unsafe rules)', () => {
             const rules = [makeRule(1, '||example.com^'), makeRule(2, '||example.net^')];
             const rs = new Ruleset('rs-1', rules);
-            expect(rs.getRulesCount()).toBe(2);
+            expect(rs.getSafeRulesCount()).toBe(2);
+        });
+
+        it('excludes unsafe rules from the rules count', () => {
+            const unsafeRule: DeclarativeRule = {
+                id: 10,
+                priority: 1,
+                action: {
+                    type: RuleActionType.ModifyHeaders,
+                    responseHeaders: [{ header: 'x-frame-options', operation: HeaderOperation.Remove }],
+                },
+                condition: { urlFilter: '||unsafe.com^' },
+            };
+            const rs = new Ruleset('rs-1', [makeRule(1, '||example.com^'), unsafeRule]);
+            // 2 total declarative rules, 1 of them unsafe → safe count is 1
+            expect(rs.getSafeRulesCount()).toBe(1);
         });
 
         it('returns unsafe rules count from declarative rules', () => {
@@ -98,7 +113,7 @@ describe('Ruleset (simple)', () => {
             const restored = Ruleset.deserialize('rs-1', json);
 
             expect(restored.getId()).toBe('rs-1');
-            expect(restored.getRulesCount()).toBe(2);
+            expect(restored.getSafeRulesCount()).toBe(2);
             expect(restored.getDeclarativeRules()).toStrictEqual(rules);
         });
 

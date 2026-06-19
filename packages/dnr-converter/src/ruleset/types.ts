@@ -45,11 +45,11 @@ export type UpdateStaticRulesOptions = {
  */
 export interface IBaseRuleset {
     /**
-     * Number of converted declarative rules.
+     * Number of safe declarative rules (excludes unsafe rules).
      *
-     * @returns Number of converted declarative rules.
+     * @returns Number of safe declarative rules.
      */
-    getRulesCount(): number;
+    getSafeRulesCount(): number;
 
     /**
      * Number of converted declarative unsafe rules.

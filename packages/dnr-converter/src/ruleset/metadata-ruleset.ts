@@ -8,7 +8,7 @@
 
 import * as v from 'valibot';
 
-import { FilterConverter } from '../filter-converter/filter-converter';
+import { getRuleSetId } from '../utils/ruleset-utils';
 import { serializeJson } from '../utils/string';
 
 import { createMetadataRule, type MetadataRule } from './metadata-rule';
@@ -54,8 +54,10 @@ type Metadata = v.InferOutput<typeof metadataValidator>;
 /**
  * Metadata rule validator.
  *
- * @note We use `v.looseObject` to allow additional fields in the object
- * (equivalent of Zod's `.passthrough()`).
+ * Uses `v.looseObject` to allow additional Chrome DNR fields (`id`,
+ * `priority`, `action`, `condition` etc.) that are outside our control.
+ * The nested `metadata` field uses `v.strictObject()` so unknown metadata
+ * keys are rejected at deserialization time.
  */
 const metadataRuleValidator = v.looseObject({
     metadata: metadataValidator,
@@ -106,7 +108,7 @@ export class MetadataRuleset {
     // Note: we prefer `instance.getId()` over `MetadataRuleset.getId(instance)` for consistency.
     // eslint-disable-next-line class-methods-use-this
     public getId(): string {
-        return FilterConverter.getRuleSetId(METADATA_RULESET_ID);
+        return getRuleSetId(METADATA_RULESET_ID);
     }
 
     /**

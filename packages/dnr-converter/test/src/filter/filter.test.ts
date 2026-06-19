@@ -172,5 +172,33 @@ describe('Filter', () => {
             expect(await filter.getRuleByIndex(0)).toBe('||a.com^');
             expect(await filter.getRuleByIndex(9)).toBe('||b.com^');
         });
+
+        it('strips trailing \\r from \\r\\n line endings', async () => {
+            const filter = new Filter(1, async () => '||a.com^\r\n||b.com^');
+            expect(await filter.getRuleByIndex(0)).toBe('||a.com^');
+        });
+
+        it('returns the second line at correct offset with \\r\\n endings', async () => {
+            // '||a.com^' = 8 chars, '\r\n' at offsets 8-9, '||b.com^' starts at offset 10.
+            const filter = new Filter(1, async () => '||a.com^\r\n||b.com^');
+            expect(await filter.getRuleByIndex(10)).toBe('||b.com^');
+        });
+
+        it('handles mixed \\r\\n and \\n line endings', async () => {
+            const filter = new Filter(1, async () => '||a.com^\r\n||b.com^\n||c.com^');
+            expect(await filter.getRuleByIndex(0)).toBe('||a.com^');
+            // '||a.com^'=8 + '\r\n'=2 → next starts at 10
+            expect(await filter.getRuleByIndex(10)).toBe('||b.com^');
+            // '||b.com^'=8 + '\n'=1 → next starts at 19
+            expect(await filter.getRuleByIndex(19)).toBe('||c.com^');
+        });
+
+        it('does not strip standalone \\r not followed by \\n', async () => {
+            // Standalone \r (not part of \r\n) should remain in the rule text.
+            const filter = new Filter(1, async () => '||a.com^\r\nrule with \r standalone');
+            expect(await filter.getRuleByIndex(0)).toBe('||a.com^');
+            // offset: 8 for first line + 2 for \r\n = 10
+            expect(await filter.getRuleByIndex(10)).toBe('rule with \r standalone');
+        });
     });
 });

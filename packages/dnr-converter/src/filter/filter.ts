@@ -21,9 +21,10 @@ import { type IFilter } from './types';
  */
 export class Filter implements IFilter {
     /**
-     * Line separator used to split filter content into rule lines.
+     * Regex that matches both \n and \r\n line endings when splitting
+     * filter content into individual rules.
      */
-    private static readonly NEWLINE = '\n';
+    private static readonly LINE_SPLITTER = /\r?\n/;
 
     /**
      * ID of filter.
@@ -119,12 +120,19 @@ export class Filter implements IFilter {
         // character offset at which a rule's text begins in the raw filter string.
         if (this.ruleByOffset === null) {
             const map = new Map<number, string>();
-            const lines = content.split(Filter.NEWLINE);
+            // Use regex that handles both \n and \r\n line endings.
+            const lines = content.split(Filter.LINE_SPLITTER);
             let offset = 0;
             for (const line of lines) {
                 map.set(offset, line);
-                // +1 accounts for the '\n' separator stripped by split.
-                offset += line.length + 1;
+                // Determine the actual separator length by peeking
+                // at the raw content after the line.
+                const afterLine = offset + line.length;
+                let separatorLength = 0;
+                if (afterLine < content.length) {
+                    separatorLength = content[afterLine] === '\r' ? 2 : 1;
+                }
+                offset += line.length + separatorLength;
             }
             this.ruleByOffset = map;
         }

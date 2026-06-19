@@ -5,22 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.3.0]
+## Unreleased
 
 ### Changed
 
+- Updated `validator-data.json` to reflect the rename of `rulesCount` to
+  `safeRulesCount` in metadata keys produced by `@adguard/dnr-converter`.
 - Replaced `@adguard/tsurlfilter` DNR APIs with `@adguard/dnr-converter`.
   All DNR-related imports now use the standalone `@adguard/dnr-converter`
   package. The `@adguard/tsurlfilter` dependency has been removed.
-
-## [4.3.0] - 2026-06-17
 
 ### Added
 
 - AdGuard Mail Tracking Protection filter list (ID 25) to `chromium-mv3` and
   `opera-mv3` rulesets.
-
-[4.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.3.0
 
 ## [4.2.1] - 2026-04-24
 

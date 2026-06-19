@@ -48,6 +48,11 @@ export class Ruleset implements IRuleset {
     private readonly declarativeRules: DeclarativeRule[];
 
     /**
+     * Number of safe declarative rules (excludes unsafe rules).
+     */
+    private readonly safeRulesCount: number;
+
+    /**
      * Number of converted declarative unsafe rules.
      */
     private readonly unsafeRulesCount: number;
@@ -69,6 +74,7 @@ export class Ruleset implements IRuleset {
     ) {
         this.id = id;
         this.declarativeRules = declarativeRules;
+        this.safeRulesCount = declarativeRules.filter((r) => isSafeRule(r)).length;
         this.unsafeRulesCount = declarativeRules.filter((r) => !isSafeRule(r)).length;
         this.regexpRulesCount = declarativeRules
             .filter(({ condition: { regexFilter } }) => regexFilter !== undefined)
@@ -81,8 +87,8 @@ export class Ruleset implements IRuleset {
     }
 
     /** @inheritdoc */
-    public getRulesCount(): number {
-        return this.declarativeRules.length;
+    public getSafeRulesCount(): number {
+        return this.safeRulesCount;
     }
 
     /** @inheritdoc */

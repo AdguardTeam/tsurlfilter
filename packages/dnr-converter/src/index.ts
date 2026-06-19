@@ -34,7 +34,7 @@ export {
 export { MetadataRuleset, METADATA_RULESET_ID } from './ruleset/metadata-ruleset';
 export { type HttpHeaderMatcher, Rule } from './rule/rule';
 export { RuleDeclarativeValidator } from './rule/rule-validator';
-export { type DeclarativeRule, ResourceType } from './declarative-rule';
+export { type DeclarativeRule, ResourceType, RuleActionType } from './declarative-rule';
 export {
     type ConversionError,
     EmptyResourcesError,

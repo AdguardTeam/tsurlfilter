@@ -168,6 +168,12 @@ export class RegularRuleConverter {
     private static readonly URL_FILTER_SPECIAL_CHARS = /[|*^]/;
 
     /**
+     * Pipe character used as a separator in $removeparam multi-value rules,
+     * e.g. `$removeparam=utm_source|utm_medium`.
+     */
+    private static readonly PIPE_SEPARATOR = '|';
+
+    /**
      * String path to web accessible resources, relative to the extension root dir.
      * Should start with leading slash and end without trailing slash (`'/'`).
      */
@@ -231,11 +237,19 @@ export class RegularRuleConverter {
     }
 
     /**
-     * Retrieves the remove param redirect action for the provided {@link Rule}.
+     * Returns a redirect action for a `$removeparam` rule.
+     *
+     * Pipe-separated values (e.g. `utm_source|utm_medium`) are
+     * split into individual `removeParams` entries.
+     *
+     * In case if a param is an encoded URI, it is decoded first:
+     * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014.
      *
      * @param rule {@link Rule} to get action for.
      *
-     * @returns Redirect action, which describes where and how the request should be redirected.
+     * @returns Redirect action, or `null` if the rule does not have a
+     * `$removeparam` modifier, its value is `null`, or a param value cannot be
+     * URI-decoded (in which case augmentation is skipped).
      */
     private static getRemoveParamRedirectAction(rule: Rule): Redirect | null {
         if (!rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
@@ -251,15 +265,21 @@ export class RegularRuleConverter {
             return { transform: { query: '' } };
         }
 
+        // Split on pipe to support multiple param names in a single rule.
+        // If any segment contains invalid percent-encoding, decoding throws;
+        // skip augmentation by returning null, consistent with getRemoveParamToken().
+        let removeParams: string[];
+        try {
+            removeParams = value
+                .split(RegularRuleConverter.PIPE_SEPARATOR)
+                .map((p) => decodeURIComponent(p));
+        } catch {
+            return null;
+        }
+
         return {
             transform: {
-                queryTransform: {
-                    /**
-                     * In case if param is encoded URI we need to decode it first:
-                     * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014.
-                     */
-                    removeParams: [decodeURIComponent(value)],
-                },
+                queryTransform: { removeParams },
             },
         };
     }
@@ -275,6 +295,7 @@ export class RegularRuleConverter {
      * - empty or null param value (strip-all-params rule).
      * - negation (`~param`).
      * - regex (`/pattern/`).
+     * - pipe-separated values (`a|b`) — cannot generate a single token.
      * - whitespace-only param name.
      * - value cannot be URI-decoded.
      * - param name contains urlFilter special characters (`|`, `*`, `^`).
@@ -286,8 +307,13 @@ export class RegularRuleConverter {
     private static getRemoveParamToken(rule: Rule): string | null {
         const value = rule.advancedModifierValue;
 
-        // Skip augmentation for strip-all, negation, and regex params.
-        if (!value || value.startsWith(MASK_NEGATE_CHARACTER) || value.startsWith(MASK_REGEX_RULE)) {
+        // Skip augmentation for strip-all, negation, regex, and pipe-separated params.
+        if (
+            !value
+            || value.startsWith(MASK_NEGATE_CHARACTER)
+            || value.startsWith(MASK_REGEX_RULE)
+            || value.includes(RegularRuleConverter.PIPE_SEPARATOR)
+        ) {
             return null;
         }
 

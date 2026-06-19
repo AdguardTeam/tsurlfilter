@@ -155,11 +155,34 @@ export async function excludeUnsafeRules(params: ExcludeUnsafeRulesOptions): Pro
     const checksums: Record<string, string> = {};
 
     const tasks = rulesets.map(async (ruleset) => {
+        // Get unsafe rules from the metadata (set by a previous
+        // excludeUnsafeRules run) and from the declarative rules
+        // (present on the first run before unsafe rules are moved).
+        const unsafeRulesFromMetadata = await ruleset.getUnsafeRules();
+
         const declarativeRules = await ruleset.getDeclarativeRules();
 
-        const unsafeDeclarativeRules = declarativeRules.filter((rule: DeclarativeRule) => {
+        const unsafeDeclarativeRulesFromRuleset = declarativeRules.filter((rule: DeclarativeRule) => {
             return !isSafeRule(rule);
         });
+
+        // Merge unsafe rules from both sources, deduplicating by rule ID for make
+        // excluding idempotent (running excludeUnsafeRules multiple times should
+        // not cause issues with already excluded rules).
+        const seenIds = new Set<number>();
+        const unsafeDeclarativeRules: DeclarativeRule[] = [];
+        for (const rule of unsafeRulesFromMetadata) {
+            if (!seenIds.has(rule.id)) {
+                seenIds.add(rule.id);
+                unsafeDeclarativeRules.push(rule);
+            }
+        }
+        for (const rule of unsafeDeclarativeRulesFromRuleset) {
+            if (!seenIds.has(rule.id)) {
+                seenIds.add(rule.id);
+                unsafeDeclarativeRules.push(rule);
+            }
+        }
 
         const processedRuleset = await ruleset.serializeCompact(
             prettifyJson,

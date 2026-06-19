@@ -153,7 +153,7 @@ export type SerializedRulesetLazyData = {
 const serializedRuleSetDataValidator = strictObjectByType<SerializedRulesetData>({
     regexpRulesCount: v.number(),
     unsafeRulesCount: v.number(),
-    rulesCount: v.number(),
+    safeRulesCount: v.number(),
     ruleSetHashMapRaw: v.string(),
     badFilterRulesRaw: v.array(v.string()),
     unsafeRules: v.optional(v.array(DeclarativeRuleValidator)),
@@ -165,7 +165,7 @@ const serializedRuleSetDataValidator = strictObjectByType<SerializedRulesetData>
 export type SerializedRulesetData = {
     regexpRulesCount: number;
     unsafeRulesCount: number;
-    rulesCount: number;
+    safeRulesCount: number;
     ruleSetHashMapRaw: string;
     badFilterRulesRaw: string[];
     unsafeRules?: DeclarativeRule[];
@@ -225,12 +225,13 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     private declarativeRules: DeclarativeRule[] = [];
 
     /**
-     * Number of converted declarative rules.
+     * Number of safe declarative rules (unsafe rules are stored separately
+     * and not counted here).
      *
      * This is needed for the lazy version of the rule set,
      * when content not loaded.
      */
-    private readonly rulesCount: number = 0;
+    private readonly safeRulesCount: number = 0;
 
     /**
      * Converted declarative unsafe rules.
@@ -294,7 +295,8 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      * Constructor of RulesetWithSourceMap.
      *
      * @param id Id of rule set.
-     * @param rulesCount Number of rules.
+     * @param safeRulesCount Number of safe declarative rules
+     * (unsafe rules are tracked separately via {@link unsafeRulesCount}).
      * @param unsafeRulesCount Number of unsafe rules.
      * @param regexpRulesCount Number of regexp rules.
      * @param ruleSetContentProvider Rule set content provider.
@@ -304,7 +306,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      */
     constructor(
         id: string,
-        rulesCount: number,
+        safeRulesCount: number,
         unsafeRulesCount: number,
         regexpRulesCount: number,
         ruleSetContentProvider: RulesetContentProvider,
@@ -313,7 +315,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         unsafeRules?: DeclarativeRule[],
     ) {
         this.id = id;
-        this.rulesCount = rulesCount;
+        this.safeRulesCount = safeRulesCount;
         this.unsafeRulesCount = unsafeRulesCount;
         this.regexpRulesCount = regexpRulesCount;
         this.ruleSetContentProvider = ruleSetContentProvider;
@@ -343,8 +345,8 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     }
 
     /** @inheritdoc */
-    public getRulesCount(): number {
-        return this.rulesCount;
+    public getSafeRulesCount(): number {
+        return this.safeRulesCount;
     }
 
     /** @inheritdoc */
@@ -660,18 +662,13 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      * @returns Serialized rule set data.
      */
     private getSerializedRuleSetData(unsafeRules?: DeclarativeRule[]): SerializedRulesetData {
-        let { rulesCount } = this;
-
-        // If unsaferRules is provided, we should not count them in
-        // the rules count, since they are moved to the metadata rule.
-        if (unsafeRules) {
-            rulesCount -= unsafeRules.length;
-        }
-
         return {
             regexpRulesCount: this.regexpRulesCount,
             unsafeRulesCount: this.unsafeRulesCount,
-            rulesCount,
+            // `safeRulesCount` in serialized data represents safe declarative
+            // rules only — unsafe rules are tracked in `unsafeRulesCount`
+            // and stored in the `unsafeRules` array (metadata).
+            safeRulesCount: this.safeRulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
             badFilterRulesRaw: this.badFilterRules.map((r) => r.getText()),
             unsafeRules,

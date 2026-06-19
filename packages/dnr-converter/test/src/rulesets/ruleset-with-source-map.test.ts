@@ -125,7 +125,7 @@ describe('RuleSet', () => {
 
         const ruleSet = await createRuleSet(content);
 
-        expect(ruleSet.getRulesCount()).toStrictEqual(2);
+        expect(ruleSet.getSafeRulesCount()).toStrictEqual(2);
     });
 
     it('returns bad filter rules from constructor', () => {
@@ -169,7 +169,7 @@ describe('RuleSet', () => {
 
         const ruleSet = await createRuleSet(content, filterId);
 
-        expect(ruleSet.getRulesCount()).toStrictEqual(1);
+        expect(ruleSet.getSafeRulesCount()).toStrictEqual(1);
 
         const [declarativeRule] = await ruleSet.getDeclarativeRules();
         const originalRules = await ruleSet.getRulesById(declarativeRule.id);
@@ -211,7 +211,7 @@ describe('RuleSet', () => {
             data: {
                 regexpRulesCount,
                 unsafeRulesCount,
-                rulesCount,
+                safeRulesCount,
                 ruleSetHashMapRaw,
                 badFilterRulesRaw,
             },
@@ -237,7 +237,7 @@ describe('RuleSet', () => {
 
         const deserializedRuleSet = new RulesetWithSourceMap(
             id,
-            rulesCount,
+            safeRulesCount,
             unsafeRulesCount,
             regexpRulesCount,
             ruleSetContentProvider,
@@ -256,7 +256,7 @@ describe('RuleSet', () => {
         expect(d1).toStrictEqual(d2);
 
         // check counters
-        expect(deserializedRuleSet.getRulesCount()).toStrictEqual(ruleSet.getRulesCount());
+        expect(deserializedRuleSet.getSafeRulesCount()).toStrictEqual(ruleSet.getSafeRulesCount());
 
         // check source map works
         const [dRuleId] = await deserializedRuleSet.getDeclarativeRulesIdsBySourceRuleIndex({
@@ -444,7 +444,7 @@ describe('RuleSet', () => {
             const validData: SerializedRulesetData = {
                 regexpRulesCount: 0,
                 unsafeRulesCount: 0,
-                rulesCount: 0,
+                safeRulesCount: 0,
                 ruleSetHashMapRaw: '[]',
                 badFilterRulesRaw: [],
             };

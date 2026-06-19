@@ -57,7 +57,7 @@
         "rulesetMetadataKeys": [
             "regexpRulesCount",
             "unsafeRulesCount",
-            "rulesCount",
+            "safeRulesCount",
             "ruleSetHashMapRaw",
             "badFilterRulesRaw"
         ]
@@ -120,7 +120,7 @@
         "rulesetMetadataKeys": [
             "regexpRulesCount",
             "unsafeRulesCount",
-            "rulesCount",
+            "safeRulesCount",
             "ruleSetHashMapRaw",
             "badFilterRulesRaw"
         ]

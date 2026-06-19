@@ -99,7 +99,7 @@ describe('FilterConverter (withSourceMap: true)', () => {
             ]);
             const [{ ruleSet }] = await converter.convert([filter], withSourceMapOptions);
 
-            expect(ruleSet.getRulesCount()).toStrictEqual(2);
+            expect(ruleSet.getSafeRulesCount()).toStrictEqual(2);
         });
 
         it('does not throw on conversion errors', async () => {
@@ -111,7 +111,7 @@ describe('FilterConverter (withSourceMap: true)', () => {
             const [{ ruleSet }] = await converter.convert([filter], withSourceMapOptions);
 
             // At least the valid rule should be converted
-            expect(ruleSet.getRulesCount()).toBeGreaterThanOrEqual(1);
+            expect(ruleSet.getSafeRulesCount()).toBeGreaterThanOrEqual(1);
         });
 
         it('returns separate results per filter', async () => {

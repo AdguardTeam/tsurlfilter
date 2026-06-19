@@ -219,10 +219,20 @@ describe('Rule', () => {
             }).toThrow();
         });
 
-        it('throws for $permissions combined with incompatible modifier $script', () => {
+        it('throws for $permissions combined with incompatible modifier $third-party', () => {
             expect(() => {
-                Rule.createFromText(1, 0, '||example.com^$permissions=camera=(),script');
+                Rule.createFromText(1, 0, '||example.com^$permissions=camera=(),third-party');
             }).toThrow();
+        });
+
+        it('allows $permissions combined with $domain and content types', () => {
+            expect(() => {
+                Rule.createFromText(
+                    1,
+                    0,
+                    '||example.com^$permissions=geolocation=(self "https://example.com"),subdocument,domain=example.com',
+                );
+            }).not.toThrow();
         });
 
         it('throws for $header combined with request-side $removeheader', () => {

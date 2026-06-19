@@ -188,7 +188,7 @@ const converter = new FilterConverter();
 const [{ ruleSet, errors, limitations }] = await converter.convert([filter]);
 
 console.log(ruleSet.getDeclarativeRules()); // DeclarativeRule[]
-console.log(ruleSet.getRulesCount());       // 2
+console.log(ruleSet.getSafeRulesCount());    // 2
 console.log(errors.length);                 // 0
 ```
 
@@ -216,7 +216,7 @@ const restored = Ruleset.deserialize(ruleSet.getId(), json);
 | Method | Returns | Description |
 | --- | --- | --- |
 | `getId()` | `string` | Rule set identifier (e.g. `"ruleset_1"`) |
-| `getRulesCount()` | `number` | Total number of declarative rules |
+| `getSafeRulesCount()` | `number` | Count of safe declarative rules (excludes unsafe) |
 | `getUnsafeRulesCount()` | `number` | Count of unsafe rules |
 | `getRegexpRulesCount()` | `number` | Count of regexp-based rules |
 | `getDeclarativeRules()` | `DeclarativeRule[]` | All converted DNR rules (synchronous) |
@@ -263,7 +263,7 @@ const rulesToDisable = await converter.computeRulesToDisable(
 | Method | Returns | Description |
 | --- | --- | --- |
 | `getId()` | `string` | Rule set identifier |
-| `getRulesCount()` | `number` | Total number of declarative rules |
+| `getSafeRulesCount()` | `number` | Count of safe declarative rules (excludes unsafe) |
 | `getUnsafeRulesCount()` | `number` | Count of unsafe rules |
 | `getRegexpRulesCount()` | `number` | Count of regexp-based rules |
 | `getDeclarativeRules()` | `Promise<DeclarativeRule[]>` | All converted DNR rules (lazy) |

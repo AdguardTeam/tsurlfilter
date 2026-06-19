@@ -75,7 +75,7 @@ describe('FilterConverter', () => {
             ]);
             const [{ ruleSet }] = await converter.convert([filter]);
 
-            expect(ruleSet.getRulesCount()).toStrictEqual(2);
+            expect(ruleSet.getSafeRulesCount()).toStrictEqual(2);
         });
 
         it('does not throw on conversion errors', async () => {
@@ -87,7 +87,7 @@ describe('FilterConverter', () => {
             const [{ ruleSet }] = await converter.convert([filter]);
 
             // At least the valid rule should be converted
-            expect(ruleSet.getRulesCount()).toBeGreaterThanOrEqual(1);
+            expect(ruleSet.getSafeRulesCount()).toBeGreaterThanOrEqual(1);
         });
     });
 
@@ -123,7 +123,7 @@ describe('FilterConverter', () => {
             const declarativeRules = ruleSet.getDeclarativeRules();
 
             expect(errors).toHaveLength(0);
-            expect(ruleSet.getRulesCount()).toBe(0);
+            expect(ruleSet.getSafeRulesCount()).toBe(0);
             expect(declarativeRules).toHaveLength(0);
         });
 

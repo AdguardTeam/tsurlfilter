@@ -97,37 +97,28 @@ describe('excludeUnsafeRules', () => {
             dirWithCases: 'cases/zero_unsafe_rules/',
             unsafe: `${RULESET_999}/${RULESET_999}.json`,
             safe: `${RULESET_999}.json.safe`,
-            // Should changed because for saving backward compatibility, old
-            // ruleset can not contain "unsafeRules" field and if there are no
-            // unsafe rules, only this field will be added.
-            expectedChangedChecksum: true,
         },
         {
             id: 2,
             dirWithCases: 'cases/zero_unsafe_rules_2/',
             unsafe: `${RULESET_999}/${RULESET_999}.json`,
             safe: `${RULESET_999}.json.safe`,
-            // Should not change checksum since no unsafe rules were removed
-            // and ruleset already contains "unsafeRules" field.
-            expectedChangedChecksum: false,
         },
         {
             id: 3,
             dirWithCases: 'cases/one_unsafe_rules/',
             unsafe: `${RULESET_999}/${RULESET_999}.json`,
             safe: `${RULESET_999}.json.safe`,
-            expectedChangedChecksum: true,
         },
         {
             id: 4,
             dirWithCases: 'cases/five_unsafe_rules/',
             unsafe: `${RULESET_999}/${RULESET_999}.json`,
             safe: `${RULESET_999}.json.safe`,
-            expectedChangedChecksum: true,
         },
     ];
 
-    rulesets.forEach(async ({ unsafe, safe, dirWithCases, expectedChangedChecksum }) => {
+    rulesets.forEach(async ({ unsafe, safe, dirWithCases }) => {
         it(`case ${dirWithCases}`, async () => {
             // Move the unsafe ruleset to a temporary directory
             // to avoid modifying the original file.
@@ -158,12 +149,8 @@ describe('excludeUnsafeRules', () => {
             const expectedChecksum = generateMD5Hash(result);
             expect(newChecksum).toBe(expectedChecksum);
 
-            // For cases with unsafe rules, verify that checksum has changed
-            if (expectedChangedChecksum) {
-                expect(newChecksum).not.toBe(originalChecksum);
-            } else {
-                expect(newChecksum).toBe(originalChecksum);
-            }
+            // Checksum always changes — excludeUnsafeRules re-serializes the ruleset.
+            expect(newChecksum).not.toBe(originalChecksum);
         });
     });
 
@@ -202,5 +189,71 @@ describe('excludeUnsafeRules', () => {
 
         const promise = excludeUnsafeRules({ dir: tempDir, limit: 2 });
         await expect(promise).rejects.toThrowError(`Too many unsafe rules found: 5. Limit is 2.`);
+    });
+
+    it('is idempotent — running twice should not lose unsafe rules', async () => {
+        const ruleset = rulesets.find((r) => r.id === 3);
+        if (!ruleset) {
+            throw new Error('Test ruleset not found');
+        }
+
+        const tempDir = await copyToTemp(ruleset.dirWithCases);
+        tempDirs.push(tempDir);
+
+        const rulesetPath = path.join(tempDir, ruleset.unsafe);
+
+        // First run: extract unsafe rules from declarative rules into metadata.
+        await excludeUnsafeRules({ dir: tempDir });
+
+        const firstRun = JSON.parse(await fs.readFile(rulesetPath, 'utf-8'));
+        const firstMeta = firstRun[0].metadata.metadata;
+        const firstUnsafeRules = firstMeta.unsafeRules || [];
+        expect(firstUnsafeRules.length).toBeGreaterThan(0);
+
+        // Second run: should NOT lose unsafe rules already stored in metadata.
+        await excludeUnsafeRules({ dir: tempDir });
+
+        const secondRun = JSON.parse(await fs.readFile(rulesetPath, 'utf-8'));
+        const secondMeta = secondRun[0].metadata.metadata;
+        const secondUnsafeRules = secondMeta.unsafeRules || [];
+
+        // Unsafe rules must be preserved — same count, same rule IDs.
+        expect(secondUnsafeRules.length).toBe(firstUnsafeRules.length);
+        const firstIds = firstUnsafeRules.map((r: { id: number }) => r.id).sort();
+        const secondIds = secondUnsafeRules.map((r: { id: number }) => r.id).sort();
+        expect(secondIds).toEqual(firstIds);
+    });
+
+    it('is idempotent — checksum unchanged on second run of already-processed ruleset', async () => {
+        // Use zero_unsafe_rules_2: already has `unsafeRules` in metadata,
+        // already uses `safeRulesCount`.
+        const ruleset = rulesets.find((r) => r.id === 2);
+        if (!ruleset) {
+            throw new Error('Test ruleset not found');
+        }
+
+        const tempDir = await copyToTemp(ruleset.dirWithCases);
+        tempDirs.push(tempDir);
+
+        const metadataPath = path.join(tempDir, 'ruleset_0/ruleset_0.json');
+
+        // First run: normalizes serialization formatting to current standard.
+        await excludeUnsafeRules({ dir: tempDir });
+
+        const rulesetBytes = await fs.readFile(path.join(tempDir, ruleset.unsafe));
+        const checksumAfterFirstRun = generateMD5Hash(rulesetBytes.toString());
+
+        // Second run: pure no-op, nothing to move or reformat.
+        await excludeUnsafeRules({ dir: tempDir });
+
+        const rulesetBytes2 = await fs.readFile(path.join(tempDir, ruleset.unsafe));
+        const checksumAfterSecondRun = generateMD5Hash(rulesetBytes2.toString());
+
+        // Checksums must be stable — second run doesn't change anything.
+        expect(checksumAfterSecondRun).toBe(checksumAfterFirstRun);
+
+        const updatedMetadata = JSON.parse(await fs.readFile(metadataPath, 'utf-8'));
+        const metadataChecksum = updatedMetadata[0].metadata.checksums[RULESET_999];
+        expect(metadataChecksum).toBe(checksumAfterFirstRun);
     });
 });

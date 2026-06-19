@@ -1,20 +1,20 @@
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "dummy.rule.adguard.com",
-			"resourceTypes": [
-				"xmlhttprequest"
-			]
-		},
-		"metadata": {
-			"checksums": {
-				"ruleset_999": "aadb478085137620e278ff58f36d216c"
-			},
-			"additionalProperties": {}
-		}
-	}
+  {
+    "id": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "dummy.rule.adguard.com",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    },
+    "metadata": {
+      "checksums": {
+        "ruleset_999": "6bb1fda990b93224a4bbb4455c7a9776"
+      },
+      "additionalProperties": {}
+    }
+  }
 ]
