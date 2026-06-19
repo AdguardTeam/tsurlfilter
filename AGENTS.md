@@ -11,7 +11,7 @@ high-level extension APIs (`adguard-api`, `adguard-api-mv3`).
 ## Technical Context
 
 - **Language/Version**: TypeScript, Node.js ≥ 22
-- **Package Manager**: pnpm v10 with workspaces and
+- **Package Manager**: pnpm v10.33.4 with workspaces and
   [catalogs](https://pnpm.io/catalogs) (`pnpm-workspace.yaml`)
 - **Orchestration**: Lerna 8 (independent versioning) + Nx (cacheable builds)
 - **Testing**: Vitest (root config delegates to per-package configs)
