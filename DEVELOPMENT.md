@@ -7,7 +7,7 @@ for contributing to the `tsurlfilter` monorepo.
 
 - **Node.js**: v22 or later (use [nvm](https://github.com/nvm-sh/nvm) to
   manage versions)
-- **pnpm**: v10 (see [pnpm installation](https://pnpm.io/installation))
+- **pnpm**: v10.33.4 (see [pnpm installation](https://pnpm.io/installation))
 - **Git**: latest stable version
 - **OS**: macOS or Linux (some commands may not work on Windows without WSL)
 
