@@ -5,7 +5,7 @@ This guide covers the development workflow for `@adguard/api`.
 ## Prerequisites
 
 - **Node.js**: v22 or later
-- **pnpm**: v10 (managed via the monorepo root)
+- **pnpm**: v10.33.4 (managed via the monorepo root)
 - **Browser**: Chromium-based or Firefox for testing the example extension
 
 ## Getting Started
