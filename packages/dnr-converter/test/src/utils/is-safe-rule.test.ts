@@ -75,8 +75,8 @@ describe('isSafeRule', () => {
                 },
                 condition: {
                     urlFilter: 'trusted.com',
-                    domains: ['example.com'],
-                    excludedDomains: ['malicious.com'],
+                    initiatorDomains: ['example.com'],
+                    excludedInitiatorDomains: ['malicious.com'],
                 },
             };
             expect(isSafeRule(rule)).toBe(true);

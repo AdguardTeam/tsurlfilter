@@ -14,5 +14,19 @@ export const loggerMocks = {
 vi.mock('@adguard/logger', () => ({
     // eslint-disable-next-line prefer-arrow-callback
     Logger: vi.fn().mockImplementation(function mockLoggerConstructor() { return loggerMocks; }),
+    LogLevel: {
+        Error: 'error',
+        Warn: 'warn',
+        Info: 'info',
+        Debug: 'debug',
+        Verbose: 'verbose',
+    },
+    LogMethod: {
+        Error: 'error',
+        Warn: 'warn',
+        Info: 'info',
+        Debug: 'debug',
+        Trace: 'trace',
+    },
     getErrorMessage: vi.fn((error: unknown) => (error instanceof Error ? error.message : String(error))),
 }));

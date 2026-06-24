@@ -185,8 +185,11 @@ export const convertFilters = async (
         // eslint-disable-next-line no-await-in-loop
         await ensureDir(ruleSetDir);
 
+        // Initial conversion stage: no unsafe rules are excluded yet (the unsafe-rule
+        // post-pass in @adguard/dnr-rulesets performs the exclusion), so the metadata
+        // records an empty unsafe-rules set.
         // eslint-disable-next-line no-await-in-loop
-        const result = await ruleSet.serializeCompact(prettifyJson);
+        const result = await ruleSet.serializeCompact([], prettifyJson);
         const ruleSetPath = getRuleSetPath(id, destRulesetsPath);
         // eslint-disable-next-line no-await-in-loop
         await fs.promises.writeFile(ruleSetPath, result);

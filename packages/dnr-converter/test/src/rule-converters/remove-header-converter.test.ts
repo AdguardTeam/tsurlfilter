@@ -6,7 +6,8 @@ import {
 } from 'vitest';
 
 import { type DeclarativeRule, HeaderOperation, RuleActionType } from '../../../src/declarative-rule';
-import { type Rule } from '../../../src/rule/rule';
+import { UnsupportedModifierError } from '../../../src/errors/conversion-errors';
+import { Rule } from '../../../src/rule/rule';
 import { RemoveHeaderConverter } from '../../../src/rule-converters';
 import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
 
@@ -492,6 +493,71 @@ describe('RemoveHeaderConverter', () => {
                 // @ts-expect-error Accessing private method for testing purposes
                 RemoveHeaderConverter.combineRulePair,
             );
+        });
+    });
+
+    describe('convert — incompatible modifiers', () => {
+        it('skips $removeheader + $method (loop-reachable) and records a conversion error', async () => {
+            const converter = new RemoveHeaderConverter('/war');
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeheader=refresh,method=get');
+
+            const result = await converter.convert(1, [rule], new Set<number>());
+
+            expect(result.declarativeRules).toHaveLength(0);
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0]).toBeInstanceOf(UnsupportedModifierError);
+        });
+
+        it('skips $removeheader rule with incompatible $to (field-only) and records a conversion error', async () => {
+            const converter = new RemoveHeaderConverter('/war');
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeheader=refresh,to=foo.com');
+
+            const result = await converter.convert(1, [rule], new Set<number>());
+
+            expect(result.declarativeRules).toHaveLength(0);
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors[0]).toBeInstanceOf(UnsupportedModifierError);
+        });
+    });
+
+    describe('convert — compatible modifiers (no regression)', () => {
+        it('converts $removeheader with compatible $third-party into a ModifyHeaders DNR rule', async () => {
+            const converter = new RemoveHeaderConverter('/war');
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeheader=refresh,third-party');
+
+            const result = await converter.convert(1, [rule], new Set<number>());
+
+            expect(result.errors).toHaveLength(0);
+            expect(result.declarativeRules).toHaveLength(1);
+            const converted = result.declarativeRules[0];
+            expect(converted.action.type).toBe(RuleActionType.ModifyHeaders);
+            expect(converted.action.responseHeaders).toEqual([
+                { header: 'refresh', operation: HeaderOperation.Remove },
+            ]);
+        });
+
+        it('converts $removeheader + $domain into a ModifyHeaders rule with initiatorDomains', async () => {
+            const converter = new RemoveHeaderConverter('/war');
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeheader=refresh,domain=foo.com');
+
+            const result = await converter.convert(1, [rule], new Set<number>());
+
+            expect(result.errors).toHaveLength(0);
+            expect(result.declarativeRules).toHaveLength(1);
+            const converted = result.declarativeRules[0];
+            expect(converted.action.type).toBe(RuleActionType.ModifyHeaders);
+            expect(converted.condition.initiatorDomains).toEqual(['foo.com']);
+        });
+
+        it('converts a plain $removeheader rule (no extra modifiers) into a ModifyHeaders DNR rule', async () => {
+            const converter = new RemoveHeaderConverter('/war');
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeheader=refresh');
+
+            const result = await converter.convert(1, [rule], new Set<number>());
+
+            expect(result.errors).toHaveLength(0);
+            expect(result.declarativeRules).toHaveLength(1);
+            expect(result.declarativeRules[0].action.type).toBe(RuleActionType.ModifyHeaders);
         });
     });
 });

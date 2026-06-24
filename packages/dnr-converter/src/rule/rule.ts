@@ -213,7 +213,7 @@ const HEADER_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
  * Modifier names that are compatible with `$removeheader`.
  * Ported from tsurlfilter's `RemoveHeaderCompatibleOptions`.
  */
-const REMOVEHEADER_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
+export const REMOVEHEADER_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
     OPTION_NAMES.REMOVEHEADER,
     OPTION_NAMES.HEADER,
     OPTION_NAMES.THIRD_PARTY,
@@ -752,16 +752,6 @@ export class Rule {
                 throw new SyntaxError(
                     'Request-side $removeheader is not compatible with $header',
                 );
-            }
-        }
-
-        if (this.enabledModifiers.has(OPTION_NAMES.REMOVEHEADER)) {
-            for (const modifier of this.enabledModifiers) {
-                if (!REMOVEHEADER_COMPATIBLE_MODIFIERS.has(modifier)) {
-                    throw new SyntaxError(
-                        `$removeheader is not compatible with $${modifier}`,
-                    );
-                }
             }
         }
 

@@ -86,6 +86,7 @@
     },
     "devDependencies": {
         "@adguard/eslint-plugin-logger-context": "^1.0.1",
+        "@adguard/tsurlfilter": "workspace:^",
         "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-json": "catalog:",
         "@rollup/plugin-node-resolve": "catalog:",

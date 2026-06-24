@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced `@adguard/tsurlfilter` DNR APIs with `@adguard/dnr-converter`.
   All DNR-related imports now use the standalone `@adguard/dnr-converter`
   package. The `@adguard/tsurlfilter` dependency has been removed.
+- The serialized ruleset metadata produced by `@adguard/dnr-converter` now always
+  includes the `unsafeRules` key. Test fixtures for the initial (pre-exclusion) ruleset
+  state were aligned accordingly; no source change was required.
 
 ### Added
 

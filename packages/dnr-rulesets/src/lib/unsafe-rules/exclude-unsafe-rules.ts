@@ -185,8 +185,8 @@ export async function excludeUnsafeRules(params: ExcludeUnsafeRulesOptions): Pro
         }
 
         const processedRuleset = await ruleset.serializeCompact(
-            prettifyJson,
             unsafeDeclarativeRules,
+            prettifyJson,
         );
 
         const ruleSetPath = getRuleSetPath(
