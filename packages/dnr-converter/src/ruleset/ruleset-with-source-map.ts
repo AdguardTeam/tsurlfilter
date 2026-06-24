@@ -86,29 +86,13 @@ export interface IRulesetWithSourceMap extends IBaseRuleset {
     unloadContent(): void;
 
     /**
-     * Serializes rule set to primitives values with lazy load.
-     *
-     * TODO: Replace this method with `serializeCompact` method, because this
-     * one is not used in the codebase.
-     *
-     * @returns Serialized rule set.
-     *
-     * @throws Error {@link UnavailableRulesetSourceError} if rule set source
-     * is not available.
-     *
-     * @deprecated
-     */
-    serialize(): Promise<SerializedRuleset>;
-
-    /**
      * Serializes rule set to a single file.
      *
-     * @param prettyPrint Whether to pretty print the output. Default is `true`.
-     * @param unsafeRules Optional list of unsafe rules to add to the serialized
-     * output. If this parameter is provided, number of unsafe rules will be
-     * excluded from the counter of declarative rules in the serialized metadata.
-     *
+     * @param unsafeRules List of unsafe rules to add to the serialized output.
+     * Number of unsafe rules will be excluded from the counter of declarative
+     * rules in the serialized metadata.
      * IMPORTANT: currently multiple filters in a single ruleset are not supported.
+     * @param prettyPrint Whether to pretty print the output. Default is `true`.
      *
      * @returns Serialized rule set.
      *
@@ -117,8 +101,8 @@ export interface IRulesetWithSourceMap extends IBaseRuleset {
      * the provided `unsafeRules` array.
      */
     serializeCompact(
+        unsafeRules: DeclarativeRule[],
         prettyPrint?: boolean,
-        unsafeRules?: DeclarativeRule[],
     ): Promise<string>;
 }
 
@@ -156,7 +140,7 @@ const serializedRuleSetDataValidator = strictObjectByType<SerializedRulesetData>
     safeRulesCount: v.number(),
     ruleSetHashMapRaw: v.string(),
     badFilterRulesRaw: v.array(v.string()),
-    unsafeRules: v.optional(v.array(DeclarativeRuleValidator)),
+    unsafeRules: v.array(DeclarativeRuleValidator),
 });
 
 /**
@@ -168,7 +152,7 @@ export type SerializedRulesetData = {
     safeRulesCount: number;
     ruleSetHashMapRaw: string;
     badFilterRulesRaw: string[];
-    unsafeRules?: DeclarativeRule[];
+    unsafeRules: DeclarativeRule[];
 };
 
 /**
@@ -239,19 +223,14 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     private readonly unsafeRulesCount: number = 0;
 
     /**
-     * Array with unsafe declarative rules, which can be optionally provided
-     * when creating a ruleset.
+     * Array with unsafe declarative rules stored in the serialized metadata.
      *
      * This can be used to store unsafe rules inside metadata rule to use
      * "skip review" feature in CWS.
      *
-     * It's marked as optional to keep backward compatibility with old rulesets.
-     *
      * {@link https://developer.chrome.com/docs/webstore/skip-review/}.
-     *
-     * @todo TODO: Mark this field as required in the next major version.
      */
-    private readonly unsafeRules?: DeclarativeRule[];
+    private readonly unsafeRules: DeclarativeRule[];
 
     /**
      * Converted declarative regexp rules.
@@ -312,7 +291,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         ruleSetContentProvider: RulesetContentProvider,
         badFilterRules: Rule[],
         rulesHashMap: IRulesHashMap,
-        unsafeRules?: DeclarativeRule[],
+        unsafeRules: DeclarativeRule[],
     ) {
         this.id = id;
         this.safeRulesCount = safeRulesCount;
@@ -341,7 +320,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
 
     /** @inheritdoc */
     public getUnsafeRules(): Promise<DeclarativeRule[]> {
-        return Promise.resolve(this.unsafeRules || []);
+        return Promise.resolve(this.unsafeRules);
     }
 
     /** @inheritdoc */
@@ -656,12 +635,11 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     /**
      * Helper method to get serialized rule set data.
      *
-     * @param unsafeRules Optional list of unsafe rules to add to the serialized
-     * output.
+     * @param unsafeRules List of unsafe rules to add to the serialized output.
      *
      * @returns Serialized rule set data.
      */
-    private getSerializedRuleSetData(unsafeRules?: DeclarativeRule[]): SerializedRulesetData {
+    private getSerializedRuleSetData(unsafeRules: DeclarativeRule[]): SerializedRulesetData {
         return {
             regexpRulesCount: this.regexpRulesCount,
             unsafeRulesCount: this.unsafeRulesCount,
@@ -688,29 +666,9 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     }
 
     /** @inheritdoc */
-    public async serialize(): Promise<SerializedRuleset> {
-        try {
-            await this.loadContent();
-        } catch (e) {
-            const id = this.getId();
-            // eslint-disable-next-line max-len
-            const msg = `Cannot serialize rule set '${id}' because of not available source, got error: ${getErrorMessage(e)}`;
-            throw new UnavailableRulesetSourceError(msg, id, e as Error);
-        }
-
-        const serialized: SerializedRuleset = {
-            id: this.id,
-            data: JSON.stringify(this.getSerializedRuleSetData()),
-            lazyData: JSON.stringify(this.getSerializedRuleSetLazyData()),
-        };
-
-        return serialized;
-    }
-
-    /** @inheritdoc */
     public async serializeCompact(
+        unsafeRules: DeclarativeRule[],
         prettyPrint = true,
-        unsafeRules?: DeclarativeRule[],
     ): Promise<string> {
         try {
             await this.loadContent();
@@ -738,7 +696,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         // To ensure that unsafe rules are provided and their count is correct,
         // we check if the length of the provided unsafe rules array is equal to
         // the `unsafeRulesCount` property of the rule set.
-        if (unsafeRules && unsafeRules.length > 0 && unsafeRules.length !== this.unsafeRulesCount) {
+        if (unsafeRules.length > 0 && unsafeRules.length !== this.unsafeRulesCount) {
             const id = this.getId();
             // eslint-disable-next-line max-len
             const msg = `Unsafe rules count is not equal to the length of provided unsafe rules array in rule set '${id}'`;
@@ -760,8 +718,8 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         const convertedRules = await this.getDeclarativeRules();
         declarativeRules = declarativeRules.concat(convertedRules);
 
-        // Exclude unsafe rules from declarative rules if they are provided.
-        if (unsafeRules) {
+        // Exclude unsafe rules from declarative rules if any are provided.
+        if (unsafeRules.length > 0) {
             const unsafeRulesIds = new Set(unsafeRules.map((rule) => rule.id));
 
             declarativeRules = declarativeRules.filter((rule) => {

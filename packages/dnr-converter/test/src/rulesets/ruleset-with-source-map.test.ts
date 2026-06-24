@@ -113,6 +113,7 @@ const createRuleSet = async (contentLines: string[], filterId = 0): Promise<Rule
         ruleSetContent,
         badFilterRules,
         rulesHashMap,
+        [],
     );
 };
 
@@ -148,6 +149,7 @@ describe('RuleSet', () => {
             ruleSetContent,
             [badFilterRule],
             new RulesHashMap([]),
+            [],
         );
 
         expect(ruleSet.getBadFilterRules()).toHaveLength(1);
@@ -199,13 +201,21 @@ describe('RuleSet', () => {
 
         const ruleSet = await createRuleSet(content, filterId);
 
-        const {
-            id,
-            data,
-            lazyData,
-        } = await ruleSet.serialize();
-
-        const declarativeRules = await ruleSet.getDeclarativeRules();
+        // Produce the compact ruleset and extract the metadata envelope that
+        // deserialize() expects, mirroring the production reader in
+        // dnr-rulesets/src/lib/unsafe-rules/ruleset-deserialize.ts.
+        const compactOutput = await ruleSet.serializeCompact([], true);
+        const parsedRuleSet = JSON.parse(compactOutput) as DeclarativeRule[];
+        // The first element is the metadata rule whose `metadata` key
+        // carries the `metadata` (SerializedRulesetData) and `lazyMetadata`
+        // (SerializedRulesetLazyData) envelopes.
+        const metadataRule = parsedRuleSet[0] as unknown as {
+            metadata: {
+                metadata: unknown;
+                lazyMetadata: unknown;
+            };
+        };
+        const { metadata, lazyMetadata } = metadataRule.metadata;
 
         const {
             data: {
@@ -214,13 +224,14 @@ describe('RuleSet', () => {
                 safeRulesCount,
                 ruleSetHashMapRaw,
                 badFilterRulesRaw,
+                unsafeRules,
             },
             ruleSetContentProvider,
         } = await RulesetWithSourceMap.deserialize(
-            id,
-            data,
-            async () => lazyData,
-            async () => JSON.stringify(declarativeRules),
+            ruleSet.getId(),
+            JSON.stringify(metadata),
+            async () => JSON.stringify(lazyMetadata),
+            async () => JSON.stringify(parsedRuleSet.slice(1)),
             [originalFilter],
         );
 
@@ -236,13 +247,14 @@ describe('RuleSet', () => {
             );
 
         const deserializedRuleSet = new RulesetWithSourceMap(
-            id,
+            ruleSet.getId(),
             safeRulesCount,
             unsafeRulesCount,
             regexpRulesCount,
             ruleSetContentProvider,
             badFilterRules,
             ruleSetHashMap,
+            unsafeRules,
         );
 
         // check $badfilter rules
@@ -333,6 +345,7 @@ describe('RuleSet', () => {
             ruleSetContent,
             [],
             new RulesHashMap([]),
+            [],
         );
 
         // Start loading content
@@ -397,6 +410,16 @@ describe('RuleSet', () => {
         expect(ruleSet.getId()).toBe('ruleSetId');
     });
 
+    it('does not expose the deprecated serialize() method', async () => {
+        const content = ['||example.com^$document'];
+        const ruleSet = await createRuleSet(content);
+
+        // The deprecated serialize() method must be removed from the public
+        // API; only serializeCompact() remains.
+        expect((ruleSet as unknown as Record<string, unknown>).serialize).toBeUndefined();
+        expect(typeof ruleSet.serializeCompact).toBe('function');
+    });
+
     describe('getRuleBySourceRule', () => {
         it('returns network rules for valid source rule', () => {
             const rules = RulesetWithSourceMap.getRuleBySourceRule({
@@ -428,6 +451,29 @@ describe('RuleSet', () => {
     });
 
     describe('deserialize', () => {
+        it('throws when unsafeRules is missing from the data', async () => {
+            // unsafeRules is now a required field; metadata omitting it must fail
+            // validation with a descriptive error.
+            const dataWithoutUnsafeRules = {
+                regexpRulesCount: 0,
+                unsafeRulesCount: 0,
+                safeRulesCount: 0,
+                ruleSetHashMapRaw: '[]',
+                badFilterRulesRaw: [],
+                // unsafeRules intentionally omitted
+            };
+
+            await expect(
+                RulesetWithSourceMap.deserialize(
+                    'testId',
+                    JSON.stringify(dataWithoutUnsafeRules),
+                    async () => '{}',
+                    async () => '[]',
+                    [],
+                ),
+            ).rejects.toThrow();
+        });
+
         it('throws on invalid data', async () => {
             await expect(
                 RulesetWithSourceMap.deserialize(
@@ -447,6 +493,7 @@ describe('RuleSet', () => {
                 safeRulesCount: 0,
                 ruleSetHashMapRaw: '[]',
                 badFilterRulesRaw: [],
+                unsafeRules: [],
             };
 
             const { ruleSetContentProvider } = await RulesetWithSourceMap.deserialize(
@@ -470,7 +517,7 @@ describe('RuleSet', () => {
             ];
 
             const ruleSet = await createRuleSet(content);
-            const compactOutput = await ruleSet.serializeCompact(true);
+            const compactOutput = await ruleSet.serializeCompact([], true);
 
             expect(compactOutput).toBeTruthy();
             const parsed = JSON.parse(compactOutput) as DeclarativeRule[];

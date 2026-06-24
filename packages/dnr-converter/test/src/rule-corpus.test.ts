@@ -2,11 +2,8 @@
  * @file Corpus test: verifies that dnr-converter's Rule can parse
  * all rules from the corpus file and produce consistent accessor results.
  *
- * NOTE: Direct cross-package parity testing with @adguard/tsurlfilter is
- * not possible here because the global test setup mocks @adguard/logger
- * in a way that is incompatible with tsurlfilter's Logger constructor.
- * Instead, we verify structural correctness and consistency of the
- * dnr-converter Rule against the corpus.
+ * Cross-package parity against @adguard/tsurlfilter is covered by
+ * `rule-parity.test.ts`.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';

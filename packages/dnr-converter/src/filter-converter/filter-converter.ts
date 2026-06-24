@@ -509,6 +509,9 @@ export class FilterConverter {
             ruleSetContent,
             badFilterRules,
             rulesHashMap,
+            // Freshly-converted rulesets have no metadata-stored unsafe rules yet;
+            // unsafe-rule exclusion is performed later by the serializeCompact() caller.
+            [],
         );
 
         return {

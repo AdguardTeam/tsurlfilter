@@ -7,9 +7,21 @@ import { RegularRuleConverter } from './regular-rule-converter';
 /**
  * Describes how to convert `$removeheader` rules.
  *
- * TODO: Add checks for rules containing the `$removeheader` and
- * incompatible modifiers: `$domain`, `$third-party`, `$important`, `$app`,
- * `$match-case`, `$script`, `$stylesheet`, etc.
+ * Incompatible-modifier handling is performed by `RuleDeclarativeValidator`
+ * (`checkRemoveHeaderCompatibleModifiersFn`): a `$removeheader` rule combined
+ * with an incompatible modifier is rejected with an `UnsupportedModifierError`
+ * and skipped — no declarative rule is emitted — following the package's
+ * "report limitation + skip" convention.
+ *
+ * Incompatible modifiers are detected in two ways, because dnr-converter
+ * stores modifiers differently from tsurlfilter:
+ * - loop-reachable modifiers present in `enabledModifiers` and absent from
+ *   `REMOVEHEADER_COMPATIBLE_MODIFIERS` (e.g. `$method`);
+ * - the `$to` modifier, which is field-only but incompatible per tsurlfilter
+ *   (checked explicitly on `permittedToDomains`/`restrictedToDomains`).
+ *
+ * `$domain` and `$denyallow` are compatible (they set no flag in tsurlfilter)
+ * and convert normally, so they are not rejected.
  *
  * @see {@link RegularRuleConverter} parent class.
  */

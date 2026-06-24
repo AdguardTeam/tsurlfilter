@@ -77,8 +77,8 @@ COPY packages/ ./packages/
 # Dependency tree (see README.md for full details):
 #   source-leaf-packages:      logger + css-tokenizer + eslint-plugin (leaf packages, no workspace deps)
 #   source-with-agtree:        agtree (depends on css-tokenizer)
-#   source-with-dnr-converter: dnr-converter (depends on agtree, logger)
 #   source-with-tsurlfilter:   tsurlfilter (depends on agtree, css-tokenizer)
+#   source-with-dnr-converter: dnr-converter (depends on agtree, logger, tsurlfilter [dev])
 #   source-with-tswebextension: tswebextension (depends on tsurlfilter, dnr-converter, agtree, logger)
 #
 # Stages that need packages outside this chain (e.g. dnr-rulesets, adguard-api)
@@ -105,15 +105,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     npx lerna run build --scope @adguard/agtree
 
-FROM built-agtree AS source-with-dnr-converter
-COPY packages/dnr-converter/ ./packages/dnr-converter/
-
-FROM source-with-dnr-converter AS built-dnr-converter
-RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
-    pnpm config set store-dir /pnpm-store && \
-    npx lerna run build --scope @adguard/dnr-converter
-
-FROM built-dnr-converter AS source-with-tsurlfilter
+FROM built-agtree AS source-with-tsurlfilter
 COPY packages/tsurlfilter/ ./packages/tsurlfilter/
 
 FROM source-with-tsurlfilter AS built-tsurlfilter
@@ -121,7 +113,15 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     npx lerna run build --scope @adguard/tsurlfilter
 
-FROM built-tsurlfilter AS source-with-tswebextension
+FROM built-tsurlfilter AS source-with-dnr-converter
+COPY packages/dnr-converter/ ./packages/dnr-converter/
+
+FROM source-with-dnr-converter AS built-dnr-converter
+RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
+    pnpm config set store-dir /pnpm-store && \
+    npx lerna run build --scope @adguard/dnr-converter
+
+FROM built-dnr-converter AS source-with-tswebextension
 COPY packages/tswebextension/ ./packages/tswebextension/
 
 FROM source-with-tswebextension AS built-tswebextension
@@ -261,7 +261,7 @@ COPY --from=test-tsurlfilter /out/ /
 # Stage: test-dnr-converter
 # Runs lint + smoke + test:ci for @adguard/dnr-converter
 # ============================================================================
-FROM built-agtree AS test-dnr-converter
+FROM built-tsurlfilter AS test-dnr-converter
 
 COPY packages/dnr-converter/ ./packages/dnr-converter/
 
@@ -269,8 +269,8 @@ ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    echo "${TEST_RUN_ID}" > /tmp/.test-run-id && \
     mkdir -p /out/tests-reports && \
+    echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     npx lerna run build --scope @adguard/dnr-converter; \
     BUILD_EXIT=$?; \
     if [ $BUILD_EXIT -ne 0 ]; then \
@@ -507,6 +507,26 @@ FROM scratch AS build-agtree-output
 COPY --from=build-agtree /out/ /
 
 # ============================================================================
+# Stage: build-dnr-converter
+# Builds @adguard/dnr-converter and packs .tgz
+# ============================================================================
+FROM built-dnr-converter AS build-dnr-converter
+
+ARG TEST_RUN_ID
+
+RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
+    pnpm config set store-dir /pnpm-store && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
+    cd packages/dnr-converter && \
+    pnpm tgz && \
+    mkdir -p /out/artifacts && \
+    mv dnr-converter.tgz /out/artifacts/ && \
+    cp dist/build.txt /out/artifacts/
+
+FROM scratch AS build-dnr-converter-output
+COPY --from=build-dnr-converter /out/ /
+
+# ============================================================================
 # Stage: build-tsurlfilter
 # Builds @adguard/tsurlfilter and packs .tgz
 # ============================================================================
@@ -727,15 +747,24 @@ COPY --from=increment-dnr-rulesets /out/ /
 
 # ============================================================================
 # Stage: increment-dnr-converter
-# Placeholder for DNR Converter increment (TODO: AG-45668)
+# Increments @adguard/dnr-converter version and extracts modified files
 # ============================================================================
 FROM source AS increment-dnr-converter
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     touch /tmp/.pre-increment-marker && \
-    echo "TODO: Implement dnr-converter increment (AG-45668)" && \
-    mkdir -p /out/modified
+    pnpm run increment dnr-converter && \
+    mkdir -p /out/modified && \
+    find . -newer /tmp/.pre-increment-marker -type f \
+      -not -path './.git/*' \
+      -not -path './node_modules/*' \
+      -not -path './**/node_modules/*' \
+      -not -path './**/dist/*' \
+      | sed 's|^\./||' | while IFS= read -r f; do \
+        mkdir -p "/out/modified/$(dirname "$f")"; \
+        cp "$f" "/out/modified/$f"; \
+      done
 
 FROM scratch AS increment-dnr-converter-output
 COPY --from=increment-dnr-converter /out/ /
