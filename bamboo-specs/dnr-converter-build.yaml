@@ -27,24 +27,13 @@ Build:
             # Fix mixed logs
             exec 2>&1
 
-            export DOCKER_BUILDKIT=1
+            # TODO: Implement build (AG-45668)
+            echo "DNR Converter build not yet implemented"
 
-            docker build \
-              --file Dockerfile \
-              --progress plain \
-              --build-arg TEST_RUN_ID=${bamboo.buildNumber} \
-              --target build-dnr-converter-output \
-              --output type=local,dest=output \
-              .
-    - inject-variables:
-        file: output/artifacts/build.txt
-        scope: RESULT
-        namespace: inject
-    - any-task:
-        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
-        configuration:
-          selectedRepository: defaultRepository
-          tagName: dnr-converter-v${bamboo.inject.version}
+            # Create empty placeholder artifact so downstream plans that
+            # reference dnr-converter.tgz do not fail.
+            mkdir -p output/artifacts
+            touch output/artifacts/dnr-converter.tgz
   final-tasks:
     - script:
         interpreter: SHELL

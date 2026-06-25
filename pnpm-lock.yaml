@@ -1091,9 +1091,6 @@ importers:
       '@adguard/eslint-plugin-logger-context':
         specifier: ^1.0.1
         version: 1.0.1
-      '@adguard/tsurlfilter':
-        specifier: workspace:^
-        version: link:../tsurlfilter
       '@rollup/plugin-commonjs':
         specifier: 'catalog:'
         version: 28.0.3(rollup@4.53.3)

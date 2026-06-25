@@ -6,7 +6,6 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { UnsupportedModifierError } from '../../src/errors/conversion-errors';
 import { Rule } from '../../src/rule/rule';
 import { RuleDeclarativeValidator } from '../../src/rule/rule-validator';
 
@@ -216,38 +215,6 @@ describe('RuleDeclarativeValidator', () => {
 
             // If the rule parsed successfully, the validator should reject it
             expect(() => RuleDeclarativeValidator.shouldConvertRule(rule)).toThrow();
-        });
-    });
-
-    describe('shouldConvertRule — $removeheader compatible modifiers', () => {
-        it('accepts $removeheader with a compatible content-type modifier ($script)', () => {
-            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeheader=refresh,script');
-            expect(RuleDeclarativeValidator.shouldConvertRule(rule)).toBe(true);
-        });
-
-        it('accepts $removeheader with $third-party (compatible)', () => {
-            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeheader=refresh,third-party');
-            expect(RuleDeclarativeValidator.shouldConvertRule(rule)).toBe(true);
-        });
-
-        it('accepts $removeheader with $important (compatible)', () => {
-            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeheader=refresh,important');
-            expect(RuleDeclarativeValidator.shouldConvertRule(rule)).toBe(true);
-        });
-
-        it('accepts $removeheader with $domain (compatible — $domain is field-only, sets no flag)', () => {
-            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeheader=refresh,domain=foo.com');
-            expect(RuleDeclarativeValidator.shouldConvertRule(rule)).toBe(true);
-        });
-
-        it('throws UnsupportedModifierError for $removeheader with incompatible $method (loop-reachable)', () => {
-            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeheader=refresh,method=get');
-            expect(() => RuleDeclarativeValidator.shouldConvertRule(rule)).toThrow(UnsupportedModifierError);
-        });
-
-        it('throws UnsupportedModifierError for $removeheader with incompatible $to (field-only)', () => {
-            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeheader=refresh,to=foo.com');
-            expect(() => RuleDeclarativeValidator.shouldConvertRule(rule)).toThrow(UnsupportedModifierError);
         });
     });
 });

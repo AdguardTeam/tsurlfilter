@@ -76,6 +76,20 @@ export interface RuleCondition {
     domainType?: DomainType;
 
     /**
+     * The rule will only match network requests originating from the list of {@link domains}.
+     *
+     * @deprecated Since Chrome 101. Use {@link initiatorDomains} instead.
+     */
+    domains?: string[];
+
+    /**
+     * The rule will not match network requests originating from the list of {@link excludedDomains}.
+     *
+     * @deprecated Since Chrome 101. Use {@link excludedInitiatorDomains} instead.
+     */
+    excludedDomains?: string[];
+
+    /**
      * The rule will only match network requests originating
      * from the list of {@link initiatorDomains}. If the list is omitted,
      * the rule is applied to requests from all domains.
@@ -286,6 +300,8 @@ export interface RuleCondition {
  */
 export const RuleConditionValidator = strictObjectByType<RuleCondition>({
     domainType: v.optional(v.enum(DomainType)),
+    domains: v.optional(v.array(v.string())),
+    excludedDomains: v.optional(v.array(v.string())),
     initiatorDomains: v.optional(v.pipe(
         v.array(v.string()),
         v.nonEmpty(),

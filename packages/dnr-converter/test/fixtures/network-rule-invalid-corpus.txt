@@ -67,9 +67,3 @@
 
 ! === $header combined with request-side $removeheader ===
 ||example.com^$header=set-cookie,removeheader=request:set-cookie
-
-! === $removeheader with incompatible modifier $method (loop-reachable) ===
-||example.com^$removeheader=refresh,method=get
-
-! === $removeheader with incompatible modifier $to (field-only) ===
-||example.com^$removeheader=refresh,to=foo.com

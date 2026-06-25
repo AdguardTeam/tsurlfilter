@@ -271,7 +271,8 @@ const rulesToDisable = await converter.computeRulesToDisable(
 | `getRulesById(id)` | `Promise<SourceRuleAndFilterId[]>` | Source rules for a DNR rule |
 | `getBadFilterRules()` | `NetworkRule[]` | `$badfilter` rules in this set |
 | `getRulesHashMap()` | `IRulesHashMap` | Hash map for fast `$badfilter` matching |
-| `serializeCompact(unsafeRules, prettyPrint?)` | `Promise<string>` | Compact JSON serialization |
+| `serialize()` | `Promise<SerializedRuleset>` | Full serialization (rules + source map + hash map) |
+| `serializeCompact(prettyPrint?, unsafeRules?)` | `Promise<string>` | Compact JSON serialization |
 | `unloadContent()` | `void` | Release lazy-loaded content |
 
 ```ts

@@ -105,7 +105,6 @@ import { type Rule } from '../rule/rule';
 import { type ScannedFilter } from '../rules-scanner';
 import { type Source } from '../ruleset/source-map';
 import { isSafeRule } from '../utils/is-safe-rule';
-import { Lazy } from '../utils/lazy';
 
 import { type ConvertedRules } from './converted-rules';
 import { CspConverter } from './csp-converter';
@@ -340,53 +339,6 @@ export class RulesConverter {
     }
 
     /**
-     * Builds an index of conversion errors keyed by their declarative rule id,
-     * preserving the input order within each group and the key first-appearance
-     * order across groups.
-     *
-     * @param convertedRulesErrors Flat list of conversion errors that carry a
-     * declarative rule reference.
-     *
-     * @returns Map from declarative rule id to the list of errors for that id.
-     */
-    private static buildErrorsIndex(
-        convertedRulesErrors: InvalidDeclarativeRuleError[],
-    ): Map<number, ConversionError[]> {
-        const convertedRulesErrorsIndex = new Map<number, ConversionError[]>();
-        convertedRulesErrors.forEach((e) => {
-            const errorsList = convertedRulesErrorsIndex.get(e.declarativeRule.id);
-            const newValue = errorsList
-                ? errorsList.concat(e)
-                : [e];
-
-            convertedRulesErrorsIndex.set(e.declarativeRule.id, newValue);
-        });
-        return convertedRulesErrorsIndex;
-    }
-
-    /**
-     * Builds an index of {@link Source} values keyed by their declarative rule
-     * id, preserving the input order within each group and the key
-     * first-appearance order across groups.
-     *
-     * @param sourceMapValues Flat list of {@link Source} values.
-     *
-     * @returns Map from declarative rule id to the list of sources for that id.
-     */
-    private static buildSourcesIndex(sourceMapValues: Source[]): Map<number, Source[]> {
-        const sourcesIndex = new Map<number, Source[]>();
-        sourceMapValues.forEach((source) => {
-            const sources = sourcesIndex.get(source.declarativeRuleId);
-            const newValue = sources
-                ? sources.concat(source)
-                : [source];
-
-            sourcesIndex.set(source.declarativeRuleId, newValue);
-        });
-        return sourcesIndex;
-    }
-
-    /**
      * Removes sources and errors associated with a truncated rule.
      *
      * @param ruleId The ID of the truncated rule.
@@ -438,13 +390,14 @@ export class RulesConverter {
         let {
             declarativeRules,
             sourceMapValues,
+            errors,
         } = converted;
 
         const convertedRulesErrors: InvalidDeclarativeRuleError[] = [];
-        const otherErrors: (ConversionError | Error)[] = [];
+        const otherErrors: Error[] = [];
 
-        for (let i = 0; i < converted.errors.length; i += 1) {
-            const e = converted.errors[i];
+        for (let i = 0; i < errors.length; i += 1) {
+            const e = errors[i];
 
             // Checks only errors of converted declarative rules
             if (e instanceof InvalidDeclarativeRuleError) {
@@ -454,14 +407,30 @@ export class RulesConverter {
             }
         }
 
-        // Indexes are built lazily on the first truncation that needs them.
-        // In the common case (no limit exceeded) they are never constructed.
-        const sourcesIndexLoader = new Lazy<Map<number, Source[]>>(() => (
-            RulesConverter.buildSourcesIndex(sourceMapValues)
-        ));
-        const errorsIndexLoader = new Lazy<Map<number, ConversionError[]>>(() => (
-            RulesConverter.buildErrorsIndex(convertedRulesErrors)
-        ));
+        // TODO: Lazy creation of index
+        // Create index of errors for fast search and filtering
+        const convertedRulesErrorsIndex = new Map<number, ConversionError[]>();
+        convertedRulesErrors.forEach((e) => {
+            // Checks only errors of converted declarative rules
+            const errorsList = convertedRulesErrorsIndex.get(e.declarativeRule.id);
+            const newValue = errorsList
+                ? errorsList.concat(e)
+                : [e];
+
+            convertedRulesErrorsIndex.set(e.declarativeRule.id, newValue);
+        });
+
+        // TODO: Lazy creation of index
+        // Create index of sources for fast search and filtering
+        const sourcesIndex = new Map<number, Source[]>();
+        sourceMapValues.forEach((source) => {
+            const sources = sourcesIndex.get(source.declarativeRuleId);
+            const newValue = sources
+                ? sources.concat(source)
+                : [source];
+
+            sourcesIndex.set(source.declarativeRuleId, newValue);
+        });
 
         // Checks and, if necessary, trims the maximum number of rules
         if (maxNumberOfRules && declarativeRules.length > 0) {
@@ -479,8 +448,8 @@ export class RulesConverter {
                     if (unsafeRulesCounter > maxNumberOfUnsafeRules) {
                         RulesConverter.removeTruncatedRuleSourcesAndErrors(
                             rule.id,
-                            sourcesIndexLoader.get(),
-                            errorsIndexLoader.get(),
+                            sourcesIndex,
+                            convertedRulesErrorsIndex,
                             excludedRulesIds,
                         );
 
@@ -495,8 +464,8 @@ export class RulesConverter {
 
                 RulesConverter.removeTruncatedRuleSourcesAndErrors(
                     rule.id,
-                    sourcesIndexLoader.get(),
-                    errorsIndexLoader.get(),
+                    sourcesIndex,
+                    convertedRulesErrorsIndex,
                     excludedRulesIds,
                 );
             }
@@ -544,8 +513,8 @@ export class RulesConverter {
                     if (regexpRulesCounter > maxNumberOfRegexpRules) {
                         RulesConverter.removeTruncatedRuleSourcesAndErrors(
                             rule.id,
-                            sourcesIndexLoader.get(),
-                            errorsIndexLoader.get(),
+                            sourcesIndex,
+                            convertedRulesErrorsIndex,
                             excludedRulesIds,
                         );
 
@@ -570,28 +539,20 @@ export class RulesConverter {
             declarativeRules = filteredRules;
         }
 
-        // Flatten the indexes back to arrays only if they were built (i.e. some
-        // rule was truncated). When nothing was truncated, the original arrays
-        // are returned unchanged, which is byte-for-byte identical to the
-        // previous eager-flatten output (see plan's behaviour-preservation
-        // analysis).
-        if (sourcesIndexLoader.isLoaded()) {
-            sourceMapValues = Array.from(sourcesIndexLoader.get().values())
-                .filter((arr) => arr.length > 0)
-                .flat();
-        }
+        // Make array from index
+        sourceMapValues = Array.from(sourcesIndex.values())
+            .filter((arr) => arr.length > 0)
+            .flat();
 
-        const convertedErrors: (ConversionError | Error)[] = errorsIndexLoader.isLoaded()
-            ? Array.from(errorsIndexLoader.get().values())
-                .filter((arr) => arr.length > 0)
-                .flat()
-            : convertedRulesErrors;
-        const finalErrors = convertedErrors.concat(otherErrors);
+        // Make array from index
+        errors = Array.from(convertedRulesErrorsIndex.values())
+            .filter((arr) => arr.length > 0)
+            .flat();
 
         return {
             sourceMapValues,
             declarativeRules,
-            errors: finalErrors,
+            errors: errors.concat(otherErrors),
             limitations,
         };
     }

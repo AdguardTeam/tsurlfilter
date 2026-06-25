@@ -27,13 +27,6 @@ Increment:
             # Fix mixed logs
             exec 2>&1
 
-            BRANCH="${bamboo.planRepository.branchName}"
-
-            if [ "$BRANCH" != "master" ]; then
-              echo "increment is not supported on branch ${BRANCH}"
-              exit 1
-            fi
-
             export DOCKER_BUILDKIT=1
 
             docker build \

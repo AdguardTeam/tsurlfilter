@@ -4,7 +4,7 @@ import { MASK_REGEX_RULE } from '../constants';
 import { UnsupportedModifierError } from '../errors/conversion-errors/unsupported-modifier-error';
 
 import { OPTION_NAMES } from './option-names';
-import { REMOVEHEADER_COMPATIBLE_MODIFIERS, type Rule } from './rule';
+import { type Rule } from './rule';
 
 /**
  * Validator for a single modifier.
@@ -137,62 +137,6 @@ export class RuleDeclarativeValidator {
         if (!hasValidResponseHeader && !hasValidRequestHeader) {
             return new UnsupportedModifierError(
                 'Network rule with $removeheader modifier contains some of the unsupported headers',
-                rule,
-            );
-        }
-
-        return null;
-    }
-
-    /**
-     * Checks if the $removeheader modifier is combined only with modifiers
-     * that are compatible with it, aligned with tsurlfilter's
-     * `RemoveHeaderCompatibleOptions` and `validateRemoveHeaderRule`.
-     *
-     * Because dnr-converter stores modifiers differently from tsurlfilter, two
-     * kinds of incompatible modifiers must be detected:
-     *
-     * First, loop-reachable modifiers present in `rule.enabledModifiers`
-     * (e.g. `$method`, `$csp`, `$redirect`, `$cookie`, `$removeparam`,
-     * `$app`, `$network`, DNS modifiers). Any enabled modifier that is not
-     * in {@link REMOVEHEADER_COMPATIBLE_MODIFIERS} makes the rule
-     * incompatible. This mirrors tsurlfilter's
-     * `enabledOptions ⊆ RemoveHeaderCompatibleOptions`.
-     *
-     * Second, the `$to` modifier, which is parsed into `permittedToDomains` /
-     * `restrictedToDomains` and therefore never enters `enabledModifiers`,
-     * so it is invisible to the loop. Tsurlfilter still rejects it (it sets
-     * the `$to` flag, which is absent from
-     * `RemoveHeaderCompatibleOptions`), so it is rejected here explicitly
-     * for parity.
-     *
-     * `$domain` and `$denyallow` set no flag in tsurlfilter and are compatible
-     * with `$removeheader`, so they are intentionally NOT checked here.
-     *
-     * @param rule Network rule.
-     * @param name Modifier's name.
-     *
-     * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
-     */
-    private static checkRemoveHeaderCompatibleModifiersFn(
-        rule: Rule,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        name: string,
-    ): UnsupportedModifierError | null {
-        // 1. Loop-reachable incompatible modifiers.
-        for (const modifier of rule.enabledModifiers) {
-            if (!REMOVEHEADER_COMPATIBLE_MODIFIERS.has(modifier)) {
-                return new UnsupportedModifierError(
-                    `$removeheader is not compatible with $${modifier}`,
-                    rule,
-                );
-            }
-        }
-
-        // 2. $to is field-only (invisible to the loop) but incompatible per tsurlfilter.
-        if (rule.permittedToDomains !== null || rule.restrictedToDomains !== null) {
-            return new UnsupportedModifierError(
-                '$removeheader is not compatible with $to',
                 rule,
             );
         }
@@ -402,7 +346,6 @@ export class RuleDeclarativeValidator {
             customChecks: [
                 RuleDeclarativeValidator.checkAllowRulesFn,
                 RuleDeclarativeValidator.checkRemoveHeaderModifierFn,
-                RuleDeclarativeValidator.checkRemoveHeaderCompatibleModifiersFn,
             ],
         },
         [OPTION_NAMES.COOKIE]: {
