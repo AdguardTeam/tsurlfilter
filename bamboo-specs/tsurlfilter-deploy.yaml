@@ -7,14 +7,11 @@ release-naming: ${bamboo.inject.version}
 # Here we need two fully identical plans in order
 # to have two different versions in bamboo releases
 environments:
-  - npmjs • 1.x
-  - npmjs • 3.x
-  - npmjs • 4.x
   - npmjs • 5.x
   - npmjs • alpha
   - npmjs • beta
 
-npmjs • 1.x: &npmjs
+npmjs • 5.x: &npmjs
   variables: &npmjs-variables
     publishArgs: --access public
   docker: &npmjs-docker
@@ -45,15 +42,6 @@ npmjs • 1.x: &npmjs
             npm publish tsurlfilter.tgz $bamboo_publishArgs
   requirements:
     - extension: 'true'
-
-npmjs • 3.x:
-  <<: *npmjs
-
-npmjs • 4.x:
-  <<: *npmjs
-
-npmjs • 5.x:
-  <<: *npmjs
 
 npmjs • alpha:
   <<: *npmjs

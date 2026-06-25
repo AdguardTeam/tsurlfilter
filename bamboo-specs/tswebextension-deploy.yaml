@@ -6,12 +6,11 @@ deployment:
 release-naming: ${bamboo.inject.version}
 
 environments:
-  - npmjs • 2.x
   - npmjs • 4.x
   - npmjs • alpha
   - npmjs • beta
 
-npmjs • 2.x: &npmjs
+npmjs • 4.x: &npmjs
   variables: &npmjs-variables
     publishArgs: --access public
   docker:
@@ -42,9 +41,6 @@ npmjs • 2.x: &npmjs
             npm publish tswebextension.tgz $bamboo_publishArgs
   requirements:
     - extension: 'true'
-
-npmjs • 4.x:
-  <<: *npmjs
 
 npmjs • alpha:
   <<: *npmjs
