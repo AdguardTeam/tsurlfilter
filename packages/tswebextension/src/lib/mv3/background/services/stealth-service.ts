@@ -11,6 +11,7 @@ import { logger } from '../../../common/utils/logger';
 import { getDomain } from '../../../common/utils/url';
 import { appContext } from '../app-context';
 import { type SettingsConfigMV3 } from '../configuration';
+import { type ContentScriptDescriptor, ContentScriptManager } from '../content-script-manager';
 import { type RequestContext, requestContextStorage } from '../request';
 import { SessionRuleId, SessionRulesApi } from '../session-rules-api';
 
@@ -121,6 +122,12 @@ export class StealthService {
      * TODO: After reverting that checkboxes we should remove it (AG-34765).
      */
     private static readonly IS_REFERRER_CHECKBOX_PRESENT = false;
+
+    /**
+     * Namespace used for all stealth content scripts registered via
+     * {@link ContentScriptManager}.
+     */
+    private static readonly CONTENT_SCRIPT_NAMESPACE = 'stealth';
 
     /**
      * Applies stealth actions to request headers and publishes filtering log event.
@@ -735,45 +742,61 @@ export class StealthService {
      *
      * @param contentScriptId Content script id.
      */
-    private static async removeContentScript(contentScriptId: StealthContentScriptId): Promise<void> {
-        const existedContentScripts = await chrome.scripting.getRegisteredContentScripts({
-            ids: [contentScriptId],
-        });
-
-        if (existedContentScripts.length > 0) {
-            await chrome.scripting.unregisterContentScripts({
-                ids: existedContentScripts.map(((script) => script.id)),
-            });
-        }
+    private static async removeContentScript(
+        contentScriptId: StealthContentScriptId,
+    ): Promise<void> {
+        await ContentScriptManager.unregister(
+            StealthService.CONTENT_SCRIPT_NAMESPACE,
+            [contentScriptId],
+        );
     }
 
     /**
-     * Register content script.
-     * If content script with {@link contentScript} has already registered, update it.
+     * Upserts a stealth content script via {@link ContentScriptManager.upsert}.
+     * If the script is already registered, it is updated; otherwise, it is
+     * registered.
      *
-     * @param contentScript Content script to set.
+     * @param contentScript Content script to upsert.
      */
     private static async setContentScript(
-        contentScript: chrome.scripting.RegisteredContentScript & { id: StealthContentScriptId },
+        contentScript: ContentScriptDescriptor & { id: StealthContentScriptId },
     ): Promise<void> {
-        await StealthService.removeContentScript(contentScript.id);
-
-        await chrome.scripting.registerContentScripts([contentScript]);
+        await ContentScriptManager.upsert(
+            StealthService.CONTENT_SCRIPT_NAMESPACE,
+            [contentScript],
+        );
     }
 
     /**
      * Removes all stealth rules and content scripts.
+     *
+     * Errors from individual cleanup steps are logged but do not cause
+     * this method to reject — it always resolves, even if some removals
+     * fail. This is by design: partial cleanup failures should not block
+     * shutdown or reconfiguration flows.
+     *
+     * @returns Array of rejected results describing each failed cleanup step.
      */
-    public static async clearAll(): Promise<void> {
-        const contentScriptIds = Object.values(StealthContentScriptId);
-        contentScriptIds.forEach(async (id) => {
-            await StealthService.removeContentScript(id);
-        });
+    public static async clearAll(): Promise<PromiseRejectedResult[]> {
+        const results = await Promise.allSettled([
+            ContentScriptManager.clear(StealthService.CONTENT_SCRIPT_NAMESPACE),
+            StealthService.removeSessionRule(SessionRuleId.BlockChromeClientData),
+            StealthService.removeSessionRule(SessionRuleId.HideReferrer),
+            StealthService.removeSessionRule(SessionRuleId.HideSearchQueries),
+            StealthService.removeSessionRule(SessionRuleId.SendDoNotTrack),
+        ]);
 
-        await StealthService.removeSessionRule(SessionRuleId.BlockChromeClientData);
-        await StealthService.removeSessionRule(SessionRuleId.HideReferrer);
-        await StealthService.removeSessionRule(SessionRuleId.HideSearchQueries);
-        await StealthService.removeSessionRule(SessionRuleId.SendDoNotTrack);
+        const errors = results.filter((r) => r.status === 'rejected');
+        if (errors.length > 0) {
+            const reasons = errors.map((e) => {
+                const { reason } = e as PromiseRejectedResult;
+                return reason instanceof Error ? `${reason.message}\n${reason.stack}` : String(reason);
+            });
+
+            logger.error(`[tsweb.StealthService.clearAll]: ${errors.length} cleanup step(s) failed:\n${reasons.join('\n---\n')}`);
+        }
+
+        return errors;
     }
 
     /**

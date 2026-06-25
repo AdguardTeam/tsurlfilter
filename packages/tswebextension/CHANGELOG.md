@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `FilteringEventType.PopupBlocked` filtering log event (with matching
   `PopupBlockedEvent` / `PopupBlockedEventData` types) dispatched when
   `$popup` modifier rule is applied [AdguardBrowserExtension#1686].
+- `TsWebExtension.syncContentScripts()` static method (MV3-only) for dynamic
+  content script synchronization via `chrome.scripting` API.
 
 ### Fixed
 

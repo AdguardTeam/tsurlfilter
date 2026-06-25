@@ -108,7 +108,32 @@ You MUST follow the following rules for EVERY task that you perform:
 
 ### I. Architecture
 
-1. **MV2/MV3 split.** The package maintains separate implementations for
+1. **`TsWebExtension` is the single entry point.**
+   Both MV2 and MV3 implementations expose a `TsWebExtension` class that
+   acts as the sole public API for all consumer interaction. Consumers —
+   including `@adguard/api`, `@adguard/api-mv3`, and third-party browser
+   extensions — MUST only call methods on this class (`start`, `configure`,
+   `stop`, `setLocalScriptRules`, `setFilteringEnabled`, `openAssistant`,
+   `getMessageHandler`, etc.). Internal services (`EngineApi`,
+   `WebRequestApi`, `TabsApi`, `StealthService`, `localScriptRulesService`,
+   etc.) MUST NOT be accessed directly by consumers.
+
+   When adding new functionality that consumers need to invoke, expose it
+   as a public method on `TsWebExtension` rather than exporting internal
+   services or APIs. The class delegates to the appropriate internal
+   service, keeping the consumer contract narrow and stable. Both MV2 and
+   MV3 implementations conform to the shared `AppInterface` defined in
+   `src/lib/common/app.ts`, ensuring a consistent contract across manifest
+   versions.
+
+   **Rationale**: Keeping a single entry point simplifies the consumer
+   contract, isolates internal refactoring from downstream code, and
+   ensures that MV2 and MV3 present a uniform API surface despite their
+   fundamentally different internals. Importing an internal service
+   directly from a consumer package creates tight coupling and makes
+   future refactoring harder.
+
+2. **MV2/MV3 split.** The package maintains separate implementations for
    Manifest V2 (`src/lib/mv2/`) and Manifest V3 (`src/lib/mv3/`). Shared
    code lives in `src/lib/common/`. Each has its own export path (`.` for
    MV2, `./mv3` for MV3).
@@ -117,21 +142,21 @@ You MUST follow the following rules for EVERY task that you perform:
    webRequest vs. declarativeNetRequest). Shared logic is factored into
    `common/` to avoid duplication.
 
-2. **Multiple export paths.** The package exposes subpath exports for MV2,
+3. **Multiple export paths.** The package exposes subpath exports for MV2,
    MV3, content scripts, CLI, assistant inject, CSS hits counter, and filters
    storage. New public API MUST be exported through the appropriate barrel.
 
    **Rationale**: Consumers import only what they need; content scripts are
    side-effectful and must be separate entry points.
 
-3. **Content scripts are side-effectful.** Files like `content-script.js`,
+4. **Content scripts are side-effectful.** Files like `content-script.js`,
    `assistant-inject.js`, and `gpc.mv3.js` are marked as `sideEffects` in
    `package.json` and execute on injection.
 
    **Rationale**: These scripts run in the page context and must not be
    tree-shaken.
 
-4. **CLI is a separate entry point.** The `src/cli/` directory provides
+5. **CLI is a separate entry point.** The `src/cli/` directory provides
    build-time utilities, shipped as a separate export.
 
    **Rationale**: Keeps CLI/build-time code out of the runtime library bundle.
