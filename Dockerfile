@@ -281,10 +281,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
       'cd packages/dnr-converter && pnpm lint && pnpm test:smoke && pnpm test:ci'; \
     EXIT_CODE=$?; \
-    if [ -d packages/dnr-converter/tests-reports ]; then \
-      cp -R packages/dnr-converter/tests-reports/. /out/tests-reports/ && \
-      find /out/tests-reports -name '*.xml' -exec touch {} +; \
-    fi; \
+    ./bamboo-specs/scripts/copy-test-reports.sh packages/dnr-converter; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
