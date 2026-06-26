@@ -570,16 +570,11 @@ export class RulesConverter {
             declarativeRules = filteredRules;
         }
 
-        // Filter truncated rules' sources and errors in original (input) order.
-        // Using the original arrays (instead of flattening the grouped index)
-        // preserves the source-map ordering of the no-truncation path, so the
-        // serialized output is byte-for-byte identical regardless of whether
-        // truncation happened. Truncated rules are exactly those whose index
-        // group was emptied to `[]` by `removeTruncatedRuleSourcesAndErrors`;
-        // every declarative rule has at least one source, so an empty group can
-        // only result from truncation. The lazily-built indexes are still used
-        // above to collect `excludedRulesIds` (source rule indices) for the
-        // limitation errors.
+        // Filter truncated rules' sources/errors in original order to keep the
+        // serialized source map byte-for-byte identical regardless of
+        // truncation. Truncated rules are the index groups emptied to `[]`
+        // (every declarative rule has ≥1 source, so an empty group only results
+        // from truncation).
         if (sourcesIndexLoader.isLoaded()) {
             const sourcesIndex = sourcesIndexLoader.get();
             sourceMapValues = sourceMapValues.filter((source) => {

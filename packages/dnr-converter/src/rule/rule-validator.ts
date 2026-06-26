@@ -169,12 +169,9 @@ export class RuleDeclarativeValidator {
      * `$domain` and `$denyallow` set no flag in tsurlfilter and are compatible
      * with `$removeheader`, so they are intentionally NOT checked here.
      *
-     * Parity relies on `rule.ts` keeping `$to` (`permittedToDomains` /
-     * `restrictedToDomains`) and `$domain` (`permittedDomains` /
-     * `restrictedDomains`) in separate fields — only the `$to` pair is
-     * field-only and thus invisible to the `enabledModifiers` loop. A future
-     * refactor merging those fields would silently break this parity and must
-     * update this check accordingly.
+     * Parity relies on `rule.ts` keeping `$to` and `$domain` in separate fields
+     * — only `$to` (`permittedToDomains`/`restrictedToDomains`) is field-only
+     * and thus invisible to the `enabledModifiers` loop.
      *
      * @param rule Network rule.
      * @param name Modifier's name.
