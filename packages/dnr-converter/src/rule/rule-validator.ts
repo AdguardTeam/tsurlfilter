@@ -169,6 +169,13 @@ export class RuleDeclarativeValidator {
      * `$domain` and `$denyallow` set no flag in tsurlfilter and are compatible
      * with `$removeheader`, so they are intentionally NOT checked here.
      *
+     * Parity relies on `rule.ts` keeping `$to` (`permittedToDomains` /
+     * `restrictedToDomains`) and `$domain` (`permittedDomains` /
+     * `restrictedDomains`) in separate fields — only the `$to` pair is
+     * field-only and thus invisible to the `enabledModifiers` loop. A future
+     * refactor merging those fields would silently break this parity and must
+     * update this check accordingly.
+     *
      * @param rule Network rule.
      * @param name Modifier's name.
      *
@@ -179,6 +186,11 @@ export class RuleDeclarativeValidator {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         name: string,
     ): UnsupportedModifierError | null {
+        // Registered as a `customChecks` entry under `$removeheader`, so this is
+        // invoked exactly once per rule — when `$removeheader` is the currently
+        // iterated modifier — even though the body re-scans all
+        // `enabledModifiers`. `name` (the iterated modifier name) is unused
+        // here but required by the `customChecks` callback signature.
         // 1. Loop-reachable incompatible modifiers.
         for (const modifier of rule.enabledModifiers) {
             if (!REMOVEHEADER_COMPATIBLE_MODIFIERS.has(modifier)) {

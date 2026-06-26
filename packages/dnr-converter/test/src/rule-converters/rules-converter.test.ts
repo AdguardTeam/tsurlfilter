@@ -1490,6 +1490,42 @@ describe('RulesConverter', () => {
             expect(result.declarativeRules.map((r) => r.id)).toEqual([1, 2, 4]);
             expect(result.sourceMapValues.map((s) => s.declarativeRuleId)).toEqual([1, 2, 4]);
         });
+
+        it('preserves original source-map order when truncated rule ids are interleaved', () => {
+            // Regression: the truncation path used to rebuild sourceMapValues
+            // from the grouped index (Map by declarativeRuleId), which reorders
+            // entries whenever a rule id appears in non-contiguous positions.
+            // It must instead filter the original array in place.
+            const declarativeRules = [
+                createDeclarativeRule(1, 'example.com'),
+                createDeclarativeRule(2, 'test.com'),
+                createDeclarativeRule(3, 'another.com'),
+            ];
+            // Note: rule id 1 appears twice, non-contiguously (positions 0 and 2).
+            const sourceMapValues = [
+                createSource(1, 10, 100),
+                createSource(2, 20, 200),
+                createSource(1, 30, 300),
+                createSource(3, 40, 400),
+            ];
+            const converted = createConvertedRules(declarativeRules, sourceMapValues);
+
+            isSafeRuleMocked.mockReturnValue(true);
+
+            // @ts-expect-error Accessing private method for testing
+            const result = RulesConverter.checkLimitations(
+                converted,
+                2, // maxNumberOfRules - truncates rule 3
+            );
+
+            // Rule 3 is removed; the remaining sources stay in original order
+            // (including both rule-1 entries in their original positions).
+            expect(result.sourceMapValues).toEqual([
+                createSource(1, 10, 100),
+                createSource(2, 20, 200),
+                createSource(1, 30, 300),
+            ]);
+        });
     });
 
     describe('removeTruncatedRuleSourcesAndErrors', () => {

@@ -693,9 +693,20 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
 
         const content = await filter.getContent();
 
-        // To ensure that unsafe rules are provided and their count is correct,
-        // we check if the length of the provided unsafe rules array is equal to
-        // the `unsafeRulesCount` property of the rule set.
+        // Validate the provided unsafe rules against the stored count.
+        //
+        // Two valid states are intentionally supported:
+        //  - Non-empty `unsafeRules`: used by the unsafe-rule post-pass (see
+        //    `@adguard/dnr-rulesets`) which moves unsafe rules out of the
+        //    declarative list into metadata. Here the length MUST equal
+        //    `unsafeRulesCount`.
+        //  - Empty `unsafeRules` (`[]`): used at the initial CLI conversion
+        //    stage, where no unsafe rules are excluded yet — the count is still
+        //    recorded in `unsafeRulesCount` for capacity tracking, but the
+        //    metadata stores an empty set until the post-pass runs.
+        //
+        // The check therefore only rejects a mismatch when a non-empty array is
+        // provided; an empty array is always allowed (initial conversion).
         if (unsafeRules.length > 0 && unsafeRules.length !== this.unsafeRulesCount) {
             const id = this.getId();
             // eslint-disable-next-line max-len

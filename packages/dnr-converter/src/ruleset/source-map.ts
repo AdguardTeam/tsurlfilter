@@ -89,6 +89,11 @@ const VLQ_CONTINUATION_BIT = 1 << VLQ_BASE_SHIFT;
  * Arithmetic (not bitwise) is used for the magnitude to support values up to
  * 2^31-1 (declarative rule IDs are text hashes) without 32-bit overflow.
  *
+ * Note: every value is non-negative, so an unsigned VLQ variant (without the
+ * sign bit) would save one bit per value. We keep the standard, well-understood
+ * source-map codec for interoperability and readability rather than shaving a
+ * marginal amount of size.
+ *
  * @param value Non-negative integer to encode.
  *
  * @returns Base64 VLQ string for the value.
@@ -180,6 +185,12 @@ const decodeSourceMapVlq = (str: string): number[][] => {
             const [value, next] = decodeVlq(segment, pos);
             triple.push(value);
             pos = next;
+        }
+        // Reject trailing data after exactly 3 values so malformed/crafted
+        // segments cannot decode to silently-wrong data. This hardens the
+        // deserialization contract documented above.
+        if (pos !== segment.length) {
+            throw new Error('Invalid VLQ segment: trailing data after 3 values');
         }
         return triple;
     });

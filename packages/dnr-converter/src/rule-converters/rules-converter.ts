@@ -570,21 +570,29 @@ export class RulesConverter {
             declarativeRules = filteredRules;
         }
 
-        // Flatten the indexes back to arrays only if they were built (i.e. some
-        // rule was truncated). When nothing was truncated, the original arrays
-        // are returned unchanged, which is byte-for-byte identical to the
-        // previous eager-flatten output (see plan's behaviour-preservation
-        // analysis).
+        // Filter truncated rules' sources and errors in original (input) order.
+        // Using the original arrays (instead of flattening the grouped index)
+        // preserves the source-map ordering of the no-truncation path, so the
+        // serialized output is byte-for-byte identical regardless of whether
+        // truncation happened. Truncated rules are exactly those whose index
+        // group was emptied to `[]` by `removeTruncatedRuleSourcesAndErrors`;
+        // every declarative rule has at least one source, so an empty group can
+        // only result from truncation. The lazily-built indexes are still used
+        // above to collect `excludedRulesIds` (source rule indices) for the
+        // limitation errors.
         if (sourcesIndexLoader.isLoaded()) {
-            sourceMapValues = Array.from(sourcesIndexLoader.get().values())
-                .filter((arr) => arr.length > 0)
-                .flat();
+            const sourcesIndex = sourcesIndexLoader.get();
+            sourceMapValues = sourceMapValues.filter((source) => {
+                const kept = sourcesIndex.get(source.declarativeRuleId);
+                return kept !== undefined && kept.length > 0;
+            });
         }
 
         const convertedErrors: (ConversionError | Error)[] = errorsIndexLoader.isLoaded()
-            ? Array.from(errorsIndexLoader.get().values())
-                .filter((arr) => arr.length > 0)
-                .flat()
+            ? convertedRulesErrors.filter((e) => {
+                const kept = errorsIndexLoader.get().get(e.declarativeRule.id);
+                return kept !== undefined && kept.length > 0;
+            })
             : convertedRulesErrors;
         const finalErrors = convertedErrors.concat(otherErrors);
 

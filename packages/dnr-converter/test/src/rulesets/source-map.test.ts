@@ -98,21 +98,12 @@ describe('SourceMap', () => {
         });
 
         it('throws a descriptive error on a segment with wrong arity (too many VLQ values)', () => {
-            // A valid VLQ triple followed by an extra VLQ char — the extra data
-            // is silently consumed (decoder reads exactly 3), but the string
-            // should not have trailing content after a complete triple.
-            // Since the decoder reads exactly 3 values per segment and ignores
-            // the rest, this input produces a valid triple and should NOT throw.
-            // This verifies that extra VLQ chars within a segment are
-            // harmlessly ignored rather than causing an error.
-            const serialized = new SourceMap([
-                { declarativeRuleId: 100, sourceRuleIndex: 0, filterId: 1 },
-                { declarativeRuleId: 200, sourceRuleIndex: 20, filterId: 2 },
-            ]).serialize();
-
-            // Round-trip works — the format is self-delimiting.
-            const result = SourceMap.deserializeSources(serialized);
-            expect(result).toHaveLength(2);
+            // 'C' decodes to 1, so 'CCC' is a valid triple [1, 1, 1]. Appending
+            // an extra 'C' leaves trailing data after exactly 3 values, which
+            // strict parsing rejects (the decoder verifies the whole segment is
+            // consumed).
+            expect(() => SourceMap.deserializeSources('CCCC'))
+                .toThrow(/source map/i);
         });
 
         it('throws a descriptive error on negative decoded values', () => {
@@ -121,6 +112,24 @@ describe('SourceMap', () => {
             // minValue(0) validation.
             expect(() => SourceMap.deserializeSources('DDD'))
                 .toThrow(/source map/i);
+        });
+
+        it('round-trips declarative rule ids near 2^31 - 1 (arithmetic boundary)', () => {
+            // The encoder/decoder use arithmetic (not bitwise) math to support
+            // values up to 2^31 - 1 without 32-bit overflow. Verify the
+            // boundary round-trips exactly.
+            const maxId = 2 ** 31 - 1;
+            const map = new SourceMap([
+                { declarativeRuleId: maxId, sourceRuleIndex: 0, filterId: 1 },
+                { declarativeRuleId: maxId - 1, sourceRuleIndex: 20, filterId: 2 },
+            ]);
+            const serialized = map.serialize();
+
+            const result = SourceMap.deserializeSources(serialized);
+            expect(result).toEqual([
+                { declarativeRuleId: maxId, sourceRuleIndex: 0, filterId: 1 },
+                { declarativeRuleId: maxId - 1, sourceRuleIndex: 20, filterId: 2 },
+            ]);
         });
 
         it('throws a descriptive error on non-triple input (multiple segments with wrong arity)', () => {
