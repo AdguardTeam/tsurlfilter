@@ -4,6 +4,19 @@ packages:
   - "packages/benchmarks/*"
   - "packages/tsurlfilter/test/builders/*"
 
+# DEV-ONLY OVERRIDE (issue 2-AFK): the npm-published @adguard/extended-css@2.2.0
+# does not yet ship the `dist/extended-css.apply.min.js` apply bundle produced by
+# issue 1-AFK. The override is declared in the root package.json under
+# `pnpm.overrides` (alongside the existing @adguard/agtree override) and resolves
+# the package to a COMMITTED local tarball
+# (vendor/adguard-extended-css-2.2.0.tgz) built from the enhance/AG-45086 branch
+# of the extended-css sibling workspace, which contains the apply bundle. The
+# tarball is committed (rather than referenced by absolute path) so that CI can
+# run tests against the apply bundle too. TODO: remove that override and the
+# vendored tarball once 1-AFK's apply bundle is published to npm (e.g. as
+# @adguard/extended-css@2.2.1+) and bump the version in
+# packages/tswebextension/package.json accordingly.
+
 # AG-54210
 # minimumReleaseAge is in minutes; 10080 = 7 days.
 minimumReleaseAge: 10080

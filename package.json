@@ -34,7 +34,7 @@
         "neverBuiltDependencies": [],
         "overrides": {
             "@adguard/agtree": "workspace:^",
-            "@adguard/extended-css": "file:/Volumes/dev/extended-css-AG-45086"
+            "@adguard/extended-css": "file:vendor/adguard-extended-css-2.2.0.tgz"
         }
     }
 }
