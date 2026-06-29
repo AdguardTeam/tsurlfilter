@@ -10,6 +10,20 @@ import { FrameCommon, type PreparedCosmeticResultCommon } from '../../common/tab
  */
 export type PreparedCosmeticResultMV3 = PreparedCosmeticResultCommon & {
     /**
+     * Whether CSS hits statistics collection is enabled for this frame.
+     * Drives both hits-marker encoding in `extCssRules` and the injected
+     * `beforeStyleApplied` callback registration.
+     */
+    areHitsStatsCollected: boolean;
+
+    /**
+     * ExtendedCSS rule strings (`selector { style }`) to inject directly from
+     * the background via `chrome.scripting.executeScript`. `null` when there
+     * are no matching ExtCSS rules, in which case no injection is performed.
+     */
+    extCssRules: string[] | null;
+
+    /**
      * Prepared cosmetic result for MV3 with scriptlets data and script texts.
      */
     localRules: {

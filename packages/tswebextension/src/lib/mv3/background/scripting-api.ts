@@ -2,6 +2,7 @@ import { type Source } from '@adguard/scriptlets';
 import { type ScriptletData } from '@adguard/tsurlfilter';
 
 import { appContext } from './app-context';
+import { applyExtCss } from './extcss-apply-fn';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
 
 /**
@@ -69,6 +70,22 @@ export type ExecuteCombinedScriptParams = ExecuteTarget & {
      * Combined script text to be injected.
      */
     scriptText: string;
+};
+
+/**
+ * Parameters for executing the ExtendedCSS engine + rules.
+ */
+export type ExecuteExtCssParams = ExecuteTarget & {
+    /**
+     * ExtendedCSS rule strings to apply.
+     */
+    cssRules: string[];
+
+    /**
+     * Whether to register the CSS-hits `beforeStyleApplied` callback in the
+     * injected func.
+     */
+    collectStats: boolean;
 };
 
 /**
@@ -246,6 +263,42 @@ export class ScriptingApi {
             func: scriptFunction,
             injectImmediately: true,
             world: 'MAIN',
+        });
+    }
+
+    /**
+     * Injects the pre-bundled ExtendedCSS engine and the matching rule strings
+     * into the target frame and applies them. Runs in the ISOLATED world
+     * (ExtendedCss only needs DOM access; `MutationObserver` in the isolated
+     * world observes the same DOM, including page-JS mutations) and injects
+     * immediately at `onCommitted` to minimize ad flash.
+     *
+     * The `func` is the static, self-contained `applyExtCss` function whose
+     * body contains the inlined `@adguard/extended-css` engine (issue 1-AFK),
+     * so it survives `executeScript` serialization and satisfies the MV3
+     * service-worker CSP (no `eval`/`new Function`).
+     *
+     * @param params Parameters for executing ExtendedCSS.
+     * @param params.tabId The ID of the tab.
+     * @param params.frameId The ID of the frame.
+     * @param params.cssRules ExtendedCSS rule strings to apply.
+     * @param params.collectStats Whether to register the CSS-hits
+     * `beforeStyleApplied` callback in the injected func.
+     *
+     * @returns Promise that resolves when the engine + rules are injected.
+     */
+    public static async executeExtCss({
+        tabId,
+        frameId,
+        cssRules,
+        collectStats,
+    }: ExecuteExtCssParams): Promise<void> {
+        await chrome.scripting.executeScript({
+            target: { tabId, frameIds: [frameId] },
+            func: applyExtCss,
+            args: [cssRules, collectStats],
+            injectImmediately: true,
+            world: 'ISOLATED',
         });
     }
 }

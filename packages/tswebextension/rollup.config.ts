@@ -8,6 +8,12 @@ import cleanup from 'rollup-plugin-cleanup';
 import dts from 'rollup-plugin-dts';
 import externals from 'rollup-plugin-node-externals';
 
+// NOTE: explicit `.ts` extension is required because Rollup's config bundler
+// (loaded via `--configPlugin @rollup/plugin-swc`) resolves exact file paths but
+// does not append the `.ts` extension to extensionless specifiers.
+// eslint-disable-next-line import/extensions -- see NOTE above
+import { inlineExtCssBundle } from './tasks/inline-extcss-bundle.ts';
+
 const BUILD_DIST = 'dist';
 
 const commonPlugins: Plugin[] = [
@@ -17,6 +23,9 @@ const commonPlugins: Plugin[] = [
     resolve({ preferBuiltins: false }),
     cleanup({ comments: ['srcmaps'] }),
     commonjs(),
+    // Must run AFTER typescript so the type checker never sees the inlined
+    // `var applyExtendedCss` alongside the type-only `declare const`.
+    inlineExtCssBundle(),
 ];
 
 /**

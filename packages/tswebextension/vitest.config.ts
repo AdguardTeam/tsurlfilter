@@ -1,6 +1,7 @@
 import { defineConfig, defineProject, type UserWorkspaceConfig } from 'vitest/config';
 
 import { ManifestVersionEnv } from './tasks/constants';
+import { inlineExtCssBundle } from './tasks/inline-extcss-bundle';
 
 /**
  * Creates a test configuration for a specific manifest version.
@@ -32,6 +33,11 @@ const createProjectForManifestVersion = (
             '**/test/lib/common/**',
         ],
     },
+    // The ExtCSS inlining plugin is only needed for the MV3 project, where the
+    // `applyExtCss` function (and its tests) live. It is a no-op for MV2.
+    plugins: manifestVersion === ManifestVersionEnv.Third
+        ? [inlineExtCssBundle()]
+        : [],
 });
 
 export default defineConfig({

@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Performance benchmark and large-rule-set (500 rules) validation for the
+  background-injected ExtendedCSS path (`applyExtCss`), covering application
+  latency (print-only, correctness-asserted) and `executeScript` payload
+  sizing.
+
+- Inject ExtendedCSS rules via `chrome.userScripts.execute()` (ISOLATED world)
+  when the user has granted the userScripts API permission, reusing the existing
+  `UserScriptsApi` wrapper and deduplication. When the permission is not granted,
+  ExtCSS continues to use `scripting.executeScript()`. There is no local/remote
+  split for ExtCSS rules (AG-45086).
+
+- Apply ExtendedCSS rules directly from the MV3 background service worker via
+  `chrome.scripting.executeScript({ func, args })`, using the pre-bundled
+  `@adguard/extended-css` apply engine (inlined at build time). No injection is
+  performed when there are no matching ExtCSS rules.
+
+### Changed
+
+- Lowered the log level for caught ExtendedCSS injection failures on
+  restricted or permission-denied pages from `info` to `debug` (US5 / SC-005).
+- CSS hits statistics are now reported from the ISOLATED-world injected
+  `applyExtCss` func via a self-contained `beforeStyleApplied` callback that
+  sends `SaveCssHitsStats` messages to the background, instead of being counted
+  in the content script (AG-45086).
+- The background-injected ExtendedCSS engine now disposes the previous
+  `ExtendedCss` instance (disconnecting its `MutationObserver` and reverting
+  styles) before applying a new one on re-injection, preventing stale/duplicate
+  observers across same-document (SPA) navigations. Dynamically added matching
+  elements continue to be hidden by the engine's built-in `MutationObserver`.
+- ExtendedCSS rules are no longer applied from the MV3 content script. The
+  MV3 `CosmeticController` now only repairs invalid grouped native CSS
+  selectors; `GetCosmeticData` returns `extCssRules: null`, the legacy
+  retry loop and `ExtendedCss` instantiation are removed, and
+  `@adguard/extended-css` is dropped from the MV3 content-script bundle.
+  ExtCSS is applied solely by the background injection path. The MV2 path is
+  unchanged.
+
+### Fixed
+
+- Fixed the build-time ExtCSS bundle inliner corrupting the inlined engine.
+  The inliner used a string replacement, so `$` patterns in the bundle source
+  (e.g. `$&` inside `escapeRegExp`) were interpreted by
+  `String.prototype.replace` as match/backreference substitutions, breaking
+  regex-dependent pseudo-classes (`:matches-css()`, `:contains()` with special
+  characters, etc.) in the shipped MV3 bundle. A replacer function is now used
+  so the bundle source is emitted verbatim.
+
 ## [4.1.2] - 2026-05-13
 
 ### Fixed

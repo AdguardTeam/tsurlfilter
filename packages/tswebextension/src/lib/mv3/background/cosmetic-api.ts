@@ -224,16 +224,6 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const cosmeticResult = engineApi.matchCosmetic(matchQuery);
 
-        data.extCssRules = CosmeticApi.getExtCssRules(
-            cosmeticResult,
-            {
-                areHitsStatsCollected,
-                // always true for MV3
-                // since minimum version of mv3 browser already supports :has()
-                isNativeHasSupported: true,
-            },
-        );
-
         data.nativeCssSelectors = CosmeticApi.getNativeCssSelectors(
             cosmeticResult,
             { isNativeHasSupported: true },
@@ -423,6 +413,54 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Injects ExtendedCSS rules into the specified tab and frame directly from
+     * the background via the Scripting API.
+     *
+     * Makes no call when there are no matching rules (PRD SC-002 / US1 scenario
+     * 3). Errors are caught and logged (US5) — restricted pages must not
+     * disrupt the extension. When `areHitsStatsCollected` is true, the rules
+     * carry hits markers and the injected func registers a
+     * `beforeStyleApplied` callback that reports hits back to the background.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param extCssRules ExtendedCSS rule strings, or null when none match.
+     * @param areHitsStatsCollected Whether CSS hits stats collection is enabled.
+     *
+     * @returns A promise that resolves when the rules are injected.
+     */
+    private static async applyExtCssRules(
+        tabId: number,
+        frameId: number,
+        extCssRules: string[] | null,
+        areHitsStatsCollected: boolean,
+    ): Promise<void> {
+        if (!extCssRules || extCssRules.length === 0) {
+            return;
+        }
+
+        try {
+            if (UserScriptsApi.isEnabled) {
+                await UserScriptsApi.executeExtCss({
+                    tabId,
+                    frameId,
+                    cssRules: extCssRules,
+                    collectStats: areHitsStatsCollected,
+                });
+            } else {
+                await ScriptingApi.executeExtCss({
+                    tabId,
+                    frameId,
+                    cssRules: extCssRules,
+                    collectStats: areHitsStatsCollected,
+                });
+            }
+        } catch (e) {
+            logger.debug(`[tsweb.CosmeticApi.applyExtCssRules]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
+        }
+    }
+
+    /**
      * Filters script rules for logging.
      *
      * @param params Data for JS rule logging.
@@ -529,6 +567,12 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (shouldApplyCss) {
             tasks.push(
                 CosmeticApi.applyCss(tabId, frameId, frameContext.preparedCosmeticResult.cssText),
+                CosmeticApi.applyExtCssRules(
+                    tabId,
+                    frameId,
+                    frameContext.preparedCosmeticResult.extCssRules,
+                    frameContext.preparedCosmeticResult.areHitsStatsCollected,
+                ),
             );
         }
 

@@ -1,55 +1,29 @@
-import { type ExtCssConfiguration, ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
-
-import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
-import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
 import { MessageType } from '../../common/message-constants';
 import { validateSelectors } from '../../common/utils/selector-validator';
 import { HIDING_STYLE } from '../../mv2/common/hidden-style';
 
 /**
  * This class applies cosmetic rules in page context.
+ *
+ * ExtendedCSS rules are applied directly from the MV3 background service worker
+ * via `chrome.scripting.executeScript` (see `CosmeticApi.applyCosmeticRules`).
+ * The content script is responsible only for repairing invalid grouped native
+ * CSS selectors that the background injected via the browser CSS API.
  */
 export class CosmeticController {
     /**
-     * Retry timeout for {@link MessageType.GetCosmeticData} request to background in milliseconds.
-     */
-    private static GET_COSMETIC_DATA_RETRY_TIMEOUT_MS = 100;
-
-    /**
-     * Max {@link MessageType.GetCosmeticData} request limit.
-     */
-    private static MAX_GET_COSMETIC_DATA_TRIES = 200;
-
-    /**
-     * Number of {@link MessageType.GetCosmeticData} requests.
-     */
-    private tries = 0;
-
-    /**
-     * Module that collects statistics about the usage of CSS rules.
-     */
-    private cssHitsCounter?: CssHitsCounter;
-
-    /**
-     * Creates new {@link CosmeticController} instance.
-     */
-    constructor() {
-        this.process = this.process.bind(this);
-        this.beforeStyleApplied = this.beforeStyleApplied.bind(this);
-    }
-
-    /**
      * Init cosmetic processing.
      */
-    public init(): void {
-        this.process();
+    public static init(): void {
+        CosmeticController.process();
     }
 
     /**
-     * Sends {@link MessageType.GetCosmeticData} message to background and process response.
+     * Sends {@link MessageType.GetCosmeticData} message to background and
+     * repairs native CSS selectors if any are invalid.
      */
-    private async process(): Promise<void> {
+    private static async process(): Promise<void> {
         const res = await sendAppMessage({
             type: MessageType.GetCosmeticData,
             payload: {
@@ -58,60 +32,8 @@ export class CosmeticController {
         });
 
         if (res) {
-            this.applyExtendedCss(res);
+            CosmeticController.repairNativeCss(res.nativeCssSelectors);
         }
-    }
-
-    /**
-     * Process {@link MessageType.GetCosmeticData} response from background.
-     *
-     * If {@link cosmeticData.isAppStarted} is false, retry
-     * request after {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} milliseconds.
-     * Else apply extended css rules from {@link cosmeticData.extCssText}
-     * and enable {@link CssHitsCounter} if {@link cosmeticData.areHitsStatsCollected} is true.
-     *
-     * @param cosmeticData Response cosmetic data from background.
-     */
-    private applyExtendedCss(cosmeticData: ContentScriptCosmeticData): void {
-        const {
-            isAppStarted,
-            extCssRules,
-            areHitsStatsCollected,
-            nativeCssSelectors,
-        } = cosmeticData;
-
-        if (!isAppStarted
-            && this.tries <= CosmeticController.MAX_GET_COSMETIC_DATA_TRIES
-        ) {
-            this.tries += 1;
-
-            setTimeout(
-                this.process,
-                CosmeticController.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS,
-            );
-            return;
-        }
-
-        if (areHitsStatsCollected) {
-            this.cssHitsCounter = CosmeticController.createCssHitsCounter();
-        }
-
-        CosmeticController.repairNativeCss(nativeCssSelectors);
-
-        if (!extCssRules || extCssRules.length === 0) {
-            return;
-        }
-
-        const extendedCssConfig: ExtCssConfiguration = {
-            cssRules: extCssRules,
-        };
-
-        if (areHitsStatsCollected) {
-            extendedCssConfig.beforeStyleApplied = this.beforeStyleApplied;
-        }
-
-        const extendedCss = new ExtendedCss(extendedCssConfig);
-        extendedCss.apply();
     }
 
     /**
@@ -147,34 +69,5 @@ export class CosmeticController {
             .map((sel) => `${sel} ${HIDING_STYLE}`)
             .join('\n');
         (document.head || document.documentElement).appendChild(style);
-    }
-
-    /**
-     * Preprocess {@link IAffectedElement} for {@link ExtendedCss} instance.
-     *
-     * @param el Record with required 'content' style property in rules.
-     *
-     * @returns Affected element record.
-     */
-    private beforeStyleApplied(el: IAffectedElement): IAffectedElement {
-        if (!this.cssHitsCounter) {
-            return el;
-        }
-
-        return this.cssHitsCounter.countAffectedByExtendedCss(el);
-    }
-
-    /**
-     * Create new {@link CssHitsCounter} instance.
-     *
-     * @returns CssHitsCounter instance.
-     */
-    private static createCssHitsCounter(): CssHitsCounter {
-        return new CssHitsCounter((stats) => {
-            sendAppMessage({
-                type: MessageType.SaveCssHitsStats,
-                payload: stats,
-            });
-        });
     }
 }

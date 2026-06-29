@@ -122,6 +122,19 @@ export class CosmeticFrameProcessor {
                     isNativeHasSupported: true,
                 },
             ),
+            // ExtendedCSS rules are injected directly from the background via
+            // chrome.scripting.executeScript. When CSS-hits stats are enabled,
+            // the rules carry hits markers and the injected func registers a
+            // beforeStyleApplied callback.
+            extCssRules: CosmeticApi.getExtCssRules(
+                cosmeticResult,
+                {
+                    areHitsStatsCollected,
+                    // always true for MV3
+                    isNativeHasSupported: true,
+                },
+            ),
+            areHitsStatsCollected,
             // Local script rules should be processed separately
             // because they will be injected with two different calls
             // to scripting API.
