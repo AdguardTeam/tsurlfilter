@@ -56,6 +56,8 @@
         "build": "rimraf dist && rollup -c rollup.config.ts --configPlugin typescript",
         "postbuild": "tsx tasks/build-txt.ts",
         "docs:examples": "tsx tasks/generate-examples.ts",
+        "bench:cold-start": "tsx benchmarks/cold-start-benchmark.ts",
+        "bench:vlq": "tsx benchmarks/vlq-size-benchmark.ts",
         "test": "vitest run",
         "test:light": "vitest run --exclude \"**/*benchmark*.test.ts\"",
         "test:watch": "vitest run --watch",
@@ -69,7 +71,7 @@
         "tgz": "pnpm pack --out dnr-converter.tgz"
     },
     "lint-staged": {
-        "{src,cli,test,tasks}/**/*.ts": [
+        "{src,cli,test,tasks,benchmarks}/**/*.ts": [
             "eslint"
         ]
     },

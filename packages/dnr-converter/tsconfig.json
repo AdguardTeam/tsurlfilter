@@ -10,6 +10,7 @@
         "cli/**/*.ts",
         "test/**/*.ts",
         "tasks/**/*.ts",
+        "benchmarks/**/*.ts",
         "**/.eslintrc.cjs",
         "rollup.config.ts",
         "vitest.config.ts"
