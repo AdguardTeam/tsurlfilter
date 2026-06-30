@@ -42,6 +42,48 @@ type LogJsRulesParamsMv3 = LogJsRulesParams & {
  */
 export class CosmeticApi extends CosmeticApiCommon {
     /**
+     * Domains for which scriptlets and JS rules are injected via
+     * preregistered content scripts (`chrome.scripting.registerContentScripts`).
+     *
+     * When a page's domain matches one of these, the dynamic cosmetic
+     * injection (local script rules and scriptlets) is skipped to avoid
+     * double execution — the preregistered bundle already handles it.
+     *
+     * Set via {@link setPreregisteredScriptDomains}.
+     */
+    private static preregisteredScriptDomains: Set<string> = new Set();
+
+    /**
+     * Sets the list of domains that have preregistered content scripts.
+     *
+     * For these domains, local script rules and scriptlets will not be
+     * injected dynamically by the cosmetic API, preventing double execution
+     * with the preregistered bundles.
+     *
+     * @param domains List of preregistered domain strings (e.g. `["youtube.com"]`).
+     */
+    public static setPreregisteredScriptDomains(domains: string[]): void {
+        CosmeticApi.preregisteredScriptDomains = new Set(domains);
+    }
+
+    /**
+     * Checks whether a domain (or any of its parent domains) is in the
+     * preregistered script domains set.
+     *
+     * @param domain Domain to check (e.g. `"music.youtube.com"`).
+     *
+     * @returns `true` if the domain matches a preregistered domain.
+     */
+    private static isPreregisteredDomain(domain: string): boolean {
+        for (const preregistered of CosmeticApi.preregisteredScriptDomains) {
+            if (domain === preregistered || domain.endsWith(`.${preregistered}`)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * This is STEP 3: All previously matched script rules are processed and filtered:
      * Scriptlet and JS rules from pre-built filters (previously collected, pre-built and passed to the engine)
      * are going to be executed as functions via chrome.scripting API,
@@ -512,19 +554,31 @@ export class CosmeticApi extends CosmeticApiCommon {
             return [];
         }
 
-        const tasks = [
-            CosmeticApi.applyLocalCosmeticRules(
-                tabId,
-                frameId,
-                frameContext.preparedCosmeticResult.localRules,
-                frameContext.url,
-            ),
+        const tasks: Promise<void>[] = [];
+
+        // Skip local script / scriptlet injection for preregistered domains —
+        // those are handled by preregistered content scripts, and injecting
+        // them again here would cause double execution (the two guard
+        // mechanisms are independent and cannot cross-deduplicate).
+        const domain = getDomain(frameContext.url);
+        if (!domain || !CosmeticApi.isPreregisteredDomain(domain)) {
+            tasks.push(
+                CosmeticApi.applyLocalCosmeticRules(
+                    tabId,
+                    frameId,
+                    frameContext.preparedCosmeticResult.localRules,
+                    frameContext.url,
+                ),
+            );
+        }
+
+        tasks.push(
             CosmeticApi.applyRemoteCosmeticRules(
                 tabId,
                 frameId,
                 frameContext.preparedCosmeticResult.remoteRules,
             ),
-        ];
+        );
 
         if (shouldApplyCss) {
             tasks.push(

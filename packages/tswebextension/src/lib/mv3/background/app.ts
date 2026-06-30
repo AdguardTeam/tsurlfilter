@@ -24,6 +24,7 @@ import { appContext } from './app-context';
 import { assistant, Assistant } from './assistant';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
 import { type ContentScriptDescriptor, ContentScriptManager } from './content-script-manager';
+import { CosmeticApi } from './cosmetic-api';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { engineApi } from './engine-api';
@@ -545,6 +546,22 @@ export class TsWebExtension implements AppInterface<
      */
     public static setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
         localScriptRulesService.setLocalScriptRules(localScriptRules);
+    }
+
+    /**
+     * Sets the list of domains that have preregistered content scripts.
+     *
+     * For these domains, local script rules and scriptlets will not be
+     * injected dynamically by the cosmetic API, preventing double execution
+     * with the preregistered bundles.
+     *
+     * **MV3 only** — there is no MV2 equivalent because preregistered
+     * content scripts are only available in Manifest V3.
+     *
+     * @param domains List of preregistered domain strings (e.g. `["youtube.com"]`).
+     */
+    public static setPreregisteredScriptDomains(domains: string[]): void {
+        CosmeticApi.setPreregisteredScriptDomains(domains);
     }
 
     /**

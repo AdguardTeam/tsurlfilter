@@ -1,4 +1,5 @@
 export { BrowserFilters } from '../../common/constants';
+export { isJsInjectionRule, parseFilterList } from '../common/local-script-rules-base';
 export { LocalScriptRulesJs } from '../common/local-script-rules-js';
 export { type DomainConfig, LocalScriptRulesJson } from '../common/local-script-rules-json';
 export {
