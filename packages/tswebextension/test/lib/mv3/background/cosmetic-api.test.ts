@@ -61,7 +61,7 @@ vi.mock('../../../../src/lib/mv3/background/user-scripts-api', () => ({
  *
  * @returns Partial frame context accepted by the mock.
  */
-const makeFrameContext = (url: string) => ({
+const makeFrameContext = (url: string): object => ({
     url,
     preparedCosmeticResult: {
         localRules: {
