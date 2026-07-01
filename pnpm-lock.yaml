@@ -2157,7 +2157,7 @@ packages:
     resolution: {integrity: sha512-KfHD0UrCkkHQK7cq5nBvY9cJ/kDJoMwKfq66cJngLRKnCkCYGKGBT+HPmwapkXK96UItfPswW07i1VWIaZSgpA==}
 
   '@adguard/extended-css@file:vendor/adguard-extended-css-2.2.0.tgz':
-    resolution: {integrity: sha512-RsZBPp6BsTdG3SaRk2jTdYrI94nO8uyD3ygbAMpKTSjy65iqbdM8EijS/vJi8vwyCv5cmvjpJ2OuzoV9w2uyKQ==, tarball: file:vendor/adguard-extended-css-2.2.0.tgz}
+    resolution: {integrity: sha512-84GZIOPFXB1vDEyd0Qu4oBhKGkOvc/viuaKaahpkSMPHqBj6OYf+RSXsUi4pPSJFfGdQHNtEC9K9Qs951d4+VQ==, tarball: file:vendor/adguard-extended-css-2.2.0.tgz}
     version: 2.2.0
     engines: {node: '>=16'}
 
