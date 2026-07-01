@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - AdGuard Mail Tracking Protection filter list (ID 25) to `chromium-mv3` and
   `opera-mv3` rulesets.
+- `isJsInjectionRule` and `parseFilterList` re-exported from package entry point
+  for external consumers.
+
+### Changed
+
+- `isJsInjectionRule` refined to a type predicate (`ruleNode is JsInjectionRule`)
+  with null-safety (`ruleNode: AnyRule | null`).
 
 ## [4.2.1] - 2026-04-24
 

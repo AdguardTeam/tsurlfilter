@@ -60,23 +60,34 @@ export class CosmeticApi extends CosmeticApiCommon {
      * injected dynamically by the cosmetic API, preventing double execution
      * with the preregistered bundles.
      *
+     * Domains are normalized (lowercased, trimmed, leading/trailing dots
+     * removed) before storage to ensure reliable matching regardless of
+     * how callers format them.
+     *
      * @param domains List of preregistered domain strings (e.g. `["youtube.com"]`).
      */
     public static setPreregisteredScriptDomains(domains: string[]): void {
-        CosmeticApi.preregisteredScriptDomains = new Set(domains);
+        CosmeticApi.preregisteredScriptDomains = new Set(
+            domains.map((d) => d.trim().toLowerCase().replace(/^\.+|\.+$/g, '')),
+        );
     }
 
     /**
      * Checks whether a domain (or any of its parent domains) is in the
      * preregistered script domains set.
      *
+     * The provided domain is lowercased before lookup for defensive
+     * case-insensitive matching, even though browser-originated URLs are
+     * already lowercased in practice.
+     *
      * @param domain Domain to check (e.g. `"music.youtube.com"`).
      *
      * @returns `true` if the domain matches a preregistered domain.
      */
     private static isPreregisteredDomain(domain: string): boolean {
+        const normalized = domain.toLowerCase();
         for (const preregistered of CosmeticApi.preregisteredScriptDomains) {
-            if (domain === preregistered || domain.endsWith(`.${preregistered}`)) {
+            if (normalized === preregistered || normalized.endsWith(`.${preregistered}`)) {
                 return true;
             }
         }

@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Added
 
 - $urltransform modifier support [AGLint#249].
+- `getScriptletName` utility export for extracting scriptlet names from `ParameterList` nodes.
 
 [AGLint#249]: https://github.com/AdguardTeam/AGLint/issues/249
 [4.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.1.2

@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `$popup` modifier rule is applied [AdguardBrowserExtension#1686].
 - `TsWebExtension.syncContentScripts()` static method (MV3-only) for dynamic
   content script synchronization via `chrome.scripting` API.
+- `TsWebExtension.setPreregisteredScriptDomains()` static method (MV3-only) for
+  skipping dynamic scriptlet injection on domains covered by preregistered
+  content scripts, preventing double execution.
 
 ### Fixed
 
@@ -444,8 +447,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#147]: https://github.com/AdguardTeam/tsurlfilter/issues/147
 [AdguardBrowserExtension#2646]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2646
 [AdguardBrowserExtension#2826]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2826
-[AdguardBrowserExtension#2832]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2832
-[AdguardBrowserExtension#2839]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2839
+[AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
+[AdguardBrowserExtension#3192]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3192
 [AdguardBrowserExtension#3122]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3122
 [AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
 [AdguardBrowserExtension#3192]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3192
