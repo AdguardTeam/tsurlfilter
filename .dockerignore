@@ -15,6 +15,13 @@ node_modules
 **/dist
 **/*.tgz
 
+# FIXME: undo before merging. The line below un-excludes the vendored
+# @adguard/extended-css tarball (referenced by the pnpm.overrides in
+# package.json) so it is available during `pnpm install` in the deps stage.
+# Remove this rule (and the COPY vendor/ in Dockerfile + the override) once
+# the apply bundle is published to npm.
+!vendor/*.tgz
+
 # IDE and editor files
 .vscode
 .idea
