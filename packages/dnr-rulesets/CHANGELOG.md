@@ -13,8 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - AdGuard Mail Tracking Protection filter (filter ID `25`) to `chromium-mv3`
   and `opera-mv3` rulesets.
-- Stevo's AI Blocklist (filter ID `260`) to `chromium-mv3` and `opera-mv3`
-  rulesets.
 
 ### Changed
 

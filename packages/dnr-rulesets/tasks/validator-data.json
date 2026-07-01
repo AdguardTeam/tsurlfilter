@@ -52,8 +52,7 @@
             255,
             256,
             257,
-            259,
-            260
+            259
         ],
         "rulesetMetadataKeys": [
             "regexpRulesCount",
@@ -116,8 +115,7 @@
             255,
             256,
             257,
-            259,
-            260
+            259
         ],
         "rulesetMetadataKeys": [
             "regexpRulesCount",
