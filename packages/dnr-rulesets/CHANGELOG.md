@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- 4.2.0-beta.2 is the same as 4.2.0-beta.1, just a new build with latest filters -->
 
+## [Unreleased]
+
+### Added
+
+- AdGuard Mail Tracking Protection filter (filter ID `25`) to `chromium-mv3`
+  and `opera-mv3` rulesets.
+- Stevo's AI Blocklist (filter ID `260`) to `chromium-mv3` and `opera-mv3`
+  rulesets.
+
+### Changed
+
+- Updated `validator-data.json` baseline versions to `4.2.1` for both
+  `chromium-mv3` and `opera-mv3`.
+
 ## [4.2.1] - 2026-04-24
 
 ### Changed
