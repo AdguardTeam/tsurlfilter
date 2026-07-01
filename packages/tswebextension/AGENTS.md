@@ -96,6 +96,10 @@ You MUST follow the following rules for EVERY task that you perform:
   section. Add entries to the appropriate subsection (`Added`, `Changed`, or
   `Fixed`); do not create duplicate subsections.
 
+- Do NOT add internal task numbers (e.g. `AG-12345`) or links to internal
+  websites (e.g. `jira.adguard.com`) in `CHANGELOG.md`. Only public GitHub
+  links are allowed as markdown reference links.
+
 - Since `@adguard/tswebextension` is a dependency of `@adguard/api` and
   `@adguard/api-mv3`, consider updating their changelogs when making breaking
   or behavioral changes.

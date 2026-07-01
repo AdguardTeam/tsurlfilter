@@ -125,11 +125,12 @@ export class Filter implements IFilter {
         // Assign the promise immediately to avoid race conditions
         this.contentLoadingPromise = (async (): Promise<FilterList> => {
             try {
+                // A successfully resolved source is treated as available even
+                // when it yields an empty filter list (e.g. user rules,
+                // allowlist or trusted-domains filters with no entries). Only a
+                // rejecting source is considered unavailable. Empty content is a
+                // valid, non-throwing result.
                 const content = await this.source.getContent();
-
-                if (!content.getContent()) {
-                    throw new Error('Loaded empty content');
-                }
 
                 // Assign content and clear the loading promise
                 this.content = content;

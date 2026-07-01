@@ -170,6 +170,24 @@ export class TabContextCommon<F extends FrameCommon> {
      * @param frameId Frame id.
      */
     public setDocumentId(documentId: string, frameId: number): void {
+        // A frame can only have one active document at a time, so any document
+        // IDs previously mapped to this frame are now stale. Remove them before
+        // adding the new mapping. This is what keeps documentIdsMap bounded for
+        // the main frame (frame 0), which is never deleted via deleteFrameContext
+        // and would otherwise accumulate one entry per navigation, causing OOM on
+        // redirect loops.
+        //
+        // We intentionally do not call clearStaleDocumentIds() here: it is on the
+        // hot path of a redirect loop, and a per-frame delete is allocation-free,
+        // whereas clearStaleDocumentIds() builds a throwaway array + Set + spread
+        // on every call. Removing only entries for this frame is sufficient because
+        // stale IDs of other frames are pruned by deleteFrameContext, and a full
+        // sweep still runs via clearStaleFrames -> clearStaleDocumentIds.
+        for (const [existingDocumentId, existingFrameId] of this.documentIdsMap) {
+            if (existingFrameId === frameId) {
+                this.documentIdsMap.delete(existingDocumentId);
+            }
+        }
         this.documentIdsMap.set(documentId, frameId);
     }
 

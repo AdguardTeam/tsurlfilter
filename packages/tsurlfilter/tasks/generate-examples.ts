@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
 import { FilterList } from '../src/filterlist/filter-list';
 import { DeclarativeFilterConverter, type DeclarativeRule, Filter } from '../src/rules/declarative-converter';
+import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
+import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
 
 const readmeTxtPath = './src/rules/declarative-converter/readme.txt';
 const readmeMdPath = './src/rules/declarative-converter/README.md';
@@ -13,6 +15,10 @@ setConfiguration({
     verbose: true,
     compatibility: CompatibilityTypes.Extension,
 });
+
+// Set the RE2 regex validator so that rules with regexFilter (e.g.
+// $urltransform) pass validation in the Node.js environment.
+re2Validator.setValidator(regexValidatorNode);
 
 const filterConverter = new DeclarativeFilterConverter();
 

@@ -36,9 +36,10 @@ export async function loadRulesetAndFilter(
         rawFilterList,
     } = metadataRule.metadata;
 
-    const filterList = new FilterList(rawFilterList, conversionData);
-
     const filterId = Number(id);
+
+    const filterList = new FilterList(rawFilterList, filterId, conversionData);
+
     const filter = new Filter(
         filterId,
         { getContent: (): Promise<FilterList> => Promise.resolve(filterList) },

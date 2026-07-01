@@ -56,13 +56,29 @@ describe('Engine Api', () => {
     };
 
     describe('startEngine method', () => {
-        it('should run tsurlfilter engine', () => {
+        it('should run tsurlfilter engine and return conversion errors', async () => {
             vi.spyOn(Engine, 'createAsync');
+
+            // Mock getConversionErrors so we can verify the return value
+            const mockConversionErrors = [
+                {
+                    rule: '##^:bad-rule()',
+                    offset: 0,
+                    message: 'bad rule',
+                    filterId: 1,
+                },
+            ];
+            const getConversionErrorsSpy = vi.spyOn(Engine.prototype, 'getConversionErrors')
+                .mockReturnValue(mockConversionErrors);
 
             const configuration = getConfigurationMv2Fixture();
 
-            engineApi.startEngine(configuration);
+            const result = await engineApi.startEngine(configuration);
+
             expect(Engine.createAsync).toHaveBeenCalled();
+            expect(result).toEqual({ conversionErrors: mockConversionErrors });
+
+            getConversionErrorsSpy.mockRestore();
         });
     });
 

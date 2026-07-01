@@ -114,7 +114,7 @@ export const convertFilters = async (
 
             return new Filter(
                 filterId,
-                { getContent: async () => new FilterList(data) },
+                { getContent: async () => new FilterList(data, filterId) },
                 // we consider that all preinstalled filters are trusted
                 true,
             );

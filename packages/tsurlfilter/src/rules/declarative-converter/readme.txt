@@ -160,7 +160,8 @@ example.org##.banner
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
-! Doesn't support regexps and any tld domains
+! Doesn't support regexps and wildcard domains except exact wildcard TLD
+! domains such as example.*, which are expanded to popular TLDs.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -282,6 +283,10 @@ page$domain=targetdomain.com|~example.org
 
 ! ## $to
 ! <b>Status</b>: supported
+! <br/>
+! <b>MV3 notes:</b>
+! <br/>
+! Wildcard TLD domains such as tracker.* are expanded to popular TLDs.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -711,6 +716,28 @@ $xmlhttprequest,removeparam=p1case2
 ||example.org^$replace=/Z/Y/
 ! example 4
 @@||example.org/page/*$replace=/Z/Y/
+
+! ## $urltransform
+! <b>Status</b>: supported
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Converted to DNR redirect rules with regexSubstitution. Full-URL replacements
+! are passed through directly. Path-only replacements are wrapped so the origin
+! is preserved. Multi-stage pipelines (multiple substitutions separated by `|`)
+! produce one DNR rule per stage.
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1
+! full-URL replacement: redirect from old.example.com to new.example.net
+||old.example.com^$urltransform=/^https:\/\/old\.example\.com\/(.*)/https:\/\/new.example.net\/\$1/
+! example 2
+! path-only replacement: rewrite /old/ to /new/ while preserving origin
+||example.org^$urltransform=/\/old\//\/new\//
+! example 3
+! allowlist rule disables urltransform
+@@||example.com^$urltransform
 
 ! ## noop
 ! <b>Status</b>: supported

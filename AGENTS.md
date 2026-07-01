@@ -11,7 +11,7 @@ high-level extension APIs (`adguard-api`, `adguard-api-mv3`).
 ## Technical Context
 
 - **Language/Version**: TypeScript, Node.js ≥ 22
-- **Package Manager**: pnpm v10 with workspaces and
+- **Package Manager**: pnpm v10.33.4 with workspaces and
   [catalogs](https://pnpm.io/catalogs) (`pnpm-workspace.yaml`)
 - **Orchestration**: Lerna 8 (independent versioning) + Nx (cacheable builds)
 - **Testing**: Vitest (root config delegates to per-package configs)
@@ -165,6 +165,11 @@ You MUST follow the following rules for EVERY task that you perform:
 4. **Consistent `zod` version** across all packages is mandatory to avoid
    schema incompatibility. The version is pinned in `pnpm-workspace.yaml`
    catalogs.
+
+5. **Do not split logger calls.** Keep the entire log message in a single
+   expression (e.g. a template literal) rather than splitting it across
+   multiple lines with string concatenation. This makes log messages easier
+   to grep for in the codebase.
 
 ### III. Testing Discipline
 

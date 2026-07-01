@@ -7,6 +7,7 @@ import {
 
 import { CSP_HEADER_NAME } from '../../../src/modifiers/csp-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../src/modifiers/permissions-modifier';
+import { POPULAR_TLDS } from '../../../src/rules/declarative-converter/constants/popular-tlds';
 import { ResourceType } from '../../../src/rules/declarative-converter/declarative-rule';
 import { type InvalidDeclarativeRuleError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
 import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
@@ -257,6 +258,115 @@ describe('DeclarativeRulesConverter', () => {
 
             },
         });
+    });
+
+    it('expands all popular TLDs once for a wildcard $domain modifier', async () => {
+        const filterId = 0;
+
+        const filter = await createScannedFilter(
+            filterId,
+            ['||*/httpbin/anything/test-case-2.json$domain=testcases.agrd.*'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = await DeclarativeRulesConverter.convert([filter]);
+
+        const initiatorDomains = declarativeRule.condition.initiatorDomains ?? [];
+        const expectedInitiatorDomains = POPULAR_TLDS.map((tld) => `testcases.agrd.${tld}`);
+
+        expect(initiatorDomains).toEqual(expect.arrayContaining([
+            'testcases.agrd.com',
+            'testcases.agrd.co.uk',
+        ]));
+        expect([...initiatorDomains].sort()).toEqual([...expectedInitiatorDomains].sort());
+    });
+
+    it('expands multiple wildcard TLD domains in $domain modifiers', async () => {
+        const filterId = 0;
+
+        const filter = await createScannedFilter(
+            filterId,
+            ['||*/httpbin/anything/test-case-2.json$domain=testcases.agrd.*|pages.*'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = await DeclarativeRulesConverter.convert([filter]);
+
+        const initiatorDomains = declarativeRule.condition.initiatorDomains ?? [];
+
+        expect(initiatorDomains).toEqual(expect.arrayContaining([
+            'testcases.agrd.com',
+            'testcases.agrd.co.uk',
+            'pages.com',
+            'pages.co.uk',
+        ]));
+        expect(initiatorDomains).toHaveLength(POPULAR_TLDS.length * 2);
+    });
+
+    it('expands negated wildcard TLD domains in $domain modifiers', async () => {
+        const filterId = 0;
+
+        const filter = await createScannedFilter(
+            filterId,
+            ['||ads.example.org^$domain=~trusted.*'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = await DeclarativeRulesConverter.convert([filter]);
+
+        const excludedInitiatorDomains = declarativeRule.condition.excludedInitiatorDomains ?? [];
+
+        expect(excludedInitiatorDomains).toEqual(expect.arrayContaining([
+            'trusted.com',
+            'trusted.co.uk',
+        ]));
+        expect(excludedInitiatorDomains).toHaveLength(POPULAR_TLDS.length);
+    });
+
+    it('keeps concrete domains and deduplicates expanded wildcard TLD domains', async () => {
+        const filterId = 0;
+
+        const filter = await createScannedFilter(
+            filterId,
+            ['||ad.js$domain=specific.com|wild.com|wild.*|~evil.*'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = await DeclarativeRulesConverter.convert([filter]);
+
+        const initiatorDomains = declarativeRule.condition.initiatorDomains ?? [];
+        const excludedInitiatorDomains = declarativeRule.condition.excludedInitiatorDomains ?? [];
+
+        expect(initiatorDomains).toEqual(expect.arrayContaining([
+            'specific.com',
+            'wild.com',
+            'wild.co.uk',
+        ]));
+        expect(initiatorDomains.filter((domain) => domain === 'wild.com')).toHaveLength(1);
+        expect(initiatorDomains).toHaveLength(POPULAR_TLDS.length + 1);
+        expect(excludedInitiatorDomains).toEqual(expect.arrayContaining([
+            'evil.com',
+            'evil.co.uk',
+        ]));
+    });
+
+    it('converts wildcard TLD domains to ASCII after expansion', async () => {
+        const filterId = 0;
+        const filter = await createScannedFilter(
+            filterId,
+            ['||example.org/ad.js$domain=münchen.*'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = await DeclarativeRulesConverter.convert([filter]);
+
+        expect(declarativeRule.condition.initiatorDomains).toContain('xn--mnchen-3ya.com');
+        expect(declarativeRule.condition.initiatorDomains).not.toContain('münchen.com');
     });
 
     it('converts rules with specified request types', async () => {
@@ -1765,6 +1875,50 @@ describe('DeclarativeRulesConverter', () => {
                 },
             });
         });
+
+        it('expands wildcard TLD domains in $to modifiers', async () => {
+            const filterId = 0;
+            const filter = await createScannedFilter(
+                filterId,
+                ['/ads$to=tracker.*|specific.com'],
+            );
+
+            const {
+                declarativeRules,
+            } = await DeclarativeRulesConverter.convert([filter]);
+
+            const requestDomains = declarativeRules[0].condition.requestDomains ?? [];
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(requestDomains).toEqual(expect.arrayContaining([
+                'tracker.com',
+                'tracker.co.uk',
+                'specific.com',
+            ]));
+            expect(requestDomains).toHaveLength(POPULAR_TLDS.length + 1);
+        });
+
+        it('expands negated wildcard TLD domains in $to modifiers', async () => {
+            const filterId = 0;
+            const filter = await createScannedFilter(
+                filterId,
+                ['/ads$to=~safe.*|tracker.com'],
+            );
+
+            const {
+                declarativeRules,
+            } = await DeclarativeRulesConverter.convert([filter]);
+
+            const excludedRequestDomains = declarativeRules[0].condition.excludedRequestDomains ?? [];
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.requestDomains).toEqual(['tracker.com']);
+            expect(excludedRequestDomains).toEqual(expect.arrayContaining([
+                'safe.com',
+                'safe.co.uk',
+            ]));
+            expect(excludedRequestDomains).toHaveLength(POPULAR_TLDS.length);
+        });
     });
 
     describe('check $method', () => {
@@ -2000,5 +2154,300 @@ describe('DeclarativeRulesConverter', () => {
             expect(errors[0].message).toBe('Unsupported option "$genericblock"');
             expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toBe(0);
         });
+    });
+
+    describe('$urltransform modifier', () => {
+        it('converts full-URL $urltransform to redirect with regexSubstitution', async () => {
+            const filter = await createScannedFilter(0, [
+                // eslint-disable-next-line max-len
+                '||old.example.com^$urltransform=/^https:\\/\\/old\\.example\\.com\\/(.*)/https:\\/\\/new.example.net\\/\\$1/',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action.type).toBe('redirect');
+            expect(declarativeRules[0].action.redirect?.regexSubstitution).toBeDefined();
+            expect(declarativeRules[0].condition.regexFilter).toBeDefined();
+            // urlFilter must not be present
+            expect(declarativeRules[0].condition.urlFilter).toBeUndefined();
+            // Domain scope must be preserved
+            expect(declarativeRules[0].condition.requestDomains).toEqual(['old.example.com']);
+            // Should include main_frame in resourceTypes
+            expect(declarativeRules[0].condition.resourceTypes).toContain('main_frame');
+        });
+
+        it('converts path-only $urltransform with origin wrapping', async () => {
+            const filter = await createScannedFilter(0, [
+                '||example.org^$urltransform=/\\/old\\//\\/new\\//',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toMatchObject({
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        regexSubstitution: '\\1/new/\\2',
+                    },
+                },
+                condition: {
+                    regexFilter: '^(https?://[^/]+)/old/(.*)',
+                    requestDomains: ['example.org'],
+                },
+            });
+            // Should include main_frame in resourceTypes
+            expect(declarativeRules[0].condition.resourceTypes).toContain('main_frame');
+        });
+
+        it('converts $urltransform allowlist rule to allow action', async () => {
+            const filter = await createScannedFilter(0, [
+                '@@||example.com^$urltransform',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action.type).toBe('allow');
+        });
+
+        it('converts 2-stage pipeline $urltransform into 2 DNR rules', async () => {
+            const filter = await createScannedFilter(0, [
+                '||example.com^$urltransform=/\\/old\\//\\/new\\//|/tracking-/clean-/',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules.length).toBe(2);
+            expect(declarativeRules[0].action.type).toBe('redirect');
+            expect(declarativeRules[1].action.type).toBe('redirect');
+            expect(declarativeRules[0].condition.regexFilter).toContain('/old/');
+            expect(declarativeRules[1].condition.regexFilter).toContain('tracking-');
+            // Both rules should preserve domain scope
+            expect(declarativeRules[0].condition.requestDomains).toEqual(['example.com']);
+            expect(declarativeRules[1].condition.requestDomains).toEqual(['example.com']);
+        });
+
+        it('reports $urltransform with pct decode as unsupported error', async () => {
+            const filter = await createScannedFilter(0, [
+                '||tracker.example.com^$urltransform=/\\/redir\\?url=([^&]*)/\\$1/|pct',
+            ]);
+            const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors.length).toBeGreaterThan(0);
+        });
+
+        it('converts $urltransform with /i flag correctly', async () => {
+            const filter = await createScannedFilter(0, [
+                // eslint-disable-next-line max-len
+                '||tracker.example.com^$urltransform=/^https:\\/\\/TRACKER\\.example\\.com\\/(.*)/https:\\/\\/clean.example.com\\/\\$1/i',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.isUrlFilterCaseSensitive).toBe(false);
+            // Domain scope preserved
+            expect(declarativeRules[0].condition.requestDomains).toEqual(['tracker.example.com']);
+        });
+
+        it('does not add requestDomains for wildcard patterns', async () => {
+            const filter = await createScannedFilter(0, [
+                '*$urltransform=/\\/old\\//\\/new\\//,domain=example.org',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            // Domain constraint comes from initiatorDomains (from $domain), not requestDomains
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['example.org']);
+        });
+
+        it('defaults to all resource types when no content type modifiers', async () => {
+            const filter = await createScannedFilter(0, [
+                '||example.org^$urltransform=/\\/old\\//\\/new\\//',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.resourceTypes).toEqual(allResourcesTypes);
+        });
+
+        it('defaults to all resource types for full-URL mode without content types', async () => {
+            const filter = await createScannedFilter(0, [
+                // eslint-disable-next-line max-len
+                '||old.example.com^$urltransform=/^https:\\/\\/old\\.example\\.com\\/(.*)/https:\\/\\/new.example.net\\/\\$1/',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.resourceTypes).toEqual(allResourcesTypes);
+        });
+
+        it('respects explicit $script content type modifier', async () => {
+            const filter = await createScannedFilter(0, [
+                '||example.org^$urltransform=/\\/old\\//\\/new\\/,script',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.resourceTypes).toEqual([ResourceType.Script]);
+        });
+
+        it('respects multiple explicit content type modifiers', async () => {
+            const filter = await createScannedFilter(0, [
+                '||example.org^$urltransform=/\\/old\\//\\/new\\/,script,xmlhttprequest',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.resourceTypes).toEqual(
+                expect.arrayContaining([ResourceType.Script, ResourceType.XmlHttpRequest]),
+            );
+            expect(declarativeRules[0].condition.resourceTypes).toHaveLength(2);
+        });
+
+        it('respects excluded content type modifier (~image)', async () => {
+            const filter = await createScannedFilter(0, [
+                '||example.org^$urltransform=/\\/old\\//\\/new\\/,~image',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.excludedResourceTypes).toContain(ResourceType.Image);
+        });
+
+        it('converts $urltransform with $method=get correctly', async () => {
+            const filter = await createScannedFilter(0, [
+                '||example.org^$urltransform=/\\/old\\//\\/new\\/,method=get',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.requestMethods).toEqual(['get']);
+            // $method triggers shouldMatchAllResourcesTypes, so all resource types are set
+            expect(declarativeRules[0].condition.resourceTypes).toEqual(allResourcesTypes);
+        });
+
+        it('converts full-URL $urltransform without capture groups (no crash)', async () => {
+            // This rule caused a crash because escaped slashes (\/) in the
+            // replacement were left as-is. Chrome DNR interprets \ in
+            // regexSubstitution as a backreference prefix, so \/ is invalid.
+            const filter = await createScannedFilter(0, [
+                String.raw`||example.org^$urltransform=/^https:\/\/example.org/https:\/\/httpbin.agrd.dev/`,
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toMatchObject({
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        regexSubstitution: 'https://httpbin.agrd.dev',
+                    },
+                },
+                condition: {
+                    regexFilter: '^https://example.org',
+                    requestDomains: ['example.org'],
+                },
+            });
+            // urlFilter must not be present alongside regexFilter
+            expect(declarativeRules[0].condition.urlFilter).toBeUndefined();
+            // regexSubstitution must not contain \/ (invalid DNR escape)
+            expect(declarativeRules[0].action.redirect?.regexSubstitution).not.toContain('\\/');
+        });
+
+        // Testcase rules from rules_2.md
+        it('Case 1: converts path-only $urltransform with ^ and \\$ anchors', async () => {
+            const filter = await createScannedFilter(0, [
+                String.raw`||httpbin.agrd.dev^$urltransform=/^\/status\/500\$/\/status\/200/`,
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toMatchObject({
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        regexSubstitution: '\\1/status/200',
+                    },
+                },
+                condition: {
+                    regexFilter: '^(https?://[^/]+)/status/500$',
+                    requestDomains: ['httpbin.agrd.dev'],
+                },
+            });
+        });
+
+        it('Case 2: floating path-only $urltransform does not restrict to GET-only', async () => {
+            // ||httpbin.agrd.dev^$urltransform=/royalmail/post/
+            // This is a path-only (non-origin-changing) rule, so it
+            // should NOT be restricted to GET-only.
+            const filter = await createScannedFilter(0, [
+                '||httpbin.agrd.dev^$urltransform=/royalmail/post/',
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            // path-only rules don't get requestMethods restriction
+            expect(declarativeRules[0].condition.requestMethods).toBeUndefined();
+        });
+
+        it('Case 3: full-URL $urltransform defaults to GET-only', async () => {
+            // ||example.org^$urltransform=/^https:\/\/example.org/https:\/\/httpbin.agrd.dev/
+            const filter = await createScannedFilter(0, [
+                String.raw`||example.org^$urltransform=/^https:\/\/example.org/https:\/\/httpbin.agrd.dev/`,
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            // Full-URL mode defaults to GET-only to prevent discarding POST bodies
+            expect(declarativeRules[0].condition.requestMethods).toEqual(['get']);
+        });
+
+        it('Case 5: $urltransform with $script modifier has correct resourceTypes', async () => {
+            const filter = await createScannedFilter(0, [
+                String.raw`||httpbin.agrd.dev^$script,urltransform=/^\/status\/502\$/\/status\/200/`,
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.resourceTypes).toEqual([ResourceType.Script]);
+            expect(declarativeRules[0].condition.regexFilter).toBe('^(https?://[^/]+)/status/502$');
+        });
+
+        it('Case 6: $urltransform with $image modifier has correct resourceTypes', async () => {
+            const filter = await createScannedFilter(0, [
+                String.raw`||httpbin.agrd.dev^$image,urltransform=/^\/status\/503\$/\/image\/png/`,
+            ]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.resourceTypes).toEqual([ResourceType.Image]);
+            expect(declarativeRules[0].condition.regexFilter).toBe('^(https?://[^/]+)/status/503$');
+            expect(declarativeRules[0].action.redirect?.regexSubstitution).toBe('\\1/image/png');
+        });
+    });
+
+    it('ignores /g flag in $urltransform (MV3 DNR replaces only first match)', async () => {
+        const withGlobalFilter = await createScannedFilter(0, [
+            '||example.org^$urltransform=/tracking-/clean-/g',
+        ]);
+        const withoutGlobalFilter = await createScannedFilter(0, [
+            '||example.org^$urltransform=/tracking-/clean-/',
+        ]);
+
+        const {
+            declarativeRules: [withGlobalRule],
+        } = await DeclarativeRulesConverter.convert([withGlobalFilter]);
+
+        const {
+            declarativeRules: [withoutGlobalRule],
+        } = await DeclarativeRulesConverter.convert([withoutGlobalFilter]);
+
+        expect(withGlobalRule.action.redirect?.regexSubstitution)
+            .toBe(withoutGlobalRule.action.redirect?.regexSubstitution);
+        expect(withGlobalRule.condition.regexFilter)
+            .toBe(withoutGlobalRule.condition.regexFilter);
+        expect(withGlobalRule.condition.isUrlFilterCaseSensitive).toBeUndefined();
+    });
+
+    it('keeps multiple matching $urltransform rules separate; priority decides the winner in MV3', async () => {
+        const filter = await createScannedFilter(0, [
+            '||example.org^$urltransform=/foo/bar/',
+            '||example.org^$urltransform=/foo/baz/,important',
+        ]);
+
+        const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+
+        expect(declarativeRules).toHaveLength(2);
+
+        const regularRule = declarativeRules.find(
+            (rule) => rule.action.redirect?.regexSubstitution === '\\1bar\\2',
+        );
+        const importantRule = declarativeRules.find(
+            (rule) => rule.action.redirect?.regexSubstitution === '\\1baz\\2',
+        );
+
+        expect(regularRule).toBeDefined();
+        expect(importantRule).toBeDefined();
+        expect(importantRule?.priority).toBeGreaterThan(regularRule?.priority ?? 0);
     });
 });

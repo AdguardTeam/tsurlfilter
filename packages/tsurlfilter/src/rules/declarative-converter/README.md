@@ -54,6 +54,7 @@
     1. [$removeheader](#advanced_capabilities__$removeheader)
     1. [$removeparam](#advanced_capabilities__$removeparam)
     1. [$replace](#advanced_capabilities__$replace)
+    1. [$urltransform](#advanced_capabilities__$urltransform)
     1. [noop](#advanced_capabilities__noop)
     1. [$empty](#advanced_capabilities__$empty)
     1. [$mp4](#advanced_capabilities__$mp4)
@@ -385,7 +386,8 @@ example.org##.banner
 <br/>
 <b>MV3 limitations:</b>
 <br/>
-Doesn't support regexps and any tld domains
+Doesn't support regexps and wildcard domains except exact wildcard TLD
+domains such as example.*, which are expanded to popular TLDs.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -528,8 +530,181 @@ example 6
       "urlFilter": "||baddomain.com^",
       "excludedInitiatorDomains": [
         "a.com",
-        "b.*",
-        "/(^\\|.+\\\\.)c\\\\.(com\\\\|org)\\\\$/"
+        "b.ac",
+        "b.ae",
+        "b.agency",
+        "b.ai",
+        "b.am",
+        "b.app",
+        "b.ar",
+        "b.art",
+        "b.at",
+        "b.au",
+        "b.az",
+        "b.bd",
+        "b.be",
+        "b.bg",
+        "b.biz",
+        "b.blog",
+        "b.br",
+        "b.by",
+        "b.ca",
+        "b.cam",
+        "b.cc",
+        "b.center",
+        "b.cfd",
+        "b.ch",
+        "b.cl",
+        "b.click",
+        "b.cloud",
+        "b.club",
+        "b.cn",
+        "b.co",
+        "b.co.in",
+        "b.co.jp",
+        "b.co.kr",
+        "b.co.nz",
+        "b.co.uk",
+        "b.com",
+        "b.com.au",
+        "b.com.br",
+        "b.com.cn",
+        "b.com.mx",
+        "b.com.pl",
+        "b.com.tr",
+        "b.com.ua",
+        "b.company",
+        "b.cz",
+        "b.de",
+        "b.dev",
+        "b.digital",
+        "b.dk",
+        "b.edu",
+        "b.ee",
+        "b.eg",
+        "b.email",
+        "b.es",
+        "b.eu",
+        "b.fi",
+        "b.fm",
+        "b.fr",
+        "b.fun",
+        "b.ge",
+        "b.gg",
+        "b.gov",
+        "b.gr",
+        "b.group",
+        "b.hk",
+        "b.hr",
+        "b.hu",
+        "b.icu",
+        "b.id",
+        "b.ie",
+        "b.il",
+        "b.im",
+        "b.in",
+        "b.info",
+        "b.ink",
+        "b.int",
+        "b.io",
+        "b.ir",
+        "b.is",
+        "b.it",
+        "b.jobs",
+        "b.jp",
+        "b.ke",
+        "b.kr",
+        "b.kz",
+        "b.la",
+        "b.li",
+        "b.life",
+        "b.link",
+        "b.live",
+        "b.lk",
+        "b.lol",
+        "b.lt",
+        "b.lu",
+        "b.lv",
+        "b.ma",
+        "b.md",
+        "b.me",
+        "b.media",
+        "b.mil",
+        "b.mobi",
+        "b.mx",
+        "b.my",
+        "b.name",
+        "b.net",
+        "b.net.au",
+        "b.network",
+        "b.news",
+        "b.ng",
+        "b.nl",
+        "b.no",
+        "b.np",
+        "b.nu",
+        "b.nz",
+        "b.one",
+        "b.onion",
+        "b.online",
+        "b.org",
+        "b.org.uk",
+        "b.pe",
+        "b.ph",
+        "b.pk",
+        "b.pl",
+        "b.plus",
+        "b.porn",
+        "b.pro",
+        "b.pt",
+        "b.pub",
+        "b.pw",
+        "b.ro",
+        "b.rs",
+        "b.ru",
+        "b.sa",
+        "b.sbs",
+        "b.se",
+        "b.sg",
+        "b.shop",
+        "b.si",
+        "b.site",
+        "b.sk",
+        "b.software",
+        "b.solutions",
+        "b.space",
+        "b.store",
+        "b.su",
+        "b.sx",
+        "b.systems",
+        "b.tech",
+        "b.th",
+        "b.to",
+        "b.today",
+        "b.tokyo",
+        "b.top",
+        "b.tr",
+        "b.travel",
+        "b.tube",
+        "b.tv",
+        "b.tw",
+        "b.ua",
+        "b.uk",
+        "b.us",
+        "b.video",
+        "b.vip",
+        "b.vn",
+        "b.website",
+        "b.wiki",
+        "b.win",
+        "b.work",
+        "b.world",
+        "b.ws",
+        "b.xn--p1ai",
+        "b.xxx",
+        "b.xyz",
+        "b.za",
+        "b.zone"
       ]
     },
     "priority": 2
@@ -759,7 +934,21 @@ example 13
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 1353025509,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "regexFilter": "banner\\d+",
+      "initiatorDomains": [
+        "targetdomain.com"
+      ]
+    },
+    "priority": 201
+  }
+]
 
 ```
 example 14
@@ -1297,6 +1486,10 @@ example 2
 <a name="basic_modifiers__$to"></a>
 ## $to
 <b>Status</b>: supported
+<br/>
+<b>MV3 notes:</b>
+<br/>
+Wildcard TLD domains such as tracker.* are expanded to popular TLDs.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2378,7 +2571,195 @@ example 9
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 1549369771,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "/some",
+      "initiatorDomains": [
+        "example.ac",
+        "example.ae",
+        "example.agency",
+        "example.ai",
+        "example.am",
+        "example.app",
+        "example.ar",
+        "example.art",
+        "example.at",
+        "example.au",
+        "example.az",
+        "example.bd",
+        "example.be",
+        "example.bg",
+        "example.biz",
+        "example.blog",
+        "example.br",
+        "example.by",
+        "example.ca",
+        "example.cam",
+        "example.cc",
+        "example.center",
+        "example.cfd",
+        "example.ch",
+        "example.cl",
+        "example.click",
+        "example.cloud",
+        "example.club",
+        "example.cn",
+        "example.co",
+        "example.co.in",
+        "example.co.jp",
+        "example.co.kr",
+        "example.co.nz",
+        "example.co.uk",
+        "example.com",
+        "example.com.au",
+        "example.com.br",
+        "example.com.cn",
+        "example.com.mx",
+        "example.com.pl",
+        "example.com.tr",
+        "example.com.ua",
+        "example.company",
+        "example.cz",
+        "example.de",
+        "example.dev",
+        "example.digital",
+        "example.dk",
+        "example.edu",
+        "example.ee",
+        "example.eg",
+        "example.email",
+        "example.es",
+        "example.eu",
+        "example.fi",
+        "example.fm",
+        "example.fr",
+        "example.fun",
+        "example.ge",
+        "example.gg",
+        "example.gov",
+        "example.gr",
+        "example.group",
+        "example.hk",
+        "example.hr",
+        "example.hu",
+        "example.icu",
+        "example.id",
+        "example.ie",
+        "example.il",
+        "example.im",
+        "example.in",
+        "example.info",
+        "example.ink",
+        "example.int",
+        "example.io",
+        "example.ir",
+        "example.is",
+        "example.it",
+        "example.jobs",
+        "example.jp",
+        "example.ke",
+        "example.kr",
+        "example.kz",
+        "example.la",
+        "example.li",
+        "example.life",
+        "example.link",
+        "example.live",
+        "example.lk",
+        "example.lol",
+        "example.lt",
+        "example.lu",
+        "example.lv",
+        "example.ma",
+        "example.md",
+        "example.me",
+        "example.media",
+        "example.mil",
+        "example.mobi",
+        "example.mx",
+        "example.my",
+        "example.name",
+        "example.net",
+        "example.net.au",
+        "example.network",
+        "example.news",
+        "example.ng",
+        "example.nl",
+        "example.no",
+        "example.np",
+        "example.nu",
+        "example.nz",
+        "example.one",
+        "example.onion",
+        "example.online",
+        "example.org",
+        "example.org.uk",
+        "example.pe",
+        "example.ph",
+        "example.pk",
+        "example.pl",
+        "example.plus",
+        "example.porn",
+        "example.pro",
+        "example.pt",
+        "example.pub",
+        "example.pw",
+        "example.ro",
+        "example.rs",
+        "example.ru",
+        "example.sa",
+        "example.sbs",
+        "example.se",
+        "example.sg",
+        "example.shop",
+        "example.si",
+        "example.site",
+        "example.sk",
+        "example.software",
+        "example.solutions",
+        "example.space",
+        "example.store",
+        "example.su",
+        "example.sx",
+        "example.systems",
+        "example.tech",
+        "example.th",
+        "example.to",
+        "example.today",
+        "example.tokyo",
+        "example.top",
+        "example.tr",
+        "example.travel",
+        "example.tube",
+        "example.tv",
+        "example.tw",
+        "example.ua",
+        "example.uk",
+        "example.us",
+        "example.video",
+        "example.vip",
+        "example.vn",
+        "example.website",
+        "example.wiki",
+        "example.win",
+        "example.work",
+        "example.world",
+        "example.ws",
+        "example.xn--p1ai",
+        "example.xxx",
+        "example.xyz",
+        "example.za",
+        "example.zone"
+      ]
+    },
+    "priority": 201
+  }
+]
 
 ```
 example 10
@@ -3918,6 +4299,145 @@ example 4
 
 ```json
 []
+
+```
+<a name="advanced_capabilities__$urltransform"></a>
+## $urltransform
+<b>Status</b>: supported
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Converted to DNR redirect rules with regexSubstitution. Full-URL replacements
+are passed through directly. Path-only replacements are wrapped so the origin
+is preserved. Multi-stage pipelines (multiple substitutions separated by `|`)
+produce one DNR rule per stage.
+<br/>
+<b>Examples:</b>
+<br/>
+example 1
+full-URL replacement: redirect from old.example.com to new.example.net
+
+```adblock
+||old.example.com^$urltransform=/^https:\/\/old\.example\.com\/(.*)/https:\/\/new.example.net\/\$1/
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+  {
+    "id": 1149502163,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "https:\\/\\/new.example.net\\/\\1"
+      }
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ],
+      "requestDomains": [
+        "old.example.com"
+      ],
+      "regexFilter": "^https:\\/\\/old\\.example\\.com\\/(.*)"
+    },
+    "priority": 2
+  }
+]
+
+```
+example 2
+path-only replacement: rewrite /old/ to /new/ while preserving origin
+
+```adblock
+||example.org^$urltransform=/\/old\//\/new\//
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+  {
+    "id": 1009789837,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1/new/\\2"
+      }
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ],
+      "requestDomains": [
+        "example.org"
+      ],
+      "regexFilter": "^(https?://[^/]+)/old/(.*)"
+    },
+    "priority": 2
+  }
+]
+
+```
+example 3
+allowlist rule disables urltransform
+
+```adblock
+@@||example.com^$urltransform
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+  {
+    "id": 1781897823,
+    "action": {
+      "type": "allow"
+    },
+    "condition": {
+      "urlFilter": "||example.com^",
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 100002
+  }
+]
 
 ```
 <a name="advanced_capabilities__noop"></a>

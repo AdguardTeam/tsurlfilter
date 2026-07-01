@@ -1,8 +1,6 @@
 FROM adguard/node-ssh:22.22--0 AS base
 SHELL ["/bin/bash", "-lc"]
 
-RUN npm install -g pnpm@10.7.0
-
 WORKDIR /tsurlfilter
 
 ENV PNPM_STORE=/pnpm-store
@@ -258,9 +256,12 @@ COPY --from=test-tsurlfilter /out/ /
 
 # ============================================================================
 # Stage: test-tswebextension
-# Runs test:prod (lint + smoke + test:ci) for @adguard/tswebextension
+# Runs test:prod (lint + smoke + test:ci + test:e2e) for @adguard/tswebextension
 # ============================================================================
 FROM built-tswebextension AS test-tswebextension
+
+# Install Playwright Chromium browser and its system dependencies for e2e tests
+RUN cd packages/tswebextension && npx playwright install --with-deps chromium
 
 ARG TEST_RUN_ID
 
@@ -302,8 +303,11 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     set +e; \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
       # Run assets validation last to prevent JUnit XML report missing
-      # if the validation fails
-      'cd packages/dnr-rulesets && pnpm test:prod && pnpm validate:assets'; \
+      # if the validation fails.
+      # DNR_RULESETS_CI_TEST=true makes validation non-fatal in test CI,
+      # so newly added rulesets (e.g. filter 25) don't break the pipeline
+      # before the baseline validator-data.json is updated on master.
+      'cd packages/dnr-rulesets && pnpm test:prod && DNR_RULESETS_CI_TEST=true pnpm validate:assets'; \
     EXIT_CODE=$?; \
     ./bamboo-specs/scripts/copy-test-reports.sh packages/dnr-rulesets; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
@@ -504,7 +508,7 @@ COPY --from=build-tswebextension /out/ /
 
 # ============================================================================
 # Stage: build-dnr-rulesets
-# Builds @adguard/dnr-rulesets and packs .tgz
+# Builds @adguard/dnr-rulesets, validates rulesets, and packs .tgz
 # ============================================================================
 FROM built-tsurlfilter AS build-dnr-rulesets
 
@@ -517,6 +521,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     npx lerna run build --scope @adguard/dnr-rulesets && \
     cd packages/dnr-rulesets && \
+    pnpm validate:assets && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
     mv dnr-rulesets.tgz /out/artifacts/ && \

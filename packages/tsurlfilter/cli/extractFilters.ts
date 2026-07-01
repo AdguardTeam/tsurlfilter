@@ -91,7 +91,7 @@ export class Extractor {
 
                 const outputFileName = `filter_${filterId}.txt`;
                 const outputFilePath = path.join(outputPath, outputFileName);
-                const filterList = new FilterList(rawFilterList, conversionData);
+                const filterList = new FilterList(rawFilterList, filterId, conversionData);
                 const originalFilterListText = filterList.getOriginalContent();
                 await fs.writeFile(outputFilePath, originalFilterListText);
                 console.log(`Successfully extracted filter ${filterId} to ${outputFilePath}`);

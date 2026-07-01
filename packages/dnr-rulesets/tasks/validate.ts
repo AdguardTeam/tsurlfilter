@@ -117,6 +117,27 @@ const getAllOldValidatorData = async (): Promise<AllRulesetIdsAndMetadataKeys> =
 };
 
 /**
+ * Checks if the script is running in a test CI context.
+ * When set, validation failures are logged as warnings instead of throwing.
+ * This allows the test pipeline to pass while new rulesets are being added
+ * (e.g., filter 25 has been introduced on release branches before master).
+ *
+ * @returns True if running in test CI mode.
+ */
+const isCiTestRun = (): boolean => {
+    return process.env.DNR_RULESETS_CI_TEST === 'true';
+};
+
+/**
+ * Logs a warning message when running in test CI mode.
+ *
+ * @param message Warning message to log.
+ */
+const logCiWarning = (message: string): void => {
+    console.warn(`[WARNING] ${message}`);
+};
+
+/**
  * Validates rulesets — checks if list of ruleset ids or metadata keys has changed.
  *
  * Please note that error should be thrown for both manual and auto build,
@@ -150,6 +171,13 @@ const validateRulesets = async (
         }
 
         messageParts.push(RECOMMENDATION_MESSAGE);
+
+        if (isCiTestRun()) {
+            logCiWarning(messageParts.join('\n'));
+            logCiWarning(`Skipping validation failure in test CI mode for ${browser}. `
+                + `Update ${VALIDATOR_DATA_FILE_NAME} when rulesets are stable.`);
+            return;
+        }
 
         throw new Error(messageParts.join('\n'));
     }

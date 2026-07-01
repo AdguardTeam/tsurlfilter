@@ -74,6 +74,9 @@ packages/tsurlfilter/
 - `pnpm lint` — run ESLint and TypeScript type checking
 - `pnpm lint:code` — run ESLint only
 - `pnpm lint:types` — run TypeScript type checking only
+- `pnpm docs:mv3` — regenerate
+  `src/rules/declarative-converter/README.md` from
+  `src/rules/declarative-converter/readme.txt`
 
 ## Contribution Instructions
 
@@ -94,6 +97,12 @@ You MUST follow the following rules for EVERY task that you perform:
 - Since `@adguard/tsurlfilter` is a dependency of `@adguard/tswebextension`,
   `@adguard/dnr-rulesets`, `@adguard/api`, and `@adguard/api-mv3`, consider
   updating their changelogs when making breaking or behavioral changes.
+
+- When changing declarative converter behavior, supported rule types, or
+  converter examples, update `src/rules/declarative-converter/readme.txt` as
+  needed and run `pnpm docs:mv3` to regenerate
+  `src/rules/declarative-converter/README.md`. Do not manually edit the
+  generated README output.
 
 ## Code Guidelines
 

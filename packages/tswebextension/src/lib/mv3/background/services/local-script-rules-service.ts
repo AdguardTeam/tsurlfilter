@@ -1,7 +1,7 @@
 /**
  * A function type representing local script logic.
  */
-export type LocalScriptFunction = () => void;
+export type LocalScriptFunction = (...args: unknown[]) => void;
 
 /**
  * An object containing local script functions where:

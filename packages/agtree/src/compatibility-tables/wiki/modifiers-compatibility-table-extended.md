@@ -2056,6 +2056,32 @@ This table is generated from the compatibility data.
     <tr>
       <td>
         <a
+          href="https://adguard.app/kb/general/ad-filtering/create-own-filters/#urltransform-modifier"
+          >urltransform</a
+        >
+      </td>
+      <td>
+        <a
+          href="https://adguard.app/kb/general/ad-filtering/create-own-filters/#urltransform-modifier"
+          >urltransform</a
+        >
+      </td>
+      <td>
+        <a
+          href="https://adguard.app/kb/general/ad-filtering/create-own-filters/#urltransform-modifier"
+          >urltransform</a
+        >
+      </td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>
+        <a
           href="https://adguard.app/kb/general/ad-filtering/create-own-filters/#webrtc-modifier"
           >webrtc</a
         >

@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
 
-import { type FilteringLogEvent } from '@adguard/tswebextension';
+import { type FilteringLogEvent, USER_FILTER_ID } from '@adguard/tswebextension';
 import {
     Configuration,
     defaultFilteringLog,
@@ -69,6 +69,7 @@ const messageHandler = async (message: IMessage) => {
                 filters: config.staticFiltersIds,
                 rules: new FilterList(
                     config.userrules.content,
+                    USER_FILTER_ID,
                     config.userrules.conversionData,
                 ).getOriginalContent(),
             };
@@ -111,7 +112,7 @@ const messageHandler = async (message: IMessage) => {
             return isStarted;
         }
         case Message.ApplyUserRules: {
-            const list = new FilterList(data);
+            const list = new FilterList(data, USER_FILTER_ID);
 
             config.userrules = {
                 content: list.getContent(),

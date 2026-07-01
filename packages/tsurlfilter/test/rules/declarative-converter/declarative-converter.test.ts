@@ -15,6 +15,7 @@ import {
     TooManyRulesError,
     TooManyUnsafeRulesError,
 } from '../../../src/rules/declarative-converter/errors/limitation-errors';
+import { Filter } from '../../../src/rules/declarative-converter/filter';
 import { DeclarativeFilterConverter } from '../../../src/rules/declarative-converter/filter-converter';
 import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
@@ -101,6 +102,58 @@ describe('DeclarativeConverter', () => {
         expect(declarativeRules[2]).toMatchObject({
             action: { type: 'block' },
             condition: { urlFilter: '||example.net^' },
+        });
+    });
+
+    describe('empty dynamic filters (fresh install)', () => {
+        // Reproduces AG-55141: on a fresh install the user rules (0), allowlist
+        // (100) and blocking-page trusted domains (-10) dynamic filters are all
+        // empty. They must convert to zero rules without producing errors.
+        it('converts empty dynamic filters to zero rules without errors', async () => {
+            const userRules = createFilter([], 0);
+            const allowlist = createFilter([], 100);
+            const trustedDomains = createFilter([], -10);
+
+            const { ruleSet, errors } = await converter.convertDynamicRuleSets(
+                [allowlist, trustedDomains, userRules],
+                [],
+            );
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(ruleSet.getRulesCount()).toBe(0);
+            expect(declarativeRules).toHaveLength(0);
+        });
+
+        it('converts non-empty dynamic filters while ignoring empty ones, without errors', async () => {
+            const emptyUserRules = createFilter([], 0);
+            const allowlist = createFilter(['||example.org^'], 100);
+
+            const { ruleSet, errors } = await converter.convertDynamicRuleSets(
+                [allowlist, emptyUserRules],
+                [],
+            );
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules.length).toBeGreaterThan(0);
+        });
+
+        it('still reports an error when a dynamic filter source is genuinely unavailable', async () => {
+            const failingFilter = new Filter(
+                100,
+                {
+                    getContent: async () => {
+                        throw new Error('source failure');
+                    },
+                },
+                true,
+            );
+
+            const { errors } = await converter.convertDynamicRuleSets([failingFilter], []);
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0].message).toContain('Cannot scan rules from filter 100');
         });
     });
 
@@ -1189,11 +1242,31 @@ describe('DeclarativeConverter', () => {
             expect(errors[0]).toStrictEqual(err);
         });
 
-        it('returns error if initiatorDomains is empty, but original rule has domains', async () => {
+        it('converts wildcard TLD-only $domain rules without EmptyDomainsError', async () => {
             const filter = createFilter(['$script,xmlhttprequest,third-party,domain=clickndownload.*|clicknupload.*']);
             const { ruleSet, errors } = await converter.convertStaticRuleSet(filter);
             const declarativeRules = await ruleSet.getDeclarativeRules();
-            expect(declarativeRules).toHaveLength(0); // wildcard domains are not supported
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(
+                expect.arrayContaining([
+                    'clickndownload.com',
+                    'clickndownload.co.uk',
+                    'clicknupload.com',
+                    'clicknupload.co.uk',
+                ]),
+            );
+        });
+
+        it('returns error if initiatorDomains is empty after filtering unsupported domains', async () => {
+            const filter = createFilter([
+                String.raw`$script,xmlhttprequest,third-party,domain=/clickndownload\.(com|net)/`,
+            ]);
+            const { ruleSet, errors } = await converter.convertStaticRuleSet(filter);
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
             expect(errors[0]).toBeInstanceOf(EmptyDomainsError);
         });

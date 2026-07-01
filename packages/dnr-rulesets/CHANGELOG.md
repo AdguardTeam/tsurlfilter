@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `validator-data.json` baseline versions to `4.2.1` for both
+- Updated `validator-data.json` baseline versions to `4.3.0` for both
   `chromium-mv3` and `opera-mv3`.
 
 ## [4.2.1] - 2026-04-24

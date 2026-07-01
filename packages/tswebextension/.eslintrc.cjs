@@ -181,4 +181,16 @@ module.exports = {
             contextModuleName: 'tsweb',
         }],
     },
+    overrides: [
+        {
+            // Playwright e2e suite: relax a few rules that don't fit
+            // browser-injected harness code (a global namespace on window
+            // and the standard `setTimeout` promise pattern).
+            files: ['test/e2e/**/*.ts'],
+            rules: {
+                'no-underscore-dangle': 'off',
+                'no-promise-executor-return': 'off',
+            },
+        },
+    ],
 };
