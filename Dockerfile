@@ -38,6 +38,13 @@ COPY packages/benchmarks/agtree-browser-benchmark/package.json ./packages/benchm
 COPY packages/benchmarks/css-tokenizer-benchmark/package.json ./packages/benchmarks/css-tokenizer-benchmark/
 COPY packages/benchmarks/tsurlfilter-benchmark/package.json ./packages/benchmarks/tsurlfilter-benchmark/
 
+# FIXME: Remove this COPY (and the `vendor/` override in package.json `pnpm.overrides`)
+# before merging this branch. It is only needed because the npm-published
+# @adguard/extended-css@2.2.0 does not yet ship the apply bundle; once that is
+# published (e.g. as @adguard/extended-css@2.2.1+), the vendored tarball should
+# be dropped and the override removed.
+COPY vendor/ ./vendor/
+
 # --ignore-scripts is safe here: this monorepo has no native / postinstall deps.
 # The flag skips only lifecycle scripts (husky prepare, etc.) which are
 # unnecessary inside Docker and would otherwise require a full git history.
