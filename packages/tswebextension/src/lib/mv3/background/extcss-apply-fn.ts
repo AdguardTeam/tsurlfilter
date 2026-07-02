@@ -80,6 +80,13 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
     const w = window as unknown as Record<string, ExtCssInstance | null | undefined>;
 
     // Dispose the previous instance (if any) before applying a new one.
+    //
+    // NOTE: disposal only reaches the SAME execution world — `window` (and
+    // thus the retain key) is world-scoped: `ScriptingApi` injects into
+    // ISOLATED, `UserScriptsApi` into USER_SCRIPT. A mid-session
+    // userScripts-permission flip would leave a stale instance + live
+    // MutationObserver in the old world, but permission changes reload the
+    // tab, so this is not a practical concern.
     // eslint-disable-next-line @typescript-eslint/dot-notation -- bracket keeps the key a verbatim string literal
     const previous = w['__adguardExtCss'];
     if (previous) {
@@ -169,15 +176,22 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
             // beforeStyleApplied and disrupt styling. The service worker may
             // be inactive or the page tearing down, in which case
             // sendMessage rejects — swallow it.
-            try {
+            //
+            // NOTE: in MV3, `chrome.runtime.sendMessage` (without a callback)
+            // returns a Promise; a synchronous try/catch cannot catch its
+            // async rejection, which would otherwise surface as an unhandled
+            // promise rejection in the page's world on every hit while the
+            // SW is asleep. `Promise.resolve(...)` also guards the rare
+            // synchronous-throw case, and `.catch()` swallows both.
+            Promise.resolve(
                 chrome.runtime.sendMessage({
                     handlerName: 'tsWebExtension',
                     type: 'saveCssHitsStats',
                     payload: hits,
-                });
-            } catch (e) {
+                }),
+            ).catch(() => {
                 /* ignore — see comment above */
-            }
+            });
         }
 
         return el;

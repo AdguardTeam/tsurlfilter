@@ -52,14 +52,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   elements continue to be hidden by the engine's built-in `MutationObserver`.
 - ExtendedCSS rules are no longer applied from the MV3 content script. The
   MV3 `CosmeticController` now only repairs invalid grouped native CSS
-  selectors; `GetCosmeticData` returns `extCssRules: null`, the legacy
-  retry loop and `ExtendedCss` instantiation are removed, and
-  `@adguard/extended-css` is dropped from the MV3 content-script bundle.
-  ExtCSS is applied solely by the background injection path. The MV2 path is
-  unchanged.
+  selectors; `GetCosmeticData` returns `extCssRules: null`,
+  `@adguard/extended-css` instantiation is removed from the MV3
+  content-script bundle, and the `GetCosmeticData` retry loop is retained
+  (narrowed to native-CSS repair) so the repair still runs for documents
+  that load during the background startup race. ExtCSS is applied solely by
+  the background injection path. The MV2 path is unchanged.
 
 ### Fixed
 
+- The fire-and-forget CSS-hits reporter in the background-injected
+  `applyExtCss` func now swallows the async `chrome.runtime.sendMessage`
+  rejection via `.catch()` — a synchronous `try/catch` cannot catch the MV3
+  `sendMessage` Promise rejection — preventing unhandled promise rejections in
+  the page's world while the service worker is inactive (AG-45086).
 - Fixed the build-time ExtCSS bundle inliner corrupting the inlined engine.
   The inliner used a string replacement, so `$` patterns in the bundle source
   (e.g. `$&` inside `escapeRegExp`) were interpreted by

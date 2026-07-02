@@ -193,6 +193,43 @@ describe('applyExtCss — CSS hits stats', () => {
         expect((msg as any).payload[0].element).toBe('<div class="ad">');
     });
 
+    it('uses .catch() — not try/catch — to swallow the async sendMessage rejection', () => {
+        const src = String(applyExtCss);
+        // The fire-and-forget reporter MUST attach .catch(); a synchronous
+        // try/catch cannot catch the async rejection from sendMessage in MV3.
+        expect(src).toContain('Promise.resolve(');
+        expect(src).toMatch(/\.catch\s*\(/);
+    });
+
+    it('swallows a rejected sendMessage so no unhandled rejection escapes beforeStyleApplied', async () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+
+        // Simulate "Receiving end does not exist." while the SW is asleep. A
+        // synchronous try/catch could not catch this async rejection — the
+        // fire-and-forget reporter must attach .catch().
+        sendMessageSpy.mockImplementation((): Promise<never> => Promise.reject(
+            new Error('Receiving end does not exist.'),
+        ));
+
+        const unhandled: unknown[] = [];
+        const onUnhandled = (reason: unknown): void => { unhandled.push(reason); };
+        process.on('unhandledRejection', onUnhandled);
+
+        try {
+            // Must not throw synchronously; an uncaught throw would fail here.
+            applyExtCss([MARKER_RULE], true);
+
+            // Flush microtasks so the rejected sendMessage promise settles and
+            // the .catch() handler runs.
+            await new Promise((resolve) => { setTimeout(resolve, 50); });
+        } finally {
+            process.off('unhandledRejection', onUnhandled);
+        }
+
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+        expect(unhandled).toHaveLength(0);
+    });
+
     it('registers no beforeStyleApplied and sends no message when collectStats is off', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 

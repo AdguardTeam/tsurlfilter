@@ -13,6 +13,24 @@ import { HIDING_STYLE } from '../../mv2/common/hidden-style';
  */
 export class CosmeticController {
     /**
+     * Retry timeout for {@link MessageType.GetCosmeticData} request to the
+     * background, in milliseconds.
+     */
+    private static readonly GET_COSMETIC_DATA_RETRY_TIMEOUT_MS = 100;
+
+    /**
+     * Max number of {@link MessageType.GetCosmeticData} retries before giving
+     * up. At {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} intervals this covers
+     * ~20s of startup.
+     */
+    private static readonly MAX_GET_COSMETIC_DATA_TRIES = 200;
+
+    /**
+     * Number of {@link MessageType.GetCosmeticData} requests sent so far.
+     */
+    private static tries = 0;
+
+    /**
      * Init cosmetic processing.
      */
     public static init(): void {
@@ -22,6 +40,17 @@ export class CosmeticController {
     /**
      * Sends {@link MessageType.GetCosmeticData} message to background and
      * repairs native CSS selectors if any are invalid.
+     *
+     * The background engine may not be started yet when the content script
+     * loads (a common startup race — the service worker is still
+     * initializing). In that case the response is `undefined` (the message
+     * handler returns nothing until the engine is started). This method
+     * retries after {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} until the engine
+     * reports `isAppStarted`, so the native-CSS repair — which only the
+     * content script can perform — is not permanently skipped for documents
+     * that loaded during startup. Without this retry, an invalid grouped
+     * native selector dropped by the browser would never be re-injected for
+     * such pages.
      */
     private static async process(): Promise<void> {
         const res = await sendAppMessage({
@@ -30,6 +59,20 @@ export class CosmeticController {
                 documentUrl: window.location.href,
             },
         });
+
+        // Retry while the background engine is not ready (startup race).
+        // The response is `undefined` until `tsWebExtension.isStarted`, and
+        // `isAppStarted` is false until the app finishes initializing.
+        if ((!res || !res.isAppStarted)
+            && CosmeticController.tries <= CosmeticController.MAX_GET_COSMETIC_DATA_TRIES
+        ) {
+            CosmeticController.tries += 1;
+            setTimeout(
+                CosmeticController.process,
+                CosmeticController.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS,
+            );
+            return;
+        }
 
         if (res) {
             CosmeticController.repairNativeCss(res.nativeCssSelectors);
