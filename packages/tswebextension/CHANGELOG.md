@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `default_public_interface_only` to reduce VoIP breakage while still
   preventing IP leaks.
 - Lowered the log level for caught ExtendedCSS injection failures on
-  restricted or permission-denied pages from `info` to `debug` (US5 / SC-005).
+  restricted or permission-denied pages from `info` to `debug`.
 - CSS hits statistics are now reported from the ISOLATED-world injected
   `applyExtCss` func via a self-contained `beforeStyleApplied` callback that
   sends `SaveCssHitsStats` messages to the background, instead of being counted

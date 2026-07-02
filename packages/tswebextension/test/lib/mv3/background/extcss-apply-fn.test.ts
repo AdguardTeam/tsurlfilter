@@ -13,7 +13,7 @@ import {
 
 import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 
-// Single file-level cleanup (finding 2). The jsdom `window` is shared across
+// Single file-level cleanup. The jsdom `window` is shared across
 // every test in this file, so a retained `window['__adguardExtCss']` instance
 // (and its MutationObserver) would leak into the next test. Dispose it and
 // reset the DOM here for every test, instead of repeating the teardown per

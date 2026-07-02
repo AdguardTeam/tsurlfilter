@@ -23,10 +23,10 @@ import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn'
 // `pnpm test:mv3` gate, which `@adguard/tswebextension` runs in full on every
 // CI invocation (there is no `test:light`-style exclude here).
 //
-// This is NOT the SC-001 "50ms from onCommitted" target (that is
-// architectural: the new path injects with injectImmediately:true and no
-// retry loop, verified manually in benchmark-results.md). It is a jsdom
-// observability benchmark for manual review and trend tracking.
+// This is NOT a latency-target assertion (that is architectural: the new
+// path injects with injectImmediately:true and no retry loop, verified
+// manually in benchmark-results.md). It is a jsdom observability benchmark
+// for manual review and trend tracking.
 
 // Iterations for a stable sample in jsdom.
 const ITERATIONS = 50;

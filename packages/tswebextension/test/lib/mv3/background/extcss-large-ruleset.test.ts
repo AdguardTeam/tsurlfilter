@@ -12,7 +12,7 @@ import {
 
 import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 
-// US4 scenario 2 / AC2: "hundreds of ExtCSS rules". 500 is well above
+// Large rule set: "hundreds of ExtCSS rules". 500 is well above
 // "hundreds" and exercises the args serialization path heavily.
 const LARGE_RULESET_SIZE = 500;
 
@@ -66,7 +66,7 @@ function buildLargeRuleset(): {
     return { rules, sampleSelectors };
 }
 
-describe('applyExtCss — large rule set (AC2 / US4 scenario 2)', () => {
+describe('applyExtCss — large rule set', () => {
     beforeEach(() => {
         document.body.innerHTML = '';
     });

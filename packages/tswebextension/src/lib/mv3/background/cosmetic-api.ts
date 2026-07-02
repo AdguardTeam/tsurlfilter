@@ -416,8 +416,8 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Injects ExtendedCSS rules into the specified tab and frame directly from
      * the background via the Scripting API.
      *
-     * Makes no call when there are no matching rules (PRD SC-002 / US1 scenario
-     * 3). Errors are caught and logged (US5) — restricted pages must not
+     * Makes no call when there are no matching rules. Errors are caught and
+     * logged — restricted pages must not
      * disrupt the extension. When `areHitsStatsCollected` is true, the rules
      * carry hits markers and the injected func registers a
      * `beforeStyleApplied` callback that reports hits back to the background.

@@ -1,21 +1,18 @@
-// Type-only declarations for symbols that exist only after build-time inlining.
-// The `inlineExtCssBundle` plugin replaces the inlining marker call below with
-// the minified @adguard/extended-css apply IIFE, which defines `applyExtendedCss`
-// as a function-scoped `var` inside `applyExtCss`. Both declarations below are
-// erased at runtime; they exist only so the source type-checks before inlining.
+// Type-only decls for symbols supplied by build-time inlining (see the
+// inlineExtCssBundle plugin). Erased at runtime; they exist only so the source
+// type-checks before the inliner swaps in the real definitions.
 // eslint-disable-next-line @typescript-eslint/naming-convention -- build-time marker, replaced by the inliner
 declare function __INLINE_EXTCSS_BUNDLE__(): void;
 
 /**
- * Shape of the retained ExtendedCss instance. Only `dispose()` is used; it
- * disconnects the main MutationObserver and reverts applied styles.
+ * Retained ExtendedCss instance; only `dispose()` is used — it disconnects
+ * the main MutationObserver and reverts applied styles.
  */
 type ExtCssInstance = { dispose(): void };
 
 /**
- * Type-only mirror of the IAffectedElement the @adguard/extended-css apply IIFE
- * passes to beforeStyleApplied (see src/index.apply.ts / extended-css.ts).
- * Erased at runtime; the behavioral test pins the real shape.
+ * Type-only mirror of IAffectedElement from the extended-css apply IIFE (see
+ * src/index.apply.ts). Erased at runtime; the behavioral test pins the real shape.
  */
 type IAffectedElement = {
     node?: Element;
@@ -23,8 +20,8 @@ type IAffectedElement = {
 };
 
 /**
- * The apply IIFE entry returns the applied ExtendedCss instance and accepts an
- * optional beforeStyleApplied callback (used for CSS hits statistics).
+ * The apply IIFE entry: returns the applied ExtendedCss instance, accepts an
+ * optional beforeStyleApplied callback (for CSS-hits stats).
  */
 declare const applyExtendedCss: (
     cssRules: string[],
@@ -35,58 +32,35 @@ declare const applyExtendedCss: (
  * Self-contained ExtendedCSS apply function injected into pages via
  * `chrome.scripting.executeScript({ func, args })`.
  *
- * IMPORTANT: this function is NEVER called in the service worker. It is
- * serialized via `toString()` and executed in the page's ISOLATED world. It
- * MUST NOT reference any outer-scope variable — only literal source inside this
- * body (and the global `window`) survives serialization. The
- * `inlineExtCssBundle` build plugin replaces the inlining marker call with
- * the minified `@adguard/extended-css` apply IIFE, which defines
- * `applyExtendedCss` as a function-scoped `var`.
- *
- * Navigation cleanup (PRD US2 scenario 2): before applying a new instance, the
- * previously retained instance (if any) is disposed. `dispose()` disconnects
- * the prior `MutationObserver` and reverts its styles, so no stale/duplicate
- * observers leak across same-document (SPA) re-injections. This runs only on
- * re-injection (the next `onCommitted` with matching rules); full page loads
- * tear down the world, so no disposal is needed there.
- *
- * The active instance is retained on `window` under a string key that is
- * inlined directly in this body (NOT a module-scope const), so it is part of
- * the serialized source and resolves correctly in the ISOLATED world. The
- * self-containment is guarded by a unit test (`String(applyExtCss)`).
- *
- * CSS-hits reporting: when `collectStats` is true, a self-contained
- * `beforeStyleApplied` callback is registered. It parses the `content` style
- * marker (`adguard{filterId}%3B{ruleIndex}`) that the engine appends to rules
- * built with hits stats, serializes the matched element, and sends a
- * `SaveCssHitsStats` message to the background via `chrome.runtime.sendMessage`
- * (the same message shape the MV2 content script uses). The parsing mirrors the
- * MV2 reference (`ElementUtils.parseExtendedStyleInfo`): strip `!important`
- * FIRST, then decode, then remove quotes, then strip the `adguard` prefix. When
- * `collectStats` is false, no callback is registered and no overhead is
- * incurred.
+ * NEVER called in the service worker — it is serialized by `toString()` and
+ * re-evaluated in the page's ISOLATED world, so it MUST NOT reference any
+ * outer-scope identifier: only literal source in this body (and `window`)
+ * survives. The `inlineExtCssBundle` build plugin replaces the inlining
+ * marker call below with the minified @adguard/extended-css apply IIFE, which
+ * defines `applyExtendedCss` as a function-scoped `var`. Self-containment is
+ * pinned by the `String(applyExtCss)` unit tests.
  *
  * @param cssRules ExtendedCSS rule strings to apply to the current document.
- * @param collectStats Whether to register the CSS-hits `beforeStyleApplied`
- * callback. Defaults to false.
+ * @param collectStats When true, register a CSS-hits `beforeStyleApplied`
+ * callback (else nothing is registered and no overhead is incurred).
  */
 export const applyExtCss = (cssRules: string[], collectStats = false): void => {
     __INLINE_EXTCSS_BUNDLE__();
 
-    // NOTE: the instance key is a literal here on purpose, NOT a module-scope
-    // const — only literal source inside this body survives Function.toString()
-    // serialization (a module-scope const would be a free identifier in the
-    // page's ISOLATED world). The self-containment test guards this.
+    // Key must be a body literal, not a module-scope const: only body literals
+    // survive toString() serialization — a module-scope const would be an
+    // unresolved free identifier in the page's ISOLATED world.
     const w = window as unknown as Record<string, ExtCssInstance | null | undefined>;
 
-    // Dispose the previous instance (if any) before applying a new one.
+    // Dispose the previous instance before applying a new one. dispose()
+    // disconnects the prior MutationObserver and reverts styles, preventing
+    // stale observer/style leaks on same-document (SPA) re-injections (full
+    // page loads tear down the world, so this only matters then).
     //
-    // NOTE: disposal only reaches the SAME execution world — `window` (and
-    // thus the retain key) is world-scoped: `ScriptingApi` injects into
-    // ISOLATED, `UserScriptsApi` into USER_SCRIPT. A mid-session
-    // userScripts-permission flip would leave a stale instance + live
-    // MutationObserver in the old world, but permission changes reload the
-    // tab, so this is not a practical concern.
+    // Caveat: `window` is world-scoped (ScriptingApi -> ISOLATED,
+    // UserScriptsApi -> USER_SCRIPT), so disposal can't cross worlds; a
+    // userScripts-permission flip would orphan the old instance, but such
+    // flips reload the tab.
     // eslint-disable-next-line @typescript-eslint/dot-notation -- bracket keeps the key a verbatim string literal
     const previous = w['__adguardExtCss'];
     if (previous) {
@@ -97,12 +71,9 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
         }
     }
 
-    // CSS-hits callback. Defined inline because only source inside this body
-    // survives executeScript serialization (a module-scope function would be a
-    // free identifier in the page's ISOLATED world). Mirrors
-    // ElementUtils.parseExtendedStyleInfo -> parseInfo (strip !important FIRST,
-    // then decode, then remove quotes, then strip prefix) + elementToString;
-    // keep in sync (guarded by the behavioral test).
+    // CSS-hits callback, inlined (module functions don't survive serialization).
+    // Mirrors MV2's ElementUtils.parseExtendedStyleInfo -> parseInfo +
+    // elementToString; keep in sync — the behavioral test pins the contract.
     const beforeStyleApplied = (el: IAffectedElement): IAffectedElement => {
         const PREFIX = 'adguard';
         const hits: { filterId: number; ruleIndex: number; element: string }[] = [];
@@ -116,21 +87,19 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
 
                 let c = content;
 
-                // 1. Strip trailing !important FIRST. MUST happen before the
-                //    quote-strip step: while !important still trails, the
-                //    first/last chars are the opening quote and 't', so
-                //    removeQuotes would not match and the prefix check below
-                //    would fail, silently dropping the hit.
+                // Strip trailing !important FIRST. Order is load-bearing: while
+                // it still trails, the string's first/last chars are the opening
+                // quote and 't', so the removeQuotes step below wouldn't match
+                // and the prefix check would silently drop the hit.
                 const imp = c.lastIndexOf('!important');
                 if (imp !== -1) {
                     c = c.substring(0, imp).trim();
                 }
 
-                // 2. URI-decode; the ';' separator is encoded as %3B by
-                //    buildStyleSheetsWithHits.
+                // URI-decode (';' is encoded as %3B by buildStyleSheetsWithHits).
                 c = decodeURIComponent(c);
 
-                // 3. Remove wrapping quotes (mirrors removeQuotes).
+                // Remove wrapping quotes (mirrors removeQuotes).
                 if (c.length > 1
                     && ((c[0] === '"' && c[c.length - 1] === '"')
                         || (c[0] === '\'' && c[c.length - 1] === '\''))) {
@@ -150,9 +119,8 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
                     continue;
                 }
 
-                // Serialize element (mirrors ElementUtils.elementToString).
-                // Build `<tagname attrs>` with a SINGLE trailing '>'; the tag
-                // is left open while attributes are appended, then closed once.
+                // Serialize element (mirrors ElementUtils.elementToString):
+                // build `<tagname attrs>` with a single trailing '>'.
                 const { node } = el;
                 let elementStr = `<${node ? node.localName : 'div'}`;
                 if (node && node.attributes) {
@@ -172,17 +140,12 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
         }
 
         if (hits.length > 0) {
-            // Fire-and-forget: hits reporting must never throw out of
-            // beforeStyleApplied and disrupt styling. The service worker may
-            // be inactive or the page tearing down, in which case
-            // sendMessage rejects — swallow it.
-            //
-            // NOTE: in MV3, `chrome.runtime.sendMessage` (without a callback)
-            // returns a Promise; a synchronous try/catch cannot catch its
-            // async rejection, which would otherwise surface as an unhandled
-            // promise rejection in the page's world on every hit while the
-            // SW is asleep. `Promise.resolve(...)` also guards the rare
-            // synchronous-throw case, and `.catch()` swallows both.
+            // Fire-and-forget: must never throw out of beforeStyleApplied. In
+            // MV3 sendMessage returns a Promise, so a synchronous try/catch
+            // cannot catch its async rejection — which would otherwise surface
+            // as an unhandled rejection in the page on every hit while the SW
+            // is asleep. Promise.resolve() also guards the rare sync-throw;
+            // .catch() swallows both.
             Promise.resolve(
                 chrome.runtime.sendMessage({
                     handlerName: 'tsWebExtension',
@@ -190,7 +153,7 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
                     payload: hits,
                 }),
             ).catch(() => {
-                /* ignore — see comment above */
+                /* ignore */
             });
         }
 

@@ -11,13 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- AdGuard Mail Tracking Protection filter (filter ID `25`) to `chromium-mv3`
-  and `opera-mv3` rulesets.
-
-### Changed
-
-- Updated `validator-data.json` baseline versions to `4.3.0` for both
-  `chromium-mv3` and `opera-mv3`.
+- AdGuard Mail Tracking Protection filter list (ID 25) to `chromium-mv3` and
+  `opera-mv3` rulesets.
 
 ## [4.2.1] - 2026-04-24
 
