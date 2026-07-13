@@ -29,6 +29,7 @@ catalog:
   '@types/fs-extra': ^11.0.4
   '@types/lodash-es': ^4.17.12
   '@types/node': ^22.14.0
+  '@types/punycode': 2.1.4
   '@types/react': ^17.0.80
   '@types/react-dom': ^17.0.25
   '@types/webextension-polyfill': ^0.12.1
@@ -78,12 +79,14 @@ catalog:
   node-fetch: ^3.3.2
   os-name: ^6.0.0
   playwright: ^1.52.0
+  punycode: 2.3.1
   react: ^17.0.2
   react-dom: ^17.0.2
   rimraf: ^6.0.1
   rolldown: ^1.0.0-rc.1
   rollup: ^4.28.0
   rollup-plugin-cleanup: ^3.2.1
+  rollup-plugin-copy: ^3.5.0
   rollup-plugin-dts: ^6.0.2
   rollup-plugin-node-externals: ^8.0.0
   stream-browserify: ^3.0.0
@@ -97,6 +100,7 @@ catalog:
   tslib: ^2.8.1
   tsx: ^4.19.3
   typescript: ^5.7.3
+  valibot: ^1.1.0
   vitest: ^4.1.5
   vm-browserify: ^1.1.2
   webextension-polyfill: 0.12.0

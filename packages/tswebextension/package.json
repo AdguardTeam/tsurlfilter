@@ -1,6 +1,6 @@
 {
     "name": "@adguard/tswebextension",
-    "version": "4.1.2",
+    "version": "5.0.0",
     "description": "This is a TypeScript library that implements AdGuard's extension API",
     "type": "module",
     "main": "dist/index.js",
@@ -108,6 +108,7 @@
     },
     "dependencies": {
         "@adguard/agtree": "workspace:^",
+        "@adguard/dnr-converter": "workspace:^",
         "@adguard/assistant": "catalog:",
         "@adguard/extended-css": "2.2.0",
         "@adguard/logger": "workspace:^",

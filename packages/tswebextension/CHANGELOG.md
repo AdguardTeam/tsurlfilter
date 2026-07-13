@@ -5,13 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased <!-- release/browser-extension-v5.5 -->
+## [5.0.0] - 2026-XX-XX
 
 ### Changed
 
+- **BREAKING:** Renamed all `RuleSet`/`ruleSet` symbols to `Ruleset`/`ruleset` for naming
+  consistency. Public API renames: `syncRuleSetWithIdbByFilterId`→`syncRulesetWithIdbByFilterId`,
+  `RuleSetsLoaderApi`→`RulesetsLoaderApi`, `FiltersApi.getEnabledRuleSets`→`getEnabledRulesets`,
+  `FailedEnableRuleSetsError`→`FailedEnableRulesetsError`.
+- Migrated DNR conversion imports from `@adguard/tsurlfilter/es/declarative-converter`
+  to `@adguard/dnr-converter`.
 - `TsWebExtension.start()` and `TsWebExtension.configure()` now return
   `{ conversionErrors: FilterListConversionError[] }` instead of `void`,
   surfacing filter list rule conversion errors to callers.
+- Conversion metadata (`badFilterRules`, `rulesHashMap`) is now kept in
+  memory after `configure()` instead of being freed via the previous
+  `unloadMetadata()` call. Keeping it avoids stale cached rulesets
+  returning empty metadata on subsequent `configure()` calls; a lazy
+  reload from IDB is tracked in AG-53262.
 - Updated [@adguard/extended-css] to `v2.2.0`.
 - WebRTC IP handling policy changed from `disable_non_proxied_udp` to
   `default_public_interface_only` to reduce VoIP breakage while still
@@ -51,6 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2524]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2524
 [AdguardBrowserExtension#3525]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3525
 [AdguardBrowserExtension#3537]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3537
+
+[5.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v5.0.0
 
 ## [4.1.2] - 2026-05-13
 

@@ -95,6 +95,9 @@
 !include 'dnr-converter-permissions.yaml'
 
 ---
+!include 'dnr-converter-update-docs-mv3.yaml'
+
+---
 !include 'dnr-rulesets-build.yaml'
 
 ---

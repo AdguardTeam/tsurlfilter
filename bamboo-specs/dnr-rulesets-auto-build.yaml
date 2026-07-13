@@ -17,6 +17,7 @@ stages:
 # branch 'stable/dnr-rulesets-4.0' - for AdGuard browser extension v5.3.0.X
 # branch 'stable/dnr-rulesets-4.1' - for AdGuard browser extension v5.3.1.X
 # branch 'stable/dnr-rulesets-4.2' - for AdGuard browser extension v5.4.2.X
+# branch 'stable/dnr-rulesets-5.0' - for AdGuard browser extension v5.5.0.X
 # we should skip the build stage for other branches.
 DoNothing: !include 'jobs/dnr-rulesets-auto-build/do-nothing.yaml'
 
@@ -32,11 +33,12 @@ branches: &branches
 # branch 'stable/dnr-rulesets-4.0' - for AdGuard browser extension v5.3.X
 # branch 'stable/dnr-rulesets-4.1' - for AdGuard browser extension v5.3.1.X
 # branch 'stable/dnr-rulesets-4.2' - for AdGuard browser extension v5.4.2.X
+# branch 'stable/dnr-rulesets-5.0' - for AdGuard browser extension v5.5.0.X
 # Override is needed to skip the build stage for other branches,
 # because even if branches are not supposed to be run for PRs (due to 'create: manually' above),
 # build was triggered by 'cron' anyway.
 branch-overrides:
-  - '^stable\/dnr-rulesets-(3\.3|4\.0|4\.1|4\.2)$':
+  - '^stable\/dnr-rulesets-(3\.3|4\.0|4\.1|4\.2|5\.0)$':
       stages:
         - Build:
             - Build

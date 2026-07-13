@@ -1,0 +1,123 @@
+{
+    "name": "@adguard/dnr-converter",
+    "version": "1.0.0",
+    "description": "A converter that transforms adblock-style filtering rules into rules compatible with the Declarative Net Request (DNR) API.",
+    "main": "dist/index.js",
+    "module": "dist/index.js",
+    "types": "dist/types/src/index.d.ts",
+    "type": "module",
+    "sideEffects": false,
+    "files": [
+        "dist",
+        "!dist/build.txt"
+    ],
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/types/src/index.d.ts"
+        },
+        "./cli": {
+            "types": "./dist/types/cli/index.d.ts",
+            "default": "./dist/cli.cjs"
+        }
+    },
+    "bin": {
+        "dnr-converter": "dist/cli.cjs"
+    },
+    "typesVersions": {
+        "*": {
+            "*": [
+                "dist/types/src/index.d.ts"
+            ],
+            "cli": [
+                "dist/types/cli/index.d.ts"
+            ]
+        }
+    },
+    "author": "Adguard Software Ltd.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "directory": "packages/dnr-converter"
+    },
+    "license": "GPL-3.0-only",
+    "engines": {
+        "node": ">=22"
+    },
+    "bugs": {
+        "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
+    },
+    "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/dnr-converter#readme",
+    "scripts": {
+        "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
+        "lint:code": "eslint --cache --ignore-path .gitignore .",
+        "lint:types": "tsc",
+        "lint:md": "markdownlint .",
+        "start": "rollup -c rollup.config.ts --configPlugin typescript -w",
+        "build": "rimraf dist && rollup -c rollup.config.ts --configPlugin typescript",
+        "postbuild": "tsx tasks/build-txt.ts",
+        "docs:examples": "tsx tasks/generate-examples.ts",
+        "test": "vitest run",
+        "test:light": "vitest run --exclude \"**/*benchmark*.test.ts\"",
+        "test:watch": "vitest run --watch",
+        "test:ci": "vitest run --no-cache --reporter default --reporter junit --outputFile=./tests-reports/dnr-converter.xml",
+        "test:coverage": "vitest run --coverage",
+        "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
+        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache",
+        "test:debug": "vitest run --inspect --no-file-parallelism --watch",
+        "precommit": "lint-staged",
+        "prepublishOnly": "pnpm build",
+        "tgz": "pnpm pack --out dnr-converter.tgz"
+    },
+    "lint-staged": {
+        "{src,cli,test,tasks}/**/*.ts": [
+            "eslint"
+        ]
+    },
+    "peerDependencies": {
+        "@adguard/re2-wasm": "1.2.0"
+    },
+    "dependencies": {
+        "@adguard/agtree": "workspace:^",
+        "@adguard/logger": "workspace:^",
+        "@adguard/scriptlets": "catalog:",
+        "commander": "catalog:",
+        "punycode": "catalog:",
+        "valibot": "catalog:"
+    },
+    "devDependencies": {
+        "@adguard/eslint-plugin-logger-context": "workspace:^",
+        "@adguard/tsurlfilter": "workspace:^",
+        "@rollup/plugin-commonjs": "catalog:",
+        "@rollup/plugin-json": "catalog:",
+        "@rollup/plugin-node-resolve": "catalog:",
+        "@rollup/plugin-swc": "catalog:",
+        "@rollup/plugin-typescript": "catalog:",
+        "@types/chrome": "catalog:",
+        "@types/node": "catalog:",
+        "@types/punycode": "catalog:",
+        "@typescript-eslint/eslint-plugin": "catalog:",
+        "@typescript-eslint/parser": "catalog:",
+        "@vitest/coverage-v8": "catalog:",
+        "eslint": "catalog:",
+        "eslint-config-airbnb-base": "catalog:",
+        "eslint-config-airbnb-typescript": "catalog:",
+        "eslint-plugin-boundaries": "catalog:",
+        "eslint-plugin-import": "catalog:",
+        "eslint-plugin-import-newlines": "catalog:",
+        "eslint-plugin-jsdoc": "catalog:",
+        "eslint-plugin-n": "catalog:",
+        "lint-staged": "catalog:",
+        "markdownlint": "catalog:",
+        "markdownlint-cli": "catalog:",
+        "rimraf": "catalog:",
+        "rollup": "catalog:",
+        "rollup-plugin-copy": "catalog:",
+        "rollup-plugin-dts": "catalog:",
+        "rollup-plugin-node-externals": "catalog:",
+        "tsd": "catalog:",
+        "tsx": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:"
+    }
+}

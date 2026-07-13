@@ -20,10 +20,12 @@ tasks:
           # branch 'stable/dnr-rulesets-4.0' - for AdGuard browser extension v5.3.0.X
           # branch 'stable/dnr-rulesets-4.1' - for AdGuard browser extension v5.3.1.X
           # branch 'stable/dnr-rulesets-4.2' - for AdGuard browser extension v5.4.2.X
+          # branch 'stable/dnr-rulesets-5.0' - for AdGuard browser extension v5.5.0.X
           if [ "$BRANCH" != "stable/dnr-rulesets-3.3" ] \
               && [ "$BRANCH" != "stable/dnr-rulesets-4.0" ] \
               && [ "$BRANCH" != "stable/dnr-rulesets-4.1" ] \
-              && [ "$BRANCH" != "stable/dnr-rulesets-4.2" ]; then
+              && [ "$BRANCH" != "stable/dnr-rulesets-4.2" ] \
+              && [ "$BRANCH" != "stable/dnr-rulesets-5.0" ]; then
             echo "deployment is not supported on branch ${BRANCH}, skipping"
             exit 0
           fi
