@@ -48,15 +48,24 @@ Build:
 
             if [ "$EXIT_CODE" -eq 0 ] && [ -d output/modified ]; then
               cp -R output/modified/. .
+              echo "has_changes=true" > bamboo-inject-update-companiesdb.txt
             else
               echo "No meaningful changes detected, skipping commit"
-              exit 1
+              echo "has_changes=false" > bamboo-inject-update-companiesdb.txt
             fi
+    - inject-variables:
+        file: bamboo-inject-update-companiesdb.txt
+        scope: LOCAL
+        namespace: inject
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
           commitMessage: 'skipci: update companiesdb data'
           selectedRepository: defaultRepository
+        conditions:
+          - variable:
+              matches:
+                bamboo.inject.has_changes: 'true'
   final-tasks:
     - script:
         interpreter: SHELL

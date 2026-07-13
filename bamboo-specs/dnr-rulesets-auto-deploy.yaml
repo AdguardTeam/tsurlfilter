@@ -14,11 +14,12 @@ environments:
   - npmjs 3.3.X
   - npmjs 4.0.X
   - npmjs 4.1.X
+  - npmjs 4.2.X
 
 # for AdGuard API v3.1
 npmjs 3.3.X:
   docker: &docker
-    image: adguard/node-ssh:22.17--0
+    image: adguard/node-ssh:22.22--0
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   # run auto-deploy only after successful build for dnr-rulesets v3.3.X
@@ -73,5 +74,17 @@ npmjs 4.1.X:
         # git branch name `stable/dnr-rulesets-4.1`, '/' is replaced with '-'
         # in Bamboo
         branch: stable-dnr-rulesets-4.1
+  tasks: *tasks
+  requirements: *requirements
+
+# for AdGuard browser extension v5.4.2.X
+npmjs 4.2.X:
+  docker: *docker
+  # run auto-deploy only after successful build for dnr-rulesets v4.2.X
+  triggers:
+    - build-success:
+        # git branch name `stable/dnr-rulesets-4.2`, '/' is replaced with '-'
+        # in Bamboo
+        branch: stable-dnr-rulesets-4.2
   tasks: *tasks
   requirements: *requirements
