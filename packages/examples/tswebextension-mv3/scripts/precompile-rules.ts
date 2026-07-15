@@ -4,7 +4,7 @@ import path from 'path';
 import axios from 'axios';
 import { ensureDir } from 'fs-extra';
 
-import { convertFilters } from '@adguard/tsurlfilter/cli';
+import { convertFilters } from '@adguard/dnr-converter/cli';
 import { getFilterName } from '@adguard/tswebextension/mv3/utils';
 
 import { DEFAULT_EXTENSION_CONFIG } from './constants';

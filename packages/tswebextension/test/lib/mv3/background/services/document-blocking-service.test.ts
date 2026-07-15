@@ -56,7 +56,7 @@ describe('DocumentBlockingService', () => {
         userrules: { content: '' },
         verbose: false,
         filtersPath: '/filters',
-        ruleSetsPath: '/rulesets',
+        rulesetsPath: '/rulesets',
         declarativeLogEnabled: false,
         settings: {
             filteringEnabled: true,

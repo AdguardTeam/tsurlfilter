@@ -15,6 +15,7 @@ environments:
   - npmjs 4.0.X
   - npmjs 4.1.X
   - npmjs 4.2.X
+  - npmjs 5.0.X
 
 # for AdGuard API v3.1
 npmjs 3.3.X:
@@ -85,6 +86,20 @@ npmjs 4.2.X:
     - build-success:
         # git branch name `stable/dnr-rulesets-4.2`, '/' is replaced with '-'
         # in Bamboo
+        branch: stable-dnr-rulesets-4.2
+  tasks: *tasks
+  requirements: *requirements
+
+# for AdGuard browser extension v5.5.0.X
+npmjs 5.0.X:
+  docker: *docker
+  # run auto-deploy only after successful build for dnr-rulesets v5.0.X
+  triggers:
+    - build-success:
+        # git branch name `stable/dnr-rulesets-5.0`, '/' is replaced with '-'
+        # in Bamboo
+        # FIXME: Uncomment after merge to master to prevent Bamboo Specs Execution error
+        # branch: stable-dnr-rulesets-5.0
         branch: stable-dnr-rulesets-4.2
   tasks: *tasks
   requirements: *requirements

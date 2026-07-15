@@ -1,0 +1,75 @@
+! Network rules that should be rejected by the DNR validator.
+! Each non-comment, non-empty line is a rule that either cannot be parsed
+! or is unsupported for DNR conversion.
+
+! === $replace — not expressible in DNR ===
+||example.com^$replace=/ad/blocked/
+
+! === $jsonprune — not supported ===
+||example.com^$jsonprune=\$.ads
+
+! === $hls — not supported ===
+||example.com^$hls=/#EXTINF.+?broll/
+
+! === $stealth — not supported ===
+||example.com^$stealth
+
+! === $genericblock — not supported ===
+@@||example.com^$genericblock
+
+! === DNS modifiers — not supported ===
+||example.com^$client=192.168.1.1
+||example.com^$dnsrewrite=NOERROR;A;127.0.0.1
+||example.com^$dnstype=AAAA
+||example.com^$ctag=device_phone
+
+! === $network — desktop only, not supported ===
+||example.com^$network
+
+! === $redirect-rule — not supported ===
+||example.com^$redirect-rule=noopjs
+
+! === Allowlist with $csp — not supported ===
+@@||example.com^$csp
+
+! === Allowlist with $removeparam — not supported ===
+@@||example.com^$removeparam
+
+! === Allowlist with $removeheader — not supported ===
+@@||example.com^$removeheader=refresh
+
+! === Allowlist with $redirect — not supported ===
+@@||example.com^$redirect=noopjs
+
+! === Allowlist with $cookie — not supported ===
+@@||example.com^$cookie
+
+! === $removeparam with negation — not supported ===
+||example.com^$removeparam=~utm_source
+
+! === $removeparam with regex — not supported ===
+||example.com^$removeparam=/^utm_/
+
+! === $cookie with parameters — not supported ===
+||example.com^$cookie=test;maxAge=3600
+
+! === $header with regex value — not supported in DNR ===
+||example.com^$header=set-cookie:/test/
+
+! === $method with trace — not supported ===
+||example.com^$method=trace
+
+! === $removeparam with incompatible modifier $redirect ===
+||example.com^$removeparam=utm,redirect=noopjs
+
+! === $permissions with incompatible modifier $third-party ===
+||example.com^$permissions=camera=(),third-party
+
+! === $header combined with request-side $removeheader ===
+||example.com^$header=set-cookie,removeheader=request:set-cookie
+
+! === $removeheader with incompatible modifier $method (loop-reachable) ===
+||example.com^$removeheader=refresh,method=get
+
+! === $removeheader with incompatible modifier $to (field-only) ===
+||example.com^$removeheader=refresh,to=foo.com

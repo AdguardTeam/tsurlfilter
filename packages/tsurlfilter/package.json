@@ -1,6 +1,6 @@
 {
     "name": "@adguard/tsurlfilter",
-    "version": "5.0.1",
+    "version": "6.0.0",
     "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
     "main": "dist/es/index.js",
     "module": "dist/es/index.js",
@@ -18,10 +18,6 @@
             "import": "./dist/es/index.js",
             "require": "./dist/tsurlfilter.umd.js"
         },
-        "./es/declarative-converter": {
-            "import": "./dist/es/declarative-converter.js",
-            "types": "./dist/types/src/rules/declarative-converter/index.d.ts"
-        },
         "./es/request-type": {
             "import": "./dist/es/request-type.js",
             "types": "./dist/types/src/request-type.d.ts"
@@ -34,16 +30,8 @@
             "import": "./dist/es/simple-regex.js",
             "types": "./dist/types/src/rules/simple-regex.d.ts"
         },
-        "./es/declarative-converter-utils": {
-            "import": "./dist/es/declarative-converter-utils.js",
-            "types": "./dist/types/src/rules/declarative-converter-utils/index.d.ts"
-        },
         "./es/*": "./dist/es/*.js",
-        "./umd": "./dist/tsurlfilter.umd.js",
-        "./cli": {
-            "import": "./dist/cli.js",
-            "types": "./dist/types/cli/index.d.ts"
-        }
+        "./umd": "./dist/tsurlfilter.umd.js"
     },
     "typesVersions": {
         "*": {
@@ -61,20 +49,8 @@
             ],
             "es/simple-regex": [
                 "dist/types/src/rules/simple-regex.d.ts"
-            ],
-            "es/declarative-converter": [
-                "dist/types/src/rules/declarative-converter/index.d.ts"
-            ],
-            "es/declarative-converter-utils": [
-                "dist/types/src/rules/declarative-converter-utils/index.d.ts"
-            ],
-            "cli": [
-                "dist/types/cli/index.d.ts"
             ]
         }
-    },
-    "bin": {
-        "tsurlfilter": "dist/cli.js"
     },
     "author": "Adguard Software Ltd.",
     "repository": {
@@ -101,7 +77,6 @@
         "postbuild": "tsx tasks/build-txt.ts",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types && tsx tasks/transform-dts.ts",
         "docs": "typedoc src --out docs",
-        "docs:mv3": "tsx tasks/generate-examples",
         "test": "vitest run",
         "test:ci": "vitest run --no-cache --reporter default --reporter junit --outputFile=./tests-reports/tsurlfilter.xml",
         "test:light": "vitest run --exclude \"**/*benchmark*.test.ts\"",
@@ -120,16 +95,12 @@
             "eslint"
         ]
     },
-    "peerDependencies": {
-        "@adguard/re2-wasm": "1.2.0"
-    },
     "dependencies": {
         "@adguard/agtree": "workspace:^",
         "@adguard/css-tokenizer": "workspace:^",
         "@adguard/logger": "workspace:^",
         "@adguard/scriptlets": "catalog:",
         "cidr-tools": "^6.4.1",
-        "commander": "catalog:",
         "is-cidr": "4.0.2",
         "is-ip": "catalog:",
         "lru-cache": "catalog:",

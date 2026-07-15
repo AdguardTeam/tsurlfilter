@@ -27,6 +27,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   changes.
 - Updated [@adguard/assistant] to `v4.4.12`.
 
+### Removed
+
+- Declarative converter (`@adguard/tsurlfilter/es/declarative-converter`
+  sub-path export) — moved to the dedicated `@adguard/dnr-converter` package.
+- Declarative converter utilities
+  (`@adguard/tsurlfilter/es/declarative-converter-utils` sub-path export) —
+  moved to `@adguard/dnr-converter`.
+- CLI (`tsurlfilter` bin and `@adguard/tsurlfilter/cli` export) — the
+  `dnr-converter` binary from `@adguard/dnr-converter` replaces it.
+- `@adguard/re2-wasm` peer dependency (was only required by the old declarative
+  converter).
+
 ### Fixed
 
 - Scriptlet exception rules with comma-containing arguments now work correctly

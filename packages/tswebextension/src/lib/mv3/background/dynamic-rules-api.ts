@@ -2,15 +2,25 @@ import browser from 'webextension-polyfill';
 
 import {
     type ConversionResult,
-    DeclarativeFilterConverter,
+    FilterConverter,
     type IFilter,
-    type IRuleSet,
+    type IRulesetWithSourceMap,
     type UpdateStaticRulesOptions,
-} from '@adguard/tsurlfilter/es/declarative-converter';
+} from '@adguard/dnr-converter';
 
 import { logger } from '../../common/utils/logger';
 
-export type { ConversionResult };
+/**
+ * Narrows {@link ConversionResult} for the dynamic ruleset use case:
+ * `declarativeRulesToCancel` is always present (required, not optional) because
+ * {@link DynamicRulesApi.updateDynamicFiltering} always computes it via
+ * {@link FilterConverter.computeRulesToDisable}.
+ */
+export type DynamicConversionResult = ConversionResult<IRulesetWithSourceMap> & {
+    declarativeRulesToCancel: UpdateStaticRulesOptions[];
+};
+
+export type { DynamicConversionResult as ConversionResult };
 
 /**
  * DynamicRulesApi knows how to handle dynamic rules: apply a list of custom
@@ -70,7 +80,7 @@ export default class DynamicRulesApi {
      * @param blockingPageTrustedFilter Filter with blocking page trusted domains rules (badfiltered rules).
      * @param userRules Filter with user rules.
      * @param customFilters List of custom filters.
-     * @param enabledStaticRuleSets List of enabled static rule sets to apply
+     * @param enabledStaticRulesets List of enabled static rule sets to apply
      * $badfilter rules from dynamic rules to static.
      * @param resourcesPath String path to web accessible resources,
      * relative to the extension root dir. Should start with leading slash '/'.
@@ -78,6 +88,7 @@ export default class DynamicRulesApi {
      * @returns Converted dynamic rule set with rule set, errors and
      * limitations. @see {@link ConversionResult}.
      *
+     * @throws Error if the conversion produces no results (empty filter list).
      * @throws Error if declarativeNetRequest.updateDynamicRules() receives invalid rules
      * e.g. with non-ASCII `urlFilter` value.
      * Details: {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-urlFilter}.
@@ -87,9 +98,9 @@ export default class DynamicRulesApi {
         blockingPageTrustedFilter: IFilter,
         userRules: IFilter,
         customFilters: IFilter[],
-        enabledStaticRuleSets: IRuleSet[],
+        enabledStaticRulesets: IRulesetWithSourceMap[],
         resourcesPath?: string,
-    ): Promise<ConversionResult> {
+    ): Promise<DynamicConversionResult> {
         const filterList = [
             allowlistRules,
             blockingPageTrustedFilter,
@@ -97,22 +108,40 @@ export default class DynamicRulesApi {
             ...customFilters,
         ];
 
-        // Create filter and convert into single rule set
-        const converter = new DeclarativeFilterConverter();
+        // Collect $badfilter rules from static rulesets so the converter can
+        // skip dynamic rules that are already negated by a static $badfilter.
+        const staticBadFilterRules = enabledStaticRulesets
+            .flatMap((ruleset) => ruleset.getBadFilterRules());
 
-        const conversionResult = await converter.convertDynamicRuleSets(
+        const converter = new FilterConverter();
+
+        const results = await converter.convert(
             filterList,
-            enabledStaticRuleSets,
             {
                 resourcesPath,
                 maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_RULES,
                 maxNumberOfUnsafeRules: DynamicRulesApi.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES,
                 maxNumberOfRegexpRules: DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES,
+                withSourceMap: true,
+                combine: true,
+                badFilterRules: staticBadFilterRules,
             },
         );
-        const { ruleSet, declarativeRulesToCancel } = conversionResult;
 
-        const declarativeRules = await ruleSet.getDeclarativeRules();
+        if (results.length === 0) {
+            throw new Error('Dynamic rules conversion produced no results');
+        }
+
+        const conversionResult = results[0];
+        const { ruleset } = conversionResult;
+
+        // Compute which static rules should be disabled by dynamic $badfilter rules.
+        const declarativeRulesToCancel = await converter.computeRulesToDisable(
+            [ruleset],
+            enabledStaticRulesets,
+        );
+
+        const declarativeRules = await ruleset.getDeclarativeRules();
 
         // Remove existing dynamic rules, in order their ids not interfere with new ones
         await this.removeAllRules();
@@ -122,7 +151,7 @@ export default class DynamicRulesApi {
             addRules: declarativeRules as browser.DeclarativeNetRequest.Rule[],
         });
 
-        if (declarativeRulesToCancel && declarativeRulesToCancel.length > 0) {
+        if (declarativeRulesToCancel.length > 0) {
             // Apply $badfilter rules from dynamic filters.
             await this.applyBadFilterRules(declarativeRulesToCancel);
         } else {
@@ -131,21 +160,24 @@ export default class DynamicRulesApi {
             // Because in other case, when we will re-enable filter - maybe it
             // will contains already disabled rules?
             // Undoes all previously applied changes.
-            await this.cancelAllStaticRulesUpdates(enabledStaticRuleSets);
+            await this.cancelAllStaticRulesUpdates(enabledStaticRulesets);
         }
 
-        return conversionResult;
+        return {
+            ...conversionResult,
+            declarativeRulesToCancel,
+        };
     }
 
     /**
      * Cancels any disabled rules ids for all static rulesets.
      *
-     * @param staticRuleSets List of static {@link IRuleSet}.
+     * @param staticRulesets List of static {@link IRulesetWithSourceMap}.
      */
     private static async cancelAllStaticRulesUpdates(
-        staticRuleSets: IRuleSet[],
+        staticRulesets: IRulesetWithSourceMap[],
     ): Promise<void> {
-        const tasks = staticRuleSets.map(async (r) => {
+        const tasks = staticRulesets.map(async (r) => {
             const rulesetId = r.getId();
 
             // Get list of current disabled rules ids.

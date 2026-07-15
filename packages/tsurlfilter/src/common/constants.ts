@@ -24,10 +24,3 @@ export const ESCAPE = '\\';
 
 export const OPEN_SQUARE = '[';
 export const CLOSE_SQUARE = ']';
-
-export const RE_NUMBER = /^\d+$/;
-
-/**
- * Prefix for ruleset name.
- */
-export const RULESET_NAME_PREFIX = 'ruleset_';
