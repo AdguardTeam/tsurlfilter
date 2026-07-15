@@ -2296,9 +2296,9 @@ packages:
     resolution: {integrity: sha512-KfHD0UrCkkHQK7cq5nBvY9cJ/kDJoMwKfq66cJngLRKnCkCYGKGBT+HPmwapkXK96UItfPswW07i1VWIaZSgpA==}
 
   '@adguard/extended-css@file:vendor/adguard-extended-css-2.2.0.tgz':
-    resolution: {integrity: sha512-lz0tsJ2NNTpDBGP3NjoUi4CajV52ism6Ousmulqt1aGHzeqEmLb+fttQ7RU27xaT986hvc+0pYkDfNbSZncm7g==, tarball: file:vendor/adguard-extended-css-2.2.0.tgz}
+    resolution: {integrity: sha512-V1r9ToIJPOBXc9sZxJ9y/TRNnAcPO+/uTvR7geTsjivs+3JO5ccGsRb+2BXFyaUFM7/fCN7IiggnyY+eLvJPMQ==, tarball: file:vendor/adguard-extended-css-2.2.0.tgz}
     version: 2.2.0
-    engines: {node: '>=16'}
+    engines: {node: '>=22', pnpm: '>=10.33.4 <11'}
 
   '@adguard/filters-downloader@2.4.2':
     resolution: {integrity: sha512-efloe2ZGHaO4GK+4xQiI8B7FGIlDbMKT05X4g9XAXNfG7uWmXF0OnaaAN8312wYc1q1OXRS4SGwYwN+wocyGBw==}

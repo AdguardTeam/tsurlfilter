@@ -176,10 +176,14 @@ describe('applyExtCss — CSS hits stats', () => {
         sendMessageSpy.mockRestore();
     });
 
-    it('sends a SaveCssHitsStats message when collectStats is on and a rule carries a marker', () => {
+    it('sends a SaveCssHitsStats message when collectStats is on and a rule carries a marker', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
         applyExtCss([MARKER_RULE], true);
+
+        // Flush microtasks so the deferred sendMessage (via Promise.resolve().then(...))
+        // is recorded by the spy.
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
 
         expect(sendMessageSpy).toHaveBeenCalledTimes(1);
         const msg = sendMessageSpy.mock.calls[0][0];
@@ -258,10 +262,13 @@ describe('applyExtCss — CSS hits stats', () => {
     // contract end-to-end (marker flows rules[].style.content -> message),
     // so a drift in the callback argument shape fails the suite. This pins
     // the expected shape explicitly.
-    it('exercises the real beforeStyleApplied IAffectedElement contract { node, rules }', () => {
+    it('exercises the real beforeStyleApplied IAffectedElement contract { node, rules }', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
         applyExtCss([MARKER_RULE], true);
+
+        // Flush microtasks so the deferred sendMessage is recorded by the spy.
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
 
         // If the inlined bundle passed a differently-shaped object, the
         // content marker would never be read and no message would be sent.
@@ -271,5 +278,45 @@ describe('applyExtCss — CSS hits stats', () => {
         expect(msg.payload[0].ruleIndex).toBe(2);
         // node was an Element with localName 'div' and a class attribute.
         expect(msg.payload[0].element).toBe('<div class="ad">');
+    });
+
+    // Regression: the dedup guard (rule.style.content = '') must prevent
+    // duplicate hits when the same element is re-styled by the throttled
+    // MutationObserver. After the first hit clears the content marker,
+    // subsequent beforeStyleApplied calls find an empty string and skip.
+    it('does not send duplicate hits (dedup via content clearing)', async () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+
+        applyExtCss([MARKER_RULE], true);
+
+        // Flush microtasks so the deferred sendMessage is recorded by the spy.
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+
+        // Wait for the throttled MutationObserver to run.
+        // If the dedup guard fails (content not cleared), the observer
+        // would re-send the hit on its next pass.
+        await new Promise((resolve) => { setTimeout(resolve, 300); });
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+    });
+
+    // Regression: attribute values containing double-quotes must be escaped
+    // (\" -> backslash-quote) in the element serialization, matching MV2's
+    // ElementUtils.elementToString. See the shared contract test in
+    // css-hits-protocol.test.ts.
+    it('correctly escapes double-quotes in attribute values when serializing element', async () => {
+        // Single-quoted HTML attribute value containing a literal "
+        document.body.innerHTML = '<div data-x=\'a"b\' class="ad"><span class="child">ad</span></div>';
+
+        applyExtCss([MARKER_RULE], true);
+
+        // Flush microtasks so the deferred sendMessage is recorded by the spy.
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+        expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+        const msg = sendMessageSpy.mock.calls[0][0] as any;
+        // The serialized element must escape the " in the data-x value.
+        expect(msg.payload[0].element).toBe('<div data-x="a\\"b" class="ad">');
     });
 });

@@ -289,7 +289,7 @@ export class ScriptingApi {
      * immediately at `onCommitted` to minimize ad flash.
      *
      * The `func` is the static, self-contained `applyExtCss` function whose
-     * body contains the inlined `@adguard/extended-css` engine (issue 1-AFK),
+     * body contains the inlined `@adguard/extended-css` engine,
      * so it survives `executeScript` serialization and satisfies the MV3
      * service-worker CSP (no `eval`/`new Function`).
      *

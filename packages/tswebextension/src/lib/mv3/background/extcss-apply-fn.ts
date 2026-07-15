@@ -1,23 +1,13 @@
+import type { ExtendedCss, IAffectedElement } from '@adguard/extended-css';
+
 // Type-only decls for symbols supplied by build-time inlining (see the
 // inlineExtCssBundle plugin). Erased at runtime; they exist only so the source
-// type-checks before the inliner swaps in the real definitions.
+// type-checks before the inliner swaps in the real definitions. The
+// `import type` above is likewise erased — it provides the real library
+// types instead of hand-rolled mirrors, without affecting `toString()`
+// serialization.
 // eslint-disable-next-line @typescript-eslint/naming-convention -- build-time marker, replaced by the inliner
 declare function __INLINE_EXTCSS_BUNDLE__(): void;
-
-/**
- * Retained ExtendedCss instance; only `dispose()` is used — it disconnects
- * the main MutationObserver and reverts applied styles.
- */
-type ExtCssInstance = { dispose(): void };
-
-/**
- * Type-only mirror of IAffectedElement from the extended-css apply IIFE (see
- * src/index.apply.ts). Erased at runtime; the behavioral test pins the real shape.
- */
-type IAffectedElement = {
-    node?: Element;
-    rules?: { style?: { content?: string } }[];
-};
 
 /**
  * The apply IIFE entry: returns the applied ExtendedCss instance, accepts an
@@ -26,7 +16,7 @@ type IAffectedElement = {
 declare const applyExtendedCss: (
     cssRules: string[],
     beforeStyleApplied?: (el: IAffectedElement) => IAffectedElement,
-) => ExtCssInstance;
+) => ExtendedCss;
 
 /**
  * Self-contained ExtendedCSS apply function injected into pages via
@@ -50,17 +40,12 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
     // Key must be a body literal, not a module-scope const: only body literals
     // survive toString() serialization — a module-scope const would be an
     // unresolved free identifier in the page's ISOLATED world.
-    const w = window as unknown as Record<string, ExtCssInstance | null | undefined>;
+    const w = window as unknown as Record<string, ExtendedCss | null | undefined>;
 
     // Dispose the previous instance before applying a new one. dispose()
     // disconnects the prior MutationObserver and reverts styles, preventing
     // stale observer/style leaks on same-document (SPA) re-injections (full
     // page loads tear down the world, so this only matters then).
-    //
-    // Caveat: `window` is world-scoped (ScriptingApi -> ISOLATED,
-    // UserScriptsApi -> USER_SCRIPT), so disposal can't cross worlds; a
-    // userScripts-permission flip would orphan the old instance, but such
-    // flips reload the tab.
     // eslint-disable-next-line @typescript-eslint/dot-notation -- bracket keeps the key a verbatim string literal
     const previous = w['__adguardExtCss'];
     if (previous) {
@@ -71,9 +56,17 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
         }
     }
 
-    // CSS-hits callback, inlined (module functions don't survive serialization).
-    // Mirrors MV2's ElementUtils.parseExtendedStyleInfo -> parseInfo +
-    // elementToString; keep in sync — the behavioral test pins the contract.
+    /**
+     * CSS-hits callback, inlined (module functions don't survive serialization).
+     * Mirrors MV2's ElementUtils.parseExtendedStyleInfo -> parseInfo +
+     * elementToString. The shared round-trip contract test
+     * (test/lib/mv3/background/css-hits-protocol.test.ts) pins both
+     * implementations to the same expected outputs.
+     *
+     * @param el The affected element whose style is about to be applied.
+     *
+     * @returns The same element (with the hit marker content cleared).
+     */
     const beforeStyleApplied = (el: IAffectedElement): IAffectedElement => {
         const PREFIX = 'adguard';
         const hits: { filterId: number; ruleIndex: number; element: string }[] = [];
@@ -140,21 +133,21 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
         }
 
         if (hits.length > 0) {
-            // Fire-and-forget: must never throw out of beforeStyleApplied. In
-            // MV3 sendMessage returns a Promise, so a synchronous try/catch
-            // cannot catch its async rejection — which would otherwise surface
-            // as an unhandled rejection in the page on every hit while the SW
-            // is asleep. Promise.resolve() also guards the rare sync-throw;
-            // .catch() swallows both.
-            Promise.resolve(
-                chrome.runtime.sendMessage({
+            // Defer the call into a microtask so a synchronous throw
+            // (e.g. "Extension context invalidated" during extension
+            // reload) becomes a caught rejection rather than escaping
+            // into beforeStyleApplied → applyStyle → element hiding
+            // disruption. An async sendMessage rejection (e.g.
+            // "Receiving end does not exist") is also swallowed.
+            Promise.resolve()
+                .then(() => chrome.runtime.sendMessage({
                     handlerName: 'tsWebExtension',
                     type: 'saveCssHitsStats',
                     payload: hits,
-                }),
-            ).catch(() => {
-                /* ignore */
-            });
+                }))
+                .catch(() => {
+                    /* ignore */
+                });
         }
 
         return el;

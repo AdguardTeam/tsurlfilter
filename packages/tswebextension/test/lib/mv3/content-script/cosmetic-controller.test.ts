@@ -128,9 +128,9 @@ describe('MV3 CosmeticController — native CSS repair', () => {
         // Advance well beyond 200 retries × 100ms (~20s) — the loop gives up.
         await vi.advanceTimersByTimeAsync(25_000);
 
-        // 1 initial call + retries while tries <= MAX_GET_COSMETIC_DATA_TRIES
-        // (200): tries 0..200 retry, tries 201 falls through and stops.
-        expect(sendAppMessageMock).toHaveBeenCalledTimes(202);
+        // 1 initial call + 200 retries while tries < MAX_GET_COSMETIC_DATA_TRIES
+        // (200): tries 0..199 retry, tries 200 falls through and stops.
+        expect(sendAppMessageMock).toHaveBeenCalledTimes(201);
 
         // No style was injected (the engine never became ready).
         expect(document.querySelector('style')).toBeNull();

@@ -202,23 +202,15 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
-        const { isAppStarted, configuration } = appContext;
-        const areHitsStatsCollected = configuration?.settings.collectStats || false;
+        const { isAppStarted } = appContext;
 
         data.isAppStarted = isAppStarted;
-        data.areHitsStatsCollected = areHitsStatsCollected;
 
         const tabContext = tabsApi.getTabContext(tabId);
 
         if (!tabContext?.info.url) {
             return data;
         }
-
-        // Do not collect hits stats if website is allowlisted
-        const isDocumentAllowlisted = !!tabContext.mainFrameRule
-            && tabContext.mainFrameRule.isFilteringDisabled();
-
-        data.areHitsStatsCollected = data.areHitsStatsCollected && !isDocumentAllowlisted;
 
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
@@ -417,8 +409,8 @@ export class CosmeticApi extends CosmeticApiCommon {
      * the background via the Scripting API.
      *
      * Makes no call when there are no matching rules. Errors are caught and
-     * logged — restricted pages must not
-     * disrupt the extension. When `areHitsStatsCollected` is true, the rules
+     * logged, so restricted pages must not disrupt the extension. When
+     * `areHitsStatsCollected` is true, the rules
      * carry hits markers and the injected func registers a
      * `beforeStyleApplied` callback that reports hits back to the background.
      *
@@ -440,21 +432,12 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         try {
-            if (UserScriptsApi.isEnabled) {
-                await UserScriptsApi.executeExtCss({
-                    tabId,
-                    frameId,
-                    cssRules: extCssRules,
-                    collectStats: areHitsStatsCollected,
-                });
-            } else {
-                await ScriptingApi.executeExtCss({
-                    tabId,
-                    frameId,
-                    cssRules: extCssRules,
-                    collectStats: areHitsStatsCollected,
-                });
-            }
+            await ScriptingApi.executeExtCss({
+                tabId,
+                frameId,
+                cssRules: extCssRules,
+                collectStats: areHitsStatsCollected,
+            });
         } catch (e) {
             logger.debug(`[tsweb.CosmeticApi.applyExtCssRules]: error occurred during injection into tabId ${tabId} and frameId ${frameId} `, e);
         }

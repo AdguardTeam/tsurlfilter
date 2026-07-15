@@ -70,14 +70,12 @@ const setupMocks = (
     vi.spyOn(CosmeticApi, 'applyCosmeticRules');
     vi.spyOn(CosmeticApi, 'logScriptRules');
     vi.spyOn(ScriptingApi, 'insertCSS');
-    // ExtendedCSS is injected directly from the background (issue 2-AFK).
+    // ExtendedCSS is injected directly from the background.
     vi.spyOn(ScriptingApi, 'executeExtCss');
     // TODO (Slava): add tests for executeScriptText. AG-39122
 
     // This method will be used if userScripts API is enabled.
     vi.spyOn(UserScriptsApi, 'executeScripts');
-    // ExtendedCSS via userScripts, used when userScripts permission is on.
-    vi.spyOn(UserScriptsApi, 'executeExtCss');
 
     // These methods will be used if userScripts API is not enabled.
     vi.spyOn(ScriptingApi, 'executeScriptFunc');
@@ -162,7 +160,7 @@ describe('TabsCosmeticInjector', () => {
             cosmeticResult.CSS.append(createCosmeticRule('##h2', customFilterId));
             cosmeticResult.CSS.append(createCosmeticRule('##h3', userFilterId));
             // An ExtendedCSS rule (non-native pseudo-class) injected directly
-            // from the background via scripting.executeScript (issue 2-AFK).
+            // from the background via scripting.executeScript.
             cosmeticResult.CSS.append(createCosmeticRule('##div:contains(ad)', localFilterId));
 
             // Mark our filter as local to correctly handle injecting local rules.
@@ -204,30 +202,16 @@ describe('TabsCosmeticInjector', () => {
                     },
                 );
 
-                // ExtendedCSS rules are injected directly from the background.
-                // When userScripts permission is granted, ExtCSS routes through
-                // the userScripts path; otherwise through scripting.
-                if (userScriptsAvailable) {
-                    expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
-                    expect(UserScriptsApi.executeExtCss).toHaveBeenCalledTimes(1);
-                    expect(UserScriptsApi.executeExtCss).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            tabId,
-                            frameId,
-                            cssRules: expect.any(Array),
-                        }),
-                    );
-                } else {
-                    expect(UserScriptsApi.executeExtCss).not.toHaveBeenCalled();
-                    expect(ScriptingApi.executeExtCss).toHaveBeenCalledTimes(1);
-                    expect(ScriptingApi.executeExtCss).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            tabId,
-                            frameId,
-                            cssRules: expect.any(Array),
-                        }),
-                    );
-                }
+                // ExtendedCSS rules are injected directly from the background
+                // via the scripting API.
+                expect(ScriptingApi.executeExtCss).toHaveBeenCalledTimes(1);
+                expect(ScriptingApi.executeExtCss).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        tabId,
+                        frameId,
+                        cssRules: expect.any(Array),
+                    }),
+                );
             }
 
             // Using ScriptingApi for rules from built in filters should be
@@ -344,7 +328,6 @@ describe('TabsCosmeticInjector', () => {
             expect(ScriptingApi.executeScriptFunc).not.toBeCalled();
             expect(ScriptingApi.executeScriptlet).not.toBeCalled();
             expect(ScriptingApi.executeExtCss).not.toBeCalled();
-            expect(UserScriptsApi.executeExtCss).not.toBeCalled();
             expect(UserScriptsApi.executeScripts).not.toBeCalled();
 
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
@@ -368,7 +351,6 @@ describe('TabsCosmeticInjector', () => {
             expect(ScriptingApi.executeScriptFunc).not.toBeCalled();
             expect(ScriptingApi.executeScriptlet).not.toBeCalled();
             expect(ScriptingApi.executeExtCss).not.toBeCalled();
-            expect(UserScriptsApi.executeExtCss).not.toBeCalled();
 
             expect(ScriptingApi.insertCSS).not.toBeCalled();
             expect(ScriptingApi.executeScriptFunc).not.toBeCalled();

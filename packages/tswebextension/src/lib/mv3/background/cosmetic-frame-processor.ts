@@ -111,6 +111,13 @@ export class CosmeticFrameProcessor {
             remoteRules,
         } = CosmeticFrameProcessor.splitLocalRemoteScriptRules(scriptRules);
 
+        // No allowlist gate is needed here because the CosmeticEngine already
+        // returns an empty CosmeticResult (zero ExtCSS rules) for allowlisted
+        // documents — see getCosmeticOption() → CosmeticOptionNone. With no
+        // rules, getExtCssRules() returns null, so applyExtCssRules() injects
+        // nothing and no hit markers are produced regardless of this flag.
+        // areHitsStatsCollected only controls whether markers are ADDED to
+        // rule strings, not which rules are selected.
         const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
 
         const preparedCosmeticResult = {

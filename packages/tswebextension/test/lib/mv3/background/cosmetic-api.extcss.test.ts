@@ -11,7 +11,6 @@ import { logger } from '../../../../src/lib/common/utils/logger';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
-import { UserScriptsApi } from '../../../../src/lib/mv3/background/user-scripts-api';
 import { type PreparedCosmeticResultMV3 } from '../../../../src/lib/mv3/tabs/frame';
 import { tabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
 
@@ -42,7 +41,6 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         vi.mocked(tabsApi.getFrameContext).mockReset();
         vi.spyOn(ScriptingApi, 'executeExtCss').mockResolvedValue();
         vi.spyOn(ScriptingApi, 'insertCSS').mockResolvedValue();
-        vi.spyOn(UserScriptsApi, 'executeExtCss').mockResolvedValue();
     });
 
     afterEach(() => {
@@ -134,8 +132,6 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
 
         // Single attempt — no retry loop.
         expect(ScriptingApi.executeExtCss).toHaveBeenCalledTimes(1);
-        // No fallback activation: the userScripts path is never tried.
-        expect(UserScriptsApi.executeExtCss).not.toHaveBeenCalled();
         expect(result).toEqual(expect.any(Array));
 
         // Logged once at debug level with the context-tagged message and the error.
@@ -146,46 +142,6 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
             expect.stringContaining(expectedMessage),
             injectionError,
         );
-    });
-
-    it('routes ExtCSS via UserScriptsApi.executeExtCss when userScripts is enabled', async () => {
-        const rules = ['div:has(.ad) { display: none !important; }'];
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-            url: 'https://example.com/',
-            preparedCosmeticResult: makePrepared(rules),
-        } as any);
-        vi.spyOn(UserScriptsApi, 'isEnabled', 'get').mockReturnValue(true);
-
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-
-        expect(UserScriptsApi.executeExtCss).toHaveBeenCalledTimes(1);
-        expect(UserScriptsApi.executeExtCss).toHaveBeenCalledWith({
-            tabId: 1,
-            frameId: 0,
-            cssRules: rules,
-            collectStats: false,
-        });
-        expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
-    });
-
-    it('routes ExtCSS via ScriptingApi.executeExtCss when userScripts is disabled', async () => {
-        const rules = ['div:has(.ad) { display: none !important; }'];
-        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
-            url: 'https://example.com/',
-            preparedCosmeticResult: makePrepared(rules),
-        } as any);
-        vi.spyOn(UserScriptsApi, 'isEnabled', 'get').mockReturnValue(false);
-
-        await CosmeticApi.applyCosmeticRules(1, 0, true);
-
-        expect(UserScriptsApi.executeExtCss).not.toHaveBeenCalled();
-        expect(ScriptingApi.executeExtCss).toHaveBeenCalledTimes(1);
-        expect(ScriptingApi.executeExtCss).toHaveBeenCalledWith({
-            tabId: 1,
-            frameId: 0,
-            cssRules: rules,
-            collectStats: false,
-        });
     });
 });
 

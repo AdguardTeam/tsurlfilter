@@ -64,7 +64,7 @@ export class CosmeticController {
         // The response is `undefined` until `tsWebExtension.isStarted`, and
         // `isAppStarted` is false until the app finishes initializing.
         if ((!res || !res.isAppStarted)
-            && CosmeticController.tries <= CosmeticController.MAX_GET_COSMETIC_DATA_TRIES
+            && CosmeticController.tries < CosmeticController.MAX_GET_COSMETIC_DATA_TRIES
         ) {
             CosmeticController.tries += 1;
             setTimeout(

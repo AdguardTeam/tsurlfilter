@@ -2,8 +2,7 @@ import { logger } from '../../common/utils/logger';
 import { isUserScriptsApiEnabled } from '../utils/is-user-scripts-api-enabled';
 
 import { appContext } from './app-context';
-import { applyExtCss } from './extcss-apply-fn';
-import { type ExecuteCombinedScriptParams, type ExecuteExtCssParams } from './scripting-api';
+import { type ExecuteCombinedScriptParams } from './scripting-api';
 
 /**
  * Api for executing user scripts.
@@ -110,59 +109,6 @@ export class UserScriptsApi {
             });
         } catch (e) {
             logger.info(`[tsweb.UserScriptsApi.executeScripts]: failed to execute user script to tabId ${tabId} and frameId ${frameId} due to:`, e);
-        }
-    }
-
-    /**
-     * Injects the pre-bundled ExtendedCSS engine and the matching rule strings via
-     * the userScripts API, mirroring the JS-rules path. Used when the user has
-     * granted the userScripts API permission.
-     *
-     * The same self-contained `applyExtCss` function the `scripting` path injects
-     * via `func` is serialized to a source string and invoked inline, because
-     * `chrome.userScripts.execute` accepts only `js: [{ code }]` (no `func`). The
-     * `inlineExtCssBundle` build plugin guarantees `String(applyExtCss)` carries the
-     * whole inlined engine, so both ExtCSS paths apply identical DOM behaviour.
-     *
-     * Runs in the USER_SCRIPT world (the userScripts API's isolated world):
-     * ExtendedCss only needs DOM access and `MutationObserver`, and the
-     * USER_SCRIPT world keeps `chrome.runtime` available for the CSS-hits
-     * callback. The `wrapScriptCode` deduplication guard is reused; because
-     * ExtCSS runs in the USER_SCRIPT world and JS rules in the MAIN world,
-     * their dedup flags live on separate `Window.prototype` objects and cannot collide.
-     *
-     * @param params Parameters for executing ExtendedCSS.
-     * @param params.tabId The ID of the tab.
-     * @param params.frameId The ID of the frame.
-     * @param params.cssRules ExtendedCSS rule strings to apply.
-     * @param params.collectStats Whether to register the CSS-hits
-     * `beforeStyleApplied` callback in the injected func.
-     *
-     * @returns A promise that resolves when the engine + rules are injected.
-     */
-    public static async executeExtCss({
-        tabId,
-        frameId,
-        cssRules,
-        collectStats,
-    }: ExecuteExtCssParams): Promise<void> {
-        const code = UserScriptsApi.wrapScriptCode(
-            String(appContext.startTimeMs),
-            `(${String(applyExtCss)})(${JSON.stringify(cssRules)}, ${collectStats});`,
-        );
-
-        try {
-            await chrome.userScripts.execute({
-                target: {
-                    frameIds: [frameId],
-                    tabId,
-                },
-                injectImmediately: true,
-                js: [{ code }],
-                world: 'USER_SCRIPT',
-            });
-        } catch (e) {
-            logger.debug(`[tsweb.UserScriptsApi.executeExtCss]: failed to execute ExtCSS user script to tabId ${tabId} and frameId ${frameId} due to:`, e);
         }
     }
 

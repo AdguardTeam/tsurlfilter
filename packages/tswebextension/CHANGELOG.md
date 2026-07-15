@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.0.0] - 2026-XX-XX
+## [5.0.0] - 2026-XX-XX <!-- release/browser-extension-v5.5 -->
 
 ### Added
 
@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CSS hits statistics are now reported from the ISOLATED-world injected
   `applyExtCss` func via a self-contained `beforeStyleApplied` callback that
   sends `SaveCssHitsStats` messages to the background, instead of being counted
-  in the content script (AG-45086).
+  in the content script.
 - The background-injected ExtendedCSS engine now disposes the previous
   `ExtendedCss` instance (disconnecting its `MutationObserver` and reverting
   styles) before applying a new one on re-injection, preventing stale/duplicate
@@ -68,10 +68,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The fire-and-forget CSS-hits reporter in the background-injected
-  `applyExtCss` func now swallows the async `chrome.runtime.sendMessage`
-  rejection via `.catch()` — a synchronous `try/catch` cannot catch the MV3
-  `sendMessage` Promise rejection — preventing unhandled promise rejections in
-  the page's world while the service worker is inactive (AG-45086).
+  `applyExtCss` func now defers `chrome.runtime.sendMessage` into a microtask
+  via `Promise.resolve().then(...).catch(...)` so that both synchronous throws
+  (e.g. "Extension context invalidated" during extension reload) and async
+  rejections are swallowed, preventing disruption of element hiding during
+  extension reloads.
 - Fixed the build-time ExtCSS bundle inliner corrupting the inlined engine.
   The inliner used a string replacement, so `$` patterns in the bundle source
   (e.g. `$&` inside `escapeRegExp`) were interpreted by
