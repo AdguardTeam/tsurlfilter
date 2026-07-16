@@ -5,22 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.0.0] - 2026-XX-XX <!-- release/browser-extension-v5.5 -->
-
-### Added
-
-- Performance benchmark and large-rule-set (500 rules) validation for the
-  background-injected ExtendedCSS path (`applyExtCss`), covering application
-  latency (print-only, correctness-asserted) and `executeScript` payload
-  sizing.
-- Apply ExtendedCSS rules directly from the MV3 background service worker via
-  `chrome.scripting.executeScript({ func, args })`, using the pre-bundled
-  `@adguard/extended-css` apply engine (inlined at build time). No injection is
-  performed when there are no matching ExtCSS rules.
+## [5.0.0] - 2026-XX-XX
 
 ### Changed
 
+- **BREAKING:** Renamed all `RuleSet`/`ruleSet` symbols to `Ruleset`/`ruleset` for naming
+  consistency. Public API renames: `syncRuleSetWithIdbByFilterId`→`syncRulesetWithIdbByFilterId`,
+  `RuleSetsLoaderApi`→`RulesetsLoaderApi`, `FiltersApi.getEnabledRuleSets`→`getEnabledRulesets`,
+  `FailedEnableRuleSetsError`→`FailedEnableRulesetsError`.
+- Migrated DNR conversion imports from `@adguard/tsurlfilter/es/declarative-converter`
+  to `@adguard/dnr-converter`.
+- `TsWebExtension.start()` and `TsWebExtension.configure()` now return
+  `{ conversionErrors: FilterListConversionError[] }` instead of `void`,
+  surfacing filter list rule conversion errors to callers.
+- Conversion metadata (`badFilterRules`, `rulesHashMap`) is now kept in
+  memory after `configure()` instead of being freed via the previous
+  `unloadMetadata()` call. Keeping it avoids stale cached rulesets
+  returning empty metadata on subsequent `configure()` calls; a lazy
+  reload from IDB is tracked in AG-53262.
 - Updated [@adguard/extended-css] to `v2.3.0`.
+- WebRTC IP handling policy changed from `disable_non_proxied_udp` to
+  `default_public_interface_only` to reduce VoIP breakage while still
+  preventing IP leaks.
 - Lowered the log level for caught ExtendedCSS injection failures on
   restricted or permission-denied pages from `info` to `debug`.
 - CSS hits statistics are now reported from the ISOLATED-world injected
@@ -41,6 +47,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that load during the background startup race. ExtCSS is applied solely by
   the background injection path. The MV2 path is unchanged.
 
+### Added
+
+- Apply ExtendedCSS rules directly from the MV3 background service worker via
+  `chrome.scripting.executeScript({ func, args })`, using the pre-bundled
+  `@adguard/extended-css` apply engine (inlined at build time). No injection is
+  performed when there are no matching ExtCSS rules.
+- Performance benchmark and large-rule-set (500 rules) validation for the
+  background-injected ExtendedCSS path (`applyExtCss`), covering application
+  latency (print-only, correctness-asserted) and `executeScript` payload
+  sizing.
+- Support of `$urltransform` modifier [tsurlfilter#111].
+- `$removeparam` support for SPA navigations via `history.pushState` /
+  `history.replaceState`. Supports plain-value and regex
+  modifiers with allowlist / `$important` priority [tsurlfilter#188].
+- New `FilteringEventType.PopupBlocked` filtering log event (with matching
+  `PopupBlockedEvent` / `PopupBlockedEventData` types) dispatched when
+  `$popup` modifier rule is applied [AdguardBrowserExtension#1686].
+
 ### Fixed
 
 - The fire-and-forget CSS-hits reporter in the background-injected
@@ -56,6 +80,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   regex-dependent pseudo-classes (`:matches-css()`, `:contains()` with special
   characters, etc.) in the shipped MV3 bundle. A replacer function is now used
   so the bundle source is emitted verbatim.
+- Firefox freezes when playing Douyin videos, triggered by custom filter rule all.txt [AdguardBrowserExtension#3525].
+- Sites loading-slowly in Firefox 118 when AdGuard extension is enabled [AdguardBrowserExtension#2524].
+- Hit marker text leaking into `::before`/`::after` pseudo-elements for
+  CSS inject rules (`#$#`). Native injection now uses a non-inheriting
+  `--adguard-hit` custom property (`@property`) instead of `content:`
+  [AdguardBrowserExtension#1486].
+- Memory leak during rapid page navigations that could cause extension OOM when a
+  page refreshes repeatedly [AdguardBrowserExtension#3547].
+- Filtering log now includes generic (domain-less) scriptlet rules in `JsInject`
+  events instead of silently skipping them [AdguardBrowserExtension#2895].
+- Element hiding rules not being applied on fast page reload in MV3
+  [AdguardBrowserExtension#3537].
+
+[tsurlfilter#188]: https://github.com/AdguardTeam/tsurlfilter/issues/188
+[tsurlfilter#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
+[AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
+[AdguardBrowserExtension#1686]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
+[AdguardBrowserExtension#2895]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2895
+[AdguardBrowserExtension#3547]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3547
+[AdguardBrowserExtension#2524]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2524
+[AdguardBrowserExtension#3525]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3525
+[AdguardBrowserExtension#3537]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3537
 
 [5.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v5.0.0
 
