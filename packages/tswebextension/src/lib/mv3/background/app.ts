@@ -1,7 +1,7 @@
 import browser from 'webextension-polyfill';
 
 import { LogLevel } from '@adguard/logger';
-import { FilterList } from '@adguard/tsurlfilter';
+import { type CosmeticOption, type CosmeticResult, FilterList } from '@adguard/tsurlfilter';
 import {
     Filter,
     type IFilter,
@@ -737,6 +737,22 @@ export class TsWebExtension implements AppInterface<
     // eslint-disable-next-line class-methods-use-this
     public getRulesCount(): number {
         return engineApi.getRulesCount();
+    }
+
+    /**
+     * Returns the cosmetic rules that apply to the given URL.
+     *
+     * Delegates to the internal engine API. When the engine is not yet
+     * started, returns an empty {@link CosmeticResult}.
+     *
+     * @param url Page URL to match cosmetic rules against.
+     * @param option Cosmetic option bitmask (e.g. `CosmeticOption.CosmeticOptionJS`).
+     *
+     * @returns Cosmetic result containing element-hiding, CSS, JS, and HTML rules.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
+        return engineApi.getCosmeticResult(url, option);
     }
 
     /**
