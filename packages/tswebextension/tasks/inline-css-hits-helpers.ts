@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { type Plugin } from 'rollup';
@@ -7,6 +7,15 @@ import ts from 'typescript';
 const HELPERS_PATH = fileURLToPath(
     new URL('../src/lib/common/content-script/utils/css-hits-helpers.ts', import.meta.url),
 );
+
+// Fail fast: if the helpers source is moved or renamed, surface a clear error at
+// config-load time instead of a cryptic ENOENT deep in the transform hook.
+if (!existsSync(HELPERS_PATH)) {
+    throw new Error(
+        `[inline-css-hits-helpers] Helpers source not found at ${HELPERS_PATH}. `
+        + 'If the file was moved or renamed, update the relative path in this file.',
+    );
+}
 
 // Regex (not a plain string) so it survives downstream whitespace reformatting.
 const MARKER_PATTERN = /__INLINE_CSS_HITS_HELPERS__\(\s*\)\s*;/;

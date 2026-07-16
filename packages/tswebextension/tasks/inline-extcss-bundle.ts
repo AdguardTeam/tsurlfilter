@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { type Plugin } from 'rollup';
@@ -7,6 +7,16 @@ import { type Plugin } from 'rollup';
 const EXT_CSS_BUNDLE_PATH = fileURLToPath(
     import.meta.resolve('@adguard/extended-css/apply'),
 );
+
+// Fail fast: if the bundle is missing or the `exports` mapping points at a
+// non-existent file, surface a clear error at config-load time instead of a
+// cryptic ENOENT deep in the transform hook.
+if (!existsSync(EXT_CSS_BUNDLE_PATH)) {
+    throw new Error(
+        `[inline-extcss-bundle] ExtendedCss apply bundle not found at ${EXT_CSS_BUNDLE_PATH}. `
+        + 'Verify that @adguard/extended-css is installed and exports "./apply".',
+    );
+}
 
 // Regex (not a plain string) so it survives downstream whitespace reformatting.
 const MARKER_PATTERN = /__INLINE_EXTCSS_BUNDLE__\(\s*\)\s*;/;
