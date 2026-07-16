@@ -31,6 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TsWebExtension.setPreregisteredScriptDomains()` static method (MV3-only) for
   skipping dynamic scriptlet injection on domains covered by preregistered
   content scripts, preventing double execution.
+- Public `getCosmeticResult(url, option)` method on the MV3 `TsWebExtension`
+  app instance, allowing callers to query cosmetic rules (scriptlets + JS
+  injection) that apply to a given URL at runtime.
+- `preregisteredScriptDomains` and `preregisteredScriptsPath` optional
+  MV3 `Configuration` fields for auto-syncing preregistered content scripts.
+- Exported `hashString`, `computeScriptletHash`, `computeJsRuleHash`,
+  `SHARED_BUNDLE_FILENAME`, and `PREREGISTERED_SCRIPTS_DIR` from the MV3
+  entry point for build-time tools and consumers.
 
 ### Fixed
 

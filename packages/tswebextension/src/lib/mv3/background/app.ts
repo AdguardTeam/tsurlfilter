@@ -31,6 +31,7 @@ import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import { MessagesApi } from './messages-api';
+import { PreregisteredScriptsService } from './preregistered-scripts/preregistered-scripts-service';
 import { RequestEvents } from './request/events/request-events';
 import { RuleSetsLoaderApi } from './rule-sets-loader-api';
 import { CspService } from './services/csp-service';
@@ -523,6 +524,13 @@ export class TsWebExtension implements AppInterface<
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
+        // Set preregistered script domains so the cosmetic API skips
+        // dynamic injection for these domains (handled by preregistered
+        // content scripts instead).
+        if (configuration.preregisteredScriptDomains) {
+            CosmeticApi.setPreregisteredScriptDomains(configuration.preregisteredScriptDomains);
+        }
+
         // Update previously opened tabs with new rules - find for each tab
         // new main frame rule.
         await tabsApi.updateCurrentTabsMainFrameRules();
@@ -531,6 +539,14 @@ export class TsWebExtension implements AppInterface<
         await WebRequestApi.flushMemoryCache();
 
         documentBlockingService.configure(config);
+
+        if (configuration.preregisteredScriptDomains && configuration.preregisteredScriptsPath) {
+            await PreregisteredScriptsService.sync(
+                configuration.settings.filteringEnabled,
+                configuration.preregisteredScriptDomains,
+                configuration.preregisteredScriptsPath,
+            );
+        }
 
         logger.trace('[tsweb.TsWebExtension.configure]: end');
 
