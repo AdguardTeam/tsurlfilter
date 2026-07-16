@@ -27,36 +27,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - WebRTC IP handling policy changed from `disable_non_proxied_udp` to
   `default_public_interface_only` to reduce VoIP breakage while still
   preventing IP leaks.
-- Lowered the log level for caught ExtendedCSS injection failures on
-  restricted or permission-denied pages from `info` to `debug`.
-- CSS hits statistics are now reported from the ISOLATED-world injected
-  `applyExtCss` func via a self-contained `beforeStyleApplied` callback that
-  sends `SaveCssHitsStats` messages to the background, instead of being counted
-  in the content script.
-- The background-injected ExtendedCSS engine now disposes the previous
-  `ExtendedCss` instance (disconnecting its `MutationObserver` and reverting
-  styles) before applying a new one on re-injection, preventing stale/duplicate
-  observers across same-document (SPA) navigations. Dynamically added matching
-  elements continue to be hidden by the engine's built-in `MutationObserver`.
-- ExtendedCSS rules are no longer applied from the MV3 content script. The
-  MV3 `CosmeticController` now only repairs invalid grouped native CSS
-  selectors; `GetCosmeticData` returns `extCssRules: null`,
-  `@adguard/extended-css` instantiation is removed from the MV3
-  content-script bundle, and the `GetCosmeticData` retry loop is retained
-  (narrowed to native-CSS repair) so the repair still runs for documents
-  that load during the background startup race. ExtCSS is applied solely by
-  the background injection path. The MV2 path is unchanged.
+- ExtendedCSS rules in MV3 are now applied solely by the background
+  injection path — removed from the MV3 content script
+  (`GetCosmeticData` returns `extCssRules: null`, `@adguard/extended-css`
+  instantiation is removed from the content-script bundle). The MV2 path
+  is unchanged.
 
 ### Added
 
-- Apply ExtendedCSS rules directly from the MV3 background service worker via
-  `chrome.scripting.executeScript({ func, args })`, using the pre-bundled
-  `@adguard/extended-css` apply engine (inlined at build time). No injection is
-  performed when there are no matching ExtCSS rules.
+- Apply ExtendedCSS rules directly from the MV3 background service worker
+  via `chrome.scripting.executeScript`, using the pre-bundled
+  `@adguard/extended-css` apply engine (inlined at build time).
 - Performance benchmark and large-rule-set (500 rules) validation for the
-  background-injected ExtendedCSS path (`applyExtCss`), covering application
-  latency (print-only, correctness-asserted) and `executeScript` payload
-  sizing.
+  background-injected ExtendedCSS path.
 - Support of `$urltransform` modifier [tsurlfilter#111].
 - `$removeparam` support for SPA navigations via `history.pushState` /
   `history.replaceState`. Supports plain-value and regex
@@ -67,19 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- The fire-and-forget CSS-hits reporter in the background-injected
-  `applyExtCss` func now defers `chrome.runtime.sendMessage` into a microtask
-  via `Promise.resolve().then(...).catch(...)` so that both synchronous throws
-  (e.g. "Extension context invalidated" during extension reload) and async
-  rejections are swallowed, preventing disruption of element hiding during
-  extension reloads.
-- Fixed the build-time ExtCSS bundle inliner corrupting the inlined engine.
-  The inliner used a string replacement, so `$` patterns in the bundle source
-  (e.g. `$&` inside `escapeRegExp`) were interpreted by
-  `String.prototype.replace` as match/backreference substitutions, breaking
-  regex-dependent pseudo-classes (`:matches-css()`, `:contains()` with special
-  characters, etc.) in the shipped MV3 bundle. A replacer function is now used
-  so the bundle source is emitted verbatim.
+- Fixed the build-time ExtCSS bundle inliner corrupting the inlined engine
+  (string replacement `$` substitution bug).
 - Firefox freezes when playing Douyin videos, triggered by custom filter rule all.txt [AdguardBrowserExtension#3525].
 - Sites loading-slowly in Firefox 118 when AdGuard extension is enabled [AdguardBrowserExtension#2524].
 - Hit marker text leaking into `::before`/`::after` pseudo-elements for
