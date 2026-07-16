@@ -295,7 +295,7 @@ catalogs:
 
 overrides:
   '@adguard/agtree': workspace:^
-  '@adguard/extended-css': file:vendor/adguard-extended-css-2.2.0.tgz
+  '@adguard/extended-css': file:vendor/adguard-extended-css-2.3.0.tgz
 
 importers:
 
@@ -2074,8 +2074,8 @@ importers:
         specifier: workspace:^
         version: link:../dnr-converter
       '@adguard/extended-css':
-        specifier: file:../../vendor/adguard-extended-css-2.2.0.tgz
-        version: file:vendor/adguard-extended-css-2.2.0.tgz
+        specifier: file:../../vendor/adguard-extended-css-2.3.0.tgz
+        version: file:vendor/adguard-extended-css-2.3.0.tgz
       '@adguard/logger':
         specifier: workspace:^
         version: link:../logger
@@ -2295,9 +2295,9 @@ packages:
   '@adguard/eslint-plugin-logger-context@1.0.1':
     resolution: {integrity: sha512-KfHD0UrCkkHQK7cq5nBvY9cJ/kDJoMwKfq66cJngLRKnCkCYGKGBT+HPmwapkXK96UItfPswW07i1VWIaZSgpA==}
 
-  '@adguard/extended-css@file:vendor/adguard-extended-css-2.2.0.tgz':
-    resolution: {integrity: sha512-V1r9ToIJPOBXc9sZxJ9y/TRNnAcPO+/uTvR7geTsjivs+3JO5ccGsRb+2BXFyaUFM7/fCN7IiggnyY+eLvJPMQ==, tarball: file:vendor/adguard-extended-css-2.2.0.tgz}
-    version: 2.2.0
+  '@adguard/extended-css@file:vendor/adguard-extended-css-2.3.0.tgz':
+    resolution: {integrity: sha512-aXz13Oikag2WAk9dh7D64JoooJ3YoiW0Moi5pYaG4dEHKs9XqJ4b9HPmEWugs7jLPk4gEHRAe0RDfc19Ys1okw==, tarball: file:vendor/adguard-extended-css-2.3.0.tgz}
+    version: 2.3.0
     engines: {node: '>=22', pnpm: '>=10.33.4 <11'}
 
   '@adguard/filters-downloader@2.4.2':
@@ -10285,7 +10285,7 @@ snapshots:
 
   '@adguard/eslint-plugin-logger-context@1.0.1': {}
 
-  '@adguard/extended-css@file:vendor/adguard-extended-css-2.2.0.tgz': {}
+  '@adguard/extended-css@file:vendor/adguard-extended-css-2.3.0.tgz': {}
 
   '@adguard/filters-downloader@2.4.2':
     dependencies:
@@ -10321,7 +10321,7 @@ snapshots:
 
   '@adguard/tsurlfilter@1.0.81':
     dependencies:
-      '@adguard/extended-css': file:vendor/adguard-extended-css-2.2.0.tgz
+      '@adguard/extended-css': file:vendor/adguard-extended-css-2.3.0.tgz
       '@adguard/scriptlets': 1.12.1
       ip6addr: 0.2.5
       is-cidr: 4.0.2
