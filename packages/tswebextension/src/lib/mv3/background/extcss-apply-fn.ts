@@ -10,6 +10,28 @@ import type { ExtendedCss, IAffectedElement } from '@adguard/extended-css';
 declare function __INLINE_EXTCSS_BUNDLE__(): void;
 
 /**
+ * Build-time marker replaced by `tasks/inline-css-hits-helpers.ts`. The
+ * inlined code defines a local `cssHitsHelpers` object (the SAME source as
+ * MV2's `ElementUtils`) so the `beforeStyleApplied` callback below can call
+ * `parseExtendedStyleInfo()` and `elementToString()` without any
+ * module-scope references.
+ */
+// eslint-disable-next-line @typescript-eslint/naming-convention -- build-time marker, replaced by the inliner
+declare function __INLINE_CSS_HITS_HELPERS__(): void;
+
+/**
+ * Inlined by `__INLINE_CSS_HITS_HELPERS__()` at build time. Type-only decl so
+ * the source type-checks before the inliner swaps in the real object.
+ */
+declare const cssHitsHelpers: {
+    parseExtendedStyleInfo: (
+        content: string,
+        marker: string,
+    ) => { filterId: number; ruleIndex: number } | null;
+    elementToString: (element: Element) => string;
+};
+
+/**
  * The apply IIFE entry: returns the applied ExtendedCss instance, accepts an
  * optional beforeStyleApplied callback (for CSS-hits stats).
  */
@@ -37,6 +59,14 @@ declare const applyExtendedCss: (
 export const applyExtCss = (cssRules: string[], collectStats = false): void => {
     __INLINE_EXTCSS_BUNDLE__();
 
+    // Inlined CSS-hits helpers — the SAME source used by MV2's
+    // `ElementUtils`. Defines a local `cssHitsHelpers` object with
+    // `parseExtendedStyleInfo()` and `elementToString()` so the
+    // `beforeStyleApplied` callback below can use them without any
+    // module-scope references (which would not survive toString()-based
+    // serialization for `chrome.scripting.executeScript({ func })`).
+    __INLINE_CSS_HITS_HELPERS__();
+
     // Key must be a body literal, not a module-scope const: only body literals
     // survive toString() serialization — a module-scope const would be an
     // unresolved free identifier in the page's ISOLATED world.
@@ -57,11 +87,12 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
     }
 
     /**
-     * CSS-hits callback, inlined (module functions don't survive serialization).
-     * Mirrors MV2's ElementUtils.parseExtendedStyleInfo -> parseInfo +
-     * elementToString. The shared round-trip contract test
-     * (test/lib/mv3/background/css-hits-protocol.test.ts) pins both
-     * implementations to the same expected outputs.
+     * CSS-hits callback. Uses the inlined `cssHitsHelpers` (defined above by
+     * the build-time helpers inliner) — the SAME source as MV2's
+     * `ElementUtils` — so both manifest versions share one implementation of
+     * marker parsing and element serialization. The contract test
+     * (test/lib/mv3/background/css-hits-protocol.test.ts) pins both paths to
+     * identical outputs.
      *
      * @param el The affected element whose style is about to be applied.
      *
@@ -78,51 +109,20 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
                     continue;
                 }
 
-                let c = content;
-
-                // Strip trailing !important FIRST. Order is load-bearing: while
-                // it still trails, the string's first/last chars are the opening
-                // quote and 't', so the removeQuotes step below wouldn't match
-                // and the prefix check would silently drop the hit.
-                const imp = c.lastIndexOf('!important');
-                if (imp !== -1) {
-                    c = c.substring(0, imp).trim();
-                }
-
-                // URI-decode (';' is encoded as %3B by buildStyleSheetsWithHits).
-                c = decodeURIComponent(c);
-
-                // Remove wrapping quotes (mirrors removeQuotes).
-                if (c.length > 1
-                    && ((c[0] === '"' && c[c.length - 1] === '"')
-                        || (c[0] === '\'' && c[c.length - 1] === '\''))) {
-                    c = c.substring(1, c.length - 1);
-                }
-                if (c.indexOf(PREFIX) !== 0) {
-                    continue;
-                }
-                c = c.substring(PREFIX.length);
-                const sep = c.indexOf(';');
-                if (sep < 0) {
-                    continue;
-                }
-                const filterId = parseInt(c.slice(0, sep), 10);
-                const ruleIndex = parseInt(c.slice(sep + 1), 10);
-                if (Number.isNaN(filterId) || Number.isNaN(ruleIndex)) {
+                const ruleInfo = cssHitsHelpers.parseExtendedStyleInfo(content, PREFIX);
+                if (!ruleInfo) {
                     continue;
                 }
 
-                // Serialize element (mirrors ElementUtils.elementToString):
-                // build `<tagname attrs>` with a single trailing '>'.
+                const { filterId, ruleIndex } = ruleInfo;
+
+                // Serialize element: build `<tagname attrs>` with a single
+                // trailing '>'. Fall back to '<div>' when the node is missing
+                // (mirrors the original inline implementation's fallback).
                 const { node } = el;
-                let elementStr = `<${node ? node.localName : 'div'}`;
-                if (node && node.attributes) {
-                    for (let i = 0; i < node.attributes.length; i += 1) {
-                        const { name, value } = node.attributes[i];
-                        elementStr += ` ${name}="${(value || '').replace(/"/g, '\\"')}"`;
-                    }
-                }
-                elementStr += '>';
+                const elementStr = node
+                    ? cssHitsHelpers.elementToString(node)
+                    : '<div>';
 
                 hits.push({ filterId, ruleIndex, element: elementStr });
                 // Clear to avoid duplicate counting on re-style.

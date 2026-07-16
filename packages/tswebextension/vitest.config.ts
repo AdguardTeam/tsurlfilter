@@ -2,6 +2,7 @@ import { playwright } from '@vitest/browser-playwright';
 import { defineConfig, defineProject, type UserWorkspaceConfig } from 'vitest/config';
 
 import { ManifestVersionEnv } from './tasks/constants';
+import { inlineCssHitsHelpers } from './tasks/inline-css-hits-helpers';
 import { inlineExtCssBundle } from './tasks/inline-extcss-bundle';
 
 /**
@@ -36,10 +37,11 @@ const createProjectForManifestVersion = (
             '**/test/e2e/**',
         ],
     },
-    // The ExtCSS inlining plugin is only needed for the MV3 project, where the
-    // `applyExtCss` function (and its tests) live. It is a no-op for MV2.
+    // The ExtCSS and CSS-hits inlining plugins are only needed for the MV3
+    // project, where the `applyExtCss` function (and its tests) live. They
+    // are no-ops for MV2.
     plugins: manifestVersion === ManifestVersionEnv.Third
-        ? [inlineExtCssBundle()]
+        ? [inlineExtCssBundle(), inlineCssHitsHelpers()]
         : [],
 });
 

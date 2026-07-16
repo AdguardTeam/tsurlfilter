@@ -255,6 +255,28 @@ describe('applyExtCss — CSS hits stats', () => {
         expect(src).not.toMatch(/\bSAVE_CSS_HITS_STATS\b/);
     });
 
+    it('inlines the CSS-hits helpers (shared with MV2 ElementUtils) with no external refs', () => {
+        const src = String(applyExtCss);
+
+        // The inlined helpers must define cssHitsHelpers locally so the
+        // beforeStyleApplied callback can call parseExtendedStyleInfo() and
+        // elementToString() without unresolved free identifiers.
+        expect(src).toContain('cssHitsHelpers');
+        expect(src).toContain('parseExtendedStyleInfo');
+        expect(src).toContain('elementToString');
+
+        // The build-time marker CALL must not survive inlining.
+        // (Comments mentioning the marker name are OK — only an unresolved
+        // call would be a free identifier.)
+        expect(src).not.toMatch(/__INLINE_CSS_HITS_HELPERS__\s*\(\s*\)\s*;/);
+
+        // No code-level reference to the MV2 ElementUtils class — the helper
+        // functions must be accessed via the inlined `cssHitsHelpers`, not
+        // through an imported `ElementUtils.` class. (JSDoc comments that
+        // merely *mention* ElementUtils descriptively are fine.)
+        expect(src).not.toMatch(/ElementUtils\s*\./);
+    });
+
     // Integration-style coverage for the IAffectedElement callback contract:
     // the inlined @adguard/extended-css apply IIFE invokes beforeStyleApplied
     // with { node: Element, rules: { style: CSSStyleDeclaration }[] }. The
