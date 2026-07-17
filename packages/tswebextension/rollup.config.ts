@@ -25,11 +25,12 @@ const commonPlugins: Plugin[] = [
     resolve({ preferBuiltins: false }),
     cleanup({ comments: ['srcmaps'] }),
     commonjs(),
-    // Must run AFTER typescript so the type checker never sees the inlined
-    // `var applyExtendedCss` alongside the type-only `declare const`.
+    // Both inliners below MUST run after TypeScript so the type checker never
+    // sees the inlined `applyExtendedCss` / `cssHitsHelpers` alongside the
+    // type-only `declare const`. The two are independent — each replaces its
+    // own marker in `extcss-apply-fn.ts` — so their relative order does not
+    // matter, only that both come after `typescript()`.
     inlineExtCssBundle(),
-    // Must run AFTER typescript so the type checker never sees the inlined
-    // `cssHitsHelpers` alongside the type-only `declare const`.
     inlineCssHitsHelpers(),
 ];
 

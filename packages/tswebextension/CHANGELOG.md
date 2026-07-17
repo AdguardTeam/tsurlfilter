@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed the build-time ExtCSS bundle inliner corrupting the inlined engine
+- Build-time ExtCSS bundle inliner corrupting the inlined engine
   (string replacement `$` substitution bug).
 - Firefox freezes when playing Douyin videos, triggered by custom filter rule all.txt [AdguardBrowserExtension#3525].
 - Sites loading-slowly in Firefox 118 when AdGuard extension is enabled [AdguardBrowserExtension#2524].
