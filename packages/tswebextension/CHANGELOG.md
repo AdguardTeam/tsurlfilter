@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `unloadMetadata()` call. Keeping it avoids stale cached rulesets
   returning empty metadata on subsequent `configure()` calls; a lazy
   reload from IDB is tracked in AG-53262.
-- Updated [@adguard/extended-css] to `v2.3.0`.
+- Updated [@adguard/extended-css] to `v2.2.0`.
 - WebRTC IP handling policy changed from `disable_non_proxied_udp` to
   `default_public_interface_only` to reduce VoIP breakage while still
   preventing IP leaks.
@@ -36,8 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Apply ExtendedCSS rules directly from the MV3 background service worker
-  via `chrome.scripting.executeScript`, using the pre-bundled
-  `@adguard/extended-css` apply engine (inlined at build time).
+  via `chrome.scripting.executeScript`. The injection payload is a private
+  IIFE bundled in-memory at build time from the public root export of
+  `@adguard/extended-css` — this package owns the payload, the library
+  needs no consumer-specific subpath exports.
 - Performance benchmark and large-rule-set (500 rules) validation for the
   background-injected ExtendedCSS path.
 - Support of `$urltransform` modifier [tsurlfilter#111].
@@ -50,8 +52,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Build-time ExtCSS bundle inliner corrupting the inlined engine
-  (string replacement `$` substitution bug).
+- Native CSS hit statistics not being collected in MV3: the content script
+  now counts hits for native CSS rules only (via `CssHitsCounter`), gated
+  on the document not being allowlisted; ExtendedCSS rule hits are reported
+  by the background-injected function.
+- Stale ExtendedCSS styles and observers persisting when a frame's ExtCSS
+  rules transition from non-empty to empty: the previously injected
+  instance is now explicitly disposed.
+- Protocol literals (hit-marker prefix, message handler/type,
+  retained-instance key) hardcoded across the MV3 ExtCSS injection path:
+  centralized into `EXTCSS_PROTOCOL` and passed to the injected function
+  as serialized arguments.
 - Firefox freezes when playing Douyin videos, triggered by custom filter rule all.txt [AdguardBrowserExtension#3525].
 - Sites loading-slowly in Firefox 118 when AdGuard extension is enabled [AdguardBrowserExtension#2524].
 - Hit marker text leaking into `::before`/`::after` pseudo-elements for

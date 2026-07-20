@@ -12,11 +12,18 @@ import {
 
 import { CosmeticController } from '../../../../src/lib/mv3/content-script/cosmetic-controller';
 
-const { sendAppMessageMock } = vi.hoisted(() => ({
+const { sendAppMessageMock, cssHitsCounterCtorSpy } = vi.hoisted(() => ({
     sendAppMessageMock: vi.fn(),
+    // Used as a constructor (`new CssHitsCounter(cb)`); a plain vi.fn() can be
+    // `new`-ed and records its constructor call arguments.
+    cssHitsCounterCtorSpy: vi.fn(),
 }));
 vi.mock('../../../../src/lib/common/content-script/send-app-message', () => ({
     sendAppMessage: sendAppMessageMock,
+}));
+
+vi.mock('../../../../src/lib/common/content-script/css-hits-counter', () => ({
+    CssHitsCounter: cssHitsCounterCtorSpy,
 }));
 
 vi.mock('../../../../src/lib/common/utils/selector-validator', () => ({
@@ -46,7 +53,11 @@ describe('MV3 CosmeticController — native CSS repair', () => {
         // reset it so retry assertions are independent.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (CosmeticController as any).tries = 0;
+        // Same for the retained native CssHitsCounter instance.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (CosmeticController as any).cssHitsCounter = undefined;
         sendAppMessageMock.mockReset();
+        cssHitsCounterCtorSpy.mockClear();
     });
 
     it('retries GetCosmeticData until isAppStarted is true, then repairs native CSS', async () => {
@@ -154,19 +165,116 @@ describe('MV3 CosmeticController — native CSS repair', () => {
         expect(style?.textContent).toContain('.valid-sel');
     });
 
-    it('no longer references ExtendedCss or CssHitsCounter (source guard)', () => {
-        // ExtCSS application moved to the background; only the native-CSS repair
-        // retry loop remains in the content script.
+    it('no longer references ExtendedCss, but restores native-only CssHitsCounter (source guard)', () => {
+        // ExtCSS application moved to the background; the content script keeps
+        // only the native-CSS repair retry loop and the native-only hits counter.
         expect(CONTROLLER_SRC).not.toContain('@adguard/extended-css');
         expect(CONTROLLER_SRC).not.toContain('ExtendedCss');
         expect(CONTROLLER_SRC).not.toContain('applyExtendedCss');
-        expect(CONTROLLER_SRC).not.toContain('CssHitsCounter');
-        expect(CONTROLLER_SRC).not.toContain('cssHitsCounter');
         expect(CONTROLLER_SRC).not.toContain('beforeStyleApplied');
+        // Native CSS hits counting IS restored (the counter reads the
+        // `--adguard-hit` markers from computed styles); ExtendedCSS hits stay
+        // in the background-injected callback.
+        expect(CONTROLLER_SRC).toContain('CssHitsCounter');
+        expect(CONTROLLER_SRC).toContain('cssHitsCounter');
         // The retry constants ARE present again (re-added for the native-CSS
         // repair startup race), so they are asserted to be present rather than
         // absent.
         expect(CONTROLLER_SRC).toContain('GET_COSMETIC_DATA_RETRY_TIMEOUT_MS');
         expect(CONTROLLER_SRC).toContain('MAX_GET_COSMETIC_DATA_TRIES');
+    });
+});
+
+describe('MV3 CosmeticController — native CssHitsCounter', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        // Reset module-level static state between tests (see the block above).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (CosmeticController as any).tries = 0;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (CosmeticController as any).cssHitsCounter = undefined;
+        sendAppMessageMock.mockReset();
+        cssHitsCounterCtorSpy.mockClear();
+    });
+
+    it('creates a CssHitsCounter when areHitsStatsCollected is true and the app is started', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        sendAppMessageMock.mockResolvedValue({
+            isAppStarted: true,
+            areHitsStatsCollected: true,
+            extCssRules: null,
+            nativeCssSelectors: null,
+        });
+
+        CosmeticController.init();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(cssHitsCounterCtorSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does NOT create a CssHitsCounter when areHitsStatsCollected is false', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        sendAppMessageMock.mockResolvedValue({
+            isAppStarted: true,
+            areHitsStatsCollected: false,
+            extCssRules: null,
+            nativeCssSelectors: null,
+        });
+
+        CosmeticController.init();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(cssHitsCounterCtorSpy).not.toHaveBeenCalled();
+    });
+
+    it('sends SaveCssHitsStats messages through the counter callback', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        sendAppMessageMock.mockResolvedValue({
+            isAppStarted: true,
+            areHitsStatsCollected: true,
+            extCssRules: null,
+            nativeCssSelectors: null,
+        });
+
+        CosmeticController.init();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(cssHitsCounterCtorSpy).toHaveBeenCalledTimes(1);
+        // Grab the callback handed to the counter and simulate a counted hit.
+        const hitsCallback = cssHitsCounterCtorSpy.mock.calls[0][0] as (stats: unknown) => void;
+        const stats = [{ filterId: 1, ruleIndex: 2, element: '<div class="ad">' }];
+        hitsCallback(stats);
+
+        expect(sendAppMessageMock).toHaveBeenCalledWith({
+            type: 'saveCssHitsStats',
+            payload: stats,
+        });
+    });
+
+    it('does not create a duplicate CssHitsCounter on retry (idempotent)', async () => {
+        vi.useFakeTimers();
+        document.head.innerHTML = '';
+        sendAppMessageMock.mockResolvedValue({
+            isAppStarted: true,
+            areHitsStatsCollected: true,
+            extCssRules: null,
+            nativeCssSelectors: null,
+        });
+
+        CosmeticController.init();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(cssHitsCounterCtorSpy).toHaveBeenCalledTimes(1);
+
+        // A second init() (same document) must not create another counter.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (CosmeticController as any).tries = 0;
+        CosmeticController.init();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(cssHitsCounterCtorSpy).toHaveBeenCalledTimes(1);
     });
 });

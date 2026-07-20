@@ -35,6 +35,17 @@ export const LF = '\n';
 export const SEMICOLON = ';';
 
 /**
+ * CSS hits marker value prefix; a marker encodes as
+ * `<prefix><filterId>%3B<ruleIndex>`.
+ *
+ * Single source of truth shared by the marker emitters
+ * (`CosmeticApiCommon.NATIVE_MARKER` / `EXTENDED_MARKER`), the marker
+ * readers (`CssHitsCounter`), and the MV3 injection protocol constants
+ * (`EXTCSS_PROTOCOL` in `message-constants.ts`).
+ */
+export const CSS_HITS_MARKER_PREFIX = 'adguard';
+
+/**
  * Timeout used for deletion of request context data and frame context data from the storage.
  */
 export const FRAME_DELETION_TIMEOUT_MS = 3000;

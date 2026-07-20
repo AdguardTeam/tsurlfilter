@@ -34,6 +34,11 @@ function buildHelpersSource(): string {
         compilerOptions: {
             target: ts.ScriptTarget.ES2022,
             module: ts.ModuleKind.ES2022,
+            // Strip comments: the transpiled source is inlined into the
+            // injected `applyExtCss` body, so every byte counts — and stray
+            // comment text (e.g. `'adguard'` examples) must not pollute the
+            // self-containment contract of the serialized function.
+            removeComments: true,
         },
     });
     return outputText.replace(/export\s*\{[^}]*\}\s*;?/g, '').trimEnd();

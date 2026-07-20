@@ -30,7 +30,10 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 }
 
 # check css hits counter size
-max_size=20100
+# NOTE: raised from 20100 — `ElementUtils` now delegates to the shared
+# `css-hits-helpers` module (one implementation for the MV2 runtime and the
+# MV3 inlined path), which legitimately adds ~4 KB to this bundle.
+max_size=25000
 filename="dist/css-hits-counter.js"
 filesize=$(stat -f "%z" "$filename")
 if [ "$filesize" -gt $max_size ]; then

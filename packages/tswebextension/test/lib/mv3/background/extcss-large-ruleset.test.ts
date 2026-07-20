@@ -10,6 +10,7 @@ import {
     it,
 } from 'vitest';
 
+import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
 import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 
 // Large rule set: "hundreds of ExtCSS rules". 500 is well above
@@ -82,7 +83,7 @@ describe('applyExtCss — large rule set', () => {
             document.body.appendChild(el);
         }
 
-        applyExtCss(rules);
+        applyExtCss(rules, false, EXTCSS_PROTOCOL);
 
         for (const cls of sampleSelectors) {
             const el = document.querySelector(`.${cls}`) as HTMLElement;
@@ -96,9 +97,10 @@ describe('applyExtCss — large rule set', () => {
 
         // func payload: exactly what Chrome serializes via Function.toString().
         const funcBytes = Buffer.byteLength(String(applyExtCss), 'utf8');
-        // args payload: cssRules (array of strings) + collectStats (boolean).
+        // args payload: cssRules (array of strings) + collectStats (boolean)
+        // + protocol (small literal object).
         const argsBytes = Buffer.byteLength(
-            JSON.stringify([rules, false]),
+            JSON.stringify([rules, false, EXTCSS_PROTOCOL]),
             'utf8',
         );
         const totalBytes = funcBytes + argsBytes;

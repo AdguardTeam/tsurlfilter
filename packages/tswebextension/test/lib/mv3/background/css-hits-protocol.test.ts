@@ -12,6 +12,7 @@ import {
 } from 'vitest';
 
 import { ElementUtils } from '../../../../src/lib/common/content-script/utils/element-utils';
+import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
 import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 
 /**
@@ -27,9 +28,9 @@ import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn'
  *           ElementUtils.elementToString(element) — the reference parsing
  *           used by the MV2 content-script CssHitsCounter.
  *
- * MV3 path: applyExtCss([markerRule], true) — the background-injected func
- *           whose beforeStyleApplied callback parses the same marker and
- *           serializes the element identically.
+ * MV3 path: applyExtCss([markerRule], true, EXTCSS_PROTOCOL) — the
+ *           background-injected func whose beforeStyleApplied callback parses
+ *           the same marker and serializes the element identically.
  */
 
 describe('CSS-hits marker protocol: MV2 vs MV3 contract', () => {
@@ -87,7 +88,7 @@ describe('CSS-hits marker protocol: MV2 vs MV3 contract', () => {
 
         // MV3 end-to-end path
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
-        applyExtCss([buildMarkerRule(filterId, ruleIndex)], true);
+        applyExtCss([buildMarkerRule(filterId, ruleIndex)], true, EXTCSS_PROTOCOL);
 
         await flushMicrotasks();
 
@@ -109,7 +110,7 @@ describe('CSS-hits marker protocol: MV2 vs MV3 contract', () => {
 
         // MV3 end-to-end path (CSS rule has !important on the content declaration)
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
-        applyExtCss([buildMarkerRule(filterId, ruleIndex)], true);
+        applyExtCss([buildMarkerRule(filterId, ruleIndex)], true, EXTCSS_PROTOCOL);
 
         await flushMicrotasks();
 
@@ -131,6 +132,7 @@ describe('CSS-hits marker protocol: MV2 vs MV3 contract', () => {
         applyExtCss(
             ['.ad:has(.child) { display: none !important; content: "unknown1%3B2" !important; }'],
             true,
+            EXTCSS_PROTOCOL,
         );
 
         await flushMicrotasks();
@@ -147,7 +149,7 @@ describe('CSS-hits marker protocol: MV2 vs MV3 contract', () => {
         expect(mv2Str).toBe('<div class="ad">');
 
         // MV3 end-to-end: the serialized element is in the sendMessage payload
-        applyExtCss([buildMarkerRule(1, 2)], true);
+        applyExtCss([buildMarkerRule(1, 2)], true, EXTCSS_PROTOCOL);
 
         await flushMicrotasks();
 
@@ -166,7 +168,7 @@ describe('CSS-hits marker protocol: MV2 vs MV3 contract', () => {
         expect(mv2Str).toBe('<div data-x="a\\"b" class="ad">');
 
         // MV3 end-to-end
-        applyExtCss([buildMarkerRule(1, 2)], true);
+        applyExtCss([buildMarkerRule(1, 2)], true, EXTCSS_PROTOCOL);
 
         await flushMicrotasks();
 
@@ -182,7 +184,7 @@ describe('CSS-hits marker protocol: MV2 vs MV3 contract', () => {
         const mv2Str = ElementUtils.elementToString(el);
 
         // MV3 end-to-end
-        applyExtCss([buildMarkerRule(1, 2)], true);
+        applyExtCss([buildMarkerRule(1, 2)], true, EXTCSS_PROTOCOL);
 
         await flushMicrotasks();
 

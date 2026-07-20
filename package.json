@@ -34,8 +34,7 @@
     "pnpm": {
         "neverBuiltDependencies": [],
         "overrides": {
-            "@adguard/agtree": "workspace:^",
-            "@adguard/extended-css": "file:vendor/adguard-extended-css-2.3.0.tgz"
+            "@adguard/agtree": "workspace:^"
         }
     }
 }

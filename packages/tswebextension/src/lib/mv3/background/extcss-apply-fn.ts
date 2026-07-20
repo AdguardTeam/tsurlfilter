@@ -1,5 +1,7 @@
 import type { ExtendedCss, IAffectedElement } from '@adguard/extended-css';
 
+import { type ExtCssProtocol } from '../../common/message-constants';
+
 // Type-only decls for symbols supplied by build-time inlining (see the
 // inlineExtCssBundle plugin). Erased at runtime; they exist only so the source
 // type-checks before the inliner swaps in the real definitions. The
@@ -48,15 +50,26 @@ declare const applyExtendedCss: (
  * re-evaluated in the page's ISOLATED world, so it MUST NOT reference any
  * outer-scope identifier: only literal source in this body (and `window`)
  * survives. The `inlineExtCssBundle` build plugin replaces the inlining
- * marker call below with the minified @adguard/extended-css apply IIFE, which
- * defines `applyExtendedCss` as a function-scoped `var`. Self-containment is
- * pinned by the `String(applyExtCss)` unit tests.
+ * marker call below with the private minified ExtendedCss apply IIFE (built
+ * in-memory from the library's public root export), which defines
+ * `applyExtendedCss` as a function-scoped `var`. Every injection-boundary
+ * literal (message handler name, message type, marker prefix, instance key)
+ * arrives via the `protocol` argument — the shared `EXTCSS_PROTOCOL`
+ * constant is the single source of truth. Self-containment is pinned by the
+ * `String(applyExtCss)` unit tests.
  *
  * @param cssRules ExtendedCSS rule strings to apply to the current document.
  * @param collectStats When true, register a CSS-hits `beforeStyleApplied`
  * callback (else nothing is registered and no overhead is incurred).
+ * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`). A
+ * required argument (not a module-scope default) so the serialized body has
+ * zero free identifiers.
  */
-export const applyExtCss = (cssRules: string[], collectStats = false): void => {
+export const applyExtCss = (
+    cssRules: string[],
+    collectStats: boolean,
+    protocol: ExtCssProtocol,
+): void => {
     __INLINE_EXTCSS_BUNDLE__();
 
     // Inlined CSS-hits helpers — the SAME source used by MV2's
@@ -67,17 +80,15 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
     // serialization for `chrome.scripting.executeScript({ func })`).
     __INLINE_CSS_HITS_HELPERS__();
 
-    // Key must be a body literal, not a module-scope const: only body literals
-    // survive toString() serialization — a module-scope const would be an
-    // unresolved free identifier in the page's ISOLATED world.
     const w = window as unknown as Record<string, ExtendedCss | null | undefined>;
 
     // Dispose the previous instance before applying a new one. dispose()
     // disconnects the prior MutationObserver and reverts styles, preventing
     // stale observer/style leaks on same-document (SPA) re-injections (full
-    // page loads tear down the world, so this only matters then).
-    // eslint-disable-next-line @typescript-eslint/dot-notation -- bracket keeps the key a verbatim string literal
-    const previous = w['__adguardExtCss'];
+    // page loads tear down the world, so this only matters then). The key
+    // arrives via `protocol` — a module-scope const would be an unresolved
+    // free identifier in the page's ISOLATED world.
+    const previous = w[protocol.instanceKey];
     if (previous) {
         try {
             previous.dispose();
@@ -99,7 +110,7 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
      * @returns The same element (with the hit marker content cleared).
      */
     const beforeStyleApplied = (el: IAffectedElement): IAffectedElement => {
-        const PREFIX = 'adguard';
+        const PREFIX = protocol.markerPrefix;
         const hits: { filterId: number; ruleIndex: number; element: string }[] = [];
 
         if (el && el.rules) {
@@ -141,8 +152,8 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
             // "Receiving end does not exist") is also swallowed.
             Promise.resolve()
                 .then(() => chrome.runtime.sendMessage({
-                    handlerName: 'tsWebExtension',
-                    type: 'saveCssHitsStats',
+                    handlerName: protocol.handlerName,
+                    type: protocol.messageType,
                     payload: hits,
                 }))
                 .catch(() => {
@@ -154,8 +165,34 @@ export const applyExtCss = (cssRules: string[], collectStats = false): void => {
     };
 
     // Retain the new instance so the next call can dispose it.
-    // eslint-disable-next-line @typescript-eslint/dot-notation -- bracket keeps the key a verbatim string literal
-    w['__adguardExtCss'] = collectStats
+    w[protocol.instanceKey] = collectStats
         ? applyExtendedCss(cssRules, beforeStyleApplied)
         : applyExtendedCss(cssRules);
+};
+
+/**
+ * Self-contained ExtendedCSS disposal function injected into pages via
+ * `chrome.scripting.executeScript({ func, args })` when the rule set
+ * transitions from non-empty to empty (or null) on a same-document
+ * navigation. Disposes the previously retained ExtendedCss instance (if
+ * any): disconnects its MutationObserver and reverts its styles, so stale
+ * observers and styles do not leak.
+ *
+ * Like {@link applyExtCss}, it MUST NOT reference any outer-scope identifier;
+ * the instance key arrives via the `protocol` argument.
+ *
+ * @param protocol Serialized protocol values (see `EXTCSS_PROTOCOL`); only
+ * `instanceKey` is used.
+ */
+export const disposeExtCss = (protocol: ExtCssProtocol): void => {
+    const w = window as unknown as Record<string, { dispose(): void } | null | undefined>;
+    const previous = w[protocol.instanceKey];
+    if (previous) {
+        try {
+            previous.dispose();
+        } catch {
+            // Ignore disposal errors; the key is cleared regardless.
+        }
+        w[protocol.instanceKey] = null;
+    }
 };

@@ -12,6 +12,7 @@ import {
     it,
 } from 'vitest';
 
+import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
 import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 
 // NOTE: This benchmark follows the convention of the prior-art
@@ -84,7 +85,7 @@ describe('applyExtCss — performance benchmark (AC1, print-only timings)', () =
             document.body.innerHTML = `<div class="${matchClass}"><span class="child"></span></div>`;
 
             const start = performance.now();
-            applyExtCss(rules);
+            applyExtCss(rules, false, EXTCSS_PROTOCOL);
             const elapsed = performance.now() - start;
 
             const el = document.querySelector(`.${matchClass}`) as HTMLElement;

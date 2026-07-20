@@ -11,7 +11,8 @@ import {
     vi,
 } from 'vitest';
 
-import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
+import { EXTCSS_PROTOCOL, type ExtCssProtocol } from '../../../../src/lib/common/message-constants';
+import { applyExtCss, disposeExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
 
 // Single file-level cleanup. The jsdom `window` is shared across
 // every test in this file, so a retained `window['__adguardExtCss']` instance
@@ -37,7 +38,20 @@ describe('applyExtCss (inlined bundle)', () => {
     it('hides a matching :has() element after being called', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss(['.ad:has(.child) { display: none !important; }']);
+        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+
+        const ad = document.querySelector('.ad') as HTMLElement;
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+        expect(ad.style.getPropertyPriority('display')).toBe('important');
+    });
+
+    it('hides a matching :contains() element (exercises init())', () => {
+        // `:contains()` requires the `init()` lifecycle step (it snapshots the
+        // native `Node.prototype.textContent` getter), so this test fails if
+        // the inlined payload calls `apply()` without `init()`.
+        document.body.innerHTML = '<div class="ad">adsbygoogle</div>';
+
+        applyExtCss(['.ad:contains(adsbygoogle) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
@@ -47,7 +61,7 @@ describe('applyExtCss (inlined bundle)', () => {
     it('does not hide non-matching elements', () => {
         document.body.innerHTML = '<div class="ad"><span class="other">ad</span></div>';
 
-        applyExtCss(['.ad:has(.child) { display: none !important; }']);
+        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('');
@@ -60,15 +74,18 @@ describe('applyExtCss (inlined bundle)', () => {
         expect(String(applyExtCss)).toContain('applyExtendedCss');
     });
 
-    it('is self-contained — inlines the instance key with no module-scope references', () => {
+    it('is self-contained — the instance key arrives via the protocol argument', () => {
         // applyExtCss is serialized via Function.toString() and re-executed in the
         // page's ISOLATED world by executeScript({ func }). Any module-scope
         // identifier referenced in the body becomes a free identifier there
-        // (ReferenceError, or `undefined`), so `w[EXTCSS_INSTANCE_KEY]` would
-        // read/write the wrong key and silently break the retain/dispose logic.
-        // The instance key MUST therefore be a literal inside the body.
-        expect(String(applyExtCss)).toContain('__adguardExtCss');
-        expect(String(applyExtCss)).not.toContain('EXTCSS_INSTANCE_KEY');
+        // (ReferenceError, or `undefined`), so the retain/dispose key MUST
+        // arrive via the serialized `protocol` argument — not as a body
+        // literal duplicated across call sites, and not as a module-scope ref.
+        const src = String(applyExtCss);
+        expect(src).toContain('protocol.instanceKey');
+        expect(src).not.toContain('__adguardExtCss');
+        expect(src).not.toContain('EXTCSS_INSTANCE_KEY');
+        expect(src).not.toContain('EXTCSS_PROTOCOL');
     });
 
     // Regression: the build-time inliner must not let `String.prototype.replace`
@@ -91,7 +108,7 @@ describe('applyExtCss (inlined bundle)', () => {
         // escaped value becomes garbage and the regex no longer matches.
         document.body.innerHTML = '<div class="ad" style="color: red">ad</div>';
 
-        applyExtCss(['.ad:matches-css(color: rgb(255, 0, 0)) { display: none !important; }']);
+        applyExtCss(['.ad:matches-css(color: rgb(255, 0, 0)) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
@@ -103,14 +120,14 @@ describe('applyExtCss — navigation cleanup (AC2)', () => {
     it('disposes the previous instance on re-apply (old styles reverted, old observer stopped)', async () => {
         // First injection: rule A hides `.ad:has(.child)`.
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
-        applyExtCss(['.ad:has(.child) { display: none !important; }']);
+        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
         const ad = document.querySelector('.ad') as HTMLElement;
         expect(ad.style.getPropertyValue('display')).toBe('none');
 
         // Second injection (simulates the next onCommitted re-injection with a
         // different rule set for the new URL). The previous instance must be
         // disposed: its styles are reverted synchronously by dispose().
-        applyExtCss(['.other:has(.x) { display: none !important; }']);
+        applyExtCss(['.other:has(.x) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         // Old instance's styles reverted → `.ad` is visible again.
         expect(ad.style.getPropertyValue('display')).toBe('');
@@ -142,7 +159,7 @@ describe('applyExtCss — navigation cleanup (AC2)', () => {
 describe('applyExtCss — continuous observation (AC1)', () => {
     it('hides a matching element added dynamically after applyExtCss', async () => {
         document.body.innerHTML = '';
-        applyExtCss(['.ad:has(.child) { display: none !important; }']);
+        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         // Append a matching element after the call.
         const ad = document.createElement('div');
@@ -179,7 +196,7 @@ describe('applyExtCss — CSS hits stats', () => {
     it('sends a SaveCssHitsStats message when collectStats is on and a rule carries a marker', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss([MARKER_RULE], true);
+        applyExtCss([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         // Flush microtasks so the deferred sendMessage (via Promise.resolve().then(...))
         // is recorded by the spy.
@@ -221,7 +238,7 @@ describe('applyExtCss — CSS hits stats', () => {
 
         try {
             // Must not throw synchronously; an uncaught throw would fail here.
-            applyExtCss([MARKER_RULE], true);
+            applyExtCss([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
             // Flush microtasks so the rejected sendMessage promise settles and
             // the .catch() handler runs.
@@ -237,22 +254,84 @@ describe('applyExtCss — CSS hits stats', () => {
     it('registers no beforeStyleApplied and sends no message when collectStats is off', () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss(['.ad:has(.child) { display: none !important; }'], false);
+        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
 
         expect(sendMessageSpy).not.toHaveBeenCalled();
     });
 
-    it('is self-contained — inlines marker literals with no module-scope refs', () => {
+    it('is self-contained — protocol literals arrive via the protocol argument', () => {
         const src = String(applyExtCss);
-        // Hit-bridge literals must be inlined verbatim in the serialized body
-        // (the transpiler may normalize quote style, so match either quote).
-        expect(src).toMatch(/['"]adguard['"]/);
-        expect(src).toMatch(/['"]tsWebExtension['"]/);
-        expect(src).toMatch(/['"]saveCssHitsStats['"]/);
+        // The hit-bridge protocol values (marker prefix, handler name, message
+        // type) MUST arrive via the serialized `protocol` argument — the
+        // shared `EXTCSS_PROTOCOL` constant is the single source of truth, so
+        // the literals must NOT be duplicated in the injected function body.
+        expect(src).not.toMatch(/['"]adguard['"]/);
+        expect(src).not.toMatch(/['"]tsWebExtension['"]/);
+        expect(src).not.toMatch(/['"]saveCssHitsStats['"]/);
+        // The body reads them from the `protocol` parameter.
+        expect(src).toContain('protocol.markerPrefix');
+        expect(src).toContain('protocol.handlerName');
+        expect(src).toContain('protocol.messageType');
         // No module-scope identifier leaks for these concepts.
+        expect(src).not.toMatch(/\bEXTCSS_PROTOCOL\b/);
+        expect(src).not.toMatch(/\bMESSAGE_HANDLER_NAME\b/);
+        expect(src).not.toMatch(/\bMessageType\b/);
+        expect(src).not.toMatch(/\bCSS_HITS_MARKER_PREFIX\b/);
         expect(src).not.toMatch(/\bHANDLER_NAME\b/);
         expect(src).not.toMatch(/\bCONTENT_ATTR_PREFIX\b/);
         expect(src).not.toMatch(/\bSAVE_CSS_HITS_STATS\b/);
+    });
+
+    it('uses the passed-in protocol values, not the shared defaults', async () => {
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+
+        // A non-default protocol: the injected function must use THESE values
+        // (proving nothing is read from module scope or duplicated literals).
+        const customProtocol: ExtCssProtocol = {
+            markerPrefix: 'custommarker',
+            handlerName: 'customHandler',
+            messageType: 'customCssHitsType',
+            // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
+            instanceKey: '__customExtCss',
+        };
+        const customMarkerRule = '.ad:has(.child) { display: none !important; '
+            + 'content: \'custommarker1%3B2\' !important; }';
+
+        try {
+            applyExtCss([customMarkerRule], true, customProtocol);
+
+            // Flush microtasks so the deferred sendMessage is recorded by the spy.
+            await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+            expect(sendMessageSpy).toHaveBeenCalledTimes(1);
+            const msg = sendMessageSpy.mock.calls[0][0];
+            expect(msg).toEqual({
+                handlerName: 'customHandler',
+                type: 'customCssHitsType',
+                payload: [{ filterId: 1, ruleIndex: 2, element: expect.any(String) }],
+            });
+
+            // The instance is retained under the CUSTOM key, never the default.
+            const w = window as unknown as Record<string, unknown>;
+            // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
+            expect(w.__customExtCss).toBeTruthy();
+            // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
+            expect(w.__adguardExtCss).toBeFalsy();
+        } finally {
+            // Clean up the custom retained instance.
+            const w = window as unknown as Record<string, { dispose(): void } | null>;
+            // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
+            const handle = w.__customExtCss;
+            if (handle) {
+                try {
+                    handle.dispose();
+                } catch {
+                    // ignore
+                }
+            }
+            // eslint-disable-next-line no-underscore-dangle -- deliberate test marker key
+            w.__customExtCss = null;
+        }
     });
 
     it('inlines the CSS-hits helpers (shared with MV2 ElementUtils) with no external refs', () => {
@@ -287,7 +366,7 @@ describe('applyExtCss — CSS hits stats', () => {
     it('exercises the real beforeStyleApplied IAffectedElement contract { node, rules }', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss([MARKER_RULE], true);
+        applyExtCss([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         // Flush microtasks so the deferred sendMessage is recorded by the spy.
         await new Promise((resolve) => { setTimeout(resolve, 0); });
@@ -309,7 +388,7 @@ describe('applyExtCss — CSS hits stats', () => {
     it('does not send duplicate hits (dedup via content clearing)', async () => {
         document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss([MARKER_RULE], true);
+        applyExtCss([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         // Flush microtasks so the deferred sendMessage is recorded by the spy.
         await new Promise((resolve) => { setTimeout(resolve, 0); });
@@ -331,7 +410,7 @@ describe('applyExtCss — CSS hits stats', () => {
         // Single-quoted HTML attribute value containing a literal "
         document.body.innerHTML = '<div data-x=\'a"b\' class="ad"><span class="child">ad</span></div>';
 
-        applyExtCss([MARKER_RULE], true);
+        applyExtCss([MARKER_RULE], true, EXTCSS_PROTOCOL);
 
         // Flush microtasks so the deferred sendMessage is recorded by the spy.
         await new Promise((resolve) => { setTimeout(resolve, 0); });
@@ -340,5 +419,71 @@ describe('applyExtCss — CSS hits stats', () => {
         const msg = sendMessageSpy.mock.calls[0][0] as any;
         // The serialized element must escape the " in the data-x value.
         expect(msg.payload[0].element).toBe('<div data-x="a\\"b" class="ad">');
+    });
+});
+
+describe('disposeExtCss — empty transition disposal', () => {
+    it('disposes the previous instance (styles reverted, key cleared)', () => {
+        // First injection: rule hides `.ad:has(.child)`.
+        document.body.innerHTML = '<div class="ad"><span class="child">ad</span></div>';
+        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+        const ad = document.querySelector('.ad') as HTMLElement;
+        expect(ad.style.getPropertyValue('display')).toBe('none');
+
+        // The rule set transitioned from non-empty to empty on a same-document
+        // navigation — the background injects disposeExtCss. The retained
+        // instance must be disposed: its styles are reverted synchronously.
+        disposeExtCss(EXTCSS_PROTOCOL);
+
+        // Old instance's styles reverted → `.ad` is visible again.
+        expect(ad.style.getPropertyValue('display')).toBe('');
+        // The retained-instance key is cleared.
+        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
+        expect((window as unknown as { __adguardExtCss?: unknown }).__adguardExtCss).toBeNull();
+    });
+
+    it('stops the old observer — newly added matching nodes are NOT hidden', async () => {
+        document.body.innerHTML = '';
+        applyExtCss(['.ad:has(.child) { display: none !important; }'], false, EXTCSS_PROTOCOL);
+
+        disposeExtCss(EXTCSS_PROTOCOL);
+
+        // Append a matching element after disposal: the (disconnected)
+        // MutationObserver must not hide it.
+        const ad = document.createElement('div');
+        ad.className = 'ad';
+        ad.innerHTML = '<span class="child">ad</span>';
+        document.body.appendChild(ad);
+
+        // Give any (disposed) observer a chance to run.
+        await new Promise((resolve) => { setTimeout(resolve, 250); });
+        expect((ad as HTMLElement).style.getPropertyValue('display')).toBe('');
+    });
+
+    it('is a no-op when no instance is retained', () => {
+        // Must not throw when the window key was never set.
+        expect(() => disposeExtCss(EXTCSS_PROTOCOL)).not.toThrow();
+    });
+
+    it('tolerates a retained instance whose dispose() throws', () => {
+        const w = window as unknown as Record<string, unknown>;
+        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
+        w.__adguardExtCss = {
+            dispose(): void {
+                throw new Error('dispose failed');
+            },
+        };
+
+        expect(() => disposeExtCss(EXTCSS_PROTOCOL)).not.toThrow();
+        // The key is cleared even when dispose() threw.
+        // eslint-disable-next-line no-underscore-dangle -- deliberate marker matching the retained-instance key
+        expect(w.__adguardExtCss).toBeNull();
+    });
+
+    it('is self-contained — the instance key arrives via the protocol argument', () => {
+        const src = String(disposeExtCss);
+        expect(src).toContain('protocol.instanceKey');
+        expect(src).not.toContain('__adguardExtCss');
+        expect(src).not.toContain('EXTCSS_PROTOCOL');
     });
 });

@@ -212,6 +212,15 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
+        // The content script needs this flag to decide whether to create its
+        // native-only CssHitsCounter (it reads the `--adguard-hit` markers
+        // the background adds to native CSS when statistics are enabled).
+        // Do not collect hits stats if the website is allowlisted.
+        const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
+        const isDocumentAllowlisted = !!tabContext.mainFrameRule
+            && tabContext.mainFrameRule.isFilteringDisabled();
+        data.areHitsStatsCollected = areHitsStatsCollected && !isDocumentAllowlisted;
+
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
         const cosmeticResult = engineApi.matchCosmetic(matchQuery);
@@ -408,9 +417,12 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Injects ExtendedCSS rules into the specified tab and frame directly from
      * the background via the Scripting API.
      *
-     * Makes no call when there are no matching rules. Errors are caught and
-     * logged, so restricted pages must not disrupt the extension. When
-     * `areHitsStatsCollected` is true, the rules
+     * When there are no matching rules (empty or null), a disposal function
+     * is injected instead: the rule set may have transitioned from non-empty
+     * to empty on a same-document (SPA) navigation, and the previously
+     * retained ExtendedCss instance's observer and styles must be cleaned
+     * up. Errors are caught and logged, so restricted pages must not disrupt
+     * the extension. When `areHitsStatsCollected` is true, the rules
      * carry hits markers and the injected func registers a
      * `beforeStyleApplied` callback that reports hits back to the background.
      *
@@ -427,11 +439,15 @@ export class CosmeticApi extends CosmeticApiCommon {
         extCssRules: string[] | null,
         areHitsStatsCollected: boolean,
     ): Promise<void> {
-        if (!extCssRules || extCssRules.length === 0) {
-            return;
-        }
-
         try {
+            if (!extCssRules || extCssRules.length === 0) {
+                // Dispose any previously retained instance — the rule set
+                // transitioned from non-empty to empty on a same-document
+                // navigation.
+                await ScriptingApi.disposeExtCss({ tabId, frameId });
+                return;
+            }
+
             await ScriptingApi.executeExtCss({
                 tabId,
                 frameId,

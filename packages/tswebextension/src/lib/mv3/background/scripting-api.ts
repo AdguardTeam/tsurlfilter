@@ -1,8 +1,10 @@
 import { type Source } from '@adguard/scriptlets';
 import { type ScriptletData } from '@adguard/tsurlfilter';
 
+import { EXTCSS_PROTOCOL } from '../../common/message-constants';
+
 import { appContext } from './app-context';
-import { applyExtCss } from './extcss-apply-fn';
+import { applyExtCss, disposeExtCss } from './extcss-apply-fn';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
 
 /**
@@ -311,7 +313,34 @@ export class ScriptingApi {
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
             func: applyExtCss,
-            args: [cssRules, collectStats],
+            args: [cssRules, collectStats, EXTCSS_PROTOCOL],
+            injectImmediately: true,
+            world: 'ISOLATED',
+        });
+    }
+
+    /**
+     * Disposes the ExtendedCss instance previously retained in the target
+     * frame (if any) by injecting the self-contained {@link disposeExtCss}
+     * function. Called when the matched ExtendedCSS rule set transitions
+     * from non-empty to empty on a same-document navigation, so the stale
+     * instance's MutationObserver and styles are cleaned up instead of
+     * leaking.
+     *
+     * @param params Target parameters.
+     * @param params.tabId The ID of the tab.
+     * @param params.frameId The ID of the frame.
+     *
+     * @returns Promise that resolves when the disposal is executed.
+     */
+    public static async disposeExtCss({
+        tabId,
+        frameId,
+    }: ExecuteTarget): Promise<void> {
+        await chrome.scripting.executeScript({
+            target: { tabId, frameIds: [frameId] },
+            func: disposeExtCss,
+            args: [EXTCSS_PROTOCOL],
             injectImmediately: true,
             world: 'ISOLATED',
         });

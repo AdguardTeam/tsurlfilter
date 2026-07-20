@@ -1,7 +1,7 @@
 import { CosmeticRuleType } from '@adguard/agtree';
 import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
-import { LF, SEMICOLON } from './constants';
+import { CSS_HITS_MARKER_PREFIX, LF, SEMICOLON } from './constants';
 import { defaultFilteringLog, FilteringEventType } from './filtering-log';
 import { type ContentType } from './request-type';
 import { CssCapabilities } from './utils/css-capabilities';
@@ -177,14 +177,14 @@ export class CosmeticApiCommon {
      */
     protected static readonly NATIVE_MARKER: HitMarkerStrategy = {
         preamble: CosmeticApiCommon.PROPERTY_RULE,
-        markerDeclStart: " --adguard-hit: 'adguard",
+        markerDeclStart: ` --adguard-hit: '${CSS_HITS_MARKER_PREFIX}`,
         markerDeclEnd: "' !important;",
         skipInject: (): boolean => false,
     };
 
     protected static readonly EXTENDED_MARKER: HitMarkerStrategy = {
         preamble: '',
-        markerDeclStart: " content: 'adguard",
+        markerDeclStart: ` content: '${CSS_HITS_MARKER_PREFIX}`,
         markerDeclEnd: "' !important;",
         skipInject: (ruleContent: string): boolean => {
             // Reset lastIndex because the `g` flag preserves state.

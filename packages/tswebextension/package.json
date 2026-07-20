@@ -110,7 +110,7 @@
         "@adguard/agtree": "workspace:^",
         "@adguard/dnr-converter": "workspace:^",
         "@adguard/assistant": "catalog:",
-        "@adguard/extended-css": "2.3.0",
+        "@adguard/extended-css": "2.2.0",
         "@adguard/logger": "workspace:^",
         "@adguard/scriptlets": "catalog:",
         "@adguard/text-encoding": "^0.8.3",

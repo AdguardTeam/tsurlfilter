@@ -7,6 +7,7 @@ import {
     vi,
 } from 'vitest';
 
+import { EXTCSS_PROTOCOL } from '../../../../src/lib/common/message-constants';
 import { logger } from '../../../../src/lib/common/utils/logger';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { applyExtCss } from '../../../../src/lib/mv3/background/extcss-apply-fn';
@@ -40,6 +41,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         vi.restoreAllMocks();
         vi.mocked(tabsApi.getFrameContext).mockReset();
         vi.spyOn(ScriptingApi, 'executeExtCss').mockResolvedValue();
+        vi.spyOn(ScriptingApi, 'disposeExtCss').mockResolvedValue();
         vi.spyOn(ScriptingApi, 'insertCSS').mockResolvedValue();
     });
 
@@ -65,7 +67,10 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         });
     });
 
-    it('makes NO executeExtCss call when the rule set is empty', async () => {
+    it('injects disposeExtCss (not executeExtCss) when the rule set is empty', async () => {
+        // Non-empty → empty transition on a same-document navigation: the
+        // previously retained instance must be disposed so its observer and
+        // styles do not leak.
         vi.mocked(tabsApi.getFrameContext).mockReturnValue({
             url: 'https://example.com/',
             preparedCosmeticResult: makePrepared([]),
@@ -74,6 +79,8 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
         expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
+        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(1);
+        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledWith({ tabId: 1, frameId: 0 });
     });
 
     it('forwards areHitsStatsCollected from the prepared result to executeExtCss', async () => {
@@ -93,7 +100,7 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         });
     });
 
-    it('makes NO executeExtCss call when extCssRules is null', async () => {
+    it('injects disposeExtCss (not executeExtCss) when extCssRules is null', async () => {
         vi.mocked(tabsApi.getFrameContext).mockReturnValue({
             url: 'https://example.com/',
             preparedCosmeticResult: makePrepared(null),
@@ -102,6 +109,38 @@ describe('CosmeticApi.applyCosmeticRules — ExtCSS injection', () => {
         await CosmeticApi.applyCosmeticRules(1, 0, true);
 
         expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
+        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledTimes(1);
+        expect(ScriptingApi.disposeExtCss).toHaveBeenCalledWith({ tabId: 1, frameId: 0 });
+    });
+
+    it('does not inject anything on onResponseStarted (shouldApplyCss=false), even for disposal', async () => {
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
+            url: 'https://example.com/',
+            preparedCosmeticResult: makePrepared(null),
+        } as any);
+
+        await CosmeticApi.applyCosmeticRules(1, 0, false);
+
+        expect(ScriptingApi.executeExtCss).not.toHaveBeenCalled();
+        expect(ScriptingApi.disposeExtCss).not.toHaveBeenCalled();
+    });
+
+    it('logs disposeExtCss failures at debug level without throwing', async () => {
+        vi.mocked(tabsApi.getFrameContext).mockReturnValue({
+            url: 'https://example.com/',
+            preparedCosmeticResult: makePrepared(null),
+        } as any);
+        const disposalError = new Error('Cannot access contents of the page');
+        vi.mocked(ScriptingApi.disposeExtCss).mockRejectedValue(disposalError);
+        const debugSpy = vi.spyOn(logger, 'debug');
+
+        // Must not throw: applyExtCssRules catches internally.
+        await CosmeticApi.applyCosmeticRules(1, 0, true);
+
+        expect(debugSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[tsweb.CosmeticApi.applyExtCssRules]'),
+            disposalError,
+        );
     });
 
     it('does not inject ExtCSS on onResponseStarted (shouldApplyCss=false)', async () => {
@@ -164,7 +203,7 @@ describe('CosmeticApi.applyCosmeticRules — end-to-end in jsdom', () => {
         // Drive the real inlined `applyExtCss` through the injection call shape
         // that `executeExtCss` would hand to `chrome.scripting.executeScript`.
         vi.spyOn(ScriptingApi, 'executeExtCss').mockImplementation(async (params) => {
-            applyExtCss(params.cssRules);
+            applyExtCss(params.cssRules, params.collectStats, EXTCSS_PROTOCOL);
         });
 
         const rules = ['.ad:has(.child) { display: none !important; }'];

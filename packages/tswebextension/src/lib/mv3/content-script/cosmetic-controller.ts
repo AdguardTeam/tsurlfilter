@@ -1,3 +1,4 @@
+import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { MessageType } from '../../common/message-constants';
 import { validateSelectors } from '../../common/utils/selector-validator';
@@ -8,8 +9,12 @@ import { HIDING_STYLE } from '../../mv2/common/hidden-style';
  *
  * ExtendedCSS rules are applied directly from the MV3 background service worker
  * via `chrome.scripting.executeScript` (see `CosmeticApi.applyCosmeticRules`).
- * The content script is responsible only for repairing invalid grouped native
- * CSS selectors that the background injected via the browser CSS API.
+ * The content script is responsible only for:
+ * - repairing invalid grouped native CSS selectors that the background
+ *   injected via the browser CSS API;
+ * - counting native CSS hits statistics (the background adds `--adguard-hit`
+ *   markers to native CSS when statistics are enabled, and the content
+ *   script's {@link CssHitsCounter} reads them from computed styles).
  */
 export class CosmeticController {
     /**
@@ -29,6 +34,12 @@ export class CosmeticController {
      * Number of {@link MessageType.GetCosmeticData} requests sent so far.
      */
     private static tries = 0;
+
+    /**
+     * Module that collects statistics about the usage of native CSS rules.
+     * Created at most once per document (see {@link process}).
+     */
+    private static cssHitsCounter?: CssHitsCounter;
 
     /**
      * Init cosmetic processing.
@@ -75,8 +86,34 @@ export class CosmeticController {
         }
 
         if (res) {
+            // Native-only CSS hits counting: reads the `--adguard-hit`
+            // custom property from computed styles. Extended-CSS-rule hits
+            // are reported separately by the background-injected `applyExtCss`
+            // callback, so this counter reads ONLY native CSS markers.
+            // Created at most once per document — repeated `process()` runs
+            // (e.g. after retries or re-init) must not duplicate the counter
+            // and its MutationObserver.
+            if (res.areHitsStatsCollected && !CosmeticController.cssHitsCounter) {
+                CosmeticController.cssHitsCounter = CosmeticController.createCssHitsCounter();
+            }
+
             CosmeticController.repairNativeCss(res.nativeCssSelectors);
         }
+    }
+
+    /**
+     * Creates a new {@link CssHitsCounter} instance reporting counted hits
+     * to the background.
+     *
+     * @returns CssHitsCounter instance.
+     */
+    private static createCssHitsCounter(): CssHitsCounter {
+        return new CssHitsCounter((stats) => {
+            sendAppMessage({
+                type: MessageType.SaveCssHitsStats,
+                payload: stats,
+            });
+        });
     }
 
     /**
