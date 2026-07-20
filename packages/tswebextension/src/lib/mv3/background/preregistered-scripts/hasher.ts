@@ -1,18 +1,4 @@
 /**
- * Copyright (c) 2015-2026 Adguard Software Ltd.
- *
- * @file
- * Hashing utilities for preregistered scripts.
- *
- * These functions are shared between build-time tools (in browser-extension)
- * and runtime (in tswebextension) to ensure consistent hash computation.
- *
- * This file has **no browser-extension dependencies** and can be imported
- * from Node.js (e.g. by build-time tools) via the `@adguard/tswebextension/mv3/preregistered-scripts`
- * entry point.
- */
-
-/**
  * Filename of the shared scriptlets bundle loaded before every per-hash file.
  */
 export const SHARED_BUNDLE_FILENAME = 'scriptlets-bundle.js';
@@ -23,18 +9,28 @@ export const SHARED_BUNDLE_FILENAME = 'scriptlets-bundle.js';
 export const PREREGISTERED_SCRIPTS_DIR = 'preregistered-scripts';
 
 /**
- * Computes the SHA-256 hash of a string.
+ * Number of hex characters to keep from the full SHA-256 digest.
+ *
+ * 16 hex chars (64 bits) keeps per-hash filenames short while collision risk
+ * stays negligible for the realistic number of distinct rules (thousands).
+ */
+const HASH_LENGTH = 16;
+
+/**
+ * Computes a truncated SHA-256 hash of a string, used as a short, stable
+ * filename (`{hash}.js`) for both build-time file generation and runtime
+ * content-script registration.
  *
  * @param text Text to hash.
  *
- * @returns SHA-256 hex string.
+ * @returns Lowercase hex string, {@link HASH_LENGTH} characters long.
  */
 export const hashString = async (text: string): Promise<string> => {
     const encoder = new TextEncoder();
     const data = encoder.encode(text);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, HASH_LENGTH);
 };
 
 /**

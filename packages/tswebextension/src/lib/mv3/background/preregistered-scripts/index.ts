@@ -1,10 +1,3 @@
-/**
- * Copyright (c) 2015-2026 Adguard Software Ltd.
- *
- * @file
- * Re-exports for preregistered scripts.
- */
-
 export {
     hashString,
     computeScriptletHash,

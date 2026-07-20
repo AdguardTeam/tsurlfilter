@@ -1,18 +1,3 @@
-/**
- * Copyright (c) 2015-2026 Adguard Software Ltd.
- *
- * @file
- * Preregistered scripts service for MV3.
- *
- * Manages preregistered content-script registrations for domains that have
- * scriptlet or JS injection rules in static filters.
- *
- * At runtime, this service queries the engine per domain to get applicable
- * cosmetic rules, computes their hashes (matching build-time hashes), and
- * registers content scripts with wildcard `matches` and `excludeMatches`
- * for subdomains with different rule sets.
- */
-
 import { CosmeticOption, type CosmeticResult } from '@adguard/tsurlfilter';
 
 import { logger } from '../../../common/utils/logger';
