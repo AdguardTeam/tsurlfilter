@@ -11,6 +11,7 @@ export const PREREGISTERED_SCRIPTS_DIR = 'preregistered-scripts';
 /**
  * Number of hex characters to keep from the full SHA-256 digest.
  * 16 hex chars (64 bits) keeps per-hash filenames short while collision risk
+ * stays negligible for the realistic number of distinct rules.
  */
 const HASH_LENGTH = 16;
 
@@ -67,5 +68,5 @@ export const computeJsRuleHash = async (body: string): Promise<string> => {
  * @returns Normalized domain string.
  */
 export const normalizeDomain = (domain: string): string => {
-    return domain.trim().toLowerCase().replace(/^\.+|\.+$/g, '');
+    return domain.trim().toLowerCase().replace(/^www\./, '').replace(/^\.+|\.+$/g, '');
 };

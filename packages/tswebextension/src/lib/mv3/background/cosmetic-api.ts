@@ -560,8 +560,9 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         // Skip local script / scriptlet injection for preregistered domains —
         // those are handled by preregistered content scripts, and injecting
-        // them again here would cause double execution (the two guard
-        // mechanisms are independent and cannot cross-deduplicate).
+        // them again here would cause double execution. `remoteRules` below
+        // doesn't need this guard: it only ever contains custom/user filter
+        // rules, which preregistered scripts (local filters only) never cover.
         const domain = getDomain(frameContext.url);
         if (!domain || !CosmeticApi.isPreregisteredDomain(domain)) {
             tasks.push(

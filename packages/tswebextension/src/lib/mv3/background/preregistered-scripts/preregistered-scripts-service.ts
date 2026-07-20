@@ -130,8 +130,9 @@ export class PreregisteredScriptsService {
         let scripts: ContentScriptDescriptor[] = [];
 
         if (filteringEnabled && domains.length > 0) {
+            const normalizedDomains = [...new Set(domains.map(normalizeDomain))];
             scripts = await PreregisteredScriptsService.buildDomainScripts(
-                domains.map(normalizeDomain),
+                normalizedDomains,
                 scriptsPath,
             );
         }

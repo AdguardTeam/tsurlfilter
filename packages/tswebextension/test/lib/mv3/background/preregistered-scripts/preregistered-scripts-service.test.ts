@@ -197,6 +197,26 @@ describe('PreregisteredScriptsService', () => {
             expect(scripts).toHaveLength(1);
             expect(scripts[0].id).toBe('youtube.com');
         });
+
+        it('dedupes domains that collapse to the same value after normalization (e.g. www. and apex)', async () => {
+            // Regression test: `normalizeDomain` strips a leading `www.` label,
+            // so `www.youtube.com` and `youtube.com` both normalize to
+            // `youtube.com`. Without deduping, this used to produce two
+            // registrations with the same `id`, and `ContentScriptManager.sync`
+            // would throw "Duplicate script ID".
+            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+
+            const result = await PreregisteredScriptsService.sync(
+                true,
+                ['www.youtube.com', 'youtube.com'],
+                SCRIPTS_PATH,
+            );
+
+            expect(result).toBe(true);
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts).toHaveLength(1);
+            expect(scripts[0].id).toBe('youtube.com');
+        });
     });
 
     describe('sync — subdomain wildcard collapsing', () => {

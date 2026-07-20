@@ -70,7 +70,7 @@ const makeFrameContext = (url: string): object => ({
             rawRules: [],
         },
         remoteRules: {
-            scriptTexts: 'console.log("remote")',
+            scriptText: 'console.log("remote")',
             rawRules: [],
         },
         cssText: '.ad { display: none }',
@@ -147,6 +147,19 @@ describe('CosmeticApi — preregistered script domains', () => {
         it('does NOT skip local rules when preregistered domains list is empty', async () => {
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
                 makeFrameContext('https://youtube.com/') as any,
+            );
+
+            const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
+
+            await CosmeticApi.applyCosmeticRules(1, 0, false);
+
+            expect(applyLocal).toHaveBeenCalled();
+        });
+
+        it('applies local rules when getDomain() returns null (e.g. about:blank)', async () => {
+            CosmeticApi.setPreregisteredScriptDomains(['example.com']);
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(
+                makeFrameContext('about:blank') as any,
             );
 
             const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
