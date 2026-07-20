@@ -10,9 +10,7 @@ export const PREREGISTERED_SCRIPTS_DIR = 'preregistered-scripts';
 
 /**
  * Number of hex characters to keep from the full SHA-256 digest.
- *
  * 16 hex chars (64 bits) keeps per-hash filenames short while collision risk
- * stays negligible for the realistic number of distinct rules (thousands).
  */
 const HASH_LENGTH = 16;
 
