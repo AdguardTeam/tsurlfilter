@@ -524,13 +524,6 @@ export class TsWebExtension implements AppInterface<
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
-        // Set preregistered script domains so the cosmetic API skips
-        // dynamic injection for these domains (handled by preregistered
-        // content scripts instead).
-        if (configuration.preregisteredScriptDomains) {
-            CosmeticApi.setPreregisteredScriptDomains(configuration.preregisteredScriptDomains);
-        }
-
         // Update previously opened tabs with new rules - find for each tab
         // new main frame rule.
         await tabsApi.updateCurrentTabsMainFrameRules();
@@ -540,12 +533,23 @@ export class TsWebExtension implements AppInterface<
 
         documentBlockingService.configure(config);
 
+        // Sync preregistered scripts BEFORE disabling dynamic injection for
+        // their domains, to avoid a gap where neither is active.
+        let preregisteredSyncSucceeded = false;
         if (configuration.preregisteredScriptDomains && configuration.preregisteredScriptsPath) {
-            await PreregisteredScriptsService.sync(
+            preregisteredSyncSucceeded = await PreregisteredScriptsService.sync(
                 configuration.settings.filteringEnabled,
                 configuration.preregisteredScriptDomains,
                 configuration.preregisteredScriptsPath,
             );
+        }
+
+        // Only skip dynamic injection if sync succeeded; otherwise keep it
+        // enabled as a fallback.
+        if (configuration.preregisteredScriptDomains && preregisteredSyncSucceeded) {
+            CosmeticApi.setPreregisteredScriptDomains(configuration.preregisteredScriptDomains);
+        } else {
+            CosmeticApi.setPreregisteredScriptDomains([]);
         }
 
         logger.trace('[tsweb.TsWebExtension.configure]: end');

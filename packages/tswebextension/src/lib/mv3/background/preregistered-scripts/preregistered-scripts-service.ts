@@ -19,7 +19,12 @@ import { logger } from '../../../common/utils/logger';
 import { type ContentScriptDescriptor, ContentScriptManager } from '../content-script-manager';
 import { engineApi } from '../engine-api';
 
-import { computeJsRuleHash, computeScriptletHash, SHARED_BUNDLE_FILENAME } from './hasher';
+import {
+    computeJsRuleHash,
+    computeScriptletHash,
+    normalizeDomain,
+    SHARED_BUNDLE_FILENAME,
+} from './hasher';
 
 /**
  * Namespace for content script registration. Must be stable across sessions.
@@ -126,22 +131,36 @@ export class PreregisteredScriptsService {
      * @param domains List of preregistered domain strings.
      * @param scriptsPath Extension-relative path to the preregistered scripts
      * directory (e.g. `filters/preregistered-scripts`).
+     *
+     * @returns `true` if all scripts were registered/updated/removed
+     * successfully, `false` if any operation failed. Callers should only
+     * treat these domains as "covered by preregistered scripts" (e.g. by
+     * disabling the dynamic injection fallback) when this resolves to `true`.
      */
     public static async sync(
         filteringEnabled: boolean,
         domains: string[],
         scriptsPath: string,
-    ): Promise<void> {
+    ): Promise<boolean> {
         let scripts: ContentScriptDescriptor[] = [];
 
         if (filteringEnabled && domains.length > 0) {
-            scripts = await PreregisteredScriptsService.buildDomainScripts(domains, scriptsPath);
+            scripts = await PreregisteredScriptsService.buildDomainScripts(
+                domains.map(normalizeDomain),
+                scriptsPath,
+            );
         }
 
         try {
-            await ContentScriptManager.sync(PREREGISTERED_SCRIPTS_NAMESPACE, scripts);
+            const errors = await ContentScriptManager.sync(PREREGISTERED_SCRIPTS_NAMESPACE, scripts);
+            if (errors.length > 0) {
+                logger.error(`[tsweb.PreregisteredScriptsService.sync]: ${errors.length} operation(s) failed while syncing preregistered scripts`);
+                return false;
+            }
+            return true;
         } catch (e) {
             logger.error('[tsweb.PreregisteredScriptsService.sync]: Failed to sync preregistered scripts', e);
+            return false;
         }
     }
 
@@ -149,7 +168,7 @@ export class PreregisteredScriptsService {
      * Builds MAIN-world content-script descriptors with wildcard `matches`
      * and `excludeMatches` for subdomains with different rule sets.
      *
-     * @param allDomains All preregistered domains.
+     * @param allDomains All preregistered domains (already normalized).
      * @param scriptsPath Extension-relative path to preregistered scripts.
      *
      * @returns Array of content-script descriptors.
@@ -170,34 +189,37 @@ export class PreregisteredScriptsService {
         );
         const hashCache = new Map<string, Set<string>>(hashEntries);
 
-        for (const domain of allDomains) {
-            const domainHashes = hashCache.get(domain)!;
-
+        for (const [domain, domainHashes] of hashEntries) {
             if (domainHashes.size === 0) {
                 continue;
             }
 
             // Skip if same hashes as closest parent (parent's wildcard covers it).
             const parent = findClosestParentDomain(domain, allDomains);
-            if (parent && setsEqual(domainHashes, hashCache.get(parent)!)) {
+            const parentHashes = parent ? hashCache.get(parent) : undefined;
+            if (parentHashes && setsEqual(domainHashes, parentHashes)) {
                 continue;
             }
 
             // Find subdomains with different hash sets → excludeMatches.
             const excludeMatches: string[] = [];
-            for (const other of allDomains) {
+            for (const [other, otherHashes] of hashEntries) {
                 if (other === domain || !other.endsWith(`.${domain}`)) {
                     continue;
                 }
-                const otherHashes = hashCache.get(other)!;
                 if (!setsEqual(otherHashes, domainHashes)) {
                     excludeMatches.push(...domainToMatchPatterns(other));
                 }
             }
+            // Sort for deterministic output — avoids spurious `updateContentScripts`
+            // calls caused by non-guaranteed iteration/array order between
+            // otherwise-identical `configure()` calls.
+            excludeMatches.sort();
 
-            const js = [sharedBundlePath, ...[...domainHashes].map(
-                (hash) => getScriptPath(scriptsPath, hash),
-            )];
+            const js = [
+                sharedBundlePath,
+                ...[...domainHashes].sort().map((hash) => getScriptPath(scriptsPath, hash)),
+            ];
 
             scripts.push({
                 id: domain,
@@ -218,6 +240,14 @@ export class PreregisteredScriptsService {
      * Queries the engine for cosmetic rules applicable to `domain` and computes
      * their hashes.
      *
+     * Only rules from **local** (built-in, pre-bundled) filters are hashed.
+     * Rules from custom filters or user rules are intentionally excluded:
+     * they were never scanned by the build-time collector, so no matching
+     * `{hash}.js` file exists for them, and including them here would produce
+     * a hash with no corresponding file, breaking content-script registration
+     * for the whole domain. Such rules continue to be handled by the existing
+     * dynamic (non-preregistered) injection path in {@link CosmeticApi}.
+     *
      * @param domain Domain string.
      *
      * @returns Set of rule hash strings.
@@ -228,12 +258,13 @@ export class PreregisteredScriptsService {
             url,
             CosmeticOption.CosmeticOptionJS,
         );
-        const rules = cosmeticResult.JS.getRules();
+        const localRules = cosmeticResult.JS.getRules()
+            .filter((rule) => engineApi.isLocalFilter(rule.getFilterListId()));
 
         const hashes = new Set<string>();
 
         const hashList = await Promise.all(
-            rules.map(async (rule) => {
+            localRules.map(async (rule) => {
                 try {
                     if (rule.isScriptlet) {
                         const data = rule.getScriptletData();

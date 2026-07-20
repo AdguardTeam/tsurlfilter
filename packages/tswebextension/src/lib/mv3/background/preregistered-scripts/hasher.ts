@@ -59,3 +59,19 @@ export const computeScriptletHash = async (name: string, args: string[]): Promis
 export const computeJsRuleHash = async (body: string): Promise<string> => {
     return hashString(body);
 };
+
+/**
+ * Normalizes a domain string for comparison: trims whitespace, lower-cases it,
+ * and strips leading/trailing dots.
+ *
+ * Shared by build-time collection (browser-extension) and runtime matching
+ * (`CosmeticApi`, `PreregisteredScriptsService`) so both sides agree on
+ * whether two domain strings refer to the same domain.
+ *
+ * @param domain Raw domain string.
+ *
+ * @returns Normalized domain string.
+ */
+export const normalizeDomain = (domain: string): string => {
+    return domain.trim().toLowerCase().replace(/^\.+|\.+$/g, '');
+};

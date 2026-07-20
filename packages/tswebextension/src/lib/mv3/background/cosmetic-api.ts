@@ -10,6 +10,7 @@ import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
+import { normalizeDomain } from './preregistered-scripts/hasher';
 import { ScriptingApi } from './scripting-api';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { UserScriptsApi } from './user-scripts-api';
@@ -63,9 +64,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param domains List of preregistered domain strings (e.g. `["youtube.com"]`).
      */
     public static setPreregisteredScriptDomains(domains: string[]): void {
-        CosmeticApi.preregisteredScriptDomains = new Set(
-            domains.map((d) => d.trim().toLowerCase().replace(/^\.+|\.+$/g, '')),
-        );
+        CosmeticApi.preregisteredScriptDomains = new Set(domains.map(normalizeDomain));
     }
 
     /**
@@ -77,7 +76,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @returns `true` if the domain matches a preregistered domain.
      */
     private static isPreregisteredDomain(domain: string): boolean {
-        const normalized = domain.toLowerCase();
+        const normalized = normalizeDomain(domain);
         for (const preregistered of CosmeticApi.preregisteredScriptDomains) {
             if (normalized === preregistered || normalized.endsWith(`.${preregistered}`)) {
                 return true;

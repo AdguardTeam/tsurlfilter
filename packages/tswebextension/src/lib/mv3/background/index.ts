@@ -90,6 +90,7 @@ export {
     hashString,
     computeScriptletHash,
     computeJsRuleHash,
+    normalizeDomain,
     SHARED_BUNDLE_FILENAME,
     PREREGISTERED_SCRIPTS_DIR,
     PreregisteredScriptsService,
