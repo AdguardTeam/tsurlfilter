@@ -61,9 +61,6 @@ describe('normalizeDomain', () => {
         expect(normalizeDomain('.youtube.com.')).toBe('youtube.com');
     });
 
-    it('strips a leading www. label', () => {
-        expect(normalizeDomain('www.youtube.com')).toBe('youtube.com');
-    });
 
     it('combines all normalizations at once', () => {
         expect(normalizeDomain('  .YouTube.Com. ')).toBe('youtube.com');

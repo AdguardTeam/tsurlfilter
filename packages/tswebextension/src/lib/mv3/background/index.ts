@@ -95,3 +95,8 @@ export {
     PREREGISTERED_SCRIPTS_DIR,
     PreregisteredScriptsService,
 } from './preregistered-scripts';
+
+// re-exported so consumers can type `app.ts`'s public `getCosmeticResult` /
+// `engine-api.ts`'s `matchCosmetic` results without importing directly from
+// `@adguard/tsurlfilter`.
+export { type CosmeticOption, type CosmeticResult } from '@adguard/tsurlfilter';

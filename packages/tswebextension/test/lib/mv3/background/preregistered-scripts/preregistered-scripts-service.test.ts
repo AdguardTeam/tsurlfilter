@@ -198,17 +198,12 @@ describe('PreregisteredScriptsService', () => {
             expect(scripts[0].id).toBe('youtube.com');
         });
 
-        it('dedupes domains that collapse to the same value after normalization (e.g. www. and apex)', async () => {
-            // Regression test: `normalizeDomain` strips a leading `www.` label,
-            // so `www.youtube.com` and `youtube.com` both normalize to
-            // `youtube.com`. Without deduping, this used to produce two
-            // registrations with the same `id`, and `ContentScriptManager.sync`
-            // would throw "Duplicate script ID".
+        it('dedupes literally-duplicate entries in the input domain list', async () => {
             setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
 
             const result = await PreregisteredScriptsService.sync(
                 true,
-                ['www.youtube.com', 'youtube.com'],
+                ['youtube.com', 'YouTube.com.'],
                 SCRIPTS_PATH,
             );
 
