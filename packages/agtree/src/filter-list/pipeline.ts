@@ -44,7 +44,7 @@ import { asError } from '../utils/error';
 import { SYNTAX_ALL, SYNTAX_UNKNOWN } from '../utils/syntax-flags';
 
 import { FilterListScanner } from './scanner';
-import type { FilterListParseOptions, NewLine } from './types';
+import type { FilterListParseOptions } from './types';
 
 /**
  * When `options.tolerant` is omitted, the pipeline runs in tolerant mode:
@@ -102,7 +102,7 @@ export class FilterListPipeline {
 
         this.scanner.scan(
             source,
-            (kind: RuleKind, ruleStart: number, ruleEnd: number, _nlType: NewLine | undefined, ctx: ParserContext) => {
+            (kind: RuleKind, ruleStart: number, ruleEnd: number, ctx: ParserContext) => {
                 if (tolerant) {
                     try {
                         children.push(FilterListPipeline.buildRuleAst(kind, ruleStart, ruleEnd, ctx, options));

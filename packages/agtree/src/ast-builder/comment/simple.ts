@@ -11,6 +11,7 @@ import {
     CM_SIMPLE_TEXT_END_OFFSET,
     CM_SIMPLE_TEXT_START_OFFSET,
 } from '../../parser/comment/simple';
+import { SPACE } from '../../utils/constants';
 import {
     SYNTAX_ADG,
     SYNTAX_ALL,
@@ -55,6 +56,15 @@ export class SimpleCommentAstBuilder {
             marker,
             text,
         };
+
+        // Preserve the original marker-to-text whitespace when it deviates from a
+        // single space (the generator's default). The structural parser trims this
+        // gap off the text bounds, so without this the spacing would be lost and
+        // `#comment` / `# comment` would become indistinguishable.
+        const markerSpacing = source.slice(markerStart + 1, textStart);
+        if (markerSpacing !== SPACE) {
+            result.markerSpacing = markerSpacing;
+        }
 
         if (options.isLocIncluded) {
             result.start = 0;

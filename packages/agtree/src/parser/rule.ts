@@ -22,6 +22,7 @@ import {
     CR_BODY_END,
     CR_BODY_START,
     CR_BODY_START_TI,
+    CR_FLAG_BODY_ABP_CSS_INJECTION,
     CR_FLAG_BODY_ADG_SCRIPTLET,
     CR_FLAG_BODY_UBO_CSS_INJECTION,
     CR_FLAG_BODY_UBO_SCRIPTLET,
@@ -271,14 +272,14 @@ export class RuleParser implements RootParser<RuleParserOptions> {
                             UboHtmlFilteringParser.parse(ctx, classified, {
                                 parseUboSpecificRules,
                                 onlyHeader: !parseHtmlFilteringRuleBodies,
-                            });
+                            }, startTi, endTi);
                             return RuleKind.Cosmetic;
                         }
 
                         // No ^: normal element hiding / scriptlet flow
                         // Always run modifier detection so we can throw
                         // symmetrically when parseUboSpecificRules is disabled.
-                        ElementHidingParser.parse(ctx, classified, { parseUboSpecificRules: true });
+                        ElementHidingParser.parse(ctx, classified, { parseUboSpecificRules: true }, startTi, endTi);
 
                         // After ElementHidingParser.parse() the uBO modifier records
                         // (if any) live at CR_UBO_MODS_OFFSET with stride
@@ -311,25 +312,48 @@ export class RuleParser implements RootParser<RuleParserOptions> {
                             }
                         }
 
+                        // Legacy ADG/ABP CSS injection: `##selector { declarations }`.
+                        // ElementHidingParser sets CR_FLAG_BODY_ABP_CSS_INJECTION when the
+                        // body contains a top-level declaration block (e.g.
+                        // `##.banner { display: none; }`). Route to the CSS injection
+                        // parser/builder so the rule becomes a CssInjectionRule, matching
+                        // the legacy parser's behavior.
+                        // eslint-disable-next-line no-bitwise
+                        if ((ctx.data[CR_FLAGS_OFFSET] & CR_FLAG_BODY_ABP_CSS_INJECTION) !== 0) {
+                            const cssParsed = AdgCssInjectionParser.parse(
+                                ctx,
+                                ctx.data[CR_BODY_START_TI],
+                                endTi,
+                                scriptletBodyDataOffset(ctx),
+                                false, // not required — fall back to element hiding if no brace
+                            );
+
+                            if (cssParsed) {
+                                // eslint-disable-next-line no-bitwise
+                                ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ADG_CSS_INJECTION << CR_SEP_KIND_SHIFT;
+                                return RuleKind.Cosmetic;
+                            }
+                        }
+
                         // Detect +js( or script:inject( prefix
                         if (detectUboScriptletPrefix(ctx.source, ctx.data[CR_BODY_START])) {
                             // eslint-disable-next-line no-bitwise
                             ctx.data[CR_FLAGS_OFFSET] |= CR_FLAG_BODY_UBO_SCRIPTLET;
-                            ScriptletBodyParser.parse(ctx, classified);
+                            ScriptletBodyParser.parse(ctx, classified, endTi);
                         }
                         return RuleKind.Cosmetic;
                     }
 
                     case CR_SEP_KIND_ABP_SNIPPET: {
                         // #$# / #@$# — ambiguous: CSS injection if body has braces, else ABP snippet.
-                        parseCommonCosmeticHeader(ctx, classified, 'CSS injection rule');
+                        parseCommonCosmeticHeader(ctx, classified, 'CSS injection rule', startTi, endTi);
 
                         const bodyStartTi = ctx.data[CR_BODY_START_TI];
 
                         const parsed = AdgCssInjectionParser.parse(
                             ctx,
                             bodyStartTi,
-                            ctx.tokenCount,
+                            endTi,
                             scriptletBodyDataOffset(ctx),
                             false, // not required — fall back to ABP if no brace found
                         );
@@ -353,17 +377,17 @@ export class RuleParser implements RootParser<RuleParserOptions> {
                         }
                         // eslint-disable-next-line no-bitwise
                         ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ABP_SNIPPET << CR_SEP_KIND_SHIFT;
-                        ScriptletBodyParser.parse(ctx, classified);
+                        ScriptletBodyParser.parse(ctx, classified, endTi);
                         return RuleKind.Cosmetic;
                     }
 
                     case CR_SEP_KIND_ADG_CSS_INJECTION: {
                         // #$?# / #@$?# — always CSS injection (extended CSS, required braces).
-                        parseCommonCosmeticHeader(ctx, classified, 'CSS injection rule');
+                        parseCommonCosmeticHeader(ctx, classified, 'CSS injection rule', startTi, endTi);
                         AdgCssInjectionParser.parse(
                             ctx,
                             ctx.data[CR_BODY_START_TI],
-                            ctx.tokenCount,
+                            endTi,
                             scriptletBodyDataOffset(ctx),
                             true, // required — must have braces
                         );
@@ -373,22 +397,22 @@ export class RuleParser implements RootParser<RuleParserOptions> {
                     }
 
                     case CR_SEP_KIND_ADG_JS: {
-                        parseCommonCosmeticHeader(ctx, classified, 'ADG JS injection rule');
+                        parseCommonCosmeticHeader(ctx, classified, 'ADG JS injection rule', startTi, endTi);
                         // eslint-disable-next-line no-bitwise
                         ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ADG_JS << CR_SEP_KIND_SHIFT;
                         if (detectAdgScriptletPrefix(ctx.source, ctx.data[CR_BODY_START])) {
                             // eslint-disable-next-line no-bitwise
                             ctx.data[CR_FLAGS_OFFSET] |= CR_FLAG_BODY_ADG_SCRIPTLET;
-                            ScriptletBodyParser.parse(ctx, classified);
+                            ScriptletBodyParser.parse(ctx, classified, endTi);
                         }
                         return RuleKind.Cosmetic;
                     }
 
                     case CR_SEP_KIND_ADG_HTML_FILTERING: {
                         if (parseHtmlFilteringRuleBodies) {
-                            AdgHtmlFilteringParser.parse(ctx, classified);
+                            AdgHtmlFilteringParser.parse(ctx, classified, startTi, endTi);
                         } else {
-                            parseCommonCosmeticHeader(ctx, classified, 'ADG HTML filtering rule');
+                            parseCommonCosmeticHeader(ctx, classified, 'ADG HTML filtering rule', startTi, endTi);
                             // eslint-disable-next-line no-bitwise
                             ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ADG_HTML_FILTERING << CR_SEP_KIND_SHIFT;
                         }

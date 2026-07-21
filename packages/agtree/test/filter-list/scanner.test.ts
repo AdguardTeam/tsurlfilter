@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { FilterListScanner } from '../../src/filter-list/scanner';
-import type { NewLine, ScannedRuleInfo } from '../../src/filter-list/types';
+import type { ScannedRuleInfo } from '../../src/filter-list/types';
 import { RuleKind } from '../../src/parser/rule';
 
 /**
@@ -11,7 +11,6 @@ import { RuleKind } from '../../src/parser/rule';
  * @param kind Structural classification of the rule.
  * @param ruleStart Source start offset.
  * @param ruleEnd Source end offset.
- * @param nlType Newline type following the rule.
  *
  * @returns A {@link ScannedRuleInfo} object.
  */
@@ -19,12 +18,10 @@ const toInfo = (
     kind: RuleKind,
     ruleStart: number,
     ruleEnd: number,
-    nlType: NewLine | undefined,
 ): ScannedRuleInfo => ({
     kind,
     ruleStart,
     ruleEnd,
-    nlType,
 });
 
 type EmptyLineInfo = {
@@ -53,9 +50,9 @@ describe('FilterListScanner', () => {
 
         scanner.scan(
             source,
-            (kind, ruleStart, ruleEnd, nlType) => {
+            (kind, ruleStart, ruleEnd) => {
                 // Collect into ScannedRuleInfo shape to keep existing assertions unchanged
-                rules.push(toInfo(kind, ruleStart, ruleEnd, nlType));
+                rules.push(toInfo(kind, ruleStart, ruleEnd));
             },
             (start: number, end: number) => {
                 empties.push({ start, end });
@@ -71,7 +68,6 @@ describe('FilterListScanner', () => {
         expect(rules[0].kind).toBe(RuleKind.Network);
         expect(rules[0].ruleStart).toBe(0);
         expect(rules[0].ruleEnd).toBe(14);
-        expect(rules[0].nlType).toBeUndefined();
         expect(empties).toHaveLength(0);
     });
 
@@ -80,27 +76,20 @@ describe('FilterListScanner', () => {
         const { rules } = collectRules(source);
         expect(rules).toHaveLength(3);
         expect(rules[0].kind).toBe(RuleKind.Network);
-        expect(rules[0].nlType).toBe('lf');
         expect(rules[1].kind).toBe(RuleKind.Comment);
-        expect(rules[1].nlType).toBe('lf');
         expect(rules[2].kind).toBe(RuleKind.Cosmetic);
-        expect(rules[2].nlType).toBeUndefined();
     });
 
-    test('detects CRLF newlines', () => {
+    test('splits rules across CRLF newlines', () => {
         const source = '||a.com^\r\n||b.com^';
         const { rules } = collectRules(source);
         expect(rules).toHaveLength(2);
-        expect(rules[0].nlType).toBe('crlf');
-        expect(rules[1].nlType).toBeUndefined();
     });
 
-    test('detects CR newlines', () => {
+    test('splits rules across CR newlines', () => {
         const source = '||a.com^\r||b.com^';
         const { rules } = collectRules(source);
         expect(rules).toHaveLength(2);
-        expect(rules[0].nlType).toBe('cr');
-        expect(rules[1].nlType).toBeUndefined();
     });
 
     test('handles empty lines', () => {
@@ -114,7 +103,6 @@ describe('FilterListScanner', () => {
         const source = '||a.com^\n';
         const { rules, empties } = collectRules(source);
         expect(rules).toHaveLength(1);
-        expect(rules[0].nlType).toBe('lf');
         expect(empties).toHaveLength(1);
     });
 
@@ -167,14 +155,10 @@ describe('FilterListScanner', () => {
         expect(empties).toHaveLength(4);
     });
 
-    test('mixed newline types', () => {
+    test('splits rules across mixed newline types', () => {
         const source = '! a\r\n! b\r! c\n! d';
         const { rules } = collectRules(source);
         expect(rules).toHaveLength(4);
-        expect(rules[0].nlType).toBe('crlf');
-        expect(rules[1].nlType).toBe('cr');
-        expect(rules[2].nlType).toBe('lf');
-        expect(rules[3].nlType).toBeUndefined();
     });
 
     test('large list (1000 rules) produces correct count', () => {
@@ -196,7 +180,7 @@ describe('FilterListScanner', () => {
 
             tinyScanner.scan(
                 oversizedRule,
-                (kind, ruleStart, ruleEnd, nlType) => { rules.push(toInfo(kind, ruleStart, ruleEnd, nlType)); },
+                (kind, ruleStart, ruleEnd) => { rules.push(toInfo(kind, ruleStart, ruleEnd)); },
                 () => {},
                 (e) => { errors.push(e); },
             );
@@ -215,7 +199,7 @@ describe('FilterListScanner', () => {
 
             tinyScanner.scan(
                 source,
-                (kind, ruleStart, ruleEnd, nlType) => { rules.push(toInfo(kind, ruleStart, ruleEnd, nlType)); },
+                (kind, ruleStart, ruleEnd) => { rules.push(toInfo(kind, ruleStart, ruleEnd)); },
                 () => {},
                 (e) => { errors.push(e); },
             );
@@ -281,7 +265,7 @@ describe('FilterListScanner', () => {
 
             scanner2.scan(
                 twoModRule,
-                (kind, ruleStart, ruleEnd, nlType) => { rules.push(toInfo(kind, ruleStart, ruleEnd, nlType)); },
+                (kind, ruleStart, ruleEnd) => { rules.push(toInfo(kind, ruleStart, ruleEnd)); },
                 () => {},
                 (e) => { errors.push(e); },
             );
@@ -317,7 +301,7 @@ describe('FilterListScanner', () => {
 
             scanner2.scan(
                 source,
-                (kind, ruleStart, ruleEnd, nlType) => { rules.push(toInfo(kind, ruleStart, ruleEnd, nlType)); },
+                (kind, ruleStart, ruleEnd) => { rules.push(toInfo(kind, ruleStart, ruleEnd)); },
                 () => {},
                 (e) => { errors.push(e); },
             );

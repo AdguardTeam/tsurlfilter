@@ -709,6 +709,17 @@ export interface CommentRule extends CommentBase {
      * If the rule is `! This is just a comment`, then the text will be `This is just a comment`.
      */
     text: Value;
+
+    /**
+     * Verbatim whitespace between the marker and the text.
+     *
+     * The structural parser trims this whitespace off the text bounds, so it is
+     * stored here to allow lossless generation and correct conversion.
+     * When this field is omitted, the generator assumes a single space.
+     * An empty string means the marker is directly followed by the text, as in
+     * `#comment` or `#####`.
+     */
+    markerSpacing?: string;
 }
 
 /**

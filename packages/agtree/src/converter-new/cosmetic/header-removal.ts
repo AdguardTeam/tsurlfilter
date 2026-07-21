@@ -1,0 +1,128 @@
+/**
+ * @file Converter for request header removal rules.
+ */
+
+import { RuleParserPipeline } from '../../ast-builder/rule-parser';
+import { createModifierListNode, createModifierNode } from '../../ast-utils-new/modifiers';
+import { createNetworkRuleNode } from '../../ast-utils-new/network-rules';
+import { isUboResponseHeaderRemovalRuleBody } from '../../common/ubo-html-filtering-body-common';
+import { RuleConversionError } from '../../errors/rule-conversion-error';
+import {
+    type AnyRule,
+    CosmeticRuleType,
+    type HtmlFilteringRule,
+    type HtmlFilteringRuleBody,
+    type PseudoClassSelector,
+    RuleCategory,
+} from '../../nodes-new';
+import { EMPTY, UBO_RESPONSEHEADER_FN } from '../../utils/constants';
+import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_START } from '../../utils/regexp';
+import { SYNTAX_ADG } from '../../utils/syntax-flags';
+import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
+
+const ADG_REMOVEHEADER_MODIFIER = 'removeheader';
+
+export const ERROR_MESSAGES = {
+    EMPTY_PARAMETER: `Empty parameter for '${UBO_RESPONSEHEADER_FN}' function`,
+    EXPECTED_END_OF_RULE: "Expected end of rule, but got '%s'",
+    MULTIPLE_DOMAINS_NOT_SUPPORTED: 'Multiple domains are not supported yet',
+};
+
+/**
+ * Converter for request header removal rules.
+ *
+ * @todo Implement `convertToUbo` (ABP currently doesn't support header removal rules).
+ */
+export class HeaderRemovalRuleConverter extends RuleConverterBase {
+    /**
+     * Converts a header removal rule to AdGuard syntax, if possible.
+     *
+     * @param rule Rule node to convert.
+     *
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference.
+     *
+     * @throws If the rule is invalid or cannot be converted.
+     *
+     * @example
+     * If the input rule is:
+     * ```adblock
+     * example.com##^responseheader(header-name)
+     * ```
+     * The output will be:
+     * ```adblock
+     * ||example.com^$removeheader=header-name
+     * ```
+     */
+    public static convertToAdg(rule: AnyRule): NodeConversionResult<AnyRule> {
+        // TODO: Add support for ABP syntax once it starts supporting header removal rules
+        // Leave the rule as is if it's not a header removal rule
+        if (rule.category !== RuleCategory.Cosmetic || rule.type !== CosmeticRuleType.HtmlFilteringRule) {
+            return createNodeConversionResult([rule], false);
+        }
+
+        // Handle case when body is raw value string.
+        // If so, try to parse it first using the pipeline.
+        let body: HtmlFilteringRuleBody | null = null;
+        if (rule.body.type === 'Raw') {
+            // Re-parse the full rule to get the parsed body
+            const pipeline = new RuleParserPipeline();
+            const parsedRule = pipeline.parse(
+                `example.com##^${rule.body.value}`,
+                { parseHtmlFilteringRuleBodies: true },
+            ) as HtmlFilteringRule;
+            body = parsedRule.body as HtmlFilteringRuleBody;
+        } else {
+            body = rule.body as HtmlFilteringRuleBody;
+        }
+
+        // Check if the rule body is a uBO responseheader(...) function
+        if (!body || !isUboResponseHeaderRemovalRuleBody(body)) {
+            return createNodeConversionResult([rule], false);
+        }
+
+        // Length of AST nodes, types of nodes, non-null argument
+        // check are already done in `isUboResponseHeaderRemovalRuleBody()`
+        const { selectorList } = body;
+        const complexSelector = selectorList.children[0];
+        const pseudoClassSelector = complexSelector.children[0] as PseudoClassSelector;
+        const headerName = pseudoClassSelector.argument!.value;
+
+        // Prepare network rule pattern
+        const pattern: string[] = [];
+
+        if (rule.domains.children.length === 1) {
+            // If the rule has only one domain, we can use a simple network rule pattern:
+            // ||single-domain-from-the-rule^
+            pattern.push(ADBLOCK_URL_START, rule.domains.children[0].value, ADBLOCK_URL_SEPARATOR);
+        } else if (rule.domains.children.length > 1) {
+            // TODO: Add support for multiple domains, for example:
+            // example.com,example.org,example.net##^responseheader(header-name)
+            // We should consider allowing $domain with $removeheader modifier,
+            // for example:
+            // $removeheader=header-name,domain=example.com|example.org|example.net
+            throw new RuleConversionError(ERROR_MESSAGES.MULTIPLE_DOMAINS_NOT_SUPPORTED);
+        }
+
+        // Prepare network rule modifiers
+        const modifiers = createModifierListNode();
+
+        modifiers.children.push(createModifierNode(ADG_REMOVEHEADER_MODIFIER, headerName));
+
+        // Construct the network rule
+        return createNodeConversionResult(
+            [
+                createNetworkRuleNode(
+                    pattern.join(EMPTY),
+                    modifiers,
+                    // Copy the exception flag
+                    rule.exception,
+                    SYNTAX_ADG,
+                ),
+            ],
+            true,
+        );
+    }
+}

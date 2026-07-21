@@ -212,7 +212,7 @@ export class NetworkRuleParser implements StructuralParser {
 
         // Parse modifiers (if separator found)
         if (sepTi !== -1) {
-            ModifierListParser.parse(ctx, sepTi + 1, dataOffset + NR_MODIFIER_RECORDS_OFFSET, dataOffset);
+            ModifierListParser.parse(ctx, sepTi + 1, dataOffset + NR_MODIFIER_RECORDS_OFFSET, dataOffset, endTi);
         } else {
             d[dataOffset + NR_MODIFIER_COUNT_OFFSET] = 0;
         }
@@ -238,7 +238,7 @@ export class NetworkRuleParser implements StructuralParser {
                 break;
             }
 
-            if (isPotentialNetModifier(ctx, i + 1)) {
+            if (isPotentialNetModifier(ctx, i + 1, endTi)) {
                 return i;
             }
         }

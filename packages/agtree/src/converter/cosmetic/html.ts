@@ -674,20 +674,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
         if (minValues.length > 1) {
             min = Math.max(...minValues);
-            // eslint-disable-next-line no-console
-            console.warn(
-                `Multiple [min-length] selectors found among: [${minValues.join(', ')}]. Selected largest: ${min}.`,
-            );
         } else if (minValues.length === 1) {
             [min] = minValues;
         }
 
         if (maxValues.length > 1) {
             max = Math.min(...maxValues);
-            // eslint-disable-next-line no-console
-            console.warn(
-                `Multiple [max-length] selectors found among: [${maxValues.join(', ')}]. Selected smallest: ${max}.`,
-            );
         } else if (maxValues.length === 1) {
             [max] = maxValues;
         }

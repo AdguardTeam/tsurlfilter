@@ -107,16 +107,17 @@ export class ScriptletBodyParser implements CosmeticBodyParser {
      * @param ctx Parser context.
      * @param _classified Packed classifier result. Currently unused; kept
      *   for {@link CosmeticBodyParser} contract conformance.
+     * @param endTi Exclusive token index where the rule ends. Defaults to `ctx.tokenCount`.
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-bitwise
-    public static parse(ctx: ParserContext, _classified: number): void {
+    public static parse(ctx: ParserContext, _classified: number, endTi = ctx.tokenCount): void {
         const flags = ctx.data[CR_FLAGS_OFFSET];
         // eslint-disable-next-line no-bitwise
         const sepKind = (flags >>> CR_SEP_KIND_SHIFT) & CR_SEP_KIND_MASK;
         const bodyStartTi = ctx.data[CR_BODY_START_TI];
         const bodyStart = ctx.data[CR_BODY_START];
         const bodyEnd = ctx.data[CR_BODY_END];
-        const bodyEndTi = ctx.tokenCount;
+        const bodyEndTi = endTi;
 
         // eslint-disable-next-line no-bitwise
         if ((flags & CR_FLAG_BODY_ADG_SCRIPTLET) !== 0) {

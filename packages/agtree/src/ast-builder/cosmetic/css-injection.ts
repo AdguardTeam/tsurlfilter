@@ -57,7 +57,7 @@ import { DEFAULT_MAX_DECLARATIONS } from '../../parser/css/declaration-list/cons
 import { SelectorListParser } from '../../parser/css/selector-list';
 import { DEFAULT_MAX_COMPLEX } from '../../parser/css/selector-list/constants';
 import { COMMA } from '../../utils/constants';
-import { SYNTAX_ADG } from '../../utils/syntax-flags';
+import { SYNTAX_ABP, SYNTAX_ADG, type SyntaxFlags } from '../../utils/syntax-flags';
 import { DomainListAstBuilder } from '../misc/domain-list';
 import { ModifierListAstBuilder } from '../misc/modifier-list';
 import { type ParseOptions } from '../options';
@@ -260,11 +260,16 @@ export class CssInjectionAstBuilder {
             body.end = bodyEnd;
         }
 
+        // Determine syntax from the separator: element-hiding separators
+        // (`##` / `#@#`) mark legacy ABP CSS injection, while `$`-based
+        // separators (`#$#`, `#$?#`, …) are AdGuard-specific.
+        const syntax: SyntaxFlags = separator.value.includes('$') ? SYNTAX_ADG : SYNTAX_ABP;
+
         // Build rule node
         const rule: CssInjectionRule = {
             category: RuleCategory.Cosmetic,
             type: CosmeticRuleType.CssInjectionRule,
-            syntax: SYNTAX_ADG,
+            syntax,
             exception,
             modifiers,
             domains,

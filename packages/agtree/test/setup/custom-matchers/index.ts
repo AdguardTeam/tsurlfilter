@@ -4,3 +4,4 @@
  * @see https://vitest.dev/guide/extending-matchers#extending-matchers
  */
 import './check-conversion';
+import './check-conversion-new';

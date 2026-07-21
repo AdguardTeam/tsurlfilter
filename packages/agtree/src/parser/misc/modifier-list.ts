@@ -81,14 +81,17 @@ export class ModifierListParser implements StructuralParser {
      * @param recordsOffset Buffer offset where modifier records should be written.
      * @param headerOffset Offset within `ctx.data` where the modifier-list
      *   header fields (count) are written.
+     * @param endTi Exclusive token index where the modifier list ends. Defaults to `ctx.tokenCount`.
      */
     public static parse(
         ctx: ParserContext,
         startTi: number,
         recordsOffset: number,
         headerOffset: number,
+        endTi: number = ctx.tokenCount,
     ): void {
-        const { types, tokenCount } = ctx;
+        const { types } = ctx;
+        const tokenCount = endTi;
         let { maxMods } = ctx;
         let currentTi = startTi;
         let modCount = 0;
@@ -112,7 +115,7 @@ export class ModifierListParser implements StructuralParser {
                 // offset, so recordsOffset remains valid.
             }
 
-            const nextTi = ModifierParser.parse(ctx, currentTi, modCount, recordsOffset);
+            const nextTi = ModifierParser.parse(ctx, currentTi, modCount, recordsOffset, tokenCount);
 
             // ModifierParser.parse returns -1 if it can't start a modifier
             if (nextTi === -1) {

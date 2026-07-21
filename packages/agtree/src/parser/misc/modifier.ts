@@ -153,6 +153,7 @@ export class ModifierParser implements RecordParser {
      * @param ti Token index where the modifier starts.
      * @param modIndex Modifier index (0-based) for writing the record.
      * @param recordsOffset Buffer offset where modifier records should be written (defaults to network offset).
+     * @param endTi Exclusive token index where the modifier list ends. Defaults to `ctx.tokenCount`.
      *
      * @returns Token index after the modifier, or -1 if no modifier found.
      */
@@ -161,8 +162,10 @@ export class ModifierParser implements RecordParser {
         ti: number,
         modIndex: number,
         recordsOffset: number = NR_MODIFIER_RECORDS_OFFSET,
+        endTi: number = ctx.tokenCount,
     ): number {
-        const { types, tokenCount } = ctx;
+        const { types } = ctx;
+        const tokenCount = endTi;
         const modBase = recordsOffset + modIndex * MODIFIER_RECORD_STRIDE;
         let modFlags = 0;
 
@@ -179,8 +182,9 @@ export class ModifierParser implements RecordParser {
             ti = skipWs(ctx, ti);
         }
 
-        // Modifier name — expect identifier starting with Letter
-        if (ti >= tokenCount || types[ti] !== TokenType.Letter) {
+        // Modifier name — expect identifier starting with Letter or Digit.
+        // Digit-leading names are valid for uBO aliases like `1p` / `3p`.
+        if (ti >= tokenCount || (types[ti] !== TokenType.Letter && types[ti] !== TokenType.Digit)) {
             return -1;
         }
 

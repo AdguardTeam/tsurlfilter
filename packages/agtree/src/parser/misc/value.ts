@@ -33,7 +33,7 @@ export class ValueParser implements CursorParser {
     public static parseStandard(ctx: ParserContext, ti: number, end: number): number {
         ti = skipUntil(ctx, ti, end, TokenType.Comma);
 
-        while (ti < end && ctx.types[ti] === TokenType.Comma && !isPotentialNetModifier(ctx, ti + 1)) {
+        while (ti < end && ctx.types[ti] === TokenType.Comma && !isPotentialNetModifier(ctx, ti + 1, end)) {
             // consume non-separator comma
             ti += 1;
             ti = skipUntil(ctx, ti, end, TokenType.Comma);

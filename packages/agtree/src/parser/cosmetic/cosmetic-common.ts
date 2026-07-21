@@ -29,6 +29,12 @@ import {
 } from './constants';
 
 /**
+ * Character code of `@`, used to detect the exception marker inside a cosmetic
+ * rule separator (e.g. `#@#`, `#@$#`).
+ */
+const AT_SIGN = 0x40;
+
+/**
  * Find the closing bracket token (]) that matches the opening [.
  * Tracks bracket depth to handle nested brackets (e.g. regex character classes).
  * Skips Escaped tokens to handle \].
@@ -81,6 +87,8 @@ function findClosingBracket(
  * @param ctx Parser context.
  * @param classified Packed classifier result (separator kind + index).
  * @param ruleTypeName Human-readable rule type name for error messages.
+ * @param startTi Inclusive token index where the rule starts. Defaults to 0.
+ * @param endTi Exclusive token index where the rule ends. Defaults to `ctx.tokenCount`.
  *
  * @throws {Error} If body is empty or structure is invalid.
  */
@@ -88,6 +96,8 @@ export function parseCommonCosmeticHeader(
     ctx: ParserContext,
     classified: number,
     ruleTypeName: string,
+    startTi = 0,
+    endTi = ctx.tokenCount,
 ): void {
     const { types, source } = ctx;
 
@@ -101,26 +111,26 @@ export function parseCommonCosmeticHeader(
     const sepLen = sepSourceEnd - sepSourceStart;
 
     // Detect AdGuard modifier list prefix: [$...]
-    let domainStartTi = 0;
+    let domainStartTi = startTi;
     let hasAdgMods = false;
 
-    if (types[0] === TokenType.OpenSquare && types[1] === TokenType.DollarSign) {
+    if (types[startTi] === TokenType.OpenSquare && types[startTi + 1] === TokenType.DollarSign) {
         // Find closing ] with bracket depth tracking
-        const closeBracketTi = findClosingBracket(ctx, 1, sepTokenIndex);
+        const closeBracketTi = findClosingBracket(ctx, startTi + 1, sepTokenIndex);
 
         if (closeBracketTi < 0) {
             throw new Error('Unclosed AdGuard modifier list: missing ]');
         }
 
         // Preparse modifier list (up to closeBracketTi, exclusive)
-        if (closeBracketTi === 2) {
+        if (closeBracketTi === startTi + 2) {
             throw new Error('AdGuard modifier list [$...] is empty');
         }
 
         const savedTokenCount = ctx.tokenCount;
         try {
             ctx.tokenCount = closeBracketTi;
-            ModifierListParser.parse(ctx, 2, CR_MODIFIER_RECORDS_OFFSET, 0);
+            ModifierListParser.parse(ctx, startTi + 2, CR_MODIFIER_RECORDS_OFFSET, 0);
             if (ctx.status === 1) {
                 throw new AdblockSyntaxError(
                     'Too many modifiers in AdGuard modifier list',
@@ -153,7 +163,7 @@ export function parseCommonCosmeticHeader(
     const bodyStartTi = skipWs(ctx, bodyCandidateTi);
 
     // Validate body is non-empty
-    if (bodyStartTi >= ctx.tokenCount) {
+    if (bodyStartTi >= endTi) {
         throw new Error(`${ruleTypeName} has empty body`);
     }
 
@@ -161,7 +171,7 @@ export function parseCommonCosmeticHeader(
 
     // Find trimmed body end by tracking last non-whitespace token
     let trimmedEnd = bodyStart;
-    for (let ti = bodyStartTi; ti < ctx.tokenCount; ti += 1) {
+    for (let ti = bodyStartTi; ti < endTi; ti += 1) {
         if (types[ti] !== TokenType.Whitespace) {
             trimmedEnd = tokenStart(ctx, ti + 1);
         }
@@ -171,11 +181,17 @@ export function parseCommonCosmeticHeader(
         throw new Error(`${ruleTypeName} has empty body`);
     }
 
-    // Pack flags — determine exception from raw separator containing '@'
+    // Pack flags — determine exception from the separator containing '@'.
+    // Scan only the separator's own characters ([sepSourceStart, sepSourceEnd)).
+    // Using `source.indexOf('@', sepSourceStart)` would scan to the end of the
+    // entire filter list when no '@' is present, making conversion of N
+    // exception-free cosmetic rules Θ(N²).
     let flags = 0;
-    if (source.indexOf('@', sepSourceStart) >= 0
-        && source.indexOf('@', sepSourceStart) < sepSourceEnd) {
-        flags |= CR_FLAG_EXCEPTION;
+    for (let i = sepSourceStart; i < sepSourceEnd; i += 1) {
+        if (source.charCodeAt(i) === AT_SIGN) {
+            flags |= CR_FLAG_EXCEPTION;
+            break;
+        }
     }
     flags |= (sepLen & CR_SEP_LEN_MASK) << CR_SEP_LEN_SHIFT;
     if (hasAdgMods) {

@@ -1,0 +1,111 @@
+import { describe, expect, test } from 'vitest';
+
+import { RawFilterListConverter } from '../../src/converter-new/raw-filter-list';
+import { NEWLINE } from '../../src/utils/constants';
+
+describe('RawFilterListConverter', () => {
+    test('convertToAdg should leave non-affected filter lists as is', () => {
+        const filterListContent = [
+            '! Title: Foo',
+            '! Description: Bar',
+            '! Expires: 1 day',
+            '! Homepage: https://example.com',
+            '! Version: 1',
+            '! License: https://example.com/license',
+            '||example.com^$script',
+        ].join(NEWLINE);
+
+        const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
+
+        expect(convertedFilterList.isConverted).toBe(false);
+        expect(convertedFilterList.result).toBe(filterListContent);
+    });
+
+    test('convertToAdg should convert filter lists to AdGuard syntax', () => {
+        // We don't need to test all possible rule types here, since we already
+        // have tests for RuleConverter.convertToAdg
+        const filterListContent = [
+            '! Title: Foo',
+            '! Description: Bar',
+            '! Expires: 1 day',
+            '! Homepage: https://example.com',
+            '! Version: 1',
+            '! License: https://example.com/license',
+            '||example.com^$script',
+            // ---
+            '||googletagservices.com/test.js$domain=test.com,redirect=googletagservices_gpt.js',
+            '||delivery.tf1.fr/pub$media,rewrite=abp-resource:blank-mp3,domain=tf1.fr',
+            'example.com#$#abp-snippet1 arg0 arg1; abp-snippet2 arg0 arg1',
+            '##^script:has-text(ad)',
+        ].join(NEWLINE);
+
+        const expectedFilterListContent = [
+            '! Title: Foo',
+            '! Description: Bar',
+            '! Expires: 1 day',
+            '! Homepage: https://example.com',
+            '! Version: 1',
+            '! License: https://example.com/license',
+            '||example.com^$script',
+            // ---
+            '||googletagservices.com/test.js$domain=test.com,redirect=googletagservices-gpt',
+            '||delivery.tf1.fr/pub$media,redirect=noopmp3-0.1s,domain=tf1.fr',
+            "example.com#%#//scriptlet('abp-snippet1', 'arg0', 'arg1')",
+            "example.com#%#//scriptlet('abp-snippet2', 'arg0', 'arg1')",
+            '$$script:contains(ad)',
+        ].join(NEWLINE);
+
+        const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
+
+        expect(convertedFilterList.isConverted).toBe(true);
+        expect(convertedFilterList.result).toBe(expectedFilterListContent);
+    });
+
+    test('Tolerant mode should work correctly', () => {
+        const filterListContent = [
+            '! Title: Foo',
+            // Invalid rule because `:has-text()` provided without argument
+            '##^body:has-text(',
+            // Should be converted
+            '||example.com^$3p',
+        ].join(NEWLINE);
+
+        // Expected tolerantly converted filter list
+        const expectedFilterListContent = [
+            '! Title: Foo',
+            '##^body:has-text(', // Left as is
+            '||example.com^$third-party', // Converted
+        ].join(NEWLINE);
+
+        // Without tolerant mode, the whole filter list should fail
+        expect(() => RawFilterListConverter.convertToAdg(filterListContent, false)).toThrow();
+
+        // With tolerant mode, the whole filter list should be converted
+        const tolerant = () => RawFilterListConverter.convertToAdg(filterListContent, true);
+        expect(tolerant).not.toThrow();
+
+        // The rule should be left as is
+        expect(tolerant().result).toBe(expectedFilterListContent);
+    });
+
+    test('convertToAdg should convert a modifier on a rule followed by another rule', () => {
+        // Regression: the `$` separator of the first rule must be detected even
+        // though a line break (belonging to the next rule) follows `$3p`.
+        // Previously the modifier probe used the chunk-wide token count, saw the
+        // line break, rejected the separator, and left `$3p` in the pattern.
+        const filterListContent = [
+            '||a^$3p',
+            '||b^$script',
+        ].join(NEWLINE);
+
+        const expectedFilterListContent = [
+            '||a^$third-party',
+            '||b^$script',
+        ].join(NEWLINE);
+
+        const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
+
+        expect(convertedFilterList.isConverted).toBe(true);
+        expect(convertedFilterList.result).toBe(expectedFilterListContent);
+    });
+});

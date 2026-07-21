@@ -67,6 +67,10 @@ function findOpenBrace(
     targetDepth: number,
 ): number {
     let depth = 0;
+    // Parenthesis depth: braces inside pseudo-class arguments (e.g.
+    // `:contains(/[\w\W]{30,}/)`) must not be treated as the declaration
+    // block, so only braces at parenthesis depth 0 are considered.
+    let parenDepth = 0;
     let ti = startTi;
     while (ti < endTi) {
         // Skip CSS strings (Quote/Apostrophe delimited) — reuse the shared
@@ -78,13 +82,22 @@ function findOpenBrace(
             // eslint-disable-next-line no-continue
             continue;
         }
-        if (types[ti] === TokenType.OpenBrace) {
-            if (depth === targetDepth) {
-                return ti;
+        const tt = types[ti];
+        if (tt === TokenType.OpenParen) {
+            parenDepth += 1;
+        } else if (tt === TokenType.CloseParen) {
+            if (parenDepth > 0) {
+                parenDepth -= 1;
             }
-            depth += 1;
-        } else if (types[ti] === TokenType.CloseBrace) {
-            depth -= 1;
+        } else if (parenDepth === 0) {
+            if (tt === TokenType.OpenBrace) {
+                if (depth === targetDepth) {
+                    return ti;
+                }
+                depth += 1;
+            } else if (tt === TokenType.CloseBrace) {
+                depth -= 1;
+            }
         }
         ti += 1;
     }
@@ -111,6 +124,8 @@ function findCloseBrace(
     targetDepth: number,
 ): number {
     let depth = targetDepth + 1; // we are inside the brace we want to close
+    // Parenthesis depth: braces inside pseudo-class arguments must be ignored.
+    let parenDepth = 0;
     let ti = startTi;
     while (ti < endTi) {
         // Skip CSS strings — same as findOpenBrace.
@@ -120,12 +135,21 @@ function findCloseBrace(
             // eslint-disable-next-line no-continue
             continue;
         }
-        if (types[ti] === TokenType.OpenBrace) {
-            depth += 1;
-        } else if (types[ti] === TokenType.CloseBrace) {
-            depth -= 1;
-            if (depth === targetDepth) {
-                return ti;
+        const tt = types[ti];
+        if (tt === TokenType.OpenParen) {
+            parenDepth += 1;
+        } else if (tt === TokenType.CloseParen) {
+            if (parenDepth > 0) {
+                parenDepth -= 1;
+            }
+        } else if (parenDepth === 0) {
+            if (tt === TokenType.OpenBrace) {
+                depth += 1;
+            } else if (tt === TokenType.CloseBrace) {
+                depth -= 1;
+                if (depth === targetDepth) {
+                    return ti;
+                }
             }
         }
         ti += 1;

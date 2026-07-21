@@ -85,6 +85,8 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
      * @param ctx Parser context.
      * @param classified Packed classifier result (separator kind + index).
      * @param options Parser options.
+     * @param startTi Inclusive token index where the rule starts. Defaults to 0.
+     * @param endTi Exclusive token index where the rule ends. Defaults to `ctx.tokenCount`.
      *
      * @throws {Error} If body is empty or structure is invalid.
      */
@@ -92,10 +94,12 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         ctx: ParserContext,
         classified: number,
         options?: ElementHidingParserOptions,
+        startTi = 0,
+        endTi = ctx.tokenCount,
     ): void {
         const parseUboSpecificRules = options?.parseUboSpecificRules ?? true;
         // Write common header (flags, sep, domains, bodyStart, bodyEnd, modCount, bodyStartTi)
-        parseCommonCosmeticHeader(ctx, classified, 'Element hiding rule');
+        parseCommonCosmeticHeader(ctx, classified, 'Element hiding rule', startTi, endTi);
 
         // Read bodyStartTi from ctx.data (written by parseCommonCosmeticHeader)
         const bodyStartTi = ctx.data[CR_BODY_START_TI];
@@ -109,7 +113,7 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
             const hasCandidate = ElementHidingParser.hasUboCandidate(
                 ctx,
                 bodyStartTi,
-                ctx.tokenCount,
+                endTi,
             );
 
             // Gate 3: full balanced scan (only if candidate found)
@@ -117,7 +121,7 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
                 uboModCount = ElementHidingParser.scanUboModifiers(
                     ctx,
                     bodyStartTi,
-                    ctx.tokenCount,
+                    endTi,
                 );
             }
         }
@@ -149,7 +153,6 @@ export class ElementHidingParser implements CosmeticBodyParser<ElementHidingPars
         //   3. The OpenBrace has the matching CloseBrace at the end
         if (uboModCount === 0 && !hasAdgMods) {
             const { types } = ctx;
-            const endTi = ctx.tokenCount;
 
             // Find last non-whitespace token — must be CloseBrace
             let lastNonWsTi = endTi - 1;

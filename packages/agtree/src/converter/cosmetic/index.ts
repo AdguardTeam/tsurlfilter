@@ -107,9 +107,8 @@ export class CosmeticRuleConverter extends RuleConverterBase {
         }
 
         // Track if any conversion happened
-        const wasConverted = subconverterResult.result.length > 1
-            || subconverterResult.isConverted
-            || (convertedModifiers && convertedModifiers.isConverted);
+        const wasConverted = subconverterResult.isConverted
+            || (convertedModifiers?.isConverted ?? false);
 
         if (wasConverted) {
             // Add modifier list to the subconverter result rules

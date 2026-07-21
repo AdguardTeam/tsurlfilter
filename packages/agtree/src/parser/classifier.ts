@@ -71,6 +71,24 @@ export class RuleClassifier {
         const sep = findCosmeticSeparator(types, endTi, startTi);
 
         if (sep !== -1) {
+            // Host-style (#-started) rules require a valid selector after the
+            // cosmetic separator; otherwise the rule is a comment. This mirrors
+            // legacy `SimpleCommentParser.isSimpleComment`, so rules like
+            // `#####` are treated as comments, while `###selector` stays cosmetic.
+            if (types[ti] === TokenType.HashMark) {
+                const afterTi = cosmeticSepStartIndex(sep) + cosmeticSepTokenCount(sep);
+
+                const invalidSelector = afterTi >= endTi
+                    || types[afterTi] === TokenType.Whitespace
+                    || (types[afterTi] === TokenType.HashMark
+                        && afterTi + 1 < endTi
+                        && types[afterTi + 1] === TokenType.HashMark);
+
+                if (invalidSelector) {
+                    return RuleClassifier.pack(RuleKind.Comment, 0, 0);
+                }
+            }
+
             return RuleClassifier.pack(
                 RuleKind.Cosmetic,
                 cosmeticSepTokenCount(sep),

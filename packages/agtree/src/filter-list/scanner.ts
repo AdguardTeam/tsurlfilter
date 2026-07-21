@@ -34,8 +34,6 @@ import { RuleParser } from '../parser/rule';
 import { TokenType } from '../tokenizer/token-types';
 import { Tokenizer } from '../tokenizer/tokenizer';
 
-import type { NewLine } from './types';
-
 /**
  * Error message used when the data buffer (modifiers / domains / scriptlet
  * body) overflows at current capacity and `grow` is `false`.
@@ -70,7 +68,6 @@ const DEFAULT_DOMAIN_CAPACITY = 128;
  * @param kind Structural classification of the rule.
  * @param ruleStart Source offset where rule text starts (inclusive).
  * @param ruleEnd Source offset where rule text ends (exclusive of newline).
- * @param nlType Newline type following this rule, or `undefined` for the last rule.
  * @param ctx Parser context with `ctx.data` populated for this rule.
  *   Only valid during the callback — will be overwritten on the next rule.
  */
@@ -78,7 +75,6 @@ export type ScanCallback = (
     kind: RuleKind,
     ruleStart: number,
     ruleEnd: number,
-    nlType: NewLine | undefined,
     ctx: ParserContext,
 ) => void;
 
@@ -87,26 +83,23 @@ export type ScanCallback = (
  *
  * @param ruleStart Source offset where the empty line starts.
  * @param ruleEnd Source offset where the empty line ends.
- * @param nlType Newline type following this empty line.
  */
-export type EmptyLineCallback = (ruleStart: number, ruleEnd: number, nlType: NewLine | undefined) => void;
+export type EmptyLineCallback = (ruleStart: number, ruleEnd: number) => void;
 
 /**
  * Callback type for rule-level structural parse errors.
  *
  * Called when `RuleParser.parse()` throws for a rule. The rule's source range
- * and newline type are passed so the caller can construct an `InvalidRule` node.
+ * is passed so the caller can construct an `InvalidRule` node.
  *
  * @param error The thrown error.
  * @param ruleStart Source offset where the rule starts.
  * @param ruleEnd Source offset where the rule ends (exclusive of newline).
- * @param nlType Newline type following the rule.
  */
 export type ScanErrorCallback = (
     error: unknown,
     ruleStart: number,
     ruleEnd: number,
-    nlType: NewLine | undefined,
 ) => void;
 
 /**
@@ -115,45 +108,28 @@ export type ScanErrorCallback = (
  * @param source Source string.
  * @param offset Position to start searching from.
  *
- * @returns Tuple `[ruleEnd, nextStart, nlType]`:
+ * @returns Tuple `[ruleEnd, nextStart]`:
  *   - `ruleEnd` — source offset of the newline character (`source.length` if none).
  *   - `nextStart` — source offset immediately after the newline (`source.length` if none).
- *   - `nlType` — detected `NewLine` type, or `undefined` if end-of-source.
  */
 function findNextNewline(
     source: string,
     offset: number,
-): [ruleEnd: number, nextStart: number, nlType: NewLine | undefined] {
+): [ruleEnd: number, nextStart: number] {
     const len = source.length;
     for (let i = offset; i < len; i += 1) {
         const c = source.charCodeAt(i);
         if (c === 0x0A) {
-            return [i, i + 1, 'lf'];
+            return [i, i + 1];
         }
         if (c === 0x0D) {
             if (i + 1 < len && source.charCodeAt(i + 1) === 0x0A) {
-                return [i, i + 2, 'crlf'];
+                return [i, i + 2];
             }
-            return [i, i + 1, 'cr'];
+            return [i, i + 1];
         }
     }
-    return [len, len, undefined];
-}
-
-/**
- * Detect the `NewLine` type from a `LineBreak` token.
- *
- * @param source Source string.
- * @param tokenStart Inclusive start offset of the LineBreak token.
- * @param tokenEnd Exclusive end offset of the LineBreak token.
- *
- * @returns The newline type.
- */
-function detectNewline(source: string, tokenStart: number, tokenEnd: number): NewLine {
-    if (tokenEnd - tokenStart === 2) {
-        return 'crlf';
-    }
-    return source.charCodeAt(tokenStart) === 0x0D ? 'cr' : 'lf';
+    return [len, len];
 }
 
 /**
@@ -309,15 +285,13 @@ export class FilterListScanner {
                 // Rule tokens are [ruleStartTi, i).
 
                 const nlStart = tokenSourceStart(i);
-                const nlEnd = t.ends[i];
-                const nlType = detectNewline(source, nlStart, nlEnd);
 
                 const ruleSourceStart = tokenSourceStart(ruleStartTi);
                 // Rule text ends just before the newline.
                 const ruleSourceEnd = nlStart;
 
                 if (ruleStartTi >= i || this.isEmptyRange(ruleStartTi, i)) {
-                    onEmptyLine(ruleSourceStart, ruleSourceEnd, nlType);
+                    onEmptyLine(ruleSourceStart, ruleSourceEnd);
                 } else {
                     try {
                         ctx.status = CTX_STATUS_OK;
@@ -325,16 +299,16 @@ export class FilterListScanner {
                         const overflowErr = FilterListScanner.checkCtxStatus(ctx);
                         if (overflowErr !== null) {
                             if (onRuleError) {
-                                onRuleError(overflowErr, ruleSourceStart, ruleSourceEnd, nlType);
+                                onRuleError(overflowErr, ruleSourceStart, ruleSourceEnd);
                             } else {
                                 throw overflowErr;
                             }
                         } else {
-                            onRule(kind, ruleSourceStart, ruleSourceEnd, nlType, ctx);
+                            onRule(kind, ruleSourceStart, ruleSourceEnd, ctx);
                         }
                     } catch (e: unknown) {
                         if (onRuleError) {
-                            onRuleError(e, ruleSourceStart, ruleSourceEnd, nlType);
+                            onRuleError(e, ruleSourceStart, ruleSourceEnd);
                         } else {
                             throw e;
                         }
@@ -354,7 +328,7 @@ export class FilterListScanner {
                     const ruleSourceEnd = t.ends[t.tokenCount - 1];
 
                     if (this.isEmptyRange(ruleStartTi, t.tokenCount)) {
-                        onEmptyLine(ruleSourceStart, ruleSourceEnd, undefined);
+                        onEmptyLine(ruleSourceStart, ruleSourceEnd);
                     } else {
                         try {
                             ctx.status = CTX_STATUS_OK;
@@ -362,16 +336,16 @@ export class FilterListScanner {
                             const overflowErr = FilterListScanner.checkCtxStatus(ctx);
                             if (overflowErr !== null) {
                                 if (onRuleError) {
-                                    onRuleError(overflowErr, ruleSourceStart, ruleSourceEnd, undefined);
+                                    onRuleError(overflowErr, ruleSourceStart, ruleSourceEnd);
                                 } else {
                                     throw overflowErr;
                                 }
                             } else {
-                                onRule(kind, ruleSourceStart, ruleSourceEnd, undefined, ctx);
+                                onRule(kind, ruleSourceStart, ruleSourceEnd, ctx);
                             }
                         } catch (e: unknown) {
                             if (onRuleError) {
-                                onRuleError(e, ruleSourceStart, ruleSourceEnd, undefined);
+                                onRuleError(e, ruleSourceStart, ruleSourceEnd);
                             } else {
                                 throw e;
                             }
@@ -380,7 +354,7 @@ export class FilterListScanner {
                 } else if (lastLineBreakTi >= 0 && lastLineBreakTi === t.tokenCount - 1) {
                     // Source ends with a newline — emit trailing empty line.
                     const emptyStart = t.ends[lastLineBreakTi];
-                    onEmptyLine(emptyStart, emptyStart, undefined);
+                    onEmptyLine(emptyStart, emptyStart);
                 }
                 break;
             }
@@ -403,11 +377,11 @@ export class FilterListScanner {
                     // report the entire span as one error. Never emit a partial
                     // rule callback, which would violate the one-callback-per-
                     // physical-line contract.
-                    const [ruleEnd, nextStart, nlType] = findNextNewline(source, t.offset);
+                    const [ruleEnd, nextStart] = findNextNewline(source, t.offset);
                     // eslint-disable-next-line max-len
                     const e = new Error(`Rule at offset ${pendingRuleSourceStart} exceeds the maximum token capacity of ${HARD_TOKEN_CAP} tokens`);
                     if (onRuleError) {
-                        onRuleError(e, pendingRuleSourceStart, ruleEnd, nlType);
+                        onRuleError(e, pendingRuleSourceStart, ruleEnd);
                     } else {
                         throw e;
                     }
@@ -417,12 +391,12 @@ export class FilterListScanner {
                 // No LineBreak found and growth disabled — skip forward to the
                 // next newline and report the entire span as one error. Never
                 // emit a partial rule callback.
-                const [ruleEnd, nextStart, nlType] = findNextNewline(source, t.offset);
+                const [ruleEnd, nextStart] = findNextNewline(source, t.offset);
                 const e = new Error(
                     `Rule at offset ${pendingRuleSourceStart} exceeds the token capacity of ${t.types.length} tokens`,
                 );
                 if (onRuleError) {
-                    onRuleError(e, pendingRuleSourceStart, ruleEnd, nlType);
+                    onRuleError(e, pendingRuleSourceStart, ruleEnd);
                 } else {
                     throw e;
                 }

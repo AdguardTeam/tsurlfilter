@@ -6,11 +6,6 @@ import type { ParseOptions } from '../ast-builder/options';
 import type { RuleKind } from '../parser/classifier';
 
 /**
- * Represents possible newline types detected in a filter list source.
- */
-export type NewLine = 'crlf' | 'lf' | 'cr';
-
-/**
  * Information about a scanned rule, passed to the scanner callback.
  *
  * The `ParserContext.data` buffer is populated with the structural parse
@@ -31,12 +26,6 @@ export interface ScannedRuleInfo {
      * Source char offset where rule text ends (exclusive of newline).
      */
     ruleEnd: number;
-
-    /**
-     * Newline type following this rule. `undefined` for the last rule
-     * (no trailing newline).
-     */
-    nlType: NewLine | undefined;
 }
 
 /**

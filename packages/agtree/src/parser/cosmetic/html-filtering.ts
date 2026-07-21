@@ -64,6 +64,7 @@ function skipWsTokens(types: Uint8Array, ti: number, endTi: number): number {
  *
  * @param ctx Parser context.
  * @param startTi Token index where the body starts (after ^ and whitespace).
+ * @param endTi Exclusive token index where the rule ends.
  *
  * @returns True if a responseheader pattern was detected and parsed.
  *
@@ -72,11 +73,11 @@ function skipWsTokens(types: Uint8Array, ti: number, endTi: number): number {
 function tryParseResponseHeader(
     ctx: ParserContext,
     startTi: number,
+    endTi: number,
 ): boolean {
     const {
         types, ends, source, sourceStart,
     } = ctx;
-    const endTi = ctx.tokenCount;
 
     // Check for ident run matching "responseheader"
     const identLen = cssIdentSequenceLength(types, startTi, endTi, source, ends, sourceStart);
@@ -194,16 +195,18 @@ export class AdgHtmlFilteringParser implements CosmeticBodyParser {
      *
      * @param ctx Parser context.
      * @param classified Packed classifier result.
+     * @param startTi Inclusive token index where the rule starts. Defaults to 0.
+     * @param endTi Exclusive token index where the rule ends. Defaults to `ctx.tokenCount`.
      */
-    public static parse(ctx: ParserContext, classified: number): void {
-        parseCommonCosmeticHeader(ctx, classified, 'ADG HTML filtering rule');
+    public static parse(ctx: ParserContext, classified: number, startTi = 0, endTi = ctx.tokenCount): void {
+        parseCommonCosmeticHeader(ctx, classified, 'ADG HTML filtering rule', startTi, endTi);
         ctx.data[CR_FLAGS_OFFSET] |= CR_SEP_KIND_ADG_HTML_FILTERING << CR_SEP_KIND_SHIFT;
 
         const bodyStartTi = ctx.data[CR_BODY_START_TI];
         SelectorListParser.parse(
             ctx,
             bodyStartTi,
-            ctx.tokenCount,
+            endTi,
             selectorListDataOffset(ctx),
             undefined,
             undefined,
@@ -250,22 +253,26 @@ export class UboHtmlFilteringParser implements CosmeticBodyParser<UboHtmlFilteri
      * @param ctx Parser context.
      * @param classified Packed classifier result.
      * @param options Parser options.
+     * @param startTi Inclusive token index where the rule starts. Defaults to 0.
+     * @param endTi Exclusive token index where the rule ends. Defaults to `ctx.tokenCount`.
      */
     public static parse(
         ctx: ParserContext,
         classified: number,
         options?: UboHtmlFilteringParserOptions,
+        startTi = 0,
+        endTi = ctx.tokenCount,
     ): void {
         const parseUboSpecificRules = options?.parseUboSpecificRules ?? true;
         const onlyHeader = options?.onlyHeader ?? false;
 
-        parseCommonCosmeticHeader(ctx, classified, 'uBO HTML filtering rule');
+        parseCommonCosmeticHeader(ctx, classified, 'uBO HTML filtering rule', startTi, endTi);
 
         const { types, ends } = ctx;
         let bodyStartTi = ctx.data[CR_BODY_START_TI];
 
         // Body must start with ^ (Caret token)
-        if (bodyStartTi >= ctx.tokenCount || types[bodyStartTi] !== TokenType.Caret) {
+        if (bodyStartTi >= endTi || types[bodyStartTi] !== TokenType.Caret) {
             throw new AdblockSyntaxError(
                 'Expected ^ at the start of uBO HTML filtering rule body',
                 ctx.data[CR_BODY_START],
@@ -286,9 +293,9 @@ export class UboHtmlFilteringParser implements CosmeticBodyParser<UboHtmlFilteri
 
         // Skip ^ and following whitespace
         bodyStartTi += 1;
-        bodyStartTi = skipWsTokens(types, bodyStartTi, ctx.tokenCount);
+        bodyStartTi = skipWsTokens(types, bodyStartTi, endTi);
 
-        if (bodyStartTi >= ctx.tokenCount) {
+        if (bodyStartTi >= endTi) {
             throw new AdblockSyntaxError(
                 'Empty uBO HTML filtering rule body after ^',
                 ctx.data[CR_BODY_START],
@@ -301,7 +308,7 @@ export class UboHtmlFilteringParser implements CosmeticBodyParser<UboHtmlFilteri
         ctx.data[CR_BODY_START_TI] = bodyStartTi;
 
         // Try to detect responseheader(...)
-        if (tryParseResponseHeader(ctx, bodyStartTi)) {
+        if (tryParseResponseHeader(ctx, bodyStartTi, endTi)) {
             return;
         }
 
@@ -313,7 +320,7 @@ export class UboHtmlFilteringParser implements CosmeticBodyParser<UboHtmlFilteri
         SelectorListParser.parse(
             ctx,
             bodyStartTi,
-            ctx.tokenCount,
+            endTi,
             selectorListDataOffset(ctx),
         );
     }
