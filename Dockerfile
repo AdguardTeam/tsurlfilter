@@ -68,7 +68,7 @@ FROM source-base AS source
 
 COPY packages/ ./packages/
 
-# ============================================================================
+# ===========================================================================
 # Build layers following the dependency hierarchy.
 # Source is copied just-in-time before each build step so that a change in a
 # higher-level package (e.g. tswebextension) does not invalidate the Docker
