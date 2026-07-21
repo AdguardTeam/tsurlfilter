@@ -59,15 +59,6 @@ export const computeJsRuleHash = async (body: string): Promise<string> => {
  * Normalizes a domain string for comparison: trims whitespace, lower-cases it,
  * and strips leading/trailing dots.
  *
- * Deliberately does NOT strip a leading `www.` label (or any other
- * subdomain label): `PreregisteredScriptsService.buildDomainScripts` already
- * treats `www.example.com` as a subdomain of `example.com` via wildcard
- * `matches` patterns and hash-set-equality collapsing, and `CosmeticApi`'s
- * `isPreregisteredDomain` matches subdomains via `endsWith`. Special-casing
- * `www` here would only make distinct domain strings collide too early —
- * that used to cause a "Duplicate script ID" crash when both `www.example.com`
- * and `example.com` were preregistered.
- *
  * Shared by build-time collection (browser-extension) and runtime matching
  * (`CosmeticApi`, `PreregisteredScriptsService`) so both sides agree on
  * whether two domain strings refer to the same domain.
