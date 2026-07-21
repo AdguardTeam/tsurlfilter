@@ -16,6 +16,7 @@
         - [AdGuard Mobile App Banners filter](#chromium-mv3-filters-annoyances-adguard-mobile-app-banners-filter)
         - [AdGuard Other Annoyances filter](#chromium-mv3-filters-annoyances-adguard-other-annoyances-filter)
         - [AdGuard Widgets filter](#chromium-mv3-filters-annoyances-adguard-widgets-filter)
+        - [Stevo's AI Blocklist](#chromium-mv3-filters-annoyances-stevos-ai-blocklist)
     - [Security](#chromium-mv3-filters-security)
         - [Online Malicious URL Blocklist](#chromium-mv3-filters-security-online-malicious-url-blocklist)
         - [Phishing URL Blocklist](#chromium-mv3-filters-security-phishing-url-blocklist)
@@ -75,6 +76,7 @@
         - [AdGuard Mobile App Banners filter](#opera-mv3-filters-annoyances-adguard-mobile-app-banners-filter)
         - [AdGuard Other Annoyances filter](#opera-mv3-filters-annoyances-adguard-other-annoyances-filter)
         - [AdGuard Widgets filter](#opera-mv3-filters-annoyances-adguard-widgets-filter)
+        - [Stevo's AI Blocklist](#opera-mv3-filters-annoyances-stevos-ai-blocklist)
     - [Security](#opera-mv3-filters-security)
         - [Online Malicious URL Blocklist](#opera-mv3-filters-security-online-malicious-url-blocklist)
         - [Phishing URL Blocklist](#opera-mv3-filters-security-phishing-url-blocklist)
@@ -208,6 +210,13 @@ Blocks annoying third-party widgets: online assistants, live support chats, etc.
 
 - Filter ID: **22**
 - Path: `dist/filters/chromium-mv3/declarative/ruleset_22/ruleset_22.json`
+
+#### <a id="chromium-mv3-filters-annoyances-stevos-ai-blocklist"></a> Stevo's AI Blocklist
+
+A filter list that hides website features which use generative AI and AI-generated content.
+
+- Filter ID: **260**
+- Path: `dist/filters/chromium-mv3/declarative/ruleset_260/ruleset_260.json`
 
 ### <a id="chromium-mv3-filters-security"></a> Security
 
@@ -583,6 +592,13 @@ Blocks annoying third-party widgets: online assistants, live support chats, etc.
 
 - Filter ID: **22**
 - Path: `dist/filters/opera-mv3/declarative/ruleset_22/ruleset_22.json`
+
+#### <a id="opera-mv3-filters-annoyances-stevos-ai-blocklist"></a> Stevo's AI Blocklist
+
+A filter list that hides website features which use generative AI and AI-generated content.
+
+- Filter ID: **260**
+- Path: `dist/filters/opera-mv3/declarative/ruleset_260/ruleset_260.json`
 
 ### <a id="opera-mv3-filters-security"></a> Security
 

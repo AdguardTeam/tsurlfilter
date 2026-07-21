@@ -1,6 +1,6 @@
 {
     "chromium-mv3": {
-        "version": "4.3.0",
+        "version": "5.0.0",
         "rulesetIds": [
             1,
             2,
@@ -52,18 +52,20 @@
             255,
             256,
             257,
-            259
+            259,
+            260
         ],
         "rulesetMetadataKeys": [
             "regexpRulesCount",
             "unsafeRulesCount",
             "safeRulesCount",
             "rulesetHashMapRaw",
-            "badFilterRulesRaw"
+            "badFilterRulesRaw",
+            "unsafeRules"
         ]
     },
     "opera-mv3": {
-        "version": "4.3.0",
+        "version": "5.0.0",
         "rulesetIds": [
             1,
             2,
@@ -115,14 +117,16 @@
             255,
             256,
             257,
-            259
+            259,
+            260
         ],
         "rulesetMetadataKeys": [
             "regexpRulesCount",
             "unsafeRulesCount",
             "safeRulesCount",
             "rulesetHashMapRaw",
-            "badFilterRulesRaw"
+            "badFilterRulesRaw",
+            "unsafeRules"
         ]
     }
 }
