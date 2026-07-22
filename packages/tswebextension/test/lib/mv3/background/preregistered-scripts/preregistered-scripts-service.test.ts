@@ -8,6 +8,7 @@ import {
 
 import { ContentScriptManager } from '../../../../../src/lib/mv3/background/content-script-manager';
 import { engineApi } from '../../../../../src/lib/mv3/background/engine-api';
+import { CLEANUP_BUNDLE_FILENAME } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
 import {
     PreregisteredScriptsService,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/preregistered-scripts-service';
@@ -117,8 +118,11 @@ describe('PreregisteredScriptsService', () => {
                 allFrames: true,
                 persistAcrossSessions: true,
             });
-            expect(scripts[0].js).toHaveLength(2);
+            expect(scripts[0].js).toHaveLength(3);
             expect(scripts[0].js?.[0]).toBe(`${SCRIPTS_PATH}/scriptlets-bundle.js`);
+            // Cleanup file must always be last, so it deletes the coordination
+            // property before any page script runs.
+            expect(scripts[0].js?.at(-1)).toBe(`${SCRIPTS_PATH}/${CLEANUP_BUNDLE_FILENAME}`);
         });
 
         it('registers a content script for a domain with a JS injection rule', async () => {
@@ -169,8 +173,8 @@ describe('PreregisteredScriptsService', () => {
 
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts).toHaveLength(1);
-            // Shared bundle + exactly one per-hash file (the local rule only).
-            expect(scripts[0].js).toHaveLength(2);
+            // Shared bundle + exactly one per-hash file (the local rule only) + cleanup.
+            expect(scripts[0].js).toHaveLength(3);
         });
 
         it('skips a rule whose getScriptletData() returns null without failing the whole sync', async () => {
@@ -185,7 +189,7 @@ describe('PreregisteredScriptsService', () => {
 
             expect(result).toBe(true);
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts[0].js).toHaveLength(2); // shared bundle + the one valid rule
+            expect(scripts[0].js).toHaveLength(3); // shared bundle + the one valid rule + cleanup
         });
 
         it('normalizes domains (trims, lower-cases, strips surrounding dots) before use', async () => {

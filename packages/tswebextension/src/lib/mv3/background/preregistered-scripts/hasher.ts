@@ -4,6 +4,13 @@
 export const SHARED_BUNDLE_FILENAME = 'scriptlets-bundle.js';
 
 /**
+ * Filename of the cleanup script loaded after the shared bundle and every
+ * per-hash file. Deletes the coordination property the shared bundle creates
+ * on `window`, so it never survives into the page's own script execution.
+ */
+export const CLEANUP_BUNDLE_FILENAME = 'cleanup.js';
+
+/**
  * Subdirectory within the filters folder where preregistered-script bundles live.
  */
 export const PREREGISTERED_SCRIPTS_DIR = 'preregistered-scripts';

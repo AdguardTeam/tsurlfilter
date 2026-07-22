@@ -94,6 +94,7 @@ export {
     computeJsRuleHash,
     normalizeDomain,
     SHARED_BUNDLE_FILENAME,
+    CLEANUP_BUNDLE_FILENAME,
     PREREGISTERED_SCRIPTS_DIR,
     PreregisteredScriptsService,
 } from './preregistered-scripts';

@@ -5,6 +5,7 @@ import { type ContentScriptDescriptor, ContentScriptManager } from '../content-s
 import { engineApi } from '../engine-api';
 
 import {
+    CLEANUP_BUNDLE_FILENAME,
     computeJsRuleHash,
     computeScriptletHash,
     normalizeDomain,
@@ -81,6 +82,15 @@ const getSharedBundlePath = (scriptsPath: string): string => {
 
 /**
  * @param scriptsPath Base path to preregistered scripts directory.
+ *
+ * @returns Extension-relative path to the cleanup script.
+ */
+const getCleanupPath = (scriptsPath: string): string => {
+    return `${scriptsPath}/${CLEANUP_BUNDLE_FILENAME}`;
+};
+
+/**
+ * @param scriptsPath Base path to preregistered scripts directory.
  * @param hash SHA-256 hash of the scriptlet name + args (or JS rule body).
  *
  * @returns Extension-relative path to the per-hash scriptlet file.
@@ -103,6 +113,11 @@ const getScriptPath = (scriptsPath: string, hash: string): string => {
  * wildcard `matches` and `excludeMatches` for subdomains with different rule
  * sets. Apex domains cover all subdomains via wildcards; subdomains with
  * exceptions or extra rules get their own registration.
+ *
+ * Each registration's `js` array is `[sharedBundle, ...perHashFiles, cleanup]`.
+ * The cleanup script always runs last, deleting the shared bundle's
+ * `window`-scoped coordination property before the page's own scripts get a
+ * chance to run, so page code never observes it.
  */
 export class PreregisteredScriptsService {
     /**
@@ -205,6 +220,9 @@ export class PreregisteredScriptsService {
             const js = [
                 sharedBundlePath,
                 ...[...domainHashes].sort().map((hash) => getScriptPath(scriptsPath, hash)),
+                // Must run last: deletes the shared bundle's coordination property
+                // before the page's own scripts get a chance to run.
+                getCleanupPath(scriptsPath),
             ];
 
             scripts.push({
