@@ -75,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   events instead of silently skipping them [AdguardBrowserExtension#2895].
 - Element hiding rules not being applied on fast page reload in MV3
   [AdguardBrowserExtension#3537].
+- monkeytype.com fails to load — requests stuck "Pending" with AdGuard MV2 enabled [AdguardBrowserExtension#3565].
 
 [tsurlfilter#188]: https://github.com/AdguardTeam/tsurlfilter/issues/188
 [tsurlfilter#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
@@ -85,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2524]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2524
 [AdguardBrowserExtension#3525]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3525
 [AdguardBrowserExtension#3537]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3537
+[AdguardBrowserExtension#3565]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3565
 
 [5.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v5.0.0
 

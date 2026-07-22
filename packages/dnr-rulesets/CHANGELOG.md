@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - AdGuard Mail Tracking Protection filter list (ID 25) to `chromium-mv3` and
   `opera-mv3` rulesets.
+- Stevo's AI Blocklist filter list (ID 260) to `chromium-mv3` and
+  `opera-mv3` rulesets. Updated `tasks/validator-data.json` accordingly.
 
 [5.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v5.0.0
 

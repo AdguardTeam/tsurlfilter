@@ -68,7 +68,7 @@ FROM source-base AS source
 
 COPY packages/ ./packages/
 
-# ============================================================================
+# ===========================================================================
 # Build layers following the dependency hierarchy.
 # Source is copied just-in-time before each build step so that a change in a
 # higher-level package (e.g. tswebextension) does not invalidate the Docker
@@ -95,7 +95,7 @@ COPY packages/eslint-plugin-logger-context/ ./packages/eslint-plugin-logger-cont
 FROM source-leaf-packages AS built-css-tokenizer-and-logger
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    npx lerna run build --scope @adguard/logger --scope @adguard/css-tokenizer
+    npx lerna run build --stream --scope @adguard/logger --scope @adguard/css-tokenizer
 
 FROM built-css-tokenizer-and-logger AS source-with-agtree
 COPY packages/agtree/ ./packages/agtree/
@@ -103,7 +103,7 @@ COPY packages/agtree/ ./packages/agtree/
 FROM source-with-agtree AS built-agtree
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    npx lerna run build --scope @adguard/agtree
+    npx lerna run build --stream --scope @adguard/agtree
 
 FROM built-agtree AS source-with-tsurlfilter
 COPY packages/tsurlfilter/ ./packages/tsurlfilter/
@@ -111,7 +111,7 @@ COPY packages/tsurlfilter/ ./packages/tsurlfilter/
 FROM source-with-tsurlfilter AS built-tsurlfilter
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    npx lerna run build --scope @adguard/tsurlfilter
+    npx lerna run build --stream --scope @adguard/tsurlfilter
 
 FROM built-tsurlfilter AS source-with-dnr-converter
 COPY packages/dnr-converter/ ./packages/dnr-converter/
@@ -119,7 +119,7 @@ COPY packages/dnr-converter/ ./packages/dnr-converter/
 FROM source-with-dnr-converter AS built-dnr-converter
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    npx lerna run build --scope @adguard/dnr-converter
+    npx lerna run build --stream --scope @adguard/dnr-converter
 
 FROM built-dnr-converter AS source-with-tswebextension
 COPY packages/tswebextension/ ./packages/tswebextension/
@@ -127,7 +127,7 @@ COPY packages/tswebextension/ ./packages/tswebextension/
 FROM source-with-tswebextension AS built-tswebextension
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    npx lerna run build --scope @adguard/tswebextension
+    npx lerna run build --stream --scope @adguard/tswebextension
 
 # ============================================================================
 # Test stages
