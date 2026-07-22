@@ -164,10 +164,10 @@ export const inlineExtCssBundle = (): Plugin => ({
     generateBundle(_options: NormalizedOutputOptions, bundle: OutputBundle): void {
         for (const [fileName, item] of Object.entries(bundle)) {
             if (item.type === 'chunk' && item.code.includes(MARKER_NAME)) {
-                // eslint-disable-next-line max-len
-                const errMessage = `[inline-extcss-bundle] Un-inlined ${MARKER_NAME} marker in ${fileName}: the module containing the marker call was not transformed.`;
-                this.error(errMessage);
-                throw new Error(errMessage);
+                throw new Error(
+                    `[inline-extcss-bundle] Un-inlined ${MARKER_NAME} marker in ${fileName}: `
+                    + 'the module containing the marker call was not transformed.',
+                );
             }
         }
     },
