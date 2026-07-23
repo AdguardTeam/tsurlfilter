@@ -541,6 +541,10 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param shouldApplyCss We are not applying CSS on onResponseStarted, since
      * it might be too early. Instead, we wait until the DOM is ready on
      * onCommitted and apply them then.
+     * @param forceDynamicInjection When `true`, skips the preregistered-domain
+     * check and always injects dynamically. Used for tabs open before
+     * preregistration took effect, since persistent scripts can't run
+     * retroactively in them. Defaults to `false`.
      *
      * @returns A promise that resolves when the cosmetic rules are applied.
      */
@@ -548,6 +552,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         tabId: number,
         frameId: number,
         shouldApplyCss: boolean,
+        forceDynamicInjection = false,
     ): Promise<PromiseSettledResult<void>[]> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
@@ -564,7 +569,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         // doesn't need this guard: it only ever contains custom/user filter
         // rules, which preregistered scripts (local filters only) never cover.
         const domain = getDomain(frameContext.url);
-        if (!domain || !CosmeticApi.isPreregisteredDomain(domain)) {
+        if (forceDynamicInjection || !domain || !CosmeticApi.isPreregisteredDomain(domain)) {
             tasks.push(
                 CosmeticApi.applyLocalCosmeticRules(
                     tabId,

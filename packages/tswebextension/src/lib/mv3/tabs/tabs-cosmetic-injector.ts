@@ -140,7 +140,7 @@ export class TabsCosmeticInjector {
             }
 
             try {
-                await CosmeticApi.applyCosmeticRules(tabId, frameId, true);
+                await CosmeticApi.applyCosmeticRules(tabId, frameId, true, true);
             } catch (e) {
                 logger.error(`[tsweb.TabsCosmeticInjector.processOpenTab]: error applying cosmetic rules for tabId ${tabId} and frameId ${frameId}`, e);
             }

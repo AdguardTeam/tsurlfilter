@@ -203,6 +203,19 @@ describe('CosmeticApi — preregistered script domains', () => {
             expect(result).toEqual([]);
         });
 
+        it('forceDynamicInjection bypasses suppression for an otherwise-preregistered domain', async () => {
+            CosmeticApi.setPreregisteredScriptDomains(['youtube.com']);
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(
+                makeFrameContext('https://youtube.com/') as any,
+            );
+
+            const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
+
+            await CosmeticApi.applyCosmeticRules(1, 0, false, true);
+
+            expect(applyLocal).toHaveBeenCalled();
+        });
+
         it('replaces the entire domain set on subsequent calls', async () => {
             CosmeticApi.setPreregisteredScriptDomains(['youtube.com']);
             CosmeticApi.setPreregisteredScriptDomains(['example.com']);
