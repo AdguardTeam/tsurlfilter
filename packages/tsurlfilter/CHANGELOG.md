@@ -45,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([AdguardBrowserExtension#3533]).
 - Expanded wildcard TLD domains in DNR conversion for `$domain` and `$to`
   modifiers [#189].
+- Regex domains in the `$domain` modifier with multiple escaped separators
+  (e.g. `/example\d*\.(live\|com\|icu\|org)$/`) not matching any domain,
+  because only the first escaped separator was unescaped.
 
 [AdguardBrowserExtension#3533]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3533
 [#189]: https://github.com/AdguardTeam/tsurlfilter/issues/189
