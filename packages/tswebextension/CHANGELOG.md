@@ -34,8 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public `getCosmeticResult(url, option)` method on the MV3 `TsWebExtension`
   app instance, allowing callers to query cosmetic rules (scriptlets + JS
   injection) that apply to a given URL at runtime.
-- `preregisteredScriptDomains` and `preregisteredScriptsPath` optional
-  MV3 `Configuration` fields for auto-syncing preregistered content scripts.
+- `preregisteredScripts` optional MV3 `Configuration` field for auto-syncing
+   preregistered content scripts.
 - `PreregisteredScriptsService` (MV3-only), exported from the MV3 entry
   point, along with `hashString`, `computeScriptletHash`, `computeJsRuleHash`,
   `normalizeDomain`, `SHARED_BUNDLE_FILENAME`, and `PREREGISTERED_SCRIPTS_DIR`

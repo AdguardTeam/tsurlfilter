@@ -85,18 +85,21 @@ export const configurationMV3Validator = configurationValidator.extend({
     userrules: customFilterMV3Validator.omit({ filterId: true, trusted: true }),
 
     /**
-     * Domains with build-time preregistered scripts. When provided,
-     * tswebextension auto-syncs content-script registrations and skips
-     * dynamic scriptlet injection for these domains.
+     * Build-time preregistered script configuration. When provided,
+     * enables persistent content-script registration and skips dynamic
+     * scriptlet injection for the listed domains.
      */
-    preregisteredScriptDomains: zod.string().array().optional(),
+    preregisteredScripts: zod.object({
+        /**
+         * Domains with build-time preregistered scripts.
+         */
+        domains: zod.string().array(),
 
-    /**
-     * Path to preregistered script bundles.
-     * Used with {@link preregisteredScriptDomains} to load shared and
-     * per-hash script files.
-     */
-    preregisteredScriptsPath: zod.string().optional(),
+        /**
+         * Path to preregistered script bundles.
+         */
+        path: zod.string(),
+    }).optional(),
 });
 
 /**
@@ -113,6 +116,6 @@ export type ConfigurationMV3 = zod.infer<typeof configurationMV3Validator>;
 export type ConfigurationMV3Context =
     & Omit<
         ConfigurationMV3,
-        'customFilters' | 'allowlist' | 'userrules' | 'trustedDomains' | 'preregisteredScriptDomains'
+        'customFilters' | 'allowlist' | 'userrules' | 'trustedDomains' | 'preregisteredScripts'
     >
     & { customFilters: number[] };

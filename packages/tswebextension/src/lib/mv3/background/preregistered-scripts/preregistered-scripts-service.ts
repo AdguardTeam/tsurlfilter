@@ -232,6 +232,7 @@ export class PreregisteredScriptsService {
                 runAt: 'document_start',
                 world: 'MAIN',
                 allFrames: true,
+                matchOriginAsFallback: true,
                 persistAcrossSessions: true,
             });
         }

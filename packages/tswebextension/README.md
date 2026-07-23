@@ -311,6 +311,31 @@ type: `boolean`
 
 Enables matching declarative rules for filtering log.
 
+#### preregisteredScripts (MV3 only)
+
+type: `{ domains: string[]; path: string }` (optional)
+
+Build-time preregistered script configuration. Registers persistent content
+scripts for `domains` and skips dynamic scriptlet injection for them.
+
+##### domains
+
+type: `string[]`
+
+Domains with build-time preregistered scripts.
+
+##### path
+
+type: `string`
+
+Path to preregistered script bundles, under `PREREGISTERED_SCRIPTS_DIR`:
+
+- A shared bundle (`SHARED_BUNDLE_FILENAME`).
+- One `{hash}.js` file per rule, hashed via `computeScriptletHash` /
+  `computeJsRuleHash` (`@adguard/tswebextension/mv3/preregistered-scripts/hasher`).
+- Falls back to dynamic scriptlet injection if sync fails, or for tabs
+  already open before sync.
+
 #### allowlist
 
 type: `string[]`

@@ -536,18 +536,18 @@ export class TsWebExtension implements AppInterface<
         // Sync preregistered scripts BEFORE disabling dynamic injection for
         // their domains, to avoid a gap where neither is active.
         let preregisteredSyncSucceeded = false;
-        if (configuration.preregisteredScriptDomains && configuration.preregisteredScriptsPath) {
+        if (configuration.preregisteredScripts) {
             preregisteredSyncSucceeded = await PreregisteredScriptsService.sync(
                 configuration.settings.filteringEnabled,
-                configuration.preregisteredScriptDomains,
-                configuration.preregisteredScriptsPath,
+                configuration.preregisteredScripts.domains,
+                configuration.preregisteredScripts.path,
             );
         }
 
         // Only skip dynamic injection if sync succeeded; otherwise keep it
         // enabled as a fallback.
-        if (configuration.preregisteredScriptDomains && preregisteredSyncSucceeded) {
-            CosmeticApi.setPreregisteredScriptDomains(configuration.preregisteredScriptDomains);
+        if (configuration.preregisteredScripts && preregisteredSyncSucceeded) {
+            CosmeticApi.setPreregisteredScriptDomains(configuration.preregisteredScripts.domains);
         } else {
             CosmeticApi.setPreregisteredScriptDomains([]);
         }
