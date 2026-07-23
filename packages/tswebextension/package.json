@@ -25,10 +25,6 @@
             "types": "./dist/types/mv3-utils.d.ts",
             "default": "./dist/mv3-utils.js"
         },
-        "./mv3/preregistered-scripts": {
-            "types": "./dist/types/preregistered-scripts.d.ts",
-            "default": "./dist/preregistered-scripts.js"
-        },
         "./mv3/preregistered-scripts/hasher": {
             "types": "./dist/types/preregistered-scripts-hasher.d.ts",
             "default": "./dist/preregistered-scripts-hasher.js"

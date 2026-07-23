@@ -39,7 +39,6 @@ const entryPoints = {
     cli: 'src/cli/index.ts',
     'mv3-utils': 'src/lib/mv3/utils/index.ts',
     'filters-storage': 'src/lib/common/storage/public-filters.ts',
-    'preregistered-scripts': 'src/lib/mv3/background/preregistered-scripts/index.ts',
     'preregistered-scripts-hasher': 'src/lib/mv3/background/preregistered-scripts/hasher.ts',
 };
 

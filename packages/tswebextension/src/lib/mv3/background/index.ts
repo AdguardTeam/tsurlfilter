@@ -96,5 +96,5 @@ export {
     SHARED_BUNDLE_FILENAME,
     CLEANUP_BUNDLE_FILENAME,
     PREREGISTERED_SCRIPTS_DIR,
-    PreregisteredScriptsService,
-} from './preregistered-scripts';
+} from './preregistered-scripts/hasher';
+export { PreregisteredScriptsService } from './preregistered-scripts/preregistered-scripts-service';

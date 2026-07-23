@@ -69,6 +69,29 @@ export interface ContentScriptDescriptor {
 const NAMESPACE_SEPARATOR = ':';
 
 /**
+ * Fills in chrome.scripting's documented defaults for omitted optional
+ * fields, so a `desired` descriptor (which often omits defaults) and a
+ * descriptor returned by `getRegisteredContentScripts()` (which chrome
+ * normalizes and fills in) compare equal when nothing actually changed.
+ *
+ * @param script Descriptor to normalize.
+ *
+ * @returns Canonical descriptor with all optional fields explicit.
+ */
+const canonicalize = (script: ContentScriptDescriptor): Required<ContentScriptDescriptor> => ({
+    id: script.id,
+    allFrames: script.allFrames ?? false,
+    matchOriginAsFallback: script.matchOriginAsFallback ?? false,
+    css: script.css ?? [],
+    excludeMatches: script.excludeMatches ?? [],
+    js: script.js ?? [],
+    matches: script.matches ?? [],
+    persistAcrossSessions: script.persistAcrossSessions ?? true,
+    runAt: script.runAt ?? 'document_idle',
+    world: script.world ?? 'ISOLATED',
+});
+
+/**
  * Manages dynamic content script registration via the chrome.scripting API.
  *
  * This class is not instantiable — all methods are static and accept a
@@ -398,7 +421,7 @@ export class ContentScriptManager {
 
             if (!existing) {
                 toRegisterScripts.push(script);
-            } else if (!isEqual(script, existing)) {
+            } else if (!isEqual(canonicalize(script), canonicalize(existing))) {
                 toUpdateScripts.push(script);
             }
 

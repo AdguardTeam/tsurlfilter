@@ -378,6 +378,36 @@ describe('ContentScriptManager', () => {
             expect(mockUpdate).not.toHaveBeenCalled();
         });
 
+        it('should not update when only chrome-added defaults differ from an omitted desired field', async () => {
+            await ContentScriptManager.register(NS, [
+                { id: 'domains', js: ['domains.js'], matches: ['<all_urls>'] },
+            ]);
+            vi.clearAllMocks();
+            // Simulates chrome.scripting.getRegisteredContentScripts() actual
+            // behavior: it normalizes and fills in defaults for fields the
+            // caller never specified.
+            mockGetRegistered.mockResolvedValue([
+                {
+                    id: 'critical:domains',
+                    js: ['domains.js'],
+                    matches: ['<all_urls>'],
+                    allFrames: false,
+                    matchOriginAsFallback: false,
+                    excludeMatches: undefined,
+                    css: undefined,
+                    persistAcrossSessions: true,
+                    runAt: 'document_idle',
+                    world: 'ISOLATED',
+                },
+            ]);
+            await ContentScriptManager.sync(NS, [
+                { id: 'domains', js: ['domains.js'], matches: ['<all_urls>'] },
+            ]);
+            expect(mockUnregister).not.toHaveBeenCalled();
+            expect(mockRegister).not.toHaveBeenCalled();
+            expect(mockUpdate).not.toHaveBeenCalled();
+        });
+
         it('should update scripts with changed properties via updateContentScripts', async () => {
             await ContentScriptManager.register(NS, [
                 { id: 'domains', js: ['old.js'], matches: ['<all_urls>'] },
