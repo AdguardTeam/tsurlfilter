@@ -413,10 +413,11 @@ export class ContentScriptManager {
             ContentScriptManager.update(namespace, toUpdateScripts),
         ]);
 
-        const errors = result.filter((r) => r.status === 'rejected');
+        const errors = result.filter(
+            (r): r is PromiseRejectedResult => r.status === 'rejected',
+        );
         if (errors.length > 0) {
-            const reasons = errors.map((e) => {
-                const { reason } = e as PromiseRejectedResult;
+            const reasons = errors.map(({ reason }) => {
                 return reason instanceof Error ? `${reason.message}\n${reason.stack}` : String(reason);
             });
 
@@ -525,10 +526,11 @@ export class ContentScriptManager {
 
         const results = await Promise.allSettled(operations);
 
-        const errors = results.filter((r) => r.status === 'rejected');
+        const errors = results.filter(
+            (r): r is PromiseRejectedResult => r.status === 'rejected',
+        );
         if (errors.length > 0) {
-            const reasons = errors.map((e) => {
-                const { reason } = e as PromiseRejectedResult;
+            const reasons = errors.map(({ reason }) => {
                 return reason instanceof Error ? `${reason.message}\n${reason.stack}` : String(reason);
             });
 

@@ -103,6 +103,19 @@ describe('CosmeticApi — preregistered script domains', () => {
             expect(applyRemote).toHaveBeenCalled();
         });
 
+        it('skips local rules when preregistered domain uses www and frame url is www', async () => {
+            CosmeticApi.setPreregisteredScriptDomains(['www.youtube.com']);
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(
+                makeFrameContext('https://www.youtube.com/watch?v=123') as any,
+            );
+
+            const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
+
+            await CosmeticApi.applyCosmeticRules(1, 0, false);
+
+            expect(applyLocal).not.toHaveBeenCalled();
+        });
+
         it('skips local rules for a subdomain of a preregistered domain', async () => {
             CosmeticApi.setPreregisteredScriptDomains(['youtube.com']);
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(

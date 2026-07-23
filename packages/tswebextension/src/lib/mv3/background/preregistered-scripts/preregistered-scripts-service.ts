@@ -6,8 +6,7 @@ import { engineApi } from '../engine-api';
 
 import {
     CLEANUP_BUNDLE_FILENAME,
-    computeJsRuleHash,
-    computeScriptletHash,
+    computeRuleHash,
     normalizeDomain,
     SHARED_BUNDLE_FILENAME,
 } from './hasher';
@@ -270,15 +269,7 @@ export class PreregisteredScriptsService {
         const hashList = await Promise.all(
             localRules.map(async (rule) => {
                 try {
-                    if (rule.isScriptlet) {
-                        const data = rule.getScriptletData();
-                        if (!data) {
-                            throw new Error('getScriptletData() returned null');
-                        }
-                        return await computeScriptletHash(data.params.name, data.params.args);
-                    }
-                    const content = rule.getContent();
-                    return await computeJsRuleHash(content);
+                    return await computeRuleHash(rule);
                 } catch (e) {
                     logger.warn(
                         `[tsweb.PreregisteredScriptsService.getDomainRuleHashes]: Failed to hash rule: ${domain}`,

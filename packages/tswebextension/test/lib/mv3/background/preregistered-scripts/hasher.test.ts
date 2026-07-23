@@ -61,9 +61,12 @@ describe('normalizeDomain', () => {
         expect(normalizeDomain('.youtube.com.')).toBe('youtube.com');
     });
 
+    it('strips a leading www prefix', () => {
+        expect(normalizeDomain('www.youtube.com')).toBe('youtube.com');
+    });
 
     it('combines all normalizations at once', () => {
-        expect(normalizeDomain('  .YouTube.Com. ')).toBe('youtube.com');
+        expect(normalizeDomain('  .WWW.YouTube.Com. ')).toBe('youtube.com');
     });
 
     it('leaves an already-normalized domain unchanged', () => {

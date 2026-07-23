@@ -1,3 +1,5 @@
+import { type CosmeticRule } from '@adguard/tsurlfilter';
+
 /**
  * Filename of the shared scriptlets bundle loaded before every per-hash file.
  */
@@ -63,8 +65,36 @@ export const computeJsRuleHash = async (body: string): Promise<string> => {
 };
 
 /**
+ * Computes the stable hash for a cosmetic rule (scriptlet or JS injection),
+ * dispatching on the rule's own {@link CosmeticRule.isScriptlet} flag.
+ *
+ * This is the single hashing entry point shared by build-time collection
+ * (`ScriptletCollector`) and runtime matching
+ * (`PreregisteredScriptsService`), so both sides are guaranteed to hash any
+ * given rule identically — there is no separate extraction logic to keep in sync.
+ *
+ * @param rule A constructed `CosmeticRule` instance.
+ *
+ * @returns SHA-256 hex hash string.
+ *
+ * @throws If the rule is a scriptlet rule but its scriptlet data can't be read.
+ */
+export const computeRuleHash = async (rule: CosmeticRule): Promise<string> => {
+    if (!rule.isScriptlet) {
+        return computeJsRuleHash(rule.getContent());
+    }
+
+    const data = rule.getScriptletData();
+    if (!data) {
+        throw new Error('getScriptletData() returned null for a scriptlet rule');
+    }
+
+    return computeScriptletHash(data.params.name, data.params.args);
+};
+
+/**
  * Normalizes a domain string for comparison: trims whitespace, lower-cases it,
- * and strips leading/trailing dots.
+ * strips leading/trailing dots, and drops a leading `www.` prefix.
  *
  * Shared by build-time collection (browser-extension) and runtime matching
  * (`CosmeticApi`, `PreregisteredScriptsService`) so both sides agree on
@@ -75,5 +105,5 @@ export const computeJsRuleHash = async (body: string): Promise<string> => {
  * @returns Normalized domain string.
  */
 export const normalizeDomain = (domain: string): string => {
-    return domain.trim().toLowerCase().replace(/^\.+|\.+$/g, '');
+    return domain.trim().toLowerCase().replace(/^\.+|\.+$/g, '').replace(/^www\./, '');
 };
