@@ -7,14 +7,26 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## [4.1.2] - Unreleased
+## [4.2.0] - Unreleased <!-- release/browser-extension-v5.5 -->
 
 ### Added
 
 - $urltransform modifier support [AGLint#249].
 
 [AGLint#249]: https://github.com/AdguardTeam/AGLint/issues/249
+[4.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.2.0
+
+## [4.1.2] - 2026-07-24
+
+### Fixed
+
+- UBO → AdGuard conversion of `json-prune-fetch-response` and
+  `json-prune-xhr-response` scriptlets: uBO key/value args for `propsToMatch`
+  and `stackToMatch` are now remapped into AdGuard positional argument slots
+  instead of being passed through positionally [FiltersCompiler#250].
+
 [4.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.1.2
+[FiltersCompiler#250]: https://github.com/AdguardTeam/FiltersCompiler/issues/250
 
 ## [4.1.1] - 2026-04-24
 
@@ -24,6 +36,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   ADG→UBO and UBO→ADG conversion of `google-ima3`/`google-ima` scriptlet rules
   ([FiltersCompiler#274]).
 
+[4.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.1.1
 [FiltersCompiler#274]: https://github.com/AdguardTeam/FiltersCompiler/issues/274
 [4.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.1.1
 

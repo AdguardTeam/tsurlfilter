@@ -3,6 +3,7 @@ import {
     expect,
     it,
     test,
+    vi,
 } from 'vitest';
 
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
@@ -171,8 +172,102 @@ describe('Scriptlet conversion', () => {
                     "example.org#@%#//scriptlet('ubo-google-ima')",
                 ],
             },
+            // uBO's json-prune-fetch-response: propsToMatch is a key/value vararg, not positional.
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/250
+            {
+                // eslint-disable-next-line max-len
+                actual: 'philo.com##+js(json-prune-fetch-response, periods.[-].eventStreams.0.id, , propsToMatch, /manifestv2)',
+                expected: [
+                    // eslint-disable-next-line max-len
+                    "philo.com#%#//scriptlet('json-prune-fetch-response', 'periods.[-].eventStreams.0.id', '', '/manifestv2')",
+                ],
+                shouldConvert: true,
+            },
+            // json-prune-xhr-response: same key/value vararg remap.
+            {
+                // eslint-disable-next-line max-len
+                actual: 'philo.com##+js(json-prune-xhr-response, periods.[-].eventStreams.0.id, , propsToMatch, /manifestv2)',
+                expected: [
+                    // eslint-disable-next-line max-len
+                    "philo.com#%#//scriptlet('json-prune-xhr-response', 'periods.[-].eventStreams.0.id', '', '/manifestv2')",
+                ],
+                shouldConvert: true,
+            },
+            // both propsToMatch and stackToMatch as key/value pairs.
+            {
+                // eslint-disable-next-line max-len
+                actual: 'example.com##+js(json-prune-fetch-response, a, b, propsToMatch, url:/foo, stackToMatch, /bar/)',
+                expected: [
+                    "example.com#%#//scriptlet('json-prune-fetch-response', 'a', 'b', 'url:/foo', '/bar/')",
+                ],
+                shouldConvert: true,
+            },
+            // only stackToMatch (no propsToMatch): empty propsToMatch placeholder before stack.
+            {
+                actual: 'example.com##+js(json-prune-fetch-response, a, b, stackToMatch, /bar/)',
+                expected: [
+                    "example.com#%#//scriptlet('json-prune-fetch-response', 'a', 'b', '', '/bar/')",
+                ],
+                shouldConvert: true,
+            },
+            // no varargs: native name, prune + needle only.
+            {
+                actual: 'example.com##+js(json-prune-fetch-response, a, b)',
+                expected: [
+                    "example.com#%#//scriptlet('json-prune-fetch-response', 'a', 'b')",
+                ],
+                shouldConvert: true,
+            },
+            // exception rule keeps exception status.
+            {
+                actual: 'example.com#@#+js(json-prune-fetch-response, a, b, propsToMatch, /x)',
+                expected: [
+                    "example.com#@%#//scriptlet('json-prune-fetch-response', 'a', 'b', '/x')",
+                ],
+                shouldConvert: true,
+            },
+            // unknown extra args are dropped: only recognized keys
+            // (propsToMatch, stackToMatch) are remapped to positional slots.
+            {
+                // eslint-disable-next-line max-len
+                actual: 'example.com##+js(json-prune-fetch-response, a, b, propsToMatch, /foo, unknownKey, /baz, stackToMatch, /bar/)',
+                expected: [
+                    "example.com#%#//scriptlet('json-prune-fetch-response', 'a', 'b', '/foo', '/bar/')",
+                ],
+                shouldConvert: true,
+            },
+            // repeated recognized keys: last value wins (last-value-wins semantics).
+            {
+                // eslint-disable-next-line max-len
+                actual: 'example.com##+js(json-prune-fetch-response, a, b, propsToMatch, /first, propsToMatch, /second)',
+                expected: [
+                    "example.com#%#//scriptlet('json-prune-fetch-response', 'a', 'b', '/second')",
+                ],
+                shouldConvert: true,
+            },
+            // Single positional arg (no obligatoryProps, no varargs): the output
+            // must not gain a trailing empty arg the source never had.
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/250
+            {
+                actual: 'example.com##+js(json-prune-fetch-response, a)',
+                expected: [
+                    "example.com#%#//scriptlet('json-prune-fetch-response', 'a')",
+                ],
+                shouldConvert: true,
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
+        });
+
+        it('warns when unknown extra args are dropped', () => {
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            // eslint-disable-next-line max-len
+            const actual = 'example.com##+js(json-prune-fetch-response, a, b, propsToMatch, /foo, unknownKey, /baz)';
+
+            ScriptletRuleConverter.convertToAdg(RuleParser.parse(actual) as ScriptletInjectionRule);
+
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('unknownKey'));
+            warnSpy.mockRestore();
         });
     });
 
@@ -382,6 +477,60 @@ describe('Scriptlet conversion', () => {
                 actual: "aceee.org#%#//scriptlet('prevent-canvas', '2d')",
                 expected: [
                     'aceee.org##+js(prevent-canvas, 2d)',
+                ],
+                shouldConvert: true,
+            },
+            // ADG positional propsToMatch/stack must round-trip back to uBO
+            // key/value pairs, otherwise uBO drops them as unknown keys.
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/250
+            {
+                // eslint-disable-next-line max-len
+                actual: "example.com#%#//scriptlet('json-prune-fetch-response', 'a', 'b', '/foo', '/bar/')",
+                expected: [
+                    'example.com##+js(json-prune-fetch-response, a, b, propsToMatch, /foo, stackToMatch, /bar/)',
+                ],
+                shouldConvert: true,
+            },
+            // only propsToMatch (no stack).
+            {
+                // eslint-disable-next-line max-len
+                actual: "example.com#%#//scriptlet('json-prune-fetch-response', 'a', 'b', '/foo')",
+                expected: [
+                    'example.com##+js(json-prune-fetch-response, a, b, propsToMatch, /foo)',
+                ],
+                shouldConvert: true,
+            },
+            // only stack (empty propsToMatch placeholder): re-emit only stackToMatch.
+            {
+                // eslint-disable-next-line max-len
+                actual: "example.com#%#//scriptlet('json-prune-fetch-response', 'a', 'b', '', '/bar/')",
+                expected: [
+                    'example.com##+js(json-prune-fetch-response, a, b, stackToMatch, /bar/)',
+                ],
+                shouldConvert: true,
+            },
+            // no propsToMatch/stack: preserved verbatim.
+            {
+                actual: "example.com#%#//scriptlet('json-prune-fetch-response', 'a', 'b')",
+                expected: [
+                    'example.com##+js(json-prune-fetch-response, a, b)',
+                ],
+                shouldConvert: true,
+            },
+            // single positional arg: preserved verbatim.
+            {
+                actual: "example.com#%#//scriptlet('json-prune-fetch-response', 'a')",
+                expected: [
+                    'example.com##+js(json-prune-fetch-response, a)',
+                ],
+                shouldConvert: true,
+            },
+            // xhr variant also remaps.
+            {
+                // eslint-disable-next-line max-len
+                actual: "example.com#%#//scriptlet('json-prune-xhr-response', 'a', 'b', '/foo')",
+                expected: [
+                    'example.com##+js(json-prune-xhr-response, a, b, propsToMatch, /foo)',
                 ],
                 shouldConvert: true,
             },

@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.0.0] - 2026-XX-XX
+## [5.0.0] - Unreleased <!-- release/browser-extension-v5.5 -->
 
 ### Changed
 
@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - WebRTC IP handling policy changed from `disable_non_proxied_udp` to
   `default_public_interface_only` to reduce VoIP breakage while still
   preventing IP leaks.
+- Updated [@adguard/agtree] to `v4.2.0`.
+- Updated [@adguard/tsurlfilter] to `v6.0.0`.
 
 ### Added
 
@@ -54,15 +56,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [AdguardBrowserExtension#3537].
 - monkeytype.com fails to load — requests stuck "Pending" with AdGuard MV2 enabled [AdguardBrowserExtension#3565].
 
-[tsurlfilter#188]: https://github.com/AdguardTeam/tsurlfilter/issues/188
 [tsurlfilter#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
+[tsurlfilter#188]: https://github.com/AdguardTeam/tsurlfilter/issues/188
 [AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
 [AdguardBrowserExtension#1686]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
-[AdguardBrowserExtension#2895]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2895
-[AdguardBrowserExtension#3547]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3547
 [AdguardBrowserExtension#2524]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2524
+[AdguardBrowserExtension#2895]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2895
 [AdguardBrowserExtension#3525]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3525
 [AdguardBrowserExtension#3537]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3537
+[AdguardBrowserExtension#3547]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3547
 [AdguardBrowserExtension#3565]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3565
 
 [5.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v5.0.0
