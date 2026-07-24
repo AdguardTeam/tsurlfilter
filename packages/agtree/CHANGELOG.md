@@ -38,7 +38,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [4.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.1.1
 [FiltersCompiler#274]: https://github.com/AdguardTeam/FiltersCompiler/issues/274
-[4.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.1.1
 
 ## [4.1.0-beta.0] - 2026-04-21
 
