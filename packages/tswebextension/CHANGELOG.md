@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `default_public_interface_only` to reduce VoIP breakage while still
   preventing IP leaks.
 - Updated [@adguard/agtree] to `v4.2.0`.
-- Updated [@adguard/tsurlfilter] to `v6.0.0`.
+- Updated [@adguard/tsurlfilter] to `v6.0.1`.
 
 ### Added
 
