@@ -15,7 +15,7 @@ import {
 
 vi.mock('../../../../../src/lib/mv3/background/engine-api', () => ({
     engineApi: {
-        getCosmeticResult: vi.fn(),
+        getJsRulesIgnoringPath: vi.fn(),
         isLocalFilter: vi.fn(),
     },
 }));
@@ -29,22 +29,30 @@ vi.mock('../../../../../src/lib/mv3/background/content-script-manager', () => ({
 const SCRIPTS_PATH = 'filters/preregistered-scripts';
 
 /**
- * Builds a mock scriptlet rule as returned by `CosmeticResult.JS.getRules()`.
+ * Builds a mock scriptlet rule as returned by `Engine.getJsRulesIgnoringPath()`.
  *
  * @param name Scriptlet name.
  * @param args Scriptlet arguments.
  * @param filterListId Id of the filter list the rule came from.
+ * @param pathModifier Optional mock `$path` modifier (only `pattern` is read).
+ * @param pathModifier.pattern Raw `$path` pattern text.
  *
  * @returns Mock scriptlet rule.
  */
-const mockScriptletRule = (name: string, args: string[], filterListId = 1): object => ({
+const mockScriptletRule = (
+    name: string,
+    args: string[],
+    filterListId = 1,
+    pathModifier?: { pattern: string },
+): object => ({
     isScriptlet: true,
     getScriptletData: (): object => ({ params: { name, args } }),
     getFilterListId: (): number => filterListId,
+    pathModifier,
 });
 
 /**
- * Builds a mock JS injection rule as returned by `CosmeticResult.JS.getRules()`.
+ * Builds a mock JS injection rule as returned by `Engine.getJsRulesIgnoringPath()`.
  *
  * @param content Raw JS rule body.
  * @param filterListId Id of the filter list the rule came from.
@@ -58,9 +66,9 @@ const mockJsRule = (content: string, filterListId = 1): object => ({
 });
 
 /**
- * Configures `engineApi.getCosmeticResult` to return the given rules for the
- * given domain, and `engineApi.isLocalFilter` to treat `localFilterIds` as
- * local filters (everything else is treated as remote/custom/user rules).
+ * Configures `engineApi.getJsRulesIgnoringPath` to return the given rules for
+ * the given domain, and `engineApi.isLocalFilter` to treat `localFilterIds`
+ * as local filters (everything else is treated as remote/custom/user rules).
  *
  * @param rulesByDomain Map of domain → rules to return for that domain.
  * @param localFilterIds Filter ids considered "local" by `isLocalFilter`.
@@ -69,9 +77,9 @@ const setupEngine = (
     rulesByDomain: Record<string, ReturnType<typeof mockScriptletRule>[]>,
     localFilterIds: number[] = [1],
 ): void => {
-    vi.mocked(engineApi.getCosmeticResult).mockImplementation((url: string) => {
+    vi.mocked(engineApi.getJsRulesIgnoringPath).mockImplementation((url: string) => {
         const domain = new URL(url).hostname;
-        return { JS: { getRules: () => rulesByDomain[domain] ?? [] } } as any;
+        return (rulesByDomain[domain] ?? []) as any[];
     });
     vi.mocked(engineApi.isLocalFilter).mockImplementation(
         (filterListId: number) => localFilterIds.includes(filterListId),
@@ -111,13 +119,13 @@ describe('PreregisteredScriptsService', () => {
             expect(scripts).toHaveLength(1);
             expect(scripts[0]).toMatchObject({
                 id: 'youtube.com',
-                matches: ['*://youtube.com/*', '*://*.youtube.com/*'],
-                excludeMatches: undefined,
+                matches: ['*://youtube.com/*', '*://www.youtube.com/*'],
                 runAt: 'document_start',
                 world: 'MAIN',
                 allFrames: true,
                 persistAcrossSessions: true,
             });
+            expect(scripts[0].excludeMatches).toBeUndefined();
             expect(scripts[0].js).toHaveLength(3);
             expect(scripts[0].js?.[0]).toBe(`${SCRIPTS_PATH}/scriptlets-bundle.js`);
             // Cleanup file must always be last, so it deletes the coordination
@@ -141,6 +149,32 @@ describe('PreregisteredScriptsService', () => {
 
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts).toHaveLength(0);
+        });
+
+        it('includes rules with a $path modifier (over-collected, path enforced later at runtime)', async () => {
+            setupEngine({
+                'youtube.com': [
+                    mockScriptletRule('set-cookie', [], 1, { pattern: '/watch' }),
+                ],
+            });
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts).toHaveLength(1);
+            expect(scripts[0].js).toHaveLength(3);
+        });
+
+        it('includes a rule that only targets the www. alias (queried in union with the apex domain)', async () => {
+            setupEngine({
+                'www.youtube.com': [mockScriptletRule('set-cookie', [])],
+            });
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts).toHaveLength(1);
+            expect(scripts[0].matches).toEqual(['*://youtube.com/*', '*://www.youtube.com/*']);
         });
 
         it('excludes rules from non-local (custom/user) filters from hashing', async () => {
@@ -215,90 +249,6 @@ describe('PreregisteredScriptsService', () => {
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts).toHaveLength(1);
             expect(scripts[0].id).toBe('youtube.com');
-        });
-    });
-
-    describe('sync — subdomain wildcard collapsing', () => {
-        it('skips a subdomain registration when its hash set equals its parent’s', async () => {
-            setupEngine({
-                'youtube.com': [mockScriptletRule('set-cookie', ['a'])],
-                'm.youtube.com': [mockScriptletRule('set-cookie', ['a'])],
-            });
-
-            await PreregisteredScriptsService.sync(
-                true,
-                ['youtube.com', 'm.youtube.com'],
-                SCRIPTS_PATH,
-            );
-
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts).toHaveLength(1);
-            expect(scripts[0].id).toBe('youtube.com');
-        });
-
-        it('registers parent and child (with child excluded from parent) when hash sets differ', async () => {
-            setupEngine({
-                'youtube.com': [mockScriptletRule('set-cookie', ['a'])],
-                'm.youtube.com': [mockScriptletRule('set-cookie', ['b'])],
-            });
-
-            await PreregisteredScriptsService.sync(
-                true,
-                ['youtube.com', 'm.youtube.com'],
-                SCRIPTS_PATH,
-            );
-
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts).toHaveLength(2);
-
-            const parent = scripts.find((s): boolean => s.id === 'youtube.com');
-            const child = scripts.find((s): boolean => s.id === 'm.youtube.com');
-
-            expect(parent?.excludeMatches).toEqual(
-                ['*://*.m.youtube.com/*', '*://m.youtube.com/*'],
-            );
-            expect(child?.excludeMatches).toBeUndefined();
-        });
-
-        it('produces deterministically sorted js/excludeMatches regardless of rule return order', async () => {
-            setupEngine({
-                'youtube.com': [
-                    mockScriptletRule('z-scriptlet', []),
-                    mockScriptletRule('a-scriptlet', []),
-                ],
-                'm.youtube.com': [mockScriptletRule('set-cookie', ['b'])],
-            });
-
-            await PreregisteredScriptsService.sync(
-                true,
-                ['youtube.com', 'm.youtube.com'],
-                SCRIPTS_PATH,
-            );
-            const [, firstRunScripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-
-            vi.clearAllMocks();
-
-            // Same rules, reversed order — simulates a non-guaranteed engine
-            // iteration order between two otherwise-identical configure() calls.
-            setupEngine({
-                'youtube.com': [
-                    mockScriptletRule('a-scriptlet', []),
-                    mockScriptletRule('z-scriptlet', []),
-                ],
-                'm.youtube.com': [mockScriptletRule('set-cookie', ['b'])],
-            });
-
-            await PreregisteredScriptsService.sync(
-                true,
-                ['youtube.com', 'm.youtube.com'],
-                SCRIPTS_PATH,
-            );
-            const [, secondRunScripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-
-            const parent1 = firstRunScripts.find((s): boolean => s.id === 'youtube.com');
-            const parent2 = secondRunScripts.find((s): boolean => s.id === 'youtube.com');
-            expect(parent1?.js).toEqual(parent2?.js);
-            expect(parent1?.excludeMatches).toEqual(parent2?.excludeMatches);
         });
     });
 

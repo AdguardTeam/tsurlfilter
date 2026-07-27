@@ -116,7 +116,7 @@ describe('CosmeticApi — preregistered script domains', () => {
             expect(applyLocal).not.toHaveBeenCalled();
         });
 
-        it('skips local rules for a subdomain of a preregistered domain', async () => {
+        it('does NOT skip local rules for a subdomain (subdomains are not preregistered)', async () => {
             CosmeticApi.setPreregisteredScriptDomains(['youtube.com']);
             vi.mocked(tabsApi.getFrameContext).mockReturnValue(
                 makeFrameContext('https://music.youtube.com/') as any,
@@ -126,7 +126,7 @@ describe('CosmeticApi — preregistered script domains', () => {
 
             await CosmeticApi.applyCosmeticRules(1, 0, false);
 
-            expect(applyLocal).not.toHaveBeenCalled();
+            expect(applyLocal).toHaveBeenCalled();
         });
 
         it('does NOT skip local rules for an unrelated domain', async () => {

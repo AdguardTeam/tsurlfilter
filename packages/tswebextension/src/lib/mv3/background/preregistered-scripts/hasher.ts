@@ -80,8 +80,10 @@ export const computeJsRuleHash = async (body: string): Promise<string> => {
  * @throws If the rule is a scriptlet rule but its scriptlet data can't be read.
  */
 export const computeRuleHash = async (rule: CosmeticRule): Promise<string> => {
+    const pathSuffix = rule.pathModifier ? `|path:${rule.pathModifier.pattern}` : '';
+
     if (!rule.isScriptlet) {
-        return computeJsRuleHash(rule.getContent());
+        return hashString(rule.getContent() + pathSuffix);
     }
 
     const data = rule.getScriptletData();
@@ -89,7 +91,7 @@ export const computeRuleHash = async (rule: CosmeticRule): Promise<string> => {
         throw new Error('getScriptletData() returned null for a scriptlet rule');
     }
 
-    return computeScriptletHash(data.params.name, data.params.args);
+    return hashString(data.params.name + JSON.stringify(data.params.args) + pathSuffix);
 };
 
 /**

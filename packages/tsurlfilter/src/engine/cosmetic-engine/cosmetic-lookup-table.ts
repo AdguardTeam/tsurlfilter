@@ -183,10 +183,11 @@ export class CosmeticLookupTable {
      * Finds rules by hostname.
      *
      * @param request Request to check.
+     * @param ignorePath If true, the `$path` modifier condition is skipped.
      *
      * @returns Array of matching cosmetic rules.
      */
-    public findByHostname(request: Request): CosmeticRule[] {
+    public findByHostname(request: Request, ignorePath = false): CosmeticRule[] {
         const result: CosmeticRule[] = [];
         const { subdomains } = request;
 
@@ -201,7 +202,7 @@ export class CosmeticLookupTable {
             const uniqueRulesIndexes = new Set(rulesIndexes);
             for (const ruleIndex of uniqueRulesIndexes) {
                 const rule = this.ruleStorage.retrieveRule(ruleIndex, true, false) as CosmeticRule;
-                if (rule && !rule.isAllowlist() && rule.match(request)) {
+                if (rule && !rule.isAllowlist() && rule.match(request, ignorePath)) {
                     result.push(rule);
                 }
             }
@@ -210,7 +211,7 @@ export class CosmeticLookupTable {
         for (const ruleIndex of this.seqScanRuleIndexes) {
             // Note: rule storage caches retrieved rules
             const rule = this.ruleStorage.retrieveCosmeticRule(ruleIndex);
-            if (rule && !rule.isAllowlist() && rule.match(request)) {
+            if (rule && !rule.isAllowlist() && rule.match(request, ignorePath)) {
                 result.push(rule);
             }
         }

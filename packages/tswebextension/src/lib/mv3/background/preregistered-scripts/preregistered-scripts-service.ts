@@ -1,5 +1,3 @@
-import { CosmeticOption, type CosmeticResult } from '@adguard/tsurlfilter';
-
 import { logger } from '../../../common/utils/logger';
 import { type ContentScriptDescriptor, ContentScriptManager } from '../content-script-manager';
 import { engineApi } from '../engine-api';
@@ -17,57 +15,17 @@ import {
 const PREREGISTERED_SCRIPTS_NAMESPACE = 'preregistered';
 
 /**
- * Converts a domain into URL match patterns for `matches`/`excludeMatches`.
+ * Converts a domain into URL match patterns for `matches`.
+ *
+ * Only the exact apex domain and its `www.` alias are matched — subdomains
+ * are intentionally out of scope (see class-level doc).
  *
  * @param domain Domain string.
  *
- * @returns Two match patterns: `*://domain/*` and `*://*.domain/*`.
+ * @returns Two match patterns: `*://domain/*` and `*://www.domain/*`.
  */
 const domainToMatchPatterns = (domain: string): string[] => {
-    return [`*://${domain}/*`, `*://*.${domain}/*`];
-};
-
-/**
- * Finds the longest domain in the list that is a parent of `domain`.
- *
- * @param domain Domain to find parent for.
- * @param allDomains All preregistered domains.
- *
- * @returns Closest parent, or `null` if none.
- */
-const findClosestParentDomain = (
-    domain: string,
-    allDomains: readonly string[],
-): string | null => {
-    let parent: string | null = null;
-    for (const d of allDomains) {
-        if (d !== domain && domain.endsWith(`.${d}`)) {
-            if (parent === null || d.length > parent.length) {
-                parent = d;
-            }
-        }
-    }
-
-    return parent;
-};
-
-/**
- * @param a First set.
- * @param b Second set.
- *
- * @returns `true` if both sets contain the same elements.
- */
-const setsEqual = <T>(a: Set<T>, b: Set<T>): boolean => {
-    if (a.size !== b.size) {
-        return false;
-    }
-    for (const item of a) {
-        if (!b.has(item)) {
-            return false;
-        }
-    }
-
-    return true;
+    return [`*://${domain}/*`, `*://www.${domain}/*`];
 };
 
 /**
@@ -107,11 +65,18 @@ const getScriptPath = (scriptsPath: string, hash: string): string => {
  * `{hash}.js` files, a shared `scriptlets-bundle.js`, and `domains.js` listing
  * domains that have rules.
  *
- * At runtime, this service queries the engine per domain to get applicable
- * cosmetic rules, computes their hashes, and registers content scripts with
- * wildcard `matches` and `excludeMatches` for subdomains with different rule
- * sets. Apex domains cover all subdomains via wildcards; subdomains with
- * exceptions or extra rules get their own registration.
+ * At runtime, this service queries the engine per domain (ignoring the
+ * `$path` modifier, so path-qualified rules aren't missed) to get applicable
+ * JS/scriptlet rules, computes their hashes, and registers a content script
+ * for the exact apex domain and its `www.` alias. Subdomains are
+ * intentionally NOT covered by wildcard matches — only the fixed set of
+ * preregistered domains (and their `www.` alias) is registered; any other
+ * subdomain falls back to the standard dynamic injection path.
+ *
+ * Rules with a `$path` modifier are still included in a domain's registration
+ * (over-collection is intentional — the file is loaded on every path), but
+ * the actual path condition is enforced at runtime inside the generated
+ * per-hash file itself, which checks `location.pathname` before executing.
  *
  * Each registration's `js` array is `[sharedBundle, ...perHashFiles, cleanup]`.
  * The cleanup script always runs last, deleting the shared bundle's
@@ -165,8 +130,8 @@ export class PreregisteredScriptsService {
     }
 
     /**
-     * Builds MAIN-world content-script descriptors with wildcard `matches`
-     * and `excludeMatches` for subdomains with different rule sets.
+     * Builds MAIN-world content-script descriptors for the exact preregistered
+     * domains (and their `www.` alias). Subdomains are not covered.
      *
      * @param allDomains All preregistered domains (already normalized).
      * @param scriptsPath Extension-relative path to preregistered scripts.
@@ -177,72 +142,42 @@ export class PreregisteredScriptsService {
         allDomains: string[],
         scriptsPath: string,
     ): Promise<ContentScriptDescriptor[]> {
-        const scripts: ContentScriptDescriptor[] = [];
         const sharedBundlePath = getSharedBundlePath(scriptsPath);
 
-        // Pre-compute hashes for all domains.
-        const hashEntries = await Promise.all(
-            allDomains.map(async (domain) => {
-                const hashes = await PreregisteredScriptsService.getDomainRuleHashes(domain);
-                return [domain, hashes] as const;
+        const scripts = await Promise.all(
+            allDomains.map(async (domain): Promise<ContentScriptDescriptor | null> => {
+                const domainHashes = await PreregisteredScriptsService.getDomainRuleHashes(domain);
+                if (domainHashes.size === 0) {
+                    return null;
+                }
+
+                const js = [
+                    sharedBundlePath,
+                    ...[...domainHashes].sort().map((hash) => getScriptPath(scriptsPath, hash)),
+                    getCleanupPath(scriptsPath),
+                ];
+
+                return {
+                    id: domain,
+                    js,
+                    matches: domainToMatchPatterns(domain),
+                    runAt: 'document_start',
+                    world: 'MAIN',
+                    allFrames: true,
+                    matchOriginAsFallback: true,
+                    persistAcrossSessions: true,
+                };
             }),
         );
-        const hashCache = new Map<string, Set<string>>(hashEntries);
 
-        for (const [domain, domainHashes] of hashEntries) {
-            if (domainHashes.size === 0) {
-                continue;
-            }
-
-            // Skip if same hashes as closest parent (parent's wildcard covers it).
-            const parent = findClosestParentDomain(domain, allDomains);
-            const parentHashes = parent ? hashCache.get(parent) : undefined;
-            if (parentHashes && setsEqual(domainHashes, parentHashes)) {
-                continue;
-            }
-
-            // Find subdomains with different hash sets → excludeMatches.
-            const excludeMatches: string[] = [];
-            for (const [other, otherHashes] of hashEntries) {
-                if (other === domain || !other.endsWith(`.${domain}`)) {
-                    continue;
-                }
-                if (!setsEqual(otherHashes, domainHashes)) {
-                    excludeMatches.push(...domainToMatchPatterns(other));
-                }
-            }
-            // Sort for deterministic output — avoids spurious `updateContentScripts`
-            // calls caused by non-guaranteed iteration/array order between
-            // otherwise-identical `configure()` calls.
-            excludeMatches.sort();
-
-            const js = [
-                sharedBundlePath,
-                ...[...domainHashes].sort().map((hash) => getScriptPath(scriptsPath, hash)),
-                // Must run last: deletes the shared bundle's coordination property
-                // before the page's own scripts get a chance to run.
-                getCleanupPath(scriptsPath),
-            ];
-
-            scripts.push({
-                id: domain,
-                js,
-                matches: domainToMatchPatterns(domain),
-                excludeMatches: excludeMatches.length > 0 ? excludeMatches : undefined,
-                runAt: 'document_start',
-                world: 'MAIN',
-                allFrames: true,
-                matchOriginAsFallback: true,
-                persistAcrossSessions: true,
-            });
-        }
-
-        return scripts;
+        return scripts.filter((script): script is ContentScriptDescriptor => script !== null);
     }
 
     /**
-     * Queries the engine for cosmetic rules applicable to `domain` and computes
-     * their hashes.
+     * Queries the engine for JS/scriptlet rules applicable to `domain`
+     * **and** its `www.` alias (union of both, so a rule targeting only
+     * `www.domain` isn't missed), ignoring the `$path` modifier (so
+     * path-qualified rules aren't missed either), and computes their hashes.
      *
      * Only rules from **local** (built-in, pre-bundled) filters are hashed.
      * Rules from custom filters or user rules are intentionally excluded:
@@ -257,12 +192,9 @@ export class PreregisteredScriptsService {
      * @returns Set of rule hash strings.
      */
     private static async getDomainRuleHashes(domain: string): Promise<Set<string>> {
-        const url = `https://${domain}/`;
-        const cosmeticResult: CosmeticResult = engineApi.getCosmeticResult(
-            url,
-            CosmeticOption.CosmeticOptionJS,
-        );
-        const localRules = cosmeticResult.JS.getRules()
+        const urls = [`https://${domain}/`, `https://www.${domain}/`];
+        const allRules = urls.flatMap((url) => engineApi.getJsRulesIgnoringPath(url));
+        const localRules = allRules
             .filter((rule) => engineApi.isLocalFilter(rule.getFilterListId()));
 
         const hashes = new Set<string>();

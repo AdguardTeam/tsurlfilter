@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for `UrlTransformModifier` [#111].
 - `FilterListConversionError` interface, `FilterList.getConversionErrors()`
   and `Engine.getConversionErrors()` methods.
+- `Engine.getJsRulesIgnoringPath(request)` — returns JS/scriptlet rules
+  matching a domain, ignoring any `$path` modifier.
 
 ### Changed
 

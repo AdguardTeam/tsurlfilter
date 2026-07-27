@@ -558,6 +558,53 @@ describe('Test cosmetic engine - JS rules', () => {
             expect(result.JS.generic.length).toBe(0);
         });
     });
+
+    describe('match() with ignorePath', () => {
+        it('still cancels a specific rule matching a domain-specific exception', () => {
+            const rule = "example.org#%#//scriptlet('set-cookie', 'name', 'val')";
+            const exceptionRule = "example.org#@%#//scriptlet('set-cookie', 'name', 'val')";
+            const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, [rule, exceptionRule].join('\n'))]);
+
+            const result = cosmeticEngine.match(
+                createRequest('https://example.org'),
+                CosmeticOption.CosmeticOptionAll,
+                true,
+            );
+
+            expect(result.JS.specific.length).toBe(0);
+            expect(result.JS.generic.length).toBe(0);
+        });
+
+        it('still cancels a generic rule matching a domain-specific exception', () => {
+            const rule = "#%#//scriptlet('set-cookie', 'name', 'val')";
+            const exceptionRule = "example.org#@%#//scriptlet('set-cookie', 'name', 'val')";
+            const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, [rule, exceptionRule].join('\n'))]);
+
+            const result = cosmeticEngine.match(
+                createRequest('https://example.org'),
+                CosmeticOption.CosmeticOptionAll,
+                true,
+            );
+
+            expect(result.JS.specific.length).toBe(0);
+            expect(result.JS.generic.length).toBe(0);
+        });
+
+        it('includes a $path-restricted rule regardless of the request path', () => {
+            const content = "//scriptlet('set-cookie', 'name', 'val')";
+            const rule = `[$domain=example.org,path=/only-here]#%#${content}`;
+            const cosmeticEngine = createCosmeticEngine([new StringRuleList(1, rule)]);
+
+            const result = cosmeticEngine.match(
+                createRequest('https://example.org/unrelated-path'),
+                CosmeticOption.CosmeticOptionAll,
+                true,
+            );
+
+            expect(result.JS.specific.length).toBe(1);
+            expect(result.JS.specific[0].getContent()).toBe(content);
+        });
+    });
 });
 
 describe('Test cosmetic engine - HTML filtering rules', () => {

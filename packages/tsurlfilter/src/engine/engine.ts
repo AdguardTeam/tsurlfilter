@@ -8,13 +8,14 @@ import { RuleStorage } from '../filterlist/rule-storage';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { Request } from '../request';
 import { RequestType } from '../request-type';
+import { type CosmeticRule } from '../rules/cosmetic-rule';
 import { type NetworkRule } from '../rules/network-rule';
 import { type IndexedStorageCosmeticRuleParts, type IndexedStorageNetworkRuleParts } from '../rules/rule';
 
 import { CHUNK_SIZE } from './constants';
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { type CosmeticResult } from './cosmetic-engine/cosmetic-result';
-import { type CosmeticOption } from './cosmetic-option';
+import { CosmeticOption } from './cosmetic-option';
 import { MatchingResult } from './matching-result';
 import { NetworkEngine } from './network-engine';
 
@@ -325,11 +326,26 @@ export class Engine {
      *
      * @param request Host to check.
      * @param option Mask of enabled cosmetic types.
+     * @param ignorePath If true, skips the `$path` modifier check. Defaults to false.
      *
      * @returns Cosmetic result.
      */
-    public getCosmeticResult(request: Request, option: CosmeticOption): CosmeticResult {
-        return this.cosmeticEngine.match(request, option);
+    public getCosmeticResult(request: Request, option: CosmeticOption, ignorePath = false): CosmeticResult {
+        return this.cosmeticEngine.match(request, option, ignorePath);
+    }
+
+    /**
+     * Gets JS/scriptlet rules for the request's domain, ignoring the `$path` modifier.
+     *
+     * Used for build-time/preregistration discovery of every rule that could
+     * apply to a domain, without enumerating paths.
+     *
+     * @param request Request to check — only its domain is used, path is ignored.
+     *
+     * @returns Matching JS/scriptlet rules.
+     */
+    public getJsRulesIgnoringPath(request: Request): CosmeticRule[] {
+        return this.getCosmeticResult(request, CosmeticOption.CosmeticOptionJS, true).getScriptRules();
     }
 
     /**

@@ -68,21 +68,14 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Checks whether a domain (or any of its parent domains) is in the
-     * preregistered script domains set.
+     * Checks whether a domain is in the preregistered script domains set.
      *
-     * @param domain Domain to check (e.g. `"music.youtube.com"`).
+     * @param domain Domain to check (e.g. `"youtube.com"`).
      *
      * @returns `true` if the domain matches a preregistered domain.
      */
     private static isPreregisteredDomain(domain: string): boolean {
-        const normalized = normalizeDomain(domain);
-        for (const preregistered of CosmeticApi.preregisteredScriptDomains) {
-            if (normalized === preregistered || normalized.endsWith(`.${preregistered}`)) {
-                return true;
-            }
-        }
-        return false;
+        return CosmeticApi.preregisteredScriptDomains.has(normalizeDomain(domain));
     }
 
     /**

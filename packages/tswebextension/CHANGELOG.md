@@ -38,7 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    preregistered content scripts.
 - `PreregisteredScriptsService` (MV3-only), exported from the MV3 entry
   point, along with `hashString`, `computeScriptletHash`, `computeJsRuleHash`,
-  `normalizeDomain`, `SHARED_BUNDLE_FILENAME`, and `PREREGISTERED_SCRIPTS_DIR`
+  `computeRuleHash`, `normalizeDomain`,
+  `SHARED_BUNDLE_FILENAME`, and `PREREGISTERED_SCRIPTS_DIR`
   — the shared hash contract used by build-time tools to generate
   preregistered script bundles matching what the engine resolves at runtime.
 

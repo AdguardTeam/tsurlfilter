@@ -167,10 +167,11 @@ export class CosmeticEngine {
      *
      * @param request Request to match.
      * @param option Mask of enabled cosmetic types.
+     * @param ignorePath If true, skips the `$path` modifier check. Defaults to false.
      *
      * @returns CosmeticResult.
      */
-    public match(request: Request, option: CosmeticOption): CosmeticResult {
+    public match(request: Request, option: CosmeticOption, ignorePath = false): CosmeticResult {
         const includeGeneric = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionGenericCSS);
         const includeSpecific = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionSpecificCSS);
 
@@ -180,25 +181,35 @@ export class CosmeticEngine {
         const cosmeticResult = new CosmeticResult();
 
         if (includeGeneric) {
-            CosmeticEngine.appendGenericRules(cosmeticResult.elementHiding, this.elementHidingLookupTable, request);
-            CosmeticEngine.appendGenericRules(cosmeticResult.CSS, this.cssLookupTable, request);
+            CosmeticEngine.appendGenericRules(
+                cosmeticResult.elementHiding,
+                this.elementHidingLookupTable,
+                request,
+                ignorePath,
+            );
+            CosmeticEngine.appendGenericRules(cosmeticResult.CSS, this.cssLookupTable, request, ignorePath);
         }
 
         if (includeSpecific) {
-            CosmeticEngine.appendSpecificRules(cosmeticResult.elementHiding, this.elementHidingLookupTable, request);
-            CosmeticEngine.appendSpecificRules(cosmeticResult.CSS, this.cssLookupTable, request);
+            CosmeticEngine.appendSpecificRules(
+                cosmeticResult.elementHiding,
+                this.elementHidingLookupTable,
+                request,
+                ignorePath,
+            );
+            CosmeticEngine.appendSpecificRules(cosmeticResult.CSS, this.cssLookupTable, request, ignorePath);
         }
 
         if (includeJs) {
-            CosmeticEngine.appendGenericRules(cosmeticResult.JS, this.jsLookupTable, request);
-            CosmeticEngine.appendSpecificRules(cosmeticResult.JS, this.jsLookupTable, request);
+            CosmeticEngine.appendGenericRules(cosmeticResult.JS, this.jsLookupTable, request, ignorePath);
+            CosmeticEngine.appendSpecificRules(cosmeticResult.JS, this.jsLookupTable, request, ignorePath);
         }
 
         if (includeHtml) {
             if (includeGeneric) {
-                CosmeticEngine.appendGenericRules(cosmeticResult.Html, this.htmlLookupTable, request);
+                CosmeticEngine.appendGenericRules(cosmeticResult.Html, this.htmlLookupTable, request, ignorePath);
             }
-            CosmeticEngine.appendSpecificRules(cosmeticResult.Html, this.htmlLookupTable, request);
+            CosmeticEngine.appendSpecificRules(cosmeticResult.Html, this.htmlLookupTable, request, ignorePath);
         }
 
         return cosmeticResult;
@@ -210,15 +221,17 @@ export class CosmeticEngine {
      * @param cosmeticResult Cosmetic result.
      * @param lookupTable Lookup table.
      * @param request Request.
+     * @param ignorePath If true, skips the `$path` modifier condition (see {@link match}).
      */
     private static appendGenericRules(
         cosmeticResult: CosmeticContentResult,
         lookupTable: CosmeticLookupTable,
         request: Request,
+        ignorePath = false,
     ): void {
         for (const genericRule of lookupTable.genericRules) {
             if (!lookupTable.isAllowlisted(request, genericRule)
-                && genericRule.match(request)) {
+                && genericRule.match(request, ignorePath)) {
                 cosmeticResult.append(genericRule, request);
             }
         }
@@ -230,13 +243,15 @@ export class CosmeticEngine {
      * @param cosmeticResult Cosmetic result.
      * @param lookupTable Lookup table.
      * @param request Request.
+     * @param ignorePath If true, skips the `$path` modifier condition (see {@link match}).
      */
     private static appendSpecificRules(
         cosmeticResult: CosmeticContentResult,
         lookupTable: CosmeticLookupTable,
         request: Request,
+        ignorePath = false,
     ): void {
-        const specificRules = lookupTable.findByHostname(request);
+        const specificRules = lookupTable.findByHostname(request, ignorePath);
 
         if (specificRules.length === 0) {
             return;

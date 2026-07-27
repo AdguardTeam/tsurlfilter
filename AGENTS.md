@@ -161,6 +161,10 @@ You MUST follow the following rules for EVERY task that you perform:
    packages). Code MUST pass `pnpm lint:code`.
 
 3. **JSDoc** is required in most packages (enforced by `eslint-plugin-jsdoc`).
+   Keep it short — one sentence per tag when possible. Do not repeat what's
+   already obvious from the parameter/method name, don't restate the
+   implementation, and don't add usage examples or rationale unless the
+   behavior is genuinely non-obvious. Long descriptions don't get read.
 
 4. **Consistent `zod` version** across all packages is mandatory to avoid
    schema incompatibility. The version is pinned in `pnpm-workspace.yaml`

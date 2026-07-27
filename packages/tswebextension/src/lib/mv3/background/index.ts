@@ -92,6 +92,7 @@ export {
     hashString,
     computeScriptletHash,
     computeJsRuleHash,
+    computeRuleHash,
     normalizeDomain,
     SHARED_BUNDLE_FILENAME,
     CLEANUP_BUNDLE_FILENAME,

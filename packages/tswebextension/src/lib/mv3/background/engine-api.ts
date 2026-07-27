@@ -4,6 +4,7 @@ import {
     CompatibilityTypes,
     type CosmeticOption,
     CosmeticResult,
+    type CosmeticRule,
     Engine,
     type EngineFactoryFilterList,
     type HTTPMethod,
@@ -236,6 +237,30 @@ export class EngineApi {
         const request = new Request(url, frameUrl, RequestType.Document);
 
         return this.engine.getCosmeticResult(request, option);
+    }
+
+    /**
+     * Gets JS/scriptlet cosmetic rules matching the specified url's domain,
+     * ignoring the `$path` modifier, if engine is started. Otherwise returns
+     * an empty array.
+     *
+     * Used by {@link PreregisteredScriptsService} to discover every rule that
+     * could ever apply to a domain without enumerating every possible path.
+     *
+     * @param url Url to check — only its domain is used, path is ignored.
+     *
+     * @returns Matching rules, regardless of any `$path` modifier they carry.
+     */
+    public getJsRulesIgnoringPath(url: string): CosmeticRule[] {
+        if (!this.engine) {
+            return [];
+        }
+
+        const frameUrl = getHost(url);
+
+        const request = new Request(url, frameUrl, RequestType.Document);
+
+        return this.engine.getJsRulesIgnoringPath(request);
     }
 
     /**
