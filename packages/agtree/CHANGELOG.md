@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## [4.2.0] - Unreleased <!-- release/browser-extension-v5.5 -->
+## [4.2.0] - 2026-07-27
 
 ### Added
 
