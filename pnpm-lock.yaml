@@ -10,8 +10,8 @@ catalogs:
       specifier: ^4.4.12
       version: 4.4.12
     '@adguard/scriptlets':
-      specifier: 2.4.2
-      version: 2.4.2
+      specifier: 2.5.0
+      version: 2.5.0
     '@rollup/plugin-alias':
       specifier: ^5.1.1
       version: 5.1.1
@@ -1086,7 +1086,7 @@ importers:
         version: 1.2.0
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.4.2
+        version: 2.5.0
       commander:
         specifier: 'catalog:'
         version: 12.1.0
@@ -1863,7 +1863,7 @@ importers:
         version: link:../logger
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.4.2
+        version: 2.5.0
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -2080,7 +2080,7 @@ importers:
         version: link:../logger
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.4.2
+        version: 2.5.0
       '@adguard/text-encoding':
         specifier: ^0.8.3
         version: 0.8.3
@@ -2320,8 +2320,9 @@ packages:
   '@adguard/scriptlets@2.2.14':
     resolution: {integrity: sha512-IY5iy0gaNQq0YEFpdp9yb6zNmjQXFB3Hox84rKBCFZAJWw0AP4OQsZErH6IqpaAkBrA96KVXWKHYc09WdyOxyg==}
 
-  '@adguard/scriptlets@2.4.2':
-    resolution: {integrity: sha512-poh0KyNiN9nIa7DkzabcGa/HwrfjvNzk2wRj6jcgeySnWEPaYK61SyhC1L6pFn3fFVQdUJLTVCCFowcuEmW3Lg==}
+  '@adguard/scriptlets@2.5.0':
+    resolution: {integrity: sha512-1DISQycmS1+KkYYvn9bl6PQIV84MdykM/Jyyu+iI8h3xpWJCudH0KR/b5g4qDYmKGBoGg6LclMsyLxzPdeje0A==}
+    engines: {pnpm: '>=10.33.4 <11'}
 
   '@adguard/text-encoding@0.8.3':
     resolution: {integrity: sha512-LA0bsY+YYnQqItGaYMoVL0l55JDi/uwvUca53V6M6mvKNHtaYDTlf3yAeW2PafsTfWvoYH7gObGu8eCvPh69tg==}
@@ -10315,7 +10316,7 @@ snapshots:
       '@types/trusted-types': 2.0.7
       js-yaml: 3.14.1
 
-  '@adguard/scriptlets@2.4.2':
+  '@adguard/scriptlets@2.5.0':
     dependencies:
       '@adguard/agtree': link:packages/agtree
       '@types/trusted-types': 2.0.7
@@ -10355,7 +10356,7 @@ snapshots:
       '@adguard/css-tokenizer': 1.2.0
       '@adguard/logger': 2.0.0
       '@adguard/re2-wasm': 1.2.0
-      '@adguard/scriptlets': 2.4.2
+      '@adguard/scriptlets': 2.5.0
       cidr-tools: 6.4.2
       commander: 12.1.0
       is-cidr: 4.0.2
