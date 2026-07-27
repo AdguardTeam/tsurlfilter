@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [6.0.0] - Unreleased <!-- release/browser-extension-v5.5 -->
+## [6.0.0] - 2026-07-27
 
 ### Added
 
@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   changes.
 - Updated [@adguard/assistant] to `v4.4.12`.
 - Updated [@adguard/agtree] to `v4.2.0`.
+- Updated [@adguard/scriptlets] to `v2.5.0`.
 
 ### Removed
 
@@ -50,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (e.g. `/example\d*\.(live\|com\|icu\|org)$/`) not matching any domain,
   because only the first escaped separator was unescaped.
 
+[v5.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.0.0
 [#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
 [#189]: https://github.com/AdguardTeam/tsurlfilter/issues/189
 [AdguardBrowserExtension#3533]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3533
