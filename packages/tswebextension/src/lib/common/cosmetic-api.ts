@@ -86,6 +86,37 @@ export type CosmeticOptions = {
 };
 
 /**
+ * Strategy describing how to encode a hit marker into a CSS rule string.
+ * See `CosmeticApiCommon.NATIVE_MARKER` and `EXTENDED_MARKER` for the
+ * concrete instances and their rationale.
+ */
+type HitMarkerStrategy = {
+    /**
+     * Optional rule prepended once to a stylesheet that contains markers
+     * (e.g. `@property --adguard-hit { … }` for the native path). Empty
+     * string means no preamble.
+     */
+    preamble: string;
+
+    /**
+     * Opening of the marker declaration, ready to have the encoded
+     * `<filterId>%3B<ruleIndex>` and `markerDeclEnd` appended.
+     */
+    markerDeclStart: string;
+
+    /**
+     * Closing of the marker declaration.
+     */
+    markerDeclEnd: string;
+
+    /**
+     * Returns true if the inject rule already has a colliding declaration
+     * and must be emitted unchanged (without a marker).
+     */
+    skipInject: (ruleContent: string) => boolean;
+};
+
+/**
  * CosmeticApiCommon contains common logic about building css for hiding elements.
  */
 export class CosmeticApiCommon {
@@ -97,29 +128,70 @@ export class CosmeticApiCommon {
     protected static readonly CSS_SELECTORS_PER_LINE = 50;
 
     /**
-     * Element hiding CSS style beginning.
-     */
-    protected static readonly ELEMHIDE_HIT_START = " { display: none !important; content: 'adguard";
-
-    /**
-     * CSS style declaration for hit stats.
-     */
-    protected static readonly INJECT_HIT_START = " content: 'adguard";
-
-    /**
-     * Separator for hit stats.
+     * URL-encoded semicolon (`%3B`) used to separate filterId from ruleIndex
+     * inside the marker string. A bare `;` cannot be used because the CSS
+     * parser would treat it as the end of the marker declaration.
+     * The reader decodes it back via `decodeURIComponent` in
+     * `ElementUtils.parseInfo`.
      */
     protected static readonly HIT_SEP = encodeURIComponent(SEMICOLON);
 
     /**
-     * Element hiding CSS style ending.
+     * Element hiding declaration block used by `addMarkerToElemhideRule`.
+     * Combined with the selector, filterId and ruleIndex it produces the rule below.
+     *
+     * ```css
+     * <selector> { display: none !important; --adguard-hit: 'adguard<id>%3B<idx>' !important; }
+     * ```
      */
-    protected static readonly HIT_END = "' !important; }";
+    protected static readonly ELEMHIDE_BLOCK_START = ' { display: none !important;';
+
+    protected static readonly ELEMHIDE_BLOCK_END = ' }';
 
     /**
-     * Regular expression to find content attribute in css rule.
+     * `@property` registration for `--adguard-hit`. Emitted once at the top
+     * of every stylesheet built with hit markers so the property is
+     * non-inheriting and initializes to an empty string on every element.
+     */
+    // eslint-disable-next-line max-len
+    protected static readonly PROPERTY_RULE = "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }";
+
+    /**
+     * Regular expression used by the legacy ExtendedCss marker to detect
+     * a user-declared `content:` and skip injection (it would otherwise
+     * collide).
      */
     protected static CONTENT_ATTR_RE = /[{;"(]\s*content\s*:/gi;
+
+    /**
+     * Hit-marker emission strategy. The cosmetic emitter has two callers
+     * with different transports for the marker:
+     *
+     *   - Native CSS (`<style>` injection) MUST use a custom property so
+     *     pseudo-element rules (`::before` / `::after`) cannot paint the
+     *     marker as visible text — see AG-265.
+     *   - ExtendedCss reads the marker from the *parsed rule object*, never
+     *     from the DOM, and the counter blanks `rule.style.content` before
+     *     `setStyleToElement`. The marker therefore must travel as a
+     *     `content:` declaration in the rule string passed to ExtendedCss.
+     */
+    protected static readonly NATIVE_MARKER: HitMarkerStrategy = {
+        preamble: CosmeticApiCommon.PROPERTY_RULE,
+        markerDeclStart: " --adguard-hit: 'adguard",
+        markerDeclEnd: "' !important;",
+        skipInject: (): boolean => false,
+    };
+
+    protected static readonly EXTENDED_MARKER: HitMarkerStrategy = {
+        preamble: '',
+        markerDeclStart: " content: 'adguard",
+        markerDeclEnd: "' !important;",
+        skipInject: (ruleContent: string): boolean => {
+            // Reset lastIndex because the `g` flag preserves state.
+            CosmeticApiCommon.CONTENT_ATTR_RE.lastIndex = 0;
+            return CosmeticApiCommon.CONTENT_ATTR_RE.test(ruleContent);
+        },
+    };
 
     /**
      * Builds stylesheets from rules.
@@ -203,75 +275,102 @@ export class CosmeticApiCommon {
     }
 
     /**
-     * Patches rule selector adding adguard mark rule info in the content attribute.
+     * Wraps an elemhide selector in a hit-marker declaration block.
+     *
+     * Produces a rule of the form:
+     * ```css
+     * <selector> { display: none !important; <markerDecl> }
+     * ```
+     * where `<markerDecl>` is the strategy-specific marker declaration
+     * (custom property for native, `content:` for ExtendedCss).
      *
      * @param rule Elemhide cosmetic rule.
+     * @param strategy Marker emission strategy.
      *
-     * @returns Rule with modified stylesheet, containing content marker.
-     *
-     * @example
-     * `.selector` -> `.selector { content: 'adguard{filterId};{ruleText} !important;}`
+     * @returns Full CSS rule including marker.
      */
-    private static addMarkerToElemhideRule(rule: CosmeticRule): string {
-        const result: string[] = [];
-        result.push(rule.getContent());
-        result.push(CosmeticApiCommon.ELEMHIDE_HIT_START);
-        result.push(String(rule.getFilterListId()));
-        result.push(CosmeticApiCommon.HIT_SEP);
-        result.push(String(rule.getIndex()));
-        result.push(CosmeticApiCommon.HIT_END);
-        return result.join('');
+    private static addMarkerToElemhideRule(rule: CosmeticRule, strategy: HitMarkerStrategy): string {
+        return [
+            rule.getContent(),
+            CosmeticApiCommon.ELEMHIDE_BLOCK_START,
+            strategy.markerDeclStart,
+            String(rule.getFilterListId()),
+            CosmeticApiCommon.HIT_SEP,
+            String(rule.getIndex()),
+            strategy.markerDeclEnd,
+            CosmeticApiCommon.ELEMHIDE_BLOCK_END,
+        ].join('');
     }
 
     /**
-     * Patches rule selector adding adguard mark and rule info in the content style attribute.
-     * Example:
-     * .selector { color: red } -> .selector { color: red, content: 'adguard{filterId};{ruleText} !important;}.
+     * Inserts the strategy's marker declaration into the rule's own
+     * declaration block, leaving the selector and any existing
+     * declarations untouched.
+     *
+     * On the native path this is a custom-property declaration that does
+     * not collide with anything the rule may already declare. On the
+     * ExtendedCss path the marker is `content:`, so a rule that already
+     * declares `content:` is emitted unchanged (would otherwise clobber
+     * the user declaration).
      *
      * @param rule Inject cosmetic rule.
+     * @param strategy Marker emission strategy.
      *
-     * @returns Modified rule with injected content marker into stylesheet.
+     * @returns Rule string with the marker appended to its block.
      */
-    private static addMarkerToInjectRule(rule: CosmeticRule): string {
-        const result: string[] = [];
+    private static addMarkerToInjectRule(rule: CosmeticRule, strategy: HitMarkerStrategy): string {
         const ruleContent = rule.getContent();
-        // if rule text has content attribute we don't add rule marker
-        if (CosmeticApiCommon.CONTENT_ATTR_RE.test(ruleContent)) {
+
+        if (strategy.skipInject(ruleContent)) {
             return ruleContent;
         }
 
-        // remove closing brace
+        // Strip trailing `}` (and optional trailing whitespace) so we can
+        // append the marker declaration; ensure the preceding declaration
+        // ends with a `;` to keep the block parseable.
         const ruleTextWithoutCloseBrace = ruleContent.slice(0, -1).trim();
-        // check semicolon
         const ruleTextWithSemicolon = ruleTextWithoutCloseBrace.endsWith(SEMICOLON)
             ? ruleTextWithoutCloseBrace
             : `${ruleTextWithoutCloseBrace}${SEMICOLON}`;
-        result.push(ruleTextWithSemicolon);
-        result.push(CosmeticApiCommon.INJECT_HIT_START);
-        result.push(String(rule.getFilterListId()));
-        result.push(CosmeticApiCommon.HIT_SEP);
-        result.push(String(rule.getIndex()));
-        result.push(CosmeticApiCommon.HIT_END);
 
-        return result.join('');
+        return [
+            ruleTextWithSemicolon,
+            strategy.markerDeclStart,
+            String(rule.getFilterListId()),
+            CosmeticApiCommon.HIT_SEP,
+            String(rule.getIndex()),
+            strategy.markerDeclEnd,
+            CosmeticApiCommon.ELEMHIDE_BLOCK_END,
+        ].join('');
     }
 
     /**
-     * Builds stylesheets with css-hits marker.
+     * Builds stylesheets with hit markers using the given strategy.
+     * If the strategy has a non-empty `preamble`, it is prepended once at
+     * the top of the returned list.
      *
      * @param elemhideRules Elemhide css rules.
      * @param injectRules Inject css rules.
+     * @param strategy Marker emission strategy.
      *
-     * @returns List of stylesheet expressions.
+     * @returns List of stylesheet expressions (preamble + one
+     * marker-bearing rule per input rule).
      */
     private static buildStyleSheetsWithHits(
         elemhideRules: CosmeticRule[],
         injectRules: CosmeticRule[],
+        strategy: HitMarkerStrategy,
     ): string[] {
-        const elemhideStyles = elemhideRules.map((x) => CosmeticApiCommon.addMarkerToElemhideRule(x));
-        const injectStyles = injectRules.map((x) => CosmeticApiCommon.addMarkerToInjectRule(x));
+        const elemhideStyles = elemhideRules.map((x) => CosmeticApiCommon.addMarkerToElemhideRule(x, strategy));
+        const injectStyles = injectRules.map((x) => CosmeticApiCommon.addMarkerToInjectRule(x, strategy));
 
-        return [...elemhideStyles, ...injectStyles];
+        if (elemhideStyles.length === 0 && injectStyles.length === 0) {
+            return [];
+        }
+
+        return strategy.preamble
+            ? [strategy.preamble, ...elemhideStyles, ...injectStyles]
+            : [...elemhideStyles, ...injectStyles];
     }
 
     /**
@@ -389,6 +488,7 @@ export class CosmeticApiCommon {
             extCssRules = CosmeticApiCommon.buildStyleSheetsWithHits(
                 elemhideReclassified.extended,
                 cssReclassified.extended,
+                CosmeticApiCommon.EXTENDED_MARKER,
             );
         } else {
             extCssRules = CosmeticApiCommon.buildStyleSheets(
@@ -441,6 +541,7 @@ export class CosmeticApiCommon {
             styles = CosmeticApiCommon.buildStyleSheetsWithHits(
                 elemhideReclassified.native,
                 cssReclassified.native,
+                CosmeticApiCommon.NATIVE_MARKER,
             );
         } else {
             styles = CosmeticApiCommon.buildStyleSheets(
@@ -527,10 +628,6 @@ export class CosmeticApiCommon {
         } = params;
 
         for (const scriptRule of appliedScriptRules) {
-            if (scriptRule.isGeneric()) {
-                continue;
-            }
-
             const ruleType = scriptRule.getType();
             const { appliedRuleText, originalRuleText } = getRuleTexts(scriptRule, engineApi);
 

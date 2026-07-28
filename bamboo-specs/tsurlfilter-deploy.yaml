@@ -4,17 +4,15 @@ deployment:
   name: tsurlfilter - deploy
   source-plan: AJL-TSURLFILTERBUILD
 release-naming: ${bamboo.inject.version}
-# Here we need two fully identical plans in order
-# to have two different versions in bamboo releases
+# Here we need fully identical environments in order
+# to have different major versions in bamboo releases
 environments:
-  - npmjs • 1.x
-  - npmjs • 3.x
-  - npmjs • 4.x
   - npmjs • 5.x
+  - npmjs • 6.x
   - npmjs • alpha
   - npmjs • beta
 
-npmjs • 1.x: &npmjs
+npmjs • 5.x: &npmjs
   variables: &npmjs-variables
     publishArgs: --access public
   docker: &npmjs-docker
@@ -46,13 +44,7 @@ npmjs • 1.x: &npmjs
   requirements:
     - extension: 'true'
 
-npmjs • 3.x:
-  <<: *npmjs
-
-npmjs • 4.x:
-  <<: *npmjs
-
-npmjs • 5.x:
+npmjs • 6.x:
   <<: *npmjs
 
 npmjs • alpha:

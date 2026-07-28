@@ -68,7 +68,7 @@ export const configurationMV3Validator = configurationValidator.extend({
      * Path to directory with converted rule sets.
      * Note: it's better to convert filters with tsurlfilter.convertFilters.
      */
-    ruleSetsPath: zod.string(),
+    rulesetsPath: zod.string(),
 
     /**
      * Enables logging declarative rules, which will increase used memory,

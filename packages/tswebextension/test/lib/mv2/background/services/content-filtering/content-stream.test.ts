@@ -5,7 +5,7 @@ import {
     vi,
 } from 'vitest';
 
-import { TextDecoder, TextEncoder } from '@adguard/text-encoding';
+import { TextEncoder } from '@adguard/text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
 
 import {
@@ -28,6 +28,8 @@ import { MockStreamFilter } from './mock-stream-filter';
 vi.mock('../../../../../../src/lib/common/utils/logger');
 
 describe('Content stream', () => {
+    // Encoding to legacy charsets is only supported by the polyfill encoder.
+    // Decoding is verified with the native TextDecoder, same as in ContentStream.
     const textEncoderUtf8 = new TextEncoder();
     const textDecoderUtf8 = new TextDecoder();
 
@@ -290,5 +292,72 @@ describe('Content stream', () => {
         // Content and rawChunks should be cleared after fallback
         expect(streamAny.content).toBe('');
         expect(streamAny.rawChunks).toHaveLength(0);
+    });
+
+    it('flushes all received chunks and disconnects when response exceeds the size limit', () => {
+        const { stream, mockFilter } = createStreamInstance();
+
+        stream.setCharset(DEFAULT_CHARSET);
+
+        const spyWrite = vi.spyOn(mockFilter, 'write');
+        const spyDisconnect = vi.spyOn(mockFilter, 'disconnect');
+
+        const streamAny = stream as any;
+
+        // 6 MB chunk, below the 10 MB limit: should be buffered, not flushed.
+        const firstChunk = new Uint8Array(6 * 1024 * 1024).fill(0x61).buffer;
+        streamAny.onResponseData({ data: firstChunk });
+
+        expect(spyWrite).not.toHaveBeenCalled();
+        expect(spyDisconnect).not.toHaveBeenCalled();
+
+        // Another 6 MB chunk crosses the limit: everything received so far
+        // must be flushed to the page before disconnecting.
+        const secondChunk = new Uint8Array(6 * 1024 * 1024).fill(0x62).buffer;
+        streamAny.onResponseData({ data: secondChunk });
+
+        expect(spyWrite).toHaveBeenNthCalledWith(1, firstChunk);
+        expect(spyWrite).toHaveBeenNthCalledWith(2, secondChunk);
+        expect(spyDisconnect).toHaveBeenCalledTimes(1);
+
+        // Buffers must be released after disconnect.
+        expect(streamAny.rawChunks).toHaveLength(0);
+        expect(streamAny.content).toBe('');
+        expect(streamAny.totalRawSize).toBe(0);
+    });
+
+    it('does not crash if onstop is invoked with no decoder', () => {
+        // Simulate a scenario where onstop fires but the decoder was never
+        // set up (should cause flush+disconnect, not a TypeError).
+        const mockFilter = new MockStreamFilter();
+        const stream = new ContentStream(
+            context,
+            contentStringFilter,
+            () => mockFilter,
+            new MockFilteringLog(),
+        );
+        // Do NOT call init() — encoder & decoder stay undefined.
+
+        const spyDisconnect = vi.spyOn(mockFilter, 'disconnect');
+        const streamAny = stream as any;
+
+        expect(() => streamAny.onResponseFinish()).not.toThrow();
+        expect(spyDisconnect).toHaveBeenCalled();
+    });
+
+    it('passes non-200 responses through as raw bytes', () => {
+        const non200Context = { ...context, statusCode: 404 } as RequestContext;
+        const { stream, mockFilter } = createStreamInstance(non200Context);
+        stream.setCharset(DEFAULT_CHARSET);
+
+        const chunk = new Uint8Array([0x41, 0x42]).buffer; // "AB"
+        const spyWrite = vi.spyOn(mockFilter, 'write');
+
+        const streamAny = stream as any;
+        streamAny.onResponseData({ data: chunk });
+        streamAny.onResponseFinish();
+
+        // Should have written the raw chunk, not re-encoded decoded content.
+        expect(spyWrite).toHaveBeenCalledWith(chunk);
     });
 });

@@ -5,7 +5,7 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
     staticFiltersIds: [1, 2],
     customFilters: [],
     filtersPath: '',
-    ruleSetsPath: '',
+    rulesetsPath: '',
     allowlist: ['example.com'],
     userrules: { content: ['||example.org^', 'example.com##h1', 'baddomain.org$document'].join(LF) },
     verbose: false,

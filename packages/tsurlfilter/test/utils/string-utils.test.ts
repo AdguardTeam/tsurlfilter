@@ -11,6 +11,7 @@ import {
     replaceAll,
     splitByDelimiterWithEscapeCharacter,
     startsAtIndexWith,
+    unescapeChar,
 } from '../../src/utils/string-utils';
 
 describe('splitByDelimiterWithEscapeCharacter', () => {
@@ -113,6 +114,22 @@ describe('hasUnquotedSubstring', () => {
 describe('replaceAll', () => {
     it('works if it can replace simple strings', () => {
         expect(replaceAll('example_example', 'ex', 'EX')).toEqual('EXample_EXample');
+    });
+});
+
+describe('unescapeChar', () => {
+    it('unescapes single occurrence', () => {
+        expect(unescapeChar(String.raw`example\|org`, '|')).toEqual('example|org');
+    });
+
+    it('unescapes all occurrences', () => {
+        // AG-56856: all escaped separators should be unescaped, not only the first one
+        expect(unescapeChar(String.raw`live\|com\|icu\|org`, '|')).toEqual('live|com|icu|org');
+        expect(unescapeChar(String.raw`example\,org\,net`, ',')).toEqual('example,org,net');
+    });
+
+    it('does not modify string without escaped chars', () => {
+        expect(unescapeChar('example.org', '|')).toEqual('example.org');
     });
 });
 

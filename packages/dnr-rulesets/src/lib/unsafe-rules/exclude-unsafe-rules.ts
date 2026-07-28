@@ -1,19 +1,20 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { generateMD5Hash } from '@adguard/tsurlfilter/cli';
 import {
-    DeclarativeRule,
-    IRuleSet,
-    METADATA_RULESET_ID,
-    MetadataRuleSet,
-} from '@adguard/tsurlfilter/es/declarative-converter';
-import {
-    extractRuleSetId,
-    getRuleSetPath,
+    type DeclarativeRule,
+    type IRulesetWithSourceMap,
     isSafeRule,
+    METADATA_RULESET_ID,
+    MetadataRuleset,
+} from '@adguard/dnr-converter';
+import {
+    extractRulesetId,
+    generateMD5Hash,
+    getRulesetId,
+    getRulesetPath,
     RULESET_FILE_EXT,
-} from '@adguard/tsurlfilter/es/declarative-converter-utils';
+} from '@adguard/dnr-converter/cli';
 import { ensureDir } from 'fs-extra';
 
 import { findFiles } from '../../utils/find-files';
@@ -48,7 +49,7 @@ interface ExcludeUnsafeRulesOptions {
  *
  * @returns A promise that resolves to an array of rulesets.
  */
-async function scanFolder(dirPath: string): Promise<IRuleSet[]> {
+async function scanFolder(dirPath: string): Promise<IRulesetWithSourceMap[]> {
     await ensureDir(dirPath);
 
     const rulesetsPaths = await findFiles(
@@ -60,7 +61,7 @@ async function scanFolder(dirPath: string): Promise<IRuleSet[]> {
         .map((rulesetPath) => {
             const jsonFilePath = rulesetPath;
 
-            const id = extractRuleSetId(jsonFilePath);
+            const id = extractRulesetId(jsonFilePath);
 
             if (id === null) {
                 throw new Error(`Failed to extract ruleset ID from path: ${jsonFilePath}.`);
@@ -84,37 +85,37 @@ async function scanFolder(dirPath: string): Promise<IRuleSet[]> {
 /**
  * Updates the metadata ruleset with checksums and saves it to the specified path.
  *
- * @param metadataRuleSetPath The path to the metadata ruleset.
+ * @param metadataRulesetPath The path to the metadata ruleset.
  * @param checksums An object containing checksums for the rulesets,
  * where keys are ruleset IDs and values are checksums.
  * @param prettifyJson Optional parameter to define whether to prettify the JSON output.
  */
 async function updateMetadataRuleset(
-    metadataRuleSetPath: string,
+    metadataRulesetPath: string,
     checksums: Record<string, string>,
     prettifyJson?: boolean,
 ) {
-    console.log('Path to metadata ruleset:', metadataRuleSetPath);
+    console.log('Path to metadata ruleset:', metadataRulesetPath);
 
     const rawMetadataRuleset = await fs.readFile(
-        metadataRuleSetPath,
+        metadataRulesetPath,
         { encoding: 'utf-8' },
     );
 
-    const metadataRuleset = MetadataRuleSet.deserialize(rawMetadataRuleset);
+    const metadataRuleset = MetadataRuleset.deserialize(rawMetadataRuleset);
 
     // Update each checksum in the metadata ruleset instead of recreating whole
     // ruleset to keep all additional properties not touched by this operation.
-    Object.entries(checksums).forEach(([ruleSetId, checksum]) => {
-        metadataRuleset.setChecksum(ruleSetId, checksum);
+    Object.entries(checksums).forEach(([rulesetId, checksum]) => {
+        metadataRuleset.setChecksum(rulesetId, checksum);
     });
 
     await fs.writeFile(
-        metadataRuleSetPath,
+        metadataRulesetPath,
         metadataRuleset.serialize(prettifyJson),
     );
 
-    console.log(`Metadata ruleset updated and saved to ${metadataRuleSetPath}`);
+    console.log(`Metadata ruleset updated and saved to ${metadataRulesetPath}`);
 }
 
 /**
@@ -154,30 +155,53 @@ export async function excludeUnsafeRules(params: ExcludeUnsafeRulesOptions): Pro
     const checksums: Record<string, string> = {};
 
     const tasks = rulesets.map(async (ruleset) => {
+        // Get unsafe rules from the metadata (set by a previous
+        // excludeUnsafeRules run) and from the declarative rules
+        // (present on the first run before unsafe rules are moved).
+        const unsafeRulesFromMetadata = await ruleset.getUnsafeRules();
+
         const declarativeRules = await ruleset.getDeclarativeRules();
 
-        const unsafeDeclarativeRules = declarativeRules.filter((rule: DeclarativeRule) => {
+        const unsafeDeclarativeRulesFromRuleset = declarativeRules.filter((rule: DeclarativeRule) => {
             return !isSafeRule(rule);
         });
 
+        // Merge unsafe rules from both sources, deduplicating by rule ID for make
+        // excluding idempotent (running excludeUnsafeRules multiple times should
+        // not cause issues with already excluded rules).
+        const seenIds = new Set<number>();
+        const unsafeDeclarativeRules: DeclarativeRule[] = [];
+        for (const rule of unsafeRulesFromMetadata) {
+            if (!seenIds.has(rule.id)) {
+                seenIds.add(rule.id);
+                unsafeDeclarativeRules.push(rule);
+            }
+        }
+        for (const rule of unsafeDeclarativeRulesFromRuleset) {
+            if (!seenIds.has(rule.id)) {
+                seenIds.add(rule.id);
+                unsafeDeclarativeRules.push(rule);
+            }
+        }
+
         const processedRuleset = await ruleset.serializeCompact(
-            prettifyJson,
             unsafeDeclarativeRules,
+            prettifyJson,
         );
 
-        const ruleSetPath = getRuleSetPath(
+        const rulesetPath = getRulesetPath(
             ruleset.getId(),
             dir,
         );
 
-        await ensureDir(path.dirname(ruleSetPath));
-        await fs.writeFile(ruleSetPath, processedRuleset);
+        await ensureDir(path.dirname(rulesetPath));
+        await fs.writeFile(rulesetPath, processedRuleset);
 
         checksums[ruleset.getId()] = generateMD5Hash(processedRuleset);
 
         console.log(`========== Ruleset #${ruleset.getId()} ==========`);
         console.log('Moved unsafe rules:', unsafeDeclarativeRules.length);
-        console.log('Safety ruleset saved to:', ruleSetPath);
+        console.log('Safety ruleset saved to:', rulesetPath);
         console.log(`========== Ruleset #${ruleset.getId()} ==========`);
         console.log('\n');
     });
@@ -185,7 +209,7 @@ export async function excludeUnsafeRules(params: ExcludeUnsafeRulesOptions): Pro
     await Promise.all(tasks);
 
     await updateMetadataRuleset(
-        getRuleSetPath(METADATA_RULESET_ID, dir),
+        getRulesetPath(getRulesetId(METADATA_RULESET_ID), dir),
         checksums,
         prettifyJson,
     );

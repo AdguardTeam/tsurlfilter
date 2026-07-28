@@ -23,6 +23,7 @@ COPY packages/css-tokenizer/package.json ./packages/css-tokenizer/
 COPY packages/agtree/package.json ./packages/agtree/
 COPY packages/tsurlfilter/package.json ./packages/tsurlfilter/
 COPY packages/tswebextension/package.json ./packages/tswebextension/
+COPY packages/dnr-converter/package.json ./packages/dnr-converter/
 COPY packages/dnr-rulesets/package.json ./packages/dnr-rulesets/
 COPY packages/adguard-api/package.json ./packages/adguard-api/
 COPY packages/adguard-api-mv3/package.json ./packages/adguard-api-mv3/
@@ -67,7 +68,7 @@ FROM source-base AS source
 
 COPY packages/ ./packages/
 
-# ============================================================================
+# ===========================================================================
 # Build layers following the dependency hierarchy.
 # Source is copied just-in-time before each build step so that a change in a
 # higher-level package (e.g. tswebextension) does not invalidate the Docker
@@ -77,7 +78,8 @@ COPY packages/ ./packages/
 #   source-leaf-packages:      logger + css-tokenizer + eslint-plugin (leaf packages, no workspace deps)
 #   source-with-agtree:        agtree (depends on css-tokenizer)
 #   source-with-tsurlfilter:   tsurlfilter (depends on agtree, css-tokenizer)
-#   source-with-tswebextension: tswebextension (depends on tsurlfilter, agtree, logger)
+#   source-with-dnr-converter: dnr-converter (depends on agtree, logger, tsurlfilter [dev])
+#   source-with-tswebextension: tswebextension (depends on tsurlfilter, dnr-converter, agtree, logger)
 #
 # Stages that need packages outside this chain (e.g. dnr-rulesets, adguard-api)
 # add their own COPY statements directly after FROM.
@@ -93,7 +95,7 @@ COPY packages/eslint-plugin-logger-context/ ./packages/eslint-plugin-logger-cont
 FROM source-leaf-packages AS built-css-tokenizer-and-logger
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    npx lerna run build --scope @adguard/logger --scope @adguard/css-tokenizer
+    npx lerna run build --stream --scope @adguard/logger --scope @adguard/css-tokenizer
 
 FROM built-css-tokenizer-and-logger AS source-with-agtree
 COPY packages/agtree/ ./packages/agtree/
@@ -101,7 +103,7 @@ COPY packages/agtree/ ./packages/agtree/
 FROM source-with-agtree AS built-agtree
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    npx lerna run build --scope @adguard/agtree
+    npx lerna run build --stream --scope @adguard/agtree
 
 FROM built-agtree AS source-with-tsurlfilter
 COPY packages/tsurlfilter/ ./packages/tsurlfilter/
@@ -109,15 +111,23 @@ COPY packages/tsurlfilter/ ./packages/tsurlfilter/
 FROM source-with-tsurlfilter AS built-tsurlfilter
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    npx lerna run build --scope @adguard/tsurlfilter
+    npx lerna run build --stream --scope @adguard/tsurlfilter
 
-FROM built-tsurlfilter AS source-with-tswebextension
+FROM built-tsurlfilter AS source-with-dnr-converter
+COPY packages/dnr-converter/ ./packages/dnr-converter/
+
+FROM source-with-dnr-converter AS built-dnr-converter
+RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
+    pnpm config set store-dir /pnpm-store && \
+    npx lerna run build --stream --scope @adguard/dnr-converter
+
+FROM built-dnr-converter AS source-with-tswebextension
 COPY packages/tswebextension/ ./packages/tswebextension/
 
 FROM source-with-tswebextension AS built-tswebextension
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
-    npx lerna run build --scope @adguard/tswebextension
+    npx lerna run build --stream --scope @adguard/tswebextension
 
 # ============================================================================
 # Test stages
@@ -248,10 +258,44 @@ FROM scratch AS test-tsurlfilter-output
 COPY --from=test-tsurlfilter /out/ /
 
 # ============================================================================
+# Stage: test-dnr-converter
+# Runs lint + smoke + test:ci for @adguard/dnr-converter
+# ============================================================================
+FROM built-tsurlfilter AS test-dnr-converter
+
+COPY packages/dnr-converter/ ./packages/dnr-converter/
+
+ARG TEST_RUN_ID
+
+RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
+    pnpm config set store-dir /pnpm-store && \
+    mkdir -p /out/tests-reports && \
+    echo "${TEST_RUN_ID}" > /out/.test-run-id && \
+    npx lerna run build --scope @adguard/dnr-converter; \
+    BUILD_EXIT=$?; \
+    if [ $BUILD_EXIT -ne 0 ]; then \
+      echo $BUILD_EXIT > /out/exit-code.txt; \
+      exit 0; \
+    fi; \
+    set +e; \
+    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+      'cd packages/dnr-converter && pnpm lint && pnpm test:smoke && pnpm test:ci'; \
+    EXIT_CODE=$?; \
+    ./bamboo-specs/scripts/copy-test-reports.sh packages/dnr-converter; \
+    echo ${EXIT_CODE} > /out/exit-code.txt; \
+    exit 0
+
+FROM scratch AS test-dnr-converter-output
+COPY --from=test-dnr-converter /out/ /
+
+# ============================================================================
 # Stage: test-tswebextension
-# Runs test:prod (lint + smoke + test:ci) for @adguard/tswebextension
+# Runs test:prod (lint + smoke + test:ci + test:e2e) for @adguard/tswebextension
 # ============================================================================
 FROM built-tswebextension AS test-tswebextension
+
+# Install Playwright Chromium browser and its system dependencies for e2e tests
+RUN cd packages/tswebextension && npx playwright install --with-deps chromium
 
 ARG TEST_RUN_ID
 
@@ -277,6 +321,7 @@ COPY --from=test-tswebextension /out/ /
 FROM built-tsurlfilter AS test-dnr-rulesets
 
 COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/dnr-converter/ ./packages/dnr-converter/
 
 ARG TEST_RUN_ID
 
@@ -316,6 +361,7 @@ FROM built-tswebextension AS test-examples
 COPY packages/adguard-api/ ./packages/adguard-api/
 COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
 COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/dnr-converter/ ./packages/dnr-converter/
 COPY packages/examples/ ./packages/examples/
 
 ARG TEST_RUN_ID
@@ -347,6 +393,7 @@ FROM built-tswebextension AS test-adguard-api-mv3
 
 COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
 COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/dnr-converter/ ./packages/dnr-converter/
 
 ARG TEST_RUN_ID
 
@@ -457,6 +504,26 @@ FROM scratch AS build-agtree-output
 COPY --from=build-agtree /out/ /
 
 # ============================================================================
+# Stage: build-dnr-converter
+# Builds @adguard/dnr-converter and packs .tgz
+# ============================================================================
+FROM built-dnr-converter AS build-dnr-converter
+
+ARG TEST_RUN_ID
+
+RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
+    pnpm config set store-dir /pnpm-store && \
+    mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
+    cd packages/dnr-converter && \
+    pnpm tgz && \
+    mkdir -p /out/artifacts && \
+    mv dnr-converter.tgz /out/artifacts/ && \
+    cp dist/build.txt /out/artifacts/
+
+FROM scratch AS build-dnr-converter-output
+COPY --from=build-dnr-converter /out/ /
+
+# ============================================================================
 # Stage: build-tsurlfilter
 # Builds @adguard/tsurlfilter and packs .tgz
 # ============================================================================
@@ -503,6 +570,7 @@ COPY --from=build-tswebextension /out/ /
 FROM built-tsurlfilter AS build-dnr-rulesets
 
 COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/dnr-converter/ ./packages/dnr-converter/
 
 ARG TEST_RUN_ID
 
@@ -577,6 +645,7 @@ FROM built-tswebextension AS build-adguard-api-mv3
 
 COPY packages/adguard-api-mv3/ ./packages/adguard-api-mv3/
 COPY packages/dnr-rulesets/ ./packages/dnr-rulesets/
+COPY packages/dnr-converter/ ./packages/dnr-converter/
 COPY packages/examples/adguard-api-mv3/ ./packages/examples/adguard-api-mv3/
 
 ARG TEST_RUN_ID
@@ -675,15 +744,24 @@ COPY --from=increment-dnr-rulesets /out/ /
 
 # ============================================================================
 # Stage: increment-dnr-converter
-# Placeholder for DNR Converter increment (TODO: AG-45668)
+# Increments @adguard/dnr-converter version and extracts modified files
 # ============================================================================
 FROM source AS increment-dnr-converter
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     touch /tmp/.pre-increment-marker && \
-    echo "TODO: Implement dnr-converter increment (AG-45668)" && \
-    mkdir -p /out/modified
+    pnpm run increment dnr-converter && \
+    mkdir -p /out/modified && \
+    find . -newer /tmp/.pre-increment-marker -type f \
+      -not -path './.git/*' \
+      -not -path './node_modules/*' \
+      -not -path './**/node_modules/*' \
+      -not -path './**/dist/*' \
+      | sed 's|^\./||' | while IFS= read -r f; do \
+        mkdir -p "/out/modified/$(dirname "$f")"; \
+        cp "$f" "/out/modified/$f"; \
+      done
 
 FROM scratch AS increment-dnr-converter-output
 COPY --from=increment-dnr-converter /out/ /
@@ -760,28 +838,32 @@ FROM scratch AS update-companiesdb-output
 COPY --from=update-companiesdb /out/ /
 
 # ============================================================================
-# Stage: update-docs-mv3
-# Runs the tsurlfilter MV3 docs update
+# Stage: dnr-converter-update-docs-mv3
+# Regenerates dnr-converter examples docs and fails the build if the generated
+# README.md differs from the committed version (i.e. docs are stale).
 # ============================================================================
-FROM source AS update-docs-mv3
+FROM source AS dnr-converter-update-docs-mv3
 
 ARG TEST_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
-    touch /tmp/.pre-update-marker && \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s ./bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh && \
-    mkdir -p /out/modified && \
-    find . -newer /tmp/.pre-update-marker -type f \
-      -not -path './.git/*' \
-      -not -path './node_modules/*' \
-      -not -path './**/node_modules/*' \
-      -not -path './**/dist/*' \
-      | sed 's|^\./||' | while IFS= read -r f; do \
-        mkdir -p "/out/modified/$(dirname "$f")"; \
-        cp "$f" "/out/modified/$f"; \
-      done
+    touch /tmp/.pre-docs-marker && \
+    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c '\
+      pnpm install && \
+      npx lerna run build,docs:examples --scope @adguard/dnr-converter --include-dependencies \
+    ' && \
+    if find packages/dnr-converter/src/examples/README.md -newer /tmp/.pre-docs-marker | grep -q .; then \
+      echo ""; \
+      echo "============================================"; \
+      echo "Examples docs are stale."; \
+      echo "Run: pnpm --filter @adguard/dnr-converter docs:examples"; \
+      echo "Then commit the updated README.md."; \
+      echo "============================================"; \
+      exit 1; \
+    fi
 
-FROM scratch AS update-docs-mv3-output
-COPY --from=update-docs-mv3 /out/ /
+FROM scratch AS dnr-converter-update-docs-mv3-output
+COPY --from=dnr-converter-update-docs-mv3 /out/ /
+

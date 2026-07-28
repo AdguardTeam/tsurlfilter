@@ -1,6 +1,6 @@
 {
     "name": "@adguard/tswebextension",
-    "version": "4.1.2",
+    "version": "5.0.0",
     "description": "This is a TypeScript library that implements AdGuard's extension API",
     "type": "module",
     "main": "dist/index.js",
@@ -94,7 +94,8 @@
         "test:coverage": "vitest run --coverage",
         "test:smoke": "pnpm run test:smoke:exports && (cd test/builders/rollup-ts && pnpm test)",
         "test:smoke:exports": "./test/smoke/exports/test.sh",
-        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test:ci",
+        "test:e2e": "vitest run --project browser",
+        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test:ci && pnpm test:e2e",
         "report-coverage": "cat ./coverage/lcov.info | coveralls",
         "precommit": "lint-staged",
         "prepublishOnly": "pnpm build",
@@ -107,8 +108,9 @@
     },
     "dependencies": {
         "@adguard/agtree": "workspace:^",
+        "@adguard/dnr-converter": "workspace:^",
         "@adguard/assistant": "catalog:",
-        "@adguard/extended-css": "^2.1.1",
+        "@adguard/extended-css": "2.2.0",
         "@adguard/logger": "workspace:^",
         "@adguard/scriptlets": "catalog:",
         "@adguard/text-encoding": "^0.8.3",
@@ -129,6 +131,9 @@
     },
     "devDependencies": {
         "@adguard/eslint-plugin-logger-context": "^1.0.1",
+        "@vitest/browser": "catalog:",
+        "@vitest/browser-playwright": "catalog:",
+        "playwright": "catalog:",
         "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-json": "catalog:",
         "@rollup/plugin-node-resolve": "catalog:",

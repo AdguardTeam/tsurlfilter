@@ -50,6 +50,7 @@ describe('TsWebExtension', () => {
     beforeEach(async () => {
         instance = createTsWebExtension('test');
         config = getConfigurationMv2Fixture();
+        vi.spyOn(engineApi, 'startEngine').mockResolvedValue({ conversionErrors: [] });
     });
 
     afterEach(() => {
@@ -65,19 +66,34 @@ describe('TsWebExtension', () => {
             await expect(() => instance.configure(config)).rejects.toThrowError('App is not started!');
         });
 
-        it('should be started correctly', async () => {
+        it('should be started correctly and return conversion errors', async () => {
+            const mockErrors = [
+                {
+                    rule: '##^:bad-rule()',
+                    offset: 0,
+                    message: 'bad rule',
+                    filterId: 1,
+                },
+            ];
+            vi.spyOn(engineApi, 'startEngine').mockResolvedValue({ conversionErrors: mockErrors });
+
             await instance.initStorage();
-            await instance.start(config);
+            const result = await instance.start(config);
 
             expect(instance.isStarted).toBe(true);
+            expect(result).toEqual({ conversionErrors: mockErrors });
         });
 
-        it('should be updated correctly', async () => {
+        it('should be updated correctly and return conversion errors', async () => {
+            const mockErrors: never[] = [];
+            vi.spyOn(engineApi, 'startEngine').mockResolvedValue({ conversionErrors: mockErrors });
+
             config.settings.filteringEnabled = false;
 
-            await instance.configure(config);
+            const result = await instance.configure(config);
 
             expect(instance.configuration.settings.filteringEnabled).toBe(false);
+            expect(result).toEqual({ conversionErrors: mockErrors });
         });
 
         it('Should be stopped correctly', async () => {

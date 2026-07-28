@@ -1,6 +1,6 @@
 {
     "name": "@adguard/dnr-rulesets",
-    "version": "4.2.1",
+    "version": "5.0.0",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
         "dist/**/*"
@@ -47,10 +47,10 @@
     "author": "Adguard Software Ltd.",
     "license": "GPL-3.0-only",
     "dependencies": {
+        "@adguard/dnr-converter": "workspace:^",
         "@adguard/re2-wasm": "1.2.0",
         "@adguard/agtree": "workspace:^",
         "@adguard/logger": "workspace:^",
-        "@adguard/tsurlfilter": "workspace:^",
         "axios": "catalog:",
         "chokidar": "^4.0.3",
         "commander": "catalog:",

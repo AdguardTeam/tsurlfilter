@@ -1,15 +1,16 @@
 import browser from 'webextension-polyfill';
 
+import { Filter, type IFilter, RULESET_NAME_PREFIX } from '@adguard/dnr-converter';
 import { FilterList } from '@adguard/tsurlfilter';
-import { Filter, type IFilter, RULESET_NAME_PREFIX } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { FiltersStorage } from '../../common/storage/filters';
-import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
+import { FailedEnableRulesetsError } from '../errors/failed-enable-rulesets-error';
 
 import { type ConfigurationMV3 } from './configuration';
+import { type ITrustedFilter, TrustedFilter } from './trusted-filter';
 
 export type UpdateStaticFiltersResult = {
-    errors: FailedEnableRuleSetsError[];
+    errors: FailedEnableRulesetsError[];
 };
 
 /**
@@ -55,7 +56,7 @@ export default class FiltersApi {
             });
         } catch (e) {
             const msg = 'Cannot change list of enabled rule sets';
-            const err = new FailedEnableRuleSetsError(
+            const err = new FailedEnableRulesetsError(
                 msg,
                 enableRulesetIds,
                 disableRulesetIds,
@@ -72,9 +73,9 @@ export default class FiltersApi {
      *
      * @returns List of extracted enabled rule sets ids.
      */
-    public static async getEnabledRuleSets(): Promise<number[]> {
-        const ruleSets = await browser.declarativeNetRequest.getEnabledRulesets();
-        return ruleSets.map((f) => Number.parseInt(f.slice(RULESET_NAME_PREFIX.length), 10));
+    public static async getEnabledRulesets(): Promise<number[]> {
+        const rulesets = await browser.declarativeNetRequest.getEnabledRulesets();
+        return rulesets.map((f) => Number.parseInt(f.slice(RULESET_NAME_PREFIX.length), 10));
     }
 
     /**
@@ -95,11 +96,11 @@ export default class FiltersApi {
 
             const filter = new Filter(
                 filterId,
-                { getContent: (): Promise<FilterList> => FiltersApi.loadFilterContent(filterId) },
-                /**
-                 * Static filters are trusted.
-                 */
-                true,
+                async (): Promise<string> => {
+                    const f = await FiltersApi.loadFilterContent(filterId);
+
+                    return f.getContent();
+                },
             );
 
             this.filtersCache.set(filterId, filter);
@@ -109,20 +110,26 @@ export default class FiltersApi {
     }
 
     /**
-     * Wraps custom filter into {@link IFilter}.
+     * Wraps custom filter into {@link ITrustedFilter}.
      *
      * @param customFilters List of custom filters.
      *
-     * @returns List of {@link IFilter} with a lazy content loading feature.
+     * @returns List of {@link ITrustedFilter} with a lazy content loading feature.
      */
-    static createCustomFilters(customFilters: ConfigurationMV3['customFilters']): IFilter[] {
-        return customFilters.map((f) => new Filter(
-            f.filterId,
-            {
-                getContent: () => Promise.resolve(new FilterList(f.content, f.conversionData)),
-            },
-            f.trusted,
-        ));
+    static createCustomFilters(customFilters: ConfigurationMV3['customFilters']): ITrustedFilter[] {
+        return customFilters.map((f) => {
+            const filterList = new FilterList(
+                f.content,
+                f.filterId,
+                f.conversionData,
+            );
+            return new TrustedFilter(
+                f.filterId,
+                filterList.getContent(),
+                f.trusted,
+                filterList.getConversionErrors(),
+            );
+        });
     }
 
     /**
@@ -143,7 +150,7 @@ export default class FiltersApi {
                 throw new Error(`Filter with id ${filterId} not found`);
             }
 
-            return new FilterList(result.rawFilterList, result.conversionData);
+            return new FilterList(result.rawFilterList, filterId, result.conversionData);
         } catch (e) {
             throw new Error(`Failed to load filter content: ${e}`);
         }

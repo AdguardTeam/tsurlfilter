@@ -1525,4 +1525,41 @@ describe('$path cosmetic modifier', () => {
         );
         expect(result.elementHiding.specific.length).toEqual(1);
     });
+
+    it('should aggregate conversion errors from multiple filter lists', () => {
+        // '##^:has-text()' triggers a converter exception; using it in two separate filters
+        // verifies that Engine collects errors from all lists and tags each with the correct filterId.
+        const engine = Engine.createSync({
+            filters: [
+                { id: 1, content: '##^:has-text()' },
+                { id: 2, content: ['||valid.com^', '##^:min-text-length(abc)'].join('\n') },
+            ],
+        });
+
+        const errors = engine.getConversionErrors();
+
+        expect(errors).toHaveLength(2);
+
+        const errFromFilter1 = errors.find((e) => e.filterId === 1);
+        expect(errFromFilter1).toBeDefined();
+        expect(errFromFilter1!.rule).toBe('##^:has-text()');
+        expect(errFromFilter1!.message).toContain('has-text');
+
+        const errFromFilter2 = errors.find((e) => e.filterId === 2);
+        expect(errFromFilter2).toBeDefined();
+        expect(errFromFilter2!.rule).toBe('##^:min-text-length(abc)');
+        expect(errFromFilter2!.message).toContain('min-text-length');
+    });
+});
+
+it('should return empty conversion errors when all rules are valid', () => {
+    const engine = Engine.createSync({
+        filters: [
+            { id: 1, content: '||example.com^' },
+            { id: 2, content: '||example.org^' },
+        ],
+    });
+
+    const errors = engine.getConversionErrors();
+    expect(errors).toHaveLength(0);
 });

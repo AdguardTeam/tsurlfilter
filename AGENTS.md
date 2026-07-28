@@ -28,6 +28,7 @@ high-level extension APIs (`adguard-api`, `adguard-api-mv3`).
 │   ├── css-tokenizer/               # @adguard/css-tokenizer — CSS tokenizer
 │   ├── agtree/                      # @adguard/agtree — filter list parser & AST
 │   ├── tsurlfilter/                 # @adguard/tsurlfilter — blocking rules engine
+│   ├── dnr-converter/               # @adguard/dnr-converter — DNR rule converter (CLI + lib)
 │   ├── tswebextension/              # @adguard/tswebextension — web extension API wrapper
 │   ├── dnr-rulesets/                # @adguard/dnr-rulesets — DNR ruleset builder (CLI + lib)
 │   ├── adguard-api/                 # @adguard/api — high-level extension API (MV2)
@@ -62,10 +63,13 @@ graph TD
     css-tokenizer --> tsurlfilter
     agtree --> tsurlfilter
     agtree --> tswebextension
+    agtree --> dnr-converter
     tsurlfilter --> tswebextension
-    tsurlfilter --> dnr-rulesets
     logger --> tswebextension
     logger --> dnr-rulesets
+    logger --> dnr-converter
+    dnr-converter --> tswebextension
+    dnr-converter --> dnr-rulesets
     tswebextension --> api
     tswebextension --> api-mv3
 ```
@@ -165,6 +169,11 @@ You MUST follow the following rules for EVERY task that you perform:
 4. **Consistent `zod` version** across all packages is mandatory to avoid
    schema incompatibility. The version is pinned in `pnpm-workspace.yaml`
    catalogs.
+
+5. **Do not split logger calls.** Keep the entire log message in a single
+   expression (e.g. a template literal) rather than splitting it across
+   multiple lines with string concatenation. This makes log messages easier
+   to grep for in the codebase.
 
 ### III. Testing Discipline
 

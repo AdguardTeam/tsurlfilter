@@ -52,6 +52,7 @@ export const NETWORK_RULE_OPTIONS = {
     METHOD: 'method',
     TO: 'to',
     PERMISSIONS: 'permissions',
+    URLTRANSFORM: 'urltransform',
     ALL: 'all',
 };
 

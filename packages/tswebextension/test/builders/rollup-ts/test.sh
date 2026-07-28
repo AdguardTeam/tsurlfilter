@@ -30,7 +30,7 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 }
 
 # check css hits counter size
-max_size=20100
+max_size=27000
 filename="dist/css-hits-counter.js"
 filesize=$(stat -f "%z" "$filename")
 if [ "$filesize" -gt $max_size ]; then

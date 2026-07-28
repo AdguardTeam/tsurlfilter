@@ -75,7 +75,7 @@ const cliConfig = {
                 // Bundle all AdGuard packages to avoid issues with
                 // `import.meta.url` in ESM format (all our libraries in
                 // ESM only), since output is CJS (because of re2-wasm).
-                /^@adguard\/(agtree|logger|tsurlfilter).*$/,
+                /^@adguard\/(agtree|logger|dnr-converter).*$/,
             ],
         }),
         commonjs(),

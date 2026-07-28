@@ -18,15 +18,51 @@ import {
 } from './charsets';
 import { type ContentStringFilterInterface } from './content-string-filter';
 
-// Do not destruct inside import, because it somehow breaks build in browser
-// extension via "ReferenceError: TextDecoder is not defined".
-const { TextEncoder, TextDecoder } = TextEncoding;
+/**
+ * Maximum total response size (in bytes) for which we perform content
+ * filtering. Responses larger than this are passed through unmodified.
+ *
+ * Buffering arbitrarily large responses leads to excessive memory consumption
+ * and GC pressure in the extension process, since the whole response has to
+ * be held in memory until the request finishes.
+ *
+ * This limit also protects against never-ending responses (e.g. Server-Sent
+ * Events or other long-lived streaming endpoints): their `onstop` event may
+ * never fire, so without the limit we would buffer and decode such streams
+ * indefinitely while the page receives no data at all. Once the limit is
+ * crossed, all buffered bytes are flushed to the page and the filter
+ * disconnects, letting the stream flow directly to the page.
+ *
+ * The value is aligned with the 10 MB response size limit for `$replace`
+ * rules in `ContentStringFilter.applyRules`.
+ *
+ * Original issue link: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3525.
+ */
+const MAX_CONTENT_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+
+/**
+ * Unicode replacement character (U+FFFD) that appears when the decoder
+ * encounters bytes that cannot be decoded using the current charset.
+ * Its presence indicates that either the charset was incorrectly determined
+ * or the original content contains invalid byte sequences for the specified
+ * encoding.
+ */
+const REPLACEMENT_CHAR = '\uFFFD';
 
 /**
  * Content Stream Filter class.
  *
  * Encapsulates response data stream filtering logic
  * https://mail.mozilla.org/pipermail/dev-addons/2017-April/002729.html.
+ *
+ * Performance note: decoding is done with the platform-native `TextDecoder`,
+ * which supports all charsets from {@link SUPPORTED_CHARSETS}. The pure-JS
+ * polyfill from `@adguard/text-encoding` decodes responses byte-by-byte and
+ * produces an enormous amount of short-lived allocations (it was a source of
+ * constant `OUT_OF_NURSERY` minor GCs and high memory usage in Firefox).
+ * The polyfill is only used for encoding back to legacy charsets, which the
+ * native `TextEncoder` does not support, and which happens at most once per
+ * request.
  */
 export class ContentStream {
     /**
@@ -60,13 +96,17 @@ export class ContentStream {
 
     /**
      * Decoder instance.
+     *
+     * Native `TextDecoder` is used for performance reasons, see class JSDoc.
      */
-    private decoder: TextEncoding.TextDecoder | undefined;
+    private decoder: TextDecoder | undefined;
 
     /**
      * Encoder instance.
+     *
+     * Native `TextEncoder` for utf-8, polyfill encoder for legacy charsets.
      */
-    private encoder: TextEncoding.TextEncoder | undefined;
+    private encoder: TextEncoder | TextEncoding.TextEncoder | undefined;
 
     /**
      * Filtering log.
@@ -75,8 +115,19 @@ export class ContentStream {
 
     /**
      * Buffer for raw response data chunks.
+     *
+     * Kept until the response finishes so that the original bytes can be
+     * written back unmodified if decoding fails or filtering is aborted.
+     * Total buffered size is bounded by {@link MAX_CONTENT_SIZE_BYTES}.
      */
     private rawChunks: ArrayBuffer[] = [];
+
+    /**
+     * Total size (in bytes) of raw chunks received so far.
+     * Used to enforce {@link MAX_CONTENT_SIZE_BYTES} and disconnect early
+     * for large responses.
+     */
+    private totalRawSize = 0;
 
     /**
      * Contains collection of accepted content types for stream filtering.
@@ -147,20 +198,6 @@ export class ContentStream {
     }
 
     /**
-     * Disconnects filter from stream.
-     *
-     * @param data Data to write.
-     */
-    public disconnect(data: BufferSource): void {
-        this.filter.write(data as ArrayBuffer);
-        this.filter.disconnect();
-
-        // Clear buffers when explicitly disconnecting
-        this.rawChunks = [];
-        this.content = '';
-    }
-
-    /**
      * Initializes encoders.
      */
     private initEncoders(): void {
@@ -175,7 +212,9 @@ export class ContentStream {
         if (set === DEFAULT_CHARSET) {
             this.encoder = new TextEncoder();
         } else {
-            this.encoder = new TextEncoder(set, { NONSTANDARD_allowLegacyEncoding: true });
+            // Only the polyfill supports encoding to legacy charsets.
+            // It is slow, but it is used at most once per request.
+            this.encoder = new TextEncoding.TextEncoder(set, { NONSTANDARD_allowLegacyEncoding: true });
         }
     }
 
@@ -210,11 +249,22 @@ export class ContentStream {
      * @param event Stream filter event.
      */
     private onResponseData(event: WebRequest.StreamFilterEventData): void {
-        // Store raw data regardless of decoding outcome for potential fallback
-        this.rawChunks.push(event.data);
+        const { data } = event;
+
+        // Always buffer raw chunks: they are needed for a byte-exact fallback
+        // when decoding fails, and to flush already received bytes if
+        // filtering is aborted mid-stream. Total size is bounded by MAX_CONTENT_SIZE_BYTES.
+        this.rawChunks.push(data);
+        this.totalRawSize += data.byteLength;
+
+        if (this.totalRawSize > MAX_CONTENT_SIZE_BYTES) {
+            logger.debug(`[tsweb.ContentStream.onResponseData]: disconnecting request ${this.context.requestId} because response size exceeded the limit of ${MAX_CONTENT_SIZE_BYTES} bytes`);
+            this.flushRawAndDisconnect();
+            return;
+        }
 
         if (!this.shouldProcessFiltering()) {
-            this.disconnect(event.data);
+            this.flushRawAndDisconnect();
             return;
         }
 
@@ -227,7 +277,7 @@ export class ContentStream {
                  */
                 if (this.context.requestType === RequestType.SubDocument
                     || this.context.requestType === RequestType.Document) {
-                    charset = ContentStream.parseHtmlCharset(event.data);
+                    charset = ContentStream.parseHtmlCharset(data);
                 }
 
                 /**
@@ -235,7 +285,7 @@ export class ContentStream {
                  * directive.
                  */
                 if (this.context.requestType === RequestType.Stylesheet) {
-                    charset = ContentStream.parseCssCharset(event.data);
+                    charset = ContentStream.parseCssCharset(data);
                 }
 
                 // If charset is not detected, try to parse it from Content-Type header if it exists
@@ -247,25 +297,24 @@ export class ContentStream {
                     charset = DEFAULT_CHARSET;
                 }
 
-                if (charset && SUPPORTED_CHARSETS.indexOf(charset) >= 0) {
+                if (charset && SUPPORTED_CHARSETS.includes(charset)) {
                     this.charset = charset;
                     this.initEncoders();
-                    this.content += this.decoder!.decode(event.data, { stream: true });
+                    this.content += this.decoder!.decode(data, { stream: true });
                 } else {
                     // Charset is not supported
-                    this.disconnect(event.data);
+                    this.flushRawAndDisconnect();
                 }
             } catch (e) {
                 logger.warn('[tsweb.ContentStream.onResponseData]: Error during charset detection/initial decode. Disconnecting.', e);
-                this.disconnect(event.data);
+                this.flushRawAndDisconnect();
             }
         } else {
             try {
-                const decodedChunk = this.decoder!.decode(event.data, { stream: true });
-                this.content += decodedChunk;
+                this.content += this.decoder!.decode(data, { stream: true });
             } catch (decodingError) {
                 logger.warn('[tsweb.ContentStream.onResponseData]: Error decoding subsequent chunk with charset. Disconnecting.', decodingError);
-                this.disconnect(event.data);
+                this.flushRawAndDisconnect();
             }
         }
     }
@@ -283,7 +332,24 @@ export class ContentStream {
      * Handler for the end of response data.
      */
     private onResponseFinish(): void {
-        this.content += this.decoder!.decode(); // finish stream
+        if (!this.decoder) {
+            this.flushRawAndDisconnect();
+            return;
+        }
+
+        this.content += this.decoder.decode(); // finish stream
+
+        // For non-200 responses there is no point in applying content
+        // filtering.  Flush the original raw bytes to avoid any risk of
+        // the decode→re-encode round-trip altering the payload (the
+        // polyfill encoder for legacy charsets is non-identical to the
+        // server's original encoding).
+        const { contentTypeHeader, statusCode } = this.context;
+
+        if (statusCode !== 200) {
+            this.flushRawAndDisconnect();
+            return;
+        }
 
         this.filteringLog.publishEvent({
             type: FilteringEventType.ContentFilteringStart,
@@ -292,55 +358,35 @@ export class ContentStream {
             },
         });
 
-        const { contentTypeHeader, statusCode } = this.context;
-
-        if (statusCode !== 200) {
-            this.write(this.content);
-            return;
-        }
-
         const charset = parseCharsetFromHeader(contentTypeHeader);
 
         if (charset) {
-            if (SUPPORTED_CHARSETS.indexOf(charset) < 0) {
+            if (!SUPPORTED_CHARSETS.includes(charset)) {
                 // Charset is detected and it is not supported
                 logger.warn(`[tsweb.ContentStream.onResponseFinish]: skipping request ${this.context.requestId} with Content-Type ${this.context.contentTypeHeader}`);
-                this.write(this.content);
+                this.writeAndCleanup(this.content);
                 return;
             }
             this.setCharset(charset);
         }
 
-        // Unicode replacement character (U+FFFD) that appears when the decoder encounters
-        // bytes that cannot be decoded using the current charset. Its presence indicates
-        // that either the charset was incorrectly determined or the original content
-        // contains invalid byte sequences for the specified encoding.
-        const REPLACEMENT_CHAR = '\uFFFD';
-
-        // This indicates the original byte stream was likely invalid for the determined charset.
-        // In this case, we write the raw chunks directly to the filter.
+        // Presence of the replacement character indicates the original byte
+        // stream was likely invalid for the determined charset. In this case,
+        // we write the buffered raw chunks back unmodified to avoid corrupting
+        // the response.
         if (this.content.includes(REPLACEMENT_CHAR)) {
-            logger.debug(`[tsweb.ContentStream.onResponseFinish]: Writing raw chunks for request ${this.context.requestId}`);
-            // Write all buffered raw chunks directly
+            logger.debug(`[tsweb.ContentStream.onResponseFinish]: writing raw chunks for request ${this.context.requestId}`);
             for (const chunk of this.rawChunks) {
                 this.filter.write(chunk);
             }
             this.filter.close();
-
-            // Clear buffers regardless of fallback success/failure before returning
-            this.rawChunks = [];
-            this.content = '';
+            this.cleanup();
             return;
         }
 
-        // --- If we reach here, decoding succeeded without replacement characters ---
+        const filteredContent = this.contentStringFilter.applyRules(this.content);
 
-        // Clear raw chunks as they are no longer needed
-        this.rawChunks = [];
-
-        this.content = this.contentStringFilter.applyRules(this.content);
-
-        this.write(this.content);
+        this.writeAndCleanup(filteredContent);
 
         this.filteringLog.publishEvent({
             type: FilteringEventType.ContentFilteringFinish,
@@ -348,6 +394,38 @@ export class ContentStream {
                 requestId: this.context.requestId,
             },
         });
+    }
+
+    /**
+     * Writes content to the stream, closes it and releases buffers.
+     *
+     * @param content Content to write.
+     */
+    private writeAndCleanup(content: string): void {
+        this.write(content);
+        this.cleanup();
+    }
+
+    /**
+     * Flushes all buffered raw chunks to the stream and disconnects the
+     * filter, so the page receives its content unmodified and all further
+     * data bypasses the extension entirely.
+     */
+    private flushRawAndDisconnect(): void {
+        for (const chunk of this.rawChunks) {
+            this.filter.write(chunk);
+        }
+        this.filter.disconnect();
+        this.cleanup();
+    }
+
+    /**
+     * Releases all buffered data.
+     */
+    private cleanup(): void {
+        this.rawChunks = [];
+        this.content = '';
+        this.totalRawSize = 0;
     }
 
     /**

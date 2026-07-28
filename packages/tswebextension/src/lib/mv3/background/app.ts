@@ -1,21 +1,21 @@
 import browser from 'webextension-polyfill';
 
-import { LogLevel } from '@adguard/logger';
-import { FilterList } from '@adguard/tsurlfilter';
 import {
     Filter,
+    getRulesetId,
     type IFilter,
-    type IRuleSet,
+    type IRulesetWithSourceMap,
     METADATA_RULESET_ID,
     RULESET_NAME_PREFIX,
-} from '@adguard/tsurlfilter/es/declarative-converter';
-import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
+} from '@adguard/dnr-converter';
+import { LogLevel } from '@adguard/logger';
+import { FilterList } from '@adguard/tsurlfilter';
 
 import { type AppInterface, type MessageHandler } from '../../common/app';
 import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
-import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
+import { type FailedEnableRulesetsError } from '../errors/failed-enable-rulesets-error';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 
@@ -30,24 +30,26 @@ import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import { MessagesApi } from './messages-api';
 import { RequestEvents } from './request/events/request-events';
-import { RuleSetsLoaderApi } from './rule-sets-loader-api';
+import { RulesetsLoaderApi } from './rulesets-loader-api';
 import { CspService } from './services/csp-service';
 import { documentBlockingService } from './services/document-blocking-service';
 import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
+import { removeParamInjectionService } from './services/remove-param-injection-service';
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { SessionRulesApi } from './session-rules-api';
+import { type ITrustedFilter } from './trusted-filter';
 import { WebRequestApi } from './web-request-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
-    staticFilters: IRuleSet[];
+    staticFilters: IRulesetWithSourceMap[];
     dynamicRules?: ConversionResult;
     stealthResult?: StealthConfigurationResult;
 };
 
 type FiltersUpdateInfo = {
     staticFilters: IFilter[];
-    customFilters: IFilter[];
+    customFilters: ITrustedFilter[];
     filtersIdsToEnable: number[];
     filtersIdsToDisable: number[];
 };
@@ -56,7 +58,7 @@ type FiltersUpdateInfo = {
 export type {
     ConfigurationResult,
     ConversionResult,
-    FailedEnableRuleSetsError,
+    FailedEnableRulesetsError,
 };
 
 /**
@@ -156,6 +158,9 @@ export class TsWebExtension implements AppInterface<
             // Start handle request events.
             WebRequestApi.start();
 
+            // Start $removeparam injection tracking.
+            removeParamInjectionService.start();
+
             // Start handle onRuleMatchedDebug event.
             declarativeFilteringLog.start();
 
@@ -191,25 +196,25 @@ export class TsWebExtension implements AppInterface<
      * Synchronize rule set with IDB.
      *
      * @param staticFilterId Static filter id.
-     * @param ruleSetsPath Path to rule sets.
+     * @param rulesetsPath Path to rule sets.
      *
      * TODO: Find a way to exclude public usage of this method, since we trying
      * to keep only one way to configure tswebextension and all its parts,
      * including rulesets: via passing single configuration file. And this
      * method creates a "dirty" flow, when tswebextension is not received log
      * level from extension and forces us to use static locks for IDB in
-     * RuleSetsLoaderApi to prevent concurrent access issues between multiple
+     * RulesetsLoaderApi to prevent concurrent access issues between multiple
      * instances.
      */
-    public static async syncRuleSetWithIdbByFilterId(
+    public static async syncRulesetWithIdbByFilterId(
         staticFilterId: number,
-        ruleSetsPath: string,
+        rulesetsPath: string,
     ): Promise<void> {
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        const rulesetsLoaderApi = new RulesetsLoaderApi(rulesetsPath);
 
-        const ruleSetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
+        const rulesetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
 
-        await ruleSetsLoaderApi.syncRuleSetWithIdb(ruleSetId);
+        await rulesetsLoaderApi.syncRulesetWithIdb(rulesetId);
     }
 
     /**
@@ -217,19 +222,19 @@ export class TsWebExtension implements AppInterface<
      * This method is used to ensure all rule sets are properly cached for
      * future calls to configure method.
      *
-     * @param ruleSetsPath Path to rule sets.
+     * @param rulesetsPath Path to rule sets.
      * @param staticFiltersIds Array of static filter IDs to sync.
      */
-    private static async syncRuleSetsWithIdb(
-        ruleSetsPath: string,
+    private static async syncRulesetsWithIdb(
+        rulesetsPath: string,
         staticFiltersIds: number[],
     ): Promise<void> {
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        const rulesetsLoaderApi = new RulesetsLoaderApi(rulesetsPath);
 
         const syncTasks = staticFiltersIds.map((staticFilterId) => {
-            const ruleSetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
+            const rulesetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
 
-            return ruleSetsLoaderApi.syncRuleSetWithIdb(ruleSetId);
+            return rulesetsLoaderApi.syncRulesetWithIdb(rulesetId);
         });
 
         await Promise.all(syncTasks);
@@ -272,7 +277,7 @@ export class TsWebExtension implements AppInterface<
     private static async removeAllFilteringRules(): Promise<void> {
         await DynamicRulesApi.removeAllRules();
 
-        const disableFiltersIds = await FiltersApi.getEnabledRuleSets();
+        const disableFiltersIds = await FiltersApi.getEnabledRulesets();
         await FiltersApi.updateFiltering(disableFiltersIds);
 
         await StealthService.clearAll();
@@ -304,6 +309,9 @@ export class TsWebExtension implements AppInterface<
         // Stop handle request events.
         WebRequestApi.stop();
 
+        // Stop $removeparam injection tracking.
+        removeParamInjectionService.stop();
+
         // Remove tabs listeners and clear context storage
         tabsApi.stop();
 
@@ -332,7 +340,7 @@ export class TsWebExtension implements AppInterface<
         // proper logging and error handling.
         TsWebExtension.updateLogLevel(config.logLevel);
 
-        await TsWebExtension.syncRuleSetsWithIdb(config.ruleSetsPath, config.staticFiltersIds);
+        await TsWebExtension.syncRulesetsWithIdb(config.rulesetsPath, config.staticFiltersIds);
 
         // Exclude binary fields from logged config.
         const binaryFields = [
@@ -378,16 +386,16 @@ export class TsWebExtension implements AppInterface<
             );
 
             // Create static rulesets.
-            const staticRuleSets = await TsWebExtension.loadStaticRuleSets(
-                configuration.ruleSetsPath,
+            const staticRulesets = await TsWebExtension.loadStaticRulesets(
+                configuration.rulesetsPath,
                 staticFilters,
             );
 
             // Get enabled static rule sets
-            const enabledRuleSetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
-            const enabledStaticRuleSets = staticRuleSets.filter((ruleSet) => {
-                const ruleSetId = ruleSet.getId();
-                return enabledRuleSetsIds.includes(ruleSetId);
+            const enabledRulesetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
+            const enabledStaticRulesets = staticRulesets.filter((ruleset) => {
+                const rulesetId = ruleset.getId();
+                return enabledRulesetsIds.includes(rulesetId);
             });
 
             // Update allowlist settings.
@@ -397,54 +405,36 @@ export class TsWebExtension implements AppInterface<
 
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
-                {
-                    getContent: (): Promise<FilterList> => {
-                        return Promise.resolve(
-                            new FilterList(
-                                configuration.userrules.content,
-                                configuration.userrules.conversionData,
-                            ),
-                        );
-                    },
-                },
-                true,
+                async () => new FilterList(
+                    configuration.userrules.content,
+                    USER_FILTER_ID,
+                    configuration.userrules.conversionData,
+                ).getContent(),
             );
 
             const allowlistFilter = new Filter(
                 ALLOWLIST_FILTER_ID,
                 // TODO: Generate AST directly for allowlist rules.
-                {
-                    getContent: (): Promise<FilterList> => {
-                        return Promise.resolve(
-                            new FilterList(
-                                combinedAllowlistRules,
-                                // Note: this filter list is generated by our library,
-                                // there is no need to provide any real conversion data.
-                                FilterList.createEmptyConversionData(),
-                            ),
-                        );
-                    },
-                },
-                true,
+                async () => new FilterList(
+                    combinedAllowlistRules,
+                    ALLOWLIST_FILTER_ID,
+                    // Note: this filter list is generated by our library,
+                    // there is no need to provide any real conversion data.
+                    FilterList.createEmptyConversionData(),
+                ).getContent(),
             );
 
             const trustedDomainsExceptionRule = AllowlistApi.getAllowlistRule(configuration.trustedDomains);
 
             const blockingPageTrustedFilter = new Filter(
                 BLOCKING_TRUSTED_FILTER_ID,
-                {
-                    getContent: (): Promise<FilterList> => {
-                        return Promise.resolve(
-                            new FilterList(
-                                trustedDomainsExceptionRule,
-                                // Note: this filter list is generated by our library,
-                                // there is no need to provide any real conversion data.
-                                FilterList.createEmptyConversionData(),
-                            ),
-                        );
-                    },
-                },
-                true,
+                async () => new FilterList(
+                    trustedDomainsExceptionRule,
+                    BLOCKING_TRUSTED_FILTER_ID,
+                    // Note: this filter list is generated by our library,
+                    // there is no need to provide any real conversion data.
+                    FilterList.createEmptyConversionData(),
+                ).getContent(),
             );
 
             // Convert quick fixes rules, allowlist, custom filters and user
@@ -454,12 +444,12 @@ export class TsWebExtension implements AppInterface<
                 blockingPageTrustedFilter,
                 userRulesFilter,
                 customFilters,
-                enabledStaticRuleSets,
+                enabledStaticRulesets,
                 this.webAccessibleResourcesPath,
             );
 
             await SessionRulesApi.updateSessionRules(
-                enabledStaticRuleSets,
+                enabledStaticRulesets,
                 res.dynamicRules.declarativeRulesToCancel,
             );
 
@@ -480,31 +470,33 @@ export class TsWebExtension implements AppInterface<
             await engineApi.waitingForEngine;
 
             // TODO: Recreate only dynamic ruleset, because static cannot be changed
-            const ruleSets = [
-                ...staticRuleSets,
-                res.dynamicRules.ruleSet,
+            const rulesets = [
+                ...staticRulesets,
+                res.dynamicRules.ruleset,
             ];
 
             // Update rulesets in declarative filtering log.
-            declarativeFilteringLog.finishUpdate(ruleSets, configuration.declarativeLogEnabled);
+            declarativeFilteringLog.finishUpdate(rulesets, configuration.declarativeLogEnabled);
 
-            // Free heavy metadata (badFilterRules, rulesHashMap) from all
-            // rulesets (both static and dynamic) since they are only needed
-            // during conversion above. They will be lazy-loaded from IDB if needed again.
-            for (const ruleSet of ruleSets) {
-                ruleSet.unloadMetadata();
-            }
+            // TODO (AG-53262): Measure memory impact of keeping metadata (badFilterRules,
+            // rulesHashMap) in memory vs. lazy-loading it on demand. The metadata
+            // is used only during the conversion phase above, but removing it
+            // requires making getBadFilterRules()/getRulesHashMap() async with
+            // lazy reload from IDB — a non-trivial change. For now, keep metadata
+            // in memory to avoid bugs with stale cached rulesets returning empty
+            // metadata on subsequent configure() calls.
+            // See: https://bit.int.agrd.dev/projects/ADGUARD-FILTERS/repos/tsurlfilter/pull-requests/1648/overview
 
             // If declarative log is disabled, also unload content
             // (sourceMap, declarativeRules, filterList) from all rulesets
             // since it is only needed for the filtering log.
             if (!configuration.declarativeLogEnabled) {
-                for (const ruleSet of ruleSets) {
-                    ruleSet.unloadContent();
+                for (const ruleset of rulesets) {
+                    ruleset.unloadContent();
                 }
             }
 
-            res.staticFilters = staticRuleSets;
+            res.staticFilters = staticRulesets;
         } else {
             await TsWebExtension.removeAllFilteringRules();
         }
@@ -710,7 +702,7 @@ export class TsWebExtension implements AppInterface<
             verbose,
             settings,
             filtersPath,
-            ruleSetsPath,
+            rulesetsPath,
             declarativeLogEnabled,
         } = configuration;
 
@@ -718,7 +710,7 @@ export class TsWebExtension implements AppInterface<
             staticFiltersIds,
             customFilters: customFilters.map(({ filterId }) => filterId),
             filtersPath,
-            ruleSetsPath,
+            rulesetsPath,
             declarativeLogEnabled,
             verbose,
             settings,
@@ -744,8 +736,8 @@ export class TsWebExtension implements AppInterface<
         );
         const filtersIdsToEnable = staticFilters
             .map((filter) => filter.getId());
-        const enabledRuleSetsIds = await FiltersApi.getEnabledRuleSets();
-        const filtersIdsToDisable = enabledRuleSetsIds
+        const enabledRulesetsIds = await FiltersApi.getEnabledRulesets();
+        const filtersIdsToDisable = enabledRulesetsIds
             .filter((id) => !filtersIdsToEnable.includes(id));
 
         return {
@@ -759,18 +751,18 @@ export class TsWebExtension implements AppInterface<
     /**
      * Wraps static filters into rule sets.
      *
-     * @param ruleSetsPath Path to the rule set metadata.
+     * @param rulesetsPath Path to the rule set metadata.
      * @param staticFilters List of static {@link IFilter}.
      *
-     * @returns A list of static {@link IRuleSet}, or an empty list if an error
+     * @returns A list of static {@link IRulesetWithSourceMap}, or an empty list if an error
      * occurred during the rule scanning step.
      */
-    private static async loadStaticRuleSets(
-        ruleSetsPath: ConfigurationMV3['ruleSetsPath'],
+    private static async loadStaticRulesets(
+        rulesetsPath: ConfigurationMV3['rulesetsPath'],
         staticFilters: IFilter[],
-    ): Promise<IRuleSet[]> {
+    ): Promise<IRulesetWithSourceMap[]> {
         // Wrap filters into rule sets
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        const rulesetsLoaderApi = new RulesetsLoaderApi(rulesetsPath);
         const manifest = browser.runtime.getManifest();
         if (!manifest.declarative_net_request) {
             throw new Error('Cannot find declarative_net_request in manifest');
@@ -779,21 +771,21 @@ export class TsWebExtension implements AppInterface<
         // Note: we cannot create rulesets only for enabled filters because we
         // need to get all rulesets' counters for checking limits on the client.
         // Note: we skip metadata ruleset, because it is not a real ruleset.
-        const manifestRuleSets = manifest.declarative_net_request.rule_resources
-            .filter(({ id }) => id !== getRuleSetId(METADATA_RULESET_ID));
+        const manifestRulesets = manifest.declarative_net_request.rule_resources
+            .filter(({ id }) => id !== getRulesetId(METADATA_RULESET_ID));
 
-        const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
-            return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
+        const staticRulesetsTasks = manifestRulesets.map(({ id }) => {
+            return rulesetsLoaderApi.createRuleset(id, staticFilters);
         });
 
         try {
-            const staticRuleSets = await Promise.all(staticRuleSetsTasks);
+            const staticRulesets = await Promise.all(staticRulesetsTasks);
 
-            return staticRuleSets;
+            return staticRulesets;
         } catch (e) {
             const filterListIds = staticFilters.map((f) => f.getId());
 
-            logger.error(`[tsweb.TsWebExtension.loadStaticRuleSets]: cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
+            logger.error(`[tsweb.TsWebExtension.loadStaticRulesets]: cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
 
             return [];
         }

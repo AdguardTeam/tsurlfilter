@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache';
 
-import { FilterList } from '../filterlist/filter-list';
+import { FilterList, type FilterListConversionError } from '../filterlist/filter-list';
 import { FilterRuleList } from '../filterlist/filter-rule-list';
 import { type IRuleList } from '../filterlist/rule-list';
 import { RuleCategory } from '../filterlist/rule-parts';
@@ -90,6 +90,11 @@ export class Engine {
     private readonly resultCache: LRUCache<string, MatchingResult>;
 
     /**
+     * Conversion errors that occurred during filter list processing.
+     */
+    private conversionErrors: FilterListConversionError[] = [];
+
+    /**
      * Creates an instance of the network engine in sync mode.
      *
      * @param options Engine factory options.
@@ -101,6 +106,7 @@ export class Engine {
         const cosmeticRulesParts: IndexedStorageCosmeticRuleParts[] = [];
 
         const lists: IRuleList[] = [];
+        const conversionErrors: FilterListConversionError[] = [];
 
         for (const filter of options.filters) {
             let list: FilterList;
@@ -108,8 +114,10 @@ export class Engine {
             if (filter.content instanceof FilterList) {
                 list = filter.content;
             } else {
-                list = new FilterList(filter.content);
+                list = new FilterList(filter.content, filter.id);
             }
+
+            conversionErrors.push(...list.getConversionErrors());
 
             const ruleList = new FilterRuleList(
                 filter.id,
@@ -144,7 +152,7 @@ export class Engine {
         const networkEngine = NetworkEngine.createSync(networkRulesParts, storage);
         const cosmeticEngine = CosmeticEngine.createSync(cosmeticRulesParts, storage);
 
-        const engine = new Engine(storage, networkEngine, cosmeticEngine);
+        const engine = new Engine(storage, networkEngine, cosmeticEngine, conversionErrors);
 
         return engine;
     }
@@ -161,6 +169,7 @@ export class Engine {
         const cosmeticRulesParts: IndexedStorageCosmeticRuleParts[] = [];
 
         const lists: IRuleList[] = [];
+        const conversionErrors: FilterListConversionError[] = [];
 
         for (const filter of options.filters) {
             let list: FilterList;
@@ -168,8 +177,10 @@ export class Engine {
             if (filter.content instanceof FilterList) {
                 list = filter.content;
             } else {
-                list = new FilterList(filter.content);
+                list = new FilterList(filter.content, filter.id);
             }
+
+            conversionErrors.push(...list.getConversionErrors());
 
             const ruleList = new FilterRuleList(
                 filter.id,
@@ -222,7 +233,7 @@ export class Engine {
             CosmeticEngine.createAsync(cosmeticRulesParts, storage),
         ]);
 
-        const engine = new Engine(storage, networkEngine, cosmeticEngine);
+        const engine = new Engine(storage, networkEngine, cosmeticEngine, conversionErrors);
 
         return engine;
     }
@@ -234,16 +245,19 @@ export class Engine {
      * @param ruleStorage Storage.
      * @param networkEngine Network engine.
      * @param cosmeticEngine Cosmetic engine.
+     * @param conversionErrors Conversion errors.
      */
     private constructor(
         ruleStorage: RuleStorage,
         networkEngine: NetworkEngine,
         cosmeticEngine: CosmeticEngine,
+        conversionErrors: FilterListConversionError[],
     ) {
         this.ruleStorage = ruleStorage;
         this.networkEngine = networkEngine;
         this.cosmeticEngine = cosmeticEngine;
         this.resultCache = new LRUCache({ max: Engine.REQUEST_CACHE_SIZE });
+        this.conversionErrors = conversionErrors;
     }
 
     /**
@@ -351,5 +365,14 @@ export class Engine {
      */
     public retrieveOriginalRuleText(filterId: number, ruleIndex: number): string | null {
         return this.ruleStorage.retrieveOriginalRuleText(filterId, ruleIndex);
+    }
+
+    /**
+     * Gets the conversion errors that occurred during filter list processing.
+     *
+     * @returns Array of conversion errors.
+     */
+    public getConversionErrors(): readonly FilterListConversionError[] {
+        return this.conversionErrors;
     }
 }

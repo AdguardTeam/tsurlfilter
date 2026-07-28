@@ -580,7 +580,7 @@ export class StealthService {
     }
 
     /**
-     * If {@link isWebRTCDisabled} is true, sets the browser IP policy to `disable_non_proxied_udp`,
+     * If {@link isWebRTCDisabled} is true, sets the browser IP policy to `default_public_interface_only`,
      * otherwise restore default policy.
      *
      * @param isWebRTCDisabled Flag that determines if the WebRTC should be disabled.
@@ -611,7 +611,7 @@ export class StealthService {
             if (isWebRTCDisabled) {
                 await StealthService.setSetting(
                     setting,
-                    chrome.privacy.IPHandlingPolicy.DISABLE_NON_PROXIED_UDP,
+                    chrome.privacy.IPHandlingPolicy.DEFAULT_PUBLIC_INTERFACE_ONLY,
                 );
             } else {
                 await StealthService.clearSetting(setting);

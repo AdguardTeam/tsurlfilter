@@ -5,6 +5,7 @@ import {
     it,
     vi,
 } from 'vitest';
+import browser from 'webextension-polyfill';
 
 import { MatchingResult } from '@adguard/tsurlfilter';
 
@@ -107,6 +108,112 @@ describe('StealthApi', () => {
                 createNetworkRule('@@||*.*^$urlblock', 0),
             );
             expect(stealthApi.getStealthScript(null, result)).toBe('');
+        });
+    });
+
+    describe('updateWebRtcPrivacyPermissions - WebRTC policy', () => {
+        const mockWebRTCIPHandlingPolicy = {
+            set: vi.fn().mockResolvedValue(undefined),
+            clear: vi.fn().mockResolvedValue(undefined),
+        };
+
+        const mockPeerConnectionEnabled = {
+            set: vi.fn().mockResolvedValue(undefined),
+            clear: vi.fn().mockResolvedValue(undefined),
+        };
+
+        beforeEach(() => {
+            vi.clearAllMocks();
+
+            // Mock browser.privacy.network
+            (browser.privacy as any) = {
+                network: {
+                    webRTCIPHandlingPolicy: mockWebRTCIPHandlingPolicy,
+                    peerConnectionEnabled: mockPeerConnectionEnabled,
+                },
+            };
+
+            // Mock permissions.contains to return true
+            vi.spyOn(browser.permissions, 'contains').mockResolvedValue(true);
+        });
+
+        it('should set policy to default_public_interface_only when blockWebRTC enabled', async () => {
+            appContext.configuration = {
+                ...getDefaultConfiguration(),
+                settings: {
+                    ...getDefaultConfiguration().settings,
+                    stealth: {
+                        ...getDefaultConfiguration().settings.stealth,
+                        blockWebRTC: true,
+                    },
+                },
+            } as ConfigurationMV2Context;
+
+            await stealthApi.updateWebRtcPrivacyPermissions();
+
+            expect(mockWebRTCIPHandlingPolicy.set).toHaveBeenCalledWith({
+                value: 'default_public_interface_only',
+                scope: 'regular',
+            });
+        });
+
+        it('should clear webRTCIPHandlingPolicy when blockWebRTC disabled', async () => {
+            appContext.configuration = {
+                ...getDefaultConfiguration(),
+                settings: {
+                    ...getDefaultConfiguration().settings,
+                    stealth: {
+                        ...getDefaultConfiguration().settings.stealth,
+                        blockWebRTC: false,
+                    },
+                },
+            } as ConfigurationMV2Context;
+
+            await stealthApi.updateWebRtcPrivacyPermissions();
+
+            expect(mockWebRTCIPHandlingPolicy.clear).toHaveBeenCalledWith({
+                scope: 'regular',
+            });
+        });
+
+        it('should always clear peerConnectionEnabled (migration)', async () => {
+            appContext.configuration = {
+                ...getDefaultConfiguration(),
+                settings: {
+                    ...getDefaultConfiguration().settings,
+                    stealth: {
+                        ...getDefaultConfiguration().settings.stealth,
+                        blockWebRTC: true,
+                    },
+                },
+            } as ConfigurationMV2Context;
+
+            await stealthApi.updateWebRtcPrivacyPermissions();
+
+            expect(mockPeerConnectionEnabled.clear).toHaveBeenCalledWith({
+                scope: 'regular',
+            });
+            expect(mockPeerConnectionEnabled.set).not.toHaveBeenCalled();
+        });
+
+        it('should clear peerConnectionEnabled even when blockWebRTC disabled', async () => {
+            appContext.configuration = {
+                ...getDefaultConfiguration(),
+                settings: {
+                    ...getDefaultConfiguration().settings,
+                    stealth: {
+                        ...getDefaultConfiguration().settings.stealth,
+                        blockWebRTC: false,
+                    },
+                },
+            } as ConfigurationMV2Context;
+
+            await stealthApi.updateWebRtcPrivacyPermissions();
+
+            expect(mockPeerConnectionEnabled.clear).toHaveBeenCalledWith({
+                scope: 'regular',
+            });
+            expect(mockPeerConnectionEnabled.set).not.toHaveBeenCalled();
         });
     });
 });
