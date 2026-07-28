@@ -119,7 +119,7 @@ describe('PreregisteredScriptsService', () => {
             expect(scripts).toHaveLength(1);
             expect(scripts[0]).toMatchObject({
                 id: 'youtube.com',
-                matches: ['*://youtube.com/*', '*://www.youtube.com/*'],
+                matches: ['*://youtube.com/*'],
                 runAt: 'document_start',
                 world: 'MAIN',
                 allFrames: true,
@@ -165,7 +165,20 @@ describe('PreregisteredScriptsService', () => {
             expect(scripts[0].js).toHaveLength(3);
         });
 
-        it('includes a rule that only targets the www. alias (queried in union with the apex domain)', async () => {
+        it('treats a www. hostname as its own independent entry (no union with the apex)', async () => {
+            setupEngine({
+                'www.youtube.com': [mockScriptletRule('set-cookie', [])],
+            });
+
+            await PreregisteredScriptsService.sync(true, ['www.youtube.com'], SCRIPTS_PATH);
+
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts).toHaveLength(1);
+            expect(scripts[0].id).toBe('www.youtube.com');
+            expect(scripts[0].matches).toEqual(['*://www.youtube.com/*']);
+        });
+
+        it('does not pick up a www.-only rule when only the apex hostname is in the domains list', async () => {
             setupEngine({
                 'www.youtube.com': [mockScriptletRule('set-cookie', [])],
             });
@@ -173,8 +186,7 @@ describe('PreregisteredScriptsService', () => {
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts).toHaveLength(1);
-            expect(scripts[0].matches).toEqual(['*://youtube.com/*', '*://www.youtube.com/*']);
+            expect(scripts).toHaveLength(0);
         });
 
         it('excludes rules from non-local (custom/user) filters from hashing', async () => {
@@ -224,31 +236,6 @@ describe('PreregisteredScriptsService', () => {
             expect(result).toBe(true);
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts[0].js).toHaveLength(3); // shared bundle + the one valid rule + cleanup
-        });
-
-        it('normalizes domains (trims, lower-cases, strips surrounding dots) before use', async () => {
-            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
-
-            await PreregisteredScriptsService.sync(true, [' YouTube.com. '], SCRIPTS_PATH);
-
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts).toHaveLength(1);
-            expect(scripts[0].id).toBe('youtube.com');
-        });
-
-        it('dedupes literally-duplicate entries in the input domain list', async () => {
-            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
-
-            const result = await PreregisteredScriptsService.sync(
-                true,
-                ['youtube.com', 'YouTube.com.'],
-                SCRIPTS_PATH,
-            );
-
-            expect(result).toBe(true);
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
-            expect(scripts).toHaveLength(1);
-            expect(scripts[0].id).toBe('youtube.com');
         });
     });
 

@@ -2,12 +2,7 @@ import { logger } from '../../../common/utils/logger';
 import { type ContentScriptDescriptor, ContentScriptManager } from '../content-script-manager';
 import { engineApi } from '../engine-api';
 
-import {
-    CLEANUP_BUNDLE_FILENAME,
-    computeRuleHash,
-    normalizeDomain,
-    SHARED_BUNDLE_FILENAME,
-} from './hasher';
+import { CLEANUP_BUNDLE_FILENAME, computeRuleHash, SHARED_BUNDLE_FILENAME } from './hasher';
 
 /**
  * Namespace for content script registration. Must be stable across sessions.
@@ -15,17 +10,14 @@ import {
 const PREREGISTERED_SCRIPTS_NAMESPACE = 'preregistered';
 
 /**
- * Converts a domain into URL match patterns for `matches`.
+ * Converts a hostname into a URL match pattern for `matches`.
  *
- * Only the exact apex domain and its `www.` alias are matched — subdomains
- * are intentionally out of scope (see class-level doc).
+ * @param hostname Hostname string.
  *
- * @param domain Domain string.
- *
- * @returns Two match patterns: `*://domain/*` and `*://www.domain/*`.
+ * @returns A single match pattern: `*://hostname/*`.
  */
-const domainToMatchPatterns = (domain: string): string[] => {
-    return [`*://${domain}/*`, `*://www.${domain}/*`];
+const domainToMatchPatterns = (hostname: string): string[] => {
+    return [`*://${hostname}/*`];
 };
 
 /**
@@ -63,15 +55,16 @@ const getScriptPath = (scriptsPath: string, hash: string): string => {
  *
  * Build-time (`tools/resources/preregistered-scripts/`) generates per-rule
  * `{hash}.js` files, a shared `scriptlets-bundle.js`, and `domains.js` listing
- * domains that have rules.
+ * hostnames that have rules — each hostname (apex domain and/or its `www.`
+ * alias) is a separate, independent entry; this service does not expand or
+ * union apex/`www.` variants itself.
  *
- * At runtime, this service queries the engine per domain (ignoring the
+ * At runtime, this service queries the engine per hostname (ignoring the
  * `$path` modifier, so path-qualified rules aren't missed) to get applicable
  * JS/scriptlet rules, computes their hashes, and registers a content script
- * for the exact apex domain and its `www.` alias. Subdomains are
- * intentionally NOT covered by wildcard matches — only the fixed set of
- * preregistered domains (and their `www.` alias) is registered; any other
- * subdomain falls back to the standard dynamic injection path.
+ * for that exact hostname. Any hostname not in the list (including
+ * subdomains other than a listed `www.` alias) falls back to the standard
+ * dynamic injection path.
  *
  * Rules with a `$path` modifier are still included in a domain's registration
  * (over-collection is intentional — the file is loaded on every path), but
@@ -92,7 +85,9 @@ export class PreregisteredScriptsService {
      * repeated calls with same state are safe.
      *
      * @param filteringEnabled Whether global filtering is enabled.
-     * @param domains List of preregistered domain strings.
+     * @param domains List of preregistered hostnames (build-time `domains.js`
+     * output — already normalized and deduped; apex domains and `www.`
+     * aliases are separate entries).
      * @param scriptsPath Extension-relative path to the preregistered scripts
      * directory (e.g. `filters/preregistered-scripts`).
      *
@@ -109,9 +104,8 @@ export class PreregisteredScriptsService {
         let scripts: ContentScriptDescriptor[] = [];
 
         if (filteringEnabled && domains.length > 0) {
-            const normalizedDomains = [...new Set(domains.map(normalizeDomain))];
             scripts = await PreregisteredScriptsService.buildDomainScripts(
-                normalizedDomains,
+                domains,
                 scriptsPath,
             );
         }
@@ -130,70 +124,70 @@ export class PreregisteredScriptsService {
     }
 
     /**
-     * Builds MAIN-world content-script descriptors for the exact preregistered
-     * domains (and their `www.` alias). Subdomains are not covered.
+     * Builds MAIN-world content-script descriptors for the given hostnames,
+     * each treated independently (no apex/`www.` expansion or union).
      *
-     * @param allDomains All preregistered domains (already normalized).
+     * @param hostnames Preregistered hostnames (already normalized).
      * @param scriptsPath Extension-relative path to preregistered scripts.
      *
      * @returns Array of content-script descriptors.
      */
     private static async buildDomainScripts(
-        allDomains: string[],
+        hostnames: string[],
         scriptsPath: string,
     ): Promise<ContentScriptDescriptor[]> {
         const sharedBundlePath = getSharedBundlePath(scriptsPath);
+        const scripts: ContentScriptDescriptor[] = [];
 
-        const scripts = await Promise.all(
-            allDomains.map(async (domain): Promise<ContentScriptDescriptor | null> => {
-                const domainHashes = await PreregisteredScriptsService.getDomainRuleHashes(domain);
-                if (domainHashes.size === 0) {
-                    return null;
+        // Registration order doesn't matter — ContentScriptManager.sync() diffs by `id`.
+        await Promise.all(
+            hostnames.map(async (hostname) => {
+                const ruleHashes = await PreregisteredScriptsService.getHostnameRuleHashes(hostname);
+                if (ruleHashes.size === 0) {
+                    return;
                 }
 
                 const js = [
                     sharedBundlePath,
-                    ...[...domainHashes].sort().map((hash) => getScriptPath(scriptsPath, hash)),
+                    ...[...ruleHashes].sort().map((hash) => getScriptPath(scriptsPath, hash)),
                     getCleanupPath(scriptsPath),
                 ];
 
-                return {
-                    id: domain,
+                scripts.push({
+                    id: hostname,
                     js,
-                    matches: domainToMatchPatterns(domain),
+                    matches: domainToMatchPatterns(hostname),
                     runAt: 'document_start',
                     world: 'MAIN',
                     allFrames: true,
                     matchOriginAsFallback: true,
                     persistAcrossSessions: true,
-                };
+                });
             }),
         );
 
-        return scripts.filter((script): script is ContentScriptDescriptor => script !== null);
+        return scripts;
     }
 
     /**
-     * Queries the engine for JS/scriptlet rules applicable to `domain`
-     * **and** its `www.` alias (union of both, so a rule targeting only
-     * `www.domain` isn't missed), ignoring the `$path` modifier (so
-     * path-qualified rules aren't missed either), and computes their hashes.
+     * Queries the engine for JS/scriptlet rules applicable to `hostname`,
+     * ignoring the `$path` modifier (so path-qualified rules aren't missed),
+     * and computes their hashes.
      *
      * Only rules from **local** (built-in, pre-bundled) filters are hashed.
      * Rules from custom filters or user rules are intentionally excluded:
      * they were never scanned by the build-time collector, so no matching
      * `{hash}.js` file exists for them, and including them here would produce
      * a hash with no corresponding file, breaking content-script registration
-     * for the whole domain. Such rules continue to be handled by the existing
+     * for the whole hostname. Such rules continue to be handled by the existing
      * dynamic (non-preregistered) injection path in {@link CosmeticApi}.
      *
-     * @param domain Domain string.
+     * @param hostname Hostname string.
      *
      * @returns Set of rule hash strings.
      */
-    private static async getDomainRuleHashes(domain: string): Promise<Set<string>> {
-        const urls = [`https://${domain}/`, `https://www.${domain}/`];
-        const allRules = urls.flatMap((url) => engineApi.getJsRulesIgnoringPath(url));
+    private static async getHostnameRuleHashes(hostname: string): Promise<Set<string>> {
+        const allRules = engineApi.getJsRulesIgnoringPath(`https://${hostname}/`);
         const localRules = allRules
             .filter((rule) => engineApi.isLocalFilter(rule.getFilterListId()));
 
@@ -205,7 +199,7 @@ export class PreregisteredScriptsService {
                     return await computeRuleHash(rule);
                 } catch (e) {
                     logger.warn(
-                        `[tsweb.PreregisteredScriptsService.getDomainRuleHashes]: Failed to hash rule: ${domain}`,
+                        `[tsweb.PreregisteredScriptsService.getHostnameRuleHashes]: Failed to hash rule: ${hostname}`,
                         e,
                     );
                     return null;
