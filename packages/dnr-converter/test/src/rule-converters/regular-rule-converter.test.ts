@@ -8,6 +8,7 @@ import {
 } from 'vitest';
 
 import { CSP_HEADER_NAME, PERMISSIONS_POLICY_HEADER_NAME } from '../../../src/constants';
+import { POPULAR_TLDS } from '../../../src/constants/popular-tlds';
 import {
     type DeclarativeRule,
     DomainType,
@@ -1050,6 +1051,38 @@ describe('RuleConverter', () => {
             expect(condition.excludedInitiatorDomains).toEqual(['example.com']);
         });
 
+        it('expands wildcard TLD permitted domains into popular TLDs', () => {
+            const rule = createRuleMock({
+                permittedDomains: ['example.*'],
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.initiatorDomains).toContain('example.com');
+            expect(condition.initiatorDomains).toContain('example.org');
+            expect(condition.initiatorDomains).toHaveLength(POPULAR_TLDS.length);
+        });
+
+        it('expands wildcard TLD restricted domains and skips regex domains', () => {
+            const rule = createRuleMock({
+                restrictedDomains: ['a.com', 'b.*', '/(^|\\.)c\\.(com|org)$/'],
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.excludedInitiatorDomains).toContain('a.com');
+            expect(condition.excludedInitiatorDomains).toContain('b.com');
+            // Regex domain must not leak into the DNR condition.
+            expect(condition.excludedInitiatorDomains?.some((d) => d.includes('/'))).toBe(false);
+        });
+
+        it('skips non-TLD wildcard domains that DNR cannot represent', () => {
+            const rule = createRuleMock({
+                permittedDomains: ['example.com', 'foo.*.bar'],
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition = RegularRuleConverter.getCondition(rule);
+            expect(condition.initiatorDomains).toEqual(['example.com']);
+        });
+
         it('should skip requestDomains if permitted to domains are not specified or empty', () => {
             const networkRule1 = createRuleMock();
             // @ts-expect-error Accessing private member for test purposes
@@ -1274,11 +1307,18 @@ describe('RuleConverter', () => {
             expect(condition5.resourceTypes).toEqual(allResourceTypes);
 
             const networkRule6 = createRuleMock({
-                enabledOptions: [OPTION_NAMES.HEADER],
+                enabledOptions: [OPTION_NAMES.URLTRANSFORM],
             });
             // @ts-expect-error Accessing private member for test purposes
             const condition6 = RegularRuleConverter.getCondition(networkRule6);
-            expect(condition6.resourceTypes).toBeUndefined();
+            expect(condition6.resourceTypes).toEqual(allResourceTypes);
+
+            const networkRule7 = createRuleMock({
+                enabledOptions: [OPTION_NAMES.HEADER],
+            });
+            // @ts-expect-error Accessing private member for test purposes
+            const condition7 = RegularRuleConverter.getCondition(networkRule7);
+            expect(condition7.resourceTypes).toBeUndefined();
         });
 
         it('correctly specifies document resourceTypes for different options', () => {

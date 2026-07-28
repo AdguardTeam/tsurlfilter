@@ -27,6 +27,11 @@ export const MASK_NEGATE_CHARACTER = '~';
 export const MASK_ANY_CHARACTER = '*';
 
 /**
+ * Dot character, used as a domain label separator.
+ */
+export const DOT = '.';
+
+/**
  * Space character.
  */
 export const SPACE_CHARACTER = ' ';

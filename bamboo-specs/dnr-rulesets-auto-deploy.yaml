@@ -98,8 +98,6 @@ npmjs 5.0.X:
     - build-success:
         # git branch name `stable/dnr-rulesets-5.0`, '/' is replaced with '-'
         # in Bamboo
-        # FIXME: Uncomment after merge to master to prevent Bamboo Specs Execution error
-        # branch: stable-dnr-rulesets-5.0
-        branch: stable-dnr-rulesets-4.2
+        branch: stable-dnr-rulesets-5.0
   tasks: *tasks
   requirements: *requirements

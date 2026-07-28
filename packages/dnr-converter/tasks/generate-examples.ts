@@ -4,6 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 import { type DeclarativeRule } from '../src/declarative-rule';
 import { Filter, FilterConverter } from '../src/index';
+import { re2Validator } from '../src/re2-regexp/re2-validator';
+import { regexValidatorNode } from '../src/re2-regexp/regex-validator-node';
+
+// Docs run in Node, not an extension. Use the same RE2 validator as the CLI so
+// regex examples match real Node conversion output.
+re2Validator.setValidator(regexValidatorNode);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -189,7 +195,21 @@ const generate = async (): Promise<void> => {
     // eslint-disable-next-line no-console
     console.log('Generating examples documentation...');
     const output = await parseTxt(readmeTxtPath);
-    fs.writeFileSync(readmeMdPath, output.join('\n'), { encoding: 'utf-8' });
+    const next = `${output.join('\n')}\n`;
+
+    // Skip the write when content is unchanged so CI's mtime-based freshness
+    // check (`find … -newer`) does not treat a no-op regenerate as "stale".
+    const previous = fs.existsSync(readmeMdPath)
+        ? fs.readFileSync(readmeMdPath, { encoding: 'utf-8' })
+        : null;
+
+    if (previous === next) {
+        // eslint-disable-next-line no-console
+        console.log(`Unchanged: ${readmeMdPath}`);
+        return;
+    }
+
+    fs.writeFileSync(readmeMdPath, next, { encoding: 'utf-8' });
     // eslint-disable-next-line no-console
     console.log(`Written to ${readmeMdPath}`);
 };

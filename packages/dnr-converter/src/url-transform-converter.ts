@@ -256,13 +256,20 @@ export function convertPathOnlyTransform(
         workPattern = workPattern.substring(1);
     }
 
-    // Check for end-of-string anchor (\$ in filter syntax, which
-    // becomes $ in regex).  When present, we must NOT append the
-    // remainder-capturing group (.*)  after the pattern.
+    // Check for end-of-string anchor.  It may be written either as `\$`
+    // (escaped, because `$` is the modifier separator in AdGuard syntax)
+    // or as a bare `$` when the modifier value is the last one in the rule.
+    // Both forms mean the same regex end-of-string anchor.  When present,
+    // we must NOT append the remainder-capturing group `(.*)` after the
+    // pattern — otherwise the anchor would end up in the middle of the
+    // resulting regex, producing a rule that never matches.
     let hasEndAnchor = false;
     if (workPattern.endsWith('\\$')) {
         hasEndAnchor = true;
         workPattern = workPattern.substring(0, workPattern.length - 2);
+    } else if (workPattern.endsWith('$')) {
+        hasEndAnchor = true;
+        workPattern = workPattern.substring(0, workPattern.length - 1);
     }
 
     const userGroupCount = countCaptureGroups(workPattern);

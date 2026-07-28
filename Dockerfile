@@ -851,7 +851,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     touch /tmp/.pre-docs-marker && \
     ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c '\
-      pnpm install && \
+      pnpm install --ignore-scripts && \
       npx lerna run build,docs:examples --scope @adguard/dnr-converter --include-dependencies \
     ' && \
     if find packages/dnr-converter/src/examples/README.md -newer /tmp/.pre-docs-marker | grep -q .; then \

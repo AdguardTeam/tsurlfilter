@@ -225,6 +225,24 @@ describe('convertPathOnlyTransform', () => {
             isUrlFilterCaseSensitive: undefined,
         });
     });
+
+    it('treats a bare trailing $ as end-of-string anchor in pattern', () => {
+        // Rule: ||httpbin.agrd.dev^$script,urltransform=/^\/status\/502$/\/status\/200/
+        // Here `$` is not escaped because $urltransform is the last modifier,
+        // so the value is passed through as-is. It must be handled exactly
+        // like the escaped `\$` form, otherwise the anchor ends up in the
+        // middle of the regex (`.../status/502$(.*)`) and never matches.
+        const result = convertPathOnlyTransform(
+            '^\\/status\\/502$',
+            '\\/status\\/200',
+            '',
+        );
+        expect(result).toEqual({
+            regexFilter: '^(https?://[^/]+)/status/502$',
+            regexSubstitution: '\\1/status/200',
+            isUrlFilterCaseSensitive: undefined,
+        });
+    });
 });
 
 describe('convertUrlTransformToDnr', () => {
@@ -307,5 +325,27 @@ describe('convertUrlTransformToDnr', () => {
         expect(results).toHaveLength(1);
         expect(results[0].regexFilter).toBe('^(https?://[^/]+)/status/502$');
         expect(results[0].regexSubstitution).toBe('\\1/status/200');
+    });
+
+    it('converts Case 5: path-only with unescaped trailing $ anchor (script)', () => {
+        // ||httpbin.agrd.dev^$script,urltransform=/^\/status\/502$/\/status\/200/
+        // `$` is unescaped here — must produce the same result as the
+        // escaped `\$` variant above.
+        const results = convertUrlTransformToDnr(
+            '/^\\/status\\/502$/\\/status\\/200/',
+        );
+        expect(results).toHaveLength(1);
+        expect(results[0].regexFilter).toBe('^(https?://[^/]+)/status/502$');
+        expect(results[0].regexSubstitution).toBe('\\1/status/200');
+    });
+
+    it('converts Case 6: path-only with unescaped trailing $ anchor (image)', () => {
+        // ||httpbin.agrd.dev^$image,urltransform=/^\/status\/503$/\/image\/png/
+        const results = convertUrlTransformToDnr(
+            '/^\\/status\\/503$/\\/image\\/png/',
+        );
+        expect(results).toHaveLength(1);
+        expect(results[0].regexFilter).toBe('^(https?://[^/]+)/status/503$');
+        expect(results[0].regexSubstitution).toBe('\\1/image/png');
     });
 });

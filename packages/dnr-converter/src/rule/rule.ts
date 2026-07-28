@@ -7,6 +7,7 @@
 
 import {
     type AnyRule,
+    DomainListParser,
     type NetworkRule as NetworkRuleNode,
     NetworkRuleType,
     RuleCategory,
@@ -26,6 +27,11 @@ import { RulePriority } from './rule-priority';
 import { type ConversionMeta, type HttpHeaderMatcher } from './rule-types';
 
 export type { HttpHeaderMatcher } from './rule-types';
+
+/**
+ * Separator used in network-rule modifier domain lists (`$domain=a|b`).
+ */
+const DOMAIN_LIST_PIPE_SEPARATOR = '|';
 
 /**
  * Maps canonical content-type modifier names to their DNR `ResourceType`
@@ -555,16 +561,7 @@ export class Rule {
                 }
 
                 case OPTION_NAMES.DOMAIN: {
-                    const parts = value.split('|').filter(Boolean);
-                    const permitted: string[] = [];
-                    const restricted: string[] = [];
-                    for (const part of parts) {
-                        if (part.startsWith('~')) {
-                            restricted.push(part.slice(1));
-                        } else {
-                            permitted.push(part);
-                        }
-                    }
+                    const { permitted, restricted } = Rule.parseDomainList(value);
                     if (permitted.length > 0) {
                         this.permittedDomains = permitted;
                         meta.permittedDomainCount = permitted.length;
@@ -577,35 +574,26 @@ export class Rule {
                 }
 
                 case OPTION_NAMES.DENYALLOW: {
-                    const parts = value.split('|').filter(Boolean);
-                    if (parts.some((p) => p.startsWith('~'))) {
+                    const { permitted, restricted } = Rule.parseDomainList(value);
+                    if (restricted.length > 0) {
                         throw new SyntaxError(
-                            'Modifier $denyallow domains cannot be negated',
+                            'modifier $denyallow domains cannot be negated',
                         );
                     }
-                    if (parts.length > 0) {
-                        this.denyAllowDomains = parts;
+                    if (permitted.length > 0) {
+                        this.denyAllowDomains = permitted;
                         meta.baseModifierCount += 1;
                     }
                     break;
                 }
 
                 case OPTION_NAMES.TO: {
-                    const parts = value.split('|').filter(Boolean);
-                    const toPermitted: string[] = [];
-                    const toRestricted: string[] = [];
-                    for (const part of parts) {
-                        if (part.startsWith('~')) {
-                            toRestricted.push(part.slice(1));
-                        } else {
-                            toPermitted.push(part);
-                        }
+                    const { permitted, restricted } = Rule.parseDomainList(value);
+                    if (permitted.length > 0) {
+                        this.permittedToDomains = permitted;
                     }
-                    if (toPermitted.length > 0) {
-                        this.permittedToDomains = toPermitted;
-                    }
-                    if (toRestricted.length > 0) {
-                        this.restrictedToDomains = toRestricted;
+                    if (restricted.length > 0) {
+                        this.restrictedToDomains = restricted;
                     }
                     meta.baseModifierCount += 1;
                     break;
@@ -653,6 +641,7 @@ export class Rule {
                 case OPTION_NAMES.HLS:
                 case OPTION_NAMES.REFERRERPOLICY:
                 case OPTION_NAMES.PERMISSIONS:
+                case OPTION_NAMES.URLTRANSFORM:
                     this.enabledModifiers.add(name);
                     this.advancedModifierName = rawName;
                     this.advancedModifierValue = value || null;
@@ -912,6 +901,41 @@ export class Rule {
             name: isValid ? headerName : null,
             isRequest,
         };
+    }
+
+    /**
+     * Parses a pipe-separated domain list, keeping `/regex/` tokens intact
+     * (so `|` inside a regexp is not treated as a domain separator).
+     *
+     * @param value Raw `$domain` / `$to` / `$denyallow` modifier value.
+     *
+     * @returns Permitted and restricted domain lists.
+     */
+    private static parseDomainList(value: string): {
+        permitted: string[];
+        restricted: string[];
+    } {
+        const permitted: string[] = [];
+        const restricted: string[] = [];
+        const node = DomainListParser.parse(
+            value,
+            undefined,
+            0,
+            DOMAIN_LIST_PIPE_SEPARATOR,
+        );
+
+        for (const { exception, value: domain } of node.children) {
+            if (!domain) {
+                continue;
+            }
+            if (exception) {
+                restricted.push(domain);
+            } else {
+                permitted.push(domain);
+            }
+        }
+
+        return { permitted, restricted };
     }
 
     /**

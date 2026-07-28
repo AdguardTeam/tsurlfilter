@@ -38,9 +38,7 @@ branches: &branches
 # because even if branches are not supposed to be run for PRs (due to 'create: manually' above),
 # build was triggered by 'cron' anyway.
 branch-overrides:
-  # FIXME: Uncomment after merge to master to prevent Bamboo Specs Execution error
-  # - '^stable\/dnr-rulesets-(3\.3|4\.0|4\.1|4\.2|5\.0)$':
-  - '^stable\/dnr-rulesets-(3\.3|4\.0|4\.1|4\.2)$':
+  - '^stable\/dnr-rulesets-(3\.3|4\.0|4\.1|4\.2|5\.0)$':
       stages:
         - Build:
             - Build

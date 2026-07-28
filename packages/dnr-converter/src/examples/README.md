@@ -472,24 +472,10 @@ example 5 (regexp syntax — not supported in MV3; output reflects current parse
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-  {
-    "id": 933221318,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||baddomain.com^",
-      "initiatorDomains": [
-        "/(^\\\\",
-        ".+\\\\.)example\\\\.(com\\\\",
-        "org)\\\\$/"
-      ]
-    },
-    "priority": 135
-  }
-]
+[]
 ```
+
+> ⚠️ Conversion errors: Conversion initiatorDomains is empty, but original rule's domains not: "||baddomain.com^$domain=/(^\\|.+\\.)example\\.(com\\|org)\\$/"
 example 6 (regexp syntax — not supported in MV3; output reflects current parser behavior only)
 
 ```adblock
@@ -507,10 +493,6 @@ example 6 (regexp syntax — not supported in MV3; output reflects current parse
     },
     "condition": {
       "urlFilter": "||baddomain.com^",
-      "initiatorDomains": [
-        ".+\\\\.)c\\\\.(com\\\\",
-        "org)\\\\$/"
-      ],
       "excludedInitiatorDomains": [
         "a.com",
         "b.ac",
@@ -690,7 +672,7 @@ example 6 (regexp syntax — not supported in MV3; output reflects current parse
         "b.zone"
       ]
     },
-    "priority": 152
+    "priority": 2
   }
 ]
 ```
@@ -931,10 +913,7 @@ example 13
     "priority": 201
   }
 ]
-
 ```
-
-> ⚠️ Conversion errors: Regex is unsupported in rule: "/banner\d+/$domain=targetdomain.com"
 example 14
 
 ```adblock
@@ -2696,10 +2675,7 @@ example 9
     "priority": 201
   }
 ]
-
 ```
-
-> ⚠️ Conversion errors: Conversion initiatorDomains is empty, but original rule's domains not: "/some$domain=example.*"
 example 10
 
 ```adblock
@@ -4292,6 +4268,8 @@ example 4
 ```json
 []
 ```
+
+> ⚠️ Conversion errors: Unsupported option "$replace"
 <a name="advanced_capabilities__$urltransform"></a>
 ## $urltransform
 <b>Status</b>: supported
@@ -4321,7 +4299,7 @@ full-URL replacement: redirect from old.example.com to new.example.net
     "action": {
       "type": "redirect",
       "redirect": {
-        "regexSubstitution": "https:\\/\\/new.example.net\\/\\1"
+        "regexSubstitution": "https://new.example.net/\\1"
       }
     },
     "condition": {
@@ -4335,19 +4313,24 @@ full-URL replacement: redirect from old.example.com to new.example.net
         "object",
         "xmlhttprequest",
         "ping",
+        "csp_report",
         "media",
         "websocket",
+        "webtransport",
+        "webbundle",
         "other"
       ],
       "requestDomains": [
         "old.example.com"
       ],
-      "regexFilter": "^https:\\/\\/old\\.example\\.com\\/(.*)"
+      "requestMethods": [
+        "get"
+      ],
+      "regexFilter": "^https://old\\.example\\.com/(.*)"
     },
-    "priority": 2
+    "priority": 1
   }
 ]
-
 ```
 example 2
 path-only replacement: rewrite /old/ to /new/ while preserving origin
@@ -4379,8 +4362,11 @@ path-only replacement: rewrite /old/ to /new/ while preserving origin
         "object",
         "xmlhttprequest",
         "ping",
+        "csp_report",
         "media",
         "websocket",
+        "webtransport",
+        "webbundle",
         "other"
       ],
       "requestDomains": [
@@ -4388,10 +4374,9 @@ path-only replacement: rewrite /old/ to /new/ while preserving origin
       ],
       "regexFilter": "^(https?://[^/]+)/old/(.*)"
     },
-    "priority": 2
+    "priority": 1
   }
 ]
-
 ```
 example 3
 allowlist rule disables urltransform
@@ -4421,15 +4406,17 @@ allowlist rule disables urltransform
         "object",
         "xmlhttprequest",
         "ping",
+        "csp_report",
         "media",
         "websocket",
+        "webtransport",
+        "webbundle",
         "other"
       ]
     },
-    "priority": 100002
+    "priority": 100001
   }
 ]
-
 ```
 <a name="advanced_capabilities__noop"></a>
 ## noop

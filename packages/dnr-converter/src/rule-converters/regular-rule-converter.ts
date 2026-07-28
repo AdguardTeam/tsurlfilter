@@ -97,11 +97,13 @@ import { getRedirectFilename } from '@adguard/scriptlets/redirects';
 
 import {
     CSP_HEADER_NAME,
+    DOT,
     MASK_ANY_CHARACTER,
     MASK_NEGATE_CHARACTER,
     MASK_REGEX_RULE,
     PERMISSIONS_POLICY_HEADER_NAME,
 } from '../constants';
+import { POPULAR_TLDS } from '../constants/popular-tlds';
 import {
     type DeclarativeRule,
     DomainType,
@@ -174,6 +176,11 @@ export class RegularRuleConverter {
     private static readonly PIPE_SEPARATOR = '|';
 
     /**
+     * Wildcard TLD suffix (`.*`) used in domain modifiers, e.g. `example.*`.
+     */
+    private static readonly WILDCARD_TLD = `${DOT}${MASK_ANY_CHARACTER}`;
+
+    /**
      * String path to web accessible resources, relative to the extension root dir.
      * Should start with leading slash and end without trailing slash (`'/'`).
      */
@@ -186,6 +193,62 @@ export class RegularRuleConverter {
      */
     constructor(webAccessibleResourcesPath?: string) {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
+    }
+
+    /**
+     * Checks whether a domain uses wildcard TLD syntax.
+     *
+     * @param domain Domain to check.
+     *
+     * @returns True when domain ends with `.*` and has a non-empty prefix.
+     */
+    private static isWildcardTldDomain(domain: string): boolean {
+        return domain.length > RegularRuleConverter.WILDCARD_TLD.length
+            && domain.endsWith(RegularRuleConverter.WILDCARD_TLD);
+    }
+
+    /**
+     * Expands wildcard TLD domain into concrete popular TLD domains.
+     *
+     * @param domain Wildcard TLD domain.
+     *
+     * @returns Expanded domain list.
+     */
+    private static expandWildcardTldDomain(domain: string): string[] {
+        const domainPrefix = domain.slice(0, -RegularRuleConverter.WILDCARD_TLD.length);
+
+        return POPULAR_TLDS.map((tld) => `${domainPrefix}.${tld}`);
+    }
+
+    /**
+     * Prepares domains for DNR condition arrays.
+     *
+     * Regex and non-TLD wildcard domains are not representable in DNR and are
+     * dropped; wildcard TLD domains (e.g. `example.*`) are expanded to the
+     * popular TLD list.
+     *
+     * @param domains Domains from network rule modifier.
+     *
+     * @returns ASCII-only unique domains supported by DNR.
+     */
+    private static prepareDeclarativeDomains(domains: string[] | null | undefined): string[] {
+        const expandedDomains = domains?.flatMap((domain) => {
+            if (isRegexPattern(domain)) {
+                return [];
+            }
+
+            if (RegularRuleConverter.isWildcardTldDomain(domain)) {
+                return RegularRuleConverter.expandWildcardTldDomain(domain);
+            }
+
+            if (domain.includes(MASK_ANY_CHARACTER)) {
+                return [];
+            }
+
+            return [domain];
+        }) ?? [];
+
+        return [...new Set(toASCII(expandedDomains))];
     }
 
     /**
@@ -586,35 +649,32 @@ export class RegularRuleConverter {
         }
 
         // set `initiatorDomains`
-        const permittedDomains = rule.permittedDomains?.filter((domain) => (
-            !domain.includes(MASK_ANY_CHARACTER)
-            && !isRegexPattern(domain)
-        ));
-        if (permittedDomains && permittedDomains.length > 0) {
-            condition.initiatorDomains = toASCII(permittedDomains);
+        const permittedDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.permittedDomains);
+        if (permittedDomains.length > 0) {
+            condition.initiatorDomains = permittedDomains;
         }
 
         // set `excludedInitiatorDomains`
-        const excludedDomains = rule.restrictedDomains;
-        if (excludedDomains && excludedDomains.length > 0) {
-            condition.excludedInitiatorDomains = toASCII(excludedDomains);
+        const excludedDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.restrictedDomains);
+        if (excludedDomains.length > 0) {
+            condition.excludedInitiatorDomains = excludedDomains;
         }
 
         // set `requestDomains`
-        const { permittedToDomains } = rule;
-        if (permittedToDomains && permittedToDomains.length > 0) {
-            condition.requestDomains = toASCII(permittedToDomains);
+        const permittedToDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.permittedToDomains);
+        if (permittedToDomains.length > 0) {
+            condition.requestDomains = permittedToDomains;
         }
 
         // Can be specified `$to` or `$denyallow`, but not together.
-        const { denyAllowDomains } = rule;
-        const { restrictedToDomains } = rule;
+        const denyAllowDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.denyAllowDomains);
+        const restrictedToDomains = RegularRuleConverter.prepareDeclarativeDomains(rule.restrictedToDomains);
 
         // set `excludedRequestDomains`
-        if (denyAllowDomains && denyAllowDomains.length !== 0) {
-            condition.excludedRequestDomains = toASCII(denyAllowDomains);
-        } else if (restrictedToDomains && restrictedToDomains.length !== 0) {
-            condition.excludedRequestDomains = toASCII(restrictedToDomains);
+        if (denyAllowDomains.length !== 0) {
+            condition.excludedRequestDomains = denyAllowDomains;
+        } else if (restrictedToDomains.length !== 0) {
+            condition.excludedRequestDomains = restrictedToDomains;
         }
 
         // set `excludedResourceTypes`
@@ -685,7 +745,11 @@ export class RegularRuleConverter {
                 || rule.isModifierEnabled(OPTION_NAMES.CSP)
                 || rule.isModifierEnabled(OPTION_NAMES.COOKIE)
                 || rule.isModifierEnabled(OPTION_NAMES.TO)
-                || rule.isModifierEnabled(OPTION_NAMES.METHOD);
+                || rule.isModifierEnabled(OPTION_NAMES.METHOD)
+                // `$urltransform` rules without content-type modifiers apply to
+                // every request type, including document navigations, so the
+                // full list must be set explicitly.
+                || rule.isModifierEnabled(OPTION_NAMES.URLTRANSFORM);
 
             /**
              * `$permissions` and `$removeparam` modifiers must be applied only to `document` content-type
