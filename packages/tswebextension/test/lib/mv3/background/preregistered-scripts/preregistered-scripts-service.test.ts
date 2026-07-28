@@ -7,6 +7,7 @@ import {
 } from 'vitest';
 
 import { ContentScriptManager } from '../../../../../src/lib/mv3/background/content-script-manager';
+import { DocumentApi } from '../../../../../src/lib/mv3/background/document-api';
 import { engineApi } from '../../../../../src/lib/mv3/background/engine-api';
 import { CLEANUP_BUNDLE_FILENAME } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
 import {
@@ -15,8 +16,14 @@ import {
 
 vi.mock('../../../../../src/lib/mv3/background/engine-api', () => ({
     engineApi: {
-        getJsRulesIgnoringPath: vi.fn(),
+        matchCosmetic: vi.fn(),
         isLocalFilter: vi.fn(),
+    },
+}));
+
+vi.mock('../../../../../src/lib/mv3/background/document-api', () => ({
+    DocumentApi: {
+        matchFrame: vi.fn().mockReturnValue(null),
     },
 }));
 
@@ -29,7 +36,7 @@ vi.mock('../../../../../src/lib/mv3/background/content-script-manager', () => ({
 const SCRIPTS_PATH = 'filters/preregistered-scripts';
 
 /**
- * Builds a mock scriptlet rule as returned by `Engine.getJsRulesIgnoringPath()`.
+ * Builds a mock scriptlet rule as returned by `CosmeticResult.getScriptRules()`.
  *
  * @param name Scriptlet name.
  * @param args Scriptlet arguments.
@@ -52,7 +59,7 @@ const mockScriptletRule = (
 });
 
 /**
- * Builds a mock JS injection rule as returned by `Engine.getJsRulesIgnoringPath()`.
+ * Builds a mock JS injection rule as returned by `CosmeticResult.getScriptRules()`.
  *
  * @param content Raw JS rule body.
  * @param filterListId Id of the filter list the rule came from.
@@ -66,20 +73,35 @@ const mockJsRule = (content: string, filterListId = 1): object => ({
 });
 
 /**
- * Configures `engineApi.getJsRulesIgnoringPath` to return the given rules for
- * the given domain, and `engineApi.isLocalFilter` to treat `localFilterIds`
- * as local filters (everything else is treated as remote/custom/user rules).
+ * Configures `engineApi.matchCosmetic` to return the given rules (via
+ * `getScriptRules()`) for the given domain, and `engineApi.isLocalFilter` to
+ * treat `localFilterIds` as local filters (everything else is treated as
+ * remote/custom/user rules).
+ *
+ * `disableJsForDomains` simulates a document-level allowlist rule (e.g.
+ * `$document`/`$jsinject`) that suppresses JS injection for that domain —
+ * `matchCosmetic` reports no script rules for it, same as the real engine
+ * would once the JS cosmetic bit is cleared.
+ *
+ * `DocumentApi.matchFrame` defaults to `null` (module-level mock); tests
+ * that specifically exercise the `frameRule` wiring override it directly.
  *
  * @param rulesByDomain Map of domain → rules to return for that domain.
  * @param localFilterIds Filter ids considered "local" by `isLocalFilter`.
+ * @param disableJsForDomains Domains for which `matchCosmetic` should report
+ * no script rules (simulating an allowlist rule).
  */
 const setupEngine = (
     rulesByDomain: Record<string, ReturnType<typeof mockScriptletRule>[]>,
     localFilterIds: number[] = [1],
+    disableJsForDomains: string[] = [],
 ): void => {
-    vi.mocked(engineApi.getJsRulesIgnoringPath).mockImplementation((url: string) => {
-        const domain = new URL(url).hostname;
-        return (rulesByDomain[domain] ?? []) as any[];
+    vi.mocked(engineApi.matchCosmetic).mockImplementation(({ requestUrl }: { requestUrl: string }) => {
+        const domain = new URL(requestUrl).hostname;
+        const rules = disableJsForDomains.includes(domain) ? [] : (rulesByDomain[domain] ?? []);
+        return {
+            getScriptRules: (): any[] => rules as any[],
+        } as any;
     });
     vi.mocked(engineApi.isLocalFilter).mockImplementation(
         (filterListId: number) => localFilterIds.includes(filterListId),
@@ -149,6 +171,33 @@ describe('PreregisteredScriptsService', () => {
 
             const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
             expect(scripts).toHaveLength(0);
+        });
+
+        it('skips preregistration for a domain covered by a document-level allowlist rule', async () => {
+            setupEngine(
+                { 'youtube.com': [mockScriptletRule('set-cookie', [])] },
+                [1],
+                ['youtube.com'],
+            );
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(scripts).toHaveLength(0);
+        });
+
+        it('queries DocumentApi.matchFrame() and forwards its result as frameRule (inverted allowlist)', async () => {
+            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+            const syntheticAllowlistRule = { isAllowlist: (): boolean => true } as any;
+            vi.mocked(DocumentApi.matchFrame).mockReturnValue(syntheticAllowlistRule);
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(DocumentApi.matchFrame).toHaveBeenCalledWith('https://youtube.com/');
+            expect(engineApi.matchCosmetic).toHaveBeenCalledWith(
+                expect.objectContaining({ frameRule: syntheticAllowlistRule }),
+                true,
+            );
         });
 
         it('includes rules with a $path modifier (over-collected, path enforced later at runtime)', async () => {

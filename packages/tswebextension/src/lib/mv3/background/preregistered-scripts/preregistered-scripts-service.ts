@@ -1,5 +1,8 @@
+import { RequestType } from '@adguard/tsurlfilter';
+
 import { logger } from '../../../common/utils/logger';
 import { type ContentScriptDescriptor, ContentScriptManager } from '../content-script-manager';
+import { DocumentApi } from '../document-api';
 import { engineApi } from '../engine-api';
 
 import { CLEANUP_BUNDLE_FILENAME, computeRuleHash, SHARED_BUNDLE_FILENAME } from './hasher';
@@ -187,7 +190,21 @@ export class PreregisteredScriptsService {
      * @returns Set of rule hash strings.
      */
     private static async getHostnameRuleHashes(hostname: string): Promise<Set<string>> {
-        const allRules = engineApi.getJsRulesIgnoringPath(`https://${hostname}/`);
+        const url = `https://${hostname}/`;
+
+        const frameRule = DocumentApi.matchFrame(url);
+
+        const cosmeticResult = engineApi.matchCosmetic(
+            {
+                requestUrl: url,
+                frameUrl: url,
+                requestType: RequestType.Document,
+                frameRule,
+            },
+            true,
+        );
+
+        const allRules = cosmeticResult.getScriptRules();
         const localRules = allRules
             .filter((rule) => engineApi.isLocalFilter(rule.getFilterListId()));
 

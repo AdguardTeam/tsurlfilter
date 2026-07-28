@@ -4,7 +4,6 @@ import {
     CompatibilityTypes,
     type CosmeticOption,
     CosmeticResult,
-    type CosmeticRule,
     Engine,
     type EngineFactoryFilterList,
     type HTTPMethod,
@@ -224,10 +223,11 @@ export class EngineApi {
      *
      * @param url Hostname to check.
      * @param option Mask of enabled cosmetic types.
+     * @param ignorePath If true, skips the `$path` modifier check. Defaults to false.
      *
      * @returns Cosmetic result.
      */
-    public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
+    public getCosmeticResult(url: string, option: CosmeticOption, ignorePath = false): CosmeticResult {
         if (!this.engine) {
             return new CosmeticResult();
         }
@@ -236,31 +236,7 @@ export class EngineApi {
 
         const request = new Request(url, frameUrl, RequestType.Document);
 
-        return this.engine.getCosmeticResult(request, option);
-    }
-
-    /**
-     * Gets JS/scriptlet cosmetic rules matching the specified url's domain,
-     * ignoring the `$path` modifier, if engine is started. Otherwise returns
-     * an empty array.
-     *
-     * Used by {@link PreregisteredScriptsService} to discover every rule that
-     * could ever apply to a domain without enumerating every possible path.
-     *
-     * @param url Url to check — only its domain is used, path is ignored.
-     *
-     * @returns Matching rules, regardless of any `$path` modifier they carry.
-     */
-    public getJsRulesIgnoringPath(url: string): CosmeticRule[] {
-        if (!this.engine) {
-            return [];
-        }
-
-        const frameUrl = getHost(url);
-
-        const request = new Request(url, frameUrl, RequestType.Document);
-
-        return this.engine.getJsRulesIgnoringPath(request);
+        return this.engine.getCosmeticResult(request, option, ignorePath);
     }
 
     /**
@@ -277,10 +253,11 @@ export class EngineApi {
      * Searched for cosmetic rules by match query.
      *
      * @param matchQuery Query against which the request would be matched.
+     * @param ignorePath If true, skips the `$path` modifier check. Defaults to false.
      *
      * @returns Cosmetic result.
      */
-    public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
+    public matchCosmetic(matchQuery: MatchQuery, ignorePath = false): CosmeticResult {
         if (!this.engine || !isHttpRequest(matchQuery.frameUrl)) {
             return new CosmeticResult();
         }
@@ -293,7 +270,7 @@ export class EngineApi {
 
         const cosmeticOption = matchingResult.getCosmeticOption();
 
-        return this.getCosmeticResult(matchQuery.requestUrl, cosmeticOption);
+        return this.getCosmeticResult(matchQuery.requestUrl, cosmeticOption, ignorePath);
     }
 
     /**
