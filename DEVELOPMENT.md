@@ -42,7 +42,7 @@ workspace dependencies automatically:
 npx lerna run build
 
 # Build a specific package with its dependencies
-npx lerna run build --scope=@adguard/tsurlfilter
+npx lerna run build --scope=@adguard/dnr-converter
 ```
 
 Lerna + Nx respect the dependency tree and cache build outputs.
@@ -201,6 +201,7 @@ Create a `tsurlfilter.code-workspace` file in the monorepo root:
         { "path": "packages/css-tokenizer" },
         { "path": "packages/agtree" },
         { "path": "packages/tsurlfilter" },
+        { "path": "packages/dnr-converter" },
         { "path": "packages/tswebextension" },
         { "path": "packages/dnr-rulesets" },
         { "path": "packages/adguard-api" },

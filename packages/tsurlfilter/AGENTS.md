@@ -5,9 +5,7 @@
 `@adguard/tsurlfilter` is the core content blocking engine for AdGuard browser
 extensions. It parses AdGuard filter rules, builds lookup tables for fast
 matching, and evaluates network requests and cosmetic rules against those
-tables. It also includes a declarative converter for translating filter rules
-to Chrome's Declarative Net Request (DNR) format, and a CLI for filter
-conversion tasks.
+tables.
 
 ## Technical Context
 
@@ -15,8 +13,8 @@ conversion tasks.
 - **Primary Dependencies**: `@adguard/agtree` (rule parsing),
   `@adguard/css-tokenizer` (CSS parsing), `@adguard/logger` (logging),
   `@adguard/scriptlets` (scriptlet injection), `zod` (schema validation),
-  `tldts` (domain parsing), `lru-cache`, `commander` (CLI)
-- **Peer Dependencies**: `@adguard/re2-wasm` (optional RE2 regex engine)
+  `tldts` (domain parsing), `lru-cache`
+- **Peer Dependencies**: none
 - **Build Toolchain**: Rollup (with `@rollup/plugin-typescript`), `tsc` +
   custom `transform-dts.ts` for type declarations
 - **Testing**: Vitest (with `@vitest/coverage-v8`)
@@ -47,9 +45,8 @@ packages/tsurlfilter/
 │   │   └── lookup-tables/    # Fast lookup data structures
 │   ├── filterlist/           # Filter list loading and management
 │   ├── modifiers/            # Network rule modifier implementations
-│   ├── rules/                # Rule classes and declarative converter
+│   ├── rules/                # Rule classes
 │   └── utils/                # Utility functions
-├── cli/                      # CLI entry point and commands
 ├── test/                     # Unit tests + smoke tests + builder tests
 ├── tasks/                    # Build scripts (build-txt, transform-dts, etc.)
 ├── types/                    # Custom type declarations
@@ -92,16 +89,18 @@ You MUST follow the following rules for EVERY task that you perform:
   `Fixed`); do not create duplicate subsections.
 
 - Since `@adguard/tsurlfilter` is a dependency of `@adguard/tswebextension`,
-  `@adguard/dnr-rulesets`, `@adguard/api`, and `@adguard/api-mv3`, consider
-  updating their changelogs when making breaking or behavioral changes.
+  `@adguard/api`, and `@adguard/api-mv3`, consider updating their changelogs
+  when making breaking or behavioral changes.
+
+- The DNR converter now lives in the separate `@adguard/dnr-converter` package.
+  Update converter behavior, examples, and docs there (see its `AGENTS.md`).
 
 ## Code Guidelines
 
 ### I. Architecture
 
 1. **Multiple export paths.** The package exposes subpath exports for
-   `declarative-converter`, `request-type`, `network-rule-options`,
-   `simple-regex`, `declarative-converter-utils`, and `cli`. New public API
+   `request-type`, `network-rule-options`, and `simple-regex`. New public API
    MUST be exported through the appropriate barrel file.
 
    **Rationale**: Allows consumers to import specific functionality without
@@ -114,19 +113,6 @@ You MUST follow the following rules for EVERY task that you perform:
 
    **Rationale**: Separates concerns between rule storage, indexing, and
    matching.
-
-3. **Declarative converter is self-contained.** The `src/rules/` directory
-   contains the declarative converter for translating filter rules to DNR
-   format, used by `@adguard/dnr-rulesets`.
-
-   **Rationale**: Keeps DNR conversion logic co-located with rule
-   representation.
-
-4. **CLI is a separate entry point.** The `cli/` directory provides a
-   `commander`-based CLI for filter conversion tasks, shipped as a separate
-   export.
-
-   **Rationale**: Keeps CLI code out of the library bundle.
 
 ### II. Code Quality Standards
 

@@ -235,7 +235,7 @@ export class AdguardApi {
 
         return {
             filtersPath: this.configuration.assetsPath,
-            ruleSetsPath: `${this.configuration.assetsPath}${AdguardApi.DECLARATIVE_RULES_PATH}`,
+            rulesetsPath: `${this.configuration.assetsPath}${AdguardApi.DECLARATIVE_RULES_PATH}`,
             customFilters: [],
             trustedDomains: [],
             // This is needed only for filters developers.

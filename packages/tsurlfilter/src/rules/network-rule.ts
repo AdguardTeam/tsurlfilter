@@ -14,7 +14,7 @@ import { DnsRewriteModifier } from '../modifiers/dns/dnsrewrite-modifier';
 import { DnsTypeModifier } from '../modifiers/dns/dnstype-modifier';
 import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
 import { HeaderModifier, type HttpHeaderMatcher, type HttpHeadersItem } from '../modifiers/header-modifier';
-import { type HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
+import { HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
 import { PermissionsModifier } from '../modifiers/permissions-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
@@ -22,10 +22,11 @@ import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { StealthModifier } from '../modifiers/stealth-modifier';
 import { ToModifier } from '../modifiers/to-modifier';
+import { UrlTransformModifier } from '../modifiers/url-transform-modifier';
 import { type IValueListModifier } from '../modifiers/value-list-modifier';
 import { type Request } from '../request';
 import { RequestType } from '../request-type';
-import { countEnabledBits, getBitCount } from '../utils/bit-utils';
+import { getBitCount } from '../utils/bit-utils';
 import { hasSpaces, stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
 
 import {
@@ -34,36 +35,43 @@ import {
     NOT_MARK,
     OPTIONS_DELIMITER,
 } from './network-rule-options';
+import { type NetworkRuleOption as NetworkRuleOptionType, OptionFlags } from './option-flags';
 import { Pattern } from './pattern';
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
 import { SimpleRegex } from './simple-regex';
 
+export { OptionFlags };
+
 /**
- * NetworkRuleOption is the enumeration of various rule options.
- * In order to save memory, we store some options as a flag.
+ * NetworkRuleOption is a wide bitfield of various rule options stored as
+ * two 32-bit integers. Existing options occupy the `lo` word (bits 0–30);
+ * future options use the `hi` word.
  *
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rule-modifiers}
  */
-export enum NetworkRuleOption {
+export type NetworkRuleOption = NetworkRuleOptionType;
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const NetworkRuleOption = {
     /**
      * No value is set. Syntax sugar to simplify code.
      */
-    NotSet = 0,
+    NotSet: OptionFlags.createOption(0),
 
     /**
      * $third-party modifier.
      */
-    ThirdParty = 1,
+    ThirdParty: OptionFlags.createOption(1),
 
     /**
      * $match-case modifier.
      */
-    MatchCase = 1 << 1,
+    MatchCase: OptionFlags.createOption(2),
 
     /**
      * $important modifier.
      */
-    Important = 1 << 2,
+    Important: OptionFlags.createOption(3),
 
     // Allowlist rules modifiers
     // Each of them can disable part of the functionality
@@ -71,205 +79,257 @@ export enum NetworkRuleOption {
     /**
      * $elemhide modifier.
      */
-    Elemhide = 1 << 3,
+    Elemhide: OptionFlags.createOption(4),
 
     /**
      * $generichide modifier.
      */
-    Generichide = 1 << 4,
+    Generichide: OptionFlags.createOption(5),
 
     /**
      * $specifichide modifier.
      */
-    Specifichide = 1 << 5,
+    Specifichide: OptionFlags.createOption(6),
 
     /**
      * $genericblock modifier.
      */
-    Genericblock = 1 << 6,
+    Genericblock: OptionFlags.createOption(7),
 
     /**
      * $jsinject modifier.
      */
-    Jsinject = 1 << 7,
+    Jsinject: OptionFlags.createOption(8),
 
     /**
      * $urlblock modifier.
      */
-    Urlblock = 1 << 8,
+    Urlblock: OptionFlags.createOption(9),
 
     /**
      * $content modifier.
      */
-    Content = 1 << 9,
+    Content: OptionFlags.createOption(10),
 
     /**
      * $extension modifier.
      */
-    Extension = 1 << 10,
+    Extension: OptionFlags.createOption(11),
 
     /**
      * $stealth modifier.
      */
-    Stealth = 1 << 11,
+    Stealth: OptionFlags.createOption(12),
 
     // Other modifiers
 
     /**
      * $popup modifier.
      */
-    Popup = 1 << 12,
+    Popup: OptionFlags.createOption(13),
 
     /**
      * $csp modifier.
      */
-    Csp = 1 << 13,
+    Csp: OptionFlags.createOption(14),
 
     /**
      * $replace modifier.
      */
-    Replace = 1 << 14,
+    Replace: OptionFlags.createOption(15),
 
     /**
      * $cookie modifier.
      */
-    Cookie = 1 << 15,
+    Cookie: OptionFlags.createOption(16),
 
     /**
      * $redirect modifier.
      */
-    Redirect = 1 << 16,
+    Redirect: OptionFlags.createOption(17),
 
     /**
      * $badfilter modifier.
      */
-    Badfilter = 1 << 17,
+    Badfilter: OptionFlags.createOption(18),
 
     /**
      * $removeparam modifier.
      */
-    RemoveParam = 1 << 18,
+    RemoveParam: OptionFlags.createOption(19),
 
     /**
      * $removeheader modifier.
      */
-    RemoveHeader = 1 << 19,
+    RemoveHeader: OptionFlags.createOption(20),
 
     /**
      * $jsonprune modifier.
      */
-    JsonPrune = 1 << 20,
+    JsonPrune: OptionFlags.createOption(21),
 
     /**
      * $hls modifier.
      */
-    Hls = 1 << 21,
+    Hls: OptionFlags.createOption(22),
 
     // Compatibility dependent
     /**
      * $network modifier.
      */
-    Network = 1 << 22,
+    Network: OptionFlags.createOption(23),
 
     /**
-     * Dns modifiers.
+     * $client modifier.
      */
-    Client = 1 << 23,
-    DnsRewrite = 1 << 24,
-    DnsType = 1 << 25,
-    Ctag = 1 << 26,
+    Client: OptionFlags.createOption(24),
+
+    /**
+     * $dnsrewrite modifier.
+     */
+    DnsRewrite: OptionFlags.createOption(25),
+
+    /**
+     * $dnstype modifier.
+     */
+    DnsType: OptionFlags.createOption(26),
+
+    /**
+     * $ctag modifier.
+     */
+    Ctag: OptionFlags.createOption(27),
 
     /**
      * $method modifier.
      */
-    Method = 1 << 27,
+    Method: OptionFlags.createOption(28),
 
     /**
      * $to modifier.
      */
-    To = 1 << 28,
+    To: OptionFlags.createOption(29),
 
     /**
      * $permissions modifier.
      */
-    Permissions = 1 << 29,
+    Permissions: OptionFlags.createOption(30),
 
     /**
      * $header modifier.
      */
-    Header = 1 << 30,
+    Header: OptionFlags.createOption(31),
+
+    /**
+     * $urltransform modifier.
+     */
+    Urltransform: OptionFlags.createOption(32),
+} as const;
+
+/**
+ * Returns the name of a NetworkRuleOption for error messages.
+ * Replaces the enum's built-in reverse mapping (NetworkRuleOption[value]).
+ *
+ * @param option The option to look up.
+ *
+ * @returns The option name, or 'Unknown' if not found.
+ */
+function getOptionName(option: NetworkRuleOption): string {
+    for (const [key, value] of Object.entries(NetworkRuleOption)) {
+        if (value.lo === option.lo && value.hi === option.hi) {
+            return key;
+        }
+    }
+    return 'Unknown';
 }
 
 /**
- * NetworkRuleOptions is the enumeration of various rule options groups
+ * NetworkRuleGroupOptions groups related network rule options
  * needed for validation.
  */
-export enum NetworkRuleGroupOptions {
+export type NetworkRuleGroupOptions = NetworkRuleOption;
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const NetworkRuleGroupOptions = {
     /**
      * Allowlist-only modifiers.
      */
-    AllowlistOnly = NetworkRuleOption.Elemhide
-        | NetworkRuleOption.Genericblock
-        | NetworkRuleOption.Generichide
-        | NetworkRuleOption.Specifichide
-        | NetworkRuleOption.Jsinject
-        | NetworkRuleOption.Urlblock
-        | NetworkRuleOption.Content
-        | NetworkRuleOption.Extension
-        | NetworkRuleOption.Stealth,
+    AllowlistOnly: OptionFlags.combine(
+        NetworkRuleOption.Elemhide,
+        NetworkRuleOption.Genericblock,
+        NetworkRuleOption.Generichide,
+        NetworkRuleOption.Specifichide,
+        NetworkRuleOption.Jsinject,
+        NetworkRuleOption.Urlblock,
+        NetworkRuleOption.Content,
+        NetworkRuleOption.Extension,
+        NetworkRuleOption.Stealth,
+    ),
 
     /**
      * Options supported by host-level network rules.
      */
-    OptionHostLevelRules = NetworkRuleOption.Important
-        | NetworkRuleOption.Badfilter
-        | NetworkRuleOption.Client
-        | NetworkRuleOption.DnsRewrite
-        | NetworkRuleOption.DnsType
-        | NetworkRuleOption.Ctag,
+    OptionHostLevelRules: OptionFlags.combine(
+        NetworkRuleOption.Important,
+        NetworkRuleOption.Badfilter,
+        NetworkRuleOption.Client,
+        NetworkRuleOption.DnsRewrite,
+        NetworkRuleOption.DnsType,
+        NetworkRuleOption.Ctag,
+    ),
 
     /**
      * Cosmetic option modifiers.
      */
-    CosmeticOption = NetworkRuleOption.Elemhide
-        | NetworkRuleOption.Generichide
-        | NetworkRuleOption.Specifichide
-        | NetworkRuleOption.Jsinject
-        | NetworkRuleOption.Content,
+    CosmeticOption: OptionFlags.combine(
+        NetworkRuleOption.Elemhide,
+        NetworkRuleOption.Generichide,
+        NetworkRuleOption.Specifichide,
+        NetworkRuleOption.Jsinject,
+        NetworkRuleOption.Content,
+    ),
 
     /**
      * Removeparam compatible modifiers.
      *
-     * $removeparam rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
-     * except $document (using by default) and this list of modifiers.
+     * $removeparam rules are compatible only with content type modifiers
+     * ($subdocument, $script, $stylesheet, etc) except $document (using by
+     * default) and this list of modifiers.
      */
-    RemoveParamCompatibleOptions = NetworkRuleOption.RemoveParam
-        | NetworkRuleOption.ThirdParty
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.Badfilter,
+    RemoveParamCompatibleOptions: OptionFlags.combine(
+        NetworkRuleOption.RemoveParam,
+        NetworkRuleOption.ThirdParty,
+        NetworkRuleOption.Important,
+        NetworkRuleOption.MatchCase,
+        NetworkRuleOption.Badfilter,
+    ),
 
     /**
      * Removeheader compatible modifiers.
      *
-     * $removeheader rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
-     * except $document (using by default) and this list of modifiers.
+     * $removeheader rules are compatible only with content type modifiers
+     * ($subdocument, $script, $stylesheet, etc) except $document (using by
+     * default) and this list of modifiers.
      */
-    RemoveHeaderCompatibleOptions = NetworkRuleOption.RemoveHeader
-        | NetworkRuleOption.ThirdParty
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.Header
-        | NetworkRuleOption.Badfilter,
+    RemoveHeaderCompatibleOptions: OptionFlags.combine(
+        NetworkRuleOption.RemoveHeader,
+        NetworkRuleOption.ThirdParty,
+        NetworkRuleOption.Important,
+        NetworkRuleOption.MatchCase,
+        NetworkRuleOption.Header,
+        NetworkRuleOption.Badfilter,
+    ),
 
     /**
      * Permissions compatible modifiers.
      *
-     * $permissions is compatible with the limited list of modifiers: $domain, $important, and $subdocument.
+     * $permissions is compatible with the limited list of modifiers:
+     * $domain, $important, and $subdocument.
      */
-    PermissionsCompatibleOptions = NetworkRuleOption.Permissions
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.Badfilter,
+    PermissionsCompatibleOptions: OptionFlags.combine(
+        NetworkRuleOption.Permissions,
+        NetworkRuleOption.Important,
+        NetworkRuleOption.Badfilter,
+    ),
 
     /**
      * Header compatible modifiers.
@@ -284,14 +344,33 @@ export enum NetworkRuleGroupOptions {
      * - $domain
      * - all content type modifiers ($subdocument, $script, $stylesheet, etc).
      */
-    HeaderCompatibleOptions = NetworkRuleOption.Header
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.Csp
-        | NetworkRuleOption.RemoveHeader
-        | NetworkRuleOption.ThirdParty
-        | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.Badfilter,
-}
+    HeaderCompatibleOptions: OptionFlags.combine(
+        NetworkRuleOption.Header,
+        NetworkRuleOption.Important,
+        NetworkRuleOption.Csp,
+        NetworkRuleOption.RemoveHeader,
+        NetworkRuleOption.ThirdParty,
+        NetworkRuleOption.MatchCase,
+        NetworkRuleOption.Badfilter,
+    ),
+
+    /**
+     * Urltransform compatible modifiers.
+     *
+     * $urltransform rules are compatible only with content type modifiers
+     * ($subdocument, $script, $stylesheet, etc) and this list of modifiers.
+     */
+    UrlTransformCompatibleOptions: OptionFlags.combine(
+        NetworkRuleOption.Urltransform,
+        NetworkRuleOption.ThirdParty,
+        NetworkRuleOption.Important,
+        NetworkRuleOption.MatchCase,
+        NetworkRuleOption.Badfilter,
+        NetworkRuleOption.To,
+        NetworkRuleOption.Method,
+        NetworkRuleOption.Popup,
+    ),
+} as const;
 
 /**
  * Basic network filtering rule.
@@ -342,12 +421,12 @@ export class NetworkRule implements IRule {
     /**
      * Flag with all enabled rule options.
      */
-    private enabledOptions: NetworkRuleOption = NetworkRuleOption.NotSet;
+    private enabledOptions: NetworkRuleOption = OptionFlags.createOption(0);
 
     /**
      * Flag with all disabled rule options.
      */
-    private disabledOptions: NetworkRuleOption = NetworkRuleOption.NotSet;
+    private disabledOptions: NetworkRuleOption = OptionFlags.createOption(0);
 
     /**
      * Flag with all permitted request types.
@@ -411,9 +490,12 @@ export class NetworkRule implements IRule {
      *
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-1
      */
-    private static readonly CATEGORY_1_OPTIONS_MASK = NetworkRuleOption.ThirdParty
-        | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.DnsRewrite;
+    private static readonly CATEGORY_1_OPTIONS_MASK: NetworkRuleOption = OptionFlags.combine(
+        NetworkRuleOption.ThirdParty,
+        NetworkRuleOption.MatchCase,
+        NetworkRuleOption.DnsRewrite,
+        NetworkRuleOption.Urltransform,
+    );
 
     /**
      * The priority weight used in {@link calculatePriorityWeight} for rules
@@ -462,14 +544,16 @@ export class NetworkRule implements IRule {
      *
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-4
      */
-    private static readonly SPECIFIC_EXCLUSIONS_MASK = NetworkRuleOption.Elemhide
-        | NetworkRuleOption.Generichide
-        | NetworkRuleOption.Specifichide
-        | NetworkRuleOption.Content
-        | NetworkRuleOption.Urlblock
-        | NetworkRuleOption.Genericblock
-        | NetworkRuleOption.Jsinject
-        | NetworkRuleOption.Extension;
+    private static readonly SPECIFIC_EXCLUSIONS_MASK: NetworkRuleOption = OptionFlags.combine(
+        NetworkRuleOption.Elemhide,
+        NetworkRuleOption.Generichide,
+        NetworkRuleOption.Specifichide,
+        NetworkRuleOption.Content,
+        NetworkRuleOption.Urlblock,
+        NetworkRuleOption.Genericblock,
+        NetworkRuleOption.Jsinject,
+        NetworkRuleOption.Extension,
+    );
 
     /**
      * The priority weight used in {@link calculatePriorityWeight} for rules
@@ -558,6 +642,7 @@ export class NetworkRule implements IRule {
         NetworkRule.OPTIONS.DNSREWRITE,
         NetworkRule.OPTIONS.DNSTYPE,
         NetworkRule.OPTIONS.CTAG,
+        NetworkRule.OPTIONS.URLTRANSFORM,
     ]);
 
     /**
@@ -903,6 +988,20 @@ export class NetworkRule implements IRule {
             || this.isOptionEnabled(NetworkRuleOption.Permissions)
         ) {
             if (!this.matchRequestTypeExplicit(request.requestType)) {
+                return false;
+            }
+        }
+
+        // Origin-changing (full-URL mode) $urltransform rules default to
+        // GET-only when no explicit $method modifier is set.
+        if (
+            this.isOptionEnabled(NetworkRuleOption.Urltransform)
+            && !this.isOptionEnabled(NetworkRuleOption.Method)
+            && request.method !== undefined
+            && request.method !== HTTPMethod.GET
+        ) {
+            const modifier = this.getAdvancedModifier();
+            if (modifier instanceof UrlTransformModifier && modifier.isFullUrlMode()) {
                 return false;
             }
         }
@@ -1310,7 +1409,7 @@ export class NetworkRule implements IRule {
      *
      * @param option Rule option to check.
      *
-     * @returns True if rule contains (enabled or disabled) specified option.
+     * @returns True if rule contains (enabled or disabled) specified option. Returns true for empty flags.
      */
     public hasOption(option: NetworkRuleOption): boolean {
         return this.isOptionEnabled(option) || this.isOptionDisabled(option);
@@ -1322,7 +1421,7 @@ export class NetworkRule implements IRule {
      * @returns True if the rule has at least one cosmetic option enabled.
      */
     public hasCosmeticOption(): boolean {
-        return (this.enabledOptions & NetworkRuleGroupOptions.CosmeticOption) !== 0;
+        return !OptionFlags.isEmpty(OptionFlags.and(this.enabledOptions, NetworkRuleGroupOptions.CosmeticOption));
     }
 
     /**
@@ -1334,7 +1433,7 @@ export class NetworkRule implements IRule {
      * @returns True if the specified option is enabled.
      */
     public isOptionEnabled(option: NetworkRuleOption): boolean {
-        return (this.enabledOptions & option) === option;
+        return OptionFlags.has(option, this.enabledOptions);
     }
 
     /**
@@ -1345,7 +1444,7 @@ export class NetworkRule implements IRule {
      * @returns True if the specified option is enabled.
      */
     public isSingleOptionEnabled(option: NetworkRuleOption): boolean {
-        return this.enabledOptions === option;
+        return OptionFlags.equals(this.enabledOptions, option);
     }
 
     /**
@@ -1357,7 +1456,7 @@ export class NetworkRule implements IRule {
      * @returns True if the specified option is disabled.
      */
     public isOptionDisabled(option: NetworkRuleOption): boolean {
-        return (this.disabledOptions & option) === option;
+        return OptionFlags.has(option, this.disabledOptions);
     }
 
     /**
@@ -1412,11 +1511,12 @@ export class NetworkRule implements IRule {
             return false;
         }
 
-        if ((this.enabledOptions ^ NetworkRuleOption.Badfilter) !== specifiedRule.enabledOptions) {
+        const xored = OptionFlags.xor(this.enabledOptions, NetworkRuleOption.Badfilter);
+        if (!OptionFlags.equals(xored, specifiedRule.enabledOptions)) {
             return false;
         }
 
-        if (this.disabledOptions !== specifiedRule.disabledOptions) {
+        if (!OptionFlags.equals(this.disabledOptions, specifiedRule.disabledOptions)) {
             return false;
         }
 
@@ -1449,15 +1549,13 @@ export class NetworkRule implements IRule {
             return false;
         }
 
-        if (this.disabledOptions !== NetworkRuleOption.NotSet) {
+        if (!OptionFlags.isEmpty(this.disabledOptions)) {
             return false;
         }
 
-        if (this.enabledOptions !== NetworkRuleOption.NotSet) {
-            return ((this.enabledOptions
-                    & NetworkRuleGroupOptions.OptionHostLevelRules)
-                | (this.enabledOptions
-                    ^ NetworkRuleGroupOptions.OptionHostLevelRules)) === NetworkRuleGroupOptions.OptionHostLevelRules;
+        if (!OptionFlags.isEmpty(this.enabledOptions)) {
+            // enabledOptions must be a subset of OptionHostLevelRules
+            return OptionFlags.has(this.enabledOptions, NetworkRuleGroupOptions.OptionHostLevelRules);
         }
 
         return true;
@@ -1475,17 +1573,17 @@ export class NetworkRule implements IRule {
      */
     private setOptionEnabled(option: NetworkRuleOption, enabled: boolean, skipRestrictions = false): void {
         if (!skipRestrictions) {
-            if (!this.allowlist && (option & NetworkRuleGroupOptions.AllowlistOnly) === option) {
+            if (!this.allowlist && OptionFlags.has(option, NetworkRuleGroupOptions.AllowlistOnly)) {
                 throw new SyntaxError(
-                    `Modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule`,
+                    `Modifier ${getOptionName(option)} cannot be used in blacklist rule`,
                 );
             }
         }
 
         if (enabled) {
-            this.enabledOptions |= option;
+            OptionFlags.enable(this.enabledOptions, option);
         } else {
-            this.disabledOptions |= option;
+            OptionFlags.enable(this.disabledOptions, option);
         }
     }
 
@@ -1733,6 +1831,11 @@ export class NetworkRule implements IRule {
                 this.setOptionEnabled(NetworkRuleOption.Replace, true);
                 this.advancedModifier = new ReplaceModifier(optionValue);
                 break;
+            // $urltransform
+            case OPTIONS.URLTRANSFORM:
+                this.setOptionEnabled(NetworkRuleOption.Urltransform, true);
+                this.advancedModifier = new UrlTransformModifier(optionValue);
+                break;
             // $cookie
             case OPTIONS.COOKIE:
                 this.setOptionEnabled(NetworkRuleOption.Cookie, true);
@@ -1904,8 +2007,8 @@ export class NetworkRule implements IRule {
      */
     private calculatePriorityWeight() {
         // Base modifiers, category 1.
-        this.priorityWeight += countEnabledBits(this.enabledOptions, NetworkRule.CATEGORY_1_OPTIONS_MASK);
-        this.priorityWeight += countEnabledBits(this.disabledOptions, NetworkRule.CATEGORY_1_OPTIONS_MASK);
+        this.priorityWeight += OptionFlags.maskedBitCount(this.enabledOptions, NetworkRule.CATEGORY_1_OPTIONS_MASK);
+        this.priorityWeight += OptionFlags.maskedBitCount(this.disabledOptions, NetworkRule.CATEGORY_1_OPTIONS_MASK);
 
         /**
          * When dealing with a negated domain, app, method, or content-type,
@@ -1989,7 +2092,7 @@ export class NetworkRule implements IRule {
         }
 
         // Category 5: specific exceptions.
-        this.priorityWeight += NetworkRule.CategoryFiveWeight * countEnabledBits(
+        this.priorityWeight += NetworkRule.CategoryFiveWeight * OptionFlags.maskedBitCount(
             this.enabledOptions,
             NetworkRule.SPECIFIC_EXCLUSIONS_MASK,
         );
@@ -2014,6 +2117,8 @@ export class NetworkRule implements IRule {
     private validateOptions(): void {
         if (this.advancedModifier instanceof RemoveParamModifier) {
             this.validateRemoveParamRule();
+        } else if (this.advancedModifier instanceof UrlTransformModifier) {
+            this.validateUrlTransformRule();
         } else if (this.advancedModifier instanceof RemoveHeaderModifier) {
             this.validateRemoveHeaderRule();
         } else if (this.advancedModifier instanceof PermissionsModifier) {
@@ -2043,8 +2148,10 @@ export class NetworkRule implements IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateHeaderRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.HeaderCompatibleOptions)
-                        !== NetworkRuleGroupOptions.HeaderCompatibleOptions) {
+        if (!OptionFlags.equals(
+            OptionFlags.or(this.enabledOptions, NetworkRuleGroupOptions.HeaderCompatibleOptions),
+            NetworkRuleGroupOptions.HeaderCompatibleOptions,
+        )) {
             throw new SyntaxError('$header rules are not compatible with some other modifiers');
         }
         if (this.advancedModifier && this.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
@@ -2062,8 +2169,10 @@ export class NetworkRule implements IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validatePermissionsRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.PermissionsCompatibleOptions)
-                !== NetworkRuleGroupOptions.PermissionsCompatibleOptions) {
+        if (!OptionFlags.equals(
+            OptionFlags.or(this.enabledOptions, NetworkRuleGroupOptions.PermissionsCompatibleOptions),
+            NetworkRuleGroupOptions.PermissionsCompatibleOptions,
+        )) {
             throw new SyntaxError('$permissions rules are not compatible with some other modifiers');
         }
     }
@@ -2074,9 +2183,28 @@ export class NetworkRule implements IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateRemoveParamRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.RemoveParamCompatibleOptions)
-            !== NetworkRuleGroupOptions.RemoveParamCompatibleOptions) {
+        if (!OptionFlags.equals(
+            OptionFlags.or(this.enabledOptions, NetworkRuleGroupOptions.RemoveParamCompatibleOptions),
+            NetworkRuleGroupOptions.RemoveParamCompatibleOptions,
+        )) {
             throw new SyntaxError('$removeparam rules are not compatible with some other modifiers');
+        }
+    }
+
+    /**
+     * $urltransform rules are not compatible with any other modifiers except
+     * $domain, $third-party, $important, $match-case, $badfilter,
+     * $to, $method, $popup, $denyallow
+     * and permitted content type modifiers ($script, $stylesheet, etc).
+     * The rules with any other modifiers are considered invalid
+     * and will be discarded.
+     */
+    private validateUrlTransformRule(): void {
+        if (!OptionFlags.equals(
+            OptionFlags.or(this.enabledOptions, NetworkRuleGroupOptions.UrlTransformCompatibleOptions),
+            NetworkRuleGroupOptions.UrlTransformCompatibleOptions,
+        )) {
+            throw new SyntaxError('$urltransform rules are not compatible with some other modifiers');
         }
     }
 
@@ -2086,8 +2214,10 @@ export class NetworkRule implements IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateRemoveHeaderRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.RemoveHeaderCompatibleOptions)
-            !== NetworkRuleGroupOptions.RemoveHeaderCompatibleOptions) {
+        if (!OptionFlags.equals(
+            OptionFlags.or(this.enabledOptions, NetworkRuleGroupOptions.RemoveHeaderCompatibleOptions),
+            NetworkRuleGroupOptions.RemoveHeaderCompatibleOptions,
+        )) {
             throw new SyntaxError('$removeheader rules are not compatible with some other modifiers');
         }
         if (this.headerModifier && this.isOptionEnabled(NetworkRuleOption.Header)) {

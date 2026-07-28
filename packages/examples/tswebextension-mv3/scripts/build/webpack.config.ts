@@ -7,7 +7,7 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import { Configuration } from 'webpack';
 
-import { getIdFromFilterName } from '@adguard/tsurlfilter';
+import { getIdFromFilterName } from '@adguard/dnr-converter/cli';
 
 import packageJson from '../../package.json';
 

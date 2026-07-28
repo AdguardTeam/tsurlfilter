@@ -129,6 +129,7 @@ describe('cosmetic api', () => {
         });
 
         describe('elemhide rules + hits counter enabled', () => {
+            const PROP_RULE = "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }";
             const testCases = [
                 {
                     // one specific rules
@@ -136,7 +137,7 @@ describe('cosmetic api', () => {
                         'example.com##h1',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { display: none !important; content: \'adguard0%3B0\' !important; }',
+                    expected: `${PROP_RULE}\r\nh1 { display: none !important; --adguard-hit: 'adguard0%3B0' !important; }`,
                 },
                 {
                     // few specific rules
@@ -145,7 +146,7 @@ describe('cosmetic api', () => {
                         'example.org##h2',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { display: none !important; content: \'adguard0%3B0\' !important; }\r\nh2 { display: none !important; content: \'adguard0%3B1\' !important; }',
+                    expected: `${PROP_RULE}\r\nh1 { display: none !important; --adguard-hit: 'adguard0%3B0' !important; }\r\nh2 { display: none !important; --adguard-hit: 'adguard0%3B1' !important; }`,
                 },
                 {
                     // few generic rules
@@ -154,7 +155,7 @@ describe('cosmetic api', () => {
                         '##h2',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { display: none !important; content: \'adguard0%3B0\' !important; }\r\nh2 { display: none !important; content: \'adguard0%3B1\' !important; }',
+                    expected: `${PROP_RULE}\r\nh1 { display: none !important; --adguard-hit: 'adguard0%3B0' !important; }\r\nh2 { display: none !important; --adguard-hit: 'adguard0%3B1' !important; }`,
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
@@ -169,6 +170,7 @@ describe('cosmetic api', () => {
         });
 
         describe('css rules + hits counter enabled', () => {
+            const PROP_RULE = "@property --adguard-hit { syntax: '*'; inherits: false; initial-value: ''; }";
             const testCases = [
                 {
                     // one specific rules
@@ -176,7 +178,7 @@ describe('cosmetic api', () => {
                         'example.com#$#h1 { color: black !important; }',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { color: black !important; content: \'adguard0%3B0\' !important; }',
+                    expected: `${PROP_RULE}\r\nh1 { color: black !important; --adguard-hit: 'adguard0%3B0' !important; }`,
                 },
                 {
                     // few specific rules
@@ -185,7 +187,7 @@ describe('cosmetic api', () => {
                         'example.org#$#h2 { color: red !important; }',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { color: black !important; content: \'adguard0%3B0\' !important; }\r\nh2 { color: red !important; content: \'adguard0%3B1\' !important; }',
+                    expected: `${PROP_RULE}\r\nh1 { color: black !important; --adguard-hit: 'adguard0%3B0' !important; }\r\nh2 { color: red !important; --adguard-hit: 'adguard0%3B1' !important; }`,
                 },
                 {
                     // few generic rules
@@ -194,7 +196,7 @@ describe('cosmetic api', () => {
                         '#$#h2 { color: red !important; }',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { color: black !important; content: \'adguard0%3B0\' !important; }\r\nh2 { color: red !important; content: \'adguard0%3B1\' !important; }',
+                    expected: `${PROP_RULE}\r\nh1 { color: black !important; --adguard-hit: 'adguard0%3B0' !important; }\r\nh2 { color: red !important; --adguard-hit: 'adguard0%3B1' !important; }`,
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {

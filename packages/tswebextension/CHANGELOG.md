@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2026-07-28
+
+### Changed
+
+- **BREAKING:** Renamed all `RuleSet`/`ruleSet` symbols to `Ruleset`/`ruleset` for naming
+  consistency. Public API renames: `syncRuleSetWithIdbByFilterId`→`syncRulesetWithIdbByFilterId`,
+  `RuleSetsLoaderApi`→`RulesetsLoaderApi`, `FiltersApi.getEnabledRuleSets`→`getEnabledRulesets`,
+  `FailedEnableRuleSetsError`→`FailedEnableRulesetsError`.
+- Migrated DNR conversion imports from `@adguard/tsurlfilter/es/declarative-converter`
+  to `@adguard/dnr-converter`.
+- `TsWebExtension.start()` and `TsWebExtension.configure()` now return
+  `{ conversionErrors: FilterListConversionError[] }` instead of `void`,
+  surfacing filter list rule conversion errors to callers.
+- Conversion metadata (`badFilterRules`, `rulesHashMap`) is now kept in
+  memory after `configure()` instead of being freed via the previous
+  `unloadMetadata()` call. Keeping it avoids stale cached rulesets
+  returning empty metadata on subsequent `configure()` calls; a lazy
+  reload from IDB is tracked in AG-53262.
+- Updated [@adguard/extended-css] to `v2.2.0`.
+- WebRTC IP handling policy changed from `disable_non_proxied_udp` to
+  `default_public_interface_only` to reduce VoIP breakage while still
+  preventing IP leaks.
+- Updated [@adguard/agtree] to `v4.2.0`.
+- Updated [@adguard/tsurlfilter] to `v6.0.2`.
+
+### Added
+
+- Support of `$urltransform` modifier [tsurlfilter#111].
+- `$removeparam` support for SPA navigations via `history.pushState` /
+  `history.replaceState`. Supports plain-value and regex
+  modifiers with allowlist / `$important` priority [tsurlfilter#188].
+- New `FilteringEventType.PopupBlocked` filtering log event (with matching
+  `PopupBlockedEvent` / `PopupBlockedEventData` types) dispatched when
+  `$popup` modifier rule is applied [AdguardBrowserExtension#1686].
+
+### Fixed
+
+- Firefox freezes when playing Douyin videos, triggered by custom filter rule all.txt [AdguardBrowserExtension#3525].
+- Sites loading-slowly in Firefox 118 when AdGuard extension is enabled [AdguardBrowserExtension#2524].
+- Hit marker text leaking into `::before`/`::after` pseudo-elements for
+  CSS inject rules (`#$#`). Native injection now uses a non-inheriting
+  `--adguard-hit` custom property (`@property`) instead of `content:`
+  [AdguardBrowserExtension#1486].
+- Memory leak during rapid page navigations that could cause extension OOM when a
+  page refreshes repeatedly [AdguardBrowserExtension#3547].
+- Filtering log now includes generic (domain-less) scriptlet rules in `JsInject`
+  events instead of silently skipping them [AdguardBrowserExtension#2895].
+- Element hiding rules not being applied on fast page reload in MV3
+  [AdguardBrowserExtension#3537].
+- monkeytype.com fails to load — requests stuck "Pending" with AdGuard MV2 enabled [AdguardBrowserExtension#3565].
+
+[tsurlfilter#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
+[tsurlfilter#188]: https://github.com/AdguardTeam/tsurlfilter/issues/188
+[AdguardBrowserExtension#1486]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1486
+[AdguardBrowserExtension#1686]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1686
+[AdguardBrowserExtension#2524]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2524
+[AdguardBrowserExtension#2895]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2895
+[AdguardBrowserExtension#3525]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3525
+[AdguardBrowserExtension#3537]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3537
+[AdguardBrowserExtension#3547]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3547
+[AdguardBrowserExtension#3565]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3565
+
+[5.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v5.0.0
+
 ## [4.1.2] - 2026-05-13
 
 ### Fixed

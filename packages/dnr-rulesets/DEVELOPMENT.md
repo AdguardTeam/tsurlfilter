@@ -37,7 +37,7 @@ Before working on `dnr-rulesets`, build the workspace packages it depends on:
 
 ```bash
 pnpm --filter @adguard/agtree build
-pnpm --filter @adguard/tsurlfilter build
+pnpm --filter @adguard/dnr-converter build
 pnpm --filter @adguard/logger build
 ```
 
@@ -224,6 +224,6 @@ pnpm test:coverage
 - [README.md](README.md) — Package overview, CLI usage, and API reference
 - [AGENTS.md](AGENTS.md) — AI agent instructions and code guidelines
 - [CHANGELOG.md](CHANGELOG.md) — Version history
-- [TSUrlFilter declarative-converter](../tsurlfilter/README.md#declarativeconverter) — Underlying DNR conversion engine
+- [`@adguard/dnr-converter`](../dnr-converter/README.md) — Underlying DNR conversion engine
 - [adguard-api-mv3 example](../examples/adguard-api-mv3) — Usage example
 - [Root DEVELOPMENT.md](../../DEVELOPMENT.md) — Monorepo-wide development guide

@@ -1,5 +1,6 @@
 import browser from 'webextension-polyfill';
 
+import { type IFilter } from '@adguard/dnr-converter';
 import {
     CompatibilityTypes,
     type CosmeticOption,
@@ -13,13 +14,13 @@ import {
     RequestType,
     setConfiguration,
 } from '@adguard/tsurlfilter';
-import { type IFilter, UnavailableFilterSourceError } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { logger } from '../../common/utils/logger';
 import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 
 import { type ConfigurationMV3 } from './configuration';
+import { type ITrustedFilter } from './trusted-filter';
 import { UserScriptsApi } from './user-scripts-api';
 
 type EngineConfig = {
@@ -32,9 +33,10 @@ type EngineConfig = {
 
     /**
      * For filters which are downloaded by user from remote sources, e.g.
-     * custom filters.
+     * custom filters. Each filter carries its `trusted` flag which controls
+     * whether JS and unsafe rules are allowed.
      */
-    remoteFilters: IFilter[];
+    remoteFilters: ITrustedFilter[];
 
     /**
      * Filter with user-defined rules.
@@ -106,31 +108,47 @@ export class EngineApi {
         const lists: EngineFactoryFilterList[] = [];
 
         /**
-         * If userScripts permission is not granted, custom filters are
-         * not allowed to be executed, because they are from remote source.
-         * Rules from built-in filters are always applied.
+         * Local (built-in) filters are always applied and are trusted.
+         * Remote (custom) filters are only applied when userScripts permission
+         * is granted, and are not trusted (JS rules are restricted).
          */
-        const filters = UserScriptsApi.isEnabled
-            ? localFilters.concat(remoteFilters)
-            : localFilters;
-
-        for (let i = 0; i < filters.length; i += 1) {
+        for (let i = 0; i < localFilters.length; i += 1) {
             try {
-                const filter = filters[i];
+                const filter = localFilters[i];
                 // eslint-disable-next-line no-await-in-loop
                 const content = await filter.getContent();
-                const trusted = filter.isTrusted();
 
                 lists.push({
                     id: filter.getId(),
                     content,
                     ignoreCosmetic: false,
-                    ignoreJS: !trusted,
-                    ignoreUnsafe: !trusted,
+                    ignoreJS: false,
+                    ignoreUnsafe: false,
                 });
             } catch (e) {
-                const filterId = filters[i].getId();
+                const filterId = localFilters[i].getId();
                 logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
+            }
+        }
+
+        if (UserScriptsApi.isEnabled) {
+            for (let i = 0; i < remoteFilters.length; i += 1) {
+                try {
+                    const filter = remoteFilters[i];
+                    // eslint-disable-next-line no-await-in-loop
+                    const content = await filter.getContent();
+
+                    lists.push({
+                        id: filter.getId(),
+                        content,
+                        ignoreCosmetic: false,
+                        ignoreJS: !filter.isTrusted(),
+                        ignoreUnsafe: !filter.isTrusted(),
+                    });
+                } catch (e) {
+                    const filterId = remoteFilters[i].getId();
+                    logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
+                }
             }
         }
 
@@ -142,7 +160,9 @@ export class EngineApi {
          */
         try {
             const userrules = await userRulesFilter.getContent();
-            if (userrules.getContent().length > 0) {
+            // User rules can be empty (e.g. on a fresh install); in that case
+            // the resolved content is simply empty and we skip adding it.
+            if (userrules.length > 0) {
                 // Note: rules are already converted at the extension side
                 lists.push({
                     id: USER_FILTER_ID,
@@ -154,17 +174,7 @@ export class EngineApi {
             }
         } catch (e) {
             const filterId = userRulesFilter.getId();
-
-            // This dirty hack is needed since Filter check inside itself
-            // for empty loaded content.
-            if (e instanceof UnavailableFilterSourceError
-                && e.cause instanceof Error
-                && e.cause.message.includes('Loaded empty content')) {
-                // User rules can be empty, so just log a trace message and continue.
-                logger.trace(`[tsweb.EngineApi.startEngine]: user rules filter ${filterId} is empty: `, e);
-            } else {
-                logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for user rules filter ${filterId} due to: `, e);
-            }
+            logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for user rules filter ${filterId} due to: `, e);
         }
 
         if (allowlistRulesList) {

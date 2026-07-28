@@ -1,8 +1,7 @@
 import { NetworkRuleType, RuleCategory } from '@adguard/agtree';
-import { defaultParserOptions, NetworkRuleParser, RuleParser } from '@adguard/agtree/parser';
+import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
 
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
-import { NetworkRuleWithNodeAndText } from '../../src/rules/declarative-converter/network-rule-with-node-and-text';
 import { NetworkRule } from '../../src/rules/network-rule';
 import { type IRule, RULE_INDEX_NONE } from '../../src/rules/rule';
 import { RuleFactory } from '../../src/rules/rule-factory';
@@ -24,32 +23,6 @@ export const createNetworkRule = (
     ruleIndex = RULE_INDEX_NONE,
 ): NetworkRule => {
     return new NetworkRule(rule.trim(), filterListId, ruleIndex);
-};
-
-/**
- * Helper function to create a network rule with node from a string.
- *
- * @param text Rule text.
- * @param filterListId Filter list ID (optional, default is 0).
- * @param ruleIndex Rule index (optional, default is {@link RULE_INDEX_NONE}).
- *
- * @returns Network rule with node instance.
- *
- * @throws Error if the rule is not a valid network rule.
- */
-export const createNetworkRuleWithNode = (
-    text: string,
-    filterListId = 0,
-    ruleIndex = RULE_INDEX_NONE,
-): NetworkRuleWithNodeAndText => {
-    const trimmedText = text.trim();
-    const node = NetworkRuleParser.parse(trimmedText);
-
-    return new NetworkRuleWithNodeAndText(
-        new NetworkRule(trimmedText, filterListId, ruleIndex),
-        node,
-        trimmedText,
-    );
 };
 
 /**

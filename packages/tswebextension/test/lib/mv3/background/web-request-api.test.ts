@@ -16,6 +16,9 @@ import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { RequestBlockingApi } from '../../../../src/lib/mv3/background/request/request-blocking-api';
 import { requestContextStorage } from '../../../../src/lib/mv3/background/request/request-context-storage';
 import { documentBlockingService } from '../../../../src/lib/mv3/background/services/document-blocking-service';
+import {
+    removeParamInjectionService,
+} from '../../../../src/lib/mv3/background/services/remove-param-injection-service';
 import { WebRequestApi } from '../../../../src/lib/mv3/background/web-request-api';
 import { tabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
 
@@ -96,6 +99,13 @@ vi.mock('../../../../src/lib/mv3/background/services/document-blocking-service',
     },
 }));
 
+vi.mock('../../../../src/lib/mv3/background/services/remove-param-injection-service', () => ({
+    removeParamInjectionService: {
+        invalidateTab: vi.fn(),
+        injectRemoveParam: vi.fn(),
+    },
+}));
+
 describe('WebRequestApi MV3 prefetch handling', () => {
     const createBeforeRequestContext = (): {
         requestType: RequestType;
@@ -129,7 +139,7 @@ describe('WebRequestApi MV3 prefetch handling', () => {
         vi.clearAllMocks();
     });
 
-    it('passes isPrefetchRequest to precalculateCosmetics for prefetch main-frame requests', () => {
+    it('keeps isPrefetchRequest set in context for prefetch main-frame requests', () => {
         const context = createBeforeRequestContext();
         context.isPrefetchRequest = true;
 
@@ -222,7 +232,11 @@ describe('WebRequestApi MV3 prefetch handling', () => {
         });
     });
 
-    it('passes isPrefetchRequest to precalculateCosmetics when shouldSkipRecalculation is false', () => {
+    it('does not reset frame context or recalculate cosmetics for prefetch main-frame requests', () => {
+        // Even if recalculation would not be skipped, a speculative
+        // (prefetch) main-frame request must not touch the frame's cosmetic
+        // state, otherwise the subsequent real navigation gets deduplicated and
+        // loses its prepared cosmetic result (AdguardBrowserExtension#3537).
         vi.mocked(CosmeticFrameProcessor.shouldSkipRecalculation).mockReturnValueOnce(false);
         vi.mocked(engineApi.matchRequest).mockReturnValueOnce({
             getBasicResult: vi.fn(() => null),
@@ -242,11 +256,53 @@ describe('WebRequestApi MV3 prefetch handling', () => {
             },
         });
 
-        expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).toHaveBeenCalledWith(
-            expect.objectContaining({
-                isPrefetchRequest: true,
-            }),
-        );
+        expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).not.toHaveBeenCalled();
+        expect(vi.mocked(tabsApi.setFrameContext)).not.toHaveBeenCalled();
+        // shouldSkipRecalculation must not even be consulted for speculative
+        // main-frame requests.
+        expect(vi.mocked(CosmeticFrameProcessor.shouldSkipRecalculation)).not.toHaveBeenCalled();
+    });
+
+    it('does not reset frame context or recalculate cosmetics for prerender main-frame navigations', () => {
+        // Same hazard as prefetch in onBeforeRequest: handleFrame skips
+        // cosmetic recalculation for prerenders, so resetting the frame here
+        // would poison the frame state for the subsequent real navigation
+        // (AdguardBrowserExtension#3537).
+        vi.mocked(CosmeticFrameProcessor.shouldSkipRecalculation).mockReturnValueOnce(false);
+
+        (WebRequestApi as any).onBeforeNavigate({
+            tabId: 1,
+            frameId: 0,
+            parentFrameId: -1,
+            url: 'https://example.com/',
+            timeStamp: 123,
+            documentLifecycle: DocumentLifecycle.Prerender,
+            documentId: 'document-id',
+            parentDocumentId: undefined,
+        });
+
+        expect(vi.mocked(tabsApi.setFrameContext)).not.toHaveBeenCalled();
+        expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).not.toHaveBeenCalled();
+        expect(vi.mocked(removeParamInjectionService.invalidateTab)).not.toHaveBeenCalled();
+    });
+
+    it('resets frame context and recalculates cosmetics for active main-frame navigations', () => {
+        vi.mocked(CosmeticFrameProcessor.shouldSkipRecalculation).mockReturnValueOnce(false);
+
+        (WebRequestApi as any).onBeforeNavigate({
+            tabId: 1,
+            frameId: 0,
+            parentFrameId: -1,
+            url: 'https://example.com/',
+            timeStamp: 123,
+            documentLifecycle: DocumentLifecycle.Active,
+            documentId: 'document-id',
+            parentDocumentId: undefined,
+        });
+
+        expect(vi.mocked(tabsApi.setFrameContext)).toHaveBeenCalled();
+        expect(vi.mocked(CosmeticFrameProcessor.precalculateCosmetics)).toHaveBeenCalled();
+        expect(vi.mocked(removeParamInjectionService.invalidateTab)).toHaveBeenCalledWith(1);
     });
 
     it('calls incrementTabBlockedRequestCount when blocking response is cancel', () => {

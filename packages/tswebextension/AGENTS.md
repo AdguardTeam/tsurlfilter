@@ -13,10 +13,11 @@ content scripts and a CLI for build-time tasks.
 
 - **Language/Version**: TypeScript (ESM-only output), Node.js ≥ 22
 - **Primary Dependencies**: `@adguard/tsurlfilter` (blocking engine),
-  `@adguard/agtree` (rule parsing), `@adguard/logger` (logging),
-  `@adguard/scriptlets`, `@adguard/assistant`, `@adguard/extended-css`,
-  `webextension-polyfill`, `zod` (schema validation), `lodash-es`, `lru-cache`,
-  `idb` (IndexedDB wrapper), `superjson`, `bowser`, `tldts`
+  `@adguard/dnr-converter` (DNR rule conversion), `@adguard/agtree` (rule
+  parsing), `@adguard/logger` (logging), `@adguard/scriptlets`,
+  `@adguard/assistant`, `@adguard/extended-css`, `webextension-polyfill`,
+  `zod` (schema validation), `lodash-es`, `lru-cache`, `idb` (IndexedDB
+  wrapper), `superjson`, `bowser`, `tldts`
 - **Build Toolchain**: Rollup (with `@rollup/plugin-swc`), `rollup-plugin-dts`
   (type bundling), `tsc` + custom `transform-dts.ts`
 - **Testing**: Vitest (multi-project config: `mv2`, `mv3`, `common`), with
@@ -95,6 +96,10 @@ You MUST follow the following rules for EVERY task that you perform:
 - When the task is finished, update `CHANGELOG.md` in the `Unreleased`
   section. Add entries to the appropriate subsection (`Added`, `Changed`, or
   `Fixed`); do not create duplicate subsections.
+
+- Do NOT add internal task numbers (e.g. `AG-12345`) or links to internal
+  websites (e.g. `jira.adguard.com`) in `CHANGELOG.md`. Only public GitHub
+  links are allowed as markdown reference links.
 
 - Since `@adguard/tswebextension` is a dependency of `@adguard/api` and
   `@adguard/api-mv3`, consider updating their changelogs when making breaking

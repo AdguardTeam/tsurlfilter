@@ -7,6 +7,7 @@
     - [Privacy](#chromium-mv3-filters-privacy)
         - [AdGuard Tracking Protection filter](#chromium-mv3-filters-privacy-adguard-tracking-protection-filter)
         - [AdGuard URL Tracking filter](#chromium-mv3-filters-privacy-adguard-url-tracking-filter)
+        - [AdGuard Mail Tracking Protection filter](#chromium-mv3-filters-privacy-adguard-mail-tracking-protection-filter)
     - [Social widgets](#chromium-mv3-filters-social-widgets)
         - [AdGuard Social Media filter](#chromium-mv3-filters-social-widgets-adguard-social-media-filter)
     - [Annoyances](#chromium-mv3-filters-annoyances)
@@ -15,6 +16,7 @@
         - [AdGuard Mobile App Banners filter](#chromium-mv3-filters-annoyances-adguard-mobile-app-banners-filter)
         - [AdGuard Other Annoyances filter](#chromium-mv3-filters-annoyances-adguard-other-annoyances-filter)
         - [AdGuard Widgets filter](#chromium-mv3-filters-annoyances-adguard-widgets-filter)
+        - [Stevo's AI Blocklist](#chromium-mv3-filters-annoyances-stevos-ai-blocklist)
     - [Security](#chromium-mv3-filters-security)
         - [Online Malicious URL Blocklist](#chromium-mv3-filters-security-online-malicious-url-blocklist)
         - [Phishing URL Blocklist](#chromium-mv3-filters-security-phishing-url-blocklist)
@@ -40,6 +42,7 @@
         - [EasyList Lithuania](#chromium-mv3-filters-language-specific-easylist-lithuania)
         - [Latvian List](#chromium-mv3-filters-language-specific-latvian-list)
         - [Liste AR](#chromium-mv3-filters-language-specific-liste-ar)
+        - [ROList](#chromium-mv3-filters-language-specific-rolist)
         - [AdBlockID](#chromium-mv3-filters-language-specific-adblockid)
         - [EasyList Thailand](#chromium-mv3-filters-language-specific-easylist-thailand)
         - [Hungarian filter](#chromium-mv3-filters-language-specific-hungarian-filter)
@@ -48,7 +51,7 @@
         - [Polish GDPR-Cookies Filters](#chromium-mv3-filters-language-specific-polish-gdpr-cookies-filters)
         - [Estonian List](#chromium-mv3-filters-language-specific-estonian-list)
         - [AdGuard Chinese filter](#chromium-mv3-filters-language-specific-adguard-chinese-filter)
-        - [List-KR](#chromium-mv3-filters-language-specific-list-kr)
+        - [List-KR Classic filter list](#chromium-mv3-filters-language-specific-list-kr-classic-filter-list)
         - [Adblock List for Finland](#chromium-mv3-filters-language-specific-adblock-list-for-finland)
         - [Persian Blocker](#chromium-mv3-filters-language-specific-persian-blocker)
         - [Polish Anti Adblock Filters](#chromium-mv3-filters-language-specific-polish-anti-adblock-filters)
@@ -64,6 +67,7 @@
     - [Privacy](#opera-mv3-filters-privacy)
         - [AdGuard Tracking Protection filter](#opera-mv3-filters-privacy-adguard-tracking-protection-filter)
         - [AdGuard URL Tracking filter](#opera-mv3-filters-privacy-adguard-url-tracking-filter)
+        - [AdGuard Mail Tracking Protection filter](#opera-mv3-filters-privacy-adguard-mail-tracking-protection-filter)
     - [Social widgets](#opera-mv3-filters-social-widgets)
         - [AdGuard Social Media filter](#opera-mv3-filters-social-widgets-adguard-social-media-filter)
     - [Annoyances](#opera-mv3-filters-annoyances)
@@ -72,6 +76,7 @@
         - [AdGuard Mobile App Banners filter](#opera-mv3-filters-annoyances-adguard-mobile-app-banners-filter)
         - [AdGuard Other Annoyances filter](#opera-mv3-filters-annoyances-adguard-other-annoyances-filter)
         - [AdGuard Widgets filter](#opera-mv3-filters-annoyances-adguard-widgets-filter)
+        - [Stevo's AI Blocklist](#opera-mv3-filters-annoyances-stevos-ai-blocklist)
     - [Security](#opera-mv3-filters-security)
         - [Online Malicious URL Blocklist](#opera-mv3-filters-security-online-malicious-url-blocklist)
         - [Phishing URL Blocklist](#opera-mv3-filters-security-phishing-url-blocklist)
@@ -97,6 +102,7 @@
         - [EasyList Lithuania](#opera-mv3-filters-language-specific-easylist-lithuania)
         - [Latvian List](#opera-mv3-filters-language-specific-latvian-list)
         - [Liste AR](#opera-mv3-filters-language-specific-liste-ar)
+        - [ROList](#opera-mv3-filters-language-specific-rolist)
         - [AdBlockID](#opera-mv3-filters-language-specific-adblockid)
         - [EasyList Thailand](#opera-mv3-filters-language-specific-easylist-thailand)
         - [Hungarian filter](#opera-mv3-filters-language-specific-hungarian-filter)
@@ -105,7 +111,7 @@
         - [Polish GDPR-Cookies Filters](#opera-mv3-filters-language-specific-polish-gdpr-cookies-filters)
         - [Estonian List](#opera-mv3-filters-language-specific-estonian-list)
         - [AdGuard Chinese filter](#opera-mv3-filters-language-specific-adguard-chinese-filter)
-        - [List-KR](#opera-mv3-filters-language-specific-list-kr)
+        - [List-KR Classic filter list](#opera-mv3-filters-language-specific-list-kr-classic-filter-list)
         - [Adblock List for Finland](#opera-mv3-filters-language-specific-adblock-list-for-finland)
         - [Persian Blocker](#opera-mv3-filters-language-specific-persian-blocker)
         - [Polish Anti Adblock Filters](#opera-mv3-filters-language-specific-polish-anti-adblock-filters)
@@ -152,6 +158,13 @@ Filter that enhances privacy by removing tracking parameters from URLs.
 - Filter ID: **17**
 - Path: `dist/filters/chromium-mv3/declarative/ruleset_17/ruleset_17.json`
 
+#### <a id="chromium-mv3-filters-privacy-adguard-mail-tracking-protection-filter"></a> AdGuard Mail Tracking Protection filter
+
+This filter blocks tracking pixels in email clients.
+
+- Filter ID: **25**
+- Path: `dist/filters/chromium-mv3/declarative/ruleset_25/ruleset_25.json`
+
 ### <a id="chromium-mv3-filters-social-widgets"></a> Social widgets
 
 #### <a id="chromium-mv3-filters-social-widgets-adguard-social-media-filter"></a> AdGuard Social Media filter
@@ -197,6 +210,13 @@ Blocks annoying third-party widgets: online assistants, live support chats, etc.
 
 - Filter ID: **22**
 - Path: `dist/filters/chromium-mv3/declarative/ruleset_22/ruleset_22.json`
+
+#### <a id="chromium-mv3-filters-annoyances-stevos-ai-blocklist"></a> Stevo's AI Blocklist
+
+A filter list that hides website features which use generative AI and AI-generated content.
+
+- Filter ID: **260**
+- Path: `dist/filters/chromium-mv3/declarative/ruleset_260/ruleset_260.json`
 
 ### <a id="chromium-mv3-filters-security"></a> Security
 
@@ -358,6 +378,13 @@ Additional filter list for websites in Arabic.
 - Filter ID: **112**
 - Path: `dist/filters/chromium-mv3/declarative/ruleset_112/ruleset_112.json`
 
+#### <a id="chromium-mv3-filters-language-specific-rolist"></a> ROList
+
+Additional filter list for websites in Romanian.
+
+- Filter ID: **114**
+- Path: `dist/filters/chromium-mv3/declarative/ruleset_114/ruleset_114.json`
+
 #### <a id="chromium-mv3-filters-language-specific-adblockid"></a> AdBlockID
 
 Additional filter list for websites in Indonesian.
@@ -374,7 +401,7 @@ Filter that blocks ads on Thai sites.
 
 #### <a id="chromium-mv3-filters-language-specific-hungarian-filter"></a> Hungarian filter
 
-Hufilter. Filter list that specifically removes ads on websites in the Hungarian language.
+Hufilter. Filter list that specifically removes ads, privacy threats, and security risks on websites in the Hungarian language.
 
 - Filter ID: **203**
 - Path: `dist/filters/chromium-mv3/declarative/ruleset_203/ruleset_203.json`
@@ -414,9 +441,9 @@ EasyList China + AdGuard Chinese filter. Filter list that specifically removes a
 - Filter ID: **224**
 - Path: `dist/filters/chromium-mv3/declarative/ruleset_224/ruleset_224.json`
 
-#### <a id="chromium-mv3-filters-language-specific-list-kr"></a> List-KR
+#### <a id="chromium-mv3-filters-language-specific-list-kr-classic-filter-list"></a> List-KR Classic filter list
 
-Filter that removes ads and various scripts from websites with Korean content. Combined and augmented with AdGuard-specific rules for enhanced filtering. This filter is expected to be used alongside with AdGuard Base filter.
+The List-KR Сlassic filter list for AdGuard blocks ads and disables anti-adblock scripts on Korean-language websites and apps.
 
 - Filter ID: **227**
 - Path: `dist/filters/chromium-mv3/declarative/ruleset_227/ruleset_227.json`
@@ -513,6 +540,13 @@ Filter that enhances privacy by removing tracking parameters from URLs.
 - Filter ID: **17**
 - Path: `dist/filters/opera-mv3/declarative/ruleset_17/ruleset_17.json`
 
+#### <a id="opera-mv3-filters-privacy-adguard-mail-tracking-protection-filter"></a> AdGuard Mail Tracking Protection filter
+
+This filter blocks tracking pixels in email clients.
+
+- Filter ID: **25**
+- Path: `dist/filters/opera-mv3/declarative/ruleset_25/ruleset_25.json`
+
 ### <a id="opera-mv3-filters-social-widgets"></a> Social widgets
 
 #### <a id="opera-mv3-filters-social-widgets-adguard-social-media-filter"></a> AdGuard Social Media filter
@@ -558,6 +592,13 @@ Blocks annoying third-party widgets: online assistants, live support chats, etc.
 
 - Filter ID: **22**
 - Path: `dist/filters/opera-mv3/declarative/ruleset_22/ruleset_22.json`
+
+#### <a id="opera-mv3-filters-annoyances-stevos-ai-blocklist"></a> Stevo's AI Blocklist
+
+A filter list that hides website features which use generative AI and AI-generated content.
+
+- Filter ID: **260**
+- Path: `dist/filters/opera-mv3/declarative/ruleset_260/ruleset_260.json`
 
 ### <a id="opera-mv3-filters-security"></a> Security
 
@@ -719,6 +760,13 @@ Additional filter list for websites in Arabic.
 - Filter ID: **112**
 - Path: `dist/filters/opera-mv3/declarative/ruleset_112/ruleset_112.json`
 
+#### <a id="opera-mv3-filters-language-specific-rolist"></a> ROList
+
+Additional filter list for websites in Romanian.
+
+- Filter ID: **114**
+- Path: `dist/filters/opera-mv3/declarative/ruleset_114/ruleset_114.json`
+
 #### <a id="opera-mv3-filters-language-specific-adblockid"></a> AdBlockID
 
 Additional filter list for websites in Indonesian.
@@ -735,7 +783,7 @@ Filter that blocks ads on Thai sites.
 
 #### <a id="opera-mv3-filters-language-specific-hungarian-filter"></a> Hungarian filter
 
-Hufilter. Filter list that specifically removes ads on websites in the Hungarian language.
+Hufilter. Filter list that specifically removes ads, privacy threats, and security risks on websites in the Hungarian language.
 
 - Filter ID: **203**
 - Path: `dist/filters/opera-mv3/declarative/ruleset_203/ruleset_203.json`
@@ -775,9 +823,9 @@ EasyList China + AdGuard Chinese filter. Filter list that specifically removes a
 - Filter ID: **224**
 - Path: `dist/filters/opera-mv3/declarative/ruleset_224/ruleset_224.json`
 
-#### <a id="opera-mv3-filters-language-specific-list-kr"></a> List-KR
+#### <a id="opera-mv3-filters-language-specific-list-kr-classic-filter-list"></a> List-KR Classic filter list
 
-Filter that removes ads and various scripts from websites with Korean content. Combined and augmented with AdGuard-specific rules for enhanced filtering. This filter is expected to be used alongside with AdGuard Base filter.
+The List-KR Сlassic filter list for AdGuard blocks ads and disables anti-adblock scripts on Korean-language websites and apps.
 
 - Filter ID: **227**
 - Path: `dist/filters/opera-mv3/declarative/ruleset_227/ruleset_227.json`

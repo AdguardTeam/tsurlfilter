@@ -1,0 +1,128 @@
+! Network rule corpus for parity testing against @adguard/tsurlfilter.
+! Each non-comment, non-empty line is a valid network rule that both packages must parse identically.
+! Covers all modifier groups: basic flags, domain, to, denyallow, method, header,
+! resource types, advanced modifiers, allowlist, priority categories, and badfilter.
+
+! === Basic rules (no modifiers) ===
+||example.com^
+||ads.example.org^
+/banner/
+||cdn.example.com/assets/ad.js
+
+! === Simple flag modifiers ===
+||example.com^$third-party
+||example.com^$~third-party
+||example.com^$match-case
+||example.com^$~match-case
+||example.com^$important
+||example.com^$third-party,important
+
+! === $domain modifier ===
+||example.com^$domain=foo.com
+||example.com^$domain=foo.com|bar.com
+||example.com^$domain=~baz.com
+||example.com^$domain=foo.com|~bar.com
+||example.com^$domain=one.com|two.com|~three.com
+
+! === $to modifier ===
+||example.com^$to=target.com
+||example.com^$to=a.com|b.com
+||example.com^$to=~excluded.com
+
+! === $denyallow modifier ===
+||example.com^$denyallow=safe.com
+||example.com^$denyallow=safe.com|also-safe.com
+
+! === $method modifier ===
+||example.com^$method=get
+||example.com^$method=get|post
+||example.com^$method=~head
+
+! === Resource type modifiers ===
+||example.com^$script
+||example.com^$stylesheet
+||example.com^$image
+||example.com^$media
+||example.com^$font
+||example.com^$xmlhttprequest
+||example.com^$websocket
+||example.com^$subdocument
+||example.com^$ping
+||example.com^$other
+||example.com^$object
+||example.com^$script,image
+||example.com^$~script
+||example.com^$~image,~media
+
+! === $header modifier ===
+||example.com^$header=set-cookie
+||example.com^$header=x-custom-header:value
+
+! === Allowlist rules ===
+@@||example.com^
+@@||example.com^$document
+@@||example.com^$elemhide
+@@||example.com^$generichide
+@@||example.com^$specifichide
+@@||example.com^$elemhide,content,urlblock,jsinject
+@@||example.com^$important
+@@||example.com^$domain=foo.com
+@@||example.com^$third-party
+
+! === $csp modifier ===
+||example.com^$csp=default-src 'self'
+||example.com^$csp=script-src 'none'
+
+! === $redirect modifier ===
+||example.com^$redirect=noopjs
+||example.com^$redirect=1x1-transparent.gif
+||example.com^$image,redirect=1x1-transparent.gif
+
+! === $removeparam modifier ===
+||example.com^$removeparam=utm_source
+||example.com^$removeparam=fbclid
+||example.com^$removeparam
+
+! === $removeheader modifier ===
+||example.com^$removeheader=refresh
+||example.com^$removeheader=location
+
+! === $cookie modifier ===
+||example.com^$cookie
+
+! === $permissions modifier ===
+||example.com^$permissions=camera=()
+
+! === $badfilter ===
+||example.com^$badfilter
+||example.com^$third-party,badfilter
+||example.com^$domain=foo.com,badfilter
+
+! === Combined modifiers ===
+||example.com^$third-party,domain=foo.com
+||example.com^$script,third-party,domain=test.com
+||example.com^$important,third-party,match-case
+||example.com^$image,domain=site.com|~sub.site.com,third-party
+||example.com^$script,domain=example.org,to=target.com
+||example.com^$method=get,domain=foo.com
+||ads.example.com^$third-party,denyallow=safe.com,domain=publisher.com
+
+! === Regex rules ===
+/banner\d+\.js/
+/ads\.(js|css)/$script
+
+! === Priority edge cases ===
+||example.com^$domain=a.com|b.com|c.com|d.com|e.com
+||example.com^$script,image,stylesheet,media
+@@||example.com^$important,domain=foo.com
+||example.com^$redirect=noopjs,important
+
+! === Noop modifier ===
+||example.com^$_,script
+||example.com^$___,important
+
+! === $first-party alias ===
+||example.com^$first-party
+
+! === $document and $doc aliases ===
+@@||example.com^$document
