@@ -25,6 +25,7 @@ import {
     type CssInjectionRule,
     type ElementHidingRule,
     type EmptyRule,
+    type HostRule,
     type HtmlFilteringRule,
     type InvalidRule,
     type JsInjectionRule,
@@ -33,7 +34,7 @@ import {
     type RawRule,
     RuleCategory,
     type ScriptletInjectionRule,
-} from '../nodes-new';
+} from '../nodes';
 import {
     createParserContext,
     CTX_STATUS_HARD_CAP,
@@ -68,6 +69,7 @@ import { HtmlFilteringAstBuilder } from './cosmetic/html-filtering';
 import { JsInjectionAstBuilder } from './cosmetic/js-injection';
 import { ScriptletInjectionAstBuilder } from './cosmetic/scriptlet-injection';
 import { UboCssInjectionAstBuilder } from './cosmetic/ubo-css-injection';
+import { HostRuleAstBuilder } from './network/host-rule';
 import { NetworkRuleAstBuilder } from './network/network-rule';
 import type { ParseOptions } from './options';
 
@@ -129,6 +131,7 @@ export type AnyParsedRule =
     | RawRule
     | InvalidRule
     | AnyCommentRule
+    | HostRule
     | NetworkRule
     | ElementHidingRule
     | CssInjectionRule
@@ -331,6 +334,12 @@ export class RuleParserPipeline {
                 return CommentAstBuilder.parse(source, this.ctx.data, 0, options);
 
             case RuleKind.Network:
+                if (options?.parseHostRules && HostRuleAstBuilder.isCandidate(this.ctx)) {
+                    const hostRule = HostRuleAstBuilder.parse(source, options);
+                    if (hostRule) {
+                        return hostRule;
+                    }
+                }
                 return NetworkRuleAstBuilder.parse(source, this.ctx.data, 0, options);
 
             case RuleKind.Cosmetic: {

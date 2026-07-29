@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest';
 
+import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { createNodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
 import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
 import { NotImplementedError } from '../../../src/errors/not-implemented-error';
 import { type HtmlFilteringRule } from '../../../src/nodes';
-import { defaultParserOptions, type ParserOptions } from '../../../src/parser-legacy/options';
-import { RuleParser } from '../../../src/parser-legacy/rule-parser';
+import { SYNTAX_ABP, SYNTAX_ADG, SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 
 /**
  * Invalid test data interface.
@@ -22,20 +22,14 @@ interface InvalidTestData {
     error: string;
 }
 
-/**
- * Default parser options with HTML filtering rules parsing enabled.
- */
-const parsingEnabledDefaultParserOptions: ParserOptions = {
-    ...defaultParserOptions,
-    parseHtmlFilteringRuleBodies: true,
-};
+const parser = new RuleParserPipeline();
 
 describe('HtmlRuleConverter', () => {
     describe('convertToAdg', () => {
         describe('from ABP', () => {
             test('should throw unsupported error', () => {
                 expect(() => HtmlRuleConverter.convertToAdg({
-                    syntax: 'AdblockPlus',
+                    syntax: SYNTAX_ABP,
                 } as HtmlFilteringRule)).toThrowError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
             });
         });
@@ -193,10 +187,10 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$script:contains({"zone_id":")'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
-                    expect(testData).toBeConvertedProperly(
+                    expect(testData).toBeConvertedProperlyNew(
                         HtmlRuleConverter,
                         'convertToAdg',
-                        parsingEnabledDefaultParserOptions,
+                        { parseHtmlFilteringRuleBodies: true },
                     );
                 });
             });
@@ -206,7 +200,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid body - empty selector list
                     {
                         input: {
-                            syntax: 'AdGuard',
+                            syntax: SYNTAX_ADG,
                             body: {
                                 selectorList: {
                                     children: [],
@@ -219,7 +213,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - empty selectors in complex selector
                     {
                         input: {
-                            syntax: 'AdGuard',
+                            syntax: SYNTAX_ADG,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -235,7 +229,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - invalid selector combinator usage - first
                     {
                         input: {
-                            syntax: 'AdGuard',
+                            syntax: SYNTAX_ADG,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -253,7 +247,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - invalid selector combinator usage - double
                     {
                         input: {
-                            syntax: 'AdGuard',
+                            syntax: SYNTAX_ADG,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -280,7 +274,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - invalid selector combinator usage - last
                     {
                         input: {
-                            syntax: 'AdGuard',
+                            syntax: SYNTAX_ADG,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -348,7 +342,7 @@ describe('HtmlRuleConverter', () => {
                     } else {
                         expect(() => {
                             HtmlRuleConverter.convertToAdg(
-                                RuleParser.parse(input, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                                parser.parse(input, { parseHtmlFilteringRuleBodies: true }) as HtmlFilteringRule,
                             );
                         }).toThrowError(error);
                     }
@@ -401,7 +395,7 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$script:contains({"zone_id":")'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
-                    expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
+                    expect(testData).toBeConvertedProperlyNew(HtmlRuleConverter, 'convertToAdg');
                 });
             });
 
@@ -433,7 +427,7 @@ describe('HtmlRuleConverter', () => {
                         }).toThrowError(error);
                     } else {
                         expect(() => {
-                            HtmlRuleConverter.convertToAdg(RuleParser.parse(input) as HtmlFilteringRule);
+                            HtmlRuleConverter.convertToAdg(parser.parse(input) as HtmlFilteringRule);
                         }).toThrowError(error);
                     }
                 });
@@ -491,10 +485,10 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/ex.*ple/i)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
-                    expect(testData).toBeConvertedProperly(
+                    expect(testData).toBeConvertedProperlyNew(
                         HtmlRuleConverter,
                         'convertToAdg',
-                        parsingEnabledDefaultParserOptions,
+                        { parseHtmlFilteringRuleBodies: true },
                     );
                 });
             });
@@ -504,7 +498,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid body - empty selector list
                     {
                         input: {
-                            syntax: 'UblockOrigin',
+                            syntax: SYNTAX_UBO,
                             body: {
                                 selectorList: {
                                     children: [],
@@ -517,7 +511,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - empty selectors in complex selector
                     {
                         input: {
-                            syntax: 'UblockOrigin',
+                            syntax: SYNTAX_UBO,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -533,7 +527,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - invalid selector combinator usage - first
                     {
                         input: {
-                            syntax: 'UblockOrigin',
+                            syntax: SYNTAX_UBO,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -551,7 +545,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - invalid selector combinator usage - double
                     {
                         input: {
-                            syntax: 'UblockOrigin',
+                            syntax: SYNTAX_UBO,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -578,7 +572,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - invalid selector combinator usage - last
                     {
                         input: {
-                            syntax: 'UblockOrigin',
+                            syntax: SYNTAX_UBO,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -635,7 +629,7 @@ describe('HtmlRuleConverter', () => {
                     } else {
                         expect(() => {
                             HtmlRuleConverter.convertToAdg(
-                                RuleParser.parse(input, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                                parser.parse(input, { parseHtmlFilteringRuleBodies: true }) as HtmlFilteringRule,
                             );
                         }).toThrowError(error);
                     }
@@ -662,7 +656,7 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(example)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
-                    expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
+                    expect(testData).toBeConvertedProperlyNew(HtmlRuleConverter, 'convertToAdg');
                 });
             });
 
@@ -695,7 +689,7 @@ describe('HtmlRuleConverter', () => {
                         }).toThrowError(error);
                     } else {
                         expect(() => {
-                            HtmlRuleConverter.convertToAdg(RuleParser.parse(input) as HtmlFilteringRule);
+                            HtmlRuleConverter.convertToAdg(parser.parse(input) as HtmlFilteringRule);
                         }).toThrowError(error);
                     }
                 });
@@ -707,7 +701,7 @@ describe('HtmlRuleConverter', () => {
         describe('from ABP', () => {
             test('should throw unsupported error', () => {
                 expect(() => HtmlRuleConverter.convertToUbo({
-                    syntax: 'AdblockPlus',
+                    syntax: SYNTAX_ABP,
                 } as HtmlFilteringRule)).toThrowError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
             });
         });
@@ -823,10 +817,10 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div:has-text(a):has-text(/^.*example.*$/s):has-text(b)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
-                    expect(testData).toBeConvertedProperly(
+                    expect(testData).toBeConvertedProperlyNew(
                         HtmlRuleConverter,
                         'convertToUbo',
-                        parsingEnabledDefaultParserOptions,
+                        { parseHtmlFilteringRuleBodies: true },
                     );
                 });
             });
@@ -836,7 +830,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid body - empty selector list
                     {
                         input: {
-                            syntax: 'AdGuard',
+                            syntax: SYNTAX_ADG,
                             body: {
                                 selectorList: {
                                     children: [],
@@ -849,7 +843,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - selectors in complex selector
                     {
                         input: {
-                            syntax: 'AdGuard',
+                            syntax: SYNTAX_ADG,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -865,7 +859,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - invalid selector combinator usage - first
                     {
                         input: {
-                            syntax: 'AdGuard',
+                            syntax: SYNTAX_ADG,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -883,7 +877,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - invalid selector combinator usage - double
                     {
                         input: {
-                            syntax: 'AdGuard',
+                            syntax: SYNTAX_ADG,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -910,7 +904,7 @@ describe('HtmlRuleConverter', () => {
                     // invalid selector list - invalid selector combinator usage - last
                     {
                         input: {
-                            syntax: 'AdGuard',
+                            syntax: SYNTAX_ADG,
                             body: {
                                 selectorList: {
                                     children: [{
@@ -978,7 +972,7 @@ describe('HtmlRuleConverter', () => {
                     } else {
                         expect(() => {
                             HtmlRuleConverter.convertToUbo(
-                                RuleParser.parse(input, parsingEnabledDefaultParserOptions) as HtmlFilteringRule,
+                                parser.parse(input, { parseHtmlFilteringRuleBodies: true }) as HtmlFilteringRule,
                             );
                         }).toThrowError(error);
                     }
@@ -1013,7 +1007,7 @@ describe('HtmlRuleConverter', () => {
                         expected: ['##^div:has-text(example)'],
                     },
                 ])("should convert '$actual' to '$expected'", (testData) => {
-                    expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToUbo');
+                    expect(testData).toBeConvertedProperlyNew(HtmlRuleConverter, 'convertToUbo');
                 });
             });
 
@@ -1029,7 +1023,6 @@ describe('HtmlRuleConverter', () => {
                     },
                     {
                         input: '$$[min-length="-1"]',
-                        // eslint-disable-next-line max-len
                         error: "Value of special attribute selector 'min-length' must be a positive integer, got '-1'",
                     },
 
@@ -1039,15 +1032,9 @@ describe('HtmlRuleConverter', () => {
                         error: 'Type selector must be first in the compound selector',
                     },
                 ])("should not convert '$input'", ({ input, error }) => {
-                    if (typeof input !== 'string') {
-                        expect(() => {
-                            HtmlRuleConverter.convertToUbo(input);
-                        }).toThrowError(error);
-                    } else {
-                        expect(() => {
-                            HtmlRuleConverter.convertToUbo(RuleParser.parse(input) as HtmlFilteringRule);
-                        }).toThrowError(error);
-                    }
+                    expect(() => {
+                        HtmlRuleConverter.convertToUbo(parser.parse(input as string) as HtmlFilteringRule);
+                    }).toThrowError(error);
                 });
             });
         });
@@ -1055,7 +1042,7 @@ describe('HtmlRuleConverter', () => {
         describe('from uBO', () => {
             test('should not convert and return the same rule', () => {
                 const rule = {
-                    syntax: 'UblockOrigin',
+                    syntax: SYNTAX_UBO,
                 } as HtmlFilteringRule;
 
                 expect(HtmlRuleConverter.convertToUbo(rule)).toEqual(createNodeConversionResult([rule], false));
@@ -1067,7 +1054,7 @@ describe('HtmlRuleConverter', () => {
         describe('from ABP', () => {
             test('should throw not implemented error', () => {
                 expect(() => HtmlRuleConverter.convertToAbp({
-                    syntax: 'AdblockPlus',
+                    syntax: SYNTAX_ABP,
                 } as HtmlFilteringRule)).toThrowError(NotImplementedError);
             });
         });
@@ -1075,7 +1062,7 @@ describe('HtmlRuleConverter', () => {
         describe('from ADG', () => {
             test('should throw not implemented error', () => {
                 expect(() => HtmlRuleConverter.convertToAbp({
-                    syntax: 'AdGuard',
+                    syntax: SYNTAX_ADG,
                 } as HtmlFilteringRule)).toThrowError(NotImplementedError);
             });
         });
@@ -1083,7 +1070,7 @@ describe('HtmlRuleConverter', () => {
         describe('from uBO', () => {
             test('should throw not implemented error', () => {
                 expect(() => HtmlRuleConverter.convertToAbp({
-                    syntax: 'UblockOrigin',
+                    syntax: SYNTAX_UBO,
                 } as HtmlFilteringRule)).toThrowError(NotImplementedError);
             });
         });

@@ -12,7 +12,7 @@ import {
     ListNodeType,
     NetworkRuleType,
     NodeType,
-} from '../nodes-new';
+} from '../nodes';
 import type {
     Agent,
     AgentCommentRule,
@@ -55,7 +55,7 @@ import type {
     SelectorList,
     StealthOptionList,
     UboSelector,
-} from '../nodes-new';
+} from '../nodes';
 
 import {
     visitAgent,
@@ -114,7 +114,7 @@ import type { AnyWalkNode } from './types';
  * Dispatches to the correct handler based on `node.type`.
  *
  * The exhaustive switch ensures a compile error when a new node type is
- * added to `nodes-new` without a corresponding handler here.
+ * added to `nodes` without a corresponding handler here.
  *
  * @param node The current node being visited.
  * @param visitChild Callback to recurse into a child node. Returns `false` if traversal should stop.

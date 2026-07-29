@@ -11,7 +11,7 @@ import type {
     ExpressionParenthesisNode,
     FilterList,
     ParameterList,
-} from '../../nodes-new';
+} from '../../nodes';
 import type { AnyWalkNode } from '../types';
 
 /**

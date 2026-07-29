@@ -2,9 +2,8 @@
  * @file Validator for pipe-separated apps.
  */
 
+import { parseAppList } from '../../ast-utils/parsing';
 import { type AppList } from '../../nodes';
-import { AppListParser } from '../../parser-legacy/misc/app-list-parser';
-import { defaultParserOptions } from '../../parser-legacy/options';
 import { DOT, WILDCARD } from '../../utils/constants';
 
 import { type ValidationContext, type Validator } from './types';
@@ -99,7 +98,7 @@ const validatePipeSeparatedApps = (value: string, ctx: ValidationContext): void 
 
     let appList: AppList;
     try {
-        appList = AppListParser.parse(value, defaultParserOptions, 0);
+        appList = parseAppList(value);
     } catch (e: unknown) {
         if (e instanceof Error) {
             ctx.addError('APP_LIST_PARSE_ERROR', { message: e.message });

@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
 import { type AnyCosmeticRule } from '../../nodes';
-import { AdblockSyntax } from '../../utils/adblockers';
 import {
     CLOSE_PARENTHESIS,
     COLON,
@@ -9,6 +8,7 @@ import {
     OPEN_PARENTHESIS,
     SPACE,
 } from '../../utils/constants';
+import { SYNTAX_UBO } from '../../utils/syntax-flags';
 import { BaseGenerator } from '../base-generator';
 
 import { CosmeticRuleBodyGenerator } from './cosmetic-rule-body-generator';
@@ -50,7 +50,7 @@ export class CosmeticRuleGenerator extends BaseGenerator {
         result += node.separator.value;
 
         // uBO rule modifiers
-        if (node.syntax === AdblockSyntax.Ubo && node.modifiers) {
+        if (node.syntax === SYNTAX_UBO && node.modifiers) {
             node.modifiers.children.forEach((modifier) => {
                 if (modifier.exception) {
                     result += COLON;

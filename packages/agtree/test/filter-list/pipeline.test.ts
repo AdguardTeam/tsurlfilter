@@ -9,7 +9,7 @@ import {
     NodeType,
     type RawRule,
     RuleCategory,
-} from '../../src/nodes-new';
+} from '../../src/nodes';
 
 describe('FilterListPipeline', () => {
     const pipeline = new FilterListPipeline();

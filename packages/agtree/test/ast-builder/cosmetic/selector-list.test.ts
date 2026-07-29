@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { type SelectorList } from '../../../src/nodes-new';
+import { type SelectorList } from '../../../src/nodes';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 import { parseSelectorList } from '../../helpers/parse-helpers';
 

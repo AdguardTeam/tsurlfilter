@@ -4,8 +4,8 @@
  * Builds a TypeSelector AST node from a parsed child record.
  */
 
-import type { TypeSelector } from '../../../nodes-new';
-import { NodeType } from '../../../nodes-new';
+import type { TypeSelector } from '../../../nodes';
+import { NodeType } from '../../../nodes';
 import {
     CHILD_FIELD_0,
     CHILD_FIELD_1,

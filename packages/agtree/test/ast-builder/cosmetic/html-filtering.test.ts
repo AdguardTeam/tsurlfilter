@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import type { HtmlFilteringRule } from '../../../src/nodes-new';
+import type { HtmlFilteringRule } from '../../../src/nodes';
 import { SYNTAX_ADG, SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();

@@ -63,11 +63,9 @@ const main = {
     cache: false,
     input: [
         'src/index.ts',
-        'src/parser-legacy/index.ts',
+        'src/parser/index.ts',
         'src/generator/index.ts',
         'src/converter/index.ts',
-        'src/converter-new/index.ts',
-        'src/generator-new/index.ts',
         'src/utils/index.ts',
         'src/walker/index.ts',
     ],

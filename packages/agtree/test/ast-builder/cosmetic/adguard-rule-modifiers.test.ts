@@ -94,6 +94,64 @@ describe('RuleParser — AdGuard rule modifiers', () => {
             });
         });
 
+        test('regex-literal bracket in modifier value does not close modifier list', () => {
+            // A `]` inside a regex character class (e.g. `path=/[abc]/`)
+            // must be skipped during bracket-depth tracking in findClosingBracket
+            // so it is not mistaken for the closing `]` of the modifier list.
+            const ast = parser.parse('[$domain=example.com,path=/[abc]/]##.selector');
+
+            expect(ast).toMatchObject({
+                type: 'ElementHidingRule',
+                modifiers: {
+                    type: 'ModifierList',
+                    children: [
+                        {
+                            type: 'Modifier',
+                            name: { type: 'Value', value: 'domain' },
+                            value: { type: 'Raw', value: 'example.com' },
+                        },
+                        {
+                            type: 'Modifier',
+                            name: { type: 'Value', value: 'path' },
+                            value: { type: 'Value', value: '/[abc]/' },
+                        },
+                    ],
+                },
+                body: {
+                    selectorList: {
+                        value: '.selector',
+                    },
+                },
+            });
+        });
+
+        test('slash inside a regex character class does not close the regex', () => {
+            // A `/` inside a regex character class (e.g. `/[/]/`) must be
+            // skipped by findClosingSlash until classDepth returns to 0;
+            // otherwise the class's `]` is misidentified as the end of the
+            // modifier list.
+            const ast = parser.parse('[$path=/[/]/]##.ad');
+
+            expect(ast).toMatchObject({
+                type: 'ElementHidingRule',
+                modifiers: {
+                    type: 'ModifierList',
+                    children: [
+                        {
+                            type: 'Modifier',
+                            name: { type: 'Value', value: 'path' },
+                            value: { type: 'Value', value: '/[/]/' },
+                        },
+                    ],
+                },
+                body: {
+                    selectorList: {
+                        value: '.ad',
+                    },
+                },
+            });
+        });
+
         test('modifier list with domain list - [$path=/page]example.com,test.org##.ads', () => {
             const ast = parser.parse('[$path=/page]example.com,test.org##.ads');
 

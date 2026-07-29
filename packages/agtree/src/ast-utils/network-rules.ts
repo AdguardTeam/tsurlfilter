@@ -8,8 +8,8 @@ import {
     NetworkRuleType,
     RuleCategory,
 } from '../nodes';
-import { AdblockSyntax } from '../utils/adblockers';
 import { clone } from '../utils/clone';
+import { SYNTAX_UNKNOWN, type SyntaxFlags } from '../utils/syntax-flags';
 import { isUndefined } from '../utils/type-guards';
 
 /**
@@ -18,7 +18,7 @@ import { isUndefined } from '../utils/type-guards';
  * @param pattern Rule pattern.
  * @param modifiers Rule modifiers (optional, default: undefined).
  * @param exception Exception rule flag (optional, default: false).
- * @param syntax Adblock syntax (optional, default: Common).
+ * @param syntax Adblock syntax flags (optional, default: {@link SYNTAX_UNKNOWN}).
  *
  * @returns Network rule node.
  */
@@ -26,7 +26,7 @@ export function createNetworkRuleNode(
     pattern: string,
     modifiers: ModifierList | undefined = undefined,
     exception = false,
-    syntax: AdblockSyntax = AdblockSyntax.Common,
+    syntax: SyntaxFlags = SYNTAX_UNKNOWN,
 ): NetworkRule {
     const result: NetworkRule = {
         category: RuleCategory.Network,

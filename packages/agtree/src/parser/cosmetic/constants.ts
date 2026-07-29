@@ -1,6 +1,7 @@
 /* eslint-disable no-bitwise, jsdoc/require-description-complete-sentence */
 
 import { SL_MIN_DATA_SLOTS } from '../css/selector-list/constants';
+import { MODIFIER_RECORD_STRIDE } from '../network/constants';
 
 /**
  * @file Cosmetic rule parser data layout constants.
@@ -246,6 +247,31 @@ export const CR_MODIFIER_RECORDS_OFFSET = 7;
  * Offset in ctx.data where uBO modifier records begin (alias for CR_MODIFIER_RECORDS_OFFSET).
  */
 export const CR_UBO_MODS_OFFSET = CR_MODIFIER_RECORDS_OFFSET;
+
+/**
+ * Compute the selector-list data offset within a parsed cosmetic-rule buffer.
+ *
+ * When the rule carries an AdGuard `[$…]` modifier list (indicated by
+ * {@link CR_FLAG_HAS_ADG_MODS}), the selector-list region starts after the
+ * modifier records (at `CR_MODIFIER_RECORDS_OFFSET + modCount * stride`).
+ * Otherwise it starts at {@link CR_MODIFIER_RECORDS_OFFSET}.
+ *
+ * Shared between the structural parser and the AST builder so the layout
+ * rule is defined in one place.
+ *
+ * @param data Parsed cosmetic-rule data buffer.
+ * @param dataOffset Offset within `data` where the CR header starts.
+ *
+ * @returns Selector-list data offset relative to `dataOffset`.
+ */
+export function slDataOffset(data: Int32Array, dataOffset = 0): number {
+    if ((data[dataOffset + CR_FLAGS_OFFSET] & CR_FLAG_HAS_ADG_MODS) === 0) {
+        return CR_MODIFIER_RECORDS_OFFSET;
+    }
+
+    const modCount = data[dataOffset + CR_MODIFIER_COUNT_OFFSET];
+    return CR_MODIFIER_RECORDS_OFFSET + modCount * MODIFIER_RECORD_STRIDE;
+}
 
 // ---------------------------------------------------------------------------
 // uBO modifier bitmask constants (for zero-allocation duplicate detection)

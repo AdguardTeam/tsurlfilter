@@ -5,7 +5,7 @@ import {
     type DeclarationListParseOptions,
 } from '../../../src/ast-builder/cosmetic/declaration-list';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import type { CssDeclarationList } from '../../../src/nodes-new';
+import type { CssDeclarationList } from '../../../src/nodes';
 import { createParserContext, initParserContext } from '../../../src/parser/context';
 import { DeclarationListParser } from '../../../src/parser/css/declaration-list';
 import { DEFAULT_MAX_DECLARATIONS } from '../../../src/parser/css/declaration-list/constants';

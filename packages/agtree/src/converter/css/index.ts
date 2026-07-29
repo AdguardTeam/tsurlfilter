@@ -1,4 +1,6 @@
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { SelectorListOrRawGenerator } from '../../generator/cosmetic/selector/selector-list-or-raw-generator';
+import { NodeType, type Raw, type SelectorList } from '../../nodes';
 import { QuoteUtils } from '../../utils';
 import {
     CLOSE_PARENTHESIS,
@@ -25,6 +27,8 @@ const CHAR_CLOSE_PAREN = 0x29;
 const CHAR_SINGLE_QUOTE = 0x27;
 const CHAR_DOUBLE_QUOTE = 0x22;
 const CHAR_BACKSLASH = 0x5C;
+const CHAR_OPEN_SQUARE = 0x5B;
+const CHAR_CLOSE_SQUARE = 0x5D;
 
 /**
  * Finds the index of the matching closing quote for a string that opens at
@@ -106,9 +110,24 @@ export interface AdgConversionResult extends ConversionResult<string> {
  */
 export class CssSelectorConverter extends BaseConverter {
     /**
+     * Extracts the raw CSS selector string from an AST node.
+     *
+     * If the node is a {@link Raw} value, returns its `.value` directly.
+     * If it is already a parsed {@link SelectorList}, serializes it back to a
+     * string using {@link SelectorListGenerator.generate}.
+     *
+     * @param node CSS selector list AST node.
+     *
+     * @returns The raw CSS selector text.
+     */
+    private static selectorListNodeToString(node: SelectorList | Raw): string {
+        return SelectorListOrRawGenerator.generate(node);
+    }
+
+    /**
      * Converts Extended CSS elements to AdGuard-compatible ones.
      *
-     * @param selectorList Selector list to convert.
+     * @param node CSS selector list AST node (parsed or raw) to convert.
      *
      * @returns An object which follows the {@link AdgConversionResult} interface. Its `result` property contains
      * the converted selector, `isConverted` indicates whether the original was modified, and `hasExtendedCss`
@@ -116,7 +135,8 @@ export class CssSelectorConverter extends BaseConverter {
      *
      * @throws If the rule is invalid or incompatible.
      */
-    public static convertToAdg(selectorList: string): AdgConversionResult {
+    public static convertToAdg(node: SelectorList | Raw): AdgConversionResult {
+        const selectorList = CssSelectorConverter.selectorListNodeToString(node);
         const cursor = new CssCursor();
         cursor.reset(selectorList);
 
@@ -269,7 +289,10 @@ export class CssSelectorConverter extends BaseConverter {
                 let processedValue = QuoteUtils.removeQuotes(value);
 
                 if (attr === PseudoClasses.Has) {
-                    processedValue = CssSelectorConverter.convertToAdg(processedValue).result;
+                    processedValue = CssSelectorConverter.convertToAdg({
+                        type: NodeType.Raw,
+                        value: processedValue,
+                    }).result;
                 }
 
                 converted.push(processedValue);
@@ -297,36 +320,71 @@ export class CssSelectorConverter extends BaseConverter {
      * necessary because uBO uses CSSTree which follows the CSS spec and rejects
      * unpaired quotes inside pseudo-class arguments.
      *
-     * @param selectorList Selector list string to convert.
+     * @param node CSS selector list AST node (parsed or raw) to convert.
      *
      * @returns An object which follows the {@link ConversionResult} interface.
      */
-    public static convertToUbo(selectorList: string): ConversionResult<string> {
+    public static convertToUbo(node: SelectorList | Raw): ConversionResult<string> {
+        const selectorList = CssSelectorConverter.selectorListNodeToString(node);
+
         // Use a simple source-offset approach: scan for :contains( or :-abp-contains(
         // and replace with :has-text('...') using raw paren-balanced argument extraction.
         // This mirrors how the old tokenizeExtended callback worked.
+        //
+        // While scanning we track quote, escape, and bracket state so that text
+        // inside quoted strings or attribute selectors (e.g.
+        // `div[data-note=":contains(foo)"]`) is never mistaken for a real
+        // pseudo-class and rewritten, which would change selector semantics.
         const parts: string[] = [];
         let isConverted = false;
         let i = 0;
+        // Index up to which the untouched source has been flushed to `parts`.
+        let flushed = 0;
+        // Attribute-selector (`[...]`) nesting depth.
+        let bracketDepth = 0;
+
+        const containsPrefix = `:${PseudoClasses.Contains}(`;
+        const abpContainsPrefix = `:${PseudoClasses.AbpContains}(`;
 
         while (i < selectorList.length) {
-            // Look for ':' which may start a pseudo-class
-            if (selectorList.charCodeAt(i) !== CHAR_COLON) {
-                // Find the next ':' or end of string
-                const nextColon = selectorList.indexOf(':', i);
-                if (nextColon === -1) {
-                    parts.push(selectorList.slice(i));
-                    break;
+            const ch = selectorList.charCodeAt(i);
+
+            // Skip escaped characters entirely.
+            if (ch === CHAR_BACKSLASH) {
+                i += 2;
+                continue;
+            }
+
+            // Skip over quoted strings so their contents are never treated as
+            // pseudo-classes. Unmatched quotes are treated as literal chars.
+            if (ch === CHAR_SINGLE_QUOTE || ch === CHAR_DOUBLE_QUOTE) {
+                const closeIdx = findClosingQuote(selectorList, i);
+                i = closeIdx !== -1 ? closeIdx + 1 : i + 1;
+                continue;
+            }
+
+            // Track attribute-selector nesting.
+            if (ch === CHAR_OPEN_SQUARE) {
+                bracketDepth += 1;
+                i += 1;
+                continue;
+            }
+            if (ch === CHAR_CLOSE_SQUARE) {
+                if (bracketDepth > 0) {
+                    bracketDepth -= 1;
                 }
-                parts.push(selectorList.slice(i, nextColon));
-                i = nextColon;
+                i += 1;
+                continue;
+            }
+
+            // Only a ':' outside quotes and attribute selectors can start a
+            // pseudo-class we care about.
+            if (ch !== CHAR_COLON || bracketDepth > 0) {
+                i += 1;
                 continue;
             }
 
             // Check for :contains( or :-abp-contains( at position i
-            const containsPrefix = `:${PseudoClasses.Contains}(`;
-            const abpContainsPrefix = `:${PseudoClasses.AbpContains}(`;
-
             let matchedPrefix: string | null = null;
             if (selectorList.startsWith(containsPrefix, i)) {
                 matchedPrefix = containsPrefix;
@@ -335,11 +393,13 @@ export class CssSelectorConverter extends BaseConverter {
             }
 
             if (matchedPrefix === null) {
-                // Not a :contains( — emit the colon and continue
-                parts.push(':');
+                // Not a :contains( — keep scanning.
                 i += 1;
                 continue;
             }
+
+            // Flush the untouched source preceding this pseudo-class.
+            parts.push(selectorList.slice(flushed, i));
 
             // Found :contains( or :-abp-contains( — replace with :has-text(
             parts.push(COLON);
@@ -353,15 +413,15 @@ export class CssSelectorConverter extends BaseConverter {
             let parenBalance = 1;
             let pos = argStart;
             while (pos < selectorList.length && parenBalance > 0) {
-                const ch = selectorList.charCodeAt(pos);
+                const argCh = selectorList.charCodeAt(pos);
 
-                if (ch === CHAR_BACKSLASH) {
+                if (argCh === CHAR_BACKSLASH) {
                     // Skip escaped character
                     pos += 2;
                     continue;
                 }
 
-                if (ch === CHAR_SINGLE_QUOTE || ch === CHAR_DOUBLE_QUOTE) {
+                if (argCh === CHAR_SINGLE_QUOTE || argCh === CHAR_DOUBLE_QUOTE) {
                     // Look ahead for the matching closing quote. Only skip the
                     // quoted range if the quote is properly closed; otherwise
                     // treat it as a literal character (unmatched quotes are
@@ -373,9 +433,9 @@ export class CssSelectorConverter extends BaseConverter {
                     }
                 }
 
-                if (ch === CHAR_OPEN_PAREN) {
+                if (argCh === CHAR_OPEN_PAREN) {
                     parenBalance += 1;
-                } else if (ch === CHAR_CLOSE_PAREN) {
+                } else if (argCh === CHAR_CLOSE_PAREN) {
                     parenBalance -= 1;
                 }
                 pos += 1;
@@ -388,7 +448,11 @@ export class CssSelectorConverter extends BaseConverter {
             parts.push(CLOSE_PARENTHESIS);
 
             i = pos; // continue after the closing paren
+            flushed = pos;
         }
+
+        // Flush any remaining untouched source.
+        parts.push(selectorList.slice(flushed));
 
         const result = parts.join(EMPTY);
         return createConversionResult(result, isConverted);

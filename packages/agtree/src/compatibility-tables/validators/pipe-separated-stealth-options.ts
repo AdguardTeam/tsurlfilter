@@ -2,9 +2,8 @@
  * @file Validator for pipe-separated stealth options.
  */
 
+import { parseStealthOptionList } from '../../ast-utils/parsing';
 import { type StealthOptionList } from '../../nodes';
-import { StealthOptionListParser } from '../../parser-legacy/misc/stealth-option-list-parser';
-import { defaultParserOptions } from '../../parser-legacy/options';
 
 import { type ValidationContext, type Validator } from './types';
 
@@ -47,7 +46,7 @@ const validatePipeSeparatedStealthOptions = (value: string, ctx: ValidationConte
 
     let stealthOptionsList: StealthOptionList;
     try {
-        stealthOptionsList = StealthOptionListParser.parse(value, defaultParserOptions, 0);
+        stealthOptionsList = parseStealthOptionList(value);
     } catch (e: unknown) {
         if (e instanceof Error) {
             ctx.addError('STEALTH_OPTION_LIST_PARSE_ERROR', { message: e.message });

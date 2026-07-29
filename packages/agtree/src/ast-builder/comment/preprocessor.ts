@@ -4,7 +4,7 @@
  * Builds {@link PreProcessorCommentRule} nodes from parsed data.
  */
 
-import { CommentRuleType, type PreProcessorCommentRule, RuleCategory } from '../../nodes-new';
+import { CommentRuleType, type PreProcessorCommentRule, RuleCategory } from '../../nodes';
 import {
     CM_PREP_LE_DATA_OFFSET,
     CM_PREP_NAME_END_OFFSET,

@@ -34,7 +34,7 @@ describe('NetworkRule - csp rules', () => {
     it('works if invalid csp modifier is detected', () => {
         expect(() => {
             createNetworkRule('||example.org$csp=', 0);
-        }).toThrowError('Modifier value cannot be empty');
+        }).toThrowError('Invalid $CSP rule: CSP directive must not be empty');
 
         expect(() => {
             createNetworkRule('||example.org$csp=report-uri /csp-violation-report-endpoint/', 0);

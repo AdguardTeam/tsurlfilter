@@ -11,7 +11,7 @@ import type {
     HintCommentRule,
     MetadataCommentRule,
     PreProcessorCommentRule,
-} from '../../nodes-new';
+} from '../../nodes';
 
 import type { VisitChildFn } from './misc';
 

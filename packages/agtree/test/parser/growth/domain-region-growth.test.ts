@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
-import type { ElementHidingRule } from '../../../src/nodes-new';
+import type { ElementHidingRule } from '../../../src/nodes';
 
 /**
  * More than the 128-domain default — verifies single-step growth.

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../src/ast-builder/rule-parser';
-import type { ElementHidingRule } from '../../src/nodes-new';
+import type { ElementHidingRule } from '../../src/nodes';
 
 /**
  * Large enough to force domain-buffer growth, used to verify that reset() reclaims the extra memory.

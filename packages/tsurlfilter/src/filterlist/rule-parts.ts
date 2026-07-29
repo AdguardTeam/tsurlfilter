@@ -1,7 +1,5 @@
 import isIp from 'is-ip';
 
-import { NetworkRuleParser } from '@adguard/agtree';
-
 import {
     CLOSE_SQUARE,
     COMMA,
@@ -16,6 +14,143 @@ import {
     findPrevNonWhitespace,
     hasWhitespace,
 } from '../utils/string-utils';
+
+const NETWORK_RULE_SEPARATOR = '$';
+const REGEX_MARKER = '/';
+const MODIFIER_ASSIGN = '=';
+
+/**
+ * Checks whether a `$` at the given position falls inside a `/.../` regex
+ * value region — either the pattern part (`/x$y/`) or the replacement part
+ * (`$1` in `/(a)/$1/`) of a `$replace` or `$removeparam` modifier.
+ *
+ * Finds the nearest `=/` opener before `pos`, then scans forward to determine
+ * whether `pos` lies between the opening `/` and the final closing `/` of the
+ * modifier value.
+ *
+ * This is an intentionally duplicated, allocation-free character scan on
+ * tsurlfilter's hot rule-splitting path: AGTree does not export an equivalent
+ * regex-region predicate, so reusing its parser here would mean tokenizing the
+ * rule just to locate the separator. Keep this in sync with AGTree's network
+ * rule separator handling if that logic changes.
+ *
+ * @param rule Network rule text.
+ * @param pos Position of the `$` to check.
+ *
+ * @returns Whether the `$` at `pos` is inside a regex value region.
+ */
+function isDollarInsideRegex(rule: string, pos: number): boolean {
+    // Find the nearest `=/` (regex value opener) before `pos`.
+    // We scan backward skipping `=` that are not followed by `/`,
+    // since those belong to non-regex modifiers (e.g. `$domain=...`).
+    let openerIdx = -1;
+    for (let j = pos - 1; j >= 1; j -= 1) {
+        if (rule[j] === ESCAPE) {
+            j -= 1;
+            continue;
+        }
+        if (rule[j] === REGEX_MARKER && rule[j - 1] === MODIFIER_ASSIGN) {
+            openerIdx = j;
+            break;
+        }
+        // If we hit `=` NOT followed by `/`, this `=` belongs to
+        // a different modifier — stop looking.
+        if (rule[j] === MODIFIER_ASSIGN && rule[j + 1] !== REGEX_MARKER) {
+            break;
+        }
+    }
+
+    if (openerIdx === -1) {
+        return false;
+    }
+
+    // Scan forward from the opening `/` to find the matching closing `/`
+    // of the regex pattern.
+    let depth = 1;
+    for (let i = openerIdx + 1; i < rule.length; i += 1) {
+        if (rule[i] === ESCAPE) {
+            i += 1;
+            continue;
+        }
+        if (rule[i] === REGEX_MARKER) {
+            depth -= 1;
+            if (depth === 0) {
+                // Found the closing `/` of the pattern.
+                // If `pos` is inside the pattern, we're done.
+                if (pos < i) {
+                    return true;
+                }
+
+                // `pos` >= `i`: `pos` is at or after the pattern's
+                // closing `/`. For `$replace`, there may be a
+                // replacement string between this `/` and a third `/`.
+                // Scan for a trailing replacement-closing `/`.
+                // NOTE: we do NOT break on `$` here — inside a regex
+                // value region (after `=/`), `$` is part of the
+                // replacement string (e.g. `$1`), not a separator.
+                let r = i + 1;
+                while (r < rule.length) {
+                    if (rule[r] === ESCAPE) {
+                        r += 2;
+                        continue;
+                    }
+                    if (rule[r] === REGEX_MARKER) {
+                        // Found replacement's closing `/`.
+                        return pos < r;
+                    }
+                    if (rule[r] === COMMA) {
+                        break;
+                    }
+                    r += 1;
+                }
+                return false;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Finds the index of the last unescaped `$` option separator in a network rule
+ * that is not inside a regex literal (e.g.
+ * `example.org^$removeparam=/regex$/`, `$replace=/a$b/good/`,
+ * `$replace=/(a)/$1/`).
+ *
+ * Scans backward through the rule. A `$` is skipped if:
+ * - It is immediately followed by `/` (inside a regex value).
+ * - It is preceded by `\` (escaped `$` inside a regex).
+ * - It falls inside a `=/…/` regex value region (including
+ *   `$replace` replacement strings like `$1`).
+ *
+ * @param rule Network rule text.
+ *
+ * @returns The separator index, or `-1` if there is none.
+ */
+const findNetworkRuleSeparatorIndex = (rule: string): number => {
+    for (let i = rule.length - 1; i >= 0; i -= 1) {
+        const ch = rule[i];
+
+        if (ch === NETWORK_RULE_SEPARATOR) {
+            // A `$` immediately followed by `/` is inside a regex value
+            // (e.g. `$replace=/foo$/bar/`), never the separator.
+            if (rule[i + 1] !== REGEX_MARKER
+                // A `$` preceded by `\` is an escaped `$` inside a
+                // regex value (e.g. `$removeparam=/x\$y/`) and is
+                // never the separator.
+                && rule[i - 1] !== ESCAPE
+                // A `$` not caught by the two fast checks above could
+                // still be inside a regex segment — either in the
+                // middle of the pattern (e.g. `/x$y/`) or in the
+                // replacement string (e.g. `$1` in `/(a)/$1/`).
+                && !isDollarInsideRegex(rule, i)) {
+                return i;
+            }
+        }
+    }
+
+    return -1;
+};
 
 /**
  * Rule category.
@@ -260,7 +395,6 @@ const HOST_COMMENT_MARKER = '#';
 const NETWORK_RULE_ALLOWLIST_MARKER = '@@';
 const NETWORK_RULE_ALLOWLIST_MARKER_LENGTH = NETWORK_RULE_ALLOWLIST_MARKER.length;
 
-const MODIFIER_ASSIGN = '=';
 const DOMAIN_MODIFIER = 'domain';
 const DOMAIN_MODIFIER_LENGTH = DOMAIN_MODIFIER.length;
 
@@ -721,9 +855,11 @@ export function getRuleParts(rule: string, ignoreCosmetics = false, ignoreHosts 
         };
     }
 
-    // TODO (David): Handle this case in AGTree v5, this is just a temporary fix
+    // When multiple `$` characters appear and at least one `/` follows the
+    // last `$` (indicating a regex value like `$replace=/a$b/good/`),
+    // use the backward regex-aware scanner to find the real separator.
     if (dollarCount > 1 && rule.indexOf('/', lastDollarIndex) !== -1) {
-        lastDollarIndex = NetworkRuleParser.findNetworkRuleSeparatorIndex(rule);
+        lastDollarIndex = findNetworkRuleSeparatorIndex(rule);
     }
 
     const modifierListStart = lastDollarIndex + 1;

@@ -15,7 +15,7 @@ import { TokenType } from '../tokenizer/token-types';
 import type { Tokenizer } from '../tokenizer/tokenizer';
 
 import {
-    CR_MODIFIER_RECORDS_OFFSET,
+    slDataOffset as crSlDataOffset,
     HF_MIN_DATA_SLOTS,
     SCRIPTLET_BODY_DATA_CAPACITY,
     UBO_MODIFIER_RECORD_STRIDE,
@@ -465,18 +465,19 @@ export function scriptletBodyDataOffset(ctx: ParserContext): number {
  * Computes the offset where the cosmetic body's selector-list region
  * begins in `ctx.data`. This is the data offset passed to
  * {@link SelectorListParser.parse} when invoked from a cosmetic body
- * parser (e.g. ADG/uBO HTML filtering). It currently coincides with the
- * cosmetic modifier-records region; the accessor exists so callers do
- * not depend on that constant directly.
+ * parser (e.g. ADG/uBO HTML filtering).
  *
- * @param _ctx Parser context (currently unused, reserved for future
- *   layout changes).
+ * When the rule carries an AdGuard `[$…]` modifier list, its records occupy
+ * the modifier region starting at {@link CR_MODIFIER_RECORDS_OFFSET}, so the
+ * selector-list region must begin *after* those records to avoid overwriting
+ * them. Otherwise it coincides with the modifier-records region.
+ *
+ * @param ctx Parser context.
  *
  * @returns Selector list data offset within `ctx.data`.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function selectorListDataOffset(_ctx: ParserContext): number {
-    return CR_MODIFIER_RECORDS_OFFSET;
+export function selectorListDataOffset(ctx: ParserContext): number {
+    return crSlDataOffset(ctx.data);
 }
 
 /**

@@ -170,7 +170,7 @@ describe('Cosmetic rule modifiers conversion', () => {
                 shouldConvert: true,
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(CosmeticRuleConverter, 'convertToAdg');
+            expect(testData).toBeConvertedProperlyNew(CosmeticRuleConverter, 'convertToAdg');
         });
     });
     describe('ADG to uBO', () => {
@@ -395,7 +395,7 @@ describe('Cosmetic rule modifiers conversion', () => {
                 shouldConvert: true,
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(CosmeticRuleConverter, 'convertToUbo');
+            expect(testData).toBeConvertedProperlyNew(CosmeticRuleConverter, 'convertToUbo');
         });
     });
 });

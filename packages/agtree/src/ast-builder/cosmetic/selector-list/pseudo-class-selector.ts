@@ -4,8 +4,8 @@
  * Builds a PseudoClassSelector AST node from a parsed child record.
  */
 
-import type { PseudoClassSelector } from '../../../nodes-new';
-import { NodeType } from '../../../nodes-new';
+import type { PseudoClassSelector } from '../../../nodes';
+import { NodeType } from '../../../nodes';
 import {
     CHILD_FIELD_0,
     CHILD_FIELD_1,

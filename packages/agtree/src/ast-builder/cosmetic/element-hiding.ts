@@ -13,7 +13,7 @@ import {
     NodeType,
     RuleCategory,
     ValueKind,
-} from '../../nodes-new';
+} from '../../nodes';
 import type {
     ElementHidingRule,
     ElementHidingRuleBody,
@@ -21,7 +21,7 @@ import type {
     ModifierList,
     Raw,
     Value,
-} from '../../nodes-new';
+} from '../../nodes';
 import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
 import {
     CR_BODY_END,

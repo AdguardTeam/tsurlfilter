@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
-import type { Parameter, ScriptletInjectionRule } from '../../../src/nodes-new';
+import type { Parameter, ScriptletInjectionRule } from '../../../src/nodes';
 
 /**
  * Exceeds the default capacity (128 Int32 slots / 2 = 64 usable param slots).

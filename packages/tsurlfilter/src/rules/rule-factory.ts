@@ -1,10 +1,5 @@
-import {
-    NetworkRuleType,
-    RuleCategory,
-    RuleGenerator,
-    RuleParser,
-} from '@adguard/agtree';
-import { defaultParserOptions } from '@adguard/agtree/parser';
+import { NetworkRuleType, RuleCategory, RuleParserPipeline } from '@adguard/agtree';
+import { RuleGenerator } from '@adguard/agtree/generator';
 import { getErrorMessage } from '@adguard/logger';
 
 import { logger } from '../utils/logger';
@@ -19,6 +14,11 @@ import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
  * Rule builder class.
  */
 export class RuleFactory {
+    /**
+     * Shared AGTree parser pipeline instance.
+     */
+    private static readonly PARSER = new RuleParserPipeline();
+
     /**
      * Creates rule of suitable class from text string.
      * It returns null if the line is empty or if it is a comment.
@@ -43,8 +43,7 @@ export class RuleFactory {
         parseHtmlFilteringRuleBodies = false,
     ): IRule | null {
         try {
-            const node = RuleParser.parse(ruleText, {
-                ...defaultParserOptions,
+            const node = RuleFactory.PARSER.parse(ruleText, {
                 parseHostRules,
                 parseHtmlFilteringRuleBodies,
             });

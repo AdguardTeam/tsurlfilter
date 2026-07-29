@@ -25,6 +25,8 @@ import {
     cssStringLength,
     cssWhitespaceLength,
 } from '../../css/tokenizer/css-token-mapping';
+import { CapacityOverflowError, REGION_TOKENS } from '../../errors/capacity-overflow-error';
+import { MAX_TOKEN_CAPACITY } from '../../limits';
 import { TokenType } from '../../tokenizer/token-types';
 import { Tokenizer } from '../../tokenizer/tokenizer';
 
@@ -183,12 +185,38 @@ export class CssCursor {
     /**
      * Reset the cursor with a new source string. Tokenizes immediately.
      *
+     * If the internal token buffer is exhausted before the whole source is
+     * consumed, it is grown and the source re-tokenized from scratch until the
+     * entire input fits or the hard cap is reached. This prevents long
+     * selectors from being silently truncated when they exceed the initial
+     * buffer capacity.
+     *
      * @param source CSS selector string to iterate.
      * @param offset Base offset within a larger source (for error reporting).
+     *
+     * @throws A `CapacityOverflowError` if the source needs more tokens than
+     * the hard cap allows.
      */
     public reset(source: string, offset = 0): void {
         this.initialOffset = offset;
-        this.tokenizer.setSource(source);
+
+        this.tokenizer.source = source;
+        this.tokenizer.offset = 0;
+        this.tokenizer.tokenize();
+
+        // If the tokenizer didn't reach the end of the source, its token buffer
+        // was exhausted. Grow and retokenize from scratch (offset = 0) until the
+        // full source is consumed or we hit the hard cap.
+        while (this.tokenizer.offset < source.length) {
+            const requested = Math.min(this.tokenizer.types.length * 2, MAX_TOKEN_CAPACITY);
+            if (requested <= this.tokenizer.types.length) {
+                throw new CapacityOverflowError(REGION_TOKENS, requested, MAX_TOKEN_CAPACITY);
+            }
+            this.tokenizer.growCapacity(requested);
+            this.tokenizer.offset = 0;
+            this.tokenizer.tokenize();
+        }
+
         this.pos = 0;
         this.parenDepth = 0;
         this.bracketDepth = 0;

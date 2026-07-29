@@ -1,7 +1,8 @@
-import { RuleParser, modifiersCompatibilityTable, Platform } from '@adguard/agtree';
+import { RuleParserPipeline, modifiersCompatibilityTable, Platform } from '@adguard/agtree';
 import { ok } from 'assert';
 
-const ruleNode = RuleParser.parse('||example.com^');
+const pipeline = new RuleParserPipeline();
+const ruleNode = pipeline.parse('||example.com^');
 
 ok(ruleNode);
 

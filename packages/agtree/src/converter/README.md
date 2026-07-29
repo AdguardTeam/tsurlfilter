@@ -23,11 +23,14 @@ Table of contents:
 
 ## Converter API
 
-The converter API is available by the `@adguard/agtree/converter` entrypoint:
+The new converter API is available by the `@adguard/agtree/converter` entrypoint:
 
 ```ts
 import { RuleConverter, FilterListConverter } from '@adguard/agtree/converter';
 ```
+
+The legacy converter (based on the old AST) remains available at
+`@adguard/agtree/converter`. All new development should use `converter`.
 
 The idea is quite simple, we provide two converter classes:
 
@@ -124,7 +127,7 @@ console.log(conversionResult.result.map(RuleGenerator.generate).join('\n'));
 ### Examples of converting a filter list
 
 ```ts
-import { FilterListParser } from '@adguard/agtree/parser';
+import { FilterListPipeline } from '@adguard/agtree';
 import { FilterListConverter } from '@adguard/agtree/converter';
 import { FilterListGenerator } from '@adguard/agtree/generator';
 import { readFileSync, writeFileSync } from 'fs';
@@ -142,10 +145,12 @@ example.com#$#abp-snippet0 arg00 arg01; abp-snippet1 arg10 arg11
 // Or you can read the filter list from a file:
 // const filterListToConvert = readFileSync('filter-list-to-convert.txt', 'utf8');
 
+const pipeline = new FilterListPipeline();
+
 // Filter list converter is a special case and returns a single filter list node,
 // not an array of nodes, because it doesn't make sense to convert a filter list
 // to multiple filter lists.
-const convertedFilterList = FilterListConverter.convertToAdg(FilterListParser.parse(filterListToConvert));
+const convertedFilterList = FilterListConverter.convertToAdg(pipeline.parse(filterListToConvert));
 
 // You can simply serialize the filter list node, then print it to the console
 console.log(FilterListGenerator.generate(convertedFilterList.result));

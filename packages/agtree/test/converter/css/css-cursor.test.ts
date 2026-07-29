@@ -196,4 +196,24 @@ describe('CssCursor', () => {
             expect(cursor.value).toBe('second');
         });
     });
+
+    describe('capacity handling', () => {
+        test('does not truncate selectors exceeding the initial buffer capacity', () => {
+            // Small initial capacity to force a grow-and-retokenize.
+            const smallCursor = new CssCursor(8);
+            const selector = '.a'.repeat(600);
+
+            smallCursor.reset(selector);
+
+            let last = 0;
+            while (!smallCursor.isEof()) {
+                last = smallCursor.end;
+                smallCursor.advance();
+            }
+
+            // The last token must reach the end of the whole selector,
+            // proving nothing was silently dropped.
+            expect(last).toBe(selector.length);
+        });
+    });
 });

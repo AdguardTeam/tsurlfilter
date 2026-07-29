@@ -7,8 +7,8 @@
  * {@link ModifierListAstBuilder} → modifier parser → {@link ValueAstBuilder}.
  */
 
-import type { NetworkRule } from '../../nodes-new';
-import { NetworkRuleType, RuleCategory, ValueKind } from '../../nodes-new';
+import type { NetworkRule } from '../../nodes';
+import { NetworkRuleType, RuleCategory, ValueKind } from '../../nodes';
 import {
     NR_FLAG_EXCEPTION,
     NR_FLAG_PATTERN_REGEX,

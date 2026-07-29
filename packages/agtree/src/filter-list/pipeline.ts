@@ -24,7 +24,7 @@ import {
     NodeType,
     type RawRule,
     RuleCategory,
-} from '../nodes-new';
+} from '../nodes';
 import type { ParserContext } from '../parser/context';
 import {
     CR_FLAG_BODY_ADG_SCRIPTLET,

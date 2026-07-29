@@ -2,9 +2,9 @@
  * @file Utility functions for working with scriptlet nodes.
  */
 
-import { type ParameterList } from '../nodes';
+import { NodeType, type ParameterList } from '../nodes';
 import { EMPTY } from '../utils/constants';
-import { type QuoteType, QuoteUtils } from '../utils/quotes';
+import { QuoteType } from '../utils/quotes';
 import { isNull, isUndefined } from '../utils/type-guards';
 
 /**
@@ -59,8 +59,9 @@ export function transformNthScriptletArgument(
         if (isNull(child)) {
             // eslint-disable-next-line no-param-reassign
             scriptletNode.children[index] = {
-                type: 'Value',
+                type: NodeType.Parameter,
                 value: transformed,
+                quoteType: QuoteType.None,
             };
 
             return;
@@ -103,7 +104,24 @@ export function setScriptletName(scriptletNode: ParameterList, name: string): vo
  * @param quoteType Preferred quote type.
  */
 export function setScriptletQuoteType(scriptletNode: ParameterList, quoteType: QuoteType): void {
-    // null is a special value that means "no value", but we can't change its quote type,
-    // so we need to convert it to empty string
-    transformAllScriptletArguments(scriptletNode, (value) => QuoteUtils.setStringQuoteType(value ?? EMPTY, quoteType));
+    for (let i = 0; i < scriptletNode.children.length; i += 1) {
+        const child = scriptletNode.children[i];
+
+        // `null` represents an empty parameter. Materialize it as an explicit
+        // empty-valued parameter so it is still quoted on output (e.g. `''`).
+        if (isNull(child)) {
+            // eslint-disable-next-line no-param-reassign
+            scriptletNode.children[i] = {
+                type: NodeType.Parameter,
+                value: EMPTY,
+                quoteType,
+            };
+
+            continue;
+        }
+
+        // `Parameter.value` is already the clean, unquoted value — only record
+        // the desired quote type. The generator performs the escaping/wrapping.
+        child.quoteType = quoteType;
+    }
 }

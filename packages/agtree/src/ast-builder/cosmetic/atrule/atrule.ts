@@ -19,8 +19,8 @@ import type {
     CssDeclarationList,
     Raw,
     Value,
-} from '../../../nodes-new';
-import { NodeType } from '../../../nodes-new';
+} from '../../../nodes';
+import { NodeType } from '../../../nodes';
 import type { ParserContext } from '../../../parser/context';
 import { CssAtRuleParser } from '../../../parser/css/atrule';
 import { AT_HEADER_SIZE, AT_NO_VALUE } from '../../../parser/css/atrule/constants';

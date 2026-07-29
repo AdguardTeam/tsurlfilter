@@ -17,7 +17,7 @@ import type {
     ScriptletInjectionRuleBody,
     StealthOptionList,
     UboSelector,
-} from '../../nodes-new';
+} from '../../nodes';
 import type { AnyWalkNode } from '../types';
 
 import type { VisitChildFn } from './misc';

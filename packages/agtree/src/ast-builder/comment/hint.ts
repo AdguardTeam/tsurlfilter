@@ -11,7 +11,7 @@ import {
     NodeType,
     type ParameterList,
     RuleCategory,
-} from '../../nodes-new';
+} from '../../nodes';
 import {
     CM_HINT_COUNT_OFFSET,
     CM_HINT_RECORDS_OFFSET,

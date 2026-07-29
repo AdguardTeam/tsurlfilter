@@ -2,7 +2,7 @@
  * @file Walker type definitions.
  */
 
-import type { AnyNode } from '../nodes-new';
+import type { AnyNode } from '../nodes';
 
 /**
  * Walk action constants returned by callbacks to control traversal.
@@ -28,7 +28,7 @@ export type WalkActionType = typeof WalkAction[keyof typeof WalkAction];
 
 /**
  * Union of all concrete node types that the walker can visit.
- * Aliased from {@link AnyNode} in `nodes-new` — update that type when adding
+ * Aliased from {@link AnyNode} in `nodes` — update that type when adding
  * new AST node interfaces to maintain exhaustiveness.
  */
 export type AnyWalkNode = AnyNode;

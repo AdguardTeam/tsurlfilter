@@ -8,6 +8,18 @@
 import { describe, expect, test } from 'vitest';
 
 import { CssSelectorConverter } from '../../../src/converter/css';
+import { NodeType, type Raw } from '../../../src/nodes';
+
+/**
+ * Wraps a raw CSS selector string in a minimal {@link Raw} AST node.
+ *
+ * @param value Raw CSS selector text.
+ *
+ * @returns A Raw AST node.
+ */
+function raw(value: string): Raw {
+    return { type: NodeType.Raw, value };
+}
 
 describe('CssSelectorConverter', () => {
     describe('convertToAdg', () => {
@@ -333,7 +345,7 @@ describe('CssSelectorConverter', () => {
             },
         ])('should convert \'$actual\' to \'$expected\'', ({ actual, expected, shouldConvert }) => {
             // Convert the selector list with the converter API
-            const conversionResult = CssSelectorConverter.convertToAdg(actual);
+            const conversionResult = CssSelectorConverter.convertToAdg(raw(actual));
 
             expect(conversionResult).toHaveProperty('isConverted');
             expect(conversionResult.isConverted).toBe(shouldConvert);
@@ -526,8 +538,31 @@ describe('CssSelectorConverter', () => {
                 expected: String.raw`div:has-text('a\)b')`,
                 shouldConvert: true,
             },
+
+            // :contains( inside a quoted attribute value must NOT be rewritten,
+            // otherwise the selector semantics change.
+            {
+                actual: 'div[data-note=":contains(foo)"]',
+                expected: 'div[data-note=":contains(foo)"]',
+                shouldConvert: false,
+            },
+
+            // Same, but with single-quoted attribute value
+            {
+                actual: "div[data-note=':contains(foo)']",
+                expected: "div[data-note=':contains(foo)']",
+                shouldConvert: false,
+            },
+
+            // A real :contains() alongside a quoted attribute value that also
+            // contains the literal text — only the real one is converted.
+            {
+                actual: 'div[data-note=":contains(foo)"]:contains(bar)',
+                expected: "div[data-note=\":contains(foo)\"]:has-text('bar')",
+                shouldConvert: true,
+            },
         ])('should convert "$actual" to "$expected"', ({ actual, expected, shouldConvert }) => {
-            const conversionResult = CssSelectorConverter.convertToUbo(actual);
+            const conversionResult = CssSelectorConverter.convertToUbo(raw(actual));
 
             expect(conversionResult).toHaveProperty('isConverted');
             expect(conversionResult.isConverted).toBe(shouldConvert);

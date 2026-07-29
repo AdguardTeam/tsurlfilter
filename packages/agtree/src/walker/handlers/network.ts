@@ -8,7 +8,7 @@ import type {
     Modifier,
     ModifierList,
     NetworkRule,
-} from '../../nodes-new';
+} from '../../nodes';
 
 import type { VisitChildFn } from './misc';
 

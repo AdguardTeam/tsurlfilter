@@ -4,9 +4,8 @@
  * Technically, this is a wrapper around `FilterListConverter` that works with nodes instead of strings.
  */
 
+import { FilterListPipeline } from '../filter-list';
 import { FilterListGenerator } from '../generator/filterlist-generator';
-import { FilterListParser } from '../parser-legacy/filterlist-parser';
-import { defaultParserOptions } from '../parser-legacy/options';
 
 import { BaseConverter } from './base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';
@@ -31,17 +30,17 @@ export class RawFilterListConverter extends BaseConverter {
      * Defaults to `true`.
      *
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
-     * the array of converted filter list text, and its `isConverted` flag indicates whether the original rule was
-     * converted. If the rule was not converted, the original filter list text will be returned.
+     * the converted filter list text as a string, and its `isConverted` flag indicates whether the original filter
+     * list was converted. If the filter list was not converted, the original text will be returned.
      *
      * @throws If the filter list is invalid or cannot be converted (if the tolerant mode is disabled).
      */
     public static convertToAdg(rawFilterList: string, tolerant = true): ConversionResult<string> {
+        const filterListPipeline = new FilterListPipeline();
         const conversionResult = FilterListConverter.convertToAdg(
-            FilterListParser.parse(
+            filterListPipeline.parse(
                 rawFilterList,
                 {
-                    ...defaultParserOptions,
                     isLocIncluded: false,
                     tolerant,
                 },
@@ -55,6 +54,6 @@ export class RawFilterListConverter extends BaseConverter {
         }
 
         // Otherwise, serialize the filter list and return the result
-        return createConversionResult(FilterListGenerator.generate(conversionResult.result, false, tolerant), true);
+        return createConversionResult(FilterListGenerator.generate(conversionResult.result, tolerant), true);
     }
 }

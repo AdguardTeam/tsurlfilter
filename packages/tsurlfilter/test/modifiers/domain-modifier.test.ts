@@ -153,6 +153,7 @@ describe('Domain modifier', () => {
         const ENDS_WITH_SEPARATOR_ERROR = 'Value list cannot end with a separator';
         const HAS_INVALID_WILDCARD = 'Wildcards are only supported for top-level domains:';
         const SPACE_AFTER_EXCEPTION_ERROR = 'Exception marker cannot be followed by whitespace';
+        const EMPTY_ITEM_AFTER_EXCEPTION_ERROR = 'Domain list contains empty item after ~';
         const invalidCases = [
             {
                 actual: '',
@@ -164,7 +165,7 @@ describe('Domain modifier', () => {
             },
             {
                 actual: '~',
-                error: EMPTY_DOMAIN_ERROR,
+                error: EMPTY_ITEM_AFTER_EXCEPTION_ERROR,
             },
             {
                 actual: '~  ,',

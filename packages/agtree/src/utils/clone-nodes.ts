@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 /**
  * @file Type-specific AST node clone functions for all node types defined in
- * `nodes-new` — leaf nodes, list nodes, CSS nodes, rule bodies, expression
+ * `nodes` — leaf nodes, list nodes, CSS nodes, rule bodies, expression
  * nodes, comment rules, cosmetic rules, and network rules.
  *
  * All functions enumerate properties explicitly for maximum performance.
@@ -73,7 +73,7 @@ import {
     type StealthOptionList,
     type UboSelector,
     type Value,
-} from '../nodes-new';
+} from '../nodes';
 
 /**
  * Type guard that narrows a `Value | Raw` union to `Raw`.

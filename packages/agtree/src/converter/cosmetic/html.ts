@@ -5,6 +5,7 @@
 import { sprintf } from 'sprintf-js';
 
 import { cloneDomainListNode } from '../../ast-utils/clone';
+import { parseHtmlFilteringBody } from '../../ast-utils/parsing';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     AdgHtmlFilteringBodyGenerator,
@@ -21,22 +22,14 @@ import {
     type HtmlFilteringRule,
     type HtmlFilteringRuleBody,
     type PseudoClassSelector,
+    type Raw,
     RuleCategory,
     type SelectorCombinator,
     type SimpleSelector,
-    type Value,
 } from '../../nodes';
-// eslint-disable-next-line max-len
-import {
-    AdgHtmlFilteringBodyParser,
-} from '../../parser-legacy/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
-// eslint-disable-next-line max-len
-import {
-    UboHtmlFilteringBodyParser,
-} from '../../parser-legacy/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
-import { AdblockSyntax } from '../../utils/adblockers';
 import { EMPTY, EQUALS } from '../../utils/constants';
 import { RegExpUtils } from '../../utils/regexp';
+import { SYNTAX_ABP, SYNTAX_ADG, SYNTAX_UBO } from '../../utils/syntax-flags';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
@@ -161,15 +154,6 @@ type OnSpecialAttributeSelectorCallback = (name: string, value: string) => Simpl
 type OnSpecialPseudoClassSelectorCallback = (name: string, argument: string) => SimpleSelector | boolean;
 
 /**
- * Union type of HTML filtering rule body parsers:
- * - AdGuard HTML filtering body parser - {@link AdgHtmlFilteringBodyParser}
- * - uBlock HTML filtering body parser - {@link UboHtmlFilteringBodyParser}.
- */
-type HtmlFilteringRuleParser =
-    | typeof AdgHtmlFilteringBodyParser
-    | typeof UboHtmlFilteringBodyParser;
-
-/**
  * Union type of HTML filtering rule body generators:
  * - AdGuard HTML filtering body generator - {@link AdgHtmlFilteringBodyGenerator}
  * - uBlock HTML filtering body generator - {@link UboHtmlFilteringBodyGenerator}.
@@ -197,13 +181,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rule: HtmlFilteringRule): NodeConversionResult<HtmlFilteringRule> {
-        let parser: HtmlFilteringRuleParser;
         let onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback;
         let onSpecialPseudoClassSelector: OnSpecialPseudoClassSelectorCallback;
 
         let isConverted = false;
-        if (rule.syntax === AdblockSyntax.Adg) {
-            parser = AdgHtmlFilteringBodyParser;
+        if (rule.syntax === SYNTAX_ADG) {
             onSpecialAttributeSelector = (name, value) => {
                 /**
                  * Mark rule as converted in ADG -> ADG conversion only if
@@ -215,12 +197,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 return HtmlRuleConverter.convertSpecialAttributeSelectorAdgToAdg(name, value);
             };
             onSpecialPseudoClassSelector = HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToAdg;
-        } else if (rule.syntax === AdblockSyntax.Ubo) {
+        } else if (rule.syntax === SYNTAX_UBO) {
             /**
              * Always mark rule as converted in UBO -> ADG conversion.
              */
             isConverted = true;
-            parser = UboHtmlFilteringBodyParser;
             onSpecialAttributeSelector = HtmlRuleConverter.convertSpecialAttributeSelectorUboToAdg;
             onSpecialPseudoClassSelector = HtmlRuleConverter.convertSpecialPseudoClassSelectorUboToAdg;
         } else {
@@ -230,11 +211,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
         // Convert body
         const convertedBody = HtmlRuleConverter.convertBody(
             rule.body,
-            parser,
             AdgHtmlFilteringBodyGenerator,
             onSpecialAttributeSelector,
             onSpecialPseudoClassSelector,
-            rule.syntax === AdblockSyntax.Adg,
+            rule.syntax === SYNTAX_ADG,
         );
 
         if (!isConverted) {
@@ -245,7 +225,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             [{
                 category: RuleCategory.Cosmetic,
                 type: CosmeticRuleType.HtmlFilteringRule,
-                syntax: AdblockSyntax.Adg,
+                syntax: SYNTAX_ADG,
 
                 exception: rule.exception,
                 domains: cloneDomainListNode(rule.domains),
@@ -278,18 +258,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     public static convertToUbo(rule: HtmlFilteringRule): NodeConversionResult<HtmlFilteringRule> {
         // Ignore uBlock rules
-        if (rule.syntax === AdblockSyntax.Ubo) {
+        if (rule.syntax === SYNTAX_UBO) {
             return createNodeConversionResult([rule], false);
         }
 
-        if (rule.syntax === AdblockSyntax.Abp) {
+        if (rule.syntax === SYNTAX_ABP) {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
         // Convert body
         const convertedBody = HtmlRuleConverter.convertBody(
             rule.body,
-            AdgHtmlFilteringBodyParser,
             UboHtmlFilteringBodyGenerator,
             HtmlRuleConverter.convertSpecialAttributeSelectorAdgToUbo,
             HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToUbo,
@@ -299,7 +278,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             [{
                 category: RuleCategory.Cosmetic,
                 type: CosmeticRuleType.HtmlFilteringRule,
-                syntax: AdblockSyntax.Ubo,
+                syntax: SYNTAX_UBO,
 
                 exception: rule.exception,
                 domains: cloneDomainListNode(rule.domains),
@@ -340,20 +319,23 @@ export class HtmlRuleConverter extends RuleConverterBase {
     private static convertSpecialAttributeSelectorAdgToAdg(name: string, value: string): SimpleSelector {
         switch (name) {
             // `[tag-content="content"]` -> `:contains(content)`
-            // direct conversion, no changes to value
+            // Unescape legacy `""` double-quote escaping before creating the node
             case AdgAttributeSelectors.TagContent: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
-                    value,
+                    HtmlRuleConverter.unescapeAttributeValueDoubleQuotes(value),
                 );
             }
 
             // `[wildcard="*content*"] -> `:contains(/*.content*./s)`
             // convert search pattern to regular expression
+            // Unescape legacy `""` double-quote escaping before converting to regexp
             case AdgAttributeSelectors.Wildcard: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
-                    RegExpUtils.globToRegExp(value),
+                    RegExpUtils.globToRegExp(
+                        HtmlRuleConverter.unescapeAttributeValueDoubleQuotes(value),
+                    ),
                 );
             }
 
@@ -516,20 +498,23 @@ export class HtmlRuleConverter extends RuleConverterBase {
     private static convertSpecialAttributeSelectorAdgToUbo(name: string, value: string): SimpleSelector | false {
         switch (name) {
             // `[tag-content="content"]` -> `:has-text(content)`
-            // direct conversion, no changes to value
+            // Unescape legacy `""` double-quote escaping before creating the node
             case AdgAttributeSelectors.TagContent: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
-                    value,
+                    HtmlRuleConverter.unescapeAttributeValueDoubleQuotes(value),
                 );
             }
 
             // `[wildcard="*content*"] -> `:has-text(/*.content*./s)`
             // convert search pattern to regular expression
+            // Unescape legacy `""` double-quote escaping before converting to regexp
             case AdgAttributeSelectors.Wildcard: {
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     UboPseudoClasses.HasText,
-                    RegExpUtils.globToRegExp(value),
+                    RegExpUtils.globToRegExp(
+                        HtmlRuleConverter.unescapeAttributeValueDoubleQuotes(value),
+                    ),
                 );
             }
 
@@ -692,7 +677,6 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * Special simple selectors are skipped in the converted selector list and should be handled from callee.
      *
      * @param body HTML filtering rule body to convert.
-     * @param parser HTML filtering rule body parser used for parsing raw value bodies.
      * @param generator HTML filtering rule body generator used for generating raw value bodies.
      * @param onSpecialAttributeSelector Callback invoked when a special attribute selector is found.
      * @param onSpecialPseudoClassSelector Callback invoked when a special pseudo-class selector is found.
@@ -703,21 +687,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @returns Converted selector list without special simple selectors.
      */
     private static convertBody(
-        body: Value | HtmlFilteringRuleBody,
-        parser: HtmlFilteringRuleParser,
+        body: Raw | HtmlFilteringRuleBody,
         generator: HtmlFilteringRuleGenerator,
         onSpecialAttributeSelector: OnSpecialAttributeSelectorCallback,
         onSpecialPseudoClassSelector: OnSpecialPseudoClassSelectorCallback,
         shouldMergeLengthSelectors = false,
-    ): Value | HtmlFilteringRuleBody {
+    ): Raw | HtmlFilteringRuleBody {
         // Handle case when body is raw value string.
         // If so, parse it first as we need to work with AST nodes.
         let processedBody: HtmlFilteringRuleBody;
-        if (body.type === 'Value') {
-            processedBody = parser.parse(body.value, {
-                isLocIncluded: false,
-                parseHtmlFilteringRuleBodies: true,
-            }) as HtmlFilteringRuleBody;
+        if (body.type === 'Raw') {
+            processedBody = parseHtmlFilteringBody(body);
         } else {
             processedBody = body;
         }
@@ -896,7 +876,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             });
         }
 
-        let convertedBody: Value | HtmlFilteringRuleBody = {
+        let convertedBody: Raw | HtmlFilteringRuleBody = {
             type: 'HtmlFilteringRuleBody',
             selectorList: {
                 type: 'SelectorList',
@@ -904,11 +884,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
             },
         };
 
-        // Convert back to Value if the original body was Value
-        if (body.type === 'Value') {
+        // Convert back to Raw if the original body was Raw
+        if (body.type === 'Raw') {
+            const generatedValue = generator.generate(convertedBody);
             convertedBody = {
-                type: 'Value',
-                value: generator.generate(convertedBody),
+                type: 'Raw',
+                value: generatedValue,
             };
         }
 
@@ -1040,6 +1021,24 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 errorMessage,
             ));
         }
+    }
+
+    /**
+     * Unescapes legacy `""` double-quote escaping in attribute selector values
+     * (used by `[tag-content]` and `[wildcard]`), converting `""` to `"`.
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content}
+     *
+     * @param value Raw attribute selector value potentially containing `""` sequences.
+     *
+     * @returns Unescaped value with `""` replaced by `"`.
+     *
+     * @note Double quotes are handled by the parser,
+     * this function is only needed to unescape legacy `""` escaping
+     * in the raw value before processing it further.
+     */
+    private static unescapeAttributeValueDoubleQuotes(value: string): string {
+        return value.replace(/""/g, '"');
     }
 
     /**

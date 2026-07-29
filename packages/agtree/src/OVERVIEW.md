@@ -22,10 +22,6 @@ All three stages share the same pre-allocated buffers that are reused across
 calls. The only heap allocations that happen are in the final AST builder
 stage, when AST objects and their `value` strings are created.
 
-> **Note:** The legacy monolithic parser lives in `src/parser-legacy/` and is
-> exported under the `"./parser"` package path. It remains for backward
-> compatibility while the three-stage pipeline matures.
-
 ---
 
 ## Benefits & Design Rationale
@@ -640,24 +636,4 @@ export class FooPipelineParser {
 - `test/parser/foo/foo.test.ts` — structural parser unit tests.
 - `test/ast-builder/foo/foo-parser.test.ts` — pipeline parser tests including
   `parseRange()`.
-
----
-
-## Legacy Parser
-
-`src/parser-legacy/` is the original monolithic parser that converts source
-strings directly to AST nodes without the three-stage pipeline. It is
-preserved for backward compatibility and exported under the `"./parser"`
-package subpath:
-
-```jsonc
-// package.json exports
-"./parser": {
-    "types":  "./dist/types/parser-legacy/index.d.ts",
-    "import": "./dist/parser-legacy/index.js"
-}
-```
-
-The legacy parser will be removed once all consumers have migrated to the
-new pipeline API. Do not add new features to `src/parser-legacy/`.
 

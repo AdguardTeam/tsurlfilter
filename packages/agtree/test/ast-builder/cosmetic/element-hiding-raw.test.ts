@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
-import type { ElementHidingRule, JsInjectionRule } from '../../../src/nodes-new';
-import { ValueKind } from '../../../src/nodes-new';
+import type { ElementHidingRule, JsInjectionRule } from '../../../src/nodes';
+import { ValueKind } from '../../../src/nodes';
 
 const parser = new RuleParserPipeline();
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { CssAtRuleAstBuilder, CssAtRulePipelineParser } from '../../../src/ast-builder/cosmetic/atrule';
-import type { CssAtRule, CssAtRuleParseOptions } from '../../../src/nodes-new';
+import type { CssAtRule, CssAtRuleParseOptions } from '../../../src/nodes';
 import { createParserContext, initParserContext } from '../../../src/parser/context';
 import { CssAtRuleParser } from '../../../src/parser/css/atrule';
 import { AT_MIN_DATA_SLOTS } from '../../../src/parser/css/atrule/constants';

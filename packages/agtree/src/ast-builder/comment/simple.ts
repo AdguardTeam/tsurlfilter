@@ -4,7 +4,7 @@
  * Builds {@link CommentRule} nodes from parsed data.
  */
 
-import { type CommentRule, CommentRuleType, RuleCategory } from '../../nodes-new';
+import { type CommentRule, CommentRuleType, RuleCategory } from '../../nodes';
 import {
     CM_SIMPLE_MARKER_IS_HASH,
     CM_SIMPLE_MARKER_OFFSET,

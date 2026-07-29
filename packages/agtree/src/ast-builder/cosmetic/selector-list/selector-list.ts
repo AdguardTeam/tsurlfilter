@@ -12,8 +12,8 @@ import type {
     SelectorCombinator as SelectorCombinatorNode,
     SelectorList,
     SimpleSelector,
-} from '../../../nodes-new';
-import { NodeType } from '../../../nodes-new';
+} from '../../../nodes';
+import { NodeType } from '../../../nodes';
 import { SelectorListParser } from '../../../parser/css/selector-list';
 import { CHILD_FIELD_KIND, ChildKind, DEFAULT_MAX_COMPLEX } from '../../../parser/css/selector-list/constants';
 

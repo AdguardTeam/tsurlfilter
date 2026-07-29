@@ -7,7 +7,7 @@
  * tokenize → structural parse → AST build.
  */
 
-import type { CssAtRule, CssAtRuleParseOptions } from '../../../nodes-new';
+import type { CssAtRule, CssAtRuleParseOptions } from '../../../nodes';
 import { createParserContext, initParserContext, type ParserContext } from '../../../parser/context';
 import { CssAtRuleParser } from '../../../parser/css/atrule';
 import { AT_MIN_DATA_SLOTS } from '../../../parser/css/atrule/constants';

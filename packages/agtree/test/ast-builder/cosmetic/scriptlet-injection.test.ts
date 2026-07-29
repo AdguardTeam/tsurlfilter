@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
-import type { ScriptletInjectionRule } from '../../../src/nodes-new';
+import type { ScriptletInjectionRule } from '../../../src/nodes';
 import { QuoteType } from '../../../src/utils/quotes';
 import { SYNTAX_ABP, SYNTAX_ADG, SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 

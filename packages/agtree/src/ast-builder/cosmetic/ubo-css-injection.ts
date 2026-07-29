@@ -19,7 +19,7 @@ import {
     ListNodeType,
     NodeType,
     RuleCategory,
-} from '../../nodes-new';
+} from '../../nodes';
 import type {
     CssDeclarationList,
     CssInjectionRule,
@@ -30,7 +30,7 @@ import type {
     Raw,
     SelectorList,
     Value,
-} from '../../nodes-new';
+} from '../../nodes';
 import { createParserContext, initParserContext, MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
 import type { ParserContext } from '../../parser/context';
 import {

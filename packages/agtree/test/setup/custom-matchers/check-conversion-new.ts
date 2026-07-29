@@ -8,10 +8,10 @@ import { expect } from 'vitest';
 import * as z from 'zod';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
-import { type BaseConverter } from '../../../src/converter-new/base-interfaces/base-converter';
-import { type NodeConversionResult } from '../../../src/converter-new/base-interfaces/conversion-result';
-import { RuleGenerator } from '../../../src/generator-new';
-import { type AnyRule } from '../../../src/nodes-new';
+import { type BaseConverter } from '../../../src/converter/base-interfaces/base-converter';
+import { type NodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
+import { RuleGenerator } from '../../../src/generator';
+import { type AnyRule } from '../../../src/nodes';
 import { type RuleParserOptions } from '../../../src/parser/options';
 import { getErrorMessage } from '../../../src/utils/error';
 import { everyRefsAreDifferent } from '../../helpers/refs';

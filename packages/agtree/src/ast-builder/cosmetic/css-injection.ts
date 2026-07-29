@@ -15,14 +15,14 @@ import type {
     Raw,
     SelectorList,
     Value,
-} from '../../nodes-new';
+} from '../../nodes';
 import {
     CosmeticRuleType,
     ListNodeType,
     NodeType,
     RuleCategory,
     ValueKind,
-} from '../../nodes-new';
+} from '../../nodes';
 import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
 import type { ParserContext } from '../../parser/context';
 import {

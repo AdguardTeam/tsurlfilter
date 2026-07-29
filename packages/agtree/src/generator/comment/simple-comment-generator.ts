@@ -1,5 +1,5 @@
 import type { CommentRule } from '../../nodes';
-import { EMPTY } from '../../utils/constants';
+import { EMPTY, SPACE } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
 import { ValueGenerator } from '../misc/value-generator';
 
@@ -18,7 +18,19 @@ export class SimpleCommentGenerator extends BaseGenerator {
         let result = EMPTY;
 
         result += ValueGenerator.generate(node.marker);
-        result += ValueGenerator.generate(node.text);
+
+        const text = ValueGenerator.generate(node.text);
+
+        // Preserve the original marker-to-text spacing when it was captured;
+        // otherwise fall back to a single space, but only when there is text to
+        // separate (avoids a trailing space for marker-only comments like `!`).
+        if (node.markerSpacing !== undefined) {
+            result += node.markerSpacing;
+        } else if (text.length > 0) {
+            result += SPACE;
+        }
+
+        result += text;
 
         return result;
     }

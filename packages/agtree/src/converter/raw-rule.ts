@@ -4,8 +4,8 @@
  * Technically, this is a wrapper around `RuleConverter` that works with nodes instead of strings.
  */
 
+import { RuleParserPipeline } from '../ast-builder/rule-parser';
 import { RuleGenerator } from '../generator';
-import { RuleParser } from '../parser-legacy/rule-parser';
 
 import { BaseConverter } from './base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';
@@ -33,7 +33,8 @@ export class RawRuleConverter extends BaseConverter {
      * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rawRule: string): ConversionResult<string, string[]> {
-        const conversionResult = RuleConverter.convertToAdg(RuleParser.parse(rawRule));
+        const ruleParser = new RuleParserPipeline();
+        const conversionResult = RuleConverter.convertToAdg(ruleParser.parse(rawRule));
 
         // If the rule was not converted, return the original rule text
         if (!conversionResult.isConverted) {

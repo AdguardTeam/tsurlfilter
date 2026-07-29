@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
-import type { NetworkRule } from '../../../src/nodes-new';
+import type { NetworkRule } from '../../../src/nodes';
 
 /**
  * More than the 64-modifier default — verifies single-step growth.

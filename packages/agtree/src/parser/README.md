@@ -5,10 +5,6 @@ It is a token-driven, zero-heap-allocation parser that produces a compact
 `Int32Array` data layout consumed by the AST builders in
 [`../ast-builder/`](../ast-builder/).
 
-The legacy regex/string-based parser still lives in
-[`../parser-legacy/`](../parser-legacy/) and remains exported for backwards
-compatibility while the new pipeline finishes covering every rule kind.
-
 ## Folder layout
 
 ```text

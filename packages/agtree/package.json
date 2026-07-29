@@ -35,24 +35,16 @@
             "import": "./dist/index.js"
         },
         "./parser": {
-            "types": "./dist/types/parser-legacy/index.d.ts",
-            "import": "./dist/parser-legacy/index.js"
+            "types": "./dist/types/parser/index.d.ts",
+            "import": "./dist/parser/index.js"
         },
         "./generator": {
             "types": "./dist/types/generator/index.d.ts",
             "import": "./dist/generator/index.js"
         },
-        "./generator-new": {
-            "types": "./dist/types/generator-new/index.d.ts",
-            "import": "./dist/generator-new/index.js"
-        },
         "./converter": {
             "types": "./dist/types/converter/index.d.ts",
             "import": "./dist/converter/index.js"
-        },
-        "./converter-new": {
-            "types": "./dist/types/converter-new/index.d.ts",
-            "import": "./dist/converter-new/index.js"
         },
         "./utils": {
             "types": "./dist/types/utils/index.d.ts",

@@ -3,6 +3,7 @@
  */
 
 import { cloneDomainListNode, cloneModifierListNode, cloneScriptletRuleNode } from '../../ast-utils/clone';
+import { parseDomainList } from '../../ast-utils/parsing';
 import {
     getScriptletName,
     setScriptletName,
@@ -19,8 +20,6 @@ import {
     type ParameterList,
     type ScriptletInjectionRule,
 } from '../../nodes';
-import { DomainListParser } from '../../parser-legacy';
-import { AdblockSyntax } from '../../utils/adblockers';
 import {
     ADG_DOMAINS_MODIFIER,
     EMPTY,
@@ -28,6 +27,7 @@ import {
     SPACE,
 } from '../../utils/constants';
 import { QuoteType, QuoteUtils } from '../../utils/quotes';
+import { SYNTAX_ABP, SYNTAX_ADG, SYNTAX_UBO } from '../../utils/syntax-flags';
 import { isNull, isUndefined } from '../../utils/type-guards';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
@@ -100,7 +100,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
      */
     public static convertToAdg(rule: ScriptletInjectionRule): NodeConversionResult<ScriptletInjectionRule> {
         // Ignore AdGuard rules
-        if (rule.syntax === AdblockSyntax.Adg) {
+        if (rule.syntax === SYNTAX_ADG) {
             return createNodeConversionResult([rule], false);
         }
 
@@ -129,12 +129,12 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             let charToUnescape: string | undefined;
 
             switch (rule.syntax) {
-                case AdblockSyntax.Abp:
+                case SYNTAX_ABP:
                     prefix = ABP_SCRIPTLET_PREFIX;
                     charToUnescape = SPACE;
                     break;
 
-                case AdblockSyntax.Ubo:
+                case SYNTAX_UBO:
                     prefix = UBO_SCRIPTLET_PREFIX;
                     charToUnescape = COMMA_SEPARATOR;
                     break;
@@ -157,7 +157,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                 });
             }
 
-            if (rule.syntax === AdblockSyntax.Ubo) {
+            if (rule.syntax === SYNTAX_UBO) {
                 const scriptletData = scriptletsCompatibilityTable.query(
                     scriptletName,
                     Platform.UboAny,
@@ -197,8 +197,9 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                     // Set last arg to be the combined selectors (in reverse order, because we popped them)
                     if (selectors.length > 0) {
                         scriptletClone.children.push({
-                            type: 'Value',
+                            type: 'Parameter',
                             value: selectors.reverse().join(', '),
+                            quoteType: QuoteType.Double,
                         });
                     }
 
@@ -208,14 +209,16 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                         // we need to add an empty parameter before the 'applying' one
                         if (selectors.length === 0) {
                             scriptletClone.children.push({
-                                type: 'Value',
+                                type: 'Parameter',
                                 value: EMPTY,
+                                quoteType: QuoteType.Double,
                             });
                         }
 
                         scriptletClone.children.push({
-                            type: 'Value',
+                            type: 'Parameter',
                             value: applying,
+                            quoteType: QuoteType.Double,
                         });
                     }
                 }
@@ -237,7 +240,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             const convertedScriptletNode: ScriptletInjectionRule = {
                 category: rule.category,
                 type: rule.type,
-                syntax: AdblockSyntax.Adg,
+                syntax: SYNTAX_ADG,
                 exception: rule.exception,
                 domains: cloneDomainListNode(rule.domains),
                 separator: {
@@ -261,7 +264,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                 const res: ScriptletInjectionRule = {
                     category: rule.category,
                     type: rule.type,
-                    syntax: AdblockSyntax.Adg,
+                    syntax: SYNTAX_ADG,
                     exception: rule.exception,
                     domains: cloneDomainListNode(rule.domains),
                     separator: {
@@ -297,13 +300,13 @@ export class ScriptletRuleConverter extends RuleConverterBase {
      */
     public static convertToUbo(rule: ScriptletInjectionRule): NodeConversionResult<ScriptletInjectionRule> {
         // Ignore uBlock rules
-        if (rule.syntax === AdblockSyntax.Ubo) {
+        if (rule.syntax === SYNTAX_UBO) {
             return createNodeConversionResult([rule], false);
         }
 
         let ruleDomainsList: DomainList | undefined = cloneDomainListNode(rule.domains);
 
-        if (rule.syntax === AdblockSyntax.Adg && rule.modifiers?.children.length) {
+        if (rule.syntax === SYNTAX_ADG && rule.modifiers?.children.length) {
             const { modifiers } = rule;
 
             // Validate modifiers structure
@@ -331,9 +334,8 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             }
 
             // Parse domain list
-            const parsedDomainList = DomainListParser.parse(
+            const parsedDomainList = parseDomainList(
                 domainModifier.value.value,
-                {},
                 domainModifier.start,
                 PIPE_MODIFIER_SEPARATOR,
             );
@@ -370,7 +372,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                 throw new RuleConversionError(`Scriptlet "${scriptletName}" is not supported in uBlock Origin.`);
             }
 
-            if (rule.syntax === AdblockSyntax.Adg && scriptletName.startsWith(UBO_SCRIPTLET_PREFIX)) {
+            if (rule.syntax === SYNTAX_ADG && scriptletName.startsWith(UBO_SCRIPTLET_PREFIX)) {
                 // Special case: AdGuard syntax 'preserves' the original scriptlet name,
                 // so we need to convert it back by removing the uBO prefix
                 uboScriptletName = scriptletName.slice(UBO_SCRIPTLET_PREFIX_LENGTH);
@@ -413,7 +415,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             });
 
             // Unescape spaces in parameters, because uBlock Origin doesn't treat them as separators.
-            if (rule.syntax === AdblockSyntax.Abp) {
+            if (rule.syntax === SYNTAX_ABP) {
                 transformAllScriptletArguments(scriptletClone, (value) => {
                     if (!isNull(value)) {
                         return QuoteUtils.unescapeSingleEscapedOccurrences(value, SPACE);
@@ -456,14 +458,13 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             convertedScriptlets.push(scriptletClone);
         }
 
-        // TODO: Refactor redundant code
         if (rule.body.children.length === 0) {
             const convertedScriptletNode: ScriptletInjectionRule = {
                 category: rule.category,
                 type: rule.type,
-                syntax: AdblockSyntax.Ubo,
+                syntax: SYNTAX_UBO,
                 exception: rule.exception,
-                domains: cloneDomainListNode(rule.domains),
+                domains: ruleDomainsList,
                 separator: {
                     type: 'Value',
                     value: convertedSeparator,
@@ -473,9 +474,6 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                     children: [],
                 },
             };
-            if (rule.modifiers) {
-                convertedScriptletNode.modifiers = cloneModifierListNode(rule.modifiers);
-            }
 
             return createNodeConversionResult([convertedScriptletNode], true);
         }
@@ -485,7 +483,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                 const res: ScriptletInjectionRule = {
                     category: rule.category,
                     type: rule.type,
-                    syntax: AdblockSyntax.Ubo,
+                    syntax: SYNTAX_UBO,
                     exception: rule.exception,
                     domains: ruleDomainsList,
                     separator: {
@@ -585,17 +583,17 @@ export class ScriptletRuleConverter extends RuleConverterBase {
         // eslint-disable-next-line no-param-reassign
         scriptletClone.children = [
             scriptletClone.children[0],
-            { type: 'Value', value: propsToRemove },
+            { type: 'Parameter', value: propsToRemove, quoteType: QuoteType.None },
         ];
 
         if (hadObligatoryProps || propsToMatch !== EMPTY || stack !== EMPTY) {
-            scriptletClone.children.push({ type: 'Value', value: obligatoryProps });
+            scriptletClone.children.push({ type: 'Parameter', value: obligatoryProps, quoteType: QuoteType.None });
         }
         if (propsToMatch !== EMPTY || stack !== EMPTY) {
-            scriptletClone.children.push({ type: 'Value', value: propsToMatch });
+            scriptletClone.children.push({ type: 'Parameter', value: propsToMatch, quoteType: QuoteType.None });
         }
         if (stack !== EMPTY) {
-            scriptletClone.children.push({ type: 'Value', value: stack });
+            scriptletClone.children.push({ type: 'Parameter', value: stack, quoteType: QuoteType.None });
         }
     }
 
@@ -628,13 +626,21 @@ export class ScriptletRuleConverter extends RuleConverterBase {
         );
 
         if (propsToMatchVal && propsToMatchVal !== EMPTY) {
-            scriptletClone.children.push({ type: 'Value', value: UBO_PRUNE_RESPONSE_PROPS_TO_MATCH_KEY });
-            scriptletClone.children.push({ type: 'Value', value: propsToMatchVal });
+            scriptletClone.children.push({
+                type: 'Parameter',
+                value: UBO_PRUNE_RESPONSE_PROPS_TO_MATCH_KEY,
+                quoteType: QuoteType.None,
+            });
+            scriptletClone.children.push({ type: 'Parameter', value: propsToMatchVal, quoteType: QuoteType.None });
         }
 
         if (stackVal && stackVal !== EMPTY) {
-            scriptletClone.children.push({ type: 'Value', value: UBO_PRUNE_RESPONSE_STACK_TO_MATCH_KEY });
-            scriptletClone.children.push({ type: 'Value', value: stackVal });
+            scriptletClone.children.push({
+                type: 'Parameter',
+                value: UBO_PRUNE_RESPONSE_STACK_TO_MATCH_KEY,
+                quoteType: QuoteType.None,
+            });
+            scriptletClone.children.push({ type: 'Parameter', value: stackVal, quoteType: QuoteType.None });
         }
     }
 }

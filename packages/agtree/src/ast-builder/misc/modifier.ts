@@ -6,8 +6,8 @@
  * Delegates value node creation to {@link ValueAstBuilder}.
  */
 
-import { NodeType, ValueKind } from '../../nodes-new';
-import type { Modifier } from '../../nodes-new';
+import { NodeType, ValueKind } from '../../nodes';
+import type { Modifier } from '../../nodes';
 import {
     MOD_KIND_CSP,
     MOD_KIND_DOMAIN_LIST,

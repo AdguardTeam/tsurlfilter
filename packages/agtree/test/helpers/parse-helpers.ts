@@ -10,7 +10,7 @@ import { CommentAstBuilder } from '../../src/ast-builder/comment/comment';
 import { SelectorListAstBuilder, type SelectorListParseOptions } from '../../src/ast-builder/cosmetic/selector-list';
 import { NetworkRuleAstBuilder } from '../../src/ast-builder/network/network-rule';
 import type { ParseOptions } from '../../src/ast-builder/options';
-import type { AnyCommentRule, NetworkRule, SelectorList } from '../../src/nodes-new';
+import type { AnyCommentRule, NetworkRule, SelectorList } from '../../src/nodes';
 import { CommentParser } from '../../src/parser/comment/classifier';
 import { createParserContext, initParserContext } from '../../src/parser/context';
 import { SelectorListParser } from '../../src/parser/css/selector-list';

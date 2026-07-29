@@ -24,6 +24,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Trie-based storage for compatibility table data with wildcard query support.
 - `PlatformExpressionEvaluator` for parsing platform expressions with negation.
 - `Safari` platform type.
+- `parseHostRules` option in `ParseOptions` and host-rule parsing in
+  `RuleParserPipeline` (produces `HostRule` nodes for `/etc/hosts`-style input).
+- `parseDomainList` is now exported from the `@adguard/agtree` package root.
+- `hasNativeCssPseudoClass` selector utility (exported from the package root and
+  `@adguard/agtree/utils`).
 
 ### Changed
 
@@ -34,11 +39,39 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `existsAny()` → `has()`.
 - Removed `platform-helpers.ts` utilities — replaced by `Platform` class methods.
 - Simplified public exports from `compatibility-tables`.
+- **BREAKING:** Promoted the new pipeline implementations to the canonical
+  module names. The `./generator-new` and `./converter-new` subpath exports are
+  removed; use `./generator` and `./converter`. The `./parser` subpath now
+  exposes the new structural parser.
 
 ### Removed
 
+- Legacy `parser-legacy` module and its public exports (`RuleParser`,
+  `CommentParser`, `NetworkRuleParser`, `FilterListParser`, `AppListParser`,
+  `DomainListParser`, `MethodListParser`, `StealthOptionListParser`,
+  `ModifierParser`, `ModifierListParser`, `ParameterListParser`,
+  `HostRuleParser`, `HintParser`, `AgentParser`, `LogicalExpressionParser`,
+  `CssTokenStream`, `ParserOptions`, `OnParseError`, `defaultParserOptions`).
+- Legacy `converter`, `generator`, `nodes`, and `ast-utils` implementations
+  (superseded by the new pipeline stack).
 - Serializer and Deserializer APIs.
 - Bitwise platform enums (`GenericPlatform`, `SpecificPlatform`) and related helpers.
+
+### Fixed
+
+- Network and cosmetic (`[$…]`) modifier parsing no longer drops the `$`
+  separator when the first modifier name starts with an underscore, so noop
+  modifiers such as `$_`, `$___`, and `$_invalid_` are parsed correctly.
+- HTML filtering rules (`$$`, `$@$`) that carry an AdGuard `[$…]` modifier list
+  no longer overwrite the modifier records with the selector-list body; the
+  selector-list region is now placed after the modifier records.
+- Cosmetic `[$…]` modifier-list bracket matching now skips regex-literal values
+  (e.g. `$path=/…/`), so a `]` inside a regex character class no longer closes
+  the modifier list prematurely.
+- ABP CSS injection (`##selector { declarations }`) is now gated behind the
+  `parseAbpSpecificRules` option; when disabled, such rules are no longer
+  promoted to `CssInjectionRule` and remain element-hiding rules (their raw body
+  keeps the declaration block so consumers can reject it).
 
 ## [4.2.0] - 2026-07-27
 

@@ -13,7 +13,7 @@ import {
     NodeType,
     RuleCategory,
     ValueKind,
-} from '../../nodes-new';
+} from '../../nodes';
 import type {
     ComplexSelector,
     DomainList,
@@ -24,7 +24,7 @@ import type {
     Raw,
     SelectorList,
     Value,
-} from '../../nodes-new';
+} from '../../nodes';
 import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
 import {
     CR_BODY_END,
@@ -46,6 +46,7 @@ import {
     HF_ARG_START,
     HF_FN_NAME_END,
     HF_FN_NAME_START,
+    slDataOffset,
 } from '../../parser/cosmetic/constants';
 import { DEFAULT_MAX_COMPLEX } from '../../parser/css/selector-list/constants';
 import { SYNTAX_ADG, SYNTAX_UBO } from '../../utils/syntax-flags';
@@ -54,12 +55,6 @@ import { ModifierListAstBuilder } from '../misc/modifier-list';
 import type { ParseOptions } from '../options';
 
 import { SelectorListAstBuilder } from './selector-list/selector-list';
-
-/**
- * Data offset where SelectorListParser writes its data (after CR header).
- * Must match the value used in the structural parser.
- */
-const SL_DATA_OFFSET = CR_MODIFIER_RECORDS_OFFSET;
 
 /**
  * HTML filtering cosmetic rule AST builder.
@@ -228,10 +223,12 @@ export class HtmlFilteringAstBuilder {
         bodyEnd: number,
         isLocIncluded: boolean,
     ): HtmlFilteringRuleBody {
+        // Resolve the selector-list data offset from the buffer flags via the
+        // shared slDataOffset helper.
         const selectorList = SelectorListAstBuilder.parse(
             source,
             data,
-            dataOffset + SL_DATA_OFFSET,
+            dataOffset + slDataOffset(data, dataOffset),
             DEFAULT_MAX_COMPLEX,
             bodyStart,
             bodyEnd,

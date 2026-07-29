@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
-import type { FilterList, NetworkRule } from '../../src/nodes-new';
-import { NetworkRuleType, NodeType, RuleCategory } from '../../src/nodes-new';
+import type { FilterList, NetworkRule } from '../../src/nodes';
+import { NetworkRuleType, NodeType, RuleCategory } from '../../src/nodes';
 import { SYNTAX_ALL } from '../../src/utils/syntax-flags';
 import { walk, WalkAction } from '../../src/walker';
 

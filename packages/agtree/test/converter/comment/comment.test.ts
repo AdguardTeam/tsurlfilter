@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { CommentRuleConverter } from '../../../src/converter/comment';
 import { type CommentRule } from '../../../src/nodes';
-import { CommentParser } from '../../../src/parser-legacy/comment/comment-parser';
+
+const parser = new RuleParserPipeline();
 
 describe('CommentRuleConverter', () => {
     describe('convertToAdg', () => {
@@ -62,15 +64,32 @@ describe('CommentRuleConverter', () => {
                 ],
                 shouldConvert: true,
             },
+            // Marker-to-text spacing must be preserved from AST metadata, not
+            // inferred from content: `#comment` and `# comment` both expose the
+            // text `comment` after the parser trims the marker whitespace.
+            {
+                actual: '#comment',
+                expected: [
+                    '! #comment',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: '# comment',
+                expected: [
+                    '! # comment',
+                ],
+                shouldConvert: true,
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(CommentRuleConverter, 'convertToAdg');
+            expect(testData).toBeConvertedProperlyNew(CommentRuleConverter, 'convertToAdg');
         });
     });
 
     it('convertToUbo', () => {
         // TODO: We should implement this later
         expect(() => CommentRuleConverter.convertToUbo(
-            CommentParser.parse('! this is a comment') as CommentRule,
+            parser.parse('! this is a comment') as CommentRule,
         )).toThrowError(
             'Not implemented',
         );
@@ -79,7 +98,7 @@ describe('CommentRuleConverter', () => {
     it('convertToAbp', () => {
         // TODO: We should implement this later
         expect(() => CommentRuleConverter.convertToAbp(
-            CommentParser.parse('! this is a comment') as CommentRule,
+            parser.parse('! this is a comment') as CommentRule,
         )).toThrowError(
             'Not implemented',
         );

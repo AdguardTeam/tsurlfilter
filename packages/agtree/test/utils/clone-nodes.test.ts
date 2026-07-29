@@ -18,7 +18,7 @@ import {
     NetworkRuleType,
     NodeType,
     RuleCategory,
-} from '../../src/nodes-new';
+} from '../../src/nodes';
 import {
     cloneAgentCommentRule,
     cloneAppList,

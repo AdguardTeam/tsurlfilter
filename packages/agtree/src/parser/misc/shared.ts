@@ -37,12 +37,17 @@ export function isPotentialNetModifier(ctx: ParserContext, offset: number, endTi
         }
     }
 
-    if (i >= endTi || (types[i] !== TokenType.Letter && types[i] !== TokenType.Digit)) {
+    if (
+        i >= endTi
+        || (types[i] !== TokenType.Letter && types[i] !== TokenType.Digit && types[i] !== TokenType.Underscore)
+    ) {
         return false;
     }
 
-    // Advance past modifier name — Letter (0) | Hyphen (1) | Digit (2): types <= TokenType.Digit
-    while (i < endTi && types[i] <= TokenType.Digit) {
+    // Advance past modifier name — Letter (0) | Hyphen (1) | Digit (2) |
+    // Underscore (3): types <= TokenType.Underscore. Underscore is included to
+    // support noop modifiers (e.g. `$_`, `$___`).
+    while (i < endTi && types[i] <= TokenType.Underscore) {
         i += 1;
     }
 

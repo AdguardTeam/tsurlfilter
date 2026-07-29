@@ -61,4 +61,11 @@ export interface ParseOptions {
      * Defaults to `false`.
      */
     ignoreNetwork?: boolean;
+
+    /**
+     * When `true`, `/etc/hosts`-style rules (e.g. `127.0.0.1 example.com` or the
+     * "just domain" form `example.org`) are parsed into `HostRule` nodes before
+     * falling back to network-rule parsing. Defaults to `false`.
+     */
+    parseHostRules?: boolean;
 }

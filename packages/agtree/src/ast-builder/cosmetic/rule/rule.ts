@@ -15,8 +15,8 @@ import type {
     CssRuleParseOptions,
     Raw,
     SelectorList,
-} from '../../../nodes-new';
-import { NodeType } from '../../../nodes-new';
+} from '../../../nodes';
+import { NodeType } from '../../../nodes';
 import type { ParserContext } from '../../../parser/context';
 import { DeclarationListParser } from '../../../parser/css/declaration-list';
 import { DEFAULT_MAX_DECLARATIONS } from '../../../parser/css/declaration-list/constants';

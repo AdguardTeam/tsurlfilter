@@ -13,7 +13,7 @@ import {
     type ExpressionVariableNode,
     NodeType,
     OperatorValue,
-} from '../../nodes-new';
+} from '../../nodes';
 import {
     LE_HEADER,
     LE_KIND,

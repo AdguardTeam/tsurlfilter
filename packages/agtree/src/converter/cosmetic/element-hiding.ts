@@ -3,8 +3,8 @@
  */
 
 import { CosmeticRuleSeparator, type ElementHidingRule } from '../../nodes';
-import { AdblockSyntax } from '../../utils/adblockers';
 import { clone } from '../../utils/clone';
+import { isUnknown, SYNTAX_ADG, SYNTAX_UBO } from '../../utils/syntax-flags';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { CssSelectorConverter } from '../css';
@@ -29,7 +29,7 @@ export class ElementHidingRuleConverter extends RuleConverterBase {
     public static convertToAdg(rule: ElementHidingRule): NodeConversionResult<ElementHidingRule> {
         const separator = rule.separator.value;
         let convertedSeparator = separator;
-        const convertedSelectorList = CssSelectorConverter.convertToAdg(rule.body.selectorList.value);
+        const convertedSelectorList = CssSelectorConverter.convertToAdg(rule.body.selectorList);
 
         // Change the separator if the rule contains ExtendedCSS elements,
         // but do not force non-extended CSS separator if the rule does not contain any ExtendedCSS selectors,
@@ -42,14 +42,14 @@ export class ElementHidingRuleConverter extends RuleConverterBase {
 
         // Check if the rule needs to be converted
         if (
-            !(rule.syntax === AdblockSyntax.Common || rule.syntax === AdblockSyntax.Adg)
+            !(isUnknown(rule.syntax) || rule.syntax & SYNTAX_ADG)
             || separator !== convertedSeparator
             || convertedSelectorList.isConverted
         ) {
             // TODO: Replace with custom clone method
             const ruleClone = clone(rule);
 
-            ruleClone.syntax = AdblockSyntax.Adg;
+            ruleClone.syntax = SYNTAX_ADG;
             ruleClone.separator.value = convertedSeparator;
             ruleClone.body.selectorList.value = convertedSelectorList.result;
 
@@ -75,12 +75,7 @@ export class ElementHidingRuleConverter extends RuleConverterBase {
      * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToUbo(rule: ElementHidingRule): NodeConversionResult<ElementHidingRule> {
-        // Skip conversion if the rule is already in uBO format
-        if (rule.syntax === AdblockSyntax.Ubo) {
-            return createNodeConversionResult([rule], false);
-        }
-
-        const convertedSelectorList = CssSelectorConverter.convertToUbo(rule.body.selectorList.value);
+        const convertedSelectorList = CssSelectorConverter.convertToUbo(rule.body.selectorList);
 
         // Determine if separator needs adjustment.
         // For uBO, use ## / #@# (uBO auto-detects extended CSS from selector content).
@@ -90,20 +85,28 @@ export class ElementHidingRuleConverter extends RuleConverterBase {
 
         const separatorNeedsChange = rule.separator.value !== targetSeparator;
 
-        // If no conversion needed, return as-is
-        if (!convertedSelectorList.isConverted && !separatorNeedsChange) {
-            return createNodeConversionResult([rule], false);
+        // Check if conversion is needed:
+        // 1. Syntax is not uBO-compatible (force conversion for cross-syntax rules)
+        // 2. Separator needs to change (e.g. #?# → ##)
+        // 3. Selector content was converted (e.g. :contains() → :has-text())
+        if (
+            !(isUnknown(rule.syntax) || rule.syntax & SYNTAX_UBO)
+            || separatorNeedsChange
+            || convertedSelectorList.isConverted
+        ) {
+            const ruleClone = clone(rule);
+            ruleClone.syntax = SYNTAX_UBO;
+
+            if (convertedSelectorList.isConverted) {
+                ruleClone.body.selectorList.value = convertedSelectorList.result;
+            }
+
+            ruleClone.separator.value = targetSeparator;
+
+            return createNodeConversionResult([ruleClone], true);
         }
 
-        const ruleClone = clone(rule);
-        ruleClone.syntax = AdblockSyntax.Ubo;
-
-        if (convertedSelectorList.isConverted) {
-            ruleClone.body.selectorList.value = convertedSelectorList.result;
-        }
-
-        ruleClone.separator.value = targetSeparator;
-
-        return createNodeConversionResult([ruleClone], true);
+        // Otherwise, return the original rule
+        return createNodeConversionResult([rule], false);
     }
 }

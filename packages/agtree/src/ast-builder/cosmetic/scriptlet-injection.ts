@@ -16,7 +16,7 @@ import {
     ListNodeType,
     NodeType,
     RuleCategory,
-} from '../../nodes-new';
+} from '../../nodes';
 import type {
     DomainList,
     ModifierList,
@@ -25,7 +25,7 @@ import type {
     ScriptletInjectionRule,
     ScriptletInjectionRuleBody,
     Value,
-} from '../../nodes-new';
+} from '../../nodes';
 import { MAX_MODIFIER_RECORD_STRIDE } from '../../parser/context';
 import {
     CR_BODY_END,

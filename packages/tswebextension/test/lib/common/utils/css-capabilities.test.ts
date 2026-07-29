@@ -90,9 +90,10 @@ describe('CSS Capabilities', () => {
             expect(CssCapabilities.isPotentiallyExtendedCss('.target:contains(text)')).toBe(false);
         });
 
-        it('should correctly handle pseudo-classes in attribute values', () => {
-            // CssTokenStream correctly recognizes that :has( inside attribute values
-            // is NOT a pseudo-class, unlike the old regex approach
+        it('should not match pseudo-class-like patterns inside attribute values', () => {
+            // `(?<![="'])` negative lookbehind excludes `:has(` / `:is(` / `:not(`
+            // when preceded by `=`, `"`, or `'`, catching pseudo-class names inside
+            // attribute values (e.g. `[data-test=":has("]`).
             expect(CssCapabilities.isPotentiallyExtendedCss('[data-test=":has("]')).toBe(false);
             expect(CssCapabilities.isPotentiallyExtendedCss('[data-test=":is("]')).toBe(false);
         });

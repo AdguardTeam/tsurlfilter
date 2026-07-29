@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'vitest';
 
-import type { CommentRule, FilterList, NetworkRule } from '../../src/nodes-new';
+import type { CommentRule, FilterList, NetworkRule } from '../../src/nodes';
 import {
     CommentRuleType,
     NetworkRuleType,
     NodeType,
     RuleCategory,
-} from '../../src/nodes-new';
+} from '../../src/nodes';
 import { SYNTAX_ALL } from '../../src/utils/syntax-flags';
 import { walk } from '../../src/walker';
 import type { AnyWalkNode } from '../../src/walker';

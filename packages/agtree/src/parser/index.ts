@@ -4,7 +4,7 @@
  * Three-layer architecture:
  *   1. Tokenizer (existing) → token types + end positions
  *   2. Parser (this module) → structural indices in reusable Int32Array
- *   3. Parser (in ../parser-new) → full AST objects, only when needed.
+ *   3. AST builder (in ../ast-builder) → full AST objects, only when needed.
  */
 
 export {

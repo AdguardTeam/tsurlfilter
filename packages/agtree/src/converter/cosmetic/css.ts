@@ -2,9 +2,9 @@
  * @file CSS injection rule converter.
  */
 
-import { CosmeticRuleSeparator, type CssInjectionRule } from '../../nodes';
-import { AdblockSyntax } from '../../utils/adblockers';
+import { CosmeticRuleSeparator, type CssInjectionRule, NodeType } from '../../nodes';
 import { clone } from '../../utils/clone';
+import { isUnknown, SYNTAX_ADG } from '../../utils/syntax-flags';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { CssSelectorConverter } from '../css';
@@ -29,7 +29,7 @@ export class CssInjectionRuleConverter extends RuleConverterBase {
     public static convertToAdg(rule: CssInjectionRule): NodeConversionResult<CssInjectionRule> {
         const separator = rule.separator.value;
         let convertedSeparator = separator;
-        const convertedSelectorList = CssSelectorConverter.convertToAdg(rule.body.selectorList.value);
+        const convertedSelectorList = CssSelectorConverter.convertToAdg(rule.body.selectorList);
 
         // Change the separator if the rule contains ExtendedCSS elements,
         // but do not force non-extended CSS separator if the rule does not contain any ExtendedCSS selectors,
@@ -38,7 +38,7 @@ export class CssInjectionRuleConverter extends RuleConverterBase {
             convertedSeparator = rule.exception
                 ? CosmeticRuleSeparator.AdgExtendedCssInjectionException
                 : CosmeticRuleSeparator.AdgExtendedCssInjection;
-        } else if (rule.syntax !== AdblockSyntax.Adg) {
+        } else if (!(rule.syntax & SYNTAX_ADG)) {
             // If the original rule syntax is not AdGuard, use the default separator
             // e.g. if the input rule is from uBO, we need to convert ## to #$#.
             convertedSeparator = rule.exception
@@ -48,16 +48,20 @@ export class CssInjectionRuleConverter extends RuleConverterBase {
 
         // Check if the rule needs to be converted
         if (
-            !(rule.syntax === AdblockSyntax.Common || rule.syntax === AdblockSyntax.Adg)
+            !(isUnknown(rule.syntax) || rule.syntax & SYNTAX_ADG)
             || separator !== convertedSeparator
             || convertedSelectorList.isConverted
         ) {
             // TODO: Replace with custom clone method
             const ruleClone = clone(rule);
 
-            ruleClone.syntax = AdblockSyntax.Adg;
+            ruleClone.syntax = SYNTAX_ADG;
             ruleClone.separator.value = convertedSeparator;
-            ruleClone.body.selectorList.value = convertedSelectorList.result;
+            // After conversion the selector text has changed, so store as Raw
+            ruleClone.body.selectorList = {
+                type: NodeType.Raw,
+                value: convertedSelectorList.result,
+            };
 
             return createNodeConversionResult([ruleClone], true);
         }

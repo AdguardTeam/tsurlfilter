@@ -4,9 +4,8 @@
 
 import { sprintf } from 'sprintf-js';
 
+import { parseModifier } from '../ast-utils/parsing';
 import { type Modifier } from '../nodes';
-import { ModifierParser } from '../parser-legacy/misc/modifier-parser';
-import { defaultParserOptions } from '../parser-legacy/options';
 import { UNDERSCORE } from '../utils/constants';
 import { getErrorMessage } from '../utils/error';
 import { isValidNoopModifier } from '../utils/noop-modifier';
@@ -80,7 +79,7 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
 
         if (isString(data)) {
             try {
-                modifier = ModifierParser.parse(data, defaultParserOptions);
+                modifier = parseModifier(data);
             } catch (error) {
                 ctx.addError(getErrorMessage(error));
                 return;

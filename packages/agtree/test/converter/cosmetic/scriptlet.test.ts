@@ -6,9 +6,11 @@ import {
     vi,
 } from 'vitest';
 
+import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
 import { type ScriptletInjectionRule } from '../../../src/nodes';
-import { RuleParser } from '../../../src/parser-legacy/rule-parser';
+
+const parser = new RuleParserPipeline();
 
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {
@@ -72,7 +74,7 @@ describe('Scriptlet conversion', () => {
                 ],
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
+            expect(testData).toBeConvertedProperlyNew(ScriptletRuleConverter, 'convertToAdg');
         });
     });
 
@@ -256,7 +258,7 @@ describe('Scriptlet conversion', () => {
                 shouldConvert: true,
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
+            expect(testData).toBeConvertedProperlyNew(ScriptletRuleConverter, 'convertToAdg');
         });
 
         it('warns when unknown extra args are dropped', () => {
@@ -264,7 +266,7 @@ describe('Scriptlet conversion', () => {
             // eslint-disable-next-line max-len
             const actual = 'example.com##+js(json-prune-fetch-response, a, b, propsToMatch, /foo, unknownKey, /baz)';
 
-            ScriptletRuleConverter.convertToAdg(RuleParser.parse(actual) as ScriptletInjectionRule);
+            ScriptletRuleConverter.convertToAdg(parser.parse(actual) as ScriptletInjectionRule);
 
             expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('unknownKey'));
             warnSpy.mockRestore();
@@ -313,7 +315,7 @@ describe('Scriptlet conversion', () => {
                 shouldConvert: false,
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
+            expect(testData).toBeConvertedProperlyNew(ScriptletRuleConverter, 'convertToAdg');
         });
     });
 
@@ -535,7 +537,7 @@ describe('Scriptlet conversion', () => {
                 shouldConvert: true,
             },
         ])("should convert '$actual' to '$expected'", (testData) => {
-            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToUbo');
+            expect(testData).toBeConvertedProperlyNew(ScriptletRuleConverter, 'convertToUbo');
         });
     });
 
@@ -618,11 +620,11 @@ describe('Scriptlet conversion', () => {
             {
                 // eslint-disable-next-line max-len
                 actual: "[$domain=domain=exam[le.org|example.com|example,org|example or,]#%#//scriptlet('set-constant', 'form')",
-                expected: 'Modifier name cannot be empty',
+                expected: 'Unclosed AdGuard modifier list: missing ]',
             },
         ])("should throw error on '$actual'", ({ actual, expected }) => {
             // eslint-disable-next-line max-len
-            expect(() => ScriptletRuleConverter.convertToUbo(RuleParser.parse(actual) as ScriptletInjectionRule)).toThrowError(
+            expect(() => ScriptletRuleConverter.convertToUbo(parser.parse(actual) as ScriptletInjectionRule)).toThrowError(
                 expected,
             );
         });
@@ -631,7 +633,7 @@ describe('Scriptlet conversion', () => {
     it('convertToAbp', () => {
         // TODO: We should implement this later
         expect(() => ScriptletRuleConverter.convertToAbp(
-            RuleParser.parse('#%#//scriptlet(\'test\')') as ScriptletInjectionRule,
+            parser.parse('#%#//scriptlet(\'test\')') as ScriptletInjectionRule,
         )).toThrowError(
             'Not implemented',
         );

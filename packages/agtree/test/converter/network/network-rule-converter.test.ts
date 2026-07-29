@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest';
 
+import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { NetworkRuleConverter } from '../../../src/converter/network';
 import { RuleConversionError } from '../../../src/errors/rule-conversion-error';
-import { NetworkRuleParser } from '../../../src/parser-legacy/network/network-rule-parser';
+import { type AnyNetworkRule } from '../../../src/nodes';
 
 describe('NetworkRuleConverter', () => {
     describe('convertToAdg', () => {
@@ -319,7 +320,7 @@ describe('NetworkRuleConverter', () => {
                 ],
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(NetworkRuleConverter, 'convertToAdg');
+            expect(testData).toBeConvertedProperlyNew(NetworkRuleConverter, 'convertToAdg');
         });
 
         // Invalid rules
@@ -352,8 +353,11 @@ describe('NetworkRuleConverter', () => {
                 expected: "Modifier 'rewrite' cannot be negated",
             },
         ])("should throw '$expected' for '$actual'", ({ actual, expected }) => {
+            const pipeline = new RuleParserPipeline();
+            const ruleNode = pipeline.parse(actual);
+
             expect(() => {
-                NetworkRuleConverter.convertToAdg(NetworkRuleParser.parse(actual));
+                NetworkRuleConverter.convertToAdg(ruleNode as AnyNetworkRule);
             }).toThrow(new RuleConversionError(expected));
         });
     });
@@ -455,7 +459,7 @@ describe('NetworkRuleConverter', () => {
                 expected: ['||ad.example.com^$redirect-rule=noop.txt,important,image,media,subdocument,stylesheet,script,xhr,other'],
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(NetworkRuleConverter, 'convertToUbo');
+            expect(testData).toBeConvertedProperlyNew(NetworkRuleConverter, 'convertToUbo');
         });
     });
 });

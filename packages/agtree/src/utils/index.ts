@@ -39,6 +39,7 @@ export {
     QuoteUtils,
 } from './quotes';
 export { type Position, PositionProvider } from './position-provider';
+export { hasNativeCssPseudoClass } from './css';
 export { RuleCategorizer } from './categorizer';
 export {
     cloneAgentCommentRule,

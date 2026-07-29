@@ -2,9 +2,8 @@
  * @file Validator for pipe-separated domains.
  */
 
+import { parseDomainList } from '../../ast-utils/parsing';
 import { type DomainList } from '../../nodes';
-import { DomainListParser } from '../../parser-legacy/misc/domain-list-parser';
-import { defaultParserOptions } from '../../parser-legacy/options';
 import { RegExpUtils } from '../../utils';
 import { PIPE } from '../../utils/constants';
 import { DomainUtils } from '../../utils/domain';
@@ -26,7 +25,7 @@ const validatePipeSeparatedDomains = (value: string, ctx: ValidationContext): vo
 
     let domainList: DomainList;
     try {
-        domainList = DomainListParser.parse(value, defaultParserOptions, 0, PIPE);
+        domainList = parseDomainList(value, 0, PIPE);
     } catch (e: unknown) {
         if (e instanceof Error) {
             ctx.addError('DOMAIN_LIST_PARSE_ERROR', { message: e.message });

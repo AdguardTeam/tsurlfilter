@@ -7,7 +7,7 @@ import {
     type Raw,
     type Value,
     type ValueKind,
-} from '../../nodes-new';
+} from '../../nodes';
 
 /**
  * Parser for Value AST nodes.

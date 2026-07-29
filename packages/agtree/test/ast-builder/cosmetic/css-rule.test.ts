@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { CssRuleAstBuilder } from '../../../src/ast-builder/cosmetic/rule';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import type { CssRule, CssRuleParseOptions } from '../../../src/nodes-new';
+import type { CssRule, CssRuleParseOptions } from '../../../src/nodes';
 import { createParserContext, initParserContext } from '../../../src/parser/context';
 import { CssRuleParser } from '../../../src/parser/css/rule';
 import { CR_MIN_DATA_SLOTS } from '../../../src/parser/css/rule/constants';

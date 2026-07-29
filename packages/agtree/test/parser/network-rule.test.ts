@@ -249,6 +249,34 @@ describe('parseNetworkRule', () => {
             expect(ModifierParser.getValue(source, d, 0)).toBe('/test,value/');
             expect(ModifierParser.getName(source, d, 1)).toBe('script');
         });
+
+        test('noop modifier $_ is not dropped', () => {
+            const source = '||example.org^$_';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('_');
+        });
+
+        test('noop modifier $___ is not dropped', () => {
+            const source = '||example.org^$___';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(ModifierListParser.getCount(d)).toBe(1);
+            expect(ModifierParser.getName(source, d, 0)).toBe('___');
+        });
+
+        test('noop modifier $_invalid_ with mixed modifiers survives', () => {
+            const source = '||example.org^$_invalid_,script';
+            const d = parse(source);
+
+            expect(NetworkRuleParser.hasSeparator(d)).toBe(true);
+            expect(ModifierListParser.getCount(d)).toBe(2);
+            expect(ModifierParser.getName(source, d, 0)).toBe('_invalid_');
+            expect(ModifierParser.getName(source, d, 1)).toBe('script');
+        });
     });
 
     describe('replace modifier (special value parsing)', () => {

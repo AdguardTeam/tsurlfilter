@@ -4,8 +4,8 @@
  * Builds a SelectorCombinator AST node from a parsed child record.
  */
 
-import type { SelectorCombinator, SelectorCombinatorValue } from '../../../nodes-new';
-import { NodeType } from '../../../nodes-new';
+import type { SelectorCombinator, SelectorCombinatorValue } from '../../../nodes';
+import { NodeType } from '../../../nodes';
 import {
     CHILD_FIELD_0,
     CHILD_FIELD_SOURCE_END,

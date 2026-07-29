@@ -5,7 +5,7 @@
   "author": "Adguard Software Ltd.",
   "type": "module",
   "scripts": {
-    "start": "tsc --noEmit && tsx root-exports.ts && tsx specific-exports.ts && tsx converter-new.ts && tsx generator-new.ts && tsd",
+    "start": "tsc --noEmit && tsx root-exports.ts && tsx specific-exports.ts && tsx converter.ts && tsx generator.ts && tsx parser.ts && tsd",
     "test": "./test.sh"
   }
 }

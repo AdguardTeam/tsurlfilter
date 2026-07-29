@@ -1,7 +1,6 @@
 import { getPublicSuffix } from 'tldts';
 
-import { type DomainList } from '@adguard/agtree';
-import { defaultParserOptions, DomainListParser } from '@adguard/agtree/parser';
+import { type DomainList, parseDomainList } from '@adguard/agtree';
 
 import { WILDCARD } from '../common/constants';
 import { SimpleRegex } from '../rules/simple-regex';
@@ -100,12 +99,7 @@ export class DomainModifier {
         let processed: ProcessedDomainList;
 
         if (isString(domains)) {
-            const node = DomainListParser.parse(
-                domains.trim(),
-                { ...defaultParserOptions, isLocIncluded: false },
-                0,
-                separator,
-            );
+            const node = parseDomainList(domains.trim(), 0, separator);
 
             if (node.children.length === 0) {
                 throw new SyntaxError('At least one domain must be specified');

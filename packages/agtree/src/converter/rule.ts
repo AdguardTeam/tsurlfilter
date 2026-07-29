@@ -51,6 +51,7 @@ export class RuleConverter extends RuleConverterBase {
 
             case RuleCategory.Invalid:
             case RuleCategory.Empty:
+            case RuleCategory.Raw:
                 // Just forward the rule as is
                 return createConversionResult([rule], false);
 

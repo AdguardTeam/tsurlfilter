@@ -1,10 +1,9 @@
 import { sprintf } from 'sprintf-js';
 import { describe, expect, test } from 'vitest';
 
+import { LIST_PARSE_ERROR_PREFIX, parseModifier } from '../../src/ast-utils/parsing';
 import { Platform } from '../../src/compatibility-tables';
 import { type Modifier } from '../../src/nodes';
-import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser-legacy/misc/list-items-parser';
-import { ModifierParser } from '../../src/parser-legacy/misc/modifier-parser';
 import { StringUtils } from '../../src/utils/string';
 import { modifierValidator } from '../../src/validator';
 import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
@@ -22,7 +21,7 @@ const getModifier = (rawModifier: string | Modifier): Modifier => {
     let modifier: Modifier;
     if (StringUtils.isString(rawModifier)) {
         // no try..catch used here in purpose
-        modifier = ModifierParser.parse(rawModifier);
+        modifier = parseModifier(rawModifier);
     } else {
         modifier = rawModifier;
     }

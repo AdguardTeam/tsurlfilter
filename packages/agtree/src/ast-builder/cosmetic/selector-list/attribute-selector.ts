@@ -13,8 +13,8 @@ import type {
     AttributeSelectorWithoutValue,
     AttributeSelectorWithValue,
     Value,
-} from '../../../nodes-new';
-import { NodeType } from '../../../nodes-new';
+} from '../../../nodes';
+import { NodeType } from '../../../nodes';
 import {
     CHILD_FIELD_0,
     CHILD_FIELD_1,

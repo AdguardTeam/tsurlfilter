@@ -12,7 +12,7 @@ import type {
     CssRule,
     PseudoClassSelector,
     SelectorList,
-} from '../../nodes-new';
+} from '../../nodes';
 
 import type { VisitChildFn } from './misc';
 

@@ -32,14 +32,24 @@ export class CommentRuleConverter extends RuleConverterBase {
             case CommentRuleType.CommentRule:
                 // Check if the rule needs to be converted
                 if (rule.type === CommentRuleType.CommentRule && rule.marker.value === CommentMarker.Hashmark) {
-                    // Add a ! to the beginning of the comment
+                    // Convert #-style comment to !-style comment
                     // TODO: Replace with custom clone method
                     const ruleClone = clone(rule);
 
                     ruleClone.marker.value = CommentMarker.Regular;
 
-                    // Add the hashmark to the beginning of the comment text
-                    ruleClone.text.value = `${SPACE}${CommentMarker.Hashmark}${ruleClone.text.value}`;
+                    // The `#` marker is kept as part of the visible text, so the
+                    // converted rule reads e.g. `! # comment`. Reattach the marker
+                    // together with its original marker-to-text spacing (preserved
+                    // on the node, defaulting to a single space) instead of guessing
+                    // it from the text content — `#comment` and `# comment` both
+                    // expose text `comment` and must stay distinguishable.
+                    const originalSpacing = rule.markerSpacing ?? SPACE;
+                    ruleClone.text.value = `${CommentMarker.Hashmark}${originalSpacing}${rule.text.value}`;
+
+                    // The converted `!` marker uses the default single-space
+                    // spacing, so drop any preserved (non-default) spacing.
+                    delete ruleClone.markerSpacing;
 
                     return createNodeConversionResult([ruleClone], true);
                 }

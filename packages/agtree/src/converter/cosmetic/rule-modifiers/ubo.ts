@@ -3,6 +3,7 @@
  */
 
 import { createModifierNode } from '../../../ast-utils/modifiers';
+import { parseDomainList } from '../../../ast-utils/parsing';
 import {
     type DomainList,
     ListItemNodeType,
@@ -10,7 +11,6 @@ import {
     type Modifier,
     type ModifierList,
 } from '../../../nodes';
-import { DomainListParser } from '../../../parser-legacy';
 import { clone } from '../../../utils/clone';
 import {
     ADG_APP_MODIFIER,
@@ -92,9 +92,8 @@ export class UboCosmeticRuleModifierConverter {
                         return;
                     }
 
-                    domainList = DomainListParser.parse(
+                    domainList = parseDomainList(
                         modifier.value.value,
-                        {},
                         modifier.start,
                         PIPE_MODIFIER_SEPARATOR,
                     );

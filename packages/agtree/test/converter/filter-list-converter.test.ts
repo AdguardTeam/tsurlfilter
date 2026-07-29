@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'vitest';
 
 import { FilterListConverter } from '../../src/converter/filter-list';
+import { FilterListPipeline } from '../../src/filter-list';
 import { FilterListGenerator } from '../../src/generator/filterlist-generator';
-import { FilterListParser } from '../../src/parser-legacy/filterlist-parser';
 import { NEWLINE } from '../../src/utils/constants';
+
+const filterListParser = new FilterListPipeline();
 
 describe('FilterListConverter', () => {
     test('convertToAdg should leave non-affected filter lists as is', () => {
@@ -17,7 +19,7 @@ describe('FilterListConverter', () => {
             '||example.com^$script',
         ].join(NEWLINE);
 
-        const filterListNode = FilterListParser.parse(filterListContent);
+        const filterListNode = filterListParser.parse(filterListContent);
         const convertedFilterList = FilterListConverter.convertToAdg(filterListNode);
 
         // Converted filter list should be the same as the original one
@@ -65,7 +67,7 @@ describe('FilterListConverter', () => {
             '$$script:contains(ad)',
         ].join(NEWLINE);
 
-        const filterListNode = FilterListParser.parse(filterListContent);
+        const filterListNode = filterListParser.parse(filterListContent);
         const convertedFilterList = FilterListConverter.convertToAdg(filterListNode);
 
         // Filter list node references should be different
@@ -101,7 +103,7 @@ describe('FilterListConverter', () => {
             '||example.com^$third-party', // Converted
         ].join(NEWLINE);
 
-        const filterListNode = FilterListParser.parse(filterListContent);
+        const filterListNode = filterListParser.parse(filterListContent);
 
         // Without tolerant mode, the whole filter list should fail
         expect(() => FilterListConverter.convertToAdg(filterListNode, false)).toThrow();

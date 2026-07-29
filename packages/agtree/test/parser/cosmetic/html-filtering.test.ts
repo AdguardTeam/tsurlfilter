@@ -9,7 +9,12 @@ import { describe, expect, test } from 'vitest';
 
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { RuleClassifier } from '../../../src/parser/classifier';
-import { createParserContext, initParserContext, tokenStart } from '../../../src/parser/context';
+import {
+    createParserContext,
+    initParserContext,
+    selectorListDataOffset,
+    tokenStart,
+} from '../../../src/parser/context';
 import {
     CR_BODY_START,
     CR_BODY_START_TI,
@@ -119,6 +124,20 @@ function slChild(i: number) {
 }
 
 describe('HtmlFilteringParser — ADG', () => {
+    test('ADG rule with [$…] modifier list correctly separates data regions', () => {
+        // When an AdGuard [$…] modifier list is present, the parser shifts
+        // selector-list data past the modifier records so the two regions
+        // don't overwrite each other (selectorListDataOffset).
+        parseAdg('[$domain=example.com]example.org$$script[data-src="banner"]');
+        expect(sepKind()).toBe(CR_SEP_KIND_ADG_HTML_FILTERING);
+
+        // The selector-list count at the shifted offset must be correct.
+        // Use the context-aware selectorListDataOffset instead of the fixed
+        // SL_DATA_OFFSET so the test reads from the right position.
+        const slOffset = selectorListDataOffset(ctx);
+        expect(ctx.data[slOffset + SL_COUNT_OFFSET]).toBeGreaterThan(0);
+    });
+
     test('basic ADG rule: example.org$$script[data-src="banner"]', () => {
         parseAdg('example.org$$script[data-src="banner"]');
         expect(sepKind()).toBe(CR_SEP_KIND_ADG_HTML_FILTERING);

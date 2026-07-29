@@ -5,15 +5,10 @@
  * Decoupled from specific rule types - all parameters are caller-provided.
  */
 
-import { ListItemNodeType, ListNodeType } from '../../nodes-new';
-import type { Domain, DomainList, DomainListSeparator } from '../../nodes-new';
-import {
-    DOMAIN_FIELD_FLAGS,
-    DOMAIN_FIELD_VALUE_END,
-    DOMAIN_FIELD_VALUE_START,
-    DOMAIN_FLAG_EXCEPTION,
-    DOMAIN_RECORD_STRIDE,
-} from '../../parser/cosmetic/constants';
+import { ListItemNodeType, ListNodeType } from '../../nodes';
+import type { DomainList, DomainListSeparator } from '../../nodes';
+
+import { ListAstBuilder } from './list';
 
 /**
  * Domain list AST parser (shared infrastructure).
@@ -21,6 +16,11 @@ import {
 export class DomainListAstBuilder {
     /**
      * Parse a domain list from parsed data.
+     *
+     * A `DomainList` is structurally a {@link ListAstBuilder} list specialized
+     * to `DomainList` / `Domain` node types, so the record iteration is
+     * delegated to keep the semantics in a single place. The only difference
+     * is the `domainCount === 0` early return, which yields `undefined`.
      *
      * @param source Source string.
      * @param data Int32Array with parsed data.
@@ -43,57 +43,15 @@ export class DomainListAstBuilder {
             return undefined;
         }
 
-        const children: Domain[] = [];
-        let listStart = -1;
-        let listEnd = -1;
-
-        for (let i = 0; i < domainCount; i += 1) {
-            const recordBase = domainRecordsOffset + i * DOMAIN_RECORD_STRIDE;
-            const valueStart = data[recordBase + DOMAIN_FIELD_VALUE_START];
-            const valueEnd = data[recordBase + DOMAIN_FIELD_VALUE_END];
-            const flags = data[recordBase + DOMAIN_FIELD_FLAGS];
-
-            // Guard against empty slices
-            if (valueEnd <= valueStart) {
-                continue;
-            }
-
-            const value = source.slice(valueStart, valueEnd);
-            const exception = (flags & DOMAIN_FLAG_EXCEPTION) !== 0;
-
-            const domain: Domain = {
-                type: ListItemNodeType.Domain,
-                value,
-                exception,
-            };
-
-            if (isLocIncluded) {
-                domain.start = valueStart;
-                domain.end = valueEnd;
-            }
-
-            children.push(domain);
-
-            // Track list start/end
-            if (listStart === -1 || valueStart < listStart) {
-                listStart = valueStart;
-            }
-            if (listEnd === -1 || valueEnd > listEnd) {
-                listEnd = valueEnd;
-            }
-        }
-
-        const domainList: DomainList = {
-            type: ListNodeType.DomainList,
+        return ListAstBuilder.parse(
+            source,
+            data,
+            domainCount,
+            domainRecordsOffset,
+            ListNodeType.DomainList,
+            ListItemNodeType.Domain,
             separator,
-            children,
-        };
-
-        if (isLocIncluded && listStart !== -1) {
-            domainList.start = listStart;
-            domainList.end = listEnd;
-        }
-
-        return domainList;
+            isLocIncluded,
+        ) as DomainList;
     }
 }

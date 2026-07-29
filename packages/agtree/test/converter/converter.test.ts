@@ -8,9 +8,11 @@
  */
 import { describe, expect, test } from 'vitest';
 
+import { RuleParserPipeline } from '../../src/ast-builder/rule-parser';
 import { RuleConverter } from '../../src/converter/rule';
 import { RuleConversionError } from '../../src/errors/rule-conversion-error';
-import { RuleParser } from '../../src/parser-legacy/rule-parser';
+
+const parser = new RuleParserPipeline();
 
 describe('Converter integration tests', () => {
     describe('should convert rules to ADG', () => {
@@ -42,7 +44,7 @@ describe('Converter integration tests', () => {
                     shouldConvert: false,
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -70,7 +72,7 @@ describe('Converter integration tests', () => {
                     expected: ["example.com$$script:contains(d.createElement('script'))"],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -91,9 +93,17 @@ describe('Converter integration tests', () => {
                     expected: "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",
                 },
             ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
-                expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual))).toThrowError(
-                    new RuleConversionError(expected),
-                );
+                // Old parsers threw a generic Error; our pipeline throws
+                // RuleConversionError or wraps it accordingly.
+                // Let's catch whatever comes and check the message.
+                let firstError: unknown;
+                try {
+                    RuleConverter.convertToAdg(parser.parse(actual));
+                } catch (e: unknown) {
+                    firstError = e;
+                }
+                expect(firstError).toBeInstanceOf(RuleConversionError);
+                expect((firstError as RuleConversionError).message).toBe(expected);
             });
         });
 
@@ -154,7 +164,7 @@ describe('Converter integration tests', () => {
                     expected: [String.raw`[$path=/\\/(sub1|sub2)\\/page\\.html/]example.org#$?#p:contains(/[\w\W]{30,}/) { background: #ff0033 !important; }`],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -263,7 +273,7 @@ describe('Converter integration tests', () => {
                     expected: ['[$path=/path]example.com,example.org##.ad'],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -275,7 +285,7 @@ describe('Converter integration tests', () => {
                     shouldConvert: false,
                 },
             ])('should not convert \'$actual\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -286,7 +296,7 @@ describe('Converter integration tests', () => {
                     expected: 'Path-in-domain syntax cannot be used with exception domains',
                 },
             ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
-                expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual))).toThrowError(
+                expect(() => RuleConverter.convertToAdg(parser.parse(actual))).toThrowError(
                     new RuleConversionError(expected),
                 );
             });
@@ -309,7 +319,7 @@ describe('Converter integration tests', () => {
                     shouldConvert: false,
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -350,7 +360,7 @@ describe('Converter integration tests', () => {
                     expected: ['example.org#$?##case26 { remove: true; }'],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -403,7 +413,7 @@ describe('Converter integration tests', () => {
                     shouldConvert: false,
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -421,7 +431,7 @@ describe('Converter integration tests', () => {
                     shouldConvert: false,
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -658,7 +668,7 @@ describe('Converter integration tests', () => {
                     expected: [String.raw`/\/\?[0-9a-zA-Z]{32}&[0-9]{5}&(https?|undefined$)/$~third-party,script`],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -714,7 +724,7 @@ describe('Converter integration tests', () => {
                     ],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -750,7 +760,7 @@ describe('Converter integration tests', () => {
                     expected: ['||delivery.tf1.fr/pub$media,redirect=noopmp3-0.1s,domain=tf1.fr'],
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -785,6 +795,13 @@ describe('Converter integration tests', () => {
                     expected: ['#?#.banner'],
                     shouldConvert: false,
                 },
+                // a forced ExtCss separator on an already-AdGuard rule must be preserved,
+                // even when the selector has no recognized ExtCss pseudo-class
+                {
+                    actual: '#$?#.banner { display: none; }',
+                    expected: ['#$?#.banner { display: none; }'],
+                    shouldConvert: false,
+                },
                 {
                     actual: '##.banner { display: none; }',
                     expected: ['#$#.banner { display: none; }'],
@@ -812,7 +829,7 @@ describe('Converter integration tests', () => {
                     shouldConvert: false,
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -839,7 +856,7 @@ describe('Converter integration tests', () => {
                     shouldConvert: true,
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToAdg');
             });
         });
 
@@ -944,7 +961,7 @@ describe('Converter integration tests', () => {
                     shouldConvert: true,
                 },
             ])("should convert '$actual' to '$expected'", (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToUbo');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToUbo');
             });
         });
 
@@ -1012,7 +1029,7 @@ describe('Converter integration tests', () => {
                     shouldConvert: true,
                 },
             ])("should convert '$actual' to '$expected'", (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToUbo');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToUbo');
             });
         });
 
@@ -1074,7 +1091,7 @@ describe('Converter integration tests', () => {
                     shouldConvert: true,
                 },
             ])("should convert '$actual' to '$expected'", (testData) => {
-                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToUbo');
+                expect(testData).toBeConvertedProperlyNew(RuleConverter, 'convertToUbo');
             });
         });
     });

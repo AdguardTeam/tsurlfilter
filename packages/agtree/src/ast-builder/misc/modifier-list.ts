@@ -4,8 +4,8 @@
  * Delegates individual modifier parsing to {@link ModifierAstBuilder}.
  */
 
-import { NodeType } from '../../nodes-new';
-import type { Modifier, ModifierList } from '../../nodes-new';
+import { NodeType } from '../../nodes';
+import type { Modifier, ModifierList } from '../../nodes';
 import {
     MODIFIER_FIELD_NAME_END,
     MODIFIER_FIELD_NAME_START,

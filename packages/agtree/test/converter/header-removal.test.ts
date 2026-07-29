@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest';
 
+import { RuleParserPipeline } from '../../src/ast-builder/rule-parser';
 import { HeaderRemovalRuleConverter } from '../../src/converter/cosmetic/header-removal';
 import { RuleConversionError } from '../../src/errors/rule-conversion-error';
-import { RuleParser } from '../../src/parser-legacy/rule-parser';
+
+const parser = new RuleParserPipeline();
 
 describe('HeaderRemovalRuleConverter', () => {
     describe('uBO to ADG', () => {
@@ -45,7 +47,7 @@ describe('HeaderRemovalRuleConverter', () => {
                 ],
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(HeaderRemovalRuleConverter, 'convertToAdg');
+            expect(testData).toBeConvertedProperlyNew(HeaderRemovalRuleConverter, 'convertToAdg');
         });
 
         // Invalid rules
@@ -63,7 +65,7 @@ describe('HeaderRemovalRuleConverter', () => {
         ])("should throw '$expected' error when converting '$actual'", ({ actual, expected }) => {
             expect(() => {
                 HeaderRemovalRuleConverter.convertToAdg(
-                    RuleParser.parse(actual),
+                    parser.parse(actual),
                 );
             }).toThrowError(new RuleConversionError(expected));
         });

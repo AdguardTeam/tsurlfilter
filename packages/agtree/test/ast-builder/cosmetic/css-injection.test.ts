@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
-import type { CssDeclarationList, CssInjectionRule, SelectorList } from '../../../src/nodes-new';
-import { ValueKind } from '../../../src/nodes-new';
+import type { CssDeclarationList, CssInjectionRule, SelectorList } from '../../../src/nodes';
+import { ValueKind } from '../../../src/nodes';
 import { SYNTAX_ADG } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();

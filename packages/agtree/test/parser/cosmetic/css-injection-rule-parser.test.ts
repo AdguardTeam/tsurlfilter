@@ -235,6 +235,29 @@ describe('RuleParser — CSS injection dispatch', () => {
         });
     });
 
+    describe('## ABP CSS injection gating (parseAbpSpecificRules)', () => {
+        test('parseAbpSpecificRules=false keeps ##sel { decl } as element-hiding', () => {
+            // When parseAbpSpecificRules is disabled, element-hiding rules
+            // with declaration blocks (ABP CSS injection syntax) should stay
+            // as element-hiding rules instead of being promoted to CssInjectionRule.
+            const source = '##.banner { display: none; }';
+            const kind = parseRule(source, false);
+
+            // Returns Cosmetic but stays as element hiding (CR_SEP_KIND_ELEM_HIDE = 0)
+            // not promoted to CR_SEP_KIND_ADG_CSS_INJECTION (3)
+            expect(kind).toBe(RuleKind.Cosmetic);
+            expect(getSepKind()).not.toBe(CR_SEP_KIND_ADG_CSS_INJECTION);
+        });
+
+        test('parseAbpSpecificRules=true promotes ##sel { decl } to CSS injection', () => {
+            const source = '##.banner { display: none; }';
+            const kind = parseRule(source, true);
+
+            expect(kind).toBe(RuleKind.Cosmetic);
+            expect(getSepKind()).toBe(CR_SEP_KIND_ADG_CSS_INJECTION);
+        });
+    });
+
     describe('remove: true via RuleParser', () => {
         test('remove: true sets flag', () => {
             const source = '#$#.textad { remove: true; }';

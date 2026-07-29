@@ -1,12 +1,12 @@
-import { RuleParser } from '@adguard/agtree/parser';
+import { type AnyRule, RuleParserPipeline } from '@adguard/agtree';
 import { CosmeticRuleGenerator, RuleGenerator } from '@adguard/agtree/generator';
 import { ok } from 'assert';
 
 const ruleText = '||example.com^';
-const ruleNode = RuleParser.parse(ruleText);
+const pipeline = new RuleParserPipeline();
+const result = pipeline.parse(ruleText);
 
-const generatedRuleText = RuleGenerator.generate(ruleNode);
-
+const generatedRuleText = RuleGenerator.generate(result as AnyRule);
 ok(generatedRuleText === ruleText);
 
 ok(CosmeticRuleGenerator);

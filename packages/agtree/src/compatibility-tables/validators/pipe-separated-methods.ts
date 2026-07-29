@@ -2,9 +2,8 @@
  * @file Validator for pipe-separated HTTP methods.
  */
 
+import { parseMethodList } from '../../ast-utils/parsing';
 import { type MethodList } from '../../nodes';
-import { MethodListParser } from '../../parser-legacy/misc/method-list-parser';
-import { defaultParserOptions } from '../../parser-legacy/options';
 
 import { type ValidationContext, type Validator } from './types';
 
@@ -40,7 +39,7 @@ const validatePipeSeparatedMethods = (value: string, ctx: ValidationContext): vo
 
     let methodList: MethodList;
     try {
-        methodList = MethodListParser.parse(value, defaultParserOptions, 0);
+        methodList = parseMethodList(value);
     } catch (e: unknown) {
         if (e instanceof Error) {
             ctx.addError('METHOD_LIST_PARSE_ERROR', { message: e.message });

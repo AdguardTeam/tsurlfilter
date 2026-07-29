@@ -118,6 +118,42 @@ const ADG_CONVERSION_MAP = new Map<string, ModifierConversion[]>([
  */
 export class NetworkRuleModifierListConverter extends BaseConverter {
     /**
+     * Removes duplicate modifiers from the given list in a single linear pass,
+     * preserving the order of the first occurrence.
+     *
+     * Two modifiers are considered duplicates when their name, exception flag,
+     * and value are all strictly equal (mirroring the previous
+     * `filter(...findIndex(...))` comparison, but in O(n) instead of O(n²)).
+     *
+     * @param modifiers Modifier nodes to deduplicate.
+     *
+     * @returns A new array without duplicates.
+     */
+    private static dedupeModifiers(modifiers: Modifier[]): Modifier[] {
+        const seen = new Set<string>();
+        const result: Modifier[] = [];
+
+        for (const modifierNode of modifiers) {
+            // JSON encoding yields an unambiguous key for the (name, exception,
+            // value) tuple. `undefined` serializes to `null`, so an undefined
+            // exception/value stays distinct from `false`/empty string, exactly
+            // as the previous strict-equality comparison did.
+            const key = JSON.stringify([
+                modifierNode.name.value,
+                modifierNode.exception,
+                modifierNode.value?.value,
+            ]);
+
+            if (!seen.has(key)) {
+                seen.add(key);
+                result.push(modifierNode);
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * Converts a network rule modifier list to AdGuard format, if possible.
      *
      * @param modifierList Network rule modifier list node to convert.
@@ -261,13 +297,10 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                 );
             }
 
-            // Before returning the result, remove duplicated modifiers
-            modifierListClone.children = modifierListClone.children.filter(
-                (modifierNode, index, self) => self.findIndex(
-                    (m) => m.name.value === modifierNode.name.value
-                        && m.exception === modifierNode.exception
-                        && m.value?.value === modifierNode.value?.value,
-                ) === index,
+            // Before returning the result, remove duplicated modifiers in a
+            // single linear pass (preserving order of first occurrence).
+            modifierListClone.children = NetworkRuleModifierListConverter.dedupeModifiers(
+                modifierListClone.children,
             );
 
             return createConversionResult(modifierListClone, true);
@@ -423,13 +456,10 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                 return modifierNode;
             }).flat();
 
-            // Before returning the result, remove duplicated modifiers
-            modifierListClone.children = modifierListClone.children.filter(
-                (modifierNode, index, self) => self.findIndex(
-                    (m) => m.name.value === modifierNode.name.value
-                        && m.exception === modifierNode.exception
-                        && m.value?.value === modifierNode.value?.value,
-                ) === index,
+            // Before returning the result, remove duplicated modifiers in a
+            // single linear pass (preserving order of first occurrence).
+            modifierListClone.children = NetworkRuleModifierListConverter.dedupeModifiers(
+                modifierListClone.children,
             );
 
             if (resourceTypeModifiersToAdd.size) {

@@ -2,6 +2,7 @@
  * @file Converter for request header removal rules.
  */
 
+import { RuleParserPipeline } from '../../ast-builder/rule-parser';
 import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
 import { createNetworkRuleNode } from '../../ast-utils/network-rules';
 import { isUboResponseHeaderRemovalRuleBody } from '../../common/ubo-html-filtering-body-common';
@@ -9,17 +10,14 @@ import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     type AnyRule,
     CosmeticRuleType,
+    type HtmlFilteringRule,
     type HtmlFilteringRuleBody,
     type PseudoClassSelector,
     RuleCategory,
 } from '../../nodes';
-// eslint-disable-next-line max-len
-import {
-    UboHtmlFilteringBodyParser,
-} from '../../parser-legacy/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
-import { AdblockSyntax } from '../../utils/adblockers';
 import { EMPTY, UBO_RESPONSEHEADER_FN } from '../../utils/constants';
 import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_START } from '../../utils/regexp';
+import { SYNTAX_ADG } from '../../utils/syntax-flags';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
@@ -66,15 +64,18 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
         }
 
         // Handle case when body is raw value string.
-        // If so, parse it first as we need to work with AST nodes.
+        // If so, try to parse it first using the pipeline.
         let body: HtmlFilteringRuleBody | null = null;
-        if (rule.body.type === 'Value') {
-            body = UboHtmlFilteringBodyParser.parseResponseHeaderRule(rule.body.value, {
-                isLocIncluded: false,
-                parseHtmlFilteringRuleBodies: true,
-            });
+        if (rule.body.type === 'Raw') {
+            // Re-parse the full rule to get the parsed body
+            const pipeline = new RuleParserPipeline();
+            const parsedRule = pipeline.parse(
+                `##^${rule.body.value}`,
+                { parseHtmlFilteringRuleBodies: true },
+            ) as HtmlFilteringRule;
+            body = parsedRule.body as HtmlFilteringRuleBody;
         } else {
-            body = rule.body;
+            body = rule.body as HtmlFilteringRuleBody;
         }
 
         // Check if the rule body is a uBO responseheader(...) function
@@ -118,7 +119,7 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
                     modifiers,
                     // Copy the exception flag
                     rule.exception,
-                    AdblockSyntax.Adg,
+                    SYNTAX_ADG,
                 ),
             ],
             true,

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { type AnyParsedRule, RuleParserPipeline } from '../../src/ast-builder/rule-parser';
-import { NodeType, type RawRule, RuleCategory } from '../../src/nodes-new';
+import { NodeType, type RawRule, RuleCategory } from '../../src/nodes';
 
 const parser = new RuleParserPipeline();
 

@@ -11,7 +11,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../src/ast-builder/rule-parser';
-import type { AgentCommentRule } from '../../src/nodes-new';
+import type { AgentCommentRule } from '../../src/nodes';
 import {
     SYNTAX_ABP,
     SYNTAX_ADG,

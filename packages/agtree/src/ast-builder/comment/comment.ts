@@ -6,7 +6,7 @@
  * populated with structural indices and `ctx.data[0]` holds the `CommentKind`.
  */
 
-import type { AnyCommentRule } from '../../nodes-new';
+import type { AnyCommentRule } from '../../nodes';
 import { CommentKind } from '../../parser/comment/types';
 import type { ParseOptions } from '../options';
 

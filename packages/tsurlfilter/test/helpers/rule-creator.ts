@@ -1,10 +1,11 @@
-import { NetworkRuleType, RuleCategory } from '@adguard/agtree';
-import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
+import { NetworkRuleType, RuleCategory, RuleParserPipeline } from '@adguard/agtree';
 
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { NetworkRule } from '../../src/rules/network-rule';
 import { type IRule, RULE_INDEX_NONE } from '../../src/rules/rule';
 import { RuleFactory } from '../../src/rules/rule-factory';
+
+const parser = new RuleParserPipeline();
 
 /**
  * Helper function to create a network rule from a string.
@@ -69,8 +70,7 @@ export const createRule = (
     ignoreHtmlFilteringBodies = true,
 ): IRule | null => {
     const trimmedRule = rule.trim();
-    const node = RuleParser.parse(trimmedRule, {
-        ...defaultParserOptions,
+    const node = parser.parse(trimmedRule, {
         parseHostRules: !ignoreHost,
         parseHtmlFilteringRuleBodies: !ignoreCosmetic && !ignoreHtmlFilteringBodies,
     });

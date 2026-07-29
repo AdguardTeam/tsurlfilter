@@ -1,4 +1,4 @@
-import { type NetworkRule as NetworkRuleNode, RuleGenerator } from '@adguard/agtree';
+import { type NetworkRule as NetworkRuleNode, RuleGenerator, SYNTAX_ADG } from '@adguard/agtree';
 
 import { type RequestMethod, type ResourceType } from '../../src/declarative-rule';
 import { type HttpHeaderMatcher, type Rule } from '../../src/rule/rule';
@@ -162,7 +162,7 @@ export function createRuleMock(options: CreateRuleMockOptions = {}): Rule {
         index = 1,
         node = {
             category: 'Network',
-            syntax: 'AdGuard',
+            syntax: SYNTAX_ADG,
             type: 'NetworkRule',
             exception: options.allowlist ?? false,
             pattern: {

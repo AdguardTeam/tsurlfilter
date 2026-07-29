@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vitest';
 
 import { ElementHidingRuleConverter } from '../../../src/converter/cosmetic/element-hiding';
 
-// Import custom matcher setup (registers toBeConvertedProperly)
+// Import custom matcher setup (registers toBeConvertedProperlyNew)
 import '../../setup/custom-matchers/check-conversion';
 
 describe('ElementHidingRuleConverter', () => {
@@ -53,7 +53,7 @@ describe('ElementHidingRuleConverter', () => {
                 shouldConvert: true,
             },
         ])("should convert '$actual'", (testData) => {
-            expect(testData).toBeConvertedProperly(
+            expect(testData).toBeConvertedProperlyNew(
                 ElementHidingRuleConverter,
                 'convertToUbo',
             );

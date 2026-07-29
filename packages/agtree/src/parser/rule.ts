@@ -315,11 +315,14 @@ export class RuleParser implements RootParser<RuleParserOptions> {
                         // Legacy ADG/ABP CSS injection: `##selector { declarations }`.
                         // ElementHidingParser sets CR_FLAG_BODY_ABP_CSS_INJECTION when the
                         // body contains a top-level declaration block (e.g.
-                        // `##.banner { display: none; }`). Route to the CSS injection
-                        // parser/builder so the rule becomes a CssInjectionRule, matching
-                        // the legacy parser's behavior.
+                        // `##.banner { display: none; }`). This is ABP-specific syntax
+                        // (SYNTAX_ABP), so it is only promoted to a CssInjectionRule when
+                        // `parseAbpSpecificRules` is enabled; otherwise the rule is left as
+                        // an element-hiding rule (its raw body keeps the braces so consumers
+                        // can reject it).
                         // eslint-disable-next-line no-bitwise
-                        if ((ctx.data[CR_FLAGS_OFFSET] & CR_FLAG_BODY_ABP_CSS_INJECTION) !== 0) {
+                        const hasAbpCssInjection = (ctx.data[CR_FLAGS_OFFSET] & CR_FLAG_BODY_ABP_CSS_INJECTION) !== 0;
+                        if (parseAbpSpecificRules && hasAbpCssInjection) {
                             const cssParsed = AdgCssInjectionParser.parse(
                                 ctx,
                                 ctx.data[CR_BODY_START_TI],

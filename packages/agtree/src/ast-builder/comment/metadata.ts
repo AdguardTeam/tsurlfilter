@@ -4,7 +4,7 @@
  * Builds {@link MetadataCommentRule} nodes from parsed data.
  */
 
-import { CommentRuleType, type MetadataCommentRule, RuleCategory } from '../../nodes-new';
+import { CommentRuleType, type MetadataCommentRule, RuleCategory } from '../../nodes';
 import {
     CM_META_HEADER_END_OFFSET,
     CM_META_HEADER_START_OFFSET,

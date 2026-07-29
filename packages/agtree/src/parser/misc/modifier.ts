@@ -182,16 +182,20 @@ export class ModifierParser implements RecordParser {
             ti = skipWs(ctx, ti);
         }
 
-        // Modifier name — expect identifier starting with Letter or Digit.
+        // Modifier name — expect identifier starting with Letter, Digit or Underscore.
         // Digit-leading names are valid for uBO aliases like `1p` / `3p`.
-        if (ti >= tokenCount || (types[ti] !== TokenType.Letter && types[ti] !== TokenType.Digit)) {
+        // Underscore-leading names are valid for noop modifiers like `_` / `___`.
+        if (
+            ti >= tokenCount
+            || (types[ti] !== TokenType.Letter && types[ti] !== TokenType.Digit && types[ti] !== TokenType.Underscore)
+        ) {
             return -1;
         }
 
         const nameStartIdx = tokenStart(ctx, ti);
-        // Modifier names are [A-Za-z][A-Za-z0-9-]* — single range check covers
-        // Letter (0) | Hyphen (1) | Digit (2): types[ti] <= TokenType.Digit
-        while (ti < tokenCount && types[ti] <= TokenType.Digit) {
+        // Modifier names are [A-Za-z_][A-Za-z0-9-_]* — single range check covers
+        // Letter (0) | Hyphen (1) | Digit (2) | Underscore (3): types[ti] <= TokenType.Underscore
+        while (ti < tokenCount && types[ti] <= TokenType.Underscore) {
             ti += 1;
         }
         const nameEndIdx = ctx.ends[ti - 1];

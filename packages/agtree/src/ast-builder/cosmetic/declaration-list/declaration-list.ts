@@ -6,8 +6,8 @@
  * AST node by iterating declaration records.
  */
 
-import type { CssDeclaration, CssDeclarationList, Value } from '../../../nodes-new';
-import { NodeType } from '../../../nodes-new';
+import type { CssDeclaration, CssDeclarationList, Value } from '../../../nodes';
+import { NodeType } from '../../../nodes';
 import { DeclarationListParser } from '../../../parser/css/declaration-list';
 import { DEFAULT_MAX_DECLARATIONS } from '../../../parser/css/declaration-list/constants';
 

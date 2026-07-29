@@ -5,7 +5,7 @@
  * the parameter list parser into a {@link ParameterList} AST node.
  */
 
-import { NodeType, type Parameter, type ParameterList } from '../../nodes-new';
+import { NodeType, type Parameter, type ParameterList } from '../../nodes';
 import {
     PL_COUNT,
     PL_FLAG_TRANSFORM,

@@ -1,6 +1,5 @@
 import { UboPseudoName } from '../../common/ubo-selector-common';
-import { type AnyCosmeticRule, CosmeticRuleType } from '../../nodes';
-import { AdblockSyntax } from '../../utils/adblockers';
+import { type AnyCosmeticRule, CosmeticRuleType, NodeType } from '../../nodes';
 import {
     CLOSE_PARENTHESIS,
     COLON,
@@ -10,14 +9,17 @@ import {
     SPACE,
     UBO_HTML_MASK,
 } from '../../utils/constants';
+import { SYNTAX_ABP, SYNTAX_ADG, SYNTAX_UBO } from '../../utils/syntax-flags';
 import { BaseGenerator } from '../base-generator';
 import { AdgCssInjectionGenerator } from '../css/adg-css-injection-generator';
+import { DeclarationListGenerator } from '../css/declaration-list-generator';
 
 import { AdgHtmlFilteringBodyGenerator } from './html-filtering-body/adg-html-filtering-body-generator';
 import { UboHtmlFilteringBodyGenerator } from './html-filtering-body/ubo-html-filtering-body-generator';
 import { AbpSnippetInjectionBodyGenerator } from './scriptlet-body/abp-snippet-injection-body-generator';
 import { AdgScriptletInjectionBodyGenerator } from './scriptlet-body/adg-scriptlet-injection-body-generator';
 import { UboScriptletInjectionBodyGenerator } from './scriptlet-body/ubo-scriptlet-injection-body-generator';
+import { SelectorListGenerator } from './selector/selector-list-generator';
 
 /**
  * Cosmetic rule body generator.
@@ -46,9 +48,9 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
                 break;
 
             case CosmeticRuleType.CssInjectionRule:
-                if (node.syntax === AdblockSyntax.Adg || node.syntax === AdblockSyntax.Abp) {
+                if (node.syntax === SYNTAX_ADG || node.syntax === SYNTAX_ABP) {
                     result = AdgCssInjectionGenerator.generate(node.body);
-                } else if (node.syntax === AdblockSyntax.Ubo) {
+                } else if (node.syntax === SYNTAX_UBO) {
                     if (node.body.mediaQueryList) {
                         if (node.body.mediaQueryNegated) {
                             result += COLON;
@@ -70,7 +72,11 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
                         result += SPACE;
                     }
 
-                    result += node.body.selectorList.value;
+                    if (node.body.selectorList.type === 'Raw') {
+                        result += node.body.selectorList.value;
+                    } else {
+                        result += SelectorListGenerator.generate(node.body.selectorList);
+                    }
 
                     if (node.body.remove) {
                         result += COLON;
@@ -81,7 +87,11 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
                         result += COLON;
                         result += UboPseudoName.Style;
                         result += OPEN_PARENTHESIS;
-                        result += node.body.declarationList.value;
+                        if (node.body.declarationList.type === 'Raw') {
+                            result += node.body.declarationList.value;
+                        } else {
+                            result += DeclarationListGenerator.generate(node.body.declarationList);
+                        }
                         result += CLOSE_PARENTHESIS;
                     }
                 }
@@ -89,15 +99,23 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
 
             case CosmeticRuleType.HtmlFilteringRule:
                 switch (node.syntax) {
-                    case AdblockSyntax.Adg:
-                        result = AdgHtmlFilteringBodyGenerator.generate(node.body);
+                    case SYNTAX_ADG:
+                        if (node.body.type === NodeType.Raw) {
+                            result = node.body.value;
+                        } else {
+                            result = AdgHtmlFilteringBodyGenerator.generate(node.body);
+                        }
                         break;
 
-                    case AdblockSyntax.Ubo:
-                        result = UBO_HTML_MASK + UboHtmlFilteringBodyGenerator.generate(node.body);
+                    case SYNTAX_UBO:
+                        if (node.body.type === NodeType.Raw) {
+                            result = UBO_HTML_MASK + node.body.value;
+                        } else {
+                            result = UBO_HTML_MASK + UboHtmlFilteringBodyGenerator.generate(node.body);
+                        }
                         break;
 
-                    case AdblockSyntax.Abp:
+                    case SYNTAX_ABP:
                         throw new Error('ABP does not support HTML filtering rules');
 
                     default:
@@ -111,15 +129,15 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
 
             case CosmeticRuleType.ScriptletInjectionRule:
                 switch (node.syntax) {
-                    case AdblockSyntax.Adg:
+                    case SYNTAX_ADG:
                         result = AdgScriptletInjectionBodyGenerator.generate(node.body);
                         break;
 
-                    case AdblockSyntax.Abp:
+                    case SYNTAX_ABP:
                         result = AbpSnippetInjectionBodyGenerator.generate(node.body);
                         break;
 
-                    case AdblockSyntax.Ubo:
+                    case SYNTAX_UBO:
                         result = UboScriptletInjectionBodyGenerator.generate(node.body);
                         break;
 

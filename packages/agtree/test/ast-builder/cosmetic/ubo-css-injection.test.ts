@@ -2,8 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { AdgCssInjectionGenerator } from '../../../src/generator/css/adg-css-injection-generator';
-import type { CssInjectionRuleBody } from '../../../src/nodes';
-import type { CssInjectionRule, Raw } from '../../../src/nodes-new';
+import type { CssInjectionRule, CssInjectionRuleBody, Raw } from '../../../src/nodes';
 import { SYNTAX_UBO } from '../../../src/utils/syntax-flags';
 
 const parser = new RuleParserPipeline();

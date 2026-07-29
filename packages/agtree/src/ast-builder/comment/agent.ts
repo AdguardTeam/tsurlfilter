@@ -12,7 +12,7 @@ import {
     CommentRuleType,
     NodeType,
     RuleCategory,
-} from '../../nodes-new';
+} from '../../nodes';
 import {
     AGENT_FIELD_END,
     AGENT_FIELD_START,

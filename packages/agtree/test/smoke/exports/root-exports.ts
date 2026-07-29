@@ -1,5 +1,6 @@
 import {
-    RuleParser,
+    type AnyRule,
+    RuleParserPipeline,
     RuleGenerator,
     modifiersCompatibilityTable,
     Platform,
@@ -7,11 +8,15 @@ import {
 import { ok } from 'assert';
 
 const ruleText = '||example.com^';
-const ruleNode = RuleParser.parse(ruleText);
+const pipeline = new RuleParserPipeline();
+const result = pipeline.parse(ruleText);
 
-const generatedRuleText = RuleGenerator.generate(ruleNode);
-
-ok(generatedRuleText === ruleText);
+if (result) {
+    const generatedRuleText = RuleGenerator.generate(result as AnyRule);
+    ok(generatedRuleText === ruleText);
+} else {
+    ok(false, 'Failed to parse rule');
+}
 
 const modifierData = modifiersCompatibilityTable.get('third-party', Platform.AdgExtChrome);
 
