@@ -3,6 +3,7 @@ import browser, { type Tabs } from 'webextension-polyfill';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { ContentType } from '../../common/request-type';
 import { logger } from '../../common/utils/logger';
+import { getHost } from '../../common/utils/url';
 import { appContext } from '../background/app-context';
 import { CosmeticApi } from '../background/cosmetic-api';
 import { CosmeticFrameProcessor } from '../background/cosmetic-frame-processor';
@@ -140,7 +141,23 @@ export class TabsCosmeticInjector {
             }
 
             try {
-                await CosmeticApi.applyCosmeticRules(tabId, frameId, true, true);
+                const host = getHost(url);
+                const bootScriptIds = appContext.preregisteredScriptIdsAtBoot;
+                // Force dynamic injection only when the page could not have
+                // received the preregistered bundle: if a persisted
+                // registration for this exact host already existed when the
+                // service worker started, the bundle ran at document_start
+                // and dynamic injection would double-execute the rules.
+                const hadRegistrationAtBoot = host !== null
+                    && bootScriptIds !== undefined
+                    && bootScriptIds.has(host);
+
+                await CosmeticApi.applyCosmeticRules({
+                    tabId,
+                    frameId,
+                    shouldApplyCss: true,
+                    forceDynamicInjection: !hadRegistrationAtBoot,
+                });
             } catch (e) {
                 logger.error(`[tsweb.TabsCosmeticInjector.processOpenTab]: error applying cosmetic rules for tabId ${tabId} and frameId ${frameId}`, e);
             }

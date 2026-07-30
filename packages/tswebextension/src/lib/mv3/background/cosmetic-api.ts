@@ -4,13 +4,13 @@ import { BACKGROUND_TAB_ID } from '../../common/constants';
 import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
-import { getDomain, isExtensionUrl } from '../../common/utils/url';
+import { getDomain, getHost, isExtensionUrl } from '../../common/utils/url';
 import { type PreparedCosmeticResultMV3 } from '../tabs/frame';
 import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
-import { normalizeDomain } from './preregistered-scripts/hasher';
+import { computeRuleHash } from './preregistered-scripts/hasher';
 import { ScriptingApi } from './scripting-api';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { UserScriptsApi } from './user-scripts-api';
@@ -38,6 +38,36 @@ type LogJsRulesParamsMv3 = LogJsRulesParams & {
 };
 
 /**
+ * Parameters of {@link CosmeticApi.applyCosmeticRules}.
+ */
+interface ApplyCosmeticRulesParams {
+    /**
+     * Tab id.
+     */
+    tabId: number;
+
+    /**
+     * Frame id.
+     */
+    frameId: number;
+
+    /**
+     * Whether to apply CSS. We do not apply CSS on onResponseStarted, since
+     * it might be too early. Instead, we wait until the DOM is ready on
+     * onCommitted and apply it then.
+     */
+    shouldApplyCss: boolean;
+
+    /**
+     * When `true`, skips the preregistered-domain check and always injects
+     * dynamically. Used for pages that could not have received the
+     * preregistered bundle (no persisted registration existed when the page
+     * loaded). Defaults to `false`.
+     */
+    forceDynamicInjection?: boolean;
+}
+
+/**
  * Cosmetic api class.
  * Used to prepare and inject javascript and css into pages.
  */
@@ -46,36 +76,43 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Domains for which scriptlets and JS rules are injected via
      * preregistered content scripts (`chrome.scripting.registerContentScripts`).
      *
-     * When a page's domain matches one of these, the dynamic cosmetic
-     * injection (local script rules and scriptlets) is skipped to avoid
-     * double execution — the preregistered bundle already handles it.
+     * Stored as exact hostnames mapped to the hashes of the covered
+     * rules — the same hostname semantics as the registered content-script
+     * match patterns: a preregistered `www.` alias does NOT cover the apex
+     * domain and vice versa.
      *
-     * Set via {@link setPreregisteredScriptDomains}.
+     * For a matching hostname, dynamic injection is skipped only for the
+     * listed rule hashes to avoid double execution — the preregistered
+     * bundle already handles them. Rules degraded at sync time (runtime
+     * `$path` exceptions, missing per-hash files) are absent and keep the
+     * dynamic injection path.
+     *
+     * Set via {@link setPreregisteredScriptRules}.
      */
-    private static preregisteredScriptDomains: Set<string> = new Set();
+    private static preregisteredScriptRules: ReadonlyMap<string, ReadonlySet<string>> = new Map();
 
     /**
-     * Sets the list of domains that have preregistered content scripts.
+     * Sets the rules covered by preregistered content scripts, per hostname.
      *
-     * For these domains, local script rules and scriptlets will not be
-     * injected dynamically by the cosmetic API, preventing double execution
-     * with the preregistered bundles.
+     * Covered rules are not injected dynamically by the cosmetic API,
+     * preventing double execution with the preregistered bundles.
      *
-     * @param domains List of preregistered domain strings (e.g. `["youtube.com"]`).
+     * @param rules Hostname to covered rule hashes map.
      */
-    public static setPreregisteredScriptDomains(domains: string[]): void {
-        CosmeticApi.preregisteredScriptDomains = new Set(domains.map(normalizeDomain));
+    public static setPreregisteredScriptRules(rules: ReadonlyMap<string, ReadonlySet<string>>): void {
+        CosmeticApi.preregisteredScriptRules = rules;
     }
 
     /**
-     * Checks whether a domain is in the preregistered script domains set.
+     * Returns the hashes of preregistered rules for a URL's exact hostname.
      *
-     * @param domain Domain to check (e.g. `"youtube.com"`).
+     * @param url URL to check.
      *
-     * @returns `true` if the domain matches a preregistered domain.
+     * @returns Covered rule hashes or `undefined` for non-preregistered hosts.
      */
-    private static isPreregisteredDomain(domain: string): boolean {
-        return CosmeticApi.preregisteredScriptDomains.has(normalizeDomain(domain));
+    private static getPreregisteredCoveredRules(url: string): ReadonlySet<string> | undefined {
+        const host = getHost(url);
+        return host ? CosmeticApi.preregisteredScriptRules.get(host) : undefined;
     }
 
     /**
@@ -529,24 +566,20 @@ export class CosmeticApi extends CosmeticApiCommon {
     /**
      * Applies cosmetic rules to the specified tab and frame.
      *
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     * @param shouldApplyCss We are not applying CSS on onResponseStarted, since
-     * it might be too early. Instead, we wait until the DOM is ready on
-     * onCommitted and apply them then.
-     * @param forceDynamicInjection When `true`, skips the preregistered-domain
-     * check and always injects dynamically. Used for tabs open before
-     * preregistration took effect, since persistent scripts can't run
-     * retroactively in them. Defaults to `false`.
+     * @param params Parameters of the call, see {@link ApplyCosmeticRulesParams}.
      *
      * @returns A promise that resolves when the cosmetic rules are applied.
      */
     public static async applyCosmeticRules(
-        tabId: number,
-        frameId: number,
-        shouldApplyCss: boolean,
-        forceDynamicInjection = false,
+        params: ApplyCosmeticRulesParams,
     ): Promise<PromiseSettledResult<void>[]> {
+        const {
+            tabId,
+            frameId,
+            shouldApplyCss,
+            forceDynamicInjection = false,
+        } = params;
+
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         if (!frameContext || !frameContext.preparedCosmeticResult) {
@@ -556,21 +589,61 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const tasks: Promise<void>[] = [];
 
-        // Skip local script / scriptlet injection for preregistered domains —
-        // those are handled by preregistered content scripts, and injecting
-        // them again here would cause double execution. `remoteRules` below
+        // Skip dynamic injection of the rules covered by preregistered
+        // content scripts — injecting them again would cause double
+        // execution. Rules missing from the covered set (degraded at sync
+        // time) still go through the dynamic path. `remoteRules` below
         // doesn't need this guard: it only ever contains custom/user filter
         // rules, which preregistered scripts (local filters only) never cover.
-        const domain = getDomain(frameContext.url);
-        if (forceDynamicInjection || !domain || !CosmeticApi.isPreregisteredDomain(domain)) {
+        const coveredRules = forceDynamicInjection
+            ? undefined
+            : CosmeticApi.getPreregisteredCoveredRules(frameContext.url);
+
+        const { localRules } = frameContext.preparedCosmeticResult;
+
+        if (!coveredRules) {
             tasks.push(
                 CosmeticApi.applyLocalCosmeticRules(
                     tabId,
                     frameId,
-                    frameContext.preparedCosmeticResult.localRules,
+                    localRules,
                     frameContext.url,
                 ),
             );
+        } else {
+            // Rules are identified by hash: engine-sourced rules don't
+            // carry their text, so a text-based identity would never match.
+            // Rules that fail to hash keep the dynamic injection path —
+            // coverage can't be proven for them.
+            const uncoveredRules = (
+                await Promise.all(localRules.rawRules.map(async (rule) => {
+                    try {
+                        return coveredRules.has(await computeRuleHash(rule)) ? null : rule;
+                    } catch (e) {
+                        // eslint-disable-next-line max-len
+                        logger.error(`[tsweb.CosmeticApi.applyCosmeticRules]: Failed to hash a rule for "${frameContext.url}", keeping dynamic injection`, e);
+                        return rule;
+                    }
+                }))
+            ).filter((rule): rule is CosmeticRule => rule !== null);
+
+            if (uncoveredRules.length > 0) {
+                const rulesToApply = uncoveredRules.length === localRules.rawRules.length
+                    ? localRules
+                    : {
+                        ...CosmeticApi.getScriptsAndScriptletsData(uncoveredRules),
+                        rawRules: uncoveredRules,
+                    };
+
+                tasks.push(
+                    CosmeticApi.applyLocalCosmeticRules(
+                        tabId,
+                        frameId,
+                        rulesToApply,
+                        frameContext.url,
+                    ),
+                );
+            }
         }
 
         tasks.push(

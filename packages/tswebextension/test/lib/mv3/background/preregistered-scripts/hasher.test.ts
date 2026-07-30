@@ -68,6 +68,18 @@ describe('computeRuleHash', () => {
         );
     });
 
+    it('leaf hashers with an explicit $path pattern match computeRuleHash', async () => {
+        const pathPattern = '/watch';
+
+        expect(await computeRuleHash(jsRule('window._foo = 1;', { pattern: pathPattern }))).toBe(
+            await computeJsRuleHash('window._foo = 1;', pathPattern),
+        );
+
+        expect(await computeRuleHash(scriptletRule('set-cookie', ['a'], { pattern: pathPattern }))).toBe(
+            await computeScriptletHash('set-cookie', ['a'], pathPattern),
+        );
+    });
+
     it('produces a different hash for a JS rule with a $path modifier than without one', async () => {
         const withoutPath = await computeRuleHash(jsRule('window._foo = 1;'));
         const withPath = await computeRuleHash(jsRule('window._foo = 1;', { pattern: '/watch' }));

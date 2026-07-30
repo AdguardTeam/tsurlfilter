@@ -349,6 +349,21 @@ export class Engine {
     }
 
     /**
+     * Checks if a JS/scriptlet rule is cancelled by an allowlist exception.
+     *
+     * @param request Request to check.
+     * @param rule Cosmetic rule to check.
+     * @param ignoreExceptionPath If true, the `$path` modifier of exceptions
+     * is skipped, i.e. an exception applying to any path of the hostname
+     * cancels the rule. Defaults to false.
+     *
+     * @returns True if the rule is cancelled by an exception.
+     */
+    public isCosmeticRuleAllowlisted(request: Request, rule: CosmeticRule, ignoreExceptionPath = false): boolean {
+        return this.cosmeticEngine.isAllowlisted(request, rule, ignoreExceptionPath);
+    }
+
+    /**
      * Gets rules count.
      *
      * @returns The total number of rules.

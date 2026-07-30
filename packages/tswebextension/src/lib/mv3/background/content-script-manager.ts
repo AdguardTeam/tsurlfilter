@@ -92,6 +92,25 @@ const canonicalize = (script: ContentScriptDescriptor): Required<ContentScriptDe
 });
 
 /**
+ * Result of {@link ContentScriptManager.syncDetailed}.
+ */
+export interface SyncScriptsResult {
+    /**
+     * Errors from failed operations (already logged). Empty when everything
+     * succeeded.
+     */
+    errors: PromiseRejectedResult[];
+
+    /**
+     * Original (unprefixed) IDs of desired scripts that could NOT be
+     * registered — i.e. scripts with no guaranteed active registration
+     * after the call. Failed updates and unregistrations are NOT included:
+     * in those cases a (possibly stale) registration is still active.
+     */
+    failedScriptIds: string[];
+}
+
+/**
  * Manages dynamic content script registration via the chrome.scripting API.
  *
  * This class is not instantiable — all methods are static and accept a
@@ -371,6 +390,46 @@ export class ContentScriptManager {
      * Reconciles the actual state of registered content scripts with the
      * desired state for the given namespace.
      *
+     * Thin wrapper over {@link ContentScriptManager.syncDetailed} that
+     * discards per-script failure details and returns only the errors.
+     *
+     * @param namespace Namespace string used to prefix script IDs.
+     * @param desiredScripts The desired set of content scripts.
+     *
+     * @returns Promise that resolves with an array of rejected results if
+     * any operations failed, or an empty array if all succeeded.
+     *
+     * @throws {Error} If the namespace is invalid, or if the internal
+     * {@code get()} call fails.
+     */
+    public static async sync(
+        namespace: string,
+        desiredScripts: ContentScriptDescriptor[],
+    ): Promise<PromiseRejectedResult[]> {
+        const { errors } = await ContentScriptManager.syncDetailed(namespace, desiredScripts);
+        return errors;
+    }
+
+    /**
+     * Lists the original (unprefixed) IDs of all content scripts currently
+     * registered under the given namespace.
+     *
+     * @param namespace Namespace string used to prefix script IDs.
+     *
+     * @returns Promise that resolves with the array of registered script IDs.
+     *
+     * @throws {Error} If the namespace is invalid, or if
+     * chrome.scripting.getRegisteredContentScripts fails.
+     */
+    public static async listIds(namespace: string): Promise<string[]> {
+        const scripts = await ContentScriptManager.get(namespace);
+        return scripts.map((script) => script.id);
+    }
+
+    /**
+     * Reconciles the actual state of registered content scripts with the
+     * desired state for the given namespace.
+     *
      * Uses a diff-based approach: scripts present in the desired set but
      * missing from the current state are registered; scripts present in
      * the current state but missing from the desired set are unregistered;
@@ -388,23 +447,25 @@ export class ContentScriptManager {
      * scripts registered outside this manager. See the class-level
      * "Namespace ownership" note for details.
      *
-     * **Partial failure**: Errors from individual operations (unregister,
-     * register, update) are collected and returned — they are NOT thrown.
-     * Callers should inspect the return value to detect partial failures.
+     * **Batch failure**: the chrome API rejects a batched call as a unit
+     * (one bad entry fails them all). A failed register therefore marks ALL
+     * new script IDs as failed in {@link SyncScriptsResult.failedScriptIds};
+     * callers are expected to recover via a fallback for those scripts.
+     * Failed updates and unregistrations only surface in `errors`, since a
+     * (possibly stale) registration remains active.
      *
      * @param namespace Namespace string used to prefix script IDs.
      * @param desiredScripts The desired set of content scripts.
      *
-     * @returns Promise that resolves with an array of rejected results if
-     * any operations failed, or an empty array if all succeeded.
+     * @returns Promise that resolves with the per-script sync result.
      *
      * @throws {Error} If the namespace is invalid, or if the internal
      * {@code get()} call fails.
      */
-    public static async sync(
+    public static async syncDetailed(
         namespace: string,
         desiredScripts: ContentScriptDescriptor[],
-    ): Promise<PromiseRejectedResult[]> {
+    ): Promise<SyncScriptsResult> {
         ContentScriptManager.validateNamespace(namespace);
 
         const toRegisterScripts: ContentScriptDescriptor[] = [];
@@ -430,24 +491,32 @@ export class ContentScriptManager {
 
         const toRemoveIds = Array.from(existingMap.keys());
 
-        const result = await Promise.allSettled([
+        const [unregisterResult, registerResult, updateResult] = await Promise.allSettled([
             ContentScriptManager.unregister(namespace, toRemoveIds),
             ContentScriptManager.register(namespace, toRegisterScripts),
             ContentScriptManager.update(namespace, toUpdateScripts),
         ]);
 
-        const errors = result.filter(
+        const errors = [unregisterResult, registerResult, updateResult].filter(
             (r): r is PromiseRejectedResult => r.status === 'rejected',
         );
+
+        // Batch register is atomic: if it failed, none of the new scripts is
+        // active. Failed updates/unregistrations keep a stale registration
+        // active, so they only surface in `errors`.
+        const failedScriptIds = registerResult.status === 'rejected'
+            ? toRegisterScripts.map((script) => script.id)
+            : [];
+
         if (errors.length > 0) {
             const reasons = errors.map(({ reason }) => {
                 return reason instanceof Error ? `${reason.message}\n${reason.stack}` : String(reason);
             });
 
-            logger.error(`[tsweb.ContentScriptManager.sync]: ${errors.length} operation(s) failed:\n${reasons.join('\n---\n')}`);
+            logger.error(`[tsweb.ContentScriptManager.syncDetailed]: ${errors.length} operation(s) failed:\n${reasons.join('\n---\n')}`);
         }
 
-        return errors;
+        return { errors, failedScriptIds };
     }
 
     /**

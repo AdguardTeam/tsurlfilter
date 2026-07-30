@@ -31,7 +31,10 @@ import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import { MessagesApi } from './messages-api';
-import { PreregisteredScriptsService } from './preregistered-scripts/preregistered-scripts-service';
+import {
+    PREREGISTERED_SCRIPTS_NAMESPACE,
+    PreregisteredScriptsService,
+} from './preregistered-scripts/preregistered-scripts-service';
 import { RequestEvents } from './request/events/request-events';
 import { RuleSetsLoaderApi } from './rule-sets-loader-api';
 import { CspService } from './services/csp-service';
@@ -534,23 +537,27 @@ export class TsWebExtension implements AppInterface<
         documentBlockingService.configure(config);
 
         // Sync preregistered scripts BEFORE disabling dynamic injection for
-        // their domains, to avoid a gap where neither is active.
-        let preregisteredSyncSucceeded = false;
+        // their rules, to avoid a gap where neither is active.
+        let coveredPreregisteredRules = new Map<string, Set<string>>();
         if (configuration.preregisteredScripts) {
-            preregisteredSyncSucceeded = await PreregisteredScriptsService.sync(
-                configuration.settings.filteringEnabled,
+            if (appContext.preregisteredScriptIdsAtBoot === undefined) {
+                appContext.preregisteredScriptIdsAtBoot = new Set(
+                    await ContentScriptManager.listIds(PREREGISTERED_SCRIPTS_NAMESPACE),
+                );
+            }
+
+            // Debug needs verbose scriptlets, which only dynamic injection
+            // can build — disable preregistration entirely.
+            const { debugScriptlets } = configuration.settings;
+            const { coveredRules } = await PreregisteredScriptsService.sync(
+                configuration.settings.filteringEnabled && !debugScriptlets,
                 configuration.preregisteredScripts.domains,
                 configuration.preregisteredScripts.path,
             );
+            coveredPreregisteredRules = coveredRules;
         }
 
-        // Only skip dynamic injection if sync succeeded; otherwise keep it
-        // enabled as a fallback.
-        if (configuration.preregisteredScripts && preregisteredSyncSucceeded) {
-            CosmeticApi.setPreregisteredScriptDomains(configuration.preregisteredScripts.domains);
-        } else {
-            CosmeticApi.setPreregisteredScriptDomains([]);
-        }
+        CosmeticApi.setPreregisteredScriptRules(coveredPreregisteredRules);
 
         logger.trace('[tsweb.TsWebExtension.configure]: end');
 
@@ -569,19 +576,20 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Sets the list of domains that have preregistered content scripts.
+     * Sets the rules covered by preregistered content scripts, per hostname.
      *
-     * For these domains, local script rules and scriptlets will not be
-     * injected dynamically by the cosmetic API, preventing double execution
-     * with the preregistered bundles.
+     * Covered local script rules and scriptlets are not injected dynamically
+     * by the cosmetic API, preventing double execution with the
+     * preregistered bundles. Rules absent from the map keep the dynamic
+     * injection path.
      *
      * **MV3 only** — there is no MV2 equivalent because preregistered
      * content scripts are only available in Manifest V3.
      *
-     * @param domains List of preregistered domain strings (e.g. `["youtube.com"]`).
+     * @param rules Hostname to covered rule texts map.
      */
-    public static setPreregisteredScriptDomains(domains: string[]): void {
-        CosmeticApi.setPreregisteredScriptDomains(domains);
+    public static setPreregisteredScriptRules(rules: ReadonlyMap<string, ReadonlySet<string>>): void {
+        CosmeticApi.setPreregisteredScriptRules(rules);
     }
 
     /**

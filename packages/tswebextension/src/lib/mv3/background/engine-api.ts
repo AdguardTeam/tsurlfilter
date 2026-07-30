@@ -4,6 +4,7 @@ import {
     CompatibilityTypes,
     type CosmeticOption,
     CosmeticResult,
+    type CosmeticRule,
     Engine,
     type EngineFactoryFilterList,
     type HTTPMethod,
@@ -310,6 +311,28 @@ export class EngineApi {
      */
     public isLocalFilter(filterId: number): boolean {
         return this.localRulesFiltersIds.includes(filterId);
+    }
+
+    /**
+     * Checks if a JS/scriptlet rule is cancelled on a hostname by an allowlist
+     * exception (user rules, custom filters).
+     *
+     * @param hostname Hostname to match the exception domains against.
+     * @param rule Cosmetic rule to check.
+     * @param ignoreExceptionPath If true, the `$path` modifier of exceptions
+     * is skipped, i.e. an exception applying to any path of the hostname
+     * cancels the rule. Defaults to false.
+     *
+     * @returns `true` if the rule is cancelled by an exception, `false`
+     * otherwise or when the engine is not started.
+     */
+    public isCosmeticRuleAllowlisted(hostname: string, rule: CosmeticRule, ignoreExceptionPath = false): boolean {
+        if (!this.engine) {
+            return false;
+        }
+
+        const request = new Request(`https://${hostname}/`, null, RequestType.Document);
+        return this.engine.isCosmeticRuleAllowlisted(request, rule, ignoreExceptionPath);
     }
 
     /**

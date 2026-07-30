@@ -607,9 +607,19 @@ describe('ContentScriptManager', () => {
         });
 
         it('should return rejected results when sync operations fail', async () => {
-            mockRegister.mockRejectedValueOnce(new Error('Sync failed'));
+            // Pre-register a script, then make its update fail.
+            // (Register failures are surfaced via syncDetailed's failedScriptIds
+            // instead — see the batch failure tests below.)
+            await ContentScriptManager.register(NS, [
+                { id: 'existing', js: ['old.js'], matches: ['<all_urls>'] },
+            ]);
+            vi.clearAllMocks();
+            mockGetRegistered.mockResolvedValue([
+                { id: 'critical:existing', js: ['old.js'], matches: ['<all_urls>'] },
+            ]);
+            mockUpdate.mockRejectedValue(new Error('Update failed'));
             const result = await TsWebExtension.syncContentScripts(NS, [
-                { id: 'bad', js: ['bad.js'], matches: ['invalid'] },
+                { id: 'existing', js: ['new.js'], matches: ['<all_urls>'] },
             ]);
             expect(result).toHaveLength(1);
         });
@@ -648,7 +658,7 @@ describe('ContentScriptManager', () => {
             mockGetRegistered.mockResolvedValue([
                 { id: 'critical:domains', js: ['domains.js'], matches: ['<all_urls>'] },
             ]);
-            mockUnregister.mockRejectedValueOnce(new Error('Unregister API failure'));
+            mockUnregister.mockRejectedValue(new Error('Unregister API failure'));
             const result = await ContentScriptManager.sync(NS, [
                 { id: 'new', js: ['new.js'], matches: ['<all_urls>'] },
             ]);
@@ -656,7 +666,8 @@ describe('ContentScriptManager', () => {
             expect(mockUnregister).toHaveBeenCalledTimes(1);
         });
 
-        it('should return errors and leave namespace empty when unregister succeeds but register fails', async () => {
+        // eslint-disable-next-line max-len
+        it('should report failed IDs and leave namespace empty when unregister succeeds but register fails', async () => {
             // Pre-register one script in the namespace.
             await ContentScriptManager.register(NS, [
                 { id: 'old', js: ['old.js'], matches: ['<all_urls>'] },
@@ -668,30 +679,29 @@ describe('ContentScriptManager', () => {
                 { id: 'critical:old', js: ['old.js'], matches: ['<all_urls>'] },
             ]);
 
-            // Unregister will succeed (removing 'old').
-            // Register will fail (e.g. invalid match pattern for 'new').
-            mockRegister.mockRejectedValueOnce(new Error('Invalid match pattern'));
+            // Unregister will succeed (removing 'old'); the batch register
+            // fails (invalid match pattern for 'new'). Since the batch is
+            // atomic, 'new' ends up both in errors and in failedScriptIds.
+            mockRegister.mockRejectedValue(new Error('Invalid match pattern'));
 
-            const errors = await ContentScriptManager.sync(NS, [
+            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
                 { id: 'new', js: ['new.js'], matches: ['<invalid>'] },
             ]);
 
-            // sync() collects errors — it does NOT throw.
+            // syncDetailed() collects errors — it does NOT throw.
             expect(errors).toHaveLength(1);
-            expect(errors[0].status).toBe('rejected');
-            expect((errors[0] as PromiseRejectedResult).reason).toBeInstanceOf(Error);
-            expect((errors[0] as PromiseRejectedResult).reason.message).toBe('Invalid match pattern');
+            expect(failedScriptIds).toEqual(['new']);
 
             // Verify unregister was called (removing 'old').
             expect(mockUnregister).toHaveBeenCalledWith({ ids: ['critical:old'] });
 
-            // Verify register was attempted.
+            // Single batch register attempt.
             expect(mockRegister).toHaveBeenCalledTimes(1);
             expect(mockRegister.mock.calls[0][0][0].id).toBe('critical:new');
 
             // The namespace is now empty — old script was removed, new script was not added.
             // This is the documented partial-failure behavior: the caller must inspect
-            // the returned errors and decide how to recover.
+            // failedScriptIds and decide how to recover.
         });
     });
 
@@ -963,6 +973,84 @@ describe('ContentScriptManager', () => {
                 'critical:b',
             ]);
             expect(mockRegister).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('listIds', () => {
+        it('should return original (unprefixed) IDs of registered scripts', async () => {
+            mockGetRegistered.mockResolvedValue([
+                { id: 'critical:a', js: ['a.js'], matches: ['<all_urls>'] },
+                { id: 'critical:b', js: ['b.js'], matches: ['<all_urls>'] },
+                { id: 'stealth:c', js: ['c.js'], matches: ['<all_urls>'] },
+            ]);
+
+            const ids = await ContentScriptManager.listIds(NS);
+
+            expect(ids.sort()).toEqual(['a', 'b']);
+        });
+
+        it('should return an empty array when nothing is registered', async () => {
+            mockGetRegistered.mockResolvedValue([]);
+
+            const ids = await ContentScriptManager.listIds(NS);
+
+            expect(ids).toEqual([]);
+        });
+
+        it('should validate namespace before making any chrome API calls', async () => {
+            await expect(ContentScriptManager.listIds('')).rejects.toThrow('Namespace must not be empty');
+            expect(mockGetRegistered).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('syncDetailed — batch failures', () => {
+        it('should report all new IDs as failed when the batch register fails because of one bad entry', async () => {
+            mockGetRegistered.mockResolvedValue([]);
+            mockRegister.mockRejectedValue(new Error('Invalid match pattern'));
+
+            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+                { id: 'good', js: ['good.js'], matches: ['<all_urls>'] },
+                { id: 'bad', js: ['bad.js'], matches: ['<invalid>'] },
+            ]);
+
+            // The batch register is atomic — nothing was registered, so ALL
+            // new IDs are reported as failed; the caller is expected to fall
+            // back for them.
+            expect(errors).toHaveLength(1);
+            expect(failedScriptIds.sort()).toEqual(['bad', 'good']);
+            expect(mockRegister).toHaveBeenCalledTimes(1);
+        });
+
+        it('should surface an error and leave the stale registration when a batch update fails', async () => {
+            await ContentScriptManager.register(NS, [
+                { id: 'existing', js: ['old.js'], matches: ['<all_urls>'] },
+            ]);
+            vi.clearAllMocks();
+            mockGetRegistered.mockResolvedValue([
+                { id: 'critical:existing', js: ['old.js'], matches: ['<all_urls>'] },
+            ]);
+            mockUpdate.mockRejectedValue(new Error('Update API failure'));
+
+            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+                { id: 'existing', js: ['new.js'], matches: ['<all_urls>'] },
+            ]);
+
+            expect(errors).toHaveLength(1);
+            // Stale registration is still active — not reported as failed.
+            expect(failedScriptIds).toEqual([]);
+        });
+
+        it('should report all desired IDs as failed when every registration fails', async () => {
+            mockGetRegistered.mockResolvedValue([]);
+            mockRegister.mockRejectedValue(new Error('Register API failure'));
+
+            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+                { id: 'a', js: ['a.js'], matches: ['<all_urls>'] },
+                { id: 'b', js: ['b.js'], matches: ['<all_urls>'] },
+            ]);
+
+            expect(errors).toHaveLength(1);
+            expect(failedScriptIds.sort()).toEqual(['a', 'b']);
         });
     });
 });

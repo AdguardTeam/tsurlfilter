@@ -39,6 +39,18 @@ export class AppContext {
      */
     @sessionDecorator(SessionStorageKey.CosmeticsInjectedOnStartup)
     accessor cosmeticsInjectedOnStartup!: boolean;
+
+    /**
+     * Hostnames with an active preregistered content script registration,
+     * snapshotted when the service worker started (before the first sync of
+     * this SW lifetime). Plain (non-persisted) field: a stale snapshot must
+     * not survive an extension update that removes registrations.
+     *
+     * Used to decide whether a pre-existing tab could have received the
+     * preregistered bundle at document_start (skip dynamic injection) or
+     * not (force dynamic injection).
+     */
+    public preregisteredScriptIdsAtBoot?: Set<string>;
 }
 
 export const appContext = new AppContext();

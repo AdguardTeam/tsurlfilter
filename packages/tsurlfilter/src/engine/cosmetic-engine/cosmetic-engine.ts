@@ -1,6 +1,7 @@
 import { type CosmeticRuleParts, CosmeticRuleType } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
+import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { type IndexedStorageCosmeticRuleParts } from '../../rules/rule';
 import { CHUNK_SIZE } from '../constants';
 import { CosmeticOption } from '../cosmetic-option';
@@ -160,6 +161,21 @@ export class CosmeticEngine {
      */
     public static matchOption(option: CosmeticOption, targetOption: CosmeticOption): boolean {
         return (option & targetOption) === targetOption;
+    }
+
+    /**
+     * Checks if a JS/scriptlet rule is cancelled by an allowlist exception.
+     *
+     * @param request Request to check.
+     * @param rule Cosmetic rule to check.
+     * @param ignoreExceptionPath If true, the `$path` modifier of exceptions
+     * is skipped, i.e. an exception applying to any path of the hostname
+     * cancels the rule. Defaults to false.
+     *
+     * @returns True if the rule is cancelled by an exception.
+     */
+    public isAllowlisted(request: Request, rule: CosmeticRule, ignoreExceptionPath = false): boolean {
+        return this.jsLookupTable.isAllowlisted(request, rule, ignoreExceptionPath);
     }
 
     /**

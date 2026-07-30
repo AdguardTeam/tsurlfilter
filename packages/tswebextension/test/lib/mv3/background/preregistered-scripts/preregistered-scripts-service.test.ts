@@ -6,10 +6,16 @@ import {
     vi,
 } from 'vitest';
 
+import { CosmeticRule } from '@adguard/tsurlfilter';
+
 import { ContentScriptManager } from '../../../../../src/lib/mv3/background/content-script-manager';
 import { DocumentApi } from '../../../../../src/lib/mv3/background/document-api';
 import { engineApi } from '../../../../../src/lib/mv3/background/engine-api';
-import { CLEANUP_BUNDLE_FILENAME } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
+import {
+    CLEANUP_BUNDLE_FILENAME,
+    computeRuleHash,
+    MANIFEST_FILENAME,
+} from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
 import {
     PreregisteredScriptsService,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/preregistered-scripts-service';
@@ -18,6 +24,7 @@ vi.mock('../../../../../src/lib/mv3/background/engine-api', () => ({
     engineApi: {
         matchCosmetic: vi.fn(),
         isLocalFilter: vi.fn(),
+        isCosmeticRuleAllowlisted: vi.fn().mockReturnValue(false),
     },
 }));
 
@@ -30,6 +37,8 @@ vi.mock('../../../../../src/lib/mv3/background/document-api', () => ({
 vi.mock('../../../../../src/lib/mv3/background/content-script-manager', () => ({
     ContentScriptManager: {
         sync: vi.fn().mockResolvedValue([]),
+        syncDetailed: vi.fn().mockResolvedValue({ errors: [], failedScriptIds: [] }),
+        listIds: vi.fn().mockResolvedValue([]),
     },
 }));
 
@@ -51,7 +60,7 @@ const mockScriptletRule = (
     args: string[],
     filterListId = 1,
     pathModifier?: { pattern: string },
-): object => ({
+): any => ({
     isScriptlet: true,
     getScriptletData: (): object => ({ params: { name, args } }),
     getFilterListId: (): number => filterListId,
@@ -66,7 +75,7 @@ const mockScriptletRule = (
  *
  * @returns Mock JS injection rule.
  */
-const mockJsRule = (content: string, filterListId = 1): object => ({
+const mockJsRule = (content: string, filterListId = 1): any => ({
     isScriptlet: false,
     getContent: (): string => content,
     getFilterListId: (): number => filterListId,
@@ -92,7 +101,7 @@ const mockJsRule = (content: string, filterListId = 1): object => ({
  * no script rules (simulating an allowlist rule).
  */
 const setupEngine = (
-    rulesByDomain: Record<string, ReturnType<typeof mockScriptletRule>[]>,
+    rulesByDomain: Record<string, any[]>,
     localFilterIds: number[] = [1],
     disableJsForDomains: string[] = [],
 ): void => {
@@ -108,36 +117,74 @@ const setupEngine = (
     );
 };
 
+interface ManifestStub {
+    hashes: string[];
+}
+
+/**
+ * Stubs `chrome.runtime.getURL` and `fetch` so the manifest lookup behaves
+ * as desired.
+ *
+ * @param manifest Manifest object to serve, or `null` to simulate a missing
+ * (404) manifest.
+ */
+const setupManifest = (
+    manifest: ManifestStub | null,
+): void => {
+    // sinon-chrome exposes getURL via a getter — replace the whole global.
+    const getURL = vi.fn((p: string) => `chrome-extension://test/${p}`);
+    vi.stubGlobal('chrome', {
+        ...chrome,
+        runtime: { ...chrome.runtime, getURL },
+    });
+
+    vi.stubGlobal('fetch', vi.fn(async () => {
+        if (manifest === null) {
+            return { ok: false, status: 404 };
+        }
+        return {
+            ok: true,
+            status: 200,
+            json: async (): Promise<ManifestStub> => manifest,
+        };
+    }));
+};
+
 describe('PreregisteredScriptsService', () => {
     afterEach(() => {
         vi.clearAllMocks();
+        vi.unstubAllGlobals();
     });
 
     describe('sync — early exits', () => {
-        it('syncs an empty script list and resolves true when filtering is disabled', async () => {
+        it('syncs an empty script list and covers no domains when filtering is disabled', async () => {
             setupEngine({ 'youtube.com': [mockScriptletRule('foo', [])] });
 
             const result = await PreregisteredScriptsService.sync(false, ['youtube.com'], SCRIPTS_PATH);
 
-            expect(result).toBe(true);
-            expect(ContentScriptManager.sync).toHaveBeenCalledWith('preregistered', []);
+            expect(result.coveredRules).toEqual(new Map());
+            expect(ContentScriptManager.syncDetailed).toHaveBeenCalledWith('preregistered', []);
         });
 
-        it('syncs an empty script list and resolves true when domains list is empty', async () => {
+        it('syncs an empty script list and covers no domains when domains list is empty', async () => {
             const result = await PreregisteredScriptsService.sync(true, [], SCRIPTS_PATH);
 
-            expect(result).toBe(true);
-            expect(ContentScriptManager.sync).toHaveBeenCalledWith('preregistered', []);
+            expect(result.coveredRules).toEqual(new Map());
+            expect(ContentScriptManager.syncDetailed).toHaveBeenCalledWith('preregistered', []);
         });
     });
 
     describe('sync — building scripts', () => {
         it('registers a content script for a domain with a local scriptlet rule', async () => {
-            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', ['a', 'b'])] });
+            const rule = mockScriptletRule('set-cookie', ['a', 'b']);
+            setupEngine({ 'youtube.com': [rule] });
 
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(result.coveredRules.get('youtube.com'))
+                .toEqual(new Set([await computeRuleHash(rule)]));
+
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
             expect(scripts).toHaveLength(1);
             expect(scripts[0]).toMatchObject({
                 id: 'youtube.com',
@@ -156,20 +203,24 @@ describe('PreregisteredScriptsService', () => {
         });
 
         it('registers a content script for a domain with a JS injection rule', async () => {
-            setupEngine({ 'youtube.com': [mockJsRule('console.log(1)')] });
+            const rule = mockJsRule('console.log(1)');
+            setupEngine({ 'youtube.com': [rule] });
 
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(result.coveredRules.get('youtube.com'))
+                .toEqual(new Set([await computeRuleHash(rule)]));
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
             expect(scripts).toHaveLength(1);
         });
 
         it('does not register a script for a domain with no matching rules', async () => {
             setupEngine({ 'youtube.com': [] });
 
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(result.coveredRules).toEqual(new Map());
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
             expect(scripts).toHaveLength(0);
         });
 
@@ -180,9 +231,10 @@ describe('PreregisteredScriptsService', () => {
                 ['youtube.com'],
             );
 
-            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(result.coveredRules).toEqual(new Map());
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
             expect(scripts).toHaveLength(0);
         });
 
@@ -209,7 +261,7 @@ describe('PreregisteredScriptsService', () => {
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
             expect(scripts).toHaveLength(1);
             expect(scripts[0].js).toHaveLength(3);
         });
@@ -221,7 +273,7 @@ describe('PreregisteredScriptsService', () => {
 
             await PreregisteredScriptsService.sync(true, ['www.youtube.com'], SCRIPTS_PATH);
 
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
             expect(scripts).toHaveLength(1);
             expect(scripts[0].id).toBe('www.youtube.com');
             expect(scripts[0].matches).toEqual(['*://www.youtube.com/*']);
@@ -234,7 +286,7 @@ describe('PreregisteredScriptsService', () => {
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
             expect(scripts).toHaveLength(0);
         });
 
@@ -249,7 +301,7 @@ describe('PreregisteredScriptsService', () => {
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
             expect(scripts).toHaveLength(0);
         });
 
@@ -266,56 +318,217 @@ describe('PreregisteredScriptsService', () => {
 
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
             expect(scripts).toHaveLength(1);
             // Shared bundle + exactly one per-hash file (the local rule only) + cleanup.
             expect(scripts[0].js).toHaveLength(3);
         });
 
-        it('skips a rule whose getScriptletData() returns null without failing the whole sync', async () => {
+        it('keeps the domain registered when a single rule fails to hash', async () => {
             const badRule = {
                 isScriptlet: true,
                 getScriptletData: (): null => null,
                 getFilterListId: (): number => 1,
             };
-            setupEngine({ 'youtube.com': [badRule as any, mockScriptletRule('set-cookie', [])] });
+            const goodRule = mockScriptletRule('set-cookie', []);
+            setupEngine({ 'youtube.com': [badRule as any, goodRule] });
 
             const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
-            expect(result).toBe(true);
-            const [, scripts] = vi.mocked(ContentScriptManager.sync).mock.calls[0];
+            expect(result.coveredRules.get('youtube.com'))
+                .toEqual(new Set([await computeRuleHash(goodRule)]));
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
             expect(scripts[0].js).toHaveLength(3); // shared bundle + the one valid rule + cleanup
         });
     });
 
-    describe('sync — failure propagation', () => {
-        it('resolves false when ContentScriptManager.sync reports partial failures', async () => {
+    describe('sync — manifest check', () => {
+        it('registers the domain when the manifest contains all computed hashes', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            setupEngine({ 'youtube.com': [rule] });
+            setupManifest({ hashes: [await computeRuleHash(rule)] });
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect([...result.coveredRules.keys()]).toEqual(['youtube.com']);
+            expect(chrome.runtime.getURL).toHaveBeenCalledWith(`${SCRIPTS_PATH}/${MANIFEST_FILENAME}`);
+        });
+
+        it('covers no rules when the only computed hash is missing from the manifest', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            setupEngine({ 'youtube.com': [rule] });
+            setupManifest({ hashes: ['deadbeefdeadbeef'] });
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result.coveredRules).toEqual(new Map());
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
+            expect(scripts).toHaveLength(0);
+        });
+
+        it('degrades only the rule whose hash is missing from the manifest, keeping the rest covered', async () => {
+            const keptRule = mockScriptletRule('set-cookie', []);
+            const degradedRule = mockScriptletRule('prevent-fetch', []);
+            setupEngine({ 'youtube.com': [keptRule, degradedRule] });
+            setupManifest({ hashes: [await computeRuleHash(keptRule)] });
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result.coveredRules.get('youtube.com'))
+                .toEqual(new Set([await computeRuleHash(keptRule)]));
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
+            expect(scripts[0].js).toHaveLength(3); // shared bundle + the covered rule + cleanup
+        });
+
+        it('proceeds without the check when the manifest is missing (404)', async () => {
             setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
-            vi.mocked(ContentScriptManager.sync).mockResolvedValueOnce([
-                { status: 'rejected', reason: new Error('registerContentScripts failed') } as PromiseRejectedResult,
+            setupManifest(null);
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect([...result.coveredRules.keys()]).toEqual(['youtube.com']);
+        });
+
+        it('proceeds without the check when the manifest fetch fails', async () => {
+            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+            const getURL = vi.fn(() => {
+                throw new Error('no chrome.runtime');
+            });
+            vi.stubGlobal('chrome', { ...chrome, runtime: { ...chrome.runtime, getURL } });
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect([...result.coveredRules.keys()]).toEqual(['youtube.com']);
+        });
+
+        it('proceeds without the check when the manifest is malformed', async () => {
+            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+            setupManifest({ hashes: 'not-an-array' } as any);
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect([...result.coveredRules.keys()]).toEqual(['youtube.com']);
+        });
+    });
+
+    describe('sync — runtime $path exceptions', () => {
+        const blockedRuleText = "youtube.com#%#//scriptlet('set-cookie', 'a', 'b')";
+        const keptRuleText = "youtube.com#%#//scriptlet('prevent-fetch')";
+
+        afterEach(() => {
+            vi.mocked(engineApi.isCosmeticRuleAllowlisted).mockReset().mockReturnValue(false);
+        });
+
+        it('degrades only the rule cancelled by a $path exception, keeping the rest covered', async () => {
+            const blockedRule = new CosmeticRule(blockedRuleText, 1);
+            const keptRule = new CosmeticRule(keptRuleText, 1);
+            setupEngine({ 'youtube.com': [blockedRule, keptRule] });
+            vi.mocked(engineApi.isCosmeticRuleAllowlisted).mockImplementation(
+                (_hostname: string, rule: any) => rule.getText() === blockedRuleText,
+            );
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result.coveredRules.get('youtube.com')).toEqual(new Set([await computeRuleHash(keptRule)]));
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
+            expect(scripts).toHaveLength(1);
+            expect(scripts[0].js).toHaveLength(3); // shared bundle + the covered rule + cleanup
+        });
+
+        it('asks the engine to ignore the exception `$path` modifier', async () => {
+            const blockedRule = new CosmeticRule(blockedRuleText, 1);
+            setupEngine({ 'youtube.com': [blockedRule] });
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(engineApi.isCosmeticRuleAllowlisted)
+                .toHaveBeenCalledWith('youtube.com', blockedRule, true);
+        });
+
+        it('does not register the domain when its only rule is cancelled by a $path exception', async () => {
+            const blockedRule = new CosmeticRule(blockedRuleText, 1);
+            setupEngine({ 'youtube.com': [blockedRule] });
+            vi.mocked(engineApi.isCosmeticRuleAllowlisted).mockReturnValue(true);
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result.coveredRules).toEqual(new Map());
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
+            expect(scripts).toHaveLength(0);
+        });
+
+        it('covers the rule when no runtime exception cancels it', async () => {
+            const blockedRule = new CosmeticRule(blockedRuleText, 1);
+            setupEngine({ 'youtube.com': [blockedRule] });
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result.coveredRules.get('youtube.com')).toEqual(new Set([await computeRuleHash(blockedRule)]));
+        });
+    });
+
+    describe('sync — failure propagation', () => {
+        it('excludes failed domains from coveredRules when registration fails for them', async () => {
+            setupEngine({
+                'youtube.com': [mockScriptletRule('set-cookie', [])],
+                'example.com': [mockScriptletRule('set-cookie', [])],
+            });
+            const rejection = {
+                status: 'rejected',
+                reason: new Error('registerContentScripts failed'),
+            } as PromiseRejectedResult;
+            vi.mocked(ContentScriptManager.syncDetailed).mockResolvedValueOnce({
+                errors: [rejection],
+                failedScriptIds: ['youtube.com'],
+            });
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com', 'example.com'], SCRIPTS_PATH);
+
+            expect([...result.coveredRules.keys()]).toEqual(['example.com']);
+        });
+
+        it('covers no domains (without throwing) when ContentScriptManager.syncDetailed throws', async () => {
+            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+            vi.mocked(ContentScriptManager.syncDetailed).mockRejectedValueOnce(new Error('invalid namespace'));
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result.coveredRules).toEqual(new Map());
+        });
+
+        it('covers all domains when ContentScriptManager.syncDetailed succeeds with no failures', async () => {
+            setupEngine({
+                'youtube.com': [mockScriptletRule('set-cookie', [])],
+                'example.com': [mockScriptletRule('set-cookie', [])],
+            });
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com', 'example.com'], SCRIPTS_PATH);
+
+            expect([...result.coveredRules.keys()].sort()).toEqual(['example.com', 'youtube.com']);
+        });
+    });
+
+    describe('sync — concurrency', () => {
+        it('serializes concurrent sync calls', async () => {
+            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+
+            const order: string[] = [];
+            vi.mocked(ContentScriptManager.syncDetailed).mockImplementation(async () => {
+                order.push('start');
+                await new Promise((resolve) => {
+                    setTimeout(resolve, 10);
+                });
+                order.push('end');
+                return { errors: [], failedScriptIds: [] };
+            });
+
+            await Promise.all([
+                PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH),
+                PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH),
             ]);
 
-            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            expect(result).toBe(false);
-        });
-
-        it('resolves false (without throwing) when ContentScriptManager.sync throws', async () => {
-            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
-            vi.mocked(ContentScriptManager.sync).mockRejectedValueOnce(new Error('invalid namespace'));
-
-            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            expect(result).toBe(false);
-        });
-
-        it('resolves true when ContentScriptManager.sync succeeds with no errors', async () => {
-            setupEngine({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
-            vi.mocked(ContentScriptManager.sync).mockResolvedValueOnce([]);
-
-            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
-
-            expect(result).toBe(true);
+            // Second sync must not start before the first one finished.
+            expect(order).toEqual(['start', 'end', 'start', 'end']);
         });
     });
 });

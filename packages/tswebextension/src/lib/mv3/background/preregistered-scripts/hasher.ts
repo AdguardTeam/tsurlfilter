@@ -7,10 +7,33 @@ export const SHARED_BUNDLE_FILENAME = 'scriptlets-bundle.js';
 
 /**
  * Filename of the cleanup script loaded after the shared bundle and every
- * per-hash file. Deletes the coordination property the shared bundle creates
- * on `window`, so it never survives into the page's own script execution.
+ * per-hash file. Reassigns the coordination `let` binding the shared bundle
+ * declares, so it doesn't survive into the page's own script execution.
  */
 export const CLEANUP_BUNDLE_FILENAME = 'cleanup.js';
+
+/**
+ * Filename of the JSON manifest describing the generated artifacts:
+ * the coordination key and the set of per-rule hashes with matching files.
+ */
+export const MANIFEST_FILENAME = 'manifest.json';
+
+/**
+ * Shape of the `manifest.json` shipped next to the generated artifacts.
+ * Shared contract between the build-time writer (browser-extension tools)
+ * and the runtime reader ({@link PreregisteredScriptsService}).
+ */
+export interface PreregisteredScriptsManifest {
+    /**
+     * Coordination key baked into the shared bundle of this generation.
+     */
+    coordinationKey: string;
+
+    /**
+     * Hashes of the current generation's per-rule files.
+     */
+    hashes: string[];
+}
 
 /**
  * Subdirectory within the filters folder where preregistered-script bundles live.
@@ -42,26 +65,53 @@ export const hashString = async (text: string): Promise<string> => {
 };
 
 /**
+ * Type-discriminator prefixes so a scriptlet invocation and a JS rule body
+ * can never hash to the same value even if their raw text happens to
+ * coincide (e.g. a JS rule body that's textually identical to
+ * `name + JSON.stringify(args)` for some scriptlet).
+ */
+const SCRIPTLET_HASH_PREFIX = 's:';
+const JS_RULE_HASH_PREFIX = 'j:';
+
+/**
+ * Suffix appended to the hash input when a rule carries a `$path` modifier,
+ * so the same rule body with different `$path` values hashes differently.
+ *
+ * @param pathPattern Raw `$path` modifier pattern.
+ *
+ * @returns Suffix string or an empty string.
+ */
+const pathHashSuffix = (pathPattern?: string): string => {
+    return pathPattern ? `|path:${pathPattern}` : '';
+};
+
+/**
  * Computes the stable hash for a scriptlet invocation.
  *
  * @param name Scriptlet name.
  * @param args Scriptlet arguments array.
+ * @param pathPattern Optional raw `$path` modifier pattern of the rule.
  *
  * @returns SHA-256 hex hash string.
  */
-export const computeScriptletHash = async (name: string, args: string[]): Promise<string> => {
-    return hashString(name + JSON.stringify(args));
+export const computeScriptletHash = async (
+    name: string,
+    args: string[],
+    pathPattern?: string,
+): Promise<string> => {
+    return hashString(SCRIPTLET_HASH_PREFIX + name + JSON.stringify(args) + pathHashSuffix(pathPattern));
 };
 
 /**
  * Computes the stable hash for a JS injection rule.
  *
  * @param body Generated JS rule body.
+ * @param pathPattern Optional raw `$path` modifier pattern of the rule.
  *
  * @returns SHA-256 hex hash string.
  */
-export const computeJsRuleHash = async (body: string): Promise<string> => {
-    return hashString(body);
+export const computeJsRuleHash = async (body: string, pathPattern?: string): Promise<string> => {
+    return hashString(JS_RULE_HASH_PREFIX + body + pathHashSuffix(pathPattern));
 };
 
 /**
@@ -80,10 +130,10 @@ export const computeJsRuleHash = async (body: string): Promise<string> => {
  * @throws If the rule is a scriptlet rule but its scriptlet data can't be read.
  */
 export const computeRuleHash = async (rule: CosmeticRule): Promise<string> => {
-    const pathSuffix = rule.pathModifier ? `|path:${rule.pathModifier.pattern}` : '';
+    const pathPattern = rule.pathModifier?.pattern;
 
     if (!rule.isScriptlet) {
-        return hashString(rule.getContent() + pathSuffix);
+        return computeJsRuleHash(rule.getContent(), pathPattern);
     }
 
     const data = rule.getScriptletData();
@@ -91,16 +141,17 @@ export const computeRuleHash = async (rule: CosmeticRule): Promise<string> => {
         throw new Error('getScriptletData() returned null for a scriptlet rule');
     }
 
-    return hashString(data.params.name + JSON.stringify(data.params.args) + pathSuffix);
+    return computeScriptletHash(data.params.name, data.params.args, pathPattern);
 };
 
 /**
  * Normalizes a domain string for comparison: trims whitespace, lower-cases it,
  * strips leading/trailing dots, and drops a leading `www.` prefix.
  *
- * Shared by build-time collection (browser-extension) and runtime matching
- * (`CosmeticApi`, `PreregisteredScriptsService`) so both sides agree on
- * whether two domain strings refer to the same domain.
+ * Used at build time (browser-extension `ScriptletCollector`) to normalize
+ * configured preregistered domains. Runtime matching does NOT use it: content
+ * script match patterns are exact-host, so `CosmeticApi` compares exact
+ * (lower-cased) hostnames instead.
  *
  * @param domain Raw domain string.
  *
