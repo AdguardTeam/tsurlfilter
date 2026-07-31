@@ -19,6 +19,10 @@ The modifier validator API is available in the `@adguard/agtree` package:
 import { modifierValidator } from '@adguard/agtree';
 ```
 
+> [!NOTE]
+> The examples below obtain a `Modifier` AST node by parsing a full rule with
+> `RuleParserPipeline` and extracting it from the result's modifier list.
+
 ### <a name="modifier-validator-api--exists"></a> `exists()`
 
 ```ts
@@ -41,15 +45,28 @@ where `Modifier` is a [common parser type][parser-modifier-type].
 [**Examples of `exists()` usage:**](#modifier-validator-api--exists--examples)
 
 ```ts
-import { ModifierParser, modifierValidator } from '@adguard/agtree';
+import { RuleParserPipeline, RuleCategory, NetworkRuleType, modifierValidator } from '@adguard/agtree';
 
-// ModifierParser.parse() converts a string modifier into the AGTree `Modifier` type
+// RuleParserPipeline parses a full rule; we extract the modifier node from the
+// result's modifier list.
+const parser = new RuleParserPipeline();
 
-// true is returned because $domain is a known modifier
-modifierValidator.exists(ModifierParser.parse('domain=example.com|example.org'));
+function firstModifier(ruleSource: string) {
+    const rule = parser.parse(ruleSource);
+    if (rule.category === RuleCategory.Network && rule.type === NetworkRuleType.NetworkRule) {
+        return rule.modifiers?.children[0];
+    }
+    return undefined;
+}
 
-// false is returned because $non-existent-modifier is not a known modifier
-modifierValidator.exists(ModifierParser.parse('non-existent-modifier=value'));
+// Note: the `!` assertions below are safe — each sample rule
+// always produces a network rule with at least one modifier.
+
+// true: $domain is a known modifier
+modifierValidator.exists(firstModifier('||example.com^$domain=example.com|example.org')!);
+
+// false: $non-existent-modifier is not a known modifier
+modifierValidator.exists(firstModifier('||example.com^$non-existent-modifier=value')!);
 ```
 
 ### <a name="modifier-validator-api--validate"></a> `validate()`
@@ -107,8 +124,8 @@ where
 [**Examples of `validate()` usage:**](#modifier-validator-api--validate--examples)
 
 ```ts
-import { Platform, ModifierParser, modifierValidator } from '@adguard/agtree';
-// ModifierParser.parse() converts a string modifier into the AGTree `Modifier` type
+import { Platform } from '@adguard/agtree';
+// `parser` and `firstModifier` are defined in the `exists()` example above.
 ```
 
 - `$webrtc` is not supported by AdGuard:
@@ -116,7 +133,7 @@ import { Platform, ModifierParser, modifierValidator } from '@adguard/agtree';
     ```ts
     modifierValidator.validate(
         [Platform.AdgOsWindows],
-        ModifierParser.parse('webrtc'),
+        firstModifier('||example.com^$webrtc')!,
     );
     ```
 
@@ -134,7 +151,7 @@ import { Platform, ModifierParser, modifierValidator } from '@adguard/agtree';
     ```ts
     modifierValidator.validate(
         [Platform.UboExtFirefox],
-        ModifierParser.parse('webrtc'),
+        firstModifier('||example.com^$webrtc')!,
     );
     ```
 
@@ -151,7 +168,7 @@ import { Platform, ModifierParser, modifierValidator } from '@adguard/agtree';
     ```ts
     modifierValidator.validate(
         [Platform.AdgOsWindows],
-        ModifierParser.parse('stealth=dpi'),
+        firstModifier('||example.com^$stealth=dpi')!,
         false,
     );
     ```
@@ -170,7 +187,7 @@ import { Platform, ModifierParser, modifierValidator } from '@adguard/agtree';
     ```ts
     modifierValidator.validate(
         [Platform.AdgOsWindows],
-        ModifierParser.parse('mp4'),
+        firstModifier('||example.com^$mp4')!,
     );
     ```
 

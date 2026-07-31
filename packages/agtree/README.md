@@ -25,10 +25,19 @@
 
 AGTree is a tool set for working with adblock filter lists. It contains the following modules:
 
-- [Adblock rule parser][parser-url]
-- [Adblock rule converter][converter-url]
-- [Adblock rule validator][validator-url]
-- [Compatibility tables][compatibility-tables-url]
+- [Adblock rule parser][parser-url] — the v5 `RuleParserPipeline` is imported from `@adguard/agtree`;
+  the structural parser stage is importable via the `@adguard/agtree/parser` subpath
+- [Adblock rule generator][generator-url] — importable via the `@adguard/agtree/generator` subpath
+- [Adblock rule converter][converter-url] — importable via the `@adguard/agtree/converter` subpath
+- [Adblock rule validator][validator-url] — re-exported through the package root (`@adguard/agtree`)
+- [Compatibility tables][compatibility-tables-url] — re-exported through the package root (`@adguard/agtree`)
+- [Utils][utils-url] — importable via the `@adguard/agtree/utils` subpath
+- [AST walker][walker-url] — importable via the `@adguard/agtree/walker` subpath
+
+> [!NOTE]
+> Modules whose source lives in `src/` directories — such as `ast-utils/`
+> helpers like `parseDomainList` — are re-exported through the package root
+> (`@adguard/agtree`), not via separate subpaths.
 
 ## Installation
 
@@ -39,17 +48,123 @@ You can install the library using
 - [PNPM][pnpm-pkg-manager-url]: `pnpm add @adguard/agtree`
 
 > [!IMPORTANT]
-> AGTree is an ESM-only package and requires Node.js version 18 or higher.
+> AGTree is an ESM-only package and requires Node.js version 22 or higher.
 
 [yarn-pkg-manager-url]: https://yarnpkg.com/en/docs/install
 [npm-pkg-manager-url]: https://www.npmjs.com/get-npm
 [pnpm-pkg-manager-url]: https://pnpm.io/
 
+## Quick start
+
+> [!NOTE]
+> The v5 pipeline API below is **preview/alpha**. AGTree is currently at
+> `5.0.0-alpha.0`; the public surface may change before 5.0.0 GA.
+
+Install and import:
+
+```ts
+import {
+    RuleParserPipeline,
+    FilterListPipeline,
+    parseDomainList,
+    PIPE_MODIFIER_SEPARATOR,
+    COMMA_DOMAIN_LIST_SEPARATOR,
+    hasNativeCssPseudoClass,
+    RuleCategory,
+    NetworkRuleType,
+    type ParseOptions,
+} from '@adguard/agtree';
+import { RuleGenerator } from '@adguard/agtree/generator';
+```
+
+### Parse a single rule
+
+```ts
+const parser = new RuleParserPipeline();
+
+// A network rule:
+const networkRule = parser.parse('||example.com^$script');
+if (networkRule.category === RuleCategory.Network
+    && networkRule.type === NetworkRuleType.NetworkRule) {
+    console.log(networkRule.pattern.value); // "||example.com^"
+}
+
+// A cosmetic (element-hiding) rule:
+const cosmeticRule = parser.parse('##.banner');
+if (cosmeticRule.category === RuleCategory.Cosmetic) {
+    console.log(cosmeticRule.type); // e.g. "ElementHidingRule"
+}
+```
+
+### Parse a whole filter list
+
+```ts
+const filterListPipeline = new FilterListPipeline();
+const list = filterListPipeline.parse([
+    '! Title: Example',
+    '||example.com^$script',
+    '##.banner',
+].join('\n'));
+
+console.log(list.children.length); // number of top-level nodes
+```
+
+### Parse a `$domain` value
+
+```ts
+// Pipe-separated (AdGuard default):
+const domains = parseDomainList('example.com|~example.org', undefined, 0, PIPE_MODIFIER_SEPARATOR);
+console.log(domains.children.map((c) => c.value));      // ["example.com", "example.org"]
+console.log(domains.children.map((c) => c.exception));  // [false, true]
+
+// Comma-separated (e.g. ABP/uBO):
+parseDomainList('a.com,b.com', undefined, 0, COMMA_DOMAIN_LIST_SEPARATOR);
+```
+
+### Parse an `/etc/hosts`-style host rule
+
+```ts
+// Host rules are opt-in via the `parseHostRules` flag on ParseOptions:
+const host = parser.parse('127.0.0.1 example.com example.org', {
+    parseHostRules: true,
+});
+
+if (host.category === RuleCategory.Network
+    && host.type === NetworkRuleType.HostRule) {
+    console.log(host.ip.value);                          // "127.0.0.1"
+    console.log(host.hostnames.children.map((h) => h.value)); // ["example.com", "example.org"]
+}
+```
+
+### Round-trip: parse → mutate → serialize
+
+```ts
+const node = parser.parse('||example.com^$script');
+const text = RuleGenerator.generate(node); // "||example.com^$script"
+```
+
+### Check a selector for native CSS pseudo-classes
+
+```ts
+hasNativeCssPseudoClass('div:has(> a)'); // true  — :has() is native in modern browsers
+hasNativeCssPseudoClass('div.banner > a'); // false
+```
+
+### `ParseOptions`
+
+The pipeline accepts parse-time flags via `ParseOptions` (see
+[OVERVIEW.md](src/OVERVIEW.md#parseoptions--parse-time-flags) for the full
+interface):
+
+```ts
+const located = parser.parse('||example.com^', { isLocIncluded: true });
+```
+
 ## Documentation
 
 - [Changelog](CHANGELOG.md)
 - [Development guide](../../DEVELOPMENT.md)
-- [LLM agent rules](AGENTS.md)
+- [Package LLM agent rules](AGENTS.md)
 
 ## Ideas & Questions
 
@@ -92,11 +207,14 @@ resources, please let us know.
 [compatibility-tables-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/compatibility-tables
 [converter-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/converter
 [discussions-url]: https://github.com/AdguardTeam/tsurlfilter/discussions
+[generator-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/generator
 [license-url]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/agtree/LICENSE
 [mdn-css-selectors]: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors
 [new-issue-url]: https://github.com/AdguardTeam/tsurlfilter/issues/new
 [parser-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/parser
+[utils-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/utils
 [validator-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/validator
+[walker-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/walker
 [ubo-filters]: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax
 [ubo-procedural]: https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters
 [ubo-scriptlets]: https://github.com/gorhill/uBlock/wiki/Resources-Library#available-general-purpose-scriptlets

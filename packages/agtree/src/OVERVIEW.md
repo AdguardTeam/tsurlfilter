@@ -22,6 +22,8 @@ All three stages share the same pre-allocated buffers that are reused across
 calls. The only heap allocations that happen are in the final AST builder
 stage, when AST objects and their `value` strings are created.
 
+> The v5 pipeline API is documented in the [package README](../../README.md#quick-start).
+
 ---
 
 ## Benefits & Design Rationale
@@ -244,8 +246,10 @@ RuleParser.parse(source, options?)
 ## How the three stages fit together
 
 ```typescript
-// Allocate once, reuse forever — done internally by RuleParser constructor
-const parser = new RuleParser({ tokenCapacity: 1024, itemCapacity: 64 });
+// Allocate once, reuse forever — RuleParserPipeline owns the tokenizer + context
+import { RuleParserPipeline } from '@adguard/agtree';
+
+const parser = new RuleParserPipeline({ tokenCapacity: 1024, itemCapacity: 64 });
 
 // Per rule (hot path — no allocations until stage 3)
 const ast = parser.parse(source, options);   // all three stages run inside
@@ -346,7 +350,7 @@ The three-stage pipeline has two consumer-facing tiers:
 **Decision guide:**
 
 - *"I have a source string and want an AST node."* → **use a pipeline parser**
-  (`new RuleParser().parse(source)`).
+  (`new RuleParserPipeline().parse(source)`).
 - *"I have an already-tokenized context and want to avoid re-tokenizing."* →
   **use `parseRange()`** on a pipeline parser.
 - *"I have `ctx.data` already filled and just want to materialize the AST."* →
@@ -368,9 +372,9 @@ interface ParserCapacity {
 }
 
 // Usage:
-const parser = new RuleParser({ tokenCapacity: 2048, itemCapacity: 128 });
+const parser = new RuleParserPipeline({ tokenCapacity: 2048, itemCapacity: 128 });
 // Disable auto-growth (legacy behaviour — throws on overflow):
-const strictParser = new RuleParser({ grow: false });
+const strictParser = new RuleParserPipeline({ grow: false });
 ```
 
 ### `reset()` — release grown memory
@@ -380,7 +384,7 @@ to their construction-time defaults and release any memory acquired by
 auto-growth:
 
 ```typescript
-const parser = new RuleParser();   // default capacities
+const parser = new RuleParserPipeline();   // default capacities
 parser.parse(massiveRule);         // buffers may have grown
 parser.reset();                    // shrink back & free grown memory
 parser.parse(smallRule);           // next parse starts with compact buffers
@@ -390,18 +394,26 @@ parser.parse(smallRule);           // next parse starts with compact buffers
 
 ```typescript
 interface ParseOptions {
-    isLocIncluded?:          boolean;  // include source locations in AST
-    parseUboSpecificRules?:  boolean;  // parse uBO-only syntax
-    parseAbpSpecificRules?:  boolean;  // parse ABP-only syntax
+    isLocIncluded?:                boolean;  // include source locations in AST
+    parseUboSpecificRules?:        boolean;  // @default true  — uBO-only cosmetic syntax
+    parseAbpSpecificRules?:        boolean;  // @default true  — ABP snippet injection
+    parseHtmlFilteringRuleBodies?: boolean;  // @default false — parse HTML-filtering bodies
+    parseCssSelectorList?:         boolean;  // @default false — parse CSS-injection selectors
+    parseCssDeclarationList?:      boolean;  // @default false — parse CSS-injection declarations
+    ignoreCosmetic?:               boolean;  // @default false — cosmetic → RawRule
+    ignoreNetwork?:                boolean;  // @default false — network → RawRule
+    parseHostRules?:               boolean;  // @default false — /etc/hosts-style → HostRule
 }
+
+// See src/ast-builder/options.ts for authoritative JSDoc.
 ```
 
 ### `parse(source, options?)` — full pipeline entry point
 
 ```typescript
 // Pipeline parser — owns tokenizer + context
-const parser = new NetworkRuleParser();
-const ast: NetworkRule = parser.parse('||example.com^$script', { isLocIncluded: true });
+const parser = new RuleParserPipeline();
+const ast = parser.parse('||example.com^$script', { isLocIncluded: true });
 ```
 
 ### `parseRange(ctx, startTi, endTi, dataOffset, options?)` — sub-range entry point

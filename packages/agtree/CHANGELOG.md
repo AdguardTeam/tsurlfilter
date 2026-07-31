@@ -43,6 +43,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   module names. The `./generator-new` and `./converter-new` subpath exports are
   removed; use `./generator` and `./converter`. The `./parser` subpath now
   exposes the new structural parser.
+- Updated in-source READMEs, OVERVIEW, and the package README to reflect the v5
+  pipeline API, including a new Quick start section and corrected import paths.
 
 ### Removed
 

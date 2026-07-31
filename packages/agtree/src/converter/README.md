@@ -91,7 +91,7 @@ FilterListConverter.convertToAdg(filterList: FilterList): ConversionResult<Filte
 ```
 
 Filter list converter returns a single filter list node, not an array of nodes, because it doesn't make sense to convert
-a filter list to multiple filter lists, simply the converted filter list may contains a few more rules than the original
+a filter list to multiple filter lists, the converted filter list may contain a few more rules than the original
 one.
 
 ## Examples
@@ -101,7 +101,7 @@ In this section we will show some examples of using the converter API.
 ### Examples of converting a single rule
 
 ```ts
-import { RuleParser } from '@adguard/agtree/parser';
+import { RuleParserPipeline } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
 import { RuleGenerator } from '@adguard/agtree/generator';
 
@@ -110,7 +110,8 @@ const rawRuleToConvert = 'example.com#$#abp-snippet0 arg00 arg01; abp-snippet1 a
 // Parse the rule to get an AST rule node.
 // Please note that the parser will throw an error if the rule is
 // syntactically incorrect.
-const ruleNode = RuleParser.parse(rawRuleToConvert);
+const parser = new RuleParserPipeline();
+const ruleNode = parser.parse(rawRuleToConvert);
 
 // Now you can use the converter API by passing the AST node as an input.
 // Please note that the converter API returns an array of rule nodes,
