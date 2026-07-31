@@ -1,4 +1,4 @@
-import type { AnyRule, FilterList, JsInjectionRule } from '@adguard/agtree';
+import type { AnyRule, FilterList } from '@adguard/agtree';
 import { CosmeticRuleType, RuleCategory } from '@adguard/agtree';
 import { defaultParserOptions, FilterListParser } from '@adguard/agtree/parser';
 
@@ -26,10 +26,7 @@ export const parseFilterList = (filterStr: string, includeRaws: boolean = false)
  *
  * @returns True if the rule node is a JS injection rule, false otherwise.
  */
-export const isJsInjectionRule = (
-    ruleNode: AnyRule | null,
-): ruleNode is JsInjectionRule => {
-    return !!ruleNode
-        && ruleNode.category === RuleCategory.Cosmetic
+export const isJsInjectionRule = (ruleNode: AnyRule): boolean => {
+    return ruleNode.category === RuleCategory.Cosmetic
         && ruleNode.type === CosmeticRuleType.JsInjectionRule;
 };

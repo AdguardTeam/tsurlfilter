@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 
+import type { JsInjectionRule } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 import { parse } from 'acorn';
 import { minify } from 'terser';
@@ -232,7 +233,7 @@ export class LocalScriptRulesJs {
             }
 
             try {
-                const rawBody = CosmeticRuleBodyGenerator.generate(ruleNode);
+                const rawBody = CosmeticRuleBodyGenerator.generate(ruleNode as JsInjectionRule);
 
                 // Validate that rule is valid javascript
                 LocalScriptRulesJs.validateModule(rawBody);
