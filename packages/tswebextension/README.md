@@ -316,7 +316,8 @@ Enables matching declarative rules for filtering log.
 type: `{ domains: string[]; path: string }` (optional)
 
 Build-time preregistered script configuration. Registers persistent content
-scripts for `domains` and skips dynamic scriptlet injection for them.
+scripts for `domains` and skips dynamic scriptlet injection for rules they
+cover.
 
 ##### domains
 
@@ -328,13 +329,11 @@ Domains with build-time preregistered scripts.
 
 type: `string`
 
-Path to preregistered script bundles, under `PREREGISTERED_SCRIPTS_DIR`:
-
-- A shared bundle (`SHARED_BUNDLE_FILENAME`).
-- One `{hash}.js` file per rule, hashed via `computeScriptletHash` /
-  `computeJsRuleHash` (`@adguard/tswebextension/mv3/preregistered-scripts/hasher`).
-- Falls back to dynamic scriptlet injection if sync fails, or for tabs
-  already open before sync.
+Path to the preregistered script artifacts directory (contains
+`manifest.json`, the shared bundle, one file per rule, and the cleanup
+file — see `@adguard/tswebextension/mv3/preregistered-scripts/hasher`).
+Falls back to dynamic scriptlet injection if sync fails, or for tabs
+already open before sync.
 
 #### allowlist
 

@@ -1,7 +1,7 @@
 import browser from 'webextension-polyfill';
 
 import { LogLevel } from '@adguard/logger';
-import { type CosmeticOption, type CosmeticResult, FilterList } from '@adguard/tsurlfilter';
+import { FilterList } from '@adguard/tsurlfilter';
 import {
     Filter,
     type IFilter,
@@ -31,10 +31,7 @@ import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import { MessagesApi } from './messages-api';
-import {
-    PREREGISTERED_SCRIPTS_NAMESPACE,
-    PreregisteredScriptsService,
-} from './preregistered-scripts/preregistered-scripts-service';
+import { PreregisteredScriptsService } from './preregistered-scripts/preregistered-scripts-service';
 import { RequestEvents } from './request/events/request-events';
 import { RuleSetsLoaderApi } from './rule-sets-loader-api';
 import { CspService } from './services/csp-service';
@@ -536,28 +533,13 @@ export class TsWebExtension implements AppInterface<
 
         documentBlockingService.configure(config);
 
-        // Sync preregistered scripts BEFORE disabling dynamic injection for
-        // their rules, to avoid a gap where neither is active.
-        let coveredPreregisteredRules = new Map<string, Set<string>>();
-        if (configuration.preregisteredScripts) {
-            if (appContext.preregisteredScriptIdsAtBoot === undefined) {
-                appContext.preregisteredScriptIdsAtBoot = new Set(
-                    await ContentScriptManager.listIds(PREREGISTERED_SCRIPTS_NAMESPACE),
-                );
-            }
-
-            // Debug needs verbose scriptlets, which only dynamic injection
-            // can build — disable preregistration entirely.
-            const { debugScriptlets } = configuration.settings;
-            const { coveredRules } = await PreregisteredScriptsService.sync(
-                configuration.settings.filteringEnabled && !debugScriptlets,
-                configuration.preregisteredScripts.domains,
-                configuration.preregisteredScripts.path,
-            );
-            coveredPreregisteredRules = coveredRules;
-        }
-
-        CosmeticApi.setPreregisteredScriptRules(coveredPreregisteredRules);
+        // Debug needs verbose scriptlets, which only dynamic injection
+        // can build — disable preregistration entirely.
+        const { filteringEnabled, debugScriptlets } = configuration.settings;
+        await PreregisteredScriptsService.init(
+            filteringEnabled && !debugScriptlets,
+            configuration.preregisteredScripts,
+        );
 
         logger.trace('[tsweb.TsWebExtension.configure]: end');
 
@@ -576,17 +558,11 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Sets the rules covered by preregistered content scripts, per hostname.
+     * Sets the rules covered by preregistered content scripts, per hostname
+     * (MV3 only). Covered rules are not injected dynamically, preventing
+     * double execution; rules absent from the map keep the dynamic path.
      *
-     * Covered local script rules and scriptlets are not injected dynamically
-     * by the cosmetic API, preventing double execution with the
-     * preregistered bundles. Rules absent from the map keep the dynamic
-     * injection path.
-     *
-     * **MV3 only** — there is no MV2 equivalent because preregistered
-     * content scripts are only available in Manifest V3.
-     *
-     * @param rules Hostname to covered rule texts map.
+     * @param rules Hostname to covered rule hashes map.
      */
     public static setPreregisteredScriptRules(rules: ReadonlyMap<string, ReadonlySet<string>>): void {
         CosmeticApi.setPreregisteredScriptRules(rules);
@@ -765,22 +741,6 @@ export class TsWebExtension implements AppInterface<
     // eslint-disable-next-line class-methods-use-this
     public getRulesCount(): number {
         return engineApi.getRulesCount();
-    }
-
-    /**
-     * Returns the cosmetic rules that apply to the given URL.
-     *
-     * Delegates to the internal engine API. When the engine is not yet
-     * started, returns an empty {@link CosmeticResult}.
-     *
-     * @param url Page URL to match cosmetic rules against.
-     * @param option Cosmetic option bitmask (e.g. `CosmeticOption.CosmeticOptionJS`).
-     *
-     * @returns Cosmetic result containing element-hiding, CSS, JS, and HTML rules.
-     */
-    // eslint-disable-next-line class-methods-use-this
-    public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
-        return engineApi.getCosmeticResult(url, option);
     }
 
     /**

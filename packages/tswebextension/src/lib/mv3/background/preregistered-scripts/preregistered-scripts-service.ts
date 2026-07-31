@@ -1,13 +1,16 @@
 import { type CosmeticRule, RequestType } from '@adguard/tsurlfilter';
 
 import { logger } from '../../../common/utils/logger';
+import { appContext } from '../app-context';
 import { type ContentScriptDescriptor, ContentScriptManager } from '../content-script-manager';
+import { CosmeticApi } from '../cosmetic-api';
 import { DocumentApi } from '../document-api';
 import { engineApi } from '../engine-api';
 
 import {
-    CLEANUP_BUNDLE_FILENAME,
-    computeRuleHash,
+    CLEANUP_FILENAME,
+    computeRuleHashCached,
+    getRuleFilename,
     MANIFEST_FILENAME,
     type PreregisteredScriptsManifest,
     SHARED_BUNDLE_FILENAME,
@@ -17,26 +20,6 @@ import {
  * Namespace for content script registration. Must be stable across sessions.
  */
 export const PREREGISTERED_SCRIPTS_NAMESPACE = 'preregistered';
-
-/**
- * Result of {@link PreregisteredScriptsService.sync}.
- */
-export interface PreregisteredSyncResult {
-    /**
-     * Hostnames mapped to the hashes (see {@link computeRuleHash}) of the
-     * rules guaranteed to have an active preregistered content script
-     * registration after the sync. Rules that are excluded by runtime
-     * `$path` exceptions, missing from the manifest, or whose registration
-     * failed are absent — they stay on the dynamic injection path. Every
-     * other local script rule of a listed hostname is expected to be
-     * covered by the registration.
-     *
-     * Hashes are used as the identity because engine-sourced rules don't
-     * carry their text (see `CosmeticRule.getText()`), while the hash is
-     * derived from the parsed content and is always computable.
-     */
-    coveredRules: Map<string, Set<string>>;
-}
 
 /**
  * Converts a hostname into a URL match pattern for `matches`.
@@ -50,52 +33,22 @@ const domainToMatchPatterns = (hostname: string): string[] => {
 };
 
 /**
- * @param scriptsPath Base path to preregistered scripts directory.
- *
- * @returns Extension-relative path to the shared scriptlets bundle.
- */
-const getSharedBundlePath = (scriptsPath: string): string => {
-    return `${scriptsPath}/${SHARED_BUNDLE_FILENAME}`;
-};
-
-/**
- * @param scriptsPath Base path to preregistered scripts directory.
- *
- * @returns Extension-relative path to the cleanup script.
- */
-const getCleanupPath = (scriptsPath: string): string => {
-    return `${scriptsPath}/${CLEANUP_BUNDLE_FILENAME}`;
-};
-
-/**
- * @param scriptsPath Base path to preregistered scripts directory.
- * @param hash SHA-256 hash of the scriptlet name + args (or JS rule body).
- *
- * @returns Extension-relative path to the per-hash scriptlet file.
- */
-const getScriptPath = (scriptsPath: string, hash: string): string => {
-    return `${scriptsPath}/${hash}.js`;
-};
-
-/**
  * Registers persistent (`persistAcrossSessions: true`) content scripts for
  * preregistered domains, so build-time-known scriptlet/JS rules run at
  * `document_start`, before the extension itself finishes starting up.
  *
- * Build-time (`tools/resources/preregistered-scripts/`) generates a
- * `{hash}.js` file per rule, a shared `scriptlets-bundle.js`, and
- * `domains.js` listing hostnames with rules (apex and `www.` are separate
- * entries; this service doesn't expand or union them).
+ * For each hostname from the build-time `domains.js` the service queries
+ * the engine (ignoring `$path`, so path-qualified rules aren't missed),
+ * hashes the matching rules and registers
+ * `js: [bundle, ...perRuleFiles, cleanup]`. The per-rule file itself
+ * enforces any `$path` condition via `location`. `cleanup` runs last,
+ * deleting the coordination `window` property before page scripts run.
  *
- * At runtime, for each listed hostname this service queries the engine
- * (ignoring the `$path` modifier, so path-qualified rules aren't missed),
- * hashes the matching rules, and registers a content script with
- * `js: [sharedBundle, ...perHashFiles, cleanup]`. The per-hash file itself
- * enforces any `$path` condition via `location.pathname`. `cleanup.js` runs
- * last, erasing the shared bundle's coordination `let` before page scripts
- * run.
+ * `matchOriginAsFallback: true` additionally covers `about:blank`/srcdoc
+ * frames on these hosts, which the dynamic path never reaches — an
+ * intentional behavior extension.
  *
- * Hostnames not in the list fall back to the standard dynamic injection path.
+ * Hostnames not in the list keep the standard dynamic injection path.
  */
 export class PreregisteredScriptsService {
     /**
@@ -105,6 +58,55 @@ export class PreregisteredScriptsService {
      * content-script namespace.
      */
     private static syncQueue: Promise<unknown> = Promise.resolve();
+
+    /**
+     * Initializes the feature for the current configuration: snapshots the
+     * persisted registrations once per service-worker lifetime (used to
+     * decide dynamic injection for pre-existing tabs), syncs them — or
+     * clears all when the feature is not configured, since persisted
+     * registrations would otherwise survive forever — and reports the
+     * covered rules to {@link CosmeticApi}.
+     *
+     * @param filteringEnabled Whether preregistration should be active.
+     * @param preregisteredScripts Build-time preregistered script
+     * configuration, or `undefined` when the feature is not configured.
+     * @param preregisteredScripts.domains Preregistered hostnames.
+     * @param preregisteredScripts.path Extension-relative path to the
+     * preregistered scripts directory.
+     */
+    public static async init(
+        filteringEnabled: boolean,
+        preregisteredScripts?: { domains: string[]; path: string },
+    ): Promise<void> {
+        let coveredRules = new Map<string, Set<string>>();
+
+        if (preregisteredScripts) {
+            if (appContext.preregisteredScriptIdsAtBoot === undefined) {
+                try {
+                    appContext.preregisteredScriptIdsAtBoot = new Set(
+                        await ContentScriptManager.listIds(PREREGISTERED_SCRIPTS_NAMESPACE),
+                    );
+                } catch (e) {
+                    logger.error('[tsweb.PreregisteredScriptsService.init]: Failed to snapshot preregistered script ids', e);
+                    appContext.preregisteredScriptIdsAtBoot = new Set();
+                }
+            }
+
+            coveredRules = await PreregisteredScriptsService.sync(
+                filteringEnabled,
+                preregisteredScripts.domains,
+                preregisteredScripts.path,
+            );
+        } else {
+            try {
+                await ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE);
+            } catch (e) {
+                logger.error('[tsweb.PreregisteredScriptsService.init]: Failed to clear preregistered scripts', e);
+            }
+        }
+
+        CosmeticApi.setPreregisteredScriptRules(coveredRules);
+    }
 
     /**
      * Synchronises preregistered content scripts with the current engine state.
@@ -119,15 +121,17 @@ export class PreregisteredScriptsService {
      * @param scriptsPath Extension-relative path to the preregistered scripts
      * directory (e.g. `filters/preregistered-scripts`).
      *
-     * @returns Promise resolving with the rules that ended up with an
-     * active preregistered registration, per hostname. Callers should keep
-     * the dynamic injection for every rule not listed there.
+     * @returns Promise resolving with, per hostname, the hashes of the rules
+     * with an active preregistered registration after the sync. Rules
+     * cancelled by runtime `$path` exceptions, missing from the manifest, or
+     * whose registration failed are absent — they stay on the dynamic
+     * injection path.
      */
     public static async sync(
         filteringEnabled: boolean,
         domains: string[],
         scriptsPath: string,
-    ): Promise<PreregisteredSyncResult> {
+    ): Promise<Map<string, Set<string>>> {
         const result = PreregisteredScriptsService.syncQueue.then(() => {
             return PreregisteredScriptsService.doSync(
                 filteringEnabled,
@@ -149,28 +153,31 @@ export class PreregisteredScriptsService {
      * @param scriptsPath Extension-relative path to the preregistered scripts
      * directory.
      *
-     * @returns Promise resolving with the sync result.
+     * @returns Promise resolving with the covered rule hashes per hostname.
      */
     private static async doSync(
         filteringEnabled: boolean,
         domains: string[],
         scriptsPath: string,
-    ): Promise<PreregisteredSyncResult> {
-        let scripts: ContentScriptDescriptor[] = [];
-        let coveredRules = new Map<string, Set<string>>();
-
-        if (filteringEnabled && domains.length > 0) {
-            const manifest = await PreregisteredScriptsService.loadManifest(scriptsPath);
-            const built = await PreregisteredScriptsService.buildDomainScripts(
-                domains,
-                scriptsPath,
-                manifest,
-            );
-            scripts = built.scripts;
-            coveredRules = built.coveredRules;
-        }
-
+    ): Promise<Map<string, Set<string>>> {
         try {
+            let scripts: ContentScriptDescriptor[] = [];
+            let coveredRules = new Map<string, Set<string>>();
+
+            if (filteringEnabled && domains.length > 0) {
+                const manifest = await PreregisteredScriptsService.loadManifest(scriptsPath);
+                if (!manifest) {
+                    return coveredRules;
+                }
+                const built = await PreregisteredScriptsService.buildDomainScripts(
+                    domains,
+                    scriptsPath,
+                    manifest,
+                );
+                scripts = built.scripts;
+                coveredRules = built.coveredRules;
+            }
+
             const { failedScriptIds } = await ContentScriptManager.syncDetailed(
                 PREREGISTERED_SCRIPTS_NAMESPACE,
                 scripts,
@@ -182,27 +189,24 @@ export class PreregisteredScriptsService {
                     coveredRules.delete(failedId);
                 }
             }
+
+            logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${domains.length} domains covered`);
+
+            return coveredRules;
         } catch (e) {
-            logger.error('[tsweb.PreregisteredScriptsService.doSync]: Failed to sync preregistered scripts', e);
-            coveredRules = new Map();
+            logger.error('[tsweb.PreregisteredScriptsService.doSync]: Sync failed, keeping dynamic injection', e);
+            return new Map();
         }
-
-        logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${domains.length} domains covered`);
-
-        return { coveredRules };
     }
 
     /**
      * Fetches the build-time manifest shipped next to the artifacts.
-     *
-     * A missing or unreadable manifest is not fatal: the service proceeds
-     * without the file-existence check (compatibility with consumers that
-     * don't ship one).
+     * Required: it lists the rule hashes with matching generated files.
      *
      * @param scriptsPath Extension-relative path to the preregistered scripts
      * directory.
      *
-     * @returns Parsed manifest or `null` when unavailable.
+     * @returns Parsed manifest or `null` when unavailable or malformed.
      */
     private static async loadManifest(scriptsPath: string): Promise<PreregisteredScriptsManifest | null> {
         try {
@@ -210,20 +214,20 @@ export class PreregisteredScriptsService {
             const response = await fetch(url);
 
             if (!response.ok) {
-                logger.warn(`[tsweb.PreregisteredScriptsService.loadManifest]: No manifest at ${url} (status ${response.status}), skipping file-existence check`);
+                logger.warn(`[tsweb.PreregisteredScriptsService.loadManifest]: No manifest at ${url} (status ${response.status})`);
                 return null;
             }
 
             const manifest = await response.json();
 
             if (!manifest || !Array.isArray(manifest.hashes)) {
-                logger.warn(`[tsweb.PreregisteredScriptsService.loadManifest]: Malformed manifest at ${url}, skipping file-existence check`);
+                logger.warn(`[tsweb.PreregisteredScriptsService.loadManifest]: Malformed manifest at ${url}`);
                 return null;
             }
 
             return manifest;
         } catch (e) {
-            logger.warn('[tsweb.PreregisteredScriptsService.loadManifest]: Failed to load manifest, skipping file-existence check', e);
+            logger.warn('[tsweb.PreregisteredScriptsService.loadManifest]: Failed to load manifest', e);
             return null;
         }
     }
@@ -232,25 +236,24 @@ export class PreregisteredScriptsService {
      * Builds MAIN-world content-script descriptors for the given hostnames,
      * each treated independently (no apex/`www.` expansion or union).
      *
-     * Individual rules degrade to dynamic injection when they are cancelled
-     * by a runtime `$path` exception, or — when a build-time manifest is
-     * available — their per-hash file is not in the bundle (a registration
-     * would 404 at best). A hostname with no surviving rules is not
-     * registered at all.
+     * Individual rules degrade to dynamic injection when cancelled by a
+     * runtime `$path` exception or absent from the manifest (no generated
+     * file for them). A hostname with no surviving rules is not registered.
      *
      * @param hostnames Preregistered hostnames (already normalized).
      * @param scriptsPath Extension-relative path to preregistered scripts.
-     * @param manifest Build-time manifest or `null` when unavailable.
+     * @param manifest Build-time manifest.
      *
      * @returns Descriptors plus, per hostname, the hashes of covered rules.
      */
     private static async buildDomainScripts(
         hostnames: string[],
         scriptsPath: string,
-        manifest: PreregisteredScriptsManifest | null,
+        manifest: PreregisteredScriptsManifest,
     ): Promise<{ scripts: ContentScriptDescriptor[]; coveredRules: Map<string, Set<string>> }> {
-        const sharedBundlePath = getSharedBundlePath(scriptsPath);
-        const manifestHashes = manifest ? new Set(manifest.hashes) : null;
+        const manifestHashes = new Set(manifest.hashes);
+        const sharedBundlePath = `${scriptsPath}/${SHARED_BUNDLE_FILENAME}`;
+        const cleanupPath = `${scriptsPath}/${CLEANUP_FILENAME}`;
 
         const scripts: ContentScriptDescriptor[] = [];
         const coveredRules = new Map<string, Set<string>>();
@@ -265,7 +268,7 @@ export class PreregisteredScriptsService {
                 const hashResults = await Promise.all(
                     rules.map(async (rule) => {
                         try {
-                            return { rule, hash: await computeRuleHash(rule) };
+                            return { rule, hash: await computeRuleHashCached(rule) };
                         } catch (e) {
                             logger.error(
                                 // eslint-disable-next-line max-len
@@ -292,7 +295,7 @@ export class PreregisteredScriptsService {
                         continue;
                     }
 
-                    if (manifestHashes && !manifestHashes.has(hash)) {
+                    if (!manifestHashes.has(hash)) {
                         // eslint-disable-next-line max-len
                         logger.warn(`[tsweb.PreregisteredScriptsService.buildDomainScripts]: No per-hash file for rule ${hash} on "${hostname}", keeping dynamic injection`);
                         continue;
@@ -305,11 +308,9 @@ export class PreregisteredScriptsService {
                     return;
                 }
 
-                const js = [
-                    sharedBundlePath,
-                    ...[...coveredHashes].map((hash) => getScriptPath(scriptsPath, hash)),
-                    getCleanupPath(scriptsPath),
-                ];
+                const ruleFiles = [...coveredHashes]
+                    .map((hash) => `${scriptsPath}/${getRuleFilename(hash)}`);
+                const js = [sharedBundlePath, ...ruleFiles, cleanupPath];
 
                 scripts.push({
                     id: hostname,

@@ -70,9 +70,9 @@ const NAMESPACE_SEPARATOR = ':';
 
 /**
  * Fills in chrome.scripting's documented defaults for omitted optional
- * fields, so a `desired` descriptor (which often omits defaults) and a
- * descriptor returned by `getRegisteredContentScripts()` (which chrome
- * normalizes and fills in) compare equal when nothing actually changed.
+ * fields, so a `desired` descriptor and a descriptor returned by
+ * `getRegisteredContentScripts()` compare equal when nothing changed.
+ * Array fields are sorted copies: file order is not a reason to re-register.
  *
  * @param script Descriptor to normalize.
  *
@@ -82,10 +82,10 @@ const canonicalize = (script: ContentScriptDescriptor): Required<ContentScriptDe
     id: script.id,
     allFrames: script.allFrames ?? false,
     matchOriginAsFallback: script.matchOriginAsFallback ?? false,
-    css: script.css ?? [],
-    excludeMatches: script.excludeMatches ?? [],
-    js: script.js ?? [],
-    matches: script.matches ?? [],
+    css: [...script.css ?? []].sort(),
+    excludeMatches: [...script.excludeMatches ?? []].sort(),
+    js: [...script.js ?? []].sort(),
+    matches: [...script.matches ?? []].sort(),
     persistAcrossSessions: script.persistAcrossSessions ?? true,
     runAt: script.runAt ?? 'document_idle',
     world: script.world ?? 'ISOLATED',
@@ -102,10 +102,11 @@ export interface SyncScriptsResult {
     errors: PromiseRejectedResult[];
 
     /**
-     * Original (unprefixed) IDs of desired scripts that could NOT be
-     * registered — i.e. scripts with no guaranteed active registration
-     * after the call. Failed updates and unregistrations are NOT included:
-     * in those cases a (possibly stale) registration is still active.
+     * Original (unprefixed) IDs of desired scripts whose desired state is
+     * not guaranteed after the call: failed registrations (no registration
+     * active) and failed updates (stale registration active). Failed
+     * unregistrations are not included — the script is no longer desired,
+     * so a stale leftover only over-applies until the next sync.
      */
     failedScriptIds: string[];
 }
@@ -448,11 +449,9 @@ export class ContentScriptManager {
      * "Namespace ownership" note for details.
      *
      * **Batch failure**: the chrome API rejects a batched call as a unit
-     * (one bad entry fails them all). A failed register therefore marks ALL
-     * new script IDs as failed in {@link SyncScriptsResult.failedScriptIds};
-     * callers are expected to recover via a fallback for those scripts.
-     * Failed updates and unregistrations only surface in `errors`, since a
-     * (possibly stale) registration remains active.
+     * (one bad entry fails them all), so failed register/update batches are
+     * retried per script; only individually failing scripts land in
+     * {@link SyncScriptsResult.failedScriptIds}.
      *
      * @param namespace Namespace string used to prefix script IDs.
      * @param desiredScripts The desired set of content scripts.
@@ -497,16 +496,41 @@ export class ContentScriptManager {
             ContentScriptManager.update(namespace, toUpdateScripts),
         ]);
 
-        const errors = [unregisterResult, registerResult, updateResult].filter(
-            (r): r is PromiseRejectedResult => r.status === 'rejected',
-        );
+        const errors: PromiseRejectedResult[] = [];
+        if (unregisterResult.status === 'rejected') {
+            errors.push(unregisterResult);
+        }
 
-        // Batch register is atomic: if it failed, none of the new scripts is
-        // active. Failed updates/unregistrations keep a stale registration
-        // active, so they only surface in `errors`.
-        const failedScriptIds = registerResult.status === 'rejected'
-            ? toRegisterScripts.map((script) => script.id)
-            : [];
+        // Chrome rejects a batched call as a unit (one bad entry fails them
+        // all), so a failed batch is retried per script to isolate the
+        // failures to the offending scripts.
+        const failedScriptIds: string[] = [];
+
+        if (registerResult.status === 'rejected') {
+            errors.push(registerResult);
+            const retries = await Promise.allSettled(
+                toRegisterScripts.map((script) => ContentScriptManager.register(namespace, [script])),
+            );
+            retries.forEach((retry, index) => {
+                const script = toRegisterScripts[index];
+                if (retry.status === 'rejected' && script) {
+                    failedScriptIds.push(script.id);
+                }
+            });
+        }
+
+        if (updateResult.status === 'rejected') {
+            errors.push(updateResult);
+            const retries = await Promise.allSettled(
+                toUpdateScripts.map((script) => ContentScriptManager.update(namespace, [script])),
+            );
+            retries.forEach((retry, index) => {
+                const script = toUpdateScripts[index];
+                if (retry.status === 'rejected' && script) {
+                    failedScriptIds.push(script.id);
+                }
+            });
+        }
 
         if (errors.length > 0) {
             const reasons = errors.map(({ reason }) => {

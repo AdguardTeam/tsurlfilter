@@ -10,7 +10,7 @@ import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
-import { computeRuleHash } from './preregistered-scripts/hasher';
+import { computeRuleHashCached } from './preregistered-scripts/hasher';
 import { ScriptingApi } from './scripting-api';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { UserScriptsApi } from './user-scripts-api';
@@ -73,29 +73,15 @@ interface ApplyCosmeticRulesParams {
  */
 export class CosmeticApi extends CosmeticApiCommon {
     /**
-     * Domains for which scriptlets and JS rules are injected via
-     * preregistered content scripts (`chrome.scripting.registerContentScripts`).
-     *
-     * Stored as exact hostnames mapped to the hashes of the covered
-     * rules — the same hostname semantics as the registered content-script
-     * match patterns: a preregistered `www.` alias does NOT cover the apex
-     * domain and vice versa.
-     *
-     * For a matching hostname, dynamic injection is skipped only for the
-     * listed rule hashes to avoid double execution — the preregistered
-     * bundle already handles them. Rules degraded at sync time (runtime
-     * `$path` exceptions, missing per-hash files) are absent and keep the
-     * dynamic injection path.
-     *
-     * Set via {@link setPreregisteredScriptRules}.
+     * Exact hostnames mapped to the hashes of rules covered by preregistered
+     * content scripts; dynamic injection of covered rules is skipped to
+     * avoid double execution. Hostname semantics match the content-script
+     * match patterns exactly: a `www.` alias does not cover the apex.
      */
     private static preregisteredScriptRules: ReadonlyMap<string, ReadonlySet<string>> = new Map();
 
     /**
      * Sets the rules covered by preregistered content scripts, per hostname.
-     *
-     * Covered rules are not injected dynamically by the cosmetic API,
-     * preventing double execution with the preregistered bundles.
      *
      * @param rules Hostname to covered rule hashes map.
      */
@@ -111,7 +97,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @returns Covered rule hashes or `undefined` for non-preregistered hosts.
      */
     private static getPreregisteredCoveredRules(url: string): ReadonlySet<string> | undefined {
-        const host = getHost(url);
+        const host = getHost(url)?.toLowerCase();
         return host ? CosmeticApi.preregisteredScriptRules.get(host) : undefined;
     }
 
@@ -611,14 +597,15 @@ export class CosmeticApi extends CosmeticApiCommon {
                 ),
             );
         } else {
-            // Rules are identified by hash: engine-sourced rules don't
-            // carry their text, so a text-based identity would never match.
             // Rules that fail to hash keep the dynamic injection path —
-            // coverage can't be proven for them.
+            // coverage can't be proven for them. Split coverage can reorder
+            // same-domain rules relative to each other (bundle runs at
+            // document_start, dynamic injection later) — accepted: rule
+            // execution order is not a contract anywhere on the dynamic path.
             const uncoveredRules = (
                 await Promise.all(localRules.rawRules.map(async (rule) => {
                     try {
-                        return coveredRules.has(await computeRuleHash(rule)) ? null : rule;
+                        return coveredRules.has(await computeRuleHashCached(rule)) ? null : rule;
                     } catch (e) {
                         // eslint-disable-next-line max-len
                         logger.error(`[tsweb.CosmeticApi.applyCosmeticRules]: Failed to hash a rule for "${frameContext.url}", keeping dynamic injection`, e);

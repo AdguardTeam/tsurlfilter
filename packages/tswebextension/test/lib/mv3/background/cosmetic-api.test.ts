@@ -133,6 +133,21 @@ describe('CosmeticApi — preregistered script rules', () => {
             expect(applyRemote).toHaveBeenCalled();
         });
 
+        it('skips local rules for a mixed-case URL host (hosts are matched case-insensitively)', async () => {
+            CosmeticApi.setPreregisteredScriptRules(
+                new Map([['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
+            );
+            vi.mocked(tabsApi.getFrameContext).mockReturnValue(
+                makeFrameContext('https://YouTube.COM/watch?v=123') as any,
+            );
+
+            const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
+
+            await CosmeticApi.applyCosmeticRules({ tabId: 1, frameId: 0, shouldApplyCss: false });
+
+            expect(applyLocal).not.toHaveBeenCalled();
+        });
+
         it('skips local rules when preregistered domain uses www and frame url is www', async () => {
             CosmeticApi.setPreregisteredScriptRules(
                 new Map([['www.youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),

@@ -1,20 +1,40 @@
 import { type CosmeticRule } from '@adguard/tsurlfilter';
 
 /**
- * Filename of the shared scriptlets bundle loaded before every per-hash file.
+ * Coordination key: the `window` property name shared by the shared bundle,
+ * per-rule files and the cleanup file.
+ *
+ * Fixed forever: the cleanup file deletes the property before any page
+ * script runs, so rotation buys no stealth. A stable key keeps filenames
+ * stable, so persisted content-script registrations from a previous
+ * extension version keep loading the same paths.
+ */
+export const COORDINATION_KEY = '__ag_7d8a978ba755ed70';
+
+/**
+ * Filename of the shared scriptlets bundle.
  */
 export const SHARED_BUNDLE_FILENAME = 'scriptlets-bundle.js';
 
 /**
- * Filename of the cleanup script loaded after the shared bundle and every
- * per-hash file. Reassigns the coordination `let` binding the shared bundle
- * declares, so it doesn't survive into the page's own script execution.
+ * Filename of the cleanup script — the last file loaded for a domain.
  */
-export const CLEANUP_BUNDLE_FILENAME = 'cleanup.js';
+export const CLEANUP_FILENAME = 'cleanup.js';
 
 /**
- * Filename of the JSON manifest describing the generated artifacts:
- * the coordination key and the set of per-rule hashes with matching files.
+ * Returns the per-rule filename for a hash.
+ *
+ * @param hash Rule hash.
+ *
+ * @returns Per-rule filename.
+ */
+export const getRuleFilename = (hash: string): string => {
+    return `${hash}.js`;
+};
+
+/**
+ * Filename of the JSON manifest listing the per-rule hashes with matching
+ * generated files.
  */
 export const MANIFEST_FILENAME = 'manifest.json';
 
@@ -24,11 +44,6 @@ export const MANIFEST_FILENAME = 'manifest.json';
  * and the runtime reader ({@link PreregisteredScriptsService}).
  */
 export interface PreregisteredScriptsManifest {
-    /**
-     * Coordination key baked into the shared bundle of this generation.
-     */
-    coordinationKey: string;
-
     /**
      * Hashes of the current generation's per-rule files.
      */
@@ -142,6 +157,33 @@ export const computeRuleHash = async (rule: CosmeticRule): Promise<string> => {
     }
 
     return computeScriptletHash(data.params.name, data.params.args, pathPattern);
+};
+
+/**
+ * Cache for {@link computeRuleHashCached}: engine rule objects are reused
+ * across lookups, so identity-keyed memoization is safe.
+ */
+const ruleHashCache = new WeakMap<CosmeticRule, Promise<string>>();
+
+/**
+ * {@link computeRuleHash} memoized per rule object — hashing runs on the
+ * per-frame injection path, where the same rules are hashed repeatedly.
+ *
+ * @param rule A constructed `CosmeticRule` instance.
+ *
+ * @returns SHA-256 hex hash string.
+ */
+export const computeRuleHashCached = (rule: CosmeticRule): Promise<string> => {
+    let cached = ruleHashCache.get(rule);
+
+    if (!cached) {
+        cached = computeRuleHash(rule);
+        ruleHashCache.set(rule, cached);
+
+        cached.catch(() => ruleHashCache.delete(rule));
+    }
+
+    return cached;
 };
 
 /**

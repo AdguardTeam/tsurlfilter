@@ -28,20 +28,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `$popup` modifier rule is applied [AdguardBrowserExtension#1686].
 - `TsWebExtension.syncContentScripts()` static method (MV3-only) for dynamic
   content script synchronization via `chrome.scripting` API.
-- `TsWebExtension.setPreregisteredScriptDomains()` static method (MV3-only) for
-  skipping dynamic scriptlet injection on domains covered by preregistered
+- `TsWebExtension.setPreregisteredScriptRules()` static method (MV3-only) for
+  skipping dynamic scriptlet injection of rules covered by preregistered
   content scripts, preventing double execution.
-- Public `getCosmeticResult(url, option)` method on the MV3 `TsWebExtension`
-  app instance, allowing callers to query cosmetic rules (scriptlets + JS
-  injection) that apply to a given URL at runtime.
 - `preregisteredScripts` optional MV3 `Configuration` field for auto-syncing
-   preregistered content scripts.
+  preregistered content scripts.
 - `PreregisteredScriptsService` (MV3-only), exported from the MV3 entry
   point, along with `hashString`, `computeScriptletHash`, `computeJsRuleHash`,
-  `computeRuleHash`, `normalizeDomain`,
-  `SHARED_BUNDLE_FILENAME`, and `PREREGISTERED_SCRIPTS_DIR`
-  — the shared hash contract used by build-time tools to generate
-  preregistered script bundles matching what the engine resolves at runtime.
+  `computeRuleHash`, `computeRuleHashCached`, `normalizeDomain`,
+  `COORDINATION_KEY`, `SHARED_BUNDLE_FILENAME`, `CLEANUP_FILENAME`,
+  `getRuleFilename`, and `PREREGISTERED_SCRIPTS_DIR` — the shared
+  hash/filename contract used by build-time tools to generate preregistered
+  script bundles matching what the engine resolves at runtime. Filenames are
+  stable (the coordination key is a fixed constant); `manifest.json` is
+  required at sync time.
 
 ### Fixed
 

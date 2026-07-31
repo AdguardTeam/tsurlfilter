@@ -1,4 +1,4 @@
-import type { CosmeticRule, JsInjectionRule } from '@adguard/agtree';
+import type { CosmeticRule } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 
 import { logger } from '../utils/logger';
@@ -125,9 +125,9 @@ export class LocalScriptRulesJson {
 
             try {
                 // Re-generate raw body to make it consistent
-                const rawBody = CosmeticRuleBodyGenerator.generate(ruleNode as JsInjectionRule);
+                const rawBody = CosmeticRuleBodyGenerator.generate(ruleNode);
 
-                const domainConfig = LocalScriptRulesJson.extractDomainConfig(ruleNode as JsInjectionRule);
+                const domainConfig = LocalScriptRulesJson.extractDomainConfig(ruleNode);
 
                 const existing = rulesMap.get(rawBody);
                 if (!existing) {

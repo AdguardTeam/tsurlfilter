@@ -126,7 +126,6 @@ export {
     QuoteType,
     QuoteUtils,
 } from './utils/quotes';
-export { getScriptletName } from './ast-utils/scriptlets';
 export { type Position, PositionProvider } from './utils/position-provider';
 export { RuleCategorizer } from './utils/categorizer';
 

@@ -29,8 +29,6 @@ export {
     type NetworkRule,
     type CosmeticRule,
     type NetworkRuleOption,
-    type CosmeticOption,
-    type CosmeticResult,
 } from '@adguard/tsurlfilter';
 
 export * from './app';
@@ -93,9 +91,12 @@ export {
     computeScriptletHash,
     computeJsRuleHash,
     computeRuleHash,
+    computeRuleHashCached,
     normalizeDomain,
+    COORDINATION_KEY,
     SHARED_BUNDLE_FILENAME,
-    CLEANUP_BUNDLE_FILENAME,
+    CLEANUP_FILENAME,
+    getRuleFilename,
     PREREGISTERED_SCRIPTS_DIR,
 } from './preregistered-scripts/hasher';
 export { PreregisteredScriptsService } from './preregistered-scripts/preregistered-scripts-service';

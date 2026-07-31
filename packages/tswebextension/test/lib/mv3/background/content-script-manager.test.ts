@@ -680,8 +680,8 @@ describe('ContentScriptManager', () => {
             ]);
 
             // Unregister will succeed (removing 'old'); the batch register
-            // fails (invalid match pattern for 'new'). Since the batch is
-            // atomic, 'new' ends up both in errors and in failedScriptIds.
+            // fails (invalid match pattern for 'new'), and so does the
+            // per-script retry. 'new' ends up in failedScriptIds.
             mockRegister.mockRejectedValue(new Error('Invalid match pattern'));
 
             const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
@@ -689,14 +689,16 @@ describe('ContentScriptManager', () => {
             ]);
 
             // syncDetailed() collects errors — it does NOT throw.
+            // errors holds the batch-level failure; the failed per-script
+            // retry surfaces via failedScriptIds.
             expect(errors).toHaveLength(1);
             expect(failedScriptIds).toEqual(['new']);
 
             // Verify unregister was called (removing 'old').
             expect(mockUnregister).toHaveBeenCalledWith({ ids: ['critical:old'] });
 
-            // Single batch register attempt.
-            expect(mockRegister).toHaveBeenCalledTimes(1);
+            // Batch attempt + one per-script retry.
+            expect(mockRegister).toHaveBeenCalledTimes(2);
             expect(mockRegister.mock.calls[0][0][0].id).toBe('critical:new');
 
             // The namespace is now empty — old script was removed, new script was not added.
@@ -1004,24 +1006,31 @@ describe('ContentScriptManager', () => {
     });
 
     describe('syncDetailed — batch failures', () => {
-        it('should report all new IDs as failed when the batch register fails because of one bad entry', async () => {
+        it('should isolate the failure to the bad entry via per-script retry', async () => {
             mockGetRegistered.mockResolvedValue([]);
-            mockRegister.mockRejectedValue(new Error('Invalid match pattern'));
+            // Batch calls (2 scripts) reject; per-script retries reject only
+            // the offending entry.
+            mockRegister.mockImplementation((scripts: { id: string }[]) => {
+                if (scripts.length > 1 || scripts[0].id === 'critical:bad') {
+                    return Promise.reject(new Error('Invalid match pattern'));
+                }
+                return Promise.resolve(undefined);
+            });
 
             const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
                 { id: 'good', js: ['good.js'], matches: ['<all_urls>'] },
                 { id: 'bad', js: ['bad.js'], matches: ['<invalid>'] },
             ]);
 
-            // The batch register is atomic — nothing was registered, so ALL
-            // new IDs are reported as failed; the caller is expected to fall
-            // back for them.
+            // errors holds the batch-level failure; the failed retry of
+            // 'bad' surfaces via failedScriptIds.
             expect(errors).toHaveLength(1);
-            expect(failedScriptIds.sort()).toEqual(['bad', 'good']);
-            expect(mockRegister).toHaveBeenCalledTimes(1);
+            expect(failedScriptIds).toEqual(['bad']);
+            // 1 batch + 2 per-script retries.
+            expect(mockRegister).toHaveBeenCalledTimes(3);
         });
 
-        it('should surface an error and leave the stale registration when a batch update fails', async () => {
+        it('should report a failed update when the batch and the per-script retry both fail', async () => {
             await ContentScriptManager.register(NS, [
                 { id: 'existing', js: ['old.js'], matches: ['<all_urls>'] },
             ]);
@@ -1035,9 +1044,33 @@ describe('ContentScriptManager', () => {
                 { id: 'existing', js: ['new.js'], matches: ['<all_urls>'] },
             ]);
 
+            // errors holds the batch-level failure; the failed per-script
+            // retry surfaces via failedScriptIds.
             expect(errors).toHaveLength(1);
-            // Stale registration is still active — not reported as failed.
+            // A stale registration is active but outdated — reported as failed.
+            expect(failedScriptIds).toEqual(['existing']);
+        });
+
+        it('should not report a failed update when the per-script retry succeeds', async () => {
+            await ContentScriptManager.register(NS, [
+                { id: 'existing', js: ['old.js'], matches: ['<all_urls>'] },
+            ]);
+            vi.clearAllMocks();
+            mockGetRegistered.mockResolvedValue([
+                { id: 'critical:existing', js: ['old.js'], matches: ['<all_urls>'] },
+            ]);
+            // Only the batch call rejects; the per-script retry succeeds.
+            mockUpdate
+                .mockRejectedValueOnce(new Error('Update API failure'))
+                .mockResolvedValue(undefined);
+
+            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+                { id: 'existing', js: ['new.js'], matches: ['<all_urls>'] },
+            ]);
+
+            expect(errors).toHaveLength(1);
             expect(failedScriptIds).toEqual([]);
+            expect(mockUpdate).toHaveBeenCalledTimes(2);
         });
 
         it('should report all desired IDs as failed when every registration fails', async () => {
@@ -1049,8 +1082,29 @@ describe('ContentScriptManager', () => {
                 { id: 'b', js: ['b.js'], matches: ['<all_urls>'] },
             ]);
 
+            // errors holds the batch-level failure; the failed per-script
+            // retries surface via failedScriptIds.
             expect(errors).toHaveLength(1);
             expect(failedScriptIds.sort()).toEqual(['a', 'b']);
+        });
+
+        it('should treat reordered js/matches arrays as unchanged (no update)', async () => {
+            mockGetRegistered.mockResolvedValue([
+                {
+                    id: 'critical:domains',
+                    js: ['a.js', 'b.js'],
+                    matches: ['*://a.com/*', '*://b.com/*'],
+                },
+            ]);
+
+            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, [
+                { id: 'domains', js: ['b.js', 'a.js'], matches: ['*://b.com/*', '*://a.com/*'] },
+            ]);
+
+            expect(errors).toEqual([]);
+            expect(failedScriptIds).toEqual([]);
+            expect(mockUpdate).not.toHaveBeenCalled();
+            expect(mockRegister).not.toHaveBeenCalled();
         });
     });
 });

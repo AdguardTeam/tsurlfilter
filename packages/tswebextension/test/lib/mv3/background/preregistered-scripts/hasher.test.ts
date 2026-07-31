@@ -1,17 +1,29 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    CLEANUP_FILENAME,
     computeJsRuleHash,
     computeRuleHash,
+    computeRuleHashCached,
     computeScriptletHash,
+    COORDINATION_KEY,
+    getRuleFilename,
     hashString,
     normalizeDomain,
+    SHARED_BUNDLE_FILENAME,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
 
 describe('hashString', () => {
     it('produces a 16-character lowercase hex digest (truncated SHA-256)', async () => {
         const hash = await hashString('hello');
         expect(hash).toMatch(/^[0-9a-f]{16}$/);
+    });
+
+    it('matches the SHA-256 golden vector (algorithm lock with build-time tools)', async () => {
+        // sha256('hello') = 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
+        expect(await hashString('hello')).toBe('2cf24dba5fb0a30e');
+        // sha256('') = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        expect(await hashString('')).toBe('e3b0c44298fc1c14');
     });
 
     it('is deterministic for the same input', async () => {
@@ -107,6 +119,61 @@ describe('computeRuleHash', () => {
     it('throws when a scriptlet rule has no scriptlet data', async () => {
         const badRule: any = { isScriptlet: true, getScriptletData: (): null => null };
         await expect(computeRuleHash(badRule)).rejects.toThrow();
+    });
+});
+
+describe('computeRuleHashCached', () => {
+    it('hashes the same rule object only once', async () => {
+        let dataCalls = 0;
+        const rule: any = {
+            isScriptlet: true,
+            getScriptletData: (): object => {
+                dataCalls += 1;
+                return { params: { name: 'set-cookie', args: [] } };
+            },
+        };
+
+        const hash1 = await computeRuleHashCached(rule);
+        const hash2 = await computeRuleHashCached(rule);
+
+        expect(hash1).toBe(hash2);
+        expect(dataCalls).toBe(1);
+    });
+
+    it('produces the same hash for equal rules as different objects', async () => {
+        const make = (): any => ({
+            isScriptlet: true,
+            getScriptletData: (): object => ({ params: { name: 'set-cookie', args: ['a'] } }),
+        });
+
+        expect(await computeRuleHashCached(make())).toBe(await computeRuleHashCached(make()));
+    });
+
+    it('does not cache rejections (a later call retries)', async () => {
+        let dataCalls = 0;
+        const rule: any = {
+            isScriptlet: true,
+            getScriptletData: (): object | null => {
+                dataCalls += 1;
+                return dataCalls === 1 ? null : { params: { name: 'set-cookie', args: [] } };
+            },
+        };
+
+        await expect(computeRuleHashCached(rule)).rejects.toThrow();
+        await expect(computeRuleHashCached(rule)).resolves.toMatch(/^[0-9a-f]{16}$/);
+        expect(dataCalls).toBe(2);
+    });
+});
+
+describe('artifact filenames', () => {
+    it('locks the stable filename contract (persisted registrations reference these paths)', () => {
+        expect(SHARED_BUNDLE_FILENAME).toBe('scriptlets-bundle.js');
+        expect(CLEANUP_FILENAME).toBe('cleanup.js');
+        expect(getRuleFilename('deadbeefdeadbeef')).toBe('deadbeefdeadbeef.js');
+    });
+
+    it('locks the coordination key (a valid JS identifier used as a window property)', () => {
+        expect(COORDINATION_KEY).toMatch(/^__ag_[0-9a-f]{16}$/);
     });
 });
 
