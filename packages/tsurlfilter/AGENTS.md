@@ -95,12 +95,6 @@ You MUST follow the following rules for EVERY task that you perform:
 - The DNR converter now lives in the separate `@adguard/dnr-converter` package.
   Update converter behavior, examples, and docs there (see its `AGENTS.md`).
 
-- When changing declarative converter behavior, supported rule types, or
-  converter examples, update `src/rules/declarative-converter/readme.txt` as
-  needed and run `pnpm docs:mv3` to regenerate
-  `src/rules/declarative-converter/README.md`. Do not manually edit the
-  generated README output.
-
 ## Code Guidelines
 
 ### I. Architecture
