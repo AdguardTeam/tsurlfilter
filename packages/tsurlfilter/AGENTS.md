@@ -71,9 +71,6 @@ packages/tsurlfilter/
 - `pnpm lint` — run ESLint and TypeScript type checking
 - `pnpm lint:code` — run ESLint only
 - `pnpm lint:types` — run TypeScript type checking only
-- `pnpm docs:mv3` — regenerate
-  `src/rules/declarative-converter/README.md` from
-  `src/rules/declarative-converter/readme.txt`
 
 ## Contribution Instructions
 
