@@ -1,0 +1,10 @@
+{
+    "name": "esm",
+    "license": "MIT",
+    "author": "Adguard Software Ltd.",
+    "type": "module",
+    "scripts": {
+        "start": "node index.js",
+        "test": "./test.sh"
+    }
+}

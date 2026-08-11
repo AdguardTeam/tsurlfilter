@@ -303,15 +303,15 @@ export function isString(value: unknown): value is string {
 }
 
 /**
- * Unescapes the specified character in the string.
+ * Unescapes all occurrences of the specified character in the string.
  *
- * @param str String to escape.
- * @param char Character to escape.
+ * @param str String to unescape.
+ * @param char Character to unescape.
  *
- * @returns The string with the specified character unescaped.
+ * @returns The string with all occurrences of the specified character unescaped.
  */
 export function unescapeChar(str: string, char: string): string {
-    return str.replace(`\\${char}`, char);
+    return replaceAll(str, `\\${char}`, char);
 }
 
 /**

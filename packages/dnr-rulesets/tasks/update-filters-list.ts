@@ -1,4 +1,4 @@
-import { getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
+import { getRulesetId, getRulesetPath } from '@adguard/dnr-converter/cli';
 import fs from 'fs';
 
 import { BrowserFilters, FILTERS_MARKDOWN_PATH } from '../common/constants';
@@ -114,7 +114,7 @@ async function updateFiltersList(sections: MetadataSection[]): Promise<void> {
 
             for (const filter of groupFilters) {
                 const filterId = `${groupId}-${generateMarkdownAnchor(filter.name)}`;
-                const filterPath = getRuleSetPath(filter.filterId, baseDir);
+                const filterPath = getRulesetPath(getRulesetId(filter.filterId), baseDir);
 
                 headers += indentText(`- [${filter.name}](#${filterId})\n`, 2);
                 desc += `#### <a id="${filterId}"></a> ${filter.name}\n\n`;

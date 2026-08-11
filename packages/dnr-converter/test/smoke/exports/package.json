@@ -1,0 +1,11 @@
+{
+    "name": "typescript-exports",
+    "version": "1.0.0",
+    "license": "MIT",
+    "author": "Adguard Software Ltd.",
+    "type": "module",
+    "scripts": {
+        "start": "tsc --noEmit && tsx index.ts && tsd",
+        "test": "./test.sh"
+    }
+}

@@ -5,7 +5,7 @@
 `@adguard/dnr-rulesets` is a build-time utility and CLI tool that creates,
 loads, and manages prebuilt AdGuard Declarative Net Request (DNR) rulesets for
 Chromium MV3 browser extensions. It downloads AdGuard filter lists, converts
-them to DNR JSON rulesets via `@adguard/tsurlfilter`'s declarative converter,
+them to DNR JSON rulesets via `@adguard/dnr-converter`'s declarative converter,
 patches extension `manifest.json` with ruleset declarations, and provides a
 watch mode for local development. It also exposes a programmatic API for
 integration into custom build scripts.
@@ -13,7 +13,7 @@ integration into custom build scripts.
 ## Technical Context
 
 - **Language/Version**: TypeScript (ESNext target, strict mode)
-- **Primary Dependencies**: `@adguard/tsurlfilter` (declarative converter),
+- **Primary Dependencies**: `@adguard/dnr-converter` (declarative converter),
   `@adguard/agtree` (filter rule parser), `@adguard/logger`, `commander`
   (CLI), `axios` (HTTP), `zod` (schema validation), `chokidar` (file
   watching), `fs-extra`, `fast-glob`
@@ -200,7 +200,7 @@ You MUST follow the following rules for EVERY task that you perform:
 
 2. **All AdGuard workspace packages are bundled into the CLI.** The Rollup CLI
    config excludes most externals but bundles `@adguard/agtree`,
-   `@adguard/logger`, and `@adguard/tsurlfilter` because they are ESM-only and
+   `@adguard/logger`, and `@adguard/dnr-converter` because they are ESM-only and
    the CLI output is CJS.
 
    **Rationale**: Avoids `import.meta.url` issues in CJS context.

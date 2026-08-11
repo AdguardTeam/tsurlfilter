@@ -51,7 +51,7 @@ describe('DynamicRulesApi', () => {
                 [],
             );
 
-            let declarativeRules = await conversionResult.ruleSet.getDeclarativeRules();
+            let declarativeRules = await conversionResult.ruleset.getDeclarativeRules();
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0].action.type).toBe('allowAllRequests');
             expect(declarativeRules[0].condition.requestDomains![0]).toBe('example.org');
@@ -66,7 +66,7 @@ describe('DynamicRulesApi', () => {
                 [],
             );
 
-            declarativeRules = await conversionResult.ruleSet.getDeclarativeRules();
+            declarativeRules = await conversionResult.ruleset.getDeclarativeRules();
 
             expect(declarativeRules).toHaveLength(2);
             expect(declarativeRules[0].action.type).toBe('allowAllRequests');
@@ -82,7 +82,7 @@ describe('DynamicRulesApi', () => {
                 [],
             );
 
-            declarativeRules = await conversionResult.ruleSet.getDeclarativeRules();
+            declarativeRules = await conversionResult.ruleset.getDeclarativeRules();
 
             expect(declarativeRules).toHaveLength(2);
             expect(declarativeRules[0].action.type).toBe('allowAllRequests');
@@ -101,7 +101,7 @@ describe('DynamicRulesApi', () => {
                 [],
             );
 
-            declarativeRules = await conversionResult.ruleSet.getDeclarativeRules();
+            declarativeRules = await conversionResult.ruleset.getDeclarativeRules();
 
             expect(declarativeRules).toHaveLength(3);
             expect(declarativeRules[0].action.type).toBe('allowAllRequests');
@@ -119,7 +119,7 @@ describe('DynamicRulesApi', () => {
                 [],
             );
 
-            declarativeRules = await conversionResult.ruleSet.getDeclarativeRules();
+            declarativeRules = await conversionResult.ruleset.getDeclarativeRules();
 
             expect(declarativeRules).toHaveLength(4);
             expect(declarativeRules[0].action.type).toBe('allowAllRequests');
@@ -128,6 +128,74 @@ describe('DynamicRulesApi', () => {
             expect(declarativeRules[1].condition.requestDomains![0]).toBe('example123.com');
             expect(declarativeRules[2].condition.urlFilter).toBe('example.org');
             expect(declarativeRules[3].condition.urlFilter).toBe('example.com');
+
+            // Clean up the mock after the test
+            // @ts-ignore
+            delete browser.declarativeNetRequest;
+        });
+
+        // eslint-disable-next-line max-len
+        it('preserves ruleset metadata across unloadContent() and re-convert (AG-45668 regression test)', async () => {
+            // Manually create the mock structure for browser.declarativeNetRequest
+            const mockDeclarativeNetRequest = {
+                getDynamicRules: vi.fn().mockResolvedValue([]),
+                updateDynamicRules: vi.fn().mockResolvedValue({}),
+                MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES: 0,
+                MAX_NUMBER_OF_DYNAMIC_RULES: 10,
+                MAX_NUMBER_OF_REGEX_RULES: 0,
+            };
+
+            // Override the browser object with the mock
+            // @ts-expect-error(2540)
+            browser.declarativeNetRequest = mockDeclarativeNetRequest;
+            // MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES is used directly from chrome
+            // namespace.
+            // @ts-expect-error(2740)
+            chrome.declarativeNetRequest = mockDeclarativeNetRequest;
+
+            // `||example.net^` / `||example.com^` are convertible network rules
+            // that populate the rules hash map; `||example.org^$badfilter`
+            // populates `badFilterRules`.
+            const userRules = [
+                '||example.net^',
+                '||example.com^',
+                '||example.org^$badfilter',
+            ];
+
+            const { ruleset } = await DynamicRulesApi.updateDynamicFiltering(
+                createFilter([], ALLOWLIST_FILTER_ID),
+                createFilter([], BLOCKING_TRUSTED_FILTER_ID),
+                createFilter(userRules, USER_FILTER_ID),
+                [],
+                [],
+            );
+
+            // Metadata must be populated right after conversion.
+            expect(ruleset.getBadFilterRules()).not.toHaveLength(0);
+            expect(ruleset.getRulesHashMap().serialize()).not.toBe('[]');
+
+            // `unloadContent()` is the end-of-`configure()` cleanup invoked when
+            // `declarativeLogEnabled` is false (see app.ts). It unloads the
+            // source map / filter list / declarative rules but MUST NOT clear
+            // the in-memory metadata (previously a separate `unloadMetadata()`
+            // did, which returned empty metadata on a subsequent `configure()`).
+            ruleset.unloadContent();
+
+            expect(ruleset.getBadFilterRules()).not.toHaveLength(0);
+            expect(ruleset.getRulesHashMap().serialize()).not.toBe('[]');
+
+            // A second conversion mirrors a re-`configure()` and must again
+            // produce non-empty metadata on the fresh ruleset.
+            const secondResult = await DynamicRulesApi.updateDynamicFiltering(
+                createFilter([], ALLOWLIST_FILTER_ID),
+                createFilter([], BLOCKING_TRUSTED_FILTER_ID),
+                createFilter(userRules, USER_FILTER_ID),
+                [],
+                [],
+            );
+
+            expect(secondResult.ruleset.getBadFilterRules()).not.toHaveLength(0);
+            expect(secondResult.ruleset.getRulesHashMap().serialize()).not.toBe('[]');
 
             // Clean up the mock after the test
             // @ts-ignore

@@ -3,7 +3,7 @@
  * @file Watch task for track changes in the filters directory and rebuild DNR rulesets.
  */
 
-import { convertFilters } from '@adguard/tsurlfilter/cli';
+import { convertFilters } from '@adguard/dnr-converter/cli';
 import { ChokidarOptions, type FSWatcher, watch } from 'chokidar';
 
 import { BrowserFilters } from '../../../common/constants';

@@ -24,7 +24,7 @@ Table of content:
                 - [content](#content-1)
                 - [conversionData](#conversiondata)
             - [filtersPath (MV3 only)](#filterspath-mv3-only)
-            - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
+            - [rulesetsPath (MV3 only)](#rulesetspath-mv3-only)
             - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
             - [allowlist](#allowlist)
             - [trustedDomains](#trusteddomains)
@@ -299,7 +299,7 @@ type: `string`
 
 Path to the filter list file.
 
-#### ruleSetsPath (MV3 only)
+#### rulesetsPath (MV3 only)
 
 type: `string`
 
@@ -572,7 +572,7 @@ contains multiple fields with errors and limitations
 that **must be checked**:
 
 - **`staticFiltersStatus.errors`**: Array of
-  `FailedEnableRuleSetsError` instances if
+  `FailedEnableRulesetsError` instances if
   `browser.declarativeNetRequest.updateEnabledRulesets` fails.
   The browser does not update or enable any rulesets if any single
   ruleset is not found.

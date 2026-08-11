@@ -23,6 +23,7 @@ stages:
         - Test ESLint Plugin Logger Context
         - Test AGTree
         - Test TSUrlFilter
+        - Test DNR-Converter
         - Test TSWebExtension
         - Test DNR-Rulesets
         - Test Adguard API
@@ -34,6 +35,7 @@ Test CSSTokenizer: !include 'jobs/tests/test-css-tokenizer.yaml'
 Test ESLint Plugin Logger Context: !include 'jobs/tests/test-eslint-plugin-logger-context.yaml'
 Test AGTree: !include 'jobs/tests/test-agtree.yaml'
 Test TSUrlFilter: !include 'jobs/tests/test-tsurlfilter.yaml'
+Test DNR-Converter: !include 'jobs/tests/test-dnr-converter.yaml'
 Test TSWebExtension: !include 'jobs/tests/test-tswebextension.yaml'
 Test DNR-Rulesets: !include 'jobs/tests/test-dnr-rulesets.yaml'
 Test Adguard API: !include 'jobs/tests/test-adguard-api.yaml'

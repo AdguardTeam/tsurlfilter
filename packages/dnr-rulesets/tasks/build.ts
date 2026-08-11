@@ -1,4 +1,4 @@
-import { convertFilters } from '@adguard/tsurlfilter/cli';
+import { convertFilters } from '@adguard/dnr-converter/cli';
 import fs from 'fs';
 import path from 'path';
 

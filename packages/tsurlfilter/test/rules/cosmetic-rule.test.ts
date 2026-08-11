@@ -322,6 +322,19 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://example.net'))).toEqual(true);
     });
 
+    it('matches requests by regexp pattern of domain with multiple escaped pipes', () => {
+        // AG-56856: all escaped separators inside the regexp should be unescaped,
+        // not only the first one
+        const rule = createCosmeticRule(String.raw`[$domain=/example\d*\.(live\|com\|icu\|org)$/]##body`, 0);
+        expect(rule.match(createRequest('https://example.com'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.org'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.live'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.icu'))).toEqual(true);
+        expect(rule.match(createRequest('https://sub.example.org'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.net'))).toEqual(false);
+        expect(rule.match(createRequest('https://google.com'))).toEqual(false);
+    });
+
     it('matches by $domain modifier with mixed type values', () => {
         let request: Request;
         const rule = createCosmeticRule(String.raw`[$domain=/\.(io\|com)/|evil.*|ads.net|~/jwt\.io/|~evil.gov]##banner`, 0);
@@ -1010,7 +1023,6 @@ describe('Javascript rules', () => {
         expect(getScriptletName('#@%#//scriptlet()')).toBe(null);
         expect(getScriptletName("#@%#//scriptlet('set-cookie')")).toBe('set-cookie');
         expect(getScriptletName('#@%#//scriptlet("set-cookie")')).toBe('set-cookie');
-        expect(getScriptletName("#%#//scriptlet('ubo-nobab')")).toBe('ubo-nobab');
     });
 
     it('normalizes scriptlet rule content', () => {

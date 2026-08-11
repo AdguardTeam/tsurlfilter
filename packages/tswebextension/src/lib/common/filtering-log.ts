@@ -1,4 +1,4 @@
-import { type SourceRuleAndFilterId } from '@adguard/tsurlfilter/es/declarative-converter';
+import { type SourceRuleAndFilterId } from '@adguard/dnr-converter';
 
 import { type ContentType } from './request-type';
 import { type RuleInfo, type RuleInfoOptional } from './rule-info';

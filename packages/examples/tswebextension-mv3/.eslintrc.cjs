@@ -9,6 +9,7 @@ module.exports = {
     },
     plugins: [
         'import',
+        '@adguard/logger-context',
         '@typescript-eslint',
     ],
     extends: [
@@ -78,5 +79,10 @@ module.exports = {
                 'tsx': 'never',
             },
         ],
+
+        // Check that every logger call has a context tag.
+        '@adguard/logger-context/require-logger-context': ['error', {
+            contextModuleName: 'tswebexample',
+        }],
     },
 };

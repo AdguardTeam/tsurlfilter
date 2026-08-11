@@ -8,7 +8,5 @@ import { DEFAULT_EXTENSION_CONFIG } from '../../../scripts/constants';
  * @returns configuration
  */
 export const loadDefaultConfig = (): Configuration => {
-    console.debug('[LOAD DEFAULT CONFIG]');
-
     return DEFAULT_EXTENSION_CONFIG;
 };

@@ -28,6 +28,7 @@ high-level extension APIs (`adguard-api`, `adguard-api-mv3`).
 │   ├── css-tokenizer/               # @adguard/css-tokenizer — CSS tokenizer
 │   ├── agtree/                      # @adguard/agtree — filter list parser & AST
 │   ├── tsurlfilter/                 # @adguard/tsurlfilter — blocking rules engine
+│   ├── dnr-converter/               # @adguard/dnr-converter — DNR rule converter (CLI + lib)
 │   ├── tswebextension/              # @adguard/tswebextension — web extension API wrapper
 │   ├── dnr-rulesets/                # @adguard/dnr-rulesets — DNR ruleset builder (CLI + lib)
 │   ├── adguard-api/                 # @adguard/api — high-level extension API (MV2)
@@ -62,10 +63,13 @@ graph TD
     css-tokenizer --> tsurlfilter
     agtree --> tsurlfilter
     agtree --> tswebextension
+    agtree --> dnr-converter
     tsurlfilter --> tswebextension
-    tsurlfilter --> dnr-rulesets
     logger --> tswebextension
     logger --> dnr-rulesets
+    logger --> dnr-converter
+    dnr-converter --> tswebextension
+    dnr-converter --> dnr-rulesets
     tswebextension --> api
     tswebextension --> api-mv3
 ```

@@ -1,5 +1,5 @@
-import { METADATA_RULESET_ID } from '@adguard/tsurlfilter/es/declarative-converter';
-import { extractRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
+import { METADATA_RULESET_ID } from '@adguard/dnr-converter';
+import { extractRulesetId, getRulesetId, getRulesetPath } from '@adguard/dnr-converter/cli';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -53,7 +53,7 @@ const getValidatorData = async (destDir: string): Promise<RulesetIdsAndMetadataK
     const destDirSubdirectories = destDirItems.filter((item) => item.isDirectory());
 
     destDirSubdirectories.forEach((item) => {
-        const id = extractRuleSetId(item.name);
+        const id = extractRulesetId(item.name);
 
         if (id === null) {
             throw new Error(`Cannot extract ruleset id from ${item.name}`);
@@ -67,22 +67,22 @@ const getValidatorData = async (destDir: string): Promise<RulesetIdsAndMetadataK
         rulesetIds.push(id);
     });
 
-    const ruleSetPath = getRuleSetPath(rulesetIds[0], destDir);
+    const rulesetPath = getRulesetPath(getRulesetId(rulesetIds[0]), destDir);
 
     try {
-        const rawRuleSetContent = await fs.promises.readFile(
-            ruleSetPath,
+        const rawRulesetContent = await fs.promises.readFile(
+            rulesetPath,
             { encoding: 'utf-8' },
         );
 
-        const ruleSetContent = JSON.parse(rawRuleSetContent);
-        const metadataRule = ruleSetContent[0];
+        const rulesetContent = JSON.parse(rawRulesetContent);
+        const metadataRule = rulesetContent[0];
         const metadata = metadataRule.metadata;
         const declarativeMetadata = metadata.metadata;
 
         rulesetMetadataKeys.push(...Object.keys(declarativeMetadata));
     } catch (e: unknown) {
-        console.error(`Error parsing metadata file ${ruleSetPath} due to ${e}`);
+        console.error(`Error parsing metadata file ${rulesetPath} due to ${e}`);
     }
 
     return {

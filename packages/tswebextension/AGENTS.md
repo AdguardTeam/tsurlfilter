@@ -13,10 +13,11 @@ content scripts and a CLI for build-time tasks.
 
 - **Language/Version**: TypeScript (ESM-only output), Node.js ≥ 22
 - **Primary Dependencies**: `@adguard/tsurlfilter` (blocking engine),
-  `@adguard/agtree` (rule parsing), `@adguard/logger` (logging),
-  `@adguard/scriptlets`, `@adguard/assistant`, `@adguard/extended-css`,
-  `webextension-polyfill`, `zod` (schema validation), `lodash-es`, `lru-cache`,
-  `idb` (IndexedDB wrapper), `superjson`, `bowser`, `tldts`
+  `@adguard/dnr-converter` (DNR rule conversion), `@adguard/agtree` (rule
+  parsing), `@adguard/logger` (logging), `@adguard/scriptlets`,
+  `@adguard/assistant`, `@adguard/extended-css`, `webextension-polyfill`,
+  `zod` (schema validation), `lodash-es`, `lru-cache`, `idb` (IndexedDB
+  wrapper), `superjson`, `bowser`, `tldts`
 - **Build Toolchain**: Rollup (with `@rollup/plugin-swc`), `rollup-plugin-dts`
   (type bundling), `tsc` + custom `transform-dts.ts`
 - **Testing**: Vitest (multi-project config: `mv2`, `mv3`, `common`), with
