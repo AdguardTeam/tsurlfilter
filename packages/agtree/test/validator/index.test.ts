@@ -373,6 +373,7 @@ describe('ModifierValidator', () => {
                         'redirect=googletagmanager-gtm',
                         'redirect-rule=noopjs',
                         'redirect-rule=noopmp4-1s',
+                        'redirect-rule=googletagmanager-gtm',
                         'removeheader=link',
                         'removeheader=request:user-agent',
                         'removeparam=cb',

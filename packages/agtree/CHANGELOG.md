@@ -7,14 +7,26 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [Unreleased]
+
+### Fixed
+
+- `redirect-rule` modifier `value_format` for AdGuard platforms was missing
+  the `googletagmanager-gtm` entry (present in `redirect` modifier), causing
+  `modifierValidator.validate()` to incorrectly reject valid
+  `redirect-rule=googletagmanager-gtm` rules [FiltersCompiler#159].
+
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/agtree-v4.2.0...HEAD
+[FiltersCompiler#159]: https://github.com/AdguardTeam/FiltersCompiler/issues/159
+
 ## [4.2.0] - 2026-07-27
 
 ### Added
 
-- $urltransform modifier support [AGLint#249].
+- $urltransform modifier support [#111].
 
-[AGLint#249]: https://github.com/AdguardTeam/AGLint/issues/249
 [4.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.2.0
+[#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
 
 ## [4.1.2] - 2026-07-24
 
