@@ -258,8 +258,15 @@ export class UrlTransformModifier implements IAdvancedModifier {
      * Constructor.
      *
      * @param value UrlTransform modifier value (may contain `|` pipeline separators).
+     * @param isAllowlist Whether the rule is an allowlist (exception) rule.
+     * The value may be omitted only in allowlist rules, e.g.
+     * `@@||example.com^$urltransform` disables urltransform rules for matching requests.
+     *
+     * @throws SyntaxError if the value is empty and the rule is not an allowlist rule.
      */
-    constructor(value: string) {
+    constructor(value: string, isAllowlist: boolean) {
+        UrlTransformModifier.validate(value, isAllowlist);
+
         this.optionText = value;
 
         if (!value) {
@@ -406,5 +413,19 @@ export class UrlTransformModifier implements IAdvancedModifier {
         }
 
         return result;
+    }
+
+    /**
+     * Validates urltransform rule.
+     *
+     * @param value UrlTransform modifier value.
+     * @param isAllowlist Indicates if the rule is an allowlist rule.
+     *
+     * @throws SyntaxError if the value is empty and the rule is not an allowlist rule.
+     */
+    private static validate(value: string, isAllowlist: boolean): void {
+        if (!isAllowlist && !value) {
+            throw new SyntaxError('Invalid $urltransform rule, urltransform value must not be empty');
+        }
     }
 }

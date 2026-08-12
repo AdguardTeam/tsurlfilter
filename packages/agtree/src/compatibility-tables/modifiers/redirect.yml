@@ -5,6 +5,7 @@ adg_os_any:
   assignable: true
   negatable: false
   value_optional: true
+  value_optional_exception_only: true
   # TODO: Add a custom validator, like `adg_redirect_resource` that based on the
   # compatibility table from the ADG Scriptlets repo.
   value_format: |-
@@ -62,6 +63,7 @@ adg_ext_any:
   assignable: true
   negatable: false
   value_optional: true
+  value_optional_exception_only: true
   # TODO: Add a custom validator, like `adg_redirect_resource` that based on the
   # compatibility table from the ADG Scriptlets repo.
   value_format: |-

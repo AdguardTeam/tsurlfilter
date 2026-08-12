@@ -7,7 +7,22 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## [Unreleased]
+## [4.2.1] - 2026-08-12
+
+### Added
+
+- New `value_optional_exception_only` compatibility table optional field for
+  assignable modifiers whose value may be omitted only in exception rules,
+  e.g. `$urltransform`, `$permissions`, etc.
+
+### Changed
+
+- Valueless modifiers are now invalid in blocking rules for `$urltransform`,
+  `$csp`, `$permissions`, `$redirect`, `$redirect-rule` and `$removeheader` —
+  the value may only be omitted in exception rules, e.g.
+  `@@||example.com^$urltransform`.
+- Valueless `$replace` is now valid in exception rules (previously rejected
+  everywhere) but invalid in blocking rules.
 
 ### Fixed
 
@@ -16,7 +31,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `modifierValidator.validate()` to incorrectly reject valid
   `redirect-rule=googletagmanager-gtm` rules [FiltersCompiler#159].
 
-[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/agtree-v4.2.0...HEAD
+[4.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.2.1
 [FiltersCompiler#159]: https://github.com/AdguardTeam/FiltersCompiler/issues/159
 
 ## [4.2.0] - 2026-07-27

@@ -551,6 +551,12 @@ describe('NetworkRule - urltransform rules', () => {
         expect(rule.getAdvancedModifierValue()).toBe('');
     });
 
+    it('throws if urltransform modifier has no value in blocking rule', () => {
+        expect(() => createNetworkRule('||example.org^$urltransform', 0)).toThrow(
+            'Invalid $urltransform rule, urltransform value must not be empty',
+        );
+    });
+
     it('works if urltransform with capture groups is parsed', () => {
         const optionText = '/(pref\\/).*\\/(suf)/\\$1\\$2/i';
         const rule = createNetworkRule(`||example.org^$urltransform=${optionText}`, 0);

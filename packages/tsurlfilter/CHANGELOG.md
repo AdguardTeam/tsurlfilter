@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Valueless `$urltransform` modifier now throws a `SyntaxError` in blocking
+  rules, e.g. `||example.com^$urltransform` is invalid, and remains valid
+  in exception rules, e.g. `@@||example.com^$urltransform`.
+- Updated [@adguard/agtree] to `v4.2.1`.
+
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.2...HEAD
+
 ## [v6.0.2] - 2026-07-28
 
 ### Added

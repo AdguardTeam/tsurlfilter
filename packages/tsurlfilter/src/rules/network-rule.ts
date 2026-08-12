@@ -1834,7 +1834,7 @@ export class NetworkRule implements IRule {
             // $urltransform
             case OPTIONS.URLTRANSFORM:
                 this.setOptionEnabled(NetworkRuleOption.Urltransform, true);
-                this.advancedModifier = new UrlTransformModifier(optionValue);
+                this.advancedModifier = new UrlTransformModifier(optionValue, this.isAllowlist());
                 break;
             // $cookie
             case OPTIONS.COOKIE:

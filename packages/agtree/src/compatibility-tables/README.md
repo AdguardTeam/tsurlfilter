@@ -399,6 +399,7 @@ this will returns all compatibility data for the `$third-party` modifier for AdG
   blockOnly: false,
   exceptionOnly: false,
   valueOptional: false,
+  valueOptionalExceptionOnly: false,
   valueFormat: null
 }
 ```

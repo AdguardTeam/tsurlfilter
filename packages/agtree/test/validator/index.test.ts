@@ -331,17 +331,64 @@ describe('ModifierValidator', () => {
             describe('optional value', () => {
                 const validModifiers = [
                     'cookie',
-                    'csp',
                     'hls',
                     'jsonprune',
-                    'redirect',
-                    'redirect-rule',
-                    'removeheader',
                     'removeparam',
                 ];
                 test.each(validModifiers)('%s', (rawModifier) => {
                     const modifier = getModifier(rawModifier);
                     const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
+                    expect(validationResult.valid).toBeTruthy();
+                });
+            });
+
+            describe('optional value only for exception rules', () => {
+                const exceptionOnlyOptionalValueModifiers = [
+                    'csp',
+                    'permissions',
+                    'redirect',
+                    'redirect-rule',
+                    'removeheader',
+                    'replace',
+                    'urltransform',
+                ];
+
+                test.each(
+                    exceptionOnlyOptionalValueModifiers,
+                )('%s without value is invalid in blocking rules', (rawModifier) => {
+                    const modifier = getModifier(rawModifier);
+                    // third argument is 'false' for blocking rules
+                    const validationResult = modifierValidator.validate(
+                        SpecificPlatform.AdgOsWindows,
+                        modifier,
+                        false,
+                    );
+                    expect(validationResult.valid).toBeFalsy();
+                    expect(
+                        validationResult.error?.startsWith(VALIDATION_ERROR_PREFIX.VALUE_REQUIRED),
+                    ).toBeTruthy();
+                });
+
+                test.each(
+                    exceptionOnlyOptionalValueModifiers,
+                )('%s without value is valid in exception rules', (rawModifier) => {
+                    const modifier = getModifier(rawModifier);
+                    // third argument is 'true' for exception rules
+                    const validationResult = modifierValidator.validate(
+                        SpecificPlatform.AdgOsWindows,
+                        modifier,
+                        true,
+                    );
+                    expect(validationResult.valid).toBeTruthy();
+                });
+
+                test('urltransform with value is valid in blocking rules', () => {
+                    const modifier = getModifier('urltransform=/a/b/');
+                    const validationResult = modifierValidator.validate(
+                        SpecificPlatform.AdgOsWindows,
+                        modifier,
+                        false,
+                    );
                     expect(validationResult.valid).toBeTruthy();
                 });
             });

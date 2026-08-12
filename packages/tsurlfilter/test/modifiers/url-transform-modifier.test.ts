@@ -6,43 +6,54 @@ import { UrlTransformModifier } from '../../src/modifiers/url-transform-modifier
 describe('UrlTransformModifier', () => {
     describe('constructor and getValue', () => {
         it('stores the option text', () => {
-            const modifier = new UrlTransformModifier('/\\/old\\//\\/new\\//');
+            const modifier = new UrlTransformModifier('/\\/old\\//\\/new\\//', false);
             expect(modifier.getValue()).toBe('/\\/old\\//\\/new\\//');
         });
 
         it('returns empty string for empty value', () => {
-            const modifier = new UrlTransformModifier('');
+            const modifier = new UrlTransformModifier('', true);
+            expect(modifier.getValue()).toBe('');
+        });
+
+        it('throws for empty value in blocking rules', () => {
+            expect(() => new UrlTransformModifier('', false)).toThrow(
+                'Invalid $urltransform rule, urltransform value must not be empty',
+            );
+        });
+
+        it('accepts empty value in allowlist rules', () => {
+            const modifier = new UrlTransformModifier('', true);
             expect(modifier.getValue()).toBe('');
         });
     });
 
     describe('getApplyFunc', () => {
         it('returns identity function for empty value', () => {
-            const modifier = new UrlTransformModifier('');
+            const modifier = new UrlTransformModifier('', true);
             const apply = modifier.getApplyFunc();
             expect(apply('anything')).toBe('anything');
         });
 
         it('applies regex substitution', () => {
-            const modifier = new UrlTransformModifier('/old/new/');
+            const modifier = new UrlTransformModifier('/old/new/', false);
             const apply = modifier.getApplyFunc();
             expect(apply('/old/page')).toBe('/new/page');
         });
 
         it('adds global flag automatically', () => {
-            const modifier = new UrlTransformModifier('/x/y/');
+            const modifier = new UrlTransformModifier('/x/y/', false);
             const apply = modifier.getApplyFunc();
             expect(apply('xaxbx')).toBe('yayby');
         });
 
         it('respects case-insensitive flag', () => {
-            const modifier = new UrlTransformModifier('/OLD/new/i');
+            const modifier = new UrlTransformModifier('/OLD/new/i', false);
             const apply = modifier.getApplyFunc();
             expect(apply('/old/page')).toBe('/new/page');
         });
 
         it('unescapes dollar sign in replacement', () => {
-            const modifier = new UrlTransformModifier('/(a)(b)/\\$1\\$2/');
+            const modifier = new UrlTransformModifier('/(a)(b)/\\$1\\$2/', false);
             const apply = modifier.getApplyFunc();
             expect(apply('ab')).toBe('ab');
         });
@@ -50,7 +61,7 @@ describe('UrlTransformModifier', () => {
 
     describe('applyToUrl - basic path rewrite', () => {
         it('rewrites URL path', () => {
-            const modifier = new UrlTransformModifier('/\\/old\\//\\/new\\//');
+            const modifier = new UrlTransformModifier('/\\/old\\//\\/new\\//', false);
             expect(modifier.applyToUrl('https://example.org/old/page')).toBe('https://example.org/new/page');
         });
 
@@ -58,38 +69,38 @@ describe('UrlTransformModifier', () => {
             // Rule from testcases: ||httpbin.agrd.dev^$urltransform=/^\/status\/500\$/\/status\/200/
             // The \$ in the filter text is an escaped $ (modifier separator in AdGuard syntax)
             // and should act as the end-of-string anchor in the regex.
-            const modifier = new UrlTransformModifier('/^\\/status\\/500\\$/\\/status\\/200/');
+            const modifier = new UrlTransformModifier('/^\\/status\\/500\\$/\\/status\\/200/', false);
             expect(modifier.applyToUrl('https://httpbin.agrd.dev/status/500'))
                 .toBe('https://httpbin.agrd.dev/status/200');
         });
 
         it('does not rewrite when \\$ anchor prevents partial match', () => {
             // With $ anchor, /status/500 must be at the end — /status/500/extra should NOT match
-            const modifier = new UrlTransformModifier('/^\\/status\\/500\\$/\\/status\\/200/');
+            const modifier = new UrlTransformModifier('/^\\/status\\/500\\$/\\/status\\/200/', false);
             expect(modifier.applyToUrl('https://httpbin.agrd.dev/status/500/extra'))
                 .toBe('https://httpbin.agrd.dev/status/500/extra');
         });
 
         it('returns original URL when regex does not match', () => {
-            const modifier = new UrlTransformModifier('/\\/old\\//\\/new\\//');
+            const modifier = new UrlTransformModifier('/\\/old\\//\\/new\\//', false);
             expect(modifier.applyToUrl('https://example.org/other/page')).toBe('https://example.org/other/page');
         });
 
         it('returns original URL for empty modifier value', () => {
-            const modifier = new UrlTransformModifier('');
+            const modifier = new UrlTransformModifier('', true);
             expect(modifier.applyToUrl('https://example.org/page')).toBe('https://example.org/page');
         });
     });
 
     describe('applyToUrl - query string transformation', () => {
         it('strips a query parameter', () => {
-            const modifier = new UrlTransformModifier('/\\?tracking=[^&]*//');
+            const modifier = new UrlTransformModifier('/\\?tracking=[^&]*//', false);
             expect(modifier.applyToUrl('https://example.org/page?tracking=abc123'))
                 .toBe('https://example.org/page');
         });
 
         it('strips utm parameter from middle of query', () => {
-            const modifier = new UrlTransformModifier('/&utm_source=[^&]*//');
+            const modifier = new UrlTransformModifier('/&utm_source=[^&]*//', false);
             expect(modifier.applyToUrl('https://example.org/page?bar=1&utm_source=foo'))
                 .toBe('https://example.org/page?bar=1');
         });
@@ -97,29 +108,29 @@ describe('UrlTransformModifier', () => {
 
     describe('applyToUrl - origin preservation', () => {
         it('rejects transforms that would inject a different host via path', () => {
-            const modifier = new UrlTransformModifier('/\\/\\//@evil.org/');
+            const modifier = new UrlTransformModifier('/\\/\\//@evil.org/', false);
             expect(modifier.applyToUrl('https://example.org/')).toBe('https://example.org/');
         });
 
         it('does not change origin when regex only matches path content', () => {
-            const modifier = new UrlTransformModifier('/example/evil/');
+            const modifier = new UrlTransformModifier('/example/evil/', false);
             expect(modifier.applyToUrl('https://example.org/path')).toBe('https://example.org/path');
         });
 
         it('rejects when reconstructed URL has different origin', () => {
-            const modifier = new UrlTransformModifier('/^\\//@evil.org\\//');
+            const modifier = new UrlTransformModifier('/^\\//@evil.org\\//', false);
             const result = modifier.applyToUrl('https://example.org/');
             expect(result).toBe('https://example.org/');
         });
 
         it('rejects origin change in path-only mode', () => {
-            const modifier = new UrlTransformModifier('/example/evil/');
+            const modifier = new UrlTransformModifier('/example/evil/', false);
             expect(modifier.isFullUrlMode()).toBe(false);
             expect(modifier.applyToUrl('https://example.org/path')).toBe('https://example.org/path');
         });
 
         it('rejects credential injection', () => {
-            const modifier = new UrlTransformModifier('/\\/\\//@evil.org/');
+            const modifier = new UrlTransformModifier('/\\/\\//@evil.org/', false);
             expect(modifier.isFullUrlMode()).toBe(false);
             expect(modifier.applyToUrl('https://example.org/')).toBe('https://example.org/');
         });
@@ -127,7 +138,7 @@ describe('UrlTransformModifier', () => {
 
     describe('applyToUrl - fragment handling', () => {
         it('transforms hash fragment', () => {
-            const modifier = new UrlTransformModifier('/#old/#new/');
+            const modifier = new UrlTransformModifier('/#old/#new/', false);
             expect(modifier.applyToUrl('https://example.org/page#old'))
                 .toBe('https://example.org/page#new');
         });
@@ -135,7 +146,7 @@ describe('UrlTransformModifier', () => {
 
     describe('applyToUrl - capture groups', () => {
         it('uses capture group references in replacement', () => {
-            const modifier = new UrlTransformModifier('/(pref\\/).*\\/(suf)/\\$1\\$2/i');
+            const modifier = new UrlTransformModifier('/(pref\\/).*\\/(suf)/\\$1\\$2/i', false);
             expect(modifier.applyToUrl('https://example.org/pref/middle/suf'))
                 .toBe('https://example.org/pref/suf');
         });
@@ -143,70 +154,70 @@ describe('UrlTransformModifier', () => {
 
     describe('applyToUrl - invalid URL', () => {
         it('returns original string for unparseable URL', () => {
-            const modifier = new UrlTransformModifier('/x/y/');
+            const modifier = new UrlTransformModifier('/x/y/', false);
             expect(modifier.applyToUrl('not-a-url')).toBe('not-a-url');
         });
     });
 
     describe('isFullUrl - full-URL mode detection', () => {
         it('returns true for pattern starting with ^http://', () => {
-            const modifier = new UrlTransformModifier('^http:\\/\\/old\\.com(.*)/http:\\/\\/new.com$1/');
+            const modifier = new UrlTransformModifier('^http:\\/\\/old\\.com(.*)/http:\\/\\/new.com$1/', false);
             expect(modifier.isFullUrlMode()).toBe(true);
         });
 
         it('returns true for pattern starting with ^https://', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/old\\.com(.*)/https:\\/\\/new.com$1/');
+            const modifier = new UrlTransformModifier('^https:\\/\\/old\\.com(.*)/https:\\/\\/new.com$1/', false);
             expect(modifier.isFullUrlMode()).toBe(true);
         });
 
         it('returns true for pattern starting with ^https?://', () => {
-            const modifier = new UrlTransformModifier('^https?:\\/\\/old\\.com(.*)/https:\\/\\/new.com$1/');
+            const modifier = new UrlTransformModifier('^https?:\\/\\/old\\.com(.*)/https:\\/\\/new.com$1/', false);
             expect(modifier.isFullUrlMode()).toBe(true);
         });
 
         it('returns false for path-only pattern', () => {
-            const modifier = new UrlTransformModifier('/\\/old\\//\\/new\\//');
+            const modifier = new UrlTransformModifier('/\\/old\\//\\/new\\//', false);
             expect(modifier.isFullUrlMode()).toBe(false);
         });
 
         it('returns false for pattern containing http but not starting with ^http', () => {
-            const modifier = new UrlTransformModifier('/http/https/');
+            const modifier = new UrlTransformModifier('/http/https/', false);
             expect(modifier.isFullUrlMode()).toBe(false);
         });
 
         it('returns false for empty value', () => {
-            const modifier = new UrlTransformModifier('');
+            const modifier = new UrlTransformModifier('', true);
             expect(modifier.isFullUrlMode()).toBe(false);
         });
     });
 
     describe('applyToUrl - full-URL mode (origin-changing redirects)', () => {
         it('redirects to a different domain', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/old\\.example\\.com(.*)/https:\\/\\/new.example.net$1/');
+            const modifier = new UrlTransformModifier('^https:\\/\\/old\\.example\\.com(.*)/https:\\/\\/new.example.net$1/', false);
             expect(modifier.applyToUrl('https://old.example.com/path?q=1'))
                 .toBe('https://new.example.net/path?q=1');
         });
 
         it('returns original URL when regex does not match', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/old\\.example\\.com(.*)/https:\\/\\/new.example.net$1/');
+            const modifier = new UrlTransformModifier('^https:\\/\\/old\\.example\\.com(.*)/https:\\/\\/new.example.net$1/', false);
             expect(modifier.applyToUrl('https://other.example.com/path'))
                 .toBe('https://other.example.com/path');
         });
 
         it('allows scheme change from http to https', () => {
-            const modifier = new UrlTransformModifier('^http:\\/\\/insecure\\.example\\.com(.*)/https:\\/\\/secure.example.com$1/');
+            const modifier = new UrlTransformModifier('^http:\\/\\/insecure\\.example\\.com(.*)/https:\\/\\/secure.example.com$1/', false);
             expect(modifier.applyToUrl('http://insecure.example.com/page'))
                 .toBe('https://secure.example.com/page');
         });
 
         it('supports capture groups across origin change', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/cdn(\\d+)\\.old\\.com(\\/.*)/https:\\/\\/cdn$1.new.com$2/');
+            const modifier = new UrlTransformModifier('^https:\\/\\/cdn(\\d+)\\.old\\.com(\\/.*)/https:\\/\\/cdn$1.new.com$2/', false);
             expect(modifier.applyToUrl('https://cdn3.old.com/assets/image.png'))
                 .toBe('https://cdn3.new.com/assets/image.png');
         });
 
         it('supports case-insensitive flag', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/OLD\\.example\\.com(.*)/https:\\/\\/new.example.com$1/i');
+            const modifier = new UrlTransformModifier('^https:\\/\\/OLD\\.example\\.com(.*)/https:\\/\\/new.example.com$1/i', false);
             expect(modifier.applyToUrl('https://old.example.com/page'))
                 .toBe('https://new.example.com/page');
         });
@@ -214,49 +225,49 @@ describe('UrlTransformModifier', () => {
 
     describe('applyToUrl - full-URL mode security (scheme validation)', () => {
         it('rejects javascript: scheme result', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\//javascript:\\/\\//');
+            const modifier = new UrlTransformModifier('^https:\\/\\//javascript:\\/\\//', false);
             expect(modifier.applyToUrl('https://example.com/page'))
                 .toBe('https://example.com/page');
         });
 
         it('rejects data: scheme result', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com/data:text\\/html,<h1>Hi<\\/h1>/');
+            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com/data:text\\/html,<h1>Hi<\\/h1>/', false);
             expect(modifier.applyToUrl('https://example.com'))
                 .toBe('https://example.com');
         });
 
         it('rejects file: scheme result', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com(.*)/file:\\/\\/\\/etc\\/passwd/');
+            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com(.*)/file:\\/\\/\\/etc\\/passwd/', false);
             expect(modifier.applyToUrl('https://example.com/page'))
                 .toBe('https://example.com/page');
         });
 
         it('allows http: result', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com(.*)/http:\\/\\/example.com$1/');
+            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com(.*)/http:\\/\\/example.com$1/', false);
             expect(modifier.applyToUrl('https://example.com/page'))
                 .toBe('http://example.com/page');
         });
 
         it('allows ws: result', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com(.*)/ws:\\/\\/example.com$1/');
+            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com(.*)/ws:\\/\\/example.com$1/', false);
             expect(modifier.applyToUrl('https://example.com/page'))
                 .toBe('ws://example.com/page');
         });
 
         it('allows wss: result', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com(.*)/wss:\\/\\/example.com$1/');
+            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com(.*)/wss:\\/\\/example.com$1/', false);
             expect(modifier.applyToUrl('https://example.com/page'))
                 .toBe('wss://example.com/page');
         });
 
         it('returns original for invalid URL result', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com/not-a-url/');
+            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com/not-a-url/', false);
             expect(modifier.applyToUrl('https://example.com'))
                 .toBe('https://example.com');
         });
 
         it('returns original for empty result', () => {
-            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com.*//');
+            const modifier = new UrlTransformModifier('^https:\\/\\/example\\.com.*//', false);
             expect(modifier.applyToUrl('https://example.com/page'))
                 .toBe('https://example.com/page');
         });
@@ -264,13 +275,13 @@ describe('UrlTransformModifier', () => {
 
     describe('pipeline - pct (percent-decode)', () => {
         it('decodes percent-encoded path', () => {
-            const modifier = new UrlTransformModifier('pct');
+            const modifier = new UrlTransformModifier('pct', false);
             expect(modifier.applyToUrl('https://example.com/page%20name'))
                 .toBe('https://example.com/page name');
         });
 
         it('returns original URL on invalid percent sequence', () => {
-            const modifier = new UrlTransformModifier('pct');
+            const modifier = new UrlTransformModifier('pct', false);
             expect(modifier.applyToUrl('https://example.com/path%GG'))
                 .toBe('https://example.com/path%GG');
         });
@@ -279,24 +290,24 @@ describe('UrlTransformModifier', () => {
     describe('pipeline - b64 (Base64 decode)', () => {
         it('decodes Base64 via getApplyFunc', () => {
             // "hello" → base64 "aGVsbG8="
-            const modifier = new UrlTransformModifier('b64');
+            const modifier = new UrlTransformModifier('b64', false);
             expect(modifier.getApplyFunc()('aGVsbG8=')).toBe('hello');
         });
 
         it('decodes URL-safe Base64 (- and _ instead of + and /)', () => {
             // "i??>" → standard base64 "aT8/Pg==" → url-safe "aT8_Pg"
-            const modifier = new UrlTransformModifier('b64');
+            const modifier = new UrlTransformModifier('b64', false);
             expect(modifier.getApplyFunc()('aT8_Pg')).toBe('i??>');
         });
 
         it('decodes Base64 without padding', () => {
             // "https://example.com" → "aHR0cHM6Ly9leGFtcGxlLmNvbQ" (no ==)
-            const modifier = new UrlTransformModifier('b64');
+            const modifier = new UrlTransformModifier('b64', false);
             expect(modifier.getApplyFunc()('aHR0cHM6Ly9leGFtcGxlLmNvbQ')).toBe('https://example.com');
         });
 
         it('returns input unchanged for invalid Base64', () => {
-            const modifier = new UrlTransformModifier('b64');
+            const modifier = new UrlTransformModifier('b64', false);
             expect(modifier.getApplyFunc()('not!valid!base64!')).toBe('not!valid!base64!');
         });
     });
@@ -304,31 +315,31 @@ describe('UrlTransformModifier', () => {
     describe('pipeline - chained transforms', () => {
         it('applies substitute then pct', () => {
             // Extract url= param value with leading /, then percent-decode
-            const modifier = new UrlTransformModifier('/.*url=([^&]*).*/\\/\\$1/|pct');
+            const modifier = new UrlTransformModifier('/.*url=([^&]*).*/\\/\\$1/|pct', false);
             expect(modifier.applyToUrl('https://tracker.example.com/visit?url=https%3A%2F%2Fshop.com%2F&ref=123'))
                 .toBe('https://tracker.example.com/https://shop.com/');
         });
 
         it('applies pct then b64 via getApplyFunc', () => {
             // "hello" → base64 "aGVsbG8=" → percent-encoded "aGVsbG8%3D"
-            const modifier = new UrlTransformModifier('pct|b64');
+            const modifier = new UrlTransformModifier('pct|b64', false);
             expect(modifier.getApplyFunc()('aGVsbG8%3D')).toBe('hello');
         });
 
         it('applies multiple substitutes in sequence', () => {
-            const modifier = new UrlTransformModifier('/X/Y/|/A/B/');
+            const modifier = new UrlTransformModifier('/X/Y/|/A/B/', false);
             expect(modifier.applyToUrl('https://example.com/XApath'))
                 .toBe('https://example.com/YBpath');
         });
 
         it('failed substitute passes through to next transform', () => {
-            const modifier = new UrlTransformModifier('/nomatch/Y/|pct');
+            const modifier = new UrlTransformModifier('/nomatch/Y/|pct', false);
             expect(modifier.applyToUrl('https://example.com/hello%20world'))
                 .toBe('https://example.com/hello world');
         });
 
         it('handles regex with | alternation inside substitute', () => {
-            const modifier = new UrlTransformModifier('/a|b/c/');
+            const modifier = new UrlTransformModifier('/a|b/c/', false);
             expect(modifier.applyToUrl('https://example.com/a'))
                 .toBe('https://example.com/c');
             expect(modifier.applyToUrl('https://example.com/b'))
@@ -338,36 +349,36 @@ describe('UrlTransformModifier', () => {
 
     describe('pipeline - full-URL mode', () => {
         it('detects full-URL mode from first substitute in pipeline', () => {
-            const modifier = new UrlTransformModifier('^https?:\\/\\/tracker\\.example\\.com\\/.*url=([^&]*).*/\\$1/|pct');
+            const modifier = new UrlTransformModifier('^https?:\\/\\/tracker\\.example\\.com\\/.*url=([^&]*).*/\\$1/|pct', false);
             expect(modifier.isFullUrlMode()).toBe(true);
         });
 
         it('applies full-URL pipeline with pct decode', () => {
-            const modifier = new UrlTransformModifier('^https?:\\/\\/tracker\\.example\\.com\\/.*url=([^&]*).*/\\$1/|pct');
+            const modifier = new UrlTransformModifier('^https?:\\/\\/tracker\\.example\\.com\\/.*url=([^&]*).*/\\$1/|pct', false);
             expect(modifier.applyToUrl('https://tracker.example.com/visit?url=https%3A%2F%2Fshop.com%2F'))
                 .toBe('https://shop.com/');
         });
 
         it('decode-only pipeline uses path-only mode', () => {
-            const modifier = new UrlTransformModifier('pct');
+            const modifier = new UrlTransformModifier('pct', false);
             expect(modifier.isFullUrlMode()).toBe(false);
         });
     });
 
     describe('pipeline - backward compatibility', () => {
         it('single substitute works identically to before', () => {
-            const modifier = new UrlTransformModifier('/\\/old\\//\\/new\\//');
+            const modifier = new UrlTransformModifier('/\\/old\\//\\/new\\//', false);
             expect(modifier.applyToUrl('https://example.org/old/page'))
                 .toBe('https://example.org/new/page');
         });
 
         it('getValue returns full pipeline text', () => {
-            const modifier = new UrlTransformModifier('/X/Y/|pct');
+            const modifier = new UrlTransformModifier('/X/Y/|pct', false);
             expect(modifier.getValue()).toBe('/X/Y/|pct');
         });
 
         it('empty value still produces identity transform', () => {
-            const modifier = new UrlTransformModifier('');
+            const modifier = new UrlTransformModifier('', true);
             expect(modifier.applyToUrl('https://example.com/page'))
                 .toBe('https://example.com/page');
         });
@@ -375,13 +386,13 @@ describe('UrlTransformModifier', () => {
 
     describe('pipeline - edge cases', () => {
         it('empty segment treated as no-op', () => {
-            const modifier = new UrlTransformModifier('|pct');
+            const modifier = new UrlTransformModifier('|pct', false);
             expect(modifier.applyToUrl('https://example.com/hello%20world'))
                 .toBe('https://example.com/hello world');
         });
 
         it('double pct decode', () => {
-            const modifier = new UrlTransformModifier('pct|pct');
+            const modifier = new UrlTransformModifier('pct|pct', false);
             expect(modifier.applyToUrl('https://example.com/hello%2520world'))
                 .toBe('https://example.com/hello world');
         });

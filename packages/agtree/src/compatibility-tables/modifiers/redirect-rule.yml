@@ -34,6 +34,7 @@ adg_os_any:
   assignable: true
   negatable: false
   value_optional: true
+  value_optional_exception_only: true
   value_format: |-
     (?x)
       ^(
@@ -117,6 +118,7 @@ adg_ext_any:
   assignable: true
   negatable: false
   value_optional: true
+  value_optional_exception_only: true
   value_format: |-
     (?x)
       ^(
