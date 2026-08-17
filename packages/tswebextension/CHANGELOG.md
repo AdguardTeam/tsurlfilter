@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Wrong `frameDomain` in cosmetic hits filtering-log events for subframes, breaking
+  exception rules created from the filtering log [AdguardBrowserExtension#1449].
+
+[AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
+
 ### Security
 
 ## [5.0.3] - 2026-08-25
@@ -48,7 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Short-lived duplicated elements on pages when CSS hits counting is enabled.
 
 [5.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v5.0.1
-
 
 ## [5.0.0] - 2026-07-28
 
