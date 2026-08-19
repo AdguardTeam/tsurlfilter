@@ -332,7 +332,11 @@ export class MessagesApi {
         let { url } = tabContext.info;
 
         if (frameId !== MAIN_FRAME_ID) {
-            url = this.tabsApi.getTabFrame(tabId, frameId)?.url ?? sender.url ?? url;
+            const frameUrl = this.tabsApi.getTabFrame(tabId, frameId)?.url ?? sender.url;
+
+            if (frameUrl) {
+                url = frameUrl;
+            }
         }
 
         let published = false;
