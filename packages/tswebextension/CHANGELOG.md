@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Wrong `frameDomain` in cosmetic hits filtering-log events for subframes, breaking
+  exception rules created from the filtering log [AdguardBrowserExtension#1449].
+
+[AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
+
+<!-- fix the [Unreleased] link after release — point it to the new version tag -->
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-...
+
 ## [5.0.0] - 2026-07-28
 
 ### Changed
