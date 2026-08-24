@@ -30,7 +30,7 @@ import {
 import type { ParserContext } from '../parser/context';
 import type { RuleParserOptions } from '../parser/options';
 import type { RuleKind } from '../parser/rule';
-import { RuleParser } from '../parser/rule';
+import { StructuralRuleParser } from '../parser/rule';
 import { TokenType } from '../tokenizer/token-types';
 import { Tokenizer } from '../tokenizer/tokenizer';
 
@@ -89,7 +89,7 @@ export type EmptyLineCallback = (ruleStart: number, ruleEnd: number) => void;
 /**
  * Callback type for rule-level structural parse errors.
  *
- * Called when `RuleParser.parse()` throws for a rule. The rule's source range
+ * Called when `StructuralRuleParser.parse()` throws for a rule. The rule's source range
  * is passed so the caller can construct an `InvalidRule` node.
  *
  * @param error The thrown error.
@@ -295,7 +295,7 @@ export class FilterListScanner {
                 } else {
                     try {
                         ctx.status = CTX_STATUS_OK;
-                        const kind = RuleParser.parse(ctx, ruleStartTi, i, 0, options);
+                        const kind = StructuralRuleParser.parse(ctx, ruleStartTi, i, 0, options);
                         const overflowErr = FilterListScanner.checkCtxStatus(ctx);
                         if (overflowErr !== null) {
                             if (onRuleError) {
@@ -332,7 +332,7 @@ export class FilterListScanner {
                     } else {
                         try {
                             ctx.status = CTX_STATUS_OK;
-                            const kind = RuleParser.parse(ctx, ruleStartTi, t.tokenCount, 0, options);
+                            const kind = StructuralRuleParser.parse(ctx, ruleStartTi, t.tokenCount, 0, options);
                             const overflowErr = FilterListScanner.checkCtxStatus(ctx);
                             if (overflowErr !== null) {
                                 if (onRuleError) {
@@ -423,7 +423,7 @@ export class FilterListScanner {
     }
 
     /**
-     * Check `ctx.status` after a `RuleParser.parse()` call and convert any
+     * Check `ctx.status` after a `StructuralRuleParser.parse()` call and convert any
      * overflow condition into an `Error` (or `CapacityOverflowError`).
      *
      * Resets `ctx.status` and `ctx.overflowRegion` before returning so the

@@ -15,7 +15,7 @@ src/parser/
 ├── options.ts                ← RuleParserOptions + resolver
 ├── context.ts                ← ParserContext (shared Int32Array buffer)
 ├── classifier.ts             ← top-level rule kind dispatch
-├── rule.ts                   ← RuleParser entry point
+├── rule.ts                   ← StructuralRuleParser entry point
 ├── cosmetic-separator.ts     ← cosmetic separator token scan
 ├── comment/                  ← comment + classifier sub-parsers
 ├── cosmetic/                 ← element-hiding, CSS/JS/scriptlet/HTML body parsers
@@ -38,7 +38,7 @@ The contracts are:
 
 | Contract              | Purpose                                                                   |
 | --------------------- | ------------------------------------------------------------------------- |
-| `RootParser`          | Top-level entry parsers (`RuleParser`)                                    |
+| `RootParser`          | Top-level entry parsers (`StructuralRuleParser`)                          |
 | `StructuralParser`    | Parsers writing rule data into `ctx.data`                                 |
 | `CosmeticBodyParser`  | Cosmetic-rule body parsers (scriptlet body, declaration list, …)          |
 | `CursorParser`        | Token-cursor based sub-parsers                                            |

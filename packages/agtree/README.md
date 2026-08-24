@@ -113,12 +113,12 @@ console.log(list.children.length); // number of top-level nodes
 
 ```ts
 // Pipe-separated (AdGuard default):
-const domains = parseDomainList('example.com|~example.org', undefined, 0, PIPE_MODIFIER_SEPARATOR);
+const domains = parseDomainList('example.com|~example.org', 0, PIPE_MODIFIER_SEPARATOR);
 console.log(domains.children.map((c) => c.value));      // ["example.com", "example.org"]
 console.log(domains.children.map((c) => c.exception));  // [false, true]
 
 // Comma-separated (e.g. ABP/uBO):
-parseDomainList('a.com,b.com', undefined, 0, COMMA_DOMAIN_LIST_SEPARATOR);
+parseDomainList('a.com,b.com', 0, COMMA_DOMAIN_LIST_SEPARATOR);
 ```
 
 ### Parse an `/etc/hosts`-style host rule

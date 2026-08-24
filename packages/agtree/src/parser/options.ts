@@ -2,12 +2,12 @@
  * @file Parser options.
  *
  * Centralised location for the public option types accepted by the
- * top-level {@link RuleParser}, together with their defaults and the
+ * top-level {@link StructuralRuleParser}, together with their defaults and the
  * resolver helper that normalises caller input.
  */
 
 /**
- * Options for `RuleParser.parse()`.
+ * Options for `StructuralRuleParser.parse()`.
  */
 export interface RuleParserOptions {
     /**
@@ -28,7 +28,7 @@ export interface RuleParserOptions {
 
     /**
      * When `true`, cosmetic rules are classified but not parsed.
-     * `RuleParser.parse()` returns `RuleKind.Cosmetic` without writing
+     * `StructuralRuleParser.parse()` returns `RuleKind.Cosmetic` without writing
      * any cosmetic-specific data to `ctx.data` beyond `ctx.data[0]` (which
      * is zeroed). Defaults to `false`.
      */
@@ -36,7 +36,7 @@ export interface RuleParserOptions {
 
     /**
      * When `true`, network rules are classified but not parsed.
-     * `RuleParser.parse()` returns `RuleKind.Network` without writing
+     * `StructuralRuleParser.parse()` returns `RuleKind.Network` without writing
      * any network-specific data to `ctx.data` beyond `ctx.data[0]` (which
      * is zeroed). Defaults to `false`.
      */

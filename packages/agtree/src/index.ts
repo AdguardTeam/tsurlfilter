@@ -4,6 +4,7 @@
 
 // Parser
 export { RuleGenerator } from './generator/rule-generator';
+export { FilterListGenerator } from './generator/filterlist-generator';
 
 // New pipeline parser (supports element hiding and other cosmetic rules)
 export { RuleParserPipeline } from './ast-builder/rule-parser';
@@ -11,7 +12,13 @@ export type { ParseOptions } from './ast-builder/options';
 export type { ParserCapacity } from './ast-builder/capacity';
 
 // AST-building convenience helpers
-export { parseDomainList } from './ast-utils/parsing';
+export {
+    parseDomainList,
+    parseModifier,
+    parseAppList,
+    parseMethodList,
+    parseStealthOptionList,
+} from './ast-utils/parsing';
 
 // Filter list scanner and pipeline
 export { FilterListScanner, FilterListPipeline } from './filter-list';
@@ -22,59 +29,110 @@ export type {
     ScannedRuleInfo,
     FilterListParseOptions,
 } from './filter-list';
+// Re-export the intended AST node vocabulary from `./nodes` as an explicit
+// allow-list. Internal helpers (`defaultLocation`, `AnyNode`, `NetworkRuleBase`,
+// `ListItem`, `AnyListItem`, `InvalidRuleError`, `ConfigNode`, `UboSelector`,
+// `PipeSeparator`, `CommaSeparator`, and the `Css*ParseOptions` option types)
+// are intentionally kept out of the public surface. Named re-exports (instead of
+// `export *`) keep the surface intentional and surface any future name clash at
+// compile time.
 export {
-    type Agent,
-    type AgentCommentRule,
-    type AnyCommentRule,
-    type AnyCosmeticRule,
-    type AnyExpressionNode,
-    type AnyRule,
-    type CommentBase,
+    // Discriminant enums (value + type)
+    OperatorValue,
+    ValueKind,
     CommentMarker,
-    type CommentRule,
-    CommentRuleType,
-    type ConfigCommentRule,
-    type CosmeticRule,
-    CosmeticRuleSeparator,
-    CosmeticRuleType,
-    type CssInjectionRule,
-    type CssInjectionRuleBody,
-    type Domain,
-    type DomainList,
-    type DomainListSeparator,
-    type ElementHidingRule,
-    type ElementHidingRuleBody,
-    type EmptyRule,
-    type ExpressionOperatorNode,
-    type ExpressionParenthesisNode,
-    type ExpressionVariableNode,
-    type FilterList,
-    type Hint,
-    type HintCommentRule,
-    type HtmlFilteringRule,
-    type HtmlFilteringRuleBody,
-    type InvalidRule,
-    type SelectorList,
-    type SelectorCombinatorValue,
-    type JsInjectionRule,
-    type Location,
-    type LocationRange,
-    type MetadataCommentRule,
-    type Modifier,
-    type ModifierList,
-    type NetworkRule,
-    type Node,
-    type ParameterList,
-    type PreProcessorCommentRule,
-    type RuleBase,
     RuleCategory,
-    type ScriptletInjectionRule,
-    type ScriptletInjectionRuleBody,
-    type Value,
+    ListNodeType,
+    ListItemNodeType,
+    CommentRuleType,
+    CosmeticRuleType,
+    CosmeticRuleSeparator,
+    NodeType,
+    AttributeSelectorOperatorValue,
+    AttributeSelectorFlagValue,
+    SelectorCombinatorValue,
     NetworkRuleType,
-    type HostnameList,
-    type HostRule,
-    type AnyNetworkRule,
+} from './nodes';
+export type {
+    // Base nodes
+    Node,
+    Location,
+    LocationRange,
+    Value,
+    Raw,
+    Parameter,
+    ParameterList,
+    FilterList,
+    RuleBase,
+    // Logical expressions
+    AnyExpressionNode,
+    ExpressionVariableNode,
+    ExpressionOperatorNode,
+    ExpressionParenthesisNode,
+    // Rule unions and base rules
+    AnyRule,
+    InvalidRule,
+    RawRule,
+    EmptyRule,
+    // Comment rules
+    AnyCommentRule,
+    CommentBase,
+    CommentRule,
+    MetadataCommentRule,
+    ConfigCommentRule,
+    PreProcessorCommentRule,
+    Agent,
+    AgentCommentRule,
+    Hint,
+    HintCommentRule,
+    // Modifiers
+    ModifierList,
+    Modifier,
+    // List items and lists
+    App,
+    Domain,
+    Method,
+    StealthOption,
+    DomainList,
+    AppList,
+    MethodList,
+    StealthOptionList,
+    DomainListSeparator,
+    // Cosmetic rules
+    AnyCosmeticRule,
+    CosmeticRule,
+    CssInjectionRule,
+    CssInjectionRuleBody,
+    ElementHidingRule,
+    ElementHidingRuleBody,
+    ScriptletInjectionRule,
+    ScriptletInjectionRuleBody,
+    HtmlFilteringRule,
+    HtmlFilteringRuleBody,
+    JsInjectionRule,
+    // CSS nodes and selectors
+    CssDeclaration,
+    CssDeclarationList,
+    CssBlock,
+    CssRule,
+    CssAtRule,
+    CssAtRulePrelude,
+    TypeSelector,
+    ClassSelector,
+    IdSelector,
+    AttributeSelectorWithoutValue,
+    AttributeSelectorWithValue,
+    AttributeSelector,
+    PseudoClassSelector,
+    SelectorCombinator,
+    ComplexSelector,
+    SimpleSelector,
+    SelectorList,
+    // Network rules
+    AnyNetworkRule,
+    NetworkRule,
+    HostRule,
+    HostnameList,
 } from './nodes';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
 export {

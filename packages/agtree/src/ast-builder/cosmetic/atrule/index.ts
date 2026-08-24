@@ -3,4 +3,4 @@
  */
 
 export { CssAtRuleAstBuilder } from './atrule';
-export { CssAtRulePipelineParser } from './atrule-parser';
+export { CssAtRulePipeline } from './atrule-parser';

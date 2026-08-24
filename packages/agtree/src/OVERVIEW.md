@@ -172,8 +172,7 @@ same offset (they are mutually exclusive, so they share the region).
 
 ### Parser API: `parse()` vs `parseRange()`
 
-High-level parsers (`RuleParser`, `NetworkRuleParser`, `CommentRuleParser`)
-expose two methods:
+The single consumer-facing pipeline (`RuleParserPipeline`) exposes two methods:
 
 - **`parse(source, options?)`** — the common case. Tokenizes `source` and runs
   the full pipeline internally.
@@ -187,7 +186,7 @@ with sensible defaults so existing call sites continue to work unchanged.
 ### Dispatcher chain
 
 ```text
-RuleParser.parse(ctx, startTi?, endTi?, dataOffset?)
+StructuralRuleParser.parse(ctx, startTi?, endTi?, dataOffset?)
   └── RuleClassifier  →  Comment / Network / Cosmetic
         ├── CommentParser.parse(ctx, startTi?, endTi?, dataOffset?)
         │     └── dispatches to: SimpleCommentParser
@@ -226,7 +225,7 @@ const value: Value = {
 The dispatcher mirrors the structural parser:
 
 ```text
-RuleParser.parse(source, options?)
+RuleParserPipeline.parse(source, options?)
   ├── kind === Comment  →  CommentAstBuilder
   │     └── dispatches on ctx.data[0] (CommentKind) to:
   │           SimpleCommentAstBuilder
@@ -260,7 +259,7 @@ For advanced callers that need manual control over the pipeline:
 ```typescript
 import { Tokenizer } from './tokenizer/tokenizer';
 import { createParserContext, initParserContext } from './parser/context';
-import { RuleParser, RuleKind } from './parser/rule';
+import { StructuralRuleParser, RuleKind } from './parser/rule';
 import { CommentAstBuilder } from './ast-builder/comment/comment';
 
 // Allocate once
@@ -270,7 +269,7 @@ const ctx = createParserContext(1024, 64);
 // Per rule
 tokenizer.setSource(source);                    // stage 1: tokenize
 initParserContext(ctx, source, tokenizer);       // bind tokenizer output
-const kind = RuleParser.parse(ctx);            // stage 2: structural parse
+const kind = StructuralRuleParser.parse(ctx);  // stage 2: structural parse
 if (kind === RuleKind.Comment) {
     const ast = CommentAstBuilder.parse(source, ctx.data, options); // stage 3
 }
@@ -301,11 +300,10 @@ contributors **must** follow all of them when adding or modifying parsers.
    generic error is thrown.
 
 3. **No static singletons for pipeline parsers.**
-   Classes that own a `Tokenizer` and `ParserContext` (`RuleParser`,
-   `NetworkRuleParser`, `CommentRuleParser`, `SelectorListParser`,
-   `DeclarationListParser`, `CssRuleParser`) MUST be instance-based. Static
-   `readonly tokenizer` / `readonly ctx` fields are forbidden on these
-   classes.
+   Classes that own a `Tokenizer` and `ParserContext` (`RuleParserPipeline`,
+   `NetworkRuleParser`, `SelectorListParser`, `DeclarationListParser`,
+   `CssRuleParser`) MUST be instance-based. Static `readonly tokenizer` /
+   `readonly ctx` fields are forbidden on these classes.
 
 4. **Capacity overflow signals via `ctx.status`, not exceptions.**
    When the number of records exceeds the allocated capacity (e.g., too many
@@ -340,12 +338,12 @@ The three-stage pipeline has two consumer-facing tiers:
 
 | | Pipeline Parser (Tier 1) | AST Builder (Tier 2) |
 |---|---|---|
-| Location | `src/ast-builder/*-parser.ts` | `src/ast-builder/*/` (non-parser files) |
+| Location | `src/ast-builder/rule-parser.ts`, `src/filter-list/pipeline.ts` | `src/ast-builder/*/` (non-parser files) |
 | Owns buffers | ✅ yes — `Tokenizer` + `ParserContext` | ❌ no — reads caller-provided buffers |
 | Entry point | `parse(source, options?)` | static methods: `parse(source, data, ...)` |
 | Allocates | Yes — stage 3 only (AST nodes, strings) | Yes — AST nodes, strings |
 | Also exposes | `parseRange(ctx, startTi, endTi, dataOffset, options?)` | — |
-| Example | `RuleParser`, `NetworkRuleParser` | `NetworkRuleAstBuilder`, `CommentAstBuilder` |
+| Example | `RuleParserPipeline`, `FilterListPipeline` | `NetworkRuleAstBuilder`, `CommentAstBuilder` |
 
 **Decision guide:**
 
@@ -562,7 +560,7 @@ export class FooParser {
 ### Step 3: Register in the dispatcher
 
 In `src/parser/rule.ts`, add a `RuleKind.Foo` branch inside
-`RuleParser.parse()` and call `FooParser.parse(ctx, startTi,
+`StructuralRuleParser.parse()` and call `FooParser.parse(ctx, startTi,
 endTi, dataOffset)`.
 
 In `src/parser/classifier.ts`, extend `RuleClassifier.classify()` to detect

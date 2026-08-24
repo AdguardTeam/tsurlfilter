@@ -29,12 +29,12 @@ const DEFAULT_TOKEN_CAPACITY = 1024;
  *
  * @example
  * ```typescript
- * const parser = new CssAtRulePipelineParser();
+ * const parser = new CssAtRulePipeline();
  * const ast = parser.parse('@media (min-width: 400px) { div { color: red; } }');
  * console.log(ast.name.value); // 'media'
  * ```
  */
-export class CssAtRulePipelineParser {
+export class CssAtRulePipeline {
     /**
      * Tokenizer instance — reused across `parse()` calls.
      */
@@ -46,7 +46,7 @@ export class CssAtRulePipelineParser {
     private readonly ctx: ParserContext;
 
     /**
-     * Creates a new `CssAtRulePipelineParser`.
+     * Creates a new `CssAtRulePipeline`.
      *
      * @param capacity Optional capacity configuration. When omitted, sensible
      *   defaults are used (`tokenCapacity = 1024`).

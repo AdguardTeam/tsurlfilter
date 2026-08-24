@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { CssAtRuleAstBuilder, CssAtRulePipelineParser } from '../../../src/ast-builder/cosmetic/atrule';
+import { CssAtRuleAstBuilder, CssAtRulePipeline } from '../../../src/ast-builder/cosmetic/atrule';
 import type { CssAtRule, CssAtRuleParseOptions } from '../../../src/nodes';
 import { createParserContext, initParserContext } from '../../../src/parser/context';
 import { CssAtRuleParser } from '../../../src/parser/css/atrule';
@@ -251,8 +251,8 @@ describe('CssAtRuleAstBuilder', () => {
     });
 });
 
-describe('CssAtRulePipelineParser', () => {
-    const parser = new CssAtRulePipelineParser();
+describe('CssAtRulePipeline', () => {
+    const parser = new CssAtRulePipeline();
 
     test('parse() produces same result as manual pipeline', () => {
         const input = '@media (min-width: 400px) { div { color: red; } }';

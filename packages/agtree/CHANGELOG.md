@@ -29,6 +29,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `parseDomainList` is now exported from the `@adguard/agtree` package root.
 - `hasNativeCssPseudoClass` selector utility (exported from the package root and
   `@adguard/agtree/utils`).
+- Re-exported the public AST node vocabulary from the package root as an
+  explicit allow-list, including the `NodeType`, `ValueKind`, `ListNodeType`, and
+  `ListItemNodeType` discriminants and node interfaces such as `RawRule`, `Raw`,
+  `AppList`, `MethodList`, and `StealthOptionList`. Internal helpers (e.g.
+  `defaultLocation`, `AnyNode`, `NetworkRuleBase`, and the `Css*ParseOptions`
+  option types) are intentionally kept out of the public surface.
+- Exported the list-parsing helper family from the package root: `parseModifier`,
+  `parseAppList`, `parseMethodList`, and `parseStealthOptionList` (joining the
+  already-exported `parseDomainList`).
+- Exported `FilterListGenerator` from the package root, mirroring
+  `FilterListPipeline`.
 
 ### Changed
 
@@ -45,6 +56,18 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   exposes the new structural parser.
 - Updated in-source READMEs, OVERVIEW, and the package README to reflect the v5
   pipeline API, including a new Quick start section and corrected import paths.
+- **BREAKING:** `RuleParserPipeline.parse()` and `parseRange()` now return the
+  public `AnyRule` union (the internal `AnyParsedRule` alias was removed).
+- **BREAKING:** Renamed the structural rule parser exposed via
+  `@adguard/agtree/parser` from `RuleParser` to `StructuralRuleParser` to avoid
+  colliding with the removed v4 `RuleParser` (which accepted a source string).
+- **BREAKING:** The `@adguard/agtree/parser` subpath no longer exports internal
+  buffer-layout constants (field offsets, record strides, bit flags) or
+  low-level utility functions (`isPotentialNetModifier`, `matchMetadataHeader`,
+  `regionEquals`, `skipWs`, `skipUntil`, `tokenStart`, `domainRecordsOffset`).
+  It now exposes only the composition surface: the parser context lifecycle, the
+  rule classifier and `RuleKind`, the structural parser classes, and the
+  `*_MIN_DATA_SLOTS` sizing constants.
 
 ### Removed
 

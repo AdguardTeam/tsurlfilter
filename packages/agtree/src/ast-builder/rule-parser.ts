@@ -1,5 +1,5 @@
 /**
- * @file High-level RuleParser — public API wrapping the full pipeline.
+ * @file High-level rule parser pipeline — public API wrapping the full pipeline.
  *
  * Owns the tokenizer buffers and parser context, reusing them across
  * calls for optimal performance.
@@ -21,15 +21,12 @@ import {
     MAX_TOKEN_CAPACITY,
 } from '../limits';
 import {
-    type AnyCommentRule,
+    type AnyRule,
     type CssInjectionRule,
     type ElementHidingRule,
     type EmptyRule,
-    type HostRule,
     type HtmlFilteringRule,
-    type InvalidRule,
     type JsInjectionRule,
-    type NetworkRule,
     NodeType,
     type RawRule,
     RuleCategory,
@@ -57,7 +54,7 @@ import {
     CR_SEP_KIND_SHIFT,
     CR_SEP_KIND_UBO_HTML_FILTERING,
 } from '../parser/cosmetic/constants';
-import { RuleKind, RuleParser } from '../parser/rule';
+import { RuleKind, StructuralRuleParser } from '../parser/rule';
 import { Tokenizer } from '../tokenizer/tokenizer';
 import { SYNTAX_ALL, SYNTAX_UNKNOWN } from '../utils/syntax-flags';
 
@@ -123,23 +120,6 @@ function hardCapForRegion(region: CapacityRegion): number {
 }
 
 /**
- * The set of rule types that this parser currently produces.
- */
-// TODO: Use AnyRule from nodes.ts
-export type AnyParsedRule =
-    | EmptyRule
-    | RawRule
-    | InvalidRule
-    | AnyCommentRule
-    | HostRule
-    | NetworkRule
-    | ElementHidingRule
-    | CssInjectionRule
-    | ScriptletInjectionRule
-    | JsInjectionRule
-    | HtmlFilteringRule;
-
-/**
  * Creates a RawRule node for a rule that was intentionally skipped
  * by the `ignoreCosmetic` or `ignoreNetwork` option.
  *
@@ -186,7 +166,7 @@ function createIgnoredRule(
  *
  * @example
  * ```typescript
- * const parser = new RuleParser();
+ * const parser = new RuleParserPipeline();
  * const ast = parser.parse('||example.org^$script');   // NetworkRule
  * const cmt = parser.parse('! Title: My List');        // MetadataCommentRule
  * const emp = parser.parse('');                        // EmptyRule
@@ -268,7 +248,7 @@ export class RuleParserPipeline {
      *
      * @throws For unsupported cosmetic rule types.
      */
-    public parse(source: string, options?: ParseOptions): AnyParsedRule {
+    public parse(source: string, options?: ParseOptions): AnyRule {
         if (source.trim().length === 0) {
             const result: EmptyRule = {
                 type: NodeType.EmptyRule,
@@ -307,7 +287,7 @@ export class RuleParserPipeline {
         initParserContext(this.ctx, source, this.tokenizer);
 
         // eslint-disable-next-line max-len
-        const kind = RuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options);
+        const kind = StructuralRuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options);
 
         // Surface structural overflow.
         if (this.ctx.status === CTX_STATUS_HARD_CAP) {
@@ -461,8 +441,8 @@ export class RuleParserPipeline {
         endTi: number,
         dataOffset: number,
         options?: ParseOptions,
-    ): AnyParsedRule {
-        const kind = RuleParser.parse(
+    ): AnyRule {
+        const kind = StructuralRuleParser.parse(
             ctx,
             startTi,
             endTi,

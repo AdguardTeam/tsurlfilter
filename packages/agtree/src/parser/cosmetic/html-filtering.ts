@@ -229,7 +229,7 @@ export interface UboHtmlFilteringParserOptions {
      * When `true`, only the cosmetic header is written and the parser
      * exits after marking the sub-kind and advancing past the leading
      * `^` (and `responseheader(...)` if present). The CSS selector list
-     * is NOT parsed. Used by {@link RuleParser} when
+     * is NOT parsed. Used by {@link StructuralRuleParser} when
      * `parseHtmlFilteringRuleBodies` is `false`. Defaults to `false`.
      */
     onlyHeader?: boolean;

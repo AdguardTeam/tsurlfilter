@@ -168,7 +168,7 @@ function classifyCosmeticSepKind(types: Uint8Array, sepTi: number): number {
 export { type RuleParserOptions } from './options';
 
 /**
- * Top-level rule parser.
+ * Top-level structural rule parser.
  *
  * Classifies the rule from the already-tokenized context, then runs the
  * matching parser so that `ctx.data` is ready for AST construction.
@@ -177,18 +177,19 @@ export { type RuleParserOptions } from './options';
  * ```typescript
  * tokenizeLine(source, 0, tokens);
  * initParserContext(ctx, source, tokens);
- * const kind = RuleParser.parse(ctx);
+ * const kind = StructuralRuleParser.parse(ctx);
  * // ctx.data is now populated; use `kind` to pick the correct AST parser.
  * ```
  */
-export class RuleParser implements RootParser<RuleParserOptions> {
+export class StructuralRuleParser implements RootParser<RuleParserOptions> {
     /**
      * Minimum `ctx.data` slots required by this parser with the default
      * capacity.  Equals the largest of all sub-parsers:
      *   - {@link NetworkRuleParser.MIN_DATA_SLOTS} = 325
      *   - {@link CommentParser.MIN_DATA_SLOTS}    = 167
      *   - {@link ElementHidingParser.MIN_DATA_SLOTS} = 35
-     *   - {@link AdgHtmlFilteringParser.MIN_DATA_SLOTS} = 737.
+     *   - `AdgHtmlFilteringParser.MIN_DATA_SLOTS` = 737 (internal parser, not
+     *     exported from the `./parser` subpath).
      */
     public static readonly MIN_DATA_SLOTS = Math.max(
         NetworkRuleParser.MIN_DATA_SLOTS,

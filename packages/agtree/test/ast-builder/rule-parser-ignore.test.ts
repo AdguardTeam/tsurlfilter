@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'vitest';
 
-import { type AnyParsedRule, RuleParserPipeline } from '../../src/ast-builder/rule-parser';
-import { NodeType, type RawRule, RuleCategory } from '../../src/nodes';
+import { RuleParserPipeline } from '../../src/ast-builder/rule-parser';
+import {
+    type AnyRule,
+    NodeType,
+    type RawRule,
+    RuleCategory,
+} from '../../src/nodes';
 
 const parser = new RuleParserPipeline();
 
@@ -12,7 +17,7 @@ const parser = new RuleParserPipeline();
  *
  * @returns True if the rule is a RawRule.
  */
-function isRawRule(rule: AnyParsedRule): rule is RawRule {
+function isRawRule(rule: AnyRule): rule is RawRule {
     return rule.type === NodeType.RawRule;
 }
 

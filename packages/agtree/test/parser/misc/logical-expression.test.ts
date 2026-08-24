@@ -3,17 +3,15 @@ import { describe, expect, test } from 'vitest';
 import { LogicalExpressionAstBuilder } from '../../../src/ast-builder/misc/logical-expression';
 import { LogicalExpressionGenerator } from '../../../src/generator/misc/logical-expression-generator';
 import type { AnyExpressionNode } from '../../../src/nodes';
+import { createParserContext, initParserContext, LogicalExpressionParser } from '../../../src/parser';
 import {
-    createParserContext,
-    initParserContext,
     LE_BUFFER_SIZE,
     LE_KIND_AND,
     LE_KIND_NOT,
     LE_KIND_OR,
     LE_KIND_PAR,
     LE_KIND_VAR,
-    LogicalExpressionParser,
-} from '../../../src/parser';
+} from '../../../src/parser/misc/logical-expression';
 import { Tokenizer } from '../../../src/tokenizer/tokenizer';
 
 const tokenizer = new Tokenizer(1024);

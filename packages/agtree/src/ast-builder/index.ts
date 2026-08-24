@@ -3,10 +3,10 @@
  */
 
 export type { ParserCapacity } from './capacity';
-export { ValueAstBuilder as ValueParser } from './misc/value';
-export { ModifierAstBuilder as ModifierParser } from './misc/modifier';
-export { ModifierListAstBuilder as ModifierListParser } from './misc/modifier-list';
-export { DomainListAstBuilder as DomainListParser } from './misc/domain-list';
+export { ValueAstBuilder } from './misc/value';
+export { ModifierAstBuilder } from './misc/modifier';
+export { ModifierListAstBuilder } from './misc/modifier-list';
+export { DomainListAstBuilder } from './misc/domain-list';
 export { NetworkRuleAstBuilder } from './network/network-rule';
 export type { ParseOptions } from './options';
 export {
@@ -32,10 +32,10 @@ export {
     AgentCommentAstBuilder,
     CommentAstBuilder,
 } from './comment';
-export { RuleParserPipeline as RuleParser, type AnyParsedRule } from './rule-parser';
+export { RuleParserPipeline } from './rule-parser';
 export { LogicalExpressionAstBuilder } from './misc/logical-expression';
 export { ParameterListAstBuilder } from './misc/parameter-list';
 export {
     CssAtRuleAstBuilder,
-    CssAtRulePipelineParser,
+    CssAtRulePipeline,
 } from './cosmetic/atrule';

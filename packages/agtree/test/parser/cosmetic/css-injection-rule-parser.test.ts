@@ -19,7 +19,7 @@ import {
     CSS_INJ_SL_SOURCE_END,
     CSS_INJ_SL_SOURCE_START,
 } from '../../../src/parser/cosmetic/constants';
-import { RuleKind, RuleParser } from '../../../src/parser/rule';
+import { RuleKind, StructuralRuleParser } from '../../../src/parser/rule';
 import { Tokenizer } from '../../../src/tokenizer/tokenizer';
 
 const tokenizer = new Tokenizer(1024);
@@ -37,7 +37,7 @@ function injOffset(): number {
 }
 
 /**
- * Parse a full rule via RuleParser using given options.
+ * Parse a full rule via StructuralRuleParser using given options.
  *
  * @param source Full rule source string.
  * @param parseAbpSpecificRules Whether to enable ABP-specific rule parsing.
@@ -50,7 +50,7 @@ function parseRule(
 ): RuleKind {
     tokenizer.setSource(source);
     initParserContext(ctx, source, tokenizer);
-    return RuleParser.parse(ctx, 0, ctx.tokenCount, 0, {
+    return StructuralRuleParser.parse(ctx, 0, ctx.tokenCount, 0, {
         parseUboSpecificRules: true,
         parseAbpSpecificRules,
     });

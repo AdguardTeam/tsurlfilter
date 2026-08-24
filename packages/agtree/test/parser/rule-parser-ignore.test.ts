@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleKind } from '../../src/parser/classifier';
 import { createParserContext, initParserContext } from '../../src/parser/context';
-import { RuleParser } from '../../src/parser/rule';
+import { StructuralRuleParser } from '../../src/parser/rule';
 import { Tokenizer } from '../../src/tokenizer/tokenizer';
 
 const tokenizer = new Tokenizer(1024);
@@ -16,10 +16,10 @@ const ctx = createParserContext();
  *
  * @returns The rule kind.
  */
-function classify(source: string, options: Parameters<typeof RuleParser.parse>[4]): RuleKind {
+function classify(source: string, options: Parameters<typeof StructuralRuleParser.parse>[4]): RuleKind {
     tokenizer.setSource(source);
     initParserContext(ctx, source, tokenizer);
-    return RuleParser.parse(ctx, 0, ctx.tokenCount, 0, options);
+    return StructuralRuleParser.parse(ctx, 0, ctx.tokenCount, 0, options);
 }
 
 describe('ignoreNetwork', () => {
@@ -62,7 +62,7 @@ describe('ignore* zeroes ctx.data[0]', () => {
         tokenizer.setSource('||example.com^');
         initParserContext(ctx, '||example.com^', tokenizer);
         ctx.data[0] = 0xDEADBEEF | 0;
-        RuleParser.parse(ctx, 0, ctx.tokenCount, 0, { ignoreNetwork: true });
+        StructuralRuleParser.parse(ctx, 0, ctx.tokenCount, 0, { ignoreNetwork: true });
         expect(ctx.data[0]).toBe(0);
     });
 
@@ -70,7 +70,7 @@ describe('ignore* zeroes ctx.data[0]', () => {
         tokenizer.setSource('example.com##.ad');
         initParserContext(ctx, 'example.com##.ad', tokenizer);
         ctx.data[0] = 0xDEADBEEF | 0;
-        RuleParser.parse(ctx, 0, ctx.tokenCount, 0, { ignoreCosmetic: true });
+        StructuralRuleParser.parse(ctx, 0, ctx.tokenCount, 0, { ignoreCosmetic: true });
         expect(ctx.data[0]).toBe(0);
     });
 });

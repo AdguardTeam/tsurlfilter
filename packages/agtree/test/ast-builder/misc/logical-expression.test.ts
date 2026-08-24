@@ -1,12 +1,8 @@
 import { describe, expect, test } from 'vitest';
 
 import { LogicalExpressionAstBuilder } from '../../../src/ast-builder/misc/logical-expression';
-import {
-    createParserContext,
-    initParserContext,
-    LE_BUFFER_SIZE,
-    LogicalExpressionParser,
-} from '../../../src/parser';
+import { createParserContext, initParserContext, LogicalExpressionParser } from '../../../src/parser';
+import { LE_BUFFER_SIZE } from '../../../src/parser/misc/logical-expression';
 import { Tokenizer } from '../../../src/tokenizer/tokenizer';
 
 const tokenizer = new Tokenizer(1024);

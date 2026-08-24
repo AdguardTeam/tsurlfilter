@@ -51,13 +51,15 @@ export interface ParseOptions {
     parseCssDeclarationList?: boolean;
 
     /**
-     * When `true`, cosmetic rules are returned as `InvalidRule` nodes.
+     * When `true`, cosmetic rules are not parsed and are returned as
+     * `RawRule` nodes (category `Raw`) carrying the original source text.
      * Defaults to `false`.
      */
     ignoreCosmetic?: boolean;
 
     /**
-     * When `true`, network rules are returned as `InvalidRule` nodes.
+     * When `true`, network rules are not parsed and are returned as
+     * `RawRule` nodes (category `Raw`) carrying the original source text.
      * Defaults to `false`.
      */
     ignoreNetwork?: boolean;

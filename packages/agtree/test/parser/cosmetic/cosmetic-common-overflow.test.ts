@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { createParserContext, initParserContext } from '../../../src/parser/context';
-import { RuleParser } from '../../../src/parser/rule';
+import { StructuralRuleParser } from '../../../src/parser/rule';
 import { Tokenizer } from '../../../src/tokenizer/tokenizer';
 
 describe('cosmetic-common modifier list overflow', () => {
@@ -13,6 +13,6 @@ describe('cosmetic-common modifier list overflow', () => {
         const source = '[$a,b]example.com##.ad';
         tokenizer.setSource(source);
         initParserContext(ctx, source, tokenizer);
-        expect(() => RuleParser.parse(ctx, 0, ctx.tokenCount, 0)).toThrow(/Too many modifiers/);
+        expect(() => StructuralRuleParser.parse(ctx, 0, ctx.tokenCount, 0)).toThrow(/Too many modifiers/);
     });
 });

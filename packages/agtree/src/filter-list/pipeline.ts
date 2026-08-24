@@ -14,9 +14,9 @@ import { JsInjectionAstBuilder } from '../ast-builder/cosmetic/js-injection';
 import { ScriptletInjectionAstBuilder } from '../ast-builder/cosmetic/scriptlet-injection';
 import { UboCssInjectionAstBuilder } from '../ast-builder/cosmetic/ubo-css-injection';
 import { NetworkRuleAstBuilder } from '../ast-builder/network/network-rule';
-import type { AnyParsedRule } from '../ast-builder/rule-parser';
 import { ProductCode } from '../compatibility-tables/platform';
 import {
+    type AnyRule,
     type EmptyRule,
     type FilterList,
     type InvalidRule,
@@ -92,7 +92,7 @@ export class FilterListPipeline {
      */
     public parse(source: string, options?: FilterListParseOptions): FilterList {
         const tolerant = options?.tolerant ?? DEFAULT_TOLERANT;
-        const children: AnyParsedRule[] = [];
+        const children: AnyRule[] = [];
 
         // Handle empty source — produce a single EmptyRule.
         if (source.length === 0) {
@@ -156,7 +156,7 @@ export class FilterListPipeline {
         ruleEnd: number,
         ctx: ParserContext,
         options?: FilterListParseOptions,
-    ): AnyParsedRule {
+    ): AnyRule {
         const { source } = ctx;
 
         // Handle ignored rules.
@@ -403,14 +403,13 @@ export class FilterListPipeline {
      * @returns FilterList AST node.
      */
     private static createFilterList(
-        children: AnyParsedRule[],
+        children: AnyRule[],
         source: string,
         options?: FilterListParseOptions,
     ): FilterList {
         const result: FilterList = {
             type: NodeType.FilterList,
-            // AnyParsedRule is a structural subset of AnyRule, so the cast is safe.
-            children: children as FilterList['children'],
+            children,
         };
         if (options?.isLocIncluded) {
             result.start = 0;
