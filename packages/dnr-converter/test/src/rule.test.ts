@@ -48,6 +48,24 @@ describe('Rule', () => {
                 Rule.createFromText(1, 0, 'ab');
             }).toThrow();
         });
+
+        it('rejects rules with unknown modifiers', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, 'test$whatever,domain=example.org');
+            }).toThrow('Unknown modifier: whatever');
+        });
+
+        it('accepts noop modifiers made only of underscores', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, 'test$_,___,domain=example.org');
+            }).not.toThrow();
+        });
+
+        it('rejects modifier names that only start with the noop marker', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, 'test$_whatever,domain=example.org');
+            }).toThrow('Unknown modifier: _whatever');
+        });
     });
 
     describe('getText', () => {

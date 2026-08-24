@@ -427,6 +427,12 @@ export class Rule {
 
             const name = rawName;
 
+            // A noop modifier consists only of underscores and does not affect the rule.
+            if (name.startsWith(OPTION_NAMES.NOOP)
+                && !name.split(OPTION_NAMES.NOOP).some((part) => !!part)) {
+                continue;
+            }
+
             if (exception && !NEGATABLE_MODIFIERS.has(name)) {
                 throw new SyntaxError(`Modifier $${name} cannot be negated`);
             }
@@ -654,6 +660,7 @@ export class Rule {
                 case OPTION_NAMES.COOKIE:
                 case OPTION_NAMES.REPLACE:
                 case OPTION_NAMES.JSONPRUNE:
+                case OPTION_NAMES.XMLPRUNE:
                 case OPTION_NAMES.HLS:
                 case OPTION_NAMES.REFERRERPOLICY:
                 case OPTION_NAMES.PERMISSIONS:
@@ -689,8 +696,9 @@ export class Rule {
                     meta.baseModifierCount += 1;
                     break;
 
-                // DNS/network-level modifiers — no DNR equivalent.
+                // Known unsupported modifiers — no DNR equivalent.
                 // Still added to enabledModifiers so the validator can reject them.
+                case OPTION_NAMES.WEBRTC:
                 case OPTION_NAMES.DNSTYPE:
                 case OPTION_NAMES.CTAG:
                 case OPTION_NAMES.CLIENT:
@@ -711,10 +719,14 @@ export class Rule {
                     this.enabledModifiers.add(OPTION_NAMES.POPUP);
                     break;
 
-                default:
-                    // Unknown modifiers are silently ignored during parsing;
-                    // they can be rejected downstream if necessary.
-                    break;
+                default: {
+                    const modifierView = [rawName, value]
+                        .filter((part) => part)
+                        .join('=');
+                    // Unknown modifiers must invalidate the entire rule.
+                    // RulesScanner catches this error and records it in the conversion result.
+                    throw new SyntaxError(`Unknown modifier: ${modifierView}`);
+                }
             }
         }
 

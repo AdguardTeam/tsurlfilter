@@ -9,12 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Unknown and unsupported modifiers were silently discarded during MV3
+  conversion, which could turn the remaining rule into a broader blocking or
+  allow DNR rule [AdguardFilters#238305].
 - Value-less `$removeparam` rules (e.g. `||example.org^$removeparam`) converted
   into blocking DNR rules instead of a redirect that removes the whole query
   string, so matching sites were blocked [AdguardBrowserExtension#3602].
 - Unanchored `$urltransform` substitution patterns did not match query strings
   in MV3 [AdguardBrowserExtension#3600].
 
+[AdguardFilters#238305]: https://github.com/AdguardTeam/AdguardFilters/issues/238305
 [AdguardBrowserExtension#3602]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3602
 [AdguardBrowserExtension#3600]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3600
 

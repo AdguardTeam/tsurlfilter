@@ -742,6 +742,7 @@ $xmlhttprequest,removeparam=p1case2
 
 ! ## $hls (not supported in extension)
 ! ## $jsonprune (not supported in extension)
+! ## $xmlprune (not supported in extension)
 ! ## $network (not supported in extension)
 ! ## $app (not supported in extension)
 ! ## $extension (not supported in extension)
