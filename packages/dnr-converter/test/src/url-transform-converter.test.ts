@@ -210,6 +210,19 @@ describe('convertPathOnlyTransform', () => {
         });
     });
 
+    it('handles an unanchored pattern in the query string', () => {
+        const result = convertPathOnlyTransform(
+            'order%3A',
+            'sort%3A',
+            'i',
+        );
+        expect(result).toEqual({
+            regexFilter: '^(https?://[^/]+/[^#]*?)order%3A(.*)',
+            regexSubstitution: '\\1sort%3A\\2',
+            isUrlFilterCaseSensitive: false,
+        });
+    });
+
     it('unescapes \\$ to $ (end-of-string anchor) in pattern', () => {
         // Rule: ||httpbin.agrd.dev^$urltransform=/^\/status\/500\$/\/status\/200/
         const result = convertPathOnlyTransform(
@@ -291,8 +304,8 @@ describe('convertUrlTransformToDnr', () => {
         // First stage: pattern starts with \/, so it's path-anchored
         expect(results[0].regexFilter).toBe('^(https?://[^/]+)/old/(.*)');
         expect(results[0].regexSubstitution).toBe('\\1/new/\\2');
-        // Second stage: pattern doesn't start with \/, so it floats (matches anywhere in path)
-        expect(results[1].regexFilter).toBe('^(https?://[^?#]*?)tracking-(.*)');
+        // Second stage: pattern doesn't start with \/, so it floats (matches anywhere in path or query)
+        expect(results[1].regexFilter).toBe('^(https?://[^/]+/[^#]*?)tracking-(.*)');
         expect(results[1].regexSubstitution).toBe('\\1clean-\\2');
     });
 
@@ -311,7 +324,7 @@ describe('convertUrlTransformToDnr', () => {
         // ||httpbin.agrd.dev^$urltransform=/royalmail/post/
         const results = convertUrlTransformToDnr('/royalmail/post/');
         expect(results).toHaveLength(1);
-        expect(results[0].regexFilter).toBe('^(https?://[^?#]*?)royalmail(.*)');
+        expect(results[0].regexFilter).toBe('^(https?://[^/]+/[^#]*?)royalmail(.*)');
         expect(results[0].regexSubstitution).toBe('\\1post\\2');
     });
 
