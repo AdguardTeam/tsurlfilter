@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Updated [@adguard/dnr-converter] to `v1.1.1`.
+
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v5.0.1...HEAD
+
 ## [5.0.1] - 2026-08-21
 
 ### Fixed
@@ -1855,6 +1863,7 @@ its setting [AdguardBrowserExtension#2584].
 [0.0.44]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.44
 
 [@adguard/agtree]: ../agtree/CHANGELOG.md
+[@adguard/dnr-converter]: ../dnr-converter/CHANGELOG.md
 [@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/tsurlfilter]: ../tsurlfilter/CHANGELOG.md
 

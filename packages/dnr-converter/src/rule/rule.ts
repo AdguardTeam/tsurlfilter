@@ -347,6 +347,11 @@ export class Rule {
 
     /**
      * Raw string value of the advanced modifier.
+     *
+     * `null` when the modifier has no value. The only exception is
+     * `$removeparam`: a value-less `$removeparam` is stored as `''`, because
+     * it carries a meaning of its own ("remove all query parameters") that
+     * must be distinguishable from "no value".
      */
     readonly advancedModifierValue: string | null = null;
 
@@ -633,8 +638,19 @@ export class Rule {
                     meta.hasHeader = true;
                     break;
 
-                case OPTION_NAMES.CSP:
                 case OPTION_NAMES.REMOVEPARAM:
+                    this.enabledModifiers.add(name);
+                    this.advancedModifierName = rawName;
+                    // Keep an empty value as `''` instead of collapsing it to
+                    // `null`: a value-less `$removeparam` means "remove all
+                    // query parameters", and the converter relies on this
+                    // distinction — otherwise such a rule silently degrades
+                    // into a plain blocking rule.
+                    // See https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3602.
+                    this.advancedModifierValue = value;
+                    break;
+
+                case OPTION_NAMES.CSP:
                 case OPTION_NAMES.COOKIE:
                 case OPTION_NAMES.REPLACE:
                 case OPTION_NAMES.JSONPRUNE:

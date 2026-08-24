@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-08-??
+
+### Fixed
+
+- Value-less `$removeparam` rules (e.g. `||example.org^$removeparam`) converted
+  into blocking DNR rules instead of a redirect that removes the whole query
+  string, so matching sites were blocked [AdguardBrowserExtension#3602].
+- `$removeparam` rules with a value that cannot be URI-decoded are now reported
+  as a conversion error instead of being silently converted into blocking rules.
+
+[AdguardBrowserExtension#3602]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3602
+
+[1.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-converter-v1.1.1
+
 ## [1.1.0] - 2026-07-28
 
 ### Changed

@@ -204,6 +204,28 @@ describe('Rule', () => {
         });
     });
 
+    describe('advancedModifierValue', () => {
+        it('keeps an empty string for value-less $removeparam (remove all query parameters)', () => {
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeparam');
+
+            expect(rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)).toBe(true);
+            expect(rule.advancedModifierValue).toBe('');
+        });
+
+        it('stores the value of $removeparam', () => {
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeparam=utm_source');
+
+            expect(rule.advancedModifierValue).toBe('utm_source');
+        });
+
+        it('keeps null for other value-less advanced modifiers (only $removeparam keeps an empty string)', () => {
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$cookie');
+
+            expect(rule.isModifierEnabled(OPTION_NAMES.COOKIE)).toBe(true);
+            expect(rule.advancedModifierValue).toBeNull();
+        });
+    });
+
     describe('priority', () => {
         it('returns default priority of 1', () => {
             const rules = Rule.createFromText(1, 0, '||example.com^');

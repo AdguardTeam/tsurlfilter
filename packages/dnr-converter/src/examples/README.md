@@ -3954,7 +3954,7 @@ design, as merging would prevent multi-hop chaining across priority levels.
 <b>Examples:</b>
 <br/>
 example 1.
-skip rules with a negation, or regexp, or the rule is an allowlist
+value-less $removeparam removes all query parameters
 
 ```adblock
 ||example.org^$removeparam
@@ -3967,7 +3967,12 @@ skip rules with a negation, or regexp, or the rule is an allowlist
   {
     "id": 2131736874,
     "action": {
-      "type": "block"
+      "type": "redirect",
+      "redirect": {
+        "transform": {
+          "query": ""
+        }
+      }
     },
     "condition": {
       "urlFilter": "||example.org^",

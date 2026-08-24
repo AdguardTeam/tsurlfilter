@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { NetworkRule, NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
 
 import { ResourceType } from '../../src/declarative-rule/rule-condition';
+import { OPTION_NAMES } from '../../src/rule/option-names';
 import { Rule } from '../../src/rule/rule';
 
 /**
@@ -273,8 +274,17 @@ describe('pattern / allowlist / priority / advanced-value parity', () => {
     it.each(corpusRules)('advanced modifier value matches for: %s', (ruleText) => {
         const [dnrRule] = Rule.createFromText(1, 0, ruleText);
         const tsRule = new NetworkRule(ruleText, 1);
-        // Normalise value-less modifiers: dnr-converter returns `null` while
-        // tsurlfilter returns `''`. Both mean "no value" — neither should
+
+        if (dnrRule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
+            // For `$removeparam` an empty value is meaningful ("remove all
+            // query parameters"), so both sides must agree exactly — `''`
+            // must not be collapsed to `null`.
+            expect(dnrRule.advancedModifierValue).toBe(tsRule.getAdvancedModifierValue());
+            return;
+        }
+
+        // Normalise other value-less modifiers: dnr-converter returns `null`
+        // while tsurlfilter returns `''`. Both mean "no value" — neither should
         // affect downstream behaviour. Apply the same normalisation on both sides.
         const dnrValue = dnrRule.advancedModifierValue || null;
         const tsValue = tsRule.getAdvancedModifierValue() || null;

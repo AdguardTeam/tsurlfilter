@@ -651,7 +651,7 @@ $removeheader=location,domain=example.com
 ! <b>Examples:</b>
 ! <br/>
 ! example 1.
-! skip rules with a negation, or regexp, or the rule is an allowlist
+! value-less $removeparam removes all query parameters
 ||example.org^$removeparam
 ! example 2
 $removeparam=~param

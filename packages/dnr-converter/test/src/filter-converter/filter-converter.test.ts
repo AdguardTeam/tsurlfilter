@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { UnsupportedModifierError } from '../../../src/errors/conversion-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
@@ -42,6 +43,72 @@ describe('FilterConverter', () => {
             expect(declarativeRules[0].condition.urlFilter).toBe('||example.org^');
             expect(errors).toBeDefined();
             expect(limitations).toBeDefined();
+        });
+
+        it('converts value-less $removeparam into a strip-all-query redirect, not a block', async () => {
+            const filter = createFilter(['||example.org^$removeparam']);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action).toEqual({
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        query: '',
+                    },
+                },
+            });
+            expect(declarativeRules[0].condition.urlFilter).toBe('||example.org^');
+            expect(declarativeRules[0].condition.resourceTypes).toEqual(['main_frame', 'sub_frame']);
+        });
+
+        it('converts value-less $removeparam with $domain into a strip-all-query redirect, not a block', async () => {
+            const filter = createFilter(['$removeparam,domain=example.org']);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action).toEqual({
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        query: '',
+                    },
+                },
+            });
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['example.org']);
+            expect(declarativeRules[0].condition.resourceTypes).toEqual(['main_frame', 'sub_frame']);
+        });
+
+        it('converts $removeparam with a value into a query transform', async () => {
+            const filter = createFilter(['||example.org^$removeparam=utm_source']);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action).toEqual({
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        queryTransform: {
+                            removeParams: ['utm_source'],
+                        },
+                    },
+                },
+            });
+        });
+
+        it('reports a conversion error (not a block) for an undecodable $removeparam value', async () => {
+            const filter = createFilter(['||example.org^$removeparam=%zz']);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toBeInstanceOf(UnsupportedModifierError);
         });
 
         it('assigns a rule set id based on filter id', async () => {
