@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated [@adguard/tswebextension] to `v5.0.1`.
 
+[4.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-v4.0.2
+
 ## [4.0.1]
 
 ### Changed
@@ -23,8 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed unused `src/local_script_rules.json` (~3.3 MB). The file was never
   imported or bundled, and `@adguard/api` downloads filters at runtime so
   pre-built local script rules cannot be kept up-to-date at build time.
-
-[4.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-v4.0.2
 
 [4.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-v4.0.1
 
