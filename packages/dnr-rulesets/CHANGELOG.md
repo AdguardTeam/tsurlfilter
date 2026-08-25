@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated [@adguard/dnr-converter] to `v1.1.1`.
+- Updated [@adguard/dnr-converter] to `v1.1.2`.
+- Updated [@adguard/tsurlfilter] to `v6.0.3`.
 
 [Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/dnr-rulesets-v5.0.1...HEAD
 
@@ -298,5 +299,6 @@ For example, while bundling the manifest with the extension.
 
 - Improve filters compatibility with Declarative Net Request API.
 
-[@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/dnr-converter]: ../dnr-converter/CHANGELOG.md
+[@adguard/logger]: ../logger/CHANGELOG.md
+[@adguard/tsurlfilter]: ../tsurlfilter/CHANGELOG.md
