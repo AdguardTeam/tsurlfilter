@@ -7,6 +7,7 @@ define: &common_props
   assignable: true
   negatable: false
   value_optional: true
+  value_optional_exception_only: true
   # TODO: Add a custom validator to validate inner regexps.
   value_format: |-
     (?xi)

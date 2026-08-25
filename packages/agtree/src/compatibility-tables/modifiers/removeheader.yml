@@ -26,6 +26,7 @@ adg_os_any:
   assignable: true
   negatable: false
   value_optional: true
+  value_optional_exception_only: true
   # Enable free-spacing and case-insensitive mode for the regex
   value_format: |-
     (?xi)
@@ -119,6 +120,7 @@ adg_ext_any:
   assignable: true
   negatable: false
   value_optional: true
+  value_optional_exception_only: true
   # Enable free-spacing and case-insensitive mode for the regex
   value_format: |-
     (?xi)

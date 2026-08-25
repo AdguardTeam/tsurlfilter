@@ -37,11 +37,15 @@ adg_os_any:
   name: replace
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#replace-modifier
   <<: *common_props
+  value_optional: true
+  value_optional_exception_only: true
 
 adg_ext_firefox:
   name: replace
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#replace-modifier
   <<: *common_props
+  value_optional: true
+  value_optional_exception_only: true
 
 ubo_ext_firefox:
   name: replace

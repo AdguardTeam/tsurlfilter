@@ -97,15 +97,24 @@ const validateForSpecificProduct = (
     if (specificBlockerData.assignable) {
         if (!modifier.value) {
             // TODO: ditch value_optional after custom validators are implemented for value_format for all modifiers.
-            // This checking should be done in each separate custom validator,
-            // because $csp and $permissions without value can be used only in extension rules,
-            // but $cookie with no value can be used in both blocking and exception rules.
+            // This checking should be done in each separate custom validator.
+            // Whether the value may be omitted only in exception rules is expressed
+            // via the 'value_optional_exception_only' compatibility table flag
+            // (e.g. $csp, $permissions, $urltransform), while some modifiers can be used
+            // without a value in both blocking and exception rules (e.g. $cookie).
             /**
              * Some assignable modifiers can be used without a value,
              * e.g. '@@||example.com^$cookie'.
              */
             if (specificBlockerData.valueOptional) {
-                return { valid: true };
+                /**
+                 * Some modifiers may omit the value only in exception rules,
+                 * e.g. '@@||example.com^$urltransform' is valid,
+                 * but '||example.com^$urltransform' is not.
+                 */
+                if (!specificBlockerData.valueOptionalExceptionOnly || isException) {
+                    return { valid: true };
+                }
             }
             // for other assignable modifiers the value is required
             return getValueRequiredValidationResult(modifierName);

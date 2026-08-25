@@ -8,6 +8,12 @@
 ! === $jsonprune — not supported ===
 ||example.com^$jsonprune=\$.ads
 
+! === $xmlprune — not supported ===
+||example.com^$xmlprune=/MPD/Period
+
+! === $webrtc — deprecated and not supported ===
+||example.com^$webrtc
+
 ! === $hls — not supported ===
 ||example.com^$hls=/#EXTINF.+?broll/
 

@@ -10,8 +10,8 @@ catalogs:
       specifier: ^4.4.12
       version: 4.4.12
     '@adguard/scriptlets':
-      specifier: 2.5.0
-      version: 2.5.0
+      specifier: 2.5.1
+      version: 2.5.1
     '@rollup/plugin-alias':
       specifier: ^5.1.1
       version: 5.1.1
@@ -1086,7 +1086,7 @@ importers:
         version: 1.2.0
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.5.0
+        version: 2.5.1
       commander:
         specifier: 'catalog:'
         version: 12.1.0
@@ -1863,7 +1863,7 @@ importers:
         version: link:../logger
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.5.0
+        version: 2.5.1
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -2080,7 +2080,7 @@ importers:
         version: link:../logger
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.5.0
+        version: 2.5.1
       '@adguard/text-encoding':
         specifier: ^0.8.3
         version: 0.8.3
@@ -2320,8 +2320,8 @@ packages:
   '@adguard/scriptlets@2.2.14':
     resolution: {integrity: sha512-IY5iy0gaNQq0YEFpdp9yb6zNmjQXFB3Hox84rKBCFZAJWw0AP4OQsZErH6IqpaAkBrA96KVXWKHYc09WdyOxyg==}
 
-  '@adguard/scriptlets@2.5.0':
-    resolution: {integrity: sha512-1DISQycmS1+KkYYvn9bl6PQIV84MdykM/Jyyu+iI8h3xpWJCudH0KR/b5g4qDYmKGBoGg6LclMsyLxzPdeje0A==}
+  '@adguard/scriptlets@2.5.1':
+    resolution: {integrity: sha512-008B4qm6mXU4mqHOl1HE/jfRa0D/LUX2Lx4k00G45csiBF/fnIGzVivPsT1Q+Uhp9C+zj5tKoekkL39W8HqjzA==}
     engines: {pnpm: '>=10.33.4 <11'}
 
   '@adguard/text-encoding@0.8.3':
@@ -10316,7 +10316,7 @@ snapshots:
       '@types/trusted-types': 2.0.7
       js-yaml: 3.14.1
 
-  '@adguard/scriptlets@2.5.0':
+  '@adguard/scriptlets@2.5.1':
     dependencies:
       '@adguard/agtree': link:packages/agtree
       '@types/trusted-types': 2.0.7
@@ -10356,7 +10356,7 @@ snapshots:
       '@adguard/css-tokenizer': 1.2.0
       '@adguard/logger': 2.0.0
       '@adguard/re2-wasm': 1.2.0
-      '@adguard/scriptlets': 2.5.0
+      '@adguard/scriptlets': 2.5.1
       cidr-tools: 6.4.2
       commander: 12.1.0
       is-cidr: 4.0.2

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Updated [@adguard/agtree] to `v4.2.1`.
+- Updated [@adguard/dnr-converter] to `v1.1.2`.
+- Updated [@adguard/scriptlets] to `v2.5.1`.
+
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/dnr-rulesets-v5.0.1...HEAD
+
 ## [5.0.1] - 2026-07-29
 
 ### Changed
@@ -290,4 +300,7 @@ For example, while bundling the manifest with the extension.
 
 - Improve filters compatibility with Declarative Net Request API.
 
+[@adguard/agtree]: ../agtree/CHANGELOG.md
+[@adguard/dnr-converter]: ../dnr-converter/CHANGELOG.md
 [@adguard/logger]: ../logger/CHANGELOG.md
+[@adguard/scriptlets]: https://github.com/AdguardTeam/Scriptlets/blob/master/CHANGELOG.md

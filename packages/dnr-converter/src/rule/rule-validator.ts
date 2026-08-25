@@ -439,7 +439,9 @@ export class RuleDeclarativeValidator {
         // Will not be supported.
         [OPTION_NAMES.REPLACE]: { name: '$replace', notSupported: true },
         [OPTION_NAMES.JSONPRUNE]: { name: '$jsonprune', notSupported: true },
+        [OPTION_NAMES.XMLPRUNE]: { name: '$xmlprune', notSupported: true },
         [OPTION_NAMES.HLS]: { name: '$hls', notSupported: true },
+        [OPTION_NAMES.WEBRTC]: { name: '$webrtc', notSupported: true },
         // DNS modifiers.
         [OPTION_NAMES.CLIENT]: { name: '$client', notSupported: true },
         [OPTION_NAMES.DNSREWRITE]: { name: '$dnsrewrite', notSupported: true },

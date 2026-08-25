@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 
+import { UnsupportedModifierError } from '../../../src/errors/conversion-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
@@ -9,6 +15,7 @@ import { UnavailableFilterSourceError } from '../../../src/errors/unavailable-so
 import { Filter } from '../../../src/filter/filter';
 import { type IFilter } from '../../../src/filter/types';
 import { FilterConverter } from '../../../src/filter-converter/filter-converter';
+import { re2Validator } from '../../../src/re2-regexp/re2-validator';
 
 /**
  * Creates a test IFilter from an array of rule strings.
@@ -42,6 +49,99 @@ describe('FilterConverter', () => {
             expect(declarativeRules[0].condition.urlFilter).toBe('||example.org^');
             expect(errors).toBeDefined();
             expect(limitations).toBeDefined();
+        });
+
+        it('converts value-less $removeparam into a strip-all-query redirect, not a block', async () => {
+            const filter = createFilter(['||example.org^$removeparam']);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action).toEqual({
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        query: '',
+                    },
+                },
+            });
+            expect(declarativeRules[0].condition.urlFilter).toBe('||example.org^');
+            expect(declarativeRules[0].condition.resourceTypes).toEqual(['main_frame', 'sub_frame']);
+        });
+
+        it('converts value-less $removeparam with $domain into a strip-all-query redirect, not a block', async () => {
+            const filter = createFilter(['$removeparam,domain=example.org']);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action).toEqual({
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        query: '',
+                    },
+                },
+            });
+            expect(declarativeRules[0].condition.initiatorDomains).toEqual(['example.org']);
+            expect(declarativeRules[0].condition.resourceTypes).toEqual(['main_frame', 'sub_frame']);
+        });
+
+        it('converts $removeparam with a value into a query transform', async () => {
+            const filter = createFilter(['||example.org^$removeparam=utm_source']);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            const declarativeRules = ruleset.getDeclarativeRules();
+            expect(errors).toHaveLength(0);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action).toEqual({
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        queryTransform: {
+                            removeParams: ['utm_source'],
+                        },
+                    },
+                },
+            });
+        });
+
+        it('reports a conversion error (not a block) for an undecodable $removeparam value', async () => {
+            const filter = createFilter(['||example.org^$removeparam=%zz']);
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toBeInstanceOf(UnsupportedModifierError);
+        });
+
+        it('applies an unanchored $urltransform pattern to the query string', async () => {
+            vi.spyOn(re2Validator, 'isRegexSupported').mockResolvedValueOnce(true);
+
+            const filter = createFilter([
+                '||safebooru.org^$urltransform=/order%3A/sort%3A/i',
+            ]);
+            const requestUrl = 'https://safebooru.org/index.php?page=post&s=list&tags=order%3ascore';
+            const expectedUrl = 'https://safebooru.org/index.php?page=post&s=list&tags=sort%3Ascore';
+
+            const [{ ruleset, errors }] = await converter.convert([filter]);
+
+            expect(errors).toEqual([]);
+
+            const [declarativeRule] = ruleset.getDeclarativeRules();
+            const { regexFilter, isUrlFilterCaseSensitive } = declarativeRule.condition;
+            const regexSubstitution = declarativeRule.action.redirect?.regexSubstitution;
+
+            expect(regexFilter).toBeDefined();
+            expect(regexSubstitution).toBeDefined();
+
+            const flags = isUrlFilterCaseSensitive === false ? 'i' : '';
+            const regexp = new RegExp(regexFilter!, flags);
+            const jsSubstitution = regexSubstitution!.replace(/\\([0-9])/g, '$$$1');
+
+            expect(requestUrl.replace(regexp, jsSubstitution)).toBe(expectedUrl);
         });
 
         it('assigns a rule set id based on filter id', async () => {

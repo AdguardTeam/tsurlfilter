@@ -7,14 +7,41 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [4.2.1] - 2026-08-12
+
+### Added
+
+- New `value_optional_exception_only` compatibility table optional field for
+  assignable modifiers whose value may be omitted only in exception rules,
+  e.g. `$urltransform`, `$permissions`, etc.
+
+### Changed
+
+- Valueless modifiers are now invalid in blocking rules for `$urltransform`,
+  `$csp`, `$permissions`, `$redirect`, `$redirect-rule` and `$removeheader` —
+  the value may only be omitted in exception rules, e.g.
+  `@@||example.com^$urltransform`.
+- Valueless `$replace` is now valid in exception rules (previously rejected
+  everywhere) but invalid in blocking rules.
+
+### Fixed
+
+- `redirect-rule` modifier `value_format` for AdGuard platforms was missing
+  the `googletagmanager-gtm` entry (present in `redirect` modifier), causing
+  `modifierValidator.validate()` to incorrectly reject valid
+  `redirect-rule=googletagmanager-gtm` rules [FiltersCompiler#159].
+
+[4.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.2.1
+[FiltersCompiler#159]: https://github.com/AdguardTeam/FiltersCompiler/issues/159
+
 ## [4.2.0] - 2026-07-27
 
 ### Added
 
-- $urltransform modifier support [AGLint#249].
+- $urltransform modifier support [#111].
 
-[AGLint#249]: https://github.com/AdguardTeam/AGLint/issues/249
 [4.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.2.0
+[#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
 
 ## [4.1.2] - 2026-07-24
 

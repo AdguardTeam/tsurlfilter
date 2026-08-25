@@ -123,6 +123,19 @@ describe('RuleDeclarativeValidator', () => {
             expect(() => RuleDeclarativeValidator.shouldConvertRule(rule)).toThrow();
         });
 
+        it('throws for $xmlprune modifier', () => {
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$xmlprune=/MPD/Period');
+            expect(() => RuleDeclarativeValidator.shouldConvertRule(rule)).toThrow(UnsupportedModifierError);
+        });
+
+        it('throws an unsupported modifier error for deprecated $webrtc rules', () => {
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$webrtc');
+            const shouldConvert = (): boolean => RuleDeclarativeValidator.shouldConvertRule(rule);
+
+            expect(shouldConvert).toThrow(UnsupportedModifierError);
+            expect(shouldConvert).toThrow('Unsupported option "$webrtc"');
+        });
+
         it('throws for $hls modifier', () => {
             const [rule] = Rule.createFromText(1, 0, '||example.com^$hls=/#EXTINF.+?broll/');
             expect(() => RuleDeclarativeValidator.shouldConvertRule(rule)).toThrow();

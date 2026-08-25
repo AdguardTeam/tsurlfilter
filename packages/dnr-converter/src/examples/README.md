@@ -61,6 +61,7 @@
 1. [Not supported in extension](#not_supported_in_extension)
     1. [$hls (not supported in extension)](#not_supported_in_extension__$hls_(not_supported_in_extension))
     1. [$jsonprune (not supported in extension)](#not_supported_in_extension__$jsonprune_(not_supported_in_extension))
+    1. [$xmlprune (not supported in extension)](#not_supported_in_extension__$xmlprune_(not_supported_in_extension))
     1. [$network (not supported in extension)](#not_supported_in_extension__$network_(not_supported_in_extension))
     1. [$app (not supported in extension)](#not_supported_in_extension__$app_(not_supported_in_extension))
     1. [$extension (not supported in extension)](#not_supported_in_extension__$extension_(not_supported_in_extension))
@@ -2057,22 +2058,10 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-  {
-    "id": 65483840,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||example.com^",
-      "initiatorDomains": [
-        "example.org"
-      ]
-    },
-    "priority": 201
-  }
-]
+[]
 ```
+
+> ⚠️ Conversion errors: Unsupported option "$webrtc"
 example 2
 
 ```adblock
@@ -2082,22 +2071,10 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-  {
-    "id": 262342547,
-    "action": {
-      "type": "allow"
-    },
-    "condition": {
-      "urlFilter": "*",
-      "initiatorDomains": [
-        "example.org"
-      ]
-    },
-    "priority": 100201
-  }
-]
+[]
 ```
+
+> ⚠️ Conversion errors: Unsupported option "$webrtc"
 <a name="content_type_modifiers__$other"></a>
 ## $other
 
@@ -3954,7 +3931,7 @@ design, as merging would prevent multi-hop chaining across priority levels.
 <b>Examples:</b>
 <br/>
 example 1.
-skip rules with a negation, or regexp, or the rule is an allowlist
+value-less $removeparam removes all query parameters
 
 ```adblock
 ||example.org^$removeparam
@@ -3967,7 +3944,12 @@ skip rules with a negation, or regexp, or the rule is an allowlist
   {
     "id": 2131736874,
     "action": {
-      "type": "block"
+      "type": "redirect",
+      "redirect": {
+        "transform": {
+          "query": ""
+        }
+      }
     },
     "condition": {
       "urlFilter": "||example.org^",
@@ -4523,6 +4505,8 @@ example 1.
 ## $hls (not supported in extension)
 <a name="not_supported_in_extension__$jsonprune_(not_supported_in_extension)"></a>
 ## $jsonprune (not supported in extension)
+<a name="not_supported_in_extension__$xmlprune_(not_supported_in_extension)"></a>
+## $xmlprune (not supported in extension)
 <a name="not_supported_in_extension__$network_(not_supported_in_extension)"></a>
 ## $network (not supported in extension)
 <a name="not_supported_in_extension__$app_(not_supported_in_extension)"></a>

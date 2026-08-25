@@ -14,6 +14,7 @@ adg_os_any|adg_ext_any:
   assignable: true
   negatable: false
   value_optional: true
+  value_optional_exception_only: true
   value_format: csp_value
 
 abp_ext_any:

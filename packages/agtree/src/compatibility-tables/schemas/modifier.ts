@@ -81,6 +81,17 @@ export const modifierDataSchema = zodToCamelCase(baseCompatibilityDataSchema.ext
     value_optional: booleanSchema.default(false),
 
     /**
+     * Describes whether the *assignable* modifier value can be omitted only in exception rules.
+     *
+     * For example, `$urltransform` can be used without a value in exception rules:
+     * `@@\|\|example.com^$urltransform`, but blocking rules must specify a value:
+     * `||example.com^$urltransform=/foo/bar/`.
+     *
+     * Requires `value_optional` to be `true`.
+     */
+    value_optional_exception_only: booleanSchema.default(false),
+
+    /**
      * Describes the format of the value for the *assignable* modifier.
      * Its value can be a regex pattern or a known validator name (e.g. `domain`, `pipe_separated_domains`, etc.).
      */
@@ -99,6 +110,13 @@ export const modifierDataSchema = zodToCamelCase(baseCompatibilityDataSchema.ext
         ctx.addIssue({
             code: zod.ZodIssueCode.custom,
             message: 'block_only and exception_only are mutually exclusive',
+        });
+    }
+
+    if (data.value_optional_exception_only && !data.value_optional) {
+        ctx.addIssue({
+            code: zod.ZodIssueCode.custom,
+            message: 'value_optional_exception_only requires value_optional to be true',
         });
     }
 
