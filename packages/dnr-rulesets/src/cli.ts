@@ -3,11 +3,11 @@ import path from 'node:path';
 import { Option, program } from 'commander';
 
 import { BrowserFilters } from '../common/constants';
-import { version } from '../package.json';
 import { ManifestPatcher, type PatchManifestOptions } from './lib';
 import { AssetsLoader, AssetsLoaderOptions } from './lib/assets/loader';
 import { Watcher, WatchOptions } from './lib/manifest/watch';
 import { excludeUnsafeRules } from './lib/unsafe-rules/exclude-unsafe-rules';
+import { getVersion } from './utils/version-utils';
 
 const DEFAULT_PATH_TO_FILTERS = './filters';
 const DEFAULT_OUTPUT_PATH_FOR_RULESETS = './filters/declarative';
@@ -64,7 +64,7 @@ const browserOption = new Option('-b, --browser <browser>', 'Browser for which t
 
 program
     .name('dnr-rulesets CLI')
-    .version(version);
+    .version(getVersion());
 
 program
     .command('exclude-unsafe-rules')

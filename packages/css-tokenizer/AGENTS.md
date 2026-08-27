@@ -36,7 +36,6 @@ packages/css-tokenizer/
 │   ├── common/                   # Shared constants and types
 │   └── utils/                    # Utility helpers
 ├── test/                         # Unit tests + smoke tests (esm, cjs, typescript)
-├── scripts/                      # Build helper scripts (build-txt)
 ├── dist/                         # Build output (gitignored)
 ├── rollup.config.ts              # Rollup build config
 ├── vitest.config.ts              # Vitest config

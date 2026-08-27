@@ -21,11 +21,10 @@ node_modules
 *.swp
 *.swo
 
-# CI/CD (not needed inside Docker)
-# NOTE: only bamboo-specs/scripts/ is used at Docker build time (test helpers).
-# bamboo-specs/jobs/ contains Bamboo YAML includes and is NOT referenced in the Dockerfile.
+# CI/CD workflow definitions (.github) are not needed inside Docker.
+# Note: scripts/ci/ helpers ARE used at Docker build time (test helpers) and
+# stay in the build context.
 .github
-bamboo-specs/jobs
 
 # Git hooks (not needed inside Docker)
 .husky
@@ -34,9 +33,14 @@ bamboo-specs/jobs
 **/coverage
 **/tests-reports
 
-# Docker build output directories (created by bamboo scripts / local verification)
+# Docker build output directories (--output type=local). These are written to
+# the workspace between Docker invocations and must never be re-uploaded as
+# build context on a later run.
 output
 output-*
+docs-output
+build-output
+test-output
 
 # Misc
 *.log

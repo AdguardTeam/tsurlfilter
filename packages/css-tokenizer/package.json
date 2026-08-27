@@ -1,6 +1,5 @@
 {
   "name": "@adguard/css-tokenizer",
-  "version": "1.2.0",
   "description": "CSS / Extended CSS tokenizer",
   "keywords": [
     "css",
@@ -10,7 +9,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+    "url": "git+https://github.com/AdGuardSoftwareLimited/ext-tsurlfilter.git",
     "directory": "packages/css-tokenizer"
   },
   "bugs": {
@@ -33,8 +32,7 @@
     "dist/csstokenizer.mjs"
   ],
   "scripts": {
-    "build": "pnpm clean && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && rimraf dist/types",
-    "build-txt": "tsx scripts/build-txt.ts",
+    "build": "pnpm clean && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && rimraf dist/types",
     "clean": "rimraf dist",
     "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
     "lint:code": "eslint . --cache --ext .ts",

@@ -1,0 +1,205 @@
+name: Publish stable DNR rulesets
+
+# Hourly scheduled build and publish of @adguard/dnr-rulesets from the
+# supported stable/dnr-rulesets-* branches (3.3, 4.0, 4.1, 4.2, 5.0). Each
+# supported branch must be on the current CI (root Dockerfile +
+# scripts/inject-package-versions.mjs): the job checks out the pinned branch,
+# stamps a <line>.<timestamp> stable version into its manifest, builds its own
+# dnr-rulesets-auto-build-output target, and publishes via trusted npm.
+# Lines whose branch has not been migrated to the current CI are skipped
+# gracefully (see the resolve-lines job) so the hourlies neither fail nor spam
+# Slack during the backport window.
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      line:
+        description: 'Specific stable line to publish (e.g. 4.2); empty = all migrated lines'
+        required: false
+        type: string
+
+# Rounds can overrun the hour (five Docker builds on the shared runner pool);
+# serialize them so two runs never publish overlapping timestamped versions.
+concurrency:
+  group: publish-stable-dnr-rulesets
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-lines:
+    name: Resolve migrated stable lines
+    runs-on: team-extensions
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.lines.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Compute lines to build
+        id: lines
+        shell: bash
+        env:
+          REQUESTED_LINE: ${{ inputs.line || '' }}
+        run: |
+          set -euo pipefail
+
+          ALL_LINES="3.3 4.0 4.1 4.2 5.0"
+          if [ -n "$REQUESTED_LINE" ]; then
+            case " $ALL_LINES " in
+              *" $REQUESTED_LINE "*)
+                LINES="$REQUESTED_LINE"
+                ;;
+              *)
+                echo "::error::Unknown stable line '$REQUESTED_LINE'; expected one of:$ALL_LINES"
+                exit 1
+                ;;
+            esac
+          else
+            LINES="$ALL_LINES"
+          fi
+
+          # The current-CI prerequisite is the injector script, the shared
+          # docker-build composite action, the CI helper scripts the build stage
+          # runs, AND the root Dockerfile carrying the
+          # dnr-rulesets-auto-build-output target at the branch tip. With them
+          # comes the whole current CI. Fetch each single branch shallowly and
+          # probe the tree — no full clones, no gh dependency.
+          INCLUDE=""
+          for line in $LINES; do
+            ref="refs/heads/stable/dnr-rulesets-${line}"
+            if git fetch -q --depth=1 origin "${ref}" 2>/dev/null \
+              && git cat-file -e "FETCH_HEAD:scripts/inject-package-versions.mjs" 2>/dev/null \
+              && git cat-file -e "FETCH_HEAD:.github/actions/docker-build/action.yml" 2>/dev/null \
+              && git cat-file -e "FETCH_HEAD:scripts/ci/timeout-wrapper.sh" 2>/dev/null \
+              && git cat-file -e "FETCH_HEAD:scripts/ci/copy-test-reports.sh" 2>/dev/null \
+              && git show "FETCH_HEAD:Dockerfile" 2>/dev/null | grep -q 'dnr-rulesets-auto-build-output'; then
+              if [ -n "$INCLUDE" ]; then INCLUDE="${INCLUDE},"; fi
+              INCLUDE="${INCLUDE}{\"line\":\"${line}\"}"
+            else
+              if [ -n "$REQUESTED_LINE" ]; then
+                # An explicit dispatch asked for this line: fail loudly instead
+                # of silently publishing nothing.
+                echo "::error::Requested line '$line' is not on the current CI (no scripts/inject-package-versions.mjs, .github/actions/docker-build, scripts/ci helpers, or dnr-rulesets-auto-build-output target on stable/dnr-rulesets-${line}); backport the CI first"
+                exit 1
+              fi
+              echo "Line ${line} is not on the current CI yet; skipping this round (backport pending)"
+            fi
+          done
+
+          # An empty schedule round (no lines migrated yet) stays green: the
+          # build/publish matrices are gated on include[0] != null, so the run
+          # completes without a Slack failure alert.
+          echo "matrix={\"include\":[${INCLUDE}]}" >> "$GITHUB_OUTPUT"
+
+  build-stable-dnr-rulesets:
+    name: Build DNR rulesets ${{ matrix.line }}
+    needs: resolve-lines
+    if: ${{ needs.resolve-lines.result == 'success' && fromJSON(needs.resolve-lines.outputs.matrix).include[0] != null }}
+    strategy:
+      fail-fast: false
+      # Cap concurrent Docker builds: the shared remote BuildKit builder OOMs /
+      # drops connections under heavy parallelism (build.yml caps its own
+      # matrix at 4 for the same reason).
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.resolve-lines.outputs.matrix) }}
+    runs-on: team-extensions
+    timeout-minutes: 30
+    steps:
+      - name: Checkout stable branch
+        uses: actions/checkout@v6
+        with:
+          ref: stable/dnr-rulesets-${{ matrix.line }}
+          # The version stamp comes from the changelogs, not git history, and
+          # .git is dockerignored anyway — a shallow clone is enough (no five
+          # full clones per hour).
+          fetch-depth: 1
+
+      - name: Stamp stable version
+        shell: bash
+        run: |
+          set -euo pipefail
+          TS=$(date -u +%Y%m%d%H%M%S)
+          STABLE_VERSION="${{ matrix.line }}.${TS}"
+          echo "Stable version: ${STABLE_VERSION}"
+          node scripts/inject-package-versions.mjs \
+            --package dnr-rulesets \
+            --version "${STABLE_VERSION}"
+
+      - name: Build package
+        uses: ./.github/actions/docker-build
+        with:
+          target: dnr-rulesets-auto-build-output
+          dest: build-output
+          cache-suffix: -${{ matrix.line }}
+
+      - name: Verify package version
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=build-output/artifacts/dnr-rulesets.tgz
+          PACKED_VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          # Escape the dots in the line prefix (e.g. 3.3) so the regex cannot
+          # match a tampered version like 3x3.20260819120000.
+          STABLE_RE="${{ matrix.line }}"
+          STABLE_RE="${STABLE_RE//./\\.}"
+          [[ "$PACKED_VERSION" =~ ^${STABLE_RE}\.[0-9]{14}$ ]] || { echo "::error::$TGZ has unexpected stable version $PACKED_VERSION"; exit 1; }
+
+      - name: Upload npm package
+        uses: actions/upload-artifact@v7
+        with:
+          name: dnr-rulesets-${{ matrix.line }}
+          path: build-output/artifacts/dnr-rulesets.tgz
+          # These tarballs only hand off to the publish job in the same run —
+          # a 1-day retention keeps the hand-off working without accumulating
+          # ~120 artifacts a day at the 90-day default.
+          retention-days: 1
+          if-no-files-found: error
+
+  publish-stable-dnr-rulesets:
+    name: Publish DNR rulesets ${{ matrix.line }}
+    needs: [resolve-lines, build-stable-dnr-rulesets]
+    # A failed build leg must not suppress publication of the healthy lines:
+    # without this, a matrix `needs` that has any failure skips this whole job.
+    # Each line publishes only its own artifact, so a broken line fails alone.
+    if: ${{ needs.resolve-lines.result == 'success' && !cancelled() && fromJSON(needs.resolve-lines.outputs.matrix).include[0] != null }}
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.resolve-lines.outputs.matrix) }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-${{ matrix.line }}
+      package-file: dnr-rulesets.tgz
+      # Per-line dist-tag so an hourly publish from an old line can never move
+      # `@adguard/dnr-rulesets@latest` backwards, and no GitHub environment
+      # (empty string) so unattended hourly runs don't hang on approval.
+      tag: stable-${{ matrix.line }}
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  notify-failure:
+    name: Notify on failure
+    needs: [resolve-lines, build-stable-dnr-rulesets, publish-stable-dnr-rulesets]
+    # Scheduled jobs get no human eyes: alert the channel when any leg failed
+    # (a cancelled run is not a failure — e.g. a scheduled round that got
+    # superseded by a manual publish). An empty schedule round (no migrated
+    # lines) is not a failure.
+    if: ${{ failure() }}
+    runs-on: team-extensions
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Send Slack notification
+        uses: AdGuardSoftwareLimited/actions/actions/slack@master
+        with:
+          channel: '#adguard-extension-vcs'
+          message: ':x: *publish-stable-dnr-rulesets* failed — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          color: danger

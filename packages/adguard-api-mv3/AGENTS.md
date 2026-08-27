@@ -35,7 +35,6 @@ packages/adguard-api-mv3/
 │   │   └── request-blocking-logger.ts # Request blocking log
 │   └── content-script/          # Content script entry points
 ├── e2e/                         # End-to-end tests
-├── tasks/                       # Build scripts (build-txt)
 ├── constants.ts                 # Shared build constants
 ├── dist/                        # Build output (gitignored)
 ├── rollup.config.ts             # Rollup build config
