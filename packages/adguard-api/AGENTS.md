@@ -44,7 +44,6 @@ packages/adguard-api/
 │   │   ├── schemas/           # Zod validation schemas
 │   │   └── utils/             # Utility functions
 │   └── content-script/        # Content script entry points
-├── tasks/                     # Build scripts (build-txt)
 ├── constants.ts               # Shared build constants
 ├── dist/                      # Build output (gitignored)
 ├── rollup.config.ts           # Rollup build config

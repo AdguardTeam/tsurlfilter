@@ -1,0 +1,114 @@
+name: Publish release
+
+# Publishes one monorepo package to npm: Docker test/build -> npm publish ->
+# tag (created only after a successful publish) -> mirror + GitHub Release ->
+# Slack. Fires automatically when a release-bump/<package>-v<version> PR is
+# merged; can be re-run manually.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to publish'
+        required: true
+        type: choice
+        options:
+          - logger
+          - css-tokenizer
+          - agtree
+          - tsurlfilter
+          - dnr-converter
+          - dnr-rulesets
+          - tswebextension
+          - adguard-api
+          - adguard-api-mv3
+          - eslint-plugin-logger-context
+      ref:
+        description: 'Ref to publish manually (leave empty for the merge commit / current master)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Run npm publish with --dry-run (no registry contact)'
+        required: false
+        type: boolean
+        default: false
+
+# Serialize all publish runs so they cannot race on tags, the npm `latest`
+# dist-tag, and the shared public mirror's actions toggle. Releases are rare
+# enough that a single repo-wide group is sound: a per-package/per-version key
+# lets two back-to-back releases of the same package run in parallel (racing
+# npm publish --tag latest — last finisher wins) and lets a manual re-dispatch
+# race an auto-fired run. GitHub keeps at most one pending run per group;
+# cancel-in-progress: false queues the new run behind the in-flight one instead
+# of cancelling a run mid-publish.
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: Resolve package and ref
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       startsWith(github.event.pull_request.head.ref, 'release-bump/') &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: team-extensions
+    timeout-minutes: 10
+    outputs:
+      package: ${{ steps.resolve.outputs.package }}
+      npm_package_name: ${{ steps.resolve.outputs.npm_package_name }}
+      ref: ${{ steps.resolve.outputs.ref }}
+      dry_run: ${{ steps.resolve.outputs.dry_run }}
+    steps:
+      # The resolve script lives in this repo; without a checkout on a fresh
+      # runner the file is absent (and on the self-hosted runner a stale copy
+      # could linger). Checkout the merge commit so the trigger SHA is what's
+      # actually published.
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+
+      - name: Resolve inputs
+        id: resolve
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref || '' }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha || '' }}
+          INPUT_PACKAGE: ${{ inputs.package || '' }}
+          INPUT_REF: ${{ inputs.ref || '' }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run || '' }}
+        run: bash scripts/ci/resolve-release-inputs.sh
+
+  publish:
+    name: Publish package
+    needs: resolve
+    uses: ./.github/workflows/_publish-release-monorepo.yml
+    with:
+      package: ${{ needs.resolve.outputs.package }}
+      npm_package_name: ${{ needs.resolve.outputs.npm_package_name }}
+      target_repo: AdguardTeam/tsurlfilter
+      ref: ${{ needs.resolve.outputs.ref }}
+      dry_run: ${{ fromJSON(needs.resolve.outputs.dry_run) }}
+    secrets: inherit
+    permissions:
+      # Required by the called workflow's publish (npm OIDC) and
+      # mirror-and-release (actions/contents/id-token) jobs; parse/build/notify
+      # are scoped to contents:read inside _publish-release-monorepo.yml.
+      actions: write    # mirror workflow disables/enables actions on the target repo
+      contents: write   # create tags and push to the repo
+      id-token: write   # OIDC for npm trusted publishing and Octopass
+      # Note: `secrets: inherit` is retained deliberately — the release chain
+      # authenticates via OIDC (npm trusted publishing, Octopass) and the Slack
+      # internal service rather than repo secrets, and the shared
+      # mirror/create-gh-release/slack workflows forward `secrets: inherit`
+      # internally regardless. Scoping further here would require enumerating
+      # names we don't control and would risk breaking the shared chain.

@@ -29,7 +29,6 @@ packages/logger/
 │   ├── error.ts           # Error utilities
 │   └── format-time.ts     # Timestamp formatting
 ├── tests/                 # Unit tests + smoke tests (esm, cjs, typescript)
-├── scripts/               # Build helper scripts (build-txt)
 ├── dist/                  # Build output (gitignored)
 ├── rollup.config.ts       # Rollup build config
 ├── vitest.config.ts       # Vitest config

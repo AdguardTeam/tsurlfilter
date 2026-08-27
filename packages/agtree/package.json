@@ -1,6 +1,5 @@
 {
     "name": "@adguard/agtree",
-    "version": "4.2.1",
     "description": "Tool set for working with adblock filter lists",
     "keywords": [
         "adblock",
@@ -17,7 +16,7 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "url": "git+https://github.com/AdGuardSoftwareLimited/ext-tsurlfilter.git",
         "directory": "packages/agtree"
     },
     "bugs": {
@@ -52,17 +51,15 @@
         }
     },
     "files": [
-        "dist/**",
-        "!dist/build.txt"
+        "dist/**"
     ],
     "engines": {
         "node": ">=22"
     },
     "scripts": {
-        "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables-wiki && pnpm build-rollup && pnpm build-types",
+        "build": "pnpm clean && pnpm build-compatibility-tables-wiki && pnpm build-rollup && pnpm build-types",
         "build-rollup": "rollup --config rollup.config.ts --configPlugin typescript",
         "build-types": "tsc --project tsconfig.build.json && tsx scripts/transform-dts.ts",
-        "build-txt": "tsx scripts/build-txt.ts",
         "build-compatibility-tables-wiki": "tsx scripts/build-compatibility-tables-wiki.ts",
         "clean": "rimraf dist",
         "coverage": "vitest run --coverage",

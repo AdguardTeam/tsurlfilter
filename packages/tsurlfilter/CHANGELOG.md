@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.2...HEAD
 
-## [v6.0.2] - 2026-07-28
+## [6.0.2] - 2026-07-28
 
 ### Added
 
@@ -62,20 +62,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (e.g. `/example\d*\.(live\|com\|icu\|org)$/`) not matching any domain,
   because only the first escaped separator was unescaped.
 
-[v6.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.0.2
+[6.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.0.2
 [#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
 [#189]: https://github.com/AdguardTeam/tsurlfilter/issues/189
 [AdguardBrowserExtension#3533]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3533
 
-## [v5.0.1] - 2026-04-24
+## [5.0.1] - 2026-04-24
 
 ### Changed
 
 - Updated [@adguard/scriptlets] to `v2.4.2`.
 
-[v5.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v5.0.1
+[5.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v5.0.1
 
-## [v5.0.0-beta.1] - 2026-04-17
+## [5.0.0-beta.1] - 2026-04-17
 
 ### Changed
 
@@ -94,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$removeparam` rules not stripping all tracking parameters
   when multiple rules match the same URL in MV3 [AdguardBrowserExtension#3444].
 
-[v5.0.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v5.0.0-beta.1
+[5.0.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v5.0.0-beta.1
 [AdguardBrowserExtension#3444]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3444
 
 ## [4.0.5] - 2026-03-26

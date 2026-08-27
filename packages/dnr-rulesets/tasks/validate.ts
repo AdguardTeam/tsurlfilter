@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { BrowserFilters, DEST_RULESETS_DIR, FILTERS_BROWSER_PLACEHOLDER } from '../common/constants';
-import { version } from '../package.json';
+import { getVersion } from '../src/utils/version-utils';
 import { VALIDATOR_DATA_FILE_NAME } from './constants';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -86,7 +86,7 @@ const getValidatorData = async (destDir: string): Promise<RulesetIdsAndMetadataK
     }
 
     return {
-        version,
+        version: getVersion(),
         // sort ids to make it more readable
         rulesetIds: rulesetIds.sort((a, b) => a - b),
         rulesetMetadataKeys,
