@@ -47,7 +47,7 @@ describe('FilterConverter', () => {
         it('assigns a rule set id based on filter id', async () => {
             const filterId = 42;
             const filter = createFilter(['||example.org^'], filterId);
-            const [{ ruleset }] = await converter.convert([filter]);
+            const [{ ruleset }] = await converter.convert([filter], { withSourceMap: true });
 
             expect(ruleset.getId()).toBe(FilterConverter.getRulesetId(filterId));
         });
@@ -88,6 +88,20 @@ describe('FilterConverter', () => {
 
             // At least the valid rule should be converted
             expect(ruleset.getSafeRulesCount()).toBeGreaterThanOrEqual(1);
+        });
+
+        it('keeps CSP allowlist rules in metadata instead of converting them to DNR allow rules', async () => {
+            const cspRule = "||example.org^$csp=script-src 'none'";
+            const cspException = "@@||example.org^$csp=script-src 'none'";
+            const filter = createFilter([cspRule, cspException]);
+
+            const [{ ruleset }] = await converter.convert([filter], { withSourceMap: true });
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].action.type).toBe('modifyHeaders');
+            expect(ruleset.getCspAllowlistRules().map((rule) => rule.getText()))
+                .toEqual([cspException]);
         });
     });
 

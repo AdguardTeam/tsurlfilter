@@ -60,6 +60,7 @@ export async function loadRulesetAndFilter(
             safeRulesCount,
             rulesetHashMapRaw,
             badFilterRulesRaw,
+            cspAllowlistRulesRaw = [],
             unsafeRules,
         },
         rulesetContentProvider,
@@ -76,6 +77,10 @@ export async function loadRulesetAndFilter(
         .map((rawString: string) => Rule.createFromText(0, 0, rawString))
         .flat();
 
+    const cspAllowlistRules = cspAllowlistRulesRaw
+        .map((rawString: string) => Rule.createFromText(0, 0, rawString))
+        .flat();
+
     // Deserialize the rules hash map
     const hashMapSources = RulesHashMap.deserializeSources(rulesetHashMapRaw);
     const rulesHashMap = new RulesHashMap(hashMapSources);
@@ -89,6 +94,7 @@ export async function loadRulesetAndFilter(
         badFilterRules,
         rulesHashMap,
         unsafeRules,
+        cspAllowlistRules,
     );
 
     console.log(`Loaded ruleset with ID ${id} from ${rulesetPath}`);

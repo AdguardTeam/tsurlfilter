@@ -67,6 +67,30 @@ async function copyToTemp(
     return tempDir;
 }
 
+/**
+ * Parses a ruleset fixture, ignoring empty CSP exception metadata added by newer converters.
+ *
+ * @param raw Serialized ruleset content.
+ *
+ * @returns Parsed ruleset fixture.
+ */
+function parseRulesetFixture(raw: string): unknown {
+    const ruleset = JSON.parse(raw) as Array<{
+        metadata?: {
+            metadata?: {
+                cspAllowlistRulesRaw?: string[];
+            };
+        };
+    }>;
+    const metadata = ruleset[0]?.metadata?.metadata;
+
+    if (metadata?.cspAllowlistRulesRaw?.length === 0) {
+        delete metadata.cspAllowlistRulesRaw;
+    }
+
+    return ruleset;
+}
+
 describe('excludeUnsafeRules', () => {
     let tempDirs: string[] = [];
 
@@ -139,7 +163,7 @@ describe('excludeUnsafeRules', () => {
             const result = await fs.readFile(rulesetBeforePath, 'utf-8');
             const expected = await fs.readFile(expectedRulesetPath, 'utf-8');
 
-            expect(JSON.parse(result)).toEqual(JSON.parse(expected));
+            expect(parseRulesetFixture(result)).toEqual(parseRulesetFixture(expected));
 
             // Check that checksum has been updated and is valid MD5
             const updatedMetadata = JSON.parse(await fs.readFile(metadataPath, 'utf-8'));
@@ -173,7 +197,7 @@ describe('excludeUnsafeRules', () => {
         const result = await fs.readFile(rulesetBeforePath, 'utf-8');
         const expected = await fs.readFile(expectedRulesetPath, 'utf-8');
 
-        expect(JSON.parse(result)).toEqual(JSON.parse(expected));
+        expect(parseRulesetFixture(result)).toEqual(parseRulesetFixture(expected));
     });
 
     it(`respects the limit - should return an error if overflowed`, async () => {

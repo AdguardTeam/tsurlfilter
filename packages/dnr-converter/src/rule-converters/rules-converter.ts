@@ -259,10 +259,18 @@ export class RulesConverter {
                 return null;
             }
 
+            const declarativeRules = key === RulesGroup.Csp
+                ? rules.filter((rule) => !rule.allowlist)
+                : rules;
+
+            if (declarativeRules.length === 0) {
+                return null;
+            }
+
             const converter = new RulesConverter.CONVERTERS[key](options?.resourcesPath);
             return converter.convert(
                 filterId,
-                rules,
+                declarativeRules,
                 usedIds,
             );
         }));

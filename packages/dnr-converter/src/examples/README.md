@@ -2898,9 +2898,83 @@ the scope of one static filter or within the scope of all dynamic rules
 <br/>
 example 1
 
+
+
+
+
+
+
+
+
 ```adblock
+||example.org^$csp=script-src 'none'
 ||example.org^$csp=frame-src 'none'
 ```
+OR
+```adblock
+||example.org^$csp=frame-src 'none' script-src 'none'
+@@||example.org^$csp=frame-src 'none'
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+  {
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Content-Security-Policy",
+          "value": "frame-src 'none'; script-src 'none'"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+    },
+  }
+]
+```
+
+@@||example.org^$csp=frame-src 'none'
+
+[
+  {
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Content-Security-Policy",
+          "value": "script-src 'none'"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+    },
+  }
+]
+
+```
+||example.org^$csp=frame-src 'none',badfilter
+||example.org^$csp=script-src 'none',badfilter
+||example.org^$csp=frame-src 'none' script-src 'none',badfilter
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 ↓↓↓↓ converted to ↓↓↓↓
 
@@ -2914,7 +2988,7 @@ example 1
         {
           "operation": "append",
           "header": "Content-Security-Policy",
-          "value": "frame-src 'none'"
+          "value": "frame-src 'none'; script 'none'"
         }
       ]
     },
@@ -3148,6 +3222,10 @@ example 3
 ```adblock
 @@||example.org/page/*$permissions
 ```
+||example.com^$csp=script-src 'none'; child-src *
+@@||example.com^$csp=child-src *
+
+||example.com^$csp=script-src 'none';
 
 ↓↓↓↓ converted to ↓↓↓↓
 
@@ -3959,7 +4037,6 @@ skip rules with a negation, or regexp, or the rule is an allowlist
 ```adblock
 ||example.org^$removeparam
 ```
-
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json

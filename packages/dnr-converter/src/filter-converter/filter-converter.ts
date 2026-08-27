@@ -414,12 +414,16 @@ export class FilterConverter {
             );
             const convertedRules = await RulesConverter.convert(scannedFilters, options);
             const badFilterRules = scannedFilters.flatMap(({ badFilterRules: rules }) => rules);
+            const cspAllowlistRules = scannedFilters.flatMap(({ rules }) => {
+                return rules.filter((rule) => rule.allowlist && rule.isModifierEnabled('csp'));
+            });
             const result = FilterConverter.collectConvertedResult(
                 FilterConverter.COMBINED_RULESET_ID,
                 filters,
                 scannedFilters,
                 convertedRules,
                 badFilterRules,
+                cspAllowlistRules,
             );
             result.errors = scanErrors.concat(result.errors);
             return [result];
@@ -441,6 +445,7 @@ export class FilterConverter {
                 [scannedFilter],
                 convertedRules,
                 scannedFilter.badFilterRules,
+                scannedFilter.rules.filter((rule) => rule.allowlist && rule.isModifierEnabled('csp')),
             );
             result.errors = scanErrors.concat(result.errors);
             return result;
@@ -460,6 +465,7 @@ export class FilterConverter {
      * @param scannedFilters Already scanned filters.
      * @param convertedRules Converted rules.
      * @param badFilterRules List of rules with $badfilter modifier.
+     * @param cspAllowlistRules List of CSP allowlist rules.
      *
      * @returns Item of {@link ConversionResult}.
      */
@@ -469,6 +475,7 @@ export class FilterConverter {
         scannedFilters: ScannedFilter[],
         convertedRules: ConvertedRules,
         badFilterRules: Rule[],
+        cspAllowlistRules: Rule[],
     ): ConversionResult<IRulesetWithSourceMap> {
         const {
             sourceMapValues,
@@ -512,6 +519,7 @@ export class FilterConverter {
             // Freshly-converted rulesets have no metadata-stored unsafe rules yet;
             // unsafe-rule exclusion is performed later by the serializeCompact() caller.
             [],
+            cspAllowlistRules,
         );
 
         return {

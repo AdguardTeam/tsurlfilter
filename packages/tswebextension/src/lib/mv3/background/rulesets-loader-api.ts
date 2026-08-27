@@ -431,6 +431,7 @@ export class RulesetsLoaderApi {
                 safeRulesCount,
                 unsafeRules,
                 badFilterRulesRaw,
+                cspAllowlistRulesRaw = [],
                 rulesetHashMapRaw,
             },
             rulesetContentProvider,
@@ -449,6 +450,9 @@ export class RulesetsLoaderApi {
         const badFilterRules = badFilterRulesRaw
             .flatMap((rawString) => Rule.createFromText(0, 0, rawString));
 
+        const cspAllowlistRules = cspAllowlistRulesRaw
+            .flatMap((rawString) => Rule.createFromText(0, 0, rawString));
+
         const sources = RulesHashMap.deserializeSources(rulesetHashMapRaw);
         const rulesHashMap = new RulesHashMap(sources);
 
@@ -461,6 +465,7 @@ export class RulesetsLoaderApi {
             badFilterRules,
             rulesHashMap,
             unsafeRules,
+            cspAllowlistRules,
         );
 
         if (filterList.some((f) => f.getId() === rulesetIdNumber)) {

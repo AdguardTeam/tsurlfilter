@@ -3,10 +3,14 @@ import browser from 'webextension-polyfill';
 import {
     type DeclarativeRule,
     type IRulesetWithSourceMap,
+    type Rule,
+    RulesetWithSourceMap,
     type UpdateStaticRulesOptions,
 } from '@adguard/dnr-converter';
 
 import { logger } from '../../common/utils/logger';
+
+import { CspExceptionPlanner } from './csp-exception-planner';
 
 /**
  * Reserved stealth rule ids for the DNR.
@@ -121,18 +125,25 @@ export class SessionRulesApi {
      * @param enabledStaticRulesets List of enabled static rule sets.
      * @param declarativeRulesToCancel List of declarative rules to cancel
      * (collected from dynamic rules).
+     * @param dynamicCspAllowlistRules CSP allowlist rules collected from dynamic rules.
      *
      * @returns Resolved promise when the session rules are updated.
      */
     public static async updateSessionRules(
         enabledStaticRulesets: IRulesetWithSourceMap[],
         declarativeRulesToCancel?: UpdateStaticRulesOptions[] | undefined,
+        dynamicCspAllowlistRules: Rule[] = [],
     ): Promise<void> {
         const rulesToCancel = new Map<string, number[]>(
             declarativeRulesToCancel
                 ? declarativeRulesToCancel.map(({ rulesetId, disableRuleIds }) => [rulesetId, disableRuleIds])
                 : [],
         );
+        const cspAllowlistRules = [
+            ...enabledStaticRulesets.flatMap((ruleset) => ruleset.getCspAllowlistRules()),
+            ...dynamicCspAllowlistRules,
+        ];
+        const unsupportedCspExceptions = new Set<Rule>();
 
         // Apply $badfilter rules from dynamic rules to static rules.
         const unsafeRulesFromStaticFilters = await Promise.all(
@@ -140,13 +151,38 @@ export class SessionRulesApi {
                 const rules = await r.getUnsafeRules();
 
                 const rulesToRemove = rulesToCancel.get(r.getId()) || [];
+                const activeRules = rules.filter((rule) => !rulesToRemove.includes(rule.id));
+                const cspRules = await Promise.all(activeRules.map(async (rule) => {
+                    if (!CspExceptionPlanner.isCspRule(rule)) {
+                        return [rule];
+                    }
+
+                    try {
+                        const sourceRules = (await r.getRulesById(rule.id))
+                            .flatMap(RulesetWithSourceMap.getRuleBySourceRule);
+                        const plan = CspExceptionPlanner.plan(rule, sourceRules, cspAllowlistRules);
+
+                        plan.unsupportedExceptions.forEach((exception) => {
+                            unsupportedCspExceptions.add(exception);
+                        });
+
+                        return plan.rules;
+                    } catch (error) {
+                        logger.error(`[tsweb.SessionRulesApi.updateSessionRules]: Cannot apply CSP exceptions to rule ${rule.id} from ruleset '${r.getId()}':`, error);
+                        return [rule];
+                    }
+                }));
 
                 return {
                     rulesetId: r.getId(),
-                    rules: rules.filter((rule) => !rulesToRemove.includes(rule.id)),
+                    rules: cspRules.flat(),
                 };
             }),
         );
+
+        if (unsupportedCspExceptions.size > 0) {
+            logger.warn(`[tsweb.SessionRulesApi.updateSessionRules]: CSP exceptions with unsupported DNR scopes remain inactive: ${Array.from(unsupportedCspExceptions, (rule) => rule.getText()).join(', ')}`);
+        }
 
         // Before collect rules to enable, record which rules should be removed
         // from browser session rules and also remove them from in-memory source

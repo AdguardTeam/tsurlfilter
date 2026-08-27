@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Wrong `frameDomain` in cosmetic hits filtering-log events for subframes, breaking
   exception rules created from the filtering log [AdguardBrowserExtension#1449].
+- Apply `$csp` allowlist exceptions to MV3 unsafe CSP session rules without using
+  broad DNR `allow` rules. Exact and request-domain exception scopes are supported;
+  unsupported scopes remain inactive.
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
 

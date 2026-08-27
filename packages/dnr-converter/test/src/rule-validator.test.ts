@@ -145,9 +145,9 @@ describe('RuleDeclarativeValidator', () => {
     });
 
     describe('shouldConvertRule — partial support (custom checks)', () => {
-        it('throws for allowlist $csp rule', () => {
+        it('accepts allowlist $csp rule for CSP exception planning', () => {
             const [rule] = Rule.createFromText(1, 0, '@@||example.com^$csp');
-            expect(() => RuleDeclarativeValidator.shouldConvertRule(rule)).toThrow();
+            expect(RuleDeclarativeValidator.shouldConvertRule(rule)).toBe(true);
         });
 
         it('throws for allowlist $redirect rule', () => {

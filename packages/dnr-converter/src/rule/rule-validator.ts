@@ -389,7 +389,6 @@ export class RuleDeclarativeValidator {
         },
         [OPTION_NAMES.CSP]: {
             name: '$csp',
-            customChecks: [RuleDeclarativeValidator.checkAllowRulesFn],
         },
         [OPTION_NAMES.REDIRECT]: {
             // $redirect and $redirect-rule modifiers are falling under this option

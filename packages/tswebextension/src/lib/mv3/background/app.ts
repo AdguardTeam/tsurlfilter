@@ -451,6 +451,7 @@ export class TsWebExtension implements AppInterface<
             await SessionRulesApi.updateSessionRules(
                 enabledStaticRulesets,
                 res.dynamicRules.declarativeRulesToCancel,
+                res.dynamicRules.ruleset.getCspAllowlistRules(),
             );
 
             await CspService.addCspReportBlockingRule();

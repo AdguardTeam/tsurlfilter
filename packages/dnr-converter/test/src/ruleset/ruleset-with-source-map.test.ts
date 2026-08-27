@@ -88,6 +88,9 @@ const createRuleset = async (
     const { filters } = await RulesScanner.scanFilters([filter]);
     const [scannedStaticFilter] = filters;
     const { badFilterRules } = scannedStaticFilter;
+    const cspAllowlistRules = scannedStaticFilter.rules.filter((rule) => {
+        return rule.allowlist && rule.isModifierEnabled('csp');
+    });
 
     const {
         sourceMapValues,
@@ -136,6 +139,7 @@ const createRuleset = async (
         badFilterRules,
         rulesHashMap,
         unsafeRules,
+        cspAllowlistRules,
     );
 };
 
@@ -212,6 +216,7 @@ describe('Ruleset', () => {
             '||example.net##h2',
             '@@||example.io^',
             '@@||evil.com^$badfilter',
+            '@@||csp.example^$csp',
         ];
         const filterId = 99;
 
@@ -246,6 +251,7 @@ describe('Ruleset', () => {
                 safeRulesCount,
                 rulesetHashMapRaw,
                 badFilterRulesRaw,
+                cspAllowlistRulesRaw = [],
                 unsafeRules,
             },
             rulesetContentProvider,
@@ -267,6 +273,8 @@ describe('Ruleset', () => {
                     rawString,
                 ),
             );
+        const cspAllowlistRules = cspAllowlistRulesRaw
+            .flatMap((rawString) => Rule.createFromText(filterId, 0, rawString));
 
         const deserializedRuleset = new RulesetWithSourceMap(
             ruleset.getId(),
@@ -277,12 +285,17 @@ describe('Ruleset', () => {
             badFilterRules,
             rulesetHashMap,
             unsafeRules,
+            cspAllowlistRules,
         );
 
         // check $badfilter rules
         expect(deserializedRuleset.getBadFilterRules()).toHaveLength(ruleset.getBadFilterRules().length);
         expect(deserializedRuleset.getBadFilterRules()[0].getText())
             .toEqual(ruleset.getBadFilterRules()[0].getText());
+
+        expect(deserializedRuleset.getCspAllowlistRules()).toHaveLength(1);
+        expect(deserializedRuleset.getCspAllowlistRules()[0].getText())
+            .toEqual('@@||csp.example^$csp');
 
         // check declarative rules
         const d1 = await ruleset.getDeclarativeRules();

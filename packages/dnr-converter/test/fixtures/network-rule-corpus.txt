@@ -72,6 +72,7 @@
 ! === $csp modifier ===
 ||example.com^$csp=default-src 'self'
 ||example.com^$csp=script-src 'none'
+@@||example.com^$csp
 
 ! === $redirect modifier ===
 ||example.com^$redirect=noopjs

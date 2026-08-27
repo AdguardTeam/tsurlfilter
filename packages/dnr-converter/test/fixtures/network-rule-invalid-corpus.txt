@@ -29,9 +29,6 @@
 ! === $redirect-rule — not supported ===
 ||example.com^$redirect-rule=noopjs
 
-! === Allowlist with $csp — not supported ===
-@@||example.com^$csp
-
 ! === Allowlist with $removeparam — not supported ===
 @@||example.com^$removeparam
 

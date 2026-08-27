@@ -47,6 +47,16 @@ export interface IRulesetWithSourceMap extends IBaseRuleset {
     getBadFilterRules(): Rule[];
 
     /**
+     * Returns network allowlist rules with the `$csp` modifier.
+     *
+     * These rules are stored for runtime CSP exception planning and are not
+     * converted to DNR `allow` rules.
+     *
+     * @returns List of CSP allowlist rules.
+     */
+    getCspAllowlistRules(): Rule[];
+
+    /**
      * Returns dictionary with hashes of all ruleset's source rules.
      *
      * @returns Dictionary with hashes of all ruleset's source rules.
@@ -140,6 +150,7 @@ const serializedRulesetDataValidator = strictObjectByType<SerializedRulesetData>
     safeRulesCount: v.number(),
     rulesetHashMapRaw: v.string(),
     badFilterRulesRaw: v.array(v.string()),
+    cspAllowlistRulesRaw: v.optional(v.array(v.string())),
     unsafeRules: v.array(DeclarativeRuleValidator),
 });
 
@@ -152,6 +163,7 @@ export type SerializedRulesetData = {
     safeRulesCount: number;
     rulesetHashMapRaw: string;
     badFilterRulesRaw: string[];
+    cspAllowlistRulesRaw?: string[];
     unsafeRules: DeclarativeRule[];
 };
 
@@ -253,6 +265,11 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     private badFilterRules: Rule[];
 
     /**
+     * List of network allowlist rules with the `$csp` modifier.
+     */
+    private cspAllowlistRules: Rule[];
+
+    /**
      * Keeps array of source filter lists.
      */
     private filterList: Map<number, IFilter> = new Map();
@@ -282,6 +299,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      * @param badFilterRules List of rules with $badfilter modifier.
      * @param rulesHashMap Dictionary with hashes for all source rules.
      * @param unsafeRules List of unsafe DNR rules.
+     * @param cspAllowlistRules List of CSP allowlist rules.
      */
     constructor(
         id: string,
@@ -292,6 +310,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         badFilterRules: Rule[],
         rulesHashMap: IRulesHashMap,
         unsafeRules: DeclarativeRule[],
+        cspAllowlistRules: Rule[] = [],
     ) {
         this.id = id;
         this.safeRulesCount = safeRulesCount;
@@ -301,6 +320,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         this.badFilterRules = badFilterRules;
         this.rulesHashMap = rulesHashMap;
         this.unsafeRules = unsafeRules;
+        this.cspAllowlistRules = cspAllowlistRules;
         this.contentLoader = new LazyLoader<void>(async () => {
             const {
                 loadSourceMap,
@@ -472,6 +492,11 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     /** @inheritdoc */
     public getBadFilterRules(): Rule[] {
         return this.badFilterRules;
+    }
+
+    /** @inheritdoc */
+    public getCspAllowlistRules(): Rule[] {
+        return this.cspAllowlistRules;
     }
 
     /** @inheritdoc */
@@ -649,6 +674,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
             safeRulesCount: this.safeRulesCount,
             rulesetHashMapRaw: this.rulesHashMap.serialize(),
             badFilterRulesRaw: this.badFilterRules.map((r) => r.getText()),
+            cspAllowlistRulesRaw: this.cspAllowlistRules.map((r) => r.getText()),
             unsafeRules,
         };
     }
