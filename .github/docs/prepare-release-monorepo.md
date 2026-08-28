@@ -33,7 +33,7 @@ After the PR is merged, the monorepo publish pipeline
 | Input | Type | Default | Description |
 | --- | --- | --- | --- |
 | `package` | string | *required* | Package directory name under `packages/` (e.g. `agtree`) |
-| `version` | string | *required* | Version to release (e.g. `4.2.0`, `4.2.0-beta.1`) |
+| `version` | string | *required* | Version to release, with the `v` prefix (e.g. `v4.2.0`, `v4.2.0-beta.1`) |
 | `team` | string | `extensions` | Team label for runner selection |
 
 ## Prerequisites
@@ -56,9 +56,11 @@ After the PR is merged, the monorepo publish pipeline
 ### Version input semantics
 
 `version` is required because package manifests intentionally do not store a
-version. The value must match
-`<M>.<m>.<p>[-<channel>.<N>]`, otherwise the workflow fails before any
-Docker/git operation.
+version. Like the org-wide `create-release-pr` schema, the value is a release
+version **with** a leading `v`: `v<M>.<m>.<p>[-<channel>.<N>]` (e.g.
+`v4.2.0`, `v4.2.0-beta.1`). A bare version without the `v` is also accepted
+and normalized. Anything else fails the workflow before any Docker/git
+operation.
 
 ## Troubleshooting
 

@@ -3,6 +3,11 @@ name: Prepare release (monorepo package)
 # Opens a release PR for a single versionless package of a monorepo: finalizes
 # packages/<package>/CHANGELOG.md, pushes branch
 # release-bump/<package>-v<version> and opens a PR back to the calling branch.
+#
+# Like the org-wide create-release-pr.yml schema, the `version` input takes the
+# future release version WITH a leading "v" (e.g. v5.0.4, v5.0.4-beta.1); the
+# resolve step strips the prefix so the changelog heading and the <package>-
+# v<version> branch/tag use the bare version.
 
 on:
   workflow_call:
@@ -12,7 +17,7 @@ on:
         type: string
         required: true
       version:
-        description: 'Version to release (e.g. 4.2.0, 4.2.0-beta.1)'
+        description: 'Version to release, with the "v" prefix (e.g. v4.2.0, v4.2.0-beta.1)'
         type: string
         required: true
       team:
@@ -59,8 +64,15 @@ jobs:
             echo "::error::Unknown package '$PACKAGE': packages/${PACKAGE}/CHANGELOG.md does not exist"
             exit 1
           fi
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?$ ]]; then
-            echo "::error::Invalid version '$VERSION'. Expected: <M>.<m>.<p>[-<channel>.<N>]"
+          # Normalize to a bare version: accept an optional leading "v" so the
+          # input matches the org-wide prepare-release schema (see
+          # create-release-pr.yml), then validate the bare semver. `target` is
+          # the stripped version used for the changelog heading and the
+          # <package>-v<version> branch/commit/title.
+          if [[ "$VERSION" =~ ^v?([0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?)$ ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+          else
+            echo "::error::Invalid version '$VERSION'. Expected: [v]<M>.<m>.<p>[-<channel>.<N>]"
             exit 1
           fi
           echo "target=$VERSION" >> "$GITHUB_OUTPUT"

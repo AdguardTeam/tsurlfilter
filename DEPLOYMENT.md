@@ -35,7 +35,9 @@ derived from the package changelog and injected temporarily by
 ## Release process
 
 1. **Prepare**: dispatch `prepare-release.yml` with the package name and required
-   `version` input. It finalizes the package's `CHANGELOG.md`, pushes
+   `version` input — a release version **with** the `v` prefix, e.g. `v5.0.4`
+   (matching the org-wide `create-release-pr` schema; a bare `5.0.4` is also
+   accepted). It finalizes the package's `CHANGELOG.md`, pushes
    `release-bump/<package>-v<version>` and opens the release PR.
 2. **Merge**: review and merge the release PR into `master`.
 3. **Publish**: `publish-release.yml` auto-fires on the merged
