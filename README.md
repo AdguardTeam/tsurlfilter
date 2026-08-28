@@ -1,5 +1,8 @@
 # AdGuard Extensions Libraries
 
+> **Note:** This package is developed in [AdGuardSoftwareLimited/ext-tsurlfilter].
+> The [AdguardTeam/tsurlfilter] repository is a public mirror.
+
 [![badge-open-issues]][open-issues] [![badge-closed-issues]][closed-issues] [![badge-license]][license-url]
 
 This monorepo provides a full stack of TypeScript libraries for content
@@ -13,6 +16,8 @@ extension APIs — and is used in AdGuard browser extensions and other projects.
 [closed-issues]: https://github.com/AdguardTeam/tsurlfilter/issues?q=is%3Aissue+is%3Aclosed
 [license-url]: https://github.com/AdguardTeam/tsurlfilter/blob/master/LICENSE
 [open-issues]: https://github.com/AdguardTeam/tsurlfilter/issues
+[AdGuardSoftwareLimited/ext-tsurlfilter]: https://github.com/AdGuardSoftwareLimited/ext-tsurlfilter
+[AdguardTeam/tsurlfilter]: https://github.com/AdguardTeam/tsurlfilter
 
 ## Key Concepts
 
@@ -36,7 +41,7 @@ Declarative Net Request rulesets for MV3), and
 ### Core Libraries
 
 | Package | Description |
-|---|---|
+| ------- | ----------- |
 | [`@adguard/tswebextension`][tswebextensionreadme] | Wraps the browser WebExtension API to integrate `tsurlfilter` into MV2 and MV3 extensions. |
 | [`@adguard/tsurlfilter`][tsurlfilterreadme] | Content blocking engine — parses AdGuard rules, matches requests, and provides a declarative converter. |
 | [`@adguard/agtree`][agtreereadme] | Universal adblock filter list parser, converter, and validator producing a detailed AST. |
@@ -50,7 +55,7 @@ Declarative Net Request rulesets for MV3), and
 ### Examples and Benchmarks
 
 | Package | Description |
-|---|---|
+| ------- | ----------- |
 | [`examples/adguard-api`][exampleadguardapi] | Sample MV2 extension using `@adguard/api`. |
 | [`examples/adguard-api-mv3`][exampleadguardapimv3] | Sample MV3 extension using `@adguard/api-mv3`. |
 | [`examples/tswebextension-mv2`][exampletswebextensionmv2] | Sample MV2 extension using `@adguard/tswebextension` directly. |
