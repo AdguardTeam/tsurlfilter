@@ -1,25 +1,33 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  parameters:
+    - name: key
+      required: true
+      description: Key name to be set.
+    - name: value
+      required: true
+      description: Key value.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: set-local-storage-item
   version_added: 1.4.3
+  description: |-
+      Adds specified key and its value to localStorage object, or updates the value of the key if it already exists. Scriptlet won't set item if storage is full.
+      To remove item from localStorage use $remove$ as a value.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-local-storage-item
   aliases:
     - set-local-storage-item.js
     - ubo-set-local-storage-item.js
     - ubo-set-local-storage-item
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-local-storage-item
-  parameters:
-    - name: key
-      required: true
-    - name: value
-      required: true
 
 ubo_any:
   name: set-local-storage-item.js
   version_added: 1.50.1b4
+  description: Set a local/session storage entry to a specific, allowed value. Scriptlet won't set item if storage is full. Double quotes surrouding the key value are allowed.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-local-storage-itemjs-
-  parameters:
-    - name: key
-      required: true
-    - name: value
-      required: true
+  aliases:
+    - set-local-storage-item
+  ubo_tokens:
+    - name: reload
+      description: Number of milliseconds to wait before reloading the page after the storage item is set. The page is only reloaded if the value was actually changed.
+      value_format: ^\d+$
+      value_type: integer

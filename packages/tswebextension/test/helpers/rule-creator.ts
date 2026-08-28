@@ -6,9 +6,9 @@ import {
     type NetworkRule as NetworkRuleNode,
     NetworkRuleType,
     RuleCategory,
+    RuleParserPipeline,
 } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
-import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
 import {
     CosmeticRule,
     type IRule,
@@ -16,6 +16,8 @@ import {
     RULE_INDEX_NONE,
     RuleFactory,
 } from '@adguard/tsurlfilter';
+
+const parser = new RuleParserPipeline();
 
 /**
  * Helper function to create a network rule from a string or a parsed node.
@@ -104,10 +106,9 @@ export const createRule = (
     let node: AnyRule;
 
     if (isString(rule)) {
-        node = RuleParser.parse(rule.trim(), {
-            ...defaultParserOptions,
+        node = parser.parse(rule.trim(), {
             parseHostRules: !ignoreHost,
-        });
+        }) as AnyRule;
     } else {
         node = rule;
     }

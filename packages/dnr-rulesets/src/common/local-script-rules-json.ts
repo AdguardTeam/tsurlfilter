@@ -2,7 +2,7 @@ import type { CosmeticRule, JsInjectionRule } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 
 import { logger } from '../utils/logger';
-import { isJsInjectionRule, parseFilterList } from './local-script-rules-base';
+import { getRuleSourceText, isJsInjectionRule, parseFilterList } from './local-script-rules-base';
 
 /**
  * Domain configuration for a script rule.
@@ -115,7 +115,7 @@ export class LocalScriptRulesJson {
         const filterStr = filterRules.join('\n');
 
         // Parse the filter list using agtree parser
-        const filterListNode = parseFilterList(filterStr, false);
+        const filterListNode = parseFilterList(filterStr);
 
         // Extract only JS injection rules (excludes scriptlets)
         filterListNode.children.forEach((ruleNode) => {
@@ -136,8 +136,10 @@ export class LocalScriptRulesJson {
                     existing.push(domainConfig);
                 }
             } catch (error) {
-                const fullRule = ruleNode.raws?.text || 'unknown rule';
-                logger.error(`Error parsing script rule with domains: ${fullRule}`, error);
+                logger.error(
+                    `Error parsing script rule with domains: ${getRuleSourceText(filterStr, ruleNode)}`,
+                    error,
+                );
             }
         });
 

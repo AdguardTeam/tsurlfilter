@@ -5,9 +5,43 @@ represented by the file `third-party.yml`.
 
 ## File structure
 
-Each file contains an object, where the key is the
-[actual adblocker ID](../README.md#supported-adblockers-and-platforms) and the value is the object with the following
-fields:
+Each file contains an object, where the key is either:
+
+- The special `common` key for properties shared across all platforms
+- An [actual adblocker ID](../README.md#supported-adblockers-and-platforms)
+
+### The `common` key
+
+The `common` key allows you to define properties that are shared across all platforms. These properties are
+automatically merged into each platform-specific entry. This reduces duplication and improves maintainability.
+
+**Example:**
+
+```yaml
+common:
+  name: important
+  description: |-
+    The `$important` modifier applied to a rule increases its priority
+    over any other rule without `$important` modifier.
+  negatable: false
+
+adg_any:
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#important-modifier
+
+ubo_any:
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#important
+```
+
+In this example, `name`, `description`, and `negatable` are common across all platforms, while `docs` links are
+platform-specific.
+
+> [!NOTE]
+> If a field is defined in both `common` and a platform-specific entry, the platform-specific value will override
+> the common value.
+
+### Platform-specific entries
+
+Each platform-specific entry is an object with the following fields:
 
 <!-- markdownlint-disable MD013 -->
 
@@ -55,31 +89,8 @@ The value format describes the format of the modifier value. It can be one of th
           It matches for `$modifier=1` (valid), but not for `$modifier=abc` (invalid).
 - Pre-defined validator name:
     - Validating the value is done by using the pre-defined validator. The value is valid if it matches the validator.
-    - Currently available validators:
-        - list of domains separated by the vertical bar `|`:
-            - `pipe_separated_apps` validates value for `$app` modifier
-            - `pipe_separated_domains` validates value for `$domain` modifier
-            - `pipe_separated_denyallow_domains` validates value for `$denyallow` modifier —
-              negation and wildcard are not allowed compared to `$domain` modifier
-            <!-- TODO: implement later -->
-            <!-- - `pipe_separated_extensions` validates value for `$extension` modifier -->
-            - `pipe_separated_methods` validates value for `$method` modifier
-            - `pipe_separated_stealth_options` validates value for `$stealth` modifier
-            - `csp_value` validates value for `$csp` modifier
-            - `permissions_value` validates value for `$permissions` modifier
-            - `referrerpolicy_value` validates value for `$referrerpolicy` modifier
-        - `url` validates that the value is a valid URL.
-        - `regexp` validates that the value is a valid regular expression.
-            > :warning: **This is not the same as when you assign a regular expression to value_format!**
-            >
-            > - If you specify `value_format: /^[0-9]+$/`,
-            >   then the value is valid if it matches the regular expression
-            >   (it is numeric, for example: `$modifier=1`, but not `$modifier=a`).
-            > - If you specify `value_format: regexp`, then the value is valid if it's a valid regular expression,
-            >   for example: `$modifier=/^valid_regex_value$/`.
-            >
-        - Example:
-        - For validating `domain` modifier, you can use `value_format: pipe_separated_domains`.
+    - For a complete list of available validators and their usage, see the [validators README](../validators/README.md).
+    - Example: For validating `domain` modifier, you can use `value_format: pipe_separated_domains`.
 
 > [!NOTE]
 > In YAML files, you can use XRegExp syntax for regular expressions.

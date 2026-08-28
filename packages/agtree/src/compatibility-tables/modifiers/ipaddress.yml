@@ -1,0 +1,8 @@
+ubo_any:
+  name: ipaddress
+  version_added: 1.60.0
+  description: The purpose is to block according to the IP address of a network request.
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#ipaddress
+  assignable: true
+  negatable: false
+  value_format: regexp

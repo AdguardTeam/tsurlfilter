@@ -6,7 +6,7 @@ import { parse } from 'acorn';
 import { minify } from 'terser';
 
 import { logger } from '../utils/logger';
-import { isJsInjectionRule, parseFilterList } from './local-script-rules-base';
+import { getRuleSourceText, isJsInjectionRule, parseFilterList } from './local-script-rules-base';
 
 /**
  * Handles local script rules in JS module format.
@@ -223,8 +223,8 @@ export class LocalScriptRulesJs {
         const rules = new Set<string>();
         const filterStr = filterRules.join('\n');
 
-        // Need raw text for error reporting
-        const filterListNode = parseFilterList(filterStr, true);
+        // Locations are enabled so rule text can be sliced from filterStr for error reporting
+        const filterListNode = parseFilterList(filterStr);
 
         // Extract only JS injection rules (excludes scriptlets)
         filterListNode.children.forEach((ruleNode) => {
@@ -241,7 +241,7 @@ export class LocalScriptRulesJs {
                 rules.add(rawBody);
             } catch (error) {
                 // Invalid rules are skipped, but we log the error
-                logger.error(`Error parsing script rule: ${ruleNode.raws?.text}`, error);
+                logger.error(`Error parsing script rule: ${getRuleSourceText(filterStr, ruleNode)}`, error);
             }
         });
 

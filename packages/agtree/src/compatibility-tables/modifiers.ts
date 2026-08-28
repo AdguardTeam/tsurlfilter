@@ -2,14 +2,24 @@
  * @file Compatibility tables for modifiers.
  */
 
+import { sprintf } from 'sprintf-js';
+
+import { parseModifier } from '../ast-utils/parsing';
+import { type Modifier } from '../nodes';
 import { UNDERSCORE } from '../utils/constants';
-import { deepFreeze } from '../utils/deep-freeze';
+import { getErrorMessage } from '../utils/error';
 import { isValidNoopModifier } from '../utils/noop-modifier';
+import { isString } from '../utils/type-guards';
+import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from '../validator/constants';
 
 import { CompatibilityTableBase } from './base';
-import { modifiersCompatibilityTableData } from './compatibility-table-data';
+import { modifiersCompatibilityTableData } from './modifiers-compatibility-table-data';
+import { type Platform } from './platform';
+import { redirectResourceTable } from './redirect-resource-bridge';
 import { type ModifierDataSchema } from './schemas';
 import { type CompatibilityTable } from './types';
+import { isRegisteredValidator, REDIRECT_RESOURCE_VALIDATOR_NAME, validate } from './validators';
+import { ValidationContext } from './validators/types';
 
 /**
  * Transforms the name of the modifier to a normalized form.
@@ -44,12 +54,199 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
     constructor(data: CompatibilityTable<ModifierDataSchema>) {
         super(data, noopModifierNameNormalizer);
     }
-}
 
-/**
- * Deep freeze the compatibility table data to avoid accidental modifications.
- */
-deepFreeze(modifiersCompatibilityTableData);
+    /**
+     * Validates a modifier against the compatibility table.
+     *
+     * @param data Modifier as string (to be parsed) or already parsed Modifier node.
+     * @param ctx Validation context to collect issues into.
+     * @param platform Platform to validate against.
+     * @param isExceptionRule Whether the modifier is used in an exception rule (default: false).
+     * @param ruleModifierNames Set of modifier names in the current rule (for conflict detection).
+     */
+    public validate(
+        data: Modifier | string,
+        ctx: ValidationContext,
+        platform?: Platform,
+        isExceptionRule?: boolean,
+        ruleModifierNames?: Set<string>,
+    ): void {
+        if (platform === undefined) {
+            throw new Error('Platform is required for modifier validation');
+        }
+
+        let modifier: Modifier;
+
+        if (isString(data)) {
+            try {
+                modifier = parseModifier(data);
+            } catch (error) {
+                ctx.addError(getErrorMessage(error));
+                return;
+            }
+        } else {
+            modifier = data;
+        }
+
+        const normalizedName = this.nameTransformer
+            ? this.nameTransformer(modifier.name.value)
+            : modifier.name.value;
+
+        const specificBlockerData = this.get(normalizedName, platform);
+
+        if (!specificBlockerData) {
+            ctx.addErrorFromNode(
+                sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, platform.toHumanReadable()),
+                modifier,
+            );
+            return;
+        }
+
+        if (specificBlockerData.removed) {
+            ctx.addErrorFromNode(
+                `${VALIDATION_ERROR_PREFIX.REMOVED}: '${normalizedName}'`,
+                modifier,
+            );
+            return;
+        }
+
+        if (specificBlockerData.deprecated) {
+            ctx.addWarningFromNode(
+                `Deprecated modifier: '${normalizedName}'`,
+                modifier,
+            );
+        }
+
+        if (specificBlockerData.blockOnly && isExceptionRule) {
+            ctx.addErrorFromNode(
+                `${VALIDATION_ERROR_PREFIX.BLOCK_ONLY}: '${normalizedName}'`,
+                modifier,
+            );
+        }
+
+        if (specificBlockerData.exceptionOnly && !isExceptionRule) {
+            ctx.addErrorFromNode(
+                `${VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY}: '${normalizedName}'`,
+                modifier,
+            );
+        }
+
+        if (!specificBlockerData.negatable && modifier.exception) {
+            ctx.addErrorFromNode(
+                `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER}: '${normalizedName}'`,
+                modifier,
+            );
+        }
+
+        if (specificBlockerData.assignable) {
+            if (!modifier.value) {
+                if (specificBlockerData.valueOptional) {
+                    return;
+                }
+                ctx.addErrorFromNode(
+                    `${VALIDATION_ERROR_PREFIX.VALUE_REQUIRED}: '${normalizedName}'`,
+                    modifier,
+                );
+                return;
+            }
+
+            if (!specificBlockerData.valueFormat) {
+                throw new Error(`${SOURCE_DATA_ERROR_PREFIX.NO_VALUE_FORMAT_FOR_ASSIGNABLE}: '${normalizedName}'`);
+            }
+
+            this.validateValue(
+                modifier,
+                specificBlockerData.valueFormat,
+                specificBlockerData.valueFormatFlags,
+                ctx,
+                platform,
+            );
+            return;
+        }
+
+        if (modifier.value) {
+            ctx.addErrorFromNode(
+                `${VALIDATION_ERROR_PREFIX.VALUE_FORBIDDEN}: '${normalizedName}'`,
+                modifier.value,
+            );
+        }
+
+        if (specificBlockerData.conflicts) {
+            for (const conflict of specificBlockerData.conflicts) {
+                const hasConflict = ruleModifierNames?.has(conflict);
+                if (specificBlockerData.inverseConflicts ? !hasConflict : hasConflict) {
+                    ctx.addErrorFromNode(
+                        `${VALIDATION_ERROR_PREFIX.CONFLICTS_WITH}: '${conflict}'`,
+                        modifier,
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks whether the value for given `modifier` is valid.
+     *
+     * @param modifier Modifier AST node.
+     * @param valueFormat Value format for the modifier.
+     * @param valueFormatFlags Optional; RegExp flags for the value format.
+     * @param ctx Validation context to collect issues into.
+     * @param platform Optional platform to validate against.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    private validateValue(
+        modifier: Modifier,
+        valueFormat: string,
+        valueFormatFlags: string | null | undefined,
+        ctx: ValidationContext,
+        platform?: Platform,
+    ): void {
+        const modifierName = modifier.name.value;
+        const modifierValue = modifier.value?.value ?? '';
+
+        // Platform-aware redirect resource validator — handled directly to avoid
+        // circular dependency through validators/index.ts → redirect-resource.ts → redirects.ts.
+        if (valueFormat === REDIRECT_RESOURCE_VALIDATOR_NAME) {
+            const tempCtx = new ValidationContext();
+            redirectResourceTable.validate(modifierValue, tempCtx, platform);
+            if (tempCtx.issues) {
+                const node = modifier.value ?? modifier;
+                for (const issue of tempCtx.issues) {
+                    if (issue.type === 'error') {
+                        ctx.addErrorFromNode(issue.messageId, node);
+                    } else {
+                        ctx.addWarningFromNode(issue.messageId, node);
+                    }
+                }
+            }
+            return;
+        }
+
+        if (isRegisteredValidator(valueFormat)) {
+            validate(valueFormat, modifierValue, ctx, platform);
+            return;
+        }
+
+        let regExp: RegExp;
+        try {
+            if (isString(valueFormatFlags)) {
+                regExp = new RegExp(valueFormat, valueFormatFlags);
+            } else {
+                regExp = new RegExp(valueFormat);
+            }
+        } catch (e) {
+            throw new Error(`${SOURCE_DATA_ERROR_PREFIX.INVALID_VALUE_FORMAT_REGEXP}: '${modifierName}'`);
+        }
+
+        const isValid = regExp.test(modifierValue);
+        if (!isValid) {
+            ctx.addErrorFromNode(
+                `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`,
+                modifier.value ?? modifier,
+            );
+        }
+    }
+}
 
 /**
  * Compatibility table instance for modifiers.

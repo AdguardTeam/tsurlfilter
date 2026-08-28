@@ -1,6 +1,11 @@
-adg_os_any:
+common:
   name: genericblock
   description: Disables generic basic rules on pages that correspond to exception rule.
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+
+adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
   conflicts:
     - domain
@@ -11,13 +16,8 @@ adg_os_any:
     - jsinject
     - content
     - badfilter
-  inverse_conflicts: true
-  negatable: false
-  exception_only: true
 
 adg_ext_any:
-  name: genericblock
-  description: Disables generic basic rules on pages that correspond to exception rule.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
   conflicts:
     - domain
@@ -26,13 +26,8 @@ adg_ext_any:
     - elemhide
     - jsinject
     - badfilter
-  inverse_conflicts: true
-  negatable: false
-  exception_only: true
 
 adg_cb_ios:
-  name: genericblock
-  description: Disables generic basic rules on pages that correspond to exception rule.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
   conflicts:
     - domain
@@ -41,13 +36,8 @@ adg_cb_ios:
     - elemhide
     - jsinject
     - badfilter
-  inverse_conflicts: true
-  negatable: false
-  exception_only: true
 
 adg_cb_safari:
-  name: genericblock
-  description: Disables generic basic rules on pages that correspond to exception rule.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
   conflicts:
     - domain
@@ -56,13 +46,6 @@ adg_cb_safari:
     - elemhide
     - jsinject
     - badfilter
-  inverse_conflicts: true
-  negatable: false
-  exception_only: true
 
 abp_ext_any:
-  name: genericblock
-  description: Disables generic basic rules on pages that correspond to exception rule.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
-  negatable: false
-  exception_only: true

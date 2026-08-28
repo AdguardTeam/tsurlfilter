@@ -1,0 +1,16 @@
+# TODO: add "version_added" field once it is available in scriptlets library (it should be added in v2.2.16 scriptlets library, ensure it later)
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: prevent-constructor
+  description: Prevents a constructor call if the constructor name and optionally the first argument match the specified criteria.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-constructor
+  parameters:
+    - name: constructorName
+      required: true
+      description: String, the name of the constructor to prevent, e.g., `Promise`, `MutationObserver`. Must be a property of the global `window` object.
+    - name: argumentsMatch
+      required: false
+      description: |-
+        String or regular expression, or JSON array of patterns matching arguments passed to the constructor. Defaults to match all constructors if not specified.
+        Possible values:
+          - string — matches the first argument only;
+          - JSON array — matches arguments positionally, should be wrapped in `[]`; use `"*"` to skip positions, e.g., if only second argument should be matched.

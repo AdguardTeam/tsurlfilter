@@ -2276,6 +2276,27 @@ This table is generated from the compatibility data.
       <td></td>
       <td>
         <a
+          href="https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#ipaddress"
+          >ipaddress</a
+        >
+      </td>
+      <td>
+        <a
+          href="https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#ipaddress"
+          >ipaddress</a
+        >
+      </td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td>
+        <a
           href="https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#popunder"
           >popunder</a
         >
@@ -2326,6 +2347,27 @@ This table is generated from the compatibility data.
         <a
           href="https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#strict3p"
           >strict3p</a
+        >
+      </td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td>
+        <a
+          href="https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#urlskip"
+          >urlskip</a
+        >
+      </td>
+      <td>
+        <a
+          href="https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#urlskip"
+          >urlskip</a
         >
       </td>
       <td></td>

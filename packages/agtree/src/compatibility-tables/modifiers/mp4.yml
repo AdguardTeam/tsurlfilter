@@ -1,33 +1,23 @@
-adg_os_any:
-  name: mp4
-  description: |-
-    As a response to blocked request AdGuard returns a short video placeholder.
-    Rules with `$mp4` are still supported and being converted into `$redirect=noopmp4-1s` now
-    but the support shall be removed in the future.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#mp4-modifier
-  deprecated: true
-  deprecation_message: |-
-    Rules with `$mp4` are still supported and being converted into `$redirect=noopmp4-1s` now
-    but the support shall be removed in the future.
-  negatable: false
-
-adg_ext_any:
-  name: mp4
-  description: |-
-    As a response to blocked request AdGuard returns a short video placeholder.
-    Rules with `$mp4` are still supported and being converted into `$redirect=noopmp4-1s` now
-    but the support shall be removed in the future.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#mp4-modifier
-  deprecated: true
-  deprecation_message: |-
-    Rules with `$mp4` are still supported and being converted into `$redirect=noopmp4-1s` now
-    but the support shall be removed in the future.
-  negatable: false
-
-ubo_ext_any:
+common:
   name: mp4
   description: |-
     As a response to blocked request a short video placeholder is returned.
     Rules with `$mp4` are supported and being converted into `$redirect=noopmp4-1s`.
-  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#mp4
   negatable: false
+
+adg_os_any:
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#mp4-modifier
+  deprecated: true
+  deprecation_message: |-
+    Rules with `$mp4` are still supported and being converted into `$redirect=noopmp4-1s` now
+    but the support shall be removed in the future.
+
+adg_ext_any:
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#mp4-modifier
+  deprecated: true
+  deprecation_message: |-
+    Rules with `$mp4` are still supported and being converted into `$redirect=noopmp4-1s` now
+    but the support shall be removed in the future.
+
+ubo_ext_any:
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#mp4

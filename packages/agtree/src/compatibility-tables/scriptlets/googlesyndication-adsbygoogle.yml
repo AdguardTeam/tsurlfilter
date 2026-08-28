@@ -1,9 +1,8 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: googlesyndication-adsbygoogle
   version_added: 1.10.25
   aliases:
     - ubo-googlesyndication_adsbygoogle.js
     - googlesyndication_adsbygoogle.js
+  description: Mocks Google AdSense API.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#googlesyndication-adsbygoogle

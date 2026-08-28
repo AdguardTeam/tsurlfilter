@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] <!-- release/agtree-v5 -->
+
+### Changed
+
+- Migrated from the removed `FilterListParser` / `defaultParserOptions` API
+  (`@adguard/agtree/parser`) to the new `FilterListPipeline` instance-based API
+  (`@adguard/agtree`). Location offsets (`start`/`end`) replace the removed
+  `raws.text` property for error reporting.
+
+<!-- 4.2.0-beta.2 is the same as 4.2.0-beta.1, just a new build with latest filters -->
+
 ## [5.0.0] - 2026-07-28 <!-- release/browser-extension-v5.5 -->
 
 ### Changed

@@ -7,6 +7,97 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [5.0.0] - TBD
+
+### Added
+
+- Added `walker` module (`src/walker/`) with high-performance, explicitly typed
+  depth-first AST traversal: `walk()`, `find()`, `findLast()`, `findAll()`.
+  Supports `enter`/`leave` hooks, `WalkAction.Skip`/`WalkAction.Stop` control,
+  `reverse` traversal, `Set<string>` node-type filtering, and a typed `context`
+  object.
+- uBO scriptlet compatibility mapping for `google-ima3`, enabling
+  ADG→UBO and UBO→ADG conversion of `google-ima3`/`google-ima` scriptlet rules
+  ([FiltersCompiler#274]).
+- New `Platform` class replacing bitwise platform enums with hierarchical
+  `ProductCode`/`PlatformType` structure.
+- Trie-based storage for compatibility table data with wildcard query support.
+- `PlatformExpressionEvaluator` for parsing platform expressions with negation.
+- `Safari` platform type.
+- `parseHostRules` option in `ParseOptions` and host-rule parsing in
+  `RuleParserPipeline` (produces `HostRule` nodes for `/etc/hosts`-style input).
+- `parseDomainList` is now exported from the `@adguard/agtree` package root.
+- `hasNativeCssPseudoClass` selector utility (exported from the package root and
+  `@adguard/agtree/utils`).
+- Re-exported the public AST node vocabulary from the package root as an
+  explicit allow-list, including the `NodeType`, `ValueKind`, `ListNodeType`, and
+  `ListItemNodeType` discriminants and node interfaces such as `RawRule`, `Raw`,
+  `AppList`, `MethodList`, and `StealthOptionList`. Internal helpers (e.g.
+  `defaultLocation`, `AnyNode`, `NetworkRuleBase`, and the `Css*ParseOptions`
+  option types) are intentionally kept out of the public surface.
+- Exported the list-parsing helper family from the package root: `parseModifier`,
+  `parseAppList`, `parseMethodList`, and `parseStealthOptionList` (joining the
+  already-exported `parseDomainList`).
+- Exported `FilterListGenerator` from the package root, mirroring
+  `FilterListPipeline`.
+
+### Changed
+
+- **BREAKING:** Replaced bitwise platform enums (`GenericPlatform`/`SpecificPlatform`)
+  with `Platform` class using `ProductCode` and `PlatformType` enums.
+- **BREAKING:** `ModifierValidator.validate()` now takes `Platform[]` instead of bitwise `AnyPlatform`.
+- **BREAKING:** Compatibility table API renamed: `find()` → `query()`, `query()` → `queryAll()`,
+  `existsAny()` → `has()`.
+- Removed `platform-helpers.ts` utilities — replaced by `Platform` class methods.
+- Simplified public exports from `compatibility-tables`.
+- **BREAKING:** Promoted the new pipeline implementations to the canonical
+  module names. The `./generator-new` and `./converter-new` subpath exports are
+  removed; use `./generator` and `./converter`. The `./parser` subpath now
+  exposes the new structural parser.
+- Updated in-source READMEs, OVERVIEW, and the package README to reflect the v5
+  pipeline API, including a new Quick start section and corrected import paths.
+- **BREAKING:** `RuleParserPipeline.parse()` and `parseRange()` now return the
+  public `AnyRule` union (the internal `AnyParsedRule` alias was removed).
+- **BREAKING:** Renamed the structural rule parser exposed via
+  `@adguard/agtree/parser` from `RuleParser` to `StructuralRuleParser` to avoid
+  colliding with the removed v4 `RuleParser` (which accepted a source string).
+- **BREAKING:** The `@adguard/agtree/parser` subpath no longer exports internal
+  buffer-layout constants (field offsets, record strides, bit flags) or
+  low-level utility functions (`isPotentialNetModifier`, `matchMetadataHeader`,
+  `regionEquals`, `skipWs`, `skipUntil`, `tokenStart`, `domainRecordsOffset`).
+  It now exposes only the composition surface: the parser context lifecycle, the
+  rule classifier and `RuleKind`, the structural parser classes, and the
+  `*_MIN_DATA_SLOTS` sizing constants.
+
+### Removed
+
+- Legacy `parser-legacy` module and its public exports (`RuleParser`,
+  `CommentParser`, `NetworkRuleParser`, `FilterListParser`, `AppListParser`,
+  `DomainListParser`, `MethodListParser`, `StealthOptionListParser`,
+  `ModifierParser`, `ModifierListParser`, `ParameterListParser`,
+  `HostRuleParser`, `HintParser`, `AgentParser`, `LogicalExpressionParser`,
+  `CssTokenStream`, `ParserOptions`, `OnParseError`, `defaultParserOptions`).
+- Legacy `converter`, `generator`, `nodes`, and `ast-utils` implementations
+  (superseded by the new pipeline stack).
+- Serializer and Deserializer APIs.
+- Bitwise platform enums (`GenericPlatform`, `SpecificPlatform`) and related helpers.
+
+### Fixed
+
+- Network and cosmetic (`[$…]`) modifier parsing no longer drops the `$`
+  separator when the first modifier name starts with an underscore, so noop
+  modifiers such as `$_`, `$___`, and `$_invalid_` are parsed correctly.
+- HTML filtering rules (`$$`, `$@$`) that carry an AdGuard `[$…]` modifier list
+  no longer overwrite the modifier records with the selector-list body; the
+  selector-list region is now placed after the modifier records.
+- Cosmetic `[$…]` modifier-list bracket matching now skips regex-literal values
+  (e.g. `$path=/…/`), so a `]` inside a regex character class no longer closes
+  the modifier list prematurely.
+- ABP CSS injection (`##selector { declarations }`) is now gated behind the
+  `parseAbpSpecificRules` option; when disabled, such rules are no longer
+  promoted to `CssInjectionRule` and remain element-hiding rules (their raw body
+  keeps the declaration block so consumers can reject it).
+
 ## [4.2.0] - 2026-07-27
 
 ### Added
@@ -100,6 +191,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Removed
 
 - Serializer and Deserializer APIs.
+- Bitwise platform enums (`GenericPlatform`, `SpecificPlatform`) and related helpers.
 
 [4.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v4.0.1
 [#96]: https://github.com/AdguardTeam/tsurlfilter/issues/96

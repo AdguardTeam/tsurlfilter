@@ -1,11 +1,15 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: inject-css-in-shadow-dom
   version_added: 1.8.2
+  description: Injects CSS rule into selected Shadow DOM subtrees on a page.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#inject-css-in-shadow-dom
   parameters:
     - name: cssRule
       required: true
+      description: String representing a single CSS rule.
     - name: hostSelector
       required: false
+      description: String, selector to match shadow host elements. CSS rule will be only applied to shadow roots inside these elements. Defaults to injecting CSS rule into all available roots.
+    - name: cssInjectionMethod
+      required: false
+      description: String, method to inject CSS rule into shadow DOM.

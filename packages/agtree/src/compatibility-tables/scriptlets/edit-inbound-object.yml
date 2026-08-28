@@ -1,0 +1,20 @@
+ubo_any:
+  name: edit-inbound-object.js
+  version_added: 1.69.1b4
+  description: Prune properties from an object passed as argument to a specific method. Properties can only be removed.
+  aliases:
+    - edit-inbound-object
+  docs: https://github.com/gorhill/uBlock/blob/a85fc33ce8ba8de5ae8f400cc6473243803deae6/src/js/resources/json-edit.js#L242
+  parameters:
+    - name: propChain
+      required: false
+      description: Property chain of the method to trap.
+      default: ''
+    - name: argPos
+      required: false
+      description: 0-based position of the argument. Use negative integer for position relative to the end.
+      default: ''
+    - name: jsonq
+      required: false
+      description: "A JSONPath query string that selects which properties to act on within the object. Uses dot-separated paths (e.g. `foo.bar`), `[]` for array items, and a `!` prefix on a path segment to delete it. Note: this is uBO's own JSONPath dialect, not the standard spec."
+      default: ''

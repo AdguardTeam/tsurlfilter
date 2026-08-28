@@ -1125,7 +1125,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
     });
 
     it('returns redirect-rule if there is blocking rule', () => {
-        const blockingRule = createNetworkRule('!/googleads.$~script,domain=~github.com|~github.io', 0);
+        const blockingRule = createNetworkRule('/googleads.$~script,domain=~github.com|~github.io', 0);
         const redirectRuleRule = createNetworkRule(
             '||googleads.g.doubleclick.net/pagead/id^$xmlhttprequest,redirect=nooptext',
             0,

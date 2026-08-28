@@ -1,73 +1,63 @@
 import { describe, expect, test } from 'vitest';
 
-import { CosmeticRuleType } from '../../src/nodes';
+import { RuleCategory } from '../../src/nodes';
 import { RuleCategorizer } from '../../src/utils/categorizer';
 
 describe('RuleCategorizer', () => {
-    describe('getCosmeticRuleType', () => {
+    describe('categorize', () => {
+        const categorizer = new RuleCategorizer();
+
+        // Empty
         test.each([
-            {
-                actual: 'example.com##.class',
-                expected: CosmeticRuleType.ElementHidingRule,
-            },
-            {
-                actual: 'example.com#?#.class:has(.another)',
-                expected: CosmeticRuleType.ElementHidingRule,
-            },
+            { input: '', expected: RuleCategory.Empty },
+            { input: '   ', expected: RuleCategory.Empty },
+            { input: '\t', expected: RuleCategory.Empty },
+        ])('should return Empty for "$input"', ({ input, expected }) => {
+            expect(categorizer.categorize(input)).toBe(expected);
+        });
 
-            {
-                actual: 'example.com#$#.selector { color: red; }',
-                expected: CosmeticRuleType.CssInjectionRule,
-            },
-            {
-                actual: 'example.com##.selector:style(color: red;)',
-                expected: CosmeticRuleType.CssInjectionRule,
-            },
+        // Comments
+        test.each([
+            { input: '! This is a comment', expected: RuleCategory.Comment },
+            { input: '!Homepage: https://example.com', expected: RuleCategory.Comment },
+            { input: '# host comment', expected: RuleCategory.Comment },
+            { input: '[Adblock Plus 2.0]', expected: RuleCategory.Comment },
+            { input: '[AdGuard]', expected: RuleCategory.Comment },
+        ])('should return Comment for "$input"', ({ input, expected }) => {
+            expect(categorizer.categorize(input)).toBe(expected);
+        });
 
-            {
-                actual: 'example.com$$div:contains(foo)',
-                expected: CosmeticRuleType.HtmlFilteringRule,
-            },
-            {
-                actual: 'example.com$$div[custom_attr]',
-                expected: CosmeticRuleType.HtmlFilteringRule,
-            },
-            {
-                actual: 'example.com##^script:has-text(foo)',
-                expected: CosmeticRuleType.HtmlFilteringRule,
-            },
+        // Cosmetic
+        test.each([
+            { input: 'example.com##.ad-banner', expected: RuleCategory.Cosmetic },
+            { input: 'example.com#@#.ad-banner', expected: RuleCategory.Cosmetic },
+            { input: 'example.com#?#.ad:has(.inner)', expected: RuleCategory.Cosmetic },
+            { input: 'example.com#$#body { padding: 0; }', expected: RuleCategory.Cosmetic },
+            { input: "example.com#%#//scriptlet('foo')", expected: RuleCategory.Cosmetic },
+            { input: 'example.com##+js(foo)', expected: RuleCategory.Cosmetic },
+            { input: '##.ad-banner', expected: RuleCategory.Cosmetic },
+        ])('should return Cosmetic for "$input"', ({ input, expected }) => {
+            expect(categorizer.categorize(input)).toBe(expected);
+        });
 
-            {
-                actual: "example.com#%#//scriptlet('foo')",
-                expected: CosmeticRuleType.ScriptletInjectionRule,
-            },
-            {
-                actual: 'example.com##+js(foo)',
-                expected: CosmeticRuleType.ScriptletInjectionRule,
-            },
-            {
-                actual: 'example.com#$#abp-snippet',
-                expected: CosmeticRuleType.ScriptletInjectionRule,
-            },
+        // Network
+        test.each([
+            { input: '||example.com^', expected: RuleCategory.Network },
+            { input: '@@||example.com^', expected: RuleCategory.Network },
+            { input: '/ads.js^$script', expected: RuleCategory.Network },
+            { input: '||example.com^$third-party', expected: RuleCategory.Network },
+            { input: 'example.com', expected: RuleCategory.Network },
+        ])('should return Network for "$input"', ({ input, expected }) => {
+            expect(categorizer.categorize(input)).toBe(expected);
+        });
 
-            {
-                actual: "example.com#%#const foo = 'bar';",
-                expected: CosmeticRuleType.JsInjectionRule,
-            },
-
-            // not a cosmetic rule
-            {
-                actual: '/ads.js^$script',
-                expected: null,
-            },
-
-            // cosmetic rule, but invalid
-            {
-                actual: '##+js(foo',
-                expected: null,
-            },
-        ])('should categorize \'$actual\' as \'$expected\'', ({ actual, expected }) => {
-            expect(RuleCategorizer.getCosmeticRuleType(actual)).toBe(expected);
+        // Invalid/malformed rules — should not throw
+        test.each([
+            { input: '||example.com^$badmod=[' },
+            { input: '###' },
+            { input: '\x00\x01\x02' },
+        ])('should not throw for malformed "$input"', ({ input }) => {
+            expect(() => categorizer.categorize(input)).not.toThrow();
         });
     });
 });

@@ -1,0 +1,10 @@
+ubo_any:
+  name: urlskip
+  version_added: 1.60.0
+  description: |-
+    Extracts a URL from another URL according to one or more transformation steps, thereby skipping over intermediate network request(s) to remote servers.
+    The main purpose is to bypass URLs designed to track whether a user visited a specific URL, typically used in click-tracking links.
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#urlskip
+  assignable: true
+  negatable: false
+  value_format: regexp

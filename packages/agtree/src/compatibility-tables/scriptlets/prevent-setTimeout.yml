@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Prevents a `setTimeout` call if all given parameters match.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-setTimeout
   version_added: 1.0.4
   aliases:
@@ -20,19 +21,27 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: matchCallback
       required: false
+      description: String or regular expression matching the stringified callback function.
     - name: matchDelay
       required: false
+      description: Value to match against the delay.
 
 ubo_any:
   name: no-setTimeout-if.js
   version_added: 1.23.0
   aliases:
+    - no-setTimeout-if
+    - nostif
     - nostif.js
+    - prevent-setTimeout
     - prevent-setTimeout.js
+    - setTimeout-defuser
     - setTimeout-defuser.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#no-setTimeout-ifjs-
   parameters:
-    - name: matchCallback
+    - name: needleRaw
       required: false
-    - name: matchDelay
+      description: String or regular expression matching the stringified callback function.
+    - name: delayRaw
       required: false
+      description: Value to match against the delay.

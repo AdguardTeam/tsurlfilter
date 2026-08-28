@@ -1,6 +1,4 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: json-prune
   version_added: 1.1.0
   aliases:
@@ -8,33 +6,49 @@ adg_os_any|adg_ext_any:
     - ubo-json-prune.js
     - ubo-json-prune
     - abp-json-prune
+  description: Removes specified properties from the result of calling `JSON.parse` and returns the caller.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#json-prune
   parameters:
     - name: propsToRemove
       required: false
+      description: String of space-separated properties to remove.
     - name: obligatoryProps
       required: false
+      description: String of space-separated properties which must be all present for the pruning to occur.
     - name: stack
       required: false
+      description: String or regular expression that must match the current function call stack trace; if regular expression is invalid it will be skipped.
 
 ubo_any:
   name: json-prune.js
   version_added: 1.23.0
+  aliases:
+    - json-prune
+  description: Intercepts calls to `JSON.parse()` and `Response.json()`. If the result of the parsing is an `Object`, remove specified properties from the result before returning to the caller.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#json-prunejs-
   parameters:
-    - name: propsToRemove
+    - name: rawPrunePaths
       required: false
-    - name: obligatoryProps
+      description: String, a list of space-separated properties to remove.
+    - name: rawNeedlePaths
       required: false
-    - name: stack
+      description: String, a list of space-separated properties which must be all present for the pruning to occur or string/regular expression, for logging purposes, matching in stringified `JSON` payloads.
+    - name: stackNeedle
       required: false
+      description: String or regular expression that must match the current function call stack trace. Prepend pattern with `!` to test for unmatched patterns in stack trace.
 
 abp_any:
   name: json-prune
   version_added: 3.9.0
+  description: Traps calls to `JSON.parse`, and if the result of the parsing is an `Object`, it will remove specified properties from the result before returning to the caller.
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
   parameters:
     - name: rawPrunePaths
       required: true
+      description: A list of space-separated properties to remove.
     - name: rawNeedlePaths
       required: false
+      description: A list of space-separated properties which must be all present for the pruning to occur.
+    - name: rawNeedleStack
+      required: false
+      description: A list of space-separated strings or regex which must be present in the JSON.prune call stack for the pruning to occur.

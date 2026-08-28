@@ -1,4 +1,5 @@
-define: &common_props
+common:
+  name: replace
   description: |-
     This modifier completely changes the rule behavior.
     If it is applied, the rule will not block the request. The response is going to be modified instead.
@@ -34,16 +35,10 @@ define: &common_props
       $
 
 adg_os_any:
-  name: replace
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#replace-modifier
-  <<: *common_props
 
 adg_ext_firefox:
-  name: replace
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#replace-modifier
-  <<: *common_props
 
 ubo_ext_firefox:
-  name: replace
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#replace
-  <<: *common_props

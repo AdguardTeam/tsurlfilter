@@ -1,9 +1,15 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: amazon-apstag
   version_added: 1.10.25
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#amazon-apstag
   aliases:
     - ubo-amazon_apstag.js
+    - ubo-amazon_apstag
     - amazon_apstag.js
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#amazon-apstag
+
+ubo_any:
+  name: amazon-apstag.js
+  version_added: 1.27.0
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#amazon_apstagjs-
+  aliases:
+    - amazon-apstag

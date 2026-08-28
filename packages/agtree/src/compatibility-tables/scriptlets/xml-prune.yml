@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Removes an element from the specified XML retrieved by an XMLHttpRequest or Fetch API call.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: xml-prune
   version_added: 1.7.3
   aliases:
@@ -11,19 +12,35 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: propsToMatch
       required: false
+      description: XPath or selector of elements which will be removed from XML.
     - name: optionalProp
       required: false
+      description: Selector of elements that must occur in XML document.
     - name: urlToMatch
       required: false
+      description: String or regular expression for matching the request's URL.
+    - name: verbose
+      required: false
+      description: Boolean, if set to `true` will log original and modified XML content in browser console.
 
 ubo_any:
   name: xml-prune.js
-  version_added: 1.49.3rc6
+  version_added: 1.44.5b3
+  aliases:
+    - xml-prune
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#xml-prunejs-
   parameters:
-    - name: propsToMatch
+    - name: selector
       required: false
-    - name: optionalProp
+      description: A selector of elements or xpath of elements/attributes which are to be removed.
+    - name: selectorCheck
       required: false
-    - name: urlToMatch
+      description: A selector or xpath that must have a match in the document for the pruning to occur. No selector means the pruning can be performed regardless.
+    - name: urlPattern
       required: false
+      description: A URL which must be a match for the pruning to occur. If left blank, the pruning can be performed regardless.
+  ubo_tokens:
+    - name: logdoc
+      description: When truthy, dumps the entire XML document being processed to the uBO logger.
+      value_format: ^1$
+      value_type: boolean

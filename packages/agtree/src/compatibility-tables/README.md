@@ -9,34 +9,20 @@ Table of contents:
     - [Supported adblockers and platforms](#supported-adblockers-and-platforms)
         - [Specific platforms](#specific-platforms)
         - [Generic platforms](#generic-platforms)
-        - [Combining platforms](#combining-platforms)
+        - [Platform expressions](#platform-expressions)
     - [Programmatic API](#programmatic-api)
-        - [General API](#general-api)
-            - [Available compatibility table instances](#available-compatibility-table-instances)
-            - [Platform flags](#platform-flags)
-            - [Platform expressions parser](#platform-expressions-parser)
-            - [Stringify platforms bitmask to platform expression](#stringify-platforms-bitmask-to-platform-expression)
-            - [Platform helper functions](#platform-helper-functions)
-                - [Get platform ID from string](#get-platform-id-from-string)
-                - [Get platform string name from flag](#get-platform-string-name-from-flag)
-                - [Human-readable platform name](#human-readable-platform-name)
-                - [Check if platform is generic](#check-if-platform-is-generic)
-                - [Check if platform includes multiple products](#check-if-platform-includes-multiple-products)
-                - [Get product from platform](#get-product-from-platform)
-                - [Split platforms by product](#split-platforms-by-product)
-                - [Get all generic platforms for a product](#get-all-generic-platforms-for-a-product)
-                - [Get all specific platforms for a product](#get-all-specific-platforms-for-a-product)
-        - [Specific API](#specific-api)
-            - [Redirects compatibility table](#redirects-compatibility-table)
-        - [Examples](#examples)
-            - [Check if a modifier is supported by any adblocker](#check-if-a-modifier-is-supported-by-any-adblocker)
-            - [Check if a modifier is supported by a specific / generic platform](#check-if-a-modifier-is-supported-by-a-specific--generic-platform)
-            - [Get modifier compatibility data for a specific platform](#get-modifier-compatibility-data-for-a-specific-platform)
-            - [Get modifier compatibility data for a generic platform](#get-modifier-compatibility-data-for-a-generic-platform)
-            - [Get all supported modifiers for a specific / generic platform](#get-all-supported-modifiers-for-a-specific--generic-platform)
-            - [Get first compatible modifier for a specific / generic platform](#get-first-compatible-modifier-for-a-specific--generic-platform)
-            - [Get compatibility table row](#get-compatibility-table-row)
-            - [Get all modifiers grouped by product](#get-all-modifiers-grouped-by-product)
+        - [Platform class](#platform-class)
+        - [PlatformExpressionEvaluator](#platformexpressionevaluator)
+        - [Compatibility Tables API](#compatibility-tables-api)
+        - [Usage Examples](#usage-examples)
+            - [Check if a feature exists](#check-if-a-feature-exists)
+            - [Check if a feature is supported by a platform](#check-if-a-feature-is-supported-by-a-platform)
+            - [Get compatibility data for a specific platform](#get-compatibility-data-for-a-specific-platform)
+            - [Query first matching platform](#query-first-matching-platform)
+            - [Query all matching platforms](#query-all-matching-platforms)
+            - [Get all features for a platform](#get-all-features-for-a-platform)
+            - [Get all platform variants](#get-all-platform-variants)
+            - [Group features by product](#group-features-by-product)
 
 ## Supported categories
 
@@ -85,26 +71,35 @@ The following specific platforms are supported:
 
 <!-- markdownlint-disable MD013 -->
 
-| Platform (ID)     | Brand                                                                                                                                                                                                                                          | Category               |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| `adg_os_windows`  | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard for Windows](https://adguard.com/adguard-windows/overview.html)                                                            | System-wide ad blocker |
-| `adg_os_mac`      | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard for Mac](https://adguard.com/adguard-mac/overview.html)                                                                    | System-wide ad blocker |
-| `adg_os_android`  | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard for Android](https://adguard.com/adguard-android/overview.html)                                                            | System-wide ad blocker |
-| `adg_ext_chrome`  | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard extension for Chrome](https://adguard.com/adguard-browser-extension/chrome/overview.html)                                  | Browser extension      |
-| `adg_ext_opera`   | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard extension for Opera](https://adguard.com/adguard-browser-extension/opera/overview.html)                                    | Browser extension      |
-| `adg_ext_edge`    | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard extension for Edge](https://adguard.com/adguard-browser-extension/edge/overview.html)                                      | Browser extension      |
-| `adg_ext_firefox` | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard extension for Firefox](https://adguard.com/adguard-browser-extension/firefox/overview.html)                                | Browser extension      |
-| `adg_cb_android`  | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard Content Blocker for Android](https://adguard.com/adguard-content-blocker/overview.html)                                    | Content blocker        |
-| `adg_cb_ios`      | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard Content Blocker for iOS](https://adguard.com/adguard-ios/overview.html)                                                    | Content blocker        |
-| `adg_cb_safari`   | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard Content Blocker for Safari](https://adguard.com/adguard-safari/overview.html)                                              | Content blocker        |
-| `ubo_ext_chrome`  | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> [uBlock Origin for Google Chrome](https://chrome.google.com/webstore/detail/ublock-origin/cjpalhdlnbpafiamejdnhcphjbkeiagm)          | Browser extension      |
-| `ubo_ext_firefox` | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> [uBlock Origin for Mozilla Firefox](https://addons.mozilla.org/addon/ublock-origin/)                                                 | Browser extension      |
-| `ubo_ext_opera`   | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> [uBlock Origin for Opera](https://addons.opera.com/extensions/details/ublock/)                                                       | Browser extension      |
-| `ubo_ext_edge`    | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> [uBlock Origin for Microsoft Edge](https://microsoftedge.microsoft.com/addons/detail/ublock-origin/odfafepnkmbhccpbejgmiehpchacaeak) | Browser extension      |
-| `abp_ext_chrome`  | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus for Google Chrome](https://chrome.google.com/webstore/detail/cfhdojbkjhnklbpkdaibdccddilifddb)                   | Browser extension      |
-| `abp_ext_firefox` | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus for Mozilla Firefox](https://eyeo.to/adblockplus/firefox_install/)                                               | Browser extension      |
-| `abp_ext_opera`   | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus for Opera](https://eyeo.to/adblockplus/opera_install/)                                                           | Browser extension      |
-| `abp_ext_edge`    | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus for Microsoft Edge](https://eyeo.to/adblockplus/edge_install/)                                                   | Browser extension      |
+| Platform (ID)         | Brand                                                                                                                                                                                                                                          | Category               |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `adg_os_windows`      | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard for Windows](https://adguard.com/adguard-windows/overview.html)                                                            | System-wide ad blocker |
+| `adg_os_mac`          | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard for Mac](https://adguard.com/adguard-mac/overview.html)                                                                    | System-wide ad blocker |
+| `adg_os_android`      | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard for Android](https://adguard.com/adguard-android/overview.html)                                                            | System-wide ad blocker |
+| `adg_os_linux`        | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> AdGuard for Linux                                                                                                                   | System-wide ad blocker |
+| `adg_ext_chrome`      | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard extension for Chrome](https://adguard.com/adguard-browser-extension/chrome/overview.html)                                  | Browser extension      |
+| `adg_ext_opera`       | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard extension for Opera](https://adguard.com/adguard-browser-extension/opera/overview.html)                                    | Browser extension      |
+| `adg_ext_edge`        | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard extension for Edge](https://adguard.com/adguard-browser-extension/edge/overview.html)                                      | Browser extension      |
+| `adg_ext_firefox`     | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard extension for Firefox](https://adguard.com/adguard-browser-extension/firefox/overview.html)                                | Browser extension      |
+| `adg_ext_chrome_mv3`  | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> AdGuard extension for Chrome (Manifest V3)                                                                                          | Browser extension      |
+| `adg_ext_firefox_mv3` | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> AdGuard extension for Firefox (Manifest V3)                                                                                         | Browser extension      |
+| `adg_ext_opera_mv3`   | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> AdGuard extension for Opera (Manifest V3)                                                                                           | Browser extension      |
+| `adg_ext_edge_mv3`    | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> AdGuard extension for Edge (Manifest V3)                                                                                            | Browser extension      |
+| `adg_cb_android`      | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard Content Blocker for Android](https://adguard.com/adguard-content-blocker/overview.html)                                    | Content blocker        |
+| `adg_cb_ios`          | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard Content Blocker for iOS](https://adguard.com/adguard-ios/overview.html)                                                    | Content blocker        |
+| `adg_cb_safari`       | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard Content Blocker for Safari](https://adguard.com/adguard-safari/overview.html)                                              | Content blocker        |
+| `ubo_ext_chrome`      | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> [uBlock Origin for Google Chrome](https://chrome.google.com/webstore/detail/ublock-origin/cjpalhdlnbpafiamejdnhcphjbkeiagm)          | Browser extension      |
+| `ubo_ext_firefox`     | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> [uBlock Origin for Mozilla Firefox](https://addons.mozilla.org/addon/ublock-origin/)                                                 | Browser extension      |
+| `ubo_ext_opera`       | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> [uBlock Origin for Opera](https://addons.opera.com/extensions/details/ublock/)                                                       | Browser extension      |
+| `ubo_ext_edge`        | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> [uBlock Origin for Microsoft Edge](https://microsoftedge.microsoft.com/addons/detail/ublock-origin/odfafepnkmbhccpbejgmiehpchacaeak) | Browser extension      |
+| `ubo_ext_chrome_mv3`  | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> uBlock Origin for Google Chrome (Manifest V3)                                                                                        | Browser extension      |
+| `ubo_ext_firefox_mv3` | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> uBlock Origin for Mozilla Firefox (Manifest V3)                                                                                      | Browser extension      |
+| `ubo_ext_opera_mv3`   | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> uBlock Origin for Opera (Manifest V3)                                                                                                | Browser extension      |
+| `ubo_ext_edge_mv3`    | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock logo" width="14px"> uBlock Origin for Microsoft Edge (Manifest V3)                                                                                       | Browser extension      |
+| `abp_ext_chrome`      | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus for Google Chrome](https://chrome.google.com/webstore/detail/cfhdojbkjhnklbpkdaibdccddilifddb)                   | Browser extension      |
+| `abp_ext_firefox`     | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus for Mozilla Firefox](https://eyeo.to/adblockplus/firefox_install/)                                               | Browser extension      |
+| `abp_ext_opera`       | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus for Opera](https://eyeo.to/adblockplus/opera_install/)                                                           | Browser extension      |
+| `abp_ext_edge`        | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus for Microsoft Edge](https://eyeo.to/adblockplus/edge_install/)                                                   | Browser extension      |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -135,248 +130,173 @@ This is useful when we want to specify compatibility for a group of platforms, b
 \* Chromium-based browsers include Google Chrome, Microsoft Edge, Opera, Brave, Vivaldi, etc. See more details
 [here](<https://en.wikipedia.org/wiki/Chromium_(web_browser)>).
 
-### Combining platforms
+### Platform expressions
 
-You can combine platforms by using the `|` operator. For example, `adg_os_any|adg_ext_firefox` means that the feature
-is supported by any AdGuard OS-wide app and the AdGuard extension for Firefox.
+Platform expressions allow you to specify multiple platforms or exclude specific ones using simple operators:
 
-If needed, you can also negate a platform by using the `~` operator. For example, `adg_any|~adg_safari_any` means
-that the feature is supported by any AdGuard adblocker, except for AdGuard Safari-like content blockers.
+- **`|` (OR operator):** Combine multiple platforms. Example: `adg_os_any|ubo_ext_chrome` means AdGuard OS apps OR
+  uBlock Origin for Chrome.
+- **`~` (NOT operator):** Exclude specific platforms. Example: `adg_any|~adg_cb_ios` means all AdGuard products
+  EXCEPT AdGuard Content Blocker for iOS.
+
+These expressions are commonly used in compatibility data YAML files to define feature support across multiple
+platforms.
 
 ## Programmatic API
 
-Compatibility table also provides a programmatic API to access compatibility data.
+The programmatic API provides a type-safe way to query compatibility data using hierarchical platform queries.
 
-### General API
+### Platform class
 
-#### Available compatibility table instances
+The `Platform` class represents a hierarchical platform identifier with three levels:
 
-We export the following compatibility table instances:
+1. **Product** (`adg`, `ubo`, `abp`, or `any`): The adblocker product
+2. **Type** (`os`, `ext`, `cb`, or `any`): The platform type (OS app, browser extension, content blocker)
+3. **Specific** (e.g., `windows`, `chrome`, `ios`): The specific platform variant
+
+Each level can be wildcarded using `any` or omitted to create generic queries that match multiple platforms.
+
+```ts
+import { Platform } from '@adguard/agtree';
+
+// Specific platform: matches exactly one platform
+Platform.AdgOsWindows    // { product: 'adg', type: 'os', specific: 'windows' }
+
+// Type wildcard: matches all platforms of this product and type
+Platform.AdgOsAny        // { product: 'adg', type: 'os', specific: undefined }
+                         // Matches: AdgOsWindows, AdgOsMac, AdgOsLinux, AdgOsAndroid
+
+// Product wildcard: matches all platforms of this product
+Platform.AdgAny          // { product: 'adg', type: undefined, specific: undefined }
+                         // Matches: all AdGuard platforms
+
+// Full wildcard: matches any platform
+Platform.Any             // { product: 'any', type: undefined, specific: undefined }
+```
+
+**Key platform methods:**
+
+<!-- markdownlint-disable MD013 -->
+
+| Method | Description |
+| --- | --- |
+| `parse(str: string): Platform` | Parse platform string (e.g., `'adg_os_windows'`) |
+| `toString(): string` | Convert to string (e.g., `'adg_os_windows'`) |
+| `matches(target: Platform): boolean` | Check if this platform matches target (wildcard matching) |
+| `isWildcard: boolean` | Check if platform contains wildcards |
+| `toHumanReadable(): string` | Get human-readable name |
+| `getAllConcretePlatforms(): Platform[]` | Get all non-wildcard platforms |
+
+<!-- markdownlint-enable MD013 -->
+
+### PlatformExpressionEvaluator
+
+For complex platform expressions with negation and wildcard expansion, use `PlatformExpressionEvaluator`:
+
+```ts
+import { PlatformExpressionEvaluator } from '@adguard/agtree';
+
+// Evaluate expression with negation
+const platforms = PlatformExpressionEvaluator.evaluate('adg_any|~adg_cb_ios');
+// Returns: Array of all AdGuard platforms except adg_cb_ios
+
+// Optimize platform lists (collapse to wildcards when possible)
+const optimized = PlatformExpressionEvaluator.optimize([
+  Platform.AdgOsWindows,
+  Platform.AdgOsMac,
+  Platform.AdgOsLinux,
+  Platform.AdgOsAndroid
+]);
+// Returns: [Platform.AdgOsAny] (all OS platforms present, collapsed to wildcard)
+```
+
+**Key features:**
+
+- **Wildcard expansion:** Expands wildcards like `adg_any` to all concrete AdGuard platforms
+- **Negation support:** Excludes specific platforms using `~` operator
+- **Optimization:** Collapses concrete platforms into wildcards when all members are present
+- **Validation:** Throws errors for invalid platform names or malformed expressions
+
+### Compatibility Tables API
+
+We export three compatibility table instances:
 
 ```ts
 import {
+  modifiersCompatibilityTable,
   redirectsCompatibilityTable,
   scriptletsCompatibilityTable,
-  modifiersCompatibilityTable,
 } from '@adguard/agtree';
 ```
 
-All of them provides the following methods for their respective compatibility data:
+All tables extend `CompatibilityTableBase` and provide the same core methods:
 
 <!-- markdownlint-disable MD013 -->
 
-| Method name | Description |
+| Method | Description |
 | --- | --- |
-| `existsAny(name: string): boolean` | Checks whether a compatibility data `name` exists for any platform. |
-| `exists(name: string, platform: SpecificPlatform \| GenericPlatform): boolean` | Checks whether a compatibility data `name` exists for a specified platform. |
-| `getSingle(name: string, platform: SpecificPlatform): T \| null` | Returns a compatibility data by name and specific platform. |
-| `getMultiple(name: string, platform: SpecificPlatform \| GenericPlatform): SinglePlatformRecords<T> \| null` | Returns all compatibility data records for name and specified platform. |
-| `getAllMultiple(platform: SpecificPlatform \| GenericPlatform): SinglePlatformRecords<T>[]` | Returns all compatibility data records for the specified platform. |
-| `getFirst(name: string, platform: SpecificPlatform \| GenericPlatform): T \| null` | Returns the first compatibility data record for name and specified platform. |
-| `getRow(name: string): T[]` | Returns all compatibility data records for the specified name. |
-| `getRowsByProduct(): RowsByProduct<T>` | Returns all compatibility data records grouped by product. |
+| `has(name: string): boolean` | Check if feature exists for any platform |
+| `supports(name: string, platform: Platform): boolean` | Check if feature is supported on platform |
+| `get(name: string, platform: Platform): T \| null` | Get data for specific platform (no wildcards) |
+| `query(name: string, platform: Platform): T \| null` | Query first matching data (handles wildcards) |
+| `queryAll(name: string, platform: Platform): T[]` | Query all matching data (handles wildcards) |
+| `getAll(platform: Platform): Map<string, T[]>` | Get all features for platform |
+| `getAllVariants(name: string): T[]` | Get all platform variants of feature |
+| `groupByProduct(): Map<AdblockProduct, Map<string, T[]>>` | Group all features by product |
 
 <!-- markdownlint-enable MD013 -->
 
-All methods based on the name of the entity and the platform.
+**Additional methods:**
 
-#### Platform flags
+- **`modifiersCompatibilityTable`:** No additional methods
+- **`redirectsCompatibilityTable`:** `getResourceTypeModifiers(redirect, platform)` - Get supported resource type
+  modifiers
+- **`scriptletsCompatibilityTable`:** No additional methods
 
-The `SpecificPlatform` and `GenericPlatform` enums are used to specify the platform in the API methods.
-These enums represents bit flags, so you can combine them on demand.
+### Usage Examples
 
-```ts
-import { SpecificPlatform, GenericPlatform } from '@adguard/agtree';
-```
+The following examples demonstrate the compatibility tables API using `modifiersCompatibilityTable`. The same methods
+work identically for `redirectsCompatibilityTable` and `scriptletsCompatibilityTable` - just replace the table instance
+and feature names.
 
-#### Platform expressions parser
+#### Check if a feature exists
 
-Parses a raw platform expression into a platform flag.
-
-```ts
-import { parseRawPlatforms } from '@adguard/agtree';
-
-parseRawPlatforms('adg_os_windows|ubo_ext_chrome');
-```
-
-#### Stringify platforms bitmask to platform expression
-
-Stringifies a platform flag into a raw platform expression.
-
-```ts
-import { stringifyPlatforms } from '@adguard/agtree';
-
-stringifyPlatforms(SpecificPlatform.AdgOsWindows | GenericPlatform.UboExtChrome); // 'adg_os_windows|ubo_ext_chrome'
-```
-
-#### Platform helper functions
-
-##### Get platform ID from string
-
-Converts a platform string name into a platform flag.
-
-```ts
-import { getPlatformId } from '@adguard/agtree';
-
-getPlatformId('adg_os_windows'); // SpecificPlatform.AdgOsWindows
-getPlatformId('adg_any'); // GenericPlatform.AdgAny
-```
-
-##### Get platform string name from flag
-
-Converts a specific platform flag into its string name.
-
-```ts
-import { getSpecificPlatformName } from '@adguard/agtree';
-
-getSpecificPlatformName(SpecificPlatform.AdgOsWindows); // 'adg_os_windows'
-```
-
-##### Human-readable platform name
-
-Converts a platform flag into a human-readable platform name.
-
-```ts
-import { getHumanReadablePlatformName } from '@adguard/agtree';
-
-getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows); // 'AdGuard for Windows'
-getHumanReadablePlatformName(GenericPlatform.AdgAny); // 'AdGuard for any platform'
-```
-
-##### Check if platform is generic
-
-Checks whether a platform flag represents a generic platform (multiple specific platforms combined).
-
-```ts
-import { isGenericPlatform, SpecificPlatform, GenericPlatform } from '@adguard/agtree';
-
-isGenericPlatform(SpecificPlatform.AdgOsWindows); // false
-isGenericPlatform(GenericPlatform.AdgAny); // true
-```
-
-##### Check if platform includes multiple products
-
-Checks whether a platform flag includes multiple adblocker products.
-
-```ts
-import { hasPlatformMultipleProducts, GenericPlatform } from '@adguard/agtree';
-
-hasPlatformMultipleProducts(GenericPlatform.AdgAny); // false (only AdGuard)
-hasPlatformMultipleProducts(GenericPlatform.AdgAny | GenericPlatform.UboAny); // true (AdGuard + uBlock Origin)
-```
-
-##### Get product from platform
-
-Converts a platform flag into an array of adblocker product(s).
-
-```ts
-import { platformToAdblockProduct, SpecificPlatform, GenericPlatform, AdblockProduct } from '@adguard/agtree';
-
-platformToAdblockProduct(SpecificPlatform.AdgOsWindows); // [AdblockProduct.Adg]
-platformToAdblockProduct(GenericPlatform.AdgAny | GenericPlatform.UboAny); // [AdblockProduct.Adg, AdblockProduct.Ubo]
-```
-
-##### Split platforms by product
-
-Splits a combined platform flag into separate platforms grouped by product.
-
-```ts
-import { getPlatformsByProduct, GenericPlatform } from '@adguard/agtree';
-
-getPlatformsByProduct(GenericPlatform.AdgAny | GenericPlatform.UboAny);
-// Returns:
-// {
-//   [AdblockProduct.Adg]: [GenericPlatform.AdgAny],
-//   [AdblockProduct.Ubo]: [GenericPlatform.UboAny]
-// }
-```
-
-##### Get all generic platforms for a product
-
-Returns all generic platforms for each adblocker product, ordered from most to least specific.
-
-```ts
-import { getProductGenericPlatforms, AdblockProduct } from '@adguard/agtree';
-
-const allGenericPlatforms = getProductGenericPlatforms();
-// Returns:
-// {
-//   [AdblockProduct.Adg]: [GenericPlatform.AdgOsAny, GenericPlatform.AdgSafariAny, ...],
-//   [AdblockProduct.Ubo]: [GenericPlatform.UboExtChromium, GenericPlatform.UboExtAny, ...],
-//   [AdblockProduct.Abp]: [GenericPlatform.AbpExtChromium, GenericPlatform.AbpExtAny, ...]
-// }
-
-// Get generic platforms for a specific product
-const adgGenericPlatforms = allGenericPlatforms[AdblockProduct.Adg];
-```
-
-##### Get all specific platforms for a product
-
-Returns all specific platforms for a given adblocker product.
-
-```ts
-import { getProductSpecificPlatforms, AdblockProduct } from '@adguard/agtree';
-
-const adgSpecificPlatforms = getProductSpecificPlatforms(AdblockProduct.Adg);
-// Returns: [SpecificPlatform.AdgOsWindows, SpecificPlatform.AdgOsMac, ...]
-
-const uboSpecificPlatforms = getProductSpecificPlatforms(AdblockProduct.Ubo);
-// Returns: [SpecificPlatform.UboExtChrome, SpecificPlatform.UboExtOpera, ...]
-```
-
-### Specific API
-
-#### Redirects compatibility table
-
-<!-- markdownlint-disable MD013 -->
-
-| Method name | Description |
-| --- | --- |
-| `getResourceTypeModifiers(redirect: string \| RedirectDataSchema platform: SpecificPlatform \| GenericPlatform)` | Get all supported resource type modifiers for a specific redirect. |
-
-<!-- markdownlint-enable MD013 -->
-
-### Examples
-
-In this section, we provide examples of how to use the compatibility table API.
-Examples are based on the `modifiersCompatibilityTable` instance, but you can use the same API for other tables.
-
-#### Check if a modifier is supported by any adblocker
-
-If you want to check if the `$third-party` modifier is supported by any AdGuard adblocker,
-you can use the following code:
+Check if the `$third-party` modifier exists for any platform:
 
 ```ts
 import { modifiersCompatibilityTable } from '@adguard/agtree';
 
-modifiersCompatibilityTable.existsAny('third-party');
+modifiersCompatibilityTable.has('third-party');  // true
 ```
 
-#### Check if a modifier is supported by a specific / generic platform
+#### Check if a feature is supported by a platform
 
-If you want to check if the `$third-party` modifier is supported by any AdGuard OS-wide app
-or the AdGuard extension for Firefox, you can use the following code:
+Check if the `$third-party` modifier is supported by AdGuard for Windows:
 
 ```ts
-import { modifiersCompatibilityTable, SpecificPlatform, parseRawPlatforms } from '@adguard/agtree';
+import { modifiersCompatibilityTable, Platform } from '@adguard/agtree';
 
-modifiersCompatibilityTable.exists('third-party', GenericPlatform.AdgOsAny | SpecificPlatform.AdgExtFirefox);
-// or you can use the `parseRawPlatforms` helper function if you prefer raw platform expressions:
-modifiersCompatibilityTable.exists('third-party', parseRawPlatforms('adg_os_any|adg_ext_firefox'));
+// Using predefined platforms
+modifiersCompatibilityTable.supports('third-party', Platform.AdgOsWindows);  // true
+
+// Using platform parser
+modifiersCompatibilityTable.supports('third-party', Platform.parse('adg_os_windows'));  // true
+
+// Check wildcard (any AdGuard OS)
+modifiersCompatibilityTable.supports('third-party', Platform.AdgOsAny);  // true
 ```
 
-#### Get modifier compatibility data for a specific platform
+#### Get compatibility data for a specific platform
 
-If you want to get all compatibility data for the `$third-party` modifier for AdGuard Extension for Chrome,
-you can use the following code:
+Get compatibility data for the `$third-party` modifier on AdGuard Extension for Chrome:
 
 ```ts
-import { modifiersCompatibilityTable, SpecificPlatform } from '@adguard/agtree';
+import { modifiersCompatibilityTable, Platform } from '@adguard/agtree';
 
-modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AdgExtChrome);
+const data = modifiersCompatibilityTable.get('third-party', Platform.AdgExtChrome);
 ```
 
-this will returns all compatibility data for the `$third-party` modifier for AdGuard Extension for Chrome:
+This returns the compatibility data object:
 
 ```js
 {
@@ -403,98 +323,93 @@ this will returns all compatibility data for the `$third-party` modifier for AdG
 }
 ```
 
-You can get any field from the compatibility data object you need.
+If the feature doesn't exist for that platform, the method returns `null`.
 
-Of course, if you specify some non-existent modifier, the method will return `null`.
+#### Query first matching platform
 
-#### Get modifier compatibility data for a generic platform
-
-If you want to get all compatibility data for the `$third-party` modifier for any AdGuard browser extension,
-you can use the following code:
+When querying with wildcards, you might only need the first result:
 
 ```ts
-import { modifiersCompatibilityTable, SpecificPlatform } from '@adguard/agtree';
+import { modifiersCompatibilityTable, Platform } from '@adguard/agtree';
 
-modifiersCompatibilityTable.getMultiple('third-party', GenericPlatform.AdgExtAny);
+// Find first AdGuard extension that supports $third-party
+const first = modifiersCompatibilityTable.query('third-party', Platform.AdgExtAny);
+// Returns the first matching ModifierData or null
 ```
 
-this will returns an object where keys are specific platforms and values are compatibility data for the `$third-party`
-modifier:
+#### Query all matching platforms
+
+Get compatibility data for all AdGuard browser extensions (wildcard query):
+
+```ts
+import { modifiersCompatibilityTable, Platform } from '@adguard/agtree';
+
+const results = modifiersCompatibilityTable.queryAll('third-party', Platform.AdgExtAny);
+```
+
+This returns an array of compatibility data for all matching platforms:
 
 ```js
-{
-  // 8 = SpecificPlatform.AdgExtChrome
-  '8': {
+[
+  {
     name: 'third-party',
     aliases: [ '3p' ],
     description: 'A restriction of third-party and own requests.\n' +
       'A third-party request is a request from a different domain.\n' +
       'For example, a request to `example.org` from `domain.com` is a third-party request.',
     docs: 'https://adguard.app/kb/general/ad-filtering/create-own-filters/#third-party-modifier',
-    // ...
+    // ... (AdGuard Chrome)
   },
-  // 16 = SpecificPlatform.AdgExtOpera
-  '16': {
+  {
     name: 'third-party',
-    // ...
+    // ... (AdGuard Opera)
   },
-  // 32 = SpecificPlatform.AdgExtEdge
-  '32': {
+  {
     name: 'third-party',
-    // ...
+    // ... (AdGuard Edge)
   },
-  // 64 = SpecificPlatform.AdgExtFirefox
-  '64': {
+  {
     name: 'third-party',
-    // ...
+    // ... (AdGuard Firefox)
   }
-}
+]
 ```
 
-#### Get all supported modifiers for a specific / generic platform
+#### Get all features for a platform
 
-If you want to get all supported modifiers for AdGuard OS-wide app for Windows, you can use the following code:
+Get all modifiers supported by AdGuard for Windows:
 
 ```ts
-import { modifiersCompatibilityTable, SpecificPlatform } from '@adguard/agtree';
+import { modifiersCompatibilityTable, Platform } from '@adguard/agtree';
 
-modifiersCompatibilityTable.getAllMultiple(SpecificPlatform.AdgOsWindows);
+const features = modifiersCompatibilityTable.getAll(Platform.AdgOsWindows);
+// Returns: Map<string, ModifierData[]>
+// e.g., Map {
+//   'third-party' => [ModifierData],
+//   'domain' => [ModifierData],
+//   'important' => [ModifierData],
+//   ...
+// }
 ```
 
-This will return an array of compatible modifiers for AdGuard OS-wide app for Windows.
-
-This method also works for generic platforms, for example, to get all supported modifiers for
-any AdGuard OS-wide app, you can use the following code:
+This also works for wildcard queries to get all features across multiple platforms:
 
 ```ts
-modifiersCompatibilityTable.getAllMultiple(GenericPlatform.AdgOsAny);
+// Get all modifiers for any AdGuard OS
+const osFeatures = modifiersCompatibilityTable.getAll(Platform.AdgOsAny);
 ```
 
-#### Get first compatible modifier for a specific / generic platform
+#### Get all platform variants
 
-As you've seen in the previous example, there are multiple compatible modifiers for a generic platform,
-but sometimes you may need only the first compatible modifier.
-
-If you want to get the first compatible modifier for AdGuard OS-wide app for Windows, you can use the following code:
-
-```ts
-import { modifiersCompatibilityTable, SpecificPlatform } from '@adguard/agtree';
-
-modifiersCompatibilityTable.getFirst('third-party', SpecificPlatform.AdgOsWindows);
-```
-
-#### Get compatibility table row
-
-Sometimes you may need to get all compatibility data for a specific modifier, redirect, or scriptlet.
-Lets say you want to get all compatibility data for the `$third-party` modifier:
+Get all platform-specific variants of a feature:
 
 ```ts
 import { modifiersCompatibilityTable } from '@adguard/agtree';
 
-modifiersCompatibilityTable.getRow('third-party');
+const variants = modifiersCompatibilityTable.getAllVariants('third-party');
 ```
 
-this will returns all compatibility data for the `$third-party` modifier:
+This returns all compatibility data across all platforms:
 
 ```js
 [
@@ -502,58 +417,41 @@ this will returns all compatibility data for the `$third-party` modifier:
     name: 'third-party',
     aliases: [ '3p' ],
     docs: 'https://adguard.app/kb/general/ad-filtering/create-own-filters/#third-party-modifier',
-    // ...
+    // ... (AdGuard)
   },
   {
     name: '3p',
     aliases: [ 'third-party' ],
     docs: 'https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#3p',
-    // ...
+    // ... (uBlock Origin)
   },
   {
     name: 'third-party',
     aliases: null,
     docs: 'https://help.adblockplus.org/hc/en-us/articles/360062733293#party-requests',
-    // ...
+    // ... (Adblock Plus)
   }
 ]
 ```
 
-As you can see, `aliases` and `docs` fields are different for each platform.
+Note that `aliases` and `docs` fields differ between platforms.
 
-#### Get all modifiers grouped by product
+#### Group features by product
 
-If you want to get all compatibility data grouped by product, you can use the following code:
+Get all features grouped by adblocker product:
 
 ```ts
-import { modifiersCompatibilityTable } from '@adguard/agtree';
+import { modifiersCompatibilityTable, AdblockProduct } from '@adguard/agtree';
 
-modifiersCompatibilityTable.getRowsByProduct();
+const grouped = modifiersCompatibilityTable.groupByProduct();
+// Returns: Map<AdblockProduct, Map<string, ModifierData[]>>
+
+// Access AdGuard-specific modifiers
+const adgModifiers = grouped.get(AdblockProduct.Adg);
+// Returns: Map<string, ModifierData[]> with all AdGuard modifiers
+
+// Access uBlock Origin-specific modifiers
+const uboModifiers = grouped.get(AdblockProduct.Ubo);
 ```
 
-This will returns an array where each element is an object that represents compatibility data for a given modifier.
-
-```js
-[
-  {
-    AdGuard: {
-      // key are platform flags
-      '1': [Object],
-      '2': [Object],
-      // ...
-    },
-    UblockOrigin: {
-      // key are platform flags
-      '1024': [Object],
-      '2048': [Object],
-      '4096': [Object],
-      '8192': [Object]
-    },
-    // seems its not compatible with AdblockPlus
-    AdblockPlus: {}
-  },
-  // ...
-]
-```
-
-Practically, we use this function to generate compatibility tables in the WIKI.
+This is useful for generating product-specific compatibility tables or documentation.

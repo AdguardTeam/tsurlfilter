@@ -10,7 +10,6 @@ import {
     ListItemNodeType,
     ListNodeType,
 } from '../../nodes';
-import { AdblockSyntax } from '../../utils/adblockers';
 import { clone } from '../../utils/clone';
 import {
     ADG_PATH_MODIFIER,
@@ -20,6 +19,7 @@ import {
     REGEX_MARKER,
     SLASH,
 } from '../../utils/constants';
+import { SYNTAX_ADG } from '../../utils/syntax-flags';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 
 /**
@@ -175,6 +175,60 @@ export function convertPathInDomainToModifier(
         }
     }
 
+    // Build a rule projection WITHOUT the original domain list. Cloning this
+    // projection per path group avoids deep-copying every domain node once per
+    // group, which would create Θ(D²) temporary nodes for D domains spread
+    // across D distinct paths. Each clone only carries its own group's domains.
+    const { domains: originalDomains, ...ruleWithoutDomains } = rule;
+
+    /**
+     * Clones the rule (excluding its domain list) and attaches the given
+     * domains. When `path` is provided, the rule is marked as AdGuard syntax
+     * and a `$path` modifier is appended.
+     *
+     * @param domainItems Domains to attach to the cloned rule.
+     * @param path Optional path value for the `$path` modifier.
+     *
+     * @returns The cloned rule with the attached domains.
+     */
+    const buildRuleWithDomains = (
+        domainItems: Array<{ domain: string; exception: boolean }>,
+        path?: string,
+    ): AnyCosmeticRule => {
+        const convertedRule = clone(ruleWithoutDomains) as AnyCosmeticRule;
+
+        convertedRule.domains = {
+            type: ListNodeType.DomainList,
+            separator: originalDomains.separator,
+            children: domainItems.map((d) => ({
+                type: ListItemNodeType.Domain,
+                value: d.domain,
+                exception: d.exception,
+            })),
+        };
+
+        if (path !== undefined) {
+            // Set syntax to Adg since we're adding AdGuard modifiers
+            convertedRule.syntax = SYNTAX_ADG;
+
+            const pathModifier = createModifierNode(ADG_PATH_MODIFIER, path);
+
+            if (convertedRule.modifiers) {
+                convertedRule.modifiers = {
+                    ...convertedRule.modifiers,
+                    children: [...convertedRule.modifiers.children, pathModifier],
+                };
+            } else {
+                convertedRule.modifiers = {
+                    type: 'ModifierList',
+                    children: [pathModifier],
+                };
+            }
+        }
+
+        return convertedRule;
+    };
+
     // Group domains by path
     const pathGroups = new Map<string, Array<{ domain: string; exception: boolean }>>();
 
@@ -189,38 +243,8 @@ export function convertPathInDomainToModifier(
     // create a single rule with $path modifier
     if (pathGroups.size === 1 && domainsWithoutPaths.length === 0) {
         const [path, domains] = Array.from(pathGroups.entries())[0];
-        const convertedRule = clone(rule);
 
-        // Set syntax to Adg since we're adding AdGuard modifiers
-        convertedRule.syntax = AdblockSyntax.Adg;
-
-        // Update domains to remove paths
-        convertedRule.domains = {
-            type: ListNodeType.DomainList,
-            separator: rule.domains.separator,
-            children: domains.map((d) => ({
-                type: ListItemNodeType.Domain,
-                value: d.domain,
-                exception: d.exception,
-            })),
-        };
-
-        // Add $path modifier
-        const pathModifier = createModifierNode(ADG_PATH_MODIFIER, path);
-
-        if (convertedRule.modifiers) {
-            convertedRule.modifiers = {
-                ...convertedRule.modifiers,
-                children: [...convertedRule.modifiers.children, pathModifier],
-            };
-        } else {
-            convertedRule.modifiers = {
-                type: 'ModifierList',
-                children: [pathModifier],
-            };
-        }
-
-        return createNodeConversionResult([convertedRule], true);
+        return createNodeConversionResult([buildRuleWithDomains(domains, path)], true);
     }
 
     // Multiple paths or mixed (with/without paths) - split into multiple rules
@@ -228,55 +252,12 @@ export function convertPathInDomainToModifier(
 
     // Create rules for domains with paths
     pathGroups.forEach((domains, path) => {
-        const convertedRule = clone(rule);
-
-        // Set syntax to Adg since we're adding AdGuard modifiers
-        convertedRule.syntax = AdblockSyntax.Adg;
-
-        // Set domains for this path
-        convertedRule.domains = {
-            type: 'DomainList',
-            separator: rule.domains!.separator,
-            children: domains.map((d) => ({
-                type: 'Domain',
-                value: d.domain,
-                exception: d.exception,
-            })),
-        };
-
-        // Add $path modifier
-        const pathModifier = createModifierNode(ADG_PATH_MODIFIER, path);
-
-        if (convertedRule.modifiers) {
-            convertedRule.modifiers = {
-                ...convertedRule.modifiers,
-                children: [...convertedRule.modifiers.children, pathModifier],
-            };
-        } else {
-            convertedRule.modifiers = {
-                type: 'ModifierList',
-                children: [pathModifier],
-            };
-        }
-
-        convertedRules.push(convertedRule);
+        convertedRules.push(buildRuleWithDomains(domains, path));
     });
 
     // Create rule for domains without paths (if any)
     if (domainsWithoutPaths.length > 0) {
-        const convertedRule = clone(rule);
-
-        convertedRule.domains = {
-            type: 'DomainList',
-            separator: rule.domains!.separator,
-            children: domainsWithoutPaths.map((d) => ({
-                type: 'Domain',
-                value: d.domain,
-                exception: d.exception,
-            })),
-        };
-
-        convertedRules.push(convertedRule);
+        convertedRules.push(buildRuleWithDomains(domainsWithoutPaths));
     }
 
     return createNodeConversionResult(convertedRules, true);

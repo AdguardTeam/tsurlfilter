@@ -1,4 +1,4 @@
-adg_os_any:
+common:
   name: inline-script
   description: |-
     The `$inline-script` modifier is a sort of a shortcut for $csp modifier with specific value.
@@ -6,24 +6,12 @@ adg_os_any:
     ```adblock
     ||example.org^$csp=script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:
     ```
+
+adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#inline-script-modifier
 
 adg_ext_any:
-  name: inline-script
-  description: |-
-    The `$inline-script` modifier is a sort of a shortcut for $csp modifier with specific value.
-    E.g. `||example.org^$inline-script` is converting into:
-    ```adblock
-    ||example.org^$csp=script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:
-    ```
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#inline-script-modifier
 
 ubo_ext_any:
-  name: inline-script
-  description: |-
-    The `$inline-script` modifier is a sort of a shortcut for $csp modifier with specific value.
-    E.g. `||example.org^$inline-script` is converting into:
-    ```adblock
-    ||example.org^$csp=script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:
-    ```
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#inline-script

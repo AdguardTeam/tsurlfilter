@@ -1,22 +1,26 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
 adg_os_any|adg_ext_any:
   name: prevent-eval-if
   version_added: 1.0.4
+  description: Prevents page to use eval matching payload.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-eval-if
   aliases:
     - noeval-if.js
     - ubo-noeval-if.js
     - ubo-noeval-if
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-eval-if
   parameters:
     - name: search
       required: false
+      description: String or regular expression matching the stringified eval payload; defaults to match all stringified eval payloads; invalid regular expression will cause exit and rule will not work.
 
 ubo_any:
   name: noeval-if.js
+  description: Prevent web pages from using eval() on specific matching payloads.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
   aliases:
     - prevent-eval-if.js
-  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#noeval-ifjs-
+    - prevent-eval-if
+    - noeval-if
   parameters:
     - name: search
       required: false
+      description: String/regular expression, matching in payload string.

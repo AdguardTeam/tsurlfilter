@@ -1,14 +1,47 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
-  name: trusted-suppress-native-method
-  version_added: 1.10.25
+common:
+  is_trusted: true
   parameters:
     - name: methodPath
       required: true
+      description: String path to a native method (joined with "." (dot) if needed). The property must be attached to window.
     - name: signatureStr
       required: true
+      description: String of |-separated argument matchers.
     - name: how
       required: false
+      description: String, one of the following.
+
+adg_os_any|adg_ext_any|adg_safari_any:
+  name: trusted-suppress-native-method
+  version_added: 1.10.25
+  description: Prevents a call of a given native method, matching the call by incoming arguments.
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-trusted-scriptlets.md#trusted-suppress-native-method
+  parameters:
     - name: stack
       required: false
+      description: String or regular expression that must match the current function call stack trace.
+
+ubo_any:
+  name: trusted-suppress-native-method.js
+  version_added: 1.58.1rc0
+  description: |-
+    This is a first draft version with current limitations:
+    * Does not support matching arguments which are object or array.
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#trusted-suppress-native-methodjs-
+  aliases:
+    - trusted-suppress-native-method
+  parameters:
+    - name: methodPath
+      required: true
+      description: A chain of dot-separated properties leading to the native method to suppress.
+    - name: signature
+      required: false
+      description: |-
+        A `|`-separated list of argument matchers. Each entry can be a quoted string pattern (e.g. `"pattern"`), a regex (e.g. `/regex/`), or one of the exact literals `true`, `false`, `null`, `undefined`.
+        If empty, all calls are logged and none are suppressed.
+    - name: how
+      required: false
+      description: How to handle a matched call. `abort` throws a ReferenceError. `debug` triggers a debugger breakpoint. If empty, the call is silently suppressed.
+    - name: stack
+      required: false
+      description: String or regular expression that must match the current function call stack trace. Prepend with `!` to negate.

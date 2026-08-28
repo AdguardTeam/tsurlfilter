@@ -1,13 +1,14 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Aborts on property write (PopAds, popns), throws reference error with random id.
+
 adg_os_any|adg_ext_any:
   name: prevent-popads-net
   aliases:
     - popads.js
-  description: Aborts on property write (PopAds, popns), throws reference error with random id.
 
 ubo_any:
   name: popads.js
-  description: Aborts on property write (PopAds, popns), throws reference error with random id.
   resource_types:
     - script

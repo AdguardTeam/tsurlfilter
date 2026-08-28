@@ -1,152 +1,136 @@
 /* eslint-disable no-param-reassign */
-import { type ModifierList } from '../../nodes';
-import { MODIFIERS_SEPARATOR } from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
-import { BaseParser } from '../base-parser';
-import { defaultParserOptions } from '../options';
-
-import { ModifierParser } from './modifier-parser';
 
 /**
- * `ModifierListParser` is responsible for parsing modifier lists. Please note that the name is not
- * uniform, "modifiers" are also known as "options".
+ * @file Modifier list parser.
  *
- * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers}
- * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#non-basic-rules-modifiers}
- * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#options}
+ * Splits the modifier list by comma separators and delegates each
+ * individual modifier to {@link ModifierParser}.
  */
-export class ModifierListParser extends BaseParser {
+
+import { REGION_MODIFIERS } from '../../errors/capacity-overflow-error';
+import { TokenType } from '../../tokenizer/token-types';
+import type { ParserContext } from '../context';
+import { CTX_STATUS_HARD_CAP, CTX_STATUS_OVERFLOW, growCtxRegion } from '../context';
+import { MODIFIER_RECORD_STRIDE, NR_MODIFIER_COUNT_OFFSET, NR_MODIFIER_RECORDS_OFFSET } from '../network/constants';
+import type { StructuralParser } from '../types';
+
+import { ModifierParser } from './modifier';
+
+/**
+ * Parser for a comma-separated modifier list.
+ *
+ * Delegates individual modifier parsing to {@link ModifierParser}.
+ */
+export class ModifierListParser implements StructuralParser {
     /**
-     * Parses the cosmetic rule modifiers, eg. `third-party,domain=example.com|~example.org`.
-     *
-     * _Note:_ you should remove `$` separator before passing the raw modifiers to this function,
-     *  or it will be parsed in the first modifier.
-     *
-     * @param raw Raw input to parse.
-     * @param options Global parser options.
-     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     *
-     * @returns Parsed modifiers interface.
+     * Minimum number of `ctx.data` slots for a modifier list with default capacity (64 modifiers).
      */
-    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): ModifierList {
-        const result: ModifierList = {
-            type: 'ModifierList',
-            children: [],
-        };
+    public static readonly MIN_DATA_SLOTS = NR_MODIFIER_RECORDS_OFFSET + 64 * MODIFIER_RECORD_STRIDE;
 
-        if (options.isLocIncluded) {
-            result.start = baseOffset;
-            result.end = baseOffset + raw.length;
+    /**
+     * Returns the number of modifiers in the parsed rule.
+     *
+     * @param data Preparsed data buffer.
+     *
+     * @returns Modifier count.
+     */
+    public static getCount(data: Int32Array): number {
+        return data[NR_MODIFIER_COUNT_OFFSET];
+    }
+
+    /**
+     * Searches for a modifier by name (zero allocation).
+     *
+     * @param source Original source string.
+     * @param data Preparsed data buffer.
+     * @param name Modifier name to search for.
+     *
+     * @returns Modifier index (0-based) or -1 if not found.
+     */
+    public static findIndex(source: string, data: Int32Array, name: string): number {
+        const count = data[NR_MODIFIER_COUNT_OFFSET];
+
+        for (let i = 0; i < count; i += 1) {
+            if (ModifierParser.nameEquals(source, data, i, name)) {
+                return i;
+            }
         }
 
-        let offset = StringUtils.skipWS(raw);
+        return -1;
+    }
 
-        let separatorIndex = -1;
+    /**
+     * Returns `true` if the rule has a modifier with the given name (zero allocation).
+     *
+     * @param source Original source string.
+     * @param data Preparsed data buffer.
+     * @param name Modifier name to search for.
+     *
+     * @returns `true` if found.
+     */
+    public static hasNamed(source: string, data: Int32Array, name: string): boolean {
+        return ModifierListParser.findIndex(source, data, name) !== -1;
+    }
 
-        // Split modifiers by unescaped commas
-        while (offset < raw.length) {
-            // Skip whitespace before the modifier
-            offset = StringUtils.skipWS(raw, offset);
+    /**
+     * Preparse a comma-separated modifier list starting at token `startTi`.
+     * Writes modifier records to `ctx.data` and returns the total count.
+     *
+     * @param ctx Parser context.
+     * @param startTi Token index at the first modifier (after the `$` separator).
+     * @param recordsOffset Buffer offset where modifier records should be written.
+     * @param headerOffset Offset within `ctx.data` where the modifier-list
+     *   header fields (count) are written.
+     * @param endTi Exclusive token index where the modifier list ends. Defaults to `ctx.tokenCount`.
+     */
+    public static parse(
+        ctx: ParserContext,
+        startTi: number,
+        recordsOffset: number,
+        headerOffset: number,
+        endTi: number = ctx.tokenCount,
+    ): void {
+        const { types } = ctx;
+        const tokenCount = endTi;
+        let { maxMods } = ctx;
+        let currentTi = startTi;
+        let modCount = 0;
 
-            const modifierStart = offset;
-
-            // Check if this modifier has a regexp pattern
-            // Look for the `=` sign to find where the modifier value starts
-            let useSimpleSearch = false;
-            const equalsIndex = raw.indexOf('=', offset);
-            if (equalsIndex !== -1 && equalsIndex < raw.length - 1) {
-                const valueStart = equalsIndex + 1;
-                // Check if value starts with / (potential regex)
-                if (raw[valueStart] === '/' && raw[valueStart + 1] !== '/') {
-                    // Look for a closing / for the regex pattern
-                    // Search through the rest of the string for an unescaped /
-                    let firstClosingSlashIndex = -1;
-                    for (let i = valueStart + 1; i < raw.length; i += 1) {
-                        if (raw[i] === '/' && raw[i - 1] !== '\\') {
-                            firstClosingSlashIndex = i;
-                            break;
-                        }
-                    }
-
-                    if (firstClosingSlashIndex === -1) {
-                        // No closing slash found anywhere - incomplete regex pattern
-                        // Use simple search to allow it to work when it's the last modifier
-                        useSimpleSearch = true;
-                    } else {
-                        // Found a closing slash - check if there are MORE slashes after it
-                        // If yes, this might be a complex pattern like replace=/pattern/replacement/flags
-                        // and we should use simple search to avoid breaking it
-                        let hasMoreSlashes = false;
-                        for (let i = firstClosingSlashIndex + 1; i < raw.length; i += 1) {
-                            if (raw[i] === '/' && raw[i - 1] !== '\\') {
-                                hasMoreSlashes = true;
-                                break;
-                            }
-                        }
-
-                        // Use simple search if there are more slashes (complex pattern)
-                        if (hasMoreSlashes) {
-                            useSimpleSearch = true;
-                        }
-                    }
-                } else {
-                    // Value doesn't start with `/`, so it's not a regexp pattern.
-                    // Use simple search to avoid treating slashes in values
-                    // as regex markers, e.g. `redirect=googlesyndication.com/adsbygoogle.js`.
-                    useSimpleSearch = true;
+        while (currentTi < tokenCount) {
+            // Grow if the buffer is full but there are still tokens to consume.
+            if (modCount >= maxMods) {
+                if (!ctx.grow) {
+                    ctx.status = CTX_STATUS_OVERFLOW;
+                    break;
                 }
+                const requested = Math.max(modCount + 1, maxMods * 2);
+                if (!growCtxRegion(ctx, REGION_MODIFIERS, requested)) {
+                    ctx.overflowRegion = REGION_MODIFIERS;
+                    ctx.status = CTX_STATUS_HARD_CAP;
+                    break;
+                }
+                maxMods = ctx.maxMods;
+                // recordsOffset is passed as a parameter and equals NR_MODIFIER_RECORDS_OFFSET
+                // (a fixed constant). Growing modifiers does NOT shift the modifier record start
+                // offset, so recordsOffset remains valid.
             }
 
-            // Find the index of the first unescaped comma
-            let nextSeparator;
-            if (useSimpleSearch) {
-                // Use simple search for incomplete regex patterns
-                nextSeparator = StringUtils.findNextUnescapedCharacter(
-                    raw,
-                    MODIFIERS_SEPARATOR,
-                    offset,
-                );
-            } else {
-                // Use regex-aware search to handle complete regex patterns
-                nextSeparator = StringUtils.findUnescapedNonStringNonRegexChar(
-                    raw,
-                    MODIFIERS_SEPARATOR,
-                    offset,
-                );
+            const nextTi = ModifierParser.parse(ctx, currentTi, modCount, recordsOffset, tokenCount);
+
+            // ModifierParser.parse returns -1 if it can't start a modifier
+            if (nextTi === -1) {
+                break;
             }
 
-            separatorIndex = nextSeparator;
+            modCount += 1;
+            currentTi = nextTi;
 
-            const modifierEnd = separatorIndex === -1
-                ? raw.length
-                : StringUtils.skipWSBack(raw, separatorIndex - 1) + 1;
-
-            // Parse the modifier
-            const modifier = ModifierParser.parse(
-                raw.slice(modifierStart, modifierEnd),
-                options,
-                baseOffset + modifierStart,
-            );
-
-            result.children.push(modifier);
-
-            // Increment the offset to the next modifier (or the end of the string)
-            offset = separatorIndex === -1 ? raw.length : separatorIndex + 1;
+            // Consume the separator comma (if present)
+            if (currentTi < tokenCount && types[currentTi] === TokenType.Comma) {
+                currentTi += 1;
+            }
         }
 
-        // Check if there are any modifiers after the last separator
-        if (separatorIndex !== -1) {
-            const modifierStart = StringUtils.skipWS(raw, separatorIndex + 1);
-
-            result.children.push(
-                ModifierParser.parse(
-                    raw.slice(modifierStart, raw.length),
-                    options,
-                    baseOffset + modifierStart,
-                ),
-            );
-        }
-
-        return result;
+        ctx.data[headerOffset + NR_MODIFIER_COUNT_OFFSET] = modCount;
     }
 }

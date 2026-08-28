@@ -2,7 +2,7 @@ import type { ParameterList } from '../../nodes';
 import { COMMA, EMPTY, SPACE } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
 
-import { ValueGenerator } from './value-generator';
+import { ParameterGenerator } from './parameter-generator';
 
 /**
  * Generator for parameter list nodes.
@@ -26,7 +26,7 @@ export class ParameterListGenerator extends BaseGenerator {
             if (param === null) {
                 collection.push(EMPTY);
             } else {
-                collection.push(ValueGenerator.generate(param));
+                collection.push(ParameterGenerator.generate(param));
             }
         }
 

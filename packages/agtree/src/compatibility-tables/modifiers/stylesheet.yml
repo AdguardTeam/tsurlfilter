@@ -1,16 +1,14 @@
-adg_any:
+common:
   name: stylesheet
   description: The rule corresponds to CSS files requests.
+
+adg_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#stylesheet-modifier
 
 abp_any:
-  name: stylesheet
-  description: The rule corresponds to CSS files requests.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
 
 ubo_any:
-  name: stylesheet
   aliases:
     - css
-  description: The rule corresponds to CSS files requests.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#css

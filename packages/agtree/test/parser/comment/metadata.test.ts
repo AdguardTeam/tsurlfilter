@@ -1,230 +1,139 @@
 import { describe, expect, test } from 'vitest';
 
-import { MetadataCommentGenerator } from '../../../src/generator/comment/metadata-comment-generator';
-import { MetadataCommentParser } from '../../../src/parser/comment/metadata-comment-parser';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
+import {
+    CommentKind,
+    CommentParser,
+    createParserContext,
+    initParserContext,
+    MetadataCommentParser,
+} from '../../../src/parser';
+import { Tokenizer } from '../../../src/tokenizer/tokenizer';
 
-describe('MetadataCommentRuleParser', () => {
-    test('parse', () => {
-        // TODO: Refactor to test.each
-        expect(MetadataCommentParser.parse(EMPTY)).toBeNull();
-        expect(MetadataCommentParser.parse(SPACE)).toBeNull();
+const tokenizer = new Tokenizer(1024);
 
-        // Missing comment marker
-        expect(MetadataCommentParser.parse('a:b')).toBeNull();
+const ctx = createParserContext();
 
-        // Missing colon
-        expect(MetadataCommentParser.parse('!')).toBeNull();
-        expect(MetadataCommentParser.parse('!##')).toBeNull();
-        expect(MetadataCommentParser.parse('##')).toBeNull();
+/**
+ * Tokenize + parse a comment rule in one step for convenience.
+ *
+ * @param source Source string to parse.
+ *
+ * @returns Preparsed data buffer.
+ */
+function parse(source: string): Int32Array {
+    tokenizer.setSource(source);
+    initParserContext(ctx, source, tokenizer);
+    CommentParser.parse(ctx);
+    return ctx.data;
+}
 
-        // Not a known metadata header
-        expect(MetadataCommentParser.parse('!aaa:bbb')).toBeNull();
-        expect(MetadataCommentParser.parse('! aaa: bbb')).toBeNull();
-        expect(MetadataCommentParser.parse('!aaa:bbb:ccc')).toBeNull();
-        expect(MetadataCommentParser.parse('! aaa: bbb: ccc')).toBeNull();
-
-        // Invalid syntax
-        expect(MetadataCommentParser.parse('!:::')).toBeNull();
-        expect(MetadataCommentParser.parse('! : : :')).toBeNull();
-
-        // Starts like a valid metadata header, but the valid title is followed by
-        // an unexpected character
-        expect(MetadataCommentParser.parse('! Title a:')).toBeNull();
-
-        // Starts like a valid metadata header, but hasn't a value
-        expect(MetadataCommentParser.parse('! Title:')).toBeNull();
-        expect(MetadataCommentParser.parse('! Title:  ')).toBeNull();
-
-        expect(MetadataCommentParser.parse('! Title: FilterList Title')).toMatchObject({
-            type: 'MetadataCommentRule',
-            start: 0,
-            end: 25,
-            category: 'Comment',
-            syntax: 'Common',
-            marker: {
-                type: 'Value',
-                start: 0,
-                end: 1,
-                value: '!',
-            },
-            header: {
-                type: 'Value',
-                start: 2,
-                end: 7,
-                value: 'Title',
-            },
-            value: {
-                type: 'Value',
-                start: 9,
-                end: 25,
-                value: 'FilterList Title',
-            },
+describe('MetadataCommentParser', () => {
+    describe('classification', () => {
+        test('! Title: FilterList Title', () => {
+            parse('! Title: FilterList Title');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Metadata);
         });
 
-        expect(MetadataCommentParser.parse('# Title: FilterList Title')).toMatchObject({
-            type: 'MetadataCommentRule',
-            start: 0,
-            end: 25,
-            category: 'Comment',
-            syntax: 'Common',
-            marker: {
-                type: 'Value',
-                start: 0,
-                end: 1,
-                value: '#',
-            },
-            header: {
-                type: 'Value',
-                start: 2,
-                end: 7,
-                value: 'Title',
-            },
-            value: {
-                type: 'Value',
-                start: 9,
-                end: 25,
-                value: 'FilterList Title',
-            },
+        test('# Title: FilterList Title — hash marker', () => {
+            parse('# Title: FilterList Title');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Metadata);
         });
 
-        expect(MetadataCommentParser.parse('! title: FilterList Title')).toMatchObject({
-            type: 'MetadataCommentRule',
-            start: 0,
-            end: 25,
-            category: 'Comment',
-            syntax: 'Common',
-            marker: {
-                type: 'Value',
-                start: 0,
-                end: 1,
-                value: '!',
-            },
-            header: {
-                type: 'Value',
-                start: 2,
-                end: 7,
-                value: 'title',
-            },
-            value: {
-                type: 'Value',
-                start: 9,
-                end: 25,
-                value: 'FilterList Title',
-            },
+        test('! title: FilterList Title — case-insensitive header', () => {
+            parse('! title: FilterList Title');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Metadata);
         });
 
-        expect(MetadataCommentParser.parse('!    title:    Filter   ')).toMatchObject({
-            type: 'MetadataCommentRule',
-            start: 0,
-            end: 24,
-            category: 'Comment',
-            syntax: 'Common',
-            marker: {
-                type: 'Value',
-                start: 0,
-                end: 1,
-                value: '!',
-            },
-            header: {
-                type: 'Value',
-                start: 5,
-                end: 10,
-                value: 'title',
-            },
-            value: {
-                type: 'Value',
-                start: 15,
-                end: 21,
-                value: 'Filter',
-            },
+        test('! Homepage: https://example.com', () => {
+            parse('! Homepage: https://example.com');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Metadata);
         });
 
-        expect(
-            MetadataCommentParser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
-        ).toMatchObject({
-            type: 'MetadataCommentRule',
-            start: 0,
-            end: 57,
-            category: 'Comment',
-            syntax: 'Common',
-            marker: {
-                type: 'Value',
-                start: 0,
-                end: 1,
-                value: '!',
-            },
-            header: {
-                type: 'Value',
-                start: 2,
-                end: 10,
-                value: 'Homepage',
-            },
-            value: {
-                type: 'Value',
-                start: 12,
-                end: 57,
-                value: 'https://github.com/AdguardTeam/some-repo/wiki',
-            },
+        test('! Version: 2.0.0', () => {
+            parse('! Version: 2.0.0');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Metadata);
+        });
+
+        test('! Expires: 4 days (update frequency)', () => {
+            parse('! Expires: 4 days (update frequency)');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Metadata);
         });
     });
 
-    describe('parser options should work as expected', () => {
-        // TODO: Add template for test.each
-        test.each([
-            {
-                actual: '! Title: FilterList Title',
-                expected: {
-                    type: 'MetadataCommentRule',
-                    category: 'Comment',
-                    syntax: 'Common',
-                    raws: {
-                        text: '! Title: FilterList Title',
-                    },
-                    marker: {
-                        type: 'Value',
-                        value: '!',
-                    },
-                    header: {
-                        type: 'Value',
-                        value: 'Title',
-                    },
-                    value: {
-                        type: 'Value',
-                        value: 'FilterList Title',
-                    },
-                },
-            },
-        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(
-                MetadataCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
-            ).toEqual(expected);
+    describe('marker position', () => {
+        test('! Title: ... — marker at 0', () => {
+            expect(MetadataCommentParser.markerStart(parse('! Title: FilterList Title'))).toBe(0);
+        });
+
+        test('# Title: ... — hash marker at 0', () => {
+            expect(MetadataCommentParser.markerStart(parse('# Title: FilterList Title'))).toBe(0);
         });
     });
 
-    test('generate', () => {
-        const parseAndGenerate = (raw: string) => {
-            const ast = MetadataCommentParser.parse(raw);
+    describe('header bounds', () => {
+        test('! Title: FilterList Title — header at [2, 7)', () => {
+            const source = '! Title: FilterList Title';
+            const d = parse(source);
+            expect(MetadataCommentParser.headerStart(d)).toBe(2);
+            expect(MetadataCommentParser.headerEnd(d)).toBe(7);
+            expect(source.slice(2, 7)).toBe('Title');
+        });
 
-            if (ast) {
-                return MetadataCommentGenerator.generate(ast);
-            }
+        test('# Title: FilterList Title — header at [2, 7)', () => {
+            const source = '# Title: FilterList Title';
+            const d = parse(source);
+            expect(MetadataCommentParser.headerStart(d)).toBe(2);
+            expect(MetadataCommentParser.headerEnd(d)).toBe(7);
+        });
 
-            return null;
-        };
+        test('! title: FilterList Title — lowercase header at [2, 7)', () => {
+            const source = '! title: FilterList Title';
+            const d = parse(source);
+            expect(MetadataCommentParser.headerStart(d)).toBe(2);
+            expect(MetadataCommentParser.headerEnd(d)).toBe(7);
+            expect(source.slice(2, 7)).toBe('title');
+        });
 
-        // TODO: Refactor to test.each
-        expect(parseAndGenerate('! Title: Filter')).toEqual('! Title: Filter');
-        expect(parseAndGenerate('!   Title: Filter   ')).toEqual('! Title: Filter');
-        expect(parseAndGenerate('# Title: Filter')).toEqual('# Title: Filter');
+        test('!    title:    Filter   — header after leading spaces at [5, 10)', () => {
+            const source = '!    title:    Filter   ';
+            const d = parse(source);
+            expect(MetadataCommentParser.headerStart(d)).toBe(5);
+            expect(MetadataCommentParser.headerEnd(d)).toBe(10);
+            expect(source.slice(5, 10)).toBe('title');
+        });
 
-        expect(parseAndGenerate('! Homepage: https://github.com/AdguardTeam/some-repo/wiki')).toEqual(
-            '! Homepage: https://github.com/AdguardTeam/some-repo/wiki',
-        );
+        test('! Homepage: ... — header at [2, 10)', () => {
+            const source = '! Homepage: https://github.com/AdguardTeam/some-repo/wiki';
+            const d = parse(source);
+            expect(MetadataCommentParser.headerStart(d)).toBe(2);
+            expect(MetadataCommentParser.headerEnd(d)).toBe(10);
+            expect(source.slice(2, 10)).toBe('Homepage');
+        });
+    });
 
-        expect(parseAndGenerate('# Homepage: https://github.com/AdguardTeam/some-repo/wiki')).toEqual(
-            '# Homepage: https://github.com/AdguardTeam/some-repo/wiki',
-        );
+    describe('value bounds', () => {
+        test('! Title: FilterList Title — value at [9, 25)', () => {
+            const source = '! Title: FilterList Title';
+            const d = parse(source);
+            expect(MetadataCommentParser.valueStart(d)).toBe(9);
+            expect(MetadataCommentParser.valueEnd(d)).toBe(25);
+            expect(source.slice(9, 25)).toBe('FilterList Title');
+        });
+
+        test('!    title:    Filter   — trailing whitespace trimmed, value at [15, 21)', () => {
+            const source = '!    title:    Filter   ';
+            const d = parse(source);
+            expect(MetadataCommentParser.valueStart(d)).toBe(15);
+            expect(MetadataCommentParser.valueEnd(d)).toBe(21);
+            expect(source.slice(15, 21)).toBe('Filter');
+        });
+
+        test('! Homepage: URL — value at [12, 57)', () => {
+            const source = '! Homepage: https://github.com/AdguardTeam/some-repo/wiki';
+            const d = parse(source);
+            expect(MetadataCommentParser.valueStart(d)).toBe(12);
+            expect(MetadataCommentParser.valueEnd(d)).toBe(57);
+            expect(source.slice(12, 57)).toBe('https://github.com/AdguardTeam/some-repo/wiki');
+        });
     });
 });

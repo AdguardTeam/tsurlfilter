@@ -65,7 +65,7 @@ describe('RawFilterListConverter', () => {
         const filterListContent = [
             '! Title: Foo',
             // Invalid rule because `:has-text()` provided without argument
-            '##^body:has-text()',
+            '##^body:has-text(',
             // Should be converted
             '||example.com^$3p',
         ].join(NEWLINE);
@@ -73,7 +73,7 @@ describe('RawFilterListConverter', () => {
         // Expected tolerantly converted filter list
         const expectedFilterListContent = [
             '! Title: Foo',
-            '##^body:has-text()', // Left as is
+            '##^body:has-text(', // Left as is
             '||example.com^$third-party', // Converted
         ].join(NEWLINE);
 
@@ -86,5 +86,26 @@ describe('RawFilterListConverter', () => {
 
         // The rule should be left as is
         expect(tolerant().result).toBe(expectedFilterListContent);
+    });
+
+    test('convertToAdg should convert a modifier on a rule followed by another rule', () => {
+        // Regression: the `$` separator of the first rule must be detected even
+        // though a line break (belonging to the next rule) follows `$3p`.
+        // Previously the modifier probe used the chunk-wide token count, saw the
+        // line break, rejected the separator, and left `$3p` in the pattern.
+        const filterListContent = [
+            '||a^$3p',
+            '||b^$script',
+        ].join(NEWLINE);
+
+        const expectedFilterListContent = [
+            '||a^$third-party',
+            '||b^$script',
+        ].join(NEWLINE);
+
+        const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
+
+        expect(convertedFilterList.isConverted).toBe(true);
+        expect(convertedFilterList.result).toBe(expectedFilterListContent);
     });
 });

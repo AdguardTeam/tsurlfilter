@@ -1,5 +1,8 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Mocks Google's Analytics and Tag Manager APIs.
+
 adg_os_any|adg_ext_any:
   name: google-analytics
   aliases:
@@ -8,10 +11,8 @@ adg_os_any|adg_ext_any:
     - googletagmanager-gtm
     - ubo-googletagmanager_gtm.js
     - googletagmanager_gtm.js
-  description: Mocks Google's Analytics and Tag Manager APIs.
 
 ubo_any:
   name: google-analytics_analytics.js
-  description: Mocks Google's Analytics and Tag Manager APIs.
   resource_types:
     - script

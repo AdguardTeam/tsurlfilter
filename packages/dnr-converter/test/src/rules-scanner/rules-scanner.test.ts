@@ -8,8 +8,7 @@ import {
     vi,
 } from 'vitest';
 
-import { RuleCategory } from '@adguard/agtree';
-import { FilterListParser } from '@adguard/agtree/parser';
+import { type FilterListPipeline, RuleCategory } from '@adguard/agtree';
 
 import { MaxScannedRulesError } from '../../../src/errors/limitation-errors/max-scanned-rules-error';
 import { type IFilter } from '../../../src/filter/types';
@@ -18,14 +17,6 @@ import { Rule } from '../../../src/rule/rule';
 import { RulesScanner } from '../../../src/rules-scanner';
 import { createRuleMock } from '../../mocks/rule';
 
-vi.mock('@adguard/agtree/parser', async () => {
-    const actual = await vi.importActual('@adguard/agtree/parser');
-    return {
-        ...actual,
-        FilterListParser: { parse: vi.fn() },
-    };
-});
-
 const createFilter = (rules: string[] = [], id = 1): IFilter => ({
     getId: () => id,
     getRuleByIndex: async () => '',
@@ -33,11 +24,13 @@ const createFilter = (rules: string[] = [], id = 1): IFilter => ({
     unloadContent: () => {},
 });
 
-const parserMock = vi.mocked(FilterListParser.parse);
+let parserMock: MockInstance<typeof FilterListPipeline.prototype.parse>;
 let parseFromNodeMock: MockInstance<typeof Rule.parseFromNode>;
 
 describe('RulesScanner', () => {
     beforeEach(() => {
+        // The scanner uses a single shared FilterListPipeline instance.
+        parserMock = vi.spyOn((RulesScanner as unknown as { pipeline: FilterListPipeline }).pipeline, 'parse');
         parseFromNodeMock = vi.spyOn(Rule, 'parseFromNode');
         vi.clearAllMocks();
     });

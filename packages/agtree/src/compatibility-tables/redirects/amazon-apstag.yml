@@ -1,15 +1,16 @@
 # Note: content blocking products do not support redirects
+common:
+  description: Mocks Amazon's apstag.js
+
 adg_os_any|adg_ext_any:
   name: amazon-apstag
   aliases:
     - ubo-amazon_apstag.js
     - amazon_apstag.js
-  description: Mocks Amazon's apstag.js
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-redirects.md#amazon-apstag
 
 ubo_any:
   name: amazon_apstag.js
-  description: Mocks Amazon's apstag.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#amazon_apstagjs-
   resource_types:
     - script

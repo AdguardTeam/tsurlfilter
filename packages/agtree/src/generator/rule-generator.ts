@@ -21,9 +21,10 @@ export class RuleGenerator extends BaseGenerator {
      * Take a look at the following example:
      * ```js
      * // Parse the rule to the AST
-     * const ast = RuleParser.parse("example.org##.banner");
+     * const parser = new RuleParserPipeline();
+     * const ast = parser.parse("example.org##.banner");
      * // Generate the rule from the AST
-     * const raw = RuleParser.generate(ast);
+     * const raw = RuleGenerator.generate(ast);
      * // Print the generated rule
      * console.log(raw); // "example.org##.banner"
      * ```
@@ -36,6 +37,10 @@ export class RuleGenerator extends BaseGenerator {
 
             // Invalid rules
             case RuleCategory.Invalid:
+                return ast.raw;
+
+            // Raw rules — parsing was intentionally skipped, emit verbatim
+            case RuleCategory.Raw:
                 return ast.raw;
 
             // Comment rules

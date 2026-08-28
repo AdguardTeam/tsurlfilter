@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Removes content from the specified M3U file.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: m3u-prune
   version_added: 1.9.1
   aliases:
@@ -11,15 +12,24 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: propsToRemove
       required: false
+      description: String or regular expression to match the URL line (segment) which will be removed alongside with its tags.
     - name: urlToMatch
       required: false
+      description: String or regular expression for matching the request's URL.
+    - name: verbose
+      required: false
+      description: Boolean, if set to `true` will log original and modified M3U content to browser console.
 
 ubo_any:
   name: m3u-prune.js
   version_added: 1.44.5b6
+  aliases:
+    - m3u-prune
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#m3u-prunejs-
   parameters:
-    - name: propsToRemove
+    - name: m3uPattern
       required: false
-    - name: urlToMatch
+      description: String or regular expression to match the URL line (segment) which will be removed alongside with its tags.
+    - name: urlPattern
       required: false
+      description: String or regular expression for matching the request's URL.

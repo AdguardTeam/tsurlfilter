@@ -1,44 +1,22 @@
-adg_os_any:
+common:
   name: _
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#noop-modifier
   description: |-
     The noop modifier does nothing and can be used solely to increase rules' readability.
     It consists of a sequence of underscore characters (_) of any length
     and can appear in a rule as many times as needed.
   negatable: false
+
+adg_os_any:
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#noop-modifier
 
 adg_ext_any:
-  name: _
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#noop-modifier
-  description: |-
-    The noop modifier does nothing and can be used solely to increase rules' readability.
-    It consists of a sequence of underscore characters (_) of any length
-    and can appear in a rule as many times as needed.
-  negatable: false
 
 adg_cb_ios:
-  name: _
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#noop-modifier
-  description: |-
-    The noop modifier does nothing and can be used solely to increase rules' readability.
-    It consists of a sequence of underscore characters (_) of any length
-    and can appear in a rule as many times as needed.
-  negatable: false
 
 adg_cb_safari:
-  name: _
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#noop-modifier
-  description: |-
-    The noop modifier does nothing and can be used solely to increase rules' readability.
-    It consists of a sequence of underscore characters (_) of any length
-    and can appear in a rule as many times as needed.
-  negatable: false
 
 ubo_ext_any:
-  name: _
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#_-aka-noop
-  description: |-
-    The noop modifier does nothing and can be used solely to increase rules' readability.
-    It consists of a sequence of underscore characters (_) of any length
-    and can appear in a rule as many times as needed.
-  negatable: false

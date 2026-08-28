@@ -144,7 +144,8 @@ describe('some extended css rules are invalid', () => {
 
     it('no hits counter', async () => {
         const rules = [
-            '#?##bannerOff:remove()',
+            // ADG extCSS rule that selects `#bannerOff` and removes it.
+            '#$?##bannerOff { remove: true; }',
             '#?#.ad_header:contains(text)',
         ];
 
@@ -172,7 +173,8 @@ describe('some extended css rules are invalid', () => {
 
     it('hits counter enabled', async () => {
         const rules = [
-            '#?##bannerOn:remove()',
+            // ADG extCSS rule that selects `#bannerOn` and removes it.
+            '#$?##bannerOn { remove: true; }',
             '#?#.ad_header:contains(text)',
         ];
 

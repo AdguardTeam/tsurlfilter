@@ -1,6 +1,10 @@
-import { type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
+import {
+    type ModifierList,
+    type NetworkRule as NetworkRuleNode,
+    type ParseOptions,
+    RuleParserPipeline,
+} from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
-import { defaultParserOptions, NetworkRuleParser, type ParserOptions } from '@adguard/agtree/parser';
 
 import { EMPTY_STRING } from '../common/constants';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
@@ -38,6 +42,7 @@ import {
 import { type NetworkRuleOption as NetworkRuleOptionType, OptionFlags } from './option-flags';
 import { Pattern } from './pattern';
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
+import { isNetworkRuleNode } from './rule-predicates';
 import { SimpleRegex } from './simple-regex';
 
 export { OptionFlags };
@@ -381,10 +386,14 @@ export class NetworkRule implements IRule {
     /**
      * Parser options for network rules.
      */
-    private static readonly PARSER_OPTIONS: ParserOptions = {
-        ...defaultParserOptions,
+    private static readonly PARSER_OPTIONS: ParseOptions = {
         isLocIncluded: false,
     };
+
+    /**
+     * Shared AGTree parser pipeline instance.
+     */
+    private static readonly PARSER = new RuleParserPipeline();
 
     /**
      * Rule index.
@@ -1359,7 +1368,19 @@ export class NetworkRule implements IRule {
         }
 
         // Use provided node or parse the rule text
-        const parsedNode = node ?? NetworkRuleParser.parse(ruleText, NetworkRule.PARSER_OPTIONS);
+        let parsedNode: NetworkRuleNode;
+        if (node) {
+            parsedNode = node;
+        } else {
+            const parsed = NetworkRule.PARSER.parse(ruleText, NetworkRule.PARSER_OPTIONS);
+
+            // Validate that we got a valid network rule
+            if (!isNetworkRuleNode(parsed)) {
+                throw new SyntaxError(`Expected network rule but got ${parsed.category}: ${ruleText}`);
+            }
+
+            parsedNode = parsed;
+        }
         this.allowlist = parsedNode.exception;
 
         const pattern = parsedNode.pattern.value;

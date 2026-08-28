@@ -1,0 +1,24 @@
+abp_any:
+  name: freeze-element
+  description: Freezes a DOM element so it prevents adding new nodes inside it.
+  version_added: "3.10"
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01HBE84DVVYVB7M85VSS91KNN9
+  parameters:
+    - name: selector
+      required: true
+      description: The CSS selector for the parent element that we want to freeze.
+    - name: options
+      required: false
+      description: |-
+        A single parameter for snippet's options.
+        A string containing all the options we want to pass, each of them separated by a plus character `+`.
+        Empty single quotes if none `''`
+        Available options:
+        subtree (if we want to freeze all the element's children as well)
+        abort (throw an error every time an child element gets added)
+    - name: exceptions
+      required: false
+      description: |-
+        An array of regex/selectors used to specify the nodes we don't want to prevent being added. Each array item can be:
+        selector (targeting Element nodes)
+        regex (targeting Text nodes, identified by slash)
