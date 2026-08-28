@@ -1,6 +1,5 @@
 {
   "name": "@adguard/css-tokenizer",
-  "version": "1.2.0",
   "description": "CSS / Extended CSS tokenizer",
   "keywords": [
     "css",
