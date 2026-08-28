@@ -1,0 +1,108 @@
+name: Prepare release (monorepo package)
+
+# Opens a release PR for a single versionless package of a monorepo: finalizes
+# packages/<package>/CHANGELOG.md, pushes branch
+# release-bump/<package>-v<version> and opens a PR back to the calling branch.
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: 'Package directory name under packages/ (e.g. agtree)'
+        type: string
+        required: true
+      version:
+        description: 'Version to release (e.g. 4.2.0, 4.2.0-beta.1)'
+        type: string
+        required: true
+      team:
+        description: 'Team label for runner selection'
+        type: string
+        default: extensions
+
+# NOTE: no `concurrency` block here on purpose — GitHub ignores top-level
+# concurrency/environment in *called* reusable workflows (the caller's setting
+# wins), so a block here would be dead config. prepare-release.yml serializes
+# runs for the same package+version with cancel-in-progress: false.
+
+jobs:
+  prepare:
+    name: Prepare release PR
+    runs-on: team-${{ inputs.team }}
+    timeout-minutes: 10
+    permissions:
+      contents: write   # push the release branch (GITHUB_TOKEN)
+      id-token: write   # Octopass OIDC (PR is created with the Octopass token)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve and validate version
+        id: version
+        shell: bash
+        env:
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          # Explicit allowlist (matches the dispatch `choice` options); a regex
+          # alone lets an arbitrary caller pass e.g. `../..`-style or unknown
+          # names through to workflow_call.
+          ALLOWLIST="logger css-tokenizer agtree tsurlfilter dnr-converter dnr-rulesets tswebextension adguard-api adguard-api-mv3 eslint-plugin-logger-context"
+          if [[ ! " $ALLOWLIST " =~ " ${PACKAGE} " ]]; then
+            echo "::error::Unknown package '$PACKAGE'; expected one of: $ALLOWLIST"
+            exit 1
+          fi
+          if [ ! -f "packages/${PACKAGE}/CHANGELOG.md" ]; then
+            echo "::error::Unknown package '$PACKAGE': packages/${PACKAGE}/CHANGELOG.md does not exist"
+            exit 1
+          fi
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?$ ]]; then
+            echo "::error::Invalid version '$VERSION'. Expected: <M>.<m>.<p>[-<channel>.<N>]"
+            exit 1
+          fi
+          echo "target=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Node is guaranteed on GitHub Actions runners; the line-oriented
+      # changelog rewrite lives in the script (kept next to its regression
+      # tests in tests/finalize-changelog.sh), which writes the edited section
+      # to $GITHUB_OUTPUT as release_notes (multiline heredoc syntax).
+      - name: Finalize changelog
+        id: changelog
+        shell: bash
+        env:
+          CHANGELOG_PATH: packages/${{ inputs.package }}/CHANGELOG.md
+          NEW_VERSION: ${{ steps.version.outputs.target }}
+        run: node .github/actions/finalize-changelog/finalize-changelog.mjs
+
+      - name: Create branch and commit
+        id: branch
+        shell: bash
+        env:
+          PACKAGE: ${{ inputs.package }}
+          NEW_VERSION: ${{ steps.version.outputs.target }}
+        run: |
+          set -euo pipefail
+          BRANCH_NAME="release-bump/${PACKAGE}-v${NEW_VERSION}"
+          git config user.name 'adguard-octobuddy[bot]'
+          git config user.email '285975488+adguard-octobuddy[bot]@users.noreply.github.com'
+          git checkout -b "$BRANCH_NAME"
+          git add -- "packages/${PACKAGE}/CHANGELOG.md"
+          git commit -m "Release ${PACKAGE} v${NEW_VERSION}"
+          # Delete a stale remote branch, but only when it exists and surface any
+          # deletion errors instead of swallowing them (|| true masked failures).
+          if git ls-remote --exit-code --heads origin "$BRANCH_NAME" >/dev/null 2>&1; then
+            git push origin ":$BRANCH_NAME"
+          fi
+          git push origin "$BRANCH_NAME"
+          echo "branch=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        uses: AdGuardSoftwareLimited/actions/actions/create-pr@master
+        with:
+          title: 'Release ${{ inputs.package }} v${{ steps.version.outputs.target }}'
+          body: ${{ steps.changelog.outputs.release_notes }}
+          head: ${{ steps.branch.outputs.branch }}
+          base: ${{ github.ref_name }}

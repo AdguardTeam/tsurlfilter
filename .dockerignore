@@ -1,0 +1,47 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Dependencies (will be installed inside Docker)
+node_modules
+**/node_modules
+
+# Build cache
+.nx
+**/.nx
+
+# Build outputs (rebuilt inside Docker)
+**/dist
+**/*.tgz
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+
+# CI/CD workflow definitions (.github) are not needed inside Docker.
+# Note: scripts/ci/ helpers ARE used at Docker build time (test helpers) and
+# stay in the build context.
+.github
+
+# Git hooks (not needed inside Docker)
+.husky
+
+# Test outputs
+**/coverage
+**/tests-reports
+
+# Docker build output directories (--output type=local). These are written to
+# the workspace between Docker invocations and must never be re-uploaded as
+# build context on a later run.
+output
+output-*
+docs-output
+build-output
+test-output
+
+# Misc
+*.log
+.DS_Store

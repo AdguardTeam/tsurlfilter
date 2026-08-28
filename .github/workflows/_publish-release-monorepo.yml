@@ -1,0 +1,294 @@
+name: Publish release (monorepo package)
+
+# Publishes a single monorepo package: parses packages/<package>/CHANGELOG.md,
+# runs the Docker test/build targets for the package, publishes the .tgz to npm
+# (trusted publishing), and only then tags <package>-v<version> (after the npm
+# publish succeeds), mirrors to the public repo, creates a GitHub Release, and
+# notifies Slack.
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: 'Package directory name under packages/; also the tag prefix and .tgz base name (e.g. agtree)'
+        type: string
+        required: true
+      npm_package_name:
+        description: 'npm package name for Slack notification (e.g. @adguard/agtree)'
+        type: string
+        required: true
+      target_repo:
+        description: 'Public mirror repo (e.g. AdguardTeam/tsurlfilter)'
+        type: string
+        required: true
+      ref:
+        description: 'Ref to publish (merge commit SHA). Leave empty for the triggering commit.'
+        type: string
+        default: ''
+      team:
+        description: 'Team label for runner selection'
+        type: string
+        default: extensions
+      environment:
+        description: 'GitHub environment for npm publish protection rules'
+        type: string
+        default: npm
+      slack_channel:
+        description: 'Slack channel for release notifications'
+        type: string
+        default: '#adguard-extension-vcs'
+      dry_run:
+        description: 'Run npm publish with --dry-run (no registry contact). For CI testing.'
+        type: boolean
+        default: false
+
+jobs:
+  parse:
+    name: Parse changelog
+    runs-on: team-${{ inputs.team }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.parse.outputs.version }}
+      changelog: ${{ steps.parse.outputs.changelog }}
+      prerelease: ${{ steps.parse.outputs.prerelease }}
+      dist-tag: ${{ steps.meta.outputs.dist-tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Parse changelog
+        id: parse
+        uses: AdGuardSoftwareLimited/actions/actions/parse-changelog@master
+        with:
+          changelog-path: packages/${{ inputs.package }}/CHANGELOG.md
+
+      - name: Compute tag and dist-tag
+        id: meta
+        shell: bash
+        env:
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ steps.parse.outputs.version }}
+          PRERELEASE_TYPE: ${{ steps.parse.outputs.prerelease-type }}
+        run: |
+          set -euo pipefail
+          DIST_TAG="latest"
+          if [ -n "$PRERELEASE_TYPE" ]; then
+            DIST_TAG="$PRERELEASE_TYPE"
+          fi
+          echo "tag=${PACKAGE}-v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "dist-tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
+
+  tag:
+    needs: [parse, build, publish]
+    if: ${{ !inputs.dry_run }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/git-tag.yml@master
+    with:
+      team: ${{ inputs.team }}
+      tag: ${{ needs.parse.outputs.tag }}
+      # force: false (the shared workflow default) so an existing tag is never
+      # silently moved: re-releasing an already-released version must fail, not
+      # rewrite the tag out from under the mirror. A fresh tag is created only
+      # after the npm publish above has succeeded.
+      tag-message: ${{ needs.parse.outputs.tag }}
+      ref: ${{ inputs.ref }}
+
+  build:
+    name: Test and build
+    needs: parse
+    runs-on: team-${{ inputs.team }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # No `actions: write` here: actions/upload-artifact@v4+ uploads with the
+      # runner's ACTIONS_RUNTIME_TOKEN, not the repository GITHUB_TOKEN, so a
+      # least-privilege `contents: read` is sufficient for this job.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Inject package versions
+        env:
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ needs.parse.outputs.version }}
+        run: node scripts/inject-package-versions.mjs --package "$PACKAGE" --version "$VERSION"
+
+      - name: Lint and test
+        uses: ./.github/actions/docker-build
+        with:
+          target: test-${{ inputs.package }}-output
+          dest: test-output
+
+      - name: Check test exit code
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f test-output/exit-code.txt ]; then
+            echo "::error::Test stage wrote no exit-code.txt (did the test target run?)"
+            exit 1
+          fi
+          CODE=$(cat test-output/exit-code.txt)
+          if [ "$CODE" != "0" ]; then
+            echo "::error::Tests failed with exit code $CODE"
+            exit "$CODE"
+          fi
+
+      - name: Build release artifacts
+        uses: ./.github/actions/docker-build
+        with:
+          target: build-${{ inputs.package }}-output
+          dest: build-output
+
+      - name: Verify tarball contents
+        shell: bash
+        env:
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ needs.parse.outputs.version }}
+        run: |
+          set -euo pipefail
+          TGZ="build-output/artifacts/${PACKAGE}.tgz"
+          tar -tzf "$TGZ"
+          # Packaging regressions (missing files) only surface at the first real
+          # release — fail early on an obviously broken tarball.
+          tar -tzf "$TGZ" | grep -q '^package/package.json$' || { echo "::error::package.json missing from $TGZ"; exit 1; }
+          PACKED_VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          # VERSION comes from parsing CHANGELOG.md; pass it via env (NOT inline
+          # workflow-expression interpolation) so a crafted heading can never
+          # inject shell. Keep run-script comments free of expression markers:
+          # GitHub parses them in this file and marks the workflow invalid.
+          [ "$PACKED_VERSION" = "$VERSION" ] || { echo "::error::$TGZ has version $PACKED_VERSION, expected $VERSION"; exit 1; }
+          FILE_COUNT=$(tar -tzf "$TGZ" | wc -l | tr -d ' ')
+          [ "$FILE_COUNT" -gt 5 ] || { echo "::error::$TGZ contains only $FILE_COUNT entries — likely a broken package"; exit 1; }
+
+      - name: Verify dependency versions exist on npm
+        # Fails the publish before npm even sees it if a `workspace:^`
+        # dependency's floor version (its latest changelog heading) points at a
+        # version that was never released — otherwise the packed tarball would
+        # reference a nonexistent version and npm would resolve it wrongly.
+        shell: bash
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: |
+          set -euo pipefail
+          TGZ="build-output/artifacts/${PACKAGE}.tgz"
+
+          # Extract the packed package.json once and let node read it from disk.
+          # The script arrives via stdin (heredoc), so piping the tarball into
+          # node too would be overridden by the heredoc and the script's stdin
+          # would be empty — JSON.parse would throw on the first real release.
+          tar -xOf "$TGZ" package/package.json > "$PACKAGE.package.json"
+          PACKED_JSON_PATH="$PACKAGE.package.json" node - <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const fs = require('node:fs');
+
+          // Read every @adguard/* dependency's floor version from the packed
+          // manifest and check it exists on the registry.
+          const pj = JSON.parse(fs.readFileSync(process.env.PACKED_JSON_PATH, 'utf8'));
+          const deps = { ...pj.dependencies, ...pj.devDependencies };
+          const floors = [];
+          for (const [name, range] of Object.entries(deps)) {
+            if (!name.startsWith('@adguard/') || name === pj.name) continue;
+            const m = String(range).match(/^[\^~]?(\d+\.\d+\.\d+(?:-[a-z]+\.[0-9]+)?)$/);
+            if (!m) {
+              console.error(`::error::Unexpected dependency range ${name}@${range} in packed package.json`);
+              process.exit(1);
+            }
+            floors.push([name, m[1]]);
+          }
+          const missing = [];
+          for (const [name, version] of floors) {
+            let out = '';
+            try {
+              out = execFileSync('npm', ['view', `${name}@${version}`, 'version', '--silent'], { encoding: 'utf8' }).trim();
+            } catch { /* version not found */ }
+            if (!out) missing.push(`${name}@${version}`);
+          }
+          if (missing.length > 0) {
+            console.error(`::error::Dependency version${missing.length > 1 ? 's' : ''} not on npm: ${missing.join(', ')}`);
+            console.error('::error::Release the dependency first, or fix the injected version.');
+            process.exit(1);
+          }
+          console.log(`All ${floors.length} @adguard/* dependency floors exist on npm`);
+          NODE
+
+      - name: Upload npm package
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-package-${{ inputs.package }}
+          path: build-output/artifacts/${{ inputs.package }}.tgz
+          # A missing tarball must fail the job, not pass green.
+          if-no-files-found: error
+
+  publish:
+    needs: [parse, build]
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: npm-package-${{ inputs.package }}
+      package-file: ${{ inputs.package }}.tgz
+      environment: ${{ inputs.environment }}
+      tag: ${{ needs.parse.outputs.dist-tag }}
+      dry-run: ${{ inputs.dry_run }}
+    permissions:
+      contents: read
+      id-token: write
+
+  mirror-and-release:
+    needs: [parse, tag, publish]
+    if: ${{ !inputs.dry_run }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/mirror-and-release.yml@master
+    with:
+      team: ${{ inputs.team }}
+      target_repo: ${{ inputs.target_repo }}
+      tag: ${{ needs.parse.outputs.tag }}
+      changelog: ${{ needs.parse.outputs.changelog }}
+      artifact_name: npm-package-${{ inputs.package }}
+      # parse-changelog emits strings; the `== 'true'` comparison coerces to boolean
+      # for the boolean workflow_call input of mirror-and-release.yml.
+      prerelease: ${{ needs.parse.outputs.prerelease == 'true' }}
+    secrets: inherit
+    permissions:
+      actions: write
+      contents: write
+      id-token: write
+
+  notify:
+    name: Notify
+    needs: [parse, mirror-and-release]
+    if: ${{ needs.mirror-and-release.result == 'success' }}
+    runs-on: team-${{ inputs.team }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Send Slack notification
+        uses: AdGuardSoftwareLimited/actions/actions/slack@master
+        with:
+          channel: ${{ inputs.slack_channel }}
+          message: ':white_check_mark: *${{ inputs.npm_package_name }}* *v${{ needs.parse.outputs.version }}* published to npm — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          color: good
+
+  notify-failure:
+    name: Notify on failure
+    needs: [parse, build, publish, tag, mirror-and-release, notify]
+    # Once the release PR merges the publish is unattended, so a failed release
+    # (npm 409, OIDC hiccup, mirror fault) must reach the channel — the old
+    # release.yml posted to Slack with always(). A cancelled run is not a
+    # failure.
+    if: ${{ failure() }}
+    runs-on: team-${{ inputs.team }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Send Slack notification
+        uses: AdGuardSoftwareLimited/actions/actions/slack@master
+        with:
+          channel: ${{ inputs.slack_channel }}
+          message: ':x: *${{ inputs.npm_package_name }}* publish failed — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          color: danger
