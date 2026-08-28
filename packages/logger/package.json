@@ -1,10 +1,8 @@
 {
     "name": "@adguard/logger",
-    "version": "2.0.0",
     "scripts": {
         "prebuild": "rimraf dist",
-        "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript && pnpm build:types && pnpm build:txt",
-        "build:txt": "tsx scripts/build-txt",
+        "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript && pnpm build:types",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
         "test": "vitest run",
         "test:ci": "vitest run --reporter default --reporter junit --outputFile=./tests-reports/logger.xml",
@@ -37,7 +35,7 @@
     "author": "Adguard Software Ltd.",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "url": "git+https://github.com/AdGuardSoftwareLimited/ext-tsurlfilter.git",
         "directory": "packages/logger"
     },
     "bugs": {
@@ -67,8 +65,6 @@
         "tslib": "catalog:",
         "tsx": "catalog:",
         "typescript": "catalog:",
-        "markdownlint": "catalog:",
-        "markdownlint-cli": "catalog:",
         "vitest": "catalog:"
     }
 }

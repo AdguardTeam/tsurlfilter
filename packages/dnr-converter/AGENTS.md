@@ -54,7 +54,6 @@ packages/dnr-converter/
 │   └── README.md               # Auto-generated examples documentation
 ├── test/                       # Tests (mirrors src/ structure) + mocks + smoke tests
 ├── tasks/
-│   ├── build-txt.ts            # Build metadata script (postbuild)
 │   └── generate-examples.ts    # Example generation script (docs:examples)
 ├── dist/                       # Build output (gitignored)
 ├── rollup.config.ts            # Rollup build config

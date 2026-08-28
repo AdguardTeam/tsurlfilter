@@ -47,8 +47,8 @@ npx lerna run build --scope @adguard/dnr-converter --include-dependencies
 pnpm --filter @adguard/dnr-converter build
 ```
 
-This cleans `dist/`, bundles via Rollup (ESM), emits type declarations to
-`dist/types/`, and writes build metadata to `dist/build.txt`.
+This cleans `dist/`, bundles via Rollup (ESM), and emits type declarations to
+`dist/types/`.
 
 ### Running Locally
 
