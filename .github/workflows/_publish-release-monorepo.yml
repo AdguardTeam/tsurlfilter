@@ -152,19 +152,7 @@ jobs:
           VERSION: ${{ needs.parse.outputs.version }}
         run: |
           set -euo pipefail
-          TGZ="build-output/artifacts/${PACKAGE}.tgz"
-          tar -tzf "$TGZ"
-          # Packaging regressions (missing files) only surface at the first real
-          # release — fail early on an obviously broken tarball.
-          tar -tzf "$TGZ" | grep -q '^package/package.json$' || { echo "::error::package.json missing from $TGZ"; exit 1; }
-          PACKED_VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
-          # VERSION comes from parsing CHANGELOG.md; pass it via env (NOT inline
-          # workflow-expression interpolation) so a crafted heading can never
-          # inject shell. Keep run-script comments free of expression markers:
-          # GitHub parses them in this file and marks the workflow invalid.
-          [ "$PACKED_VERSION" = "$VERSION" ] || { echo "::error::$TGZ has version $PACKED_VERSION, expected $VERSION"; exit 1; }
-          FILE_COUNT=$(tar -tzf "$TGZ" | wc -l | tr -d ' ')
-          [ "$FILE_COUNT" -gt 5 ] || { echo "::error::$TGZ contains only $FILE_COUNT entries — likely a broken package"; exit 1; }
+          bash scripts/ci/verify-tarball.sh "build-output/artifacts/${PACKAGE}.tgz" "$VERSION"
 
       - name: Verify dependency versions exist on npm
         # Fails the publish before npm even sees it if a `workspace:^`

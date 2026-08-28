@@ -154,6 +154,8 @@ jobs:
         run: |
           bash -n tests/finalize-changelog.sh
           bash -n scripts/ci/resolve-release-inputs.sh
+          bash -n scripts/ci/verify-tarball.sh
+          bash -n tests/verify-tarball.sh
           node --check .github/actions/finalize-changelog/finalize-changelog.mjs
           node --check scripts/inject-package-versions.mjs
           node --check scripts/ci/compute-affected-packages.mjs
@@ -164,6 +166,9 @@ jobs:
 
       - name: Run finalize-changelog regression tests
         run: bash tests/finalize-changelog.sh
+
+      - name: Run verify-tarball regression tests
+        run: bash tests/verify-tarball.sh
 
   notify-failure:
     name: Notify master CI failure
