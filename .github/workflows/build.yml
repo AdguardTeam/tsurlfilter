@@ -1,0 +1,193 @@
+name: Build
+
+# Lints, tests, and builds affected packages on pull requests and pushes to
+# master using per-package Docker test targets with affected-package detection
+# and workspace dependency closure.
+
+on:
+  # Master-oriented per-package Docker test matrix. Scoped to master on the
+  # stable lines: the frozen line workspace cannot run master's full test
+  # suite (master-only packages/targets do not exist there); stable-line CI
+  # is publish-stable-dnr-rulesets.yml.
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+# Trust boundary (read before enabling): PR CI runs PR-controlled Docker
+# builds — and PR-modified steps of this very workflow, since `pull_request`
+# executes from the merge commit — on the persistent self-hosted
+# team-extensions runners, sharing a named BuildKit cache with the release
+# builds. Token scoping is deliberate: `contents: read`, no secrets, and
+# upload-artifact uses the runner's ACTIONS_RUNTIME_TOKEN. This matches the org
+# pattern, but the repo MUST require approval for fork / outside-collaborator
+# PR runs (Settings > Actions > fork pull request workflows) before this lands
+# on the protected master path.
+
+# Cancel superseded runs on the same ref (ext-compiler pattern). Publish jobs
+# must never be cancellable — this group applies to CI only.
+concurrency:
+  group: ci-ext-tsurlfilter-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Detect affected packages
+    runs-on: team-extensions
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.affected.outputs.matrix }}
+      root-affected: ${{ steps.affected.outputs.root-affected }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Compute affected packages
+        id: affected
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: node scripts/ci/compute-affected-packages.mjs
+
+  test:
+    name: Test ${{ matrix.target }}
+    needs: changes
+    if: fromJSON(needs.changes.outputs.matrix).include[0] != null
+    strategy:
+      fail-fast: false
+      # Cap concurrent Docker builds: the shared remote BuildKit builder OOMs /
+      # drops connections under heavy parallelism.
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
+    runs-on: team-extensions
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # No `actions: write` here: actions/upload-artifact@v4+ uploads with the
+      # runner's ACTIONS_RUNTIME_TOKEN, not the repository GITHUB_TOKEN.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # Stamp workspace dev versions via the shared set-dev-version action in
+      # monorepo mode.
+      - name: Inject development package versions
+        uses: AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@master
+        with:
+          package-globs: packages/*/package.json
+
+      - name: Run tests via Docker
+        uses: ./.github/actions/docker-build
+        with:
+          target: test-${{ matrix.target }}-output
+          dest: output
+
+      - name: Check test exit code
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Every test stage (including test-examples) writes exit-code.txt — the
+          # Docker build itself always succeeds and the real exit code is
+          # exported through the file. Fail closed: a target that forgets to
+          # write the file must not pass.
+          if [ ! -f output/exit-code.txt ]; then
+            echo "::error::Test target did not write output/exit-code.txt; refusing to pass"
+            exit 1
+          fi
+          CODE=$(cat output/exit-code.txt)
+          if [ "$CODE" != "0" ]; then
+            echo "::error::Tests failed with exit code ${CODE}"
+            exit "$CODE"
+          fi
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.target }}
+          path: output/tests-reports/
+          if-no-files-found: ignore
+
+  docs:
+    name: Check DNR converter docs
+    needs: changes
+    # The docs regenerate from dnr-converter examples, and compute-affected-packages
+    # already marks dnr-converter affected (via the workspace-dependency closure)
+    # whenever any of its dependencies — tsurlfilter, agtree, logger,
+    # eslint-plugin-logger-context — changed. So gating on the computed matrix's
+    # dnr-converter target (plus any root-level change) is exact and needs no
+    # hand-maintained YAML copy of the dependency graph. This skips the ~2.5 min
+    # Docker docs build for changes that cannot affect the generated output
+    # (e.g. a tswebextension-only PR).
+    if: >-
+      needs.changes.outputs.root-affected == 'true' ||
+      contains(fromJSON(needs.changes.outputs.matrix).include[*].target, 'dnr-converter')
+    runs-on: team-extensions
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # Stamp workspace dev versions via the shared set-dev-version action in
+      # monorepo mode.
+      - name: Inject development package versions
+        uses: AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@master
+        with:
+          package-globs: packages/*/package.json
+
+      - name: Verify generated documentation
+        uses: ./.github/actions/docker-build
+        with:
+          target: dnr-converter-update-docs-mv3-output
+          dest: docs-output
+
+  workflows:
+    name: Validate workflows and actions
+    runs-on: team-extensions
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate script syntax
+        run: |
+          bash -n tests/finalize-changelog.sh
+          bash -n scripts/ci/resolve-release-inputs.sh
+          node --check .github/actions/finalize-changelog/finalize-changelog.mjs
+          node --check scripts/inject-package-versions.mjs
+          node --check scripts/ci/compute-affected-packages.mjs
+          node --check scripts/ci/check-package-lists.mjs
+
+      - name: Check package list drift
+        run: node scripts/ci/check-package-lists.mjs
+
+      - name: Run finalize-changelog regression tests
+        run: bash tests/finalize-changelog.sh
+
+  notify-failure:
+    name: Notify master CI failure
+    needs: [changes, test, docs, workflows]
+    # Only push-to-master runs are unattended (PR failures are visible on the
+    # PR itself); the deleted Bamboo test plan posted failures to Slack, so a
+    # master failure must still reach the channel. Master now also absorbs the
+    # weekly companiesdb push, so a regression there is caught by this too.
+    # `docs` may be skipped (not affected) — skipped is not a failure.
+    if: ${{ github.event_name == 'push' && failure() }}
+    runs-on: team-extensions
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Send Slack notification
+        uses: AdGuardSoftwareLimited/actions/actions/slack@master
+        with:
+          channel: '#adguard-extension-vcs'
+          message: ':x: *build.yml* master CI failed — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          color: danger

@@ -1,0 +1,38 @@
+name: Docker build target
+
+description: >-
+  Runs one multi-stage Dockerfile target with local output (Docker BuildKit
+  `--output type=local`). Single place for the build flags and the TEST_RUN_ID
+  cache-busting convention shared by every workflow in this repo — change the
+  convention in one spot instead of six pasted invocations.
+
+inputs:
+  target:
+    description: 'Dockerfile stage to build (e.g. test-agtree-output)'
+    required: true
+  dest:
+    description: 'Local output directory (--output type=local,dest=<dest>)'
+    required: false
+    default: output
+  cache-suffix:
+    description: 'Optional suffix appended to the TEST_RUN_ID build arg (e.g. a matrix key)'
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Build Docker target
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+        DEST: ${{ inputs.dest }}
+        TEST_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}${{ inputs.cache-suffix }}
+      run: |
+        DOCKER_BUILDKIT=1 docker build \
+          --file Dockerfile \
+          --progress plain \
+          --build-arg TEST_RUN_ID="${TEST_RUN_ID}" \
+          --target "${TARGET}" \
+          --output type=local,dest="${DEST}" \
+          .
