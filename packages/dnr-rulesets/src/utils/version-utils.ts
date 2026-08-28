@@ -1,4 +1,4 @@
-import { version } from '../../package.json';
+import packageJson from '../../package.json';
 import {
     COLON,
     DASH,
@@ -19,7 +19,15 @@ const GENERATED_PATCH_VERSION_LENGTH = 14;
  *
  * @returns The version of the package.
  */
-export const getVersion = (): string => version;
+export const getVersion = (): string => {
+    if (!('version' in packageJson)
+        || typeof packageJson.version !== 'string'
+        || packageJson.version.length === 0) {
+        throw new Error('Package version is missing. Run scripts/inject-package-versions.mjs before building.');
+    }
+
+    return packageJson.version;
+};
 
 /**
  * Utility for number formatting.
@@ -68,7 +76,7 @@ export const generatePatchVersion = (timestampMs: number): string => {
  * ```
  */
 export const getVersionTimestampMs = (): number => {
-    return generateTimestampFromVersion(version);
+    return generateTimestampFromVersion(getVersion());
 };
 
 /**

@@ -1,6 +1,5 @@
 {
     "name": "@adguard/tswebextension",
-    "version": "5.0.3",
     "description": "This is a TypeScript library that implements AdGuard's extension API",
     "type": "module",
     "main": "dist/index.js",
@@ -64,7 +63,7 @@
     "author": "Adguard Software Ltd.",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "url": "git+https://github.com/AdGuardSoftwareLimited/ext-tsurlfilter.git",
         "directory": "packages/tswebextension"
     },
     "license": "GPL-3.0-only",
@@ -81,8 +80,7 @@
         "lint:types": "tsc",
         "lint:md": "markdownlint .",
         "prebuild": "rimraf dist",
-        "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
-        "postbuild": "tsx tasks/build-txt.ts",
+        "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types && tsx tasks/transform-dts.ts",
         "update:companiesdb": "tsx tasks/update-companiesdb.ts",
         "start": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc -w",
