@@ -1,18 +1,26 @@
 name: Publish stable DNR rulesets
 
-# Hourly scheduled build and publish of @adguard/dnr-rulesets from the
-# supported stable/dnr-rulesets-* branches (3.3, 4.0, 4.1, 4.2, 5.0). Each
-# supported branch must be on the current CI (root Dockerfile +
-# scripts/inject-package-versions.mjs): the job checks out the pinned branch,
-# stamps a <line>.<timestamp> stable version into its manifest, builds its own
-# dnr-rulesets-auto-build-output target, and publishes via trusted npm.
-# Lines whose branch has not been migrated to the current CI are skipped
-# gracefully (see the resolve-lines job) so the hourlies neither fail nor spam
-# Slack during the backport window.
+# Twice daily (00:17 and 12:17 UTC) build and publish of
+# @adguard/dnr-rulesets from the supported stable/dnr-rulesets-* branches
+# (3.3, 4.0, 4.1, 4.2, 5.0). Each supported branch must be on the current CI
+# (root Dockerfile + scripts/inject-package-versions.mjs): the job checks out
+# the pinned branch, stamps a <line>.<timestamp> stable version into its
+# manifest, builds its own dnr-rulesets-auto-build-output target, and
+# publishes via trusted npm. Lines whose branch has not been migrated to the
+# current CI are skipped gracefully (see the resolve-lines job) so the runs
+# neither fail nor spam Slack during the backport window.
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    # Twice a day at 00:17 / 12:17 UTC instead of hourly. The browser-extension
+    # auto-build (browser-extension/.github/workflows/auto-build.yml, cron
+    # '30 */12 * * *') picks up a fresh @adguard/dnr-rulesets only every 12 h
+    # (00:30/12:30 UTC), so only the rounds right before it were ever consumed
+    # and publishing hourly — five packages per round — kept tripping npm rate
+    # limits (HTTP 429). Running at :17 keeps the new rulesets on npm ~13
+    # minutes before the extension build collects them, and the :17 minute
+    # stays off GitHub's busiest top-of-hour slots (see the schedule docs).
+    - cron: '17 0,12 * * *'
   workflow_dispatch:
     inputs:
       line:
@@ -175,9 +183,9 @@ jobs:
     with:
       artifact-name: dnr-rulesets-${{ matrix.line }}
       package-file: dnr-rulesets.tgz
-      # Per-line dist-tag so an hourly publish from an old line can never move
+      # Per-line dist-tag so a scheduled publish from an old line can never move
       # `@adguard/dnr-rulesets@latest` backwards, and no GitHub environment
-      # (empty string) so unattended hourly runs don't hang on approval.
+      # (empty string) so unattended scheduled runs don't hang on approval.
       tag: stable-${{ matrix.line }}
       environment: ''
     permissions:
