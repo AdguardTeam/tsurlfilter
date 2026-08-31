@@ -233,7 +233,9 @@ jobs:
                   echo "Unpublished previous ${name}@${version}"
                   continue
               fi
-              if grep -qiE '404|not found|E404|EUNPUBLISH' <<<"${out}"; then
+              if [[ "${out}" == *"405"* ]]; then
+                  echo "${name}@${version}: AK does not allow unpublish (405; idempotent publish gate handles re-pushes)"
+              elif grep -qiE '404|not found|E404|EUNPUBLISH' <<<"${out}"; then
                   echo "${name}@${version}: not present (first push?) — nothing to unpublish"
               else
                   echo "::warning::${name}@${version}: npm unpublish failed:"
@@ -241,9 +243,64 @@ jobs:
               fi
           done < /tmp/dev-versions.txt
 
+  check-published:
+    name: Check already-published dev versions
+    needs: changes
+    if: >-
+      needs.changes.outputs.bridge-needed == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: team-extensions
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      existing: ${{ steps.check.outputs.existing }}
+    steps:
+      - name: Set up Node.js for AK registry access
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: ${{ env.AK_REGISTRY }}
+
+      # Artifact Keeper rejects npm unpublish (405 Method Not Allowed on the
+      # DELETE) and npm publish refuses to overwrite an existing version (409),
+      # so a -dev.pr<N> version is immutably published at most once. Versions
+      # are stable per PR, so list the ones that already exist and let the
+      # publish job skip them — re-pushes to the same PR are then idempotent.
+      - name: Find already-published dev versions
+        id: check
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
+          MAP: ${{ needs.changes.outputs.versions }}
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${NODE_AUTH_TOKEN}"
+          node - <<'NODE' > /tmp/existing.json
+          const { execFileSync } = require('node:child_process');
+          const map = JSON.parse(process.env.MAP);
+          const existing = [];
+          for (const [name, version] of Object.entries(map)) {
+              try {
+                  execFileSync('npm', [
+                      'view', `${name}@${version}`, 'version',
+                      `--registry=${process.env.AK_REGISTRY}`,
+                  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+                  existing.push(name.split('/').pop());
+              } catch { /* not published yet */ }
+          }
+          process.stdout.write(JSON.stringify(existing));
+          NODE
+          existing="$(cat /tmp/existing.json)"
+          echo "existing=${existing}" >> "$GITHUB_OUTPUT"
+
   publish:
     name: Publish ${{ matrix.package }} to Artifact Keeper
-    needs: [pack, unpublish]
+    needs: [changes, pack, unpublish, check-published]
+    if: >-
+      needs.changes.outputs.bridge-needed == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !contains(fromJSON(needs.check-published.outputs.existing || '[]'), matrix.package)
     strategy:
       fail-fast: false
       matrix:
@@ -325,7 +382,7 @@ jobs:
 
   notify-failure:
     name: Notify bridge failure
-    needs: [changes, pack, unpublish, publish, comment]
+    needs: [changes, pack, unpublish, check-published, publish, comment]
     # Bridge failures would otherwise only be visible on the PR checks.
     if: >-
       failure() &&
