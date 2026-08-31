@@ -140,7 +140,15 @@ export class TabsCosmeticInjector {
             }
 
             try {
-                await CosmeticApi.applyCosmeticRules(tabId, frameId, true);
+                await CosmeticApi.applyCosmeticRules({
+                    tabId,
+                    frameId,
+                    shouldApplyCss: true,
+                    // The page loaded before this service worker started, so
+                    // only the preregistered rules from registrations
+                    // persisted at boot are proven to have executed.
+                    preExistingDocument: true,
+                });
             } catch (e) {
                 logger.error(`[tsweb.TabsCosmeticInjector.processOpenTab]: error applying cosmetic rules for tabId ${tabId} and frameId ${frameId}`, e);
             }

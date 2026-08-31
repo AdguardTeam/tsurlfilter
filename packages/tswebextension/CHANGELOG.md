@@ -11,11 +11,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `TsWebExtension.syncContentScripts()` static method (MV3-only) for dynamic
   content script synchronization via `chrome.scripting` API.
+- `preregisteredScripts` optional MV3 `Configuration` field for auto-syncing
+  preregistered content scripts; orchestration (registration, dynamic
+  injection suppression) is handled internally by the MV3 entry point.
+- `hashString`, `computeScriptletHash`, `computeJsRuleHash`,
+  `computeRuleHash`, `computeRuleHashCached`, `normalizeDomain`,
+  `COORDINATION_KEY`, `SHARED_BUNDLE_FILENAME`, `CLEANUP_FILENAME`,
+  `getRuleFilename`, `getRuleHashFromFilePath`, and
+  `PREREGISTERED_SCRIPTS_DIR` — the shared
+  hash/filename contract used by build-time tools to generate preregistered
+  script bundles matching what the engine resolves at runtime. Filenames are
+  stable (the coordination key is a fixed constant); `manifest.json` is
+  required at sync time.
 
 ### Fixed
 
 - Wrong `frameDomain` in cosmetic hits filtering-log events for subframes, breaking
   exception rules created from the filtering log [AdguardBrowserExtension#1449].
+- Preregistered-script coverage for opaque frames (`about:blank`/srcdoc) now
+  resolves through the nearest HTTP(S) ancestor, matching the
+  `matchOriginAsFallback` semantics of the registrations.
+- Tabs that existed before the service worker started now skip only the
+  preregistered rules proven to have executed at `document_start` (from
+  registrations persisted at boot), instead of all currently covered rules —
+  rules added to a registration after the page loaded are injected
+  dynamically.
+- Boot snapshot of preregistered registrations is taken even when the
+  feature is not configured, covering updates that removed the feature after
+  pages loaded.
+- Per-hostname engine queries for preregistered scripts are cached per
+  engine generation and processed in bounded batches during sync.
 
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
 

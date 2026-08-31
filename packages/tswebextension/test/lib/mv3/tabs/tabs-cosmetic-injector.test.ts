@@ -181,7 +181,12 @@ describe('TabsCosmeticInjector', () => {
 
             const shouldApplyCss = true;
 
-            expect(CosmeticApi.applyCosmeticRules).toHaveBeenCalledWith(tabId, frameId, shouldApplyCss);
+            expect(CosmeticApi.applyCosmeticRules).toHaveBeenCalledWith({
+                tabId,
+                frameId,
+                shouldApplyCss,
+                preExistingDocument: true,
+            });
 
             // Just for readability
             if (shouldApplyCss) {

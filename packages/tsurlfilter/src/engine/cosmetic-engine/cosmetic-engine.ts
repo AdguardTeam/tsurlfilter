@@ -1,6 +1,7 @@
 import { type CosmeticRuleParts, CosmeticRuleType } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
+import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { type IndexedStorageCosmeticRuleParts } from '../../rules/rule';
 import { CHUNK_SIZE } from '../constants';
 import { CosmeticOption } from '../cosmetic-option';
@@ -163,14 +164,32 @@ export class CosmeticEngine {
     }
 
     /**
+     * Checks if a JS/scriptlet rule is cancelled by an allowlist exception.
+     *
+     * @param request Request to check.
+     * @param rule Cosmetic rule to check.
+     * @param ignoreExceptionPath If true, the `$path` modifier of exceptions
+     * is skipped, i.e. an exception applying to any path of the hostname
+     * cancels the rule. Defaults to false.
+     *
+     * @returns True if the rule is cancelled by an exception.
+     */
+    public isAllowlisted(request: Request, rule: CosmeticRule, ignoreExceptionPath = false): boolean {
+        return this.jsLookupTable.isAllowlisted(request, rule, ignoreExceptionPath);
+    }
+
+    /**
      * Prepares cosmetic result by request.
      *
      * @param request Request to match.
      * @param option Mask of enabled cosmetic types.
+     * @param ignorePath If true, skips the `$path` modifier check for
+     * JS/scriptlet rules only (build-time preregistration discovery
+     * enumerates rules per domain, without paths). Defaults to false.
      *
      * @returns CosmeticResult.
      */
-    public match(request: Request, option: CosmeticOption): CosmeticResult {
+    public match(request: Request, option: CosmeticOption, ignorePath = false): CosmeticResult {
         const includeGeneric = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionGenericCSS);
         const includeSpecific = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionSpecificCSS);
 
@@ -180,18 +199,26 @@ export class CosmeticEngine {
         const cosmeticResult = new CosmeticResult();
 
         if (includeGeneric) {
-            CosmeticEngine.appendGenericRules(cosmeticResult.elementHiding, this.elementHidingLookupTable, request);
+            CosmeticEngine.appendGenericRules(
+                cosmeticResult.elementHiding,
+                this.elementHidingLookupTable,
+                request,
+            );
             CosmeticEngine.appendGenericRules(cosmeticResult.CSS, this.cssLookupTable, request);
         }
 
         if (includeSpecific) {
-            CosmeticEngine.appendSpecificRules(cosmeticResult.elementHiding, this.elementHidingLookupTable, request);
+            CosmeticEngine.appendSpecificRules(
+                cosmeticResult.elementHiding,
+                this.elementHidingLookupTable,
+                request,
+            );
             CosmeticEngine.appendSpecificRules(cosmeticResult.CSS, this.cssLookupTable, request);
         }
 
         if (includeJs) {
-            CosmeticEngine.appendGenericRules(cosmeticResult.JS, this.jsLookupTable, request);
-            CosmeticEngine.appendSpecificRules(cosmeticResult.JS, this.jsLookupTable, request);
+            CosmeticEngine.appendGenericRules(cosmeticResult.JS, this.jsLookupTable, request, ignorePath);
+            CosmeticEngine.appendSpecificRules(cosmeticResult.JS, this.jsLookupTable, request, ignorePath);
         }
 
         if (includeHtml) {
@@ -210,15 +237,17 @@ export class CosmeticEngine {
      * @param cosmeticResult Cosmetic result.
      * @param lookupTable Lookup table.
      * @param request Request.
+     * @param ignorePath If true, skips the `$path` modifier condition (see {@link match}).
      */
     private static appendGenericRules(
         cosmeticResult: CosmeticContentResult,
         lookupTable: CosmeticLookupTable,
         request: Request,
+        ignorePath = false,
     ): void {
         for (const genericRule of lookupTable.genericRules) {
             if (!lookupTable.isAllowlisted(request, genericRule)
-                && genericRule.match(request)) {
+                && genericRule.match(request, ignorePath)) {
                 cosmeticResult.append(genericRule, request);
             }
         }
@@ -230,13 +259,15 @@ export class CosmeticEngine {
      * @param cosmeticResult Cosmetic result.
      * @param lookupTable Lookup table.
      * @param request Request.
+     * @param ignorePath If true, skips the `$path` modifier condition (see {@link match}).
      */
     private static appendSpecificRules(
         cosmeticResult: CosmeticContentResult,
         lookupTable: CosmeticLookupTable,
         request: Request,
+        ignorePath = false,
     ): void {
-        const specificRules = lookupTable.findByHostname(request);
+        const specificRules = lookupTable.findByHostname(request, ignorePath);
 
         if (specificRules.length === 0) {
             return;

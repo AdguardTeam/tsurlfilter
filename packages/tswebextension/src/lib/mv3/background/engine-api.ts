@@ -5,6 +5,7 @@ import {
     CompatibilityTypes,
     type CosmeticOption,
     CosmeticResult,
+    type CosmeticRule,
     Engine,
     type EngineFactoryFilterList,
     type HTTPMethod,
@@ -69,6 +70,22 @@ export class EngineApi {
      * Link to current Engine.
      */
     private engine: Engine | undefined;
+
+    /**
+     * Monotonic counter bumped after every engine instance swap. Consumers
+     * caching engine query results key their caches by it, so results from
+     * a previous engine are never reused.
+     */
+    private generation = 0;
+
+    /**
+     * Current engine generation; see {@link EngineApi.generation}.
+     *
+     * @returns Current engine generation number.
+     */
+    public get engineGeneration(): number {
+        return this.generation;
+    }
 
     // TODO: Make private
     /**
@@ -198,6 +215,10 @@ export class EngineApi {
             filters: lists,
         });
 
+        // Bump after the swap so a racing reader either sees the old engine
+        // with the old generation or the new engine with the new one.
+        this.generation += 1;
+
         // Update IDs of loaded to engine filters for split local and remote
         // scripts.
         this.localRulesFiltersIds = localFilters.map((filter) => filter.getId());
@@ -217,6 +238,7 @@ export class EngineApi {
      */
     public stopEngine(): void {
         this.engine = undefined;
+        this.generation += 1;
     }
 
     /**
@@ -241,10 +263,12 @@ export class EngineApi {
      *
      * @param url Hostname to check.
      * @param option Mask of enabled cosmetic types.
+     * @param ignorePath If true, skips the `$path` modifier check for
+     * JS/scriptlet rules only. Defaults to false.
      *
      * @returns Cosmetic result.
      */
-    public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
+    public getCosmeticResult(url: string, option: CosmeticOption, ignorePath = false): CosmeticResult {
         if (!this.engine) {
             return new CosmeticResult();
         }
@@ -253,7 +277,7 @@ export class EngineApi {
 
         const request = new Request(url, frameUrl, RequestType.Document);
 
-        return this.engine.getCosmeticResult(request, option);
+        return this.engine.getCosmeticResult(request, option, ignorePath);
     }
 
     /**
@@ -270,10 +294,19 @@ export class EngineApi {
      * Searched for cosmetic rules by match query.
      *
      * @param matchQuery Query against which the request would be matched.
+     * @param ignorePath If true, skips the `$path` modifier check for
+     * JS/scriptlet rules only. Defaults to false.
+     * @param optionMask If set, narrows the computed cosmetic option to the
+     * given category bits (e.g. `CosmeticOption.CosmeticOptionJS` to match
+     * only JS/scriptlet rules, skipping CSS/elemhide/HTML lookups).
      *
      * @returns Cosmetic result.
      */
-    public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
+    public matchCosmetic(
+        matchQuery: MatchQuery,
+        ignorePath = false,
+        optionMask?: CosmeticOption,
+    ): CosmeticResult {
         if (!this.engine || !isHttpRequest(matchQuery.frameUrl)) {
             return new CosmeticResult();
         }
@@ -285,8 +318,11 @@ export class EngineApi {
         }
 
         const cosmeticOption = matchingResult.getCosmeticOption();
+        const maskedOption = optionMask === undefined
+            ? cosmeticOption
+            : cosmeticOption & optionMask;
 
-        return this.getCosmeticResult(matchQuery.requestUrl, cosmeticOption);
+        return this.getCosmeticResult(matchQuery.requestUrl, maskedOption, ignorePath);
     }
 
     /**
@@ -326,6 +362,28 @@ export class EngineApi {
      */
     public isLocalFilter(filterId: number): boolean {
         return this.localRulesFiltersIds.includes(filterId);
+    }
+
+    /**
+     * Checks if a JS/scriptlet rule is cancelled on a hostname by an allowlist
+     * exception (user rules, custom filters).
+     *
+     * @param hostname Hostname to match the exception domains against.
+     * @param rule Cosmetic rule to check.
+     * @param ignoreExceptionPath If true, the `$path` modifier of exceptions
+     * is skipped, i.e. an exception applying to any path of the hostname
+     * cancels the rule. Defaults to false.
+     *
+     * @returns `true` if the rule is cancelled by an exception, `false`
+     * otherwise or when the engine is not started.
+     */
+    public isCosmeticRuleAllowlisted(hostname: string, rule: CosmeticRule, ignoreExceptionPath = false): boolean {
+        if (!this.engine) {
+            return false;
+        }
+
+        const request = new Request(`https://${hostname}/`, null, RequestType.Document);
+        return this.engine.isCosmeticRuleAllowlisted(request, rule, ignoreExceptionPath);
     }
 
     /**

@@ -30,6 +30,7 @@ import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import { MessagesApi } from './messages-api';
+import { PreregisteredScriptsService } from './preregistered-scripts/preregistered-scripts-service';
 import { RequestEvents } from './request/events/request-events';
 import { RulesetsLoaderApi } from './rulesets-loader-api';
 import { CspService } from './services/csp-service';
@@ -512,6 +513,14 @@ export class TsWebExtension implements AppInterface<
         await WebRequestApi.flushMemoryCache();
 
         documentBlockingService.configure(config);
+
+        // Debug needs verbose scriptlets, which only dynamic injection
+        // can build — disable preregistration entirely.
+        const { filteringEnabled, debugScriptlets } = configuration.settings;
+        await PreregisteredScriptsService.init(
+            filteringEnabled && !debugScriptlets,
+            configuration.preregisteredScripts,
+        );
 
         logger.trace('[tsweb.TsWebExtension.configure]: end');
 

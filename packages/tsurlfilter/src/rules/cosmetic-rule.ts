@@ -927,10 +927,11 @@ export class CosmeticRule implements IRule {
      * Match returns true if this rule can be used on the specified request.
      *
      * @param request Request to check.
+     * @param ignorePath If true, skips the `$path` modifier check. Defaults to false.
      *
      * @returns True if the rule matches the request, false otherwise.
      */
-    public match(request: Request): boolean {
+    public match(request: Request, ignorePath = false): boolean {
         if (!this.domainModifier
             && !this.pathModifier
             && !this.urlModifier
@@ -948,7 +949,7 @@ export class CosmeticRule implements IRule {
             }
         }
 
-        if (this.pathModifier) {
+        if (this.pathModifier && !ignorePath) {
             const path = getRelativeUrl(request.urlLowercase);
             if (path) {
                 return this.pathModifier.matchPathPattern(path);

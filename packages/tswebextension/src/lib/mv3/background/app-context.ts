@@ -39,6 +39,20 @@ export class AppContext {
      */
     @sessionDecorator(SessionStorageKey.CosmeticsInjectedOnStartup)
     accessor cosmeticsInjectedOnStartup!: boolean;
+
+    /**
+     * Per-hostname hashes of rules covered by preregistered content-script
+     * registrations that existed when the service worker started (before
+     * the first sync of this SW lifetime), recovered from the persisted
+     * registrations' `js` file lists. Plain (non-persisted) field: a stale
+     * snapshot must not survive an extension update that changes
+     * registrations.
+     *
+     * Used to decide which rules are proven to have executed at
+     * `document_start` in a pre-existing tab (skip dynamic injection) and
+     * which are not (inject dynamically).
+     */
+    public preregisteredScriptRulesAtBoot?: Map<string, Set<string>>;
 }
 
 export const appContext = new AppContext();

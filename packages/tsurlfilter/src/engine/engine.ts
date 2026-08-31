@@ -8,6 +8,7 @@ import { RuleStorage } from '../filterlist/rule-storage';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { Request } from '../request';
 import { RequestType } from '../request-type';
+import { type CosmeticRule } from '../rules/cosmetic-rule';
 import { type NetworkRule } from '../rules/network-rule';
 import { type IndexedStorageCosmeticRuleParts, type IndexedStorageNetworkRuleParts } from '../rules/rule';
 
@@ -325,11 +326,28 @@ export class Engine {
      *
      * @param request Host to check.
      * @param option Mask of enabled cosmetic types.
+     * @param ignorePath If true, skips the `$path` modifier check for
+     * JS/scriptlet rules only. Defaults to false.
      *
      * @returns Cosmetic result.
      */
-    public getCosmeticResult(request: Request, option: CosmeticOption): CosmeticResult {
-        return this.cosmeticEngine.match(request, option);
+    public getCosmeticResult(request: Request, option: CosmeticOption, ignorePath = false): CosmeticResult {
+        return this.cosmeticEngine.match(request, option, ignorePath);
+    }
+
+    /**
+     * Checks if a JS/scriptlet rule is cancelled by an allowlist exception.
+     *
+     * @param request Request to check.
+     * @param rule Cosmetic rule to check.
+     * @param ignoreExceptionPath If true, the `$path` modifier of exceptions
+     * is skipped, i.e. an exception applying to any path of the hostname
+     * cancels the rule. Defaults to false.
+     *
+     * @returns True if the rule is cancelled by an exception.
+     */
+    public isCosmeticRuleAllowlisted(request: Request, rule: CosmeticRule, ignoreExceptionPath = false): boolean {
+        return this.cosmeticEngine.isAllowlisted(request, rule, ignoreExceptionPath);
     }
 
     /**

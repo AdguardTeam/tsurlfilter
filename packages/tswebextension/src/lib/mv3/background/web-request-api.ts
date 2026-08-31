@@ -463,7 +463,7 @@ export class WebRequestApi {
 
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
-        CosmeticApi.applyCosmeticRules(tabId, frameId, false).catch((e) => {
+        CosmeticApi.applyCosmeticRules({ tabId, frameId, shouldApplyCss: false }).catch((e) => {
             logger.error(`[tsweb.WebRequestApi.onResponseStarted]: error applying cosmetic rules for tabId ${tabId} and frameId ${frameId}`, e);
         });
     }
@@ -873,7 +873,7 @@ export class WebRequestApi {
 
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
-        CosmeticApi.applyCosmeticRules(tabId, frameId, true).catch((e) => {
+        CosmeticApi.applyCosmeticRules({ tabId, frameId, shouldApplyCss: true }).catch((e) => {
             logger.error('[tsweb.WebRequestApi.onCommitted]: error on cosmetics injection: ', e);
         });
 
