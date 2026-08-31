@@ -1,0 +1,75 @@
+name: DevEx bridge cleanup
+
+# Fires when a source PR in ext-tsurlfilter is closed (merged or abandoned) and
+# deletes the AK dev versions devex-bridge.yml published for it — this is the
+# required AK cleanup. Nothing else exists to undo: the extension-side PR is
+# developer-owned, and its package.json/pnpm-lock.yaml pins simply stop
+# resolving once the dev versions are gone (docs require --remove before such
+# a PR could merge).
+#
+# Fail-loud by design: unpublish failures fail the job so a broken cleanup is
+# noticed. If AK policy ever forbids unpublish, fix the policy (or switch to
+# the AK admin API) rather than silencing this.
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+env:
+  BRIDGED_PACKAGES: 'logger css-tokenizer agtree tsurlfilter dnr-rulesets tswebextension'
+  AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal
+
+jobs:
+  cleanup:
+    name: Delete AK dev versions for this PR
+    # Fork PRs never produced dev versions; skip them.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: team-extensions
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js for AK registry access
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: ${{ env.AK_REGISTRY }}
+
+      - name: Delete AK dev versions for this PR
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
+          SUFFIX: '-dev.pr${{ github.event.pull_request.number }}'
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${NODE_AUTH_TOKEN}"
+          failures=0
+          for pkg in ${BRIDGED_PACKAGES}; do
+            name="@adguard/${pkg}"
+            versions="$(npm view "${name}" versions --json --registry="${AK_REGISTRY}" --silent 2>/dev/null || echo '[]')"
+            to_delete="$(node -e "
+              const raw = JSON.parse(process.argv[1]);
+              const list = Array.isArray(raw) ? raw : [raw];
+              // endsWith: '-dev.pr1' must not match '-dev.pr12'.
+              process.stdout.write(list.filter((v) => v.endsWith(process.env.SUFFIX)).join('\n'));
+            " "${versions}")"
+            if [ -z "${to_delete}" ]; then
+              echo "${name}: no dev versions for this PR"
+              continue
+            fi
+            while IFS= read -r version; do
+              [ -n "${version}" ] || continue
+              echo "Deleting ${name}@${version}"
+              if ! npm unpublish "${name}@${version}" --registry="${AK_REGISTRY}"; then
+                echo "::error::Could not unpublish ${name}@${version}"
+                failures=$((failures + 1))
+              fi
+            done <<< "${to_delete}"
+          done
+          if [ "${failures}" -gt 0 ]; then
+            echo "::error::${failures} dev version(s) could not be unpublished — AK still holds them"
+            exit 1
+          fi
