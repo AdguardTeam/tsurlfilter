@@ -224,27 +224,22 @@ jobs:
         run: |
           set -euo pipefail
           echo "::add-mask::${NODE_AUTH_TOKEN}"
-          node - <<'NODE'
-          const { execFileSync } = require('node:child_process');
-          const map = JSON.parse(process.env.MAP);
-          for (const [name, version] of Object.entries(map)) {
-              try {
-                  execFileSync('npm', [
-                      'unpublish', `${name}@${version}`,
-                      '--force',
-                      `--registry=${process.env.AK_REGISTRY}`,
-                  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-                  console.log(`Unpublished previous ${name}@${version}`);
-              } catch (e) {
-                  const msg = `${e.stderr || ''}${e.stdout || ''}`.trim();
-                  if (/404|not found|E404|EUNPUBLISH/i.test(msg)) {
-                      console.log(`${name}@${version}: not present (first push?) — nothing to unpublish`);
-                  } else {
-                      console.log(`${name}@${version}: npm unpublish exited ${e.status}:\n${msg}`);
-                  }
-              }
-          }
-          NODE
+          # npm output goes straight to this step log so failures are visible.
+          node -e 'for (const [n, v] of Object.entries(JSON.parse(process.env.MAP))) console.log(`${n} ${v}`)' > /tmp/dev-versions.txt
+          while read -r spec; do
+              name="${spec%% *}"
+              version="${spec##* }"
+              if out="$(npm unpublish "${name}@${version}" --force --registry="${AK_REGISTRY}" 2>&1)"; then
+                  echo "Unpublished previous ${name}@${version}"
+                  continue
+              fi
+              if grep -qiE '404|not found|E404|EUNPUBLISH' <<<"${out}"; then
+                  echo "${name}@${version}: not present (first push?) — nothing to unpublish"
+              else
+                  echo "::warning::${name}@${version}: npm unpublish failed:"
+                  printf '%s\n' "${out}"
+              fi
+          done < /tmp/dev-versions.txt
 
   publish:
     name: Publish ${{ matrix.package }} to Artifact Keeper
