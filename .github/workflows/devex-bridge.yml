@@ -254,7 +254,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      existing: ${{ steps.check.outputs.existing }}
+      todo: ${{ steps.check.outputs.todo }}
     steps:
       - name: Set up Node.js for AK registry access
         uses: actions/setup-node@v6
@@ -265,9 +265,10 @@ jobs:
       # Artifact Keeper rejects npm unpublish (405 Method Not Allowed on the
       # DELETE) and npm publish refuses to overwrite an existing version (409),
       # so a -dev.pr<N> version is immutably published at most once. Versions
-      # are stable per PR, so list the ones that already exist and let the
-      # publish job skip them — re-pushes to the same PR are then idempotent.
-      - name: Find already-published dev versions
+      # are stable per PR, so only the unpublished ones are emitted here and the
+      # publish job's matrix is driven from this list — re-pushes to the same PR
+      # are then idempotent (already-published entries simply drop out).
+      - name: Find unpublished dev versions
         id: check
         shell: bash
         env:
@@ -276,35 +277,37 @@ jobs:
         run: |
           set -euo pipefail
           echo "::add-mask::${NODE_AUTH_TOKEN}"
-          node - <<'NODE' > /tmp/existing.json
+          node - <<'NODE' > /tmp/todo.json
           const { execFileSync } = require('node:child_process');
           const map = JSON.parse(process.env.MAP);
-          const existing = [];
+          const todo = [];
           for (const [name, version] of Object.entries(map)) {
+              let exists = true;
               try {
                   execFileSync('npm', [
                       'view', `${name}@${version}`, 'version',
                       `--registry=${process.env.AK_REGISTRY}`,
                   ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-                  existing.push(name.split('/').pop());
-              } catch { /* not published yet */ }
+              } catch { exists = false; }
+              if (!exists) {
+                  todo.push({ package: name.split('/').pop() });
+              }
           }
-          process.stdout.write(JSON.stringify(existing));
+          process.stdout.write(JSON.stringify(todo));
           NODE
-          existing="$(cat /tmp/existing.json)"
-          echo "existing=${existing}" >> "$GITHUB_OUTPUT"
+          todo="$(cat /tmp/todo.json)"
+          echo "todo=${todo}" >> "$GITHUB_OUTPUT"
 
   publish:
     name: Publish ${{ matrix.package }} to Artifact Keeper
     needs: [changes, pack, unpublish, check-published]
     if: >-
       needs.changes.outputs.bridge-needed == 'true' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      !contains(fromJSON(needs.check-published.outputs.existing || '[]'), matrix.package)
+      github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       fail-fast: false
       matrix:
-        package: [logger, css-tokenizer, agtree, tsurlfilter, dnr-rulesets, tswebextension]
+        include: ${{ fromJSON(needs.check-published.outputs.todo || '[]') }}
     uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-ak-npm.yml@master
     with:
       team: extensions
