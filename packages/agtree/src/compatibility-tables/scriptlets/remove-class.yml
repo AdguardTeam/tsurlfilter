@@ -1,6 +1,17 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Removes the specified classes from DOM nodes.
+  parameters:
+    - name: classes
+      required: true
+      description: Class or list of classes separated by `|`.
+    - name: selector
+      required: false
+      description: CSS selector, specifies DOM nodes from which the classes will be removed.
+    - name: applying
+      required: false
+      description: One or more space-separated flags that describe the way scriptlet apply.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: remove-class
   version_added: 1.1.1
   aliases:
@@ -11,13 +22,6 @@ adg_os_any|adg_ext_any:
     - ubo-remove-class
     - ubo-rc
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#remove-class
-  parameters:
-    - name: classes
-      required: true
-    - name: selector
-      required: false
-    - name: applying
-      required: false
 
 ubo_any:
   name: remove-class.js
@@ -26,10 +30,5 @@ ubo_any:
     - rc
     - remove-class
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
-  parameters:
-    - name: classes
-      required: true
-    - name: selector
-      required: false
-    - name: applying
-      required: false
+  deprecated: true
+  deprecation_message: Deprecated by `:remove-class()`.

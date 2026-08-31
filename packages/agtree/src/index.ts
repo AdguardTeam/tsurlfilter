@@ -3,85 +3,149 @@
  */
 
 // Parser
-export { RuleParser } from './parser/rule-parser';
 export { RuleGenerator } from './generator/rule-generator';
-export { type OnParseError, defaultParserOptions, type ParserOptions } from './parser/options';
+export { FilterListGenerator } from './generator/filterlist-generator';
 
+// New pipeline parser (supports element hiding and other cosmetic rules)
+export { RuleParserPipeline } from './ast-builder/rule-parser';
+export type { ParseOptions } from './ast-builder/options';
+export type { ParserCapacity } from './ast-builder/capacity';
+
+// AST-building convenience helpers
 export {
-    type Agent,
-    type AgentCommentRule,
-    type AnyCommentRule,
-    type AnyCosmeticRule,
-    type AnyExpressionNode,
-    type AnyRule,
-    type CommentBase,
+    parseDomainList,
+    parseModifier,
+    parseAppList,
+    parseMethodList,
+    parseStealthOptionList,
+} from './ast-utils/parsing';
+
+// Filter list scanner and pipeline
+export { FilterListScanner, FilterListPipeline } from './filter-list';
+export type {
+    ScanCallback,
+    EmptyLineCallback,
+    ScanErrorCallback,
+    ScannedRuleInfo,
+    FilterListParseOptions,
+} from './filter-list';
+// Re-export the intended AST node vocabulary from `./nodes` as an explicit
+// allow-list. Internal helpers (`defaultLocation`, `AnyNode`, `NetworkRuleBase`,
+// `ListItem`, `AnyListItem`, `InvalidRuleError`, `ConfigNode`, `UboSelector`,
+// `PipeSeparator`, `CommaSeparator`, and the `Css*ParseOptions` option types)
+// are intentionally kept out of the public surface. Named re-exports (instead of
+// `export *`) keep the surface intentional and surface any future name clash at
+// compile time.
+export {
+    // Discriminant enums (value + type)
+    OperatorValue,
+    ValueKind,
     CommentMarker,
-    type CommentRule,
-    CommentRuleType,
-    type ConfigCommentRule,
-    type CosmeticRule,
-    CosmeticRuleSeparator,
-    CosmeticRuleType,
-    type CssInjectionRule,
-    type CssInjectionRuleBody,
-    type Domain,
-    type DomainList,
-    type DomainListSeparator,
-    type ElementHidingRule,
-    type ElementHidingRuleBody,
-    type EmptyRule,
-    type ExpressionOperatorNode,
-    type ExpressionParenthesisNode,
-    type ExpressionVariableNode,
-    type FilterList,
-    type Hint,
-    type HintCommentRule,
-    type HtmlFilteringRule,
-    type HtmlFilteringRuleBody,
-    type SelectorList,
-    type SelectorCombinatorValue,
-    type JsInjectionRule,
-    type Location,
-    type LocationRange,
-    type MetadataCommentRule,
-    type Modifier,
-    type ModifierList,
-    type NetworkRule,
-    type Node,
-    type ParameterList,
-    type PreProcessorCommentRule,
-    type RuleBase,
     RuleCategory,
-    type ScriptletInjectionRule,
-    type ScriptletInjectionRuleBody,
-    type Value,
+    ListNodeType,
+    ListItemNodeType,
+    CommentRuleType,
+    CosmeticRuleType,
+    CosmeticRuleSeparator,
+    NodeType,
+    AttributeSelectorOperatorValue,
+    AttributeSelectorFlagValue,
+    SelectorCombinatorValue,
     NetworkRuleType,
-    type HostnameList,
-    type HostRule,
-    type AnyNetworkRule,
+} from './nodes';
+export type {
+    // Base nodes
+    Node,
+    Location,
+    LocationRange,
+    Value,
+    Raw,
+    Parameter,
+    ParameterList,
+    FilterList,
+    RuleBase,
+    // Logical expressions
+    AnyExpressionNode,
+    ExpressionVariableNode,
+    ExpressionOperatorNode,
+    ExpressionParenthesisNode,
+    // Rule unions and base rules
+    AnyRule,
+    InvalidRule,
+    RawRule,
+    EmptyRule,
+    // Comment rules
+    AnyCommentRule,
+    CommentBase,
+    CommentRule,
+    MetadataCommentRule,
+    ConfigCommentRule,
+    PreProcessorCommentRule,
+    Agent,
+    AgentCommentRule,
+    Hint,
+    HintCommentRule,
+    // Modifiers
+    ModifierList,
+    Modifier,
+    // List items and lists
+    App,
+    Domain,
+    Method,
+    StealthOption,
+    DomainList,
+    AppList,
+    MethodList,
+    StealthOptionList,
+    DomainListSeparator,
+    // Cosmetic rules
+    AnyCosmeticRule,
+    CosmeticRule,
+    CssInjectionRule,
+    CssInjectionRuleBody,
+    ElementHidingRule,
+    ElementHidingRuleBody,
+    ScriptletInjectionRule,
+    ScriptletInjectionRuleBody,
+    HtmlFilteringRule,
+    HtmlFilteringRuleBody,
+    JsInjectionRule,
+    // CSS nodes and selectors
+    CssDeclaration,
+    CssDeclarationList,
+    CssBlock,
+    CssRule,
+    CssAtRule,
+    CssAtRulePrelude,
+    TypeSelector,
+    ClassSelector,
+    IdSelector,
+    AttributeSelectorWithoutValue,
+    AttributeSelectorWithValue,
+    AttributeSelector,
+    PseudoClassSelector,
+    SelectorCombinator,
+    ComplexSelector,
+    SimpleSelector,
+    SelectorList,
+    // Network rules
+    AnyNetworkRule,
+    NetworkRule,
+    HostRule,
+    HostnameList,
 } from './nodes';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
-export { AgentCommentParser } from './parser/comment/agent-comment-parser';
-export { AgentParser } from './parser/comment/agent-parser';
-export { CommentParser } from './parser/comment/comment-parser';
-export { ConfigCommentParser } from './parser/comment/config-comment-parser';
-export { CosmeticRuleParser } from './parser/cosmetic/cosmetic-rule-parser';
-export { AppListParser } from './parser/misc/app-list-parser';
-export { DomainListParser } from './parser/misc/domain-list-parser';
-export { MethodListParser } from './parser/misc/method-list-parser';
-export { StealthOptionListParser } from './parser/misc/stealth-option-list-parser';
-export { FilterListParser } from './parser/filterlist-parser';
-export { HintCommentParser } from './parser/comment/hint-comment-parser';
-export { HintParser } from './parser/comment/hint-parser';
-export { LogicalExpressionParser } from './parser/misc/logical-expression-parser';
-export { MetadataCommentParser } from './parser/comment/metadata-comment-parser';
-export { ModifierListParser } from './parser/misc/modifier-list';
-export { ModifierParser } from './parser/misc/modifier-parser';
-export { NetworkRuleParser } from './parser/network/network-rule-parser';
+export {
+    CapacityOverflowError,
+    type CapacityRegion,
+} from './errors/capacity-overflow-error';
+export {
+    MAX_DOMAIN_CAPACITY,
+    MAX_MODIFIER_CAPACITY,
+    MAX_SCRIPTLET_BODY_CAPACITY,
+    MAX_TOKEN_CAPACITY,
+} from './limits';
 export { NotImplementedError } from './errors/not-implemented-error';
-export { ParameterListParser } from './parser/misc/parameter-list-parser';
-export { HostRuleParser } from './parser/network/host-rule-parser';
-export { PreProcessorCommentParser } from './parser/comment/preprocessor-parser';
 export { RuleConversionError } from './errors/rule-conversion-error';
 
 // Validator
@@ -109,6 +173,17 @@ export {
     UBO_SCRIPTLET_MASK,
 } from './utils/constants';
 export { AdblockSyntax, AdblockProduct, getHumanReadableProductName } from './utils/adblockers';
+export {
+    hasAllProducts,
+    hasProduct,
+    isUnknown,
+    SYNTAX_ABP,
+    SYNTAX_ADG,
+    SYNTAX_ALL,
+    SYNTAX_UBO,
+    SYNTAX_UNKNOWN,
+} from './utils/syntax-flags';
+export type { SyntaxFlags } from './utils/syntax-flags';
 export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './utils/cosmetic-rule-separator';
 export { DomainUtils } from './utils/domain';
 export { type VariableTable, LogicalExpressionUtils } from './utils/logical-expression';
@@ -129,45 +204,23 @@ export {
 export { type Position, PositionProvider } from './utils/position-provider';
 export { RuleCategorizer } from './utils/categorizer';
 
+// CSS utilities
+export { hasNativeCssPseudoClass } from './utils/css';
+
 // Constants
 export {
     NATIVE_CSS_PSEUDO_CLASSES,
     REMOVE_PROPERTY,
 } from './converter/data/css';
 
-// CSS utilities
-export { CssTokenStream } from './parser/css/css-token-stream';
+// Compatibility tables
 
 export {
-    GenericPlatform,
-    SpecificPlatform,
+    Platform,
+    PlatformExpressionEvaluator,
     modifiersCompatibilityTable,
     redirectsCompatibilityTable,
     scriptletsCompatibilityTable,
-    parseRawPlatforms,
-    type CompatibilityTable,
-    type CompatibilityTableRow,
-    type ProductRecords,
-    type RowByProduct,
-    type RowsByProduct,
-    isGenericPlatform,
-    getPlatformId,
-    getSpecificPlatformName,
-    hasPlatformMultipleProducts,
-    getProductGenericPlatforms,
-    getProductSpecificPlatforms,
-    platformToAdblockProduct,
-    getPlatformsByProduct,
-    getHumanReadablePlatformName,
-    getAllPlatformNames,
-    ResourceType,
-    getResourceTypeModifier,
-    isValidResourceType,
-    stringifyPlatforms,
-    type PlatformsByProduct,
-    type AnyPlatform,
-    PLATFORM_NEGATION,
-    PLATFORM_SEPARATOR,
 } from './compatibility-tables';
 
 // Version

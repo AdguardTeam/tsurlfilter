@@ -2,16 +2,19 @@
  * @file Compatibility tables for redirects.
  */
 
-import { COLON } from '../utils/constants';
-import { deepFreeze } from '../utils/deep-freeze';
+import { sprintf } from 'sprintf-js';
+
+import { COLON, NEWLINE, SPACE } from '../utils/constants';
 import { isNull, isString, isUndefined } from '../utils/type-guards';
+import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from '../validator/constants';
 
 import { CompatibilityTableBase } from './base';
-import { redirectsCompatibilityTableData } from './compatibility-table-data';
-import { type AnyPlatform } from './platforms';
+import { type Platform } from './platform';
+import { redirectsCompatibilityTableData } from './redirects-compatibility-table-data';
 import { type RedirectDataSchema } from './schemas';
 import { type CompatibilityTable } from './types';
 import { getResourceTypeModifier } from './utils/resource-type-helpers';
+import { type ValidationContext } from './validators/types';
 
 /**
  * Prefix for resource redirection names.
@@ -71,18 +74,18 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
      * based on the `resourceTypes` field.
      *
      * @param redirect Redirect name or redirect data.
-     * @param platform Platform to get the modifiers for (can be specific, generic, or combined platforms).
+     * @param platform Platform to get the modifiers for.
      *
      * @returns Set of resource type modifiers or an empty set if the redirect is not found or has no resource types.
      */
     public getResourceTypeModifiers(
         redirect: string | RedirectDataSchema,
-        platform: AnyPlatform,
+        platform: Platform,
     ): Set<string> {
         let redirectData: RedirectDataSchema | null = null;
 
         if (isString(redirect)) {
-            redirectData = this.getFirst(redirect, platform);
+            redirectData = this.query(redirect, platform);
         } else {
             redirectData = redirect;
         }
@@ -105,12 +108,47 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
 
         return modifierNames;
     }
-}
 
-/**
- * Deep freeze the compatibility table data to avoid accidental modifications.
- */
-deepFreeze(redirectsCompatibilityTableData);
+    /**
+     * Validates a redirect against the compatibility table.
+     *
+     * @param data Redirect name as string.
+     * @param ctx Validation context to collect issues into.
+     * @param platform Platform to validate against.
+     */
+    public validate(data: string, ctx: ValidationContext, platform?: Platform): void {
+        if (platform === undefined) {
+            throw new Error('Platform is required for redirect validation');
+        }
+
+        const redirectName = isString(data) ? data : '';
+
+        // Get platform-specific data
+        const specificRedirectData = this.get(redirectName, platform);
+
+        if (!specificRedirectData) {
+            ctx.addError(
+                sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, platform.toHumanReadable()),
+            );
+            return;
+        }
+
+        // Check if removed
+        if (specificRedirectData.removed) {
+            ctx.addError(`${VALIDATION_ERROR_PREFIX.REMOVED}: '${redirectName}'`);
+            return;
+        }
+
+        // Check if deprecated
+        if (specificRedirectData.deprecated) {
+            if (!specificRedirectData.deprecationMessage) {
+                throw new Error(`${SOURCE_DATA_ERROR_PREFIX.NO_DEPRECATION_MESSAGE}: '${redirectName}'`);
+            }
+            const warn = specificRedirectData.deprecationMessage.replace(NEWLINE, SPACE);
+            ctx.addWarning(warn);
+        }
+    }
+}
 
 /**
  * Compatibility table instance for redirects.

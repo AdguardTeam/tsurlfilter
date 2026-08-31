@@ -1,6 +1,8 @@
-adg_any:
+common:
   name: webrtc
   description: The rule applies only to WebRTC connections.
+
+adg_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#webrtc-modifier
   removed: true
   removal_message: |-
@@ -9,8 +11,6 @@ adg_any:
     the [nowebrtc scriptlet](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#nowebrtc).
 
 ubo_any:
-  name: webrtc
-  description: The rule applies only to WebRTC connections.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax
   removed: true
   removal_message: |-
@@ -19,7 +19,5 @@ ubo_any:
     the [nowebrtc scriptlet](https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-).
 
 abp_any:
-  name: webrtc
-  description: The rule applies only to WebRTC connections.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
   version_added: 1.13.3

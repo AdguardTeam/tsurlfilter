@@ -1,4 +1,4 @@
-import { CssTokenStream } from '@adguard/agtree';
+import { hasNativeCssPseudoClass } from '@adguard/agtree';
 
 import { logger } from './logger';
 
@@ -73,6 +73,6 @@ export class CssCapabilities {
      * false otherwise.
      */
     public static isPotentiallyExtendedCss(selector: string): boolean {
-        return CssTokenStream.hasNativeCssPseudoClass(selector);
+        return hasNativeCssPseudoClass(selector);
     }
 }

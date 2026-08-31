@@ -1,5 +1,4 @@
-import { RuleCategory } from '@adguard/agtree';
-import { FilterListParser, type ParserOptions } from '@adguard/agtree/parser';
+import { type FilterListParseOptions, FilterListPipeline, RuleCategory } from '@adguard/agtree';
 
 import { MaxScannedRulesError } from '../errors/limitation-errors';
 import { type IFilter } from '../filter/types';
@@ -61,9 +60,14 @@ interface ScannedRulesWithErrors {
  */
 export class RulesScanner {
     /**
+     * Shared filter list pipeline instance reused across all scans.
+     */
+    private static readonly pipeline = new FilterListPipeline();
+
+    /**
      * Parser options for filter scanning.
      */
-    private static readonly PARSER_OPTIONS: ParserOptions = {
+    private static readonly PARSER_OPTIONS: FilterListParseOptions = {
         // We don't want parser to throw errors, so we can collect them all in the result object
         tolerant: true,
         // Location info is needed for source mapping
@@ -71,10 +75,6 @@ export class RulesScanner {
         // All syntaxes (abp, ubo) should be parsed
         parseAbpSpecificRules: true,
         parseUboSpecificRules: true,
-        // Raw text is needed for error reporting
-        includeRaws: true,
-        // We don't need to process comments
-        ignoreComments: true,
         // We only need to process network rules
         parseHostRules: false,
     };
@@ -150,7 +150,7 @@ export class RulesScanner {
         const content = await filter.getContent();
 
         // Parse filter content into AST
-        const ast = FilterListParser.parse(content, RulesScanner.PARSER_OPTIONS);
+        const ast = RulesScanner.pipeline.parse(content, RulesScanner.PARSER_OPTIONS);
 
         // Build result object
         let scannedRulesCount = 0;
@@ -160,14 +160,20 @@ export class RulesScanner {
         };
 
         for (let i = 0; i < ast.children.length; i += 1) {
+            const node = ast.children[i];
+
+            // Skip empty lines and comments — they are not convertible rules.
+            if (node.category === RuleCategory.Empty || node.category === RuleCategory.Comment) {
+                continue;
+            }
+
             /**
-             * We use `!` because location info and raw rule is always included in our parser options.
+             * We use `!` because location info is always included in our parser options.
              *
              * @see {@link RulesScanner.PARSER_OPTIONS}
              */
-            const node = ast.children[i];
             const index = node.start!;
-            const raw = node.raws!.text!;
+            const raw = content.slice(node.start!, node.end!);
 
             if (node.category === RuleCategory.Invalid) {
                 const { name, message } = node.error;

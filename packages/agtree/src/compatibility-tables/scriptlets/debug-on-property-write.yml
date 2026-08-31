@@ -1,9 +1,9 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+adg_os_any|adg_ext_any|adg_safari_any:
   name: debug-on-property-write
   version_added: 1.0.4
+  description: This scriptlet is basically the same as abort-on-property-write, but instead of aborting it starts the debugger.
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#debug-on-property-write
   parameters:
     - name: property
       required: true
+      description: Path to a property (joined with `.` if needed). The property must be attached to window.

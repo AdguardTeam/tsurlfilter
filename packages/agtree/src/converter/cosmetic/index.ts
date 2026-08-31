@@ -13,8 +13,8 @@ import {
     RuleCategory,
 } from '../../nodes';
 import { COMMA } from '../../utils';
-import { AdblockSyntax } from '../../utils/adblockers';
 import { clone } from '../../utils/clone';
+import { SYNTAX_ABP, SYNTAX_ADG, SYNTAX_UBO } from '../../utils/syntax-flags';
 import {
     type ConversionResult,
     createNodeConversionResult,
@@ -90,7 +90,7 @@ export class CosmeticRuleConverter extends RuleConverterBase {
 
         // Convert cosmetic rule modifiers, if any
         if (rule.modifiers) {
-            if (rule.syntax === AdblockSyntax.Ubo) {
+            if (rule.syntax & SYNTAX_UBO) {
                 // uBO doesn't support this rule:
                 // example.com##+js(set-constant.js, foo, bar):matches-path(/baz)
                 if (rule.type === CosmeticRuleType.ScriptletInjectionRule) {
@@ -100,16 +100,15 @@ export class CosmeticRuleConverter extends RuleConverterBase {
                 }
 
                 convertedModifiers = AdgCosmeticRuleModifierConverter.convertFromUbo(rule.modifiers);
-            } else if (rule.syntax === AdblockSyntax.Abp) {
+            } else if (rule.syntax & SYNTAX_ABP) {
                 // TODO: Implement once ABP starts supporting cosmetic rule modifiers
                 throw new RuleConversionError('ABP don\'t support cosmetic rule modifiers');
             }
         }
 
         // Track if any conversion happened
-        const wasConverted = subconverterResult.result.length > 1
-            || subconverterResult.isConverted
-            || (convertedModifiers && convertedModifiers.isConverted);
+        const wasConverted = subconverterResult.isConverted
+            || (convertedModifiers?.isConverted ?? false);
 
         if (wasConverted) {
             // Add modifier list to the subconverter result rules
@@ -163,8 +162,13 @@ export class CosmeticRuleConverter extends RuleConverterBase {
      * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToUbo(rule: AnyCosmeticRule): NodeConversionResult<AnyRule> {
-        // Skip conversation if the rule is already in uBO format
-        if (rule.syntax === AdblockSyntax.Ubo) {
+        // Skip conversion if the rule is already exclusively in uBO format.
+        // A bitwise check (`rule.syntax & SYNTAX_UBO`) is not enough here: rules
+        // that are common to several products (e.g. SYNTAX_ALL) also have the uBO
+        // bit set, yet may still need normalization when targeting uBO. Requiring
+        // an exact match keeps the behavior aligned with the sub-converters, which
+        // treat "already uBO" as the only no-op case.
+        if (rule.syntax === SYNTAX_UBO) {
             return createNodeConversionResult([rule], false);
         }
 
@@ -173,17 +177,54 @@ export class CosmeticRuleConverter extends RuleConverterBase {
             case CosmeticRuleType.HtmlFilteringRule:
                 return HtmlRuleConverter.convertToUbo(rule);
             case CosmeticRuleType.ElementHidingRule: {
-                // Check if the rule is a simple hiding rule
-                // TODO: Handle elemhide rules with extended CSS pseudos even if type is not marked explicitly
-                const isElementHidingRule = (
-                    rule.separator.value === CosmeticRuleSeparator.ElementHidingException
-                    || rule.separator.value === CosmeticRuleSeparator.ElementHiding
-                );
+                const elemHideResult = ElementHidingRuleConverter.convertToUbo(rule);
 
-                if (isElementHidingRule && !rule.modifiers) {
-                    return createNodeConversionResult([rule], false);
+                // If no modifiers to convert, return the sub-converter result directly.
+                // ElementHidingRuleConverter.convertToUbo() already handles
+                // selector conversion and separator normalization.
+                if (!rule.modifiers) {
+                    return elemHideResult;
                 }
-                break;
+
+                // For rules with modifiers, apply modifier conversion on top
+                let convertedModifiers: ConversionResult<{
+                    modifierList: ModifierList;
+                    domains?: DomainList;
+                }> | undefined;
+
+                if (rule.syntax & SYNTAX_ABP) {
+                    throw new RuleConversionError('ABP does not support cosmetic rule modifiers');
+                } else if (rule.syntax & SYNTAX_ADG) {
+                    convertedModifiers = UboCosmeticRuleModifierConverter.convertFromAdg(rule.modifiers);
+                }
+
+                const wasConverted = elemHideResult.isConverted || (convertedModifiers?.isConverted ?? false);
+
+                // Use converted rule if available, otherwise clone original
+                const result = elemHideResult.isConverted
+                    ? elemHideResult.result[0]
+                    : clone(rule);
+
+                if (convertedModifiers?.isConverted) {
+                    result.modifiers = convertedModifiers.result.modifierList;
+
+                    if (convertedModifiers.result.domains) {
+                        result.domains = convertedModifiers.result.domains;
+                        result.domains.separator = COMMA;
+                    }
+                }
+
+                // Separator normalization is already handled by
+                // ElementHidingRuleConverter.convertToUbo() when elemHideResult.isConverted,
+                // but we still need it for the clone(rule) path.
+                if (!elemHideResult.isConverted) {
+                    result.syntax = SYNTAX_UBO;
+                    result.separator.value = rule.exception
+                        ? CosmeticRuleSeparator.ElementHidingException
+                        : CosmeticRuleSeparator.ElementHiding;
+                }
+
+                return createNodeConversionResult([result], wasConverted);
             }
             case CosmeticRuleType.ScriptletInjectionRule:
                 return ScriptletRuleConverter.convertToUbo(rule);
@@ -202,17 +243,17 @@ export class CosmeticRuleConverter extends RuleConverterBase {
 
         // Convert cosmetic rule modifiers, if any
         if (rule.modifiers) {
-            if (rule.syntax === AdblockSyntax.Abp) {
+            if (rule.syntax & SYNTAX_ABP) {
                 // TODO: Implement once ABP starts supporting cosmetic rule modifiers
                 throw new RuleConversionError('ABP does not support cosmetic rule modifiers');
-            } else if (rule.syntax === AdblockSyntax.Adg) {
+            } else if (rule.syntax & SYNTAX_ADG) {
                 convertedModifiers = UboCosmeticRuleModifierConverter.convertFromAdg(rule.modifiers);
             }
         }
 
         const result = clone(rule);
 
-        result.syntax = AdblockSyntax.Ubo;
+        result.syntax = SYNTAX_UBO;
 
         if (convertedModifiers && convertedModifiers.isConverted) {
             result.modifiers = convertedModifiers.result.modifierList;

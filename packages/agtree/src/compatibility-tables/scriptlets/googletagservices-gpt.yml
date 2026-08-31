@@ -1,9 +1,14 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Mocks Google Publisher Tag API.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: googletagservices-gpt
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#googletagservices-gpt
   version_added: 1.10.25
+
+ubo_any:
+  name: googletagservices_gpt.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#googletagservices_gptjs-
   aliases:
     - ubo-googletagservices_gpt.js
-    - googletagservices_gpt.js
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#googletagservices-gpt
+  removed: true

@@ -5,16 +5,18 @@ import {
     type CosmeticRuleSeparator,
     CosmeticRuleSeparatorUtils,
     CosmeticRuleType,
+    type CssInjectionRuleBody,
     type DomainList,
     DomainUtils,
+    type ParseOptions,
     PIPE_MODIFIER_SEPARATOR,
     QuoteType,
     QuoteUtils,
     RegExpUtils,
+    RuleParserPipeline,
     type SelectorCombinatorValue,
 } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
-import { CosmeticRuleParser, defaultParserOptions, type ParserOptions } from '@adguard/agtree/parser';
 import { scriptlets, type Source } from '@adguard/scriptlets';
 import { isValidScriptletName } from '@adguard/scriptlets/validators';
 
@@ -29,10 +31,44 @@ import { validateDeclarationList } from './css/declaration-list-validator';
 import { validateSelectorList } from './css/selector-list-validator';
 import { Pattern } from './pattern';
 import { FILTER_LIST_ID_NONE, type IRule, RULE_INDEX_NONE } from './rule';
+import { isAnyCosmeticRule } from './rule-predicates';
 import { ScriptletParams } from './scriptlet-params';
 import { SimpleRegex } from './simple-regex';
 
 export type { ScriptletsProps } from './scriptlet-params';
+
+/**
+ * Checks whether an object has a `value` property.
+ *
+ * @param obj Object to check.
+ *
+ * @returns `true` if the object has a `value` property.
+ */
+const hasValue = (obj: object): boolean => 'value' in obj;
+
+/**
+ * Reads the raw CSS text from a selector or declaration list node.
+ *
+ * The cosmetic rule parser used here runs with `parseCssSelectorList` and
+ * `parseCssDeclarationList` disabled, so CSS injection selector and
+ * declaration lists are always returned as `Raw` nodes whose text can be read
+ * directly.
+ *
+ * @param node Selector list or declaration list node.
+ *
+ * @returns Raw CSS text.
+ */
+const getRawCssListText = (
+    node: CssInjectionRuleBody['selectorList'] | NonNullable<CssInjectionRuleBody['declarationList']>,
+): string => {
+    if (!hasValue(node)) {
+        throw new Error(
+            'Expected a Raw node for CSS list text, got a parsed AST node. '
+            + 'Verify that parseCssSelectorList and parseCssDeclarationList are disabled.',
+        );
+    }
+    return (node as { value: string }).value;
+};
 
 /**
  * Init script params.
@@ -208,13 +244,21 @@ export class CosmeticRule implements IRule {
     /**
      * Parser options for cosmetic rules.
      */
-    private static readonly PARSER_OPTIONS: ParserOptions = {
-        ...defaultParserOptions,
+    private static readonly PARSER_OPTIONS: ParseOptions = {
         parseAbpSpecificRules: false,
         parseUboSpecificRules: false,
         isLocIncluded: false,
         parseHtmlFilteringRuleBodies: true,
+        // CSS-list parsing is intentionally disabled: these rules are
+        // validated by tsurlfilter's own CSS validators, not by agtree.
+        parseCssSelectorList: false,
+        parseCssDeclarationList: false,
     };
+
+    /**
+     * Shared AGTree parser pipeline instance.
+     */
+    private static readonly PARSER = new RuleParserPipeline();
 
     /**
      * Rule index.
@@ -733,7 +777,7 @@ export class CosmeticRule implements IRule {
                     break;
 
                 case CosmeticRuleType.CssInjectionRule:
-                    selectorListValidationResult = validateSelectorList(ruleNode.body.selectorList.value);
+                    selectorListValidationResult = validateSelectorList(getRawCssListText(ruleNode.body.selectorList));
 
                     if (!selectorListValidationResult.isValid) {
                         throw new Error(selectorListValidationResult.errorMessage);
@@ -747,7 +791,7 @@ export class CosmeticRule implements IRule {
                     // because it mixes removal and non-removal declarations.
                     if (ruleNode.body.declarationList) {
                         // eslint-disable-next-line max-len
-                        const declarationListValidationResult = validateDeclarationList(ruleNode.body.declarationList.value);
+                        const declarationListValidationResult = validateDeclarationList(getRawCssListText(ruleNode.body.declarationList));
 
                         if (!declarationListValidationResult.isValid) {
                             throw new Error(declarationListValidationResult.errorMessage);
@@ -852,11 +896,12 @@ export class CosmeticRule implements IRule {
         if (node) {
             parsedNode = node;
         } else {
-            const parsed = CosmeticRuleParser.parse(ruleText, CosmeticRule.PARSER_OPTIONS);
+            const parsed = CosmeticRule.PARSER.parse(ruleText, CosmeticRule.PARSER_OPTIONS);
 
-            // CosmeticRuleParser returns null if the rule is not a valid cosmetic rule
-            if (!parsed) {
-                throw new SyntaxError(`Failed to parse as cosmetic rule: ${ruleText}`);
+            // The pipeline returns a rule of another category if the text is not
+            // a cosmetic rule; treat that as an invalid cosmetic rule.
+            if (!isAnyCosmeticRule(parsed)) {
+                throw new SyntaxError(`Expected cosmetic rule but got ${parsed.category}: ${ruleText}`);
             }
 
             parsedNode = parsed;

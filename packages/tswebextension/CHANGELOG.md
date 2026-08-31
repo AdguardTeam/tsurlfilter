@@ -5,19 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Added
+## [Unreleased] <!-- release/agtree-v5 -->
 
 ### Changed
 
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
+- Migrated to the refactored `@adguard/agtree` API: rule parsing uses
+  `RuleParserPipeline` and the removed `CssTokenStream.hasNativeCssPseudoClass`
+  is replaced by the `hasNativeCssPseudoClass` utility.
 
 ## [5.0.3] - 2026-08-25
 
@@ -48,7 +42,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Short-lived duplicated elements on pages when CSS hits counting is enabled.
 
 [5.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v5.0.1
-
 
 ## [5.0.0] - 2026-07-28
 

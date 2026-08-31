@@ -1,76 +1,87 @@
 /**
- * @file Common options for all parsers.
- */
-
-/**
- * Callback function type for handling parse errors in tolerant mode.
+ * @file Parser options.
  *
- * @param error The error that occurred during parsing.
+ * Centralised location for the public option types accepted by the
+ * top-level {@link StructuralRuleParser}, together with their defaults and the
+ * resolver helper that normalises caller input.
  */
-export type OnParseError = (error: unknown) => void;
 
 /**
- * Common options for all parsers.
+ * Options for `StructuralRuleParser.parse()`.
  */
-export interface ParserOptions {
+export interface RuleParserOptions {
     /**
-     * If `true`, then the parser will not throw an error if the rule is syntactically invalid, instead it will
-     * return an `InvalidRule` object with the error attached to it.
-     */
-    tolerant?: boolean;
-
-    /**
-     * Whether to include location information in the AST nodes.
-     */
-    isLocIncluded?: boolean;
-
-    /**
-     * Whether to parse AdBlock-specific rules.
-     */
-    parseAbpSpecificRules?: boolean;
-
-    /**
-     * Whether to parse uBlock Origin-specific rules.
+     * Whether to detect uBO modifiers (default true).
      */
     parseUboSpecificRules?: boolean;
 
     /**
-     * Whether to parse raw parts.
+     * Whether to detect ABP-specific rules (default true).
      */
-    includeRaws?: boolean;
+    parseAbpSpecificRules?: boolean;
 
     /**
-     * Whether to ignore comment-rules.
-     */
-    ignoreComments?: boolean;
-
-    /**
-     * Whether to parse host rules.
-     */
-    parseHostRules?: boolean;
-
-    /**
-     * Whether to parse HTML filtering rule bodies.
-     * If `false`, HTML filtering rule `body` property will be plain string.
+     * Whether to invoke HTML filtering sub-parsers on HTML filtering bodies
+     * (default false).
      */
     parseHtmlFilteringRuleBodies?: boolean;
 
     /**
-     * Callback function to handle parse errors when tolerant mode is enabled.
+     * When `true`, cosmetic rules are classified but not parsed.
+     * `StructuralRuleParser.parse()` returns `RuleKind.Cosmetic` without writing
+     * any cosmetic-specific data to `ctx.data` beyond `ctx.data[0]` (which
+     * is zeroed). Defaults to `false`.
      */
-    onParseError?: OnParseError;
+    ignoreCosmetic?: boolean;
+
+    /**
+     * When `true`, network rules are classified but not parsed.
+     * `StructuralRuleParser.parse()` returns `RuleKind.Network` without writing
+     * any network-specific data to `ctx.data` beyond `ctx.data[0]` (which
+     * is zeroed). Defaults to `false`.
+     */
+    ignoreNetwork?: boolean;
 }
 
 /**
- * Default parser options.
+ * Default values for {@link RuleParserOptions}.
+ *
+ * Exported so tests and downstream consumers can reference the canonical
+ * defaults without re-typing them.
  */
-export const defaultParserOptions: ParserOptions = Object.freeze({
-    tolerant: false,
-    isLocIncluded: true,
-    parseAbpSpecificRules: true,
+export const DEFAULT_RULE_PARSER_OPTIONS: Required<RuleParserOptions> = {
     parseUboSpecificRules: true,
-    includeRaws: true,
-    ignoreComments: false,
-    parseHostRules: false,
+    parseAbpSpecificRules: true,
     parseHtmlFilteringRuleBodies: false,
-});
+    ignoreCosmetic: false,
+    ignoreNetwork: false,
+};
+
+/**
+ * Resolves a partial {@link RuleParserOptions} object against the canonical
+ * defaults.
+ *
+ * @param options Partial options object (or `undefined`).
+ *
+ * @returns A fully populated, immutable view of the resolved options.
+ */
+export function resolveRuleParserOptions(
+    options?: RuleParserOptions,
+): Required<RuleParserOptions> {
+    if (options === undefined) {
+        return DEFAULT_RULE_PARSER_OPTIONS;
+    }
+    return {
+        parseUboSpecificRules:
+            options.parseUboSpecificRules ?? DEFAULT_RULE_PARSER_OPTIONS.parseUboSpecificRules,
+        parseAbpSpecificRules:
+            options.parseAbpSpecificRules ?? DEFAULT_RULE_PARSER_OPTIONS.parseAbpSpecificRules,
+        parseHtmlFilteringRuleBodies:
+            options.parseHtmlFilteringRuleBodies
+            ?? DEFAULT_RULE_PARSER_OPTIONS.parseHtmlFilteringRuleBodies,
+        ignoreCosmetic:
+            options.ignoreCosmetic ?? DEFAULT_RULE_PARSER_OPTIONS.ignoreCosmetic,
+        ignoreNetwork:
+            options.ignoreNetwork ?? DEFAULT_RULE_PARSER_OPTIONS.ignoreNetwork,
+    };
+}

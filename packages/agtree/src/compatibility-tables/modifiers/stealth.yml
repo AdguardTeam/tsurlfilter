@@ -1,4 +1,4 @@
-adg_os_any:
+common:
   name: stealth
   description: Disables the Stealth Mode module for all corresponding pages and requests.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#stealth-modifier
@@ -7,43 +7,13 @@ adg_os_any:
   exception_only: true
   value_optional: true
   value_format: pipe_separated_stealth_options
+
+adg_os_any:
 
 adg_ext_chrome:
-  name: stealth
-  description: Disables the Stealth Mode module for all corresponding pages and requests.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#stealth-modifier
-  assignable: true
-  negatable: false
-  exception_only: true
-  value_optional: true
-  value_format: pipe_separated_stealth_options
 
 adg_ext_firefox:
-  name: stealth
-  description: Disables the Stealth Mode module for all corresponding pages and requests.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#stealth-modifier
-  assignable: true
-  negatable: false
-  exception_only: true
-  value_optional: true
-  value_format: pipe_separated_stealth_options
 
 adg_ext_opera:
-  name: stealth
-  description: Disables the Stealth Mode module for all corresponding pages and requests.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#stealth-modifier
-  assignable: true
-  negatable: false
-  exception_only: true
-  value_optional: true
-  value_format: pipe_separated_stealth_options
 
 adg_ext_edge:
-  name: stealth
-  description: Disables the Stealth Mode module for all corresponding pages and requests.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#stealth-modifier
-  assignable: true
-  negatable: false
-  exception_only: true
-  value_optional: true
-  value_format: pipe_separated_stealth_options

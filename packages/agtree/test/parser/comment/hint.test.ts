@@ -1,769 +1,137 @@
 import { describe, expect, test } from 'vitest';
 
-import { HintCommentGenerator } from '../../../src/generator/comment/hint-comment-generator';
-import { HintCommentParser } from '../../../src/parser/comment/hint-comment-parser';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
+import {
+    CommentKind,
+    CommentParser,
+    createParserContext,
+    HintCommentParser,
+    initParserContext,
+} from '../../../src/parser';
+import { Tokenizer } from '../../../src/tokenizer/tokenizer';
+
+const tokenizer = new Tokenizer(1024);
+
+const ctx = createParserContext();
+
+/**
+ * Tokenize + parse a comment rule in one step for convenience.
+ *
+ * @param source Source string to parse.
+ *
+ * @returns Preparsed data buffer.
+ */
+function parse(source: string): Int32Array {
+    tokenizer.setSource(source);
+    initParserContext(ctx, source, tokenizer);
+    CommentParser.parse(ctx);
+    return ctx.data;
+}
 
 describe('HintCommentParser', () => {
-    test('isHintRule', () => {
-        // TODO: Refactor to test.each
-        expect(HintCommentParser.isHintRule(EMPTY)).toBeFalsy();
-        expect(HintCommentParser.isHintRule(SPACE)).toBeFalsy();
-        expect(HintCommentParser.isHintRule('! comment')).toBeFalsy();
-        expect(HintCommentParser.isHintRule('# comment')).toBeFalsy();
-        expect(HintCommentParser.isHintRule('#+')).toBeFalsy();
-        expect(HintCommentParser.isHintRule('#+ HINT_NAME1(PARAMS) HINT_NAME2(PARAMS)')).toBeFalsy();
-
-        expect(HintCommentParser.isHintRule('!+NOT_OPTIMIZED')).toBeTruthy();
-        expect(HintCommentParser.isHintRule('!+ NOT_OPTIMIZED')).toBeTruthy();
-        expect(HintCommentParser.isHintRule('!+ HINT_NAME1(PARAMS) HINT_NAME2(PARAMS)')).toBeTruthy();
-    });
-
-    test('parse', () => {
-        // TODO: Refactor to test.each
-        // Without parameters
-        expect(HintCommentParser.parse('!+NOT_OPTIMIZED')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 15,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 2,
-                    end: 15,
-                    name: {
-                        type: 'Value',
-                        start: 2,
-                        end: 15,
-                        value: 'NOT_OPTIMIZED',
-                    },
-                },
-            ],
+    describe('classification', () => {
+        test('!+NOT_OPTIMIZED', () => {
+            parse('!+NOT_OPTIMIZED');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Hint);
         });
 
-        expect(HintCommentParser.parse('!+ NOT_OPTIMIZED')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 16,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 16,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 16,
-                        value: 'NOT_OPTIMIZED',
-                    },
-                },
-            ],
+        test('!+ NOT_OPTIMIZED — space after marker', () => {
+            parse('!+ NOT_OPTIMIZED');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Hint);
         });
 
-        // Multiple, without parameters
-        expect(HintCommentParser.parse('!+ HINT_NAME1 HINT_NAME2')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 24,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 13,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 13,
-                        value: 'HINT_NAME1',
-                    },
-                },
-                {
-                    type: 'Hint',
-                    start: 14,
-                    end: 24,
-                    name: {
-                        type: 'Value',
-                        start: 14,
-                        end: 24,
-                        value: 'HINT_NAME2',
-                    },
-                },
-            ],
+        test('!+ HINT_NAME1 HINT_NAME2 — multiple hints', () => {
+            parse('!+ HINT_NAME1 HINT_NAME2');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Hint);
         });
 
-        // Without parameters, but with empty parameter list ()
-        expect(HintCommentParser.parse('!+ HINT_NAME1()')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 15,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 15,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 13,
-                        value: 'HINT_NAME1',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 14,
-                        end: 14,
-                        children: [],
-                    },
-                },
-            ],
-        });
-
-        expect(HintCommentParser.parse('!+ HINT_NAME1(     )')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 20,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 20,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 13,
-                        value: 'HINT_NAME1',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 14,
-                        end: 19,
-                        children: [
-                            null,
-                        ],
-                    },
-                },
-            ],
-        });
-
-        expect(HintCommentParser.parse('!+ HINT_NAME1() HINT_NAME2()')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 28,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 15,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 13,
-                        value: 'HINT_NAME1',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 14,
-                        end: 14,
-                        children: [],
-                    },
-                },
-                {
-                    type: 'Hint',
-                    start: 16,
-                    end: 28,
-                    name: {
-                        type: 'Value',
-                        start: 16,
-                        end: 26,
-                        value: 'HINT_NAME2',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 27,
-                        end: 27,
-                        children: [],
-                    },
-                },
-            ],
-        });
-
-        // Variadic
-        expect(HintCommentParser.parse('!+ HINT_NAME1(param0, param1) HINT_NAME2()')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 42,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 29,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 13,
-                        value: 'HINT_NAME1',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 14,
-                        end: 28,
-                        children: [
-                            {
-                                type: 'Value',
-                                start: 14,
-                                end: 20,
-                                value: 'param0',
-                            },
-                            {
-                                type: 'Value',
-                                start: 22,
-                                end: 28,
-                                value: 'param1',
-                            },
-                        ],
-                    },
-                },
-                {
-                    type: 'Hint',
-                    start: 30,
-                    end: 42,
-                    name: {
-                        type: 'Value',
-                        start: 30,
-                        end: 40,
-                        value: 'HINT_NAME2',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 41,
-                        end: 41,
-                        children: [],
-                    },
-                },
-            ],
-        });
-
-        expect(HintCommentParser.parse('!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)')).toMatchObject(
-            {
-                type: 'HintCommentRule',
-                start: 0,
-                end: 48,
-                category: 'Comment',
-                syntax: 'AdGuard',
-                children: [
-                    {
-                        type: 'Hint',
-                        start: 3,
-                        end: 29,
-                        name: {
-                            type: 'Value',
-                            start: 3,
-                            end: 13,
-                            value: 'HINT_NAME1',
-                        },
-                        params: {
-                            type: 'ParameterList',
-                            start: 14,
-                            end: 28,
-                            children: [
-                                {
-                                    type: 'Value',
-                                    start: 14,
-                                    end: 20,
-                                    value: 'param0',
-                                },
-                                {
-                                    type: 'Value',
-                                    start: 22,
-                                    end: 28,
-                                    value: 'param1',
-                                },
-                            ],
-                        },
-                    },
-                    {
-                        type: 'Hint',
-                        start: 30,
-                        end: 48,
-                        name: {
-                            type: 'Value',
-                            start: 30,
-                            end: 40,
-                            value: 'HINT_NAME2',
-                        },
-                        params: {
-                            type: 'ParameterList',
-                            start: 41,
-                            end: 47,
-                            children: [
-                                {
-                                    type: 'Value',
-                                    start: 41,
-                                    end: 47,
-                                    value: 'param0',
-                                },
-                            ],
-                        },
-                    },
-                ],
-            },
-        );
-
-        // Skipped parameters
-        expect(HintCommentParser.parse('!+ HINT_NAME(param0, , param1)')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 30,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 30,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 12,
-                        value: 'HINT_NAME',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 13,
-                        end: 29,
-                        children: [
-                            {
-                                type: 'Value',
-                                start: 13,
-                                end: 19,
-                                value: 'param0',
-                            },
-                            null,
-                            {
-                                type: 'Value',
-                                start: 23,
-                                end: 29,
-                                value: 'param1',
-                            },
-                        ],
-                    },
-                },
-            ],
-        });
-
-        expect(HintCommentParser.parse('!+ HINT_NAME(param0,    , param1)')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 33,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 33,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 12,
-                        value: 'HINT_NAME',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 13,
-                        end: 32,
-                        children: [
-                            {
-                                type: 'Value',
-                                start: 13,
-                                end: 19,
-                                value: 'param0',
-                            },
-                            null,
-                            {
-                                type: 'Value',
-                                start: 26,
-                                end: 32,
-                                value: 'param1',
-                            },
-                        ],
-                    },
-                },
-            ],
-        });
-
-        expect(HintCommentParser.parse('!+ HINT_NAME(param0, , , )')).toMatchObject(
-            {
-                type: 'HintCommentRule',
-                start: 0,
-                end: 26,
-                category: 'Comment',
-                syntax: 'AdGuard',
-                children: [
-                    {
-                        type: 'Hint',
-                        start: 3,
-                        end: 26,
-                        name: {
-                            type: 'Value',
-                            start: 3,
-                            end: 12,
-                            value: 'HINT_NAME',
-                        },
-                        params: {
-                            type: 'ParameterList',
-                            start: 13,
-                            end: 25,
-                            children: [
-                                {
-                                    type: 'Value',
-                                    start: 13,
-                                    end: 19,
-                                    value: 'param0',
-                                },
-                                null,
-                                null,
-                                null,
-                            ],
-                        },
-                    },
-                ],
-            },
-        );
-
-        expect(HintCommentParser.parse('!+ HINT_NAME( , , , )')).toMatchObject(
-            {
-                type: 'HintCommentRule',
-                start: 0,
-                end: 21,
-                category: 'Comment',
-                syntax: 'AdGuard',
-                children: [
-                    {
-                        type: 'Hint',
-                        start: 3,
-                        end: 21,
-                        name: {
-                            type: 'Value',
-                            start: 3,
-                            end: 12,
-                            value: 'HINT_NAME',
-                        },
-                        params: {
-                            type: 'ParameterList',
-                            start: 13,
-                            end: 20,
-                            children: [
-                                null,
-                                null,
-                                null,
-                                null,
-                            ],
-                        },
-                    },
-                ],
-            },
-        );
-
-        expect(HintCommentParser.parse('!+ HINT_NAME(,,,)')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 17,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 17,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 12,
-                        value: 'HINT_NAME',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 13,
-                        end: 16,
-                        children: [
-                            null,
-                            null,
-                            null,
-                            null,
-                        ],
-                    },
-                },
-            ],
-        });
-
-        // Spaces
-        expect(HintCommentParser.parse('!+ HINT_NAME(    p0  ,   p1 ,   p2 ,     p3)')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 44,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 44,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 12,
-                        value: 'HINT_NAME',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 13,
-                        end: 43,
-                        children: [
-                            {
-                                type: 'Value',
-                                start: 17,
-                                end: 19,
-                                value: 'p0',
-                            },
-                            {
-                                type: 'Value',
-                                start: 25,
-                                end: 27,
-                                value: 'p1',
-                            },
-                            {
-                                type: 'Value',
-                                start: 32,
-                                end: 34,
-                                value: 'p2',
-                            },
-                            {
-                                type: 'Value',
-                                start: 41,
-                                end: 43,
-                                value: 'p3',
-                            },
-                        ],
-                    },
-                },
-            ],
-        });
-
-        expect(HintCommentParser.parse('!+ HINT_NAME(hello world, hello   world)')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 40,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 40,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 12,
-                        value: 'HINT_NAME',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 13,
-                        end: 39,
-                        children: [
-                            {
-                                type: 'Value',
-                                start: 13,
-                                end: 24,
-                                value: 'hello world',
-                            },
-                            {
-                                type: 'Value',
-                                start: 26,
-                                end: 39,
-                                value: 'hello   world',
-                            },
-                        ],
-                    },
-                },
-            ],
-        });
-
-        expect(HintCommentParser.parse('!+ hint_name(hello world, hello   world)')).toMatchObject({
-            type: 'HintCommentRule',
-            start: 0,
-            end: 40,
-            category: 'Comment',
-            syntax: 'AdGuard',
-            children: [
-                {
-                    type: 'Hint',
-                    start: 3,
-                    end: 40,
-                    name: {
-                        type: 'Value',
-                        start: 3,
-                        end: 12,
-                        value: 'hint_name',
-                    },
-                    params: {
-                        type: 'ParameterList',
-                        start: 13,
-                        end: 39,
-                        children: [
-                            {
-                                type: 'Value',
-                                start: 13,
-                                end: 24,
-                                value: 'hello world',
-                            },
-                            {
-                                type: 'Value',
-                                start: 26,
-                                end: 39,
-                                value: 'hello   world',
-                            },
-                        ],
-                    },
-                },
-            ],
-        });
-
-        // HintRuleParser.parse() will throw an error
-        expect(() => HintCommentParser.parse('!+')).toThrowError('Empty hint rule');
-
-        // HintParser.parse() will throw an error
-        expect(() => HintCommentParser.parse('!+ ')).toThrowError('Empty hint name');
-
-        expect(() => HintCommentParser.parse('!++')).toThrowError(
-            'Invalid character "+" in hint name: "+"',
-        );
-
-        expect(() => HintCommentParser.parse('!+ (arg0)')).toThrowError('Empty hint name');
-
-        // Missing parentheses
-        expect(() => HintCommentParser.parse('!+ HINT_NAME(')).toThrowError(/^Missing closing parenthesis/);
-
-        expect(() => HintCommentParser.parse('!+ HINT_NAME)')).toThrowError(
-            'Invalid character ")" in hint name: ")"',
-        );
-
-        // Nesting isn't supported
-        expect(() => HintCommentParser.parse('!+ HINT_NAME1(HINT_NAME2(PARAM0))')).toThrowError(
-            'Invalid hint: nested parentheses are not allowed',
-        );
-    });
-
-    describe('parser options should work as expected', () => {
-        // TODO: Add template for test.each
-        test.each([
-            {
-                actual: '!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)',
-                expected: {
-                    type: 'HintCommentRule',
-                    category: 'Comment',
-                    syntax: 'AdGuard',
-                    raws: {
-                        text: '!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)',
-                    },
-                    children: [
-                        {
-                            type: 'Hint',
-                            name: {
-                                type: 'Value',
-                                value: 'HINT_NAME1',
-                            },
-                            params: {
-                                type: 'ParameterList',
-                                children: [
-                                    {
-                                        type: 'Value',
-                                        value: 'param0',
-                                    },
-                                    {
-                                        type: 'Value',
-                                        value: 'param1',
-                                    },
-                                ],
-                            },
-                        },
-                        {
-                            type: 'Hint',
-                            name: {
-                                type: 'Value',
-                                value: 'HINT_NAME2',
-                            },
-                            params: {
-                                type: 'ParameterList',
-                                children: [
-                                    {
-                                        type: 'Value',
-                                        value: 'param0',
-                                    },
-                                ],
-                            },
-                        },
-                    ],
-                },
-            },
-        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(
-                HintCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
-            ).toEqual(expected);
+        test('!+ HINT_NAME1(param0, param1) — with params', () => {
+            parse('!+ HINT_NAME1(param0, param1)');
+            expect(CommentParser.kind(ctx)).toBe(CommentKind.Hint);
         });
     });
 
-    test('generate', () => {
-        const parseAndGenerate = (raw: string) => {
-            const ast = HintCommentParser.parse(raw);
+    describe('count', () => {
+        test('!+NOT_OPTIMIZED → 1', () => {
+            expect(HintCommentParser.count(parse('!+NOT_OPTIMIZED'))).toBe(1);
+        });
 
-            if (ast) {
-                return HintCommentGenerator.generate(ast);
-            }
+        test('!+ NOT_OPTIMIZED → 1', () => {
+            expect(HintCommentParser.count(parse('!+ NOT_OPTIMIZED'))).toBe(1);
+        });
 
-            return null;
-        };
+        test('!+ HINT_NAME1 HINT_NAME2 → 2', () => {
+            expect(HintCommentParser.count(parse('!+ HINT_NAME1 HINT_NAME2'))).toBe(2);
+        });
 
-        // TODO: Refactor to test.each
-        expect(parseAndGenerate('!+ NOT_OPTIMIZED')).toEqual('!+ NOT_OPTIMIZED');
-        expect(parseAndGenerate('!+NOT_OPTIMIZED')).toEqual('!+ NOT_OPTIMIZED');
-        expect(parseAndGenerate('!+ NOT_OPTIMIZED()')).toEqual('!+ NOT_OPTIMIZED');
-        expect(parseAndGenerate('!+    NOT_OPTIMIZED   ')).toEqual('!+ NOT_OPTIMIZED');
+        test('!+ HINT_NAME1() HINT_NAME2() → 2', () => {
+            expect(HintCommentParser.count(parse('!+ HINT_NAME1() HINT_NAME2()'))).toBe(2);
+        });
 
-        expect(parseAndGenerate('!+ PLATFORM(,,windows,,)')).toEqual('!+ PLATFORM(, , windows, , )');
-        expect(parseAndGenerate('!+ PLATFORM(,,,)')).toEqual('!+ PLATFORM(, , , )');
+        test('!+ HINT_NAME1(param0, param1) HINT_NAME2(param0) → 2', () => {
+            const d = parse('!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)');
+            expect(HintCommentParser.count(d)).toBe(2);
+        });
+    });
 
-        expect(parseAndGenerate('!+ NOT_OPTIMIZED PLATFORM(windows)')).toEqual('!+ NOT_OPTIMIZED PLATFORM(windows)');
+    describe('hint name bounds — no params', () => {
+        test('!+NOT_OPTIMIZED — name at [2, 15)', () => {
+            const d = parse('!+NOT_OPTIMIZED');
+            expect(HintCommentParser.hintNameStart(d, 0)).toBe(2);
+            expect(HintCommentParser.hintNameEnd(d, 0)).toBe(15);
+        });
 
-        expect(parseAndGenerate('!+      NOT_OPTIMIZED     PLATFORM(     windows   )    ')).toEqual(
-            '!+ NOT_OPTIMIZED PLATFORM(windows)',
-        );
+        test('!+ NOT_OPTIMIZED — name at [3, 16)', () => {
+            const d = parse('!+ NOT_OPTIMIZED');
+            expect(HintCommentParser.hintNameStart(d, 0)).toBe(3);
+            expect(HintCommentParser.hintNameEnd(d, 0)).toBe(16);
+        });
 
-        expect(parseAndGenerate('!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac)')).toEqual(
-            '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac)',
-        );
+        test('!+ HINT_NAME1 HINT_NAME2 — two names', () => {
+            const d = parse('!+ HINT_NAME1 HINT_NAME2');
+            expect(HintCommentParser.hintNameStart(d, 0)).toBe(3);
+            expect(HintCommentParser.hintNameEnd(d, 0)).toBe(13);
+            expect(HintCommentParser.hintNameStart(d, 1)).toBe(14);
+            expect(HintCommentParser.hintNameEnd(d, 1)).toBe(24);
+        });
 
-        expect(parseAndGenerate('!+  NOT_OPTIMIZED  PLATFORM( windows )  NOT_PLATFORM( mac )')).toEqual(
-            '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac)',
-        );
+        test('!+NOT_OPTIMIZED — no params', () => {
+            const d = parse('!+NOT_OPTIMIZED');
+            expect(HintCommentParser.hintParamsStart(d, 0)).toBe(-1);
+            expect(HintCommentParser.hintParamsEnd(d, 0)).toBe(-1);
+        });
+    });
 
-        expect(parseAndGenerate('!+  NOT_OPTIMIZED  PLATFORM( windows     ,  mac  )  NOT_PLATFORM( mac )')).toEqual(
-            '!+ NOT_OPTIMIZED PLATFORM(windows, mac) NOT_PLATFORM(mac)',
-        );
+    describe('hint name + params bounds', () => {
+        test('!+ HINT_NAME1() — name at [3, 13), empty params [13, 15)', () => {
+            const d = parse('!+ HINT_NAME1()');
+            expect(HintCommentParser.hintNameStart(d, 0)).toBe(3);
+            expect(HintCommentParser.hintNameEnd(d, 0)).toBe(13);
+            expect(HintCommentParser.hintParamsStart(d, 0)).toBe(13);
+            expect(HintCommentParser.hintParamsEnd(d, 0)).toBe(15);
+        });
+
+        test('!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)', () => {
+            const source = '!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)';
+            const d = parse(source);
+            // hint[0]: HINT_NAME1 at [3, 13), params (param0, param1) at [13, 29)
+            expect(HintCommentParser.hintNameStart(d, 0)).toBe(3);
+            expect(HintCommentParser.hintNameEnd(d, 0)).toBe(13);
+            expect(HintCommentParser.hintParamsStart(d, 0)).toBe(13);
+            expect(HintCommentParser.hintParamsEnd(d, 0)).toBe(29);
+            // hint[1]: HINT_NAME2 at [30, 40), params (param0) at [40, 48)
+            expect(HintCommentParser.hintNameStart(d, 1)).toBe(30);
+            expect(HintCommentParser.hintNameEnd(d, 1)).toBe(40);
+            expect(HintCommentParser.hintParamsStart(d, 1)).toBe(40);
+            expect(HintCommentParser.hintParamsEnd(d, 1)).toBe(48);
+        });
+
+        test('!+ HINT_NAME1() HINT_NAME2() — two empty param lists', () => {
+            const source = '!+ HINT_NAME1() HINT_NAME2()';
+            const d = parse(source);
+            expect(HintCommentParser.hintParamsStart(d, 0)).toBe(13);
+            expect(HintCommentParser.hintParamsEnd(d, 0)).toBe(15);
+            expect(HintCommentParser.hintParamsStart(d, 1)).toBe(26);
+            expect(HintCommentParser.hintParamsEnd(d, 1)).toBe(28);
+        });
     });
 });

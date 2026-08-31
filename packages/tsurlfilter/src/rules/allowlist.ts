@@ -1,5 +1,9 @@
-import { type NetworkRule, NetworkRuleType, RuleCategory } from '@adguard/agtree';
-import { AdblockSyntax } from '@adguard/agtree/utils';
+import {
+    type NetworkRule,
+    NetworkRuleType,
+    RuleCategory,
+    SYNTAX_ALL,
+} from '@adguard/agtree';
 
 import { SimpleRegex } from './simple-regex';
 
@@ -47,7 +51,7 @@ export const createAllowlistRuleNode = (domain: string): null | NetworkRule => {
     const node: NetworkRule = {
         category: RuleCategory.Network,
         type: NetworkRuleType.NetworkRule,
-        syntax: AdblockSyntax.Common,
+        syntax: SYNTAX_ALL,
         exception: true,
         pattern: {
             type: 'Value',

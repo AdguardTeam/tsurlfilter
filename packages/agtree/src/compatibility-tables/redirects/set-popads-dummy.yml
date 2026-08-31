@@ -1,13 +1,14 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Sets static properties PopAds and popns.
+
 adg_os_any|adg_ext_any:
   name: set-popads-dummy
   aliases:
     - popads-dummy.js
-  description: Sets static properties PopAds and popns.
 
 ubo_any:
   name: popads-dummy.js
-  description: Sets static properties PopAds and popns.
   resource_types:
     - script

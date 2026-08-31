@@ -1,0 +1,10 @@
+ubo_any:
+  name: webrtc-if.js
+  description: Allows opening RTC connections to matching RTCIceServer only.
+  aliases:
+    - webrtc-if
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#webrtc-ifjs-
+  parameters:
+    - name: good
+      required: true
+      description: String/regular expression, matching in `RTCIceServer`, `urls`, `username` or `credential`.

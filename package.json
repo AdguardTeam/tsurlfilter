@@ -29,9 +29,6 @@
         "vitest": "catalog:"
     },
     "pnpm": {
-        "neverBuiltDependencies": [],
-        "overrides": {
-            "@adguard/agtree": "workspace:^"
-        }
+        "neverBuiltDependencies": []
     }
 }

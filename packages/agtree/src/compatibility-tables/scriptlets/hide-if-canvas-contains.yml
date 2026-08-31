@@ -1,0 +1,13 @@
+abp_any:
+  name: hide-if-canvas-contains
+  description: Hides a canvas element, or a parent element specified by the selector parameter, if the canvas contains the specified search term in it.
+  version_added: "4.7"
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  parameters:
+    - name: search
+      required: true
+      description: String or regex pattern that will be searched in `fillText` and `strokeText`
+    - name: selector
+      required: false
+      description: The selector identifies the HTML element to hide.
+      default: canvas

@@ -58,11 +58,11 @@ describe('Element hiding rules constructor', () => {
     it('works if it verifies rules properly', () => {
         expect(() => {
             createCosmeticRule('||example.org^', 0);
-        }).toThrow('Failed to parse as cosmetic rule: ||example.org^');
+        }).toThrow(/Expected cosmetic rule but got \w+: \|\|example\.org\^/);
 
         expect(() => {
             createCosmeticRule('example.org## ', 0);
-        }).toThrow(new AdblockSyntaxError('Empty rule body', 0, 13));
+        }).toThrow('Element hiding rule has empty body');
 
         expect(() => {
             createCosmeticRule('example.org##body { background: red!important; }', 0);
@@ -122,7 +122,7 @@ describe('Element hiding rules constructor', () => {
     it('throws error if marker is not supported yet', () => {
         expect(() => {
             createCosmeticRule('example.org$@@$script[data-src="banner"]', 0);
-        }).toThrow('Failed to parse as cosmetic rule: example.org$@@$script[data-src="banner"]');
+        }).toThrow(/Expected cosmetic rule but got \w+: example\.org\$@@\$script\[data-src="banner"\]/);
     });
 
     it('works if it parses domain wildcard properly', () => {
@@ -270,13 +270,7 @@ describe('Element hiding rules constructor', () => {
 
         expect(() => {
             createCosmeticRule('[$path=page.html###banner', 0);
-        }).toThrow(
-            new AdblockSyntaxError(
-                "Missing ']' at the end of the AdGuard modifier list in pattern '[$path=page.html'",
-                2,
-                16,
-            ),
-        );
+        }).toThrow('Unclosed AdGuard modifier list: missing ]');
 
         expect(() => {
             createCosmeticRule('[$domain,path=/page*.html]###banner', 0);
@@ -284,7 +278,7 @@ describe('Element hiding rules constructor', () => {
 
         expect(() => {
             createCosmeticRule('[$]example.com###banner', 0);
-        }).toThrow(new SyntaxError('Modifiers list cannot be be empty'));
+        }).toThrow('AdGuard modifier list [$...] is empty');
 
         expect(() => {
             createCosmeticRule('[$test=example.com,path=/page*.html]###banner', 0);
@@ -654,11 +648,11 @@ describe('CosmeticRule.CSS', () => {
     it('throws error when cosmetic rule does not contain css style', () => {
         expect(() => {
             createCosmeticRule('example.org#$#div', 0);
-        }).toThrow(new AdblockSyntaxError("Parsing 'AdblockPlus' syntax is disabled, but the rule uses it", 14, 17));
+        }).toThrow(new AdblockSyntaxError('ABP-specific rules are disabled by the parseAbpSpecificRules option', 14, 17));
 
         expect(() => {
             createCosmeticRule('example.org#$?#div', 0);
-        }).toThrow(new AdblockSyntaxError("Body 'div' is not valid for the '#$?#' cosmetic rule separator", 15, 18));
+        }).toThrow(new AdblockSyntaxError('Missing opening brace in CSS injection body', 15, 18));
     });
 
     it('throws error when cosmetic rule contains url', () => {

@@ -28,6 +28,12 @@ Makefile
 # do not expose npmjs token
 .npmrc
 
+# compatibility-data-extractor downloads
+packages/agtree/scripts/compatibility-data-extractor/downloads/
+
+# SDD specs
+specs/.current/
+
 # Docker CI / test:ci outputs
 output/
 output-*

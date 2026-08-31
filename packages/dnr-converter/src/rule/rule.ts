@@ -11,7 +11,7 @@ import {
     type NetworkRule as NetworkRuleNode,
     NetworkRuleType,
     RuleCategory,
-    RuleParser,
+    RuleParserPipeline,
 } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
 import { RuleGenerator } from '@adguard/agtree/generator';
@@ -27,6 +27,11 @@ import { RulePriority } from './rule-priority';
 import { type ConversionMeta, type HttpHeaderMatcher } from './rule-types';
 
 export type { HttpHeaderMatcher } from './rule-types';
+
+/**
+ * Shared rule parser pipeline instance reused across all parse calls.
+ */
+const ruleParser = new RuleParserPipeline();
 
 /**
  * Separator used in network-rule modifier domain lists (`$domain=a|b`).
@@ -1023,7 +1028,7 @@ export class Rule {
     ): Rule[] {
         let rulesConvertedToAGSyntax: AnyRule[];
         try {
-            const node = RuleParser.parse(text);
+            const node = ruleParser.parse(text);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAGSyntax = conversionResult.result;

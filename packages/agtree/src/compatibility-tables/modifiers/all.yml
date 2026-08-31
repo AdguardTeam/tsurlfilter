@@ -1,15 +1,15 @@
-adg_any|~adg_cb_android:
+common:
   name: all
+  negatable: false
+
+adg_any|~adg_cb_android:
   description: $all modifier is made of $document, $popup, and all content-type modifiers combined.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#all-modifier
-  negatable: false
   block_only: true
 
 ubo_ext_any:
-  name: all
   description: |-
     The `all` option is equivalent to specifying all network-based types
     + `popup`, `document`, `inline-font` and `inline-script`.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#all
-  negatable: false
   block_only: false

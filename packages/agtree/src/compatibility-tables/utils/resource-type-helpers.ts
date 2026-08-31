@@ -1,6 +1,5 @@
-import { isNull } from '../../utils/type-guards';
 import { modifiersCompatibilityTable } from '../modifiers';
-import { type AnyPlatform } from '../platforms';
+import { type Platform } from '../platform';
 import { ResourceType } from '../schemas/resource-type';
 
 /**
@@ -34,7 +33,7 @@ const RESOURCE_TYPE_MODIFIER_MAP: Readonly<Record<ResourceType, string>> = Objec
  */
 export const getResourceTypeModifier = (
     resourceType: ResourceType,
-    platform: AnyPlatform,
+    platform: Platform,
 ): string | null => {
     const modifierName = RESOURCE_TYPE_MODIFIER_MAP[resourceType];
 
@@ -42,9 +41,9 @@ export const getResourceTypeModifier = (
         return null;
     }
 
-    const modifierData = modifiersCompatibilityTable.getFirst(modifierName, platform);
+    const modifierData = modifiersCompatibilityTable.query(modifierName, platform);
 
-    if (isNull(modifierData)) {
+    if (!modifierData) {
         return null;
     }
 

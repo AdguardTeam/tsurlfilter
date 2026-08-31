@@ -1,11 +1,12 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Redirects to an empty JSON file.
+
 adg_os_any|adg_ext_any:
   name: noopjson
   aliases:
     - noop.json
-  description: Redirects to an empty JSON file.
 
 ubo_any:
   name: noop.json
-  description: Redirects to an empty JSON file.

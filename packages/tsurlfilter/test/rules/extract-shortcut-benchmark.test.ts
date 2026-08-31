@@ -5,10 +5,12 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { NetworkRuleParser } from '@adguard/agtree';
+import { type NetworkRule as NetworkRuleNode, RuleParserPipeline } from '@adguard/agtree';
 
 import { EMPTY_STRING } from '../../src/common/constants';
 import { SimpleRegex } from '../../src/rules/simple-regex';
+
+const parser = new RuleParserPipeline();
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = new URL('.', import.meta.url).pathname;
@@ -47,7 +49,7 @@ const getPatterns = async (filePath: string): Promise<string[]> => {
         .map((r) => r.trim());
 
     const patterns = rulesList
-        .map((r) => NetworkRuleParser.parse(r)?.pattern.value ?? EMPTY_STRING)
+        .map((r) => (parser.parse(r, { isLocIncluded: false }) as NetworkRuleNode).pattern.value ?? EMPTY_STRING)
         .filter((pattern) => !!pattern)
         .slice(0, MAX_PATTERNS_COUNT);
 

@@ -8,8 +8,6 @@ import {
     vi,
 } from 'vitest';
 
-import { AdblockSyntaxError } from '@adguard/agtree';
-
 import { HTTPMethod } from '../../src/modifiers/method-modifier';
 import { StealthOptionName } from '../../src/modifiers/stealth-modifier';
 import { Request } from '../../src/request';
@@ -148,7 +146,7 @@ describe('NetworkRule constructor', () => {
     it('works when it handles empty $domain modifier', () => {
         expect(() => {
             createNetworkRule('||example.org^$domain=', 0);
-        }).toThrow(new AdblockSyntaxError('Modifier value cannot be empty', 15, 22));
+        }).toThrow(new SyntaxError('At least one domain must be specified'));
     });
 
     it('works when it handles empty domain inside a $domain modifier', () => {
@@ -243,7 +241,7 @@ describe('NetworkRule constructor', () => {
 
         expect(() => {
             createNetworkRule('||baddomain.com^$method=', 0);
-        }).toThrow(new AdblockSyntaxError('Modifier value cannot be empty', 17, 24));
+        }).toThrow(new SyntaxError('$method modifier value cannot be empty'));
 
         expect(() => {
             createNetworkRule('||baddomain.com^$method=invalid', 0);
@@ -265,7 +263,7 @@ describe('NetworkRule constructor', () => {
 
         expect(() => {
             createNetworkRule('||baddomain.com^$to=', 0);
-        }).toThrow(new AdblockSyntaxError('Modifier value cannot be empty', 17, 20));
+        }).toThrow(new SyntaxError('$to modifier value cannot be empty'));
 
         expect(() => {
             createNetworkRule('||baddomain.com^$to=example.org|', 0);
@@ -312,7 +310,7 @@ describe('NetworkRule constructor', () => {
 
         expect(() => {
             createNetworkRule('|*/ads^$to=', 0);
-        }).toThrow(new AdblockSyntaxError('Modifier value cannot be empty', 8, 11));
+        }).toThrow(new SyntaxError('$to modifier value cannot be empty'));
 
         expect(() => {
             createNetworkRule('|*/ads^$to=evil.com|', 0);

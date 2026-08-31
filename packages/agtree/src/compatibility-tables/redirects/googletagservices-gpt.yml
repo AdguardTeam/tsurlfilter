@@ -1,14 +1,15 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
+common:
+  description: Mocks Google Publisher Tag API.
+
 adg_os_any|adg_ext_any:
   name: googletagservices-gpt
   aliases:
     - ubo-googletagservices_gpt.js
     - googletagservices_gpt.js
-  description: Mocks Google Publisher Tag API.
 
 ubo_any:
   name: googletagservices_gpt.js
-  description: Mocks Google Publisher Tag API.
   resource_types:
     - script

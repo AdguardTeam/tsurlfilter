@@ -7,6 +7,7 @@ import zod from 'zod';
 import { EMPTY } from '../../utils/constants';
 import { getErrorMessage } from '../../utils/error';
 import { zodToCamelCase } from '../utils/zod-camelcase';
+import { KNOWN_VALIDATORS } from '../validators';
 
 import {
     baseCompatibilityDataSchema,
@@ -14,22 +15,6 @@ import {
     booleanSchema,
     nonEmptyStringSchema,
 } from './base';
-
-/**
- * Known validators that don't need to be validated as regex.
- */
-export const KNOWN_VALIDATORS: ReadonlySet<string> = new Set([
-    'csp_value',
-    'domain',
-    'permissions_value',
-    'pipe_separated_apps',
-    'pipe_separated_denyallow_domains',
-    'pipe_separated_domains',
-    'pipe_separated_methods',
-    'pipe_separated_stealth_options',
-    'regexp',
-    'url',
-]);
 
 /**
  * Zod schema for modifier data.

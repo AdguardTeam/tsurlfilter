@@ -67,6 +67,7 @@ const main = {
         'src/generator/index.ts',
         'src/converter/index.ts',
         'src/utils/index.ts',
+        'src/walker/index.ts',
     ],
     output: [
         {

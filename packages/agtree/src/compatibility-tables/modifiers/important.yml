@@ -1,15 +1,12 @@
-adg_any:
+common:
   name: important
   description: |-
     The `$important` modifier applied to a rule increases its priority
     over any other rule without `$important` modifier. Even over basic exception rules.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#important-modifier
   negatable: false
 
+adg_any:
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#important-modifier
+
 ubo_any:
-  name: important
-  description: |-
-    The `$important` modifier applied to a rule increases its priority
-    over any other rule without `$important` modifier. Even over basic exception rules.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#important
-  negatable: false

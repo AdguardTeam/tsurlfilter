@@ -1,0 +1,15 @@
+abp_any:
+  name: hide-if-contains-image
+  description: Hides any HTML element or one of its ancestors matching a CSS selector if the background image of the element matches a given pattern.
+  version_added: 3.4.2
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial
+  parameters:
+    - name: search
+      required: true
+      description: The pattern to look for in the background images of HTML elements. This must be the hexadecimal representation of the image data for which to look. If the string begins and ends with a slash `/`, the text in between is treated as a regular expression.
+    - name: selector
+      required: true
+      description: The CSS selector that an HTML element must match for it to be hidden.
+    - name: searchSelector
+      required: false
+      description: The CSS selector that an HTML element containing the given pattern must match. Defaults to the value of the selector argument.

@@ -6,9 +6,11 @@ import {
     vi,
 } from 'vitest';
 
+import { RuleParserPipeline } from '../../../src/ast-builder/rule-parser';
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
 import { type ScriptletInjectionRule } from '../../../src/nodes';
-import { RuleParser } from '../../../src/parser/rule-parser';
+
+const parser = new RuleParserPipeline();
 
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {
@@ -72,7 +74,7 @@ describe('Scriptlet conversion', () => {
                 ],
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
+            expect(testData).toBeConvertedProperlyNew(ScriptletRuleConverter, 'convertToAdg');
         });
     });
 
@@ -256,7 +258,7 @@ describe('Scriptlet conversion', () => {
                 shouldConvert: true,
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
+            expect(testData).toBeConvertedProperlyNew(ScriptletRuleConverter, 'convertToAdg');
         });
 
         it('warns when unknown extra args are dropped', () => {
@@ -264,7 +266,7 @@ describe('Scriptlet conversion', () => {
             // eslint-disable-next-line max-len
             const actual = 'example.com##+js(json-prune-fetch-response, a, b, propsToMatch, /foo, unknownKey, /baz)';
 
-            ScriptletRuleConverter.convertToAdg(RuleParser.parse(actual) as ScriptletInjectionRule);
+            ScriptletRuleConverter.convertToAdg(parser.parse(actual) as ScriptletInjectionRule);
 
             expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('unknownKey'));
             warnSpy.mockRestore();
@@ -313,7 +315,7 @@ describe('Scriptlet conversion', () => {
                 shouldConvert: false,
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
-            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
+            expect(testData).toBeConvertedProperlyNew(ScriptletRuleConverter, 'convertToAdg');
         });
     });
 
@@ -409,8 +411,8 @@ describe('Scriptlet conversion', () => {
                 expected: ['example.com##+js(spoof-css, .adsbygoogle\\, #ads\\, .adTest, visibility, visible)'],
             },
             {
-                actual: "example.com#%#//scriptlet('set-cookie-reload', 'consent', 'true')",
-                expected: ['example.com##+js(set-cookie-reload, consent, true)'],
+                actual: "example.com#%#//scriptlet('set-cookie', 'consent', 'true')",
+                expected: ['example.com##+js(set-cookie, consent, true)'],
             },
             // https://github.com/AdguardTeam/Scriptlets/issues/404
             {
@@ -447,9 +449,9 @@ describe('Scriptlet conversion', () => {
                 shouldConvert: false,
             },
             {
-                actual: String.raw`example.net,example.com#$#set-cookie-reload Hello\ no\ quotes true`,
+                actual: String.raw`example.net,example.com#$#set-cookie Hello\ no\ quotes true`,
                 expected: [
-                    String.raw`example.net,example.com##+js(set-cookie-reload, Hello no quotes, true)`,
+                    String.raw`example.net,example.com##+js(set-cookie, Hello no quotes, true)`,
                 ],
             },
             {
@@ -535,7 +537,7 @@ describe('Scriptlet conversion', () => {
                 shouldConvert: true,
             },
         ])("should convert '$actual' to '$expected'", (testData) => {
-            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToUbo');
+            expect(testData).toBeConvertedProperlyNew(ScriptletRuleConverter, 'convertToUbo');
         });
     });
 
@@ -566,6 +568,33 @@ describe('Scriptlet conversion', () => {
                 expected: 'Scriptlet "trusted-set-cookie" is not supported in uBlock Origin.',
             },
             {
+                // eslint-disable-next-line max-len
+                actual: String.raw`example.org#%#//scriptlet('trusted-replace-argument', 'eval', '0', '"Replacement"', 'Foo bar')`,
+                expected: 'Scriptlet "trusted-replace-argument" is not supported in uBlock Origin.',
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: String.raw`example.org#%#//scriptlet('trusted-replace-node-text', 'div', 'some', 'text', 'other text')`,
+                expected: 'Scriptlet "trusted-replace-node-text" is not supported in uBlock Origin.',
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: String.raw`example.org#%#//scriptlet('trusted-suppress-native-method', 'Object.prototype.hasOwnProperty', '"test"')`,
+                expected: 'Scriptlet "trusted-suppress-native-method" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.org#%#//scriptlet('trusted-dispatch-event', 'submit', '.test')`,
+                expected: 'Scriptlet "trusted-dispatch-event" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.org#%#//scriptlet('trusted-replace-outbound-text', 'atob', 'foo', 'bar')`,
+                expected: 'Scriptlet "trusted-replace-outbound-text" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('trusted-set-constant', 'foo', 'bar')`,
+                expected: 'Scriptlet "trusted-set-constant" is not supported in uBlock Origin.',
+            },
+            {
                 actual: "[$path=/baz]example.com#%#//scriptlet('set-constant', 'foo', 'bar')",
                 expected: 'uBlock Origin scriptlet injection rules do not support cosmetic rule modifiers.',
             },
@@ -591,11 +620,11 @@ describe('Scriptlet conversion', () => {
             {
                 // eslint-disable-next-line max-len
                 actual: "[$domain=domain=exam[le.org|example.com|example,org|example or,]#%#//scriptlet('set-constant', 'form')",
-                expected: 'Modifier name cannot be empty',
+                expected: 'Unclosed AdGuard modifier list: missing ]',
             },
         ])("should throw error on '$actual'", ({ actual, expected }) => {
             // eslint-disable-next-line max-len
-            expect(() => ScriptletRuleConverter.convertToUbo(RuleParser.parse(actual) as ScriptletInjectionRule)).toThrowError(
+            expect(() => ScriptletRuleConverter.convertToUbo(parser.parse(actual) as ScriptletInjectionRule)).toThrowError(
                 expected,
             );
         });
@@ -604,7 +633,7 @@ describe('Scriptlet conversion', () => {
     it('convertToAbp', () => {
         // TODO: We should implement this later
         expect(() => ScriptletRuleConverter.convertToAbp(
-            RuleParser.parse('#%#//scriptlet(\'test\')') as ScriptletInjectionRule,
+            parser.parse('#%#//scriptlet(\'test\')') as ScriptletInjectionRule,
         )).toThrowError(
             'Not implemented',
         );

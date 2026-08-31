@@ -1,37 +1,44 @@
 /**
- * @file Compatibility tables types.
+ * @file Compatibility tables types (hybrid trie structure).
  */
+
+import type { TrieNode } from './trie';
 
 /**
- * Map with shared storage.
- * The idea is to avoid storing the same value multiple times in the map,
- * so the value is stored in the `shared` array and the map refers to the index in the `shared` array.
+ * Hybrid compatibility table row.
+ * Uses both a trie for wildcard queries and a flat map for O(1) specific lookups.
  *
- * @template K Type of the map keys.
- * @template V Type of the map values.
+ * @template T Type of the compatibility data.
  */
-interface MapWithSharedStorage<K extends string | number | symbol, V> {
+export interface HybridCompatibilityTableRow<T> {
     /**
-     * Shared storage.
+     * Trie for hierarchical wildcard queries.
+     * Keyed by path segments: product → type → specific.
      */
-    shared: V[];
+    trie: TrieNode<T>;
 
     /**
-     * Map of the values where the value is a pointer to the shared storage (refers to the index in the `shared` array).
+     * Flat map for O(1) specific platform lookups.
+     * Keyed by platform string (e.g., 'adg_os_windows').
      */
-    map: Record<K, number>;
+    flatMap: Map<string, T>;
+
+    /**
+     * Shared storage for data deduplication.
+     * Array of unique data entries referenced by trie and flatMap.
+     */
+    shared: T[];
 }
 
 /**
- * Compatibility table row.
- *
- * @template T Type of the compatibility data.
- */
-export type CompatibilityTableRow<T> = MapWithSharedStorage<number, T>;
-
-/**
  * Compatibility table.
+ * Maps feature names to their hybrid compatibility rows.
  *
  * @template T Type of the compatibility data.
  */
-export type CompatibilityTable<T> = MapWithSharedStorage<string, CompatibilityTableRow<T>>;
+export interface CompatibilityTable<T> {
+    /**
+     * Map of feature names to their compatibility data.
+     */
+    rows: Map<string, HybridCompatibilityTableRow<T>>;
+}

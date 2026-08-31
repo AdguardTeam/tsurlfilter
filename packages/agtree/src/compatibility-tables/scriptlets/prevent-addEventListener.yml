@@ -1,6 +1,7 @@
-# TODO: add scriptlet and param descriptions, documentation references, and versions
-# Note: content blocking products do not support scriptlets
-adg_os_any|adg_ext_any:
+common:
+  description: Prevents adding event listeners for the specified events and callbacks.
+
+adg_os_any|adg_ext_any|adg_safari_any:
   name: prevent-addEventListener
   version_added: 1.0.4
   aliases:
@@ -15,20 +16,46 @@ adg_os_any|adg_ext_any:
   parameters:
     - name: typeSearch
       required: false
+      description: String or regular expression matching the type (event name).
     - name: listenerSearch
       required: false
+      description: String or regular expression matching the listener function body.
+    - name: additionalArgName
+      required: false
+      description: String, name of the additional argument to match (e.g. "elements").
+    - name: additionalArgValue
+      required: false
+      description: Value corresponding to the additional argument name.
 
 ubo_any:
   name: addEventListener-defuser.js
   aliases:
+    - addEventListener-defuser
+    - aeld
     - aeld.js
+    - prevent-addEventListener
     - prevent-addEventListener.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#addEventListener-defuserjs-
   parameters:
-    - name: typeSearch
+    - name: type
       required: false
-    - name: listenerSearch
+      description: String/regular expression, name of the event listener to defuse.
+    - name: pattern
       required: false
+      description: String/regular expression matching in stringified handler function, narrows down defusing to specific handler.
+  ubo_tokens:
+    - name: runAt
+      description: Defers the prevention to a specific document ready state. Values correspond to `readyState`.
+      value_format: ^(loading|interactive|complete)$
+      value_type: string
+    - name: elements
+      description: CSS selector; limits prevention to event listeners added on elements matching this selector.
+      value_format: null
+      value_type: string
+    - name: protect
+      description: When truthy, protects the patched `addEventListener` from being overwritten by other code.
+      value_format: ^1$
+      value_type: boolean
 
 abp_any:
   name: prevent-listener
@@ -37,7 +64,10 @@ abp_any:
   parameters:
     - name: type
       required: true
+      description: Pattern that matches the type(s) of event we want to prevent.
     - name: handler
       required: false
+      description: Pattern that matches the event handler's declaration.
     - name: selector
       required: false
+      description: The CSS selector that the event target must match.

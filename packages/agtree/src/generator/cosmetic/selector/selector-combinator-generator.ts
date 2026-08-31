@@ -15,10 +15,10 @@ export class SelectorCombinatorGenerator extends BaseGenerator {
      */
     public static generate(node: SelectorCombinator): string {
         // For descendant combinator, we don't need to add spaces around it
-        if (node.value === ' ') {
+        if (node.value === SPACE) {
             return node.value;
         }
 
-        return SPACE + node.value + SPACE;
+        return `${SPACE}${node.value}${SPACE}`;
     }
 }
