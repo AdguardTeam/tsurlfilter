@@ -243,81 +243,57 @@ jobs:
               fi
           done < /tmp/dev-versions.txt
 
-  check-published:
-    name: Check already-published dev versions
-    needs: changes
-    if: >-
-      needs.changes.outputs.bridge-needed == 'true' &&
-      github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: team-extensions
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    outputs:
-      todo: ${{ steps.check.outputs.todo }}
-    steps:
-      - name: Set up Node.js for AK registry access
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          registry-url: ${{ env.AK_REGISTRY }}
-
-      # Artifact Keeper rejects npm unpublish (405 Method Not Allowed on the
-      # DELETE) and npm publish refuses to overwrite an existing version (409),
-      # so a -dev.pr<N> version is immutably published at most once. Versions
-      # are stable per PR, so only the unpublished ones are emitted here and the
-      # publish job's matrix is driven from this list — re-pushes to the same PR
-      # are then idempotent (already-published entries simply drop out).
-      - name: Find unpublished dev versions
-        id: check
-        shell: bash
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
-          MAP: ${{ needs.changes.outputs.versions }}
-        run: |
-          set -euo pipefail
-          echo "::add-mask::${NODE_AUTH_TOKEN}"
-          node - <<'NODE' > /tmp/todo.json
-          const { execFileSync } = require('node:child_process');
-          const map = JSON.parse(process.env.MAP);
-          const todo = [];
-          for (const [name, version] of Object.entries(map)) {
-              let exists = true;
-              try {
-                  execFileSync('npm', [
-                      'view', `${name}@${version}`, 'version',
-                      `--registry=${process.env.AK_REGISTRY}`,
-                  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-              } catch { exists = false; }
-              if (!exists) {
-                  todo.push({ package: name.split('/').pop() });
-              }
-          }
-          process.stdout.write(JSON.stringify(todo));
-          NODE
-          todo="$(cat /tmp/todo.json)"
-          echo "todo=${todo}" >> "$GITHUB_OUTPUT"
-
   publish:
     name: Publish ${{ matrix.package }} to Artifact Keeper
-    needs: [changes, pack, unpublish, check-published]
+    needs: [changes, pack, unpublish]
     if: >-
       needs.changes.outputs.bridge-needed == 'true' &&
       github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(needs.check-published.outputs.todo || '[]') }}
-    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-ak-npm.yml@master
-    with:
-      team: extensions
-      artifact-name: devex-${{ matrix.package }}
-      # Mutable tag, publish-time only — resolution always uses exact versions,
-      # so this tag drifting between PRs is harmless.
-      tag: devex
-    secrets: inherit
+        package: [logger, css-tokenizer, agtree, tsurlfilter, dnr-rulesets, tswebextension]
+    runs-on: team-extensions
+    timeout-minutes: 10
     permissions:
       contents: read
+    steps:
+      - name: Download dev package
+        uses: actions/download-artifact@v7
+        with:
+          name: devex-${{ matrix.package }}
+          path: .
+
+      - name: Set up Node.js for AK registry access
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: ${{ env.AK_REGISTRY }}
+
+      # AK versions are immutable: npm publish rejects an already-published
+      # version with 409 (unpublish is blocked too — 405 on DELETE). A
+      # -dev.pr<N> version only changes when the package's CHANGELOG is bumped
+      # in this PR, so "already published at this exact version" means the dev
+      # build is current — treat it as a no-op rather than a failure. Real
+      # publish errors still fail the job loudly.
+      - name: Publish to Artifact Keeper (skip if already published)
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
+          PACKAGE_FILE: ${{ matrix.package }}.tgz
+          TAG: devex
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${NODE_AUTH_TOKEN}"
+          if out="$(npm publish "${PACKAGE_FILE}" --access public --tag "${TAG}" --registry="${AK_REGISTRY}" 2>&1)"; then
+              echo "Published ${PACKAGE_FILE} (tag ${TAG})"
+          elif grep -qE '\bE409\b|409 Conflict|already exists' <<<"${out}"; then
+              echo "::warning::${PACKAGE_FILE}: already published on AK — immutable versions are not overwritten, skipping"
+          else
+              echo "::error::npm publish failed for ${PACKAGE_FILE}:"
+              printf '%s\n' "${out}"
+              exit 1
+          fi
 
   comment:
     name: Post usage comment on the source PR
@@ -385,7 +361,7 @@ jobs:
 
   notify-failure:
     name: Notify bridge failure
-    needs: [changes, pack, unpublish, check-published, publish, comment]
+    needs: [changes, pack, unpublish, publish, comment]
     # Bridge failures would otherwise only be visible on the PR checks.
     if: >-
       failure() &&
