@@ -256,15 +256,21 @@ jobs:
     name: Post usage comment on the source PR
     needs: [changes, publish]
     # publish is gated transitively via pack/unpublish; the explicit same-repo
-    # guard keeps issues: write scoped even if the gating chain changes.
+    # guard keeps pull-requests: write scoped even if the gating chain changes.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: team-extensions
     timeout-minutes: 10
     permissions:
       contents: read
-      issues: write
+      pull-requests: write
     steps:
-      - name: Upsert dev-builds comment
+      # A PR "comment" is an issue comment, and this repository has the Issues
+      # feature disabled — GITHUB_TOKEN cannot hit /issues/*/comments there
+      # (403 "Resource not accessible by integration"). Posting a pull-request
+      # review (event: COMMENT) uses the pull-requests resource instead and
+      # works regardless. Reviews are immutable, so upsert = update the body
+      # when a review carrying our marker already exists.
+      - name: Upsert dev-builds review
         uses: actions/github-script@v8
         env:
           MAP: ${{ needs.changes.outputs.versions }}
@@ -294,14 +300,20 @@ jobs:
                 'These versions are deleted automatically when this PR is closed or merged.',
             ].join('\n');
             const { owner, repo } = context.repo;
-            const { data: comments } = await github.rest.issues.listComments({
-                owner, repo, issue_number: pr, per_page: 100,
+            const { data: reviews } = await github.rest.pulls.listReviews({
+                owner, repo, pull_number: pr, per_page: 100,
             });
-            const existing = comments.find((c) => c.body?.includes(marker));
+            const existing = reviews.find((r) => r.body?.includes(marker));
             if (existing) {
-                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+                if (existing.body !== body) {
+                    await github.rest.pulls.updateReview({
+                        owner, repo, pull_number: pr, review_id: existing.id, body,
+                    });
+                }
             } else {
-                await github.rest.issues.createComment({ owner, repo, issue_number: pr, body });
+                await github.rest.pulls.createReview({
+                    owner, repo, pull_number: pr, event: 'COMMENT', body,
+                });
             }
 
   notify-failure:
