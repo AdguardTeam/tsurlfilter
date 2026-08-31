@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `TsWebExtension.syncContentScripts()` static method (MV3-only) for dynamic
+  content script synchronization via `chrome.scripting` API.
+
 ### Changed
 
 - Updated `@types/webextension-polyfill` to `0.12.6`, which adds Firefox 153+
