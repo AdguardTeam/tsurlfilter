@@ -111,6 +111,15 @@ node scripts/use-dev-builds.mjs --remove --extension /path/to/browser-extension
 Closing or merging the tsurlfilter PR deletes its dev versions from AK
 (`devex-bridge-cleanup.yml`), after which pinned branches stop resolving.
 
+### Requirements
+
+The two bridge workflows require the org-scoped `ARTIFACT_KEEPER_URL` variable
+(base URL of the Artifact Keeper instance, e.g. `https://ak.int.agrd.dev`) and
+the `ARTIFACT_KEEPER_API_KEY` secret — the same pair the shared
+`deploy-to-ak-npm.yml` workflow uses. The npm registry URL is derived as
+`${ARTIFACT_KEEPER_URL}/npm/npm-internal`. If the URL variable is unset, the
+jobs fail loudly rather than publishing to an empty registry URL.
+
 ## Development Workflow
 
 ### Branch Strategy

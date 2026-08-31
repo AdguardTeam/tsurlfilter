@@ -7,9 +7,15 @@ name: DevEx bridge cleanup
 # resolving once the dev versions are gone (docs require --remove before such
 # a PR could merge).
 #
-# Fail-loud by design: unpublish failures fail the job so a broken cleanup is
-# noticed. If AK policy ever forbids unpublish, fix the policy (or switch to
-# the AK admin API) rather than silencing this.
+# Fail-loud by design: a query failure or an unpublish failure fails the job so
+# a broken cleanup is noticed. If AK policy ever forbids unpublish, fix the
+# policy (or switch to the AK admin API) rather than silencing this.
+#
+# Requires the org variable ARTIFACT_KEEPER_URL (base URL of the Artifact
+# Keeper instance) and the org secret ARTIFACT_KEEPER_API_KEY — the same
+# variable/secret pair devex-bridge.yml and the shared deploy-to-ak-npm.yml
+# use. Without ARTIFACT_KEEPER_URL configured, AK_REGISTRY resolves to an empty
+# string and every npm call fails loudly, which is the intended behavior.
 
 on:
   pull_request:
@@ -42,20 +48,40 @@ jobs:
         shell: bash
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           SUFFIX: '-dev.pr${{ github.event.pull_request.number }}'
         run: |
           set -euo pipefail
           echo "::add-mask::${NODE_AUTH_TOKEN}"
+          # The `closed` payload normally carries the PR number, but GitHub docs
+          # warn it can be incomplete for some merged-PR deliveries. There is no
+          # way to reconstruct which versions to delete without it — fail loudly
+          # instead of silently cleaning nothing.
+          if ! [[ "${PR_NUMBER}" =~ ^[0-9]+$ ]]; then
+            echo "::error::PR number missing/invalid in the closed event ('${PR_NUMBER}') — cannot compute the -dev.pr suffix"
+            exit 1
+          fi
           failures=0
           for pkg in ${BRIDGED_PACKAGES}; do
             name="@adguard/${pkg}"
-            versions="$(npm view "${name}" versions --json --registry="${AK_REGISTRY}" --silent 2>/dev/null || echo '[]')"
+            # Query failures must not masquerade as "no dev versions": swallowing
+            # an auth/transport failure would leave AK litter with a green job —
+            # the exact opposite of the fail-loud header. Only E404 is empty.
+            if ! raw="$(npm view "${name}" versions --json --registry="${AK_REGISTRY}" --silent 2>&1)"; then
+              if grep -qiE '404|not found|E404' <<<"${raw}"; then
+                echo "${name}: not present on AK — nothing to clean up"
+                continue
+              fi
+              echo "::error::Could not query ${name} on AK:"
+              printf '%s\n' "${raw}"
+              exit 1
+            fi
             to_delete="$(node -e "
               const raw = JSON.parse(process.argv[1]);
               const list = Array.isArray(raw) ? raw : [raw];
               // endsWith: '-dev.pr1' must not match '-dev.pr12'.
               process.stdout.write(list.filter((v) => v.endsWith(process.env.SUFFIX)).join('\n'));
-            " "${versions}")"
+            " "${raw}")"
             if [ -z "${to_delete}" ]; then
               echo "${name}: no dev versions for this PR"
               continue
@@ -63,8 +89,17 @@ jobs:
             while IFS= read -r version; do
               [ -n "${version}" ] || continue
               echo "Deleting ${name}@${version}"
-              if ! npm unpublish "${name}@${version}" --registry="${AK_REGISTRY}"; then
-                echo "::error::Could not unpublish ${name}@${version}"
+              # --force is required: a single-version package on AK carries BOTH
+              # the devex and the latest dist-tags, and npm refuses to delete a
+              # version that still holds the latest tag (same rationale as the
+              # bridge's unpublish step).
+              if out="$(npm unpublish "${name}@${version}" --force --registry="${AK_REGISTRY}" 2>&1)"; then
+                echo "Deleted ${name}@${version}"
+              elif grep -qiE '404|not found|E404|EUNPUBLISH' <<<"${out}"; then
+                echo "${name}@${version}: already absent — nothing to delete"
+              else
+                echo "::error::Could not unpublish ${name}@${version}:"
+                printf '%s\n' "${out}"
                 failures=$((failures + 1))
               fi
             done <<< "${to_delete}"

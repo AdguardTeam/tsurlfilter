@@ -114,9 +114,10 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   browser extension, publishes them to the internal Artifact Keeper npm
   registry as `<next-patch>-dev.pr<N>` (overwritten on every push) and posts a
   usage comment on the PR. Same-repo PRs only (publishes use the org AK
-  secret). See DEVELOPMENT.md for the developer workflow.
+  secret). Requires the org variable `ARTIFACT_KEEPER_URL` and secret
+  `ARTIFACT_KEEPER_API_KEY`. See DEVELOPMENT.md for the developer workflow.
 - `devex-bridge-cleanup.yml` — when a source PR closes, deletes its `*-dev.pr<N>`
-  versions from AK (fail-loud).
+  versions from AK (fail-loud; requires the same `ARTIFACT_KEEPER_*` pair).
 - `prepare-release.yml` — opens a per-package release PR (thin caller of
   `_prepare-release-monorepo.yml`).
 - `_prepare-release-monorepo.yml` — reusable monorepo prepare engine: finalizes
