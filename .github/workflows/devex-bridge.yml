@@ -129,8 +129,13 @@ jobs:
           target: build-${{ matrix.package }}-output
           dest: build-output
 
-      # Same contract as _publish-release-monorepo.yml: a missing or
-      # mismatched tarball must fail here, not at publish time.
+      # Same contract as _publish-release-monorepo.yml (see
+      # scripts/ci/verify-tarball.sh): a missing or mismatched tarball must
+      # fail here, not at publish time. The presence check is extraction-based
+      # (tar -xOf), NOT `tar -tzf | grep -q`: under set -o pipefail that
+      # pipeline is racy — grep -q exits on the first match, GNU tar dies of
+      # SIGPIPE ("tar: stdout: write error"), and pipefail propagates the
+      # producer's failure as a false "package.json missing" error.
       # VERSION_SUFFIX is a workflow-level env var, so it is a plain
       # environment variable in the step shell; its value is built from the
       # numeric PR number only — no injection surface.
@@ -142,7 +147,7 @@ jobs:
           set -euo pipefail
           TGZ="build-output/artifacts/${PACKAGE}.tgz"
           tar -tzf "$TGZ"
-          tar -tzf "$TGZ" | grep -q '^package/package.json$' || { echo "::error::package.json missing from $TGZ"; exit 1; }
+          tar -xOf "$TGZ" package/package.json >/dev/null || { echo "::error::package.json missing from $TGZ"; exit 1; }
           EXPECTED=$(node -p "require('./packages/${PACKAGE}/package.json').version")
           PACKED_VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (d) => json += d).on('end', () => process.stdout.write(JSON.parse(json).version))")
           [ "$PACKED_VERSION" = "$EXPECTED" ] || { echo "::error::$TGZ has version $PACKED_VERSION, expected $EXPECTED"; exit 1; }
