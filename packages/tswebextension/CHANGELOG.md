@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `TsWebExtension.syncContentScripts()` static method (MV3-only) for dynamic
+  content script synchronization via `chrome.scripting` API.
+
 ### Fixed
 
 - Wrong `frameDomain` in cosmetic hits filtering-log events for subframes, breaking
