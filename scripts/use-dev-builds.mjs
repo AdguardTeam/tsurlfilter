@@ -44,7 +44,11 @@ const readArg = (name) => {
     if (index === -1 || index + 1 >= args.length) {
         fail(`missing required argument ${name} <value>`);
     }
-    return args[index + 1];
+    const value = args[index + 1];
+    if (value.startsWith('-')) {
+        fail(`argument ${name} expects a value, got flag-like value '${value}' — put it before the positional values?`);
+    }
+    return value;
 };
 
 const removeMode = args.includes('--remove');
@@ -65,12 +69,21 @@ if (!fs.existsSync(packageJsonPath)) {
 
 const readManifest = () => {
     const source = fs.readFileSync(packageJsonPath, 'utf8');
-    const indentMatch = source.match(/^{\n([ \t]+)/);
-    return { manifest: JSON.parse(source), indentation: indentMatch ? indentMatch[1] : '  ' };
+    // Tolerate CRLF manifests (the shared set-dev-version action uses the same
+    // /^{\r?\n(...)/ probe when preserving indentation).
+    const indentMatch = source.match(/^{\r?\n([ \t]+)/);
+    return {
+        manifest: JSON.parse(source),
+        indentation: indentMatch ? indentMatch[1] : '  ',
+        crlf: source.includes('\r\n'),
+    };
 };
 
-const writeManifest = (manifest, indentation) => {
-    fs.writeFileSync(packageJsonPath, `${JSON.stringify(manifest, null, indentation)}\n`);
+const writeManifest = (manifest, indentation, crlf) => {
+    // Preserve the manifest's original line endings (CRLF vs LF) so a rewrite
+    // never normalizes the whole file and pollutes the diff.
+    const content = `${JSON.stringify(manifest, null, indentation)}\n`;
+    fs.writeFileSync(packageJsonPath, crlf ? content.replace(/\n/g, '\r\n') : content);
 };
 
 const bridgedOverrides = (manifest) => {
@@ -82,7 +95,7 @@ const bridgedOverrides = (manifest) => {
 };
 
 const stripDevPins = () => {
-    const { manifest, indentation } = readManifest();
+    const { manifest, indentation, crlf } = readManifest();
     const present = bridgedOverrides(manifest);
     if (present.length === 0) {
         return false;
@@ -90,7 +103,7 @@ const stripDevPins = () => {
     for (const dir of present) {
         delete manifest.pnpm.overrides[`@adguard/${dir}`];
     }
-    writeManifest(manifest, indentation);
+    writeManifest(manifest, indentation, crlf);
     return true;
 };
 
@@ -108,7 +121,33 @@ const npmView = (spec, field) => {
     const viewArgs = field
         ? ['view', `${spec}`, field, `--registry=${registry}`, '--silent']
         : ['view', `${spec}`, 'versions', '--json', `--registry=${registry}`, '--silent'];
-    return execFileSync('npm', viewArgs, { encoding: 'utf8' }).trim();
+    try {
+        return execFileSync('npm', viewArgs, { encoding: 'utf8' }).trim();
+    } catch (error) {
+        // A failed registry round-trip (auth, network, E404) must produce a
+        // curated, actionable message — never a raw Node stack trace.
+        const detail = (error.stderr?.toString?.() || error.stdout?.toString?.() || error.message || '').trim();
+        fail(
+            `npm view ${spec}${field ? ` ${field}` : ' versions'} failed`
+            + ` (registry ${registry}): ${detail || String(error)}`,
+        );
+    }
+};
+
+// compareNumericCore — semver-ish comparator over the X.Y.Z core that precedes
+// the -dev.pr suffix; all candidates share the same suffix, so the core alone
+// orders them. Used to pick the newest dev version when a mid-PR release bump
+// left several -dev.pr<N> versions behind.
+const compareNumericCore = (a, b) => {
+    const core = (version) => version.split('-dev.')[0].split('.').map((n) => Number(n));
+    const ca = core(a);
+    const cb = core(b);
+    for (let i = 0; i < 3; i += 1) {
+        if (ca[i] !== cb[i]) {
+            return ca[i] - cb[i];
+        }
+    }
+    return 0;
 };
 
 if (removeMode) {
@@ -126,18 +165,30 @@ const suffix = `${DEV_MARK}${pr}`;
 const urls = {};
 for (const dir of BRIDGED_PACKAGES) {
     const name = `@adguard/${dir}`;
-    const raw = JSON.parse(npmView(name) || '[]');
-    const versions = Array.isArray(raw) ? raw : [raw];
-    const matches = versions.filter((v) => v.endsWith(suffix));
-    if (matches.length !== 1) {
+    const raw = npmView(name);
+    let versions;
+    try {
+        const parsed = JSON.parse(raw || '[]');
+        versions = Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
         fail(
-            `${name}: expected exactly one version ending '${suffix}', found ${matches.length}`
-            + ` — has devex-bridge.yml finished for PR #${pr}, or was it cleaned up?`,
+            `${name}: npm view returned unexpected output (expected a JSON array of versions), got:`
+            + ` ${JSON.stringify(raw)} — check the registry URL ${registry}`,
         );
     }
-    urls[name] = npmView(`${name}@${matches[0]}`, 'dist.tarball');
+    const matches = versions.filter((v) => typeof v === 'string' && v.endsWith(suffix));
+    if (matches.length === 0) {
+        fail(
+            `${name}: no version ending '${suffix}' found — has devex-bridge.yml finished for PR #${pr}, or was it cleaned up?`,
+        );
+    }
+    // A mid-PR release bump can legitimately leave several -dev.pr<N> versions
+    // behind after the bridge's suffix-scan unpublish races a republish; pin
+    // the newest core rather than failing on ambiguity.
+    const pick = matches.slice().sort(compareNumericCore).pop();
+    urls[name] = npmView(`${name}@${pick}`, 'dist.tarball');
     if (!urls[name]) {
-        fail(`${name}@${matches[0]}: registry returned no dist.tarball URL`);
+        fail(`${name}@${pick}: registry returned no dist.tarball URL (run 'npm view ${name}@${pick} dist.tarball --registry=${registry}' to debug)`);
     }
 }
 
@@ -148,13 +199,26 @@ const refresh = stripDevPins();
 if (refresh) {
     pnpmInstall();
 }
-const { manifest, indentation } = readManifest();
+const { manifest, indentation, crlf } = readManifest();
 manifest.pnpm = manifest.pnpm ?? {};
 manifest.pnpm.overrides = manifest.pnpm.overrides ?? {};
 for (const [name, url] of Object.entries(urls)) {
+    // Never silently clobber a hand-written override the developer did not set
+    // up for dev builds (e.g. a deliberate @adguard/tsurlfilter: '6.0.2'). Only
+    // existing dev pins (URLs containing -dev.pr) and absent entries are taken
+    // over.
+    const existing = manifest.pnpm.overrides[name];
+    const isDevPin = typeof existing === 'string' && existing.includes(DEV_MARK);
+    if (existing !== undefined && !isDevPin) {
+        console.warn(
+            `warning: keeping existing manual override ${name}=${JSON.stringify(existing)} `
+            + '(it is not a dev pin; re-run with --remove to drop it before pinning)',
+        );
+        continue;
+    }
     manifest.pnpm.overrides[name] = url;
 }
-writeManifest(manifest, indentation);
+writeManifest(manifest, indentation, crlf);
 pnpmInstall();
 
 console.log(`\nPinned ${Object.keys(urls).length} dev builds for PR #${pr}:`);
