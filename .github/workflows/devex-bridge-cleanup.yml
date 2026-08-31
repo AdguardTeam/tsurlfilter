@@ -37,15 +37,15 @@ jobs:
         with:
           node-version: '24'
           registry-url: ${{ env.AK_REGISTRY }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
 
       - name: Delete AK dev versions for this PR
         shell: bash
         env:
+          NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
           SUFFIX: '-dev.pr${{ github.event.pull_request.number }}'
         run: |
           set -euo pipefail
+          echo "::add-mask::${NODE_AUTH_TOKEN}"
           failures=0
           for pkg in ${BRIDGED_PACKAGES}; do
             name="@adguard/${pkg}"
