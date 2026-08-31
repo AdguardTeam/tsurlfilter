@@ -210,6 +210,12 @@ jobs:
       # Tolerant on purpose: the first push of a PR has nothing to delete, and
       # a cancelled previous run may have already deleted some. Real auth or
       # transport failures surface loudly in the publish job right after.
+      #
+      # npm unpublish must pass --force: a single-version package on AK carries
+      # BOTH the devex and the latest dist-tags, and npm refuses to delete a
+      # version that still holds the latest tag ("Refusing to delete the latest
+      # tag(s)"). Without --force the unpublish silently did nothing and the
+      # republish then failed with 409 Conflict.
       - name: Unpublish existing dev versions
         shell: bash
         env:
@@ -225,11 +231,17 @@ jobs:
               try {
                   execFileSync('npm', [
                       'unpublish', `${name}@${version}`,
+                      '--force',
                       `--registry=${process.env.AK_REGISTRY}`,
                   ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
                   console.log(`Unpublished previous ${name}@${version}`);
-              } catch {
-                  console.log(`${name}@${version}: not present (first push?) — nothing to unpublish`);
+              } catch (e) {
+                  const msg = String(e.stderr || e.message || '').trim();
+                  if (/404|not found|E404/i.test(msg)) {
+                      console.log(`${name}@${version}: not present (first push?) — nothing to unpublish`);
+                  } else {
+                      console.log(`${name}@${version}: unpublish failed (will surface in publish): ${msg}`);
+                  }
               }
           }
           NODE
