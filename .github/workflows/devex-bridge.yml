@@ -236,11 +236,11 @@ jobs:
                   ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
                   console.log(`Unpublished previous ${name}@${version}`);
               } catch (e) {
-                  const msg = String(e.stderr || e.message || '').trim();
-                  if (/404|not found|E404/i.test(msg)) {
+                  const msg = `${e.stderr || ''}${e.stdout || ''}`.trim();
+                  if (/404|not found|E404|EUNPUBLISH/i.test(msg)) {
                       console.log(`${name}@${version}: not present (first push?) — nothing to unpublish`);
                   } else {
-                      console.log(`${name}@${version}: unpublish failed (will surface in publish): ${msg}`);
+                      console.log(`${name}@${version}: npm unpublish exited ${e.status}:\n${msg}`);
                   }
               }
           }
