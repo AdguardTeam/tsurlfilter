@@ -123,6 +123,30 @@ jobs:
           package-globs: packages/*/package.json
           version-suffix: ${{ env.VERSION_SUFFIX }}
 
+      # set-dev-version@master does not yet honor `version-suffix`
+      # (ext-shared-actions#15 is pending review), so it stamps a bare
+      # <next-patch>-dev. Append the PR suffix here so the packed versions match
+      # the -dev.pr<N> versions. Idempotent: once the input lands on master the
+      # action stamps <next-patch>-dev.pr<N> directly and this step is a no-op.
+      # A wrong suffix (e.g. an empty VERSION_SUFFIX) is caught by the
+      # "Verify tarball contents" step below.
+      - name: Ensure PR dev-version suffix
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          for (const dir of process.env.BRIDGED_PACKAGES.split(' ')) {
+              const file = `packages/${dir}/package.json`;
+              const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+              const stamped = `-dev.${process.env.VERSION_SUFFIX}`;
+              if (!pkg.version.endsWith(stamped)) {
+                  pkg.version = `${pkg.version}.${process.env.VERSION_SUFFIX}`;
+                  fs.writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
+              }
+          }
+          NODE
+
       - name: Build package tarball
         uses: ./.github/actions/docker-build
         with:
