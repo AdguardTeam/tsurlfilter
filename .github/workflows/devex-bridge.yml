@@ -1,0 +1,295 @@
+name: DevEx bridge
+
+# Publishes the six tsurlfilter packages consumed by the browser extension to
+# the internal Artifact Keeper npm registry with PR-scoped dev versions
+# (<next-patch>-dev.pr<N>), republished (overwritten via unpublish+publish) on
+# every push, and posts/updates a comment on the source PR explaining how to
+# pin them into a browser-extension branch (scripts/use-dev-builds.mjs).
+# The extension-side PR is deliberately created by the developer, not by CI.
+# devex-bridge-cleanup.yml deletes the dev versions when the source PR closes.
+#
+# Trust boundary: pack builds PR-controlled Docker images but is unprivileged
+# (contents: read, no secrets). Jobs touching the AK secret run no PR code
+# (fixed npm CLI calls / the shared publish workflow on a prebuilt artifact)
+# and are additionally gated to same-repo PRs.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Each push republishes the same versions; stale runs are cancelled. This also
+# serializes unpublish/publish so two runs of the same PR cannot interleave.
+concurrency:
+  group: devex-bridge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # The six packages the browser extension consumes, published as an
+  # indivisible set: cross-package workspace:^ deps are rewritten to the
+  # stamped dev versions at pack time, so all six must exist with the SAME
+  # suffix for the set to resolve. Guarded against drift by
+  # scripts/ci/check-package-lists.mjs (must agree with use-dev-builds.mjs).
+  BRIDGED_PACKAGES: 'logger css-tokenizer agtree tsurlfilter dnr-rulesets tswebextension'
+  VERSION_SUFFIX: 'pr${{ github.event.pull_request.number }}'
+  AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal
+
+jobs:
+  changes:
+    name: Detect affected packages
+    runs-on: team-extensions
+    timeout-minutes: 10
+    outputs:
+      bridge-needed: ${{ steps.gate.outputs.bridge-needed }}
+      versions: ${{ steps.versions.outputs.map }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Compute affected packages
+        id: affected
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: node scripts/ci/compute-affected-packages.mjs
+
+      - name: Decide whether bridging is needed
+        id: gate
+        run: |
+          node -e "
+            const matrix = JSON.parse(process.env.MATRIX);
+            const bridged = process.env.BRIDGED_PACKAGES.split(' ');
+            const targets = (matrix.include ?? []).map((e) => e.target);
+            const hit = bridged.some((p) => targets.includes(p));
+            const needed = process.env.ROOT_AFFECTED === 'true' || hit;
+            console.log(\`bridge-needed=\${needed}\`);
+            require('node:fs').appendFileSync(process.env.GITHUB_OUTPUT, \`bridge-needed=\${needed}\n\`);
+          "
+        env:
+          MATRIX: ${{ steps.affected.outputs.matrix }}
+          ROOT_AFFECTED: ${{ steps.affected.outputs.root-affected }}
+
+      # Derive the exact dev version per bridged package once, here, from the
+      # same merge-commit tree the pack job checks out. Mirrors the
+      # set-dev-version algorithm (first released CHANGELOG heading -> next
+      # patch -> -dev.<suffix>); the unpublish and comment jobs consume this
+      # map so version arithmetic has a single source. VERSION_SUFFIX and
+      # BRIDGED_PACKAGES come from the workflow-level env block.
+      - name: Derive dev versions
+        id: versions
+        run: |
+          set -euo pipefail
+          node - <<'NODE' >> "${GITHUB_OUTPUT}"
+          const fs = require('node:fs');
+          const versions = {};
+          for (const dir of process.env.BRIDGED_PACKAGES.split(' ')) {
+              const changelog = fs.readFileSync(`packages/${dir}/CHANGELOG.md`, 'utf8');
+              const m = changelog.match(/^## \[(\d+\.\d+\.\d+)[^\]]*\]/m);
+              const core = m ? m[1] : '0.0.0';
+              const [major, minor, patch] = core.split('.').map(Number);
+              versions[`@adguard/${dir}`] = `${major}.${minor}.${patch + 1}-dev.${process.env.VERSION_SUFFIX}`;
+          }
+          console.log(`map=${JSON.stringify(versions)}`);
+          NODE
+
+  pack:
+    name: Pack ${{ matrix.package }}
+    needs: changes
+    if: >-
+      needs.changes.outputs.bridge-needed == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      # Cap concurrent Docker builds: the shared remote BuildKit builder OOMs /
+      # drops connections under heavy parallelism (same rationale as build.yml).
+      max-parallel: 4
+      matrix:
+        package: [logger, css-tokenizer, agtree, tsurlfilter, dnr-rulesets, tswebextension]
+    runs-on: team-extensions
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Inject development package versions
+        uses: AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@master
+        with:
+          package-globs: packages/*/package.json
+          version-suffix: ${{ env.VERSION_SUFFIX }}
+
+      - name: Build package tarball
+        uses: ./.github/actions/docker-build
+        with:
+          target: build-${{ matrix.package }}-output
+          dest: build-output
+
+      # Same contract as _publish-release-monorepo.yml: a missing or
+      # mismatched tarball must fail here, not at publish time.
+      # VERSION_SUFFIX is a workflow-level env var, so it is a plain
+      # environment variable in the step shell; its value is built from the
+      # numeric PR number only — no injection surface.
+      - name: Verify tarball contents
+        shell: bash
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          TGZ="build-output/artifacts/${PACKAGE}.tgz"
+          tar -tzf "$TGZ"
+          tar -tzf "$TGZ" | grep -q '^package/package.json$' || { echo "::error::package.json missing from $TGZ"; exit 1; }
+          EXPECTED=$(node -p "require('./packages/${PACKAGE}/package.json').version")
+          PACKED_VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (d) => json += d).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          [ "$PACKED_VERSION" = "$EXPECTED" ] || { echo "::error::$TGZ has version $PACKED_VERSION, expected $EXPECTED"; exit 1; }
+          case "$PACKED_VERSION" in
+            *-dev.${VERSION_SUFFIX}) ;;
+            *) echo "::error::$TGZ version $PACKED_VERSION does not end with -dev.${VERSION_SUFFIX}"; exit 1 ;;
+          esac
+          FILE_COUNT=$(tar -tzf "$TGZ" | wc -l | tr -d ' ')
+          [ "$FILE_COUNT" -gt 5 ] || { echo "::error::$TGZ contains only $FILE_COUNT entries — likely a broken package"; exit 1; }
+
+      - name: Upload dev package
+        uses: actions/upload-artifact@v7
+        with:
+          name: devex-${{ matrix.package }}
+          path: build-output/artifacts/${{ matrix.package }}.tgz
+          if-no-files-found: error
+          retention-days: 1
+
+  unpublish:
+    name: Unpublish previous dev versions (overwrite)
+    needs: changes
+    if: >-
+      needs.changes.outputs.bridge-needed == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: team-extensions
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js for AK registry access
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: ${{ env.AK_REGISTRY }}
+
+      # Tolerant on purpose: the first push of a PR has nothing to delete, and
+      # a cancelled previous run may have already deleted some. Real auth or
+      # transport failures surface loudly in the publish job right after.
+      - name: Unpublish existing dev versions
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
+          MAP: ${{ needs.changes.outputs.versions }}
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${NODE_AUTH_TOKEN}"
+          node - <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const map = JSON.parse(process.env.MAP);
+          for (const [name, version] of Object.entries(map)) {
+              try {
+                  execFileSync('npm', [
+                      'unpublish', `${name}@${version}`,
+                      `--registry=${process.env.AK_REGISTRY}`,
+                  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+                  console.log(`Unpublished previous ${name}@${version}`);
+              } catch {
+                  console.log(`${name}@${version}: not present (first push?) — nothing to unpublish`);
+              }
+          }
+          NODE
+
+  publish:
+    name: Publish ${{ matrix.package }} to Artifact Keeper
+    needs: [pack, unpublish]
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [logger, css-tokenizer, agtree, tsurlfilter, dnr-rulesets, tswebextension]
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-ak-npm.yml@master
+    with:
+      team: extensions
+      artifact-name: devex-${{ matrix.package }}
+      # Mutable tag, publish-time only — resolution always uses exact versions,
+      # so this tag drifting between PRs is harmless.
+      tag: devex
+    secrets: inherit
+    permissions:
+      contents: read
+
+  comment:
+    name: Post usage comment on the source PR
+    needs: [changes, publish]
+    # publish is gated transitively via pack/unpublish; the explicit same-repo
+    # guard keeps issues: write scoped even if the gating chain changes.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: team-extensions
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Upsert dev-builds comment
+        uses: actions/github-script@v8
+        env:
+          MAP: ${{ needs.changes.outputs.versions }}
+        with:
+          script: |
+            const marker = '<!-- devex-bridge -->';
+            const pr = context.payload.pull_request.number;
+            const map = JSON.parse(process.env.MAP);
+            const rows = Object.entries(map)
+                .map(([name, version]) => `| \`${name}\` | \`${version}\` |`)
+                .join('\n');
+            const body = [
+                marker,
+                '**Dev builds published** to the internal Artifact Keeper registry (overwritten on every push to this PR):',
+                '',
+                '| package | version |',
+                '| --- | --- |',
+                rows,
+                '',
+                'To build the browser extension against them, create your branch in `AdGuardSoftwareLimited/browser-extension` as usual, then pin the dev builds from an up-to-date tsurlfilter checkout:',
+                '',
+                '```bash',
+                `node scripts/use-dev-builds.mjs --pr ${pr} --extension /path/to/browser-extension`,
+                '```',
+                '',
+                'Re-run the same command after every push to this PR (the dev builds are overwritten in place and the lockfile integrity is refreshed).',
+                'These versions are deleted automatically when this PR is closed or merged.',
+            ].join('\n');
+            const { owner, repo } = context.repo;
+            const { data: comments } = await github.rest.issues.listComments({
+                owner, repo, issue_number: pr, per_page: 100,
+            });
+            const existing = comments.find((c) => c.body?.includes(marker));
+            if (existing) {
+                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+                await github.rest.issues.createComment({ owner, repo, issue_number: pr, body });
+            }
+
+  notify-failure:
+    name: Notify bridge failure
+    needs: [changes, pack, unpublish, publish, comment]
+    # Bridge failures would otherwise only be visible on the PR checks.
+    if: >-
+      failure() &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: team-extensions
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Send Slack notification
+        uses: AdGuardSoftwareLimited/actions/actions/slack@master
+        with:
+          channel: '#adguard-extension-vcs'
+          message: ':x: *devex-bridge* failed for PR #${{ github.event.pull_request.number }} — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          color: danger
