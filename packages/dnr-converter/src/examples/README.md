@@ -494,6 +494,10 @@ example 6 (regexp syntax — not supported in MV3; output reflects current parse
     },
     "condition": {
       "urlFilter": "||baddomain.com^",
+      "initiatorDomains": [
+        ".+\\\\.)c\\\\.(com\\\\",
+        "org)\\\\$/"
+      ],
       "excludedInitiatorDomains": [
         "a.com",
         "b.ac",
@@ -670,10 +674,11 @@ example 6 (regexp syntax — not supported in MV3; output reflects current parse
         "b.xxx",
         "b.xyz",
         "b.za",
-        "b.zone"
+        "b.zone",
+        "/(^\\\\"
       ]
     },
-    "priority": 2
+    "priority": 152
   }
 ]
 ```
