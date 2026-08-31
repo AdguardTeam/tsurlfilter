@@ -7,9 +7,9 @@
 
 import {
     type AnyRule,
-    DomainListParser,
     type NetworkRule as NetworkRuleNode,
     NetworkRuleType,
+    parseDomainList,
     RuleCategory,
     RuleParserPipeline,
 } from '@adguard/agtree';
@@ -950,9 +950,8 @@ export class Rule {
     } {
         const permitted: string[] = [];
         const restricted: string[] = [];
-        const node = DomainListParser.parse(
+        const node = parseDomainList(
             value,
-            undefined,
             0,
             DOMAIN_LIST_PIPE_SEPARATOR,
         );
