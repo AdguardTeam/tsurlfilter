@@ -82,31 +82,52 @@ for (const file of ['scripts/ci/resolve-release-inputs.sh', '.github/workflows/_
     assertSameSet(`${file} ALLOWLIST`, matches[0][1].split(' ').filter(Boolean));
 }
 
-// 4a. The DevEx bridge package list has two deliberate copies — the
-//    BRIDGED_PACKAGES env in devex-bridge.yml and the BRIDGED_PACKAGES
-//    constant in scripts/use-dev-builds.mjs. They must agree, and both must be
-//    a SUBSET of the publishable packages (the six the browser extension
-//    consumes), so this checks membership, not equality with `publishable`.
+// 4a. Every copy of the DevEx bridge package list must agree — the
+//    BRIDGED_PACKAGES env in devex-bridge.yml and devex-bridge-cleanup.yml, the
+//    BRIDGED_PACKAGES constant in scripts/use-dev-builds.mjs, and the pack /
+//    publish package matrices in devex-bridge.yml. All copies must be a SUBSET
+//    of the publishable packages (the six the browser extension consumes), so
+//    this checks membership, not equality with `publishable`. Without covering
+//    every copy, adding a 7th package would silently miss cleanup/publish.
 const bridgeWorkflow = fs.readFileSync(path.join(repoRoot, '.github/workflows/devex-bridge.yml'), 'utf8');
-const bridgeMatch = bridgeWorkflow.match(/BRIDGED_PACKAGES:\s*'([a-z0-9- ]+)'/);
-if (!bridgeMatch) {
+const bridgeCleanup = fs.readFileSync(path.join(repoRoot, '.github/workflows/devex-bridge-cleanup.yml'), 'utf8');
+const bridgeEnv = bridgeWorkflow.match(/BRIDGED_PACKAGES:\s*'([a-z0-9- ]+)'/);
+if (!bridgeEnv) {
     fail('devex-bridge.yml: could not find the BRIDGED_PACKAGES: \'...\' env assignment (format changed?)');
+}
+const cleanupEnv = bridgeCleanup.match(/BRIDGED_PACKAGES:\s*'([a-z0-9- ]+)'/);
+if (!cleanupEnv) {
+    fail('devex-bridge-cleanup.yml: could not find the BRIDGED_PACKAGES: \'...\' env assignment (format changed?)');
 }
 const devBuildsScript = fs.readFileSync(path.join(repoRoot, 'scripts/use-dev-builds.mjs'), 'utf8');
 const devBuildsMatch = devBuildsScript.match(/BRIDGED_PACKAGES = '([a-z0-9- ]+)'\.split\(' '\)/);
 if (!devBuildsMatch) {
     fail('scripts/use-dev-builds.mjs: could not find the BRIDGED_PACKAGES constant (format changed?)');
 }
-const bridgeWorkflowPackages = bridgeMatch[1].split(' ').filter(Boolean).sort();
-const devBuildsPackages = devBuildsMatch[1].split(' ').filter(Boolean).sort();
-if (JSON.stringify(bridgeWorkflowPackages) !== JSON.stringify(devBuildsPackages)) {
-    fail(`Bridge package lists disagree.\n  devex-bridge.yml: ${bridgeWorkflowPackages.join(', ')}\n  use-dev-builds.mjs: ${devBuildsPackages.join(', ')}`);
+const bridgeMatrices = [...bridgeWorkflow.matchAll(/^\s*package:\s*\[([a-z0-9-]+(?:, [a-z0-9-]+)*)\]\s*$/gm)]
+    .map((m) => m[1].split(', ').map((s) => s.trim()).filter(Boolean).sort());
+if (bridgeMatrices.length !== 2) {
+    fail(`devex-bridge.yml: expected exactly 2 package matrix lines (pack + publish), found ${bridgeMatrices.length} (format changed?)`);
+}
+const bridgeWorkflowPackages = bridgeEnv[1].split(' ').filter(Boolean).sort();
+const bridgeLists = [
+    ['devex-bridge.yml env', bridgeWorkflowPackages],
+    ['devex-bridge-cleanup.yml env', cleanupEnv[1].split(' ').filter(Boolean).sort()],
+    ['use-dev-builds.mjs', devBuildsMatch[1].split(' ').filter(Boolean).sort()],
+    ['devex-bridge.yml pack matrix', bridgeMatrices[0]],
+    ['devex-bridge.yml publish matrix', bridgeMatrices[1]],
+];
+const expectedBridgeJson = JSON.stringify(bridgeWorkflowPackages);
+for (const [label, list] of bridgeLists) {
+    if (JSON.stringify(list) !== expectedBridgeJson) {
+        fail(`Bridge package lists disagree.\n  devex-bridge.yml env: ${bridgeWorkflowPackages.join(', ')}\n  ${label}: ${list.join(', ')}`);
+    }
 }
 const unknown = bridgeWorkflowPackages.filter((name) => !publishable.includes(name));
 if (unknown.length > 0) {
     fail(`Bridge package lists contain non-publishable packages: ${unknown.join(', ')}`);
 }
-console.log(`bridge package lists: OK (${bridgeWorkflowPackages.length} packages, workflow/tool agree, subset of publishable)`);
+console.log(`bridge package lists: OK (${bridgeWorkflowPackages.length} packages, ${bridgeLists.length} copies agree, subset of publishable)`);
 
 console.log('package list drift check passed');
 
