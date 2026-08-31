@@ -71,6 +71,46 @@ already be built):
 pnpm build
 ```
 
+## Testing unmerged changes in the browser extension
+
+Every PR that touches `logger`, `css-tokenizer`, `agtree`, `tsurlfilter`,
+`dnr-rulesets`, or `tswebextension` is automatically published to the internal
+Artifact Keeper npm registry by the `devex-bridge.yml` workflow, with versions
+`<next-patch>-dev.pr<N>` (overwritten on every push). The PR gets a comment
+with the exact versions once publishing finishes.
+
+To build the browser extension against them:
+
+1. Create your branch in `AdGuardSoftwareLimited/browser-extension` as usual
+   (e.g. `feature/AG-12345-…`) with whatever changes you need — CHANGELOG
+   entries, source adaptations, etc.
+2. From an up-to-date tsurlfilter checkout, pin the dev builds:
+
+   ```bash
+   node scripts/use-dev-builds.mjs --pr <N> --extension /path/to/browser-extension
+   ```
+
+   This points the six packages at the AK tarballs via `pnpm.overrides`
+   (dependencies stay untouched) and refreshes `pnpm-lock.yaml`.
+3. Commit `package.json` and `pnpm-lock.yaml`. The extension's regular CI
+   builds the branch — installable builds are in the CI run's Artifacts
+   (`dev-builds`, `chrome-dev-crx`).
+
+After every push to the tsurlfilter PR the dev builds are overwritten in
+place; re-run the same command to refresh the lockfile integrity, then commit
+and push.
+
+A branch pinned to dev builds must never be merged. Before marking the
+extension PR ready (once the real versions are released, or if testing is
+abandoned), restore registry dependencies:
+
+```bash
+node scripts/use-dev-builds.mjs --remove --extension /path/to/browser-extension
+```
+
+Closing or merging the tsurlfilter PR deletes its dev versions from AK
+(`devex-bridge-cleanup.yml`), after which pinned branches stop resolving.
+
 ## Development Workflow
 
 ### Branch Strategy
