@@ -1,5 +1,5 @@
 export const rawCompaniesDb = {
-	"timeUpdated": "2026-03-16T10:25:01.934Z",
+	"timeUpdated": "2026-08-31T10:11:57.863Z",
 	"categories": {
 		"0": "audio_video_player",
 		"1": "comments",
@@ -2187,6 +2187,7 @@ export const rawCompaniesDb = {
 		"gcp.gvt2.com": 10,
 		"storage.googleapis.com": 10,
 		"adsensecustomsearchads.com": 4,
+		"syndicatedsearch.goog": 4,
 		"dns.google": 10,
 		"dns.google.com": 10,
 		"google-public-dns-a.google.com": 10,
