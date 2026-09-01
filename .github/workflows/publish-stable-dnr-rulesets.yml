@@ -43,7 +43,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Check 5.0 branch on the current CI
+      - name: Check stable line on the current CI
         id: lines
         shell: bash
         env:
@@ -51,14 +51,19 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -n "$REQUESTED_LINE" ] && [ "$REQUESTED_LINE" != "5.0" ]; then
-            echo "::error::Unknown stable line '$REQUESTED_LINE'; only '5.0' is published"
+          # Single source of truth for the published stable lines — the
+          # check-package-lists.mjs drift guard asserts this assignment.
+          ALL_LINES="5.0"
+
+          if [ -n "$REQUESTED_LINE" ] && [ "$REQUESTED_LINE" != "$ALL_LINES" ]; then
+            echo "::error::Unknown stable line '$REQUESTED_LINE'; expected $ALL_LINES"
             exit 1
           fi
 
           # Branch is "on the current CI" if these probe files exist at its
           # tip; probed shallowly — no full clone, no gh dep.
-          if git fetch -q --depth=1 origin "refs/heads/stable/dnr-rulesets-5.0" 2>/dev/null \
+          ref="refs/heads/stable/dnr-rulesets-${ALL_LINES}"
+          if git fetch -q --depth=1 origin "${ref}" 2>/dev/null \
             && git cat-file -e "FETCH_HEAD:scripts/inject-package-versions.mjs" 2>/dev/null \
             && git cat-file -e "FETCH_HEAD:.github/actions/docker-build/action.yml" 2>/dev/null \
             && git cat-file -e "FETCH_HEAD:scripts/ci/timeout-wrapper.sh" 2>/dev/null \
@@ -67,7 +72,7 @@ jobs:
             echo "line-5-0=true" >> "$GITHUB_OUTPUT"
           elif [ -n "$REQUESTED_LINE" ]; then
             # An explicit dispatch must not silently publish nothing.
-            echo "::error::Line 5.0 is not on the current CI (no scripts/inject-package-versions.mjs, .github/actions/docker-build, scripts/ci helpers, or dnr-rulesets-auto-build-output target on stable/dnr-rulesets-5.0); backport the CI first"
+            echo "::error::Line ${ALL_LINES} is not on the current CI (no scripts/inject-package-versions.mjs, .github/actions/docker-build, scripts/ci helpers, or dnr-rulesets-auto-build-output target on stable/dnr-rulesets-${ALL_LINES}); backport the CI first"
             exit 1
           fi
           # Empty schedule round (branch not migrated) stays green — the flag
