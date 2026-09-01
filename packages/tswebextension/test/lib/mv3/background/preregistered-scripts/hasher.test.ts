@@ -7,12 +7,28 @@ import {
     computeRuleHashCached,
     computeScriptletHash,
     COORDINATION_KEY,
+    expandHostnames,
     getRuleFilename,
     getRuleHashFromFilePath,
     hashString,
     normalizeDomain,
     SHARED_BUNDLE_FILENAME,
 } from '../../../../../src/lib/mv3/background/preregistered-scripts/hasher';
+
+describe('expandHostnames', () => {
+    it('adds the www. alias to an apex domain', () => {
+        expect(expandHostnames(['youtube.com'])).toEqual(['youtube.com', 'www.youtube.com']);
+    });
+
+    it('keeps an already-www. domain as its own single entry', () => {
+        expect(expandHostnames(['www.youtube.com'])).toEqual(['www.youtube.com']);
+    });
+
+    it('deduplicates overlapping inputs and normalizes them', () => {
+        expect(expandHostnames(['Youtube.com', 'www.youtube.com']))
+            .toEqual(['youtube.com', 'www.youtube.com']);
+    });
+});
 
 describe('hashString', () => {
     it('produces a 16-character lowercase hex digest (truncated SHA-256)', async () => {

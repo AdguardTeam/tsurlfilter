@@ -221,15 +221,38 @@ export const computeRuleHashCached = (rule: CosmeticRule): Promise<string> => {
  * content-script match patterns are exact-host, so apex and `www.` are
  * distinct registrations — collapsing them would silently widen coverage.
  *
- * Used only at build time to normalize configured preregistered domains;
- * `CosmeticApi` compares exact lower-cased hostnames instead.
- *
  * @param domain Raw domain string.
  *
  * @returns Normalized domain string.
  */
 export const normalizeDomain = (domain: string): string => {
     return domain.trim().toLowerCase().replace(/^\.+|\.+$/g, '');
+};
+
+/**
+ * Expands configured domains into lookup hostnames: the domain plus its
+ * `www.` alias when not already prefixed. Content-script match patterns
+ * are exact-host, so the apex and the alias need separate registrations;
+ * hostnames without matching rules are skipped later. Other subdomains
+ * are not covered. Shared by the build-time collector and the runtime
+ * service so both sides look up the same hostname set.
+ *
+ * @param domains Configured preregistered domains.
+ *
+ * @returns Unique normalized hostnames to look up.
+ */
+export const expandHostnames = (domains: string[]): string[] => {
+    const hostnames = new Set<string>();
+
+    for (const domain of domains) {
+        const normalized = normalizeDomain(domain);
+        hostnames.add(normalized);
+        if (!normalized.startsWith('www.')) {
+            hostnames.add(`www.${normalized}`);
+        }
+    }
+
+    return [...hostnames];
 };
 
 /**

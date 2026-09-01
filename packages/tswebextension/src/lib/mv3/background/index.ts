@@ -93,6 +93,7 @@ export {
     computeRuleHash,
     computeRuleHashCached,
     normalizeDomain,
+    expandHostnames,
     COORDINATION_KEY,
     SHARED_BUNDLE_FILENAME,
     CLEANUP_FILENAME,

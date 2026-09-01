@@ -367,7 +367,7 @@ describe('PreregisteredScriptsService', () => {
             expect(scripts[0].matches).toEqual(['*://www.youtube.com/*']);
         });
 
-        it('does not pick up a www.-only rule when only the apex hostname is in the domains list', async () => {
+        it('derives the www. alias from the apex domain and registers it when it has rules', async () => {
             await setupRulesWithManifest({
                 'www.youtube.com': [mockScriptletRule('set-cookie', [])],
             });
@@ -375,7 +375,21 @@ describe('PreregisteredScriptsService', () => {
             await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
             const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
-            expect(scripts).toHaveLength(0);
+            expect(scripts).toHaveLength(1);
+            expect(scripts[0].id).toBe('www.youtube.com');
+            expect(scripts[0].matches).toEqual(['*://www.youtube.com/*']);
+        });
+
+        it('skips the www. alias when it has no matching rules', async () => {
+            await setupRulesWithManifest({
+                'youtube.com': [mockScriptletRule('set-cookie', [])],
+            });
+
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
+            expect(scripts).toHaveLength(1);
+            expect(scripts[0].id).toBe('youtube.com');
         });
 
         it('excludes rules from non-local (custom/user) filters from hashing', async () => {

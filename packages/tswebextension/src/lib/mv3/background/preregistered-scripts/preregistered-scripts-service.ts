@@ -11,6 +11,7 @@ import { engineApi } from '../engine-api';
 import {
     CLEANUP_FILENAME,
     computeRuleHashCached,
+    expandHostnames,
     getRuleFilename,
     getRuleHashFromFilePath,
     MANIFEST_FILENAME,
@@ -47,9 +48,9 @@ const domainToMatchPatterns = (hostname: string): string[] => {
  * preregistered domains, so build-time-known scriptlet/JS rules run at
  * `document_start`, before the extension itself finishes starting up.
  *
- * For each hostname from the build-time `domains.js` the service queries
- * the engine (ignoring `$path`, so path-qualified rules aren't missed),
- * hashes the matching rules and registers
+ * For each configured hostname (plus its derived `www.` alias) the service
+ * queries the engine (ignoring `$path`, so path-qualified rules aren't
+ * missed), hashes the matching rules and registers
  * `js: [bundle, ...scriptletFunctionFiles, ...perRuleFiles, cleanup]`.
  * Scriptlet function files carry only the implementations the host's rules
  * use (from the manifest's `scriptletFiles` map). The per-rule file itself
@@ -185,8 +186,9 @@ export class PreregisteredScriptsService {
      * Concurrent calls are serialized internally.
      *
      * @param filteringEnabled Whether global filtering is enabled.
-     * @param domains Preregistered hostnames (from build-time `domains.js`;
-     * apex domains and `www.` aliases are separate entries).
+     * @param domains Configured preregistered domains: each is looked up
+     * together with its `www.` alias (exact-host match patterns need both
+     * entries); aliases without matching rules are skipped.
      * @param scriptsPath Extension-relative path to the preregistered scripts
      * directory (e.g. `filters/preregistered-scripts`).
      *
@@ -221,7 +223,7 @@ export class PreregisteredScriptsService {
      * Performs the actual sync; see {@link PreregisteredScriptsService.sync}.
      *
      * @param filteringEnabled Whether global filtering is enabled.
-     * @param domains Preregistered hostnames.
+     * @param domains Configured preregistered domains.
      * @param scriptsPath Extension-relative path to the preregistered scripts
      * directory.
      *
@@ -232,17 +234,19 @@ export class PreregisteredScriptsService {
         domains: string[],
         scriptsPath: string,
     ): Promise<Map<string, Set<string>>> {
+        const hostnames = expandHostnames(domains);
+
         try {
             let scripts: ContentScriptDescriptor[] = [];
             let coveredRules = new Map<string, Set<string>>();
 
-            if (filteringEnabled && domains.length > 0) {
+            if (filteringEnabled && hostnames.length > 0) {
                 const manifest = await PreregisteredScriptsService.loadManifest(scriptsPath);
                 if (!manifest) {
                     return coveredRules;
                 }
                 const built = await PreregisteredScriptsService.buildDomainScripts(
-                    domains,
+                    hostnames,
                     scriptsPath,
                     manifest,
                 );
@@ -267,7 +271,7 @@ export class PreregisteredScriptsService {
                 }
             }
 
-            logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${domains.length} domains covered`);
+            logger.info(`[tsweb.PreregisteredScriptsService.doSync]: Synced preregistered scripts: ${coveredRules.size}/${hostnames.length} hostnames covered`);
 
             return coveredRules;
         } catch (e) {
