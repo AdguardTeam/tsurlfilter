@@ -58,10 +58,15 @@ For a dry-run of the publish pipeline without touching the registry, dispatch
    Octopass `protected-push` (the commit avoids `[skip ci]` so `mirror.yml`
    still syncs the update to the public repo). Failures are reported to Slack.
 - `publish-stable-dnr-rulesets.yml` builds and publishes `@adguard/dnr-rulesets`
-   every hour from supported `stable/dnr-rulesets-*` branches. Versions use
-   `<major>.<minor>.<UTC timestamp>` and are injected only for that build, and
-   publish under the per-line `stable-<line>` dist-tag (never `latest`).
-   Failures are reported to Slack.
+   twice daily (00:17/12:17 UTC) from supported `stable/dnr-rulesets-*`
+   branches. Versions use `<major>.<minor>.<UTC timestamp>` and are injected
+   only for that build.
+   Publish order is staggered (~7 min between lines, 5.0 first so it lands
+   within the npm burst budget), each line is checked for idempotency before
+   publishing, and failed lines get one serialized retry after a backoff. The
+   newest line (5.0) is published under the `latest` dist-tag; older lines
+   publish under the per-line `stable-<line>` dist-tag so they can never move
+   `latest` backwards. Failures are reported to Slack.
   - **Prerequisite — each supported branch must be on the current CI** (root
     `Dockerfile` with a `dnr-rulesets-auto-build-output` target +
     `scripts/inject-package-versions.mjs` in the branch tip). The workflow

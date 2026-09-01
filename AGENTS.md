@@ -122,15 +122,19 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
 - `_publish-release-monorepo.yml` — reusable monorepo publish engine
   (Docker test/build → npm → tag after publish → mirror → GitHub Release →
   Slack, with a failure-notify Slack job).
-- `publish-stable-dnr-rulesets.yml` — hourly scheduled build/publish of
+- `publish-stable-dnr-rulesets.yml` — twice-daily scheduled build/publish of
   `@adguard/dnr-rulesets` from the supported `stable/dnr-rulesets-*` branches.
   Each supported branch must be on the current CI (root `Dockerfile` +
   `scripts/inject-package-versions.mjs`); a `resolve-lines` job checks branch
   readiness and skips not-yet-migrated lines gracefully, the job checks the
   branch out, stamps a `<line>.<timestamp>` stable version, builds its own
-  `dnr-rulesets-auto-build-output` Docker target, and publishes under the
-  per-line `stable-<line>` npm dist-tag (never `latest`, so old lines can't
-  pull the `latest` tag backwards) with no environment restriction. A
+  `dnr-rulesets-auto-build-output` Docker target, and publishes it. Publishes
+  are staggered (~7 min between lines, 5.0 first to land within npm's rate
+  budget), each line is checked for idempotency before publishing, and a
+  failed line gets one serialized retry after a long backoff. The newest line
+  (5.0) is published under the `latest` npm dist-tag; older lines publish
+  under the per-line `stable-<line>` dist-tag (never `latest`, so old lines
+  can't pull the `latest` tag backwards) with no environment restriction. A
   failure-notify job alerts Slack when any leg fails.
 - `mirror.yml` — syncs master to the public `AdguardTeam/tsurlfilter` mirror.
 - `update-companiesdb.yml` — refreshes the tswebextension companies database
