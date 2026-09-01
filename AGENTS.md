@@ -132,9 +132,10 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   `dnr-rulesets-auto-build-output` Docker target, and publishes it. The exact
   version is checked for idempotency before publishing
   (`scripts/ci/check-npm-version.sh`), and a failed publish gets one retry
-  after a long backoff. The line publishes under the `latest` npm dist-tag (no
-  older line exists to pull it backwards) with no environment restriction. A
-  failure-notify job alerts Slack when any leg fails.
+  after a backoff (outlasts npm's throttle window). The line publishes under
+  the `latest` npm dist-tag (no older line exists to pull it backwards) with
+  no environment restriction. A failure-notify job alerts Slack when any leg
+  fails.
 - `mirror.yml` — syncs master to the public `AdguardTeam/tsurlfilter` mirror.
 - `update-companiesdb.yml` — refreshes the tswebextension companies database
   every Tuesday and pushes meaningful changes with Octopass. The push avoids

@@ -63,7 +63,8 @@ For a dry-run of the publish pipeline without touching the registry, dispatch
    longer published. Versions use `<major>.<minor>.<UTC timestamp>` and are
    injected only for that build. The exact version is checked for idempotency
    before publishing (`scripts/ci/check-npm-version.sh`), and a failed publish
-   gets one retry after a backoff. Failures are reported to Slack.
+   gets one retry after a backoff (outlasts npm's throttle window). Failures
+   are reported to Slack.
   - **Prerequisite — the branch must be on the current CI** (root
     `Dockerfile` with a `dnr-rulesets-auto-build-output` target +
     `scripts/inject-package-versions.mjs` in the branch tip). The workflow

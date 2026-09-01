@@ -6,10 +6,10 @@ name: Publish stable DNR rulesets
 # @adguard/dnr-converter, replacing @adguard/tsurlfilter's DNR APIs).
 # resolve-lines skips the round if the branch isn't on the current CI yet.
 #
-# npm 429 background: back-to-back publishes trip npm/Cloudflare's burst limit
-# (each write is a heavy ~79 MB packument); publishing one line avoids it.
-# Guards: check-npm-version.sh makes re-runs idempotent, and a failed publish
-# gets one retry after a backoff.
+# npm 429 background: npm rate-limits the shared GitHub egress IP. One publish
+# per round stays inside its burst budget; a throttled publish gets one retry
+# after a backoff (npm's ~70s retry is shorter than the throttle window).
+# check-npm-version.sh makes re-runs idempotent.
 
 on:
   schedule:
@@ -181,6 +181,7 @@ jobs:
       exists: ${{ steps.version-check.outputs.exists }}
     steps:
       - name: Back off
+        # Outlast the npm throttle window; npm's own retry (~70s) doesn't.
         shell: bash
         run: sleep 600
 
