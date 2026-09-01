@@ -138,7 +138,7 @@ const pathHashSuffix = (pathPattern?: string): string => {
  *
  * @returns SHA-256 hex hash string.
  */
-export const computeScriptletHash = async (
+const computeScriptletHash = async (
     name: string,
     args: string[],
     pathPattern?: string,
@@ -154,7 +154,7 @@ export const computeScriptletHash = async (
  *
  * @returns SHA-256 hex hash string.
  */
-export const computeJsRuleHash = async (body: string, pathPattern?: string): Promise<string> => {
+const computeJsRuleHash = async (body: string, pathPattern?: string): Promise<string> => {
     return hashString(JS_RULE_HASH_PREFIX + body + pathHashSuffix(pathPattern));
 };
 

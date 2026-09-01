@@ -663,7 +663,8 @@ describe('ContentScriptManager', () => {
                 { id: 'new', js: ['new.js'], matches: ['<all_urls>'] },
             ]);
             expect(result).toHaveLength(1);
-            expect(mockUnregister).toHaveBeenCalledTimes(1);
+            // Batch call + the per-script isolation retry.
+            expect(mockUnregister).toHaveBeenCalledTimes(2);
         });
 
         // eslint-disable-next-line max-len
@@ -978,33 +979,6 @@ describe('ContentScriptManager', () => {
         });
     });
 
-    describe('listIds', () => {
-        it('should return original (unprefixed) IDs of registered scripts', async () => {
-            mockGetRegistered.mockResolvedValue([
-                { id: 'critical:a', js: ['a.js'], matches: ['<all_urls>'] },
-                { id: 'critical:b', js: ['b.js'], matches: ['<all_urls>'] },
-                { id: 'stealth:c', js: ['c.js'], matches: ['<all_urls>'] },
-            ]);
-
-            const ids = await ContentScriptManager.listIds(NS);
-
-            expect(ids.sort()).toEqual(['a', 'b']);
-        });
-
-        it('should return an empty array when nothing is registered', async () => {
-            mockGetRegistered.mockResolvedValue([]);
-
-            const ids = await ContentScriptManager.listIds(NS);
-
-            expect(ids).toEqual([]);
-        });
-
-        it('should validate namespace before making any chrome API calls', async () => {
-            await expect(ContentScriptManager.listIds('')).rejects.toThrow('Namespace must not be empty');
-            expect(mockGetRegistered).not.toHaveBeenCalled();
-        });
-    });
-
     describe('syncDetailed — batch failures', () => {
         it('should isolate the failure to the bad entry via per-script retry', async () => {
             mockGetRegistered.mockResolvedValue([]);
@@ -1086,6 +1060,35 @@ describe('ContentScriptManager', () => {
             // retries surface via failedScriptIds.
             expect(errors).toHaveLength(1);
             expect(failedScriptIds.sort()).toEqual(['a', 'b']);
+        });
+
+        it('should report a failed unregistration when the batch and the per-script retry both fail', async () => {
+            // A stale registration exists but is no longer desired.
+            mockGetRegistered.mockResolvedValue([
+                { id: 'critical:stale', js: ['old.js'], matches: ['<all_urls>'] },
+            ]);
+            mockUnregister.mockRejectedValue(new Error('Unregister API failure'));
+
+            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, []);
+
+            // A stale registration is still active — reported as failed.
+            expect(errors).toHaveLength(1);
+            expect(failedScriptIds).toEqual(['stale']);
+        });
+
+        it('should not report a failed unregistration when the per-script retry succeeds', async () => {
+            mockGetRegistered.mockResolvedValue([
+                { id: 'critical:stale', js: ['old.js'], matches: ['<all_urls>'] },
+            ]);
+            // Only the batch call rejects; the per-script retry succeeds.
+            mockUnregister
+                .mockRejectedValueOnce(new Error('Unregister API failure'))
+                .mockResolvedValue(undefined);
+
+            const { errors, failedScriptIds } = await ContentScriptManager.syncDetailed(NS, []);
+
+            expect(errors).toHaveLength(1);
+            expect(failedScriptIds).toEqual([]);
         });
 
         it('should treat reordered js/matches arrays as changed (update)', async () => {

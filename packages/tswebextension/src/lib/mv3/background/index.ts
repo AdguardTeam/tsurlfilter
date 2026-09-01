@@ -85,19 +85,3 @@ export type { LocalScriptFunctionData } from './services/local-script-rules-serv
 export type { RuleInfo } from '../../common/rule-info';
 
 export { TSWEBEXTENSION_VERSION, EXTENDED_CSS_VERSION } from '../../common/configuration';
-
-export {
-    hashString,
-    computeScriptletHash,
-    computeJsRuleHash,
-    computeRuleHash,
-    computeRuleHashCached,
-    normalizeDomain,
-    expandHostnames,
-    COORDINATION_KEY,
-    SHARED_BUNDLE_FILENAME,
-    CLEANUP_FILENAME,
-    getRuleFilename,
-    getRuleHashFromFilePath,
-    PREREGISTERED_SCRIPTS_DIR,
-} from './preregistered-scripts/hasher';

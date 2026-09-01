@@ -227,11 +227,11 @@ export class CosmeticLookupTable {
      *
      * @param content Content of the scriptlet. Empty string '' searches for scriptlets allowlisted globally.
      * @param request Request details to match against allowlist rules.
-     * @param ignorePath If true, the `$path` modifier of allowlist rules is skipped.
+     * @param ignoreExceptionPath If true, the `$path` modifier of exception rules is skipped.
      *
      * @returns True if allowlisted by a matching rule or a generic rule. False otherwise.
      */
-    isScriptletAllowlisted = (content: string, request: Request, ignorePath = false) => {
+    isScriptletAllowlisted = (content: string, request: Request, ignoreExceptionPath = false) => {
         // check for rules with that content
         const allowlistScriptletRulesIndexes = this.allowlist.get(content);
         if (allowlistScriptletRulesIndexes) {
@@ -245,7 +245,7 @@ export class CosmeticLookupTable {
                 return true;
             }
             // here we check if there is at least one allowlist rule that matches the request
-            const hasRuleMatchingRequest = rules.some((r) => r.match(request, ignorePath));
+            const hasRuleMatchingRequest = rules.some((r) => r.match(request, ignoreExceptionPath));
             if (hasRuleMatchingRequest) {
                 return true;
             }

@@ -68,7 +68,7 @@ interface ApplyCosmeticRulesParams {
      * started (e.g. tabs found on browser startup). Such pages could only
      * receive the preregistered bundle from registrations persisted across
      * the SW restart, so only those registrations' rules are skipped from
-     * dynamic injection. Defaults to `false`.
+     * dynamic injection. Defaults to false.
      */
     preExistingDocument?: boolean;
 }
@@ -150,16 +150,20 @@ export class CosmeticApi extends CosmeticApiCommon {
         frameContext: FrameMV3,
         preExistingDocument = false,
     ): ReadonlySet<string> | undefined {
+        const coveredRules = preExistingDocument
+            ? appContext.preregisteredScriptRulesAtBoot
+            : CosmeticApi.preregisteredScriptRules;
+
+        if (!coveredRules || coveredRules.size === 0) {
+            return undefined;
+        }
+
         const host = CosmeticApi.resolveCoverageHost(tabId, frameContext);
         if (!host) {
             return undefined;
         }
 
-        if (preExistingDocument) {
-            return appContext.preregisteredScriptRulesAtBoot?.get(host);
-        }
-
-        return CosmeticApi.preregisteredScriptRules.get(host);
+        return coveredRules.get(host);
     }
 
     /**

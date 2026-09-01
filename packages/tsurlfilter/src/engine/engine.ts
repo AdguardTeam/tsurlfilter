@@ -326,12 +326,17 @@ export class Engine {
      *
      * @param request Host to check.
      * @param option Mask of enabled cosmetic types.
-     * @param ignorePath If true, skips the `$path` modifier check for
+     * @param options Optional match modifiers.
+     * @param options.ignorePath If true, skips the `$path` modifier check for
      * JS/scriptlet rules only. Defaults to false.
      *
      * @returns Cosmetic result.
      */
-    public getCosmeticResult(request: Request, option: CosmeticOption, ignorePath = false): CosmeticResult {
+    public getCosmeticResult(
+        request: Request,
+        option: CosmeticOption,
+        { ignorePath = false }: { ignorePath?: boolean } = {},
+    ): CosmeticResult {
         return this.cosmeticEngine.match(request, option, ignorePath);
     }
 
@@ -340,13 +345,18 @@ export class Engine {
      *
      * @param request Request to check.
      * @param rule Cosmetic rule to check.
-     * @param ignoreExceptionPath If true, the `$path` modifier of exceptions
-     * is skipped, i.e. an exception applying to any path of the hostname
-     * cancels the rule. Defaults to false.
+     * @param options Optional match modifiers.
+     * @param options.ignoreExceptionPath If true, the `$path` modifier of
+     * exceptions is skipped, i.e. an exception applying to any path of the
+     * hostname cancels the rule. Defaults to false.
      *
      * @returns True if the rule is cancelled by an exception.
      */
-    public isCosmeticRuleAllowlisted(request: Request, rule: CosmeticRule, ignoreExceptionPath = false): boolean {
+    public isCosmeticRuleAllowlisted(
+        request: Request,
+        rule: CosmeticRule,
+        { ignoreExceptionPath = false }: { ignoreExceptionPath?: boolean } = {},
+    ): boolean {
         return this.cosmeticEngine.isAllowlisted(request, rule, ignoreExceptionPath);
     }
 

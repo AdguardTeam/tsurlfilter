@@ -2,6 +2,8 @@ import { z as zod } from 'zod';
 
 import { basicFilterValidator, configurationValidator, settingsConfigValidator } from '../../common/configuration';
 
+import { normalizeDomain } from './preregistered-scripts/hasher';
+
 /**
  * Custom filter list configuration validator for MV3.
  */
@@ -46,16 +48,21 @@ export type SettingsConfigMV3 = zod.infer<typeof settingsConfigMV3>;
 /**
  * Build-time preregistered script configuration validator. When provided,
  * enables persistent content-script registration and skips dynamic
- * scriptlet injection for the listed domains.
+ * injection of JS and scriptlet rules for the listed domains.
  */
 export const preregisteredScriptsConfigValidator = zod.object({
     /**
-     * Domains with build-time preregistered scripts.
+     * Domains with build-time preregistered scripts. Each domain's `www.`
+     * alias is derived automatically at runtime.
      */
-    domains: zod.string().array(),
+    domains: zod.string().array().transform((domains) => (
+        domains
+            .map(normalizeDomain)
+            .filter((domain) => domain !== '')
+    )),
 
     /**
-     * Path to preregistered script bundles.
+     * Path to the preregistered script artifacts directory.
      */
     path: zod.string(),
 });
@@ -110,7 +117,7 @@ export const configurationMV3Validator = configurationValidator.extend({
     /**
      * Build-time preregistered script configuration. When provided,
      * enables persistent content-script registration and skips dynamic
-     * scriptlet injection for the listed domains.
+     * injection of JS and scriptlet rules for the listed domains.
      */
     preregisteredScripts: preregisteredScriptsConfigValidator.optional(),
 });

@@ -316,24 +316,29 @@ Enables matching declarative rules for filtering log.
 type: `{ domains: string[]; path: string }` (optional)
 
 Build-time preregistered script configuration. Registers persistent content
-scripts for `domains` and skips dynamic scriptlet injection for rules they
-cover.
+scripts for `domains` and skips dynamic injection of both JS (`#%#`) and
+scriptlet (`#%#//scriptlet`) rules they cover. Preregistration is disabled
+while debug scriptlets are enabled (`app.ts` passes
+`filteringEnabled && !debugScriptlets`), so a debugging session silently uses
+the dynamic path.
 
 ##### domains
 
 type: `string[]`
 
-Domains with build-time preregistered scripts.
+Domains with build-time preregistered scripts. Each domain's `www.` alias
+is derived automatically at runtime.
 
 ##### path
 
 type: `string`
 
 Path to the preregistered script artifacts directory (contains
-`manifest.json`, the shared bundle, one file per rule, and the cleanup
-file — see `@adguard/tswebextension/mv3/preregistered-scripts/hasher`).
-Falls back to dynamic scriptlet injection if sync fails, or for tabs
-already open before sync.
+`manifest.json`, the shared bundle, one function file per scriptlet, one
+file per rule, and the cleanup file — see
+`@adguard/tswebextension/mv3/preregistered-scripts/hasher`).
+Falls back to dynamic injection if sync fails, or for tabs already open
+before sync.
 
 #### allowlist
 

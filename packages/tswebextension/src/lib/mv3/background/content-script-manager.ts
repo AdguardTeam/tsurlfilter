@@ -103,12 +103,22 @@ export interface SyncScriptsResult {
     /**
      * Original (unprefixed) IDs of desired scripts whose desired state is
      * not guaranteed after the call: failed registrations (no registration
-     * active) and failed updates (stale registration active). Failed
-     * unregistrations are not included — the script is no longer desired,
-     * so a stale leftover only over-applies until the next sync.
+     * active), failed updates (stale registration active) and failed
+     * unregistrations (stale registration still active).
      */
     failedScriptIds: string[];
 }
+
+/**
+ * Settled results of the three batch operations of
+ * {@link ContentScriptManager.syncDetailed}, together with the items each
+ * batch consisted of.
+ */
+type SyncBatchResults = {
+    unregister: { result: PromiseSettledResult<void>; ids: string[] };
+    register: { result: PromiseSettledResult<void>; scripts: ContentScriptDescriptor[] };
+    update: { result: PromiseSettledResult<void>; scripts: ContentScriptDescriptor[] };
+};
 
 /**
  * Manages dynamic content script registration via the chrome.scripting API.
@@ -411,27 +421,11 @@ export class ContentScriptManager {
     }
 
     /**
-     * Lists the original (unprefixed) IDs of all content scripts currently
-     * registered under the given namespace.
-     *
-     * @param namespace Namespace string used to prefix script IDs.
-     *
-     * @returns Promise that resolves with the array of registered script IDs.
-     *
-     * @throws {Error} If the namespace is invalid, or if
-     * chrome.scripting.getRegisteredContentScripts fails.
-     */
-    public static async listIds(namespace: string): Promise<string[]> {
-        const scripts = await ContentScriptManager.get(namespace);
-        return scripts.map((script) => script.id);
-    }
-
-    /**
      * Returns the full descriptors of all content scripts currently
      * registered under the given namespace, IDs stripped of the namespace
-     * prefix. Unlike {@link ContentScriptManager.listIds}, the descriptors
-     * include the `js` file lists, which some consumers need (e.g. to
-     * recover per-rule hashes from persisted registrations).
+     * prefix. The descriptors include the `js` file lists, which some
+     * consumers need (e.g. to recover per-rule hashes from persisted
+     * registrations).
      *
      * @param namespace Namespace string used to prefix script IDs.
      *
@@ -513,41 +507,11 @@ export class ContentScriptManager {
             ContentScriptManager.update(namespace, toUpdateScripts),
         ]);
 
-        const errors: PromiseRejectedResult[] = [];
-        if (unregisterResult.status === 'rejected') {
-            errors.push(unregisterResult);
-        }
-
-        // Chrome rejects a batched call as a unit (one bad entry fails them
-        // all), so a failed batch is retried per script to isolate the
-        // failures to the offending scripts.
-        const failedScriptIds: string[] = [];
-
-        if (registerResult.status === 'rejected') {
-            errors.push(registerResult);
-            const retries = await Promise.allSettled(
-                toRegisterScripts.map((script) => ContentScriptManager.register(namespace, [script])),
-            );
-            retries.forEach((retry, index) => {
-                const script = toRegisterScripts[index];
-                if (retry.status === 'rejected' && script) {
-                    failedScriptIds.push(script.id);
-                }
-            });
-        }
-
-        if (updateResult.status === 'rejected') {
-            errors.push(updateResult);
-            const retries = await Promise.allSettled(
-                toUpdateScripts.map((script) => ContentScriptManager.update(namespace, [script])),
-            );
-            retries.forEach((retry, index) => {
-                const script = toUpdateScripts[index];
-                if (retry.status === 'rejected' && script) {
-                    failedScriptIds.push(script.id);
-                }
-            });
-        }
+        const { errors, failedScriptIds } = await ContentScriptManager.retryFailedBatches(namespace, {
+            unregister: { result: unregisterResult, ids: toRemoveIds },
+            register: { result: registerResult, scripts: toRegisterScripts },
+            update: { result: updateResult, scripts: toUpdateScripts },
+        });
 
         if (errors.length > 0) {
             const reasons = errors.map(({ reason }) => {
@@ -558,6 +522,88 @@ export class ContentScriptManager {
         }
 
         return { errors, failedScriptIds };
+    }
+
+    /**
+     * Processes the settled batch operations of a sync: records the
+     * rejected batches as errors and retries each per item to isolate the
+     * failures to the offending scripts.
+     *
+     * @param namespace Namespace string used to prefix script IDs.
+     * @param batches Settled results together with the items each batch
+     * consisted of.
+     *
+     * @returns Batch errors and the IDs of items whose individual retry
+     * also failed.
+     */
+    private static async retryFailedBatches(
+        namespace: string,
+        batches: SyncBatchResults,
+    ): Promise<{ errors: PromiseRejectedResult[]; failedScriptIds: string[] }> {
+        const errors: PromiseRejectedResult[] = [];
+        const failedScriptIds: string[] = [];
+
+        const { unregister, register, update } = batches;
+
+        if (unregister.result.status === 'rejected') {
+            errors.push(unregister.result);
+            const failedIds = await ContentScriptManager.retryFailedBatch(
+                unregister.ids,
+                (id) => ContentScriptManager.unregister(namespace, [id]),
+                (id) => id,
+            );
+            failedScriptIds.push(...failedIds);
+        }
+
+        if (register.result.status === 'rejected') {
+            errors.push(register.result);
+            const failedIds = await ContentScriptManager.retryFailedBatch(
+                register.scripts,
+                (script) => ContentScriptManager.register(namespace, [script]),
+                (script) => script.id,
+            );
+            failedScriptIds.push(...failedIds);
+        }
+
+        if (update.result.status === 'rejected') {
+            errors.push(update.result);
+            const failedIds = await ContentScriptManager.retryFailedBatch(
+                update.scripts,
+                (script) => ContentScriptManager.update(namespace, [script]),
+                (script) => script.id,
+            );
+            failedScriptIds.push(...failedIds);
+        }
+
+        return { errors, failedScriptIds };
+    }
+
+    /**
+     * Retries a failed batch operation per item and collects the IDs of the
+     * items whose individual retry also failed.
+     *
+     * @param items Items the failed batch consisted of.
+     * @param operation Operation to retry for a single item.
+     * @param getId Extracts the script ID from an item.
+     *
+     * @returns IDs of items whose individual retry was rejected.
+     */
+    private static async retryFailedBatch<T>(
+        items: T[],
+        operation: (item: T) => Promise<void>,
+        getId: (item: T) => string,
+    ): Promise<string[]> {
+        const retries = await Promise.allSettled(items.map((item) => operation(item)));
+
+        const failedIds: string[] = [];
+        retries.forEach((retry, index) => {
+            const item = items[index];
+            if (retry.status === 'rejected' && item) {
+                failedIds.push(getId(item));
+            }
+        });
+
+        return failedIds;
     }
 
     /**

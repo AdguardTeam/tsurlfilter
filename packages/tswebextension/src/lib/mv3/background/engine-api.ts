@@ -263,12 +263,17 @@ export class EngineApi {
      *
      * @param url Hostname to check.
      * @param option Mask of enabled cosmetic types.
-     * @param ignorePath If true, skips the `$path` modifier check for
+     * @param options Optional match modifiers.
+     * @param options.ignorePath If true, skips the `$path` modifier check for
      * JS/scriptlet rules only. Defaults to false.
      *
      * @returns Cosmetic result.
      */
-    public getCosmeticResult(url: string, option: CosmeticOption, ignorePath = false): CosmeticResult {
+    public getCosmeticResult(
+        url: string,
+        option: CosmeticOption,
+        options: { ignorePath?: boolean } = {},
+    ): CosmeticResult {
         if (!this.engine) {
             return new CosmeticResult();
         }
@@ -277,7 +282,7 @@ export class EngineApi {
 
         const request = new Request(url, frameUrl, RequestType.Document);
 
-        return this.engine.getCosmeticResult(request, option, ignorePath);
+        return this.engine.getCosmeticResult(request, option, options);
     }
 
     /**
@@ -294,18 +299,18 @@ export class EngineApi {
      * Searched for cosmetic rules by match query.
      *
      * @param matchQuery Query against which the request would be matched.
-     * @param ignorePath If true, skips the `$path` modifier check for
+     * @param options Optional match modifiers.
+     * @param options.ignorePath If true, skips the `$path` modifier check for
      * JS/scriptlet rules only. Defaults to false.
-     * @param optionMask If set, narrows the computed cosmetic option to the
-     * given category bits (e.g. `CosmeticOption.CosmeticOptionJS` to match
-     * only JS/scriptlet rules, skipping CSS/elemhide/HTML lookups).
+     * @param options.optionMask If set, narrows the computed cosmetic option
+     * to the given category bits (e.g. `CosmeticOption.CosmeticOptionJS` to
+     * match only JS/scriptlet rules, skipping CSS/elemhide/HTML lookups).
      *
      * @returns Cosmetic result.
      */
     public matchCosmetic(
         matchQuery: MatchQuery,
-        ignorePath = false,
-        optionMask?: CosmeticOption,
+        { ignorePath = false, optionMask }: { ignorePath?: boolean; optionMask?: CosmeticOption } = {},
     ): CosmeticResult {
         if (!this.engine || !isHttpRequest(matchQuery.frameUrl)) {
             return new CosmeticResult();
@@ -322,7 +327,11 @@ export class EngineApi {
             ? cosmeticOption
             : cosmeticOption & optionMask;
 
-        return this.getCosmeticResult(matchQuery.requestUrl, maskedOption, ignorePath);
+        return this.getCosmeticResult(
+            matchQuery.requestUrl,
+            maskedOption,
+            { ignorePath },
+        );
     }
 
     /**
@@ -370,20 +379,25 @@ export class EngineApi {
      *
      * @param hostname Hostname to match the exception domains against.
      * @param rule Cosmetic rule to check.
-     * @param ignoreExceptionPath If true, the `$path` modifier of exceptions
-     * is skipped, i.e. an exception applying to any path of the hostname
-     * cancels the rule. Defaults to false.
+     * @param options Optional match modifiers.
+     * @param options.ignoreExceptionPath If true, the `$path` modifier of
+     * exceptions is skipped, i.e. an exception applying to any path of the
+     * hostname cancels the rule. Defaults to false.
      *
      * @returns `true` if the rule is cancelled by an exception, `false`
      * otherwise or when the engine is not started.
      */
-    public isCosmeticRuleAllowlisted(hostname: string, rule: CosmeticRule, ignoreExceptionPath = false): boolean {
+    public isCosmeticRuleAllowlisted(
+        hostname: string,
+        rule: CosmeticRule,
+        { ignoreExceptionPath = false }: { ignoreExceptionPath?: boolean } = {},
+    ): boolean {
         if (!this.engine) {
             return false;
         }
 
         const request = new Request(`https://${hostname}/`, null, RequestType.Document);
-        return this.engine.isCosmeticRuleAllowlisted(request, rule, ignoreExceptionPath);
+        return this.engine.isCosmeticRuleAllowlisted(request, rule, { ignoreExceptionPath });
     }
 
     /**

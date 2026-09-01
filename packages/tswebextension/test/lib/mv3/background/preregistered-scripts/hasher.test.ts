@@ -2,10 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
     CLEANUP_FILENAME,
-    computeJsRuleHash,
     computeRuleHash,
     computeRuleHashCached,
-    computeScriptletHash,
     COORDINATION_KEY,
     expandHostnames,
     getRuleFilename,
@@ -52,32 +50,6 @@ describe('hashString', () => {
     });
 });
 
-describe('computeScriptletHash / computeJsRuleHash', () => {
-    it('produces different scriptlet hashes for different args', async () => {
-        const hash1 = await computeScriptletHash('foo', ['a']);
-        const hash2 = await computeScriptletHash('foo', ['b']);
-        expect(hash1).not.toBe(hash2);
-    });
-
-    it('produces the same scriptlet hash for the same name/args', async () => {
-        const hash1 = await computeScriptletHash('foo', ['a', 'b']);
-        const hash2 = await computeScriptletHash('foo', ['a', 'b']);
-        expect(hash1).toBe(hash2);
-    });
-
-    it('produces the same JS rule hash for the same body', async () => {
-        const hash1 = await computeJsRuleHash('window._foo = 1;');
-        const hash2 = await computeJsRuleHash('window._foo = 1;');
-        expect(hash1).toBe(hash2);
-    });
-
-    it('produces different JS rule hashes for different bodies', async () => {
-        const hash1 = await computeJsRuleHash('window._foo = 1;');
-        const hash2 = await computeJsRuleHash('window._foo = 2;');
-        expect(hash1).not.toBe(hash2);
-    });
-});
-
 describe('computeRuleHash', () => {
     const jsRule = (content: string, pathModifier?: { pattern: string }): any => ({
         isScriptlet: false,
@@ -91,22 +63,28 @@ describe('computeRuleHash', () => {
         pathModifier,
     });
 
-    it('produces the same hash for a JS rule with no $path modifier as computeJsRuleHash', async () => {
-        expect(await computeRuleHash(jsRule('window._foo = 1;'))).toBe(
-            await computeJsRuleHash('window._foo = 1;'),
-        );
+    it('produces different scriptlet hashes for different args', async () => {
+        const hash1 = await computeRuleHash(scriptletRule('foo', ['a']));
+        const hash2 = await computeRuleHash(scriptletRule('foo', ['b']));
+        expect(hash1).not.toBe(hash2);
     });
 
-    it('leaf hashers with an explicit $path pattern match computeRuleHash', async () => {
-        const pathPattern = '/watch';
+    it('produces the same scriptlet hash for the same name/args', async () => {
+        const hash1 = await computeRuleHash(scriptletRule('foo', ['a', 'b']));
+        const hash2 = await computeRuleHash(scriptletRule('foo', ['a', 'b']));
+        expect(hash1).toBe(hash2);
+    });
 
-        expect(await computeRuleHash(jsRule('window._foo = 1;', { pattern: pathPattern }))).toBe(
-            await computeJsRuleHash('window._foo = 1;', pathPattern),
-        );
+    it('produces the same JS rule hash for the same body', async () => {
+        const hash1 = await computeRuleHash(jsRule('window._foo = 1;'));
+        const hash2 = await computeRuleHash(jsRule('window._foo = 1;'));
+        expect(hash1).toBe(hash2);
+    });
 
-        expect(await computeRuleHash(scriptletRule('set-cookie', ['a'], { pattern: pathPattern }))).toBe(
-            await computeScriptletHash('set-cookie', ['a'], pathPattern),
-        );
+    it('produces different JS rule hashes for different bodies', async () => {
+        const hash1 = await computeRuleHash(jsRule('window._foo = 1;'));
+        const hash2 = await computeRuleHash(jsRule('window._foo = 2;'));
+        expect(hash1).not.toBe(hash2);
     });
 
     it('produces a different hash for a JS rule with a $path modifier than without one', async () => {
@@ -119,12 +97,6 @@ describe('computeRuleHash', () => {
         const hash1 = await computeRuleHash(jsRule('window._foo = 1;', { pattern: '/watch' }));
         const hash2 = await computeRuleHash(jsRule('window._foo = 1;', { pattern: '/embed' }));
         expect(hash1).not.toBe(hash2);
-    });
-
-    it('produces the same hash for a scriptlet rule with no $path modifier as computeScriptletHash', async () => {
-        expect(await computeRuleHash(scriptletRule('set-cookie', ['a']))).toBe(
-            await computeScriptletHash('set-cookie', ['a']),
-        );
     });
 
     it('produces a different hash for a scriptlet rule with a $path modifier than without one', async () => {

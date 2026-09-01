@@ -4,6 +4,7 @@ import {
     describe,
     expect,
     it,
+    type MockInstance,
     vi,
 } from 'vitest';
 
@@ -109,6 +110,48 @@ const makeFrameContext = (
     },
 });
 
+/**
+ * Runs {@link CosmeticApi.applyCosmeticRules} for the given coverage and
+ * frame, returning spies on the local and remote application paths.
+ *
+ * @param coveredEntries Covered hostname → rule hashes entries.
+ * @param frame Frame context returned by the tabs API mock, or a resolver
+ * receiving the requested frame id.
+ * @param frameId Frame id the rules are applied to.
+ * @param preExistingDocument Whether to pass `preExistingDocument`.
+ *
+ * @returns Spies on `applyLocalCosmeticRules` and `applyRemoteCosmeticRules`.
+ */
+const runCosmeticApply = async (
+    coveredEntries: Array<[string, Set<string>]>,
+    frame: object | ((frameId: number) => object),
+    frameId = 0,
+    preExistingDocument = false,
+): Promise<{ applyLocal: MockInstance; applyRemote: MockInstance }> => {
+    CosmeticApi.setPreregisteredScriptRules(new Map(coveredEntries));
+
+    const frameMock = vi.mocked(tabsApi.getFrameContext);
+    if (typeof frame === 'function') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        frameMock.mockImplementation((_tabId: number, id: number) => frame(id) as any);
+    } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        frameMock.mockReturnValue(frame as any);
+    }
+
+    const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
+    const applyRemote = vi.spyOn(CosmeticApi as any, 'applyRemoteCosmeticRules');
+
+    await CosmeticApi.applyCosmeticRules({
+        tabId: 1,
+        frameId,
+        shouldApplyCss: false,
+        preExistingDocument,
+    });
+
+    return { applyLocal, applyRemote };
+};
+
 describe('CosmeticApi — preregistered script rules', () => {
     beforeEach(() => {
         // Reset to an empty map before every test.
@@ -122,63 +165,37 @@ describe('CosmeticApi — preregistered script rules', () => {
 
     describe('setPreregisteredScriptRules / applyCosmeticRules', () => {
         it('skips local rules for an exact preregistered domain match', async () => {
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
+            const { applyLocal } = await runCosmeticApply(
+                [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                makeFrameContext('https://youtube.com/watch?v=123'),
             );
-            vi.mocked(tabsApi.getFrameContext).mockReturnValue(
-                makeFrameContext('https://youtube.com/watch?v=123') as any,
-            );
-
-            const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
-            const applyRemote = vi.spyOn(CosmeticApi as any, 'applyRemoteCosmeticRules');
-
-            await CosmeticApi.applyCosmeticRules({ tabId: 1, frameId: 0, shouldApplyCss: false });
 
             expect(applyLocal).not.toHaveBeenCalled();
-            expect(applyRemote).toHaveBeenCalled();
         });
 
         it('skips local rules for a mixed-case URL host (hosts are matched case-insensitively)', async () => {
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
+            const { applyLocal } = await runCosmeticApply(
+                [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                makeFrameContext('https://YouTube.COM/watch?v=123'),
             );
-            vi.mocked(tabsApi.getFrameContext).mockReturnValue(
-                makeFrameContext('https://YouTube.COM/watch?v=123') as any,
-            );
-
-            const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
-
-            await CosmeticApi.applyCosmeticRules({ tabId: 1, frameId: 0, shouldApplyCss: false });
 
             expect(applyLocal).not.toHaveBeenCalled();
         });
 
         it('skips local rules when preregistered domain uses www and frame url is www', async () => {
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['www.youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
+            const { applyLocal } = await runCosmeticApply(
+                [['www.youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                makeFrameContext('https://www.youtube.com/watch?v=123'),
             );
-            vi.mocked(tabsApi.getFrameContext).mockReturnValue(
-                makeFrameContext('https://www.youtube.com/watch?v=123') as any,
-            );
-
-            const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
-
-            await CosmeticApi.applyCosmeticRules({ tabId: 1, frameId: 0, shouldApplyCss: false });
 
             expect(applyLocal).not.toHaveBeenCalled();
         });
 
         it('does NOT skip local rules for a subdomain (subdomains are not preregistered)', async () => {
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
+            const { applyLocal } = await runCosmeticApply(
+                [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                makeFrameContext('https://music.youtube.com/'),
             );
-            vi.mocked(tabsApi.getFrameContext).mockReturnValue(
-                makeFrameContext('https://music.youtube.com/') as any,
-            );
-
-            const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
-
-            await CosmeticApi.applyCosmeticRules({ tabId: 1, frameId: 0, shouldApplyCss: false });
 
             expect(applyLocal).toHaveBeenCalled();
         });
@@ -186,63 +203,41 @@ describe('CosmeticApi — preregistered script rules', () => {
         // eslint-disable-next-line max-len
         it('does NOT skip local rules when the domain only ends with the registered name (not a subdomain)', async () => {
             // "notyoutube.com" ends with "youtube.com" but is not a subdomain
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
+            const { applyLocal } = await runCosmeticApply(
+                [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                makeFrameContext('https://notyoutube.com/'),
             );
-            vi.mocked(tabsApi.getFrameContext).mockReturnValue(
-                makeFrameContext('https://notyoutube.com/') as any,
-            );
-
-            const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
-
-            await CosmeticApi.applyCosmeticRules({ tabId: 1, frameId: 0, shouldApplyCss: false });
 
             expect(applyLocal).toHaveBeenCalled();
         });
 
         it('applies local rules for a hostless frame URL with no HTTP(S) ancestor (about:blank)', async () => {
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['example.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
+            const { applyLocal } = await runCosmeticApply(
+                [['example.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                makeFrameContext('about:blank'),
             );
-            vi.mocked(tabsApi.getFrameContext).mockReturnValue(
-                makeFrameContext('about:blank') as any,
-            );
-
-            const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
-
-            await CosmeticApi.applyCosmeticRules({ tabId: 1, frameId: 0, shouldApplyCss: false });
 
             expect(applyLocal).toHaveBeenCalled();
         });
 
         it('skips local rules for an opaque frame whose parent is a preregistered host', async () => {
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
-            );
             const childFrame = { ...makeFrameContext('about:blank'), frameId: 1, parentFrameId: 0 };
             const parentFrame = { ...makeFrameContext('https://youtube.com/'), frameId: 0, parentFrameId: -1 };
-            vi.mocked(tabsApi.getFrameContext).mockImplementation(
-                ((tabId: number, frameId: number) => (frameId === 1 ? childFrame : parentFrame)) as any,
+
+            const { applyLocal } = await runCosmeticApply(
+                [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                (frameId: number) => (frameId === 1 ? childFrame : parentFrame),
+                1,
             );
-
-            const applyLocal = vi.spyOn(CosmeticApi as any, 'applyLocalCosmeticRules');
-
-            await CosmeticApi.applyCosmeticRules({ tabId: 1, frameId: 1, shouldApplyCss: false });
 
             expect(applyLocal).not.toHaveBeenCalled();
         });
 
         it('always applies remote rules regardless of preregistered domain match', async () => {
-            CosmeticApi.setPreregisteredScriptRules(
-                new Map([['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]]),
+            const { applyRemote } = await runCosmeticApply(
+                [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                makeFrameContext('https://youtube.com/'),
             );
-            vi.mocked(tabsApi.getFrameContext).mockReturnValue(
-                makeFrameContext('https://youtube.com/') as any,
-            );
-
-            const applyRemote = vi.spyOn(CosmeticApi as any, 'applyRemoteCosmeticRules');
-
-            await CosmeticApi.applyCosmeticRules({ tabId: 1, frameId: 0, shouldApplyCss: false });
 
             expect(applyRemote).toHaveBeenCalled();
         });
