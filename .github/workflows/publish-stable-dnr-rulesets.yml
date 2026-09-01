@@ -9,6 +9,43 @@ name: Publish stable DNR rulesets
 # publishes via trusted npm. Lines whose branch has not been migrated to the
 # current CI are skipped gracefully (see the resolve-lines job) so the runs
 # neither fail nor spam Slack during the backport window.
+#
+# npm rate limits (HTTP 429). The registry/Cloudflare aggressively throttles
+# GitHub-hosted ubuntu-latest egress IPs — which is where the shared
+# deploy-to-npm workflow runs its publishes — and a fresh publish of
+# @adguard/dnr-rulesets is an expensive registry write (~22 000 published
+# versions, ~79 MB packument, ~47 MB tarball). Five back-to-back publishes
+# blow a burst budget of roughly three per short window, so without
+# mitigation ~2 of the 5 lines failed every round (even the pre-publish
+# packument GET got 429'd, and npm's ~70 s built-in retry is shorter than the
+# registry's throttle window). We only control this repository, so the fix is
+# three repo-local measures (the shared workflow repo is out of scope):
+#   1. Staggering. The publish matrix is unrolled into one job per line,
+#      chained by spacer jobs (~7 minutes) so the five registry writes are
+#      always minutes apart. A reusable-workflow job (`uses:`) cannot contain
+#      steps, so the sleep must live in a separate spacer job between the
+#      publish jobs; chaining via explicit `needs` (rather than a delay job
+#      inside one matrix) is what actually puts time *between* publishes.
+#   2. Idempotency. A self-hosted check job per line verifies the exact
+#      <line>.<timestamp> version is not already on npm before the publish, so
+#      any retried execution — GitHub's "re-run failed jobs", the retry pass
+#      below, or a first attempt whose PUT actually landed server-side —
+#      skips instead of dying with a 409 conflict.
+#   3. A serialized retry pass. After the primary chain, every line whose
+#      publish failed gets one second chance through the same deploy-to-npm
+#      workflow, preceded by a 10-minute backoff and the same existence
+#      re-check. Retries only consume the npm budget for versions that
+#      genuinely never landed.
+# Trade-off: the staggered round now spans roughly 45–75 minutes instead of
+# ~15, so lines published after the 00:30/12:30 browser-extension auto-build
+# window are only consumed by the next window 12 h later. That is still
+# strictly better than the previous state, in which ~2 of 5 lines failed to
+# publish at all and then stayed stale until the next round. Line order
+# remains the existing ALL_LINES order (3.3 first).
+# Limitation: our own jobs run on the self-hosted team-extensions runners
+# (stable egress IPs), but the shared deploy-to-npm workflow pins its own
+# runner (ubuntu-latest) for the actual publishes. That runner choice lives
+# in the out-of-scope shared repository and cannot be changed from here.
 
 on:
   schedule:
@@ -17,9 +54,11 @@ on:
     # '30 */12 * * *') picks up a fresh @adguard/dnr-rulesets only every 12 h
     # (00:30/12:30 UTC), so only the rounds right before it were ever consumed
     # and publishing hourly — five packages per round — kept tripping npm rate
-    # limits (HTTP 429). Running at :17 keeps the new rulesets on npm ~13
-    # minutes before the extension build collects them, and the :17 minute
-    # stays off GitHub's busiest top-of-hour slots (see the schedule docs).
+    # limits (HTTP 429). Running at :17 keeps the first line(s) on npm before
+    # the extension build collects them (later staggered lines land after the
+    # window and are picked up by the following cycle — see the header), and
+    # the :17 minute stays off GitHub's busiest top-of-hour slots (see the
+    # schedule docs).
     - cron: '17 0,12 * * *'
   workflow_dispatch:
     inputs:
@@ -28,8 +67,9 @@ on:
         required: false
         type: string
 
-# Rounds can overrun the hour (five Docker builds on the shared runner pool);
-# serialize them so two runs never publish overlapping timestamped versions.
+# Rounds can overrun the hour (five Docker builds plus the staggered publish
+# chain on the shared runner pool); serialize them so two runs never publish
+# overlapping timestamped versions.
 concurrency:
   group: publish-stable-dnr-rulesets
   cancel-in-progress: false
@@ -44,6 +84,15 @@ jobs:
     timeout-minutes: 10
     outputs:
       matrix: ${{ steps.lines.outputs.matrix }}
+      # Per-line "this line is in the round" flags for the unrolled publish
+      # chain below (the JSON `matrix` is only consumed by the build matrix
+      # job; per-line jobs gate on these booleans instead of re-parsing it).
+      # Output keys cannot contain dots, hence 3.3 -> line-3-3.
+      line-3-3: ${{ steps.lines.outputs.line-3-3 }}
+      line-4-0: ${{ steps.lines.outputs.line-4-0 }}
+      line-4-1: ${{ steps.lines.outputs.line-4-1 }}
+      line-4-2: ${{ steps.lines.outputs.line-4-2 }}
+      line-5-0: ${{ steps.lines.outputs.line-5-0 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -79,6 +128,9 @@ jobs:
           # probe the tree — no full clones, no gh dependency.
           INCLUDE=""
           for line in $LINES; do
+            # Flag output for this line; left unset when the line is skipped,
+            # which the publish/check jobs read as "not in this round".
+            flag="line-${line//./-}"
             ref="refs/heads/stable/dnr-rulesets-${line}"
             if git fetch -q --depth=1 origin "${ref}" 2>/dev/null \
               && git cat-file -e "FETCH_HEAD:scripts/inject-package-versions.mjs" 2>/dev/null \
@@ -88,6 +140,7 @@ jobs:
               && git show "FETCH_HEAD:Dockerfile" 2>/dev/null | grep -q 'dnr-rulesets-auto-build-output'; then
               if [ -n "$INCLUDE" ]; then INCLUDE="${INCLUDE},"; fi
               INCLUDE="${INCLUDE}{\"line\":\"${line}\"}"
+              echo "${flag}=true" >> "$GITHUB_OUTPUT"
             else
               if [ -n "$REQUESTED_LINE" ]; then
                 # An explicit dispatch asked for this line: fail loudly instead
@@ -99,8 +152,8 @@ jobs:
             fi
           done
 
-          # An empty schedule round (no lines migrated yet) stays green: the
-          # build/publish matrices are gated on include[0] != null, so the run
+          # An empty schedule round (no lines migrated yet) stays green: every
+          # downstream job gates on its line being present, so the run
           # completes without a Slack failure alert.
           echo "matrix={\"include\":[${INCLUDE}]}" >> "$GITHUB_OUTPUT"
 
@@ -162,31 +215,662 @@ jobs:
         with:
           name: dnr-rulesets-${{ matrix.line }}
           path: build-output/artifacts/dnr-rulesets.tgz
-          # These tarballs only hand off to the publish job in the same run —
-          # a 1-day retention keeps the hand-off working without accumulating
-          # ~120 artifacts a day at the 90-day default.
+          # These tarballs only hand off to the (publish, retry) jobs in the
+          # same run — a 1-day retention keeps the hand-off working without
+          # accumulating ~120 artifacts a day at the 90-day default.
           retention-days: 1
           if-no-files-found: error
 
-  publish-stable-dnr-rulesets:
-    name: Publish DNR rulesets ${{ matrix.line }}
+  # ---------------------------------------------------------------------------
+  # Staggered primary publish chain.
+  #
+  # The old `publish-stable-dnr-rulesets` matrix job is unrolled into one job
+  # per line. Serialization no longer needs `strategy.max-parallel: 1` — each
+  # publish job `needs` the previous spacer job, so the next publish can never
+  # start until the previous one (and its ~7 minute spacer) finished, which is
+  # strictly stronger than max-parallel. Every chain link uses an explicit
+  # `if:` because a custom condition overrides GitHub's implicit
+  # "all `needs` succeeded" rule: without it, a failed/skipped predecessor
+  # would transitively skip the whole rest of the chain and a failed line
+  # would block its healthy successors.
+  #
+  # Each line also gets a ~cheap self-hosted existence check first, because
+  # running it on the stable-egress team-extensions runner (instead of the
+  # 429-prone ubuntu-latest used by the shared publish workflow) makes the
+  # check itself reliable. The check reads the exact version out of the built
+  # artifact — it cannot be recomputed, since the <line>.<timestamp> stamp is
+  # taken once during the build.
+  # ---------------------------------------------------------------------------
+
+  check-3-3:
+    name: Check 3.3 version not on npm yet
     needs: [resolve-lines, build-stable-dnr-rulesets]
-    # A failed build leg must not suppress publication of the healthy lines:
-    # without this, a matrix `needs` that has any failure skips this whole job.
-    # Each line publishes only its own artifact, so a broken line fails alone.
-    if: ${{ needs.resolve-lines.result == 'success' && !cancelled() && fromJSON(needs.resolve-lines.outputs.matrix).include[0] != null }}
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix: ${{ fromJSON(needs.resolve-lines.outputs.matrix) }}
+    # Custom `if` so a failed build leg for ANOTHER line cannot transitively
+    # skip this line's check (failed lines must not block healthy ones). A
+    # missing artifact for THIS line fails this job's download below, which
+    # in turn skips only this line's publish.
+    if: ${{ needs.resolve-lines.result == 'success' && needs.resolve-lines.outputs.line-3-3 == 'true' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 10
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Download built package
+        # Keep the major in lockstep with actions/upload-artifact (v7) used by
+        # the build job — an artifact download must understand the format the
+        # uploader wrote.
+        uses: actions/download-artifact@v7
+        with:
+          name: dnr-rulesets-3.3
+          path: artifact
+
+      - name: Check target version on npm
+        id: version-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=artifact/dnr-rulesets.tgz
+          VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          # Per-version registry endpoint: a tiny filtered response, far
+          # cheaper than the ~79 MB packument `npm view` would have to fetch.
+          HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' \
+            "https://registry.npmjs.org/@adguard/dnr-rulesets/${VERSION}" 2>/dev/null) || HTTP=000
+          case "$HTTP" in
+            200)
+              echo "::warning::Version ${VERSION} already exists on npm; skipping this publish (likely a previous attempt landed)"
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              # 404 = absent; 429/5xx/timeout = unverifiable, assume absent.
+              # An existence check must never block a legitimate publish — the
+              # publish itself is the source of truth, and a wrong "absent"
+              # only risks a single throttled publish attempt (for which the
+              # retry pass below is the backstop).
+              if [ "$HTTP" != "404" ]; then
+                echo "::warning::npm version check returned ${HTTP} for ${VERSION}; assuming not published and proceeding"
+              fi
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  publish-3-3:
+    name: Publish DNR rulesets 3.3
+    needs: [resolve-lines, build-stable-dnr-rulesets, check-3-3]
+    # Custom `if` (see chain comment): our own check must have succeeded with
+    # the version absent; the other lines' outcomes are irrelevant here.
+    if: ${{ !cancelled() && needs.resolve-lines.outputs.line-3-3 == 'true' && needs.check-3-3.result == 'success' && needs.check-3-3.outputs.exists == 'false' }}
     uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
     with:
-      artifact-name: dnr-rulesets-${{ matrix.line }}
+      artifact-name: dnr-rulesets-3.3
       package-file: dnr-rulesets.tgz
-      # Per-line dist-tag so a scheduled publish from an old line can never move
-      # `@adguard/dnr-rulesets@latest` backwards, and no GitHub environment
-      # (empty string) so unattended scheduled runs don't hang on approval.
-      tag: stable-${{ matrix.line }}
+      # Per-line dist-tag so a scheduled publish from an old line can never
+      # move `@adguard/dnr-rulesets@latest` backwards, and no GitHub
+      # environment (empty string) so unattended scheduled runs don't hang on
+      # approval.
+      tag: stable-3.3
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  space-4-0:
+    name: Wait before 4.0 publish
+    needs: [resolve-lines, publish-3-3]
+    # ~7 minute spacer (middle of the 5–10 minute target from the header)
+    # between consecutive registry writes. Runs even when publish-3-3 FAILED —
+    # after a 429 the throttle window must elapse before the next line tries —
+    # but is skipped when publish-3-3 was skipped (its version already
+    # existed: nothing consumed the npm budget, so no spacing is needed; then
+    # `result != 'failure'` on publish-4-0 lets it proceed).
+    if: ${{ needs.resolve-lines.outputs.line-4-0 == 'true' && needs.publish-3-3.result != 'skipped' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 15
+    steps:
+      - name: Wait
+        shell: bash
+        run: sleep 420
+
+  check-4-0:
+    name: Check 4.0 version not on npm yet
+    needs: [resolve-lines, build-stable-dnr-rulesets]
+    if: ${{ needs.resolve-lines.result == 'success' && needs.resolve-lines.outputs.line-4-0 == 'true' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 10
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Download built package
+        uses: actions/download-artifact@v7
+        with:
+          name: dnr-rulesets-4.0
+          path: artifact
+
+      - name: Check target version on npm
+        id: version-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=artifact/dnr-rulesets.tgz
+          VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' \
+            "https://registry.npmjs.org/@adguard/dnr-rulesets/${VERSION}" 2>/dev/null) || HTTP=000
+          case "$HTTP" in
+            200)
+              echo "::warning::Version ${VERSION} already exists on npm; skipping this publish (likely a previous attempt landed)"
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              if [ "$HTTP" != "404" ]; then
+                echo "::warning::npm version check returned ${HTTP} for ${VERSION}; assuming not published and proceeding"
+              fi
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  publish-4-0:
+    name: Publish DNR rulesets 4.0
+    needs: [resolve-lines, build-stable-dnr-rulesets, check-4-0, space-4-0]
+    # `space-4-0.result != 'failure'` rather than `== 'success'`: the spacer is
+    # intentionally skipped in partial rounds (e.g. a dispatch that includes
+    # 4.0 but not 3.3) and a skipped spacer must not swallow this line. A
+    # spacer FAILURE (runner/infra blip) does skip the publish — spacing is
+    # the point, so we refuse to publish back-to-back after a hiccup; the next
+    # line's chain self-heals since it only needs this one to not have failed.
+    if: ${{ !cancelled() && needs.resolve-lines.outputs.line-4-0 == 'true' && needs.check-4-0.result == 'success' && needs.check-4-0.outputs.exists == 'false' && needs.space-4-0.result != 'failure' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-4.0
+      package-file: dnr-rulesets.tgz
+      tag: stable-4.0
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  space-4-1:
+    name: Wait before 4.1 publish
+    needs: [resolve-lines, publish-4-0]
+    if: ${{ needs.resolve-lines.outputs.line-4-1 == 'true' && needs.publish-4-0.result != 'skipped' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 15
+    steps:
+      - name: Wait
+        shell: bash
+        run: sleep 420
+
+  check-4-1:
+    name: Check 4.1 version not on npm yet
+    needs: [resolve-lines, build-stable-dnr-rulesets]
+    if: ${{ needs.resolve-lines.result == 'success' && needs.resolve-lines.outputs.line-4-1 == 'true' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 10
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Download built package
+        uses: actions/download-artifact@v7
+        with:
+          name: dnr-rulesets-4.1
+          path: artifact
+
+      - name: Check target version on npm
+        id: version-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=artifact/dnr-rulesets.tgz
+          VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' \
+            "https://registry.npmjs.org/@adguard/dnr-rulesets/${VERSION}" 2>/dev/null) || HTTP=000
+          case "$HTTP" in
+            200)
+              echo "::warning::Version ${VERSION} already exists on npm; skipping this publish (likely a previous attempt landed)"
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              if [ "$HTTP" != "404" ]; then
+                echo "::warning::npm version check returned ${HTTP} for ${VERSION}; assuming not published and proceeding"
+              fi
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  publish-4-1:
+    name: Publish DNR rulesets 4.1
+    needs: [resolve-lines, build-stable-dnr-rulesets, check-4-1, space-4-1]
+    if: ${{ !cancelled() && needs.resolve-lines.outputs.line-4-1 == 'true' && needs.check-4-1.result == 'success' && needs.check-4-1.outputs.exists == 'false' && needs.space-4-1.result != 'failure' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-4.1
+      package-file: dnr-rulesets.tgz
+      tag: stable-4.1
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  space-4-2:
+    name: Wait before 4.2 publish
+    needs: [resolve-lines, publish-4-1]
+    if: ${{ needs.resolve-lines.outputs.line-4-2 == 'true' && needs.publish-4-1.result != 'skipped' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 15
+    steps:
+      - name: Wait
+        shell: bash
+        run: sleep 420
+
+  check-4-2:
+    name: Check 4.2 version not on npm yet
+    needs: [resolve-lines, build-stable-dnr-rulesets]
+    if: ${{ needs.resolve-lines.result == 'success' && needs.resolve-lines.outputs.line-4-2 == 'true' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 10
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Download built package
+        uses: actions/download-artifact@v7
+        with:
+          name: dnr-rulesets-4.2
+          path: artifact
+
+      - name: Check target version on npm
+        id: version-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=artifact/dnr-rulesets.tgz
+          VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' \
+            "https://registry.npmjs.org/@adguard/dnr-rulesets/${VERSION}" 2>/dev/null) || HTTP=000
+          case "$HTTP" in
+            200)
+              echo "::warning::Version ${VERSION} already exists on npm; skipping this publish (likely a previous attempt landed)"
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              if [ "$HTTP" != "404" ]; then
+                echo "::warning::npm version check returned ${HTTP} for ${VERSION}; assuming not published and proceeding"
+              fi
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  publish-4-2:
+    name: Publish DNR rulesets 4.2
+    needs: [resolve-lines, build-stable-dnr-rulesets, check-4-2, space-4-2]
+    if: ${{ !cancelled() && needs.resolve-lines.outputs.line-4-2 == 'true' && needs.check-4-2.result == 'success' && needs.check-4-2.outputs.exists == 'false' && needs.space-4-2.result != 'failure' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-4.2
+      package-file: dnr-rulesets.tgz
+      tag: stable-4.2
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  space-5-0:
+    name: Wait before 5.0 publish
+    needs: [resolve-lines, publish-4-2]
+    if: ${{ needs.resolve-lines.outputs.line-5-0 == 'true' && needs.publish-4-2.result != 'skipped' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 15
+    steps:
+      - name: Wait
+        shell: bash
+        run: sleep 420
+
+  check-5-0:
+    name: Check 5.0 version not on npm yet
+    needs: [resolve-lines, build-stable-dnr-rulesets]
+    if: ${{ needs.resolve-lines.result == 'success' && needs.resolve-lines.outputs.line-5-0 == 'true' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 10
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Download built package
+        uses: actions/download-artifact@v7
+        with:
+          name: dnr-rulesets-5.0
+          path: artifact
+
+      - name: Check target version on npm
+        id: version-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=artifact/dnr-rulesets.tgz
+          VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' \
+            "https://registry.npmjs.org/@adguard/dnr-rulesets/${VERSION}" 2>/dev/null) || HTTP=000
+          case "$HTTP" in
+            200)
+              echo "::warning::Version ${VERSION} already exists on npm; skipping this publish (likely a previous attempt landed)"
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              if [ "$HTTP" != "404" ]; then
+                echo "::warning::npm version check returned ${HTTP} for ${VERSION}; assuming not published and proceeding"
+              fi
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  publish-5-0:
+    name: Publish DNR rulesets 5.0
+    needs: [resolve-lines, build-stable-dnr-rulesets, check-5-0, space-5-0]
+    if: ${{ !cancelled() && needs.resolve-lines.outputs.line-5-0 == 'true' && needs.check-5-0.result == 'success' && needs.check-5-0.outputs.exists == 'false' && needs.space-5-0.result != 'failure' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-5.0
+      package-file: dnr-rulesets.tgz
+      tag: stable-5.0
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  # ---------------------------------------------------------------------------
+  # Serialized retry pass.
+  #
+  # The shared deploy-to-npm workflow gives us no way to read its npm stderr
+  # (so we cannot distinguish a 429 from other failures), and a reusable
+  # workflow job cannot be retried from within. Instead, every line whose
+  # PRIMARY publish failed gets one second chance below, re-publishing the
+  # same artifact through the same deploy-to-npm workflow.
+  #
+  # Three properties matter here:
+  #   * No overlap with the primary chain. retry-3-3 waits for publish-5-0
+  #     (the last primary), and every later retry waits for the previous
+  #     retry-publish, so this whole phase runs strictly after the primary
+  #     chain and strictly serialized — a retry can never share a throttle
+  #     window with a primary (or another retry) publish.
+  #   * Long backoff. Each retry sleeps 10 minutes first. During a real 429
+  #     loss the registry had ~half an hour to recover by the time the phase
+  #     starts (primary chain length), and the sleep keeps consecutive retry
+  #     publishes ~12 minutes apart.
+  #   * Idempotency. The sleep job re-checks the exact version on npm: if the
+  #     first attempt's PUT actually landed server-side, the retry is skipped
+  #     (the run stays red and Slack still fires — a line that needed a retry
+  #     is worth an alert — but the registry is not hammered with a 409).
+  # ---------------------------------------------------------------------------
+
+  retry-3-3:
+    name: Retry 3.3 (backoff + recheck)
+    needs: [build-stable-dnr-rulesets, publish-3-3, publish-5-0]
+    # Custom `if`: only when THIS line's primary publish failed; publish-5-0
+    # is a barrier to start after the whole primary chain (and may itself be
+    # failed/skipped — the custom `if` keeps this job from being skipped).
+    if: ${{ needs.publish-3-3.result == 'failure' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 20
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Back off
+        shell: bash
+        run: sleep 600
+
+      - name: Download built package
+        uses: actions/download-artifact@v7
+        with:
+          name: dnr-rulesets-3.3
+          path: artifact
+
+      - name: Re-check target version on npm
+        id: version-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=artifact/dnr-rulesets.tgz
+          VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' \
+            "https://registry.npmjs.org/@adguard/dnr-rulesets/${VERSION}" 2>/dev/null) || HTTP=000
+          case "$HTTP" in
+            200)
+              echo "::warning::Version ${VERSION} was already published by the (failed-looking) first attempt; nothing to retry"
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              if [ "$HTTP" != "404" ]; then
+                echo "::warning::npm version check returned ${HTTP} for ${VERSION}; assuming not published and retrying"
+              fi
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  retry-publish-3-3:
+    name: Publish DNR rulesets 3.3 (retry)
+    needs: [retry-3-3]
+    if: ${{ !cancelled() && needs.retry-3-3.result == 'success' && needs.retry-3-3.outputs.exists == 'false' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-3.3
+      package-file: dnr-rulesets.tgz
+      tag: stable-3.3
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  retry-4-0:
+    name: Retry 4.0 (backoff + recheck)
+    needs: [build-stable-dnr-rulesets, publish-4-0, retry-publish-3-3]
+    if: ${{ needs.publish-4-0.result == 'failure' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 20
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Back off
+        shell: bash
+        run: sleep 600
+
+      - name: Download built package
+        uses: actions/download-artifact@v7
+        with:
+          name: dnr-rulesets-4.0
+          path: artifact
+
+      - name: Re-check target version on npm
+        id: version-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=artifact/dnr-rulesets.tgz
+          VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' \
+            "https://registry.npmjs.org/@adguard/dnr-rulesets/${VERSION}" 2>/dev/null) || HTTP=000
+          case "$HTTP" in
+            200)
+              echo "::warning::Version ${VERSION} was already published by the (failed-looking) first attempt; nothing to retry"
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              if [ "$HTTP" != "404" ]; then
+                echo "::warning::npm version check returned ${HTTP} for ${VERSION}; assuming not published and retrying"
+              fi
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  retry-publish-4-0:
+    name: Publish DNR rulesets 4.0 (retry)
+    needs: [retry-4-0]
+    if: ${{ !cancelled() && needs.retry-4-0.result == 'success' && needs.retry-4-0.outputs.exists == 'false' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-4.0
+      package-file: dnr-rulesets.tgz
+      tag: stable-4.0
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  retry-4-1:
+    name: Retry 4.1 (backoff + recheck)
+    needs: [build-stable-dnr-rulesets, publish-4-1, retry-publish-4-0]
+    if: ${{ needs.publish-4-1.result == 'failure' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 20
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Back off
+        shell: bash
+        run: sleep 600
+
+      - name: Download built package
+        uses: actions/download-artifact@v7
+        with:
+          name: dnr-rulesets-4.1
+          path: artifact
+
+      - name: Re-check target version on npm
+        id: version-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=artifact/dnr-rulesets.tgz
+          VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' \
+            "https://registry.npmjs.org/@adguard/dnr-rulesets/${VERSION}" 2>/dev/null) || HTTP=000
+          case "$HTTP" in
+            200)
+              echo "::warning::Version ${VERSION} was already published by the (failed-looking) first attempt; nothing to retry"
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              if [ "$HTTP" != "404" ]; then
+                echo "::warning::npm version check returned ${HTTP} for ${VERSION}; assuming not published and retrying"
+              fi
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  retry-publish-4-1:
+    name: Publish DNR rulesets 4.1 (retry)
+    needs: [retry-4-1]
+    if: ${{ !cancelled() && needs.retry-4-1.result == 'success' && needs.retry-4-1.outputs.exists == 'false' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-4.1
+      package-file: dnr-rulesets.tgz
+      tag: stable-4.1
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  retry-4-2:
+    name: Retry 4.2 (backoff + recheck)
+    needs: [build-stable-dnr-rulesets, publish-4-2, retry-publish-4-1]
+    if: ${{ needs.publish-4-2.result == 'failure' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 20
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Back off
+        shell: bash
+        run: sleep 600
+
+      - name: Download built package
+        uses: actions/download-artifact@v7
+        with:
+          name: dnr-rulesets-4.2
+          path: artifact
+
+      - name: Re-check target version on npm
+        id: version-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=artifact/dnr-rulesets.tgz
+          VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' \
+            "https://registry.npmjs.org/@adguard/dnr-rulesets/${VERSION}" 2>/dev/null) || HTTP=000
+          case "$HTTP" in
+            200)
+              echo "::warning::Version ${VERSION} was already published by the (failed-looking) first attempt; nothing to retry"
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              if [ "$HTTP" != "404" ]; then
+                echo "::warning::npm version check returned ${HTTP} for ${VERSION}; assuming not published and retrying"
+              fi
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  retry-publish-4-2:
+    name: Publish DNR rulesets 4.2 (retry)
+    needs: [retry-4-2]
+    if: ${{ !cancelled() && needs.retry-4-2.result == 'success' && needs.retry-4-2.outputs.exists == 'false' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-4.2
+      package-file: dnr-rulesets.tgz
+      tag: stable-4.2
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  retry-5-0:
+    name: Retry 5.0 (backoff + recheck)
+    needs: [build-stable-dnr-rulesets, publish-5-0, retry-publish-4-2]
+    if: ${{ needs.publish-5-0.result == 'failure' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 20
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Back off
+        shell: bash
+        run: sleep 600
+
+      - name: Download built package
+        uses: actions/download-artifact@v7
+        with:
+          name: dnr-rulesets-5.0
+          path: artifact
+
+      - name: Re-check target version on npm
+        id: version-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=artifact/dnr-rulesets.tgz
+          VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          HTTP=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' \
+            "https://registry.npmjs.org/@adguard/dnr-rulesets/${VERSION}" 2>/dev/null) || HTTP=000
+          case "$HTTP" in
+            200)
+              echo "::warning::Version ${VERSION} was already published by the (failed-looking) first attempt; nothing to retry"
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              if [ "$HTTP" != "404" ]; then
+                echo "::warning::npm version check returned ${HTTP} for ${VERSION}; assuming not published and retrying"
+              fi
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  retry-publish-5-0:
+    name: Publish DNR rulesets 5.0 (retry)
+    needs: [retry-5-0]
+    if: ${{ !cancelled() && needs.retry-5-0.result == 'success' && needs.retry-5-0.outputs.exists == 'false' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-5.0
+      package-file: dnr-rulesets.tgz
+      tag: stable-5.0
       environment: ''
     permissions:
       contents: read
@@ -194,11 +878,11 @@ jobs:
 
   notify-failure:
     name: Notify on failure
-    needs: [resolve-lines, build-stable-dnr-rulesets, publish-stable-dnr-rulesets]
-    # Scheduled jobs get no human eyes: alert the channel when any leg failed
-    # (a cancelled run is not a failure — e.g. a scheduled round that got
-    # superseded by a manual publish). An empty schedule round (no migrated
-    # lines) is not a failure.
+    # Every leg that can fail, so no failure is missed (a cancelled run is
+    # not a failure — e.g. a scheduled round superseded by a manual publish).
+    # An empty schedule round (no migrated lines) is not a failure either:
+    # all per-line jobs skip, `failure()` stays false, no Slack alert.
+    needs: [resolve-lines, build-stable-dnr-rulesets, check-3-3, publish-3-3, check-4-0, publish-4-0, space-4-0, check-4-1, publish-4-1, space-4-1, check-4-2, publish-4-2, space-4-2, check-5-0, publish-5-0, space-5-0, retry-3-3, retry-publish-3-3, retry-4-0, retry-publish-4-0, retry-4-1, retry-publish-4-1, retry-4-2, retry-publish-4-2, retry-5-0, retry-publish-5-0]
     if: ${{ failure() }}
     runs-on: team-extensions
     timeout-minutes: 10
