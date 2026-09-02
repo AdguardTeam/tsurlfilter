@@ -1,11 +1,14 @@
 #!/bin/bash
-# Usage: verify-tarball.sh <tarball> <expected-version>
+# Usage: verify-tarball.sh <tarball> <expected-version> [<expected-name>]
 #
 # Release-time sanity checks for a packed npm tarball produced by
 # `pnpm pack` (entries live under a package/ prefix):
 #   1. package/package.json must be present;
 #   2. its `version` field must equal <expected-version>;
-#   3. the tarball must hold more than five entries.
+#   3. when <expected-name> is given, its `name` field must equal it (the
+#      DevEx bridge passes `@adguard/<package>` so a tampered manifest cannot
+#      publish under a different AK package identity with the org secret);
+#   4. the tarball must hold more than five entries.
 #
 # This logic used to live inline in
 # .github/workflows/_publish-release-monorepo.yml as
@@ -20,6 +23,7 @@ set -euo pipefail
 
 TGZ="$1"
 EXPECTED_VERSION="$2"
+EXPECTED_NAME="${3:-}"
 
 # The listing doubles as an audit trail in the release log.
 tar -tzf "$TGZ"
@@ -37,6 +41,17 @@ if [ "$PACKED_VERSION" != "$EXPECTED_VERSION" ]; then
     exit 1
 fi
 
+# Name check (optional): the DevEx bridge publishes with the org credential and
+# derives the destination package from the tarball, so the embedded name must
+# match the package identity the caller believes it is publishing.
+if [ -n "$EXPECTED_NAME" ]; then
+    PACKED_NAME=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).name))")
+    if [ "$PACKED_NAME" != "$EXPECTED_NAME" ]; then
+        echo "::error::$TGZ has name $PACKED_NAME, expected $EXPECTED_NAME" >&2
+        exit 1
+    fi
+fi
+
 # Entry-count check. `wc -l` reads the listing to EOF, so tar never sees a
 # closed pipe here either.
 FILE_COUNT=$(tar -tzf "$TGZ" | wc -l | tr -d ' ')
@@ -45,4 +60,4 @@ if [ "$FILE_COUNT" -le 5 ]; then
     exit 1
 fi
 
-echo "Verified $TGZ: version $PACKED_VERSION, $FILE_COUNT entries"
+echo "Verified $TGZ: version $PACKED_VERSION${EXPECTED_NAME:+ name $PACKED_NAME}, $FILE_COUNT entries"

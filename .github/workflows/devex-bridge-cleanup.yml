@@ -2,17 +2,21 @@ name: DevEx bridge cleanup
 
 # Fires when a source PR in ext-tsurlfilter is closed (merged or abandoned) and
 # deletes the AK dev versions devex-bridge.yml published for it — this is the
-# required AK cleanup. Nothing else exists to undo: the extension-side PR is
+# primary AK cleanup. Nothing else exists to undo: the extension-side PR is
 # developer-owned, and its package.json/pnpm-lock.yaml pins simply stop
 # resolving once the dev versions are gone (docs require --remove before such
 # a PR could merge).
 #
 # Fail-loud by design: a query failure or an unpublish failure fails the job so
-# a broken cleanup is noticed. If AK policy ever forbids unpublish, fix the
-# policy (or switch to the AK admin API) rather than silencing this. The
-# registry error taxonomy (404 vs 405 vs other) lives in
-# scripts/ci/ak-dev-unpublish.sh, shared with devex-bridge.yml, so the two
-# twins cannot drift.
+# a broken cleanup is noticed. Also reachable via workflow_dispatch
+# (input: pr-number) — an idempotent recovery path so the command can be
+# re-run from the Slack alert instead of being reconstructed by hand. The
+# periodic GC in devex-bridge-sweep.yml is the safety net that converges even
+# when this event was missed or failed. If AK policy ever forbids unpublish,
+# fix the policy (or switch to the AK admin API / TTL) rather than silencing
+# this — the registry error taxonomy (404 vs 405 vs other) lives in
+# scripts/ci/ak-dev-unpublish.sh, shared with devex-bridge.yml and the sweep,
+# so the twins cannot drift.
 #
 # Requires the org variable ARTIFACT_KEEPER_URL (base URL of the Artifact
 # Keeper instance) and the org secret ARTIFACT_KEEPER_API_KEY — the same
@@ -23,61 +27,104 @@ name: DevEx bridge cleanup
 on:
   pull_request:
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: 'PR number whose -dev.pr<N> AK builds to delete (idempotent retry of the close cleanup)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
 
 env:
   BRIDGED_PACKAGES: 'logger css-tokenizer agtree tsurlfilter dnr-rulesets tswebextension'
-  VERSION_SUFFIX: 'pr${{ github.event.pull_request.number }}'
   AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal
 
 jobs:
   cleanup:
     name: Delete AK dev versions for this PR
-    # Fork PRs never produced dev versions; skip them.
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: team-extensions
     timeout-minutes: 15
     permissions:
       contents: read
     steps:
-      - name: Checkout at PR head ref
+      # The same-repository gate MUST be evaluated after the payload is
+      # validated: a closed/merged delivery missing `pull_request.head.repo`
+      # is a malformed payload, not a fork — an ungated preflight validates the
+      # payload first and only skips after positively identifying a fork, so a
+      # broken event can never become a silent green "cleanup did nothing".
+      - name: Resolve target PR and validate payload
+        id: preflight
+        shell: bash
+        env:
+          DISPATCH_PR: ${{ github.event.inputs.pr-number }}
+          EVENT_PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ -z "${DISPATCH_PR}" ]] || ! [[ "${DISPATCH_PR}" =~ ^[0-9]+$ ]]; then
+              echo "::error::workflow_dispatch requires input 'pr-number' (a positive integer) — with no PR number there is no -dev.pr suffix to clean"
+              exit 1
+            fi
+            echo "pr-number=${DISPATCH_PR}" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          # pull_request (closed) event.
+          if [[ -z "${EVENT_PR}" ]] || ! [[ "${EVENT_PR}" =~ ^[0-9]+$ ]]; then
+            echo "::error::PR number missing/invalid in the closed event ('${EVENT_PR}') — cannot compute the -dev.pr suffix"
+            exit 1
+          fi
+          head_repo="${{ github.event.pull_request.head.repo.full_name }}"
+          if [[ -z "${head_repo}" ]]; then
+            echo "::error::closed/merged delivery is missing pull_request.head.repo — cannot tell a fork from a same-repo PR; refusing to silently skip cleanup"
+            exit 1
+          fi
+          if [[ "${head_repo}" != "${REPO}" ]]; then
+            echo "Fork PR (${head_repo}) — no dev versions were published; skipping cleanup"
+            echo "skip=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          echo "pr-number=${EVENT_PR}" >> "${GITHUB_OUTPUT}"
+
+      - name: Checkout at PR head (close) or dispatch ref
         # The `closed` event's merge ref (refs/pull/N/merge) is deleted when the
         # PR closes, so check out the PR head ref, which GitHub retains for the
         # PR's lifetime — this is what makes scripts/ci/ak-dev-unpublish.sh
-        # (reviewed under CODEOWNERS) available to run the cleanup.
+        # (reviewed under CODEOWNERS) available to run the cleanup. On a
+        # workflow_dispatch there is no PR payload; use the ref the dispatch ran
+        # on (normally the default branch).
+        if: steps.preflight.outputs.skip != 'true'
         uses: actions/checkout@v6
         with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/head
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || format('refs/pull/{0}/head', github.event.pull_request.number) }}
 
       - name: Set up Node.js for AK registry access
+        if: steps.preflight.outputs.skip != 'true'
         uses: actions/setup-node@v6
         with:
           node-version: '24'
           registry-url: ${{ env.AK_REGISTRY }}
 
+      # Deletes every `-dev.pr<N>` and `-dev.pr<N>.<sha>` version for this PR
+      # (bounded-prefix match; never crosses into `-dev.pr<N+…>`). Idempotent:
+      # a package that is already absent counts as success, so re-running via
+      # workflow_dispatch after a transient failure converges. Failures are
+      # tallied so one bad package does not hide the others (`set -e` off).
       - name: Delete AK dev versions for this PR
+        if: steps.preflight.outputs.skip != 'true'
         shell: bash
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          SUFFIX: '-dev.${{ env.VERSION_SUFFIX }}'
+          PR_NUMBER: ${{ steps.preflight.outputs.pr-number }}
         run: |
           set -euo pipefail
           echo "::add-mask::${NODE_AUTH_TOKEN}"
-          # The `closed` payload normally carries the PR number, but GitHub docs
-          # warn it can be incomplete for some merged-PR deliveries. There is no
-          # way to reconstruct which versions to delete without it — fail loudly
-          # instead of silently cleaning nothing.
-          if ! [[ "${PR_NUMBER}" =~ ^[0-9]+$ ]]; then
-            echo "::error::PR number missing/invalid in the closed event ('${PR_NUMBER}') — cannot compute the -dev.pr suffix"
-            exit 1
-          fi
           failures=0
           for pkg in ${BRIDGED_PACKAGES}; do
             name="@adguard/${pkg}"
-            if ! bash scripts/ci/ak-dev-unpublish.sh "${name}" "${AK_REGISTRY}" "${SUFFIX}"; then
+            if ! bash scripts/ci/ak-dev-unpublish.sh "${name}" "${AK_REGISTRY}" "-dev.pr${PR_NUMBER}"; then
               echo "::error::Cleanup of ${name} failed"
               failures=$((failures + 1))
             fi
@@ -89,9 +136,10 @@ jobs:
   notify-failure:
     name: Notify cleanup failure
     needs: [cleanup]
-    # Cleanup is the single-fire guard against permanent AK orphans; a failure
-    # here would otherwise only be visible as a red run on an already-closed PR
-    # that nobody watches.
+    # Cleanup is the primary guard against permanent AK orphans; a failure here
+    # would otherwise only be visible as a red run on an already-closed PR that
+    # nobody watches. The message carries the idempotent workflow_dispatch
+    # recovery command so an on-call can retry by PR number.
     if: failure()
     runs-on: team-extensions
     timeout-minutes: 10
@@ -102,5 +150,5 @@ jobs:
         uses: AdGuardSoftwareLimited/actions/actions/slack@master
         with:
           channel: '#adguard-extension-vcs'
-          message: ':x: *devex-bridge-cleanup* failed for PR #${{ github.event.pull_request.number }} — AK may still hold orphaned dev builds. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          message: ':x: *devex-bridge-cleanup* failed for PR #${{ github.event.pull_request.number || github.event.inputs.pr-number }} — AK may still hold orphaned dev builds. Retry: *Run workflow* devex-bridge-cleanup.yml with *pr-number = ${{ github.event.pull_request.number || github.event.inputs.pr-number }}*, or wait for the devex-bridge-sweep GC. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
           color: danger

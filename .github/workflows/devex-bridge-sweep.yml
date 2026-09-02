@@ -1,0 +1,77 @@
+name: DevEx bridge sweep
+
+# Periodic garbage collection for AK dev builds published by devex-bridge.yml.
+# The close-triggered cleanup (devex-bridge-cleanup.yml) fires once per PR and
+# can miss versions (malformed `closed` delivery, failed run, or a publish
+# landing after the event). This sweep enumerates every -dev.pr<N>* version on
+# AK for the bridged packages, checks whether the owning PR is still open via
+# the GitHub API, and deletes the builds whose PR is closed — an idempotent GC
+# that converges even when individual close events were missed or failed.
+#
+# Also reachable by workflow_dispatch:
+#   - no input   -> full sweep (GC of every closed-PR dev build)
+#   - pr-number  -> delete only that PR's builds (targeted recovery)
+# The deletion itself is shared with the other twins via
+# scripts/ci/ak-dev-unpublish.sh (single place for the 404/405/other taxonomy).
+#
+# Requires ARTIFACT_KEEPER_URL + ARTIFACT_KEEPER_API_KEY (same pair as the
+# other bridge workflows) and the default GITHUB_TOKEN (pull-requests: read)
+# for PR state checks.
+
+on:
+  schedule:
+    # Every 6 hours on a :23 offset to avoid peaking with other hourly jobs.
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: 'Only sweep dev builds for this PR number (optional; all closed-PR builds otherwise)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal
+
+jobs:
+  sweep:
+    name: Sweep stale AK dev builds
+    runs-on: team-extensions
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js for AK registry access
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: ${{ env.AK_REGISTRY }}
+
+      - name: Run dev-build sweep
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.inputs.pr-number }}
+        run: node scripts/ci/devex-sweep.mjs
+
+  notify-failure:
+    name: Notify sweep failure
+    needs: [sweep]
+    # A broken sweep silently loses the GC safety net — alert like the twins.
+    if: failure()
+    runs-on: team-extensions
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Send Slack notification
+        uses: AdGuardSoftwareLimited/actions/actions/slack@master
+        with:
+          channel: '#adguard-extension-vcs'
+          message: ':x: *devex-bridge-sweep* failed — the AK GC safety net is broken; orphaned dev builds may be accumulating. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          color: danger

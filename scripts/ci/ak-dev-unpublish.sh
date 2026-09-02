@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 # Unpublish every version of a package on the Artifact Keeper npm registry whose
-# version ends with a given suffix (e.g. '-dev.pr42'). Shared by:
-#   - devex-bridge.yml  (overwrite previous -dev.pr<N> builds before publishing)
-#   - devex-bridge-cleanup.yml  (delete -dev.pr<N> builds when the PR closes)
+# version ends with `-dev.pr<N>` or carries `-dev.pr<N>.<...>` (e.g.
+# '-dev.pr42', '-dev.pr42.2f5d9548'). Shared by:
+#   - devex-bridge.yml  (purge the PR's older -dev.pr<N>* builds after a republish)
+#   - devex-bridge-cleanup.yml  (delete -dev.pr<N>* builds when the PR closes)
+#   - devex-bridge-sweep.yml  (GC of closed PRs' -dev.pr<N>* builds)
 # so the registry error taxonomy (404 vs 405 vs other) lives in ONE place and
-# the two workflows cannot drift again. Requires `npm` and `node`.
+# the workflows cannot drift again. Requires `npm` and `node`.
 #
 # Usage: ak-dev-unpublish.sh <package> <registry> <suffix> [--tolerate-405] [--keep <version>]
+#   <suffix>       The version token to match. Matching is BOUNDED per PR:
+#                  a version matches when <suffix> is followed by end-of-string
+#                  (bare '-dev.pr42') or a dot (head-scoped '-dev.pr42.<sha>').
+#                  '-dev.pr1' never matches '-dev.pr12'.
 #   --tolerate-405   When AK replies 405 (unpublish not allowed), treat it as a
 #                    warning and continue instead of failing. devex-bridge.yml
 #                    passes this (overwrite is best-effort); the cleanup twin
@@ -17,6 +23,7 @@
 # Exit codes:
 #   0  success (nothing to do counts as success)
 #   1  a query or unpublish failed and was not classified as benign
+#   2  usage error (unknown argument); the caller's YAML is misconfigured
 #
 # A query is only treated as "package absent" when the error unambiguously
 # names the package AND is a 404/not-found. A wildcard 404, a wrong registry
@@ -61,14 +68,19 @@ if ! raw="$(npm view "${PACKAGE}" versions --json --registry="${REGISTRY}" --sil
     exit 1
 fi
 
-# endsWith filter: '-dev.pr1' must not match '-dev.pr12'. Keep the --keep
-# versions out of the delete set.
+# Bounded-prefix match: a version matches PR N when the `-dev.pr<N>` token is
+# followed by end-of-string (bare '-dev.pr42') or a dot (head-scoped
+# '-dev.pr42.<sha>'). Keeps '-dev.pr1' away from '-dev.pr12' and
+# '-dev.pr42' away from '-dev.pr420'. The --keep versions are kept out of the
+# delete set.
 keep_list="$(printf '%s\n' "${KEEP[@]:-}")"
 to_delete="$(node -e "
     const raw = JSON.parse(process.argv[1]);
+    const suffix = process.argv[2];
     const keep = new Set(process.argv[3].trim().split('\n').filter(Boolean));
+    const matches = (v) => v.endsWith(suffix) || v.includes(suffix + '.');
     const list = Array.isArray(raw) ? raw : [raw];
-    process.stdout.write(list.filter((v) => v.endsWith(process.argv[2]) && !keep.has(v)).join('\n'));
+    process.stdout.write(list.filter((v) => matches(v) && !keep.has(v)).join('\n'));
 " "${raw}" "${SUFFIX}" "${keep_list}")" || {
     echo "::error::npm view for ${PACKAGE} returned non-JSON (registry misbehaving?):" >&2
     printf '%s\n' "${raw}" >&2

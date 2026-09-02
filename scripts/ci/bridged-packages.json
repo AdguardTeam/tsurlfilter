@@ -1,0 +1,8 @@
+[
+  "logger",
+  "css-tokenizer",
+  "agtree",
+  "tsurlfilter",
+  "dnr-rulesets",
+  "tswebextension"
+]

@@ -1,28 +1,36 @@
 name: DevEx bridge
 
 # Publishes the six tsurlfilter packages consumed by the browser extension to
-# the internal Artifact Keeper npm registry with PR-scoped dev versions
-# (<next-patch>-dev.pr<N>). AK versions are IMMUTABLE: a version is published
-# once and cannot be overwritten or (per AK policy, HTTP 405) reliably
-# unpublished in place. A re-push therefore re-publishes only when this PR
-# bumps a package's CHANGELOG (so next-patch changes); otherwise the same
-# version already on AK is left as-is and the published comment/docs tell the
-# developer to re-run use-dev-builds to refresh the lockfile integrity, not to
-# expect a new tarball. devex-bridge-cleanup.yml deletes the dev versions when
-# the source PR closes; ak-dev-unpublish.sh is the single place the registry
-# error taxonomy (404/405/other) lives.
+# the internal Artifact Keeper npm registry with PR-scoped, HEAD-scoped dev
+# versions: `<next-patch>-dev.pr<N>.<shortsha>` where <shortsha> is the first 8
+# hex of the source PR's head commit. AK versions are IMMUTABLE: a version once
+# published cannot be overwritten in place (a re-publish of the same version
+# returns 409; per AK policy, unpublish may return 405). Because every push
+# carries a NEW head SHA, every synchronize publishes a FRESH version for all
+# six packages — so QA always resolves the current source, not the first
+# push's bits. The pinning tool (use-dev-builds.mjs) resolves the exact
+# head-scoped set, so a partially published matrix fails loudly instead of
+# mixing builds from different heads. devex-bridge-cleanup.yml deletes the
+# `-dev.pr<N>*` versions when the source PR closes, and
+# devex-bridge-sweep.yml runs a periodic GC that converges even when a close
+# event was missed; scripts/ci/ak-dev-unpublish.sh is the single place the
+# registry error taxonomy (404/405/other) and the per-PR suffix matching live.
 # The extension-side PR is deliberately created by the developer, not by CI.
 #
 # Trust boundary (read before enabling): `pull_request` executes this workflow
 # from the PR's merge commit, and GitHub provisions org secrets to same-repo PR
 # runs — so the ARTIFACT_KEEPER_API_KEY reaches code (inline node/bash in this
-# file and the reviewed scripts/ci/{check-pr-open,ak-dev-unpublish}.sh helpers)
-# that any same-repo member who can push here controls. Fork PRs get no secrets
-# and the secret-touching jobs are additionally gated to same-repo PRs, but that
-# does not protect against a same-repo insider. This matches the org model used
-# by build.yml: the repo MUST require approval for fork / outside-collaborator
-# PR runs, and .github/CODEOWNERS requires extensions-maintainers review of this
-# workflow, its cleanup twin, the pinning tool and the shared scripts. The jobs
+# file and the reviewed scripts/ci/{check-pr-open,ak-dev-unpublish,verify-tarball}.sh
+# helpers) that any same-repo member who can push here controls. The publish
+# step re-validates the tarball's embedded package name against
+# `@adguard/<matrix.package>` immediately before publishing, so a tampered
+# manifest cannot publish under a different AK package identity with the org
+# credential. Fork PRs get no secrets and the secret-touching jobs are
+# additionally gated to same-repo PRs, but that does not protect against a
+# same-repo insider. This matches the org model used by build.yml: the repo
+# MUST require approval for fork / outside-collaborator PR runs, and
+# .github/CODEOWNERS requires extensions-maintainers review of this workflow,
+# its cleanup/sweep twins, the pinning tool and the shared scripts. The jobs
 # touching the secret run npm CLI calls / inline node / the small reviewed
 # helper scripts; they never build or execute PR package code.
 #
@@ -49,12 +57,13 @@ env:
   # The six packages the browser extension consumes, published as an
   # indivisible set: cross-package workspace:^ deps are rewritten to the
   # stamped dev versions at pack time, so all six must exist with the SAME
-  # suffix for the set to resolve. This list is duplicated on purpose — it must
-  # exist as an env in devex-bridge.yml and devex-bridge-cleanup.yml, in the
-  # pack/publish matrices below, and in use-dev-builds.mjs — and every copy is
-  # guarded against drift by scripts/ci/check-package-lists.mjs.
+  # suffix for the set to resolve. The single machine-readable source of truth
+  # is scripts/ci/bridged-packages.json; BRIDGED_PACKAGES (shell loops) and the
+  # pack/publish matrices below mirror it and are guarded against drift by
+  # scripts/ci/check-package-lists.mjs (matrices cannot be derived from a file
+  # — the `env` context is unavailable at matrix-parse time — so the guard
+  # keeps the copies honest).
   BRIDGED_PACKAGES: 'logger css-tokenizer agtree tsurlfilter dnr-rulesets tswebextension'
-  VERSION_SUFFIX: 'pr${{ github.event.pull_request.number }}'
   AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal
 
 jobs:
@@ -113,6 +122,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Compute dev version suffix (head-scoped)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: echo "VERSION_SUFFIX=pr${PR_NUMBER}.${HEAD_SHA:0:8}" >> "${GITHUB_ENV}"
+
       - name: Inject development package versions
         uses: AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@master
         with:
@@ -120,12 +135,12 @@ jobs:
           version-suffix: ${{ env.VERSION_SUFFIX }}
 
       # TODO: once ext-shared-actions#15 lands on master and this workflow runs
-      # against it, set-dev-version@master stamps <next-patch>-dev.pr<N>
+      # against it, set-dev-version@master stamps <next-patch>-dev.pr<N>.<shortsha>
       # directly and this step is a real no-op — delete it then. Until #15
       # merges, the action cannot append the suffix, so this step is
-      # load-bearing: without it every `-dev.pr<N>` would actually be plain
-      # `-dev`. A wrong suffix (e.g. an empty VERSION_SUFFIX) is caught by the
-      # "Verify tarball contents" step below. The rewrite preserves the
+      # load-bearing: without it every `-dev.pr<N>.<shortsha>` would actually be
+      # plain `-dev`. A wrong suffix (e.g. an empty VERSION_SUFFIX) is caught by
+      # the "Verify tarball contents" step below. The rewrite preserves the
       # manifest's original indentation and line endings.
       - name: Ensure PR dev-version suffix
         shell: bash
@@ -154,15 +169,19 @@ jobs:
           target: build-${{ matrix.package }}-output
           dest: build-output
 
-      # Same contract as _publish-release-monorepo.yml (scripts/ci/verify-tarball.sh):
-      # a missing or mismatched tarball must fail here, not at publish time. The
-      # script uses extraction-based checks (tar -xOf), NOT `tar -tzf | grep -q`:
-      # under set -o pipefail that pipeline is racy — grep -q exits on the first
+      # Same contract as _publish-release-monorepo.yml (scripts/ci/verify-tarball.sh)
+      # plus a NAME check: the publish step derives the destination package from
+      # the PR-built tarball, so the embedded name must equal the expected AK
+      # identity while the build is still unprivileged. A missing or mismatched
+      # tarball must fail here, not at publish time. The script uses
+      # extraction-based checks (tar -xOf), NOT `tar -tzf | grep -q`: under
+      # set -o pipefail that pipeline is racy — grep -q exits on the first
       # match, GNU tar dies of SIGPIPE ("tar: stdout: write error"), and pipefail
       # propagates the producer's failure as a false "package.json missing" error.
-      # VERSION_SUFFIX is a workflow-level env var, so it is a plain environment
-      # variable in the step shell; its value is built from the numeric PR number
-      # only — no injection surface.
+      # VERSION_SUFFIX is a job-level env var (exported by the compute step
+      # above), so it is a plain environment variable in the step shell; its
+      # value is built from the numeric PR number and a hex SHA only — no
+      # injection surface.
       - name: Verify tarball contents
         shell: bash
         env:
@@ -171,10 +190,10 @@ jobs:
           set -euo pipefail
           TGZ="build-output/artifacts/${PACKAGE}.tgz"
           EXPECTED="$(node -p "require('./packages/${PACKAGE}/package.json').version")"
-          if ! bash scripts/ci/verify-tarball.sh "${TGZ}" "${EXPECTED}"; then
+          if ! bash scripts/ci/verify-tarball.sh "${TGZ}" "${EXPECTED}" "@adguard/${PACKAGE}"; then
             # verify-tarball.sh emits its ::error:: to stderr, which GitHub does
             # not render as an annotation; re-surface it on stdout here.
-            echo "::error::${TGZ} failed verification (expected version ${EXPECTED}) — see output above"
+            echo "::error::${TGZ} failed verification (expected version ${EXPECTED} name @adguard/${PACKAGE}) — see output above"
             exit 1
           fi
           PACKED_VERSION="$(tar -xOf "${TGZ}" package/package.json | node -e "let json = ''; process.stdin.on('data', (d) => json += d).on('end', () => process.stdout.write(JSON.parse(json).version))")"
@@ -235,59 +254,79 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Compute dev version suffix (head-scoped)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: echo "VERSION_SUFFIX=pr${PR_NUMBER}.${HEAD_SHA:0:8}" >> "${GITHUB_ENV}"
+
       - name: Set up Node.js for AK registry access
         uses: actions/setup-node@v6
         with:
           node-version: '24'
           registry-url: ${{ env.AK_REGISTRY }}
 
-      # Publish FIRST, then clean up stale versions (unpublish). A failed
-      # publish therefore degrades to the previous build still being present on
-      # AK — never to a PR with no dev build — which is the property the
-      # ordering review asked for.
-      - name: Bail if the PR is no longer open
+      # Publishes carry the repo's org secret, so a closed PR must never run
+      # them. check-pr-open.sh writes open=true|false; every step that touches
+      # AK (or the credentials) is gated on it. NOTE: read the exit code
+      # immediately (`$?` after an `if` is the `if`'s status, not the script's).
+      - name: Check PR is open (gate)
+        id: pr-open
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.url }}
         run: |
           set -euo pipefail
-          if bash scripts/ci/check-pr-open.sh "${PR_URL}" "${GH_TOKEN}"; then
-            exit 0
-          fi
+          set +e
+          bash scripts/ci/check-pr-open.sh "${PR_URL}" "${GH_TOKEN}"
           code=$?
-          if [[ "${code}" -eq 10 ]]; then
-            # check-pr-open.sh already warned; skipping is intentional.
-            exit 0
+          set -e
+          if [[ "${code}" -eq 1 ]]; then
+            echo "::error::Could not determine PR state" >&2
+            exit 1
           fi
-          exit "${code}"
+          # code 0 (open) or 10 (closed/merged): open=true/false is already in
+          # GITHUB_OUTPUT; a closed PR makes every gated step below skip.
 
       - name: Download dev package
+        if: steps.pr-open.outputs.open == 'true'
         uses: actions/download-artifact@v8
         with:
           name: devex-${{ matrix.package }}
           path: .
 
-      # AK versions are immutable: npm publish rejects an already-published
-      # version with 409. A -dev.pr<N> version only changes when the package's
-      # CHANGELOG is bumped in this PR, so "already published at this exact
-      # version" means the dev build is current — treat it as a no-op rather
-      # than a failure. Real publish errors still fail the job loudly.
+      # Head-scoped versions change on every push, so npm publish normally
+      # succeeds; a 409 only means this exact version (this exact head) was
+      # already published by a re-run of the same commit — treat that as the
+      # build being current rather than a failure. Real publish errors still
+      # fail the job loudly.
       - name: Publish to Artifact Keeper (skip if already published)
+        if: steps.pr-open.outputs.open == 'true'
         shell: bash
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
           PACKAGE_FILE: ${{ matrix.package }}.tgz
+          PACKAGE: ${{ matrix.package }}
           TAG: devex
         run: |
           set -euo pipefail
           echo "::add-mask::${NODE_AUTH_TOKEN}"
+          # Immediate pre-publish trust check: the destination package name is
+          # derived from the PR-built tarball, so the embedded name must match
+          # the expected AK identity before the credential is used. (The pack
+          # job already verified it; this is defense-in-depth right before push.)
+          PUBLISHED_NAME="$(tar -xOf "${PACKAGE_FILE}" package/package.json | node -e "let j='';process.stdin.on('data',(d)=>j+=d).on('end',()=>process.stdout.write(JSON.parse(j).name))")"
+          if [[ "${PUBLISHED_NAME}" != "@adguard/${PACKAGE}" ]]; then
+            echo "::error::${PACKAGE_FILE} package name '${PUBLISHED_NAME}' != '@adguard/${PACKAGE}' — refusing to publish"
+            exit 1
+          fi
           # Auth comes from NODE_AUTH_TOKEN + the .npmrc written by setup-node,
           # so no explicit --registry here (matches deploy-to-ak-npm.yml).
           if out="$(npm publish "${PACKAGE_FILE}" --access public --tag "${TAG}" 2>&1)"; then
               echo "Published ${PACKAGE_FILE} (tag ${TAG})"
           elif grep -qE '\bE409\b|409 Conflict|already exists' <<<"${out}"; then
-              echo "::warning::${PACKAGE_FILE}: already published on AK — immutable versions are not overwritten, skipping"
+              echo "::warning::${PACKAGE_FILE}: already published on AK — same head already built, skipping"
           else
               echo "::error::npm publish failed for ${PACKAGE_FILE}:"
               printf '%s\n' "${out}"
@@ -298,7 +337,9 @@ jobs:
       # was running (between the pre-publish state check and npm publish
       # finishing), the just-published version would otherwise survive forever —
       # the cleanup workflow already fired once and its `closed` event will not
-      # come again. Unpublish it here, in the same run that created it.
+      # come again. Unpublish it here, in the same run that created it. Runs
+      # unconditionally (always()) so the late-publish race is covered even
+      # when the publish step itself was gated.
       - name: Remove just-published version if the PR closed mid-run
         if: always()
         shell: bash
@@ -309,10 +350,10 @@ jobs:
           SUFFIX: '-dev.${{ env.VERSION_SUFFIX }}'
         run: |
           set -euo pipefail
-          # First step's bail already returned 0 on "still open"; here we only
-          # care about the transition: if the PR is now closed, delete what this
-          # run published so no orphan remains. Anything else (including open)
-          # is a no-op.
+          # The gate step already returned open=true/false when it ran; here we
+          # only care about the transition: if the PR is now closed, delete what
+          # this run published so no orphan remains. Anything else (including
+          # open) is a no-op.
           set +e
           bash scripts/ci/check-pr-open.sh "${PR_URL}" "${GH_TOKEN}" >/dev/null 2>&1
           state_code=$?
@@ -334,11 +375,12 @@ jobs:
 
   unpublish:
     name: Clean up stale AK dev versions
-    # Runs AFTER a successful publish: deletes only -dev.pr<N> versions that are
-    # NOT the ones just published (kept explicitly), so a mid-PR CHANGELOG bump
-    # or a re-push never leaves duplicate/stale versions, and a failed publish
-    # leaves the previous build intact. Shares the registry error taxonomy with
-    # the cleanup workflow via scripts/ci/ak-dev-unpublish.sh.
+    # Runs AFTER a successful publish: deletes only -dev.pr<N>* versions that
+    # are NOT the ones just published (kept explicitly per package), so a
+    # mid-PR CHANGELOG bump or a re-push (new head SHA) never leaves
+    # duplicate/stale versions, and a failed publish leaves the previous build
+    # intact. Shares the registry error taxonomy with the cleanup workflow via
+    # scripts/ci/ak-dev-unpublish.sh.
     needs: [changes, publish]
     if: >-
       needs.changes.outputs.bridge-needed == 'true' &&
@@ -358,59 +400,71 @@ jobs:
           node-version: '24'
           registry-url: ${{ env.AK_REGISTRY }}
 
-      - name: Bail if the PR is no longer open
+      - name: Check PR is open (gate)
+        id: pr-open
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.url }}
         run: |
           set -euo pipefail
-          if bash scripts/ci/check-pr-open.sh "${PR_URL}" "${GH_TOKEN}"; then
-            exit 0
-          fi
+          set +e
+          bash scripts/ci/check-pr-open.sh "${PR_URL}" "${GH_TOKEN}"
           code=$?
-          if [[ "${code}" -eq 10 ]]; then
-            exit 0
+          set -e
+          if [[ "${code}" -eq 1 ]]; then
+            echo "::error::Could not determine PR state" >&2
+            exit 1
           fi
-          exit "${code}"
 
       - name: Download version records
+        if: steps.pr-open.outputs.open == 'true'
         uses: actions/download-artifact@v8
         with:
           pattern: devex-version-*
           path: versions
           merge-multiple: true
 
-      # Delete every -dev.pr<N> version on AK for a bridged package EXCEPT the
-      # versions recorded as freshly packed (this push's build). Suffix scan —
-      # not version equality — so '-dev.pr1' never matches '-dev.pr12' and a
-      # prior push's stale build left by a CHANGELOG bump is still removed.
+      # Delete every -dev.pr<N>* version on AK for a bridged package EXCEPT the
+      # versions recorded as freshly packed by THIS run (this push's build).
+      # Per-PR suffix scan — 'pr1' never matches 'pr12' — so a prior push's
+      # builds (older head SHAs) left by a re-push or a CHANGELOG bump are still
+      # removed. Each package keeps ONLY its own recorded version, so a stale
+      # string can never be mistaken for another package's current version.
+      # Failures are tallied (like the cleanup twin) instead of letting `set -e`
+      # abort the loop after the first bad package.
       - name: Unpublish stale dev versions by suffix
+        if: steps.pr-open.outputs.open == 'true'
         shell: bash
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
-          SUFFIX: '-dev.${{ env.VERSION_SUFFIX }}'
         run: |
           set -euo pipefail
           echo "::add-mask::${NODE_AUTH_TOKEN}"
-          keep_list="$(node -e "
-            const fs = require('node:fs');
-            const records = fs.readdirSync('versions').filter((f) => f.endsWith('.json'));
-            const keep = records.map((f) => JSON.parse(fs.readFileSync(\`versions/\${f}\`, 'utf8')).version);
-            process.stdout.write(keep.join('\n'));
-          ")"
+          failures=0
           for pkg in ${BRIDGED_PACKAGES}; do
             name="@adguard/${pkg}"
             keep_args=()
             while IFS= read -r version; do
               [[ -n "${version}" ]] || continue
               keep_args+=(--keep "${version}")
-            done <<< "${keep_list}"
-            bash scripts/ci/ak-dev-unpublish.sh \
-              "${name}" "${AK_REGISTRY}" "${SUFFIX}" \
-              --tolerate-405 \
-              "${keep_args[@]}"
+            done < <(KEEP_NAME="${name}" node -e "
+                const fs = require('node:fs');
+                const records = fs.readdirSync('versions').filter((f) => f.endsWith('.json')).map((f) => JSON.parse(fs.readFileSync(\`versions/\${f}\`, 'utf8')));
+                process.stdout.write(records.filter((r) => r.name === process.env.KEEP_NAME).map((r) => r.version).join('\n'));
+              ")
+            if ! bash scripts/ci/ak-dev-unpublish.sh \
+                "${name}" "${AK_REGISTRY}" "-dev.pr${{ github.event.pull_request.number }}" \
+                --tolerate-405 \
+                "${keep_args[@]}"; then
+              echo "::error::stale cleanup of ${name} failed"
+              failures=$((failures + 1))
+            fi
           done
+          if (( failures > 0 )); then
+            echo "::error::${failures} package(s) could not be cleaned — see the errors above"
+            exit 1
+          fi
 
   comment:
     name: Post usage comment on the source PR
@@ -425,24 +479,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Bail if the PR is no longer open
+      - name: Check PR is open (gate)
+        id: pr-open
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.url }}
         run: |
           set -euo pipefail
-          if bash scripts/ci/check-pr-open.sh "${PR_URL}" "${GH_TOKEN}"; then
-            exit 0
-          fi
+          set +e
+          bash scripts/ci/check-pr-open.sh "${PR_URL}" "${GH_TOKEN}"
           code=$?
-          if [[ "${code}" -eq 10 ]]; then
-            # Don't advertise "Dev builds published" on a closed PR.
-            exit 0
+          set -e
+          if [[ "${code}" -eq 1 ]]; then
+            echo "::error::Could not determine PR state" >&2
+            exit 1
           fi
-          exit "${code}"
+          # A closed PR must not trigger the "Dev builds published" upsert.
 
       - name: Download version records
+        if: steps.pr-open.outputs.open == 'true'
         uses: actions/download-artifact@v8
         with:
           pattern: devex-version-*
@@ -451,6 +507,7 @@ jobs:
 
       - name: Emit packed versions map
         id: versions
+        if: steps.pr-open.outputs.open == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -484,6 +541,7 @@ jobs:
       # PR can never produce a duplicate, and matching only the bot's own
       # reviews guarantees we never rewrite a human reviewer's text).
       - name: Upsert dev-builds review
+        if: steps.pr-open.outputs.open == 'true'
         uses: actions/github-script@v8
         env:
           MAP: ${{ steps.versions.outputs.map }}
@@ -498,7 +556,7 @@ jobs:
                 .join('\n');
             const body = [
                 marker,
-                '**Dev builds published** to the internal Artifact Keeper registry (republished when this PR bumps a package CHANGELOG; re-run the pin command below to refresh the lockfile integrity):',
+                '**Dev builds published** to the internal Artifact Keeper registry under head-scoped versions (`-dev.pr<N>.<shortsha>`) — every push republishes all six, so the pinned tarballs always match the latest committed source:',
                 '',
                 '| package | version |',
                 '| --- | --- |',
@@ -510,7 +568,7 @@ jobs:
                 `node scripts/use-dev-builds.mjs --pr ${pr} --registry ${process.env.AK_REGISTRY} --extension /path/to/browser-extension`,
                 '```',
                 '',
-                'Re-run the same command after every push to this PR (immutable AK versions are republished only on a CHANGELOG bump; re-pinning refreshes the lockfile integrity).',
+                'The tool pins the coherent set for the current checkout head; re-run it after every push to this PR.',
                 'These versions are deleted automatically when this PR is closed or merged.',
             ].join('\n');
             const { owner, repo } = context.repo;
