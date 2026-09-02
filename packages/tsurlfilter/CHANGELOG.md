@@ -62,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (e.g. `/example\d*\.(live\|com\|icu\|org)$/`) not matching any domain,
   because only the first escaped separator was unescaped.
 
-[v6.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.0.2
+[6.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.0.2
 [#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
 [#189]: https://github.com/AdguardTeam/tsurlfilter/issues/189
 [AdguardBrowserExtension#3533]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3533
