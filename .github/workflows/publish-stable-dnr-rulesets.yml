@@ -146,7 +146,7 @@ jobs:
           fetch-depth: 1
 
       - name: Download built package
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: dnr-rulesets-5.0
           path: artifact
@@ -192,7 +192,7 @@ jobs:
           fetch-depth: 1
 
       - name: Download built package
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: dnr-rulesets-5.0
           path: artifact
