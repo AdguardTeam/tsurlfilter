@@ -71,13 +71,14 @@ already be built):
 pnpm build
 ```
 
-## Testing unmerged changes in the browser extension
+## Testing Unmerged Changes in the Browser Extension
 
-Every PR that touches `logger`, `css-tokenizer`, `agtree`, `tsurlfilter`,
-`dnr-rulesets`, or `tswebextension` is automatically published to the internal
-Artifact Keeper npm registry by the `devex-bridge.yml` workflow, with versions
-`<next-patch>-dev.pr<N>` (overwritten on every push). The PR gets a comment
-with the exact versions once publishing finishes.
+Every PR that touches one of the six browser-extension-consumed packages (the
+same `BRIDGED_PACKAGES` set the bridge workflows publish, see
+`devex-bridge.yml`) is automatically published to the internal Artifact Keeper
+npm registry by the `devex-bridge.yml` workflow, with versions
+`<next-patch>-dev.pr<N>`. The PR gets a comment with the exact versions once
+publishing finishes.
 
 To build the browser extension against them:
 
@@ -87,18 +88,22 @@ To build the browser extension against them:
 2. From an up-to-date tsurlfilter checkout, pin the dev builds:
 
    ```bash
-   node scripts/use-dev-builds.mjs --pr <N> --extension /path/to/browser-extension
+   node scripts/use-dev-builds.mjs --pr <N> --registry https://ak.int.agrd.dev/npm/npm-internal --extension /path/to/browser-extension
    ```
 
-   This points the six packages at the AK tarballs via `pnpm.overrides`
-   (dependencies stay untouched) and refreshes `pnpm-lock.yaml`.
+   (The `--registry` flag is optional — the tool defaults to the same AK path —
+   but pass it explicitly so it cannot drift from the workflow's
+   `ARTIFACT_KEEPER_URL`.) This points the six packages at the AK tarballs via
+   `pnpm.overrides` (dependencies stay untouched) and refreshes
+   `pnpm-lock.yaml`.
 3. Commit `package.json` and `pnpm-lock.yaml`. The extension's regular CI
    builds the branch — installable builds are in the CI run's Artifacts
    (`dev-builds`, `chrome-dev-crx`).
 
-After every push to the tsurlfilter PR the dev builds are overwritten in
-place; re-run the same command to refresh the lockfile integrity, then commit
-and push.
+After every push to the tsurlfilter PR the dev builds are (re)published when the
+PR bumps a package CHANGELOG — AK versions are immutable, so the tarball does
+not change on a no-op re-push. Re-run the same command to refresh the lockfile
+integrity, then commit and push.
 
 A branch pinned to dev builds must never be merged. Before marking the
 extension PR ready (once the real versions are released, or if testing is
@@ -119,6 +124,12 @@ the `ARTIFACT_KEEPER_API_KEY` secret — the same pair the shared
 `deploy-to-ak-npm.yml` workflow uses. The npm registry URL is derived as
 `${ARTIFACT_KEEPER_URL}/npm/npm-internal`. If the URL variable is unset, the
 jobs fail loudly rather than publishing to an empty registry URL.
+
+On the **developer side**, running `use-dev-builds.mjs` (or any `npm view`
+against the AK registry) needs the same registry reachability: the AK host is
+internal, so you must be on the internal network (VPN) and, if AK enforces
+read auth, have an npm token acceptable to AK. A cold run against an unroutable
+host fails with `ENOTFOUND`/`E401` — that is expected.
 
 ## Development Workflow
 

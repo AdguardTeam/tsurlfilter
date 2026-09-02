@@ -2,8 +2,12 @@
 # (see the "Trust boundary" header of devex-bridge.yml), so changes to them —
 # and to the pinning tool / drift guard that enforce their contract — must be
 # reviewed by Extensions maintainers.
-.github/workflows/devex-bridge.yml          @AdGuardSoftwareLimited/extensions-maintainers
-.github/workflows/devex-bridge-cleanup.yml  @AdGuardSoftwareLimited/extensions-maintainers
-scripts/use-dev-builds.mjs                  @AdGuardSoftwareLimited/extensions-maintainers
-scripts/ci/check-package-lists.mjs          @AdGuardSoftwareLimited/extensions-maintainers
-tests/use-dev-builds.sh                     @AdGuardSoftwareLimited/extensions-maintainers
+.github/CODEOWNERS                            @AdGuardSoftwareLimited/extensions-maintainers
+.github/workflows/devex-bridge.yml            @AdGuardSoftwareLimited/extensions-maintainers
+.github/workflows/devex-bridge-cleanup.yml    @AdGuardSoftwareLimited/extensions-maintainers
+scripts/use-dev-builds.mjs                    @AdGuardSoftwareLimited/extensions-maintainers
+scripts/ci/check-package-lists.mjs            @AdGuardSoftwareLimited/extensions-maintainers
+scripts/ci/ak-dev-unpublish.sh                @AdGuardSoftwareLimited/extensions-maintainers
+scripts/ci/check-pr-open.sh                   @AdGuardSoftwareLimited/extensions-maintainers
+tests/use-dev-builds.test.sh                  @AdGuardSoftwareLimited/extensions-maintainers
+tests/verify-tarball.test.sh                  @AdGuardSoftwareLimited/extensions-maintainers

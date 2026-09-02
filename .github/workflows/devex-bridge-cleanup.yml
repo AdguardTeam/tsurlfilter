@@ -9,7 +9,10 @@ name: DevEx bridge cleanup
 #
 # Fail-loud by design: a query failure or an unpublish failure fails the job so
 # a broken cleanup is noticed. If AK policy ever forbids unpublish, fix the
-# policy (or switch to the AK admin API) rather than silencing this.
+# policy (or switch to the AK admin API) rather than silencing this. The
+# registry error taxonomy (404 vs 405 vs other) lives in
+# scripts/ci/ak-dev-unpublish.sh, shared with devex-bridge.yml, so the two
+# twins cannot drift.
 #
 # Requires the org variable ARTIFACT_KEEPER_URL (base URL of the Artifact
 # Keeper instance) and the org secret ARTIFACT_KEEPER_API_KEY — the same
@@ -26,6 +29,7 @@ permissions:
 
 env:
   BRIDGED_PACKAGES: 'logger css-tokenizer agtree tsurlfilter dnr-rulesets tswebextension'
+  VERSION_SUFFIX: 'pr${{ github.event.pull_request.number }}'
   AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal
 
 jobs:
@@ -49,7 +53,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          SUFFIX: '-dev.pr${{ github.event.pull_request.number }}'
+          SUFFIX: '-dev.${{ env.VERSION_SUFFIX }}'
         run: |
           set -euo pipefail
           echo "::add-mask::${NODE_AUTH_TOKEN}"
@@ -64,47 +68,30 @@ jobs:
           failures=0
           for pkg in ${BRIDGED_PACKAGES}; do
             name="@adguard/${pkg}"
-            # Query failures must not masquerade as "no dev versions": swallowing
-            # an auth/transport failure would leave AK litter with a green job —
-            # the exact opposite of the fail-loud header. Only E404 is empty.
-            if ! raw="$(npm view "${name}" versions --json --registry="${AK_REGISTRY}" --silent 2>&1)"; then
-              if grep -qiE '404|not found|E404' <<<"${raw}"; then
-                echo "${name}: not present on AK — nothing to clean up"
-                continue
-              fi
-              echo "::error::Could not query ${name} on AK:"
-              printf '%s\n' "${raw}"
-              exit 1
+            if ! bash scripts/ci/ak-dev-unpublish.sh "${name}" "${AK_REGISTRY}" "${SUFFIX}"; then
+              echo "::error::Cleanup of ${name} failed"
+              failures=$((failures + 1))
             fi
-            to_delete="$(node -e "
-              const raw = JSON.parse(process.argv[1]);
-              const list = Array.isArray(raw) ? raw : [raw];
-              // endsWith: '-dev.pr1' must not match '-dev.pr12'.
-              process.stdout.write(list.filter((v) => v.endsWith(process.env.SUFFIX)).join('\n'));
-            " "${raw}")"
-            if [ -z "${to_delete}" ]; then
-              echo "${name}: no dev versions for this PR"
-              continue
-            fi
-            while IFS= read -r version; do
-              [ -n "${version}" ] || continue
-              echo "Deleting ${name}@${version}"
-              # --force is required: a single-version package on AK carries BOTH
-              # the devex and the latest dist-tags, and npm refuses to delete a
-              # version that still holds the latest tag (same rationale as the
-              # bridge's unpublish step).
-              if out="$(npm unpublish "${name}@${version}" --force --registry="${AK_REGISTRY}" 2>&1)"; then
-                echo "Deleted ${name}@${version}"
-              elif grep -qiE '404|not found|E404|EUNPUBLISH' <<<"${out}"; then
-                echo "${name}@${version}: already absent — nothing to delete"
-              else
-                echo "::error::Could not unpublish ${name}@${version}:"
-                printf '%s\n' "${out}"
-                failures=$((failures + 1))
-              fi
-            done <<< "${to_delete}"
           done
           if [ "${failures}" -gt 0 ]; then
-            echo "::error::${failures} dev version(s) could not be unpublished — AK still holds them"
             exit 1
           fi
+
+  notify-failure:
+    name: Notify cleanup failure
+    needs: [cleanup]
+    # Cleanup is the single-fire guard against permanent AK orphans; a failure
+    # here would otherwise only be visible as a red run on an already-closed PR
+    # that nobody watches.
+    if: failure()
+    runs-on: team-extensions
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Send Slack notification
+        uses: AdGuardSoftwareLimited/actions/actions/slack@master
+        with:
+          channel: '#adguard-extension-vcs'
+          message: ':x: *devex-bridge-cleanup* failed for PR #${{ github.event.pull_request.number }} — AK may still hold orphaned dev builds. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          color: danger

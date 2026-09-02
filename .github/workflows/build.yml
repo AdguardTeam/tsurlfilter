@@ -153,10 +153,13 @@ jobs:
       - name: Validate script syntax
         run: |
           bash -n tests/finalize-changelog.sh
-          bash -n tests/use-dev-builds.sh
+          bash -n tests/use-dev-builds.test.sh
           bash -n scripts/ci/resolve-release-inputs.sh
           bash -n scripts/ci/verify-tarball.sh
-          bash -n tests/verify-tarball.sh
+          bash -n tests/verify-tarball.test.sh
+          bash -n scripts/ci/ak-dev-unpublish.sh
+          bash -n scripts/ci/check-pr-open.sh
+          bash -n tests/ak-dev-unpublish.test.sh
           node --check .github/actions/finalize-changelog/finalize-changelog.mjs
           node --check scripts/inject-package-versions.mjs
           node --check scripts/use-dev-builds.mjs
@@ -170,10 +173,13 @@ jobs:
         run: bash tests/finalize-changelog.sh
 
       - name: Run verify-tarball regression tests
-        run: bash tests/verify-tarball.sh
+        run: bash tests/verify-tarball.test.sh
 
       - name: Run use-dev-builds regression tests
-        run: bash tests/use-dev-builds.sh
+        run: bash tests/use-dev-builds.test.sh
+
+      - name: Run ak-dev-unpublish regression tests
+        run: bash tests/ak-dev-unpublish.test.sh
 
   notify-failure:
     name: Notify master CI failure

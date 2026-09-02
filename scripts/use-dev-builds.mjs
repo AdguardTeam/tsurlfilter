@@ -39,6 +39,16 @@ const fail = (message) => {
 };
 
 const args = process.argv.slice(2);
+
+// A typo'd flag (e.g. `--remov` instead of `--remove`) must fail loudly rather
+// than silently fall through to a full pin — the opposite of what was asked.
+const KNOWN_FLAGS = new Set(['--remove', '--pr', '--extension', '--registry']);
+for (const arg of args) {
+    if (arg.startsWith('--') && !KNOWN_FLAGS.has(arg)) {
+        fail(`unknown argument '${arg}' — supported: ${[...KNOWN_FLAGS].join(', ')}`);
+    }
+}
+
 const readArg = (name) => {
     const index = args.indexOf(name);
     if (index === -1 || index + 1 >= args.length) {
@@ -72,8 +82,14 @@ const readManifest = () => {
     // Tolerate CRLF manifests (the shared set-dev-version action uses the same
     // /^{\r?\n(...)/ probe when preserving indentation).
     const indentMatch = source.match(/^{\r?\n([ \t]+)/);
+    let manifest;
+    try {
+        manifest = JSON.parse(source);
+    } catch (error) {
+        fail(`${packageJsonPath} is not valid JSON: ${error.message}`);
+    }
     return {
-        manifest: JSON.parse(source),
+        manifest,
         indentation: indentMatch ? indentMatch[1] : '  ',
         crlf: source.includes('\r\n'),
     };
@@ -111,10 +127,16 @@ const pnpmInstall = () => {
     console.log('> pnpm install --no-frozen-lockfile --ignore-scripts');
     // --no-frozen-lockfile: package.json just changed and the lockfile must be
     // regenerated (pnpm defaults to frozen when a lockfile exists).
-    execFileSync('pnpm', ['install', '--no-frozen-lockfile', '--ignore-scripts'], {
-        cwd: extensionDir,
-        stdio: 'inherit',
-    });
+    try {
+        execFileSync('pnpm', ['install', '--no-frozen-lockfile', '--ignore-scripts'], {
+            cwd: extensionDir,
+            stdio: 'inherit',
+        });
+    } catch (error) {
+        // A failing pnpm install (network, lockfile conflict, registry auth)
+        // must produce a clear message, not an opaque execFileSync stack.
+        fail(`pnpm install failed in ${extensionDir} — see the pnpm output above (${error.message})`);
+    }
 };
 
 const npmView = (spec, field) => {

@@ -129,6 +129,21 @@ if (unknown.length > 0) {
 }
 console.log(`bridge package lists: OK (${bridgeWorkflowPackages.length} packages, ${bridgeLists.length} copies agree, subset of publishable)`);
 
+// 4b. The tool's DEFAULT_REGISTRY must stay on the same AK npm path the
+//     workflows derive at runtime (`${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal`).
+//     The URL *base* is intentionally not pinned here (it depends on the org
+//     variable), but the `/npm/npm-internal` path segment must agree so a
+//     re-pinned AK base never silently serves the old host in the documented
+//     flow — and use-dev-builds.mjs accepts --registry to override.
+const devRegistryMatch = devBuildsScript.match(/DEFAULT_REGISTRY\s*=\s*'([^']+)'/);
+if (!devRegistryMatch) {
+    fail('scripts/use-dev-builds.mjs: could not find the DEFAULT_REGISTRY constant (format changed?)');
+}
+if (!devRegistryMatch[1].endsWith('/npm/npm-internal')) {
+    fail(`use-dev-builds.mjs DEFAULT_REGISTRY (${devRegistryMatch[1]}) must end in /npm/npm-internal to match the workflows' AK_REGISTRY path`);
+}
+console.log('bridge registry path: OK (DEFAULT_REGISTRY shares /npm/npm-internal with AK_REGISTRY)');
+
 console.log('package list drift check passed');
 
 // 5. The supported stable DNR ruleset lines have a single source of truth — the
