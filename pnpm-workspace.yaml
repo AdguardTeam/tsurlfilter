@@ -10,6 +10,14 @@ minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - '@adguard/*'
 
+overrides:
+  # @adguard/tsurlfilter@1.0.x (benchmarks' tsurlfilter-v1) depends on
+  # text-encoding via a git tag; every fresh resolution runs `git ls-remote`
+  # against github.com, which the CI runners' egress intermittently rejects
+  # with a 401. Pin it to the tarball of the very same commit so resolution
+  # never needs git.
+  'text-encoding@git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2': https://codeload.github.com/AdguardTeam/text-encoding/tar.gz/4268d6b7dc0e15f57134545ae1c8c59e9c5ced70
+
 # default catalog
 catalog:
   '@adguard/assistant': ^4.4.12
