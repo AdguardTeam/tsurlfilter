@@ -134,8 +134,11 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   (`scripts/ci/check-npm-version.sh`), and a failed publish gets one retry
   after a backoff (outlasts npm's throttle window). The line publishes under
   the `latest` npm dist-tag (no older line exists to pull it backwards) with
-  no environment restriction. A failure-notify job alerts Slack when any leg
-  fails.
+  no environment restriction. Each round also publishes the same tarball to
+  the internal Artifact Keeper npm registry (shared `deploy-to-ak-npm.yml`,
+  tag `latest`), independently of the npm publish, so the browser-extension
+  auto-build can install rulesets from AK when npm throttles. A failure-notify
+  job alerts Slack when any leg fails.
 - `mirror.yml` — syncs master to the public `AdguardTeam/tsurlfilter` mirror.
 - `update-companiesdb.yml` — refreshes the tswebextension companies database
   every Tuesday and pushes meaningful changes with Octopass. The push avoids
