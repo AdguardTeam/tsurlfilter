@@ -141,7 +141,7 @@ operational. Before enabling the workflows, verify:
   disabled.
 - The org secret `ARTIFACT_KEEPER_API_KEY` and the org variable
   `ARTIFACT_KEEPER_URL` are visible to this repository (required by the AK
-  publish job, which calls the shared `deploy-to-ak-npm.yml` with
-  `secrets: inherit`).
+  publish job, which calls the shared `deploy-to-ak-npm.yml` passing only the
+  `ARTIFACT_KEEPER_API_KEY` secret — least privilege, no `secrets: inherit`).
 - One push to `master` successfully mirrors branches, tags, and notes to the
   public repository.
