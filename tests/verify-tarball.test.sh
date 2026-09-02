@@ -31,12 +31,12 @@ make_tgz() {
     (cd "${dir}" && tar -czf fixture.tgz package)
 }
 
-# expect_pass NAME TGZ VERSION
+# expect_pass NAME TGZ VERSION [EXPECTED_NAME]
 expect_pass() {
-    local name="$1" tgz="$2" version="$3" out err status
+    local name="$1" tgz="$2" version="$3" expected_name="${4:-}" out err status
     out="$(mktemp)"; err="$(mktemp)"
     set +e
-    bash "${SCRIPT}" "${tgz}" "${version}" >"${out}" 2>"${err}"
+    bash "${SCRIPT}" "${tgz}" "${version}" "${expected_name}" >"${out}" 2>"${err}"
     status=$?
     set -e
     if [ "${status}" -ne 0 ]; then
@@ -48,19 +48,19 @@ expect_pass() {
         echo "FAIL ${name}: listing does not show package/package.json" >&2
         exit 1
     fi
-    if ! grep -q "^Verified .* version ${version}, " "${out}"; then
+    if ! grep -qE "^Verified .* version ${version}( name |[,])" "${out}"; then
         echo "FAIL ${name}: missing Verified line: $(cat "${out}")" >&2
         exit 1
     fi
     echo "ok ${name}"
 }
 
-# expect_fail NAME TGZ VERSION EXPECTED_ERR
+# expect_fail NAME TGZ VERSION EXPECTED_ERR [EXPECTED_NAME]
 expect_fail() {
-    local name="$1" tgz="$2" version="$3" expected_err="$4" out err status
+    local name="$1" tgz="$2" version="$3" expected_err="$4" expected_name="${5:-}" out err status
     out="$(mktemp)"; err="$(mktemp)"
     set +e
-    bash "${SCRIPT}" "${tgz}" "${version}" >"${out}" 2>"${err}"
+    bash "${SCRIPT}" "${tgz}" "${version}" "${expected_name}" >"${out}" 2>"${err}"
     status=$?
     set -e
     if [ "${status}" -eq 0 ]; then
@@ -100,5 +100,11 @@ mkdir -p "${sparse_dir}/package"
 printf '{"name":"@adguard/logger","version":"2.0.1"}\n' > "${sparse_dir}/package/package.json"
 (cd "${sparse_dir}" && tar -czf fixture.tgz package)
 expect_fail 'too-few-entries' "${sparse_dir}/fixture.tgz" '2.0.1' 'contains only 2 entries'
+
+# The DevEx bridge's embedded-name check (the fixtures say @adguard/logger): a
+# mismatched identity must fail even when the version is right, and a matching
+# one must pass.
+expect_fail 'wrong-name' "${valid_dir}/fixture.tgz" '2.0.1' 'has name @adguard/logger, expected @adguard/other' '@adguard/other'
+expect_pass 'valid-name' "${valid_dir}/fixture.tgz" '2.0.1' '@adguard/logger'
 
 echo 'verify-tarball tests passed'

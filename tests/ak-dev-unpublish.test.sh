@@ -123,9 +123,28 @@ run_case already-absent "0" \
     "err:E404 404 Not Found - @adguard/testpkg@1.0.2-dev.pr42"
 grep -q "already absent" <<<"${OUTPUT}" || { echo "FAIL already-absent:" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
 
-# 10. Non-JSON version list from npm view -> loud failure, not a silent delete.
-run_case non-json "1" \
+# 10. Query failure (npm view exits non-zero, e.g. auth/transport) -> loud
+#     failure, not a silent delete. This exercises the FAILED-QUERY branch.
+run_case query-error "1" \
     "err:some auth error line"
-grep -q "Could not query" <<<"${OUTPUT}" || { echo "FAIL non-json:" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
+grep -q "Could not query" <<<"${OUTPUT}" || { echo "FAIL query-error:" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
+
+# 10b. npm view exits 0 but returns NON-JSON -> the DEDICATED JSON-parse
+#     diagnostic, not a generic query failure and certainly not a silent delete.
+run_case non-json "1" \
+    "ok:not a json array at all"
+grep -q "returned non-JSON" <<<"${OUTPUT}" || { echo "FAIL non-json:" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
+
+# 11. Bounded-prefix matching: '-dev.pr42' must also delete the head-scoped
+#     '1.0.2-dev.pr42.2f5d9548', while the longer '-dev.pr420' stays put.
+run_case head-scoped "0" \
+    "ok:[\"1.0.1-dev.pr42\",\"1.0.2-dev.pr42.2f5d9548\",\"1.0.3-dev.pr420\"]" \
+    "ok:deleted" \
+    "ok:deleted"
+grep -q "Unpublishing @adguard/testpkg@1.0.1-dev.pr42" <<<"${OUTPUT}" || { echo "FAIL head-scoped: bare pr42 not deleted" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
+grep -q "Unpublishing @adguard/testpkg@1.0.2-dev.pr42.2f5d9548" <<<"${OUTPUT}" || { echo "FAIL head-scoped: sha'd pr42 version not deleted" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
+if grep -q "1.0.3-dev.pr420" <<<"${OUTPUT}" && grep -q "Unpublishing @adguard/testpkg@1.0.3-dev.pr420" <<<"${OUTPUT}"; then
+    echo 'FAIL head-scoped: -dev.pr420 must not match -dev.pr42' >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1
+fi
 
 echo 'ak-dev-unpublish tests passed'
