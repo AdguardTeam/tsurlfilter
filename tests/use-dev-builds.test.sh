@@ -82,7 +82,7 @@ BASE_PKG='{
     "version": "5.6.0.0",
     "dependencies": {
         "@adguard/agtree": "4.2.0",
-        "@adguard/logger": "2.0.0",
+        "@adguard/dnr-converter": "2.0.0",
         "@adguard/tsurlfilter": "6.0.2",
         "@adguard/tswebextension": "5.0.0",
         "webext-bridge": "6.0.1"
@@ -112,8 +112,8 @@ const pkg = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const ov = pkg.pnpm?.overrides ?? {};
 assert.strictEqual(Object.keys(ov).length, 6, 'expected exactly 6 overrides');
 assert.strictEqual(
-    ov['@adguard/logger'],
-    'https://ak.int.agrd.dev/npm/npm-internal/@adguard/logger/-/logger-1.0.1-dev.pr42.2f5d9548.tgz',
+    ov['@adguard/dnr-converter'],
+    'https://ak.int.agrd.dev/npm/npm-internal/@adguard/dnr-converter/-/dnr-converter-1.0.1-dev.pr42.2f5d9548.tgz',
 );
 assert.strictEqual(
     ov['@adguard/css-tokenizer'],
@@ -138,7 +138,7 @@ const fs = require('node:fs');
 const p = process.argv[2];
 const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
 pkg.pnpm = { overrides: {
-    '@adguard/logger': 'https://ak.int.agrd.dev/npm/npm-internal/@adguard/logger/-/logger-1.0.1-dev.pr42.aaaaaaaa.tgz',
+    '@adguard/dnr-converter': 'https://ak.int.agrd.dev/npm/npm-internal/@adguard/dnr-converter/-/dnr-converter-1.0.1-dev.pr42.aaaaaaaa.tgz',
     'left-pad': '1.3.0',
 } };
 fs.writeFileSync(p, JSON.stringify(pkg, null, 4) + '\n');
@@ -150,7 +150,7 @@ node - "${case_dir}/package.json" <<'NODE'
 const fs = require('node:fs');
 const assert = require('node:assert');
 const pkg = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
-assert.strictEqual(pkg.pnpm.overrides['@adguard/logger'], 'https://ak.int.agrd.dev/npm/npm-internal/@adguard/logger/-/logger-1.0.1-dev.pr42.2f5d9548.tgz', 'stale-head URL must be replaced');
+assert.strictEqual(pkg.pnpm.overrides['@adguard/dnr-converter'], 'https://ak.int.agrd.dev/npm/npm-internal/@adguard/dnr-converter/-/dnr-converter-1.0.1-dev.pr42.2f5d9548.tgz', 'stale-head URL must be replaced');
 assert.strictEqual(pkg.pnpm.overrides['left-pad'], '1.3.0', 'unrelated override must survive');
 assert.strictEqual(Object.keys(pkg.pnpm.overrides).length, 7, '6 bridged + left-pad');
 NODE
@@ -162,7 +162,7 @@ const fs = require('node:fs');
 const p = process.argv[2];
 const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
 pkg.pnpm = { overrides: {
-    '@adguard/logger': 'https://ak.int.agrd.dev/npm/npm-internal/@adguard/logger/-/logger-1.0.1-dev.pr42.2f5d9548.tgz',
+    '@adguard/dnr-converter': 'https://ak.int.agrd.dev/npm/npm-internal/@adguard/dnr-converter/-/dnr-converter-1.0.1-dev.pr42.2f5d9548.tgz',
     '@adguard/agtree': '4.3.0',
 } };
 fs.writeFileSync(p, JSON.stringify(pkg, null, 4) + '\n');
@@ -173,7 +173,7 @@ const fs = require('node:fs');
 const assert = require('node:assert');
 const pkg = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const ov = pkg.pnpm.overrides;
-assert.ok(!ov['@adguard/logger'], 'dev-pinned logger override must be removed');
+assert.ok(!ov['@adguard/dnr-converter'], 'dev-pinned dnr-converter override must be removed');
 assert.strictEqual(ov['@adguard/agtree'], '4.3.0', 'non-dev override must survive');
 NODE
 [[ "$(wc -l < "${PNPM_LOG}" | tr -d ' ')" == '1' ]] || {
@@ -227,7 +227,7 @@ case_dir="$(new_case npm-error)"
 if FAKE_NPM_ERROR=1 node "${SCRIPT}" --pr 42 --head 2f5d9548 --extension "${case_dir}" 2>"${case_dir}/err"; then
     echo 'FAIL npm-error: expected a non-zero exit code' >&2; exit 1;
 fi
-grep -q 'npm view @adguard/logger versions failed' "${case_dir}/err" || {
+grep -q 'npm view @adguard/dnr-converter versions failed' "${case_dir}/err" || {
     echo 'FAIL npm-error: error should name the failed npm view' >&2; cat "${case_dir}/err" >&2; exit 1; }
 grep -q 'registry https://ak.int.agrd.dev/npm/npm-internal' "${case_dir}/err" || {
     echo 'FAIL npm-error: error should name the registry' >&2; cat "${case_dir}/err" >&2; exit 1; }
@@ -254,8 +254,8 @@ const assert = require('node:assert');
 const pkg = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const ov = pkg.pnpm.overrides;
 assert.ok(
-    ov['@adguard/logger'].endsWith('logger-1.0.3-dev.pr42.2f5d9548.tgz'),
-    'newest core for the head must win (got ' + ov['@adguard/logger'] + ')',
+    ov['@adguard/dnr-converter'].endsWith('dnr-converter-1.0.3-dev.pr42.2f5d9548.tgz'),
+    'newest core for the head must win (got ' + ov['@adguard/dnr-converter'] + ')',
 );
 NODE
 
@@ -302,7 +302,7 @@ const fs = require('node:fs');
 const assert = require('node:assert');
 const pkg = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 assert.ok(
-    pkg.pnpm.overrides['@adguard/logger'].endsWith('logger-1.0.1-dev.pr42.2f5d9548.tgz'),
+    pkg.pnpm.overrides['@adguard/dnr-converter'].endsWith('dnr-converter-1.0.1-dev.pr42.2f5d9548.tgz'),
     'fallback should still pin the dev build',
 );
 NODE

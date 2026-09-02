@@ -38,7 +38,7 @@ permissions:
   contents: read
 
 env:
-  BRIDGED_PACKAGES: 'logger css-tokenizer agtree tsurlfilter dnr-rulesets tswebextension'
+  BRIDGED_PACKAGES: 'dnr-converter css-tokenizer agtree tsurlfilter dnr-rulesets tswebextension'
   AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal
 
 jobs:

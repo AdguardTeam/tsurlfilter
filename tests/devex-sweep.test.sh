@@ -77,7 +77,7 @@ grep -q 'PR #9 is open — keeping' <<<"${OUTPUT}" || { echo "FAIL gc: expected 
 # The deletion leg must have actually invoked ak-dev-unpublish.sh for each
 # package with the -dev.pr7 suffix.
 cd "${ROOT_DIR}"
-grep -q 'view @adguard/logger versions' "${LOG_FILE}" || { echo "FAIL gc: logger not queried" >&2; cat "${LOG_FILE}" >&2; exit 1; }
+grep -q 'view @adguard/dnr-converter versions' "${LOG_FILE}" || { echo "FAIL gc: dnr-converter not queried" >&2; cat "${LOG_FILE}" >&2; exit 1; }
 
 # 2. A PR whose state cannot be determined is left in place and fails the run.
 write_replies \

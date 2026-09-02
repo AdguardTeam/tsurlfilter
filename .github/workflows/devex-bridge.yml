@@ -63,7 +63,7 @@ env:
   # scripts/ci/check-package-lists.mjs (matrices cannot be derived from a file
   # — the `env` context is unavailable at matrix-parse time — so the guard
   # keeps the copies honest).
-  BRIDGED_PACKAGES: 'logger css-tokenizer agtree tsurlfilter dnr-rulesets tswebextension'
+  BRIDGED_PACKAGES: 'dnr-converter css-tokenizer agtree tsurlfilter dnr-rulesets tswebextension'
   AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal
 
 jobs:
@@ -113,7 +113,7 @@ jobs:
       # drops connections under heavy parallelism (same rationale as build.yml).
       max-parallel: 4
       matrix:
-        package: [logger, css-tokenizer, agtree, tsurlfilter, dnr-rulesets, tswebextension]
+        package: [dnr-converter, css-tokenizer, agtree, tsurlfilter, dnr-rulesets, tswebextension]
     runs-on: team-extensions
     timeout-minutes: 30
     permissions:
@@ -244,7 +244,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [logger, css-tokenizer, agtree, tsurlfilter, dnr-rulesets, tswebextension]
+        package: [dnr-converter, css-tokenizer, agtree, tsurlfilter, dnr-rulesets, tswebextension]
     runs-on: team-extensions
     timeout-minutes: 10
     permissions:
