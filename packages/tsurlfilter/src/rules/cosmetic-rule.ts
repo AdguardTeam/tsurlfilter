@@ -507,10 +507,7 @@ export class CosmeticRule implements IRule {
 
                 case CosmeticRuleModifier.Path:
                     result.pathModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                        SimpleRegex.unescapeModifierPatternValue(modifierValue),
                     );
                     break;
 
@@ -520,10 +517,7 @@ export class CosmeticRule implements IRule {
                     }
 
                     result.urlModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                        SimpleRegex.unescapeModifierPatternValue(modifierValue),
                     );
                     break;
 

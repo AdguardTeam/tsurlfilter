@@ -335,17 +335,17 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://google.com'))).toEqual(false);
     });
 
-    // AG-57204 / tsurlfilter#190
+    // AG-57204: doc-correct escaped [ ] must unescape in a cosmetic $domain regexp
+    // (https://github.com/AdguardTeam/tsurlfilter/issues/190)
     it('matches requests by regexp domain with escaped brackets', () => {
-        let rule: CosmeticRule;
-
-        // Doc-correct escaped form: [ and ] are escaped in the modifier value
-        rule = createCosmeticRule(String.raw`[$domain=/mingky\[0-9\]+\.net/]##banner`, 0);
+        const rule = createCosmeticRule(String.raw`[$domain=/mingky\[0-9\]+\.net/]##banner`, 0);
         expect(rule.match(createRequest('https://mingky03.net'))).toEqual(true);
         expect(rule.match(createRequest('https://example.com'))).toEqual(false);
+    });
 
-        // Raw form from the original report must keep working
-        rule = createCosmeticRule(String.raw`[$domain=/mingky[0-9]+\.net/]##banner`, 0);
+    // AG-57204: raw (unescaped-brackets) form keeps working as before the fix
+    it('matches requests by raw regexp domain without escaped brackets', () => {
+        const rule = createCosmeticRule(String.raw`[$domain=/mingky[0-9]+\.net/]##banner`, 0);
         expect(rule.match(createRequest('https://mingky03.net'))).toEqual(true);
         expect(rule.match(createRequest('https://example.com'))).toEqual(false);
     });

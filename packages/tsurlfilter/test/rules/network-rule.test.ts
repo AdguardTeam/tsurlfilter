@@ -145,17 +145,24 @@ describe('NetworkRule constructor', () => {
         expect(rule.getRestrictedDomains()).toEqual([String.raw`/good\.evil\.(com|org)/`]);
     });
 
-    // AG-57204 / tsurlfilter#190: same unescaping must apply to network $domain
-    it('unescapes escaped brackets in network $domain regexp values', () => {
+    // AG-57204: the same unescaping must apply to network $domain
+    // (https://github.com/AdguardTeam/tsurlfilter/issues/190)
+    it('works when $domain modifier is applied properly - escaped brackets', () => {
         const rule = createNetworkRule(String.raw`||example.org^$domain=/mingky\[0-9\]+\.net/`, 0);
 
         expect(rule.getPermittedDomains()).toEqual([String.raw`/mingky[0-9]+\.net/`]);
 
-        const request = new Request('https://example.org/', 'https://mingky03.net/movie', RequestType.Document);
-        expect(rule.matchDomainModifier(request)).toBeTruthy();
+        const request = new Request('https://example.org/', 'https://mingky03.net/', RequestType.Script);
+        expect(rule.match(request)).toBeTruthy();
 
-        const badRequest = new Request('https://example.org/', 'https://example.com/', RequestType.Document);
-        expect(rule.matchDomainModifier(badRequest)).toBeFalsy();
+        const badRequest = new Request('https://example.org/', 'https://example.com/', RequestType.Script);
+        expect(rule.match(badRequest)).toBeFalsy();
+    });
+
+    // AG-57204: $denyallow keeps rejecting valid regexp values, escaped brackets included
+    it('throws when $denyallow modifier has a valid regexp value with escaped brackets', () => {
+        expect(() => createNetworkRule(String.raw`@@||example.org^$denyallow=/exa\[m\]ple/`, 0))
+            .toThrow('$denyallow does not support wildcards and regex domains');
     });
 
     it('works when it handles empty $domain modifier', () => {

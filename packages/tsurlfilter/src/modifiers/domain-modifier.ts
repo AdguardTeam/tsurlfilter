@@ -19,6 +19,12 @@ export const COMMA_SEPARATOR = ',';
 export const PIPE_SEPARATOR = '|';
 
 /**
+ * Domain list separator character — `,` for the classic cosmetic domain list,
+ * `|` for the `$domain` modifier.
+ */
+export type DomainSeparator = typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR;
+
+/**
  * Processed domain list.
  */
 export interface ProcessedDomainList {
@@ -40,6 +46,12 @@ export interface ProcessedDomainList {
  * The only difference between them is that in one case we use `|` as a separator,
  * and in the other case - `,`.
  *
+ * Domain values are normalized while the list is processed: the separator escape
+ * is resolved in every value, plain and wildcard domains are lower-cased, and
+ * regexp pattern values keep their case and get the documented modifier escapes
+ * (`\[`, `\]`, `\,` and `\\`) unescaped. So the stored lists and the getters
+ * return values ready to be used as regular expressions, not the raw rule text.
+ *
  * @example
  * `||example.org^$domain=example.com|~sub.example.com` -- network rule
  * `example.com,~sub.example.com##banner` -- cosmetic rule
@@ -57,11 +69,14 @@ export class DomainModifier {
 
     /**
      * Processes domain list node, which means extracting permitted and restricted
-     * domains from it.
+     * domains from it and normalizing their values.
      *
      * @param domainListNode Domain list node to process.
      *
-     * @returns Processed domain list (permitted and restricted domains) ({@link ProcessedDomainList}).
+     * @returns Processed domain list with normalized values
+     * (permitted and restricted domains) ({@link ProcessedDomainList}).
+     *
+     * @throws An error if a domain value is invalid.
      */
     public static processDomainList(domainListNode: DomainList): ProcessedDomainList {
         const result: ProcessedDomainList = {
@@ -69,55 +84,25 @@ export class DomainModifier {
             restrictedDomains: [],
         };
 
-        const { children: domains } = domainListNode;
+        const { children: domains, separator } = domainListNode;
 
         for (const { exception, value: domain } of domains) {
-            const domainLowerCased = domain.toLowerCase();
+            const normalized = DomainModifier.normalizeDomain(domain, separator);
 
-            if (!SimpleRegex.isRegexPattern(domain) && domain.includes(WILDCARD) && !domain.endsWith(WILDCARD)) {
-                throw new SyntaxError(`Wildcards are only supported for top-level domains: "${domain}"`);
+            if (!SimpleRegex.isRegexPattern(normalized)
+                && normalized.includes(WILDCARD)
+                && !normalized.endsWith(WILDCARD)) {
+                throw new SyntaxError(`Wildcards are only supported for top-level domains: "${normalized}"`);
             }
 
             if (exception) {
-                result.restrictedDomains.push(domainLowerCased);
+                result.restrictedDomains.push(normalized);
             } else {
-                result.permittedDomains.push(domainLowerCased);
+                result.permittedDomains.push(normalized);
             }
         }
 
         return result;
-    }
-
-    /**
-     * Unescapes a domain value after parsing.
-     *
-     * The separator character is unescaped in every value. For regexp pattern
-     * values, the special characters that must be escaped in modifier values
-     * according to the documentation (`[`, `]`, `,` and `\`) are unescaped as
-     * well, so that a doc-correct regexp such as `/mingky\[0-9\]+\.net/`
-     * compiles to the intended pattern `mingky[0-9]+\.net`.
-     *
-     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-rules-modifiers}
-     *
-     * @param domain Domain value to unescape.
-     * @param separator Separator character — `,` or `|`.
-     *
-     * @returns Unescaped domain value.
-     */
-    private static unescapeDomain(
-        domain: string,
-        separator: typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR,
-    ): string {
-        const unescaped = unescapeChar(domain, separator);
-
-        if (SimpleRegex.isRegexPattern(unescaped)) {
-            return SimpleRegex.unescapeRegexSpecials(
-                unescaped,
-                SimpleRegex.reModifierPatternEscapedSpecialCharacters,
-            );
-        }
-
-        return unescaped;
     }
 
     /**
@@ -128,7 +113,7 @@ export class DomainModifier {
      *
      * @throws An error if the domains string is empty or invalid.
      */
-    constructor(domains: string | DomainList, separator: typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR) {
+    constructor(domains: string | DomainList, separator: DomainSeparator) {
         let processed: ProcessedDomainList;
 
         if (isString(domains)) {
@@ -152,14 +137,6 @@ export class DomainModifier {
 
             processed = DomainModifier.processDomainList(domains);
         }
-
-        // Unescape escaped characters in domains
-        processed.permittedDomains = processed.permittedDomains.map(
-            (domain) => DomainModifier.unescapeDomain(domain, separator),
-        );
-        processed.restrictedDomains = processed.restrictedDomains.map(
-            (domain) => DomainModifier.unescapeDomain(domain, separator),
-        );
 
         this.restrictedDomains = processed.restrictedDomains.length > 0 ? processed.restrictedDomains : null;
         this.permittedDomains = processed.permittedDomains.length > 0 ? processed.permittedDomains : null;
@@ -294,6 +271,49 @@ export class DomainModifier {
      */
     public static isWildcardOrRegexDomain(domain: string): boolean {
         return DomainModifier.isWildcardDomain(domain) || SimpleRegex.isRegexPattern(domain);
+    }
+
+    /**
+     * Normalizes a single domain value after parsing.
+     *
+     * The separator escape is resolved in every value. Non-regexp values are
+     * lower-cased. Regexp pattern values keep their case (hostnames always
+     * arrive lowercase, and case-folding the pattern source would invert the
+     * meaning of classes such as `\D` or `[A-Z]`) and get the special characters
+     * that must be escaped in modifier values according to the documentation
+     * (`[`, `]`, `,` and `\`) unescaped, so that a doc-correct regexp such as
+     * `/mingky\[0-9\]+\.net/` compiles to the intended pattern `mingky[0-9]+\.net`.
+     * The KB escape rules are written for non-basic rule modifiers; the same
+     * normalization is applied to network `$domain` and classic domain lists
+     * for consistency across all `$domain` forms.
+     *
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-rules-modifiers}
+     *
+     * @param domain Domain value to normalize.
+     * @param separator Separator character.
+     *
+     * @returns Normalized domain value.
+     *
+     * @throws An error if a regexp value does not compile after unescaping.
+     */
+    private static normalizeDomain(domain: string, separator: DomainSeparator): string {
+        const unescaped = unescapeChar(domain, separator);
+
+        if (!SimpleRegex.isRegexPattern(unescaped)) {
+            return unescaped.toLowerCase();
+        }
+
+        const pattern = SimpleRegex.unescapeModifierPatternValue(unescaped);
+
+        try {
+            // Validate compilability once at parse time, the same way
+            // the pattern is compiled at match time.
+            RegExp(pattern.slice(1, -1));
+        } catch {
+            throw new SyntaxError(`Invalid regular expression as domain pattern: "${pattern}"`);
+        }
+
+        return pattern;
     }
 
     /**
