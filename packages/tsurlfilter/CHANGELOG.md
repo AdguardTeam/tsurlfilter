@@ -13,14 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rules, e.g. `||example.com^$urltransform` is invalid, and remains valid
   in exception rules, e.g. `@@||example.com^$urltransform`.
 - Updated [@adguard/agtree] to `v4.2.1`.
-- Regexp `$domain` values in cosmetic rules, network rules and classic domain
-  lists now resolve the documented modifier escapes (`\[`, `\]`, `\,` and `\\`)
-  at parse time, so doc-correct rules like
+- Regexp `$domain` values now resolve the documented escapes (`\[`, `\]`, `\,`
+  and `\\`) and keep their case, so doc-correct rules like
   `[$domain=/mingky\[0-9\]+\.net/]##.ad` match as intended [#190].
-  Such values are also no longer lower-cased, keeping classes like `\D` and
-  `[A-Z]` meaningful, and a value that does not compile to a valid regular
-  expression after unescaping now makes the whole rule invalid at load time
-  instead of failing silently on every match.
 
 [Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.2...HEAD
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
