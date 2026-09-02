@@ -160,11 +160,13 @@ jobs:
           bash -n scripts/ci/ak-dev-unpublish.sh
           bash -n scripts/ci/check-pr-open.sh
           bash -n tests/ak-dev-unpublish.test.sh
+          bash -n tests/devex-sweep.test.sh
           node --check .github/actions/finalize-changelog/finalize-changelog.mjs
           node --check scripts/inject-package-versions.mjs
           node --check scripts/use-dev-builds.mjs
           node --check scripts/ci/compute-affected-packages.mjs
           node --check scripts/ci/check-package-lists.mjs
+          node --check scripts/ci/devex-sweep.mjs
 
       - name: Check package list drift
         run: node scripts/ci/check-package-lists.mjs
@@ -180,6 +182,9 @@ jobs:
 
       - name: Run ak-dev-unpublish regression tests
         run: bash tests/ak-dev-unpublish.test.sh
+
+      - name: Run devex-sweep regression tests
+        run: bash tests/devex-sweep.test.sh
 
   notify-failure:
     name: Notify master CI failure

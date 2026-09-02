@@ -110,14 +110,21 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   (script/Node syntax checks, package-list drift guard, finalize-changelog
   regression tests); a push-scoped failure-notify job alerts Slack on broken
   master builds.
-- `devex-bridge.yml` — on PRs touching any of the six packages consumed by the
-  browser extension, publishes them to the internal Artifact Keeper npm
-  registry as `<next-patch>-dev.pr<N>` (overwritten on every push) and posts a
-  usage comment on the PR. Same-repo PRs only (publishes use the org AK
-  secret). Requires the org variable `ARTIFACT_KEEPER_URL` and secret
-  `ARTIFACT_KEEPER_API_KEY`. See DEVELOPMENT.md for the developer workflow.
-- `devex-bridge-cleanup.yml` — when a source PR closes, deletes its `*-dev.pr<N>`
-  versions from AK (fail-loud; requires the same `ARTIFACT_KEEPER_*` pair).
+- `devex-bridge.yml` — on same-repository PRs touching any of the six packages
+  consumed by the browser extension, publishes them to the internal Artifact
+  Keeper npm registry as HEAD-scoped `<next-patch>-dev.pr<N>.<shortsha>`
+  versions (AK is immutable; every push carries a new short SHA, so each push
+  yields fresh builds for all six) and posts a usage comment on the PR.
+  Same-repo PRs only (publishes use the org AK secret). Requires the org
+  variable `ARTIFACT_KEEPER_URL` and secret `ARTIFACT_KEEPER_API_KEY`. See
+  DEVELOPMENT.md for the developer workflow.
+- `devex-bridge-cleanup.yml` — when a source PR closes, deletes its
+  `-dev.pr<N>*` versions from AK (fail-loud; requires the same `ARTIFACT_KEEPER_*`
+  pair), and is also reachable via `workflow_dispatch` (input `pr-number`) as an
+  idempotent retry.
+- `devex-bridge-sweep.yml` — scheduled GC (every 6h, plus `workflow_dispatch`):
+  deletes `-dev.pr<N>*` versions whose source PR is no longer open, so the
+  cleanup converges even when a `closed` event was missed or failed.
 - `prepare-release.yml` — opens a per-package release PR (thin caller of
   `_prepare-release-monorepo.yml`).
 - `_prepare-release-monorepo.yml` — reusable monorepo prepare engine: finalizes

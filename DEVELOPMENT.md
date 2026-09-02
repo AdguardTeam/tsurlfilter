@@ -73,12 +73,13 @@ pnpm build
 
 ## Testing Unmerged Changes in the Browser Extension
 
-Every PR that touches one of the six browser-extension-consumed packages (the
-same `BRIDGED_PACKAGES` set the bridge workflows publish, see
-`devex-bridge.yml`) is automatically published to the internal Artifact Keeper
-npm registry by the `devex-bridge.yml` workflow, with versions
-`<next-patch>-dev.pr<N>`. The PR gets a comment with the exact versions once
-publishing finishes.
+Every **same-repository** PR that touches one of the six
+browser-extension-consumed packages (the same `BRIDGED_PACKAGES` set the bridge
+workflows publish, see `devex-bridge.yml`) is automatically published to the
+internal Artifact Keeper npm registry by the `devex-bridge.yml` workflow, with
+head-scoped versions `<next-patch>-dev.pr<N>.<shortsha>`. Fork PRs get no
+builds (the publish jobs are gated to same-repo PRs). The PR gets a comment
+with the exact versions once publishing finishes.
 
 To build the browser extension against them:
 
@@ -100,10 +101,12 @@ To build the browser extension against them:
    builds the branch — installable builds are in the CI run's Artifacts
    (`dev-builds`, `chrome-dev-crx`).
 
-After every push to the tsurlfilter PR the dev builds are (re)published when the
-PR bumps a package CHANGELOG — AK versions are immutable, so the tarball does
-not change on a no-op re-push. Re-run the same command to refresh the lockfile
-integrity, then commit and push.
+After every push to the tsurlfilter PR the dev builds are republished under a
+new head-scoped version, so re-run the same command (from the pushed checkout,
+or with `--head <short-sha>` from the comment) and commit the refreshed
+`package.json` / `pnpm-lock.yaml`. The tool resolves the coherent set for the
+checkout head: if any package's build for that head is missing on AK (a publish
+leg failed), it fails loudly instead of mixing builds from different heads.
 
 A branch pinned to dev builds must never be merged. Before marking the
 extension PR ready (once the real versions are released, or if testing is
@@ -114,7 +117,8 @@ node scripts/use-dev-builds.mjs --remove --extension /path/to/browser-extension
 ```
 
 Closing or merging the tsurlfilter PR deletes its dev versions from AK
-(`devex-bridge-cleanup.yml`), after which pinned branches stop resolving.
+(`devex-bridge-cleanup.yml`), after which pinned branches stop resolving; the
+`devex-bridge-sweep.yml` GC is the safety net if a close event was missed.
 
 ### Requirements
 
