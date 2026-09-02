@@ -37,7 +37,7 @@ const repoRoot = path.resolve(scriptRoot, '..');
 const BRIDGED_PACKAGES = JSON.parse(
     fs.readFileSync(path.join(scriptRoot, 'bridged-packages.json'), 'utf8'),
 );
-const UNPUBLISH_SCRIPT = path.join(scriptRoot, 'ak-dev-unpublish.sh');
+const UNPUBLISH_SCRIPT = path.join(scriptRoot, 'ak-dev-unpublish.mjs');
 const LEASE_DAYS = 14;
 
 const registry = process.env.AK_REGISTRY;
@@ -127,7 +127,7 @@ async function prState(prNumber) {
 function deletePrVersions(pkg, prNumber) {
     // Deleting is best-effort per (package, PR); a failure must surface.
     try {
-        execFileSync('bash', [UNPUBLISH_SCRIPT, `@adguard/${pkg}`, registry, `-dev.pr${prNumber}`], {
+        execFileSync('node', [UNPUBLISH_SCRIPT, `@adguard/${pkg}`, registry, `-dev.pr${prNumber}`], {
             stdio: ['ignore', 'inherit', 'inherit'],
         });
         return true;

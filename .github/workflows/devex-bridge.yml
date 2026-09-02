@@ -13,14 +13,14 @@ name: DevEx bridge
 # mixing builds from different heads. devex-bridge-cleanup.yml deletes the
 # `-dev.pr<N>*` versions when the source PR closes, and
 # devex-bridge-sweep.yml runs a periodic GC that converges even when a close
-# event was missed; scripts/ci/ak-dev-unpublish.sh is the single place the
+# event was missed; scripts/ci/ak-dev-unpublish.mjs is the single place the
 # registry error taxonomy (404/405/other) and the per-PR suffix matching live.
 # The extension-side PR is deliberately created by the developer, not by CI.
 #
 # Trust boundary (read before enabling): `pull_request` executes this workflow
 # from the PR's merge commit, and GitHub provisions org secrets to same-repo PR
 # runs — so the ARTIFACT_KEEPER_API_KEY reaches code (inline node/bash in this
-# file and the reviewed scripts/ci/{check-pr-open,ak-dev-unpublish,verify-tarball}.sh
+# file and the reviewed scripts/ci/ak-dev-unpublish.mjs / {check-pr-open,verify-tarball}.sh
 # helpers) that any same-repo member who can push here controls. The publish
 # step re-validates the tarball's embedded package name against
 # `@adguard/<matrix.package>` immediately before publishing, so a tampered
@@ -370,7 +370,7 @@ jobs:
             exit 1
           fi
           echo "PR #${{ github.event.pull_request.number }} closed during this run — removing ${{ matrix.package }} from AK"
-          bash scripts/ci/ak-dev-unpublish.sh \
+          node scripts/ci/ak-dev-unpublish.mjs \
             "@adguard/${{ matrix.package }}" "${AK_REGISTRY}" "${SUFFIX}"
 
   unpublish:
@@ -380,7 +380,7 @@ jobs:
     # mid-PR CHANGELOG bump or a re-push (new head SHA) never leaves
     # duplicate/stale versions, and a failed publish leaves the previous build
     # intact. Shares the registry error taxonomy with the cleanup workflow via
-    # scripts/ci/ak-dev-unpublish.sh.
+    # scripts/ci/ak-dev-unpublish.mjs.
     needs: [changes, publish]
     if: >-
       needs.changes.outputs.bridge-needed == 'true' &&
@@ -453,7 +453,7 @@ jobs:
                 const records = fs.readdirSync('versions').filter((f) => f.endsWith('.json')).map((f) => JSON.parse(fs.readFileSync(\`versions/\${f}\`, 'utf8')));
                 process.stdout.write(records.filter((r) => r.name === process.env.KEEP_NAME).map((r) => r.version).join('\n'));
               ")
-            if ! bash scripts/ci/ak-dev-unpublish.sh \
+            if ! node scripts/ci/ak-dev-unpublish.mjs \
                 "${name}" "${AK_REGISTRY}" "-dev.pr${{ github.event.pull_request.number }}" \
                 --tolerate-405 \
                 "${keep_args[@]}"; then

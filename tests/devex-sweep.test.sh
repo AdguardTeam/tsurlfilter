@@ -59,7 +59,7 @@ run_sweep() {
 }
 
 # 1. Closed PR's builds are deleted, open PR's builds are kept. deletePrVersions
-#    calls ak-dev-unpublish.sh, which queries versions again — everything after
+#    calls ak-dev-unpublish.mjs, which queries versions again — everything after
 #    the first 6 replies is "ok:[]" so the delete leg reports nothing to delete
 #    (the unpublish itself is covered by ak-dev-unpublish.test.sh).
 write_replies \
@@ -74,7 +74,7 @@ set -e
 [[ "${code}" -eq 0 ]] || { echo "FAIL gc: expected exit 0, got ${code}" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
 grep -q 'PR #7 is closed — deleting' <<<"${OUTPUT}" || { echo "FAIL gc: expected PR #7 deletion:" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
 grep -q 'PR #9 is open — keeping' <<<"${OUTPUT}" || { echo "FAIL gc: expected PR #9 to be kept:" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
-# The deletion leg must have actually invoked ak-dev-unpublish.sh for each
+# The deletion leg must have actually invoked ak-dev-unpublish.mjs for each
 # package with the -dev.pr7 suffix.
 cd "${ROOT_DIR}"
 grep -q 'view @adguard/dnr-converter versions' "${LOG_FILE}" || { echo "FAIL gc: dnr-converter not queried" >&2; cat "${LOG_FILE}" >&2; exit 1; }

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Regression tests for scripts/ci/ak-dev-unpublish.sh. Hermetic: npm is stubbed
-# via PATH shadowing; every case runs against a throwaway fixture dir.
+# Regression tests for scripts/ci/ak-dev-unpublish.mjs. Hermetic: npm is stubbed
+# via PATH shadowing; every case runs against a throwaway fixture dir. The
+# script is invoked with `node` (the same way the workflows call it).
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SCRIPT="${ROOT_DIR}/scripts/ci/ak-dev-unpublish.sh"
+SCRIPT="${ROOT_DIR}/scripts/ci/ak-dev-unpublish.mjs"
 TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TEMP_DIR}"' EXIT
 
@@ -50,7 +51,7 @@ run_case() {
     write_replies "$@"
     : > "${LOG_FILE}"
     set +e
-    OUTPUT="$(bash "${SCRIPT}" "@adguard/testpkg" "https://ak.invalid/npm/npm-internal" "-dev.pr42" 2>&1)"
+    OUTPUT="$(node "${SCRIPT}" "@adguard/testpkg" "https://ak.invalid/npm/npm-internal" "-dev.pr42" 2>&1)"
     local code=$?
     set -e
     if [[ "${code}" -ne "${expected_exit}" ]]; then
@@ -87,7 +88,7 @@ write_replies \
     "ok:deleted"
 : > "${LOG_FILE}"
 set +e
-OUTPUT="$(bash "${SCRIPT}" "@adguard/testpkg" "https://ak.invalid/npm/npm-internal" "-dev.pr42" --keep "1.0.2-dev.pr42" 2>&1)"
+OUTPUT="$(node "${SCRIPT}" "@adguard/testpkg" "https://ak.invalid/npm/npm-internal" "-dev.pr42" --keep "1.0.2-dev.pr42" 2>&1)"
 code=$?
 set -e
 [[ "${code}" -eq 0 ]] || { echo "FAIL keep: exit ${code}" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
@@ -99,7 +100,7 @@ write_replies \
     "err:405 Method Not Allowed"
 : > "${LOG_FILE}"
 set +e
-OUTPUT="$(bash "${SCRIPT}" "@adguard/testpkg" "https://ak.invalid/npm/npm-internal" "-dev.pr42" --tolerate-405 2>&1)"
+OUTPUT="$(node "${SCRIPT}" "@adguard/testpkg" "https://ak.invalid/npm/npm-internal" "-dev.pr42" --tolerate-405 2>&1)"
 code=$?
 set -e
 [[ "${code}" -eq 0 ]] || { echo "FAIL tolerate-405: exit ${code}" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }

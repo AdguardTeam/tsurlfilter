@@ -15,7 +15,7 @@ name: DevEx bridge cleanup
 # when this event was missed or failed. If AK policy ever forbids unpublish,
 # fix the policy (or switch to the AK admin API / TTL) rather than silencing
 # this — the registry error taxonomy (404 vs 405 vs other) lives in
-# scripts/ci/ak-dev-unpublish.sh, shared with devex-bridge.yml and the sweep,
+# scripts/ci/ak-dev-unpublish.mjs, shared with devex-bridge.yml and the sweep,
 # so the twins cannot drift.
 #
 # Requires the org variable ARTIFACT_KEEPER_URL (base URL of the Artifact
@@ -91,7 +91,7 @@ jobs:
       - name: Checkout at PR head (close) or dispatch ref
         # The `closed` event's merge ref (refs/pull/N/merge) is deleted when the
         # PR closes, so check out the PR head ref, which GitHub retains for the
-        # PR's lifetime — this is what makes scripts/ci/ak-dev-unpublish.sh
+        # PR's lifetime — this is what makes scripts/ci/ak-dev-unpublish.mjs
         # (reviewed under CODEOWNERS) available to run the cleanup. On a
         # workflow_dispatch there is no PR payload; use the ref the dispatch ran
         # on (normally the default branch).
@@ -124,7 +124,7 @@ jobs:
           failures=0
           for pkg in ${BRIDGED_PACKAGES}; do
             name="@adguard/${pkg}"
-            if ! bash scripts/ci/ak-dev-unpublish.sh "${name}" "${AK_REGISTRY}" "-dev.pr${PR_NUMBER}"; then
+            if ! bash scripts/ci/ak-dev-unpublish.mjs "${name}" "${AK_REGISTRY}" "-dev.pr${PR_NUMBER}"; then
               echo "::error::Cleanup of ${name} failed"
               failures=$((failures + 1))
             fi

@@ -12,7 +12,7 @@ name: DevEx bridge sweep
 #   - no input   -> full sweep (GC of every closed-PR dev build)
 #   - pr-number  -> delete only that PR's builds (targeted recovery)
 # The deletion itself is shared with the other twins via
-# scripts/ci/ak-dev-unpublish.sh (single place for the 404/405/other taxonomy).
+# scripts/ci/ak-dev-unpublish.mjs (single place for the 404/405/other taxonomy).
 #
 # Requires ARTIFACT_KEEPER_URL + ARTIFACT_KEEPER_API_KEY (same pair as the
 # other bridge workflows) and the default GITHUB_TOKEN (pull-requests: read)
