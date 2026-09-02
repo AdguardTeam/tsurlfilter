@@ -15,15 +15,16 @@ name: DevEx bridge
 #
 # Trust boundary (read before enabling): `pull_request` executes this workflow
 # from the PR's merge commit, and GitHub provisions org secrets to same-repo PR
-# runs — so the ARTIFACT_KEEPER_API_KEY reaches code (inline node/bash in the
-# publish/unpublish steps) that any same-repo member who can push here controls.
-# Fork PRs get no secrets and the secret-touching jobs are additionally gated
-# to same-repo PRs, but that does not protect against a same-repo insider. This
-# matches the org model used by build.yml: the repo MUST require approval for
-# fork / outside-collaborator PR runs, and .github/CODEOWNERS requires
-# extensions-maintainers review of this workflow, its cleanup twin, and the
-# pinning tool. The jobs touching the secret run fixed npm CLI calls / inline
-# node scripts from this file; they never execute PR source code.
+# runs — so the ARTIFACT_KEEPER_API_KEY reaches code (inline node/bash in this
+# file and the reviewed scripts/ci/{check-pr-open,ak-dev-unpublish}.sh helpers)
+# that any same-repo member who can push here controls. Fork PRs get no secrets
+# and the secret-touching jobs are additionally gated to same-repo PRs, but that
+# does not protect against a same-repo insider. This matches the org model used
+# by build.yml: the repo MUST require approval for fork / outside-collaborator
+# PR runs, and .github/CODEOWNERS requires extensions-maintainers review of this
+# workflow, its cleanup twin, the pinning tool and the shared scripts. The jobs
+# touching the secret run npm CLI calls / inline node / the small reviewed
+# helper scripts; they never build or execute PR package code.
 #
 # Load note: `pack` caps its Docker build matrix at max-parallel 4; build.yml's
 # `test` matrix runs 4 concurrent builds against the same shared BuildKit
@@ -231,6 +232,9 @@ jobs:
       contents: read
       pull-requests: read
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
       - name: Set up Node.js for AK registry access
         uses: actions/setup-node@v6
         with:
@@ -345,6 +349,9 @@ jobs:
       contents: read
       pull-requests: read
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
       - name: Set up Node.js for AK registry access
         uses: actions/setup-node@v6
         with:
@@ -415,6 +422,9 @@ jobs:
       contents: read
       pull-requests: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
       - name: Bail if the PR is no longer open
         shell: bash
         env:

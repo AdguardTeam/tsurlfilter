@@ -42,6 +42,15 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Checkout at PR head ref
+        # The `closed` event's merge ref (refs/pull/N/merge) is deleted when the
+        # PR closes, so check out the PR head ref, which GitHub retains for the
+        # PR's lifetime — this is what makes scripts/ci/ak-dev-unpublish.sh
+        # (reviewed under CODEOWNERS) available to run the cleanup.
+        uses: actions/checkout@v6
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+
       - name: Set up Node.js for AK registry access
         uses: actions/setup-node@v6
         with:
