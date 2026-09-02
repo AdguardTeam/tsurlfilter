@@ -335,6 +335,21 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://google.com'))).toEqual(false);
     });
 
+    // AG-57204 / tsurlfilter#190
+    it('matches requests by regexp domain with escaped brackets', () => {
+        let rule: CosmeticRule;
+
+        // Doc-correct escaped form: [ and ] are escaped in the modifier value
+        rule = createCosmeticRule(String.raw`[$domain=/mingky\[0-9\]+\.net/]##banner`, 0);
+        expect(rule.match(createRequest('https://mingky03.net'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com'))).toEqual(false);
+
+        // Raw form from the original report must keep working
+        rule = createCosmeticRule(String.raw`[$domain=/mingky[0-9]+\.net/]##banner`, 0);
+        expect(rule.match(createRequest('https://mingky03.net'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com'))).toEqual(false);
+    });
+
     it('matches by $domain modifier with mixed type values', () => {
         let request: Request;
         const rule = createCosmeticRule(String.raw`[$domain=/\.(io\|com)/|evil.*|ads.net|~/jwt\.io/|~evil.gov]##banner`, 0);

@@ -210,6 +210,42 @@ describe('Domain modifier', () => {
         });
     });
 
+    // AG-57204 / tsurlfilter#190: [ ] , \ must be escapable inside regexp $domain values,
+    // see https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-rules-modifiers
+    describe('unescapes escaped regex special characters in regexp domains', () => {
+        it('pipe separator: permitted regexp domain', () => {
+            const modifier = new DomainModifier(String.raw`/mingky\[0-9\]+\.net/`, '|');
+
+            expect(modifier.permittedDomains).toEqual([String.raw`/mingky[0-9]+\.net/`]);
+            expect(modifier.matchDomain('mingky03.net')).toBeTruthy();
+            expect(modifier.matchDomain('mingky[0-9].net')).toBeFalsy();
+            expect(modifier.matchDomain('mingkyx.net')).toBeFalsy();
+        });
+
+        it('pipe separator: restricted regexp domain', () => {
+            const modifier = new DomainModifier(String.raw`~/bad\[0-9\]\.com/`, '|');
+
+            expect(modifier.restrictedDomains).toEqual([String.raw`/bad[0-9]\.com/`]);
+            expect(modifier.matchDomain('bad5.com')).toBeFalsy();
+            expect(modifier.matchDomain('good.com')).toBeTruthy();
+        });
+
+        it('comma separator: mixed domain list with regexp value', () => {
+            const modifier = new DomainModifier(String.raw`example.com,/foo\[bar\]\.org/`, ',');
+
+            expect(modifier.permittedDomains).toEqual(['example.com', String.raw`/foo[bar]\.org/`]);
+            expect(modifier.matchDomain('fooa.org')).toBeTruthy();
+            expect(modifier.matchDomain('example.com')).toBeTruthy();
+        });
+
+        it('leaves plain, wildcard and raw-regexp values untouched', () => {
+            const modifier = new DomainModifier('example.com|example.*|/mingky[0-9]+\\.net/', '|');
+
+            expect(modifier.permittedDomains).toEqual(['example.com', 'example.*', String.raw`/mingky[0-9]+\.net/`]);
+            expect(modifier.matchDomain('mingky03.net')).toBeTruthy();
+        });
+    });
+
     describe('DomainModifier.isDomainOrSubdomainOfAny', () => {
         const { isDomainOrSubdomainOfAny } = DomainModifier;
         it('works in common cases', () => {

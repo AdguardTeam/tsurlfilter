@@ -145,6 +145,19 @@ describe('NetworkRule constructor', () => {
         expect(rule.getRestrictedDomains()).toEqual([String.raw`/good\.evil\.(com|org)/`]);
     });
 
+    // AG-57204 / tsurlfilter#190: same unescaping must apply to network $domain
+    it('unescapes escaped brackets in network $domain regexp values', () => {
+        const rule = createNetworkRule(String.raw`||example.org^$domain=/mingky\[0-9\]+\.net/`, 0);
+
+        expect(rule.getPermittedDomains()).toEqual([String.raw`/mingky[0-9]+\.net/`]);
+
+        const request = new Request('https://example.org/', 'https://mingky03.net/movie', RequestType.Document);
+        expect(rule.matchDomainModifier(request)).toBeTruthy();
+
+        const badRequest = new Request('https://example.org/', 'https://example.com/', RequestType.Document);
+        expect(rule.matchDomainModifier(badRequest)).toBeFalsy();
+    });
+
     it('works when it handles empty $domain modifier', () => {
         expect(() => {
             createNetworkRule('||example.org^$domain=', 0);

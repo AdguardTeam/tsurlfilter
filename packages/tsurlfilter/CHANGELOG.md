@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in exception rules, e.g. `@@||example.com^$urltransform`.
 - Updated [@adguard/agtree] to `v4.2.1`.
 
+### Fixed
+
+- Unescape `[`, `]`, `,` and `\` inside regexp `$domain` modifier values in
+  cosmetic and network rules, so doc-correct rules like
+  `[$domain=/mingky\[0-9\]+\.net/]##.ad` match as intended [#190].
+
 [Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.2...HEAD
 
 ## [v6.0.2] - 2026-07-28
@@ -65,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v6.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.0.2
 [#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
 [#189]: https://github.com/AdguardTeam/tsurlfilter/issues/189
+[#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
 [AdguardBrowserExtension#3533]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3533
 
 ## [v5.0.1] - 2026-04-24

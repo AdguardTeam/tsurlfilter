@@ -89,6 +89,38 @@ export class DomainModifier {
     }
 
     /**
+     * Unescapes a domain value after parsing.
+     *
+     * The separator character is unescaped in every value. For regexp pattern
+     * values, the special characters that must be escaped in modifier values
+     * according to the documentation (`[`, `]`, `,` and `\`) are unescaped as
+     * well, so that a doc-correct regexp such as `/mingky\[0-9\]+\.net/`
+     * compiles to the intended pattern `mingky[0-9]+\.net`.
+     *
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-rules-modifiers}
+     *
+     * @param domain Domain value to unescape.
+     * @param separator Separator character — `,` or `|`.
+     *
+     * @returns Unescaped domain value.
+     */
+    private static unescapeDomain(
+        domain: string,
+        separator: typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR,
+    ): string {
+        const unescaped = unescapeChar(domain, separator);
+
+        if (SimpleRegex.isRegexPattern(unescaped)) {
+            return SimpleRegex.unescapeRegexSpecials(
+                unescaped,
+                SimpleRegex.reModifierPatternEscapedSpecialCharacters,
+            );
+        }
+
+        return unescaped;
+    }
+
+    /**
      * Parses the `domains` string and initializes the object.
      *
      * @param domains Domain list string or AGTree DomainList node.
@@ -121,9 +153,13 @@ export class DomainModifier {
             processed = DomainModifier.processDomainList(domains);
         }
 
-        // Unescape separator character in domains
-        processed.permittedDomains = processed.permittedDomains.map((domain) => unescapeChar(domain, separator));
-        processed.restrictedDomains = processed.restrictedDomains.map((domain) => unescapeChar(domain, separator));
+        // Unescape escaped characters in domains
+        processed.permittedDomains = processed.permittedDomains.map(
+            (domain) => DomainModifier.unescapeDomain(domain, separator),
+        );
+        processed.restrictedDomains = processed.restrictedDomains.map(
+            (domain) => DomainModifier.unescapeDomain(domain, separator),
+        );
 
         this.restrictedDomains = processed.restrictedDomains.length > 0 ? processed.restrictedDomains : null;
         this.permittedDomains = processed.permittedDomains.length > 0 ? processed.permittedDomains : null;
