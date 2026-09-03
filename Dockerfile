@@ -12,9 +12,7 @@ ENV npm_config_store_dir=/pnpm-store
 # socket from a previous stage would cause Nx to hang for 120 s before failing.
 ENV NX_DAEMON=false
 # Treat in-image installs as CI: pnpm then defaults to --frozen-lockfile, so
-# smoke fixtures reuse the root lockfile instead of re-resolving — a git
-# dependency of the benchmarks' old tsurlfilter baseline otherwise needs an
-# anonymous git ls-remote to github.com, which gets rate-limited on CI egress.
+# smoke fixtures reuse the root lockfile instead of re-resolving on CI egress.
 ENV CI=true
 
 # ============================================================================
@@ -41,10 +39,6 @@ COPY packages/examples/adguard-api/package.json ./packages/examples/adguard-api/
 COPY packages/examples/adguard-api-mv3/package.json ./packages/examples/adguard-api-mv3/
 COPY packages/examples/tswebextension-mv2/package.json ./packages/examples/tswebextension-mv2/
 COPY packages/examples/tswebextension-mv3/package.json ./packages/examples/tswebextension-mv3/
-COPY packages/benchmarks/agtree-benchmark/package.json ./packages/benchmarks/agtree-benchmark/
-COPY packages/benchmarks/agtree-browser-benchmark/package.json ./packages/benchmarks/agtree-browser-benchmark/
-COPY packages/benchmarks/css-tokenizer-benchmark/package.json ./packages/benchmarks/css-tokenizer-benchmark/
-COPY packages/benchmarks/tsurlfilter-benchmark/package.json ./packages/benchmarks/tsurlfilter-benchmark/
 
 # --ignore-scripts is safe here: this monorepo has no native / postinstall deps.
 # The flag skips only lifecycle scripts (husky prepare, etc.) which are
