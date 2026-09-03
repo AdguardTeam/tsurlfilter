@@ -123,16 +123,29 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Compute dev version suffix (head-scoped)
+        id: suffix
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: echo "VERSION_SUFFIX=pr${PR_NUMBER}.${HEAD_SHA:0:8}" >> "${GITHUB_ENV}"
+        run: |
+          # The suffix is written to BOTH stores because they serve different
+          # consumers:
+          #   - GITHUB_ENV  -> visible as $VERSION_SUFFIX in the SHELL of later
+          #     `run:` steps (verify-tarball, ensure-suffix, etc.).
+          #   - GITHUB_OUTPUT -> visible as steps.suffix.outputs.VERSION_SUFFIX
+          #     in `with:` / `env:` EXPRESSION contexts (set-dev-version input,
+          #     close-during-run reconciliation). Variables written to
+          #     GITHUB_ENV are NOT part of the env expression context, so the
+          #     expression-consumers MUST read the output, not `env.VERSION_SUFFIX`.
+          SUFFIX="pr${PR_NUMBER}.${HEAD_SHA:0:8}"
+          echo "VERSION_SUFFIX=${SUFFIX}" >> "${GITHUB_ENV}"
+          echo "VERSION_SUFFIX=${SUFFIX}" >> "${GITHUB_OUTPUT}"
 
       - name: Inject development package versions
         uses: AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@master
         with:
           package-globs: packages/*/package.json
-          version-suffix: ${{ env.VERSION_SUFFIX }}
+          version-suffix: ${{ steps.suffix.outputs.VERSION_SUFFIX }}
 
       # TODO: once ext-shared-actions#15 lands on master and this workflow runs
       # against it, set-dev-version@master stamps <next-patch>-dev.pr<N>.<shortsha>
@@ -297,10 +310,23 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Compute dev version suffix (head-scoped)
+        id: suffix
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: echo "VERSION_SUFFIX=pr${PR_NUMBER}.${HEAD_SHA:0:8}" >> "${GITHUB_ENV}"
+        run: |
+          # The suffix is written to BOTH stores because they serve different
+          # consumers:
+          #   - GITHUB_ENV  -> visible as $VERSION_SUFFIX in the SHELL of later
+          #     `run:` steps (verify-tarball, ensure-suffix, etc.).
+          #   - GITHUB_OUTPUT -> visible as steps.suffix.outputs.VERSION_SUFFIX
+          #     in `with:` / `env:` EXPRESSION contexts (set-dev-version input,
+          #     close-during-run reconciliation). Variables written to
+          #     GITHUB_ENV are NOT part of the env expression context, so the
+          #     expression-consumers MUST read the output, not `env.VERSION_SUFFIX`.
+          SUFFIX="pr${PR_NUMBER}.${HEAD_SHA:0:8}"
+          echo "VERSION_SUFFIX=${SUFFIX}" >> "${GITHUB_ENV}"
+          echo "VERSION_SUFFIX=${SUFFIX}" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Node.js for AK registry access
         uses: actions/setup-node@v6
@@ -378,7 +404,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.url }}
-          SUFFIX: '-dev.${{ env.VERSION_SUFFIX }}'
+          SUFFIX: '-dev.${{ steps.suffix.outputs.VERSION_SUFFIX }}'
         run: |
           set -euo pipefail
           echo "::add-mask::${NODE_AUTH_TOKEN}"
