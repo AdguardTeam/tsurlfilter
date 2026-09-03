@@ -1,10 +1,8 @@
-/* eslint-disable no-console */
 /* eslint-disable max-len */
-// pnpm vitest bench cosmetic-engine
 import { readFileSync } from 'node:fs';
 
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
-import { bench, describe } from 'vitest';
+import { test } from 'vitest';
 
 import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
@@ -12,7 +10,7 @@ import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
 import { type IndexedStorageCosmeticRuleParts } from '../../src/rules/rule';
 
-describe('Build engine', () => {
+test('build cosmetic engine: current vs v3', async ({ bench }) => {
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
     const preprocessedFilter = TsUrlFilterOld.FilterListPreprocessor.preprocess(rawFilter);
 
@@ -51,14 +49,12 @@ describe('Build engine', () => {
         return engine;
     };
 
-    console.log('Old rules count:', createOldEngine().rulesCount);
-    console.log('New rules count:', createNewEngine().rulesCount);
-
-    bench('old engine', () => {
-        createOldEngine();
-    });
-
-    bench('new engine', () => {
-        createNewEngine();
-    });
+    await bench.compare(
+        bench('old cosmetic engine (v3)', () => {
+            createOldEngine();
+        }),
+        bench('new cosmetic engine', () => {
+            createNewEngine();
+        }),
+    );
 });

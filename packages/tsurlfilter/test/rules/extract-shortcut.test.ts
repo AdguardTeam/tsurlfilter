@@ -1,5 +1,4 @@
-/* eslint-disable no-console, no-plusplus */
-import console from 'node:console';
+/* eslint-disable no-console */
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -55,22 +54,6 @@ const getPatterns = async (filePath: string): Promise<string[]> => {
 };
 
 /**
- * Calculates memory usage difference between current and base values.
- *
- * @param base Base memory usage values.
- *
- * @returns Memory usage difference.
- */
-function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
-    let { heapUsed, heapTotal } = process.memoryUsage();
-
-    heapUsed -= base.heapUsed;
-    heapTotal -= base.heapTotal;
-
-    return ({ heapUsed, heapTotal });
-}
-
-/**
  * Validates extracted shortcuts against reference file.
  *
  * @param patterns List of patterns to extract shortcuts from.
@@ -107,56 +90,20 @@ const validateExtraction = async (
     }
 };
 
-/**
- * Runs benchmark for given patterns.
- *
- * @param title Title to print before benchmark results.
- * @param patterns List of patterns to extract shortcuts from.
- */
-const runBench = async (
-    title: string,
-    patterns: string[],
-) => {
-    const initMemory = memoryUsage();
-    const start = Date.now();
-
-    let batchesCount = 3000;
-    while (batchesCount--) {
-        for (let i = 0; i < patterns.length - 1; i += 1) {
-            SimpleRegex.extractShortcut(patterns[i]);
-        }
-    }
-
-    const finalMemory = memoryUsage(initMemory);
-    const elapsed = Date.now() - start;
-
-    console.log(`\n${title}\n`);
-    console.log(`Total patterns parsed: ${patterns.length}`);
-    console.log(`Elapsed overall, ms: ${elapsed}`);
-    console.log(`Average per pattern, ms: ${elapsed / patterns.length}`);
-    console.log(`Heap growth, kB total: ${finalMemory.heapTotal}`);
-    console.log(`Heap growth, kB used: ${finalMemory.heapUsed}`);
-};
-
-// TODO: Consider using Vitest benchmark feature: https://vitest.dev/guide/features#benchmarking
-describe('Benchmarks', () => {
-    it('runs SimpleRegex.extractRegexpShortcut', async () => {
+describe('SimpleRegex shortcut extraction correctness', () => {
+    it('extractRegexpShortcut matches the reference', async () => {
         const patterns = await getPatterns(FilePath.AdguardRegexpPatternNetworkRules);
 
         await expect(
             validateExtraction(patterns, FilePath.RegexpShortcutsReference),
         ).resolves.not.toThrow();
-
-        await runBench('SimpleRegex.extractRegexpShortcut:', patterns);
     });
 
-    it('runs SimpleRegex.extractShortcut', async () => {
+    it('extractShortcut matches the reference', async () => {
         const patterns = await getPatterns(FilePath.EasylistBaseRules);
 
         await expect(
             validateExtraction(patterns, FilePath.BasicShortcutsReference),
         ).resolves.not.toThrow();
-
-        await runBench('SimpleRegex.extractRegexpShortcut:', patterns);
     });
 });

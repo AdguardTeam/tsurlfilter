@@ -69,6 +69,8 @@
         "lint:md": "markdownlint .",
         "precommit": "pnpm lint:types && pnpm lint && pnpm test",
         "test": "vitest run --no-cache",
+        "bench": "vitest bench --run --project \"node (bench)\" --reporter=default --reporter=json --outputFile.json=.vitest/bench/agtree.json",
+        "bench:browser": "vitest bench --run --project \"browser*\" --reporter=default --reporter=json --outputFile.json=.vitest/bench/agtree-browser.json",
         "test:ci": "vitest run --no-cache --reporter default --reporter junit --outputFile=./tests-reports/agtree.xml",
         "test:prod": "pnpm lint && pnpm test:smoke && pnpm test:ci",
         "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
@@ -86,6 +88,7 @@
         "zod": "catalog:"
     },
     "devDependencies": {
+        "agtree-v2": "npm:@adguard/agtree@^2.3.0",
         "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-json": "catalog:",
         "@rollup/plugin-node-resolve": "catalog:",
@@ -101,6 +104,8 @@
         "@types/sprintf-js": "^1.1.4",
         "@typescript-eslint/eslint-plugin": "catalog:",
         "@typescript-eslint/parser": "catalog:",
+        "@vitest/browser": "catalog:",
+        "@vitest/browser-playwright": "catalog:",
         "@vitest/coverage-v8": "catalog:",
         "@vitest/expect": "catalog:",
         "eslint": "catalog:",
@@ -118,6 +123,7 @@
         "markdown-table": "catalog:",
         "markdownlint": "catalog:",
         "markdownlint-cli": "catalog:",
+        "playwright": "catalog:",
         "prettier": "^3.3.2",
         "rimraf": "catalog:",
         "rollup": "catalog:",

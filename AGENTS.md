@@ -39,11 +39,8 @@ high-level extension APIs (`adguard-api`, `adguard-api-mv3`).
 │   │   ├── adguard-api-mv3/        # Example using @adguard/api-mv3
 │   │   ├── tswebextension-mv2/     # Example using tswebextension (MV2)
 │   │   └── tswebextension-mv3/     # Example using tswebextension (MV3)
-│   └── benchmarks/                  # Performance benchmarks
-│       ├── agtree-benchmark/        # AGTree parser benchmarks
-│       ├── agtree-browser-benchmark/ # AGTree browser benchmarks
-│       ├── css-tokenizer-benchmark/ # CSS tokenizer benchmarks
-│       └── tsurlfilter-benchmark/   # TSUrlFilter benchmarks
+│   └── benchmarks/                  # Benchmark documentation (benchmarks are
+│       └── (co-located in packages as test/**/*.bench.ts)
 ├── scripts/                         # Cleanup, version injection, and CI helpers
 ├── package.json                     # Root package config
 ├── pnpm-workspace.yaml              # Workspace and catalog definitions
@@ -80,6 +77,8 @@ All commands are run from the repository root unless noted otherwise.
 - **Install dependencies**: `pnpm install`
 - **Lint all packages**: `pnpm lint`
 - **Run all tests**: `npx lerna run test`
+- **Run all benchmarks**: `npx lerna run bench` (per-package `pnpm bench`;
+  browser numbers via `pnpm bench:browser` inside a package)
 - **Build all packages**: `npx lerna run build`
 - **Build a specific package**: `npx lerna run build --scope=<package-name>`
   (e.g. `--scope=@adguard/tsurlfilter`; Lerna builds dependencies

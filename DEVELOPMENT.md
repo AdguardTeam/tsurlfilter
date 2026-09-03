@@ -287,11 +287,13 @@ loaded as unpacked extensions in the browser. Use
 
 ### Running Benchmarks
 
-Each benchmark is run from its own directory under `packages/benchmarks/`:
+Benchmarks are co-located in each library as `test/**/*.bench.ts` and run via
+Vitest 5. From a package directory, run `pnpm bench` (Node) or
+`pnpm bench:browser` (Chromium). To run every package's benchmarks from the
+repository root:
 
 ```bash
-cd packages/benchmarks/agtree-benchmark
-pnpm start
+npx lerna run bench
 ```
 
 ### IDE Setup (VS Code)

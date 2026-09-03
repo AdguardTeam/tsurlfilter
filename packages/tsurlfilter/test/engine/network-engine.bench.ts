@@ -1,10 +1,8 @@
-/* eslint-disable no-console */
 /* eslint-disable max-len */
-// pnpm vitest bench network-engine
 import { readFileSync } from 'node:fs';
 
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
-import { bench, describe } from 'vitest';
+import { test } from 'vitest';
 
 import { NetworkEngine } from '../../src/engine/network-engine';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
@@ -12,7 +10,7 @@ import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
 import { type IndexedStorageNetworkRuleParts } from '../../src/rules/rule';
 
-describe('Build engine', () => {
+test('build network engine: current vs v3', async ({ bench }) => {
     const ignoreCosmetic = true;
 
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
@@ -45,7 +43,7 @@ describe('Build engine', () => {
         const rulesParts: IndexedStorageNetworkRuleParts[] = [];
 
         while (scanner.scan()) {
-            // We can safely cast here, because we configured scanner to scan only cosmetic rules
+            // We can safely cast here, because we configured scanner to scan only network rules
             rulesParts.push(scanner.getRuleParts()! as IndexedStorageNetworkRuleParts);
         }
 
@@ -53,14 +51,12 @@ describe('Build engine', () => {
         return engine;
     };
 
-    console.log('Old rules count:', createOldEngine().rulesCount);
-    console.log('New rules count:', createNewEngine().rulesCount);
-
-    bench('old engine', () => {
-        createOldEngine();
-    });
-
-    bench('new engine', () => {
-        createNewEngine();
-    });
+    await bench.compare(
+        bench('old network engine (v3)', () => {
+            createOldEngine();
+        }),
+        bench('new network engine', () => {
+            createNewEngine();
+        }),
+    );
 });
