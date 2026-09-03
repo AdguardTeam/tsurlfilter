@@ -92,8 +92,14 @@ for (let i = 0; i < rest.length; i += 1) {
     }
 }
 
-// npm() — run npm, returning { ok, out } (out is stdout on success, or the
-// merged error text on failure).
+/**
+ * Run an `npm` CLI command without throwing, so failures can be classified.
+ *
+ * @param {string[]} npmArgs CLI arguments to pass to `npm`.
+ * @returns {{ ok: boolean, out: string }} `{ ok: true, out }` with `out` set to
+ *   the trimmed stdout on success, or `{ ok: false, out }` with `out` set to the
+ *   merged error text (stderr, else stdout, else message) on failure.
+ */
 const npm = (npmArgs) => {
     try {
         return { ok: true, out: execFileSync('npm', npmArgs, { encoding: 'utf8' }).trim() };

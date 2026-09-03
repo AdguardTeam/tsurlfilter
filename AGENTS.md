@@ -239,6 +239,16 @@ You MUST follow the following rules for EVERY task that you perform:
    multiple lines with string concatenation. This makes log messages easier
    to grep for in the codebase.
 
+6. **Function docs use the standard JSDoc style everywhere, `scripts/`
+   included.** Document every non-trivial function with a `/** ... */` block
+   carrying `@param`/`@returns` tags — the same JSDoc style enforced in
+   packages via `eslint-plugin-jsdoc` — rather than a `//`-style comment above
+   the definition. This applies to standalone ESM CLI helpers such as
+   `scripts/ci/*.mjs` and their workflow callers, not just packaged sources.
+
+   **Rationale**: keeps function contracts greppable and consistent with our
+   usual JSDoc style across both packages and tooling scripts.
+
 ### III. Testing Discipline
 
 1. **Vitest** is the test runner for all packages. Each package has its own

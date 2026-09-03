@@ -55,8 +55,18 @@ const fail = (message) => {
     failures += 1;
 };
 
-// npm view for all versions of a package. Failures are classified (package
-// absent = empty list; anything else = loud failure).
+/**
+ * List every version of a package on AK via `npm view`.
+ *
+ * Failures are classified: a package absent on the registry (an E404 whose
+ * text names the package) returns an empty list; any other failure is logged
+ * loudly and returns `null`, so a green sweep can never be produced by a
+ * misbehaving registry.
+ *
+ * @param {string} pkg Bridged package name (unscoped); queried as `@adguard/<pkg>`.
+ * @returns {string[] | null} The published versions, `[]` when absent, or
+ *   `null` after logging a query/parse failure.
+ */
 function listVersions(pkg) {
     const spec = `@adguard/${pkg}`;
     let raw;
@@ -90,9 +100,17 @@ function listVersions(pkg) {
 // failure so the "leaving in place" path is exercised too.
 const stateOverride = (process.env.SWEEP_PR_STATES || '').trim();
 
-// Check the GitHub state of a PR. Returns 'open' | 'closed' | 'not-found' |
-// 'error'. A PR that 404s from the API is one we can no longer query — treat
-// it as closed so its builds get collected rather than leaking forever.
+/**
+ * Check the GitHub state of a PR.
+ *
+ * A PR that 404s from the API is one we can no longer query — treat it as
+ * closed so its builds get collected rather than leaking forever.
+ *
+ * @param {string} prNumber PR number to query.
+ * @returns {Promise<'open' | 'closed' | 'not-found' | 'error'>} The observed
+ *   state; 'error' when there is no token, the API call fails, or the override
+ *   mode does not list the PR.
+ */
 async function prState(prNumber) {
     if (stateOverride) {
         for (const entry of stateOverride.split(',')) {
@@ -124,8 +142,16 @@ async function prState(prNumber) {
     }
 }
 
+/**
+ * Delete every `-dev.pr<N>` build of one package for one PR by invoking the
+ * shared unpublish script. Deleting is best-effort per (package, PR), so a
+ * failure must surface rather than be swallowed.
+ *
+ * @param {string} pkg Bridged package name (unscoped).
+ * @param {string} prNumber PR whose builds to delete.
+ * @returns {boolean} `true` on success, `false` after logging the failure.
+ */
 function deletePrVersions(pkg, prNumber) {
-    // Deleting is best-effort per (package, PR); a failure must surface.
     try {
         execFileSync('node', [UNPUBLISH_SCRIPT, `@adguard/${pkg}`, registry, `-dev.pr${prNumber}`], {
             stdio: ['ignore', 'inherit', 'inherit'],

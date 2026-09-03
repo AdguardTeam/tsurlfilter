@@ -45,6 +45,10 @@ import process from 'node:process';
 
 const USAGE = 'Usage: check-pr-open.mjs <pr-url> <gh-token> [<output-file>]';
 
+/**
+ * Print a usage error to stdout and exit with code 2 — the caller's YAML is
+ * misconfigured.
+ */
 const usageError = () => {
     console.error(`::error::usage: ${USAGE}`);
     process.exit(2);
@@ -73,8 +77,14 @@ try {
     process.exit(1);
 }
 
-// Emit the gate output BEFORE branching, so a caller that reads the step's
-// outputs (and otherwise exits with the script's code) still sees it.
+/**
+ * Append the gate line to the output file (no-op when no output file is set).
+ *
+ * It is invoked BEFORE branching on the exit code, so a caller that reads the
+ * step's outputs (and otherwise exits with the script's code) still sees it.
+ *
+ * @param {boolean} open `true` writes `open=true`, `false` writes `open=false`.
+ */
 const emitGate = (open) => {
     if (outputFile) {
         fs.appendFileSync(outputFile, `open=${open}\n`);
