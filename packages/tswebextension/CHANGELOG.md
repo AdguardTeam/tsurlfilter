@@ -11,24 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `TsWebExtension.syncContentScripts()` static method (MV3-only) for dynamic
   content script synchronization via `chrome.scripting` API.
-- `preregisteredScripts` optional MV3 `Configuration` field for auto-syncing
-  preregistered content scripts; orchestration (registration, dynamic
-  injection suppression) is handled internally by the MV3 entry point.
-  Coverage for opaque frames (`about:blank`/srcdoc) resolves through the
-  nearest HTTP(S) ancestor, pre-existing tabs skip only rules proven to
-  have executed at `document_start`, the boot snapshot is taken even when
-  the feature is not configured, and per-hostname engine queries are
-  processed in bounded batches.
-- `hashString`, `computeRuleHash`, `computeRuleHashCached`, `normalizeDomain`,
-  `expandHostnames`, `COORDINATION_KEY`, `SHARED_BUNDLE_FILENAME`,
-  `CLEANUP_FILENAME`, `getRuleFilename`, `getRuleHashFromFilePath`,
-  `PREREGISTERED_SCRIPTS_DIR`, `MANIFEST_FILENAME`,
-  `MANIFEST_SCHEMA_VERSION`, and `PreregisteredScriptsManifest` — the shared
-  hash/filename contract used by build-time tools to generate preregistered
-  script bundles matching what the engine resolves at runtime, available from
-  `@adguard/tswebextension/mv3/preregistered-scripts/hasher`. Filenames are
-  stable (the coordination key is a fixed constant); `manifest.json` is
-  required at sync time.
+- Added optional `preregisteredScripts` MV3 configuration for synchronizing
+  persistent content-script registrations and excluding covered local rules from
+  dynamic injection. Rules that are not covered remain on the dynamic path.
+- Added public utilities for hashing preregistered rules and resolving stable
+  script filenames. They are exported from
+  `@adguard/tswebextension/mv3/preregistered-scripts/hasher`.
+  The `manifest.json` format and filename contract are shared by the build and
+  runtime.
 
 ### Fixed
 
