@@ -1,0 +1,49 @@
+name: Check PR is open
+
+description: >-
+  Runs scripts/ci/check-pr-open.mjs (via node) and exposes its `open` output.
+  Single place for the exit-code wrapper so the publish / unpublish / comment
+  jobs of devex-bridge.yml cannot drift again (they used to maintain
+  byte-identical inline copies). Fail-loud contract: check-pr-open exit 1
+  (undetermined state) and exit 2 (usage) fail the step; only 0 (open) and 10
+  (closed | merged) are accepted. The token is read from the environment
+  (never argv) so it cannot appear in the shared runner's process table.
+
+inputs:
+  pr-url:
+    description: 'Full API URL of the pull request (github.event.pull_request.url)'
+    required: true
+  github-token:
+    description: 'GitHub token with read access to the PR (github.token)'
+    required: true
+
+outputs:
+  open:
+    description: "'true' when the PR is open, 'false' when closed/merged"
+    value: ${{ steps.gate.outputs.open }}
+
+runs:
+  using: composite
+  steps:
+    - id: gate
+      name: Query PR state
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_URL: ${{ inputs.pr-url }}
+      run: |
+        set -euo pipefail
+        set +e
+        node scripts/ci/check-pr-open.mjs "${PR_URL}"
+        code=$?
+        set -e
+        # 0 open / 10 closed|merged: check-pr-open.mjs has already written
+        # open=true|false to GITHUB_OUTPUT. ANY other exit — 1 undetermined,
+        # 2 usage, 127 node missing, 137 OOM, ... — is a failure: without the
+        # `open` output every gated step is skipped and the job would go green
+        # having published nothing, with no alert. Reject everything but the
+        # two accepted exit codes.
+        if [[ "${code}" -ne 0 && "${code}" -ne 10 ]]; then
+          echo "::error::Could not determine PR state (check-pr-open.mjs exit ${code})" >&2
+          exit 1
+        fi
