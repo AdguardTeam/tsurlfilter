@@ -157,9 +157,9 @@ jobs:
           bash -n scripts/ci/resolve-release-inputs.sh
           bash -n scripts/ci/verify-tarball.sh
           bash -n tests/verify-tarball.test.sh
-          node --check scripts/ci/check-pr-open.mjs
           bash -n tests/ak-dev-unpublish.test.sh
           bash -n tests/devex-sweep.test.sh
+          node --check scripts/ci/check-pr-open.mjs
           node --check .github/actions/finalize-changelog/finalize-changelog.mjs
           node --check scripts/inject-package-versions.mjs
           node --check scripts/use-dev-builds.mjs
