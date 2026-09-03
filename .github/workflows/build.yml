@@ -157,7 +157,7 @@ jobs:
           bash -n scripts/ci/resolve-release-inputs.sh
           bash -n scripts/ci/verify-tarball.sh
           bash -n tests/verify-tarball.test.sh
-          bash -n scripts/ci/check-pr-open.sh
+          node --check scripts/ci/check-pr-open.mjs
           bash -n tests/ak-dev-unpublish.test.sh
           bash -n tests/devex-sweep.test.sh
           node --check .github/actions/finalize-changelog/finalize-changelog.mjs
@@ -185,6 +185,9 @@ jobs:
 
       - name: Run devex-sweep regression tests
         run: bash tests/devex-sweep.test.sh
+
+      - name: Run check-pr-open regression tests
+        run: bash tests/check-pr-open.test.sh
 
   notify-failure:
     name: Notify master CI failure

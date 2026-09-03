@@ -20,7 +20,7 @@ name: DevEx bridge
 # Trust boundary (read before enabling): `pull_request` executes this workflow
 # from the PR's merge commit, and GitHub provisions org secrets to same-repo PR
 # runs — so the ARTIFACT_KEEPER_API_KEY reaches code (inline node/bash in this
-# file and the reviewed scripts/ci/ak-dev-unpublish.mjs / {check-pr-open,verify-tarball}.sh
+# file and the reviewed scripts/ci/ak-dev-unpublish.mjs / check-pr-open.mjs / verify-tarball.sh
 # helpers) that any same-repo member who can push here controls. The publish
 # step re-validates the tarball's embedded package name against
 # `@adguard/<matrix.package>` immediately before publishing, so a tampered
@@ -267,7 +267,7 @@ jobs:
           registry-url: ${{ env.AK_REGISTRY }}
 
       # Publishes carry the repo's org secret, so a closed PR must never run
-      # them. check-pr-open.sh writes open=true|false; every step that touches
+      # them. check-pr-open.mjs writes open=true|false; every step that touches
       # AK (or the credentials) is gated on it. NOTE: read the exit code
       # immediately (`$?` after an `if` is the `if`'s status, not the script's).
       - name: Check PR is open (gate)
@@ -279,7 +279,7 @@ jobs:
         run: |
           set -euo pipefail
           set +e
-          bash scripts/ci/check-pr-open.sh "${PR_URL}" "${GH_TOKEN}"
+          node scripts/ci/check-pr-open.mjs "${PR_URL}" "${GH_TOKEN}"
           code=$?
           set -e
           if [[ "${code}" -eq 1 ]]; then
@@ -355,7 +355,7 @@ jobs:
           # this run published so no orphan remains. Anything else (including
           # open) is a no-op.
           set +e
-          bash scripts/ci/check-pr-open.sh "${PR_URL}" "${GH_TOKEN}" >/dev/null 2>&1
+          node scripts/ci/check-pr-open.mjs "${PR_URL}" "${GH_TOKEN}" >/dev/null 2>&1
           state_code=$?
           set -e
           if [[ "${state_code}" -eq 0 ]]; then
@@ -409,7 +409,7 @@ jobs:
         run: |
           set -euo pipefail
           set +e
-          bash scripts/ci/check-pr-open.sh "${PR_URL}" "${GH_TOKEN}"
+          node scripts/ci/check-pr-open.mjs "${PR_URL}" "${GH_TOKEN}"
           code=$?
           set -e
           if [[ "${code}" -eq 1 ]]; then
@@ -488,7 +488,7 @@ jobs:
         run: |
           set -euo pipefail
           set +e
-          bash scripts/ci/check-pr-open.sh "${PR_URL}" "${GH_TOKEN}"
+          node scripts/ci/check-pr-open.mjs "${PR_URL}" "${GH_TOKEN}"
           code=$?
           set -e
           if [[ "${code}" -eq 1 ]]; then
