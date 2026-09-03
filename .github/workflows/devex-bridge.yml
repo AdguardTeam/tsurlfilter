@@ -505,7 +505,9 @@ jobs:
   comment:
     name: Post usage comment on the source PR
     needs: [changes, publish]
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      needs.changes.outputs.bridge-needed == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: team-extensions
     timeout-minutes: 10
     permissions:
