@@ -2,7 +2,21 @@
 /**
  * @file Unpublish every version of a package on the Artifact Keeper npm
  * registry whose version ends with `-dev.pr<N>` or carries `-dev.pr<N>.<...>`
- * (e.g. '-dev.pr42', '-dev.pr42.2f5d9548'). Shared by:
+ * (e.g. '-dev.pr42', '-dev.pr42.2f5d9548').
+ *
+ * Why this exists: the DevEx bridge (AG-54910) publishes a fresh
+ * `-dev.pr<N>.<sha>` build of each bridged package to the internal Artifact
+ * Keeper registry on every PR push. Those builds are throwaway by design — they
+ * exist only so a consumer checkout can test unmerged work, each push
+ * supersedes the previous head, and once the owning PR closes they must be
+ * gone. Without cleanup the registry accumulates orphaned dev versions forever
+ * and a `-dev.pr<N>*` pin can silently resolve to a stale build. Cleanup is
+ * therefore not a one-off but a routine shared by three flows (republish purge,
+ * close cleanup, scheduled GC), so the error taxonomy — "already absent" (404),
+ * "AK refuses to unpublish" (405), real failure — must be classified the same
+ * way in all of them. This module is that single source of truth.
+ *
+ * Shared by:
  *   - devex-bridge.yml  (purge the PR's older -dev.pr<N>* builds after a republish)
  *   - devex-bridge-cleanup.yml  (delete -dev.pr<N>* builds when the PR closes)
  *   - devex-bridge-sweep.mjs  (GC of closed PRs' -dev.pr<N>* builds)
