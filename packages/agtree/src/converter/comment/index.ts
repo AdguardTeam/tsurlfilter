@@ -3,7 +3,7 @@
  */
 
 import { type AnyCommentRule, CommentMarker, CommentRuleType } from '../../nodes';
-import { clone } from '../../utils/clone';
+import { cloneAnyCommentRule } from '../../ast-utils/clone';
 import { SPACE } from '../../utils/constants';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
@@ -33,8 +33,7 @@ export class CommentRuleConverter extends RuleConverterBase {
                 // Check if the rule needs to be converted
                 if (rule.type === CommentRuleType.CommentRule && rule.marker.value === CommentMarker.Hashmark) {
                     // Add a ! to the beginning of the comment
-                    // TODO: Replace with custom clone method
-                    const ruleClone = clone(rule);
+                    const ruleClone = cloneAnyCommentRule(rule);
 
                     ruleClone.marker.value = CommentMarker.Regular;
 
