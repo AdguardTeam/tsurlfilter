@@ -21,8 +21,10 @@ name: DevEx bridge cleanup
 # Requires the org variable ARTIFACT_KEEPER_URL (base URL of the Artifact
 # Keeper instance) and the org secret ARTIFACT_KEEPER_API_KEY — the same
 # variable/secret pair devex-bridge.yml and the shared deploy-to-ak-npm.yml
-# use. Without ARTIFACT_KEEPER_URL configured, AK_REGISTRY resolves to an empty
-# string and every npm call fails loudly, which is the intended behavior.
+# use. Without ARTIFACT_KEEPER_URL configured, `${{ vars.ARTIFACT_KEEPER_URL }}`
+# resolves to an EMPTY string and AK_REGISTRY becomes a relative
+# '/npm/npm-internal' — every npm call fails loudly, which is the intended
+# behavior (devex-sweep.mjs validates the same value is an http(s) URL).
 
 on:
   pull_request:
@@ -124,7 +126,9 @@ jobs:
           failures=0
           for pkg in ${BRIDGED_PACKAGES}; do
             name="@adguard/${pkg}"
-            if ! bash scripts/ci/ak-dev-unpublish.mjs "${name}" "${AK_REGISTRY}" "-dev.pr${PR_NUMBER}"; then
+            # Invoked via `node`: ak-dev-unpublish.mjs is an ES module, so
+            # running it through bash would glob the `/**` JSDoc and fail.
+            if ! node scripts/ci/ak-dev-unpublish.mjs "${name}" "${AK_REGISTRY}" "-dev.pr${PR_NUMBER}"; then
               echo "::error::Cleanup of ${name} failed"
               failures=$((failures + 1))
             fi
@@ -139,8 +143,11 @@ jobs:
     # Cleanup is the primary guard against permanent AK orphans; a failure here
     # would otherwise only be visible as a red run on an already-closed PR that
     # nobody watches. The message carries the idempotent workflow_dispatch
-    # recovery command so an on-call can retry by PR number.
-    if: failure()
+    # recovery command so an on-call can retry by PR number. A `cancelled`
+    # conclusion (manual cancel, runner preemption, dead host mid-unpublish)
+    # must page too — the `closed` event will not fire again and only the sweep
+    # would converge the data. failure() does not match cancelled().
+    if: failure() || cancelled()
     runs-on: team-extensions
     timeout-minutes: 10
     permissions:

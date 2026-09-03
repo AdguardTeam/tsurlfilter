@@ -148,4 +148,23 @@ if grep -q "1.0.3-dev.pr420" <<<"${OUTPUT}" && grep -q "Unpublishing @adguard/te
     echo 'FAIL head-scoped: -dev.pr420 must not match -dev.pr42' >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1
 fi
 
+# 12. --versions skips the npm view round-trip and unpublishes exactly the
+#     listed versions (devex-sweep.mjs already enumerated them — passing them
+#     avoids re-querying the registry once per package per PR).
+write_replies \
+    "ok:deleted" \
+    "ok:deleted"
+: > "${LOG_FILE}"
+set +e
+OUTPUT="$(node "${SCRIPT}" "@adguard/testpkg" "https://ak.invalid/npm/npm-internal" "-dev.pr42" --versions "1.0.2-dev.pr42,1.0.2-dev.pr42.2f5d9548" 2>&1)"
+code=$?
+set -e
+[[ "${code}" -eq 0 ]] || { echo "FAIL versions: exit ${code}" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
+grep -q "Unpublishing @adguard/testpkg@1.0.2-dev.pr42" <<<"${OUTPUT}" || { echo "FAIL versions: bare version not deleted" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
+grep -q "Unpublishing @adguard/testpkg@1.0.2-dev.pr42.2f5d9548" <<<"${OUTPUT}" || { echo "FAIL versions: sha'd version not deleted" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
+# With --versions the script must NOT run `npm view` (no registry round-trip).
+if grep -q 'view ' "${LOG_FILE}"; then
+    echo 'FAIL versions: --versions must skip the npm view round-trip' >&2; cat "${LOG_FILE}" >&2; exit 1
+fi
+
 echo 'ak-dev-unpublish tests passed'

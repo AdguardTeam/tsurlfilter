@@ -122,18 +122,43 @@ Closing or merging the tsurlfilter PR deletes its dev versions from AK
 
 ### Requirements
 
-The two bridge workflows require the org-scoped `ARTIFACT_KEEPER_URL` variable
-(base URL of the Artifact Keeper instance, e.g. `https://ak.int.agrd.dev`) and
-the `ARTIFACT_KEEPER_API_KEY` secret — the same pair the shared
+The three bridge workflows (`devex-bridge.yml`, `devex-bridge-cleanup.yml`,
+`devex-bridge-sweep.yml`) all require the org-scoped `ARTIFACT_KEEPER_URL`
+variable (base URL of the Artifact Keeper instance, e.g. `https://ak.int.agrd.dev`)
+and the `ARTIFACT_KEEPER_API_KEY` secret — the same pair the shared
 `deploy-to-ak-npm.yml` workflow uses. The npm registry URL is derived as
-`${ARTIFACT_KEEPER_URL}/npm/npm-internal`. If the URL variable is unset, the
-jobs fail loudly rather than publishing to an empty registry URL.
+`${ARTIFACT_KEEPER_URL}/npm/npm-internal`. If the URL variable is unset it
+resolves to an empty string and every job fails loudly rather than publishing
+to an empty registry URL — including the sweep, which additionally validates
+that its `AK_REGISTRY` value is an http(s) URL.
 
 On the **developer side**, running `use-dev-builds.mjs` (or any `npm view`
 against the AK registry) needs the same registry reachability: the AK host is
 internal, so you must be on the internal network (VPN) and, if AK enforces
 read auth, have an npm token acceptable to AK. A cold run against an unroutable
 host fails with `ENOTFOUND`/`E401` — that is expected.
+
+### If Something Goes Wrong
+
+The recovery paths below are the documented ways to converge after a bridge,
+cleanup or sweep failure — the same commands the Slack failure alerts point at:
+
+- **A bridge run failed** (no dev builds for the last push): push again, or
+  *Re-run all jobs* on the failing run. Re-running only the failed jobs more
+  than a day later trips the `retention-days: 1` artifact expiry (the
+  version-record / tarball artifacts the publish jobs download are gone), so
+  prefer **Re-run all jobs** or a new push.
+- **A close cleanup failed** (or you suspect orphaned dev versions): re-dispatch
+  *devex-bridge-cleanup.yml* with `pr-number = <N>` — it is idempotent and only
+  writes what the close event was supposed to. If the dispatch itself fails,
+  the periodic `devex-bridge-sweep.yml` GC is the always-on safety net.
+- **The sweep failed** (GC safety net broken): fix the issue and re-run it, or
+  dispatch *devex-bridge-sweep.yml* with `pr-number = <N>` for a targeted pass;
+  the scheduled run retries every 6h.
+- **Dev pins stop resolving in the extension**: the dev versions were deleted
+  (cleanup ran), so run `use-dev-builds.mjs --remove --extension <path>` or
+  re-pin from the current checkout head. There is nothing to un-publish by
+  hand.
 
 ## Development Workflow
 

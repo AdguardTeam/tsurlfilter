@@ -37,3 +37,22 @@ export const usageError = (usage) => {
     console.error(`::error::usage: ${usage}`);
     process.exit(2);
 };
+
+/**
+ * Classify an npm CLI failure as "package absent" (benign) vs a real failure.
+ *
+ * The shared registry error taxonomy lives here so ak-dev-unpublish.mjs and
+ * devex-sweep.mjs cannot drift: a failure is only "package absent" when the
+ * error text unambiguously names the requested package AND is a 404/not-found.
+ * A wildcard 404, a wrong registry base, or a proxy error page must NOT look
+ * like "nothing to do" — the jobs that consume this are single-fire (cleanup
+ * especially), so a green run that deletes nothing must not be possible.
+ *
+ * @param {string} text Merged npm error text (stderr, else stdout, else
+ *   message).
+ * @param {string} pkg The package name the query/unpublish was for (e.g.
+ *   `@adguard/tsurlfilter`); must appear in the error for classification.
+ * @returns {boolean} `true` when the error is a benign "package absent".
+ */
+export const isPackageAbsent = (text, pkg) =>
+    /E404|404 not found|not found/i.test(text) && text.includes(pkg);

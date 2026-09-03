@@ -140,10 +140,10 @@ console.log(`bridge package lists: OK (${canonicalBridged.length} packages, ${br
 
 // 4b. The tool's DEFAULT_REGISTRY must stay on the same AK npm path the
 //     workflows derive at runtime (`${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal`).
-//     The registry PATH is read from BOTH workflows' actual AK_REGISTRY
-//     assignment (not a second hard-coded literal), so a workflow host or path
-//     change fails this check instead of silently re-pinning to the old host —
-//     and use-dev-builds.mjs accepts --registry to override.
+//     The registry PATH is read from ALL THREE bridge workflows' actual
+//     AK_REGISTRY assignment (not a second hard-coded literal), so a workflow
+//     host or path change fails this check instead of silently re-pinning to
+//     the old host — and use-dev-builds.mjs accepts --registry to override.
 const devRegistryMatch = devBuildsScript.match(/DEFAULT_REGISTRY\s*=\s*'([^']+)'/);
 if (!devRegistryMatch) {
     fail('scripts/use-dev-builds.mjs: could not find the DEFAULT_REGISTRY constant (format changed?)');
@@ -151,17 +151,51 @@ if (!devRegistryMatch) {
 const akRegistryRe = /AK_REGISTRY:\s*\$\{\{\s*vars\.ARTIFACT_KEEPER_URL\s*\}\}([^ \n]+)/;
 const bridgeAk = bridgeWorkflow.match(akRegistryRe);
 const cleanupAk = bridgeCleanup.match(akRegistryRe);
-if (!bridgeAk || !cleanupAk) {
-    fail('could not find AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}<path> in both bridge workflows (format changed?)');
+const sweepWorkflow = fs.readFileSync(path.join(repoRoot, '.github/workflows/devex-bridge-sweep.yml'), 'utf8');
+const sweepAk = sweepWorkflow.match(akRegistryRe);
+if (!bridgeAk || !cleanupAk || !sweepAk) {
+    fail('could not find AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}<path> in all three bridge workflows (format changed?)');
 }
-if (bridgeAk[1] !== cleanupAk[1]) {
-    fail(`AK_REGISTRY path differs between the bridge workflows: '${bridgeAk[1]}' vs '${cleanupAk[1]}'`);
+if (bridgeAk[1] !== cleanupAk[1] || bridgeAk[1] !== sweepAk[1]) {
+    fail(`AK_REGISTRY path differs between the bridge workflows: '${bridgeAk[1]}' vs '${cleanupAk[1]}' vs '${sweepAk[1]}'`);
 }
 const akPath = bridgeAk[1];
 if (!devRegistryMatch[1].endsWith(akPath)) {
     fail(`use-dev-builds.mjs DEFAULT_REGISTRY (${devRegistryMatch[1]}) must end in '${akPath}' to match the workflows' AK_REGISTRY path`);
 }
-console.log(`bridge registry path: OK (DEFAULT_REGISTRY shares ${akPath} with AK_REGISTRY)`);
+console.log(`bridge registry path: OK (DEFAULT_REGISTRY shares ${akPath} with all three AK_REGISTRY assignments)`);
+
+// 4c. The `-dev.pr<N>.<sha>` version grammar is re-encoded in several places
+//     (VERSION_SUFFIX in devex-bridge.yml, DEV_MARK/isPrVersion in
+//     use-dev-builds.mjs, the `-dev.pr<N>` suffix literals in the cleanup twin,
+//     the sweep's regex). Unlike the package list there is no JSON source, so
+//     this keeps the copies honest syntactically: every `-dev.<...>` literal in
+//     the bridge sources must be either a version-suffix interpolation
+//     (`-dev.${...}` / `-dev.${{...}}`) or a `-dev.pr<N>...` form — any other
+//     stem (e.g. `-dev.beta`) would silently stop cleanup/sweep matching.
+const versionGrammarLiterals = [
+    '.github/workflows/devex-bridge.yml',
+    '.github/workflows/devex-bridge-cleanup.yml',
+    '.github/workflows/devex-bridge-sweep.yml',
+    'scripts/use-dev-builds.mjs',
+    'scripts/ci/ak-dev-unpublish.mjs',
+    'scripts/ci/devex-sweep.mjs',
+];
+for (const file of versionGrammarLiterals) {
+    const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
+    const bad = [];
+    for (const m of text.matchAll(/-dev\.([A-Za-z0-9_$<>{}.()\\-]*)/g)) {
+        const stem = m[1];
+        if (stem === '' || stem.startsWith('$') || stem.startsWith('pr')) {
+            continue;
+        }
+        bad.push(`-dev.${stem}`);
+    }
+    if (bad.length > 0) {
+        fail(`${file}: found non-pr dev-version stem(s): ${bad.join(', ')} — the -dev.pr<N> grammar must stay consistent across the bridge twins`);
+    }
+}
+console.log('bridge version grammar: OK (all -dev.<...> literals are -dev.pr<N> or VERSION_SUFFIX interpolations)');
 
 console.log('package list drift check passed');
 

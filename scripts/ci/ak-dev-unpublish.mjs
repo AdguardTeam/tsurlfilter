@@ -19,24 +19,30 @@
  * Shared by:
  *   - devex-bridge.yml  (purge the PR's older -dev.pr<N>* builds after a republish)
  *   - devex-bridge-cleanup.yml  (delete -dev.pr<N>* builds when the PR closes)
- *   - devex-bridge-sweep.mjs  (GC of closed PRs' -dev.pr<N>* builds)
+ *   - scripts/ci/devex-sweep.mjs  (GC of closed PRs' -dev.pr<N>* builds,
+ *     driven by devex-bridge-sweep.yml)
  * so the registry error taxonomy (404 vs 405 vs other) and the per-PR suffix
  * matching live in ONE place and the workflows cannot drift again.
  *
  * Invoked from GitHub Actions `run:` steps with `node` (setup-node ensures a
  * runtime) — e.g. `node scripts/ci/ak-dev-unpublish.mjs ...`.
  *
- * Usage: ak-dev-unpublish.mjs <package> <registry> <suffix> [--tolerate-405] [--keep <version>]
+ * Usage: ak-dev-unpublish.mjs <package> <registry> <suffix> [--tolerate-405] [--keep <version>] [--versions <v1,v2,...>]
  *   <suffix>         The version token to match. Matching is BOUNDED per PR:
  *                    a version matches when <suffix> is followed by
  *                    end-of-string (bare '-dev.pr42') or a dot (head-scoped
  *                    '-dev.pr42.<sha>'). '-dev.pr1' never matches '-dev.pr12'.
  *   --tolerate-405   When AK replies 405 (unpublish not allowed), treat it as
  *                    a warning and continue instead of failing. devex-bridge.yml
- *                    passes this (overwrite is best-effort); the cleanup twin
+ *                    passes this for the stale-version purge — with AK's
+ *                    immutability the purge is best-effort; the cleanup twin
  *                    does NOT, because a broken cleanup must be noticed.
  *   --keep <ver>     Do not delete this exact version (e.g. the version we just
  *                    published). Repeatable.
+ *   --versions <csv> Skip the initial `npm view` and unpublish exactly these
+ *                    versions (comma-separated). Used by devex-sweep.mjs, which
+ *                    already enumerated the versions — this avoids re-querying
+ *                    the registry once per package per PR.
  *
  * Exit codes:
  *   0  success (nothing to do counts as success)
@@ -48,18 +54,19 @@
  * names the package AND is a 404/not-found. A wildcard 404, a wrong registry
  * base, or a proxy error page must NOT look like "nothing to do" — the jobs
  * that call this are single-fire (cleanup especially), so a green run that
- * deletes nothing must not be possible.
+ * deletes nothing must not be possible. The classification is shared with the
+ * sweep via `isPackageAbsent` in std-errors.mjs.
  *
- * Annotation policy: ::error:: / ::warning:: are written to STDOUT so GitHub
- * renders them as step annotations (workflow commands are parsed from stdout
- * only).
+ * Annotation policy: ::error:: / ::warning:: are written to stderr via
+ * console.error/warn; GitHub renders step annotations from either stream, so
+ * this matches std-errors.mjs (::error:: to stderr).
  */
 
 import { execFileSync } from 'node:child_process';
 import process from 'node:process';
-import { fail, usageError } from './std-errors.mjs';
+import { fail, isPackageAbsent, usageError } from './std-errors.mjs';
 
-const USAGE = 'Usage: ak-dev-unpublish.mjs <package> <registry> <suffix> [--tolerate-405] [--keep <version>]';
+const USAGE = 'Usage: ak-dev-unpublish.mjs <package> <registry> <suffix> [--tolerate-405] [--keep <version>] [--versions <v1,v2,...>]';
 
 // --- argument parsing -------------------------------------------------------
 const positional = process.argv.slice(2);
@@ -68,6 +75,7 @@ if (!pkg || !registry || !suffix) {
     usageError(USAGE);
 }
 let tolerate405 = false;
+let explicitVersions = null;
 const keep = new Set();
 for (let i = 0; i < rest.length; i += 1) {
     const arg = rest[i];
@@ -79,6 +87,13 @@ for (let i = 0; i < rest.length; i += 1) {
             usageError(USAGE);
         }
         keep.add(value);
+        i += 1;
+    } else if (arg === '--versions') {
+        const value = rest[i + 1];
+        if (value === undefined || value === '' || value.startsWith('--')) {
+            usageError(USAGE);
+        }
+        explicitVersions = value.split(',').filter(Boolean);
         i += 1;
     } else {
         fail(`ak-dev-unpublish.mjs: unknown argument '${arg}'`, 2);
@@ -103,35 +118,47 @@ const npm = (npmArgs) => {
 };
 
 // --- query current versions ------------------------------------------------
-const query = npm(['view', pkg, 'versions', '--json', `--registry=${registry}`, '--silent']);
-if (!query.ok) {
-    // Only "package absent" when the error unambiguously names the package AND
-    // is a 404/not-found. A wildcard/registry-path 404 or proxy page must fail
-    // loudly — a green run that deletes nothing must not be possible.
-    if (/E404|404 not found|not found/i.test(query.out) && query.out.includes(pkg)) {
-        console.log(`${pkg}: not present on AK — nothing to unpublish`);
+// With `--versions` the caller (devex-sweep.mjs) already enumerated the exact
+// versions to delete, so skip the npm view round-trip entirely.
+if (explicitVersions !== null) {
+    if (explicitVersions.length === 0) {
+        console.log(`${pkg}: no explicit versions to delete`);
         process.exit(0);
     }
-    console.error(`::error::Could not query ${pkg} on AK:`);
-    console.error(query.out);
-    process.exit(1);
-}
-
-let versions;
-try {
-    const parsed = JSON.parse(query.out);
-    versions = Array.isArray(parsed) ? parsed : [parsed];
-} catch {
-    console.error(`::error::npm view for ${pkg} returned non-JSON (registry misbehaving?):`);
-    console.error(query.out);
-    process.exit(1);
+} else {
+    const query = npm(['view', pkg, 'versions', '--json', `--registry=${registry}`, '--silent']);
+    if (!query.ok) {
+        // Only "package absent" when the error unambiguously names the package AND
+        // is a 404/not-found. A wildcard/registry-path 404 or proxy page must fail
+        // loudly — a green run that deletes nothing must not be possible.
+        if (isPackageAbsent(query.out, pkg)) {
+            console.log(`${pkg}: not present on AK — nothing to unpublish`);
+            process.exit(0);
+        }
+        console.error(`::error::Could not query ${pkg} on AK:`);
+        console.error(query.out);
+        process.exit(1);
+    }
+    let parsed;
+    try {
+        parsed = JSON.parse(query.out);
+    } catch {
+        console.error(`::error::npm view for ${pkg} returned non-JSON (registry misbehaving?):`);
+        console.error(query.out);
+        process.exit(1);
+    }
+    explicitVersions = Array.isArray(parsed) ? parsed : [parsed];
+    if (explicitVersions.length === 0) {
+        console.log(`${pkg}: no versions on AK`);
+        process.exit(0);
+    }
 }
 
 // Bounded per-PR match: keeps '-dev.pr1' away from '-dev.pr12', while matching
 // both bare '-dev.pr42' and head-scoped '-dev.pr42.<sha>'. The --keep versions
 // are kept out of the delete set.
 const belongsToPr = (version) => version.endsWith(suffix) || version.includes(`${suffix}.`);
-const toDelete = versions
+const toDelete = explicitVersions
     .filter((version) => typeof version === 'string' && belongsToPr(version) && !keep.has(version))
     .sort();
 
@@ -142,6 +169,7 @@ if (toDelete.length === 0) {
 
 // --- unpublish --------------------------------------------------------------
 let failures = 0;
+let tolerated405 = 0;
 for (const version of toDelete) {
     console.log(`Unpublishing ${pkg}@${version}`);
     const result = npm(['unpublish', `${pkg}@${version}`, '--force', `--registry=${registry}`]);
@@ -149,13 +177,14 @@ for (const version of toDelete) {
         continue;
     }
     const out = result.out;
-    if (/E404|404 not found|not found|EUNPUBLISH/i.test(out) && out.includes(pkg)) {
+    if (/EUNPUBLISH/i.test(out) || isPackageAbsent(out, pkg)) {
         console.log(`${pkg}@${version}: already absent — nothing to unpublish`);
         continue;
     }
     if (/\bE405\b|405 Method Not Allowed|405 not allowed/i.test(out)) {
         if (tolerate405) {
             console.log(`${pkg}@${version}: AK does not allow unpublish (405; tolerated)`);
+            tolerated405 += 1;
             continue;
         }
         console.error(`::error::${pkg}@${version}: AK refuses to unpublish (405):`);
@@ -166,6 +195,13 @@ for (const version of toDelete) {
     console.error(`::error::${pkg}@${version}: npm unpublish failed:`);
     console.error(out);
     failures += 1;
+}
+
+// On a registry that always answers 405 (AK behaves this way today) every
+// stale-version purge is K-1 known-futile calls per package per push. Surface
+// the staleness so an operator can decide whether to enable AK unpublish.
+if (tolerated405 > 0) {
+    console.warn(`::warning::${pkg}: AK refused ${tolerated405} stale unpublish(es) with 405 — stale -dev.pr builds are NOT being removed; they accumulate until cleanup can delete them`);
 }
 
 if (failures > 0) {

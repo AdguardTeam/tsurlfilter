@@ -163,6 +163,50 @@ jobs:
           }
           NODE
 
+      # set-dev-version stamped EVERY packages/*/package.json, but only the six
+      # bridged packages are published — and of the publishable non-bridged
+      # packages, @adguard/logger (and adguard-api/mv3,
+      # eslint-plugin-logger-context) still appear as `workspace:^`
+      # dependencies of the bridged ones. pnpm pack rewrites each `workspace:^`
+      # to `^<that package's current version>`; for a -dev-stamped non-bridged
+      # package that is a version on NO registry (AK never receives logger, and
+      # the public 2.0.1 does not satisfy `^2.0.2-dev`), so the extension's
+      # `pnpm install` of the pinned tarballs would fail resolution. The release
+      # pipeline solves this with inject-package-versions.mjs (non-release
+      # packages keep their released CHANGELOG version); we do the same here:
+      # reset every non-bridged publishable package to its latest released
+      # version so `workspace:^` resolves to real released semver.
+      - name: Restore released versions for non-bridged workspace deps
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const bridged = new Set(process.env.BRIDGED_PACKAGES.split(' '));
+          const releaseHeading = /^## \[(\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?)\](?:\s+-\s+\d{4}-\d{2}-\d{2})?[ \t\r]*$/m;
+          for (const dir of fs.readdirSync('packages')) {
+              const pkgPath = `packages/${dir}/package.json`;
+              const changelogPath = `packages/${dir}/CHANGELOG.md`;
+              if (bridged.has(dir) || !fs.existsSync(changelogPath)) {
+                  continue;
+              }
+              const released = fs.readFileSync(changelogPath, 'utf8').match(releaseHeading)?.[1];
+              if (!released) {
+                  throw new Error(`no released version in ${changelogPath} — cannot restore a real semver for the workspace:^ dep`);
+              }
+              const source = fs.readFileSync(pkgPath, 'utf8');
+              const indentMatch = source.match(/^{\r?\n([ \t]+)/);
+              const indentation = indentMatch ? indentMatch[1] : source.includes('\n') ? '  ' : '';
+              const pkg = JSON.parse(source);
+              if (pkg.version !== released) {
+                  pkg.version = released;
+                  const output = `${JSON.stringify(pkg, null, indentation)}\n`;
+                  fs.writeFileSync(pkgPath, source.includes('\r\n') ? output.replace(/\n/g, '\r\n') : output);
+                  console.log(`${pkg.name}=${released}`);
+              }
+          }
+          NODE
+
       - name: Build package tarball
         uses: ./.github/actions/docker-build
         with:
@@ -190,12 +234,9 @@ jobs:
           set -euo pipefail
           TGZ="build-output/artifacts/${PACKAGE}.tgz"
           EXPECTED="$(node -p "require('./packages/${PACKAGE}/package.json').version")"
-          if ! bash scripts/ci/verify-tarball.sh "${TGZ}" "${EXPECTED}" "@adguard/${PACKAGE}"; then
-            # verify-tarball.sh emits its ::error:: to stderr, which GitHub does
-            # not render as an annotation; re-surface it on stdout here.
-            echo "::error::${TGZ} failed verification (expected version ${EXPECTED} name @adguard/${PACKAGE}) — see output above"
-            exit 1
-          fi
+          # verify-tarball.sh emits its ::error:: to stderr; GitHub renders step
+          # annotations from either stream, so no re-surface hop is needed.
+          bash scripts/ci/verify-tarball.sh "${TGZ}" "${EXPECTED}" "@adguard/${PACKAGE}"
           PACKED_VERSION="$(tar -xOf "${TGZ}" package/package.json | node -e "let json = ''; process.stdin.on('data', (d) => json += d).on('end', () => process.stdout.write(JSON.parse(json).version))")"
           case "${PACKED_VERSION}" in
             *-dev.${VERSION_SUFFIX}) ;;
@@ -267,27 +308,16 @@ jobs:
           registry-url: ${{ env.AK_REGISTRY }}
 
       # Publishes carry the repo's org secret, so a closed PR must never run
-      # them. check-pr-open.mjs writes open=true|false; every step that touches
-      # AK (or the credentials) is gated on it. NOTE: read the exit code
-      # immediately (`$?` after an `if` is the `if`'s status, not the script's).
+      # them. The composite action runs check-pr-open.mjs and exposes
+      # open=true|false; every step that touches AK (or the credentials) is
+      # gated on it. The exit-code wrapper lives in the composite (one place),
+      # not per-job — see .github/actions/check-pr-open/action.yml.
       - name: Check PR is open (gate)
         id: pr-open
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_URL: ${{ github.event.pull_request.url }}
-        run: |
-          set -euo pipefail
-          set +e
-          node scripts/ci/check-pr-open.mjs "${PR_URL}" "${GH_TOKEN}"
-          code=$?
-          set -e
-          if [[ "${code}" -eq 1 ]]; then
-            echo "::error::Could not determine PR state" >&2
-            exit 1
-          fi
-          # code 0 (open) or 10 (closed/merged): open=true/false is already in
-          # GITHUB_OUTPUT; a closed PR makes every gated step below skip.
+        uses: ./.github/actions/check-pr-open
+        with:
+          pr-url: ${{ github.event.pull_request.url }}
+          github-token: ${{ github.token }}
 
       - name: Download dev package
         if: steps.pr-open.outputs.open == 'true'
@@ -350,12 +380,13 @@ jobs:
           SUFFIX: '-dev.${{ env.VERSION_SUFFIX }}'
         run: |
           set -euo pipefail
+          echo "::add-mask::${NODE_AUTH_TOKEN}"
           # The gate step already returned open=true/false when it ran; here we
           # only care about the transition: if the PR is now closed, delete what
           # this run published so no orphan remains. Anything else (including
-          # open) is a no-op.
+          # open) is a no-op. The token is read from GH_TOKEN env, not argv.
           set +e
-          node scripts/ci/check-pr-open.mjs "${PR_URL}" "${GH_TOKEN}" >/dev/null 2>&1
+          node scripts/ci/check-pr-open.mjs "${PR_URL}" >/dev/null 2>&1
           state_code=$?
           set -e
           if [[ "${state_code}" -eq 0 ]]; then
@@ -402,20 +433,10 @@ jobs:
 
       - name: Check PR is open (gate)
         id: pr-open
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_URL: ${{ github.event.pull_request.url }}
-        run: |
-          set -euo pipefail
-          set +e
-          node scripts/ci/check-pr-open.mjs "${PR_URL}" "${GH_TOKEN}"
-          code=$?
-          set -e
-          if [[ "${code}" -eq 1 ]]; then
-            echo "::error::Could not determine PR state" >&2
-            exit 1
-          fi
+        uses: ./.github/actions/check-pr-open
+        with:
+          pr-url: ${{ github.event.pull_request.url }}
+          github-token: ${{ github.token }}
 
       - name: Download version records
         if: steps.pr-open.outputs.open == 'true'
@@ -444,15 +465,30 @@ jobs:
           failures=0
           for pkg in ${BRIDGED_PACKAGES}; do
             name="@adguard/${pkg}"
+            # Build the keep list from the version records THIS run packed.
+            # Captured via command substitution (and the exit code read
+            # immediately): if reading the records fails (corrupt JSON, or the
+            # versions/ dir is gone after the 1-day artifact retention on a
+            # re-run), the step FAILS loudly instead of silently ending with an
+            # empty keep list that would delete EVERY -dev.pr<N>* version —
+            # including the one this run just published.
+            set +e
+            keep_records="$(KEEP_NAME="${name}" node -e "
+                const fs = require('node:fs');
+                const records = fs.readdirSync('versions').filter((f) => f.endsWith('.json')).map((f) => JSON.parse(fs.readFileSync(\`versions/\${f}\`, 'utf8')));
+                process.stdout.write(records.filter((r) => r.name === process.env.KEEP_NAME).map((r) => r.version).join('\n'));
+              ")"
+            keep_code=$?
+            set -e
+            if [[ "${keep_code}" -ne 0 ]]; then
+              echo "::error::could not read the packed version records for ${name} — refusing to clean stale versions"
+              exit 1
+            fi
             keep_args=()
             while IFS= read -r version; do
               [[ -n "${version}" ]] || continue
               keep_args+=(--keep "${version}")
-            done < <(KEEP_NAME="${name}" node -e "
-                const fs = require('node:fs');
-                const records = fs.readdirSync('versions').filter((f) => f.endsWith('.json')).map((f) => JSON.parse(fs.readFileSync(\`versions/\${f}\`, 'utf8')));
-                process.stdout.write(records.filter((r) => r.name === process.env.KEEP_NAME).map((r) => r.version).join('\n'));
-              ")
+            done <<< "${keep_records}"
             if ! node scripts/ci/ak-dev-unpublish.mjs \
                 "${name}" "${AK_REGISTRY}" "-dev.pr${{ github.event.pull_request.number }}" \
                 --tolerate-405 \
@@ -481,21 +517,11 @@ jobs:
 
       - name: Check PR is open (gate)
         id: pr-open
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_URL: ${{ github.event.pull_request.url }}
-        run: |
-          set -euo pipefail
-          set +e
-          node scripts/ci/check-pr-open.mjs "${PR_URL}" "${GH_TOKEN}"
-          code=$?
-          set -e
-          if [[ "${code}" -eq 1 ]]; then
-            echo "::error::Could not determine PR state" >&2
-            exit 1
-          fi
-          # A closed PR must not trigger the "Dev builds published" upsert.
+        uses: ./.github/actions/check-pr-open
+        with:
+          pr-url: ${{ github.event.pull_request.url }}
+          github-token: ${{ github.token }}
+        # A closed PR must not trigger the "Dev builds published" upsert.
 
       - name: Download version records
         if: steps.pr-open.outputs.open == 'true'
@@ -607,5 +633,5 @@ jobs:
         uses: AdGuardSoftwareLimited/actions/actions/slack@master
         with:
           channel: '#adguard-extension-vcs'
-          message: ':x: *devex-bridge* failed for PR #${{ github.event.pull_request.number }} — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          message: ':x: *devex-bridge* failed for PR #${{ github.event.pull_request.number }} — no (or stale) AK dev builds were published from the last push. Retry: push again, or *Re-run all jobs* on the failing run (a re-run of only the failed jobs more than a day later trips the `retention-days: 1` artifact expiry). <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
           color: danger

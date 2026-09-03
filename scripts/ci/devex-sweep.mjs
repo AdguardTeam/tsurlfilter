@@ -15,6 +15,12 @@
  * the sweep to one PR (its builds are then deleted regardless of GitHub state,
  * matching a manual "delete PR N" request from the cleanup alert).
  *
+ * A PR that 404s from the API (or returns an unrecognized state) is almost
+ * always a misconfiguration — closed/merged PRs stay API-visible forever — so
+ * the sweep treats it as 'error': keep the builds in place and fail loudly,
+ * matching check-pr-open.mjs's refusal to classify anything it does not
+ * recognize.
+ *
  * Env:
  *   AK_REGISTRY      - registry base the workflows derive from ARTIFACT_KEEPER_URL
  *   NODE_AUTH_TOKEN  - AK npm token (auth for npm view / unpublish)
@@ -26,20 +32,18 @@
  * failed — must be visible so the scheduled GC is not silently broken.
  */
 
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { fail as fatal } from './std-errors.mjs';
+import { fail as fatal, isPackageAbsent } from './std-errors.mjs';
 
 const scriptRoot = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(scriptRoot, '..');
 const BRIDGED_PACKAGES = JSON.parse(
     fs.readFileSync(path.join(scriptRoot, 'bridged-packages.json'), 'utf8'),
 );
 const UNPUBLISH_SCRIPT = path.join(scriptRoot, 'ak-dev-unpublish.mjs');
-const LEASE_DAYS = 14;
 
 // The GitHub PR states the sweep distinguishes. Centralized constants (an
 // "enum") keep the string literals in ONE place, so prState() and main()
@@ -47,13 +51,16 @@ const LEASE_DAYS = 14;
 const PR_STATE = Object.freeze({
     OPEN: 'open',
     CLOSED: 'closed',
-    NOT_FOUND: 'not-found',
     ERROR: 'error',
 });
 
 const registry = process.env.AK_REGISTRY;
-if (!registry) {
-    fatal('AK_REGISTRY is empty — is the ARTIFACT_KEEPER_URL org variable set?');
+// When ARTIFACT_KEEPER_URL is unset, the workflow-level `${{ vars... }}`
+// resolves to an EMPTY string and AK_REGISTRY becomes '/npm/npm-internal' —
+// truthy but useless. Validate it is an actual http(s) URL so the operator
+// gets this message, not a cryptic npm error against a relative path.
+if (!registry || !/^https?:\/\//.test(registry)) {
+    fatal(`AK_REGISTRY ('${registry || '<unset>'}') is not an http(s) URL — is the ARTIFACT_KEEPER_URL org variable set?`);
 }
 
 const repo = process.env.GITHUB_REPOSITORY || 'AdGuardSoftwareLimited/ext-tsurlfilter';
@@ -88,7 +95,10 @@ function listVersions(pkg) {
     } catch (error) {
         const detail = (error.stderr?.toString?.() || error.stdout?.toString?.() || error.message || '').trim();
         // Package absent (E404 naming the package) -> no versions, not a failure.
-        if (/E404|404 not found/i.test(detail) && detail.includes(spec)) {
+        // Shared classification from std-errors.mjs so the sweep cannot drift
+        // from ak-dev-unpublish.mjs (a plain 'not found' word is package-absent
+        // in both).
+        if (isPackageAbsent(detail, spec)) {
             return [];
         }
         fail(`could not query ${spec} on AK (${registry}): ${detail || String(error)}`);
@@ -114,12 +124,16 @@ const stateOverride = (process.env.SWEEP_PR_STATES || '').trim();
 /**
  * Check the GitHub state of a PR.
  *
- * A PR that 404s from the API is one we can no longer query — treat it as
- * closed so its builds get collected rather than leaking forever.
+ * Strict by design: only the literal `open` keeps the builds, only `closed` /
+ * `merged` authorizes deletion. A garbled `state` field on a 200, a 404 (which
+ * almost always means misconfiguration — closed/merged PRs stay API-visible
+ * forever), an auth failure, or a hung/errored fetch all return 'error' so the
+ * destructively-deleting consumer keeps the builds and fails loudly instead of
+ * guessing.
  *
  * @param {string} prNumber PR number to query.
- * @returns {Promise<PR_STATE>} The observed state; 'error' when there is no
- *   token, the API call fails, or the override mode does not list the PR.
+ * @returns {Promise<PR_STATE>} The observed state; 'error' when the state is
+ *   unknown, a 404, a failure, or the override mode does not list the PR.
  */
 async function prState(prNumber) {
     if (stateOverride) {
@@ -136,34 +150,49 @@ async function prState(prNumber) {
     }
     const url = `${apiBase}/repos/${repo}/pulls/${prNumber}`;
     try {
+        // A bounded fetch (30s) keeps a hung GitHub API call from burning the
+        // shared 30-minute budget — these calls run sequentially, so even a
+        // couple of hangs would kill the GC mid-pass.
         const response = await fetch(url, {
             headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json' },
+            signal: AbortSignal.timeout(30_000),
         });
-        if (response.status === 404) {
-            return PR_STATE.NOT_FOUND;
-        }
         if (!response.ok) {
             return PR_STATE.ERROR;
         }
         const body = await response.json();
-        return body.state === PR_STATE.OPEN ? PR_STATE.OPEN : PR_STATE.CLOSED;
+        if (body.state === PR_STATE.OPEN) {
+            return PR_STATE.OPEN;
+        }
+        if (body.state === 'closed' || body.state === 'merged') {
+            return PR_STATE.CLOSED;
+        }
+        return PR_STATE.ERROR;
     } catch {
         return PR_STATE.ERROR;
     }
 }
 
 /**
- * Delete every `-dev.pr<N>` build of one package for one PR by invoking the
- * shared unpublish script. Deleting is best-effort per (package, PR), so a
- * failure must surface rather than be swallowed.
+ * Delete the `-dev.pr<N>` builds of one package for one PR by invoking the
+ * shared unpublish script. The exact versions were already enumerated by
+ * `main()` and are passed as `--versions`, so the shared script skips its own
+ * `npm view` — without this every delete would re-query the registry once per
+ * package (six extra round-trips per closed PR). Deleting is best-effort per
+ * (package, PR), so a failure must surface rather than be swallowed.
  *
  * @param {string} pkg Bridged package name (unscoped).
  * @param {string} prNumber PR whose builds to delete.
+ * @param {string[]} versions The exact `-dev.pr<N>*` versions to remove.
  * @returns {boolean} `true` on success, `false` after logging the failure.
  */
-function deletePrVersions(pkg, prNumber) {
+function deletePrVersions(pkg, prNumber, versions) {
+    const args = [UNPUBLISH_SCRIPT, `@adguard/${pkg}`, registry, `-dev.pr${prNumber}`];
+    if (versions.length > 0) {
+        args.push('--versions', versions.join(','));
+    }
     try {
-        execFileSync('node', [UNPUBLISH_SCRIPT, `@adguard/${pkg}`, registry, `-dev.pr${prNumber}`], {
+        execFileSync('node', args, {
             stdio: ['ignore', 'inherit', 'inherit'],
         });
         return true;
@@ -230,8 +259,8 @@ async function main() {
             console.log(`PR #${pr} is ${state} — deleting ${total} version(s)`);
         }
         if (shouldDelete) {
-            for (const [pkg] of pkgMap) {
-                deletePrVersions(pkg, pr);
+            for (const [pkg, versions] of pkgMap) {
+                deletePrVersions(pkg, pr, versions);
             }
         }
     }

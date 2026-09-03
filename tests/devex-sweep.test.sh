@@ -48,16 +48,6 @@ write_replies() {
 # same list, containing a -dev.pr7 (closed) and a -dev.pr9 (open) build.
 VERSIONS='["1.0.0","1.0.1-dev.pr7","1.0.1-dev.pr9"]'
 
-run_sweep() {
-    : > "${LOG_FILE}"
-    set +e
-    OUTPUT="$(env SWEEP_PR_STATES="$1" node "${SCRIPT}" 2>&1)"
-    local code=$?
-    set -e
-    echo "${OUTPUT}"
-    return "${code}"
-}
-
 # 1. Closed PR's builds are deleted, open PR's builds are kept. deletePrVersions
 #    calls ak-dev-unpublish.mjs, which queries versions again — everything after
 #    the first 6 replies is "ok:[]" so the delete leg reports nothing to delete

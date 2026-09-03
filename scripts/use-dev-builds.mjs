@@ -37,10 +37,10 @@
  * Requires pnpm on PATH (extension repo pins pnpm >=10.33.4 <11).
  */
 
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { fail } from './ci/std-errors.mjs';
 
@@ -67,6 +67,16 @@ for (const arg of args) {
     }
 }
 
+/**
+ * Read one `--<name> <value>` option out of the raw argv.
+ *
+ * Pre-validation already rejected unknown flags; here the value is required,
+ * non-empty and must not itself look like a flag (so `--extension --pr` fails
+ * with a clear message instead of a confusing parse).
+ *
+ * @param {string} name Option name including the `--` prefix (e.g. `--pr`).
+ * @returns {string} The option value from argv.
+ */
 const readArg = (name) => {
     const index = args.indexOf(name);
     if (index === -1 || index + 1 >= args.length) {
@@ -99,6 +109,13 @@ if (!fs.existsSync(packageJsonPath)) {
     fail(`${packageJsonPath} does not exist — --extension must point at a browser-extension checkout`);
 }
 
+/**
+ * Read and parse the extension's package.json, preserving formatting.
+ *
+ * @returns {{ manifest: object, indentation: string, crlf: boolean }} The
+ *   parsed manifest plus the indentation string and line-ending style of the
+ *   original file (so a rewrite never normalizes the whole file).
+ */
 const readManifest = () => {
     const source = fs.readFileSync(packageJsonPath, 'utf8');
     // Tolerate CRLF manifests (the shared set-dev-version action uses the same
@@ -117,6 +134,13 @@ const readManifest = () => {
     };
 };
 
+/**
+ * Rewrite the extension's package.json preserving its original formatting.
+ *
+ * @param {object} manifest The manifest to serialize.
+ * @param {string} indentation Indentation string captured by {@link readManifest}.
+ * @param {boolean} crlf Whether the original file used CRLF line endings.
+ */
 const writeManifest = (manifest, indentation, crlf) => {
     // Preserve the manifest's original line endings (CRLF vs LF) so a rewrite
     // never normalizes the whole file and pollutes the diff.
@@ -124,6 +148,13 @@ const writeManifest = (manifest, indentation, crlf) => {
     fs.writeFileSync(packageJsonPath, crlf ? content.replace(/\n/g, '\r\n') : content);
 };
 
+/**
+ * The bridged packages that currently carry a dev pin in the manifest.
+ *
+ * @param {object} manifest Parsed extension manifest.
+ * @returns {string[]} Bridged directory names whose override is a `-dev.pr`
+ *   URL (i.e. ones the tool itself installed).
+ */
 const bridgedOverrides = (manifest) => {
     const overrides = manifest.pnpm?.overrides ?? {};
     return BRIDGED_PACKAGES.filter((dir) => {
@@ -132,6 +163,12 @@ const bridgedOverrides = (manifest) => {
     });
 };
 
+/**
+ * Remove every dev pin the tool previously installed.
+ *
+ * @returns {boolean} `true` when at least one pin was removed and the manifest
+ *   was rewritten; `false` when no dev pins were present.
+ */
 const stripDevPins = () => {
     const { manifest, indentation, crlf } = readManifest();
     const present = bridgedOverrides(manifest);
@@ -145,6 +182,9 @@ const stripDevPins = () => {
     return true;
 };
 
+/**
+ * Run `pnpm install` in the extension checkout to refresh the lockfile.
+ */
 const pnpmInstall = () => {
     console.log('> pnpm install --no-frozen-lockfile --ignore-scripts');
     // --no-frozen-lockfile: package.json just changed and the lockfile must be
@@ -161,6 +201,15 @@ const pnpmInstall = () => {
     }
 };
 
+/**
+ * Query the AK registry for a package via `npm view`, failing with a curated
+ * message instead of a raw Node stack trace on any error.
+ *
+ * @param {string} spec Package spec (e.g. `@adguard/tsurlfilter@1.0.0-dev.pr18`).
+ * @param {string | null} field Optional `npm view` field to request; when null
+ *   the whole `versions --json` array is requested.
+ * @returns {string} The trimmed `npm view` stdout.
+ */
 const npmView = (spec, field) => {
     const viewArgs = field
         ? ['view', `${spec}`, field, `--registry=${registry}`, '--silent']
@@ -178,10 +227,16 @@ const npmView = (spec, field) => {
     }
 };
 
-// compareNumericCore — semver-ish comparator over the X.Y.Z core that precedes
-// the -dev.pr suffix; all candidates share the same suffix, so the core alone
-// orders them. Used to pick the newest dev version when a mid-PR release bump
-// left several -dev.pr<N>.<sha> versions for the same PR behind.
+/**
+ * Semver-ish comparator over the X.Y.Z core that precedes the `-dev.pr`
+ * suffix; all candidates share the same suffix, so the core alone orders them
+ * (used to pick the newest dev version when a mid-PR release bump left several
+ * `-dev.pr<N>.<sha>` versions for the same PR behind).
+ *
+ * @param {string} a First version string.
+ * @param {string} b Second version string.
+ * @returns {number} Negative/zero/positive per the numeric core comparison.
+ */
 const compareNumericCore = (a, b) => {
     const core = (version) => version.split('-dev.pr')[0].split('.').map((n) => Number(n));
     const ca = core(a);
@@ -194,11 +249,17 @@ const compareNumericCore = (a, b) => {
     return 0;
 };
 
-// headShortSha — the 8-char abbreviated SHA of the source head whose builds we
-// pin. Tries the explicit --head override, then the tsurlfilter checkout the
-// script lives in; returns null when neither is available (falls back to a
-// non-head-scoped resolution). DEV_BUILDS_FORCE_NO_HEAD is a test hook that
-// emulates "no git context".
+/**
+ * The 8-char abbreviated SHA of the source head whose builds we pin.
+ *
+ * Tries the explicit `--head` override, then the tsurlfilter checkout the
+ * script lives in; returns `null` when neither is available (falls back to a
+ * non-head-scoped resolution). DEV_BUILDS_FORCE_NO_HEAD is a test hook that
+ * emulates "no git context".
+ *
+ * @param {string | null} requested The `--head` value, or null.
+ * @returns {string | null} The 8-char lowercase short SHA, or null.
+ */
 const headShortSha = (requested) => {
     if (process.env.DEV_BUILDS_FORCE_NO_HEAD === '1') {
         return null;
@@ -220,15 +281,30 @@ const headShortSha = (requested) => {
     return null;
 };
 
-// isPrVersion — does this version belong to PR N's dev line? Matches the exact
-// `-dev.pr<N>` tag as well as all `-dev.pr<N>.<...>` (e.g. head-scoped) builds,
-// and never crosses into `-dev.pr<N+…>` (a bare substring match on 'pr' alone
-// could not tell -dev.pr1 from -dev.pr12).
+/**
+ * Does this version belong to PR N's dev line?
+ *
+ * Matches the exact `-dev.pr<N>` tag as well as all `-dev.pr<N>.<...>`
+ * (e.g. head-scoped) builds, and never crosses into `-dev.pr<N+…>` (a bare
+ * substring match on 'pr' alone could not tell `-dev.pr1` from `-dev.pr12`).
+ *
+ * @param {unknown} version A version string (non-strings return false).
+ * @param {string} prNumber PR number (as a string).
+ * @returns {boolean} Whether the version is a dev build of this PR.
+ */
 const isPrVersion = (version, prNumber) => {
     return typeof version === 'string' && new RegExp(`-dev\\.pr${prNumber}(\\.|$)`).test(version);
 };
 
-const pickAndTarball = (name, candidates, exactSuffix) => {
+/**
+ * Pick the newest candidate (by numeric core) and resolve its tarball URL.
+ *
+ * @param {string} name Package name (e.g. `@adguard/tsurlfilter`).
+ * @param {string[]} candidates Versions to choose among (same suffix).
+ * @returns {{ version: string, url: string }} The chosen version and its
+ *   `dist.tarball` URL from the registry.
+ */
+const pickAndTarball = (name, candidates) => {
     const pick = candidates.slice().sort(compareNumericCore).pop();
     const url = npmView(`${name}@${pick}`, 'dist.tarball');
     if (!url) {
@@ -258,7 +334,6 @@ if (sha && requestedHead) {
     console.log(`Pinning the coherent set for checkout head ${sha} (PR #${pr}).`);
 }
 
-const versionsByPackage = {};
 const urls = {};
 for (const dir of BRIDGED_PACKAGES) {
     const name = `@adguard/${dir}`;
@@ -273,7 +348,6 @@ for (const dir of BRIDGED_PACKAGES) {
             + ` ${JSON.stringify(raw)} — check the registry URL ${registry}`,
         );
     }
-    versionsByPackage[name] = versions;
 
     if (sha) {
         // Head-scoped: only versions stamped from THIS head qualify. A
@@ -288,9 +362,9 @@ for (const dir of BRIDGED_PACKAGES) {
                 + ` matching the 'Dev builds published' review on PR #${pr}.`,
             );
         }
-        const { version, url } = pickAndTarball(name, exact, exactSuffix);
+        const { version, url } = pickAndTarball(name, exact);
         urls[name] = url;
-        if (version !== exact[exact.length - 1]) {
+        if (exact.length > 1) {
             console.warn(`${name}: multiple ${exactSuffix} builds exist; pinning newest (${version})`);
         }
     } else {
@@ -307,7 +381,7 @@ for (const dir of BRIDGED_PACKAGES) {
             `${name}: no git context (pass --head or run from the PR checkout) — pinned the newest ${suffix} version;`
             + ' the set may span multiple heads.',
         );
-        const { url } = pickAndTarball(name, matches, null);
+        const { url } = pickAndTarball(name, matches);
         urls[name] = url;
     }
 }

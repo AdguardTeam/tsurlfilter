@@ -159,6 +159,7 @@ jobs:
           bash -n tests/verify-tarball.test.sh
           bash -n tests/ak-dev-unpublish.test.sh
           bash -n tests/devex-sweep.test.sh
+          bash -n tests/check-pr-open.test.sh
           node --check scripts/ci/check-pr-open.mjs
           node --check .github/actions/finalize-changelog/finalize-changelog.mjs
           node --check scripts/inject-package-versions.mjs
