@@ -4,6 +4,10 @@ name: Publish stable DNR rulesets
 # build @adguard/dnr-rulesets from stable/dnr-rulesets-5.0 and publish it under
 # `latest`. Only 5.0 is published (it introduced the switch to the standalone
 # @adguard/dnr-converter, replacing @adguard/tsurlfilter's DNR APIs).
+# Each round also publishes the same tarball to the internal Artifact Keeper
+# (AK) npm registry (shared deploy-to-ak-npm.yml workflow), independently of
+# the npm publish, so the extension auto-build can install rulesets from AK
+# when npm throttles.
 # resolve-lines skips the round if the branch isn't on the current CI yet.
 #
 # npm 429 background: npm rate-limits the shared GitHub egress IP. One publish
@@ -129,6 +133,28 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  publish-ak-5-0:
+    name: Publish DNR rulesets 5.0 to Artifact Keeper
+    needs: [resolve-lines, build-stable-dnr-rulesets]
+    # Guard the build leg like the other downstream legs: if the build fails,
+    # the artifact the AK publish needs was never uploaded, so don't start and
+    # fail redundantly on top of the primary failure.
+    if: ${{ !cancelled() && needs.resolve-lines.outputs.line-5-0 == 'true' && needs.build-stable-dnr-rulesets.result == 'success' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-ak-npm.yml@master
+    with:
+      team: extensions
+      artifact-name: dnr-rulesets-5.0
+      tag: latest
+      environment: ''
+    # Least privilege: the shared deploy-to-ak-npm.yml workflow only consumes
+    # the ARTIFACT_KEEPER_API_KEY secret (the ARTIFACT_KEEPER_URL it reads is
+    # an org variable, which does not need forwarding), so pass that one secret
+    # explicitly instead of cascading the whole secret set via `secrets: inherit`.
+    secrets:
+      ARTIFACT_KEEPER_API_KEY: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
+    permissions:
+      contents: read
+
   check-5-0:
     name: Check 5.0 version not on npm yet
     needs: [resolve-lines, build-stable-dnr-rulesets]
@@ -218,7 +244,7 @@ jobs:
 
   notify-failure:
     name: Notify on failure
-    needs: [resolve-lines, build-stable-dnr-rulesets, check-5-0, publish-5-0, retry-5-0, retry-publish-5-0]
+    needs: [resolve-lines, build-stable-dnr-rulesets, check-5-0, publish-5-0, publish-ak-5-0, retry-5-0, retry-publish-5-0]
     if: ${{ failure() }}
     runs-on: team-extensions
     timeout-minutes: 10
