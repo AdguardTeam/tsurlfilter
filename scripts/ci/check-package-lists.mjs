@@ -186,7 +186,13 @@ for (const file of versionGrammarLiterals) {
     const bad = [];
     for (const m of text.matchAll(/-dev\.([A-Za-z0-9_$<>{}.()\\-]*)/g)) {
         const stem = m[1];
-        if (stem === '' || stem.startsWith('$') || stem.startsWith('pr')) {
+        // Accept `pr` only when followed by end-of-string, a digit (`-dev.pr1`),
+        // `<` (the `-dev.pr<N>` placeholder) or `$` (a `-dev.pr${{...}}`
+        // interpolation): /^pr($|[\d<$])/. `startsWith('pr')` alone would let
+        // `-dev.prod` or a typo'd `-dev.prx` through — versions the sweep's
+        // `-dev\.pr(\d+)` regex would never match, exactly the silent stop this
+        // guard exists to catch.
+        if (stem === '' || stem.startsWith('$') || /^pr($|[\d<$])/.test(stem)) {
             continue;
         }
         bad.push(`-dev.${stem}`);

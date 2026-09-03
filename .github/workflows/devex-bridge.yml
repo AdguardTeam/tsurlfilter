@@ -164,10 +164,11 @@ jobs:
           NODE
 
       # set-dev-version stamped EVERY packages/*/package.json, but only the six
-      # bridged packages are published — and of the publishable non-bridged
-      # packages, @adguard/logger (and adguard-api/mv3,
-      # eslint-plugin-logger-context) still appear as `workspace:^`
-      # dependencies of the bridged ones. pnpm pack rewrites each `workspace:^`
+      # bridged packages are published. Of the publishable non-bridged
+      # packages, @adguard/logger is the only runtime `workspace:^` dependency
+      # of the bridged set (eslint-plugin-logger-context is just a devDependency
+      # of dnr-converter, and adguard-api / api-mv3 are not dependencies of any
+      # bridged package). pnpm pack rewrites each `workspace:^`
       # to `^<that package's current version>`; for a -dev-stamped non-bridged
       # package that is a version on NO registry (AK never receives logger, and
       # the public 2.0.1 does not satisfy `^2.0.2-dev`), so the extension's
@@ -482,6 +483,15 @@ jobs:
             set -e
             if [[ "${keep_code}" -ne 0 ]]; then
               echo "::error::could not read the packed version records for ${name} — refusing to clean stale versions"
+              exit 1
+            fi
+            if [[ -z "${keep_records}" ]]; then
+              # An EMPTY per-package keep list is just as dangerous as a failed
+              # read: with no --keep, every -dev.pr<N>* version of this package
+              # would be deleted — including the one this run just published
+              # (mitigated only by AK's 405). Same contract as the comment job's
+              # version-map step: a missing version record fails loudly.
+              echo "::error::no packed version record found for ${name} (missing devex-version-* artifact?) — refusing to clean stale versions"
               exit 1
             fi
             keep_args=()

@@ -44,14 +44,25 @@ write_replies() {
     done
 }
 
+# Every case must consume exactly the replies it was handed: a leftover reply
+# means the harness no longer reflects the script's npm call shape (e.g. a
+# stale "ok:[]" left after a --versions refactor) and should fail the suite.
+assert_replies_consumed() {
+    if [[ -s "${REPLY_FILE}" ]]; then
+        echo "FAIL: ${REPLY_FILE} still holds $(wc -l < "${REPLY_FILE}" | tr -d ' ') unconsumed reply (line(s)) — script call shape changed?" >&2
+        exit 1
+    fi
+}
+
 # Six packages each answer the sweep's initial `npm view ... versions` with the
 # same list, containing a -dev.pr7 (closed) and a -dev.pr9 (open) build.
 VERSIONS='["1.0.0","1.0.1-dev.pr7","1.0.1-dev.pr9"]'
 
 # 1. Closed PR's builds are deleted, open PR's builds are kept. deletePrVersions
-#    calls ak-dev-unpublish.mjs, which queries versions again — everything after
-#    the first 6 replies is "ok:[]" so the delete leg reports nothing to delete
-#    (the unpublish itself is covered by ak-dev-unpublish.test.sh).
+#    passes `--versions` to ak-dev-unpublish.mjs, so that script skips its own
+#    `npm view` — but it still runs one `npm unpublish` per version, which the
+#    six trailing "ok:[]" replies feed (the unpublish logic itself is covered by
+#    ak-dev-unpublish.test.sh).
 write_replies \
     "ok:${VERSIONS}" "ok:${VERSIONS}" "ok:${VERSIONS}" \
     "ok:${VERSIONS}" "ok:${VERSIONS}" "ok:${VERSIONS}" \
@@ -62,6 +73,7 @@ OUTPUT="$(env SWEEP_PR_STATES='7:closed,9:open' node "${SCRIPT}" 2>&1)"
 code=$?
 set -e
 [[ "${code}" -eq 0 ]] || { echo "FAIL gc: expected exit 0, got ${code}" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
+assert_replies_consumed
 grep -q 'PR #7 is closed — deleting' <<<"${OUTPUT}" || { echo "FAIL gc: expected PR #7 deletion:" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
 grep -q 'PR #9 is open — keeping' <<<"${OUTPUT}" || { echo "FAIL gc: expected PR #9 to be kept:" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
 # The deletion leg must have actually invoked ak-dev-unpublish.mjs for each
@@ -71,13 +83,13 @@ grep -q 'view @adguard/dnr-converter versions' "${LOG_FILE}" || { echo "FAIL gc:
 
 # 2. A PR whose state cannot be determined is left in place and fails the run.
 write_replies \
-    "ok:${VERSIONS}" "ok:[]" "ok:[]" "ok:[]" "ok:[]" "ok:[]" \
-    "ok:[]" "ok:[]" "ok:[]" "ok:[]" "ok:[]"
+    "ok:${VERSIONS}" "ok:[]" "ok:[]" "ok:[]" "ok:[]" "ok:[]"
 set +e
 OUTPUT="$(env SWEEP_PR_STATES='7:error' node "${SCRIPT}" 2>&1)"
 code=$?
 set -e
 [[ "${code}" -eq 1 ]] || { echo "FAIL state-error: expected exit 1, got ${code}" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
+assert_replies_consumed
 grep -q 'could not check state of PR' <<<"${OUTPUT}" || { echo "FAIL state-error: expected a loud keep" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
 
 # 3. Targeted sweep (PR_NUMBER set) deletes that PR's builds without a state
@@ -91,6 +103,7 @@ OUTPUT="$(env PR_NUMBER=7 node "${SCRIPT}" 2>&1)"
 code=$?
 set -e
 [[ "${code}" -eq 0 ]] || { echo "FAIL targeted: expected exit 0, got ${code}" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
+assert_replies_consumed
 grep -q 'targeted sweep: deleting .* for PR #7' <<<"${OUTPUT}" || { echo "FAIL targeted: expected PR #7 deletion" >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1; }
 if grep -q 'PR #9' <<<"${OUTPUT}"; then
     echo 'FAIL targeted: PR #9 must not be touched' >&2; printf '%s\n' "${OUTPUT}" >&2; exit 1

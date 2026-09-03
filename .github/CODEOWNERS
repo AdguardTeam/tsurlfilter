@@ -8,7 +8,7 @@
 # and to the pinning tool / drift guard / sweep / check-pr-open composite that
 # enforce their contract — must be reviewed by Extensions maintainers (the
 # stricter subset).
-.github/CODEOWNERS                            @AdGuardSoftwareLimited/extensions-maintainers
+.github/CODEOWNERS                           @AdGuardSoftwareLimited/extensions-maintainers
 .github/actions/check-pr-open/               @AdGuardSoftwareLimited/extensions-maintainers
 .github/workflows/devex-bridge.yml           @AdGuardSoftwareLimited/extensions-maintainers
 .github/workflows/devex-bridge-cleanup.yml   @AdGuardSoftwareLimited/extensions-maintainers

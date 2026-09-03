@@ -9,8 +9,12 @@
  * drift between scripts.
  *
  * Annotation policy: `::error::` / `::warning::` are written to stderr, which
- * GitHub renders as step annotations; the exact output is preserved verbatim
- * from the inlined versions this replaces.
+ * GitHub renders as step annotations. The prefix + exit-code contract is
+ * carried over from the inlined helpers this module replaces (it does not keep
+ * their output byte-for-byte — e.g. a developer running the local
+ * use-dev-builds.mjs CLI also sees the `::error::` prefix in their terminal).
+ * Keeping one shared format means CI annotation rendering and local
+ * diagnostics cannot drift apart.
  */
 
 import process from 'node:process';
