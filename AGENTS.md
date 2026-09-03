@@ -110,6 +110,23 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   (script/Node syntax checks, package-list drift guard, finalize-changelog
   regression tests); a push-scoped failure-notify job alerts Slack on broken
   master builds.
+- `devex-bridge.yml` — on same-repository PRs touching any of the six packages
+  consumed by the browser extension, publishes them to the internal Artifact
+  Keeper npm registry as HEAD-scoped `<next-patch>-dev.pr<N>.<shortsha>`
+  versions (AK is immutable; every push carries a new short SHA, so each push
+  yields fresh builds for all six) and posts a usage comment on the PR.
+  Same-repo PRs only (publishes use the org AK secret). Requires the org
+  variable `ARTIFACT_KEEPER_URL` and secret `ARTIFACT_KEEPER_API_KEY`. See
+  DEVELOPMENT.md for the developer workflow.
+- `devex-bridge-cleanup.yml` — when a source PR closes, deletes its
+  `-dev.pr<N>*` versions from AK (fail-loud; requires the same `ARTIFACT_KEEPER_*`
+  pair), and is also reachable via `workflow_dispatch` (input `pr-number`) as an
+  idempotent retry.
+- `devex-bridge-sweep.yml` — scheduled GC (every 6h, plus `workflow_dispatch`):
+  deletes `-dev.pr<N>*` versions whose source PR is no longer open, so the
+  cleanup converges even when a `closed` event was missed or failed. NOTE: the
+  `workflow_dispatch` *pr-number* input deletes that PR's builds
+  UNCONDITIONALLY (targeted recovery) regardless of the PR's GitHub state.
 - `prepare-release.yml` — opens a per-package release PR (thin caller of
   `_prepare-release-monorepo.yml`).
 - `_prepare-release-monorepo.yml` — reusable monorepo prepare engine: finalizes
@@ -230,6 +247,16 @@ You MUST follow the following rules for EVERY task that you perform:
    expression (e.g. a template literal) rather than splitting it across
    multiple lines with string concatenation. This makes log messages easier
    to grep for in the codebase.
+
+6. **Function docs use the standard JSDoc style everywhere, `scripts/`
+   included.** Document every non-trivial function with a `/** ... */` block
+   carrying `@param`/`@returns` tags — the same JSDoc style enforced in
+   packages via `eslint-plugin-jsdoc` — rather than a `//`-style comment above
+   the definition. This applies to standalone ESM CLI helpers such as
+   `scripts/ci/*.mjs` and their workflow callers, not just packaged sources.
+
+   **Rationale**: keeps function contracts greppable and consistent with our
+   usual JSDoc style across both packages and tooling scripts.
 
 ### III. Testing Discipline
 

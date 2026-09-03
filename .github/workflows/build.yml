@@ -153,13 +153,22 @@ jobs:
       - name: Validate script syntax
         run: |
           bash -n tests/finalize-changelog.sh
+          bash -n tests/use-dev-builds.test.sh
           bash -n scripts/ci/resolve-release-inputs.sh
           bash -n scripts/ci/verify-tarball.sh
-          bash -n tests/verify-tarball.sh
+          bash -n tests/verify-tarball.test.sh
+          bash -n tests/ak-dev-unpublish.test.sh
+          bash -n tests/devex-sweep.test.sh
+          bash -n tests/check-pr-open.test.sh
+          node --check scripts/ci/check-pr-open.mjs
           node --check .github/actions/finalize-changelog/finalize-changelog.mjs
           node --check scripts/inject-package-versions.mjs
+          node --check scripts/use-dev-builds.mjs
           node --check scripts/ci/compute-affected-packages.mjs
           node --check scripts/ci/check-package-lists.mjs
+          node --check scripts/ci/devex-sweep.mjs
+          node --check scripts/ci/ak-dev-unpublish.mjs
+          node --check scripts/ci/std-errors.mjs
 
       - name: Check package list drift
         run: node scripts/ci/check-package-lists.mjs
@@ -168,7 +177,19 @@ jobs:
         run: bash tests/finalize-changelog.sh
 
       - name: Run verify-tarball regression tests
-        run: bash tests/verify-tarball.sh
+        run: bash tests/verify-tarball.test.sh
+
+      - name: Run use-dev-builds regression tests
+        run: bash tests/use-dev-builds.test.sh
+
+      - name: Run ak-dev-unpublish regression tests
+        run: bash tests/ak-dev-unpublish.test.sh
+
+      - name: Run devex-sweep regression tests
+        run: bash tests/devex-sweep.test.sh
+
+      - name: Run check-pr-open regression tests
+        run: bash tests/check-pr-open.test.sh
 
   notify-failure:
     name: Notify master CI failure

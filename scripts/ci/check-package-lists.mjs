@@ -15,13 +15,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { fail } from './std-errors.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-
-const fail = (message) => {
-    console.error(`::error::${message}`);
-    process.exit(1);
-};
 
 // Source of truth: packages/*/CHANGELOG.md.
 const publishable = fs.readdirSync(path.join(repoRoot, 'packages'), { withFileTypes: true })
@@ -81,6 +77,131 @@ for (const file of ['scripts/ci/resolve-release-inputs.sh', '.github/workflows/_
     }
     assertSameSet(`${file} ALLOWLIST`, matches[0][1].split(' ').filter(Boolean));
 }
+
+// 4a. Every copy of the DevEx bridge package list must agree with
+//     scripts/ci/bridged-packages.json — the single machine-readable source of
+//     truth: the BRIDGED_PACKAGES env in both workflows, and the pack /
+//     publish package matrices in devex-bridge.yml. use-dev-builds.mjs is
+//     expected to LOAD the set from that file (no literal copy of its own).
+//     Matrices cannot be derived from a file (the `env` context is unavailable
+//     at matrix-parse time in GitHub Actions), so the guard keeps the literal
+//     copies honest instead. All copies must be a SUBSET of the publishable
+//     packages (the six the browser extension consumes), so this checks
+//     membership, not equality with `publishable`. Without covering every
+//     copy, adding a 7th package would silently miss cleanup/publish.
+const bridgeJson = JSON.parse(fs.readFileSync(path.join(repoRoot, 'scripts/ci/bridged-packages.json'), 'utf8'));
+if (!Array.isArray(bridgeJson) || bridgeJson.length === 0) {
+    fail('scripts/ci/bridged-packages.json: expected a non-empty JSON array of package names');
+}
+const canonicalBridged = [...bridgeJson].sort();
+
+const bridgeWorkflow = fs.readFileSync(path.join(repoRoot, '.github/workflows/devex-bridge.yml'), 'utf8');
+const bridgeCleanup = fs.readFileSync(path.join(repoRoot, '.github/workflows/devex-bridge-cleanup.yml'), 'utf8');
+const bridgeEnv = bridgeWorkflow.match(/BRIDGED_PACKAGES:\s*'([a-z0-9- ]+)'/);
+if (!bridgeEnv) {
+    fail('devex-bridge.yml: could not find the BRIDGED_PACKAGES: \'...\' env assignment (format changed?)');
+}
+const cleanupEnv = bridgeCleanup.match(/BRIDGED_PACKAGES:\s*'([a-z0-9- ]+)'/);
+if (!cleanupEnv) {
+    fail('devex-bridge-cleanup.yml: could not find the BRIDGED_PACKAGES: \'...\' env assignment (format changed?)');
+}
+const bridgeMatrices = [...bridgeWorkflow.matchAll(/^\s*package:\s*\[([a-z0-9-]+(?:, [a-z0-9-]+)*)\]\s*$/gm)]
+    .map((m) => m[1].split(', ').map((s) => s.trim()).filter(Boolean).sort());
+if (bridgeMatrices.length !== 2) {
+    fail(`devex-bridge.yml: expected exactly 2 package matrix lines (pack + publish), found ${bridgeMatrices.length} (format changed?)`);
+}
+const devBuildsScript = fs.readFileSync(path.join(repoRoot, 'scripts/use-dev-builds.mjs'), 'utf8');
+// The tool must load the set from the JSON file, and must not keep a literal
+// BRIDGED_PACKAGES copy of its own.
+if (!devBuildsScript.includes('bridged-packages.json')) {
+    fail('scripts/use-dev-builds.mjs: must load the bridged package set from scripts/ci/bridged-packages.json');
+}
+if (/BRIDGED_PACKAGES\s*=\s*'[a-z0-9- ]+'\.split\(' '\)/.test(devBuildsScript)) {
+    fail('scripts/use-dev-builds.mjs: contains a literal BRIDGED_PACKAGES list — load it from scripts/ci/bridged-packages.json instead');
+}
+const bridgeLists = [
+    ['scripts/ci/bridged-packages.json', canonicalBridged],
+    ['devex-bridge.yml env', bridgeEnv[1].split(' ').filter(Boolean).sort()],
+    ['devex-bridge-cleanup.yml env', cleanupEnv[1].split(' ').filter(Boolean).sort()],
+    ['devex-bridge.yml pack matrix', bridgeMatrices[0]],
+    ['devex-bridge.yml publish matrix', bridgeMatrices[1]],
+];
+const expectedBridgeJson = JSON.stringify(canonicalBridged);
+for (const [label, list] of bridgeLists) {
+    if (JSON.stringify(list) !== expectedBridgeJson) {
+        fail(`Bridge package lists disagree.\n  scripts/ci/bridged-packages.json: ${canonicalBridged.join(', ')}\n  ${label}: ${list.join(', ')}`);
+    }
+}
+const unknown = canonicalBridged.filter((name) => !publishable.includes(name));
+if (unknown.length > 0) {
+    fail(`Bridge package lists contain non-publishable packages: ${unknown.join(', ')}`);
+}
+console.log(`bridge package lists: OK (${canonicalBridged.length} packages, ${bridgeLists.length} copies agree, subset of publishable)`);
+
+// 4b. The tool's DEFAULT_REGISTRY must stay on the same AK npm path the
+//     workflows derive at runtime (`${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal`).
+//     The registry PATH is read from ALL THREE bridge workflows' actual
+//     AK_REGISTRY assignment (not a second hard-coded literal), so a workflow
+//     host or path change fails this check instead of silently re-pinning to
+//     the old host — and use-dev-builds.mjs accepts --registry to override.
+const devRegistryMatch = devBuildsScript.match(/DEFAULT_REGISTRY\s*=\s*'([^']+)'/);
+if (!devRegistryMatch) {
+    fail('scripts/use-dev-builds.mjs: could not find the DEFAULT_REGISTRY constant (format changed?)');
+}
+const akRegistryRe = /AK_REGISTRY:\s*\$\{\{\s*vars\.ARTIFACT_KEEPER_URL\s*\}\}([^ \n]+)/;
+const bridgeAk = bridgeWorkflow.match(akRegistryRe);
+const cleanupAk = bridgeCleanup.match(akRegistryRe);
+const sweepWorkflow = fs.readFileSync(path.join(repoRoot, '.github/workflows/devex-bridge-sweep.yml'), 'utf8');
+const sweepAk = sweepWorkflow.match(akRegistryRe);
+if (!bridgeAk || !cleanupAk || !sweepAk) {
+    fail('could not find AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}<path> in all three bridge workflows (format changed?)');
+}
+if (bridgeAk[1] !== cleanupAk[1] || bridgeAk[1] !== sweepAk[1]) {
+    fail(`AK_REGISTRY path differs between the bridge workflows: '${bridgeAk[1]}' vs '${cleanupAk[1]}' vs '${sweepAk[1]}'`);
+}
+const akPath = bridgeAk[1];
+if (!devRegistryMatch[1].endsWith(akPath)) {
+    fail(`use-dev-builds.mjs DEFAULT_REGISTRY (${devRegistryMatch[1]}) must end in '${akPath}' to match the workflows' AK_REGISTRY path`);
+}
+console.log(`bridge registry path: OK (DEFAULT_REGISTRY shares ${akPath} with all three AK_REGISTRY assignments)`);
+
+// 4c. The `-dev.pr<N>.<sha>` version grammar is re-encoded in several places
+//     (VERSION_SUFFIX in devex-bridge.yml, DEV_MARK/isPrVersion in
+//     use-dev-builds.mjs, the `-dev.pr<N>` suffix literals in the cleanup twin,
+//     the sweep's regex). Unlike the package list there is no JSON source, so
+//     this keeps the copies honest syntactically: every `-dev.<...>` literal in
+//     the bridge sources must be either a version-suffix interpolation
+//     (`-dev.${...}` / `-dev.${{...}}`) or a `-dev.pr<N>...` form — any other
+//     stem (e.g. `-dev.beta`) would silently stop cleanup/sweep matching.
+const versionGrammarLiterals = [
+    '.github/workflows/devex-bridge.yml',
+    '.github/workflows/devex-bridge-cleanup.yml',
+    '.github/workflows/devex-bridge-sweep.yml',
+    'scripts/use-dev-builds.mjs',
+    'scripts/ci/ak-dev-unpublish.mjs',
+    'scripts/ci/devex-sweep.mjs',
+];
+for (const file of versionGrammarLiterals) {
+    const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
+    const bad = [];
+    for (const m of text.matchAll(/-dev\.([A-Za-z0-9_$<>{}.()\\-]*)/g)) {
+        const stem = m[1];
+        // Accept `pr` only when followed by end-of-string, a digit (`-dev.pr1`),
+        // `<` (the `-dev.pr<N>` placeholder) or `$` (a `-dev.pr${{...}}`
+        // interpolation): /^pr($|[\d<$])/. `startsWith('pr')` alone would let
+        // `-dev.prod` or a typo'd `-dev.prx` through — versions the sweep's
+        // `-dev\.pr(\d+)` regex would never match, exactly the silent stop this
+        // guard exists to catch.
+        if (stem === '' || stem.startsWith('$') || /^pr($|[\d<$])/.test(stem)) {
+            continue;
+        }
+        bad.push(`-dev.${stem}`);
+    }
+    if (bad.length > 0) {
+        fail(`${file}: found non-pr dev-version stem(s): ${bad.join(', ')} — the -dev.pr<N> grammar must stay consistent across the bridge twins`);
+    }
+}
+console.log('bridge version grammar: OK (all -dev.<...> literals are -dev.pr<N> or VERSION_SUFFIX interpolations)');
 
 console.log('package list drift check passed');
 
