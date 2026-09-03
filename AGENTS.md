@@ -44,8 +44,7 @@ high-level extension APIs (`adguard-api`, `adguard-api-mv3`).
 │       ├── agtree-browser-benchmark/ # AGTree browser benchmarks
 │       ├── css-tokenizer-benchmark/ # CSS tokenizer benchmarks
 │       └── tsurlfilter-benchmark/   # TSUrlFilter benchmarks
-├── scripts/                         # Monorepo-level scripts (cleanup, increment)
-├── bamboo-specs/                    # CI pipeline definitions
+├── scripts/                         # Cleanup, version injection, and CI helpers
 ├── package.json                     # Root package config
 ├── pnpm-workspace.yaml              # Workspace and catalog definitions
 ├── lerna.json                       # Lerna config (independent versioning)
@@ -87,7 +86,10 @@ All commands are run from the repository root unless noted otherwise.
   automatically)
 - **Clean all `node_modules`**: `pnpm clean`
 - **Reinstall from scratch**: `pnpm reinstall` (or `pnpm ri`)
-- **Increment a package version**: `pnpm run increment <package-name>`
+- **Stamp dev versions (CI)**: shared `set-dev-version` action in monorepo
+  mode (`package-globs: packages/*/package.json`); release versions are
+  injected at pack time by `node scripts/inject-package-versions.mjs
+  --package <name> --version <ver>`.
 - **Pack release tarballs**: `pnpm tgz` (builds and packs `dnr-rulesets`,
   `api`, `api-mv3` with dependencies)
 
@@ -97,6 +99,52 @@ CI pipelines use `docker buildx build --target <stage> --output type=local,dest=
 with the multi-stage `Dockerfile` at the repo root. Each package has dedicated
 build/test targets. The `TEST_RUN_ID` build arg busts test-stage caches while
 reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
+
+### GitHub Actions
+
+- `build.yml` — PR/push CI: finds affected packages (workspace dependency
+  closure), stamps workspace dev versions via the shared `set-dev-version`
+  action, and runs the Docker `test-<package>-output` targets in a matrix.
+  Also runs the `docs` job (verifies the regenerated DNR converter docs,
+  gated on the dnr-converter closure) and a `workflows` validation job
+  (script/Node syntax checks, package-list drift guard, finalize-changelog
+  regression tests); a push-scoped failure-notify job alerts Slack on broken
+  master builds.
+- `prepare-release.yml` — opens a per-package release PR (thin caller of
+  `_prepare-release-monorepo.yml`).
+- `_prepare-release-monorepo.yml` — reusable monorepo prepare engine: finalizes
+  the package changelog via `.github/actions/finalize-changelog/finalize-changelog.mjs`,
+  pushes `release-bump/<package>-v<version>`, opens the release PR.
+- `publish-release.yml` — publishes a package to npm after the release PR
+  merges (Docker test/build → npm → tag `<package>-v<version>` — created only
+  after the publish succeeds → mirror → GitHub Release → Slack); thin caller of
+  `_publish-release-monorepo.yml`.
+- `_publish-release-monorepo.yml` — reusable monorepo publish engine
+  (Docker test/build → npm → tag after publish → mirror → GitHub Release →
+  Slack, with a failure-notify Slack job).
+- `publish-stable-dnr-rulesets.yml` — twice-daily scheduled build/publish of
+  `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0` branch. Only the
+  5.0 line is published (under `latest`); the older stable lines are no longer
+  published. The branch must be on the current CI (root `Dockerfile` +
+  `scripts/inject-package-versions.mjs`); a `resolve-lines` job checks branch
+  readiness and skips gracefully if not yet migrated, the job checks the
+  branch out, stamps a `<line>.<timestamp>` stable version, builds its own
+  `dnr-rulesets-auto-build-output` Docker target, and publishes it. The exact
+  version is checked for idempotency before publishing
+  (`scripts/ci/check-npm-version.sh`), and a failed publish gets one retry
+  after a backoff (outlasts npm's throttle window). The line publishes under
+  the `latest` npm dist-tag (no older line exists to pull it backwards) with
+  no environment restriction. A failure-notify job alerts Slack when any leg
+  fails.
+- `mirror.yml` — syncs master to the public `AdguardTeam/tsurlfilter` mirror.
+- `update-companiesdb.yml` — refreshes the tswebextension companies database
+  every Tuesday and pushes meaningful changes with Octopass. The push avoids
+  `[skip ci]` so the change also reaches the public mirror, and a failure-notify
+  job alerts Slack on a failed refresh.
+
+Release docs live in [DEPLOYMENT.md](DEPLOYMENT.md) and [.github/docs/](.github/docs/).
+Bamboo has been decommissioned; all active CI and automation run in GitHub
+Actions.
 
 ## Contribution Instructions
 
@@ -123,6 +171,11 @@ You MUST follow the following rules for EVERY task that you perform:
   `Unreleased` section. Add entries to the appropriate subsection (`Added`,
   `Changed`, or `Fixed`); do not create duplicate subsections.
 
+- Do NOT describe internal process or infrastructure changes (CI, build,
+  release tooling, repository moves) in public `CHANGELOG.md` files —
+  changelogs are user-facing. Only user-visible behavioral changes belong in
+  them; describe internal changes in the PR or commit message instead.
+
 - When making changes to a package, consider updating changelogs of dependent
   packages that may be affected.
 
@@ -136,9 +189,9 @@ You MUST follow the following rules for EVERY task that you perform:
 
 ### I. Architecture
 
-1. **Monorepo with independent versioning.** Each package is versioned and
-   published independently via Lerna. Cross-package references use
-   `workspace:^`.
+1. **Monorepo with independent releases.** Each package is published
+  independently. Versions live in package changelogs and are injected at
+  build time; cross-package references use `workspace:^`.
 
    **Rationale**: Allows packages to evolve at different rates while sharing
    build infrastructure.

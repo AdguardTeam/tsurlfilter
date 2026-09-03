@@ -45,7 +45,7 @@ packages/agtree/
 │   ├── utils/                  # General utility functions
 │   └── validator/              # Rule validator
 ├── test/                       # Unit tests + smoke tests
-├── scripts/                    # Build scripts (build-txt, transform-dts, etc.)
+├── scripts/                    # Build scripts (transform-dts, compatibility-tables-wiki, etc.)
 ├── typings/                    # Custom type declarations
 ├── dist/                       # Build output (gitignored)
 ├── rollup.config.ts            # Rollup build config

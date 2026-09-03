@@ -1,0 +1,120 @@
+name: Update companies database
+
+# Updates the tswebextension companies database every Tuesday.
+
+on:
+  schedule:
+    - cron: '0 11 * * 2'
+  workflow_dispatch:
+
+# Serialize scheduled and manual runs so they cannot overlap on the shared
+# team-extensions runner and push conflicting commits to master. New runs
+# queue behind an in-flight run (cancel-in-progress: false); cancelling a run
+# could land mid-protected-push and leave master in a half-updated state.
+concurrency:
+  group: update-companiesdb
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+  # protected-push pushes to the protected branch through its own Octopass/OIDC
+  # flow, so no GITHUB_TOKEN contents:write is needed here. If it ever falls
+  # back to the default token, add `contents: write` and pass it to the step.
+
+jobs:
+  update:
+    name: Update companies database
+    # A workflow_dispatch can pick any ref in the UI; the Docker stage builds
+    # trackers-min.ts from that ref's tree and protected-push commits it to
+    # master. Keep the old Bamboo invariant (the plan refused to run off
+    # master): never push feature-branch-derived data onto protected master.
+    if: github.ref == 'refs/heads/master'
+    runs-on: team-extensions
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          # checkout's default persist-credentials writes its own
+          # http.https://github.com/.extraheader (GITHUB_TOKEN) into the repo's
+          # git config. http.extraheader is multi-valued, so protected-push's
+          # extraheader (Octopass token) gets merged on top and git sends two
+          # Authorization headers; GitHub rejects the push with HTTP 400
+          # "Duplicate header: Authorization". Write access is provided by
+          # protected-push's own Octopass/OIDC flow, so no persisted credentials
+          # are needed here.
+          persist-credentials: false
+
+      - name: Generate database
+        uses: ./.github/actions/docker-build
+        with:
+          target: update-companiesdb-output
+          dest: output
+
+      - name: Apply generated files
+        id: apply
+        shell: bash
+        run: |
+          set -euo pipefail
+          CODE=$(cat output/exit-code.txt 2>/dev/null || echo 2)
+          if [ "$CODE" -gt 1 ]; then
+            echo "::error::Companies database update failed with exit code $CODE"
+            exit "$CODE"
+          fi
+          COMPANIES_DB_FILE="packages/tswebextension/src/lib/common/companies-db-service/trackers-min.ts"
+          # The update task exits 0 when meaningful changes were written and 1
+          # when there is nothing to commit (timeUpdated-only diffs are ignored).
+          # Pushing in the no-change case would emit an empty/pointless commit.
+          if [ "$CODE" -ne 0 ] || [ ! -f "output/modified/$COMPANIES_DB_FILE" ]; then
+            echo "No meaningful changes; skipping push"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # The update task writes exactly one file. Fail loudly if the Docker
+          # stage exported anything else so a future second output is never
+          # silently dropped from the commit (protected-push pushes only the
+          # trackers-min.ts path below).
+          UNEXPECTED="$(cd output/modified && find . -type f ! -path "./$COMPANIES_DB_FILE" | sort)"
+          if [ -n "$UNEXPECTED" ]; then
+            echo "::error::Companies database update produced unexpected files:"
+            printf '%s\n' "$UNEXPECTED" | sed 's|^|  |'
+            exit 1
+          fi
+          # Copy only the intended file into the workspace (instead of a broad
+          # tree copy) so nothing foreign pollutes the runner workspace.
+          mkdir -p "$(dirname "$COMPANIES_DB_FILE")"
+          cp "output/modified/$COMPANIES_DB_FILE" "$COMPANIES_DB_FILE"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Push update to master
+        if: steps.apply.outputs.changed == 'true'
+        uses: AdGuardSoftwareLimited/actions/actions/protected-push@master
+        with:
+          repository: ${{ github.repository }}
+          branch: master
+          # Deliberately no "[skip ci]" prefix: GitHub's [skip ci] suppresses
+          # *all* push-triggered workflows, including mirror.yml, so the
+          # trackers-min.ts update would not reach the public mirror until the
+          # next regular push to master. The affected-gated build.yml absorbs
+          # the CI cost on this push.
+          commit-message: 'update companiesdb data'
+          files: packages/tswebextension/src/lib/common/companies-db-service/trackers-min.ts
+
+  notify-failure:
+    name: Notify on failure
+    needs: update
+    # Scheduled runs get no human eyes: alert the channel on a failed update so
+    # a broken companiesdb refresh is noticed promptly, not silently skipped.
+    if: ${{ failure() }}
+    runs-on: team-extensions
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Send Slack notification
+        uses: AdGuardSoftwareLimited/actions/actions/slack@master
+        with:
+          channel: '#adguard-extension-vcs'
+          message: ':x: *update-companiesdb* failed — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          color: danger

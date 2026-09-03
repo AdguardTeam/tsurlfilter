@@ -15,9 +15,12 @@ for contributing to the `tsurlfilter` monorepo.
 
 ### Clone the Repository
 
+The canonical development repository is private. The public repository is a
+read-only mirror.
+
 ```bash
-git clone https://github.com/AdguardTeam/tsurlfilter.git
-cd tsurlfilter
+git clone https://github.com/AdGuardSoftwareLimited/ext-tsurlfilter.git
+cd ext-tsurlfilter
 ```
 
 ### Install Dependencies
@@ -31,6 +34,20 @@ versions are managed via [pnpm catalogs](https://pnpm.io/catalogs) in
 `pnpm-workspace.yaml`.
 
 ### Building Packages
+
+Package manifests are versionless in source. Before local builds, inject
+temporary versions derived from each package's latest changelog heading:
+
+```bash
+node scripts/inject-package-versions.mjs
+```
+
+(There is no `--dev` flag: the script stamps every package from its own
+`CHANGELOG.md` when called with no arguments, and a specific package with
+`--package <name> --version <version>` for release builds. CI uses the shared
+`set-dev-version` action for the same per-package dev stamping.)
+
+Do not commit the injected `version` fields.
 
 There are two ways to build:
 
@@ -103,7 +120,7 @@ Every package that is published or tested in CI exposes a `test:prod` script
 that is the single entry point for verifying a package is healthy. It runs the
 same ordered set of checks regardless of the package:
 
-```
+```text
 lint → test:smoke (where applicable) → test:ci
 ```
 
@@ -119,11 +136,10 @@ Not every package needs all three steps — packages with no unit tests (e.g.
 `pnpm lint` only. The key rule is: **every package must have `test:prod`**, and
 its Dockerfile stage must call it.
 
-Each package's Docker test stage invokes `pnpm test:prod` and the Bamboo job
-that drives it uses `is_project_affected` to decide whether to skip. That
-helper performs a **transitive** walk of `workspace:` dependencies, so a change
-in `@adguard/agtree` automatically triggers the `test-tsurlfilter` job without
-any extra conditions in the YAML.
+Each package's Docker test stage invokes `pnpm test:prod`. The `build.yml`
+matrix computes affected packages through a **transitive** walk of `workspace:`
+dependencies, so a change in `@adguard/agtree` automatically triggers the
+`test-tsurlfilter` job without extra workflow conditions.
 
 ## Common Tasks
 
@@ -148,13 +164,12 @@ Use `workspace:^` for cross-package references:
 }
 ```
 
-### Incrementing a Package Version
+### Releasing a Package
 
-```bash
-pnpm run increment <package-name>
-```
-
-This increments the patch or prerelease version of the specified package.
+Package versions live in changelogs, not manifests. Local builds use
+`scripts/inject-package-versions.mjs` (no args — stamps every package from its
+changelog); CI and release builds pass the selected package and an explicit
+release version. See [DEPLOYMENT.md](DEPLOYMENT.md) for the release process.
 
 ### Clean Reinstall
 

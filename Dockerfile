@@ -3,10 +3,19 @@ SHELL ["/bin/bash", "-lc"]
 
 WORKDIR /tsurlfilter
 
-ENV PNPM_STORE=/pnpm-store
+# pnpm's store-dir config expressed as the env var pnpm actually consumes
+# (npm_config_store_dir). The per-RUN `pnpm config set store-dir /pnpm-store`
+# below is redundant with this but kept as belt-and-suspenders so the store
+# always lands on the /pnpm-store cache mount regardless of pnpm's env parsing.
+ENV npm_config_store_dir=/pnpm-store
 # Disable Nx daemon in Docker: each RUN step is a fresh process, and the daemon
 # socket from a previous stage would cause Nx to hang for 120 s before failing.
 ENV NX_DAEMON=false
+# Treat in-image installs as CI: pnpm then defaults to --frozen-lockfile, so
+# smoke fixtures reuse the root lockfile instead of re-resolving — a git
+# dependency of the benchmarks' old tsurlfilter baseline otherwise needs an
+# anonymous git ls-remote to github.com, which gets rate-limited on CI egress.
+ENV CI=true
 
 # ============================================================================
 # Stage: deps
@@ -56,12 +65,11 @@ FROM deps AS source-base
 # as well — otherwise the build may silently use wrong or missing configs.
 COPY nx.json lerna.json vitest.config.ts .eslintignore ./
 COPY scripts/ ./scripts/
-COPY bamboo-specs/scripts/ ./bamboo-specs/scripts/
 
 # ============================================================================
 # Stage: source
 # Full source copy for utility stages that need all files
-# (increment-*, update-*, dnr-rulesets-auto-build).
+# (update-*, dnr-rulesets-auto-build).
 # The main test/build chain uses per-level source stages below instead.
 # ============================================================================
 FROM source-base AS source
@@ -132,14 +140,8 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
 # ============================================================================
 # Test stages
 #
-# Test stages must not be cached. The Bamboo JUnit parser rejects XML files
-# whose mtime predates the task start time. TEST_RUN_ID is written to /out/
-# so that the output directory always differs between builds — preventing
-# BuildKit from serving a cached COPY --from layer with stale timestamps.
-# However, on re-runs of the same build, TEST_RUN_ID (= buildNumber) is
-# identical, so Docker may serve cached output with old mtimes. CI job
-# scripts touch the extracted XML files after `docker build --output` to
-# ensure Bamboo always accepts them.
+# TEST_RUN_ID is written to /out/ so each CI run produces a distinct output
+# layer and does not reuse stale reports from BuildKit cache.
 # ============================================================================
 
 # ============================================================================
@@ -155,10 +157,10 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     mkdir -p /out/tests-reports && \
     echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
       'cd packages/logger && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    ./bamboo-specs/scripts/copy-test-reports.sh packages/logger; \
+    bash ./scripts/ci/copy-test-reports.sh packages/logger; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -178,10 +180,10 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     mkdir -p /out/tests-reports && \
     echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
       'cd packages/css-tokenizer && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    ./bamboo-specs/scripts/copy-test-reports.sh packages/css-tokenizer; \
+    bash ./scripts/ci/copy-test-reports.sh packages/css-tokenizer; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -201,10 +203,10 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     mkdir -p /out/tests-reports && \
     echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
       'cd packages/eslint-plugin-logger-context && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    ./bamboo-specs/scripts/copy-test-reports.sh packages/eslint-plugin-logger-context eslint-plugin-logger-context; \
+    bash ./scripts/ci/copy-test-reports.sh packages/eslint-plugin-logger-context eslint-plugin-logger-context; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -224,10 +226,10 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     mkdir -p /out/tests-reports && \
     echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
       'cd packages/agtree && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    ./bamboo-specs/scripts/copy-test-reports.sh packages/agtree; \
+    bash ./scripts/ci/copy-test-reports.sh packages/agtree; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -247,10 +249,10 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     mkdir -p /out/tests-reports && \
     echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
       'cd packages/tsurlfilter && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    ./bamboo-specs/scripts/copy-test-reports.sh packages/tsurlfilter; \
+    bash ./scripts/ci/copy-test-reports.sh packages/tsurlfilter; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -278,10 +280,10 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
       exit 0; \
     fi; \
     set +e; \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
       'cd packages/dnr-converter && pnpm lint && pnpm test:smoke && pnpm test:ci'; \
     EXIT_CODE=$?; \
-    ./bamboo-specs/scripts/copy-test-reports.sh packages/dnr-converter; \
+    bash ./scripts/ci/copy-test-reports.sh packages/dnr-converter; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -304,10 +306,10 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     mkdir -p /out/tests-reports && \
     echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
       'cd packages/tswebextension && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    ./bamboo-specs/scripts/copy-test-reports.sh packages/tswebextension; \
+    bash ./scripts/ci/copy-test-reports.sh packages/tswebextension; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -336,7 +338,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
       exit 0; \
     fi; \
     set +e; \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
       # Run assets validation last to prevent JUnit XML report missing
       # if the validation fails.
       # DNR_RULESETS_CI_TEST=true makes validation non-fatal in test CI,
@@ -344,7 +346,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
       # before the baseline validator-data.json is updated on master.
       'cd packages/dnr-rulesets && pnpm test:prod && DNR_RULESETS_CI_TEST=true pnpm validate:assets'; \
     EXIT_CODE=$?; \
-    ./bamboo-specs/scripts/copy-test-reports.sh packages/dnr-rulesets; \
+    bash ./scripts/ci/copy-test-reports.sh packages/dnr-rulesets; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -369,18 +371,26 @@ ARG TEST_RUN_ID
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
-    npx lerna run build --scope @adguard/api --scope @adguard/api-mv3 && \
-    npx lerna run build --scope tswebextension-mv2 --include-dependencies && \
-    npx lerna run lint --scope tswebextension-mv2 && \
-    npx lerna run build --scope tswebextension-mv3 --include-dependencies && \
-    npx lerna run lint --scope tswebextension-mv3 && \
-    npx lerna run build --scope adguard-api-example --include-dependencies && \
-    npx lerna run lint --scope adguard-api-example && \
-    npx lerna run build --scope adguard-api-mv3-example --include-dependencies && \
-    npx lerna run lint --scope adguard-api-mv3-example && \
-    mkdir -p /out/artifacts && \
-    cp packages/examples/adguard-api/build/extension.zip /out/artifacts/examples-adguard-api-extension.zip && \
-    cp packages/examples/adguard-api-mv3/build/extension.zip /out/artifacts/examples-adguard-api-mv3-extension.zip
+    set +e; \
+    ( \
+      npx lerna run build --scope @adguard/api --scope @adguard/api-mv3 && \
+      npx lerna run build --scope tswebextension-mv2 --include-dependencies && \
+      npx lerna run lint --scope tswebextension-mv2 && \
+      npx lerna run build --scope tswebextension-mv3 --include-dependencies && \
+      npx lerna run lint --scope tswebextension-mv3 && \
+      npx lerna run build --scope adguard-api-example --include-dependencies && \
+      npx lerna run lint --scope adguard-api-example && \
+      npx lerna run build --scope adguard-api-mv3-example --include-dependencies && \
+      npx lerna run lint --scope adguard-api-mv3-example \
+    ); \
+    EXIT_CODE=$?; \
+    if [ ${EXIT_CODE} -eq 0 ]; then \
+      mkdir -p /out/artifacts && \
+      cp packages/examples/adguard-api/build/extension.zip /out/artifacts/examples-adguard-api-extension.zip && \
+      cp packages/examples/adguard-api-mv3/build/extension.zip /out/artifacts/examples-adguard-api-mv3-extension.zip; \
+    fi; \
+    echo ${EXIT_CODE} > /out/exit-code.txt; \
+    exit 0
 
 FROM scratch AS test-examples-output
 COPY --from=test-examples /out/ /
@@ -408,10 +418,10 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
       exit 0; \
     fi; \
     set +e; \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
       'cd packages/adguard-api-mv3 && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    ./bamboo-specs/scripts/copy-test-reports.sh packages/adguard-api-mv3; \
+    bash ./scripts/ci/copy-test-reports.sh packages/adguard-api-mv3; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -433,10 +443,10 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     mkdir -p /out/tests-reports && \
     echo "${TEST_RUN_ID}" > /out/.test-run-id && \
     set +e; \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c \
       'cd packages/adguard-api && pnpm test:prod'; \
     EXIT_CODE=$?; \
-    ./bamboo-specs/scripts/copy-test-reports.sh packages/adguard-api adguard-api; \
+    bash ./scripts/ci/copy-test-reports.sh packages/adguard-api adguard-api; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
     exit 0
 
@@ -457,8 +467,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     cd packages/logger && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
-    mv logger.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/
+    mv logger.tgz /out/artifacts/
 
 FROM scratch AS build-logger-output
 COPY --from=build-logger /out/ /
@@ -477,8 +486,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     cd packages/css-tokenizer && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
-    mv css-tokenizer.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/
+    mv css-tokenizer.tgz /out/artifacts/
 
 FROM scratch AS build-css-tokenizer-output
 COPY --from=build-css-tokenizer /out/ /
@@ -497,8 +505,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     cd packages/agtree && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
-    mv agtree.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/
+    mv agtree.tgz /out/artifacts/
 
 FROM scratch AS build-agtree-output
 COPY --from=build-agtree /out/ /
@@ -517,8 +524,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     cd packages/dnr-converter && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
-    mv dnr-converter.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/
+    mv dnr-converter.tgz /out/artifacts/
 
 FROM scratch AS build-dnr-converter-output
 COPY --from=build-dnr-converter /out/ /
@@ -537,8 +543,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     cd packages/tsurlfilter && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
-    mv tsurlfilter.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/
+    mv tsurlfilter.tgz /out/artifacts/
 
 FROM scratch AS build-tsurlfilter-output
 COPY --from=build-tsurlfilter /out/ /
@@ -557,8 +562,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     cd packages/tswebextension && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
-    mv tswebextension.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/
+    mv tswebextension.tgz /out/artifacts/
 
 FROM scratch AS build-tswebextension-output
 COPY --from=build-tswebextension /out/ /
@@ -582,8 +586,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm validate:assets && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
-    mv dnr-rulesets.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/
+    mv dnr-rulesets.tgz /out/artifacts/
 
 FROM scratch AS build-dnr-rulesets-output
 COPY --from=build-dnr-rulesets /out/ /
@@ -604,8 +607,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     cd packages/eslint-plugin-logger-context && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
-    mv eslint-plugin-logger-context.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/
+    mv eslint-plugin-logger-context.tgz /out/artifacts/
 
 FROM scratch AS build-eslint-plugin-logger-context-output
 COPY --from=build-eslint-plugin-logger-context /out/ /
@@ -631,7 +633,6 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
     mv adguard-api.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/ && \
     cp /tsurlfilter/packages/examples/adguard-api/build/extension.zip /out/artifacts/
 
 FROM scratch AS build-adguard-api-output
@@ -664,112 +665,14 @@ RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
     mv adguard-api-mv3.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/ && \
     cp /tsurlfilter/packages/examples/adguard-api-mv3/build/extension.zip /out/artifacts/
 
 FROM scratch AS build-adguard-api-mv3-output
 COPY --from=build-adguard-api-mv3 /out/ /
 
 # ============================================================================
-# Stage: increment-tswebextension
-# Increments @adguard/tswebextension version and extracts modified files
-# ============================================================================
-FROM source AS increment-tswebextension
-
-RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
-    pnpm config set store-dir /pnpm-store && \
-    touch /tmp/.pre-increment-marker && \
-    pnpm run increment tswebextension && \
-    mkdir -p /out/modified && \
-    find . -newer /tmp/.pre-increment-marker -type f \
-      -not -path './.git/*' \
-      -not -path './node_modules/*' \
-      -not -path './**/node_modules/*' \
-      -not -path './**/dist/*' \
-      | sed 's|^\./||' | while IFS= read -r f; do \
-        mkdir -p "/out/modified/$(dirname "$f")"; \
-        cp "$f" "/out/modified/$f"; \
-      done
-
-FROM scratch AS increment-tswebextension-output
-COPY --from=increment-tswebextension /out/ /
-
-# ============================================================================
-# Stage: increment-agtree
-# Increments @adguard/agtree version and extracts modified files
-# ============================================================================
-FROM source AS increment-agtree
-
-RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
-    pnpm config set store-dir /pnpm-store && \
-    touch /tmp/.pre-increment-marker && \
-    pnpm run increment agtree && \
-    mkdir -p /out/modified && \
-    find . -newer /tmp/.pre-increment-marker -type f \
-      -not -path './.git/*' \
-      -not -path './node_modules/*' \
-      -not -path './**/node_modules/*' \
-      -not -path './**/dist/*' \
-      | sed 's|^\./||' | while IFS= read -r f; do \
-        mkdir -p "/out/modified/$(dirname "$f")"; \
-        cp "$f" "/out/modified/$f"; \
-      done
-
-FROM scratch AS increment-agtree-output
-COPY --from=increment-agtree /out/ /
-
-# ============================================================================
-# Stage: increment-dnr-rulesets
-# Increments @adguard/dnr-rulesets version and extracts modified files
-# ============================================================================
-FROM source AS increment-dnr-rulesets
-
-RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
-    pnpm config set store-dir /pnpm-store && \
-    touch /tmp/.pre-increment-marker && \
-    pnpm run increment dnr-rulesets && \
-    mkdir -p /out/modified && \
-    find . -newer /tmp/.pre-increment-marker -type f \
-      -not -path './.git/*' \
-      -not -path './node_modules/*' \
-      -not -path './**/node_modules/*' \
-      -not -path './**/dist/*' \
-      | sed 's|^\./||' | while IFS= read -r f; do \
-        mkdir -p "/out/modified/$(dirname "$f")"; \
-        cp "$f" "/out/modified/$f"; \
-      done
-
-FROM scratch AS increment-dnr-rulesets-output
-COPY --from=increment-dnr-rulesets /out/ /
-
-# ============================================================================
-# Stage: increment-dnr-converter
-# Increments @adguard/dnr-converter version and extracts modified files
-# ============================================================================
-FROM source AS increment-dnr-converter
-
-RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
-    pnpm config set store-dir /pnpm-store && \
-    touch /tmp/.pre-increment-marker && \
-    pnpm run increment dnr-converter && \
-    mkdir -p /out/modified && \
-    find . -newer /tmp/.pre-increment-marker -type f \
-      -not -path './.git/*' \
-      -not -path './node_modules/*' \
-      -not -path './**/node_modules/*' \
-      -not -path './**/dist/*' \
-      | sed 's|^\./||' | while IFS= read -r f; do \
-        mkdir -p "/out/modified/$(dirname "$f")"; \
-        cp "$f" "/out/modified/$f"; \
-      done
-
-FROM scratch AS increment-dnr-converter-output
-COPY --from=increment-dnr-converter /out/ /
-
-# ============================================================================
 # Stage: dnr-rulesets-auto-build
-# Increments version (auto-deploy), builds, tests, packs @adguard/dnr-rulesets
-# Extracts both artifacts and modified source files
+# Builds, tests, and packs @adguard/dnr-rulesets with the version injected by CI
 # ============================================================================
 FROM source AS dnr-rulesets-auto-build
 
@@ -778,27 +681,12 @@ ARG TEST_RUN_ID
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
-    touch /tmp/.pre-build-marker && \
-    npx lerna run increment:auto-deploy --scope @adguard/dnr-rulesets && \
     DNR_FILTER_KNOWN_ONLY=true npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies && \
     npx lerna run test --scope @adguard/dnr-rulesets && \
     cd packages/dnr-rulesets && \
     pnpm tgz && \
     mkdir -p /out/artifacts && \
-    mv dnr-rulesets.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/ && \
-    cd /tsurlfilter && \
-    mkdir -p /out/modified && \
-    find . -newer /tmp/.pre-build-marker -type f \
-      -not -path './.git/*' \
-      -not -path './node_modules/*' \
-      -not -path './**/node_modules/*' \
-      -not -path './**/dist/*' \
-      -not -name '*.tgz' \
-      | sed 's|^\./||' | while IFS= read -r f; do \
-        mkdir -p "/out/modified/$(dirname "$f")"; \
-        cp "$f" "/out/modified/$f"; \
-      done
+    mv dnr-rulesets.tgz /out/artifacts/
 
 FROM scratch AS dnr-rulesets-auto-build-output
 COPY --from=dnr-rulesets-auto-build /out/ /
@@ -849,12 +737,12 @@ ARG TEST_RUN_ID
 RUN --mount=type=cache,target=/pnpm-store,id=tsurlfilter-pnpm \
     pnpm config set store-dir /pnpm-store && \
     mkdir -p /out && echo "${TEST_RUN_ID}" > /out/.test-run-id && \
-    touch /tmp/.pre-docs-marker && \
-    ./bamboo-specs/scripts/timeout-wrapper.sh 600s sh -c '\
+    cp packages/dnr-converter/src/examples/README.md /tmp/dnr-converter-examples.md && \
+    bash ./scripts/ci/timeout-wrapper.sh 600s sh -c '\
       pnpm install --ignore-scripts && \
       npx lerna run build,docs:examples --scope @adguard/dnr-converter --include-dependencies \
     ' && \
-    if find packages/dnr-converter/src/examples/README.md -newer /tmp/.pre-docs-marker | grep -q .; then \
+    if ! cmp -s /tmp/dnr-converter-examples.md packages/dnr-converter/src/examples/README.md; then \
       echo ""; \
       echo "============================================"; \
       echo "Examples docs are stale."; \

@@ -6,9 +6,21 @@ import {
     vitest,
 } from 'vitest';
 
-import { generatePatchVersion, generateTimestampFromVersion } from '../../src/utils/version-utils';
+import packageJson from '../../package.json';
+import { generatePatchVersion, generateTimestampFromVersion, getVersion } from '../../src/utils/version-utils';
 
 describe('Utils tests', () => {
+    describe('getVersion', () => {
+        it('returns an injected version or explains how to inject one', () => {
+            if ('version' in packageJson && typeof packageJson.version === 'string') {
+                expect(getVersion()).toBe(packageJson.version);
+                return;
+            }
+
+            expect(getVersion).toThrow('Run scripts/inject-package-versions.mjs before building.');
+        });
+    });
+
     describe('generatePatchVersion', () => {
         test.each([
             {
