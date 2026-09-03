@@ -63,8 +63,11 @@ For a dry-run of the publish pipeline without touching the registry, dispatch
    longer published. Versions use `<major>.<minor>.<UTC timestamp>` and are
    injected only for that build. The exact version is checked for idempotency
    before publishing (`scripts/ci/check-npm-version.sh`), and a failed publish
-   gets one retry after a backoff (outlasts npm's throttle window). Failures
-   are reported to Slack.
+   gets one retry after a backoff (outlasts npm's throttle window). The same
+   tarball is also published to the internal Artifact Keeper npm registry
+   (shared `deploy-to-ak-npm.yml`, tag `latest`) independently of the npm
+   publish, so the browser-extension auto-build can install rulesets from AK
+   when npm throttles. Failures are reported to Slack.
   - **Prerequisite — the branch must be on the current CI** (root
     `Dockerfile` with a `dnr-rulesets-auto-build-output` target +
     `scripts/inject-package-versions.mjs` in the branch tip). The workflow
@@ -136,5 +139,9 @@ operational. Before enabling the workflows, verify:
 - `AdguardTeam/tsurlfilter` exists as the public mirror, its workflows are
   disabled by the shared mirror action, and the previous Bitbucket mirror is
   disabled.
+- The org secret `ARTIFACT_KEEPER_API_KEY` and the org variable
+  `ARTIFACT_KEEPER_URL` are visible to this repository (required by the AK
+  publish job, which calls the shared `deploy-to-ak-npm.yml` passing only the
+  `ARTIFACT_KEEPER_API_KEY` secret — least privilege, no `secrets: inherit`).
 - One push to `master` successfully mirrors branches, tags, and notes to the
   public repository.
