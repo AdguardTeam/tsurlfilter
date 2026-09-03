@@ -146,12 +146,15 @@ jobs:
       artifact-name: dnr-rulesets-5.0
       tag: latest
       environment: ''
-    # Least privilege: the shared deploy-to-ak-npm.yml workflow only consumes
-    # the ARTIFACT_KEEPER_API_KEY secret (the ARTIFACT_KEEPER_URL it reads is
-    # an org variable, which does not need forwarding), so pass that one secret
-    # explicitly instead of cascading the whole secret set via `secrets: inherit`.
-    secrets:
-      ARTIFACT_KEEPER_API_KEY: ${{ secrets.ARTIFACT_KEEPER_API_KEY }}
+    # The shared deploy-to-ak-npm.yml reads `secrets.ARTIFACT_KEEPER_API_KEY`
+    # but does not declare it in `on.workflow_call.secrets` — GitHub fails any
+    # call that passes a secret the called workflow does not declare (startup
+    # failure). `secrets: inherit` is required here; it is the pattern used by
+    # every other consumer (ext-userscripts-wrapper, ext-content-script, ...),
+    # and the AK workflow is our own trusted shared workflow. It only forwards
+    # in-repo scope to the called workflow; ARTIFACT_KEEPER_URL is an org
+    # variable and does not need forwarding.
+    secrets: inherit
     permissions:
       contents: read
 
