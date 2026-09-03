@@ -58,19 +58,22 @@ For a dry-run of the publish pipeline without touching the registry, dispatch
    Octopass `protected-push` (the commit avoids `[skip ci]` so `mirror.yml`
    still syncs the update to the public repo). Failures are reported to Slack.
 - `publish-stable-dnr-rulesets.yml` builds and publishes `@adguard/dnr-rulesets`
-   every hour from supported `stable/dnr-rulesets-*` branches. Versions use
-   `<major>.<minor>.<UTC timestamp>` and are injected only for that build, and
-   publish under the per-line `stable-<line>` dist-tag (never `latest`).
-   Failures are reported to Slack.
-  - **Prerequisite — each supported branch must be on the current CI** (root
+   twice daily (00:17/12:17 UTC) from the `stable/dnr-rulesets-5.0` branch.
+   Only the 5.0 line is published (as `latest`); the older stable lines are no
+   longer published. Versions use `<major>.<minor>.<UTC timestamp>` and are
+   injected only for that build. The exact version is checked for idempotency
+   before publishing (`scripts/ci/check-npm-version.sh`), and a failed publish
+   gets one retry after a backoff (outlasts npm's throttle window). Failures
+   are reported to Slack.
+  - **Prerequisite — the branch must be on the current CI** (root
     `Dockerfile` with a `dnr-rulesets-auto-build-output` target +
     `scripts/inject-package-versions.mjs` in the branch tip). The workflow
-    checks branch readiness per line and skips lines whose branch has not been
-    migrated yet, so the hourlies neither fail nor spam Slack during the
+    checks branch readiness and skips the round if the branch has not been
+    migrated yet, so the runs neither fail nor spam Slack during the
     backport window (see the workflow's `resolve-lines` job).
   - **Branch protection required**: with `environment: ''` this pipeline
-    publishes to npm hourly straight from the tip of each `stable/dnr-rulesets-*`
-    branch, so push access to those branches is effectively npm publish access
+    publishes to npm straight from the tip of the `stable/dnr-rulesets-5.0`
+    branch, so push access to that branch is effectively npm publish access
     (bypassing the `npm` environment review that gates normal releases).
     Provision branch protection for `stable/dnr-rulesets-*` in terraform-github
     (teams with push rights are the only gate on the unattended path).

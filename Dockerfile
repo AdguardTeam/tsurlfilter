@@ -11,6 +11,11 @@ ENV npm_config_store_dir=/pnpm-store
 # Disable Nx daemon in Docker: each RUN step is a fresh process, and the daemon
 # socket from a previous stage would cause Nx to hang for 120 s before failing.
 ENV NX_DAEMON=false
+# Treat in-image installs as CI: pnpm then defaults to --frozen-lockfile, so
+# smoke fixtures reuse the root lockfile instead of re-resolving — a git
+# dependency of the benchmarks' old tsurlfilter baseline otherwise needs an
+# anonymous git ls-remote to github.com, which gets rate-limited on CI egress.
+ENV CI=true
 
 # ============================================================================
 # Stage: deps

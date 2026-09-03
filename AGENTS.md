@@ -137,16 +137,20 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
 - `_publish-release-monorepo.yml` — reusable monorepo publish engine
   (Docker test/build → npm → tag after publish → mirror → GitHub Release →
   Slack, with a failure-notify Slack job).
-- `publish-stable-dnr-rulesets.yml` — hourly scheduled build/publish of
-  `@adguard/dnr-rulesets` from the supported `stable/dnr-rulesets-*` branches.
-  Each supported branch must be on the current CI (root `Dockerfile` +
+- `publish-stable-dnr-rulesets.yml` — twice-daily scheduled build/publish of
+  `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0` branch. Only the
+  5.0 line is published (under `latest`); the older stable lines are no longer
+  published. The branch must be on the current CI (root `Dockerfile` +
   `scripts/inject-package-versions.mjs`); a `resolve-lines` job checks branch
-  readiness and skips not-yet-migrated lines gracefully, the job checks the
+  readiness and skips gracefully if not yet migrated, the job checks the
   branch out, stamps a `<line>.<timestamp>` stable version, builds its own
-  `dnr-rulesets-auto-build-output` Docker target, and publishes under the
-  per-line `stable-<line>` npm dist-tag (never `latest`, so old lines can't
-  pull the `latest` tag backwards) with no environment restriction. A
-  failure-notify job alerts Slack when any leg fails.
+  `dnr-rulesets-auto-build-output` Docker target, and publishes it. The exact
+  version is checked for idempotency before publishing
+  (`scripts/ci/check-npm-version.sh`), and a failed publish gets one retry
+  after a backoff (outlasts npm's throttle window). The line publishes under
+  the `latest` npm dist-tag (no older line exists to pull it backwards) with
+  no environment restriction. A failure-notify job alerts Slack when any leg
+  fails.
 - `mirror.yml` — syncs master to the public `AdguardTeam/tsurlfilter` mirror.
 - `update-companiesdb.yml` — refreshes the tswebextension companies database
   every Tuesday and pushes meaningful changes with Octopass. The push avoids

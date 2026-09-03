@@ -35,6 +35,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          # checkout's default persist-credentials writes its own
+          # http.https://github.com/.extraheader (GITHUB_TOKEN) into the repo's
+          # git config. http.extraheader is multi-valued, so protected-push's
+          # extraheader (Octopass token) gets merged on top and git sends two
+          # Authorization headers; GitHub rejects the push with HTTP 400
+          # "Duplicate header: Authorization". Write access is provided by
+          # protected-push's own Octopass/OIDC flow, so no persisted credentials
+          # are needed here.
+          persist-credentials: false
 
       - name: Generate database
         uses: ./.github/actions/docker-build
