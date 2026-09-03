@@ -14,6 +14,7 @@
 scripts/use-dev-builds.mjs                    @AdGuardSoftwareLimited/extensions-maintainers
 scripts/ci/bridged-packages.json              @AdGuardSoftwareLimited/extensions-maintainers
 scripts/ci/check-package-lists.mjs            @AdGuardSoftwareLimited/extensions-maintainers
+scripts/ci/std-errors.mjs                     @AdGuardSoftwareLimited/extensions-maintainers
 scripts/ci/ak-dev-unpublish.mjs                @AdGuardSoftwareLimited/extensions-maintainers
 scripts/ci/check-pr-open.mjs                  @AdGuardSoftwareLimited/extensions-maintainers
 scripts/ci/devex-sweep.mjs                    @AdGuardSoftwareLimited/extensions-maintainers

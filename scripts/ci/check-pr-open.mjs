@@ -42,21 +42,13 @@
 
 import fs from 'node:fs';
 import process from 'node:process';
+import { fail, usageError } from './std-errors.mjs';
 
 const USAGE = 'Usage: check-pr-open.mjs <pr-url> <gh-token> [<output-file>]';
 
-/**
- * Print a usage error to stdout and exit with code 2 — the caller's YAML is
- * misconfigured.
- */
-const usageError = () => {
-    console.error(`::error::usage: ${USAGE}`);
-    process.exit(2);
-};
-
 const [prUrl, ghToken, outputFile = process.env.GITHUB_OUTPUT || ''] = process.argv.slice(2);
 if (!prUrl || !ghToken) {
-    usageError();
+    usageError(USAGE);
 }
 
 let state;
@@ -68,13 +60,11 @@ try {
         },
     });
     if (!response.ok) {
-        console.error(`::error::Could not query PR state at ${prUrl} (HTTP ${response.status})`);
-        process.exit(1);
+        fail(`Could not query PR state at ${prUrl} (HTTP ${response.status})`);
     }
     state = (await response.json()).state;
 } catch (error) {
-    console.error(`::error::Could not query PR state at ${prUrl}: ${error?.message || error}`);
-    process.exit(1);
+    fail(`Could not query PR state at ${prUrl}: ${error?.message || error}`);
 }
 
 /**
@@ -103,7 +93,6 @@ switch (state) {
         process.exit(10);
         break;
     default:
-        console.error(`::error::Unexpected PR state '${state}' for ${prUrl} (expected open/closed/merged)`);
-        process.exit(1);
+        fail(`Unexpected PR state '${state}' for ${prUrl} (expected open/closed/merged)`);
         break;
 }

@@ -42,6 +42,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { fail } from './ci/std-errors.mjs';
 
 const scriptRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptRoot, '..');
@@ -54,11 +55,6 @@ const BRIDGED_PACKAGES = JSON.parse(
 );
 const DEFAULT_REGISTRY = 'https://ak.int.agrd.dev/npm/npm-internal';
 const DEV_MARK = '-dev.pr';
-
-const fail = (message) => {
-    console.error(`error: ${message}`);
-    process.exit(1);
-};
 
 const args = process.argv.slice(2);
 

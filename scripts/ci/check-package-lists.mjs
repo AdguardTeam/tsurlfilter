@@ -15,13 +15,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { fail } from './std-errors.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-
-const fail = (message) => {
-    console.error(`::error::${message}`);
-    process.exit(1);
-};
 
 // Source of truth: packages/*/CHANGELOG.md.
 const publishable = fs.readdirSync(path.join(repoRoot, 'packages'), { withFileTypes: true })

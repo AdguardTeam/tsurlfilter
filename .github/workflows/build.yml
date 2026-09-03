@@ -167,6 +167,7 @@ jobs:
           node --check scripts/ci/check-package-lists.mjs
           node --check scripts/ci/devex-sweep.mjs
           node --check scripts/ci/ak-dev-unpublish.mjs
+          node --check scripts/ci/std-errors.mjs
 
       - name: Check package list drift
         run: node scripts/ci/check-package-lists.mjs

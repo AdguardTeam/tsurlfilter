@@ -57,20 +57,15 @@
 
 import { execFileSync } from 'node:child_process';
 import process from 'node:process';
+import { fail, usageError } from './std-errors.mjs';
 
 const USAGE = 'Usage: ak-dev-unpublish.mjs <package> <registry> <suffix> [--tolerate-405] [--keep <version>]';
-
-const fail = (message) => {
-    console.error(`::error::${message}`);
-    process.exit(1);
-};
 
 // --- argument parsing -------------------------------------------------------
 const positional = process.argv.slice(2);
 const [pkg, registry, suffix, ...rest] = positional;
 if (!pkg || !registry || !suffix) {
-    console.error(`::error::usage: ${USAGE}`);
-    process.exit(2);
+    usageError(USAGE);
 }
 let tolerate405 = false;
 const keep = new Set();
@@ -81,14 +76,12 @@ for (let i = 0; i < rest.length; i += 1) {
     } else if (arg === '--keep') {
         const value = rest[i + 1];
         if (value === undefined || value.startsWith('--')) {
-            console.error(`::error::usage: ${USAGE}`);
-            process.exit(2);
+            usageError(USAGE);
         }
         keep.add(value);
         i += 1;
     } else {
-        console.error(`::error::ak-dev-unpublish.mjs: unknown argument '${arg}'`);
-        process.exit(2);
+        fail(`ak-dev-unpublish.mjs: unknown argument '${arg}'`, 2);
     }
 }
 

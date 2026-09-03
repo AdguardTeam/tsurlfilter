@@ -31,6 +31,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { fail as fatal } from './std-errors.mjs';
 
 const scriptRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptRoot, '..');
@@ -39,6 +40,16 @@ const BRIDGED_PACKAGES = JSON.parse(
 );
 const UNPUBLISH_SCRIPT = path.join(scriptRoot, 'ak-dev-unpublish.mjs');
 const LEASE_DAYS = 14;
+
+// The GitHub PR states the sweep distinguishes. Centralized constants (an
+// "enum") keep the string literals in ONE place, so prState() and main()
+// cannot drift apart (per review).
+const PR_STATE = Object.freeze({
+    OPEN: 'open',
+    CLOSED: 'closed',
+    NOT_FOUND: 'not-found',
+    ERROR: 'error',
+});
 
 const registry = process.env.AK_REGISTRY;
 if (!registry) {
@@ -107,9 +118,8 @@ const stateOverride = (process.env.SWEEP_PR_STATES || '').trim();
  * closed so its builds get collected rather than leaking forever.
  *
  * @param {string} prNumber PR number to query.
- * @returns {Promise<'open' | 'closed' | 'not-found' | 'error'>} The observed
- *   state; 'error' when there is no token, the API call fails, or the override
- *   mode does not list the PR.
+ * @returns {Promise<PR_STATE>} The observed state; 'error' when there is no
+ *   token, the API call fails, or the override mode does not list the PR.
  */
 async function prState(prNumber) {
     if (stateOverride) {
@@ -119,10 +129,10 @@ async function prState(prNumber) {
                 return state;
             }
         }
-        return 'error';
+        return PR_STATE.ERROR;
     }
     if (!ghToken) {
-        return 'error';
+        return PR_STATE.ERROR;
     }
     const url = `${apiBase}/repos/${repo}/pulls/${prNumber}`;
     try {
@@ -130,15 +140,15 @@ async function prState(prNumber) {
             headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json' },
         });
         if (response.status === 404) {
-            return 'not-found';
+            return PR_STATE.NOT_FOUND;
         }
         if (!response.ok) {
-            return 'error';
+            return PR_STATE.ERROR;
         }
         const body = await response.json();
-        return body.state === 'open' ? 'open' : 'closed';
+        return body.state === PR_STATE.OPEN ? PR_STATE.OPEN : PR_STATE.CLOSED;
     } catch {
-        return 'error';
+        return PR_STATE.ERROR;
     }
 }
 
@@ -208,11 +218,11 @@ async function main() {
             console.log(`targeted sweep: deleting ${total} version(s) for PR #${pr}`);
         } else {
             const state = await prState(pr);
-            if (state === 'open') {
+            if (state === PR_STATE.OPEN) {
                 console.log(`PR #${pr} is open — keeping ${total} version(s)`);
                 continue;
             }
-            if (state === 'error') {
+            if (state === PR_STATE.ERROR) {
                 fail(`could not check state of PR #${pr} — leaving its ${total} version(s) in place`);
                 continue;
             }
@@ -231,11 +241,6 @@ async function main() {
         process.exit(1);
     }
     console.log('dev-build sweep passed');
-}
-
-function fatal(message) {
-    console.error(`::error::${message}`);
-    process.exit(1);
 }
 
 main().catch((error) => {
