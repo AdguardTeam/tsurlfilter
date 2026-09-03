@@ -308,7 +308,6 @@ describe('RuleConverter', () => {
         });
 
         it('uses getRedirectAction if Redirect option is enabled', () => {
-            // @ts-expect-error Accessing private member for test purposes
             const getRedirectActionSpy = vi.spyOn(converter, 'getRedirectAction').mockReturnValueOnce({});
             const rule = createRuleMock({
                 enabledOptions: [OPTION_NAMES.REDIRECT],
@@ -324,7 +323,6 @@ describe('RuleConverter', () => {
         });
 
         it('returns Block action if Redirect option is enabled but couldn\'t generate action', () => {
-            // @ts-expect-error Accessing private member for test purposes
             const getRedirectActionSpy = vi.spyOn(converter, 'getRedirectAction').mockReturnValueOnce(null);
             const rule = createRuleMock({
                 enabledOptions: [OPTION_NAMES.REDIRECT],
@@ -338,7 +336,6 @@ describe('RuleConverter', () => {
 
         it('uses getRemoveParamRedirectAction if RemoveParam option is enabled', () => {
             const getRemoveParamRedirectActionSpy = vi
-                // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getRemoveParamRedirectAction')
                 .mockReturnValueOnce({} as any);
             const rule = createRuleMock({
@@ -360,7 +357,6 @@ describe('RuleConverter', () => {
             // modifier yields a strip-all redirect, an undecodable value
             // throws), so this branch is reachable only by mocking.
             const getRemoveParamRedirectActionSpy = vi
-                // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getRemoveParamRedirectAction')
                 .mockReturnValueOnce(null as any);
             const rule = createRuleMock({
@@ -374,7 +370,6 @@ describe('RuleConverter', () => {
         });
 
         it('uses getModifyHeadersAction if ModifyHeaders option is enabled', () => {
-            // @ts-expect-error Accessing private member for test purposes
             const getRemoveParamRedirectActionSpy = vi.spyOn(RegularRuleConverter, 'getModifyHeadersAction');
             const requestHeaders: ModifyHeaderInfo[] = [{
                 header: 'Test-Request-Header',
@@ -421,7 +416,6 @@ describe('RuleConverter', () => {
 
         it('returns Block action if ModifyHeaders option is enabled but couldn\'t generate action', () => {
             const getRemoveParamRedirectActionSpy = vi
-                // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getModifyHeadersAction')
                 .mockReturnValueOnce(null as any);
             const rule = createRuleMock({
@@ -436,7 +430,6 @@ describe('RuleConverter', () => {
 
         it('uses getAddingCspHeadersAction if Csp option is enabled', () => {
             const getAddingCspHeadersActionSpy = vi
-                // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getAddingCspHeadersAction')
                 .mockReturnValueOnce({} as any);
             const rule = createRuleMock({
@@ -454,7 +447,6 @@ describe('RuleConverter', () => {
 
         it('returns Block action if Csp option is enabled but couldn\'t generate action', () => {
             const getAddingCspHeadersActionSpy = vi
-                // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getAddingCspHeadersAction')
                 .mockReturnValueOnce(null as any);
             const rule = createRuleMock({
@@ -469,7 +461,6 @@ describe('RuleConverter', () => {
 
         it('uses getAddingPermissionsHeadersAction if Permissions option is enabled', () => {
             const getAddingPermissionsHeadersActionSpy = vi
-                // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getAddingPermissionsHeadersAction')
                 .mockReturnValueOnce({} as any);
             const rule = createRuleMock({
@@ -487,7 +478,6 @@ describe('RuleConverter', () => {
 
         it('returns Block action if Permissions option is enabled but couldn\'t generate action', () => {
             const getAddingPermissionsHeadersActionSpy = vi
-                // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getAddingPermissionsHeadersAction')
                 .mockReturnValueOnce(null as any);
             const rule = createRuleMock({
@@ -501,7 +491,6 @@ describe('RuleConverter', () => {
         });
 
         it('uses getRemovingCookieHeadersAction if Cookie option is enabled', () => {
-            // @ts-expect-error Accessing private member for test purposes
             const getRemovingCookieHeadersActionSpy = vi.spyOn(RegularRuleConverter, 'getRemovingCookieHeadersAction');
             const requestHeaders: ModifyHeaderInfo[] = [{
                 header: 'Test-Request-Header',
@@ -576,7 +565,6 @@ describe('RuleConverter', () => {
 
         it('returns Block action if Cookie option is enabled but couldn\'t generate action', () => {
             const getRemovingCookieHeadersActionSpy = vi
-                // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getRemovingCookieHeadersAction')
                 .mockReturnValueOnce(null as any);
 
@@ -1502,7 +1490,6 @@ describe('RuleConverter', () => {
                 priority: 1,
             };
 
-            // @ts-expect-error Accessing protected member for test purposes
             const convertRuleSpy = vi.spyOn(converter, 'convertRule')
                 .mockResolvedValueOnce(mockDeclarativeRule1 as never)
                 .mockResolvedValueOnce(mockDeclarativeRule2 as never);
@@ -1566,7 +1553,6 @@ describe('RuleConverter', () => {
 
             const conversionError = new UnsupportedModifierError('Test error', rule2);
 
-            // @ts-expect-error Accessing protected member for test purposes
             const convertRuleSpy = vi.spyOn(converter, 'convertRule')
                 .mockResolvedValueOnce(mockDeclarativeRule1 as never)
                 .mockRejectedValueOnce(conversionError as never)
@@ -1605,7 +1591,6 @@ describe('RuleConverter', () => {
 
             const genericError = new Error('Generic error');
 
-            // @ts-expect-error Accessing protected member for test purposes
             const convertRuleSpy = vi.spyOn(converter, 'convertRule')
                 .mockRejectedValueOnce(genericError);
 
@@ -1650,7 +1635,6 @@ describe('RuleConverter', () => {
                 priority: 1,
             };
 
-            // @ts-expect-error Accessing protected member for test purposes
             const convertRuleSpy = vi.spyOn(converter, 'convertRule')
                 .mockResolvedValueOnce(mockDeclarativeRule1 as never)
                 .mockResolvedValueOnce(mockDeclarativeRule2 as never);
@@ -1685,7 +1669,6 @@ describe('RuleConverter', () => {
                 priority: 1,
             };
 
-            // @ts-expect-error Accessing protected member for test purposes
             const convertRuleSpy = vi.spyOn(converter, 'convertRule')
                 .mockResolvedValueOnce(mockDeclarativeRule1 as never);
 
@@ -1733,7 +1716,6 @@ describe('RuleConverter', () => {
 
             const emptyResourcesError = new EmptyResourcesError('Empty resources', rule2, {} as DeclarativeRule);
 
-            // @ts-expect-error Accessing protected member for test purposes
             const convertRuleSpy = vi.spyOn(converter, 'convertRule')
                 .mockResolvedValueOnce(mockDeclarativeRule1 as never) // rule1: success
                 .mockRejectedValueOnce(emptyResourcesError) // rule2: error

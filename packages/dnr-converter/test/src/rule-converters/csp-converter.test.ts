@@ -342,9 +342,7 @@ describe('CspConverter', () => {
             // @ts-expect-error Accessing private property for testing purposes
             expect(cspConverter.webAccessibleResourcesPath).toBe(webAccessibleResourcesPath);
 
-            // @ts-expect-error Accessing private method for testing purposes
             const convertRulesSpy = vi.spyOn(cspConverter, 'convertRules');
-            // @ts-expect-error Accessing private method for testing purposes
             const groupConvertedRulesSpy = vi.spyOn(RegularRuleConverter, 'groupConvertedRules');
 
             const filterListId = 1;

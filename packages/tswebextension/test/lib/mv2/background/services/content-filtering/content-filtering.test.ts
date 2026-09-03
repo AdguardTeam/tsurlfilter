@@ -125,7 +125,6 @@ describe('Content filtering', () => {
 
         const expectedSortedRules: number[] = [2, 3, 1];
 
-        // @ts-expect-error - spying on private static method
         const contentStringFilterConstructorSpy = vi.spyOn(ContentFiltering, 'getReplaceRules');
 
         contentFiltering.process({
