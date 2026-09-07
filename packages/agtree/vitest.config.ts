@@ -17,6 +17,10 @@ export default defineConfig({
         benchmark: {
             include: ['test/**/*.bench.ts'],
         },
+        // The `bench`/`bench:browser` scripts select these projects with
+        // `--project "node*"` / `--project "browser*"`; in bench mode Vitest
+        // appends ` (bench)` (and ` (chromium)` for the browser instance), so
+        // wildcards keep the scripts independent of those internal suffixes.
         projects: [
             defineProject({
                 test: {
@@ -27,6 +31,12 @@ export default defineConfig({
                 test: {
                     name: 'browser',
                     include: [],
+                    // `converter.bench.ts` transitively imports `node:fs`
+                    // (compatibility-table-data), so it cannot run in Chromium.
+                    benchmark: {
+                        include: ['test/**/*.bench.ts'],
+                        exclude: ['test/converter.bench.ts'],
+                    },
                     browser: {
                         enabled: true,
                         provider: playwright(),

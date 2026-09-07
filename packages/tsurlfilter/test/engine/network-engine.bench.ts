@@ -39,7 +39,7 @@ test('build network engine: current vs v3', async ({ bench }) => {
             false,
         );
         const storage = new RuleStorage([list]);
-        const scanner = list.newScanner(ScannerType.NetworkRules);
+        const scanner = storage.createRuleStorageScanner(ScannerType.NetworkRules);
         const rulesParts: IndexedStorageNetworkRuleParts[] = [];
 
         while (scanner.scan()) {
@@ -52,11 +52,13 @@ test('build network engine: current vs v3', async ({ bench }) => {
     };
 
     await bench.compare(
-        bench('old network engine (v3)', () => {
+        bench('v3 network engine', () => {
             createOldEngine();
         }),
-        bench('new network engine', () => {
+        bench('current network engine', () => {
             createNewEngine();
         }),
+        // See engine.bench.ts for why the iteration caps are needed.
+        { iterations: 10, warmupIterations: 3 },
     );
 });

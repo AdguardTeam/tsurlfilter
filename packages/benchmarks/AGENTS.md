@@ -4,8 +4,8 @@
 
 Benchmarks are **co-located inside the libraries they measure** as
 `test/**/*.bench.ts` files. This directory no longer contains standalone
-benchmark packages; it only holds supporting documentation
-(`DEVELOPMENT.md`, `VITEST5-BENCHMARKS-RESEARCH.md`).
+benchmark packages; it only holds the benchmark development guide
+(`DEVELOPMENT.md`).
 
 ## Technical Context
 
@@ -38,23 +38,9 @@ Key files:
 - `packages/agtree/test/*.bench.ts` — AGTree parse/convert (vs `agtree-v2`)
 - `packages/css-tokenizer/test/tokenizer.bench.ts` — tokenizer vs competitors
 - `packages/tsurlfilter/test/engine/*.bench.ts` — engine startup (vs
-  `tsurlfilter-v3`)
+  `tsurlfilter-v3`, Node only)
 
-## Build And Test Commands
-
-From a package directory:
-
-- `pnpm bench` — run Node benchmarks (console + JSON result)
-- `pnpm bench:browser` — run the same files in Chromium
-- `pnpm test` — run the regular test suite (bench files are not run as tests)
-
-From the repository root:
-
-- `npx lerna run bench` — run every package's `bench` target
-
-Benchmark output is produced by Vitest's built-in `default` and `json`
-reporters (written to `.vitest/bench/`); there is no custom Markdown-table
-generator or system-spec collector.
+See `DEVELOPMENT.md` for how to run them and the full workflow.
 
 ## Contribution Instructions
 
@@ -68,5 +54,7 @@ generator or system-spec collector.
 
 - Benchmarks are not a CI regression gate; they run manually/locally.
 
-- Benchmarks that read fixture files via `node:fs` are Node-only; the browser
-  project runs the subset that does not depend on Node APIs.
+- Node-only benchmarks (those reading fixtures via `node:fs`, or importing
+  `tsurlfilter-v3`) are excluded from the browser project via
+  `test.benchmark.exclude`; `tsurlfilter` has no browser project at all.
+

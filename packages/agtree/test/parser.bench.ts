@@ -4,10 +4,14 @@ import { test } from 'vitest';
 import { RuleParser } from '../src/parser/rule-parser';
 
 const RULES = [
+    '! Title: Example',
     '||example.org^$third-party',
-    'example.com##.banner',
-    'example.com#%#//scriptlet(\'set-constant\', \'a\', \'true\')',
     '@@||example.net^$document',
+    'example.com##.banner',
+    'example.com#?#div:has(> .ad)',
+    'example.com#%#//scriptlet(\'set-constant\', \'a\', \'true\')',
+    'example.com#$#.ad { display: none; }',
+    '||example.org^$removeparam=utm_source',
 ];
 
 test('AGTree parse: current vs v2', async ({ bench }) => {

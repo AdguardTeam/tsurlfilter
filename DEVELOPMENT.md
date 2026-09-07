@@ -287,14 +287,9 @@ loaded as unpacked extensions in the browser. Use
 
 ### Running Benchmarks
 
-Benchmarks are co-located in each library as `test/**/*.bench.ts` and run via
-Vitest 5. From a package directory, run `pnpm bench` (Node) or
-`pnpm bench:browser` (Chromium). To run every package's benchmarks from the
-repository root:
-
-```bash
-npx lerna run bench
-```
+See [`packages/benchmarks/DEVELOPMENT.md`](packages/benchmarks/DEVELOPMENT.md)
+for the benchmark workflow: per-package `pnpm bench` / `pnpm bench:browser` and
+the `npx lerna run bench` aggregator.
 
 ### IDE Setup (VS Code)
 

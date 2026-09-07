@@ -5,10 +5,14 @@ import { RuleConverter } from '../src/converter/rule';
 import { RuleParser } from '../src/parser/rule-parser';
 
 const RULES = [
+    '! Title: Example',
     '||example.org^$third-party',
-    'example.com##.banner',
-    'example.com#%#//scriptlet(\'set-constant\', \'a\', \'true\')',
     '@@||example.net^$document',
+    'example.com##.banner',
+    'example.com#?#div:has(> .ad)',
+    'example.com#%#//scriptlet(\'set-constant\', \'a\', \'true\')',
+    'example.com#$#.ad { display: none; }',
+    '||example.org^$removeparam=utm_source',
 ];
 
 test('AGTree convert: current vs v2', async ({ bench }) => {

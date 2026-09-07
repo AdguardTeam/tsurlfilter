@@ -85,7 +85,7 @@ pnpm --filter @adguard/tsurlfilter lint
 # Run unit tests
 pnpm --filter @adguard/tsurlfilter test
 
-# Run tests excluding benchmarks
+# Run tests excluding the heavyweight engine-startup test
 pnpm --filter @adguard/tsurlfilter test:light
 
 # Run tests with V8 coverage

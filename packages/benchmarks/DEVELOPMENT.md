@@ -95,6 +95,34 @@ Keep these aliases up to date when new major versions are released.
 There is no committed results file. Benchmark output comes from Vitest's
 built-in reporters (console + JSON under `.vitest/bench/`).
 
+## Scope notes
+
+- **Engine startup vs request matching.** The co-located `tsurlfilter` benches
+  measure engine construction (`Engine.createSync`/`createAsync`,
+  `NetworkEngine`, `CosmeticEngine`). Timing of `matchRequest` over the
+  27,969-request corpus was intentionally dropped with the old benchmark-mixed
+  test files (see the PR discussion); the correctness counts (4667/8776/1754)
+  are preserved in `packages/tsurlfilter/test/engine/start-engine.test.ts`. A
+  request-matching bench over `test/resources/requests.json.gz` can be added
+  back if that signal is needed again.
+
+- **Prior-version A/B aliases.** `tsurlfilter-v3` resolves against the published
+  `@adguard/agtree` 3.x (via the root `pnpm.overrides` entry
+  `"@adguard/tsurlfilter@3>@adguard/agtree"`), not the workspace agtree v5, so
+  its `./serializer`/`./deserializer` imports keep working.
+
+- **Node-only benches and the browser project.** The Node benches import the
+  current implementation from source (`../src/...`) while comparators run as
+  prebuilt dist, so Node runs print Vitest's module-runner export-getter
+  warning; browser benches already run native ESM. `tsurlfilter` has no browser
+  project (its benches import `node:fs` and `tsurlfilter-v3`); `agtree` excludes
+  `converter.bench.ts` from its browser project via `test.benchmark.exclude` for
+  the same reason.
+
+- **Bounded iterations.** Engine builds take ~200-400 ms each, so their
+  `bench.compare` calls cap `iterations`/`warmupIterations` (tinybench defaults
+  to 64 + 16) to keep the whole test well under the bench-mode 60s timeout.
+
 ## Troubleshooting
 
 ### Issue: Dependencies fail to install

@@ -25,16 +25,21 @@ test('build engine: current vs v3', async ({ bench }) => {
         return new TsUrlFilterOld.Engine(storage, true);
     };
 
+    // Each engine build takes ~200-400 ms on the base filter; cap tinybench's
+    // run (its default is 64 iterations + 16 warmup per benchmark, which would
+    // blow past the 60s bench-mode test timeout). The trailing options are the
+    // bench-level run config `bench.compare` forwards to the tinybench provider.
     await bench.compare(
-        bench('old engine (v3)', () => {
+        bench('v3 engine', () => {
             const engine = createOldEngine();
             engine.loadRules();
         }),
-        bench('new engine (sync)', () => {
+        bench('current engine (sync)', () => {
             Engine.createSync({ filters: [{ id: 2, content: rawFilter, ignoreCosmetic }] });
         }),
-        bench('new engine (async)', async () => {
+        bench('current engine (async)', async () => {
             await Engine.createAsync({ filters: [{ id: 2, content: rawFilter, ignoreCosmetic }] });
         }),
+        { iterations: 10, warmupIterations: 3 },
     );
 });

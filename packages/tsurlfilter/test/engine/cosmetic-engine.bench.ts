@@ -37,7 +37,7 @@ test('build cosmetic engine: current vs v3', async ({ bench }) => {
             false,
         );
         const storage = new RuleStorage([list]);
-        const scanner = list.newScanner(ScannerType.CosmeticRules);
+        const scanner = storage.createRuleStorageScanner(ScannerType.CosmeticRules);
         const rulesParts: IndexedStorageCosmeticRuleParts[] = [];
 
         while (scanner.scan()) {
@@ -50,11 +50,13 @@ test('build cosmetic engine: current vs v3', async ({ bench }) => {
     };
 
     await bench.compare(
-        bench('old cosmetic engine (v3)', () => {
+        bench('v3 cosmetic engine', () => {
             createOldEngine();
         }),
-        bench('new cosmetic engine', () => {
+        bench('current cosmetic engine', () => {
             createNewEngine();
         }),
+        // See engine.bench.ts for why the iteration caps are needed.
+        { iterations: 10, warmupIterations: 3 },
     );
 });

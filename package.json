@@ -32,7 +32,8 @@
     "pnpm": {
         "neverBuiltDependencies": [],
         "overrides": {
-            "@adguard/agtree": "workspace:^"
+            "@adguard/agtree": "workspace:^",
+            "@adguard/tsurlfilter@3>@adguard/agtree": "^3.2.3"
         }
     }
 }
