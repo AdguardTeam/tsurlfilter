@@ -1,4 +1,12 @@
-import { NetworkRuleType, RuleCategory, RuleParserPipeline } from '@adguard/agtree';
+import {
+    type AnyCosmeticRule,
+    CosmeticRuleDataReader,
+    NetworkRuleDataReader,
+    NetworkRuleType,
+    RuleCategory,
+    RuleKind,
+    RuleParserPipeline,
+} from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
 import { getErrorMessage } from '@adguard/logger';
 
@@ -18,6 +26,35 @@ export class RuleFactory {
      * Shared AGTree parser pipeline instance.
      */
     private static readonly PARSER = new RuleParserPipeline();
+
+    /**
+     * Pre-allocated, immutable option variants (host × htmlBodies).
+     */
+    private static readonly OPTS = {
+        ff: Object.freeze({ parseHostRules: false, parseHtmlFilteringRuleBodies: false }),
+        ft: Object.freeze({ parseHostRules: false, parseHtmlFilteringRuleBodies: true }),
+        tf: Object.freeze({ parseHostRules: true, parseHtmlFilteringRuleBodies: false }),
+        tt: Object.freeze({ parseHostRules: true, parseHtmlFilteringRuleBodies: true }),
+    } as const;
+
+    /**
+     * Picks a pre-allocated option variant for the given flags, avoiding a
+     * fresh options object allocation on every `createRule` call.
+     *
+     * @param parseHostRules Whether to parse host rules.
+     * @param parseHtmlFilteringRuleBodies Whether to parse HTML filtering rule bodies.
+     *
+     * @returns The immutable options variant.
+     */
+    private static pickOpts(
+        parseHostRules: boolean,
+        parseHtmlFilteringRuleBodies: boolean,
+    ): Readonly<{ parseHostRules: boolean; parseHtmlFilteringRuleBodies: boolean }> {
+        if (parseHostRules) {
+            return parseHtmlFilteringRuleBodies ? RuleFactory.OPTS.tt : RuleFactory.OPTS.tf;
+        }
+        return parseHtmlFilteringRuleBodies ? RuleFactory.OPTS.ft : RuleFactory.OPTS.ff;
+    }
 
     /**
      * Creates rule of suitable class from text string.
@@ -43,30 +80,67 @@ export class RuleFactory {
         parseHtmlFilteringRuleBodies = false,
     ): IRule | null {
         try {
-            const node = RuleFactory.PARSER.parse(ruleText, {
-                parseHostRules,
-                parseHtmlFilteringRuleBodies,
-            });
+            const { kind, isHostCandidate, ctx } = RuleFactory.PARSER.parseStructural(
+                ruleText,
+                RuleFactory.pickOpts(parseHostRules, parseHtmlFilteringRuleBodies),
+            );
 
-            switch (node.category) {
-                case RuleCategory.Invalid:
-                case RuleCategory.Empty:
-                case RuleCategory.Comment:
+            switch (kind) {
+                case RuleKind.Comment:
                     return null;
 
-                case RuleCategory.Cosmetic:
-                    return new CosmeticRule(ruleText, filterListId, ruleIndex, node);
+                case RuleKind.Network: {
+                    if (isHostCandidate) {
+                        // Retained AST path for host candidates (no structural host layout),
+                        // built from the already-populated context without re-parsing.
+                        const node = RuleFactory.PARSER.parseFromCurrentCtx(
+                            ruleText,
+                            kind,
+                            RuleFactory.pickOpts(parseHostRules, parseHtmlFilteringRuleBodies),
+                        );
 
-                case RuleCategory.Network:
-                    if (node.type === NetworkRuleType.HostRule) {
-                        if (!parseHostRules) {
+                        if (node.category !== RuleCategory.Network) {
                             return null;
                         }
 
-                        return new HostRule(ruleText, filterListId, ruleIndex, node);
+                        if (node.type === NetworkRuleType.HostRule) {
+                            if (!parseHostRules) {
+                                return null;
+                            }
+
+                            return new HostRule(ruleText, filterListId, ruleIndex, node);
+                        }
+
+                        return new NetworkRule(ruleText, filterListId, ruleIndex, node);
                     }
 
-                    return new NetworkRule(ruleText, filterListId, ruleIndex, node);
+                    const nr = new NetworkRuleDataReader(ctx, 0);
+                    return NetworkRule.createFromReader(nr, ruleText, filterListId, ruleIndex);
+                }
+
+                case RuleKind.Cosmetic: {
+                    const cr = new CosmeticRuleDataReader(ctx, 0);
+
+                    if (cr.hasModifiers || !CosmeticRule.supportsBinaryPath(cr)) {
+                        // Retained AST path for `[$...]`/uBO-modifier and
+                        // non-binary cosmetic rules, built from the
+                        // already-populated context without re-parsing.
+                        const node = RuleFactory.PARSER.parseFromCurrentCtx(
+                            ruleText,
+                            kind,
+                            RuleFactory.pickOpts(parseHostRules, parseHtmlFilteringRuleBodies),
+                        );
+
+                        return new CosmeticRule(
+                            ruleText,
+                            filterListId,
+                            ruleIndex,
+                            node as AnyCosmeticRule,
+                        );
+                    }
+
+                    return CosmeticRule.createFromReader(cr, ruleText, filterListId, ruleIndex);
+                }
 
                 default:
                     // should not happen in normal operation

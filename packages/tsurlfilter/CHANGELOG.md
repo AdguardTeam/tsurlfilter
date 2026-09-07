@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `@adguard/agtree` to `v5.0.0` with refactored parser API: rule parsing now uses
   `RuleParserPipeline`, domain lists use `parseDomainList`, and `ParserOptions`
   is replaced by `ParseOptions`.
+- The matching engine now materializes network and cosmetic rules directly from
+  the `@adguard/agtree` structural parser output instead of building throwaway
+  AST nodes, reducing engine-creation time and allocation. Host rules and
+  cosmetic rules carrying `[$...]`/uBO modifiers continue to use the AST path.
+- The "rule is too general" `SyntaxError` now reports the original rule text
+  instead of the re-generated rule.
 
 ## [6.0.3] - 2026-08-25
 

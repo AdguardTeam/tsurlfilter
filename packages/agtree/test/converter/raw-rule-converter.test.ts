@@ -54,3 +54,19 @@ describe('Raw rule converter wrapper should work correctly', () => {
         });
     });
 });
+
+describe('RawRuleConverter shared pipeline', () => {
+    test('converts consistently across many calls', () => {
+        for (let i = 0; i < 1000; i += 1) {
+            const r = RawRuleConverter.convertToAdg('example.com##+js(nano-setInterval-booster.js)');
+            expect(r.isConverted).toBe(true);
+            expect(r.result[0]).toContain('#%#//scriptlet');
+        }
+    });
+
+    test('passthrough for already-adg rules', () => {
+        const r = RawRuleConverter.convertToAdg('||example.org^');
+        expect(r.isConverted).toBe(false);
+        expect(r.result).toEqual(['||example.org^']);
+    });
+});

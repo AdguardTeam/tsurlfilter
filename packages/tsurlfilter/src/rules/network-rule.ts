@@ -1,10 +1,10 @@
 import {
     type ModifierList,
+    type NetworkRuleDataReader,
     type NetworkRule as NetworkRuleNode,
     type ParseOptions,
     RuleParserPipeline,
 } from '@adguard/agtree';
-import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { EMPTY_STRING } from '../common/constants';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
@@ -1334,7 +1334,24 @@ export class NetworkRule implements IRule {
      * @returns True if the rule is too general.
      */
     public static isTooGeneral(node: NetworkRuleNode): boolean {
-        return !(node.modifiers?.children?.length) && node.pattern.value.length < 4;
+        return NetworkRule.isTooGeneralPattern(
+            node.pattern.value,
+            node.modifiers?.children?.length ?? 0,
+        );
+    }
+
+    /**
+     * Checks if a network rule is too general based on its pattern length and
+     * modifier count. Shared by the AST and binary constructor paths so the
+     * threshold logic lives in a single place.
+     *
+     * @param pattern Rule pattern text.
+     * @param modifierCount Number of modifiers carried by the rule.
+     *
+     * @returns True if the rule is too general.
+     */
+    private static isTooGeneralPattern(pattern: string, modifierCount: number): boolean {
+        return modifierCount === 0 && pattern.length < 4;
     }
 
     /**
@@ -1348,6 +1365,8 @@ export class NetworkRule implements IRule {
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
      * @param node Optional pre-parsed network rule node to avoid re-parsing.
+     * @param reader Optional structural reader to materialize the rule without building an AST node.
+     *   Mutually exclusive with `node`.
      *
      * @throws Error if it fails to parse the rule or if the rule is not a network rule.
      */
@@ -1356,6 +1375,7 @@ export class NetworkRule implements IRule {
         filterListId: number = FILTER_LIST_ID_NONE,
         ruleIndex: number = RULE_INDEX_NONE,
         node?: NetworkRuleNode,
+        reader?: NetworkRuleDataReader,
     ) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
@@ -1367,38 +1387,90 @@ export class NetworkRule implements IRule {
             this.ruleText = ruleText;
         }
 
-        // Use provided node or parse the rule text
-        let parsedNode: NetworkRuleNode;
-        if (node) {
-            parsedNode = node;
-        } else {
-            const parsed = NetworkRule.PARSER.parse(ruleText, NetworkRule.PARSER_OPTIONS);
+        let exception: boolean;
+        let pattern: string;
+        let loadModifiers: (() => void) | null = null;
+        let tooGeneral = false;
 
-            // Validate that we got a valid network rule
-            if (!isNetworkRuleNode(parsed)) {
-                throw new SyntaxError(`Expected network rule but got ${parsed.category}: ${ruleText}`);
+        if (reader) {
+            // Binary path: read fields straight from the structural data.
+            exception = reader.exception;
+            pattern = reader.getPattern();
+
+            const count = reader.modifierCount;
+            if (count > 0) {
+                loadModifiers = (): void => {
+                    for (let i = 0; i < count; i += 1) {
+                        const value = reader.getModifierValue(i) ?? EMPTY_STRING;
+                        this.loadOption(reader.getModifierName(i), value, reader.isModifierNegated(i));
+                    }
+                    this.validateOptions();
+                };
             }
 
-            parsedNode = parsed;
-        }
-        this.allowlist = parsedNode.exception;
+            tooGeneral = NetworkRule.isTooGeneralPattern(pattern, count);
+        } else {
+            // AST path: use provided node or parse the rule text.
+            let parsedNode: NetworkRuleNode;
+            if (node) {
+                parsedNode = node;
+            } else {
+                const parsed = NetworkRule.PARSER.parse(ruleText, NetworkRule.PARSER_OPTIONS);
 
-        const pattern = parsedNode.pattern.value;
+                // Validate that we got a valid network rule
+                if (!isNetworkRuleNode(parsed)) {
+                    throw new SyntaxError(`Expected network rule but got ${parsed.category}: ${ruleText}`);
+                }
+
+                parsedNode = parsed;
+            }
+
+            exception = parsedNode.exception;
+            pattern = parsedNode.pattern.value;
+
+            if (parsedNode.modifiers?.children?.length) {
+                loadModifiers = (): void => this.loadOptions(parsedNode.modifiers!);
+            }
+
+            tooGeneral = NetworkRule.isTooGeneral(parsedNode);
+        }
+
+        this.allowlist = exception;
+
         if (pattern && hasSpaces(pattern)) {
             throw new SyntaxError('Rule has spaces, seems to be an host rule');
         }
 
-        if (parsedNode.modifiers?.children?.length) {
-            this.loadOptions(parsedNode.modifiers);
+        if (loadModifiers) {
+            loadModifiers();
         }
 
-        if (NetworkRule.isTooGeneral(parsedNode)) {
-            throw new SyntaxError(`Rule is too general: ${RuleGenerator.generate(parsedNode)}`);
+        if (tooGeneral) {
+            throw new SyntaxError(`Rule is too general: ${ruleText}`);
         }
 
         this.calculatePriorityWeight();
 
         this.pattern = new Pattern(pattern, this.isOptionEnabled(NetworkRuleOption.MatchCase));
+    }
+
+    /**
+     * Builds a NetworkRule directly from the structural reader (no AST).
+     *
+     * @param reader Network structural reader bound to a populated ctx.
+     * @param ruleText Original rule text (for errors / getText).
+     * @param filterListId Filter list id.
+     * @param ruleIndex Rule index.
+     *
+     * @returns A fully initialized NetworkRule.
+     */
+    public static createFromReader(
+        reader: NetworkRuleDataReader,
+        ruleText: string,
+        filterListId: number = FILTER_LIST_ID_NONE,
+        ruleIndex: number = RULE_INDEX_NONE,
+    ): NetworkRule {
+        return new NetworkRule(ruleText, filterListId, ruleIndex, undefined, reader);
     }
 
     /**

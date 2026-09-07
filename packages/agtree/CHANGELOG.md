@@ -40,6 +40,19 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   already-exported `parseDomainList`).
 - Exported `FilterListGenerator` from the package root, mirroring
   `FilterListPipeline`.
+- Added structural readers `NetworkRuleDataReader` and `CosmeticRuleDataReader`,
+  the `isHostRuleCandidate` helper, the `DomainItem` type, and a
+  `RuleParserPipeline.parseStructural` entry point for zero-AST consumption of
+  the structural parser output (`@adguard/agtree/parser`).
+- Added `RuleParserPipeline.parseFromCurrentCtx` to build an AST node from an
+  already-populated structural context without re-tokenizing or re-running the
+  structural parser.
+- Re-introduced backward-compatible `RuleParser` and `defaultParserOptions` via
+  `@adguard/agtree/parser` as a thin shim over `RuleParserPipeline` (keeps
+  `@adguard/scriptlets` v2.x working against the v5 pipeline).
+- Re-exported the legacy `GenericPlatform`/`SpecificPlatform` bitmask enums and
+  added an `exists(name, platform)` compatibility method to the compatibility
+  tables, mapping legacy bitmask platforms onto `Platform` wildcard queries.
 
 ### Changed
 
@@ -68,6 +81,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   It now exposes only the composition surface: the parser context lifecycle, the
   rule classifier and `RuleKind`, the structural parser classes, and the
   `*_MIN_DATA_SLOTS` sizing constants.
+- `RawRuleConverter.convertToAdg` now reuses a shared `RuleParserPipeline`
+  instance instead of allocating one per call.
 
 ### Removed
 

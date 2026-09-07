@@ -8,8 +8,18 @@ export { FilterListGenerator } from './generator/filterlist-generator';
 
 // New pipeline parser (supports element hiding and other cosmetic rules)
 export { RuleParserPipeline } from './ast-builder/rule-parser';
+export type { StructuralParseResult } from './ast-builder/rule-parser';
 export type { ParseOptions } from './ast-builder/options';
 export type { ParserCapacity } from './ast-builder/capacity';
+
+// Structural parser surface (encapsulated readers + classification)
+export { RuleKind } from './parser';
+export {
+    CosmeticRuleDataReader,
+    isHostRuleCandidate,
+    NetworkRuleDataReader,
+    type DomainItem,
+} from './parser';
 
 // AST-building convenience helpers
 export {
@@ -222,6 +232,13 @@ export {
     redirectsCompatibilityTable,
     scriptletsCompatibilityTable,
 } from './compatibility-tables';
+
+// Backwards-compatible platform bitmask enums (consumed by @adguard/scriptlets
+// v2.x). Deprecated in favour of the Platform class above.
+export {
+    GenericPlatform,
+    SpecificPlatform,
+} from './compatibility-tables/platform-compat';
 
 // Version
 export { AGTREE_VERSION } from './version';

@@ -2,10 +2,12 @@
 import {
     type AnyCosmeticRule,
     COMMA_DOMAIN_LIST_SEPARATOR,
+    type CosmeticRuleDataReader,
     type CosmeticRuleSeparator,
     CosmeticRuleSeparatorUtils,
     CosmeticRuleType,
     type CssInjectionRuleBody,
+    type DomainItem,
     type DomainList,
     DomainUtils,
     type ParseOptions,
@@ -859,6 +861,24 @@ export class CosmeticRule implements IRule {
     }
 
     /**
+     * Checks if the structural domain items contain any meaningful domains,
+     * returning `false` when only the wildcard domain (`*`) is specified.
+     * Mirrors {@link CosmeticRule.isAnyDomainSpecified} for the binary path.
+     *
+     * @param domainItems Ordered domain items (value + exception flag).
+     *
+     * @returns `true` if the rule has any domain restriction other than `*`.
+     */
+    private static hasAnyDomainSpecified(domainItems: readonly DomainItem[]): boolean {
+        if (domainItems.length > 0) {
+            // Skip wildcard domain list (*)
+            return !(domainItems.length === 1 && domainItems[0].value === WILDCARD);
+        }
+
+        return false;
+    }
+
+    /**
      * Creates an instance of the {@link CosmeticRule}.
      * It parses the rule and extracts the permitted/restricted domains,
      * and also the cosmetic rule's content.
@@ -872,6 +892,8 @@ export class CosmeticRule implements IRule {
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
      * @param node Optional pre-parsed cosmetic rule node to avoid re-parsing.
+     * @param reader Optional structural reader to materialize the rule without building an AST node.
+     *   Mutually exclusive with `node`.
      *
      * @throws Error if it fails to parse the rule or if the rule is not a cosmetic rule.
      */
@@ -880,6 +902,7 @@ export class CosmeticRule implements IRule {
         filterListId: number = FILTER_LIST_ID_NONE,
         ruleIndex: number = RULE_INDEX_NONE,
         node?: AnyCosmeticRule,
+        reader?: CosmeticRuleDataReader,
     ) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
@@ -889,6 +912,53 @@ export class CosmeticRule implements IRule {
         // from the engine and must be available via getText().
         if (filterListId === FILTER_LIST_ID_NONE || ruleIndex === RULE_INDEX_NONE) {
             this.ruleText = ruleText;
+        }
+
+        if (reader) {
+            // Binary path: read fields straight from the structural data.
+            this.type = reader.isScriptlet
+                ? CosmeticRuleType.ScriptletInjectionRule
+                : CosmeticRuleType.ElementHidingRule;
+            this.allowlist = reader.exception;
+            this.isScriptlet = this.type === CosmeticRuleType.ScriptletInjectionRule;
+
+            if (this.isScriptlet) {
+                const rawParams = reader.getScriptletParams();
+                // Canonicalize the body so binary content matches the AST path
+                // (CosmeticRuleBodyGenerator → AdgScriptletInjectionBodyGenerator).
+                this.content = CosmeticRule.buildBinaryScriptletContent(rawParams);
+
+                const params = rawParams.map((param) => QuoteUtils.removeQuotesAndUnescape(param));
+                this.scriptletParams = new ScriptletParams(params[0] ?? '', params.slice(1));
+
+                const scriptletName = rawParams.length > 0 ? QuoteUtils.removeQuotes(rawParams[0]) : EMPTY_STRING;
+                const validationResult = CosmeticRule.validateBinary(this.type, this.content, scriptletName);
+                if (!validationResult.isValid) {
+                    throw new SyntaxError(validationResult.errorMessage);
+                }
+                this.extendedCss = false;
+            } else {
+                this.content = reader.getBody();
+                this.scriptletParams = new ScriptletParams();
+
+                const validationResult = CosmeticRule.validateBinary(this.type, this.content);
+                if (!validationResult.isValid) {
+                    throw new SyntaxError(validationResult.errorMessage);
+                }
+
+                const isExtendedCssSeparator = CosmeticRuleSeparatorUtils.isExtendedCssMarker(
+                    reader.getSeparator() as CosmeticRuleSeparator,
+                );
+                this.extendedCss = isExtendedCssSeparator || validationResult.isExtendedCss;
+            }
+
+            const domainItems = reader.getDomains();
+            if (CosmeticRule.hasAnyDomainSpecified(domainItems)) {
+                this.domainModifier = new DomainModifier(domainItems, COMMA_DOMAIN_LIST_SEPARATOR);
+            }
+
+            this.htmlSelectorList = null;
+            return;
         }
 
         // Use provided node or parse the rule text
@@ -966,6 +1036,177 @@ export class CosmeticRule implements IRule {
 
         // Process HTML filtering rule selector list
         this.htmlSelectorList = CosmeticRule.processHtmlSelectorList(parsedNode);
+    }
+
+    /**
+     * Builds a CosmeticRule directly from the structural reader (no AST).
+     *
+     * Only supports the high-volume, fully-structural kinds: element hiding and
+     * ADG scriptlet rules. Callers must route other cosmetic kinds through the
+     * AST path.
+     *
+     * @param reader Cosmetic structural reader bound to a populated ctx.
+     * @param ruleText Original rule text (for errors / getText).
+     * @param filterListId Filter list id.
+     * @param ruleIndex Rule index.
+     *
+     * @returns A fully initialized CosmeticRule.
+     */
+    public static createFromReader(
+        reader: CosmeticRuleDataReader,
+        ruleText: string,
+        filterListId: number = FILTER_LIST_ID_NONE,
+        ruleIndex: number = RULE_INDEX_NONE,
+    ): CosmeticRule {
+        return new CosmeticRule(ruleText, filterListId, ruleIndex, undefined, reader);
+    }
+
+    /**
+     * Whether the structural reader can be materialized via the binary path.
+     *
+     * The binary path only covers the high-volume, fully-structural cosmetic
+     * kinds: element hiding (all four separators) and ADG scriptlet. Everything
+     * else (uBO scriptlet, ABP snippet, JS/CSS injection, HTML filtering, and
+     * any `[$...]`/uBO modifiers) must be routed through the AST path.
+     *
+     * @param reader Cosmetic structural reader bound to a populated ctx.
+     *
+     * @returns True when the rule can be built without an AST node.
+     */
+    public static supportsBinaryPath(reader: CosmeticRuleDataReader): boolean {
+        if (reader.hasModifiers) {
+            return false;
+        }
+
+        // Element hiding (##, #@#, #?#, #@?#).
+        if (reader.separatorKind === CosmeticRule.SEP_KIND_ELEMENT_HIDING && !reader.isScriptlet) {
+            return true;
+        }
+
+        // ADG scriptlet (#%#//scriptlet(...)).
+        return reader.separatorKind === CosmeticRule.SEP_KIND_ADG_JS && reader.isScriptlet;
+    }
+
+    /**
+     * Cosmetic separator sub-kind for element hiding (mirrors AGTree
+     * `CR_SEP_KIND_ELEMENT_HIDING`).
+     */
+    private static readonly SEP_KIND_ELEMENT_HIDING = 0;
+
+    /**
+     * Cosmetic separator sub-kind for ADG JS injection (mirrors AGTree
+     * `CR_SEP_KIND_ADG_JS`).
+     */
+    private static readonly SEP_KIND_ADG_JS = 2;
+
+    /**
+     * ADG scriptlet body mask (`//scriptlet`).
+     */
+    private static readonly ADG_SCRIPTLET_MASK = '//scriptlet';
+
+    /**
+     * Canonical parameter separator used by the ADG scriptlet generator.
+     */
+    private static readonly SCRIPTLET_PARAM_SEPARATOR = ', ';
+
+    /**
+     * Maps a detected quote type to its quote character (mirrors AGTree
+     * `ParameterGenerator`).
+     */
+    private static readonly QUOTE_CHAR_BY_TYPE: Partial<Record<QuoteType, string>> = {
+        [QuoteType.Single]: "'",
+        [QuoteType.Double]: '"',
+        [QuoteType.Backtick]: '`',
+    };
+
+    /**
+     * Canonicalizes an ADG scriptlet body from its raw structural parameters,
+     * producing byte-identical content to the AST path
+     * (`AdgScriptletInjectionBodyGenerator`). This is required because the AST
+     * path re-quotes/escapes parameters and normalizes whitespace, while the
+     * binary path would otherwise emit the raw source slice.
+     *
+     * @param rawParams Raw scriptlet parameters (quotes intact), as returned by
+     *   {@link CosmeticRuleDataReader.getScriptletParams}.
+     *
+     * @returns Canonical `//scriptlet(...)` body.
+     */
+    private static buildBinaryScriptletContent(rawParams: readonly string[]): string {
+        const parts = rawParams.map((raw) => {
+            const quoteType = QuoteUtils.getStringQuoteType(raw);
+            if (quoteType === QuoteType.None) {
+                return raw;
+            }
+
+            const quoteChar = CosmeticRule.QUOTE_CHAR_BY_TYPE[quoteType];
+            if (quoteChar === undefined) {
+                return raw;
+            }
+
+            const value = QuoteUtils.removeQuotesAndUnescape(raw);
+            return quoteChar + QuoteUtils.escapeUnescapedOccurrences(value, quoteChar) + quoteChar;
+        });
+
+        return `${CosmeticRule.ADG_SCRIPTLET_MASK}(${parts.join(CosmeticRule.SCRIPTLET_PARAM_SEPARATOR)})`;
+    }
+
+    /**
+     * Validates a cosmetic rule materialized from structural data, mirroring the
+     * string-based validation branches of {@link CosmeticRule.validate} for the
+     * binary-supported rule kinds.
+     *
+     * @param type Cosmetic rule type.
+     * @param content Rule content (selector list or scriptlet body).
+     * @param scriptletName Optional scriptlet name (for scriptlet rules).
+     *
+     * @returns Validation result {@link ValidationResult}.
+     */
+    private static validateBinary(
+        type: CosmeticRuleType,
+        content: string,
+        scriptletName?: string,
+    ): ValidationResult {
+        const result: ValidationResult = {
+            isValid: true,
+            isExtendedCss: false,
+        };
+
+        try {
+            switch (type) {
+                case CosmeticRuleType.ElementHidingRule: {
+                    const selectorListValidationResult = validateSelectorList(content);
+
+                    if (!selectorListValidationResult.isValid) {
+                        throw new Error(selectorListValidationResult.errorMessage);
+                    }
+
+                    result.isExtendedCss = selectorListValidationResult.isExtendedCss;
+                    break;
+                }
+
+                case CosmeticRuleType.ScriptletInjectionRule: {
+                    const name = scriptletName ?? EMPTY_STRING;
+
+                    // Special case: scriptlet name is empty, e.g. '#%#//scriptlet()'
+                    if (name.length === 0) {
+                        break;
+                    }
+
+                    if (!isValidScriptletName(name)) {
+                        throw new Error(`'${name}' is not a known scriptlet name`);
+                    }
+                    break;
+                }
+
+                default:
+                    break;
+            }
+        } catch (error: unknown) {
+            result.isValid = false;
+            result.errorMessage = getErrorMessage(error);
+        }
+
+        return result;
     }
 
     /**

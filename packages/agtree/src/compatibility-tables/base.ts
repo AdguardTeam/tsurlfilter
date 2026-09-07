@@ -9,8 +9,11 @@ import {
     getValidAdblockProducts,
     getValidProductCodes,
     Platform,
+    PlatformType,
+    ProductCode,
     WILDCARD_ANY,
 } from './platform';
+import { GenericPlatform } from './platform-compat';
 import { type BaseCompatibilityDataSchema } from './schemas';
 import { type CompatibilityTable, type HybridCompatibilityTableRow } from './types';
 import { type ValidationContext } from './validators/types';
@@ -114,6 +117,77 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
      */
     public has(name: string): boolean {
         return this.getRow(name) !== undefined;
+    }
+
+    /**
+     * Backwards-compatible feature existence check.
+     *
+     * AGTree v4 consumers (e.g. `@adguard/scriptlets` v2.x) call
+     * `exists(name, GenericPlatform.X)` with a bitmask platform. AGTree v5
+     * exposes {@link Platform} instead, so this method maps legacy bitmask
+     * platforms onto wildcard `Platform` queries and delegates to
+     * {@link supports}.
+     *
+     * @param name Feature name.
+     * @param platform Platform query, or a legacy `GenericPlatform` /
+     *   `SpecificPlatform` bitmask.
+     *
+     * @returns True if the feature exists for the platform.
+     */
+    public exists(name: string, platform: Platform | number): boolean {
+        if (typeof platform !== 'number') {
+            return this.supports(name, platform);
+        }
+
+        const mapped = CompatibilityTableBase.mapLegacyPlatform(platform);
+        if (mapped === null) {
+            // Unknown or "any product" bitmask — name existence is the closest
+            // equivalent.
+            return this.has(name);
+        }
+
+        return this.supports(name, mapped);
+    }
+
+    /**
+     * Maps a legacy v4 platform bitmask onto a v5 wildcard {@link Platform}.
+     *
+     * @param bitmask Legacy `GenericPlatform` / `SpecificPlatform` value.
+     *
+     * @returns A wildcard `Platform`, or `null` when no mapping exists.
+     */
+    private static mapLegacyPlatform(bitmask: number): Platform | null {
+        switch (bitmask) {
+            case GenericPlatform.AdgAny:
+                return new Platform(ProductCode.Adg);
+
+            case GenericPlatform.UboAny:
+                return new Platform(ProductCode.Ubo);
+
+            case GenericPlatform.AbpAny:
+                return new Platform(ProductCode.Abp);
+
+            case GenericPlatform.AdgExtAny:
+            case GenericPlatform.AdgExtChromium:
+                return new Platform(ProductCode.Adg, PlatformType.Ext);
+
+            case GenericPlatform.AdgOsAny:
+                return new Platform(ProductCode.Adg, PlatformType.Os);
+
+            case GenericPlatform.UboExtAny:
+            case GenericPlatform.UboExtChromium:
+                return new Platform(ProductCode.Ubo, PlatformType.Ext);
+
+            case GenericPlatform.AbpExtAny:
+            case GenericPlatform.AbpExtChromium:
+                return new Platform(ProductCode.Abp, PlatformType.Ext);
+
+            case GenericPlatform.AdgSafariAny:
+                return new Platform(ProductCode.Adg, PlatformType.Safari);
+
+            default:
+                return null;
+        }
     }
 
     /**

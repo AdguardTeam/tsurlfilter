@@ -178,10 +178,16 @@ export class FilterList {
         }
 
         const { length } = original;
-        let convertedBuffer = EMPTY_STRING;
+        const parts: string[] = [];
+        let convertedLength = 0; // running byte offset, replaces convertedBuffer.length
         const data: ConversionData = {
             originals: [],
             conversions: {},
+        };
+
+        const append = (chunk: string): void => {
+            parts.push(chunk);
+            convertedLength += chunk.length;
         };
 
         let offset = 0;
@@ -198,23 +204,23 @@ export class FilterList {
                     data.originals.push(line);
 
                     for (let i = 0; i < conversionResult.result.length; i += 1) {
-                        const conversionIndex = convertedBuffer.length;
+                        const conversionIndex = convertedLength;
                         const convertedLine = conversionResult.result[i];
 
                         if (lineBreak.length > 0) {
-                            convertedBuffer += convertedLine + lineBreak;
+                            append(convertedLine + lineBreak);
                         } else if (i < conversionResult.result.length - 1) {
                             // If the file has no final line break, but we converted the last rule into multiple lines,
                             // we need to add a line break after each converted line, except the last one
-                            convertedBuffer += `${convertedLine}${LF}`;
+                            append(`${convertedLine}${LF}`);
                         } else {
-                            convertedBuffer += convertedLine;
+                            append(convertedLine);
                         }
 
                         data.conversions[conversionIndex] = originalIndex;
                     }
                 } else {
-                    convertedBuffer += line + lineBreak;
+                    append(line + lineBreak);
                 }
             } catch (e) {
                 this.errors.push({
@@ -224,14 +230,14 @@ export class FilterList {
                     filterId: this.filterId,
                 });
 
-                convertedBuffer += line + lineBreak;
+                append(line + lineBreak);
             }
 
             offset = lineBreakIndex + lineBreakLen;
         }
 
         this.data = data;
-        this.content = convertedBuffer;
+        this.content = parts.join('');
 
         this.prepared = true;
     }

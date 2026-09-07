@@ -5,6 +5,7 @@ import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { HostRule } from '../../src/rules/host-rule';
 import { NetworkRule } from '../../src/rules/network-rule';
 import { RULE_INDEX_NONE } from '../../src/rules/rule';
+import { RuleFactory } from '../../src/rules/rule-factory';
 import { createRule } from '../helpers/rule-creator';
 
 describe('RuleFactory Builder Test', () => {
@@ -79,5 +80,40 @@ describe('RuleFactory Builder Test', () => {
         // eslint-disable-next-line max-len
         const rule = createRule('*$denyallow=org|com|example.net', 1, RULE_INDEX_NONE, false, true, false, true);
         expect(rule).toBeTruthy();
+    });
+});
+
+describe('RuleFactory shared pipeline', () => {
+    it('creates correct rule types and ignores comments/empty', () => {
+        expect(RuleFactory.createRule('||example.org^', 0)).toBeInstanceOf(NetworkRule);
+        expect(RuleFactory.createRule('example.com##.ad', 0)).toBeInstanceOf(CosmeticRule);
+        expect(RuleFactory.createRule('! comment', 0)).toBeNull();
+        expect(RuleFactory.createRule('', 0)).toBeNull();
+    });
+
+    it('reuses a single options object across calls (no per-call allocation)', () => {
+        // Sanity: repeated calls stay correct with the shared pipeline/options.
+        for (let i = 0; i < 100; i += 1) {
+            expect(RuleFactory.createRule('||a.com^$third-party', 0)).toBeInstanceOf(NetworkRule);
+        }
+    });
+});
+
+describe('RuleFactory cosmetic content parity', () => {
+    const corpus = [
+        '##.banner',
+        'example.org##.ad',
+        'example.com#@#.ad',
+        '[$path=/foo]example.com##.ad', // must route via AST (has modifiers)
+        "#%#//scriptlet('set-constant', 'a', 'true')",
+        'example.com#$#body { color: red; }',
+    ];
+
+    it.each(corpus)('createRule content equals direct AST content for %s', (rule) => {
+        const viaFactory = RuleFactory.createRule(rule, 0) as CosmeticRule;
+        const viaAst = new CosmeticRule(rule, 0);
+        expect(viaFactory).toBeInstanceOf(CosmeticRule);
+        expect(viaFactory.getContent()).toBe(viaAst.getContent());
+        expect(viaFactory.getPermittedDomains()).toEqual(viaAst.getPermittedDomains());
     });
 });

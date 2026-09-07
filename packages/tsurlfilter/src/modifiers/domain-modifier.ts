@@ -1,6 +1,6 @@
 import { getPublicSuffix } from 'tldts';
 
-import { type DomainList, parseDomainList } from '@adguard/agtree';
+import { type DomainItem, type DomainList, parseDomainList } from '@adguard/agtree';
 
 import { WILDCARD } from '../common/constants';
 import { SimpleRegex } from '../rules/simple-regex';
@@ -88,14 +88,49 @@ export class DomainModifier {
     }
 
     /**
+     * Processes a list of domain items, extracting permitted and restricted
+     * domains. Mirrors {@link DomainModifier.processDomainList} but operates
+     * directly on the structural domain records (no AST nodes).
+     *
+     * @param items Ordered domain items (value + exception flag).
+     *
+     * @returns Processed domain list (permitted and restricted domains) ({@link ProcessedDomainList}).
+     */
+    public static processDomainItems(items: readonly DomainItem[]): ProcessedDomainList {
+        const result: ProcessedDomainList = {
+            permittedDomains: [],
+            restrictedDomains: [],
+        };
+
+        for (const { exception, value } of items) {
+            const domainLowerCased = value.toLowerCase();
+
+            if (!SimpleRegex.isRegexPattern(value) && value.includes(WILDCARD) && !value.endsWith(WILDCARD)) {
+                throw new SyntaxError(`Wildcards are only supported for top-level domains: "${value}"`);
+            }
+
+            if (exception) {
+                result.restrictedDomains.push(domainLowerCased);
+            } else {
+                result.permittedDomains.push(domainLowerCased);
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * Parses the `domains` string and initializes the object.
      *
-     * @param domains Domain list string or AGTree DomainList node.
+     * @param domains Domain list string, AGTree DomainList node, or structural domain items.
      * @param separator Separator — `,` or `|`.
      *
      * @throws An error if the domains string is empty or invalid.
      */
-    constructor(domains: string | DomainList, separator: typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR) {
+    constructor(
+        domains: string | DomainList | readonly DomainItem[],
+        separator: typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR,
+    ) {
         let processed: ProcessedDomainList;
 
         if (isString(domains)) {
@@ -106,13 +141,21 @@ export class DomainModifier {
             }
 
             processed = DomainModifier.processDomainList(node);
+        } else if (Array.isArray(domains)) {
+            if (domains.length === 0) {
+                throw new SyntaxError('At least one domain must be specified');
+            }
+
+            processed = DomainModifier.processDomainItems(domains as readonly DomainItem[]);
         } else {
             // domain list node stores the separator
-            if (separator !== domains.separator) {
+            const domainListNode = domains as DomainList;
+
+            if (separator !== domainListNode.separator) {
                 throw new SyntaxError('Separator mismatch');
             }
 
-            processed = DomainModifier.processDomainList(domains);
+            processed = DomainModifier.processDomainList(domainListNode);
         }
 
         // Unescape separator character in domains

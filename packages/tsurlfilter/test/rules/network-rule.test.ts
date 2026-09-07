@@ -168,6 +168,12 @@ describe('NetworkRule constructor', () => {
         }).toThrow(new SyntaxError('Rule is too general: ||*'));
     });
 
+    it('includes the original rule text in the too-general message', () => {
+        expect(() => {
+            createNetworkRule('ad', 0);
+        }).toThrow(new SyntaxError('Rule is too general: ad'));
+    });
+
     it('doesnt consider rules with app modifier too wide', () => {
         const rule = createNetworkRule('@@*$app=com.cinemark.mobile', 0);
         expect(rule).toBeTruthy();
