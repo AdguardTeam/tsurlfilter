@@ -42,7 +42,7 @@ const targets = [
     { target: 'examples', npm: null },
 ];
 
-// npm name -> package directory (covers packages/*, packages/examples/*, packages/benchmarks/*).
+// npm name -> package directory (covers packages/* and packages/examples/*).
 const dirByName = {};
 const scan = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -56,7 +56,6 @@ const scan = (dir) => {
 };
 scan('packages');
 scan('packages/examples');
-scan('packages/benchmarks');
 
 // The targets list is the source of truth for CI coverage; every non-examples
 // npm name must resolve to a scanned package directory or someone forgot to

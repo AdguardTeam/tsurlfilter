@@ -123,6 +123,15 @@ built-in reporters (console + JSON under `.vitest/bench/`).
   `bench.compare` calls cap `iterations`/`warmupIterations` (tinybench defaults
   to 64 + 16) to keep the whole test well under the bench-mode 60s timeout.
 
+- **Inline fixtures vs real corpora.** The `agtree` and `css-tokenizer` benches
+  run a small inline corpus (8 representative rules / a repeated CSS sample)
+  rather than the large filter-list / CSS corpora the deleted standalone
+  packages downloaded. `agtree` has no committed corpus and `tsurlfilter`'s
+  fixtures live in that package's `test/resources/`, so wiring real corpora in
+  is a follow-up; the inline sets were chosen to cover the main syntax classes
+  (comments, network/exception rules, element hiding, extended CSS, scriptlets,
+  CSS injection, `$removeparam`).
+
 ## Troubleshooting
 
 ### Issue: Dependencies fail to install

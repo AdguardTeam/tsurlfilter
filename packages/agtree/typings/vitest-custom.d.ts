@@ -1,7 +1,7 @@
 /**
  * @file Custom types for Vitest to extend `expect` function with custom matchers.
  *
- * @see https://vitest.dev/guide/extending-matchers#extending-matchers
+ * @see https://vitest.dev/guide/extending-matchers
  */
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -13,14 +13,11 @@ import { type ToBeConvertedProperly } from '../test/setup/custom-matchers/check-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RemoveFirstArg<T> = T extends (arg0: any, ...args: infer U) => infer R ? (...args: U) => R : never;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface CustomMatchers<R = unknown> {
-    toBeConvertedProperly: RemoveFirstArg<ToBeConvertedProperly>;
-}
-
 declare module 'vitest' {
-    // eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/no-explicit-any
-    interface Assertion<T = any> extends CustomMatchers<T> {}
-    // eslint-disable-next-line @typescript-eslint/no-empty-interface
-    interface AsymmetricMatchersContaining extends CustomMatchers {}
+    // `R`/`T` are required to match Vitest's `Matchers<R, T>` interface for
+    // declaration merging, and are otherwise unused by this matcher.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    interface Matchers<R, T> {
+        toBeConvertedProperly: RemoveFirstArg<ToBeConvertedProperly>;
+    }
 }
