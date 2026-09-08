@@ -87,13 +87,21 @@ Keep these aliases up to date when new major versions are released.
    the Vitest 5 context-fixture API.
 2. Ensure it is picked up by the package's `test.benchmark.include` glob
    (`test/**/*.bench.ts`).
-3. If it imports fixtures via `node:fs`, it is Node-only; the browser project
-   runs the subset without Node-API dependencies.
+3. If it imports fixtures via `node:fs`, it is Node-only and must be excluded
+   from the browser project — add it to that project's `test.benchmark.exclude`
+   (see agtree's `vitest.config.ts`, which excludes `converter.bench.ts`);
+   otherwise `pnpm bench:browser` collects it and dies on the import in
+   Chromium.
 
 ### Updating Results
 
 There is no committed results file. Benchmark output comes from Vitest's
 built-in reporters (console + JSON under `.vitest/bench/`).
+
+The old standalone packages' `RESULTS.md` files were the repo's only recorded
+performance history; committing a condensed baseline or a reference JSON for
+significant runs is a planned follow-up so future numbers have something to
+compare against.
 
 ## Scope notes
 

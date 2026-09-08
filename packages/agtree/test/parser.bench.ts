@@ -14,17 +14,25 @@ const RULES = [
     '||example.org^$removeparam=utm_source',
 ];
 
+// Keep the timed work observable: each bench accumulates a cheap checksum here
+// so the engine can't eliminate the closure, and we guard it after the run.
+let resultSink = 0;
+
 test('AGTree parse: current vs v2', async ({ bench }) => {
     await bench.compare(
         bench('current parse', () => {
             for (const rule of RULES) {
-                RuleParser.parse(rule);
+                resultSink += RuleParser.parse(rule) ? 1 : 0;
             }
         }),
         bench('v2 parse', () => {
             for (const rule of RULES) {
-                AGTreeV2.RuleParser.parse(rule);
+                resultSink += AGTreeV2.RuleParser.parse(rule) ? 1 : 0;
             }
         }),
     );
+
+    if (resultSink === 0) {
+        throw new Error('benchmark produced no observable results');
+    }
 });

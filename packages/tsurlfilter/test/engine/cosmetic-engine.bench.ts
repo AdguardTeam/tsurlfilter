@@ -10,6 +10,13 @@ import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
 import { type IndexedStorageCosmeticRuleParts } from '../../src/rules/rule';
 
+import { ENGINE_BENCH_OPTIONS } from './engine-bench-options';
+import { collectRuleParts } from './rule-parts';
+
+// Keep the timed work observable: each bench accumulates a cheap checksum here
+// so the engine can't eliminate the closure, and we guard it after the run.
+let resultSink = 0;
+
 test('build cosmetic engine: current vs v3', async ({ bench }) => {
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
     const preprocessedFilter = TsUrlFilterOld.FilterListPreprocessor.preprocess(rawFilter);
@@ -37,13 +44,7 @@ test('build cosmetic engine: current vs v3', async ({ bench }) => {
             false,
         );
         const storage = new RuleStorage([list]);
-        const scanner = storage.createRuleStorageScanner(ScannerType.CosmeticRules);
-        const rulesParts: IndexedStorageCosmeticRuleParts[] = [];
-
-        while (scanner.scan()) {
-            // We can safely cast here, because we configured scanner to scan only cosmetic rules
-            rulesParts.push(scanner.getRuleParts()! as IndexedStorageCosmeticRuleParts);
-        }
+        const rulesParts = collectRuleParts<IndexedStorageCosmeticRuleParts>(storage, ScannerType.CosmeticRules);
 
         const engine = CosmeticEngine.createSync(rulesParts, storage);
         return engine;
@@ -51,12 +52,15 @@ test('build cosmetic engine: current vs v3', async ({ bench }) => {
 
     await bench.compare(
         bench('v3 cosmetic engine', () => {
-            createOldEngine();
+            resultSink += createOldEngine().rulesCount;
         }),
         bench('current cosmetic engine', () => {
-            createNewEngine();
+            resultSink += createNewEngine().rulesCount;
         }),
-        // See engine.bench.ts for why the iteration caps are needed.
-        { iterations: 10, warmupIterations: 3 },
+        ENGINE_BENCH_OPTIONS,
     );
+
+    if (resultSink === 0) {
+        throw new Error('benchmark produced no observable results');
+    }
 });

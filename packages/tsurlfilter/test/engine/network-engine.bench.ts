@@ -10,6 +10,13 @@ import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
 import { type IndexedStorageNetworkRuleParts } from '../../src/rules/rule';
 
+import { ENGINE_BENCH_OPTIONS } from './engine-bench-options';
+import { collectRuleParts } from './rule-parts';
+
+// Keep the timed work observable: each bench accumulates a cheap checksum here
+// so the engine can't eliminate the closure, and we guard it after the run.
+let resultSink = 0;
+
 test('build network engine: current vs v3', async ({ bench }) => {
     const ignoreCosmetic = true;
 
@@ -39,13 +46,7 @@ test('build network engine: current vs v3', async ({ bench }) => {
             false,
         );
         const storage = new RuleStorage([list]);
-        const scanner = storage.createRuleStorageScanner(ScannerType.NetworkRules);
-        const rulesParts: IndexedStorageNetworkRuleParts[] = [];
-
-        while (scanner.scan()) {
-            // We can safely cast here, because we configured scanner to scan only network rules
-            rulesParts.push(scanner.getRuleParts()! as IndexedStorageNetworkRuleParts);
-        }
+        const rulesParts = collectRuleParts<IndexedStorageNetworkRuleParts>(storage, ScannerType.NetworkRules);
 
         const engine = NetworkEngine.createSync(rulesParts, storage);
         return engine;
@@ -53,12 +54,15 @@ test('build network engine: current vs v3', async ({ bench }) => {
 
     await bench.compare(
         bench('v3 network engine', () => {
-            createOldEngine();
+            resultSink += createOldEngine().rulesCount;
         }),
         bench('current network engine', () => {
-            createNewEngine();
+            resultSink += createNewEngine().rulesCount;
         }),
-        // See engine.bench.ts for why the iteration caps are needed.
-        { iterations: 10, warmupIterations: 3 },
+        ENGINE_BENCH_OPTIONS,
     );
+
+    if (resultSink === 0) {
+        throw new Error('benchmark produced no observable results');
+    }
 });

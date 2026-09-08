@@ -29,6 +29,10 @@ export default defineConfig({
         benchmark: {
             include: ['test/**/*.bench.ts'],
         },
+        // The `bench`/`bench:browser` scripts select these projects with
+        // `--project "node*"` / `--project "browser*"`; in bench mode Vitest
+        // appends ` (bench)` (and ` (chromium)` for the browser instance), so
+        // wildcards keep the scripts independent of those internal suffixes.
         projects: [
             defineProject({
                 test: {

@@ -6,8 +6,14 @@ import { test } from 'vitest';
 
 import { Engine } from '../../src/engine/engine';
 
+import { ENGINE_BENCH_OPTIONS } from './engine-bench-options';
+
 const ignoreCosmetic = false;
 const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
+
+// Keep the timed work observable: each bench accumulates a cheap checksum here
+// so the engine can't eliminate the closure, and we guard it after the run.
+let resultSink = 0;
 
 test('build engine: current vs v3', async ({ bench }) => {
     const preprocessed = TsUrlFilterOld.FilterListPreprocessor.preprocess(rawFilter);
@@ -25,21 +31,23 @@ test('build engine: current vs v3', async ({ bench }) => {
         return new TsUrlFilterOld.Engine(storage, true);
     };
 
-    // Each engine build takes ~200-400 ms on the base filter; cap tinybench's
-    // run (its default is 64 iterations + 16 warmup per benchmark, which would
-    // blow past the 60s bench-mode test timeout). The trailing options are the
-    // bench-level run config `bench.compare` forwards to the tinybench provider.
     await bench.compare(
         bench('v3 engine', () => {
             const engine = createOldEngine();
             engine.loadRules();
+            resultSink += engine.getRulesCount();
         }),
         bench('current engine (sync)', () => {
-            Engine.createSync({ filters: [{ id: 2, content: rawFilter, ignoreCosmetic }] });
+            resultSink += Engine.createSync({ filters: [{ id: 2, content: rawFilter, ignoreCosmetic }] }).getRulesCount();
         }),
         bench('current engine (async)', async () => {
-            await Engine.createAsync({ filters: [{ id: 2, content: rawFilter, ignoreCosmetic }] });
+            const engine = await Engine.createAsync({ filters: [{ id: 2, content: rawFilter, ignoreCosmetic }] });
+            resultSink += engine.getRulesCount();
         }),
-        { iterations: 10, warmupIterations: 3 },
+        ENGINE_BENCH_OPTIONS,
     );
+
+    if (resultSink === 0) {
+        throw new Error('benchmark produced no observable results');
+    }
 });

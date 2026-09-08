@@ -6,6 +6,9 @@ packages:
 # AG-54210
 # minimumReleaseAge is in minutes; 10080 = 7 days.
 minimumReleaseAge: 10080
+# These unversioned excludes lift the 7-day release-age quarantine for the Vitest
+# 5 stack adopted on 2026-09-03. They never expire, so revisit and drop them once
+# those majors are past the window (or add a version suffix to each entry).
 minimumReleaseAgeExclude:
   - '@adguard/*'
   - '@vitest/*'
@@ -47,7 +50,6 @@ catalog:
   chalk: 4.1.2
   clean-webpack-plugin: ^4.0.0
   commander: ^12.1.0
-  consola: ^3.2.3
   copy-webpack-plugin: ^10.0.0
   core-js: ^3.33.3
   coveralls: 3.1.1
@@ -70,7 +72,6 @@ catalog:
   is-ip: 3.1.0
   lint-staged: ^13.2.2
   lodash-es: ^4.17.21
-  lodash: ^4.17.21
   lru-cache: ^11.0.2
   markdown-table: ^3.0.3
   markdownlint: ^0.37.4

@@ -15,12 +15,24 @@ import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
 import { type IndexedStorageCosmeticRuleParts } from '../../src/rules/rule';
 
+import { collectRuleParts } from './rule-parts';
+
 /**
  * Resources file paths.
  */
 const requestsZipFilePath = './test/resources/requests.json.gz';
 const expectedRequestsCount = 27969;
 const requestsFilePath = './test/resources/requests.json';
+
+/**
+ * Expected loaded rules and match counts for the correctness suites below.
+ * Kept as named constants next to the corpus paths so a fixture change reports
+ * which count failed.
+ */
+const expectedLoadedRules = 38978;
+const expectedNetworkMatchesCount = 4667;
+const expectedDnsMatchesCount = 8776;
+const expectedCosmeticMatchesCount = 1754;
 
 /**
  * Checks if the given URL is supported.
@@ -134,15 +146,8 @@ async function parseRequests(): Promise<Request[]> {
  * @returns A cosmetic engine built from the given rule lists.
  */
 const createCosmeticEngine = (lists: IRuleList[]): CosmeticEngine => {
-    const rulesParts: IndexedStorageCosmeticRuleParts[] = [];
     const storage = new RuleStorage(lists);
-
-    const scanner = storage.createRuleStorageScanner(ScannerType.CosmeticRules);
-
-    while (scanner.scan()) {
-        // We can safely cast here, because we configured scanner to scan only cosmetic rules
-        rulesParts.push(scanner.getRuleParts()! as IndexedStorageCosmeticRuleParts);
-    }
+    const rulesParts = collectRuleParts<IndexedStorageCosmeticRuleParts>(storage, ScannerType.CosmeticRules);
 
     return CosmeticEngine.createSync(rulesParts, storage);
 };
@@ -172,20 +177,20 @@ describe('engine startup correctness', () => {
     const adguardBaseFilter = fs.readFileSync('./test/resources/adguard_base_filter.txt', 'utf8');
 
     it.each([{ loadAsync: false }, { loadAsync: true }])(
-        'network engine loads and matches ($loadAsync async)',
+        'network engine loads and matches (with loadAsync=$loadAsync)',
         async ({ loadAsync }) => {
             const requests = await parseRequests();
             const options: EngineFactoryOptions = { filters: [{ id: 1, content: easyList }] };
             const engine = loadAsync ? await Engine.createAsync(options) : Engine.createSync(options);
 
             expect(engine).toBeTruthy();
-            expect(engine.getRulesCount()).toBe(38978);
+            expect(engine.getRulesCount()).toBe(expectedLoadedRules);
 
             const totalMatches = countMatches(requests, (request) => {
                 const r = engine.matchRequest(request);
                 return !!(r && r.basicRule && !r.basicRule.isAllowlist());
             });
-            expect(totalMatches).toBe(4667);
+            expect(totalMatches).toBe(expectedNetworkMatchesCount);
         },
     );
 
@@ -203,7 +208,7 @@ describe('engine startup correctness', () => {
             }
             return dnsResult.hostRules.length > 0;
         });
-        expect(totalMatches).toBe(8776);
+        expect(totalMatches).toBe(expectedDnsMatchesCount);
     });
 
     it('cosmetic engine loads and matches', async () => {
@@ -219,6 +224,6 @@ describe('engine startup correctness', () => {
             const result = engine.match(request, CosmeticOption.CosmeticOptionAll);
             return result.elementHiding.specific.length + result.elementHiding.generic.length > 0;
         });
-        expect(totalMatches).toBe(1754);
+        expect(totalMatches).toBe(expectedCosmeticMatchesCount);
     });
 });

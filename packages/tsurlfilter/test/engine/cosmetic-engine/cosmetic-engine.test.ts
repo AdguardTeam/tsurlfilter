@@ -10,6 +10,7 @@ import { StringRuleList } from '../../../src/filterlist/string-rule-list';
 import { Request } from '../../../src/request';
 import { RequestType } from '../../../src/request-type';
 import { type IndexedStorageCosmeticRuleParts } from '../../../src/rules/rule';
+import { collectRuleParts } from '../rule-parts';
 
 /**
  * Helper function to get the rule index from the raw filter list by the rule text.
@@ -33,15 +34,8 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
 const createRequest = (url: string) => new Request(url, null, RequestType.Document);
 
 const createCosmeticEngine = (lists: IRuleList[]): CosmeticEngine => {
-    const rulesParts: IndexedStorageCosmeticRuleParts[] = [];
     const storage = new RuleStorage(lists);
-
-    const scanner = storage.createRuleStorageScanner(ScannerType.CosmeticRules);
-
-    while (scanner.scan()) {
-        // We can safely cast here, because we configured scanner to scan only cosmetic rules
-        rulesParts.push(scanner.getRuleParts()! as IndexedStorageCosmeticRuleParts);
-    }
+    const rulesParts = collectRuleParts<IndexedStorageCosmeticRuleParts>(storage, ScannerType.CosmeticRules);
 
     return CosmeticEngine.createSync(rulesParts, storage);
 };

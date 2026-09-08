@@ -707,7 +707,7 @@ importers:
         specifier: 'catalog:'
         version: 0.44.0
       parse-css:
-        specifier: ^0.1.0
+        specifier: 0.1.0
         version: 0.1.0
       playwright:
         specifier: 'catalog:'
