@@ -19,7 +19,7 @@
 - [ ] Edge
 - [ ] Other
 
-**Manifest version:**
+#### **Manifest Version**
 
 - [ ] MV2
 - [ ] MV3
