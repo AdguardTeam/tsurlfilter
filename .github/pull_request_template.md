@@ -2,6 +2,7 @@
 
 - [ ] 🐛 **Bug fix**
 - [ ] ✨ **New feature**
+- [ ] 🚀 **Enhancement**
 - [ ] ⬆️ **Dependencies update**
 - [ ] 📝 **Documentation update**
 
