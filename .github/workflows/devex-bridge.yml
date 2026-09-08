@@ -8,7 +8,8 @@ name: DevEx bridge
 # returns 409; per AK policy, unpublish may return 405). Because every push
 # carries a NEW head SHA, every synchronize publishes a FRESH version for all
 # six packages — so QA always resolves the current source, not the first
-# push's bits. The pinning tool (use-dev-builds.mjs) resolves the exact
+# push's bits. The consumer-side pinning tool (in the browser-extension repo,
+# tools/ci/use-dev-builds.ts) resolves the exact
 # head-scoped set, so a partially published matrix fails loudly instead of
 # mixing builds from different heads. devex-bridge-cleanup.yml deletes the
 # `-dev.pr<N>*` versions when the source PR closes, and
@@ -626,13 +627,13 @@ jobs:
                 '| --- | --- |',
                 rows,
                 '',
-                'To build the browser extension against them, create your branch in `AdGuardSoftwareLimited/browser-extension` as usual, then pin the dev builds from an up-to-date tsurlfilter checkout:',
+                'To build the browser extension against them, create your branch in `AdGuardSoftwareLimited/browser-extension` as usual, then pin the dev builds in that checkout with its consumer-side tool:',
                 '',
                 '```bash',
-                `node scripts/use-dev-builds.mjs --pr ${pr} --registry ${process.env.AK_REGISTRY} --extension /path/to/browser-extension`,
+                `pnpm tsx tools/ci/use-dev-builds.ts --pr ${pr} --head <short-sha> --extension . --with-dnr-converter --with-css-tokenizer --with-agtree --with-tsurlfilter --with-dnr-rulesets --with-tswebextension`,
                 '```',
                 '',
-                'The tool pins the coherent set for the current checkout head; re-run it after every push to this PR.',
+                'The tool pins the coherent set for the requested head (the short SHA from this comment); re-run it after every push to this PR.',
                 'These versions are deleted automatically when this PR is closed or merged.',
             ].join('\n');
             const { owner, repo } = context.repo;

@@ -153,7 +153,6 @@ jobs:
       - name: Validate script syntax
         run: |
           bash -n tests/finalize-changelog.sh
-          bash -n tests/use-dev-builds.test.sh
           bash -n scripts/ci/resolve-release-inputs.sh
           bash -n scripts/ci/verify-tarball.sh
           bash -n tests/verify-tarball.test.sh
@@ -163,7 +162,6 @@ jobs:
           node --check scripts/ci/check-pr-open.mjs
           node --check .github/actions/finalize-changelog/finalize-changelog.mjs
           node --check scripts/inject-package-versions.mjs
-          node --check scripts/use-dev-builds.mjs
           node --check scripts/ci/compute-affected-packages.mjs
           node --check scripts/ci/check-package-lists.mjs
           node --check scripts/ci/devex-sweep.mjs
@@ -178,9 +176,6 @@ jobs:
 
       - name: Run verify-tarball regression tests
         run: bash tests/verify-tarball.test.sh
-
-      - name: Run use-dev-builds regression tests
-        run: bash tests/use-dev-builds.test.sh
 
       - name: Run ak-dev-unpublish regression tests
         run: bash tests/ak-dev-unpublish.test.sh
