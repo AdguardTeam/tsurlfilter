@@ -48,6 +48,24 @@ describe('Rule', () => {
                 Rule.createFromText(1, 0, 'ab');
             }).toThrow();
         });
+
+        it('rejects rules with unknown modifiers', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, 'test$whatever,domain=example.org');
+            }).toThrow('Unknown modifier: whatever');
+        });
+
+        it('accepts noop modifiers made only of underscores', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, 'test$_,___,domain=example.org');
+            }).not.toThrow();
+        });
+
+        it('rejects modifier names that only start with the noop marker', () => {
+            expect(() => {
+                Rule.createFromText(1, 0, 'test$_whatever,domain=example.org');
+            }).toThrow('Unknown modifier: _whatever');
+        });
     });
 
     describe('getText', () => {
@@ -201,6 +219,28 @@ describe('Rule', () => {
 
             expect(rule.permittedDomains).toBeNull();
             expect(rule.restrictedDomains).toEqual(['foo.com']);
+        });
+    });
+
+    describe('advancedModifierValue', () => {
+        it('keeps an empty string for value-less $removeparam (remove all query parameters)', () => {
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeparam');
+
+            expect(rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)).toBe(true);
+            expect(rule.advancedModifierValue).toBe('');
+        });
+
+        it('stores the value of $removeparam', () => {
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$removeparam=utm_source');
+
+            expect(rule.advancedModifierValue).toBe('utm_source');
+        });
+
+        it('keeps null for other value-less advanced modifiers (only $removeparam keeps an empty string)', () => {
+            const [rule] = Rule.createFromText(1, 0, '||example.com^$cookie');
+
+            expect(rule.isModifierEnabled(OPTION_NAMES.COOKIE)).toBe(true);
+            expect(rule.advancedModifierValue).toBeNull();
         });
     });
 

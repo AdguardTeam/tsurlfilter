@@ -122,6 +122,7 @@ import {
     EmptyDomainsError,
     EmptyResourcesError,
     isConversionError,
+    UnsupportedModifierError,
     UnsupportedRegexpError,
 } from '../errors/conversion-errors';
 import { ResourcesPathError } from '../errors/converter-options-errors';
@@ -302,6 +303,9 @@ export class RegularRuleConverter {
     /**
      * Returns a redirect action for a `$removeparam` rule.
      *
+     * A value-less `$removeparam` (e.g. `||example.org^$removeparam`) removes
+     * the whole query string via `transform.query: ''`.
+     *
      * Pipe-separated values (e.g. `utm_source|utm_medium`) are
      * split into individual `removeParams` entries.
      *
@@ -311,8 +315,9 @@ export class RegularRuleConverter {
      * @param rule {@link Rule} to get action for.
      *
      * @returns Redirect action, or `null` if the rule does not have a
-     * `$removeparam` modifier, its value is `null`, or a param value cannot be
-     * URI-decoded (in which case augmentation is skipped).
+     * `$removeparam` modifier.
+     *
+     * @throws {UnsupportedModifierError} If a param value cannot be URI-decoded.
      */
     private static getRemoveParamRedirectAction(rule: Rule): Redirect | null {
         if (!rule.isModifierEnabled(OPTION_NAMES.REMOVEPARAM)) {
@@ -320,24 +325,30 @@ export class RegularRuleConverter {
         }
 
         const value = rule.advancedModifierValue;
-        if (value === null) {
-            return null;
-        }
 
-        if (value === '') {
+        // Value-less `$removeparam` — remove all query parameters.
+        // `Rule` stores such a value as `''`; `null` is not expected here,
+        // but is handled the same way defensively: a `$removeparam` rule must
+        // never silently degrade into a plain blocking rule.
+        // See https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3602.
+        if (!value) {
             return { transform: { query: '' } };
         }
 
         // Split on pipe to support multiple param names in a single rule.
         // If any segment contains invalid percent-encoding, decoding throws;
-        // skip augmentation by returning null, consistent with getRemoveParamToken().
+        // report it as a conversion error so that the rule is skipped instead
+        // of being converted into a blocking rule.
         let removeParams: string[];
         try {
             removeParams = value
                 .split(RegularRuleConverter.PIPE_SEPARATOR)
                 .map((p) => decodeURIComponent(p));
         } catch {
-            return null;
+            throw new UnsupportedModifierError(
+                'Network rule with $removeparam modifier contains value that cannot be decoded',
+                rule,
+            );
         }
 
         return {
@@ -517,6 +528,7 @@ export class RegularRuleConverter {
      * @returns The action of a rule that describes what should be done with the request.
      *
      * @throws Error {@link ResourcesPathError} when specified an empty path to the web accessible resources.
+     * @throws Error {@link UnsupportedModifierError} when a `$removeparam` value cannot be URI-decoded.
      */
     private getAction(rule: Rule): RuleAction {
         if (rule.allowlist) {

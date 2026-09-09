@@ -86,34 +86,36 @@ To build the browser extension against them:
 1. Create your branch in `AdGuardSoftwareLimited/browser-extension` as usual
    (e.g. `feature/AG-12345-…`) with whatever changes you need — CHANGELOG
    entries, source adaptations, etc.
-2. From an up-to-date tsurlfilter checkout, pin the dev builds:
+2. In the browser-extension checkout, pin the dev builds with the
+   consumer-side tool that lives there (`tools/ci/use-dev-builds.ts` — the
+   TypeScript port of the tool that used to live in this repo):
 
    ```bash
-   node scripts/use-dev-builds.mjs --pr <N> --registry https://ak.int.agrd.dev/npm/npm-internal --extension /path/to/browser-extension
+   pnpm tsx tools/ci/use-dev-builds.ts --pr <N> --head <short-sha> --extension . --with-dnr-converter --with-css-tokenizer --with-agtree --with-tsurlfilter --with-dnr-rulesets --with-tswebextension
    ```
 
-   (The `--registry` flag is optional — the tool defaults to the same AK path —
-   but pass it explicitly so it cannot drift from the workflow's
-   `ARTIFACT_KEEPER_URL`.) This points the six packages at the AK tarballs via
-   `pnpm.overrides` (dependencies stay untouched) and refreshes
+   The registry is fixed — dev builds are only published to the internal
+   Artifact Keeper npm registry. This points the six packages at the AK
+   tarballs via `pnpm.overrides` (dependencies stay untouched) and refreshes
    `pnpm-lock.yaml`.
 3. Commit `package.json` and `pnpm-lock.yaml`. The extension's regular CI
    builds the branch — installable builds are in the CI run's Artifacts
    (`dev-builds`, `chrome-dev-crx`).
 
 After every push to the tsurlfilter PR the dev builds are republished under a
-new head-scoped version, so re-run the same command (from the pushed checkout,
-or with `--head <short-sha>` from the comment) and commit the refreshed
+new head-scoped version, so re-run the same command with the new
+`--head <short-sha>` from the comment and commit the refreshed
 `package.json` / `pnpm-lock.yaml`. The tool resolves the coherent set for the
-checkout head: if any package's build for that head is missing on AK (a publish
-leg failed), it fails loudly instead of mixing builds from different heads.
+requested head: if any package's build for that head is missing on AK (a
+publish leg failed), it fails loudly instead of mixing builds from different
+heads.
 
 A branch pinned to dev builds must never be merged. Before marking the
 extension PR ready (once the real versions are released, or if testing is
 abandoned), restore registry dependencies:
 
 ```bash
-node scripts/use-dev-builds.mjs --remove --extension /path/to/browser-extension
+pnpm tsx tools/ci/use-dev-builds.ts --remove --extension .
 ```
 
 Closing or merging the tsurlfilter PR deletes its dev versions from AK
@@ -132,11 +134,12 @@ resolves to an empty string and every job fails loudly rather than publishing
 to an empty registry URL — including the sweep, which additionally validates
 that its `AK_REGISTRY` value is an http(s) URL.
 
-On the **developer side**, running `use-dev-builds.mjs` (or any `npm view`
-against the AK registry) needs the same registry reachability: the AK host is
-internal, so you must be on the internal network (VPN) and, if AK enforces
-read auth, have an npm token acceptable to AK. A cold run against an unroutable
-host fails with `ENOTFOUND`/`E401` — that is expected.
+On the **developer side**, running the pin tool (`tools/ci/use-dev-builds.ts`
+in the browser-extension repo, or any `npm view` against the AK registry) needs
+the same registry reachability: the AK host is internal, so you must be on the
+internal network (VPN) and, if AK enforces read auth, have an npm token
+acceptable to AK. A cold run against an unroutable host fails with
+`ENOTFOUND`/`E401` — that is expected.
 
 ### If Something Goes Wrong
 
@@ -156,9 +159,11 @@ cleanup or sweep failure — the same commands the Slack failure alerts point at
   dispatch *devex-bridge-sweep.yml* with `pr-number = <N>` for a targeted pass;
   the scheduled run retries every 6h.
 - **Dev pins stop resolving in the extension**: the dev versions were deleted
-  (cleanup ran), so run `use-dev-builds.mjs --remove --extension <path>` or
-  re-pin from the current checkout head. There is nothing to un-publish by
-  hand.
+  (cleanup ran), so run `pnpm tsx tools/ci/use-dev-builds.ts --remove --extension .`
+  in the browser-extension checkout, or re-pin with `--head <short-sha>` for a
+  tsurlfilter commit that still has builds on AK. A cleaned-up build is deleted
+  from AK, so repeating its SHA will not restore it. There is nothing to
+  un-publish by hand.
 
 ## Development Workflow
 
