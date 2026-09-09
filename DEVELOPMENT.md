@@ -160,8 +160,10 @@ cleanup or sweep failure — the same commands the Slack failure alerts point at
   the scheduled run retries every 6h.
 - **Dev pins stop resolving in the extension**: the dev versions were deleted
   (cleanup ran), so run `pnpm tsx tools/ci/use-dev-builds.ts --remove --extension .`
-  in the browser-extension checkout, or re-pin from the current checkout head.
-  There is nothing to un-publish by hand.
+  in the browser-extension checkout, or re-pin with `--head <short-sha>` for a
+  tsurlfilter commit that still has builds on AK. A cleaned-up build is deleted
+  from AK, so repeating its SHA will not restore it. There is nothing to
+  un-publish by hand.
 
 ## Development Workflow
 

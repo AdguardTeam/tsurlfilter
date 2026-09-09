@@ -31,7 +31,7 @@ name: DevEx bridge
 # same-repo insider. This matches the org model used by build.yml: the repo
 # MUST require approval for fork / outside-collaborator PR runs, and
 # .github/CODEOWNERS requires extensions-maintainers review of this workflow,
-# its cleanup/sweep twins, the pinning tool and the shared scripts. The jobs
+# its cleanup/sweep twins, and the shared scripts. The jobs
 # touching the secret run npm CLI calls / inline node / the small reviewed
 # helper scripts; they never build or execute PR package code.
 #
@@ -610,12 +610,14 @@ jobs:
         uses: actions/github-script@v8
         env:
           MAP: ${{ steps.versions.outputs.map }}
-          AK_REGISTRY: ${{ env.AK_REGISTRY }}
+          BRIDGED_PACKAGES: ${{ env.BRIDGED_PACKAGES }}
         with:
           script: |
             const marker = '<!-- devex-bridge -->';
             const pr = context.payload.pull_request.number;
             const map = JSON.parse(process.env.MAP);
+            const bridgedFlags = process.env.BRIDGED_PACKAGES.split(' ').map((p) => `--with-${p}`).join(' ');
+            const shortSha = context.payload.pull_request.head.sha.slice(0, 8);
             const rows = Object.entries(map)
                 .map(([name, version]) => `| \`${name}\` | \`${version}\` |`)
                 .join('\n');
@@ -630,10 +632,10 @@ jobs:
                 'To build the browser extension against them, create your branch in `AdGuardSoftwareLimited/browser-extension` as usual, then pin the dev builds in that checkout with its consumer-side tool:',
                 '',
                 '```bash',
-                `pnpm tsx tools/ci/use-dev-builds.ts --pr ${pr} --head <short-sha> --extension . --with-dnr-converter --with-css-tokenizer --with-agtree --with-tsurlfilter --with-dnr-rulesets --with-tswebextension`,
+                `pnpm tsx tools/ci/use-dev-builds.ts --pr ${pr} --head ${shortSha} --extension . ${bridgedFlags}`,
                 '```',
                 '',
-                'The tool pins the coherent set for the requested head (the short SHA from this comment); re-run it after every push to this PR.',
+                `The tool pins the coherent set for the requested head (--head ${shortSha}); re-run it after every push to this PR.`,
                 'These versions are deleted automatically when this PR is closed or merged.',
             ].join('\n');
             const { owner, repo } = context.repo;

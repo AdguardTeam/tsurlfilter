@@ -5,9 +5,9 @@
 
 # The DevEx bridge workflows reach the ARTIFACT_KEEPER_API_KEY org secret
 # (see the "Trust boundary" header of devex-bridge.yml), so changes to them —
-# and to the pinning tool / drift guard / sweep / check-pr-open composite that
-# enforce their contract — must be reviewed by Extensions maintainers (the
-# stricter subset).
+# and to the drift guard / sweep / check-pr-open composite that enforce their
+# contract — must be reviewed by Extensions maintainers (the stricter subset).
+# (The consumer-side pinning tool moved to the browser-extension repo.)
 .github/CODEOWNERS                           @AdGuardSoftwareLimited/extensions-maintainers
 .github/actions/check-pr-open/               @AdGuardSoftwareLimited/extensions-maintainers
 .github/workflows/devex-bridge.yml           @AdGuardSoftwareLimited/extensions-maintainers
