@@ -13,9 +13,9 @@ import { SimpleRegex } from '../../src/rules/simple-regex';
 const __dirname = new URL('.', import.meta.url).pathname;
 
 /**
- * Maximum amount of patterns that will be passed down to benchmark from incoming rule list.
- * Allows to reasonably compare plain and regexp shortcut extraction,
- * when limited number of patterns is available in one of the lists.
+ * Maximum amount of patterns extracted from an incoming rule list and checked
+ * against the reference files. Bounds the validation input so shortcut
+ * extraction is verified over a representative, finite slice of each list.
  */
 const MAX_PATTERNS_COUNT = 320;
 

@@ -35,7 +35,7 @@ pnpm install
 |---------|-------------------|------------------|
 | `agtree` | `test/parser.bench.ts`, `test/converter.bench.ts` | AGTree parse/convert vs `agtree-v2` |
 | `css-tokenizer` | `test/tokenizer.bench.ts` | Tokenizer vs `css-tree`, `@csstools/*`, `parse-css`, `csslex` |
-| `tsurlfilter` | `test/engine/*.bench.ts` | Engine startup (network/cosmetic/engine) vs `tsurlfilter-v3` |
+| `tsurlfilter` | `test/engine/*.bench.ts` | Engine startup (network/cosmetic/engine) vs `tsurlfilter-v3`; request matching over the committed request corpus |
 
 All benchmarks use Vitest 5's `test(({ bench }) => …)` context-fixture API and
 `bench.compare()` for A/B comparisons.
@@ -106,13 +106,13 @@ compare against.
 ## Scope notes
 
 - **Engine startup vs request matching.** The co-located `tsurlfilter` benches
-  measure engine construction (`Engine.createSync`/`createAsync`,
-  `NetworkEngine`, `CosmeticEngine`). Timing of `matchRequest` over the
-  27,969-request corpus was intentionally dropped with the old benchmark-mixed
-  test files (see the PR discussion); the correctness counts (4667/8776/1754)
-  are preserved in `packages/tsurlfilter/test/engine/start-engine.test.ts`. A
-  request-matching bench over `test/resources/requests.json.gz` can be added
-  back if that signal is needed again.
+  measure both engine construction (`Engine.createSync`/`createAsync`,
+  `NetworkEngine`, `CosmeticEngine`) and the request-matching hot path
+  (`matchRequest`/`match` over the committed 27,969-request corpus, in
+  `engine-match.bench.ts`). Corpus loading and engine construction happen
+  outside the timed region, so only the match calls are measured. The
+  correctness counts (4667/8776/1754) are still asserted in
+  `packages/tsurlfilter/test/engine/start-engine.test.ts`.
 
 - **Prior-version A/B aliases.** `tsurlfilter-v3` resolves against the published
   `@adguard/agtree` 3.x (via the root `pnpm.overrides` entry

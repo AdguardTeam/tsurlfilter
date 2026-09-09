@@ -38,7 +38,8 @@ Key files:
 - `packages/agtree/test/*.bench.ts` — AGTree parse/convert (vs `agtree-v2`)
 - `packages/css-tokenizer/test/tokenizer.bench.ts` — tokenizer vs competitors
 - `packages/tsurlfilter/test/engine/*.bench.ts` — engine startup (vs
-  `tsurlfilter-v3`, Node only)
+  `tsurlfilter-v3`) and request matching over the committed request corpus
+  (Node only)
 
 See `DEVELOPMENT.md` for how to run them and the full workflow.
 
