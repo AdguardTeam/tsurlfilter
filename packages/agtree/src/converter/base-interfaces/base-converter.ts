@@ -21,13 +21,11 @@ export class BaseConverter {
      *
      * @param data Data to convert.
      *
-     * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
-     * the converted node, and its `isConverted` flag indicates whether the original node was converted.
-     * If the node was not converted, the result will contain the original node with the same object reference.
+     * @returns Conversion result (shape depends on the concrete converter).
      *
      * @throws If the data is invalid or incompatible.
      */
-    public static convertToAdg(data: unknown): ConversionResult<unknown> {
+    public static convertToAdg(data: unknown): unknown {
         throw new NotImplementedError();
     }
 

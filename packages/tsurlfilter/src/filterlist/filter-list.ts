@@ -1,152 +1,117 @@
-/* eslint-disable @typescript-eslint/no-loop-func */
-import { z as zod } from 'zod';
+import {
+    type ConversionSourceMap,
+    conversionSourceMapValidator,
+    FilterListConversionResult,
+    ProductCode,
+    RawFilterListConverter,
+} from '@adguard/agtree';
 
-import { RawRuleConverter } from '@adguard/agtree';
-
-import { EMPTY_STRING, LF } from '../common/constants';
-import { getErrorMessage } from '../common/error';
+import { EMPTY_STRING } from '../common/constants';
 import { FILTER_LIST_ID_NONE } from '../rules/rule';
-import { findNextLineBreakIndex } from '../utils/string-utils';
 
 /**
- * Schema for validating and transforming non-negative integers that may be represented as strings or numbers.
- * Useful for handling JSON deserialization where numeric keys become strings.
+ * Conversion data validator (re-exported from agtree; unchanged shape).
  */
-const nonNegativeIntegerSchema = zod.union([zod.string(), zod.number()])
-    .pipe(zod.coerce.number())
-    .refine((num) => Number.isInteger(num) && num >= 0, {
-        message: 'Must be a non-negative integer',
-    });
+export const conversionDataValidator = conversionSourceMapValidator;
 
 /**
- * Conversion data validator.
- * With this data we can revert the conversion and get the original filter list.
- * It is designed to provide `O(1)` access to the original filtering rules.
+ * Serializable conversion data. Alias of the agtree source map.
  */
-export const conversionDataValidator = zod.object({
-    /**
-     * Original filter list rules.
-     */
-    originals: zod.string().array(),
-    /**
-     * Conversion map.
-     * Maps line start offsets in the converted content to indexes in the `originals` array.
-     *
-     * Keys are 0-based line start offsets in the converted content.
-     * Values are 0-based indexes in the `originals` array.
-     */
-    conversions: zod.record(nonNegativeIntegerSchema, zod.number()),
-});
-
-export type ConversionData = zod.infer<typeof conversionDataValidator>;
+export type ConversionData = ConversionSourceMap;
 
 /**
- * Represents an error that occurred during raw rule conversion in the filter list.
+ * Conversion error tagged with the source filter id.
  */
 export interface FilterListConversionError {
     /**
-     * The original rule text that failed to convert.
+     * Original rule text that failed to convert.
      */
     rule: string;
 
     /**
-     * The UTF-16 code-unit offset of the rule in the original content.
+     * UTF-16 code-unit offset of the rule in the original content.
      */
     offset: number;
 
     /**
-     * The error message.
+     * Error message.
      */
     message: string;
 
     /**
-     * The filter ID associated with the error.
+     * Filter id associated with the error.
      */
     filterId: number;
 }
 
 /**
- * FilterList is a class that represents a (converted) filter list.
- * It is designed to provide `O(1)` access to the original filtering rules.
+ * Thin adapter over the agtree {@link FilterListConversionResult}.
+ * Kept for API compatibility across the monorepo.
  */
 export class FilterList {
     /**
-     * Content of the converted filter list.
+     * Underlying agtree conversion result.
      */
-    private content: string;
+    private readonly result: FilterListConversionResult;
 
     /**
-     * Conversion data.
-     * With this data we can revert the conversion and get the original filter list.
-     * It is designed to provide `O(1)` access to the original filtering rules.
+     * Filter id used to tag conversion errors.
      */
-    private data!: ConversionData;
+    private readonly filterId: number;
 
     /**
-     * Whether the filter list has been prepared.
+     * Conversion errors tagged with the filter id.
      */
-    private prepared: boolean;
+    private readonly errors: FilterListConversionError[];
 
     /**
-     * Filter list identifier, used to tag conversion errors.
-     */
-    private filterId: number;
-
-    /**
-     * Errors that occurred during raw rule conversion.
-     */
-    private errors: FilterListConversionError[] = [];
-
-    /**
-     * Creates a new FilterList instance.
+     * Creates a filter list.
      *
-     * @param content Filter list content.
-     * @param filterId Optional filter list identifier. Used to tag conversion errors so callers
-     * can trace an error back to its source filter list.
-     * @param data Optional conversion data. If not provided, the filter list will be prepared.
-     * If provided, this class trusts the data and does not prepare the filter list.
+     * @param content Filter list content (raw when `data` is omitted, already
+     * converted when `data` is provided).
+     * @param filterId Optional filter id used to tag conversion errors.
+     * @param data Optional stored conversion data. When provided, the content is
+     * treated as already converted and is NOT re-converted.
      */
     constructor(content: string, filterId?: number, data?: ConversionData) {
         this.filterId = filterId ?? FILTER_LIST_ID_NONE;
+
         if (data !== undefined) {
-            this.prepared = true;
-            this.content = content;
-            this.data = data;
-        } else {
-            this.prepared = false;
-            this.content = content;
-            this.prepare(content);
+            const isConverted = Object.keys(data.conversions).length > 0;
+            this.result = new FilterListConversionResult(content, ProductCode.Adg, data, [], isConverted);
+            this.errors = [];
+            return;
         }
+
+        this.result = RawFilterListConverter.convertToAdg(content);
+        this.errors = this.result.errors.map((e) => ({ ...e, filterId: this.filterId }));
     }
 
     /**
-     * Creates an empty converted filter list.
+     * Creates an empty filter list.
      *
-     * @returns Empty converted filter list.
+     * @returns Empty filter list.
      */
     public static createEmpty(): FilterList {
         return new FilterList(EMPTY_STRING, FILTER_LIST_ID_NONE, FilterList.createEmptyConversionData());
     }
 
     /**
-     * Creates an empty conversion data.
+     * Creates empty conversion data.
      *
      * @returns Empty conversion data.
      */
     public static createEmptyConversionData(): ConversionData {
-        return {
-            originals: [],
-            conversions: {},
-        };
+        return { originals: [], conversions: {} };
     }
 
     /**
      * Returns the converted content.
      *
-     * @returns Converted filter list as a string.
+     * @returns Converted filter list.
      */
     public getContent(): string {
-        return this.content;
+        return this.result.converted;
     }
 
     /**
@@ -155,202 +120,57 @@ export class FilterList {
      * @returns Conversion data.
      */
     public getConversionData(): ConversionData {
-        return this.data;
+        return this.result.sourceMap;
     }
 
     /**
-     * Returns errors that occurred during raw rule conversion.
+     * Returns conversion errors.
      *
-     * @returns Array of conversion errors.
+     * @returns Conversion errors.
      */
     public getConversionErrors(): readonly FilterListConversionError[] {
         return this.errors;
     }
 
     /**
-     * Prepares the filter list by converting it and recording conversion data.
-     *
-     * @param original The original unconverted filter list.
-     */
-    private prepare(original: string) {
-        if (this.prepared) {
-            return;
-        }
-
-        const { length } = original;
-        const parts: string[] = [];
-        let convertedLength = 0; // running UTF-16 code-unit offset, replaces convertedBuffer.length
-        const data: ConversionData = {
-            originals: [],
-            conversions: {},
-        };
-
-        const append = (chunk: string): void => {
-            parts.push(chunk);
-            convertedLength += chunk.length;
-        };
-
-        let offset = 0;
-
-        while (offset < length) {
-            const [lineBreakIndex, lineBreakLen] = findNextLineBreakIndex(original, offset);
-            const lineBreak = original.slice(lineBreakIndex, lineBreakIndex + lineBreakLen);
-            const line = original.slice(offset, lineBreakIndex);
-
-            try {
-                const conversionResult = RawRuleConverter.convertToAdg(line);
-                if (conversionResult.isConverted) {
-                    const originalIndex = data.originals.length;
-                    data.originals.push(line);
-
-                    for (let i = 0; i < conversionResult.result.length; i += 1) {
-                        const conversionIndex = convertedLength;
-                        const convertedLine = conversionResult.result[i];
-
-                        if (lineBreak.length > 0) {
-                            append(convertedLine + lineBreak);
-                        } else if (i < conversionResult.result.length - 1) {
-                            // If the file has no final line break, but we converted the last rule into multiple lines,
-                            // we need to add a line break after each converted line, except the last one
-                            append(`${convertedLine}${LF}`);
-                        } else {
-                            append(convertedLine);
-                        }
-
-                        data.conversions[conversionIndex] = originalIndex;
-                    }
-                } else {
-                    append(line + lineBreak);
-                }
-            } catch (e) {
-                this.errors.push({
-                    rule: line,
-                    offset,
-                    message: getErrorMessage(e),
-                    filterId: this.filterId,
-                });
-
-                append(line + lineBreak);
-            }
-
-            offset = lineBreakIndex + lineBreakLen;
-        }
-
-        this.data = data;
-        this.content = parts.join('');
-
-        this.prepared = true;
-    }
-
-    /**
-     * Returns the rule text for a given converted line number.
-     * This rule may be converted from an original rule.
-     * If you need the original rule, use `getOriginalRuleText`.
+     * Returns the (possibly converted) rule text at an offset.
      *
      * @param offset Line start offset in the converted content.
      *
-     * @returns Rule as string, or null if not found.
+     * @returns Rule text or null.
      */
     public getRuleText(offset: number): string | null {
-        if (offset >= this.content.length) {
-            return null;
-        }
-
-        const [lineBreakStartIndex] = findNextLineBreakIndex(this.content, offset);
-        return this.content.slice(offset, lineBreakStartIndex);
+        return this.result.getRuleText(offset);
     }
 
     /**
-     * Returns the original rule text for a given converted line number.
-     * If the rule at the offset was converted, returns the original from conversion data.
-     * If the rule was not converted, returns the rule text (which is already the original).
+     * Returns the original rule text at an offset.
      *
      * @param offset Line start offset in the converted content.
      *
-     * @returns Original rule text, or null if offset is invalid.
+     * @returns Original rule text or null.
      */
     public getOriginalRuleText(offset: number): string | null {
-        if (offset < 0 || offset >= this.content.length) {
-            return null;
-        }
-
-        const originalRuleIndex = this.data.conversions[offset];
-
-        if (originalRuleIndex !== undefined) {
-            return this.data.originals[originalRuleIndex];
-        }
-
-        return this.getRuleText(offset);
+        return this.result.getOriginalRuleText(offset);
     }
 
     /**
-     * Returns the original rule text only if the rule at the given offset was actually converted.
-     * Unlike getOriginalRuleText(), this returns null for rules that were not converted.
+     * Returns the original rule text only if the rule was converted.
      *
      * @param offset Line start offset in the converted content.
      *
-     * @returns Original rule text if the rule was converted, or null if the rule was not converted
-     * or offset is invalid.
+     * @returns Original rule text or null.
      */
     public getConvertedRuleOriginal(offset: number): string | null {
-        if (offset < 0 || offset >= this.content.length) {
-            return null;
-        }
-
-        const originalRuleIndex = this.data.conversions[offset];
-
-        if (originalRuleIndex !== undefined) {
-            return this.data.originals[originalRuleIndex];
-        }
-
-        return null;
+        return this.result.getConvertedRuleOriginal(offset);
     }
 
     /**
-     * Restores the original filter list content from the converted content.
+     * Reconstructs the original content.
      *
      * @returns Original filter list content.
      */
     public getOriginalContent(): string {
-        // Trivial case
-        if (this.data.originals.length === 0) {
-            return this.content;
-        }
-
-        let originalBuffer = EMPTY_STRING;
-        const { length } = this.content;
-
-        let offset = 0;
-
-        while (offset < length) {
-            let [nextLineBreakIndex, nextLineBreakLength] = findNextLineBreakIndex(this.content, offset);
-
-            const currentLine = this.content.slice(offset, nextLineBreakIndex);
-            const firstOriginalRuleIndex = this.data.conversions[offset]; // use char offset as key
-
-            if (firstOriginalRuleIndex !== undefined) {
-                // Write original rule
-                originalBuffer += this.data.originals[firstOriginalRuleIndex];
-
-                // Skip any subsequent converted lines that came from the same original rule
-                let nextOffset = nextLineBreakIndex + nextLineBreakLength;
-                while (this.data.conversions[nextOffset] === firstOriginalRuleIndex) {
-                    [nextLineBreakIndex, nextLineBreakLength] = findNextLineBreakIndex(this.content, nextOffset);
-                    nextOffset = nextLineBreakIndex + nextLineBreakLength;
-                }
-
-                // Update offset to the end of this group
-                offset = nextLineBreakIndex + nextLineBreakLength;
-            } else {
-                // No mapping, just copy the line
-                originalBuffer += currentLine;
-                offset = nextLineBreakIndex + nextLineBreakLength;
-            }
-
-            // Preserve original line breaks, including final break if present
-            originalBuffer += this.content.slice(nextLineBreakIndex, nextLineBreakIndex + nextLineBreakLength);
-        }
-
-        return originalBuffer;
+        return this.result.getOriginalContent();
     }
 }

@@ -59,6 +59,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Added `AdgScriptletInjectionBodyGenerator.generateFromRawParams` to render
   canonical ADG scriptlet bodies directly from raw structural parameters
   without allocating AST nodes.
+- `RawFilterListConverter.convertToAdg` now returns a `FilterListConversionResult`
+  with a reverse source map (`ConversionSourceMap`), non-fatal per-rule errors,
+  and reverse-lookup helpers (`getOriginalContent`, `getOriginalRuleText`, …).
+  The list converter parses each line structurally and builds an AST only for
+  conversion candidates. Added `conversionSourceMapValidator` and
+  `createEmptyConversionSourceMap`.
 
 ### Changed
 
@@ -89,6 +95,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `*_MIN_DATA_SLOTS` sizing constants.
 - `RawRuleConverter.convertToAdg` now reuses a shared `RuleParserPipeline`
   instance instead of allocating one per call.
+- `RawRuleConverter.convertToAdg` and `RawFilterListConverter.convertToAdg` now
+  parse at a fixed converter detail level (CSS selector/declaration and HTML
+  filtering bodies enabled), so conversions no longer silently under-parse.
 
 ### Removed
 
