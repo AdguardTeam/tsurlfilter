@@ -8,6 +8,7 @@ import {
 import { HostRuleAstBuilder } from '../../src/ast-builder/network/host-rule';
 import { RuleParserPipeline } from '../../src/ast-builder/rule-parser';
 import type { HostRule } from '../../src/nodes';
+import * as hostCandidate from '../../src/parser/host-candidate';
 
 describe('RuleParserPipeline host rules', () => {
     const parser = new RuleParserPipeline();
@@ -75,7 +76,7 @@ describe('RuleParserPipeline host rules', () => {
     });
 
     it('does not touch the host gate or parser when parseHostRules is disabled', () => {
-        const candidateSpy = vi.spyOn(HostRuleAstBuilder, 'isCandidate');
+        const candidateSpy = vi.spyOn(hostCandidate, 'isHostRuleCandidate');
         const parseSpy = vi.spyOn(HostRuleAstBuilder, 'parse');
 
         // Both a host-shaped and a network rule, parsed with host parsing OFF.

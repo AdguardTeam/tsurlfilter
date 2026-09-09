@@ -93,10 +93,13 @@ export class RuleFactory {
                     if (isHostCandidate) {
                         // Retained AST path for host candidates (no structural host layout),
                         // built from the already-populated context without re-parsing.
+                        // Reuse the host-candidate classification from parseStructural so
+                        // the gate is not scanned a second time.
                         const node = RuleFactory.PARSER.parseFromCurrentCtx(
                             ruleText,
                             kind,
                             RuleFactory.pickOpts(parseHostRules, parseHtmlFilteringRuleBodies),
+                            isHostCandidate,
                         );
 
                         if (node.category !== RuleCategory.Network) {

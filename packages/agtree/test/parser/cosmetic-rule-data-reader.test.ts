@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { RuleParserPipeline } from '../../src/ast-builder/rule-parser';
 import { RuleKind } from '../../src/parser/classifier';
-import { CosmeticRuleDataReader } from '../../src/parser/cosmetic/cosmetic-rule-data-reader';
+import { CosmeticRuleDataReader, CosmeticRuleSeparatorKind } from '../../src/parser/cosmetic/cosmetic-rule-data-reader';
 
 const pipeline = new RuleParserPipeline();
 
@@ -53,5 +53,15 @@ describe('CosmeticRuleDataReader', () => {
         const r = readerFor("#%#//scriptlet('abp-abort-current-inline-script', 'a')");
         expect(r.isScriptlet).toBe(true);
         expect(r.getScriptletParams()).toEqual(["'abp-abort-current-inline-script'", "'a'"]);
+    });
+
+    test('exposes named separator kinds instead of raw integers', () => {
+        expect(readerFor('##.banner').separatorKind).toBe(CosmeticRuleSeparatorKind.ElementHiding);
+        expect(readerFor("#%#//scriptlet('x')").separatorKind).toBe(CosmeticRuleSeparatorKind.AdgJs);
+    });
+
+    test('preserves empty uBO scriptlet argument slots', () => {
+        const r = readerFor('example.org##+js(set-constant, , true)');
+        expect(r.getScriptletParams()).toEqual(['set-constant', '', 'true']);
     });
 });

@@ -14,8 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is replaced by `ParseOptions`.
 - The matching engine now materializes network and cosmetic rules directly from
   the `@adguard/agtree` structural parser output instead of building throwaway
-  AST nodes, reducing engine-creation time and allocation. Host rules and
-  cosmetic rules carrying `[$...]`/uBO modifiers continue to use the AST path.
+  AST nodes, reducing engine-creation time and allocation. The structural path
+  covers network rules, element-hiding rules (all four `##`/`#@#`/`#?#`/`#@?#`
+  separators), and ADG scriptlet rules; host rules, CSS/JS injection, HTML
+  filtering, ABP snippets, uBO scriptlets, and any cosmetic rule carrying
+  `[$...]`/uBO modifiers continue to use the AST path.
+- Added public `NetworkRule.createFromReader` and `CosmeticRule.createFromReader`
+  entry points plus `CosmeticRule.supportsBinaryPath` to materialize rules from
+  a structural reader without building an AST node. These accept a reader bound
+  to a populated parser context and only support the structural rule kinds
+  listed above; callers must route all other kinds through the AST path.
 - The "rule is too general" `SyntaxError` now reports the original rule text
   instead of the re-generated rule.
 

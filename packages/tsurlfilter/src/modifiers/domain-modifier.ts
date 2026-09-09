@@ -63,28 +63,7 @@ export class DomainModifier {
      * @returns Processed domain list (permitted and restricted domains) ({@link ProcessedDomainList}).
      */
     public static processDomainList(domainListNode: DomainList): ProcessedDomainList {
-        const result: ProcessedDomainList = {
-            permittedDomains: [],
-            restrictedDomains: [],
-        };
-
-        const { children: domains } = domainListNode;
-
-        for (const { exception, value: domain } of domains) {
-            const domainLowerCased = domain.toLowerCase();
-
-            if (!SimpleRegex.isRegexPattern(domain) && domain.includes(WILDCARD) && !domain.endsWith(WILDCARD)) {
-                throw new SyntaxError(`Wildcards are only supported for top-level domains: "${domain}"`);
-            }
-
-            if (exception) {
-                result.restrictedDomains.push(domainLowerCased);
-            } else {
-                result.permittedDomains.push(domainLowerCased);
-            }
-        }
-
-        return result;
+        return DomainModifier.processDomainItems(domainListNode.children);
     }
 
     /**
@@ -125,7 +104,9 @@ export class DomainModifier {
      * @param domains Domain list string, AGTree DomainList node, or structural domain items.
      * @param separator Separator — `,` or `|`.
      *
-     * @throws An error if the domains string is empty or invalid.
+     * @throws An error if the domains string is empty or invalid, the
+     *   `DomainList` node separator does not match, the structural domain-item
+     *   list is empty, or a non-regex domain uses an invalid wildcard placement.
      */
     constructor(
         domains: string | DomainList | readonly DomainItem[],

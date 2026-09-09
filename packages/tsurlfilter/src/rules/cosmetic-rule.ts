@@ -4,6 +4,7 @@ import {
     COMMA_DOMAIN_LIST_SEPARATOR,
     type CosmeticRuleDataReader,
     type CosmeticRuleSeparator,
+    CosmeticRuleSeparatorKind,
     CosmeticRuleSeparatorUtils,
     CosmeticRuleType,
     type CssInjectionRuleBody,
@@ -18,7 +19,7 @@ import {
     RuleParserPipeline,
     type SelectorCombinatorValue,
 } from '@adguard/agtree';
-import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
+import { AdgScriptletInjectionBodyGenerator, CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 import { scriptlets, type Source } from '@adguard/scriptlets';
 import { isValidScriptletName } from '@adguard/scriptlets/validators';
 
@@ -47,6 +48,12 @@ export type { ScriptletsProps } from './scriptlet-params';
  * @returns `true` if the object has a `value` property.
  */
 const hasValue = (obj: object): boolean => 'value' in obj;
+
+/**
+ * Shared empty domain-item array, reused by the binary materialization path for
+ * domainless cosmetic rules so it does not allocate a fresh array per rule.
+ */
+const EMPTY_DOMAIN_ITEMS: readonly DomainItem[] = [];
 
 /**
  * Reads the raw CSS text from a selector or declaration list node.
@@ -922,17 +929,28 @@ export class CosmeticRule implements IRule {
             this.allowlist = reader.exception;
             this.isScriptlet = this.type === CosmeticRuleType.ScriptletInjectionRule;
 
+            // Only allocate the domain-item array when the rule carries domains;
+            // the generic rule hits the shared empty-array constant for free.
+            const domainItems: readonly DomainItem[] = reader.domainCount > 0
+                ? reader.getDomains()
+                : EMPTY_DOMAIN_ITEMS;
+
             if (this.isScriptlet) {
                 const rawParams = reader.getScriptletParams();
                 // Canonicalize the body so binary content matches the AST path
                 // (CosmeticRuleBodyGenerator → AdgScriptletInjectionBodyGenerator).
-                this.content = CosmeticRule.buildBinaryScriptletContent(rawParams);
+                this.content = AdgScriptletInjectionBodyGenerator.generateFromRawParams(rawParams);
 
                 const params = rawParams.map((param) => QuoteUtils.removeQuotesAndUnescape(param));
                 this.scriptletParams = new ScriptletParams(params[0] ?? '', params.slice(1));
 
                 const scriptletName = rawParams.length > 0 ? QuoteUtils.removeQuotes(rawParams[0]) : EMPTY_STRING;
-                const validationResult = CosmeticRule.validateBinary(this.type, this.content, scriptletName);
+                const validationResult = CosmeticRule.validateBinary(
+                    this.type,
+                    this.content,
+                    scriptletName,
+                    domainItems,
+                );
                 if (!validationResult.isValid) {
                     throw new SyntaxError(validationResult.errorMessage);
                 }
@@ -941,7 +959,7 @@ export class CosmeticRule implements IRule {
                 this.content = reader.getBody();
                 this.scriptletParams = new ScriptletParams();
 
-                const validationResult = CosmeticRule.validateBinary(this.type, this.content);
+                const validationResult = CosmeticRule.validateBinary(this.type, this.content, undefined, domainItems);
                 if (!validationResult.isValid) {
                     throw new SyntaxError(validationResult.errorMessage);
                 }
@@ -952,7 +970,6 @@ export class CosmeticRule implements IRule {
                 this.extendedCss = isExtendedCssSeparator || validationResult.isExtendedCss;
             }
 
-            const domainItems = reader.getDomains();
             if (CosmeticRule.hasAnyDomainSpecified(domainItems)) {
                 this.domainModifier = new DomainModifier(domainItems, COMMA_DOMAIN_LIST_SEPARATOR);
             }
@@ -986,9 +1003,12 @@ export class CosmeticRule implements IRule {
         // Store the scriptlet parameters. They will be used later, when we initialize the scriptlet,
         // but at this point we need to store them in order to avoid double parsing
         if (parsedNode.type === CosmeticRuleType.ScriptletInjectionRule) {
-            // Transform complex node into a simple array of strings
+            // Transform complex node into a simple array of strings.
+            // `param.value` is already unquoted/unescaped; re-running quote
+            // removal here would strip legitimate outer quote characters that
+            // are part of the value (e.g. `'\"foo\"'` → `"foo"`, not `foo`).
             const params = parsedNode.body.children[0]?.children.map(
-                (param) => (param === null ? EMPTY_STRING : QuoteUtils.removeQuotesAndUnescape(param.value)),
+                (param) => (param === null ? EMPTY_STRING : param.value),
             ) ?? [];
 
             this.scriptletParams = new ScriptletParams(params[0] ?? '', params.slice(1));
@@ -1079,75 +1099,12 @@ export class CosmeticRule implements IRule {
         }
 
         // Element hiding (##, #@#, #?#, #@?#).
-        if (reader.separatorKind === CosmeticRule.SEP_KIND_ELEMENT_HIDING && !reader.isScriptlet) {
+        if (reader.separatorKind === CosmeticRuleSeparatorKind.ElementHiding && !reader.isScriptlet) {
             return true;
         }
 
         // ADG scriptlet (#%#//scriptlet(...)).
-        return reader.separatorKind === CosmeticRule.SEP_KIND_ADG_JS && reader.isScriptlet;
-    }
-
-    /**
-     * Cosmetic separator sub-kind for element hiding (mirrors AGTree
-     * `CR_SEP_KIND_ELEMENT_HIDING`).
-     */
-    private static readonly SEP_KIND_ELEMENT_HIDING = 0;
-
-    /**
-     * Cosmetic separator sub-kind for ADG JS injection (mirrors AGTree
-     * `CR_SEP_KIND_ADG_JS`).
-     */
-    private static readonly SEP_KIND_ADG_JS = 2;
-
-    /**
-     * ADG scriptlet body mask (`//scriptlet`).
-     */
-    private static readonly ADG_SCRIPTLET_MASK = '//scriptlet';
-
-    /**
-     * Canonical parameter separator used by the ADG scriptlet generator.
-     */
-    private static readonly SCRIPTLET_PARAM_SEPARATOR = ', ';
-
-    /**
-     * Maps a detected quote type to its quote character (mirrors AGTree
-     * `ParameterGenerator`).
-     */
-    private static readonly QUOTE_CHAR_BY_TYPE: Partial<Record<QuoteType, string>> = {
-        [QuoteType.Single]: "'",
-        [QuoteType.Double]: '"',
-        [QuoteType.Backtick]: '`',
-    };
-
-    /**
-     * Canonicalizes an ADG scriptlet body from its raw structural parameters,
-     * producing byte-identical content to the AST path
-     * (`AdgScriptletInjectionBodyGenerator`). This is required because the AST
-     * path re-quotes/escapes parameters and normalizes whitespace, while the
-     * binary path would otherwise emit the raw source slice.
-     *
-     * @param rawParams Raw scriptlet parameters (quotes intact), as returned by
-     *   {@link CosmeticRuleDataReader.getScriptletParams}.
-     *
-     * @returns Canonical `//scriptlet(...)` body.
-     */
-    private static buildBinaryScriptletContent(rawParams: readonly string[]): string {
-        const parts = rawParams.map((raw) => {
-            const quoteType = QuoteUtils.getStringQuoteType(raw);
-            if (quoteType === QuoteType.None) {
-                return raw;
-            }
-
-            const quoteChar = CosmeticRule.QUOTE_CHAR_BY_TYPE[quoteType];
-            if (quoteChar === undefined) {
-                return raw;
-            }
-
-            const value = QuoteUtils.removeQuotesAndUnescape(raw);
-            return quoteChar + QuoteUtils.escapeUnescapedOccurrences(value, quoteChar) + quoteChar;
-        });
-
-        return `${CosmeticRule.ADG_SCRIPTLET_MASK}(${parts.join(CosmeticRule.SCRIPTLET_PARAM_SEPARATOR)})`;
+        return reader.separatorKind === CosmeticRuleSeparatorKind.AdgJs && reader.isScriptlet;
     }
 
     /**
@@ -1158,6 +1115,7 @@ export class CosmeticRule implements IRule {
      * @param type Cosmetic rule type.
      * @param content Rule content (selector list or scriptlet body).
      * @param scriptletName Optional scriptlet name (for scriptlet rules).
+     * @param domainItems Structural domain items (for the common domain check).
      *
      * @returns Validation result {@link ValidationResult}.
      */
@@ -1165,6 +1123,7 @@ export class CosmeticRule implements IRule {
         type: CosmeticRuleType,
         content: string,
         scriptletName?: string,
+        domainItems?: readonly DomainItem[],
     ): ValidationResult {
         const result: ValidationResult = {
             isValid: true,
@@ -1172,6 +1131,20 @@ export class CosmeticRule implements IRule {
         };
 
         try {
+            // Common validation: every cosmetic rule has a domain list.
+            if (domainItems && domainItems.length > 0) {
+                // Iterate over the domain list and check every domain.
+                for (const { value: domain } of domainItems) {
+                    // Skip validation for regex domain patterns.
+                    if (
+                        !RegExpUtils.isRegexPattern(domain)
+                        && !DomainUtils.isValidDomainOrHostname(domain)
+                    ) {
+                        throw new Error(`'${domain}' is not a valid domain name or regexp pattern`);
+                    }
+                }
+            }
+
             switch (type) {
                 case CosmeticRuleType.ElementHidingRule: {
                     const selectorListValidationResult = validateSelectorList(content);

@@ -272,18 +272,7 @@ export class RuleParserPipeline {
      */
     public parse(source: string, options?: ParseOptions): AnyRule {
         if (source.trim().length === 0) {
-            const result: EmptyRule = {
-                type: NodeType.EmptyRule,
-                category: RuleCategory.Empty,
-                syntax: SYNTAX_ALL,
-            };
-
-            if (options?.isLocIncluded) {
-                result.start = 0;
-                result.end = source.length;
-            }
-
-            return result;
+            return RuleParserPipeline.createEmptyRule(source, options);
         }
 
         this.tokenize(source);
@@ -303,11 +292,21 @@ export class RuleParserPipeline {
      * @returns Structural classification and the populated (shared) context.
      *
      * @throws CapacityOverflowError on hard-cap overflow.
+     * @throws Error when the token buffer overflows with growth disabled.
+     * @throws AdblockSyntaxError (or its subclasses) for syntactically invalid
+     *   rule input.
      */
     public parseStructural(source: string, options?: ParseOptions): StructuralParseResult {
         if (source.trim().length === 0) {
             // Empty lines surface as Comment so callers skip them
-            // (RuleFactory maps Comment → null).
+            // (RuleFactory maps Comment → null). Reset the shared context so the
+            // previous rule's source and structural data are not exposed through
+            // the returned `ctx`. `parseFromCurrentCtx` on this result produces an
+            // `EmptyRule`, matching `parse` (see its empty-input guard).
+            this.ctx.source = source;
+            this.ctx.sourceStart = 0;
+            this.ctx.tokenCount = 0;
+            this.ctx.status = CTX_STATUS_OK;
             return { kind: RuleKind.Comment, isHostCandidate: false, ctx: this.ctx };
         }
 
@@ -329,13 +328,48 @@ export class RuleParserPipeline {
      * @param source Rule source string (must match the `parseStructural` input).
      * @param kind Rule kind returned by `parseStructural`.
      * @param options Parsing options.
+     * @param knownHostCandidate Optional pre-computed host-candidate flag from
+     *   the preceding `parseStructural` result. When omitted, the host-candidate
+     *   gate is re-run on the shared context.
      *
      * @returns Parsed rule AST node.
      *
      * @throws For unsupported cosmetic rule types.
      */
-    public parseFromCurrentCtx(source: string, kind: RuleKind, options?: ParseOptions): AnyRule {
-        return this.buildAst(source, kind, options);
+    public parseFromCurrentCtx(
+        source: string,
+        kind: RuleKind,
+        options?: ParseOptions,
+        knownHostCandidate?: boolean,
+    ): AnyRule {
+        if (source.trim().length === 0) {
+            return RuleParserPipeline.createEmptyRule(source, options);
+        }
+
+        return this.buildAst(source, kind, options, knownHostCandidate);
+    }
+
+    /**
+     * Creates an `EmptyRule` node for empty or whitespace-only input.
+     *
+     * @param source Rule source string.
+     * @param options Parsing options.
+     *
+     * @returns EmptyRule AST node.
+     */
+    private static createEmptyRule(source: string, options?: ParseOptions): EmptyRule {
+        const result: EmptyRule = {
+            type: NodeType.EmptyRule,
+            category: RuleCategory.Empty,
+            syntax: SYNTAX_ALL,
+        };
+
+        if (options?.isLocIncluded) {
+            result.start = 0;
+            result.end = source.length;
+        }
+
+        return result;
     }
 
     /**
@@ -394,10 +428,18 @@ export class RuleParserPipeline {
      * @param source Rule source string.
      * @param kind Rule kind (from the preceding structural parse).
      * @param options Parsing options.
+     * @param knownHostCandidate Optional pre-computed host-candidate flag.
+     *   Avoids re-running the host-candidate gate when the caller already has
+     *   the classification result.
      *
      * @returns Parsed rule AST node.
      */
-    private buildAst(source: string, kind: RuleKind, options?: ParseOptions): AnyRule {
+    private buildAst(
+        source: string,
+        kind: RuleKind,
+        options?: ParseOptions,
+        knownHostCandidate?: boolean,
+    ): AnyRule {
         if (kind === RuleKind.Network && options?.ignoreNetwork) {
             return createIgnoredRule(source, RuleCategory.Network, options);
         }
@@ -410,7 +452,7 @@ export class RuleParserPipeline {
                 return CommentAstBuilder.parse(source, this.ctx.data, 0, options);
 
             case RuleKind.Network:
-                if (options?.parseHostRules && HostRuleAstBuilder.isCandidate(this.ctx)) {
+                if (options?.parseHostRules && (knownHostCandidate ?? isHostRuleCandidate(this.ctx))) {
                     const hostRule = HostRuleAstBuilder.parse(source, options);
                     if (hostRule) {
                         return hostRule;

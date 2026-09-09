@@ -52,7 +52,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `@adguard/scriptlets` v2.x working against the v5 pipeline).
 - Re-exported the legacy `GenericPlatform`/`SpecificPlatform` bitmask enums and
   added an `exists(name, platform)` compatibility method to the compatibility
-  tables, mapping legacy bitmask platforms onto `Platform` wildcard queries.
+  tables, mapping legacy bitmask platforms onto `Platform` queries (specific
+  masks map to concrete platforms, combined masks expand to their members).
+- Exported `CosmeticRuleSeparatorKind` (named semantic kinds for the cosmetic
+  separator sub-kind) from the package root and `@adguard/agtree/parser`.
+- Added `AdgScriptletInjectionBodyGenerator.generateFromRawParams` to render
+  canonical ADG scriptlet bodies directly from raw structural parameters
+  without allocating AST nodes.
 
 ### Changed
 
@@ -95,13 +101,31 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Legacy `converter`, `generator`, `nodes`, and `ast-utils` implementations
   (superseded by the new pipeline stack).
 - Serializer and Deserializer APIs.
-- Bitwise platform enums (`GenericPlatform`, `SpecificPlatform`) and related helpers.
+- The v4 bitwise platform enum implementation (`GenericPlatform`,
+  `SpecificPlatform`) and its helpers. Minimal compatibility constants remain
+  exported under the same names for `@adguard/scriptlets` v2.x, but new code
+  should use the `Platform` class.
 
 ### Fixed
 
 - Network and cosmetic (`[$…]`) modifier parsing no longer drops the `$`
   separator when the first modifier name starts with an underscore, so noop
   modifiers such as `$_`, `$___`, and `$_invalid_` are parsed correctly.
+- The legacy `RuleParser` shim now honors its advertised `tolerant` and
+  `ignoreComments` options (`tolerant` wraps failures in `InvalidRule` nodes;
+  `ignoreComments` returns `null` for comment rules).
+- `RuleKind` is now a regular enum, so `RuleKind.Network` is usable as a runtime
+  value by consumers compiling with `isolatedModules` (previously the `const
+  enum` declaration caused TS2748).
+- `RuleParserPipeline.parseStructural` no longer exposes the previous rule's
+  context for empty input, and `parseFromCurrentCtx` returns an `EmptyRule` for
+  empty input, matching `parse`.
+- `CosmeticRuleDataReader.getScriptletParams` now preserves empty (`NO_VALUE`)
+  argument slots as empty strings instead of dropping them.
+- `CompatibilityTableBase.exists` now maps specific legacy platform masks to
+  concrete platforms, expands combined masks to their members (including the
+  Safari/iOS content-blocker platforms), and rejects unmapped masks instead of
+  answering with name existence.
 - HTML filtering rules (`$$`, `$@$`) that carry an AdGuard `[$…]` modifier list
   no longer overwrite the modifier records with the selector-list body; the
   selector-list region is now placed after the modifier records.

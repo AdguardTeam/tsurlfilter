@@ -91,7 +91,7 @@ describe('RuleFactory shared pipeline', () => {
         expect(RuleFactory.createRule('', 0)).toBeNull();
     });
 
-    it('reuses a single options object across calls (no per-call allocation)', () => {
+    it('keeps returning NetworkRule objects across repeated calls', () => {
         // Sanity: repeated calls stay correct with the shared pipeline/options.
         for (let i = 0; i < 100; i += 1) {
             expect(RuleFactory.createRule('||a.com^$third-party', 0)).toBeInstanceOf(NetworkRule);

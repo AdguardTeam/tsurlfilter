@@ -7,16 +7,25 @@
  * working by delegating to the new pipeline.
  */
 
+import type { ParseOptions } from '../ast-builder/options';
 import { RuleParserPipeline } from '../ast-builder/rule-parser';
-import type { AnyRule } from '../nodes';
+import {
+    type AnyRule,
+    type InvalidRule,
+    type InvalidRuleError,
+    NodeType,
+    RuleCategory,
+} from '../nodes';
+import { asError } from '../utils/error';
+import { SYNTAX_UNKNOWN } from '../utils/syntax-flags';
 
 /**
  * Legacy parser options, kept for API compatibility with pre-v5 consumers.
  */
 export interface LegacyParserOptions {
     /**
-     * If `true`, the parser returns an `InvalidRule` node instead of throwing.
-     * Ignored by the v5 pipeline (which throws on invalid input).
+     * If `true`, the parser returns an `InvalidRule` node instead of throwing
+     * on syntactically invalid input.
      */
     tolerant?: boolean;
 
@@ -36,12 +45,14 @@ export interface LegacyParserOptions {
     parseUboSpecificRules?: boolean;
 
     /**
-     * Whether to include raw source parts. Ignored by the v5 pipeline.
+     * Whether to include raw source parts. Accepted for API compatibility but
+     * not used by the v5 pipeline.
      */
     includeRaws?: boolean;
 
     /**
-     * Whether to ignore comment rules. Ignored by the v5 pipeline.
+     * Whether to ignore comment rules. When `true`, comment rules produce
+     * `null` instead of a comment AST node.
      */
     ignoreComments?: boolean;
 
@@ -53,6 +64,10 @@ export interface LegacyParserOptions {
 
 /**
  * Default legacy parser options.
+ *
+ * @deprecated The legacy parser API is a temporary bridge until `@adguard/scriptlets`
+ *   migrates to the v5 `RuleParserPipeline`. Prefer `RuleParserPipeline.parse`
+ *   for new code.
  */
 export const defaultParserOptions: Readonly<LegacyParserOptions> = Object.freeze({
     tolerant: false,
@@ -66,6 +81,9 @@ export const defaultParserOptions: Readonly<LegacyParserOptions> = Object.freeze
 
 /**
  * Legacy rule parser, delegating to {@link RuleParserPipeline}.
+ *
+ * @deprecated This class is a temporary bridge until `@adguard/scriptlets`
+ *   migrates to the v5 parser. Prefer `RuleParserPipeline.parse` for new code.
  */
 export class RuleParser {
     /**
@@ -79,16 +97,70 @@ export class RuleParser {
      * @param raw Raw rule source.
      * @param options Legacy parser options.
      *
-     * @returns Parsed rule AST node.
+     * @returns Parsed rule AST node, or `null` when `ignoreComments` is `true`
+     *   and the input is a comment rule.
      *
-     * @throws If the rule is syntactically invalid.
+     * @throws If the rule is syntactically invalid and `tolerant` is `false`.
      */
-    public static parse(raw: string, options: LegacyParserOptions = defaultParserOptions): AnyRule {
-        return RuleParser.PIPELINE.parse(raw, {
+    public static parse(raw: string, options: LegacyParserOptions = defaultParserOptions): AnyRule | null {
+        const pipelineOptions: ParseOptions = {
             isLocIncluded: options.isLocIncluded,
             parseAbpSpecificRules: options.parseAbpSpecificRules,
             parseUboSpecificRules: options.parseUboSpecificRules,
             parseHostRules: options.parseHostRules,
-        });
+        };
+
+        try {
+            const result = RuleParser.PIPELINE.parse(raw, pipelineOptions);
+
+            if (options.ignoreComments && result.category === RuleCategory.Comment) {
+                return null;
+            }
+
+            return result;
+        } catch (e: unknown) {
+            if (options.tolerant) {
+                return RuleParser.createInvalidRule(raw, asError(e), options.isLocIncluded);
+            }
+
+            throw e;
+        }
+    }
+
+    /**
+     * Builds an `InvalidRule` node for tolerant-mode failures.
+     *
+     * @param raw Raw rule source.
+     * @param error The error that occurred.
+     * @param isLocIncluded Whether to include source location info.
+     *
+     * @returns InvalidRule AST node.
+     */
+    private static createInvalidRule(
+        raw: string,
+        error: Error,
+        isLocIncluded?: boolean,
+    ): InvalidRule {
+        const errNode: InvalidRuleError = {
+            type: NodeType.InvalidRuleError,
+            name: error.name || 'SyntaxError',
+            message: error.message,
+        };
+        if (isLocIncluded) {
+            errNode.start = 0;
+            errNode.end = raw.length;
+        }
+        const result: InvalidRule = {
+            type: NodeType.InvalidRule,
+            category: RuleCategory.Invalid,
+            syntax: SYNTAX_UNKNOWN,
+            raw,
+            error: errNode,
+        };
+        if (isLocIncluded) {
+            result.start = 0;
+            result.end = raw.length;
+        }
+        return result;
     }
 }

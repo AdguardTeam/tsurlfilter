@@ -6,6 +6,7 @@ import {
     ListNodeType,
     NodeType,
     RuleGenerator,
+    RuleKind,
     RuleParserPipeline,
     ValueKind,
     modifiersCompatibilityTable,
@@ -36,6 +37,13 @@ ok(ListNodeType);
 ok(ListItemNodeType);
 ok(NodeType.RawRule === 'RawRule');
 ok(NodeType.Raw === 'Raw');
+
+// RuleKind must be a runtime value (not a const-enum-only type) so consumers
+// with isolatedModules can use `RuleKind.Network` in value positions.
+ok(typeof RuleKind === 'object');
+ok(RuleKind.Network === 0);
+ok(RuleKind.Comment === 1);
+ok(RuleKind.Cosmetic === 2);
 
 // List-parsing helper family is symmetric at the root.
 ok(typeof parseDomainList === 'function');

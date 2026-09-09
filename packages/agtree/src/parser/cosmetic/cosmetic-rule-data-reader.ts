@@ -17,8 +17,13 @@ import {
     CR_FLAG_HAS_UBO_MODS,
     CR_FLAGS_OFFSET,
     CR_SEP_KIND_ABP_SNIPPET,
+    CR_SEP_KIND_ADG_CSS_INJECTION,
+    CR_SEP_KIND_ADG_HTML_FILTERING,
+    CR_SEP_KIND_ADG_JS,
+    CR_SEP_KIND_ELEMENT_HIDING,
     CR_SEP_KIND_MASK,
     CR_SEP_KIND_SHIFT,
+    CR_SEP_KIND_UBO_HTML_FILTERING,
     CR_SEP_LEN_MASK,
     CR_SEP_LEN_SHIFT,
     CR_SEP_SOURCE_START,
@@ -45,7 +50,58 @@ export interface DomainItem {
 }
 
 /**
+ * Named semantic kinds for the cosmetic separator sub-kind exposed by
+ * {@link CosmeticRuleDataReader.separatorKind}. These mirror the internal
+ * `CR_SEP_KIND_*` bitfield values without exposing the buffer layout, so
+ * consumers can make separator-family decisions without reproducing private
+ * integer encodings.
+ */
+export const CosmeticRuleSeparatorKind = {
+    /**
+     * Element hiding (`##`, `#@#`, `#?#`, `#@?#`).
+     */
+    ElementHiding: CR_SEP_KIND_ELEMENT_HIDING,
+
+    /**
+     * ABP snippet (`#$#`, `#@$#`).
+     */
+    AbpSnippet: CR_SEP_KIND_ABP_SNIPPET,
+
+    /**
+     * ADG JS injection (`#%#`, `#@%#`).
+     */
+    AdgJs: CR_SEP_KIND_ADG_JS,
+
+    /**
+     * ADG HTML filtering (`$$`, `$@$`).
+     */
+    AdgHtmlFiltering: CR_SEP_KIND_ADG_HTML_FILTERING,
+
+    /**
+     * HTML filtering with the uBO `^` body prefix (`##` / `#@#`).
+     */
+    UboHtmlFiltering: CR_SEP_KIND_UBO_HTML_FILTERING,
+
+    /**
+     * ADG CSS injection (`#$#`, `#@$#`, `#$?#`, `#@$?#`).
+     */
+    AdgCssInjection: CR_SEP_KIND_ADG_CSS_INJECTION,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type CosmeticRuleSeparatorKind = typeof CosmeticRuleSeparatorKind[keyof typeof CosmeticRuleSeparatorKind];
+
+/**
  * Read-only view over the structural data of a single cosmetic rule.
+ *
+ * **Borrowed-buffer lifetime**: a reader retains the original rule source
+ * string and aliases the pipeline's mutable `ctx.data` buffer. It is valid
+ * only until the pipeline that produced it parses another rule or its context
+ * is otherwise invalidated (`reset`, a subsequent `parse`/`parseStructural`).
+ * After that point, getters may return slices unrelated to the original rule.
+ * Consumers must read all fields and discard the reader before reusing the
+ * pipeline.
  */
 export class CosmeticRuleDataReader {
     /**
@@ -108,11 +164,12 @@ export class CosmeticRuleDataReader {
     /**
      * Separator sub-kind of the cosmetic rule.
      *
-     * @returns Separator sub-kind (`CR_SEP_KIND_*`).
+     * @returns Separator sub-kind (`CR_SEP_KIND_*`), exposed as a named
+     *   {@link CosmeticRuleSeparatorKind} value.
      */
-    public get separatorKind(): number {
+    public get separatorKind(): CosmeticRuleSeparatorKind {
         // eslint-disable-next-line no-bitwise
-        return (this.flags >>> CR_SEP_KIND_SHIFT) & CR_SEP_KIND_MASK;
+        return ((this.flags >>> CR_SEP_KIND_SHIFT) & CR_SEP_KIND_MASK) as CosmeticRuleSeparatorKind;
     }
 
     /**
@@ -193,6 +250,7 @@ export class CosmeticRuleDataReader {
     /**
      * Reads the scriptlet parameter boundaries (raw source slices, quotes
      * intact). The first parameter is the scriptlet name for ADG/uBO scriptlets.
+     * Empty (`NO_VALUE`) argument slots are preserved as empty strings.
      *
      * Only single-call scriptlet bodies (ADG/uBO) are supported; multi-call
      * ABP snippets must be routed through the AST path.
@@ -218,10 +276,10 @@ export class CosmeticRuleDataReader {
         for (let i = 0; i < paramCount; i += 1) {
             const pStart = this.data[this.scriptletOffset + 2 + i * 2];
             const pEnd = this.data[this.scriptletOffset + 3 + i * 2];
-            if (pStart < 0 || pEnd < 0) {
-                continue;
-            }
-            out.push(this.source.slice(pStart, pEnd));
+            // Preserve empty (NO_VALUE) argument slots so callers keep
+            // positional information, matching the AST path's null → empty-string
+            // handling for supported uBO single-call bodies.
+            out.push(pStart < 0 || pEnd < 0 ? '' : this.source.slice(pStart, pEnd));
         }
         return out;
     }

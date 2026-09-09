@@ -25,6 +25,14 @@ import {
 
 /**
  * Read-only view over the structural data of a single network rule.
+ *
+ * **Borrowed-buffer lifetime**: a reader retains the original rule source
+ * string and aliases the pipeline's mutable `ctx.data` buffer. It is valid
+ * only until the pipeline that produced it parses another rule or its context
+ * is otherwise invalidated (`reset`, a subsequent `parse`/`parseStructural`).
+ * After that point, getters may return slices unrelated to the original rule.
+ * Consumers must read all fields and discard the reader before reusing the
+ * pipeline.
  */
 export class NetworkRuleDataReader {
     /**

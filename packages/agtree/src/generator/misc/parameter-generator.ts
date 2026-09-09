@@ -47,4 +47,30 @@ export class ParameterGenerator extends BaseGenerator {
         // that would strip legitimate outer quote characters from the value.
         return quoteChar + QuoteUtils.escapeUnescapedOccurrences(node.value, quoteChar) + quoteChar;
     }
+
+    /**
+     * Serializes a raw (source-slice) scriptlet parameter into its canonical
+     * rendered form, matching {@link generate} for the equivalent AST
+     * {@link Parameter} node. Unlike `generate`, this works directly from raw
+     * source text (quotes intact), so callers can render scriptlet bodies
+     * without allocating AST nodes.
+     *
+     * @param raw Raw parameter source slice (quotes intact).
+     *
+     * @returns Canonical string representation of the parameter.
+     */
+    public static generateFromRaw(raw: string): string {
+        const quoteType = QuoteUtils.getStringQuoteType(raw);
+        if (quoteType === QuoteType.None) {
+            return raw;
+        }
+
+        const quoteChar = QUOTE_CHAR_BY_TYPE[quoteType];
+        if (quoteChar === undefined) {
+            return raw;
+        }
+
+        const value = QuoteUtils.removeQuotesAndUnescape(raw);
+        return quoteChar + QuoteUtils.escapeUnescapedOccurrences(value, quoteChar) + quoteChar;
+    }
 }

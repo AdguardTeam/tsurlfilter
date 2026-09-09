@@ -170,15 +170,42 @@ For example, `!#if` embeds a flat logical-expression node tree starting at
 `data[5]`, and `!#safari_cb_affinity` embeds a flat parameter-list at the
 same offset (they are mutually exclusive, so they share the region).
 
-### Parser API: `parse()` vs `parseRange()`
+### Parser API: `parse()`, `parseRange()`, and the two-phase reader surface
 
-The single consumer-facing pipeline (`RuleParserPipeline`) exposes two methods:
+The single consumer-facing pipeline (`RuleParserPipeline`) exposes three
+consumer entry points:
 
 - **`parse(source, options?)`** — the common case. Tokenizes `source` and runs
-  the full pipeline internally.
+  the full pipeline internally, returning an AST node.
+- **`parseStructural(source, options?)`** — tokenizes and classifies `source`
+  without building an AST. It returns a `StructuralParseResult` (`kind`,
+  `isHostCandidate`, and the populated shared `ctx`), which callers can feed to
+  `parseFromCurrentCtx` to build the AST without re-tokenizing/re-parsing.
+  This is the two-phase path used for the zero-allocation materialization of
+  high-volume rule kinds.
 - **`parseRange(ctx, startTi, endTi, dataOffset, options?)`** — for callers
   that have already tokenized and want to parse a sub-range of tokens,
   optionally writing into a non-zero region of `ctx.data`.
+
+The two-phase flow is complemented by encapsulated structural readers —
+`CosmeticRuleDataReader` and `NetworkRuleDataReader` — that expose semantic
+getters over `ctx.data` without leaking the buffer layout:
+
+```typescript
+import { CosmeticRuleDataReader, RuleParserPipeline } from '@adguard/agtree';
+
+const pipeline = new RuleParserPipeline();
+const { ctx } = pipeline.parseStructural('example.org##.ad');
+const reader = new CosmeticRuleDataReader(ctx, 0);
+
+reader.exception;       // false
+reader.separatorKind;   // CosmeticRuleSeparatorKind.ElementHiding
+reader.getBody();       // '.ad'
+reader.getDomains();    // [{ value: 'example.org', exception: false }]
+```
+
+Readers borrow the pipeline's buffers: consume all fields and discard the
+reader before reusing the pipeline (see the class documentation).
 
 All structural parser methods accept `(ctx, startTi?, endTi?, dataOffset?)`
 with sensible defaults so existing call sites continue to work unchanged.

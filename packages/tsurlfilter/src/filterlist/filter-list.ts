@@ -50,7 +50,7 @@ export interface FilterListConversionError {
     rule: string;
 
     /**
-     * The byte offset of the rule in the original content.
+     * The UTF-16 code-unit offset of the rule in the original content.
      */
     offset: number;
 
@@ -179,7 +179,7 @@ export class FilterList {
 
         const { length } = original;
         const parts: string[] = [];
-        let convertedLength = 0; // running byte offset, replaces convertedBuffer.length
+        let convertedLength = 0; // running UTF-16 code-unit offset, replaces convertedBuffer.length
         const data: ConversionData = {
             originals: [],
             conversions: {},

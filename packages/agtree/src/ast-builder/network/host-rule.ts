@@ -9,8 +9,6 @@ import { getDomain, getHostname } from 'tldts';
 
 import type { HostRule, Value } from '../../nodes';
 import { NetworkRuleType, NodeType, RuleCategory } from '../../nodes';
-import type { ParserContext } from '../../parser/context';
-import { TokenType } from '../../tokenizer/token-types';
 import { StringUtils } from '../../utils/string';
 import { SYNTAX_ALL } from '../../utils/syntax-flags';
 import type { ParseOptions } from '../options';
@@ -25,33 +23,6 @@ const NULL_IP = '0.0.0.0';
  */
 const COMMENT_MARKER = '#';
 
-/**
- * Token-type lookup: `1` for token types that can legally appear in an
- * `/etc/hosts` line (letters, digits, `-`, `_`, non-ASCII, whitespace, line
- * breaks, `.`, `:`, and `#` for the trailing comment). Any other token type
- * (e.g. `|`, `^`, `$`, `/`, `@`, `*`) means the rule is definitely NOT a host
- * rule, so the candidate scan bails immediately. Indexed by `TokenType`.
- */
-const HOST_LEGAL_TOKEN = ((): Uint8Array => {
-    const table = new Uint8Array(64);
-    for (const type of [
-        TokenType.Letter,
-        TokenType.Hyphen,
-        TokenType.Digit,
-        TokenType.Underscore,
-        TokenType.NonAscii,
-        TokenType.Eof,
-        TokenType.Whitespace,
-        TokenType.LineBreak,
-        TokenType.HashMark,
-        TokenType.Dot,
-        TokenType.Colon,
-    ]) {
-        table[type] = 1;
-    }
-    return table;
-})();
-
 interface RawPart {
     value: string;
     start: number;
@@ -62,35 +33,6 @@ interface RawPart {
  * Builds `HostRule` nodes from `/etc/hosts`-style input.
  */
 export class HostRuleAstBuilder {
-    /**
-     * Cheap O(1)-amortized gate deciding whether a network-classified rule
-     * could be a host rule, using the already-computed token stream. A normal
-     * network rule contains an adblock-syntax token (`|`, `^`, `$`, `/`, `@`,
-     * `*`, …) — usually at token 0 — so this early-exits without touching the
-     * source string. Only genuine host candidates scan to the end. This keeps
-     * the string-based host parser off the network hot path (see plan R7).
-     *
-     * @param ctx Parser context whose tokenizer output is loaded.
-     *
-     * @returns `true` if the rule may be a host rule and is worth a full parse.
-     */
-    public static isCandidate(ctx: ParserContext): boolean {
-        const { types, tokenCount } = ctx;
-
-        for (let i = 0; i < tokenCount; i += 1) {
-            const type = types[i];
-            // The rest of the line is a `#comment` — host-legal; stop scanning.
-            if (type === TokenType.HashMark) {
-                break;
-            }
-            if (HOST_LEGAL_TOKEN[type] !== 1) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     /**
      * Parses a host rule string into a HostRule node.
      *

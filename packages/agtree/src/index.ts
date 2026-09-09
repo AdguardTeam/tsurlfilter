@@ -16,6 +16,7 @@ export type { ParserCapacity } from './ast-builder/capacity';
 export { RuleKind } from './parser';
 export {
     CosmeticRuleDataReader,
+    CosmeticRuleSeparatorKind,
     isHostRuleCandidate,
     NetworkRuleDataReader,
     type DomainItem,

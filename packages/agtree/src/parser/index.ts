@@ -23,7 +23,11 @@ export {
 
 // Structural readers (encapsulated views over ctx.data — layout stays internal)
 export { NetworkRuleDataReader } from './network/network-rule-data-reader';
-export { CosmeticRuleDataReader, type DomainItem } from './cosmetic/cosmetic-rule-data-reader';
+export {
+    CosmeticRuleDataReader,
+    CosmeticRuleSeparatorKind,
+    type DomainItem,
+} from './cosmetic/cosmetic-rule-data-reader';
 export { isHostRuleCandidate } from './host-candidate';
 
 // Backwards-compatible parser API (consumed by @adguard/scriptlets v2.x)
