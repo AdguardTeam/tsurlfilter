@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * @file Shared error/usage reporting for the DevEx bridge CLI helpers
- * (use-dev-builds.mjs, ak-dev-unpublish.mjs, devex-sweep.mjs,
- * check-pr-open.mjs, check-package-lists.mjs). Each of these used to inline its
+ * (ak-dev-unpublish.mjs, devex-sweep.mjs, check-pr-open.mjs,
+ * check-package-lists.mjs). Each of these used to inline its
  * own `fail`/`fatal`/`usageError` — the same console.error + process.exit with
  * the same `::error::` annotation prefix. This module is the single source for
  * those helpers so the annotation format and the exit-code contract cannot
@@ -11,8 +11,8 @@
  * Annotation policy: `::error::` / `::warning::` are written to stderr, which
  * GitHub renders as step annotations. The prefix + exit-code contract is
  * carried over from the inlined helpers this module replaces (it does not keep
- * their output byte-for-byte — e.g. a developer running the local
- * use-dev-builds.mjs CLI also sees the `::error::` prefix in their terminal).
+ * their output byte-for-byte — e.g. a developer running the local CLI also sees
+ * the `::error::` prefix in their terminal).
  * Keeping one shared format means CI annotation rendering and local
  * diagnostics cannot drift apart.
  */

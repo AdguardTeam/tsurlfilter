@@ -80,7 +80,7 @@ MV3 limitations (inherent to the Declarative Net Request API) are:
 **Not yet supported / not convertible to DNR**:
 
 - `$popup`, `$redirect-rule`, `$referrerpolicy` — not yet implemented
-- `$replace`, `$jsonprune`, `$hls`, `$network`, DNS modifiers (`$client`,
+- `$replace`, `$jsonprune`, `$xmlprune`, `$hls`, `$network`, DNS modifiers (`$client`,
   `$dnsrewrite`, `$dnstype`, `$ctag`) — not expressible in DNR; produce
   conversion errors and are skipped
 - Exception modifiers `$jsinject`, `$stealth`, `$urlblock`, `$genericblock` —

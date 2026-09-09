@@ -1,8 +1,8 @@
 name: Build
 
 # Lints, tests, and builds affected packages on pull requests and pushes to
-# release/browser-extension-v5.6 using per-package Docker test targets with
-# affected-package detection and workspace dependency closure.
+# release/browser-extension-v5.6 using per-package Docker test targets with affected-package detection
+# and workspace dependency closure.
 
 on:
   pull_request:
@@ -153,7 +153,6 @@ jobs:
       - name: Validate script syntax
         run: |
           bash -n tests/finalize-changelog.sh
-          bash -n tests/use-dev-builds.test.sh
           bash -n scripts/ci/resolve-release-inputs.sh
           bash -n scripts/ci/verify-tarball.sh
           bash -n tests/verify-tarball.test.sh
@@ -163,7 +162,6 @@ jobs:
           node --check scripts/ci/check-pr-open.mjs
           node --check .github/actions/finalize-changelog/finalize-changelog.mjs
           node --check scripts/inject-package-versions.mjs
-          node --check scripts/use-dev-builds.mjs
           node --check scripts/ci/compute-affected-packages.mjs
           node --check scripts/ci/check-package-lists.mjs
           node --check scripts/ci/devex-sweep.mjs
@@ -179,9 +177,6 @@ jobs:
       - name: Run verify-tarball regression tests
         run: bash tests/verify-tarball.test.sh
 
-      - name: Run use-dev-builds regression tests
-        run: bash tests/use-dev-builds.test.sh
-
       - name: Run ak-dev-unpublish regression tests
         run: bash tests/ak-dev-unpublish.test.sh
 
@@ -192,11 +187,12 @@ jobs:
         run: bash tests/check-pr-open.test.sh
 
   notify-failure:
-    name: Notify release-line CI failure
+    name: Notify master CI failure
     needs: [changes, test, docs, workflows]
-    # Only push-to-release-line runs are unattended (PR failures are visible on
-    # the PR itself); the deleted Bamboo test plan posted failures to Slack, so
-    # a release-line failure must still reach the channel.
+    # Only push-to-master runs are unattended (PR failures are visible on the
+    # PR itself); the deleted Bamboo test plan posted failures to Slack, so a
+    # master failure must still reach the channel. Master now also absorbs the
+    # weekly companiesdb push, so a regression there is caught by this too.
     # `docs` may be skipped (not affected) — skipped is not a failure.
     if: ${{ github.event_name == 'push' && failure() }}
     runs-on: team-extensions
@@ -208,5 +204,5 @@ jobs:
         uses: AdGuardSoftwareLimited/actions/actions/slack@master
         with:
           channel: '#adguard-extension-vcs'
-          message: ':x: *build.yml* release/browser-extension-v5.6 CI failed — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          message: ':x: *build.yml* master CI failed — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
           color: danger

@@ -114,6 +114,43 @@ describe('FilterConverter (withSourceMap: true)', () => {
             expect(ruleset.getSafeRulesCount()).toBeGreaterThanOrEqual(1);
         });
 
+        it.each([
+            {
+                caseName: 'an unknown modifier in a user rule',
+                filterId: 0,
+                ruleText: 'test$whatever,domain=example.org',
+            },
+            {
+                caseName: 'an unknown modifier in an allowlist rule',
+                filterId: 0,
+                ruleText: '@@test$whatever,domain=example.org',
+            },
+            {
+                caseName: 'the unsupported $xmlprune modifier in a filter rule',
+                filterId: 2,
+                ruleText: '/manifest.mpd$xmlprune=/MPD/Period[contains(@id\\,\'ad-\')],domain=hulu.com',
+            },
+            {
+                caseName: 'the deprecated and unsupported $webrtc modifier',
+                filterId: 2,
+                ruleText: '||example.com^$webrtc,domain=example.org',
+            },
+        ])('rejects $caseName instead of discarding it', async ({ filterId, ruleText }) => {
+            const filter = createFilter([ruleText], filterId);
+            const [{ ruleset, errors }] = await converter.convert([filter], withSourceMapOptions);
+
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+        });
+
+        it('keeps rules with noop modifiers', async () => {
+            const filter = createFilter(['test$_,___,domain=example.org']);
+            const [{ ruleset, errors }] = await converter.convert([filter], withSourceMapOptions);
+
+            expect(await ruleset.getDeclarativeRules()).toHaveLength(1);
+            expect(errors).toHaveLength(0);
+        });
+
         it('returns separate results per filter', async () => {
             const filter1 = createFilter(['||example.com^'], 1);
             const filter2 = createFilter(['||example.net^'], 2);

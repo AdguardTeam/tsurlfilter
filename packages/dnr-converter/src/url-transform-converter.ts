@@ -131,10 +131,10 @@ const FULL_URL_PATTERN_PREFIX = '^http';
 const ORIGIN_PREFIX = '^(https?://[^/]+)';
 
 /**
- * Prefix for patterns that can match anywhere in the path.
+ * Prefix for patterns that can match anywhere in the path and query.
  * Uses a non-greedy match to capture everything before the pattern.
  */
-const FLOATING_PREFIX = '^(https?://[^?#]*?)';
+const FLOATING_PREFIX = '^(https?://[^/]+/[^#]*?)';
 
 /**
  * Origin-capturing prefix for query-targeting transforms.
@@ -287,7 +287,7 @@ export function convertPathOnlyTransform(
     } else if (isPathAnchored) {
         prefix = ORIGIN_PREFIX;
     } else {
-        // Pattern can match anywhere in the path (floating match)
+        // Pattern can match anywhere in the path and query (floating match)
         prefix = FLOATING_PREFIX;
     }
 

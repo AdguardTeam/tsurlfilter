@@ -355,6 +355,10 @@ describe('RuleConverter', () => {
         });
 
         it('returns Block action if RemoveParam option is enabled but couldn\'t generate action', () => {
+            // Wiring test only: for real rules getRemoveParamRedirectAction()
+            // never returns null while $removeparam is enabled (a value-less
+            // modifier yields a strip-all redirect, an undecodable value
+            // throws), so this branch is reachable only by mocking.
             const getRemoveParamRedirectActionSpy = vi
                 // @ts-expect-error Accessing private member for test purposes
                 .spyOn(RegularRuleConverter, 'getRemoveParamRedirectAction')
@@ -653,14 +657,21 @@ describe('RuleConverter', () => {
             expect(action).toBeNull();
         });
 
-        it('returns null if advanced modifier value is null', () => {
+        it('returns strip-all query removal if advanced modifier value is null', () => {
+            // `Rule` stores a value-less `$removeparam` as `''`, but `null`
+            // must be handled the same way: a `$removeparam` rule must never
+            // degrade into a blocking rule.
             const rule = createRuleMock({
                 enabledOptions: [OPTION_NAMES.REMOVEPARAM],
                 advancedModifierValue: null,
             });
             // @ts-expect-error Accessing private member for test purposes
             const action = RegularRuleConverter.getRemoveParamRedirectAction(rule);
-            expect(action).toBeNull();
+            expect(action).toEqual({
+                transform: {
+                    query: '',
+                },
+            });
         });
 
         it('returns correct query removal if advanced modifier value is empty', () => {
@@ -757,26 +768,28 @@ describe('RuleConverter', () => {
             });
         });
 
-        it('returns null if a param value cannot be URI-decoded', () => {
+        it('throws UnsupportedModifierError if a param value cannot be URI-decoded', () => {
             // `%zz` is not valid percent-encoding, so decodeURIComponent() throws.
             const rule = createRuleMock({
                 enabledOptions: [OPTION_NAMES.REMOVEPARAM],
                 advancedModifierValue: '%zz',
             });
-            // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getRemoveParamRedirectAction(rule);
-            expect(action).toBeNull();
+            expect(() => {
+                // @ts-expect-error Accessing private member for test purposes
+                RegularRuleConverter.getRemoveParamRedirectAction(rule);
+            }).toThrow(UnsupportedModifierError);
         });
 
-        it('returns null if any pipe-separated segment cannot be URI-decoded', () => {
+        it('throws UnsupportedModifierError if any pipe-separated segment cannot be URI-decoded', () => {
             // Second segment contains invalid percent-encoding.
             const rule = createRuleMock({
                 enabledOptions: [OPTION_NAMES.REMOVEPARAM],
                 advancedModifierValue: 'utm_source|%zz',
             });
-            // @ts-expect-error Accessing private member for test purposes
-            const action = RegularRuleConverter.getRemoveParamRedirectAction(rule);
-            expect(action).toBeNull();
+            expect(() => {
+                // @ts-expect-error Accessing private member for test purposes
+                RegularRuleConverter.getRemoveParamRedirectAction(rule);
+            }).toThrow(UnsupportedModifierError);
         });
     });
 
