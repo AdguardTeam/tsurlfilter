@@ -1,6 +1,5 @@
 {
     "name": "@adguard/tsurlfilter",
-    "version": "6.0.2",
     "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
     "main": "dist/es/index.js",
     "module": "dist/es/index.js",
@@ -9,8 +8,7 @@
     "type": "module",
     "sideEffects": false,
     "files": [
-        "dist",
-        "!dist/build.txt"
+        "dist"
     ],
     "exports": {
         ".": {
@@ -55,7 +53,7 @@
     "author": "Adguard Software Ltd.",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "url": "git+https://github.com/AdGuardSoftwareLimited/ext-tsurlfilter.git",
         "directory": "packages/tsurlfilter"
     },
     "license": "GPL-3.0-only",
@@ -74,7 +72,6 @@
         "start": "rollup -c rollup.config.ts -w",
         "prebuild": "rimraf dist && pnpm build:types",
         "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript --bundleConfigAsCjs",
-        "postbuild": "tsx tasks/build-txt.ts",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types && tsx tasks/transform-dts.ts",
         "docs": "typedoc src --out docs",
         "test": "vitest run",

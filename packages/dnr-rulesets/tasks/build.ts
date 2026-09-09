@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 
 import {
-    BASE_DIR,
     BrowserFilters,
     DEST_RULESETS_DIR,
     FILTERS_BROWSER_PLACEHOLDER,
@@ -12,22 +11,9 @@ import {
     RESOURCES_DIR,
 } from '../common/constants';
 import { startDownload } from '../common/filters-downloader';
-import { version } from '../package.json';
 import { getVersion, getVersionTimestampMs } from '../src/utils/version-utils';
 import { loadAllowedFilterIds } from './helpers';
 import { createLocalScriptRulesJs, createLocalScriptRulesJson } from './local-scripts';
-
-/**
- * Creates build.txt file with package version.
- *
- * @returns Promise that resolves when build.txt is created.
- */
-const createVersionTxt = async (): Promise<void> => {
-    return fs.promises.writeFile(
-        path.join(BASE_DIR, 'build.txt'),
-        `version=${version}`,
-    );
-};
 
 /**
  * Removes all txt files from the specified directory.
@@ -122,7 +108,6 @@ const build = async (browser: BrowserFilters): Promise<void> => {
 const buildAll = async (): Promise<void> => {
     await build(BrowserFilters.ChromiumMv3);
     await build(BrowserFilters.OperaMv3);
-    await createVersionTxt();
 };
 
 buildAll();

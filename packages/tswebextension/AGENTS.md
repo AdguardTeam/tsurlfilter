@@ -49,7 +49,7 @@ packages/tswebextension/
 │           ├── utils/          # MV3 utilities
 │           └── errors/         # MV3-specific errors
 ├── test/                       # Tests (mv2/, mv3/, common/) + smoke tests
-├── tasks/                      # Build scripts (build-txt, transform-dts, etc.)
+├── tasks/                      # Build scripts (transform-dts, update-companiesdb, etc.)
 ├── dist/                       # Build output (gitignored)
 ├── rollup.config.ts            # Rollup build config
 ├── vitest.config.ts            # Vitest multi-project config

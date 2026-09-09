@@ -457,13 +457,25 @@ describe('TabsApi', () => {
     });
 
     describe('isNewPopupTab method', () => {
+        const FROZEN_NOW = 1_000_000;
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+            vi.setSystemTime(FROZEN_NOW);
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
         const cases = [
-            { url: 'https://example.com', createdAtMs: Date.now() - Math.round(TabsApi.POPUP_TAB_TIMEOUT_MS * 1.5), expected: false },
-            { url: 'https://example.com', createdAtMs: Date.now(), expected: true },
+            { url: 'https://example.com', createdAtMsOffset: -Math.round(TabsApi.POPUP_TAB_TIMEOUT_MS * 1.5), expected: false },
+            { url: 'https://example.com', createdAtMsOffset: 0, expected: true },
         ];
-        it.each(cases)('should return $expected if tab has url $url', ({ url, createdAtMs, expected }) => {
+        it.each(cases)('should return $expected if tab has url $url', ({ url, createdAtMsOffset, expected }) => {
             const tabId = 1;
 
+            const createdAtMs = FROZEN_NOW + createdAtMsOffset;
             const tabContext = { info: { url }, createdAtMs } as TabContext;
 
             tabsApi.context.set(tabId, tabContext);

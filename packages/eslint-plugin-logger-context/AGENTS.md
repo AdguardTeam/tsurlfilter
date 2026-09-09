@@ -31,7 +31,6 @@ packages/eslint-plugin-logger-context/
 │   ├── index.ts                  # Plugin entry point (rule registration)
 │   ├── require-logger-context.ts # Rule implementation
 │   └── helpers.ts                # Helper functions for AST analysis
-├── scripts/                      # Build helper scripts (build-txt)
 ├── dist/                         # Build output (gitignored)
 ├── rollup.config.ts              # Rollup build config
 ├── .eslintrc.js                  # ESLint config

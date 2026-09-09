@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 
 import { program } from 'commander';
 
-import { version } from '../../package.json';
+import packageJson from '../../package.json';
 
 import { copyWar } from './copyWar';
 
@@ -16,10 +16,16 @@ const CLI_NAME = 'tswebextension';
  * Main entrypoint.
  */
 async function main(): Promise<void> {
+    if (!('version' in packageJson)
+        || typeof packageJson.version !== 'string'
+        || packageJson.version.length === 0) {
+        throw new Error('Package version is missing. Run scripts/inject-package-versions.mjs before building.');
+    }
+
     program
         .name(CLI_NAME)
         .description('CLI to some development utils')
-        .version(version);
+        .version(packageJson.version);
 
     program
         .command('war')
@@ -55,7 +61,12 @@ const processFileName = path.basename(process.argv[1]);
 const isRunningViaCli = scriptFileName === processFileName && process.argv[1].includes(CLI_NAME);
 
 if (isRunningViaCli) {
-    main();
+    main().catch((error: unknown) => {
+        // Avoid an unhandled promise rejection on failure (e.g. missing package
+        // version): print only the actionable message with a stable exit code.
+        console.error(error instanceof Error ? error.message : error);
+        process.exitCode = 1;
+    });
 }
 
 export { copyWar };

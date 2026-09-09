@@ -1,0 +1,57 @@
+name: Prepare release
+
+# Opens a release PR for one monorepo package (finalizes its CHANGELOG.md,
+# optionally bumps its version). After the PR is merged, publish-release.yml
+# takes over.
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to release'
+        required: true
+        type: choice
+        options:
+          - logger
+          - css-tokenizer
+          - agtree
+          - tsurlfilter
+          - dnr-converter
+          - dnr-rulesets
+          - tswebextension
+          - adguard-api
+          - adguard-api-mv3
+          - eslint-plugin-logger-context
+      version:
+        description: 'Version to release, with the "v" prefix (e.g. v4.2.0, v4.2.0-beta.1)'
+        required: true
+        type: string
+
+# Serialize runs for the same package+version: two concurrent dispatches would
+# race on finalizing the same CHANGELOG.md and pushing the release branch.
+# New runs queue behind the in-flight run (cancel-in-progress: false); a cancel
+# could land mid-write and leave the changelog/branch half-updated.
+concurrency:
+  group: prepare-release-${{ inputs.package }}-${{ inputs.version }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  prepare:
+    name: Prepare release PR
+    # A workflow_dispatch can pick any ref in the UI; _prepare-release-monorepo.yml
+    # bases the release branch/PR on github.ref_name. But publish-release.yml only
+    # fires for PRs merged into master, so a dispatch from a feature branch would
+    # finalize the changelog and open release-bump/<pkg>-v<ver> against that branch
+    # and then silently never publish. Keep the old Bamboo invariant (the plan
+    # refused to run off master): only prepare releases from master, mirroring the
+    # master-only guard in update-companiesdb.yml.
+    if: github.ref == 'refs/heads/master'
+    uses: ./.github/workflows/_prepare-release-monorepo.yml
+    with:
+      package: ${{ inputs.package }}
+      version: ${{ inputs.version }}
+    secrets: inherit

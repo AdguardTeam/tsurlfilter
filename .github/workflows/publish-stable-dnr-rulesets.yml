@@ -1,0 +1,233 @@
+name: Publish stable DNR rulesets
+
+# Twice daily (00:17/12:17, ahead of the 00:30/12:30 extension auto-build),
+# build @adguard/dnr-rulesets from stable/dnr-rulesets-5.0 and publish it under
+# `latest`. Only 5.0 is published (it introduced the switch to the standalone
+# @adguard/dnr-converter, replacing @adguard/tsurlfilter's DNR APIs).
+# resolve-lines skips the round if the branch isn't on the current CI yet.
+#
+# npm 429 background: npm rate-limits the shared GitHub egress IP. One publish
+# per round stays inside its burst budget; a throttled publish gets one retry
+# after a backoff (npm's ~70s retry is shorter than the throttle window).
+# check-npm-version.sh makes re-runs idempotent.
+
+on:
+  schedule:
+    # The extension auto-build (00:30/12:30) only picks up the package every
+    # 12 h; :17 keeps 5.0 (`latest`) on npm just before it.
+    - cron: '17 0,12 * * *'
+  workflow_dispatch:
+    inputs:
+      line:
+        description: 'Stable line to publish (only 5.0); empty = 5.0'
+        required: false
+        type: string
+
+# Serialize runs so two rounds never publish colliding timestamped versions.
+concurrency:
+  group: publish-stable-dnr-rulesets
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-lines:
+    name: Resolve 5.0 for this round
+    runs-on: team-extensions
+    timeout-minutes: 10
+    outputs:
+      # Is 5.0 in this round? Downstream jobs gate on this flag.
+      line-5-0: ${{ steps.lines.outputs.line-5-0 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check stable line on the current CI
+        id: lines
+        shell: bash
+        env:
+          REQUESTED_LINE: ${{ inputs.line || '' }}
+        run: |
+          set -euo pipefail
+
+          # Single source of truth for the published stable lines — the
+          # check-package-lists.mjs drift guard asserts this assignment.
+          ALL_LINES="5.0"
+
+          if [ -n "$REQUESTED_LINE" ] && [ "$REQUESTED_LINE" != "$ALL_LINES" ]; then
+            echo "::error::Unknown stable line '$REQUESTED_LINE'; expected $ALL_LINES"
+            exit 1
+          fi
+
+          # Branch is "on the current CI" if these probe files exist at its
+          # tip; probed shallowly — no full clone, no gh dep.
+          ref="refs/heads/stable/dnr-rulesets-${ALL_LINES}"
+          if git fetch -q --depth=1 origin "${ref}" 2>/dev/null \
+            && git cat-file -e "FETCH_HEAD:scripts/inject-package-versions.mjs" 2>/dev/null \
+            && git cat-file -e "FETCH_HEAD:.github/actions/docker-build/action.yml" 2>/dev/null \
+            && git cat-file -e "FETCH_HEAD:scripts/ci/timeout-wrapper.sh" 2>/dev/null \
+            && git cat-file -e "FETCH_HEAD:scripts/ci/copy-test-reports.sh" 2>/dev/null \
+            && git show "FETCH_HEAD:Dockerfile" 2>/dev/null | grep -q 'dnr-rulesets-auto-build-output'; then
+            echo "line-5-0=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "$REQUESTED_LINE" ]; then
+            # An explicit dispatch must not silently publish nothing.
+            echo "::error::Line ${ALL_LINES} is not on the current CI (no scripts/inject-package-versions.mjs, .github/actions/docker-build, scripts/ci helpers, or dnr-rulesets-auto-build-output target on stable/dnr-rulesets-${ALL_LINES}); backport the CI first"
+            exit 1
+          fi
+          # Empty schedule round (branch not migrated) stays green — the flag
+          # is simply left unset.
+
+  build-stable-dnr-rulesets:
+    name: Build DNR rulesets 5.0
+    needs: resolve-lines
+    if: ${{ needs.resolve-lines.result == 'success' && needs.resolve-lines.outputs.line-5-0 == 'true' }}
+    runs-on: team-extensions
+    timeout-minutes: 30
+    steps:
+      - name: Checkout stable branch
+        uses: actions/checkout@v6
+        with:
+          ref: stable/dnr-rulesets-5.0
+          # Shallow: .git is dockerignored and the stamp comes from changelogs,
+          # not git history.
+          fetch-depth: 1
+
+      - name: Stamp stable version
+        shell: bash
+        run: |
+          set -euo pipefail
+          TS=$(date -u +%Y%m%d%H%M%S)
+          STABLE_VERSION="5.0.${TS}"
+          echo "Stable version: ${STABLE_VERSION}"
+          node scripts/inject-package-versions.mjs \
+            --package dnr-rulesets \
+            --version "${STABLE_VERSION}"
+
+      - name: Build package
+        uses: ./.github/actions/docker-build
+        with:
+          target: dnr-rulesets-auto-build-output
+          dest: build-output
+          cache-suffix: -5.0
+
+      - name: Verify package version
+        shell: bash
+        run: |
+          set -euo pipefail
+          TGZ=build-output/artifacts/dnr-rulesets.tgz
+          PACKED_VERSION=$(tar -xOf "$TGZ" package/package.json | node -e "let json = ''; process.stdin.on('data', (data) => json += data).on('end', () => process.stdout.write(JSON.parse(json).version))")
+          # Escape the dot so a tampered "5x0.20260819120000" can't match.
+          [[ "$PACKED_VERSION" =~ ^5\.0\.[0-9]{14}$ ]] || { echo "::error::$TGZ has unexpected stable version $PACKED_VERSION"; exit 1; }
+
+      - name: Upload npm package
+        uses: actions/upload-artifact@v7
+        with:
+          name: dnr-rulesets-5.0
+          path: build-output/artifacts/dnr-rulesets.tgz
+          # Publish/retry jobs in the same run only; 1-day retention is plenty.
+          retention-days: 1
+          if-no-files-found: error
+
+  check-5-0:
+    name: Check 5.0 version not on npm yet
+    needs: [resolve-lines, build-stable-dnr-rulesets]
+    if: ${{ needs.resolve-lines.result == 'success' && needs.resolve-lines.outputs.line-5-0 == 'true' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 10
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Checkout version-check script
+        # Sparse: the check only needs scripts/ci (the full clone is huge).
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: scripts/ci
+          fetch-depth: 1
+
+      - name: Download built package
+        uses: actions/download-artifact@v8
+        with:
+          name: dnr-rulesets-5.0
+          path: artifact
+
+      - name: Check target version not on npm yet
+        id: version-check
+        shell: bash
+        run: bash scripts/ci/check-npm-version.sh artifact/dnr-rulesets.tgz
+
+  publish-5-0:
+    name: Publish DNR rulesets 5.0
+    needs: [resolve-lines, build-stable-dnr-rulesets, check-5-0]
+    if: ${{ !cancelled() && needs.resolve-lines.outputs.line-5-0 == 'true' && needs.check-5-0.result == 'success' && needs.check-5-0.outputs.exists == 'false' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-5.0
+      package-file: dnr-rulesets.tgz
+      # `latest`; no environment so unattended runs don't wait on approval.
+      tag: latest
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  retry-5-0:
+    name: Retry 5.0
+    needs: [build-stable-dnr-rulesets, publish-5-0]
+    if: ${{ needs.publish-5-0.result == 'failure' && !cancelled() }}
+    runs-on: team-extensions
+    timeout-minutes: 20
+    outputs:
+      exists: ${{ steps.version-check.outputs.exists }}
+    steps:
+      - name: Back off
+        # Outlast the npm throttle window; npm's own retry (~70s) doesn't.
+        shell: bash
+        run: sleep 600
+
+      - name: Checkout version-check script
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: scripts/ci
+          fetch-depth: 1
+
+      - name: Download built package
+        uses: actions/download-artifact@v8
+        with:
+          name: dnr-rulesets-5.0
+          path: artifact
+
+      - name: Re-check target version on npm
+        id: version-check
+        shell: bash
+        run: bash scripts/ci/check-npm-version.sh artifact/dnr-rulesets.tgz
+
+  retry-publish-5-0:
+    name: Publish DNR rulesets 5.0 (retry)
+    needs: [retry-5-0]
+    if: ${{ !cancelled() && needs.retry-5-0.result == 'success' && needs.retry-5-0.outputs.exists == 'false' }}
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
+    with:
+      artifact-name: dnr-rulesets-5.0
+      package-file: dnr-rulesets.tgz
+      tag: latest
+      environment: ''
+    permissions:
+      contents: read
+      id-token: write
+
+  notify-failure:
+    name: Notify on failure
+    needs: [resolve-lines, build-stable-dnr-rulesets, check-5-0, publish-5-0, retry-5-0, retry-publish-5-0]
+    if: ${{ failure() }}
+    runs-on: team-extensions
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Send Slack notification
+        uses: AdGuardSoftwareLimited/actions/actions/slack@master
+        with:
+          channel: '#adguard-extension-vcs'
+          message: ':x: *publish-stable-dnr-rulesets* failed — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>'
+          color: danger

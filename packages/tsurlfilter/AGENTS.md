@@ -48,7 +48,7 @@ packages/tsurlfilter/
 │   ├── rules/                # Rule classes
 │   └── utils/                # Utility functions
 ├── test/                     # Unit tests + smoke tests + builder tests
-├── tasks/                    # Build scripts (build-txt, transform-dts, etc.)
+├── tasks/                    # Build scripts (transform-dts, etc.)
 ├── types/                    # Custom type declarations
 ├── dist/                     # Build output (gitignored)
 ├── rollup.config.ts          # Rollup build config

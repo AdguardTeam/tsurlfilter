@@ -1,13 +1,11 @@
 {
     "name": "@adguard/eslint-plugin-logger-context",
-    "version": "1.0.1",
     "description": "ESLint plugin that requires AdGuard logger calls to start with a context tag.",
     "main": "./dist/index.js",
     "module": "./dist/es/index.mjs",
     "types": "./dist/types/src/index.d.ts",
     "files": [
         "dist",
-        "!dist/build.txt",
         "!dist/.tsbuildinfo",
         "src"
     ],
@@ -21,7 +19,6 @@
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "pnpm prebuild && rolldown -c rolldown.config.ts && pnpm build:types",
-        "postbuild": "tsx scripts/build-txt.ts",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
         "lint:code": "eslint --cache --ignore-path .gitignore .",
@@ -41,7 +38,7 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "url": "git+https://github.com/AdGuardSoftwareLimited/ext-tsurlfilter.git",
         "directory": "packages/eslint-plugin-logger-context"
     },
     "bugs": {

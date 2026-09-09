@@ -1,6 +1,5 @@
 {
     "name": "@adguard/dnr-rulesets",
-    "version": "5.0.1",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
         "dist/**/*"
@@ -41,11 +40,19 @@
         "lint:code": "eslint --cache .",
         "lint:types": "tsc",
         "lint:md": "markdownlint .",
-        "increment:auto-deploy": "tsx tasks/auto-deploy-increment",
         "tgz": "pnpm pack --out dnr-rulesets.tgz"
     },
     "author": "Adguard Software Ltd.",
     "license": "GPL-3.0-only",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AdGuardSoftwareLimited/ext-tsurlfilter.git",
+        "directory": "packages/dnr-rulesets"
+    },
+    "bugs": {
+        "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
+    },
+    "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/dnr-rulesets#readme",
     "dependencies": {
         "@adguard/dnr-converter": "workspace:^",
         "@adguard/re2-wasm": "1.2.0",
