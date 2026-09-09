@@ -9,7 +9,6 @@ import { RuleGenerator } from '../generator';
 
 import { BaseConverter } from './base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';
-import { CONVERTER_PARSE_OPTIONS } from './parse-options';
 import { RuleConverter } from './rule';
 
 /**
@@ -40,9 +39,7 @@ export class RawRuleConverter extends BaseConverter {
      * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rawRule: string): ConversionResult<string, string[]> {
-        const conversionResult = RuleConverter.convertToAdg(
-            sharedRuleParser.parse(rawRule, CONVERTER_PARSE_OPTIONS),
-        );
+        const conversionResult = RuleConverter.convertToAdg(sharedRuleParser.parse(rawRule));
 
         // If the rule was not converted, return the original rule text
         if (!conversionResult.isConverted) {

@@ -26,9 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   listed above; callers must route all other kinds through the AST path.
 - The "rule is too general" `SyntaxError` now reports the original rule text
   instead of the re-generated rule.
-- `FilterList` now delegates raw-list conversion and source-map bookkeeping to
-  `@adguard/agtree`'s `RawFilterListConverter`. Its public API is unchanged;
-  `ConversionData` and `conversionDataValidator` are re-exported from agtree.
 
 ## [6.0.3] - 2026-08-25
 

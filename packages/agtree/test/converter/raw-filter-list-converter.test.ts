@@ -1,50 +1,9 @@
 import { describe, expect, test } from 'vitest';
 
-import { ProductCode } from '../../src/compatibility-tables';
 import { RawFilterListConverter } from '../../src/converter/raw-filter-list';
+import { NEWLINE } from '../../src/utils/constants';
 
-describe('RawFilterListConverter.convertToAdg', () => {
-    test('returns input unchanged when nothing needs conversion', () => {
-        const input = ['||example.com^', '||example.org^'].join('\n');
-        const r = RawFilterListConverter.convertToAdg(input);
-        expect(r.converted).toBe(input);
-        expect(r.isConverted).toBe(false);
-        expect(r.product).toBe(ProductCode.Adg);
-        expect(r.sourceMap).toEqual({ originals: [], conversions: {} });
-        expect(r.getOriginalContent()).toBe(input);
-    });
-
-    test('converts scriptlet rules and builds a source map', () => {
-        const input = ['example.com##+js(foo)', 'example.com#$#bar;baz'].join('\n');
-        const r = RawFilterListConverter.convertToAdg(input);
-        expect(r.converted).toBe([
-            "example.com#%#//scriptlet('ubo-foo')",
-            "example.com#%#//scriptlet('abp-bar')",
-            "example.com#%#//scriptlet('abp-baz')",
-        ].join('\n'));
-        expect(r.isConverted).toBe(true);
-        expect(r.getOriginalContent()).toBe(input);
-    });
-
-    test('preserves CRLF and no-trailing-newline multi-line expansion', () => {
-        const input = 'example.com##+js(foo)\r\nexample.com#$#bar;baz';
-        const r = RawFilterListConverter.convertToAdg(input);
-        expect(r.converted).toBe([
-            "example.com#%#//scriptlet('ubo-foo')\r\n",
-            "example.com#%#//scriptlet('abp-bar')\n",
-            "example.com#%#//scriptlet('abp-baz')",
-        ].join(''));
-        expect(r.getOriginalContent()).toBe(input);
-    });
-
-    test('empty input yields an empty result', () => {
-        const r = RawFilterListConverter.convertToAdg('');
-        expect(r.converted).toBe('');
-        expect(r.isConverted).toBe(false);
-    });
-});
-
-describe('RawFilterListConverter (regression)', () => {
+describe('RawFilterListConverter', () => {
     test('convertToAdg should leave non-affected filter lists as is', () => {
         const filterListContent = [
             '! Title: Foo',
@@ -54,12 +13,12 @@ describe('RawFilterListConverter (regression)', () => {
             '! Version: 1',
             '! License: https://example.com/license',
             '||example.com^$script',
-        ].join('\n');
+        ].join(NEWLINE);
 
         const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
 
         expect(convertedFilterList.isConverted).toBe(false);
-        expect(convertedFilterList.converted).toBe(filterListContent);
+        expect(convertedFilterList.result).toBe(filterListContent);
     });
 
     test('convertToAdg should convert filter lists to AdGuard syntax', () => {
@@ -78,7 +37,7 @@ describe('RawFilterListConverter (regression)', () => {
             '||delivery.tf1.fr/pub$media,rewrite=abp-resource:blank-mp3,domain=tf1.fr',
             'example.com#$#abp-snippet1 arg0 arg1; abp-snippet2 arg0 arg1',
             '##^script:has-text(ad)',
-        ].join('\n');
+        ].join(NEWLINE);
 
         const expectedFilterListContent = [
             '! Title: Foo',
@@ -94,12 +53,12 @@ describe('RawFilterListConverter (regression)', () => {
             "example.com#%#//scriptlet('abp-snippet1', 'arg0', 'arg1')",
             "example.com#%#//scriptlet('abp-snippet2', 'arg0', 'arg1')",
             '$$script:contains(ad)',
-        ].join('\n');
+        ].join(NEWLINE);
 
         const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
 
         expect(convertedFilterList.isConverted).toBe(true);
-        expect(convertedFilterList.converted).toBe(expectedFilterListContent);
+        expect(convertedFilterList.result).toBe(expectedFilterListContent);
     });
 
     test('Tolerant mode should work correctly', () => {
@@ -109,24 +68,24 @@ describe('RawFilterListConverter (regression)', () => {
             '##^body:has-text(',
             // Should be converted
             '||example.com^$3p',
-        ].join('\n');
+        ].join(NEWLINE);
 
         // Expected tolerantly converted filter list
         const expectedFilterListContent = [
             '! Title: Foo',
             '##^body:has-text(', // Left as is
             '||example.com^$third-party', // Converted
-        ].join('\n');
+        ].join(NEWLINE);
 
         // Without tolerant mode, the whole filter list should fail
-        expect(() => RawFilterListConverter.convertToAdg(filterListContent, { tolerant: false })).toThrow();
+        expect(() => RawFilterListConverter.convertToAdg(filterListContent, false)).toThrow();
 
         // With tolerant mode, the whole filter list should be converted
-        const tolerant = () => RawFilterListConverter.convertToAdg(filterListContent, { tolerant: true });
+        const tolerant = () => RawFilterListConverter.convertToAdg(filterListContent, true);
         expect(tolerant).not.toThrow();
 
         // The rule should be left as is
-        expect(tolerant().converted).toBe(expectedFilterListContent);
+        expect(tolerant().result).toBe(expectedFilterListContent);
     });
 
     test('convertToAdg should convert a modifier on a rule followed by another rule', () => {
@@ -137,32 +96,16 @@ describe('RawFilterListConverter (regression)', () => {
         const filterListContent = [
             '||a^$3p',
             '||b^$script',
-        ].join('\n');
+        ].join(NEWLINE);
 
         const expectedFilterListContent = [
             '||a^$third-party',
             '||b^$script',
-        ].join('\n');
+        ].join(NEWLINE);
 
         const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
 
         expect(convertedFilterList.isConverted).toBe(true);
-        expect(convertedFilterList.converted).toBe(expectedFilterListContent);
-    });
-});
-
-describe('RawFilterListConverter parity with tsurlfilter FilterList', () => {
-    test.each([
-        [
-            '||example.org^\nexample.com##.ad\nexample.com#@#.ad\n'
-            + 'invalid rule syntax\n! comment\n'
-            + '||track.com^$third-party,domain=a.com|~b.com\n',
-        ],
-        ['||a.com^\r\n||b.com^\n||c.com^'],
-        ['example.com#$#bar;baz\nexample.com#$#bar;baz'],
-        ['example.com##+js(foo)\r\nexample.com#$#bar;baz\r\n'],
-    ])('getOriginalContent() is byte-identical for %j', (input) => {
-        const r = RawFilterListConverter.convertToAdg(input);
-        expect(r.getOriginalContent()).toBe(input);
+        expect(convertedFilterList.result).toBe(expectedFilterListContent);
     });
 });

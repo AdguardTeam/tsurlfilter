@@ -239,17 +239,4 @@ describe('FilterList', () => {
         // No errors for valid rules
         expect(list.getConversionErrors()).toHaveLength(0);
     });
-
-    it('delegates to agtree and tags errors with filterId', () => {
-        const list = new FilterList('example.com##+js(foo)', 42);
-        expect(list.getContent()).toBe("example.com#%#//scriptlet('ubo-foo')");
-        expect(list.getConvertedRuleOriginal(0)).toBe('example.com##+js(foo)');
-    });
-
-    it('does not re-convert when constructed from stored conversion data', () => {
-        const stored = { originals: ['example.com##+js(foo)'], conversions: { 0: 0 } };
-        const list = new FilterList("example.com#%#//scriptlet('ubo-foo')", 7, stored);
-        expect(list.getConversionData()).toBe(stored);
-        expect(list.getOriginalContent()).toBe('example.com##+js(foo)');
-    });
 });
