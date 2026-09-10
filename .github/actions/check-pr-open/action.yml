@@ -2,8 +2,8 @@ name: Check PR is open
 
 description: >-
   Runs scripts/ci/check-pr-open.mjs (via node) and exposes its `open` output.
-  Single place for the exit-code wrapper so the publish / unpublish / comment
-  jobs of devex-bridge.yml cannot drift again (they used to maintain
+  Single place for the exit-code wrapper so the publish / comment jobs of
+  devex-bridge.yml cannot drift again (they used to maintain
   byte-identical inline copies). Fail-loud contract: check-pr-open exit 1
   (undetermined state) and exit 2 (usage) fail the step; only 0 (open) and 10
   (closed | merged) are accepted. The token is read from the environment
