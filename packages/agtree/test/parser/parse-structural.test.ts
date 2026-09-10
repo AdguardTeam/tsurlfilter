@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { RuleParserPipeline } from '../../src/ast-builder/rule-parser';
 import * as parserApi from '../../src/parser';
 import { RuleKind } from '../../src/parser/classifier';
+import { CTX_STATUS_OK } from '../../src/parser/context';
 
 const pipeline = new RuleParserPipeline();
 
@@ -15,7 +16,7 @@ describe('RuleParserPipeline.parseStructural', () => {
 
     test('returns the shared ctx with populated data', () => {
         const { ctx } = pipeline.parseStructural('||a.com^$third-party');
-        expect(ctx.status).toBe(0);
+        expect(ctx.status).toBe(CTX_STATUS_OK);
         expect(ctx.source).toBe('||a.com^$third-party');
     });
 
@@ -52,7 +53,7 @@ describe('RuleParserPipeline.parseStructural', () => {
 
             // The context returned by parseStructural must have been the one
             // used to build the AST (no re-tokenization in between).
-            expect(ctx.status).toBe(0);
+            expect(ctx.status).toBe(CTX_STATUS_OK);
         }
     });
 });

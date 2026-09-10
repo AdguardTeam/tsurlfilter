@@ -101,10 +101,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Legacy `converter`, `generator`, `nodes`, and `ast-utils` implementations
   (superseded by the new pipeline stack).
 - Serializer and Deserializer APIs.
-- The v4 bitwise platform enum implementation (`GenericPlatform`,
-  `SpecificPlatform`) and its helpers. Minimal compatibility constants remain
-  exported under the same names for `@adguard/scriptlets` v2.x, but new code
-  should use the `Platform` class.
 
 ### Fixed
 

@@ -9,15 +9,17 @@
 
 import type { ParseOptions } from '../ast-builder/options';
 import { RuleParserPipeline } from '../ast-builder/rule-parser';
+import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import {
     type AnyRule,
+    type EmptyRule,
     type InvalidRule,
     type InvalidRuleError,
     NodeType,
     RuleCategory,
 } from '../nodes';
 import { asError } from '../utils/error';
-import { SYNTAX_UNKNOWN } from '../utils/syntax-flags';
+import { SYNTAX_ALL, SYNTAX_UNKNOWN } from '../utils/syntax-flags';
 
 /**
  * Legacy parser options, kept for API compatibility with pre-v5 consumers.
@@ -51,8 +53,8 @@ export interface LegacyParserOptions {
     includeRaws?: boolean;
 
     /**
-     * Whether to ignore comment rules. When `true`, comment rules produce
-     * `null` instead of a comment AST node.
+     * Whether to ignore comment rules. When `true`, comment rules produce an
+     * `EmptyRule` (with location info, when enabled) instead of a comment node.
      */
     ignoreComments?: boolean;
 
@@ -97,12 +99,13 @@ export class RuleParser {
      * @param raw Raw rule source.
      * @param options Legacy parser options.
      *
-     * @returns Parsed rule AST node, or `null` when `ignoreComments` is `true`
-     *   and the input is a comment rule.
+     * @returns Parsed rule AST node. With `ignoreComments` enabled, comment
+     *   rules produce an `EmptyRule` instead of a comment node (matching the
+     *   AGTree v4 behavior).
      *
      * @throws If the rule is syntactically invalid and `tolerant` is `false`.
      */
-    public static parse(raw: string, options: LegacyParserOptions = defaultParserOptions): AnyRule | null {
+    public static parse(raw: string, options: LegacyParserOptions = defaultParserOptions): AnyRule {
         const pipelineOptions: ParseOptions = {
             isLocIncluded: options.isLocIncluded,
             parseAbpSpecificRules: options.parseAbpSpecificRules,
@@ -114,7 +117,7 @@ export class RuleParser {
             const result = RuleParser.PIPELINE.parse(raw, pipelineOptions);
 
             if (options.ignoreComments && result.category === RuleCategory.Comment) {
-                return null;
+                return RuleParser.createEmptyRule(raw, options.isLocIncluded);
             }
 
             return result;
@@ -125,6 +128,27 @@ export class RuleParser {
 
             throw e;
         }
+    }
+
+    /**
+     * Builds an `EmptyRule` node for ignored comment rules.
+     *
+     * @param raw Raw rule source.
+     * @param isLocIncluded Whether to include source location info.
+     *
+     * @returns EmptyRule AST node.
+     */
+    private static createEmptyRule(raw: string, isLocIncluded?: boolean): EmptyRule {
+        const result: EmptyRule = {
+            type: NodeType.EmptyRule,
+            category: RuleCategory.Empty,
+            syntax: SYNTAX_ALL,
+        };
+        if (isLocIncluded) {
+            result.start = 0;
+            result.end = raw.length;
+        }
+        return result;
     }
 
     /**
@@ -147,8 +171,12 @@ export class RuleParser {
             message: error.message,
         };
         if (isLocIncluded) {
-            errNode.start = 0;
-            errNode.end = raw.length;
+            // Preserve the syntax error's own precise span so consumers can
+            // highlight the exact offending range, while the outer InvalidRule
+            // keeps the full-rule location.
+            const { start, end } = RuleParser.getErrorSpan(error, raw.length);
+            errNode.start = start;
+            errNode.end = end;
         }
         const result: InvalidRule = {
             type: NodeType.InvalidRule,
@@ -162,5 +190,21 @@ export class RuleParser {
             result.end = raw.length;
         }
         return result;
+    }
+
+    /**
+     * Extracts the error's own source span, falling back to the full rule span.
+     *
+     * @param error The error that occurred.
+     * @param fallbackEnd Fallback end offset (the raw rule length).
+     *
+     * @returns The error source span.
+     */
+    private static getErrorSpan(error: Error, fallbackEnd: number): { start: number; end: number } {
+        if (error instanceof AdblockSyntaxError) {
+            return { start: error.start, end: error.end };
+        }
+
+        return { start: 0, end: fallbackEnd };
     }
 }

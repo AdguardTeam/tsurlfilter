@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] <!-- release/agtree-v5 -->
 
+### Added
+
+- Added public `NetworkRule.createFromReader` and `CosmeticRule.createFromReader`
+  entry points plus `CosmeticRule.supportsBinaryPath` to materialize rules from
+  a structural reader without building an AST node. These accept a reader bound
+  to a populated parser context and only support the structural rule kinds
+  listed below; callers must route all other kinds through the AST path.
+
 ### Changed
 
 - Updated `@adguard/agtree` to `v5.0.0` with refactored parser API: rule parsing now uses
@@ -19,11 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   separators), and ADG scriptlet rules; host rules, CSS/JS injection, HTML
   filtering, ABP snippets, uBO scriptlets, and any cosmetic rule carrying
   `[$...]`/uBO modifiers continue to use the AST path.
-- Added public `NetworkRule.createFromReader` and `CosmeticRule.createFromReader`
-  entry points plus `CosmeticRule.supportsBinaryPath` to materialize rules from
-  a structural reader without building an AST node. These accept a reader bound
-  to a populated parser context and only support the structural rule kinds
-  listed above; callers must route all other kinds through the AST path.
 - The "rule is too general" `SyntaxError` now reports the original rule text
   instead of the re-generated rule.
 

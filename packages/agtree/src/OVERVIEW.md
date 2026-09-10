@@ -181,8 +181,8 @@ consumer entry points:
   without building an AST. It returns a `StructuralParseResult` (`kind`,
   `isHostCandidate`, and the populated shared `ctx`), which callers can feed to
   `parseFromCurrentCtx` to build the AST without re-tokenizing/re-parsing.
-  This is the two-phase path used for the zero-allocation materialization of
-  high-volume rule kinds.
+  This is the two-phase path used for AST-free (reduced-allocation)
+  materialization of high-volume rule kinds.
 - **`parseRange(ctx, startTi, endTi, dataOffset, options?)`** — for callers
   that have already tokenized and want to parse a sub-range of tokens,
   optionally writing into a non-zero region of `ctx.data`.

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { defaultParserOptions, RuleParser } from '../../src/compat/rule-parser';
-import { NodeType, RuleCategory } from '../../src/nodes';
+import { type InvalidRule, NodeType, RuleCategory } from '../../src/nodes';
 
 describe('RuleParser compat shim', () => {
     test('parses network and cosmetic rules via the v5 pipeline', () => {
@@ -40,23 +40,28 @@ describe('RuleParser compat shim', () => {
         const result = RuleParser.parse('example.com#%#//scriptlet(', {
             ...defaultParserOptions,
             tolerant: true,
-        });
-        expect(result).not.toBeNull();
-        expect(result!.category).toBe(RuleCategory.Invalid);
-        expect(result!.type).toBe(NodeType.InvalidRule);
+        }) as InvalidRule;
+        expect(result.category).toBe(RuleCategory.Invalid);
+        expect(result.type).toBe(NodeType.InvalidRule);
+        // The error keeps its own precise span, the outer rule the full span.
+        expect(result.error.start).toBe(25);
+        expect(result.error.end).toBe(26);
+        expect(result.start).toBe(0);
+        expect(result.end).toBe('example.com#%#//scriptlet('.length);
     });
 
-    test('ignoreComments returns null for comment rules', () => {
+    test('ignoreComments returns an EmptyRule for comment rules', () => {
         const ignored = RuleParser.parse('! comment', {
             ...defaultParserOptions,
             ignoreComments: true,
         });
-        expect(ignored).toBeNull();
+        expect(ignored.category).toBe(RuleCategory.Empty);
+        expect(ignored.type).toBe(NodeType.EmptyRule);
 
         const kept = RuleParser.parse('! comment', {
             ...defaultParserOptions,
             ignoreComments: false,
         });
-        expect(kept?.category).toBe(RuleCategory.Comment);
+        expect(kept.category).toBe(RuleCategory.Comment);
     });
 });

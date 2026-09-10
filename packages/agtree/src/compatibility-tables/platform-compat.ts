@@ -12,8 +12,8 @@
 /**
  * List of specific platforms (v4-compatible bitmask values).
  *
- * @deprecated Legacy bitmask enum kept for API compatibility with
- *   `@adguard/scriptlets` v2.x. Use the {@link Platform} class /
+ * @deprecated Legacy bitmask enum kept as a temporary bridge until
+ *   `@adguard/scriptlets` migrates to v5. Use the {@link Platform} class /
  *   `ProductCode` + `PlatformType` instead.
  */
 export const SpecificPlatform = {
@@ -80,8 +80,8 @@ const Any = AdgAny | UboAny | AbpAny;
  * List of generic platforms (combinations of specific platforms), v4-compatible
  * bitmask values.
  *
- * @deprecated Legacy bitmask enum kept for API compatibility with
- *   `@adguard/scriptlets` v2.x. Use the {@link Platform} class /
+ * @deprecated Legacy bitmask enum kept as a temporary bridge until
+ *   `@adguard/scriptlets` migrates to v5. Use the {@link Platform} class /
  *   `ProductCode` + `PlatformType` instead.
  */
 export const GenericPlatform = {

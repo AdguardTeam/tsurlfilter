@@ -90,7 +90,11 @@ export class RuleFactory {
                     return null;
 
                 case RuleKind.Network: {
-                    if (isHostCandidate) {
+                    // Host candidates only take the AST fallback when host parsing
+                    // is enabled. With host parsing disabled, a host-shaped pattern
+                    // (e.g. a bare `example.org`) stays on the structural path like
+                    // any other network rule.
+                    if (parseHostRules && isHostCandidate) {
                         // Retained AST path for host candidates (no structural host layout),
                         // built from the already-populated context without re-parsing.
                         // Reuse the host-candidate classification from parseStructural so
