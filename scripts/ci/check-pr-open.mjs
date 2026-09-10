@@ -2,8 +2,7 @@
 /**
  * @file Check whether a GitHub pull request is open, gating every AK-facing
  * step of the DevEx bridge. The actual consumers are the devex-bridge jobs
- * publish / unpublish / comment — the cleanup workflow has its own preflight
- * and never calls this — so the fetch flags and the state
+ * publish / comment — so the fetch flags and the state
  * classification live in one place and cannot drift. Only an explicit "open"
  * proceeds; only "closed"/"merged" skips; anything else (e.g. an empty string
  * from a garbled response) is an error, so a broken API response can never
