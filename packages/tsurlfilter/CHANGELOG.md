@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v6.0.2] - 2026-07-28
 
 ### Added
 
@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   up to 62 independent flag bits (previously limited to 31). No behavioral
   changes.
 - Updated [@adguard/assistant] to `v4.4.12`.
+- Updated [@adguard/agtree] to `v4.2.0`.
+- Updated [@adguard/scriptlets] to `v2.5.0`.
 
 ### Removed
 
@@ -45,10 +47,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([AdguardBrowserExtension#3533]).
 - Expanded wildcard TLD domains in DNR conversion for `$domain` and `$to`
   modifiers [#189].
+- Regex domains in the `$domain` modifier with multiple escaped separators
+  (e.g. `/example\d*\.(live\|com\|icu\|org)$/`) not matching any domain,
+  because only the first escaped separator was unescaped.
 
-[AdguardBrowserExtension#3533]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3533
-[#189]: https://github.com/AdguardTeam/tsurlfilter/issues/189
+[v6.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v6.0.2
 [#111]: https://github.com/AdguardTeam/tsurlfilter/issues/111
+[#189]: https://github.com/AdguardTeam/tsurlfilter/issues/189
+[AdguardBrowserExtension#3533]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3533
 
 ## [v5.0.1] - 2026-04-24
 

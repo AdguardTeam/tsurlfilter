@@ -11,6 +11,7 @@ import {
     transformNthScriptletArgument,
 } from '../../ast-utils/scriptlets';
 import { GenericPlatform, scriptletsCompatibilityTable } from '../../compatibility-tables';
+import { type ScriptletDataSchema } from '../../compatibility-tables/schemas';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     CosmeticRuleSeparator,
@@ -56,6 +57,15 @@ const UBO_NO_FETCH_IF_WILDCARD = '/^/';
 
 const UBO_REMOVE_CLASS_NAME = 'remove-class.js';
 const UBO_REMOVE_ATTR_NAME = 'remove-attr.js';
+
+const UBO_JSON_PRUNE_FETCH_RESPONSE_NAME = 'json-prune-fetch-response.js';
+const UBO_JSON_PRUNE_XHR_RESPONSE_NAME = 'json-prune-xhr-response.js';
+
+const UBO_PRUNE_RESPONSE_PROPS_TO_MATCH_KEY = 'propsToMatch';
+const UBO_PRUNE_RESPONSE_STACK_TO_MATCH_KEY = 'stackToMatch';
+
+const ADG_PRUNE_FETCH_RESPONSE_NAME = UBO_JSON_PRUNE_FETCH_RESPONSE_NAME.slice(0, -UBO_SCRIPTLET_JS_SUFFIX_LENGTH);
+const ADG_PRUNE_XHR_RESPONSE_NAME = UBO_JSON_PRUNE_XHR_RESPONSE_NAME.slice(0, -UBO_SCRIPTLET_JS_SUFFIX_LENGTH);
 
 const setConstantAdgToUboMap: Record<string, string> = {
     [ADG_SET_CONSTANT_EMPTY_STRING]: UBO_SET_CONSTANT_EMPTY_STRING,
@@ -206,6 +216,12 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                             value: applying,
                         });
                     }
+                }
+
+                // Remap uBO prune-response scriptlet key/value args into ADG positional slots.
+                // https://github.com/AdguardTeam/FiltersCompiler/issues/250
+                if (scriptletData) {
+                    ScriptletRuleConverter.remapUboPruneResponseArgs(scriptletClone, scriptletData);
                 }
             }
 
@@ -421,6 +437,11 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                     });
                     break;
 
+                case ADG_PRUNE_FETCH_RESPONSE_NAME:
+                case ADG_PRUNE_XHR_RESPONSE_NAME:
+                    ScriptletRuleConverter.remapAdgToUboPruneResponseArgs(scriptletClone);
+                    break;
+
                 default:
             }
 
@@ -473,5 +494,139 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             }),
             true,
         );
+    }
+
+    /**
+     * Remaps uBO key/value args of `json-prune-fetch-response` and
+     * `json-prune-xhr-response` into AdGuard positional argument slots.
+     *
+     * These uBO variants accept only two positional args (`propsToRemove`,
+     * `obligatoryProps`); args 3+ are key/value pairs parsed by uBO's
+     * `getExtraArgs` (even index = key, odd index = value). Recognized keys:
+     * `propsToMatch`, `stackToMatch`. ADG's equivalents use positional
+     * `propsToMatch` (arg 3) and `stack` (arg 4), so the pairs are remapped into
+     * positional slots. Unknown keys are dropped, because uBO ignores keys it
+     * does not read and they cannot be mapped to an ADG positional slot. When a
+     * recognized key repeats, the last value wins.
+     *
+     * Besides remapping arguments, this method also sets the scriptlet node's
+     * name to the AdGuard native name (the uBO canonical name without the
+     * `.js` suffix). This overrides the `ubo-` prefix that `convertToAdg`
+     * adds earlier in its main flow for these two scriptlets, so the final
+     * output uses the native AdGuard name with positional argument semantics.
+     *
+     * @see https://github.com/AdguardTeam/FiltersCompiler/issues/250
+     *
+     * @param scriptletClone Cloned scriptlet node to remap in place.
+     * @param scriptletData Compatibility data for the matched uBO scriptlet.
+     */
+    private static remapUboPruneResponseArgs(
+        scriptletClone: ParameterList,
+        scriptletData: ScriptletDataSchema,
+    ): void {
+        // Only the two prune-response scriptlets need key/value → positional remapping.
+        if (
+            scriptletData.name !== UBO_JSON_PRUNE_FETCH_RESPONSE_NAME
+            && scriptletData.name !== UBO_JSON_PRUNE_XHR_RESPONSE_NAME
+        ) {
+            return;
+        }
+
+        const propsToRemove = scriptletClone.children[1]?.value ?? EMPTY;
+        const obligatoryProps = scriptletClone.children[2]?.value ?? EMPTY;
+        // Whether the source had an explicit 2nd positional arg (children[2]).
+        const hadObligatoryProps = scriptletClone.children.length > 2;
+
+        let propsToMatch = EMPTY;
+        let stack = EMPTY;
+        const unknownKeys: string[] = [];
+
+        // Varargs start at index 3 (children[0] is the scriptlet name).
+        for (let i = 3; i < scriptletClone.children.length; i += 2) {
+            const key = scriptletClone.children[i]?.value ?? EMPTY;
+            const val = scriptletClone.children[i + 1]?.value ?? EMPTY;
+
+            if (key === UBO_PRUNE_RESPONSE_PROPS_TO_MATCH_KEY) {
+                propsToMatch = val;
+            } else if (key === UBO_PRUNE_RESPONSE_STACK_TO_MATCH_KEY) {
+                stack = val;
+            } else if (key !== EMPTY) {
+                // Unknown keys are dropped: uBO ignores keys it does not read,
+                // and they cannot be mapped to an ADG positional slot.
+                unknownKeys.push(key);
+            }
+        }
+
+        if (unknownKeys.length > 0) {
+            // eslint-disable-next-line no-console
+            console.warn(
+                `[agtree] Dropped unknown extra args for ${scriptletData.name}: ${unknownKeys.join(', ')}`,
+            );
+        }
+
+        // Translate to the ADG native name (uBO canonical name without the
+        // `.js` suffix): the arguments are now in ADG positional semantics.
+        const adgName = scriptletData.name.slice(0, -UBO_SCRIPTLET_JS_SUFFIX_LENGTH);
+        setScriptletName(scriptletClone, adgName);
+
+        // Rebuild children: name, propsToRemove, then the obligatoryProps,
+        // propsToMatch and stack slots. `obligatoryProps` is emitted only when
+        // it was present in the source or when a positional propsToMatch/stack
+        // slot follows, so the output never gains a trailing empty arg the
+        // source never had.
+        // eslint-disable-next-line no-param-reassign
+        scriptletClone.children = [
+            scriptletClone.children[0],
+            { type: 'Value', value: propsToRemove },
+        ];
+
+        if (hadObligatoryProps || propsToMatch !== EMPTY || stack !== EMPTY) {
+            scriptletClone.children.push({ type: 'Value', value: obligatoryProps });
+        }
+        if (propsToMatch !== EMPTY || stack !== EMPTY) {
+            scriptletClone.children.push({ type: 'Value', value: propsToMatch });
+        }
+        if (stack !== EMPTY) {
+            scriptletClone.children.push({ type: 'Value', value: stack });
+        }
+    }
+
+    /**
+     * Inverse of {@link ScriptletRuleConverter.remapUboPruneResponseArgs}:
+     * remaps AdGuard positional `propsToMatch`/`stack` args of
+     * `json-prune-fetch-response` / `json-prune-xhr-response` back into uBO
+     * key/value pairs (`propsToMatch`, `stackToMatch`).
+     *
+     * `children` layout (AdGuard, before this method): `[name, propsToRemove,
+     * obligatoryProps, propsToMatch, stack]`. `propsToMatch` and `stack` are
+     * optional; empty values are not re-emitted, so the output never has
+     * trailing empty key/value pairs. ADG rules that already use the
+     * `ubo-`-prefixed name keep key/value args and are not handled here (they
+     * take the `ubo-` prefix branch in `convertToUbo`, not this `switch`).
+     *
+     * @param scriptletClone Cloned scriptlet node to remap in place.
+     */
+    private static remapAdgToUboPruneResponseArgs(scriptletClone: ParameterList): void {
+        // Read the positional propsToMatch/stack before truncating children.
+        const propsToMatchVal = scriptletClone.children[3]?.value;
+        const stackVal = scriptletClone.children[4]?.value;
+
+        // Keep the name and the two positional args; drop the positional
+        // propsToMatch/stack slots — they are re-emitted as uBO key/value pairs.
+        // eslint-disable-next-line no-param-reassign
+        scriptletClone.children = scriptletClone.children.slice(
+            0,
+            Math.min(3, scriptletClone.children.length),
+        );
+
+        if (propsToMatchVal && propsToMatchVal !== EMPTY) {
+            scriptletClone.children.push({ type: 'Value', value: UBO_PRUNE_RESPONSE_PROPS_TO_MATCH_KEY });
+            scriptletClone.children.push({ type: 'Value', value: propsToMatchVal });
+        }
+
+        if (stackVal && stackVal !== EMPTY) {
+            scriptletClone.children.push({ type: 'Value', value: UBO_PRUNE_RESPONSE_STACK_TO_MATCH_KEY });
+            scriptletClone.children.push({ type: 'Value', value: stackVal });
+        }
     }
 }

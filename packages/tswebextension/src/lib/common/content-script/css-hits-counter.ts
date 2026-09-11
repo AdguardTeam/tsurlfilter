@@ -182,6 +182,14 @@ export class CssHitsCounter {
     private pendingMutationRootSet = new WeakSet<Element>();
 
     /**
+     * Elements intentionally removed by ExtendedCss.
+     *
+     * ExtendedCss hits are reported synchronously before removal, so the
+     * mutation counter must not restore these detached elements to the DOM.
+     */
+    private extendedCssRemovedElements = new WeakSet<Element>();
+
+    /**
      * Probe roots that we temporarily restored to the DOM and still need to
      * remove. The stop() method also uses this list so delayed batch
      * cancellation cannot leave our temporary nodes in the page.
@@ -328,6 +336,10 @@ export class CssHitsCounter {
             const result: ICountedElement[] = [];
 
             for (const rule of affectedEl.rules) {
+                if (rule.style?.remove === 'true') {
+                    this.extendedCssRemovedElements.add(affectedEl.node);
+                }
+
                 if (rule.style && rule.style.content) {
                     const ruleInfo = ElementUtils.parseExtendedStyleInfo(
                         rule.style.content,
@@ -656,6 +668,10 @@ export class CssHitsCounter {
             }
 
             if (!element.parentNode) {
+                if (this.extendedCssRemovedElements.has(element)) {
+                    continue;
+                }
+
                 if (this.observer && !observerWasDisconnected) {
                     this.observer.disconnect();
                     observerWasDisconnected = true;

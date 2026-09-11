@@ -425,6 +425,58 @@ describe('CssHitsCounter', () => {
         vi.useRealTimers();
     });
 
+    it('does not restore a mutation root removed by ExtendedCss', () => {
+        vi.useFakeTimers();
+        document.body.innerHTML = '';
+
+        const getMutationObserver = installMutationObserverMock();
+        const onCssHitsFound = vi.fn();
+        const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
+
+        const mutationRoot = document.createElement('div');
+        mutationRoot.setAttribute('id', 'extendedCssRemovedMutationDiv');
+        document.body.appendChild(mutationRoot);
+
+        const mutationRecord = {
+            addedNodes: [mutationRoot],
+            type: 'childList',
+            target: document.body,
+        };
+
+        getMutationObserver().trigger([mutationRecord as unknown as MutationRecord]);
+
+        const rule = {
+            style: {
+                content: "'adguard19%3B19'",
+                remove: 'true',
+            },
+        };
+        cssHitsCounter.countAffectedByExtendedCss({
+            rules: [rule],
+            node: mutationRoot,
+        });
+        mutationRoot.remove();
+
+        expect(document.getElementById('extendedCssRemovedMutationDiv')).toBeNull();
+
+        vi.advanceTimersByTime(100);
+        expect(document.getElementById('extendedCssRemovedMutationDiv')).toBeNull();
+
+        vi.advanceTimersByTime(150);
+        expect(document.getElementById('extendedCssRemovedMutationDiv')).toBeNull();
+
+        vi.advanceTimersByTime(250);
+        expect(document.getElementById('extendedCssRemovedMutationDiv')).toBeNull();
+        expect(onCssHitsFound).toHaveBeenCalledTimes(1);
+        expect(onCssHitsFound).toHaveBeenLastCalledWith([expect.objectContaining({
+            filterId: 19,
+            ruleIndex: 19,
+        })]);
+
+        cssHitsCounter.stop();
+        vi.useRealTimers();
+    });
+
     it('retries captured mutation roots while waiting for css hit marker to appear', () => {
         vi.useFakeTimers();
         document.body.innerHTML = '';
