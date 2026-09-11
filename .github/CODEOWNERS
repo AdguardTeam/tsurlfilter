@@ -3,24 +3,18 @@
 # precedence (GitHub applies the last matching pattern).
 *                                                    @AdGuardSoftwareLimited/extensions
 
-# The DevEx bridge workflows reach the ARTIFACT_KEEPER_API_KEY org secret
-# (see the "Trust boundary" header of devex-bridge.yml), so changes to them —
-# and to the drift guard / sweep / check-pr-open composite that enforce their
-# contract — must be reviewed by Extensions maintainers (the stricter subset).
+# The DevEx bridge workflow reaches the ARTIFACT_KEEPER_API_KEY org secret
+# (see the "Trust boundary" header of devex-bridge.yml), so changes to it —
+# and to the drift guard / check-pr-open composite that enforce its contract —
+# must be reviewed by Extensions maintainers (the stricter subset).
 # (The consumer-side pinning tool moved to the browser-extension repo.)
 .github/CODEOWNERS                           @AdGuardSoftwareLimited/extensions-maintainers
 .github/actions/check-pr-open/               @AdGuardSoftwareLimited/extensions-maintainers
 .github/workflows/devex-bridge.yml           @AdGuardSoftwareLimited/extensions-maintainers
-.github/workflows/devex-bridge-cleanup.yml   @AdGuardSoftwareLimited/extensions-maintainers
-.github/workflows/devex-bridge-sweep.yml     @AdGuardSoftwareLimited/extensions-maintainers
 scripts/ci/bridged-packages.json             @AdGuardSoftwareLimited/extensions-maintainers
 scripts/ci/check-package-lists.mjs           @AdGuardSoftwareLimited/extensions-maintainers
 scripts/ci/std-errors.mjs                    @AdGuardSoftwareLimited/extensions-maintainers
 scripts/ci/verify-tarball.sh                 @AdGuardSoftwareLimited/extensions-maintainers
-scripts/ci/ak-dev-unpublish.mjs              @AdGuardSoftwareLimited/extensions-maintainers
 scripts/ci/check-pr-open.mjs                 @AdGuardSoftwareLimited/extensions-maintainers
-scripts/ci/devex-sweep.mjs                   @AdGuardSoftwareLimited/extensions-maintainers
 tests/verify-tarball.test.sh                 @AdGuardSoftwareLimited/extensions-maintainers
-tests/ak-dev-unpublish.test.sh               @AdGuardSoftwareLimited/extensions-maintainers
-tests/devex-sweep.test.sh                    @AdGuardSoftwareLimited/extensions-maintainers
 tests/check-pr-open.test.sh                  @AdGuardSoftwareLimited/extensions-maintainers
