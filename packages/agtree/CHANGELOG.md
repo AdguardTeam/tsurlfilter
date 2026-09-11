@@ -11,13 +11,27 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `:has-text()` is now accepted as a synonym of `:contains()` in AdGuard
+  HTML filtering rules during ADG→ADG conversion.
+
 ### Changed
+
+- HTML filtering rules with unbalanced `:contains()`/ `:-abp-contains()` /
+  `:has-text()` argument are now normalized to a quoted argument during
+  conversion, e.g.
+  `:contains(eval(function(p,a,c,k,e,d))` →
+  `:contains("eval(function(p,a,c,k,e,d)")`.
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- AdGuard HTML filtering rules whose bodies cannot be parsed as CSS selector
+  lists are now kept as-is during conversion instead of throwing a parse error,
+  e.g. `:contains()` with an unbalanced parenthesis or an unterminated
+  string in the argument, or `[tag-content]` with escaped double quotes.
 
 ### Security
 
