@@ -109,7 +109,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   modifiers such as `$_`, `$___`, and `$_invalid_` are parsed correctly.
 - The legacy `RuleParser` shim now honors its advertised `tolerant` and
   `ignoreComments` options (`tolerant` wraps failures in `InvalidRule` nodes;
-  `ignoreComments` returns `null` for comment rules).
+  `ignoreComments` returns an `EmptyRule` for comment rules, matching the
+  AGTree 4.2.0 behavior).
 - `RuleKind` is now a regular enum, so `RuleKind.Network` is usable as a runtime
   value by consumers compiling with `isolatedModules` (previously the `const
   enum` declaration caused TS2748).

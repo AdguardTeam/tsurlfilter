@@ -236,6 +236,8 @@ export {
 
 // Backwards-compatible platform bitmask enums (consumed by @adguard/scriptlets
 // v2.x). Deprecated in favour of the Platform class above.
+// TODO: remove these legacy enums once @adguard/scriptlets migrates to the
+// `Platform` class (follow-up to AG-57813).
 export {
     GenericPlatform,
     SpecificPlatform,
