@@ -46,8 +46,11 @@ From a package directory:
 
 ```bash
 pnpm bench          # Node
-pnpm bench:browser  # Chromium (Playwright provider)
+pnpm bench:browser  # Chromium (Playwright provider) — where available
 ```
+
+`pnpm bench:browser` requires a browser project: `agtree` and `css-tokenizer`
+have one, `tsurlfilter` does not (its benches import `node:fs`).
 
 To run every package's benchmarks from the monorepo root:
 
