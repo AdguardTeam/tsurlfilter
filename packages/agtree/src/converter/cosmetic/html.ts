@@ -208,7 +208,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 isConverted = true;
                 return HtmlRuleConverter.convertSpecialAttributeSelectorAdgToAdg(name, value);
             };
-            onSpecialPseudoClassSelector = HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToAdg;
+            onSpecialPseudoClassSelector = (name, argument) => {
+                const result = HtmlRuleConverter.convertSpecialPseudoClassSelectorAdgToAdg(name, argument);
+                // Mark rule as converted in ADG -> ADG conversion if the special
+                // pseudo-class selector was replaced (e.g. `:has-text()` -> `:contains()`)
+                if (typeof result !== 'boolean') {
+                    isConverted = true;
+                }
+                return result;
+            };
         } else if (rule.syntax === AdblockSyntax.Ubo) {
             /**
              * Always mark rule as converted in UBO -> ADG conversion.
@@ -396,24 +404,45 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Since special pseudo-class selectors do not need conversion
-     * in AdGuard to AdGuard conversion, we simply return `true` to keep them as-is.
+     * Handles special pseudo-class selectors during AdGuard to AdGuard conversion:
+     * - `:contains(text)` -> kept as-is
+     * - `:-abp-contains(text)` -> kept as-is
+     * - `:has-text(text)` -> `:contains(text)`
+     *   `:has-text()` is a documented synonym for `:contains()` in AdGuard products.
      *
      * @param name Name of the special pseudo-class selector.
+     * @param argument Argument of the special pseudo-class selector.
      *
-     * @returns `true` to keep the special pseudo-class selector as-is.
+     * @returns A {@link SimpleSelector} to add to the current complex selector,
+     * or `true` to keep the original pseudo-class selector as-is.
      *
      * @throws Rule conversion error for mixed syntax.
      */
-    private static convertSpecialPseudoClassSelectorAdgToAdg(name: string): true {
-        if (SUPPORTED_UBO_PSEUDO_CLASSES.has(name)) {
-            throw new RuleConversionError(sprintf(
-                ERROR_MESSAGES.INVALID_RULE,
-                ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
-            ));
-        }
+    private static convertSpecialPseudoClassSelectorAdgToAdg(name: string, argument: string): SimpleSelector | true {
+        switch (name) {
+            // `:has-text(text)` -> `:contains(text)`
+            // `:has-text()` is a documented synonym for `:contains()` in AdGuard products:
+            // https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains
+            case UboPseudoClasses.HasText: {
+                return HtmlRuleConverter.getPseudoClassSelectorNode(
+                    AdgPseudoClasses.Contains,
+                    argument,
+                );
+            }
 
-        return true;
+            // Other uBlock-specific pseudo-classes are invalid in AdGuard rules
+            case UboPseudoClasses.MinTextLength: {
+                throw new RuleConversionError(sprintf(
+                    ERROR_MESSAGES.INVALID_RULE,
+                    ERROR_MESSAGES.MIXED_SYNTAX_ADG_UBO,
+                ));
+            }
+
+            // `:contains()` and `:-abp-contains()` are kept as-is in AdGuard rules
+            default: {
+                return true;
+            }
+        }
     }
 
     /**

@@ -157,6 +157,19 @@ describe('HtmlRuleConverter', () => {
                         shouldConvert: false,
                     },
 
+                    // `:has-text()` special pseudo-class selector (uBlock alias, documented synonym of `:contains()`)
+                    // https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains
+                    {
+                        actual: '$$div:has-text(example)',
+                        expected: ['$$div:contains(example)'],
+                    },
+
+                    // `:has-text()` special pseudo-class selector - regexp argument
+                    {
+                        actual: '$$div:has-text(/ex.*ple/i)',
+                        expected: ['$$div:contains(/ex.*ple/i)'],
+                    },
+
                     // `[tag-content]` and `[wildcard]` special attribute selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]',
@@ -333,12 +346,6 @@ describe('HtmlRuleConverter', () => {
                     {
                         input: '$$:contains()',
                         error: "Special pseudo-class selector 'contains' requires an argument",
-                    },
-
-                    // invalid simple selector - mixed syntax (uBlock special pseudo-class selector)
-                    {
-                        input: '$$div:has-text(example)',
-                        error: 'Invalid HTML filtering rule: Mixed AdGuard and uBlock syntax',
                     },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {
