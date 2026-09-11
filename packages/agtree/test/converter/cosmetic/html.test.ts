@@ -407,6 +407,41 @@ describe('HtmlRuleConverter', () => {
                         actual: '$$script[tag-content="{""zone_id"":"""]',
                         expected: ['$$script:contains({"zone_id":")'],
                     },
+
+                    // `:contains()` with unbalanced parentheses in the argument (normalized to a quoted argument)
+                    {
+                        actual: '$$script:contains((function(g,b,a,c,e,d))',
+                        expected: ['$$script:contains("(function(g,b,a,c,e,d)")'],
+                    },
+
+                    // `:contains()` with an unterminated string in the argument (normalized to a quoted argument)
+                    {
+                        actual: "$$div[style=\"display: none !important;\"]:contains('ed2k://)",
+                        expected: ["$$div[style=\"display: none !important;\"]:contains(\"'ed2k://\")"],
+                    },
+
+                    // `[tag-content]` with escaped double quotes that breaks CSS tokenization (kept as-is)
+                    {
+                        // eslint-disable-next-line max-len
+                        actual: 'example.net$$li[class="hasimage"][tag-content="""NativeAdHeadlineItemViewModel"""][max-length="2000"]',
+                        // eslint-disable-next-line max-len
+                        expected: ['example.net$$li[class="hasimage"][tag-content="""NativeAdHeadlineItemViewModel"""][max-length="2000"]'],
+                        shouldConvert: false,
+                    },
+
+                    // `:contains()` with a regexp containing square brackets (normalized to a quoted argument)
+                    {
+                        actual: 'example.org$$script:contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)',
+                        expected: ['example.org$$script:contains("/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/")'],
+                    },
+
+                    // `:contains()` with unbalanced braces in the argument (normalized to a quoted argument)
+                    {
+                        // eslint-disable-next-line max-len
+                        actual: '~example.org$$script:contains(||!navigator.platform){setTimeout(function () {w.location.href=url)',
+                        // eslint-disable-next-line max-len
+                        expected: ['~example.org$$script:contains("||!navigator.platform){setTimeout(function () {w.location.href=url")'],
+                    },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
                 });
@@ -432,6 +467,12 @@ describe('HtmlRuleConverter', () => {
                     {
                         input: '##^[attr="value"]div',
                         error: 'Type selector must be first in the compound selector',
+                    },
+
+                    // Parsing error without special selectors - must still be rejected
+                    {
+                        input: 'example.com$$div[class="hotword-container"]com^',
+                        error: 'Type selector is already set for the compound selector',
                     },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {

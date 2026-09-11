@@ -5,6 +5,7 @@
 import { sprintf } from 'sprintf-js';
 
 import { cloneDomainListNode } from '../../ast-utils/clone';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     AdgHtmlFilteringBodyGenerator,
@@ -230,14 +231,67 @@ export class HtmlRuleConverter extends RuleConverterBase {
         }
 
         // Convert body
-        const convertedBody = HtmlRuleConverter.convertBody(
-            rule.body,
-            parser,
-            AdgHtmlFilteringBodyGenerator,
-            onSpecialAttributeSelector,
-            onSpecialPseudoClassSelector,
-            rule.syntax === AdblockSyntax.Adg,
-        );
+        let convertedBody: Value | HtmlFilteringRuleBody;
+        try {
+            convertedBody = HtmlRuleConverter.convertBody(
+                rule.body,
+                parser,
+                AdgHtmlFilteringBodyGenerator,
+                onSpecialAttributeSelector,
+                onSpecialPseudoClassSelector,
+                rule.syntax === AdblockSyntax.Adg,
+            );
+        } catch (error) {
+            // Tolerant fallback for AdGuard HTML filtering rules whose bodies
+            // cannot be parsed as CSS selector lists, e.g. `:contains()` with
+            // an unbalanced parenthesis or an unterminated string in the
+            // argument. Such rules are valid in CoreLibs and are present in
+            // production filter lists, so we keep them as-is instead of
+            // excluding them during conversion.
+            // Note: only applies to AdGuard-syntax rules with special
+            // selectors; genuinely invalid rules still throw.
+
+            const isAdgWithSpecialSelectorsWithError = rule.syntax === AdblockSyntax.Adg
+                && error instanceof AdblockSyntaxError
+                && HtmlRuleConverter.hasSpecialSimpleSelectors(
+                    rule.body.type === 'Value' ? rule.body.value : '',
+                );
+
+            if (!isAdgWithSpecialSelectorsWithError) {
+                throw error;
+            }
+
+            // First, try to normalize the unclosed special pseudo-class
+            // selector argument by quoting it, e.g.
+            // `:contains(eval(function(p,a,c,k,e,d))` ->
+            // `:contains("eval(function(p,a,c,k,e,d)")`.
+            // The re-parse is self-validating: if the normalized body
+            // still cannot be parsed, the rule is kept as-is.
+            const fixedBodyRaw = HtmlRuleConverter.fixUnclosedSpecialPseudoClassArgument(
+                rule.body.type === 'Value' ? rule.body.value : '',
+            );
+
+            if (fixedBodyRaw === null) {
+                return createNodeConversionResult([rule], false);
+            }
+
+            try {
+                convertedBody = HtmlRuleConverter.convertBody(
+                    {
+                        type: 'Value',
+                        value: fixedBodyRaw,
+                    },
+                    parser,
+                    AdgHtmlFilteringBodyGenerator,
+                    onSpecialAttributeSelector,
+                    onSpecialPseudoClassSelector,
+                    true,
+                );
+                isConverted = true;
+            } catch {
+                return createNodeConversionResult([rule], false);
+            }
+        }
 
         if (!isConverted) {
             return createNodeConversionResult([rule], false);
@@ -716,6 +770,92 @@ export class HtmlRuleConverter extends RuleConverterBase {
         }
 
         return { min, max };
+    }
+
+    /**
+     * Checks if the raw HTML filtering rule body contains any special
+     * attribute selector or special pseudo-class selector.
+     *
+     * Used by the tolerant fallback to distinguish rules with special
+     * selectors (which must be kept as-is if unparseable) from genuinely
+     * invalid rules (which must be rejected).
+     *
+     * @param raw Raw HTML filtering rule body.
+     *
+     * @returns `true` if the body contains special selectors, otherwise `false`.
+     */
+    private static hasSpecialSimpleSelectors(raw: string): boolean {
+        const markers = [
+            `[${AdgAttributeSelectors.TagContent}=`,
+            `[${AdgAttributeSelectors.Wildcard}=`,
+            `[${AdgAttributeSelectors.MinLength}=`,
+            `[${AdgAttributeSelectors.MaxLength}=`,
+            `${AdgPseudoClasses.Contains}(`,
+            ':-abp-contains(',
+            `${UboPseudoClasses.HasText}(`,
+        ];
+
+        return markers.some((marker) => raw.includes(marker));
+    }
+
+    /**
+     * Normalizes the raw HTML filtering rule body with an unclosed special
+     * pseudo-class selector argument by quoting that argument as a CSS string,
+     * e.g. `:contains(eval(function(p,a,c,k,e,d))` ->
+     * `:contains("eval(function(p,a,c,k,e,d)")`.
+     *
+     * The argument of the last special pseudo-class selector is considered to
+     * end at the last closing parenthesis of the rule body; the rest of the
+     * body is kept as-is. This mirrors the lenient behavior of CoreLibs, which
+     * supports such rules in production filter lists.
+     *
+     * @param raw Raw HTML filtering rule body to normalize.
+     *
+     * @returns Normalized body, or `null` if the body cannot be normalized
+     * (no special pseudo-class selector found, or no closing parenthesis found).
+     */
+    private static fixUnclosedSpecialPseudoClassArgument(raw: string): string | null {
+        // Markers of special pseudo-class selectors with raw-text arguments
+        const markers = [
+            `:${AdgPseudoClasses.Contains}(`,
+            ':-abp-contains(',
+            `:${UboPseudoClasses.HasText}(`,
+        ];
+
+        // Find the last occurrence of any special pseudo-class selector marker
+        let lastMarkerIndex = -1;
+        let lastMarkerLength = 0;
+
+        for (const marker of markers) {
+            const index = raw.lastIndexOf(marker);
+            if (index > lastMarkerIndex) {
+                lastMarkerIndex = index;
+                lastMarkerLength = marker.length;
+            }
+        }
+
+        // No special pseudo-class selector found - cannot normalize
+        if (lastMarkerIndex < 0) {
+            return null;
+        }
+
+        // Opening parenthesis of the special pseudo-class selector
+        const openParenIndex = lastMarkerIndex + lastMarkerLength - 1;
+
+        // The argument ends at the last closing parenthesis of the rule body
+        const closeParenIndex = raw.lastIndexOf(')');
+
+        // No closing parenthesis found - cannot normalize
+        if (closeParenIndex <= openParenIndex) {
+            return null;
+        }
+
+        // Extract the raw argument and quote it as a CSS string,
+        // escaping any double quotes inside the argument
+        const argumentRaw = raw.slice(openParenIndex + 1, closeParenIndex);
+        const quotedArgument = `"${argumentRaw.replace(/"/g, '\\"')}"`;
+
+        return raw.slice(0, openParenIndex + 1) + quotedArgument + raw.slice(closeParenIndex);
     }
 
     /**

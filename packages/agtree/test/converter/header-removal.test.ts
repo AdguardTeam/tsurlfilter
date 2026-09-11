@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { RuleConverter } from '../../src/converter';
 import { HeaderRemovalRuleConverter } from '../../src/converter/cosmetic/header-removal';
 import { RuleConversionError } from '../../src/errors/rule-conversion-error';
 import { RuleParser } from '../../src/parser/rule-parser';
@@ -13,6 +14,16 @@ describe('HeaderRemovalRuleConverter', () => {
                 actual: '##+js(foo)',
                 expected: [
                     '##+js(foo)',
+                ],
+                shouldConvert: false,
+            },
+
+            // Unparseable body - not a responseheader(...) rule, kept as-is
+            // so that the main HTML filtering rule converter can handle it
+            {
+                actual: '$$script:contains((function(g,b,a,c,e,d))',
+                expected: [
+                    '$$script:contains((function(g,b,a,c,e,d))',
                 ],
                 shouldConvert: false,
             },
@@ -66,6 +77,33 @@ describe('HeaderRemovalRuleConverter', () => {
                     RuleParser.parse(actual),
                 );
             }).toThrowError(new RuleConversionError(expected));
+        });
+    });
+
+    describe('full conversion path (RuleConverter.convertToAdg)', () => {
+        test.each([
+            // Unparseable HTML filtering rule with special selectors is normalized
+            // to a quoted argument by the main HTML filtering rule converter
+            {
+                actual: '$$script:contains(eval(function(p,a,c,k,e,d))',
+                expected: [
+                    '$$script:contains("eval(function(p,a,c,k,e,d)")',
+                ],
+            },
+
+            // Unparseable HTML filtering rule without special selectors is rejected
+            {
+                actual: 'example.com$$div[class="hotword-container"]com^',
+                error: 'Type selector is already set for the compound selector',
+            },
+        ])("'$actual'", (testData) => {
+            if ('error' in testData) {
+                expect(() => {
+                    RuleConverter.convertToAdg(RuleParser.parse(testData.actual));
+                }).toThrowError(testData.error);
+            } else {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+            }
         });
     });
 });
