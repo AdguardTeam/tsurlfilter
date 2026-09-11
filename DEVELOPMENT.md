@@ -86,79 +86,79 @@ To build the browser extension against them:
 1. Create your branch in `AdGuardSoftwareLimited/browser-extension` as usual
    (e.g. `feature/AG-12345-…`) with whatever changes you need — CHANGELOG
    entries, source adaptations, etc.
-2. From an up-to-date tsurlfilter checkout, pin the dev builds:
+2. In the browser-extension checkout, pin the dev builds with the
+   consumer-side tool that lives there (`tools/ci/use-dev-builds.ts` — the
+   TypeScript port of the tool that used to live in this repo):
 
    ```bash
-   node scripts/use-dev-builds.mjs --pr <N> --registry https://ak.int.agrd.dev/npm/npm-internal --extension /path/to/browser-extension
+   pnpm tsx tools/ci/use-dev-builds.ts --pr <N> --head <short-sha> --extension . --with-dnr-converter --with-css-tokenizer --with-agtree --with-tsurlfilter --with-dnr-rulesets --with-tswebextension
    ```
 
-   (The `--registry` flag is optional — the tool defaults to the same AK path —
-   but pass it explicitly so it cannot drift from the workflow's
-   `ARTIFACT_KEEPER_URL`.) This points the six packages at the AK tarballs via
-   `pnpm.overrides` (dependencies stay untouched) and refreshes
+   The registry is fixed — dev builds are only published to the internal
+   Artifact Keeper npm registry. This points the six packages at the AK
+   tarballs via `pnpm.overrides` (dependencies stay untouched) and refreshes
    `pnpm-lock.yaml`.
 3. Commit `package.json` and `pnpm-lock.yaml`. The extension's regular CI
    builds the branch — installable builds are in the CI run's Artifacts
    (`dev-builds`, `chrome-dev-crx`).
 
 After every push to the tsurlfilter PR the dev builds are republished under a
-new head-scoped version, so re-run the same command (from the pushed checkout,
-or with `--head <short-sha>` from the comment) and commit the refreshed
+new head-scoped version, so re-run the same command with the new
+`--head <short-sha>` from the comment and commit the refreshed
 `package.json` / `pnpm-lock.yaml`. The tool resolves the coherent set for the
-checkout head: if any package's build for that head is missing on AK (a publish
-leg failed), it fails loudly instead of mixing builds from different heads.
+requested head: if any package's build for that head is missing on AK (a
+publish leg failed), it fails loudly instead of mixing builds from different
+heads.
 
 A branch pinned to dev builds must never be merged. Before marking the
 extension PR ready (once the real versions are released, or if testing is
 abandoned), restore registry dependencies:
 
 ```bash
-node scripts/use-dev-builds.mjs --remove --extension /path/to/browser-extension
+pnpm tsx tools/ci/use-dev-builds.ts --remove --extension .
 ```
 
-Closing or merging the tsurlfilter PR deletes its dev versions from AK
-(`devex-bridge-cleanup.yml`), after which pinned branches stop resolving; the
-`devex-bridge-sweep.yml` GC is the safety net if a close event was missed.
+Dev builds are published to the dedicated `npm-internal-dev` AK registry and
+expire automatically 7 days after publish (AK lifecycle policy
+`max_age_days=7`). There is no CI-side cleanup: a pinned branch stops resolving
+once its dev versions expire (or are otherwise removed from AK). A PR left idle
+for more than 7 days therefore loses its dev builds — re-push (a trivial
+commit) or re-run the workflow to republish them.
 
 ### Requirements
 
-The three bridge workflows (`devex-bridge.yml`, `devex-bridge-cleanup.yml`,
-`devex-bridge-sweep.yml`) all require the org-scoped `ARTIFACT_KEEPER_URL`
-variable (base URL of the Artifact Keeper instance, e.g. `https://ak.int.agrd.dev`)
-and the `ARTIFACT_KEEPER_API_KEY` secret — the same pair the shared
-`deploy-to-ak-npm.yml` workflow uses. The npm registry URL is derived as
-`${ARTIFACT_KEEPER_URL}/npm/npm-internal`. If the URL variable is unset it
-resolves to an empty string and every job fails loudly rather than publishing
-to an empty registry URL — including the sweep, which additionally validates
-that its `AK_REGISTRY` value is an http(s) URL.
+The DevEx bridge workflow (`devex-bridge.yml`) requires the org-scoped
+`ARTIFACT_KEEPER_URL` variable (base URL of the Artifact Keeper instance, e.g.
+`https://ak.int.agrd.dev`) and the `ARTIFACT_KEEPER_API_KEY` secret — the same
+pair the shared `deploy-to-ak-npm.yml` workflow uses. The npm registry URL is
+derived as `${ARTIFACT_KEEPER_URL}/npm/npm-internal-dev`. If the URL variable
+is unset it resolves to an empty string and every job fails loudly rather than
+publishing to an empty registry URL.
 
-On the **developer side**, running `use-dev-builds.mjs` (or any `npm view`
-against the AK registry) needs the same registry reachability: the AK host is
-internal, so you must be on the internal network (VPN) and, if AK enforces
-read auth, have an npm token acceptable to AK. A cold run against an unroutable
-host fails with `ENOTFOUND`/`E401` — that is expected.
+On the **developer side**, running the pin tool (`tools/ci/use-dev-builds.ts`
+in the browser-extension repo, or any `npm view` against the AK registry) needs
+the same registry reachability: the AK host is internal, so you must be on the
+internal network (VPN) and, if AK enforces read auth, have an npm token
+acceptable to AK. A cold run against an unroutable host fails with
+`ENOTFOUND`/`E401` — that is expected.
 
 ### If Something Goes Wrong
 
-The recovery paths below are the documented ways to converge after a bridge,
-cleanup or sweep failure — the same commands the Slack failure alerts point at:
+The recovery paths below are the documented ways to converge after a bridge
+failure — the same commands the Slack failure alert points at:
 
 - **A bridge run failed** (no dev builds for the last push): push again, or
   *Re-run all jobs* on the failing run. Re-running only the failed jobs more
   than a day later trips the `retention-days: 1` artifact expiry (the
   version-record / tarball artifacts the publish jobs download are gone), so
   prefer **Re-run all jobs** or a new push.
-- **A close cleanup failed** (or you suspect orphaned dev versions): re-dispatch
-  *devex-bridge-cleanup.yml* with `pr-number = <N>` — it is idempotent and only
-  writes what the close event was supposed to. If the dispatch itself fails,
-  the periodic `devex-bridge-sweep.yml` GC is the always-on safety net.
-- **The sweep failed** (GC safety net broken): fix the issue and re-run it, or
-  dispatch *devex-bridge-sweep.yml* with `pr-number = <N>` for a targeted pass;
-  the scheduled run retries every 6h.
-- **Dev pins stop resolving in the extension**: the dev versions were deleted
-  (cleanup ran), so run `use-dev-builds.mjs --remove --extension <path>` or
-  re-pin from the current checkout head. There is nothing to un-publish by
-  hand.
+- **Dev pins stop resolving in the extension** (e.g. the PR was idle past the
+  7-day TTL and the builds expired on AK): re-push to the tsurlfilter PR to
+  publish fresh head-scoped versions, then re-pin in the browser-extension
+  checkout with `pnpm tsx tools/ci/use-dev-builds.ts --head <short-sha> --extension .`.
+  There is nothing to unpublish by hand — AK's lifecycle policy reclaims
+  expired builds on its own, and a removed build is gone for good (repeating
+  its SHA will not restore it).
 
 ## Development Workflow
 
