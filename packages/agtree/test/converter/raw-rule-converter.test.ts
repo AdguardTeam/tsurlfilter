@@ -55,6 +55,15 @@ describe('Raw rule converter wrapper should work correctly', () => {
     });
 });
 
+describe('RawRuleConverter fixed detail level', () => {
+    // uBO CSS injection needs parseCssDeclarationList=true (defaults off) to convert.
+    test('converts a uBO CSS injection rule without caller-supplied flags', () => {
+        const result = RawRuleConverter.convertToAdg('example.com##h1:style(color: red)');
+        expect(result.isConverted).toBe(true);
+        expect(result.result).toEqual(['example.com#$#h1 { color: red }']);
+    });
+});
+
 describe('RawRuleConverter shared pipeline', () => {
     test('converts consistently across many calls', () => {
         for (let i = 0; i < 1000; i += 1) {

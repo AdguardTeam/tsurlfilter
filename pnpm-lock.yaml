@@ -543,6 +543,9 @@ importers:
       agtree-v2:
         specifier: npm:@adguard/agtree@^2.3.0
         version: '@adguard/agtree@2.3.0'
+      agtree-v4:
+        specifier: npm:@adguard/agtree@^4.2.1
+        version: '@adguard/agtree@4.2.1'
       comment-parser:
         specifier: ^1.4.5
         version: 1.4.8

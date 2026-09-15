@@ -33,7 +33,8 @@ pnpm install
 
 | Package | Benchmark file(s) | What it measures |
 |---------|-------------------|------------------|
-| `agtree` | `test/parser.bench.ts`, `test/converter.bench.ts` | AGTree parse/convert vs `agtree-v2` |
+| `agtree` | `test/parser.bench.ts`, `test/converter.bench.ts` | AGTree parse/convert vs `agtree-v2`, over a small inline rule set |
+| `agtree` | `test/converter-fixture.bench.ts` | Whole-list and per-rule conversion vs `agtree-v4` over `test/fixtures/ubo-filters.txt` (Node + Chromium) |
 | `css-tokenizer` | `test/tokenizer.bench.ts` | Tokenizer vs `css-tree`, `@csstools/*`, `parse-css`, `csslex` |
 | `tsurlfilter` | `test/engine/*.bench.ts` | Engine startup (network/cosmetic/engine) vs `tsurlfilter-v3`; request matching over the committed request corpus |
 
@@ -78,6 +79,7 @@ Benchmarks compare the current version of a package against older published
 versions using npm-alias dev dependencies:
 
 - `agtree-v2` — older `@adguard/agtree` release
+- `agtree-v4` — last `@adguard/agtree` v4 release, the v5 comparison baseline
 - `tsurlfilter-v3` — older `@adguard/tsurlfilter` release
 
 Keep these aliases up to date when new major versions are released.
@@ -90,11 +92,20 @@ Keep these aliases up to date when new major versions are released.
    the Vitest 5 context-fixture API.
 2. Ensure it is picked up by the package's `test.benchmark.include` glob
    (`test/**/*.bench.ts`).
-3. If it imports fixtures via `node:fs`, it is Node-only and must be excluded
-   from the browser project — add it to that project's `test.benchmark.exclude`
-   (see agtree's `vitest.config.ts`, which excludes `converter.bench.ts`);
-   otherwise `pnpm bench:browser` collects it and dies on the import in
-   Chromium.
+3. If it imports fixtures via `node:fs`, or imports the current implementation
+   from `src`, it is Node-only and must be excluded from the browser project —
+   add it to that project's `test.benchmark.exclude` (see agtree's
+   `vitest.config.ts`, which excludes `converter.bench.ts`); otherwise
+   `pnpm bench:browser` collects it and dies on the import in Chromium. Prefer
+   Vite's `?raw` fixture imports (with the ambient `declare module '*?raw'`
+   typing in `test/types/`) when the benchmark should also run in the browser.
+4. Measure the current implementation as its BUILT bundle, not as source: import
+   the package by its own name (`@adguard/agtree`) so its `exports` map resolves
+   to `dist/`, and list both the package and the baseline in that project's
+   `deps.optimizer` (`ssr` for Node, `web` for the browser). Serving the current
+   code from `src` while the baseline runs as an optimized published bundle
+   deoptimizes cross-module calls and inflates the current timings by roughly
+   10x. Build before benching: `pnpm build`.
 
 ### Updating Results
 
@@ -122,26 +133,32 @@ compare against.
   `"@adguard/tsurlfilter@3>@adguard/agtree"`), not the workspace agtree v5, so
   its `./serializer`/`./deserializer` imports keep working.
 
-- **Node-only benches and the browser project.** The Node benches import the
-  current implementation from source (`../src/...`) while comparators run as
+- **Node-only benches and the browser project.** The older Node benches import
+  the current implementation from source (`../src/...`) while comparators run as
   prebuilt dist, so Node runs print Vitest's module-runner export-getter
   warning; browser benches already run native ESM. `tsurlfilter` has no browser
   project (its benches import `node:fs` and `tsurlfilter-v3`); `agtree` excludes
   `converter.bench.ts` from its browser project via `test.benchmark.exclude` for
-  the same reason.
+  the same reason. The fixture-based benches (`test/converter-fixture.bench.ts`)
+  do not have that problem: they import the BUILT package and a `?raw` fixture,
+  so the same file runs unchanged in Node and Chromium.
 
 - **Bounded iterations.** Engine builds take ~200-400 ms each, so their
   `bench.compare` calls cap `iterations`/`warmupIterations` (tinybench defaults
   to 64 + 16) to keep the whole test well under the bench-mode 60s timeout.
 
-- **Inline fixtures vs real corpora.** The `agtree` and `css-tokenizer` benches
-  run a small inline corpus (8 representative rules / a repeated CSS sample)
-  rather than the large filter-list / CSS corpora the deleted standalone
-  packages downloaded. `agtree` has no committed corpus and `tsurlfilter`'s
-  fixtures live in that package's `test/resources/`, so wiring real corpora in
-  is a follow-up; the inline sets were chosen to cover the main syntax classes
-  (comments, network/exception rules, element hiding, extended CSS, scriptlets,
-  CSS injection, `$removeparam`).
+- **Inline fixtures vs real corpora.** The `parser.bench.ts` / `converter.bench.ts`
+  and `css-tokenizer` benches run a small inline corpus (8 representative rules /
+  a repeated CSS sample) rather than the large filter-list / CSS corpora the
+  deleted standalone packages downloaded; the inline sets were chosen to cover
+  the main syntax classes (comments, network/exception rules, element hiding,
+  extended CSS, scriptlets, CSS injection, `$removeparam`).
+  `converter-fixture.bench.ts` is the exception: it converts the committed
+  `packages/agtree/test/fixtures/ubo-filters.txt` (~10.9k real uBO rules, ~3.8k
+  of which are actually converted), because conversion cost is dominated by
+  rules that need rewriting rather than by rule count. `tsurlfilter`'s fixtures
+  live in that package's `test/resources/`; committing comparable corpora for
+  the remaining benches is a follow-up.
 
 ## Troubleshooting
 

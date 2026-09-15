@@ -35,7 +35,9 @@ test('compare implementations', async ({ bench }) => {
 
 Key files:
 
-- `packages/agtree/test/*.bench.ts` — AGTree parse/convert (vs `agtree-v2`)
+- `packages/agtree/test/*.bench.ts` — AGTree parse/convert (vs `agtree-v2`
+  over a small inline rule set) and whole-list conversion over the committed
+  uBO fixture (vs `agtree-v4`, Node + Chromium)
 - `packages/css-tokenizer/test/tokenizer.bench.ts` — tokenizer vs competitors
 - `packages/tsurlfilter/test/engine/*.bench.ts` — engine startup (vs
   `tsurlfilter-v3`) and request matching over the committed request corpus

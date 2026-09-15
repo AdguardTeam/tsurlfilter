@@ -235,6 +235,7 @@ export {
 export {
     Platform,
     PlatformExpressionEvaluator,
+    ProductCode,
     modifiersCompatibilityTable,
     redirectsCompatibilityTable,
     scriptletsCompatibilityTable,

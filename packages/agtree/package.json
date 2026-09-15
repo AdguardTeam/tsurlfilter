@@ -114,6 +114,7 @@
         "@vitest/coverage-v8": "catalog:",
         "@vitest/expect": "catalog:",
         "agtree-v2": "npm:@adguard/agtree@^2.3.0",
+        "agtree-v4": "npm:@adguard/agtree@^4.2.1",
         "comment-parser": "^1.4.5",
         "eslint": "catalog:",
         "eslint-config-airbnb-base": "catalog:",
