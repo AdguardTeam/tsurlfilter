@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Regexp `$domain` values now resolve the documented escapes (`\[`, `\]`, `\,`
-  and `\\`) and keep their case, so doc-correct rules like
-  `[$domain=/mingky\[0-9\]+\.net/]##.ad` match as intended [#190].
+- Fixed escaped regular-expression domains in non-basic `[$domain=...]`
+  rules, while preserving regexp escapes in basic rules and classic cosmetic
+  domain lists [#190].
+- Regexp domains now match case-insensitively without changing escape tokens
+  such as `\D` into `\d`.
 
 [Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.3...HEAD
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
