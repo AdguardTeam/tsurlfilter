@@ -25,6 +25,19 @@ export default defineConfig({
             defineProject({
                 test: {
                     name: 'node',
+                    // Benchmarks compare the built `@adguard/agtree` bundle
+                    // against `agtree-v4`. Pre-bundle both with esbuild so the
+                    // in-project v5 `dist` is not served module-by-module
+                    // (which deoptimizes cross-module calls and skews timings);
+                    // this makes the node comparison apples-to-apples.
+                    deps: {
+                        optimizer: {
+                            ssr: {
+                                enabled: true,
+                                include: ['@adguard/agtree', 'agtree-v4'],
+                            },
+                        },
+                    },
                 },
             }),
             defineProject({
@@ -37,12 +50,24 @@ export default defineConfig({
                         include: ['test/**/*.bench.ts'],
                         exclude: ['test/converter.bench.ts'],
                     },
+                    // Pre-bundle both parser builds so the in-project v5 `dist`
+                    // is optimized the same way as the `agtree-v4` dependency,
+                    // keeping the browser comparison apples-to-apples.
+                    deps: {
+                        optimizer: {
+                            web: {
+                                enabled: true,
+                                include: ['@adguard/agtree', 'agtree-v4'],
+                            },
+                        },
+                    },
                     browser: {
                         enabled: true,
                         provider: playwright(),
                         headless: true,
                         instances: [
                             { browser: 'chromium' },
+                            { browser: 'firefox' },
                         ],
                     },
                 },
