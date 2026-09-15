@@ -62,7 +62,7 @@ logger call formatting).
 | [`examples/adguard-api-mv3`][exampleadguardapimv3] | Sample MV3 extension using `@adguard/api-mv3`. |
 | [`examples/tswebextension-mv2`][exampletswebextensionmv2] | Sample MV2 extension using `@adguard/tswebextension` directly. |
 | [`examples/tswebextension-mv3`][exampletswebextensionmv3] | Sample MV3 extension using `@adguard/tswebextension` directly. |
-| [`benchmarks/*`][benchmarksdir] | Performance benchmarks for `agtree`, `css-tokenizer`, and `tsurlfilter`. |
+| [`benchmarks`][benchmarksdir] | Benchmark docs — benchmarks themselves are co-located in each package as `test/**/*.bench.ts`. |
 
 [adguardapireadme]: packages/adguard-api/README.md
 [adguardapimv3readme]: packages/adguard-api-mv3/README.md
