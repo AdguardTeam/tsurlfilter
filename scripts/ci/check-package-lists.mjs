@@ -15,13 +15,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { fail } from './std-errors.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-
-const fail = (message) => {
-    console.error(`::error::${message}`);
-    process.exit(1);
-};
 
 // Source of truth: packages/*/CHANGELOG.md.
 const publishable = fs.readdirSync(path.join(repoRoot, 'packages'), { withFileTypes: true })
@@ -81,6 +77,101 @@ for (const file of ['scripts/ci/resolve-release-inputs.sh', '.github/workflows/_
     }
     assertSameSet(`${file} ALLOWLIST`, matches[0][1].split(' ').filter(Boolean));
 }
+
+// 4a. Every copy of the DevEx bridge package list must agree with
+//     scripts/ci/bridged-packages.json — the single machine-readable source of
+//     truth: the BRIDGED_PACKAGES env and the pack / publish package matrices
+//     in devex-bridge.yml. (The consumer-side pin tool now lives in the
+//     browser-extension repo — tools/ci/use-dev-builds.ts — and declares its
+//     set via --with-<package> flags, so it is no longer checked here.)
+//     Matrices cannot be derived from a file (the `env` context is unavailable
+//     at matrix-parse time in GitHub Actions), so the guard keeps the literal
+//     copies honest instead. All copies must be a SUBSET of the publishable
+//     packages (the six the browser extension consumes), so this checks
+//     membership, not equality with `publishable`. Without covering every
+//     copy, adding a 7th package would silently miss publish.
+const bridgeJson = JSON.parse(fs.readFileSync(path.join(repoRoot, 'scripts/ci/bridged-packages.json'), 'utf8'));
+if (!Array.isArray(bridgeJson) || bridgeJson.length === 0) {
+    fail('scripts/ci/bridged-packages.json: expected a non-empty JSON array of package names');
+}
+const canonicalBridged = [...bridgeJson].sort();
+
+const bridgeWorkflow = fs.readFileSync(path.join(repoRoot, '.github/workflows/devex-bridge.yml'), 'utf8');
+const bridgeEnv = bridgeWorkflow.match(/BRIDGED_PACKAGES:\s*'([a-z0-9- ]+)'/);
+if (!bridgeEnv) {
+    fail('devex-bridge.yml: could not find the BRIDGED_PACKAGES: \'...\' env assignment (format changed?)');
+}
+const bridgeMatrices = [...bridgeWorkflow.matchAll(/^\s*package:\s*\[([a-z0-9-]+(?:, [a-z0-9-]+)*)\]\s*$/gm)]
+    .map((m) => m[1].split(', ').map((s) => s.trim()).filter(Boolean).sort());
+if (bridgeMatrices.length !== 2) {
+    fail(`devex-bridge.yml: expected exactly 2 package matrix lines (pack + publish), found ${bridgeMatrices.length} (format changed?)`);
+}
+const bridgeLists = [
+    ['scripts/ci/bridged-packages.json', canonicalBridged],
+    ['devex-bridge.yml env', bridgeEnv[1].split(' ').filter(Boolean).sort()],
+    ['devex-bridge.yml pack matrix', bridgeMatrices[0]],
+    ['devex-bridge.yml publish matrix', bridgeMatrices[1]],
+];
+const expectedBridgeJson = JSON.stringify(canonicalBridged);
+for (const [label, list] of bridgeLists) {
+    if (JSON.stringify(list) !== expectedBridgeJson) {
+        fail(`Bridge package lists disagree.\n  scripts/ci/bridged-packages.json: ${canonicalBridged.join(', ')}\n  ${label}: ${list.join(', ')}`);
+    }
+}
+const unknown = canonicalBridged.filter((name) => !publishable.includes(name));
+if (unknown.length > 0) {
+    fail(`Bridge package lists contain non-publishable packages: ${unknown.join(', ')}`);
+}
+console.log(`bridge package lists: OK (${canonicalBridged.length} packages, ${bridgeLists.length} copies agree, subset of publishable)`);
+
+// 4b. The AK registry path in devex-bridge.yml must point at the dedicated dev
+//     repository (npm-internal-dev). The PATH is read from the workflow's
+//     actual AK_REGISTRY assignment (not a second hard-coded literal), so a
+//     host or path change fails this check instead of silently publishing to
+//     the wrong repository. (The consumer-side tool's registry URL is now fixed
+//     inside browser-extension.)
+const akRegistryRe = /AK_REGISTRY:\s*\$\{\{\s*vars\.ARTIFACT_KEEPER_URL\s*\}\}([^ \n]+)/;
+const bridgeAk = bridgeWorkflow.match(akRegistryRe);
+if (!bridgeAk) {
+    fail('devex-bridge.yml: could not find AK_REGISTRY: ${{ vars.ARTIFACT_KEEPER_URL }}<path> (format changed?)');
+}
+const expectedAkPath = '/npm/npm-internal-dev';
+if (bridgeAk[1] !== expectedAkPath) {
+    fail(`devex-bridge.yml AK_REGISTRY path '${bridgeAk[1]}' != expected '${expectedAkPath}'`);
+}
+console.log(`bridge registry path: OK (AK_REGISTRY points at '${bridgeAk[1]}')`);
+
+// 4c. The `-dev.pr<N>.<sha>` version grammar is re-encoded in devex-bridge.yml
+//     (VERSION_SUFFIX) and the consumer-side tool in browser-extension. Unlike
+//     the package list there is no JSON source, so this keeps the in-repo copy
+//     honest syntactically: every `-dev.<...>` literal in the bridge workflow
+//     must be either a version-suffix interpolation (`-dev.${...}` /
+//     `-dev.${{...}}`) or a `-dev.pr<N>...` form — any other stem (e.g.
+//     `-dev.beta`) would silently stop the consumer-side tool from matching the
+//     published versions.
+const versionGrammarLiterals = [
+    '.github/workflows/devex-bridge.yml',
+];
+for (const file of versionGrammarLiterals) {
+    const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
+    const bad = [];
+    for (const m of text.matchAll(/-dev\.([A-Za-z0-9_$<>{}.()\\-]*)/g)) {
+        const stem = m[1];
+        // Accept `pr` only when followed by end-of-string, a digit (`-dev.pr1`),
+        // `<` (the `-dev.pr<N>` placeholder) or `$` (a `-dev.pr${{...}}`
+        // interpolation): /^pr($|[\d<$])/. `startsWith('pr')` alone would let
+        // `-dev.prod` or a typo'd `-dev.prx` through — versions the consumer
+        // tool's `-dev\.pr(\d+)` regex would never match.
+        if (stem === '' || stem.startsWith('$') || /^pr($|[\d<$])/.test(stem)) {
+            continue;
+        }
+        bad.push(`-dev.${stem}`);
+    }
+    if (bad.length > 0) {
+        fail(`${file}: found non-pr dev-version stem(s): ${bad.join(', ')} — the -dev.pr<N> grammar must stay consistent with the consumer-side tool`);
+    }
+}
+console.log('bridge version grammar: OK (all -dev.<...> literals are -dev.pr<N> or VERSION_SUFFIX interpolations)');
 
 console.log('package list drift check passed');
 

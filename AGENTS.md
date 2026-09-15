@@ -39,11 +39,8 @@ high-level extension APIs (`adguard-api`, `adguard-api-mv3`).
 │   │   ├── adguard-api-mv3/        # Example using @adguard/api-mv3
 │   │   ├── tswebextension-mv2/     # Example using tswebextension (MV2)
 │   │   └── tswebextension-mv3/     # Example using tswebextension (MV3)
-│   └── benchmarks/                  # Performance benchmarks
-│       ├── agtree-benchmark/        # AGTree parser benchmarks
-│       ├── agtree-browser-benchmark/ # AGTree browser benchmarks
-│       ├── css-tokenizer-benchmark/ # CSS tokenizer benchmarks
-│       └── tsurlfilter-benchmark/   # TSUrlFilter benchmarks
+│   └── benchmarks/                  # Benchmark documentation (benchmarks are
+│       co-located in packages as test/**/*.bench.ts)
 ├── scripts/                         # Cleanup, version injection, and CI helpers
 ├── package.json                     # Root package config
 ├── pnpm-workspace.yaml              # Workspace and catalog definitions
@@ -80,6 +77,9 @@ All commands are run from the repository root unless noted otherwise.
 - **Install dependencies**: `pnpm install`
 - **Lint all packages**: `pnpm lint`
 - **Run all tests**: `npx lerna run test`
+- **Run all benchmarks**: `npx lerna run bench` (per-package `pnpm bench`;
+  browser numbers via `pnpm bench:browser` where available — `agtree` and
+  `css-tokenizer` have a browser project, `tsurlfilter` does not)
 - **Build all packages**: `npx lerna run build`
 - **Build a specific package**: `npx lerna run build --scope=<package-name>`
   (e.g. `--scope=@adguard/tsurlfilter`; Lerna builds dependencies
@@ -110,6 +110,18 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   (script/Node syntax checks, package-list drift guard, finalize-changelog
   regression tests); a push-scoped failure-notify job alerts Slack on broken
   master builds.
+- `devex-bridge.yml` — on same-repository PRs touching any of the six packages
+  consumed by the browser extension, publishes them to the dedicated internal
+  Artifact Keeper dev registry (`npm-internal-dev`) as HEAD-scoped
+  `<next-patch>-dev.pr<N>.<shortsha>` versions (AK is immutable; every push
+  carries a new short SHA, so each push yields fresh builds for all six) and
+  posts a usage comment on the PR. Same-repo PRs only (publishes use the org AK
+  secret). Requires the org variable `ARTIFACT_KEEPER_URL` and secret
+  `ARTIFACT_KEEPER_API_KEY`. See DEVELOPMENT.md for the developer workflow.
+  Cleanup is delegated to AK rather than CI: `npm-internal-dev` carries a
+  lifecycle policy `max_age_days=7`, so every dev build expires 7 days after
+  publish. A PR idle for more than 7 days loses its dev builds and needs a
+  re-push to republish them.
 - `prepare-release.yml` — opens a per-package release PR (thin caller of
   `_prepare-release-monorepo.yml`).
 - `_prepare-release-monorepo.yml` — reusable monorepo prepare engine: finalizes
@@ -122,16 +134,23 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
 - `_publish-release-monorepo.yml` — reusable monorepo publish engine
   (Docker test/build → npm → tag after publish → mirror → GitHub Release →
   Slack, with a failure-notify Slack job).
-- `publish-stable-dnr-rulesets.yml` — hourly scheduled build/publish of
-  `@adguard/dnr-rulesets` from the supported `stable/dnr-rulesets-*` branches.
-  Each supported branch must be on the current CI (root `Dockerfile` +
+- `publish-stable-dnr-rulesets.yml` — twice-daily scheduled build/publish of
+  `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0` branch. Only the
+  5.0 line is published (under `latest`); the older stable lines are no longer
+  published. The branch must be on the current CI (root `Dockerfile` +
   `scripts/inject-package-versions.mjs`); a `resolve-lines` job checks branch
-  readiness and skips not-yet-migrated lines gracefully, the job checks the
+  readiness and skips gracefully if not yet migrated, the job checks the
   branch out, stamps a `<line>.<timestamp>` stable version, builds its own
-  `dnr-rulesets-auto-build-output` Docker target, and publishes under the
-  per-line `stable-<line>` npm dist-tag (never `latest`, so old lines can't
-  pull the `latest` tag backwards) with no environment restriction. A
-  failure-notify job alerts Slack when any leg fails.
+  `dnr-rulesets-auto-build-output` Docker target, and publishes it. The exact
+  version is checked for idempotency before publishing
+  (`scripts/ci/check-npm-version.sh`), and a failed publish gets one retry
+  after a backoff (outlasts npm's throttle window). The line publishes under
+  the `latest` npm dist-tag (no older line exists to pull it backwards) with
+  no environment restriction. Each round also publishes the same tarball to
+  the internal Artifact Keeper npm registry (shared `deploy-to-ak-npm.yml`,
+  tag `latest`), independently of the npm publish, so the browser-extension
+  auto-build can install rulesets from AK when npm throttles. A failure-notify
+  job alerts Slack when any leg fails.
 - `mirror.yml` — syncs master to the public `AdguardTeam/tsurlfilter` mirror.
 - `update-companiesdb.yml` — refreshes the tswebextension companies database
   every Tuesday and pushes meaningful changes with Octopass. The push avoids
@@ -223,6 +242,16 @@ You MUST follow the following rules for EVERY task that you perform:
    expression (e.g. a template literal) rather than splitting it across
    multiple lines with string concatenation. This makes log messages easier
    to grep for in the codebase.
+
+6. **Function docs use the standard JSDoc style everywhere, `scripts/`
+   included.** Document every non-trivial function with a `/** ... */` block
+   carrying `@param`/`@returns` tags — the same JSDoc style enforced in
+   packages via `eslint-plugin-jsdoc` — rather than a `//`-style comment above
+   the definition. This applies to standalone ESM CLI helpers such as
+   `scripts/ci/*.mjs` and their workflow callers, not just packaged sources.
+
+   **Rationale**: keeps function contracts greppable and consistent with our
+   usual JSDoc style across both packages and tooling scripts.
 
 ### III. Testing Discipline
 

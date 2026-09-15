@@ -63,7 +63,7 @@ packages/tsurlfilter/
 - `pnpm build` — full build: clean dist, emit types, bundle via Rollup, build
   metadata
 - `pnpm test` — run unit tests via Vitest
-- `pnpm test:light` — run tests excluding benchmarks
+- `pnpm test:light` — run tests excluding the heavyweight engine-startup test
 - `pnpm test:coverage` — run tests with V8 coverage
 - `pnpm test:smoke` — run smoke tests (Rollup builder integration test)
 - `pnpm test:prod` — **full validation**: lint + smoke tests + full test suite

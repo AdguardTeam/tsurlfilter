@@ -11,6 +11,8 @@ import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
 import { type IndexedStorageNetworkRuleParts } from '../../src/rules/rule';
 
+import { collectRuleParts } from './rule-parts';
+
 /**
  * Helper function to get the rule index from the raw filter list by the rule text.
  *
@@ -25,14 +27,7 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
 
 const createNetworkEngine = (lists: IRuleList[]): NetworkEngine => {
     const storage = new RuleStorage(lists);
-    const rulesParts: IndexedStorageNetworkRuleParts[] = [];
-
-    const scanner = storage.createRuleStorageScanner(ScannerType.NetworkRules);
-
-    while (scanner.scan()) {
-        // We can safely cast here, because we configured scanner to scan only network rules
-        rulesParts.push(scanner.getRuleParts()! as IndexedStorageNetworkRuleParts);
-    }
+    const rulesParts = collectRuleParts<IndexedStorageNetworkRuleParts>(storage, ScannerType.NetworkRules);
 
     return NetworkEngine.createSync(rulesParts, storage);
 };

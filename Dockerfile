@@ -11,6 +11,9 @@ ENV npm_config_store_dir=/pnpm-store
 # Disable Nx daemon in Docker: each RUN step is a fresh process, and the daemon
 # socket from a previous stage would cause Nx to hang for 120 s before failing.
 ENV NX_DAEMON=false
+# Treat in-image installs as CI: pnpm then defaults to --frozen-lockfile, so
+# smoke fixtures reuse the root lockfile instead of re-resolving on CI egress.
+ENV CI=true
 
 # ============================================================================
 # Stage: deps
@@ -36,10 +39,6 @@ COPY packages/examples/adguard-api/package.json ./packages/examples/adguard-api/
 COPY packages/examples/adguard-api-mv3/package.json ./packages/examples/adguard-api-mv3/
 COPY packages/examples/tswebextension-mv2/package.json ./packages/examples/tswebextension-mv2/
 COPY packages/examples/tswebextension-mv3/package.json ./packages/examples/tswebextension-mv3/
-COPY packages/benchmarks/agtree-benchmark/package.json ./packages/benchmarks/agtree-benchmark/
-COPY packages/benchmarks/agtree-browser-benchmark/package.json ./packages/benchmarks/agtree-browser-benchmark/
-COPY packages/benchmarks/css-tokenizer-benchmark/package.json ./packages/benchmarks/css-tokenizer-benchmark/
-COPY packages/benchmarks/tsurlfilter-benchmark/package.json ./packages/benchmarks/tsurlfilter-benchmark/
 
 # --ignore-scripts is safe here: this monorepo has no native / postinstall deps.
 # The flag skips only lifecycle scripts (husky prepare, etc.) which are
