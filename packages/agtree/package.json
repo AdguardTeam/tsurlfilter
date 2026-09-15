@@ -93,6 +93,7 @@
         "zod": "catalog:"
     },
     "devDependencies": {
+        "@adguard/scriptlets": "catalog:",
         "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-json": "catalog:",
         "@rollup/plugin-node-resolve": "catalog:",

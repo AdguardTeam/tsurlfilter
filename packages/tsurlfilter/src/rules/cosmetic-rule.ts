@@ -2,10 +2,13 @@
 import {
     type AnyCosmeticRule,
     COMMA_DOMAIN_LIST_SEPARATOR,
+    type CosmeticRuleDataReader,
     type CosmeticRuleSeparator,
+    CosmeticRuleSeparatorKind,
     CosmeticRuleSeparatorUtils,
     CosmeticRuleType,
     type CssInjectionRuleBody,
+    type DomainItem,
     type DomainList,
     DomainUtils,
     type ParseOptions,
@@ -16,7 +19,7 @@ import {
     RuleParserPipeline,
     type SelectorCombinatorValue,
 } from '@adguard/agtree';
-import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
+import { AdgScriptletInjectionBodyGenerator, CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 import { scriptlets, type Source } from '@adguard/scriptlets';
 import { isValidScriptletName } from '@adguard/scriptlets/validators';
 
@@ -45,6 +48,12 @@ export type { ScriptletsProps } from './scriptlet-params';
  * @returns `true` if the object has a `value` property.
  */
 const hasValue = (obj: object): boolean => 'value' in obj;
+
+/**
+ * Shared empty domain-item array, reused by the binary materialization path for
+ * domainless cosmetic rules so it does not allocate a fresh array per rule.
+ */
+const EMPTY_DOMAIN_ITEMS: readonly DomainItem[] = [];
 
 /**
  * Reads the raw CSS text from a selector or declaration list node.
@@ -859,6 +868,24 @@ export class CosmeticRule implements IRule {
     }
 
     /**
+     * Checks if the structural domain items contain any meaningful domains,
+     * returning `false` when only the wildcard domain (`*`) is specified.
+     * Mirrors {@link CosmeticRule.isAnyDomainSpecified} for the binary path.
+     *
+     * @param domainItems Ordered domain items (value + exception flag).
+     *
+     * @returns `true` if the rule has any domain restriction other than `*`.
+     */
+    private static hasAnyDomainSpecified(domainItems: readonly DomainItem[]): boolean {
+        if (domainItems.length > 0) {
+            // Skip wildcard domain list (*)
+            return !(domainItems.length === 1 && domainItems[0].value === WILDCARD);
+        }
+
+        return false;
+    }
+
+    /**
      * Creates an instance of the {@link CosmeticRule}.
      * It parses the rule and extracts the permitted/restricted domains,
      * and also the cosmetic rule's content.
@@ -872,6 +899,8 @@ export class CosmeticRule implements IRule {
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
      * @param node Optional pre-parsed cosmetic rule node to avoid re-parsing.
+     * @param reader Optional structural reader to materialize the rule without building an AST node.
+     *   Mutually exclusive with `node`.
      *
      * @throws Error if it fails to parse the rule or if the rule is not a cosmetic rule.
      */
@@ -880,7 +909,12 @@ export class CosmeticRule implements IRule {
         filterListId: number = FILTER_LIST_ID_NONE,
         ruleIndex: number = RULE_INDEX_NONE,
         node?: AnyCosmeticRule,
+        reader?: CosmeticRuleDataReader,
     ) {
+        if (node && reader) {
+            throw new Error('`node` and `reader` are mutually exclusive; provide only one of them');
+        }
+
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
@@ -889,6 +923,63 @@ export class CosmeticRule implements IRule {
         // from the engine and must be available via getText().
         if (filterListId === FILTER_LIST_ID_NONE || ruleIndex === RULE_INDEX_NONE) {
             this.ruleText = ruleText;
+        }
+
+        if (reader) {
+            // Binary path: read fields straight from the structural data.
+            this.type = reader.isScriptlet
+                ? CosmeticRuleType.ScriptletInjectionRule
+                : CosmeticRuleType.ElementHidingRule;
+            this.allowlist = reader.exception;
+            this.isScriptlet = this.type === CosmeticRuleType.ScriptletInjectionRule;
+
+            // Only allocate the domain-item array when the rule carries domains;
+            // the generic rule hits the shared empty-array constant for free.
+            const domainItems: readonly DomainItem[] = reader.domainCount > 0
+                ? reader.getDomains()
+                : EMPTY_DOMAIN_ITEMS;
+
+            if (this.isScriptlet) {
+                const rawParams = reader.getScriptletParams();
+                // Canonicalize the body so binary content matches the AST path
+                // (CosmeticRuleBodyGenerator → AdgScriptletInjectionBodyGenerator).
+                this.content = AdgScriptletInjectionBodyGenerator.generateFromRawParams(rawParams);
+
+                const params = rawParams.map((param) => QuoteUtils.removeQuotesAndUnescape(param));
+                this.scriptletParams = new ScriptletParams(params[0] ?? '', params.slice(1));
+
+                const scriptletName = rawParams.length > 0 ? QuoteUtils.removeQuotes(rawParams[0]) : EMPTY_STRING;
+                const validationResult = CosmeticRule.validateBinary(
+                    this.type,
+                    this.content,
+                    scriptletName,
+                    domainItems,
+                );
+                if (!validationResult.isValid) {
+                    throw new SyntaxError(validationResult.errorMessage);
+                }
+                this.extendedCss = false;
+            } else {
+                this.content = reader.getBody();
+                this.scriptletParams = new ScriptletParams();
+
+                const validationResult = CosmeticRule.validateBinary(this.type, this.content, undefined, domainItems);
+                if (!validationResult.isValid) {
+                    throw new SyntaxError(validationResult.errorMessage);
+                }
+
+                const isExtendedCssSeparator = CosmeticRuleSeparatorUtils.isExtendedCssMarker(
+                    reader.getSeparator() as CosmeticRuleSeparator,
+                );
+                this.extendedCss = isExtendedCssSeparator || validationResult.isExtendedCss;
+            }
+
+            if (CosmeticRule.hasAnyDomainSpecified(domainItems)) {
+                this.domainModifier = new DomainModifier(domainItems, COMMA_DOMAIN_LIST_SEPARATOR);
+            }
+
+            this.htmlSelectorList = null;
+            return;
         }
 
         // Use provided node or parse the rule text
@@ -916,9 +1007,12 @@ export class CosmeticRule implements IRule {
         // Store the scriptlet parameters. They will be used later, when we initialize the scriptlet,
         // but at this point we need to store them in order to avoid double parsing
         if (parsedNode.type === CosmeticRuleType.ScriptletInjectionRule) {
-            // Transform complex node into a simple array of strings
+            // Transform complex node into a simple array of strings.
+            // `param.value` is already unquoted/unescaped; re-running quote
+            // removal here would strip legitimate outer quote characters that
+            // are part of the value (e.g. `'\"foo\"'` → `"foo"`, not `foo`).
             const params = parsedNode.body.children[0]?.children.map(
-                (param) => (param === null ? EMPTY_STRING : QuoteUtils.removeQuotesAndUnescape(param.value)),
+                (param) => (param === null ? EMPTY_STRING : param.value),
             ) ?? [];
 
             this.scriptletParams = new ScriptletParams(params[0] ?? '', params.slice(1));
@@ -966,6 +1060,137 @@ export class CosmeticRule implements IRule {
 
         // Process HTML filtering rule selector list
         this.htmlSelectorList = CosmeticRule.processHtmlSelectorList(parsedNode);
+    }
+
+    /**
+     * Builds a CosmeticRule directly from the structural reader (no AST).
+     *
+     * Only supports the high-volume, fully-structural kinds: element hiding and
+     * ADG scriptlet rules. Callers must route other cosmetic kinds through the
+     * AST path.
+     *
+     * @param reader Cosmetic structural reader bound to a populated ctx.
+     * @param ruleText Original rule text (for errors / getText).
+     * @param filterListId Filter list id.
+     * @param ruleIndex Rule index.
+     *
+     * @returns A fully initialized CosmeticRule.
+     *
+     * @throws Error if the reader represents a cosmetic kind that the binary
+     *   path cannot materialize.
+     */
+    public static createFromReader(
+        reader: CosmeticRuleDataReader,
+        ruleText: string,
+        filterListId: number = FILTER_LIST_ID_NONE,
+        ruleIndex: number = RULE_INDEX_NONE,
+    ): CosmeticRule {
+        if (!CosmeticRule.supportsBinaryPath(reader)) {
+            throw new Error('Cosmetic reader kind is not supported by the binary path; route it through the AST path');
+        }
+
+        return new CosmeticRule(ruleText, filterListId, ruleIndex, undefined, reader);
+    }
+
+    /**
+     * Whether the structural reader can be materialized via the binary path.
+     *
+     * The binary path only covers the high-volume, fully-structural cosmetic
+     * kinds: element hiding (all four separators) and ADG scriptlet. Everything
+     * else (uBO scriptlet, ABP snippet, JS/CSS injection, HTML filtering, and
+     * any `[$...]`/uBO modifiers) must be routed through the AST path.
+     *
+     * @param reader Cosmetic structural reader bound to a populated ctx.
+     *
+     * @returns True when the rule can be built without an AST node.
+     */
+    public static supportsBinaryPath(reader: CosmeticRuleDataReader): boolean {
+        if (reader.hasModifiers) {
+            return false;
+        }
+
+        // Element hiding (##, #@#, #?#, #@?#).
+        if (reader.separatorKind === CosmeticRuleSeparatorKind.ElementHiding && !reader.isScriptlet) {
+            return true;
+        }
+
+        // ADG scriptlet (#%#//scriptlet(...)).
+        return reader.separatorKind === CosmeticRuleSeparatorKind.AdgJs && reader.isScriptlet;
+    }
+
+    /**
+     * Validates a cosmetic rule materialized from structural data, mirroring the
+     * string-based validation branches of {@link CosmeticRule.validate} for the
+     * binary-supported rule kinds.
+     *
+     * @param type Cosmetic rule type.
+     * @param content Rule content (selector list or scriptlet body).
+     * @param scriptletName Optional scriptlet name (for scriptlet rules).
+     * @param domainItems Structural domain items (for the common domain check).
+     *
+     * @returns Validation result {@link ValidationResult}.
+     */
+    private static validateBinary(
+        type: CosmeticRuleType,
+        content: string,
+        scriptletName?: string,
+        domainItems?: readonly DomainItem[],
+    ): ValidationResult {
+        const result: ValidationResult = {
+            isValid: true,
+            isExtendedCss: false,
+        };
+
+        try {
+            // Common validation: every cosmetic rule has a domain list.
+            if (domainItems && domainItems.length > 0) {
+                // Iterate over the domain list and check every domain.
+                for (const { value: domain } of domainItems) {
+                    // Skip validation for regex domain patterns.
+                    if (
+                        !RegExpUtils.isRegexPattern(domain)
+                        && !DomainUtils.isValidDomainOrHostname(domain)
+                    ) {
+                        throw new Error(`'${domain}' is not a valid domain name or regexp pattern`);
+                    }
+                }
+            }
+
+            switch (type) {
+                case CosmeticRuleType.ElementHidingRule: {
+                    const selectorListValidationResult = validateSelectorList(content);
+
+                    if (!selectorListValidationResult.isValid) {
+                        throw new Error(selectorListValidationResult.errorMessage);
+                    }
+
+                    result.isExtendedCss = selectorListValidationResult.isExtendedCss;
+                    break;
+                }
+
+                case CosmeticRuleType.ScriptletInjectionRule: {
+                    const name = scriptletName ?? EMPTY_STRING;
+
+                    // Special case: scriptlet name is empty, e.g. '#%#//scriptlet()'
+                    if (name.length === 0) {
+                        break;
+                    }
+
+                    if (!isValidScriptletName(name)) {
+                        throw new Error(`'${name}' is not a known scriptlet name`);
+                    }
+                    break;
+                }
+
+                default:
+                    break;
+            }
+        } catch (error: unknown) {
+            result.isValid = false;
+            result.errorMessage = getErrorMessage(error);
+        }
+
+        return result;
     }
 
     /**

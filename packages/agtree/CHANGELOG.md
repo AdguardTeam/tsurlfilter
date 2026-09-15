@@ -40,6 +40,34 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   already-exported `parseDomainList`).
 - Exported `FilterListGenerator` from the package root, mirroring
   `FilterListPipeline`.
+- Added structural readers `NetworkRuleDataReader` and `CosmeticRuleDataReader`,
+  the `isHostRuleCandidate` helper, the `DomainItem` type, and a
+  `RuleParserPipeline.parseStructural` entry point for zero-AST consumption of
+  the structural parser output (`@adguard/agtree/parser`).
+- Added `RuleParserPipeline.parseFromCurrentCtx` to build an AST node from an
+  already-populated structural context without re-tokenizing or re-running the
+  structural parser.
+- Re-introduced backward-compatible `RuleParser` and `defaultParserOptions` via
+  `@adguard/agtree/parser` and the package root as a thin shim over
+  `RuleParserPipeline`. The shim restores the AGTree v4 import surface and
+  `parse(raw, options, baseOffset)` signature, forwarding `tolerant`,
+  `isLocIncluded`, `parseAbpSpecificRules`, `parseUboSpecificRules`,
+  `parseHostRules`, and `parseHtmlFilteringRuleBodies`, and honoring
+  `ignoreComments` and `onParseError`.
+
+  Note: the shim returns v5 nodes whose `syntax` is a numeric `SyntaxFlags`
+  bitmask rather than the legacy string `AdblockSyntax`. Consumers that compare
+  `rule.syntax` to the string enum (e.g. `@adguard/scriptlets` v2.x syntax
+  predicates) require a v5-compatible release of that package.
+- Re-exported the legacy `GenericPlatform`/`SpecificPlatform` bitmask enums and
+  added an `exists(name, platform)` compatibility method to the compatibility
+  tables, mapping legacy bitmask platforms onto `Platform` queries (specific
+  masks map to concrete platforms, combined masks expand to their members).
+- Exported `CosmeticRuleSeparatorKind` (named semantic kinds for the cosmetic
+  separator sub-kind) from the package root and `@adguard/agtree/parser`.
+- Added `AdgScriptletInjectionBodyGenerator.generateFromRawParams` to render
+  canonical ADG scriptlet bodies directly from raw structural parameters
+  without allocating AST nodes.
 
 ### Changed
 
@@ -68,6 +96,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   It now exposes only the composition surface: the parser context lifecycle, the
   rule classifier and `RuleKind`, the structural parser classes, and the
   `*_MIN_DATA_SLOTS` sizing constants.
+- `RawRuleConverter.convertToAdg` now reuses a shared `RuleParserPipeline`
+  instance instead of allocating one per call.
 
 ### Removed
 
@@ -80,13 +110,30 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Legacy `converter`, `generator`, `nodes`, and `ast-utils` implementations
   (superseded by the new pipeline stack).
 - Serializer and Deserializer APIs.
-- Bitwise platform enums (`GenericPlatform`, `SpecificPlatform`) and related helpers.
 
 ### Fixed
 
 - Network and cosmetic (`[$…]`) modifier parsing no longer drops the `$`
   separator when the first modifier name starts with an underscore, so noop
   modifiers such as `$_`, `$___`, and `$_invalid_` are parsed correctly.
+- The legacy `RuleParser` shim now honors its advertised `tolerant`,
+  `ignoreComments`, and `onParseError` options and the `baseOffset` argument.
+  `tolerant` wraps failures in `InvalidRule` nodes; `ignoreComments`
+  short-circuits comment rules before parsing and returns an `EmptyRule` for
+  them (including malformed comment bodies such as `!#if (`, matching AGTree
+  4.2.1); `onParseError` is invoked for parse errors caught in tolerant mode.
+- `RuleKind` is now a regular enum, so `RuleKind.Network` is usable as a runtime
+  value by consumers compiling with `isolatedModules` (previously the `const
+  enum` declaration caused TS2748).
+- `RuleParserPipeline.parseStructural` no longer exposes the previous rule's
+  context for empty input, and `parseFromCurrentCtx` returns an `EmptyRule` for
+  empty input, matching `parse`.
+- `CosmeticRuleDataReader.getScriptletParams` now preserves empty (`NO_VALUE`)
+  argument slots as empty strings instead of dropping them.
+- `CompatibilityTableBase.exists` now maps specific legacy platform masks to
+  concrete platforms, expands combined masks to their members (including the
+  Safari/iOS content-blocker platforms), and rejects unmapped masks instead of
+  answering with name existence.
 - HTML filtering rules (`$$`, `$@$`) that carry an AdGuard `[$…]` modifier list
   no longer overwrite the modifier records with the selector-list body; the
   selector-list region is now placed after the modifier records.

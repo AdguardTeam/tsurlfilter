@@ -2,10 +2,13 @@ import type { ScriptletInjectionRuleBody } from '../../../nodes';
 import {
     ADG_SCRIPTLET_MASK,
     CLOSE_PARENTHESIS,
+    COMMA,
     EMPTY,
     OPEN_PARENTHESIS,
+    SPACE,
 } from '../../../utils/constants';
 import { BaseGenerator } from '../../base-generator';
+import { ParameterGenerator } from '../../misc/parameter-generator';
 import { ParameterListGenerator } from '../../misc/parameter-list-generator';
 
 /**
@@ -45,5 +48,21 @@ export class AdgScriptletInjectionBodyGenerator extends BaseGenerator {
         result.push(CLOSE_PARENTHESIS);
 
         return result.join(EMPTY);
+    }
+
+    /**
+     * Generates an ADG scriptlet body directly from raw (source-slice)
+     * parameters, without allocating AST nodes. Produces the same output as
+     * {@link generate} for the equivalent `ScriptletInjectionRuleBody`.
+     *
+     * @param params Raw scriptlet parameters (quotes intact), as returned by
+     *   `CosmeticRuleDataReader.getScriptletParams`.
+     *
+     * @returns Canonical `//scriptlet(...)` body.
+     */
+    public static generateFromRawParams(params: readonly string[]): string {
+        const parts = params.map((raw) => ParameterGenerator.generateFromRaw(raw));
+
+        return ADG_SCRIPTLET_MASK + OPEN_PARENTHESIS + parts.join(`${COMMA}${SPACE}`) + CLOSE_PARENTHESIS;
     }
 }

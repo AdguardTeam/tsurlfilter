@@ -12,6 +12,12 @@ import { type ConversionResult, createConversionResult } from './base-interfaces
 import { RuleConverter } from './rule';
 
 /**
+ * Module-shared pipeline: reused across every `convertToAdg` call so filter-list
+ * preparation does not allocate a tokenizer + Int32Array context per line.
+ */
+const sharedRuleParser = new RuleParserPipeline();
+
+/**
  * Adblock filtering rule converter class.
  *
  * You can use this class to convert string-based adblock rules, since most of the converters work with nodes.
@@ -33,8 +39,7 @@ export class RawRuleConverter extends BaseConverter {
      * @throws If the rule is invalid or cannot be converted.
      */
     public static convertToAdg(rawRule: string): ConversionResult<string, string[]> {
-        const ruleParser = new RuleParserPipeline();
-        const conversionResult = RuleConverter.convertToAdg(ruleParser.parse(rawRule));
+        const conversionResult = RuleConverter.convertToAdg(sharedRuleParser.parse(rawRule));
 
         // If the rule was not converted, return the original rule text
         if (!conversionResult.isConverted) {

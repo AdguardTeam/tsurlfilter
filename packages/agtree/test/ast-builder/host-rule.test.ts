@@ -74,8 +74,7 @@ describe('RuleParserPipeline host rules', () => {
         expect(node.type).not.toBe('HostRule');
     });
 
-    it('does not touch the host gate or parser when parseHostRules is disabled', () => {
-        const candidateSpy = vi.spyOn(HostRuleAstBuilder, 'isCandidate');
+    it('does not run the host parser when parseHostRules is disabled', () => {
         const parseSpy = vi.spyOn(HostRuleAstBuilder, 'parse');
 
         // Both a host-shaped and a network rule, parsed with host parsing OFF.
@@ -83,10 +82,8 @@ describe('RuleParserPipeline host rules', () => {
         parser.parse('||example.org^$script', {});
         parser.parse('example.org'); // no options at all
 
-        expect(candidateSpy).not.toHaveBeenCalled();
         expect(parseSpy).not.toHaveBeenCalled();
 
-        candidateSpy.mockRestore();
         parseSpy.mockRestore();
     });
 });

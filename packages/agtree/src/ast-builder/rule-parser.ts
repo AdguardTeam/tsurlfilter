@@ -54,6 +54,7 @@ import {
     CR_SEP_KIND_SHIFT,
     CR_SEP_KIND_UBO_HTML_FILTERING,
 } from '../parser/cosmetic/constants';
+import { isHostRuleCandidate } from '../parser/host-candidate';
 import { RuleKind, StructuralRuleParser } from '../parser/rule';
 import { Tokenizer } from '../tokenizer/tokenizer';
 import { SYNTAX_ALL, SYNTAX_UNKNOWN } from '../utils/syntax-flags';
@@ -150,6 +151,27 @@ function createIgnoredRule(
         result.end = end;
     }
     return result;
+}
+
+/**
+ * Result of a structural-only parse. `ctx` is the shared buffer and is valid
+ * only until the next parse/parseStructural call on this pipeline.
+ */
+export interface StructuralParseResult {
+    /**
+     * The classified rule kind.
+     */
+    kind: RuleKind;
+
+    /**
+     * Whether a network-classified rule is a host-rule candidate.
+     */
+    isHostCandidate: boolean;
+
+    /**
+     * The populated (shared) parser context.
+     */
+    ctx: ParserContext;
 }
 
 /**
@@ -250,20 +272,115 @@ export class RuleParserPipeline {
      */
     public parse(source: string, options?: ParseOptions): AnyRule {
         if (source.trim().length === 0) {
-            const result: EmptyRule = {
-                type: NodeType.EmptyRule,
-                category: RuleCategory.Empty,
-                syntax: SYNTAX_ALL,
-            };
-
-            if (options?.isLocIncluded) {
-                result.start = 0;
-                result.end = source.length;
-            }
-
-            return result;
+            return RuleParserPipeline.createEmptyRule(source, options);
         }
 
+        this.tokenize(source);
+        initParserContext(this.ctx, source, this.tokenizer);
+        const kind = StructuralRuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options);
+        this.surfaceStructuralOverflow();
+
+        return this.buildAst(source, kind, options);
+    }
+
+    /**
+     * Tokenize + structural parse WITHOUT building an AST.
+     *
+     * @param source Rule source string.
+     * @param options Parsing options.
+     *
+     * @returns Structural classification and the populated (shared) context.
+     *
+     * @throws CapacityOverflowError on hard-cap overflow.
+     * @throws Error when the token buffer overflows with growth disabled.
+     * @throws AdblockSyntaxError (or its subclasses) for syntactically invalid
+     *   rule input.
+     */
+    public parseStructural(source: string, options?: ParseOptions): StructuralParseResult {
+        if (source.trim().length === 0) {
+            // Empty lines surface as Comment so callers skip them
+            // (RuleFactory maps Comment → null). Reset the shared context so the
+            // previous rule's source and structural data are not exposed through
+            // the returned `ctx`. `parseFromCurrentCtx` on this result produces an
+            // `EmptyRule`, matching `parse` (see its empty-input guard).
+            this.ctx.source = source;
+            this.ctx.sourceStart = 0;
+            this.ctx.tokenCount = 0;
+            this.ctx.status = CTX_STATUS_OK;
+            return { kind: RuleKind.Comment, isHostCandidate: false, ctx: this.ctx };
+        }
+
+        this.tokenize(source);
+        initParserContext(this.ctx, source, this.tokenizer);
+        const kind = StructuralRuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options);
+        this.surfaceStructuralOverflow();
+
+        const isHostCandidate = kind === RuleKind.Network && isHostRuleCandidate(this.ctx);
+        return { kind, isHostCandidate, ctx: this.ctx };
+    }
+
+    /**
+     * Builds an AST node from the structural data already loaded in `this.ctx`
+     * by the immediately-preceding {@link parseStructural} call on this same
+     * pipeline. Skips tokenization and the structural parse, so it must be
+     * called before any other parse on this pipeline.
+     *
+     * @param source Rule source string (must match the `parseStructural` input).
+     * @param kind Rule kind returned by `parseStructural`.
+     * @param options Parsing options.
+     * @param knownHostCandidate Optional pre-computed host-candidate flag from
+     *   the preceding `parseStructural` result. When omitted, the host-candidate
+     *   gate is re-run on the shared context.
+     *
+     * @returns Parsed rule AST node.
+     *
+     * @throws For unsupported cosmetic rule types.
+     */
+    public parseFromCurrentCtx(
+        source: string,
+        kind: RuleKind,
+        options?: ParseOptions,
+        knownHostCandidate?: boolean,
+    ): AnyRule {
+        if (source.trim().length === 0) {
+            return RuleParserPipeline.createEmptyRule(source, options);
+        }
+
+        return this.buildAst(source, kind, options, knownHostCandidate);
+    }
+
+    /**
+     * Creates an `EmptyRule` node for empty or whitespace-only input.
+     *
+     * @param source Rule source string.
+     * @param options Parsing options.
+     *
+     * @returns EmptyRule AST node.
+     */
+    private static createEmptyRule(source: string, options?: ParseOptions): EmptyRule {
+        const result: EmptyRule = {
+            type: NodeType.EmptyRule,
+            category: RuleCategory.Empty,
+            syntax: SYNTAX_ALL,
+        };
+
+        if (options?.isLocIncluded) {
+            result.start = 0;
+            result.end = source.length;
+        }
+
+        return result;
+    }
+
+    /**
+     * Tokenizes `source`, growing the token buffer as needed.
+     *
+     * @param source Rule source string.
+     *
+     * @throws CapacityOverflowError on token hard-cap overflow.
+     * @throws Error when growing is disabled and the token buffer overflows.
+     */
+    private tokenize(source: string): void {
         this.tokenizer.source = source;
         this.tokenizer.offset = 0;
         this.tokenizer.tokenize();
@@ -283,13 +400,15 @@ export class RuleParserPipeline {
             this.tokenizer.offset = 0;
             this.tokenizer.tokenize();
         }
+    }
 
-        initParserContext(this.ctx, source, this.tokenizer);
-
-        // eslint-disable-next-line max-len
-        const kind = StructuralRuleParser.parse(this.ctx, 0, this.ctx.tokenCount, 0, options);
-
-        // Surface structural overflow.
+    /**
+     * Throws on structural overflow and resets the context status.
+     *
+     * @throws CapacityOverflowError on hard-cap overflow.
+     * @throws Error on data-buffer overflow.
+     */
+    private surfaceStructuralOverflow(): void {
         if (this.ctx.status === CTX_STATUS_HARD_CAP) {
             const { overflowRegion } = this.ctx;
             this.ctx.status = CTX_STATUS_OK;
@@ -301,7 +420,26 @@ export class RuleParserPipeline {
             this.ctx.status = CTX_STATUS_OK;
             throw new Error(ERR_DATA_BUFFER_OVERFLOW);
         }
+    }
 
+    /**
+     * Builds an AST node from the structural data already loaded in `this.ctx`.
+     *
+     * @param source Rule source string.
+     * @param kind Rule kind (from the preceding structural parse).
+     * @param options Parsing options.
+     * @param knownHostCandidate Optional pre-computed host-candidate flag.
+     *   Avoids re-running the host-candidate gate when the caller already has
+     *   the classification result.
+     *
+     * @returns Parsed rule AST node.
+     */
+    private buildAst(
+        source: string,
+        kind: RuleKind,
+        options?: ParseOptions,
+        knownHostCandidate?: boolean,
+    ): AnyRule {
         if (kind === RuleKind.Network && options?.ignoreNetwork) {
             return createIgnoredRule(source, RuleCategory.Network, options);
         }
@@ -314,7 +452,7 @@ export class RuleParserPipeline {
                 return CommentAstBuilder.parse(source, this.ctx.data, 0, options);
 
             case RuleKind.Network:
-                if (options?.parseHostRules && HostRuleAstBuilder.isCandidate(this.ctx)) {
+                if (options?.parseHostRules && (knownHostCandidate ?? isHostRuleCandidate(this.ctx))) {
                     const hostRule = HostRuleAstBuilder.parse(source, options);
                     if (hostRule) {
                         return hostRule;

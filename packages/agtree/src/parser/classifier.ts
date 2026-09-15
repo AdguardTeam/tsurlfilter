@@ -20,7 +20,10 @@ import type { ParserContext } from './context';
 import { skipWs, skipWsBack } from './context';
 import { cosmeticSepStartIndex, cosmeticSepTokenCount, findCosmeticSeparator } from './cosmetic-separator';
 
-export const enum RuleKind {
+// Regular (non-const) enum so `RuleKind.Network` is usable as a runtime value
+// by consumers that compile with `isolatedModules`. A `const enum` only emits
+// a type-level declaration, which TS2748 rejects in value positions.
+export enum RuleKind {
     Network = 0,
     Comment = 1,
     Cosmetic = 2,

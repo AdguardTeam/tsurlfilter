@@ -11,6 +11,7 @@ import {
     Platform,
     WILDCARD_ANY,
 } from './platform';
+import { GenericPlatform, SpecificPlatform } from './platform-compat';
 import { type BaseCompatibilityDataSchema } from './schemas';
 import { type CompatibilityTable, type HybridCompatibilityTableRow } from './types';
 import { type ValidationContext } from './validators/types';
@@ -114,6 +115,102 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
      */
     public has(name: string): boolean {
         return this.getRow(name) !== undefined;
+    }
+
+    /**
+     * Backwards-compatible feature existence check.
+     *
+     * AGTree v4 consumers (e.g. `@adguard/scriptlets` v2.x) call
+     * `exists(name, GenericPlatform.X)` with a bitmask platform. AGTree v5
+     * exposes {@link Platform} instead, so this method maps legacy bitmask
+     * platforms onto equivalent `Platform` queries and delegates to
+     * {@link supports}.
+     *
+     * @param name Feature name.
+     * @param platform Platform query, or a legacy `GenericPlatform` /
+     *   `SpecificPlatform` bitmask.
+     *
+     * @returns True if the feature exists for the platform.
+     *
+     * @throws Error when a numeric platform bitmask cannot be mapped to a v5
+     *   platform. Unmapped masks are rejected instead of being approximated by
+     *   name existence, so callers get an explicit signal during migration.
+     */
+    public exists(name: string, platform: Platform | number): boolean {
+        if (typeof platform !== 'number') {
+            return this.supports(name, platform);
+        }
+
+        const mapped = CompatibilityTableBase.mapLegacyPlatform(platform);
+        if (mapped.length === 0) {
+            throw new Error(`Unsupported legacy platform bitmask: ${platform}`);
+        }
+
+        return mapped.some((mappedPlatform) => this.supports(name, mappedPlatform));
+    }
+
+    /**
+     * Maps a legacy v4 platform bitmask onto equivalent v5 {@link Platform}
+     * queries. Combined masks without an exact v5 wildcard are expanded into
+     * their concrete members, so the platform restriction is preserved rather
+     * than approximated by name existence.
+     *
+     * @param bitmask Legacy `GenericPlatform` / `SpecificPlatform` value.
+     *
+     * @returns Equivalent `Platform` queries, or an empty array when no
+     *   mapping exists.
+     */
+    private static mapLegacyPlatform(bitmask: number): Platform[] {
+        switch (bitmask) {
+            // Specific platforms — map 1:1 onto concrete v5 platforms.
+            case SpecificPlatform.AdgOsWindows: return [Platform.AdgOsWindows];
+            case SpecificPlatform.AdgOsMac: return [Platform.AdgOsMac];
+            case SpecificPlatform.AdgOsAndroid: return [Platform.AdgOsAndroid];
+            case SpecificPlatform.AdgExtChrome: return [Platform.AdgExtChrome];
+            case SpecificPlatform.AdgExtOpera: return [Platform.AdgExtOpera];
+            case SpecificPlatform.AdgExtEdge: return [Platform.AdgExtEdge];
+            case SpecificPlatform.AdgExtFirefox: return [Platform.AdgExtFirefox];
+            case SpecificPlatform.AdgCbAndroid: return [Platform.AdgCbAndroid];
+            case SpecificPlatform.AdgCbIos: return [Platform.AdgCbIos];
+            case SpecificPlatform.AdgCbSafari: return [Platform.AdgCbSafari];
+            case SpecificPlatform.UboExtChrome: return [Platform.UboExtChrome];
+            case SpecificPlatform.UboExtOpera: return [Platform.UboExtOpera];
+            case SpecificPlatform.UboExtEdge: return [Platform.UboExtEdge];
+            case SpecificPlatform.UboExtFirefox: return [Platform.UboExtFirefox];
+            case SpecificPlatform.AbpExtChrome: return [Platform.AbpExtChrome];
+            case SpecificPlatform.AbpExtOpera: return [Platform.AbpExtOpera];
+            case SpecificPlatform.AbpExtEdge: return [Platform.AbpExtEdge];
+            case SpecificPlatform.AbpExtFirefox: return [Platform.AbpExtFirefox];
+
+            // Generic masks with an exact v5 wildcard.
+            case GenericPlatform.AdgAny: return [Platform.AdgAny];
+            case GenericPlatform.AdgOsAny: return [Platform.AdgOsAny];
+            case GenericPlatform.AdgExtAny: return [Platform.AdgExtAny];
+            // UboAny === UboExtAny, AbpAny === AbpExtAny in the legacy layout.
+            case GenericPlatform.UboAny: return [Platform.UboAny];
+            case GenericPlatform.AbpAny: return [Platform.AbpAny];
+
+            // Chromium-only masks have no exact v5 wildcard — expand to members.
+            case GenericPlatform.AdgExtChromium:
+                return [Platform.AdgExtChrome, Platform.AdgExtOpera, Platform.AdgExtEdge];
+            case GenericPlatform.UboExtChromium:
+                return [Platform.UboExtChrome, Platform.UboExtOpera, Platform.UboExtEdge];
+            case GenericPlatform.AbpExtChromium:
+                return [Platform.AbpExtChrome, Platform.AbpExtOpera, Platform.AbpExtEdge];
+
+            // AdgSafariAny combines the Safari/iOS content-blocker platforms;
+            // v5 stores those under the `cb` type, not a `safari` wildcard.
+            case GenericPlatform.AdgSafariAny:
+                return [Platform.AdgCbSafari, Platform.AdgCbIos];
+
+            // Any product — query each product wildcard (the v5 trie has no
+            // 'any' path for the single-platform `supports` lookup).
+            case GenericPlatform.Any:
+                return [Platform.AdgAny, Platform.UboAny, Platform.AbpAny];
+
+            default:
+                return [];
+        }
     }
 
     /**

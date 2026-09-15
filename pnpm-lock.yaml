@@ -480,6 +480,9 @@ importers:
         specifier: 'catalog:'
         version: 3.24.4
     devDependencies:
+      '@adguard/scriptlets':
+        specifier: 'catalog:'
+        version: 2.5.1
       '@rollup/plugin-commonjs':
         specifier: 'catalog:'
         version: 28.0.3(rollup@4.53.3)
