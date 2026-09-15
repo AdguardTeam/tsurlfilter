@@ -107,6 +107,21 @@ const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
 ]);
 
 /**
+ * Markers of special pseudo-class selectors with raw-text arguments,
+ * used to detect and normalize unparseable HTML filtering rule bodies.
+ *
+ * Note: the leading colon is a part of the marker on purpose, so that
+ * `contains(` / `has-text(` occurring inside string literals or attribute
+ * values (e.g. `[data-x="contains(foo"]`) is not mistaken for a special
+ * pseudo-class selector.
+ */
+const SPECIAL_PSEUDO_CLASS_ARG_MARKERS = [
+    `:${AdgPseudoClasses.Contains}(`,
+    ':-abp-contains(',
+    `:${UboPseudoClasses.HasText}(`,
+] as const;
+
+/**
  * Error messages used in HTML filtering rule conversion.
  */
 /* eslint-disable max-len */
@@ -790,9 +805,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             `[${AdgAttributeSelectors.Wildcard}=`,
             `[${AdgAttributeSelectors.MinLength}=`,
             `[${AdgAttributeSelectors.MaxLength}=`,
-            `${AdgPseudoClasses.Contains}(`,
-            ':-abp-contains(',
-            `${UboPseudoClasses.HasText}(`,
+            ...SPECIAL_PSEUDO_CLASS_ARG_MARKERS,
         ];
 
         return markers.some((marker) => raw.includes(marker));
@@ -816,11 +829,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
      */
     private static fixUnclosedSpecialPseudoClassArgument(raw: string): string | null {
         // Markers of special pseudo-class selectors with raw-text arguments
-        const markers = [
-            `:${AdgPseudoClasses.Contains}(`,
-            ':-abp-contains(',
-            `:${UboPseudoClasses.HasText}(`,
-        ];
+        const markers = SPECIAL_PSEUDO_CLASS_ARG_MARKERS;
 
         // Find the last occurrence of any special pseudo-class selector marker
         let lastMarkerIndex = -1;

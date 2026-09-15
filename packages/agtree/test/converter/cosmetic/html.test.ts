@@ -474,6 +474,18 @@ describe('HtmlRuleConverter', () => {
                         input: 'example.com$$div[class="hotword-container"]com^',
                         error: 'Type selector is already set for the compound selector',
                     },
+
+                    // Parsing error with a `contains(` / `has-text(` substring inside
+                    // an attribute value (not a special pseudo-class selector) - must
+                    // still be rejected, i.e. the tolerant fallback must not be triggered
+                    {
+                        input: 'example.com$$div[data-x="contains(foo',
+                        error: "Expected '<]-token>', but got 'end of input'",
+                    },
+                    {
+                        input: 'example.com$$div[data-x="has-text(foo',
+                        error: "Expected '<]-token>', but got 'end of input'",
+                    },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {
                         expect(() => {
