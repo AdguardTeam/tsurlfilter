@@ -1,14 +1,14 @@
 # Development
 
-This guide covers the development workflow for the benchmark packages in
-`packages/benchmarks/`.
+This guide covers the development workflow for benchmarks, which are now
+**co-located** inside the libraries they measure as `test/**/*.bench.ts`.
 
 ## Prerequisites
 
 - **Node.js**: v22 or later
 - **pnpm**: v10 (managed via the monorepo root)
-- **Playwright**: required for browser-based benchmarks
-  (`agtree-browser-benchmark`, `tsurlfilter-benchmark`)
+- **Playwright**: required for browser benchmarks (`pnpm bench:browser`),
+  Chromium only for now
 
 ## Getting Started
 
@@ -29,80 +29,56 @@ From the **monorepo root**:
 pnpm install
 ```
 
-### Build Workspace Dependencies
-
-Benchmarks depend on the core packages they measure. Build them first:
-
-```bash
-# For agtree benchmarks
-npx lerna run build --scope @adguard/agtree --include-dependencies
-
-# For css-tokenizer benchmarks
-npx lerna run build --scope @adguard/css-tokenizer --include-dependencies
-
-# For tsurlfilter benchmarks
-npx lerna run build --scope @adguard/tsurlfilter --include-dependencies
-```
-
 ## Available Benchmarks
 
-| Package | Description | Runner |
-|---------|-------------|--------|
-| `agtree-benchmark` | AGTree parser performance | `benchmark.js` |
-| `agtree-browser-benchmark` | AGTree browser-based benchmarks | Playwright + `tinybench` |
-| `css-tokenizer-benchmark` | CSS tokenizer vs. other tokenizers | `benchmark.js` |
-| `tsurlfilter-benchmark` | TSUrlFilter engine benchmarks | `tinybench` + Playwright |
+| Package | Benchmark file(s) | What it measures |
+|---------|-------------------|------------------|
+| `agtree` | `test/parser.bench.ts`, `test/converter.bench.ts` | AGTree parse/convert vs `agtree-v2` |
+| `css-tokenizer` | `test/tokenizer.bench.ts` | Tokenizer vs `css-tree`, `@csstools/*`, `parse-css`, `csslex` |
+| `tsurlfilter` | `test/engine/*.bench.ts` | Engine startup (network/cosmetic/engine) vs `tsurlfilter-v3`; request matching over the committed request corpus |
+
+All benchmarks use Vitest 5's `test(({ bench }) => …)` context-fixture API and
+`bench.compare()` for A/B comparisons.
 
 ## Running Benchmarks
 
-Each benchmark is run from its own directory:
+From a package directory:
 
 ```bash
-# AGTree parser benchmarks
-cd packages/benchmarks/agtree-benchmark
-pnpm start
-
-# AGTree browser benchmarks
-cd packages/benchmarks/agtree-browser-benchmark
-pnpm start
-
-# CSS tokenizer benchmarks
-cd packages/benchmarks/css-tokenizer-benchmark
-pnpm start
-
-# TSUrlFilter engine benchmarks
-cd packages/benchmarks/tsurlfilter-benchmark
-pnpm start
+pnpm bench          # Node
+pnpm bench:browser  # Chromium (Playwright provider) — where available
 ```
+
+`pnpm bench:browser` requires a browser project: `agtree` and `css-tokenizer`
+have one, `tsurlfilter` does not (its benches import `node:fs`).
+
+To run every package's benchmarks from the monorepo root:
+
+```bash
+npx lerna run bench
+```
+
+Results are printed to the console and written as JSON under `.vitest/bench/`.
 
 ## Development Workflow
 
 ### Linting
 
-Each benchmark has its own lint setup with ESLint, TypeScript type checking,
-and markdownlint:
+Benchmark files are covered by each package's own lint setup (ESLint,
+TypeScript type checking, and markdownlint):
 
 ```bash
-cd packages/benchmarks/<benchmark-name>
+cd packages/<package>
 pnpm lint
-```
-
-Individual lint commands:
-
-```bash
-pnpm lint:code    # ESLint
-pnpm lint:types   # TypeScript type checking
-pnpm lint:md      # Markdownlint
 ```
 
 ### Version Aliases
 
 Benchmarks compare the current version of a package against older published
-versions using npm aliases:
+versions using npm-alias dev dependencies:
 
-- `agtree-v1`, `agtree-v2`, `agtree-v3` — older `@adguard/agtree` releases
-- `tsurlfilter-v1`, `tsurlfilter-v2`, `tsurlfilter-v3` — older
-  `@adguard/tsurlfilter` releases
+- `agtree-v2` — older `@adguard/agtree` release
+- `tsurlfilter-v3` — older `@adguard/tsurlfilter` release
 
 Keep these aliases up to date when new major versions are released.
 
@@ -110,16 +86,62 @@ Keep these aliases up to date when new major versions are released.
 
 ### Adding a New Benchmark
 
-1. Create a new directory under `packages/benchmarks/`.
-2. Add a `package.json` with `"private": "true"` and a `start` script.
-3. Register the directory in `pnpm-workspace.yaml` (already covered by the
-   `packages/benchmarks/*` glob).
-4. Add benchmark source in `src/`.
+1. Add a `*.bench.ts` file under the package's `test/**` tree, authored with
+   the Vitest 5 context-fixture API.
+2. Ensure it is picked up by the package's `test.benchmark.include` glob
+   (`test/**/*.bench.ts`).
+3. If it imports fixtures via `node:fs`, it is Node-only and must be excluded
+   from the browser project — add it to that project's `test.benchmark.exclude`
+   (see agtree's `vitest.config.ts`, which excludes `converter.bench.ts`);
+   otherwise `pnpm bench:browser` collects it and dies on the import in
+   Chromium.
 
 ### Updating Results
 
-When benchmark results change significantly, update `RESULTS.md` (where
-present) with the new numbers.
+There is no committed results file. Benchmark output comes from Vitest's
+built-in reporters (console + JSON under `.vitest/bench/`).
+
+The old standalone packages' `RESULTS.md` files were the repo's only recorded
+performance history; committing a condensed baseline or a reference JSON for
+significant runs is a planned follow-up so future numbers have something to
+compare against.
+
+## Scope notes
+
+- **Engine startup vs request matching.** The co-located `tsurlfilter` benches
+  measure both engine construction (`Engine.createSync`/`createAsync`,
+  `NetworkEngine`, `CosmeticEngine`) and the request-matching hot path
+  (`matchRequest`/`match` over the committed 27,969-request corpus, in
+  `engine-match.bench.ts`). Corpus loading and engine construction happen
+  outside the timed region, so only the match calls are measured. The
+  correctness counts (4667/8776/1754) are still asserted in
+  `packages/tsurlfilter/test/engine/start-engine.test.ts`.
+
+- **Prior-version A/B aliases.** `tsurlfilter-v3` resolves against the published
+  `@adguard/agtree` 3.x (via the root `pnpm.overrides` entry
+  `"@adguard/tsurlfilter@3>@adguard/agtree"`), not the workspace agtree v5, so
+  its `./serializer`/`./deserializer` imports keep working.
+
+- **Node-only benches and the browser project.** The Node benches import the
+  current implementation from source (`../src/...`) while comparators run as
+  prebuilt dist, so Node runs print Vitest's module-runner export-getter
+  warning; browser benches already run native ESM. `tsurlfilter` has no browser
+  project (its benches import `node:fs` and `tsurlfilter-v3`); `agtree` excludes
+  `converter.bench.ts` from its browser project via `test.benchmark.exclude` for
+  the same reason.
+
+- **Bounded iterations.** Engine builds take ~200-400 ms each, so their
+  `bench.compare` calls cap `iterations`/`warmupIterations` (tinybench defaults
+  to 64 + 16) to keep the whole test well under the bench-mode 60s timeout.
+
+- **Inline fixtures vs real corpora.** The `agtree` and `css-tokenizer` benches
+  run a small inline corpus (8 representative rules / a repeated CSS sample)
+  rather than the large filter-list / CSS corpora the deleted standalone
+  packages downloaded. `agtree` has no committed corpus and `tsurlfilter`'s
+  fixtures live in that package's `test/resources/`, so wiring real corpora in
+  is a follow-up; the inline sets were chosen to cover the main syntax classes
+  (comments, network/exception rules, element hiding, extended CSS, scriptlets,
+  CSS injection, `$removeparam`).
 
 ## Troubleshooting
 
@@ -133,10 +155,10 @@ pnpm ri
 
 ### Issue: Playwright not installed
 
-**Solution**: Install Playwright browsers:
+**Solution**: Install the Chromium browser:
 
 ```bash
-npx playwright install
+npx playwright install chromium
 ```
 
 ## Additional Resources

@@ -1,10 +1,8 @@
-/* eslint-disable no-console */
 /* eslint-disable max-len */
-// pnpm vitest bench network-engine
 import { readFileSync } from 'node:fs';
 
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
-import { bench, describe } from 'vitest';
+import { test } from 'vitest';
 
 import { NetworkEngine } from '../../src/engine/network-engine';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
@@ -12,7 +10,14 @@ import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
 import { type IndexedStorageNetworkRuleParts } from '../../src/rules/rule';
 
-describe('Build engine', () => {
+import { ENGINE_BENCH_OPTIONS } from './engine-bench-options';
+import { collectRuleParts } from './rule-parts';
+
+// Keep the timed work observable: each bench accumulates a cheap checksum here
+// so the engine can't eliminate the closure, and we guard it after the run.
+let resultSink = 0;
+
+test('build network engine: current vs v3', async ({ bench }) => {
     const ignoreCosmetic = true;
 
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
@@ -41,26 +46,23 @@ describe('Build engine', () => {
             false,
         );
         const storage = new RuleStorage([list]);
-        const scanner = list.newScanner(ScannerType.NetworkRules);
-        const rulesParts: IndexedStorageNetworkRuleParts[] = [];
-
-        while (scanner.scan()) {
-            // We can safely cast here, because we configured scanner to scan only cosmetic rules
-            rulesParts.push(scanner.getRuleParts()! as IndexedStorageNetworkRuleParts);
-        }
+        const rulesParts = collectRuleParts<IndexedStorageNetworkRuleParts>(storage, ScannerType.NetworkRules);
 
         const engine = NetworkEngine.createSync(rulesParts, storage);
         return engine;
     };
 
-    console.log('Old rules count:', createOldEngine().rulesCount);
-    console.log('New rules count:', createNewEngine().rulesCount);
+    await bench.compare(
+        bench('v3 network engine', () => {
+            resultSink += createOldEngine().rulesCount;
+        }),
+        bench('current network engine', () => {
+            resultSink += createNewEngine().rulesCount;
+        }),
+        ENGINE_BENCH_OPTIONS,
+    );
 
-    bench('old engine', () => {
-        createOldEngine();
-    });
-
-    bench('new engine', () => {
-        createNewEngine();
-    });
+    if (resultSink === 0) {
+        throw new Error('benchmark produced no observable results');
+    }
 });

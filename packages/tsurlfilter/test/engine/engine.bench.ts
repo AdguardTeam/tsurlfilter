@@ -1,67 +1,53 @@
-/* eslint-disable no-console */
 /* eslint-disable max-len */
-// pnpm vitest bench engine
 import { readFileSync } from 'node:fs';
 
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
-import { bench, describe } from 'vitest';
+import { test } from 'vitest';
 
 import { Engine } from '../../src/engine/engine';
 
-describe('Build engine', () => {
-    const ignoreCosmetic = false;
+import { ENGINE_BENCH_OPTIONS } from './engine-bench-options';
 
-    const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
-    const preprocessedFilter = TsUrlFilterOld.FilterListPreprocessor.preprocess(rawFilter);
+const ignoreCosmetic = false;
+const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
+
+// Keep the timed work observable: each bench accumulates a cheap checksum here
+// so the engine can't eliminate the closure, and we guard it after the run.
+let resultSink = 0;
+
+test('build engine: current vs v3', async ({ bench }) => {
+    const preprocessed = TsUrlFilterOld.FilterListPreprocessor.preprocess(rawFilter);
 
     const createOldEngine = () => {
         const list = new TsUrlFilterOld.BufferRuleList(
             2,
-            preprocessedFilter.filterList,
+            preprocessed.filterList,
             ignoreCosmetic,
             false,
             false,
-            preprocessedFilter.sourceMap,
+            preprocessed.sourceMap,
         );
         const storage = new TsUrlFilterOld.RuleStorage([list]);
-        const engine = new TsUrlFilterOld.Engine(storage, true);
-        return engine;
+        return new TsUrlFilterOld.Engine(storage, true);
     };
 
-    const createNewEngine = () => {
-        return Engine.createSync({
-            filters: [{
-                id: 2,
-                content: rawFilter,
-                ignoreCosmetic,
-            }],
-        });
-    };
+    await bench.compare(
+        bench('v3 engine', () => {
+            const engine = createOldEngine();
+            engine.loadRules();
+            resultSink += engine.getRulesCount();
+        }),
+        bench('current engine (sync)', () => {
+            resultSink += Engine.createSync({ filters: [{ id: 2, content: rawFilter, ignoreCosmetic }] }).getRulesCount();
+        }),
+        bench('current engine (async)', async () => {
+            const engine = await Engine.createAsync({ filters: [{ id: 2, content: rawFilter, ignoreCosmetic }] });
+            resultSink += engine.getRulesCount();
+        }),
+        ENGINE_BENCH_OPTIONS,
+    );
 
-    const oldEngine = createOldEngine();
-    const newEngine = createNewEngine();
-
-    oldEngine.loadRules();
-
-    console.log('Old rules count:', oldEngine.getRulesCount());
-    console.log('New rules count:', newEngine.getRulesCount());
-
-    bench('old engine', () => {
-        const engine = createOldEngine();
-        engine.loadRules();
-    });
-
-    bench('new engine (sync)', () => {
-        createNewEngine();
-    });
-
-    bench('new engine (async)', async () => {
-        await Engine.createAsync({
-            filters: [{
-                id: 2,
-                content: rawFilter,
-                ignoreCosmetic,
-            }],
-        });
-    });
+    if (resultSink === 0) {
+        throw new Error('benchmark produced no observable results');
+    }
 });

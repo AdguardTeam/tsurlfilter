@@ -1,10 +1,8 @@
-/* eslint-disable no-console */
 /* eslint-disable max-len */
-// pnpm vitest bench cosmetic-engine
 import { readFileSync } from 'node:fs';
 
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
-import { bench, describe } from 'vitest';
+import { test } from 'vitest';
 
 import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
@@ -12,7 +10,14 @@ import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
 import { type IndexedStorageCosmeticRuleParts } from '../../src/rules/rule';
 
-describe('Build engine', () => {
+import { ENGINE_BENCH_OPTIONS } from './engine-bench-options';
+import { collectRuleParts } from './rule-parts';
+
+// Keep the timed work observable: each bench accumulates a cheap checksum here
+// so the engine can't eliminate the closure, and we guard it after the run.
+let resultSink = 0;
+
+test('build cosmetic engine: current vs v3', async ({ bench }) => {
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
     const preprocessedFilter = TsUrlFilterOld.FilterListPreprocessor.preprocess(rawFilter);
 
@@ -39,26 +44,23 @@ describe('Build engine', () => {
             false,
         );
         const storage = new RuleStorage([list]);
-        const scanner = list.newScanner(ScannerType.CosmeticRules);
-        const rulesParts: IndexedStorageCosmeticRuleParts[] = [];
-
-        while (scanner.scan()) {
-            // We can safely cast here, because we configured scanner to scan only cosmetic rules
-            rulesParts.push(scanner.getRuleParts()! as IndexedStorageCosmeticRuleParts);
-        }
+        const rulesParts = collectRuleParts<IndexedStorageCosmeticRuleParts>(storage, ScannerType.CosmeticRules);
 
         const engine = CosmeticEngine.createSync(rulesParts, storage);
         return engine;
     };
 
-    console.log('Old rules count:', createOldEngine().rulesCount);
-    console.log('New rules count:', createNewEngine().rulesCount);
+    await bench.compare(
+        bench('v3 cosmetic engine', () => {
+            resultSink += createOldEngine().rulesCount;
+        }),
+        bench('current cosmetic engine', () => {
+            resultSink += createNewEngine().rulesCount;
+        }),
+        ENGINE_BENCH_OPTIONS,
+    );
 
-    bench('old engine', () => {
-        createOldEngine();
-    });
-
-    bench('new engine', () => {
-        createNewEngine();
-    });
+    if (resultSink === 0) {
+        throw new Error('benchmark produced no observable results');
+    }
 });

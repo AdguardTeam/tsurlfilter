@@ -287,12 +287,9 @@ loaded as unpacked extensions in the browser. Use
 
 ### Running Benchmarks
 
-Each benchmark is run from its own directory under `packages/benchmarks/`:
-
-```bash
-cd packages/benchmarks/agtree-benchmark
-pnpm start
-```
+See [`packages/benchmarks/DEVELOPMENT.md`](packages/benchmarks/DEVELOPMENT.md)
+for the benchmark workflow: per-package `pnpm bench` / `pnpm bench:browser` and
+the `npx lerna run bench` aggregator.
 
 ### IDE Setup (VS Code)
 
