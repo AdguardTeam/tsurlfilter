@@ -165,26 +165,6 @@ describe('FilterList', () => {
         expect(list.getOriginalContent()).toEqual(original);
     });
 
-    it('should treat form feed as a line break', () => {
-        const original = 'example.com##+js(foo)\fexample.com##+js(bar)';
-        const list = new FilterList(original);
-
-        expect(list.getContent()).toBe(
-            "example.com#%#//scriptlet('ubo-foo')\fexample.com#%#//scriptlet('ubo-bar')",
-        );
-        expect(list.getOriginalContent()).toEqual(original);
-    });
-
-    it('should reconstruct originals across form-feed line breaks from stored data', () => {
-        const converted = "example.com#%#//scriptlet('ubo-foo')\f||b.com^";
-        const list = new FilterList(converted, undefined, {
-            originals: ['example.com##+js(foo)'],
-            conversions: { 0: 0 },
-        });
-
-        expect(list.getOriginalContent()).toBe('example.com##+js(foo)\f||b.com^');
-    });
-
     it('should not return original rule if the line index is not a line start', () => {
         const original = [
             '||example.com^\n',

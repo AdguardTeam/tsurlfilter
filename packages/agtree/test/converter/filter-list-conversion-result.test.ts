@@ -47,19 +47,6 @@ describe('FilterListConversionResult', () => {
         expect(r.getRuleText(3)).toBeNull();
     });
 
-    test('reconstructs originals across form-feed line breaks', () => {
-        const converted = "example.com#%#//scriptlet('ubo-foo')\f||b.com^";
-        const r = new FilterListConversionResult(
-            converted,
-            ProductCode.Adg,
-            { originals: ['example.com##+js(foo)'], conversions: { 0: 0 } },
-            [],
-            true,
-        );
-
-        expect(r.getOriginalContent()).toBe('example.com##+js(foo)\f||b.com^');
-    });
-
     test('getOriginalContent terminates on a malformed map pointing past EOF', () => {
         const r = new FilterListConversionResult(
             'AB',

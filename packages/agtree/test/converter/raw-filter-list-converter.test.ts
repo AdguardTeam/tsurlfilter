@@ -37,16 +37,6 @@ describe('RawFilterListConverter.convertToAdg', () => {
         expect(r.getOriginalContent()).toBe(input);
     });
 
-    test('treats form feed as a line break', () => {
-        const input = 'example.com##+js(foo)\fexample.com##+js(bar)';
-        const r = RawFilterListConverter.convertToAdg(input);
-        expect(r.converted).toBe(
-            "example.com#%#//scriptlet('ubo-foo')\fexample.com#%#//scriptlet('ubo-bar')",
-        );
-        expect(r.isConverted).toBe(true);
-        expect(r.getOriginalContent()).toBe(input);
-    });
-
     test('empty input yields an empty result', () => {
         const r = RawFilterListConverter.convertToAdg('');
         expect(r.converted).toBe('');

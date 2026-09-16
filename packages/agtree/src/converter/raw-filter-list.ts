@@ -63,10 +63,6 @@ function findNextLineBreak(source: string, offset: number): [index: number, leng
         if (c === 0x0d) {
             return [i, i + 1 < length && source.charCodeAt(i + 1) === 0x0a ? 2 : 1];
         }
-        // Form feed (`\f`): the legacy splitter treated it as a line break too.
-        if (c === 0x0c) {
-            return [i, 1];
-        }
     }
     return [length, 0];
 }
