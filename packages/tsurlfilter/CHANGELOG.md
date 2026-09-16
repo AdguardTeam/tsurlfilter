@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Fixed escaped regular-expression domains in non-basic `[$domain=...]`
-  rules, while preserving regexp escapes in basic rules and classic cosmetic
-  domain lists [#190].
+- Escaped regular-expression domains in non-basic `[$domain=...]` rules now
+  match correctly, while basic rules and classic cosmetic domain lists retain
+  their regexp escapes [#190].
 - Regexp domains now match case-insensitively without changing escape tokens
   such as `\D` into `\d`.
 

@@ -293,6 +293,7 @@ export class DomainModifier {
             return domain;
         }
 
+        // Preserve escaped range endpoints: the loop below only checks adjacent characters.
         if (domain.includes('(?<') || /\\(?:[cuxkpP]|[\s\S]-)/.test(domain)) {
             return domain;
         }
