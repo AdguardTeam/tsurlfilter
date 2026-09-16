@@ -9,12 +9,15 @@ import { type ParseOptions } from '../ast-builder/options';
 /**
  * Parser detail level required for correct conversion. Callers MUST NOT pass
  * their own parse flags — the converter owns this.
+ *
+ * Frozen at runtime so importers cannot mutate a flag and alter every later
+ * conversion.
  */
-export const CONVERTER_PARSE_OPTIONS: ParseOptions = {
+export const CONVERTER_PARSE_OPTIONS: Readonly<ParseOptions> = Object.freeze({
     isLocIncluded: false,
     parseUboSpecificRules: true,
     parseAbpSpecificRules: true,
     parseHtmlFilteringRuleBodies: true,
     parseCssSelectorList: true,
     parseCssDeclarationList: true,
-};
+});

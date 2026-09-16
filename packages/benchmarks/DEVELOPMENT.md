@@ -143,6 +143,11 @@ compare against.
   do not have that problem: they import the BUILT package and a `?raw` fixture,
   so the same file runs unchanged in Node and Chromium.
 
+- **Forced dependency optimization.** The `agtree` benchmark projects set
+  `force: true` (node `deps.optimizer.ssr` and the browser `optimizeDeps`), so a
+  rebuilt `dist` is never measured stale: Vite re-pre-bundles `@adguard/agtree`
+  and `agtree-v4` on every bench run instead of trusting its optimizer cache.
+
 - **Bounded iterations.** Engine builds take ~200-400 ms each, so their
   `bench.compare` calls cap `iterations`/`warmupIterations` (tinybench defaults
   to 64 + 16) to keep the whole test well under the bench-mode 60s timeout.
@@ -154,11 +159,12 @@ compare against.
   the main syntax classes (comments, network/exception rules, element hiding,
   extended CSS, scriptlets, CSS injection, `$removeparam`).
   `converter-fixture.bench.ts` is the exception: it converts the committed
-  `packages/agtree/test/fixtures/ubo-filters.txt` (~10.9k real uBO rules, ~3.8k
-  of which are actually converted), because conversion cost is dominated by
-  rules that need rewriting rather than by rule count. `tsurlfilter`'s fixtures
-  live in that package's `test/resources/`; committing comparable corpora for
-  the remaining benches is a follow-up.
+  `packages/agtree/test/fixtures/ubo-filters.txt` (~10.9k lines — ~2k blank
+  lines, ~2.7k comments/directives, and ~6.1k filtering rules, of which ~3.8k
+  are actually converted), because conversion cost is dominated by rules that
+  need rewriting rather than by line count. `tsurlfilter`'s fixtures live in
+  that package's `test/resources/`; committing comparable corpora for the
+  remaining benches is a follow-up.
 
 ## Troubleshooting
 

@@ -1,0 +1,14 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+    },
+    "include": [
+        "test/converter-fixture.bench.ts",
+        "test/types/raw.d.ts",
+    ],
+    "exclude": [
+        "./node_modules",
+        "./test/smoke",
+    ],
+}

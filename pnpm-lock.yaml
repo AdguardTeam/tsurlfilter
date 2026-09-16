@@ -541,10 +541,10 @@ importers:
         specifier: 'catalog:'
         version: 5.0.0
       agtree-v2:
-        specifier: npm:@adguard/agtree@^2.3.0
+        specifier: npm:@adguard/agtree@2.3.0
         version: '@adguard/agtree@2.3.0'
       agtree-v4:
-        specifier: npm:@adguard/agtree@^4.2.1
+        specifier: npm:@adguard/agtree@4.2.1
         version: '@adguard/agtree@4.2.1'
       comment-parser:
         specifier: ^1.4.5

@@ -42,11 +42,17 @@ function findNextLineBreak(source: string, offset: number): [index: number, leng
     const { length } = source;
     for (let i = offset; i < length; i += 1) {
         const c = source.charCodeAt(i);
+        // Line feed (`\n`).
         if (c === 0x0a) {
             return [i, 1];
         }
+        // Carriage return (`\r`), either CRLF (length 2) or a lone CR (length 1).
         if (c === 0x0d) {
             return [i, i + 1 < length && source.charCodeAt(i + 1) === 0x0a ? 2 : 1];
+        }
+        // Form feed (`\f`): the legacy splitter treated it as a line break too.
+        if (c === 0x0c) {
+            return [i, 1];
         }
     }
     return [length, 0];
@@ -92,7 +98,7 @@ export class FilterListConversionResult {
      * @returns Rule text, or null if out of range.
      */
     public getRuleText(offset: number): string | null {
-        if (offset >= this.converted.length) {
+        if (offset < 0 || offset >= this.converted.length) {
             return null;
         }
         const [lineBreakStartIndex] = findNextLineBreak(this.converted, offset);
@@ -160,7 +166,7 @@ export class FilterListConversionResult {
                 originalBuffer += this.sourceMap.originals[firstOriginalRuleIndex];
 
                 let nextOffset = nextLineBreakIndex + nextLineBreakLength;
-                while (this.sourceMap.conversions[nextOffset] === firstOriginalRuleIndex) {
+                while (nextOffset < length && this.sourceMap.conversions[nextOffset] === firstOriginalRuleIndex) {
                     [nextLineBreakIndex, nextLineBreakLength] = findNextLineBreak(this.converted, nextOffset);
                     nextOffset = nextLineBreakIndex + nextLineBreakLength;
                 }

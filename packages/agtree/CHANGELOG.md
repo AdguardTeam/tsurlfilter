@@ -73,7 +73,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   and reverse-lookup helpers (`getOriginalContent`, `getOriginalRuleText`, …).
   The list converter parses each line structurally and builds an AST only for
   conversion candidates. Added `conversionSourceMapValidator` and
-  `createEmptyConversionSourceMap`.
+  `createEmptyConversionSourceMap`. **BREAKING:** the second argument is now an
+  options object — `convertToAdg(list, false)` becomes
+  `convertToAdg(list, { tolerant: false })` (in JavaScript the old call silently
+  enables tolerant mode) — and the converted text moved from `.result` to
+  `.converted`.
 
 ### Changed
 

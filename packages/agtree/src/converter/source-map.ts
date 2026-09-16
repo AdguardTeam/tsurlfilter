@@ -17,8 +17,9 @@ const nonNegativeIntegerSchema = zod.union([zod.string(), zod.number()])
     });
 
 /**
- * Source-map validator: reverses a conversion to recover the original list.
- * Provides `O(1)` access to the original rules.
+ * Validates the shape of a persisted source map: the `originals` array and the
+ * `conversions` offset map. It checks structure only — reversing a conversion
+ * and reverse lookups live on {@link FilterListConversionResult}.
  */
 export const conversionSourceMapValidator = zod.object({
     /**
@@ -28,6 +29,10 @@ export const conversionSourceMapValidator = zod.object({
 
     /**
      * Maps a converted-line start offset (0-based) to an index in `originals`.
+     *
+     * The indices are trusted converter output: the validator checks the shape,
+     * not that an index falls within `originals`. Maps produced outside the
+     * converter must be validated at their input boundary.
      */
     conversions: zod.record(nonNegativeIntegerSchema, zod.number()),
 });

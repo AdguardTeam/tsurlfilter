@@ -77,7 +77,10 @@ export class FilterList {
         this.filterId = filterId ?? FILTER_LIST_ID_NONE;
 
         if (data !== undefined) {
-            const isConverted = Object.keys(data.conversions).length > 0;
+            // `originals` is non-empty exactly when the converter produced at
+            // least one conversion — no need to allocate an array of every
+            // offset just to test the map for emptiness.
+            const isConverted = data.originals.length > 0;
             this.result = new FilterListConversionResult(content, ProductCode.Adg, data, [], isConverted);
             this.errors = [];
             return;

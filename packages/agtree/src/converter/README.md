@@ -54,15 +54,19 @@ The converter exposes two layers, depending on whether you want to work with raw
     - `RuleConverter`: converts a single rule AST node.
     - `FilterListConverter`: converts a whole filter list AST node.
 
-Both layers share the same fixed internal parser detail level, so a rule converted via `RawRuleConverter` always
-produces the same output as the same rule converted inside `RawFilterListConverter`. You never need to pass parser
-flags.
+The two raw converters share the same fixed internal parser detail level, so a rule converted via `RawRuleConverter`
+always produces the same output as the same rule converted inside `RawFilterListConverter`. You never need to pass
+parser flags to the raw layer.
+
+The AST converters receive caller-parsed nodes, so their output depends on the flags used to build those nodes. Parse
+the nodes at the same detail level the raw layer uses (see `CONVERTER_PARSE_OPTIONS`) so AST conversion matches raw
+conversion.
 
 Converter classes have the following methods:
 
 - `convertToAdg`: converts to AdGuard format
 - `convertToAbp`: converts to Adblock Plus format *(not implemented yet)*
-- `convertToUbo`: converts to uBlock Origin format *(not implemented yet)*
+- `convertToUbo`: converts to uBlock Origin format *(partially implemented — `RuleConverter` only)*
 
 ### Returned interfaces
 
@@ -134,7 +138,7 @@ The returned `FilterListConversionResult` also provides reverse-lookup helpers (
 ```ts
 RuleConverter.convertToAdg(rule: AnyRule): NodeConversionResult<AnyRule>;
 
-FilterListConverter.convertToAdg(filterList: FilterList): ConversionResult<FilterList>;
+FilterListConverter.convertToAdg(filterList: FilterList, tolerant?: boolean): ConversionResult<FilterList>;
 ```
 
 Filter list converter returns a single filter list node, not an array of nodes, because it doesn't make sense to convert
@@ -260,7 +264,9 @@ Please note that the converter has some limitations:
   validator to check whether the rule is valid or not.
 - Rule converter doesn't support all possible cases, for example currently it cannot convert multiple rules to a single
   rule.
-- Only `convertToAdg` is implemented; `convertToUbo` and `convertToAbp` throw a `NotImplementedError`. The result's
+- Only `convertToAdg` is fully implemented. `RuleConverter.convertToUbo` converts supported AST rules (cosmetic and
+  network — for example, `:contains` becomes `:has-text`), while the raw APIs (`RawRuleConverter.convertToUbo`,
+  `RawFilterListConverter.convertToUbo`) and every `convertToAbp` still throw a `NotImplementedError`. The result's
   `product` is always `ProductCode.Adg`.
 - The list converter decides whether to build an AST per rule using a sound candidate pre-filter: network rules with no
   modifiers and blank lines are copied verbatim, while cosmetic rules and comments are always parsed. This is

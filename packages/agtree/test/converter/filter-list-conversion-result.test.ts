@@ -33,4 +33,42 @@ describe('FilterListConversionResult', () => {
         expect(r.getOriginalRuleText(secondOffset)).toBe('||b.com^');
         expect(r.getOriginalContent()).toBe('example.com##+js(foo)\n||b.com^');
     });
+
+    test('getRuleText returns null for a negative offset', () => {
+        const r = new FilterListConversionResult(
+            'a\nb',
+            ProductCode.Adg,
+            { originals: [], conversions: {} },
+            [],
+            false,
+        );
+
+        expect(r.getRuleText(-1)).toBeNull();
+        expect(r.getRuleText(3)).toBeNull();
+    });
+
+    test('reconstructs originals across form-feed line breaks', () => {
+        const converted = "example.com#%#//scriptlet('ubo-foo')\f||b.com^";
+        const r = new FilterListConversionResult(
+            converted,
+            ProductCode.Adg,
+            { originals: ['example.com##+js(foo)'], conversions: { 0: 0 } },
+            [],
+            true,
+        );
+
+        expect(r.getOriginalContent()).toBe('example.com##+js(foo)\f||b.com^');
+    });
+
+    test('getOriginalContent terminates on a malformed map pointing past EOF', () => {
+        const r = new FilterListConversionResult(
+            'AB',
+            ProductCode.Adg,
+            { originals: ['x'], conversions: { 0: 0, 2: 0 } },
+            [],
+            true,
+        );
+
+        expect(r.getOriginalContent()).toBe('x');
+    });
 });

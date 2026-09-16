@@ -14,9 +14,10 @@ import { RawFilterListConverter, RawRuleConverter } from '@adguard/agtree';
 // eslint-disable-next-line import/no-unresolved
 import fixture from './fixtures/ubo-filters.txt?raw';
 
-// The fixture is a real uBlock Origin filter list: one rule per line, ~10.9k
-// rules. A uBO list exercises the converter far harder than an already-AdGuard
-// list, where the vast majority of rules would be copied verbatim.
+// The fixture is a real uBlock Origin filter list: ~10.9k lines (~6.1k
+// filtering rules, the rest being blank lines and comments). A uBO list
+// exercises the converter far harder than an already-AdGuard list, where the
+// vast majority of rules would be copied verbatim.
 const ALL_LINES = fixture.split('\n');
 
 /**

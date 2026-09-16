@@ -55,11 +55,17 @@ function findNextLineBreak(source: string, offset: number): [index: number, leng
     const { length } = source;
     for (let i = offset; i < length; i += 1) {
         const c = source.charCodeAt(i);
+        // Line feed (`\n`).
         if (c === 0x0a) {
             return [i, 1];
         }
+        // Carriage return (`\r`), either CRLF (length 2) or a lone CR (length 1).
         if (c === 0x0d) {
             return [i, i + 1 < length && source.charCodeAt(i + 1) === 0x0a ? 2 : 1];
+        }
+        // Form feed (`\f`): the legacy splitter treated it as a line break too.
+        if (c === 0x0c) {
+            return [i, 1];
         }
     }
     return [length, 0];
@@ -72,11 +78,13 @@ function findNextLineBreak(source: string, offset: number): [index: number, leng
  * @param start Slice start (inclusive).
  * @param end Slice end (exclusive).
  *
- * @returns True when the slice contains only spaces/tabs (or is empty).
+ * @returns True when the slice contains only whitespace (space, tab, form feed,
+ * vertical tab) or is empty.
  */
 function isBlank(source: string, start: number, end: number): boolean {
     for (let i = start; i < end; i += 1) {
         const c = source.charCodeAt(i);
+        // Space (0x20), tab (0x09), form feed (0x0c), vertical tab (0x0b).
         if (c !== 0x20 && c !== 0x09 && c !== 0x0c && c !== 0x0b) {
             return false;
         }
@@ -181,6 +189,10 @@ export class RawFilterListConverter extends BaseConverter {
                 }
             } catch (e) {
                 if (!tolerant) {
+                    // Release the shared parser's grown buffers before the
+                    // strict-mode error escapes, so a failed conversion does
+                    // not keep peak memory allocated until the next success.
+                    listParser.reset();
                     throw e;
                 }
                 errors.push({ rule: line, offset, message: getErrorMessage(e) });
