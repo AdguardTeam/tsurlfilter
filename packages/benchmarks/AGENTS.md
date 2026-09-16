@@ -15,7 +15,7 @@ benchmark packages; it only holds the benchmark development guide
 - **Runner**: `vitest bench` (per-package `pnpm bench` script)
 - **Linting**: ESLint (airbnb-typescript base), markdownlint
 - **Target Platform**: Node.js; browser numbers via a Vitest `browser` project
-  (`pnpm bench:browser`, Chromium via the Playwright provider)
+  (`pnpm bench:browser`, Chromium and Firefox via the Playwright provider)
 - **Not published**: benchmark files are development/measurement tools
 
 ## Where benchmarks live

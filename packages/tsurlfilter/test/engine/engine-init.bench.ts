@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 import * as TsUrlFilterV6 from 'tsurlfilter-v6';
 import { test } from 'vitest';
 
+import { ENGINE_BENCH_OPTIONS } from './engine-bench-options';
+
 // Compare the CURRENT (in-development) engine against the published 6.0.3
 // baseline to surface the startup gains from agtree v5 and the other
 // optimizations on this branch.
@@ -14,11 +16,28 @@ import { test } from 'vitest';
 // the current code must be measured as its optimized bundle too. The Vite dep
 // optimizer (see `vitest.config.ts`) pre-bundles both sides — including their
 // transitive `@adguard/agtree` — so neither is deoptimized by module-by-module
-// serving. Build the package before running this benchmark: `pnpm build`.
-import { Engine } from '@adguard/tsurlfilter';
+// serving. Build the package before running this benchmark (see
+// `packages/benchmarks/DEVELOPMENT.md`): inject a temporary version, then run
+// `pnpm build`. The dynamic import below turns a missing/stale build into a
+// clear error instead of a cryptic module-resolution failure.
+const TSURLFILTER = await import('@adguard/tsurlfilter').catch((error: unknown) => {
+    throw new Error(
+        'Failed to resolve the built `@adguard/tsurlfilter` bundle. '
+        + 'Build it first (inject a temporary version, then `pnpm build`) — '
+        + 'see packages/benchmarks/DEVELOPMENT.md.',
+        { cause: error },
+    );
+});
 
-import { ENGINE_BENCH_OPTIONS } from './engine-bench-options';
+const { Engine } = TSURLFILTER;
 
+// Fixture provenance: `test/resources/ag-base.txt` is a snapshot of the
+// AdGuard Base filter list (https://github.com/AdguardTeam/AdGuardFilters),
+// kept with its original CRLF line endings. A matching copy lives at
+// `packages/agtree/test/fixtures/ag-base.txt` and is used by
+// `parse-fixture.bench.ts`. To refresh, re-download the current base filter
+// list from the AdGuardFilters repository and replace BOTH copies so the two
+// benchmarks keep measuring the same corpus.
 const ignoreCosmetic = false;
 const rawFilter = readFileSync('test/resources/ag-base.txt', 'utf-8');
 

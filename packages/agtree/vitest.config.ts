@@ -3,6 +3,11 @@ import { playwright } from '@vitest/browser-playwright';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { defineConfig, defineProject } from 'vitest/config';
 
+// Pre-bundling the compared bundles with esbuild changes how the module runner
+// serves the in-project `dist`, so the benchmark-only optimizer must not leak
+// into the regular unit-test path.
+const isBench = process.argv.includes('bench');
+
 export default defineConfig({
     test: {
         setupFiles: [
@@ -29,18 +34,29 @@ export default defineConfig({
                     // against `agtree-v4`. Pre-bundle both with esbuild so the
                     // in-project v5 `dist` is not served module-by-module
                     // (which deoptimizes cross-module calls and skews timings);
-                    // this makes the node comparison apples-to-apples.
-                    deps: {
-                        optimizer: {
-                            ssr: {
-                                enabled: true,
-                                include: ['@adguard/agtree', 'agtree-v4'],
+                    // this makes the node comparison apples-to-apples. Enabled
+                    // only for bench runs to keep unit tests off this path.
+                    deps: isBench
+                        ? {
+                            optimizer: {
+                                ssr: {
+                                    enabled: true,
+                                    include: ['@adguard/agtree', 'agtree-v4'],
+                                },
                             },
-                        },
-                    },
+                        }
+                        : undefined,
                 },
             }),
             defineProject({
+                // Vite's top-level dependency optimizer. Vitest 5 does not read
+                // `deps.optimizer.web` for browser mode, so the include list
+                // lives here to pre-bundle both parser builds (the in-project
+                // v5 `dist` and the `agtree-v4` dependency) and keep the
+                // browser comparison apples-to-apples.
+                optimizeDeps: {
+                    include: ['@adguard/agtree', 'agtree-v4'],
+                },
                 test: {
                     name: 'browser',
                     include: [],
@@ -49,17 +65,6 @@ export default defineConfig({
                     benchmark: {
                         include: ['test/**/*.bench.ts'],
                         exclude: ['test/converter.bench.ts'],
-                    },
-                    // Pre-bundle both parser builds so the in-project v5 `dist`
-                    // is optimized the same way as the `agtree-v4` dependency,
-                    // keeping the browser comparison apples-to-apples.
-                    deps: {
-                        optimizer: {
-                            web: {
-                                enabled: true,
-                                include: ['@adguard/agtree', 'agtree-v4'],
-                            },
-                        },
                     },
                     browser: {
                         enabled: true,
