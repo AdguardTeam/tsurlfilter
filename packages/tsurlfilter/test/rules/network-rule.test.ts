@@ -145,6 +145,32 @@ describe('NetworkRule constructor', () => {
         expect(rule.getRestrictedDomains()).toEqual([String.raw`/good\.evil\.(com|org)/`]);
     });
 
+    it('preserves regexp escapes in basic $domain values', () => {
+        const rule = createNetworkRule(String.raw`||example.org^$domain=/\[ex\]ample/`, 0);
+        const request = new Request('https://example.org/', 'https://xample.com/', RequestType.Script);
+
+        expect(rule.match(request)).toBeFalsy();
+        expect(createNetworkRule(String.raw`*$domain=/foo\\/`, 0)).toBeTruthy();
+    });
+
+    it.each([
+        String.raw`/FOO\.bar/`,
+        String.raw`/[A-Z]+\.bar/`,
+        String.raw`/FOO\D\.BAR/`,
+    ])('matches regexp domains case-insensitively: %s', (domain) => {
+        const rule = createNetworkRule(`||example.org^$domain=${domain}`, 0);
+        const request = new Request('https://example.org/', 'https://foo.bar/', RequestType.Script);
+        const nonDigitRequest = new Request('https://example.org/', 'https://foox.bar/', RequestType.Script);
+
+        expect(rule.match(domain.includes(String.raw`\D`) ? nonDigitRequest : request)).toBeTruthy();
+    });
+
+    // AG-57204: $denyallow keeps rejecting valid regexp values, escaped brackets included
+    it('throws when $denyallow modifier has a valid regexp value with escaped brackets', () => {
+        expect(() => createNetworkRule(String.raw`@@||example.org^$denyallow=/exa\[m\]ple/`, 0))
+            .toThrow('$denyallow does not support wildcards and regex domains');
+    });
+
     it('works when it handles empty $domain modifier', () => {
         expect(() => {
             createNetworkRule('||example.org^$domain=', 0);
@@ -660,6 +686,29 @@ describe('NetworkRule constructor', () => {
 
         expect(b.negatesBadfilter(r)).toEqual(expected);
     }
+
+    it.each([
+        [String.raw`/FOO\.bar/`, String.raw`/foo\.bar/`, true],
+        [String.raw`/[A-Z]+\.bar/`, String.raw`/[a-z]+\.bar/`, true],
+        [String.raw`/FOO\D\.bar/`, String.raw`/foo\D\.bar/`, true],
+        [String.raw`/foo\D\.bar/`, String.raw`/foo\d\.bar/`, false],
+        [String.raw`/foo\W\.bar/`, String.raw`/foo\w\.bar/`, false],
+        [String.raw`/foo\S\.bar/`, String.raw`/foo\s\.bar/`, false],
+        [String.raw`/[A-z]+/`, String.raw`/[a-z]+/`, false],
+        [String.raw`/[0-Z]+/`, String.raw`/[0-z]+/`, false],
+        [String.raw`/[A-\z]+/`, String.raw`/[a-\z]+/`, false],
+        [String.raw`/\cA/`, String.raw`/\ca/`, false],
+        [String.raw`/(?<A>foo)\k<A>/`, String.raw`/(?<a>foo)\k<a>/`, false],
+        [String.raw`/\u0041/`, String.raw`/\u0041/`, true],
+    ])('compares regexp domain identity for badfilter: %s and %s', (domain, other, expected) => {
+        for (const prefix of ['', '~']) {
+            assertBadfilterNegates(
+                `*$domain=${prefix}${domain}`,
+                `*$domain=${prefix}${other},badfilter`,
+                expected,
+            );
+        }
+    });
 
     it('works if badfilter modifier works properly', () => {
         assertBadfilterNegates('*$image,domain=example.org', '*$image,domain=example.org,badfilter', true);

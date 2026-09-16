@@ -1520,11 +1520,17 @@ export class NetworkRule implements IRule {
             return false;
         }
 
-        if (!stringArraysEquals(this.getRestrictedDomains(), specifiedRule.getRestrictedDomains())) {
+        if (!stringArraysEquals(
+            this.getRestrictedDomains()?.map(DomainModifier.getComparisonKey) ?? null,
+            specifiedRule.getRestrictedDomains()?.map(DomainModifier.getComparisonKey) ?? null,
+        )) {
             return false;
         }
 
-        if (!stringArraysHaveIntersection(this.getPermittedDomains(), specifiedRule.getPermittedDomains())) {
+        if (!stringArraysHaveIntersection(
+            this.getPermittedDomains()?.map(DomainModifier.getComparisonKey) ?? null,
+            specifiedRule.getPermittedDomains()?.map(DomainModifier.getComparisonKey) ?? null,
+        )) {
             return false;
         }
 

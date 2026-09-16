@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Escaped regular-expression domains in non-basic `[$domain=...]` rules now
+  match correctly, while basic rules and classic cosmetic domain lists retain
+  their regexp escapes [#190].
+- Regexp domains now match case-insensitively without changing escape tokens
+  such as `\D` into `\d`.
+
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.3...HEAD
+[#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
+
 ## [6.0.3] - 2026-08-25
 
 ### Changed

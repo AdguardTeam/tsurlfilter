@@ -322,6 +322,26 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://example.net'))).toEqual(true);
     });
 
+    it('preserves regexp escapes in classic cosmetic domain lists', () => {
+        const rule = createCosmeticRule(String.raw`/\[ex\]ample/##.ad`, 0);
+        const request = new Request('https://xample.com/', 'https://xample.com/', RequestType.Document);
+
+        expect(rule.match(request)).toBeFalsy();
+        expect(createCosmeticRule(String.raw`/foo\\/##.ad`, 0)).toBeTruthy();
+    });
+
+    it.each([
+        String.raw`/FOO\.bar/##.ad`,
+        String.raw`/[A-Z]+\.bar/##.ad`,
+        String.raw`[$domain=/FOO\.bar/]##.ad`,
+        String.raw`[$domain=/\[A-Z\]+\.bar/]##.ad`,
+    ])('matches cosmetic regexp domains case-insensitively: %s', (text) => {
+        const rule = createCosmeticRule(text, 0);
+        const request = new Request('https://foo.bar/', 'https://foo.bar/', RequestType.Document);
+
+        expect(rule.match(request)).toBeTruthy();
+    });
+
     it('matches requests by regexp pattern of domain with multiple escaped pipes', () => {
         // AG-56856: all escaped separators inside the regexp should be unescaped,
         // not only the first one
@@ -333,6 +353,21 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://sub.example.org'))).toEqual(true);
         expect(rule.match(createRequest('https://example.net'))).toEqual(false);
         expect(rule.match(createRequest('https://google.com'))).toEqual(false);
+    });
+
+    // AG-57204: doc-correct escaped [ ] must unescape in a cosmetic $domain regexp
+    // (https://github.com/AdguardTeam/tsurlfilter/issues/190)
+    it('matches requests by regexp domain with escaped brackets', () => {
+        const rule = createCosmeticRule(String.raw`[$domain=/mingky\[0-9\]+\.net/]##banner`, 0);
+        expect(rule.match(createRequest('https://mingky03.net'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com'))).toEqual(false);
+    });
+
+    // AG-57204: raw (unescaped-brackets) form keeps working as before the fix
+    it('matches requests by raw regexp domain without escaped brackets', () => {
+        const rule = createCosmeticRule(String.raw`[$domain=/mingky[0-9]+\.net/]##banner`, 0);
+        expect(rule.match(createRequest('https://mingky03.net'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com'))).toEqual(false);
     });
 
     it('matches by $domain modifier with mixed type values', () => {

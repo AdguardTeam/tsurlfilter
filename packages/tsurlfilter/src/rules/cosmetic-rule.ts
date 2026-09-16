@@ -502,15 +502,12 @@ export class CosmeticRule implements IRule {
                         throw new SyntaxError(`'$${modifierName}' modifier is not allowed in a domain-specific rule`);
                     }
 
-                    result.domainModifier = new DomainModifier(modifierValue, PIPE_MODIFIER_SEPARATOR);
+                    result.domainModifier = new DomainModifier(modifierValue, PIPE_MODIFIER_SEPARATOR, true);
                     break;
 
                 case CosmeticRuleModifier.Path:
                     result.pathModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                        SimpleRegex.unescapeModifierPatternValue(modifierValue),
                     );
                     break;
 
@@ -520,10 +517,7 @@ export class CosmeticRule implements IRule {
                     }
 
                     result.urlModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
-                            // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                        SimpleRegex.unescapeModifierPatternValue(modifierValue),
                     );
                     break;
 
