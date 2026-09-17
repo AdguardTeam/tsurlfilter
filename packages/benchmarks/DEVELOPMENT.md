@@ -105,7 +105,10 @@ versions using npm-alias dev dependencies:
 - `tsurlfilter-v3` — older `@adguard/tsurlfilter` release (legacy engine benches)
 - `tsurlfilter-v6` — last published 6.x `@adguard/tsurlfilter` release (engine-init bench)
 
-Keep these aliases up to date when new major versions are released.
+Keep these aliases up to date when new major versions are released. The
+published baselines used by the full-list A/B benches (`agtree-v4`,
+`tsurlfilter-v6`) are pinned exactly (`4.2.1`, `6.0.3`) so comparisons stay
+stable across dependency updates.
 
 ## Common Tasks
 
@@ -147,10 +150,15 @@ compare against.
   `"@adguard/tsurlfilter@3>@adguard/agtree"`), not the workspace agtree v5, so
   its `./serializer`/`./deserializer` imports keep working.
 
-- **Node-only benches and the browser project.** The Node benches import the
+- **Source vs built-package imports.** The legacy inline benches import the
   current implementation from source (`../src/...`) while comparators run as
   prebuilt dist, so Node runs print Vitest's module-runner export-getter
-  warning; browser benches already run native ESM. `tsurlfilter` has no browser
+  warning; browser benches already run native ESM. The full-list A/B benches
+  (`parse-fixture.bench.ts`, `engine-init.bench.ts`) import the current package
+  from its **built** `dist/` bundle via the package `exports` map so it competes
+  as an optimized bundle — build first (see "Build Before Benchmarking").
+
+- **Node-only benches and the browser project.** `tsurlfilter` has no browser
   project (its benches import `node:fs`); `agtree` excludes
   `converter.bench.ts` from its browser project via `test.benchmark.exclude` for
   the same reason.
@@ -159,14 +167,17 @@ compare against.
   `bench.compare` calls cap `iterations`/`warmupIterations` (tinybench defaults
   to 64 + 16) to keep the whole test well under the bench-mode 60s timeout.
 
-- **Inline fixtures vs real corpora.** The `agtree` and `css-tokenizer` benches
-  run a small inline corpus (8 representative rules / a repeated CSS sample)
-  rather than the large filter-list / CSS corpora the deleted standalone
-  packages downloaded. `agtree` has no committed corpus and `tsurlfilter`'s
-  fixtures live in that package's `test/resources/`, so wiring real corpora in
-  is a follow-up; the inline sets were chosen to cover the main syntax classes
-  (comments, network/exception rules, element hiding, extended CSS, scriptlets,
-  CSS injection, `$removeparam`).
+- **Inline fixtures vs real corpora.** The legacy `agtree` and `css-tokenizer`
+  benches run a small inline corpus (8 representative rules / a repeated CSS
+  sample) chosen to cover the main syntax classes (comments, network/exception
+  rules, element hiding, extended CSS, scriptlets, CSS injection,
+  `$removeparam`). The full-list A/B benches use a real committed corpus
+  instead: the AdGuard Base filter list snapshot at
+  `packages/agtree/test/fixtures/ag-base.txt` (mirrored at
+  `packages/tsurlfilter/test/resources/ag-base.txt`), which the parser bench
+  feeds line-by-line (164,325 lines) and the engine bench indexes (143,149
+  rules). The larger CSS/request corpora of the deleted standalone packages
+  remain a follow-up.
 
 ## Troubleshooting
 

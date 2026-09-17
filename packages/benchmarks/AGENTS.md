@@ -35,11 +35,16 @@ test('compare implementations', async ({ bench }) => {
 
 Key files:
 
-- `packages/agtree/test/*.bench.ts` — AGTree parse/convert (vs `agtree-v2`)
+- `packages/agtree/test/parser.bench.ts`, `test/converter.bench.ts` — AGTree
+  parse/convert vs `agtree-v2`, importing the current implementation from
+  source
+- `packages/agtree/test/parse-fixture.bench.ts` — full filter-list parse vs
+  `agtree-v4` over the committed `ag-base` corpus, importing the **built**
+  `@adguard/agtree` bundle
 - `packages/css-tokenizer/test/tokenizer.bench.ts` — tokenizer vs competitors
-- `packages/tsurlfilter/test/engine/*.bench.ts` — engine startup (vs
-  `tsurlfilter-v3`) and request matching over the committed request corpus
-  (Node only)
+- `packages/tsurlfilter/test/engine/*.bench.ts` — engine startup and request
+  matching (vs `tsurlfilter-v3`, from source) and engine init vs
+  `tsurlfilter-v6` (built bundle), Node only
 
 See `DEVELOPMENT.md` for how to run them and the full workflow.
 
@@ -50,8 +55,16 @@ See `DEVELOPMENT.md` for how to run them and the full workflow.
 - When making performance-related changes to a core package, run the relevant
   benchmark before and after to quantify the impact.
 
-- A/B comparisons use npm-alias dev dependencies (e.g. `tsurlfilter-v3`,
-  `agtree-v2`) driven through `bench.compare`. Keep alias versions up to date.
+- A/B comparisons use npm-alias dev dependencies (`agtree-v2`, `agtree-v4`,
+  `tsurlfilter-v3`, `tsurlfilter-v6`) driven through `bench.compare`. Keep
+  alias versions up to date and pin the published baselines exactly for
+  stable A/B runs.
+
+- Legacy inline benches import the current implementation from `src/`;
+  full-list A/B benches (`parse-fixture.bench.ts`, `engine-init.bench.ts`)
+  import the current package from its **built** `dist/` bundle (via the
+  package `exports` map) so it competes as an optimized bundle. Build the
+  package before running the dist-importing benches.
 
 - Benchmarks are not a CI regression gate; they run manually/locally.
 
