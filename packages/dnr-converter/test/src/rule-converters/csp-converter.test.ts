@@ -8,10 +8,46 @@ import {
 import { CSP_HEADER_NAME } from '../../../src/constants';
 import { type DeclarativeRule, HeaderOperation, RuleActionType } from '../../../src/declarative-rule';
 import { type Rule } from '../../../src/rule/rule';
-import { CspConverter } from '../../../src/rule-converters';
+import { CspConverter, isCspDeclarativeRule } from '../../../src/rule-converters';
 import { RegularRuleConverter } from '../../../src/rule-converters/regular-rule-converter';
 
 describe('CspConverter', () => {
+    describe('isCspDeclarativeRule', () => {
+        it('recognizes only CSP response-header rules', () => {
+            expect(isCspDeclarativeRule({
+                id: 1,
+                action: {
+                    type: RuleActionType.ModifyHeaders,
+                    responseHeaders: [{
+                        header: CSP_HEADER_NAME,
+                        operation: HeaderOperation.Append,
+                    }],
+                },
+                condition: {},
+            })).toBe(true);
+
+            expect(isCspDeclarativeRule({
+                id: 2,
+                action: {
+                    type: RuleActionType.ModifyHeaders,
+                    responseHeaders: [{
+                        header: 'X-Test',
+                        operation: HeaderOperation.Remove,
+                    }],
+                },
+                condition: {},
+            })).toBe(false);
+
+            expect(isCspDeclarativeRule({
+                id: 3,
+                action: {
+                    type: RuleActionType.Block,
+                },
+                condition: {},
+            })).toBe(false);
+        });
+    });
+
     describe('createRuleTemplate', () => {
         it('should create template by removing id and CSP header value', () => {
             // @ts-expect-error Accessing private method for testing purposes

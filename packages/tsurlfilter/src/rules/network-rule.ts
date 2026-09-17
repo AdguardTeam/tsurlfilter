@@ -1516,6 +1516,13 @@ export class NetworkRule implements IRule {
             return false;
         }
 
+        if (
+            this.isOptionEnabled(NetworkRuleOption.Csp)
+            && this.getAdvancedModifierValue() !== specifiedRule.getAdvancedModifierValue()
+        ) {
+            return false;
+        }
+
         if (!OptionFlags.equals(this.disabledOptions, specifiedRule.disabledOptions)) {
             return false;
         }

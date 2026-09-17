@@ -282,6 +282,36 @@ export interface RuleCondition {
 }
 
 /**
+ * List fields where adding values widens the rule match.
+ */
+export const INCLUSION_LIST_CONDITION_FIELDS: readonly (keyof RuleCondition)[] = [
+    'initiatorDomains',
+    'requestDomains',
+    'resourceTypes',
+    'requestMethods',
+];
+
+/**
+ * List fields where adding values narrows the rule match.
+ */
+export const EXCLUSION_LIST_CONDITION_FIELDS: readonly (keyof RuleCondition)[] = [
+    'excludedInitiatorDomains',
+    'excludedRequestDomains',
+    'excludedResourceTypes',
+    'excludedRequestMethods',
+];
+
+/**
+ * List fields whose values also cover subdomains.
+ */
+export const DOMAIN_LIST_CONDITION_FIELDS: readonly (keyof RuleCondition)[] = [
+    'initiatorDomains',
+    'requestDomains',
+    'excludedInitiatorDomains',
+    'excludedRequestDomains',
+];
+
+/**
  * Validator for {@link RuleCondition}.
  */
 export const RuleConditionValidator = strictObjectByType<RuleCondition>({

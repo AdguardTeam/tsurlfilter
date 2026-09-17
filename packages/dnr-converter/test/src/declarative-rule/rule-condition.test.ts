@@ -1,7 +1,35 @@
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
 
+import {
+    DOMAIN_LIST_CONDITION_FIELDS,
+    EXCLUSION_LIST_CONDITION_FIELDS,
+    INCLUSION_LIST_CONDITION_FIELDS,
+} from '../../../src/declarative-rule';
 import { type RuleCondition, RuleConditionValidator } from '../../../src/declarative-rule/rule-condition';
+
+describe('RuleCondition list fields', () => {
+    it('groups fields by matching semantics', () => {
+        expect(INCLUSION_LIST_CONDITION_FIELDS).toEqual([
+            'initiatorDomains',
+            'requestDomains',
+            'resourceTypes',
+            'requestMethods',
+        ]);
+        expect(EXCLUSION_LIST_CONDITION_FIELDS).toEqual([
+            'excludedInitiatorDomains',
+            'excludedRequestDomains',
+            'excludedResourceTypes',
+            'excludedRequestMethods',
+        ]);
+        expect(DOMAIN_LIST_CONDITION_FIELDS).toEqual([
+            'initiatorDomains',
+            'requestDomains',
+            'excludedInitiatorDomains',
+            'excludedRequestDomains',
+        ]);
+    });
+});
 
 describe('RuleConditionValidator', () => {
     it('accepts a condition with initiatorDomains and excludedInitiatorDomains', () => {

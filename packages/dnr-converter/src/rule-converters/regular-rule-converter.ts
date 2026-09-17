@@ -253,6 +253,28 @@ export class RegularRuleConverter {
     }
 
     /**
+     * Checks whether all domain conditions can be represented in DNR.
+     *
+     * @param rule Source rule.
+     *
+     * @returns `true` if conversion does not drop any domain condition.
+     */
+    public static areDomainConditionsRepresentable(rule: Rule): boolean {
+        const domainLists = [
+            rule.permittedDomains,
+            rule.restrictedDomains,
+            rule.permittedToDomains,
+            rule.restrictedToDomains,
+            rule.denyAllowDomains,
+        ];
+
+        return domainLists.every((domains) => domains?.every((domain) => (
+            !isRegexPattern(domain)
+            && (!domain.includes(MASK_ANY_CHARACTER) || RegularRuleConverter.isWildcardTldDomain(domain))
+        )) ?? true);
+    }
+
+    /**
      * Checks if {@link Rule} can be converted to {@link RuleActionType.AllowAllRequests}.
      *
      * @param rule {@link Rule} to check.
@@ -620,7 +642,7 @@ export class RegularRuleConverter {
      *
      * @returns A rule condition that describes to which request the declarative rule should be applied.
      */
-    private static getCondition(rule: Rule): RuleCondition {
+    public static getCondition(rule: Rule): RuleCondition {
         const condition: RuleCondition = {};
 
         // set `urlFilter` or `regexFilter` depending on the pattern type

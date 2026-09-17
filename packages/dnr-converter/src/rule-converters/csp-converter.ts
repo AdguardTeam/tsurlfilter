@@ -1,8 +1,20 @@
 import { CSP_HEADER_NAME } from '../constants';
-import { type DeclarativeRule, type ModifyHeaderInfo } from '../declarative-rule';
+import { type DeclarativeRule, type ModifyHeaderInfo, RuleActionType } from '../declarative-rule';
 
 import { type ConvertedRules } from './converted-rules';
 import { RegularRuleConverter } from './regular-rule-converter';
+
+/**
+ * Checks whether a declarative rule appends a CSP response header.
+ *
+ * @param rule Declarative rule to check.
+ *
+ * @returns `true` for CSP declarative rules.
+ */
+export function isCspDeclarativeRule(rule: DeclarativeRule): boolean {
+    return rule.action.type === RuleActionType.ModifyHeaders
+        && rule.action.responseHeaders?.some(({ header }) => header === CSP_HEADER_NAME) === true;
+}
 
 /**
  * Describes how to convert `$csp` rules.

@@ -33,6 +33,32 @@ type OptionValidator = {
 };
 
 /**
+ * Modifiers that only refine the matching condition of a CSP exception.
+ */
+const CSP_EXCEPTION_COMPATIBLE_MODIFIERS: ReadonlySet<string> = new Set([
+    OPTION_NAMES.CSP,
+    OPTION_NAMES.THIRD_PARTY,
+    OPTION_NAMES.MATCH_CASE,
+    OPTION_NAMES.IMPORTANT,
+    OPTION_NAMES.BADFILTER,
+    OPTION_NAMES.HEADER,
+    OPTION_NAMES.METHOD,
+    OPTION_NAMES.DOMAIN,
+    OPTION_NAMES.DENYALLOW,
+    OPTION_NAMES.SCRIPT,
+    OPTION_NAMES.STYLESHEET,
+    OPTION_NAMES.SUBDOCUMENT,
+    OPTION_NAMES.OBJECT,
+    OPTION_NAMES.IMAGE,
+    OPTION_NAMES.XMLHTTPREQUEST,
+    OPTION_NAMES.MEDIA,
+    OPTION_NAMES.FONT,
+    OPTION_NAMES.WEBSOCKET,
+    OPTION_NAMES.OTHER,
+    OPTION_NAMES.PING,
+]);
+
+/**
  * Class for validating network rules against DNR (declarative network request) constraints.
  * Ported from tsurlfilter's `RuleDeclarativeValidator`.
  */
@@ -487,14 +513,19 @@ export class RuleDeclarativeValidator {
      * $permissions.
      *
      * @param rule Network rule.
+     * @param allowCspException CSP exception validation flag.
      *
      * @returns Boolean flag - `false` if the rule does not require conversion
      * and `true` if the rule is convertible.
      *
      * @throws Error with type {@link UnsupportedModifierError} if the rule is not convertible.
      */
-    public static shouldConvertRule(rule: Rule): boolean {
+    private static validateRule(rule: Rule, allowCspException: boolean): boolean {
         for (const modifier of rule.enabledModifiers) {
+            if (allowCspException && modifier === OPTION_NAMES.CSP) {
+                continue;
+            }
+
             const validator = this.optionsValidators[modifier];
             if (!validator) {
                 continue;
@@ -532,5 +563,44 @@ export class RuleDeclarativeValidator {
         }
 
         return true;
+    }
+
+    /**
+     * Checks if a network rule can be converted to a declarative format or not.
+     *
+     * @param rule Network rule.
+     *
+     * @returns Boolean flag indicating whether the rule should be converted.
+     *
+     * @throws Error with type {@link UnsupportedModifierError} if the rule is not convertible.
+     */
+    public static shouldConvertRule(rule: Rule): boolean {
+        return RuleDeclarativeValidator.validateRule(rule, false);
+    }
+
+    /**
+     * Checks whether a CSP exception can enter CSP resolution.
+     *
+     * @param rule CSP exception rule.
+     *
+     * @returns True if the rule can enter CSP resolution.
+     *
+     * @throws Error with type {@link UnsupportedModifierError} if another modifier is not supported.
+     */
+    public static shouldProcessCspException(rule: Rule): boolean {
+        if (!rule.allowlist || !rule.isModifierEnabled(OPTION_NAMES.CSP)) {
+            return false;
+        }
+
+        for (const modifier of rule.enabledModifiers) {
+            if (!CSP_EXCEPTION_COMPATIBLE_MODIFIERS.has(modifier)) {
+                throw new UnsupportedModifierError(
+                    `$csp exception is not compatible with $${modifier}`,
+                    rule,
+                );
+            }
+        }
+
+        return RuleDeclarativeValidator.validateRule(rule, true);
     }
 }

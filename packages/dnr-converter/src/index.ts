@@ -1,4 +1,5 @@
 export { DNR_CONVERTER_VERSION } from './version';
+export { isCspDeclarativeRule } from './rule-converters/csp-converter';
 export {
     type ConverterOptions,
     FilterConverter,

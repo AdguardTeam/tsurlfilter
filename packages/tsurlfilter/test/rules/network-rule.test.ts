@@ -697,6 +697,17 @@ describe('NetworkRule constructor', () => {
             '$script,third-party,denyallow=a.com|b.com,domain=example.org,badfilter',
             false,
         );
+
+        assertBadfilterNegates(
+            "||example.org^$csp=script-src 'none'",
+            "||example.org^$csp=script-src 'none',badfilter",
+            true,
+        );
+        assertBadfilterNegates(
+            "||example.org^$csp=img-src 'none'",
+            "||example.org^$csp=script-src 'none',badfilter",
+            false,
+        );
     });
 
     it('works if noop modifier works properly', () => {

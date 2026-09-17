@@ -9,6 +9,7 @@ import {
     getRulesetId,
     getRulesetPath,
     extractRulesetId,
+    isCspDeclarativeRule,
     type ConversionResult,
     type DeserializedRuleset,
     type IFilter,
@@ -37,6 +38,7 @@ expectType<0>(METADATA_RULESET_ID);
 expectType<typeof getRulesetId>(getRulesetId);
 expectType<typeof getRulesetPath>(getRulesetPath);
 expectType<typeof extractRulesetId>(extractRulesetId);
+expectType<typeof isCspDeclarativeRule>(isCspDeclarativeRule);
 
 // Verify type exports are accessible (no runtime assertions needed for types)
 type AssertIRuleset = IRuleset;
