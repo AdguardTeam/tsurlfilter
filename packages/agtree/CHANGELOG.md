@@ -19,7 +19,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
-- Hostnames with labels ending in an underscore are now accepted by domain validation.
+- Hostnames with labels ending in an underscore are now accepted by domain validation,
+  while domains with a leading dot remain invalid.
 
 ### Security
 

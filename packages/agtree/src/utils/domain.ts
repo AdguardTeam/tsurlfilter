@@ -52,9 +52,8 @@ export class DomainUtils {
             domainToCheck = domainToCheck.substring(WILDCARD_SUBDOMAIN.length);
         }
 
-        // `tldts` >= 7 accepts dot-only strings as hostnames, so such input
-        // must be rejected explicitly.
-        if (/^\.+$/.test(domainToCheck)) {
+        // A leading dot denotes an empty label, which is not valid in domain restrictions.
+        if (domainToCheck.startsWith(DOT)) {
             return false;
         }
 
