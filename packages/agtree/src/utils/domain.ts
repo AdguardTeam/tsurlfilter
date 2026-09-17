@@ -52,6 +52,12 @@ export class DomainUtils {
             domainToCheck = domainToCheck.substring(WILDCARD_SUBDOMAIN.length);
         }
 
+        // `tldts` >= 7 accepts dot-only strings as hostnames, so such input
+        // must be rejected explicitly.
+        if (/^\.+$/.test(domainToCheck)) {
+            return false;
+        }
+
         // Parse the domain with tldts
         const tldtsResult = parse(domainToCheck);
 

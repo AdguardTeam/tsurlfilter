@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Hostnames with labels ending in an underscore are now accepted by domain validation.
+
 ### Security
 
 ## [4.2.1] - 2026-08-12

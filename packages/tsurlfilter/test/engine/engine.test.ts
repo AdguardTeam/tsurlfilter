@@ -1563,3 +1563,42 @@ it('should return empty conversion errors when all rules are valid', () => {
     const errors = engine.getConversionErrors();
     expect(errors).toHaveLength(0);
 });
+
+describe('Domain-scoped rules on trailing underscore labels', () => {
+    it.each([
+        ['https://lorenne_.wehype.app/', true],
+        ['https://a.lorenne_.wehype.app/', true],
+        ['https://athenawarqueen.wehype.app/?game=battlefield-6', true],
+        ['https://bobajenny.wehype.app/guild-wars-2', true],
+        ['https://lorenne_.example.org/', false],
+        ['https://example.org/', false],
+    ])('matches the intended rules on %s', (url, matches) => {
+        const css = [
+            'div[aria-label="Your Privacy Matters"] { display: none !important; }',
+            'body { padding-right: 0 !important; overflow: auto !important; }',
+        ];
+        const js = 'window.__underscoreRule = true;';
+        const scriptlet = "//scriptlet('set-constant', '__underscoreScriptlet', 'true')";
+        const genericJs = 'window.__genericRule = true;';
+        const engine = Engine.createSync({
+            filters: [{
+                id: 1,
+                content: [
+                    ...css.map((content) => `wehype.app#$#${content}`),
+                    `wehype.app#%#${js}`,
+                    `wehype.app#%#${scriptlet}`,
+                    `#%#${genericJs}`,
+                ].join('\n'),
+            }],
+        });
+        const result = engine.getCosmeticResult(
+            createRequest(url),
+            CosmeticOption.CosmeticOptionAll,
+        );
+        expect(result.CSS.specific.map((rule) => rule.getContent()).sort())
+            .toEqual(matches ? [...css].sort() : []);
+        expect(result.JS.specific.map((rule) => rule.getContent()).sort())
+            .toEqual(matches ? [js, scriptlet].sort() : []);
+        expect(result.JS.generic.map((rule) => rule.getContent())).toEqual([genericJs]);
+    });
+});

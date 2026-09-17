@@ -48,4 +48,12 @@ describe('Domain utils', () => {
         expect(DomainUtils.isValidDomainOrHostname('a^b')).toBeFalsy();
         expect(DomainUtils.isValidDomainOrHostname('a//b')).toBeFalsy();
     });
+
+    test.each([
+        'lorenne_.wehype.app',
+        'a.lorenne_.wehype.app',
+        '*.lorenne_.wehype.app',
+    ])('accepts trailing underscore labels in %s', (hostname) => {
+        expect(DomainUtils.isValidDomainOrHostname(hostname)).toBe(true);
+    });
 });
