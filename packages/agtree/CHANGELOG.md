@@ -36,6 +36,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   bodies without `:contains()` / `:-abp-contains()` / `:has-text()` or
   `[tag-content]` / `[wildcard]` / `[min-length]` / `[max-length]` markers
   (outside of quoted text) still throw.
+- uBlock `:min-text-length()` conversion now caps the upper bound of the
+  generated length-matching regular expression at 65535 instead of 262144,
+  because CoreLibs compiles `:contains(/.../)` patterns with PCRE2, which
+  rejects quantifier numbers greater than 65535. `:min-text-length()`
+  arguments greater than 65535 now throw a conversion error instead of
+  producing a PCRE2-invalid pattern.
 
 ### Security
 

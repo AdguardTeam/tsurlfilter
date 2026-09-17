@@ -45,16 +45,21 @@ import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { PseudoClasses } from '../css/index';
 
 /**
- * From the AdGuard docs:
- * Specifies the maximum length for content of HTML element. If this parameter is
- * set and the content length exceeds the value, a rule does not apply to the element.
- * If this parameter is not specified, the max-length is considered to be 8192 (8 KB).
- * When converting from other formats, we set the max-length to 262144 (256 KB).
+ * Upper bound of the length-matching regular expression generated when
+ * converting uBlock `:min-text-length()` to AdGuard `:contains()`.
+ *
+ * The bound must not exceed 65535: converted rules are applied by CoreLibs,
+ * which compiles `:contains(/.../)` patterns with PCRE2, and PCRE2 rejects
+ * quantifier numbers greater than 65535 ("quantifier too large" error).
+ *
+ * Note: the AdGuard `[max-length]` attribute itself defaults to 8192 (8 KB)
+ * when not specified, but it is handled natively by CoreLibs and is not
+ * affected by the PCRE2 quantifier limit.
  *
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
+ * @see {@link https://www.pcre.org/current/doc/html/pcre2limits.html}
  */
-const ADG_HTML_DEFAULT_MAX_LENGTH = 8192;
-const ADG_HTML_CONVERSION_MAX_LENGTH = ADG_HTML_DEFAULT_MAX_LENGTH * 32;
+const ADG_HTML_CONVERSION_MAX_LENGTH = 65535;
 
 /**
  * Supported special pseudo-classes from uBlock.
@@ -163,6 +168,7 @@ export const ERROR_MESSAGES = {
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_REQUIRED: "Special pseudo-class selector '%s' requires an argument",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_INT: "Argument of special pseudo-class selector '%s' must be an integer, got '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_POSITIVE: "Argument of special pseudo-class selector '%s' must be a positive integer, got '%s'",
+    SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_TOO_LARGE: "Argument of special pseudo-class selector '%s' must not exceed %s, got '%s'",
     SPECIAL_PSEUDO_CLASS_SELECTOR_NOT_SUPPORTED: "Special pseudo-class selector '%s' is not supported in conversion",
 } as const;
 /* eslint-enable max-len */
@@ -624,6 +630,17 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                 // It's safe to cast to number here after validation
                 const minLength = Number(argument);
+
+                // The generated regular expression must stay within the PCRE2
+                // quantifier limit — see the ADG_HTML_CONVERSION_MAX_LENGTH comment
+                if (minLength > ADG_HTML_CONVERSION_MAX_LENGTH) {
+                    throw new RuleConversionError(sprintf(
+                        ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_SELECTOR_ARGUMENT_TOO_LARGE,
+                        name,
+                        ADG_HTML_CONVERSION_MAX_LENGTH,
+                        argument,
+                    ));
+                }
 
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,

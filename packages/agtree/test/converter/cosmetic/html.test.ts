@@ -564,16 +564,23 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div[attr="value"] + span:nth-child(2) > a[href^="https"]:not(.className)'],
                     },
 
-                    // `:min-text-length()` special pseudo-class selector (max is conversion default)
+                    // `:min-text-length()` special pseudo-class selector (max is conversion default,
+                    // capped at the PCRE2 quantifier limit for CoreLibs)
                     {
                         actual: '##^div:min-text-length(10)',
-                        expected: ['$$div:contains(/^(?=.{10,262144}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{10,65535}$).*/s)'],
                     },
 
                     // `:min-text-length()` special pseudo-class selector (max is conversion default) - multiple usages
                     {
                         actual: '##^div:min-text-length(10):min-text-length(20)',
-                        expected: ['$$div:contains(/^(?=.{10,262144}$).*/s):contains(/^(?=.{20,262144}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{10,65535}$).*/s):contains(/^(?=.{20,65535}$).*/s)'],
+                    },
+
+                    // `:min-text-length()` special pseudo-class selector - argument at the PCRE2 quantifier limit
+                    {
+                        actual: '##^div:min-text-length(65535)',
+                        expected: ['$$div:contains(/^(?=.{65535,65535}$).*/s)'],
                     },
 
                     // `:has-text()` special pseudo-class selector
@@ -731,6 +738,13 @@ describe('HtmlRuleConverter', () => {
                         error: "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",
                     },
 
+                    // invalid special pseudo-class selector - length value exceeds the PCRE2 quantifier limit
+                    {
+                        input: '##^:min-text-length(65536)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must not exceed 65535, got '65536'",
+                    },
+
                     // invalid simple selector - mixed syntax (AdGuard special attribute selector)
                     {
                         input: '##^div[tag-content="example"]',
@@ -770,7 +784,7 @@ describe('HtmlRuleConverter', () => {
                     },
                     {
                         actual: '##^div:min-text-length(10)',
-                        expected: ['$$div:contains(/^(?=.{10,262144}$).*/s)'],
+                        expected: ['$$div:contains(/^(?=.{10,65535}$).*/s)'],
                     },
                     {
                         actual: '##^div:has-text(example)',
@@ -796,6 +810,11 @@ describe('HtmlRuleConverter', () => {
                         input: '##^:min-text-length(-1)',
                         // eslint-disable-next-line max-len
                         error: "Argument of special pseudo-class selector 'min-text-length' must be a positive integer, got '-1'",
+                    },
+                    {
+                        input: '##^:min-text-length(65536)',
+                        // eslint-disable-next-line max-len
+                        error: "Argument of special pseudo-class selector 'min-text-length' must not exceed 65535, got '65536'",
                     },
 
                     // Parsing errors
