@@ -146,6 +146,29 @@ export class PreregisteredScriptsService {
     }
 
     /**
+     * Tears down preregistration: waits for any in-flight sync to settle,
+     * then clears the persisted registrations and resets coverage and the
+     * boot snapshot, so the dynamic path fully takes over after the app
+     * stops. Without the clear, `persistAcrossSessions` registrations would
+     * keep firing at `document_start` and survive browser sessions.
+     */
+    public static async stop(): Promise<void> {
+        // Wait for a queued sync so it cannot re-register right after the
+        // clear (a sync enqueued earlier would otherwise race the teardown).
+        await PreregisteredScriptsService.syncQueue.catch(() => undefined);
+
+        try {
+            await ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE);
+        } catch (e) {
+            logger.error('[tsweb.PreregisteredScriptsService.stop]: Failed to clear preregistered scripts', e);
+        }
+
+        PreregisteredScriptsService.lastCoveredRules = null;
+        appContext.preregisteredScriptRulesAtBoot = undefined;
+        CosmeticApi.setPreregisteredScriptRules(new Map());
+    }
+
+    /**
      * Synchronises preregistered content scripts with the current engine state.
      *
      * Unregisters everything when preregistration is disabled or no domains
@@ -209,12 +232,11 @@ export class PreregisteredScriptsService {
             if (preregistrationEnabled && hostnames.length > 0) {
                 const manifest = await readManifest(scriptsPath);
                 if (manifest) {
-                    const built = await PreregisteredScriptsService.buildDomainScripts(
+                    scripts = await PreregisteredScriptsService.buildDomainScripts(
                         hostnames,
                         scriptsPath,
                         manifest,
                     );
-                    scripts = built.scripts;
                 }
             }
 
@@ -250,19 +272,19 @@ export class PreregisteredScriptsService {
      * @param scriptsPath Extension-relative path to preregistered scripts.
      * @param manifest Build-time manifest.
      *
-     * @returns Descriptors plus, per hostname, the hashes of covered rules.
+     * @returns Content-script descriptors for the covered hostnames. The
+     * actual coverage is read separately from the active registrations.
      */
     private static async buildDomainScripts(
         hostnames: string[],
         scriptsPath: string,
         manifest: PreregisteredScriptsManifest,
-    ): Promise<{ scripts: ContentScriptDescriptor[]; coveredRules: Map<string, Set<string>> }> {
+    ): Promise<ContentScriptDescriptor[]> {
         const manifestHashes = new Set(manifest.hashes);
         const sharedBundlePath = `${scriptsPath}/${SHARED_BUNDLE_FILENAME}`;
         const cleanupPath = `${scriptsPath}/${CLEANUP_FILENAME}`;
 
         const scripts: ContentScriptDescriptor[] = [];
-        const coveredRules = new Map<string, Set<string>>();
 
         // Process hostnames in bounded batches: the per-host engine match is
         // cheap, but the fan-out of `crypto.subtle` hashing must stay
@@ -361,13 +383,11 @@ export class PreregisteredScriptsService {
                         matchOriginAsFallback: true,
                         persistAcrossSessions: true,
                     });
-
-                    coveredRules.set(hostname, coveredHashes);
                 }),
             );
         }
 
-        return { scripts, coveredRules };
+        return scripts;
     }
 
     /**

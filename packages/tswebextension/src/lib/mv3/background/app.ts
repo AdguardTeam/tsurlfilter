@@ -306,6 +306,11 @@ export class TsWebExtension implements AppInterface<
         // otherwise, it may try to log applying of removed rules. AG-36068.
         declarativeFilteringLog.stop();
 
+        // Tear down preregistration before the engine is stopped, so an
+        // in-flight sync can finish against a live engine; otherwise
+        // persistAcrossSessions registrations would keep firing after stop.
+        await PreregisteredScriptsService.stop();
+
         await TsWebExtension.removeAllFilteringRules();
 
         // Stop handle request events.

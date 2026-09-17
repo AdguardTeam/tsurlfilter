@@ -105,6 +105,21 @@ describe('computeRuleHash', () => {
         expect(withPath).not.toBe(withoutPath);
     });
 
+    it('distinguishes an empty (root-only) $path pattern from no $path for scriptlets', async () => {
+        // An empty `$path` means root-only; hashing it like a rule without
+        // `$path` would let the root-only artifact replace the unrestricted
+        // variant and suppress dynamic injection on other paths.
+        const noPath = await computeRuleHash(scriptletRule('set-cookie', ['a']));
+        const rootOnly = await computeRuleHash(scriptletRule('set-cookie', ['a'], { pattern: '' }));
+        expect(rootOnly).not.toBe(noPath);
+    });
+
+    it('distinguishes an empty (root-only) $path pattern from no $path for JS rules', async () => {
+        const noPath = await computeRuleHash(jsRule('window._foo = 1;'));
+        const rootOnly = await computeRuleHash(jsRule('window._foo = 1;', { pattern: '' }));
+        expect(rootOnly).not.toBe(noPath);
+    });
+
     it('throws when a scriptlet rule has no scriptlet data', async () => {
         const badRule: any = { isScriptlet: true, getScriptletData: (): null => null };
         await expect(computeRuleHash(badRule)).rejects.toThrow();

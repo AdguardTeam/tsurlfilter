@@ -71,22 +71,6 @@ export class EngineApi {
      */
     private engine: Engine | undefined;
 
-    /**
-     * Monotonic counter bumped after every engine instance swap. Consumers
-     * caching engine query results key their caches by it, so results from
-     * a previous engine are never reused.
-     */
-    private generation = 0;
-
-    /**
-     * Current engine generation; see {@link EngineApi.generation}.
-     *
-     * @returns Current engine generation number.
-     */
-    public get engineGeneration(): number {
-        return this.generation;
-    }
-
     // TODO: Make private
     /**
      * To prevent multiple calls to startEngine, saves the first call to
@@ -215,10 +199,6 @@ export class EngineApi {
             filters: lists,
         });
 
-        // Bump after the swap so a racing reader either sees the old engine
-        // with the old generation or the new engine with the new one.
-        this.generation += 1;
-
         // Update IDs of loaded to engine filters for split local and remote
         // scripts.
         this.localRulesFiltersIds = localFilters.map((filter) => filter.getId());
@@ -238,7 +218,6 @@ export class EngineApi {
      */
     public stopEngine(): void {
         this.engine = undefined;
-        this.generation += 1;
     }
 
     /**

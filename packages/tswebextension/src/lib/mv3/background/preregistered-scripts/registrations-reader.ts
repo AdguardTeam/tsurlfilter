@@ -8,6 +8,16 @@ import { getRuleHashFromFilePath } from './hasher';
  * Reads the currently active registrations of the given namespace and
  * derives the covered rule hashes per hostname from their file lists.
  *
+ * Executability contract with the build-time retention: a per-rule hash is
+ * covered only while its file list keeps a working implementation. The
+ * companion build replaces obsolete per-rule files with stubs and — for a
+ * scriptlet whose implementation changed while its invocation did not —
+ * keeps the previous function file as an executable copy instead of a
+ * stub, so a persisted registration referencing that invocation keeps a
+ * working implementation until the runtime sync replaces it. A hash from
+ * a dropped rule is harmless: the rule no longer exists in the engine, so
+ * dynamic injection would not have it either.
+ *
  * @param namespace Namespace of the preregistered scripts.
  *
  * @returns Hostname → covered hashes map.

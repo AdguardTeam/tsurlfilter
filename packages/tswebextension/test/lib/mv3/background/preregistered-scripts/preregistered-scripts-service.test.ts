@@ -369,6 +369,32 @@ describe('PreregisteredScriptsService', () => {
             expect(scripts[0].js).toHaveLength(4);
         });
 
+        it('excludes $url-scoped rules even when their hash is in the manifest', async () => {
+            // The build never generates a file for a `$url` rule, but even a
+            // manifest that lists its hash must not register it: the generated
+            // file has no URL guard, so the rule would over-apply on every
+            // path of the host instead of its URL scope.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const urlRule = {
+                isScriptlet: true,
+                getScriptletData: (): object => ({ params: { name: 'set-cookie', args: ['a', 'b'] } }),
+                getFilterListId: (): number => 1,
+                urlModifier: { pattern: '|https://youtube.com/|' },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any;
+            setupEngine({ 'youtube.com': [urlRule] });
+            setupManifest(
+                [await computeRuleHash(urlRule)],
+                { 'set-cookie': scriptletFilename('set-cookie') },
+            );
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result).toEqual(new Map());
+            const [, scripts] = vi.mocked(ContentScriptManager.syncDetailed).mock.calls[0];
+            expect(scripts).toHaveLength(0);
+        });
+
         it('treats a www. hostname as its own independent entry (no union with the apex)', async () => {
             await setupRulesWithManifest({
                 'www.youtube.com': [mockScriptletRule('set-cookie', [])],
@@ -914,6 +940,53 @@ describe('PreregisteredScriptsService', () => {
             expect(CosmeticApi.setPreregisteredScriptRules).toHaveBeenCalledWith(
                 new Map([['youtube.com', new Set(['0123456789abcdef'])]]),
             );
+        });
+    });
+
+    describe('stop', () => {
+        it('clears the persisted registrations and resets coverage and the boot snapshot', async () => {
+            registryState.descriptors = [
+                { id: 'youtube.com', js: [`${SCRIPTS_PATH}/${getRuleFilename('0123456789abcdef')}`] },
+            ];
+            appContext.preregisteredScriptRulesAtBoot = new Map([
+                ['youtube.com', new Set(['0123456789abcdef'])],
+            ]);
+
+            await PreregisteredScriptsService.stop();
+
+            expect(ContentScriptManager.clear).toHaveBeenCalledWith('preregistered');
+            expect(CosmeticApi.setPreregisteredScriptRules).toHaveBeenCalledWith(new Map());
+            expect(appContext.preregisteredScriptRulesAtBoot).toBeUndefined();
+        });
+
+        it('clears registrations only after an in-flight sync settles', async () => {
+            await setupRulesWithManifest({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+
+            const order: string[] = [];
+            vi.mocked(ContentScriptManager.syncDetailed).mockImplementation(async () => {
+                order.push('sync');
+                await new Promise((resolve) => {
+                    setTimeout(resolve, 10);
+                });
+                return { errors: [], failedScriptIds: [] };
+            });
+            vi.mocked(ContentScriptManager.clear).mockImplementation(async () => {
+                order.push('clear');
+                registryState.descriptors = [];
+            });
+
+            const syncPromise = PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            await PreregisteredScriptsService.stop();
+            await syncPromise;
+
+            // stop() must wait for the queued sync before clearing, so a
+            // just-completed sync cannot re-register after the teardown.
+            expect(order).toEqual(['sync', 'clear']);
+
+            // Restore the default clear implementation for subsequent tests.
+            vi.mocked(ContentScriptManager.clear).mockImplementation(async () => {
+                registryState.descriptors = [];
+            });
         });
     });
 });

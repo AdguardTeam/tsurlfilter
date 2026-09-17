@@ -337,8 +337,12 @@ Path to the preregistered script artifacts directory (contains
 `manifest.json`, the shared bundle, one function file per scriptlet, one
 file per rule, and the cleanup file — see
 `@adguard/tswebextension/mv3/preregistered-scripts/hasher`).
-Falls back to dynamic injection if sync fails, or for tabs already open
-before sync.
+Coverage is reported from the registrations actually active after a sync:
+on sync failure the last successful coverage is kept (the boot snapshot
+before the first sync), and rules in those sets stay excluded from dynamic
+injection; a rule that cannot be confirmed as covered remains on the
+dynamic path. Tabs opened before the first sync are judged against the
+boot snapshot of the registrations that existed when they loaded.
 
 #### allowlist
 

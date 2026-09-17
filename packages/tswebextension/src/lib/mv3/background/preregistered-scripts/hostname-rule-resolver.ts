@@ -12,6 +12,12 @@ import { engineApi } from '../engine-api';
  * `{hash}.js` exists for them — they stay on the dynamic
  * (non-preregistered) injection path in `CosmeticApi`.
  *
+ * `$url`-scoped rules are excluded even when their hash is present in the
+ * manifest: the engine is queried per-hostname root, so a rule whose URL
+ * pattern matches the root URL would end up in a `*://hostname/*`
+ * registration whose generated file carries no URL guard. They stay on the
+ * dynamic injection path, matching the build-time collector.
+ *
  * @param hostname Hostname string.
  *
  * @returns Applicable local script rules.
@@ -35,5 +41,7 @@ export const getHostnameScriptRules = (hostname: string): CosmeticRule[] => {
     );
 
     const allRules = cosmeticResult.getScriptRules();
-    return allRules.filter((rule) => engineApi.isLocalFilter(rule.getFilterListId()));
+    return allRules.filter(
+        (rule) => engineApi.isLocalFilter(rule.getFilterListId()) && !rule.urlModifier,
+    );
 };

@@ -147,12 +147,17 @@ const JS_RULE_HASH_PREFIX = 'j:';
  * Suffix appended to the hash input when a rule carries a `$path` modifier,
  * so the same rule body with different `$path` values hashes differently.
  *
+ * An empty `$path` pattern is valid and means root-only: it must hash
+ * differently from a rule without `$path`, so the root-only artifact can
+ * never cover the unrestricted variant (the collector keeps the first entry
+ * for a hash, and coverage suppresses dynamic injection on other paths).
+ *
  * @param pathPattern Raw `$path` modifier pattern.
  *
  * @returns Suffix string or an empty string.
  */
 const pathHashSuffix = (pathPattern?: string): string => {
-    return pathPattern ? `|path:${pathPattern}` : '';
+    return pathPattern !== undefined ? `|path:${pathPattern}` : '';
 };
 
 /**
