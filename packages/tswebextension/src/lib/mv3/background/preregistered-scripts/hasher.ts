@@ -85,11 +85,37 @@ export const PREREGISTERED_SCRIPTS_DIR = 'preregistered-scripts';
 const HASH_LENGTH = 16;
 
 /**
+ * Matches a bare rule hash, the format of the manifest's `hashes` entries
+ * and the stem of per-rule filenames. Derived from {@link HASH_LENGTH} so
+ * the two can never drift apart. Shared with the build tool, which uses it
+ * to validate names read back from a previous generation's manifest.
+ */
+export const RULE_HASH_REGEX = new RegExp(`^[0-9a-f]{${HASH_LENGTH}}$`);
+
+/**
  * Matches per-rule file paths (`…/{hash}.js`), the inverse of
  * {@link getRuleFilename}. Derived from {@link HASH_LENGTH} so the two can
  * never drift apart.
  */
 const RULE_FILE_PATH_REGEX = new RegExp(`(?:^|/)([0-9a-f]{${HASH_LENGTH}})\\.js$`);
+
+/**
+ * Prefix of per-scriptlet-function filenames (`s-{hash}.js`), keeping them
+ * apart from per-rule `{hash}.js` files. Part of the shared build/runtime
+ * contract: persisted content-script registrations reference these paths,
+ * so the build tool validates retained names against this format.
+ */
+export const SCRIPTLET_FUNCTION_FILENAME_PREFIX = 's-';
+
+/**
+ * Matches per-scriptlet-function filenames (`s-{hash}.js`). Derived from
+ * {@link SCRIPTLET_FUNCTION_FILENAME_PREFIX} and {@link HASH_LENGTH} so the
+ * format can never drift. Shared with the build tool, which uses it to
+ * validate names read back from a previous generation's manifest.
+ */
+export const SCRIPTLET_FUNCTION_FILE_REGEX = new RegExp(
+    `^${SCRIPTLET_FUNCTION_FILENAME_PREFIX}[0-9a-f]{${HASH_LENGTH}}\\.js$`,
+);
 
 /**
  * Computes a truncated SHA-256 hash of a string, used as a short, stable
