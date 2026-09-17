@@ -641,7 +641,18 @@ export class CosmeticRule implements IRule {
 
                             currentSpecialSelectors.push({
                                 name: HtmlSpecialSelectorName.Contains,
-                                value: SimpleRegex.fromLiteral(simpleSelectorNode.argument.value),
+                                // The argument may be a quoted CSS string, e.g. AGTree
+                                // normalizes unbalanced `:contains()` arguments to a quoted
+                                // form (`:contains("(function(p,a,c)")`). Unquote it first
+                                // to preserve the matching semantics: plain-text arguments
+                                // stay literal (without the wrapping quotes), and quoted
+                                // regexp-lookalike arguments (`"/.../flags"`) are still
+                                // treated as regexps by `SimpleRegex.fromLiteral`.
+                                // Note: only the wrapping quotes are unescaped, so regexp
+                                // escape sequences (e.g. `\.`) are kept intact.
+                                value: SimpleRegex.fromLiteral(
+                                    QuoteUtils.removeQuotesAndUnescape(simpleSelectorNode.argument.value),
+                                ),
                             });
                         } else {
                             currentNativeSelector += `:${simpleSelectorNode.name.value}`;

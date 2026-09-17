@@ -646,4 +646,62 @@ describe('Html rule selector', () => {
         const notMatchedNoFlags = selector.getMatchedElements(document);
         expect(notMatchedNoFlags).toHaveLength(0);
     });
+
+    it('checks special selector :contains() - normalized quoted argument keeps matching semantics', () => {
+        // The tolerant fallback normalizes the unbalanced argument to a quoted form;
+        // the matcher must not treat the wrapping quotes as part of the matched text
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$script:contains((function(g,b,a,c,e,d))',
+        );
+        expect(convertedRuleText).toBe('example.org$$script:contains("(function(g,b,a,c,e,d)")');
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        document.body.innerHTML = `
+        <script id="matched">(function(g,b,a,c,e,d){ return 1; })</script>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+
+        // Content without the plain text must NOT match
+        document.body.innerHTML = `
+        <script id="not-matched">var somethingElse = true;</script>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - normalized quoted regexp argument keeps regexp semantics', () => {
+        // Quoting a regexp argument must not turn it into a literal string match
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            String.raw`example.org$$script:contains(/window\.open\([^)]*\);\s*\w+\.focus/)`,
+        );
+        expect(convertedRuleText).toBe(
+            String.raw`example.org$$script:contains("/window\.open\([^)]*\);\s*\w+\.focus/")`,
+        );
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        document.body.innerHTML = `
+        <script id="matched">window.open("https://example.org");  popup.focus();</script>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+
+        // The literal regexp source text must NOT match if regexp semantics are preserved
+        // (it would match if the argument were treated as a plain string)
+        document.body.innerHTML = String.raw`
+        <script id="not-matched">/window\.open\([^)]*\);\s*\w+\.focus/</script>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
 });

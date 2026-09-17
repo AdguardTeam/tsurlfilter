@@ -1103,6 +1103,65 @@ describe('HTML filtering rules (content rules)', () => {
         });
     });
 
+    it('correctly parses html rules - contains with quoted argument', () => {
+        // AGTree normalizes unbalanced `:contains()` arguments to a quoted form,
+        // e.g. `$$script:contains((function(g,b,a,c,e,d))` is converted to
+        // `$$script:contains("(function(g,b,a,c,e,d)")` — the wrapping quotes are
+        // a transport encoding and must not become part of the matched text
+        const rule = createCosmeticRule(
+            'example.org$$script:contains("(function(g,b,a,c,e,d)")',
+            0,
+        );
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: '(function(g,b,a,c,e,d)',
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - contains with quoted regexp argument', () => {
+        // Quoting a regexp-lookalike argument must not turn it into a literal
+        // string: after unquoting, `/.../flags` is still treated as a regexp
+        const rule = createCosmeticRule(
+            String.raw`example.org$$script:contains("/window\.open\([^)]*\);\s*\w+\.focus/")`,
+            0,
+        );
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: /window\.open\([^)]*\);\s*\w+\.focus/,
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - contains with escaped quotes in quoted argument', () => {
+        // Escaped double quotes inside a quoted argument are unescaped,
+        // single quotes do not need unescaping
+        const rule = createCosmeticRule(
+            String.raw`example.org$$div:contains("say \"hello\" to 'all'")`,
+            0,
+        );
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'div',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: String`say "hello" to 'all'`,
+                }],
+            }]],
+        });
+    });
+
     it('correctly parses html rules - attribute selectors', () => {
         // eslint-disable-next-line max-len
         const contentPart = 'div[attr1="value1"][attr2*="value" i][attr3]';
