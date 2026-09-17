@@ -442,6 +442,34 @@ describe('HtmlRuleConverter', () => {
                         // eslint-disable-next-line max-len
                         expected: ['~example.org$$script:contains("||!navigator.platform){setTimeout(function () {w.location.href=url")'],
                     },
+
+                    // `:has-text()` with unbalanced parentheses in the argument
+                    // (normalized to a quoted argument and converted to `:contains()`)
+                    {
+                        actual: '$$script:has-text((function(g,b,a,c,e,d))',
+                        expected: ['$$script:contains("(function(g,b,a,c,e,d)")'],
+                    },
+
+                    // `:-abp-contains()` with unbalanced parentheses in the argument
+                    // (normalized to a quoted argument, the alias itself is kept as-is)
+                    {
+                        actual: '$$script:-abp-contains((function(g,b,a,c,e,d))',
+                        expected: ['$$script:-abp-contains("(function(g,b,a,c,e,d)")'],
+                    },
+
+                    // Invalid selector with `[tag-content]` — kept as-is both with and
+                    // without whitespace around `=` (the marker check tolerates attribute
+                    // whitespace, so both spellings are treated alike)
+                    {
+                        actual: '$$div[tag-content="a"]x',
+                        expected: ['$$div[tag-content="a"]x'],
+                        shouldConvert: false,
+                    },
+                    {
+                        actual: '$$div[tag-content = "a" ]x',
+                        expected: ['$$div[tag-content = "a" ]x'],
+                        shouldConvert: false,
+                    },
                 ])("should convert '$actual' to '$expected'", (testData) => {
                     expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
                 });
@@ -485,6 +513,33 @@ describe('HtmlRuleConverter', () => {
                     {
                         input: 'example.com$$div[data-x="has-text(foo',
                         error: "Expected '<]-token>', but got 'end of input'",
+                    },
+
+                    // Same as above, but with the full `:contains(` / `[tag-content=`
+                    // markers inside quoted attribute text — the marker scan skips
+                    // quoted text, so the fallback is not triggered
+                    {
+                        input: 'example.com$$div[data-x=":contains(foo"]com',
+                        error: 'Type selector is already set for the compound selector',
+                    },
+                    {
+                        input: 'example.com$$div[data-x="a[tag-content=b',
+                        error: "Expected '<]-token>', but got 'end of input'",
+                    },
+
+                    // The repaired body parses successfully, but the conversion
+                    // rejects the mixed uBO pseudo-class — the error must surface
+                    // instead of being hidden by the tolerant fallback
+                    {
+                        input: '$$div:min-text-length(5):contains(eval(function(p,a,c)',
+                        error: 'Mixed AdGuard and uBlock syntax',
+                    },
+
+                    // Same for invalid length values: they must surface
+                    // instead of being hidden by the tolerant fallback
+                    {
+                        input: '$$div[min-length="abc"]:contains((foo)',
+                        error: "Value of special attribute selector 'min-length' must be an integer, got 'abc'",
                     },
                 ])("should not convert '$input'", ({ input, error }) => {
                     if (typeof input !== 'string') {

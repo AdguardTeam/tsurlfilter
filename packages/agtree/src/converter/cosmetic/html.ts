@@ -30,10 +30,19 @@ import {
 import { AdgHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
 import { UboHtmlFilteringBodyParser } from '../../parser/cosmetic/html-filtering-body/ubo-html-filtering-body-parser';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { EMPTY, EQUALS } from '../../utils/constants';
+import {
+    BACKSLASH,
+    COLON,
+    DOUBLE_QUOTE,
+    EMPTY,
+    EQUALS,
+    OPEN_SQUARE_BRACKET,
+    SINGLE_QUOTE,
+} from '../../utils/constants';
 import { RegExpUtils } from '../../utils/regexp';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
+import { PseudoClasses } from '../css/index';
 
 /**
  * From the AdGuard docs:
@@ -117,9 +126,19 @@ const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
  */
 const SPECIAL_PSEUDO_CLASS_ARG_MARKERS = [
     `:${AdgPseudoClasses.Contains}(`,
-    ':-abp-contains(',
+    `:${PseudoClasses.AbpContains}(`,
     `:${UboPseudoClasses.HasText}(`,
 ] as const;
+
+/**
+ * Pattern matching special attribute selectors in a raw HTML filtering rule
+ * body, e.g. `[tag-content=` or `[ min-length =`. Whitespace around the
+ * attribute name and the `=` operator is allowed, as permitted by the
+ * attribute selector grammar.
+ */
+const SPECIAL_ATTRIBUTE_SELECTOR_PATTERN = new RegExp(
+    `^\\[\\s*(?:${Object.values(AdgAttributeSelectors).join('|')})\\s*=`,
+);
 
 /**
  * Error messages used in HTML filtering rule conversion.
@@ -189,6 +208,29 @@ type HtmlFilteringRuleGenerator =
     | typeof UboHtmlFilteringBodyGenerator;
 
 /**
+ * Result of scanning a raw HTML filtering rule body for special selector
+ * markers — see {@link HtmlRuleConverter.scanSpecialSelectorMarkers}.
+ */
+interface SpecialSelectorMarkers {
+    /**
+     * Whether a special attribute selector (e.g. `[tag-content=`) was found.
+     */
+    hasSpecialAttributeSelector: boolean;
+
+    /**
+     * Index of the last special pseudo-class selector marker
+     * (e.g. `:contains(`), or -1 if none was found.
+     */
+    lastPseudoClassMarkerIndex: number;
+
+    /**
+     * Length of the marker at {@link SpecialSelectorMarkers.lastPseudoClassMarkerIndex},
+     * or 0 if none was found.
+     */
+    lastPseudoClassMarkerLength: number;
+}
+
+/**
  * HTML filtering rule converter class.
  *
  * @todo Implement `convertToUbo` (ABP currently doesn't support HTML filtering rules).
@@ -196,7 +238,12 @@ type HtmlFilteringRuleGenerator =
 export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Converts a HTML rule to AdGuard syntax, if possible.
-     * Also can be used to convert AdGuard rules to AdGuard syntax to validate them.
+     *
+     * Note: for AdGuard rules this is not a strict validation. AdGuard rules
+     * whose bodies cannot be parsed as CSS selector lists (e.g. `:contains()`
+     * with an unbalanced parenthesis in the argument) are tolerated: such
+     * rules are kept as-is with `isConverted: false`, so callers must not
+     * treat a returned result as proof of rule validity.
      *
      * @param rule Rule node to convert.
      *
@@ -204,7 +251,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
      * If the rule was not converted, the result array will contain the original node with the same object reference.
      *
-     * @throws If the rule is invalid or cannot be converted.
+     * @throws If the rule is genuinely invalid — an unparseable body without
+     * special selector markers, or a conversion error (e.g. mixed AdGuard and
+     * uBlock syntax, invalid length values) — or cannot be converted.
      */
     public static convertToAdg(rule: HtmlFilteringRule): NodeConversionResult<HtmlFilteringRule> {
         let parser: HtmlFilteringRuleParser;
@@ -263,8 +312,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // argument. Such rules are valid in CoreLibs and are present in
             // production filter lists, so we keep them as-is instead of
             // excluding them during conversion.
-            // Note: only applies to AdGuard-syntax rules with special
-            // selectors; genuinely invalid rules still throw.
+            // Note: only applies to AdGuard-syntax rules whose raw body
+            // contains special selector markers (see hasSpecialSimpleSelectors);
+            // unparseable rules without such markers still throw.
 
             const isAdgWithSpecialSelectorsWithError = rule.syntax === AdblockSyntax.Adg
                 && error instanceof AdblockSyntaxError
@@ -303,7 +353,16 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     true,
                 );
                 isConverted = true;
-            } catch {
+            } catch (retryError) {
+                // Only tolerate syntax errors: the repaired body may still be
+                // unparseable, in which case the rule is kept as-is.
+                // Conversion errors (e.g. mixed AdGuard and uBlock syntax or
+                // invalid length values) must surface instead of being hidden
+                // by the fallback.
+                if (!(retryError instanceof AdblockSyntaxError)) {
+                    throw retryError;
+                }
+
                 return createNodeConversionResult([rule], false);
             }
         }
@@ -788,6 +847,83 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
+     * Scans a raw HTML filtering rule body for special selector markers,
+     * skipping over quoted text (string literals and attribute values), where
+     * marker-like substrings may occur as plain text, e.g. the `:contains(`
+     * in `[data-x=":contains(foo"]` is attribute text, not a selector.
+     *
+     * Quote handling:
+     * - both single and double quotes toggle the quoted state;
+     * - a backslash-escaped quote (`\"`) does not toggle the quoted state;
+     * - a doubled quote (`""`) inside a quoted section is treated as an
+     *   escaped quote (AdGuard escaping convention for `[tag-content]` values).
+     *
+     * @param raw Raw HTML filtering rule body.
+     *
+     * @returns Scan result — see {@link SpecialSelectorMarkers}.
+     */
+    private static scanSpecialSelectorMarkers(raw: string): SpecialSelectorMarkers {
+        let hasSpecialAttributeSelector = false;
+        let lastPseudoClassMarkerIndex = -1;
+        let lastPseudoClassMarkerLength = 0;
+
+        let quote: string | null = null;
+
+        for (let i = 0; i < raw.length; i += 1) {
+            const char = raw[i];
+
+            if (quote !== null) {
+                // A backslash escapes the next character inside quoted text
+                if (char === BACKSLASH) {
+                    i += 1;
+                    continue;
+                }
+
+                // A doubled quote is an escaped quote
+                // (AdGuard escaping convention for [tag-content] values)
+                if (char === quote && raw[i + 1] === quote) {
+                    i += 1;
+                    continue;
+                }
+
+                // Closing quote
+                if (char === quote) {
+                    quote = null;
+                }
+
+                continue;
+            }
+
+            if (char === DOUBLE_QUOTE || char === SINGLE_QUOTE) {
+                quote = char;
+                continue;
+            }
+
+            // Outside of quoted text — check for special selector markers
+            if (char === OPEN_SQUARE_BRACKET && SPECIAL_ATTRIBUTE_SELECTOR_PATTERN.test(raw.slice(i))) {
+                hasSpecialAttributeSelector = true;
+                continue;
+            }
+
+            if (char === COLON) {
+                for (const marker of SPECIAL_PSEUDO_CLASS_ARG_MARKERS) {
+                    if (raw.startsWith(marker, i)) {
+                        lastPseudoClassMarkerIndex = i;
+                        lastPseudoClassMarkerLength = marker.length;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return {
+            hasSpecialAttributeSelector,
+            lastPseudoClassMarkerIndex,
+            lastPseudoClassMarkerLength,
+        };
+    }
+
+    /**
      * Checks if the raw HTML filtering rule body contains any special
      * attribute selector or special pseudo-class selector.
      *
@@ -800,15 +936,12 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * @returns `true` if the body contains special selectors, otherwise `false`.
      */
     private static hasSpecialSimpleSelectors(raw: string): boolean {
-        const markers = [
-            `[${AdgAttributeSelectors.TagContent}=`,
-            `[${AdgAttributeSelectors.Wildcard}=`,
-            `[${AdgAttributeSelectors.MinLength}=`,
-            `[${AdgAttributeSelectors.MaxLength}=`,
-            ...SPECIAL_PSEUDO_CLASS_ARG_MARKERS,
-        ];
+        const {
+            hasSpecialAttributeSelector,
+            lastPseudoClassMarkerIndex,
+        } = HtmlRuleConverter.scanSpecialSelectorMarkers(raw);
 
-        return markers.some((marker) => raw.includes(marker));
+        return hasSpecialAttributeSelector || lastPseudoClassMarkerIndex >= 0;
     }
 
     /**
@@ -828,28 +961,19 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * (no special pseudo-class selector found, or no closing parenthesis found).
      */
     private static fixUnclosedSpecialPseudoClassArgument(raw: string): string | null {
-        // Markers of special pseudo-class selectors with raw-text arguments
-        const markers = SPECIAL_PSEUDO_CLASS_ARG_MARKERS;
-
-        // Find the last occurrence of any special pseudo-class selector marker
-        let lastMarkerIndex = -1;
-        let lastMarkerLength = 0;
-
-        for (const marker of markers) {
-            const index = raw.lastIndexOf(marker);
-            if (index > lastMarkerIndex) {
-                lastMarkerIndex = index;
-                lastMarkerLength = marker.length;
-            }
-        }
+        // Find the last special pseudo-class selector marker outside of quoted text
+        const {
+            lastPseudoClassMarkerIndex,
+            lastPseudoClassMarkerLength,
+        } = HtmlRuleConverter.scanSpecialSelectorMarkers(raw);
 
         // No special pseudo-class selector found - cannot normalize
-        if (lastMarkerIndex < 0) {
+        if (lastPseudoClassMarkerIndex < 0) {
             return null;
         }
 
         // Opening parenthesis of the special pseudo-class selector
-        const openParenIndex = lastMarkerIndex + lastMarkerLength - 1;
+        const openParenIndex = lastPseudoClassMarkerIndex + lastPseudoClassMarkerLength - 1;
 
         // The argument ends at the last closing parenthesis of the rule body
         const closeParenIndex = raw.lastIndexOf(')');

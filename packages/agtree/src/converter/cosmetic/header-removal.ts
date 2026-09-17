@@ -73,11 +73,13 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
                     parseHtmlFilteringRuleBodies: true,
                 });
             } catch (error) {
-                // Tolerant fallback: if the body cannot be parsed as a CSS
-                // selector list, this is not a uBO responseheader(...) rule.
-                // Leave the rule as-is, so that the main HTML filtering rule
-                // converter can handle it (it keeps rules with special
-                // selectors as-is, and throws for genuinely invalid rules).
+                // Tolerant fallback: a parse error does not necessarily mean
+                // that this is not a uBO responseheader(...) rule — the token
+                // stream checks the whole body's balance before the function
+                // name, so malformed responseheader(...) bodies can throw here
+                // too. Hand the rule to the main HTML filtering rule converter
+                // for further handling instead: it keeps rules with special
+                // selectors as-is, and throws for genuinely invalid rules.
                 if (error instanceof AdblockSyntaxError) {
                     return createNodeConversionResult([rule], false);
                 }

@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- HTML filtering rules with unbalanced `:contains()`/ `:-abp-contains()` /
+- HTML filtering rules with unbalanced `:contains()` / `:-abp-contains()` /
   `:has-text()` argument are now normalized to a quoted argument during
   conversion, e.g.
   `:contains(eval(function(p,a,c,k,e,d))` →
@@ -32,6 +32,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   lists are now kept as-is during conversion instead of throwing a parse error,
   e.g. `:contains()` with an unbalanced parenthesis or an unterminated
   string in the argument, or `[tag-content]` with escaped double quotes.
+  This tolerant fallback is gated on special selector markers — unparseable
+  bodies without `:contains()` / `:-abp-contains()` / `:has-text()` or
+  `[tag-content]` / `[wildcard]` / `[min-length]` / `[max-length]` markers
+  (outside of quoted text) still throw.
 
 ### Security
 
