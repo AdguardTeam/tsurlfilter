@@ -169,8 +169,10 @@ from storage) with `conversionSourceMapValidator` (`zod`). An empty map is creat
 `createEmptyConversionSourceMap()`. In `@adguard/tsurlfilter` this type is re-exported under its legacy name
 `ConversionData`.
 
-The result object provides the following reverse-lookup helpers, all matching the legacy `tsurlfilter` `FilterList`
-semantics:
+The result object provides the following reverse-lookup helpers, matching the legacy `tsurlfilter` `FilterList`
+semantics, with two deliberate deviations: `getRuleText` returns `null` for a negative offset (the legacy API
+returned an empty string there), and form feed (`\f`) is not treated as a line break in v5 (the legacy scanner did
+treat it as one):
 
 - `getRuleText(offset)` — the (possibly converted) rule text at a converted-line offset.
 - `getOriginalRuleText(offset)` — the original rule text at an offset, falling back to the converted rule text when the
@@ -234,16 +236,17 @@ console.log(result.getOriginalRuleText(convertedLineOffset));
 
 ```ts
 import { RuleParserPipeline } from '@adguard/agtree';
-import { RuleConverter } from '@adguard/agtree/converter';
+import { CONVERTER_PARSE_OPTIONS, RuleConverter } from '@adguard/agtree/converter';
 import { RuleGenerator } from '@adguard/agtree/generator';
 
 const rawRuleToConvert = 'example.com#$#abp-snippet0 arg00 arg01; abp-snippet1 arg10 arg11';
 
-// Parse the rule to get an AST rule node.
+// Parse the rule to get an AST rule node. Pass the converter's fixed parse
+// options so the AST is built at the same detail level the raw layer uses.
 // Please note that the parser will throw an error if the rule is
 // syntactically incorrect.
 const parser = new RuleParserPipeline();
-const ruleNode = parser.parse(rawRuleToConvert);
+const ruleNode = parser.parse(rawRuleToConvert, CONVERTER_PARSE_OPTIONS);
 
 // Now you can use the converter API by passing the AST node as an input.
 // Please note that the converter API returns an array of rule nodes,

@@ -56,11 +56,50 @@ describe('Raw rule converter wrapper should work correctly', () => {
 });
 
 describe('RawRuleConverter fixed detail level', () => {
-    // uBO CSS injection needs parseCssDeclarationList=true (defaults off) to convert.
+    // uBO CSS injection conversion relies on the converter's fixed parse options
+    // (CSS sub-parsing enabled), not on caller-supplied flags.
     test('converts a uBO CSS injection rule without caller-supplied flags', () => {
         const result = RawRuleConverter.convertToAdg('example.com##h1:style(color: red)');
         expect(result.isConverted).toBe(true);
         expect(result.result).toEqual(['example.com#$#h1 { color: red }']);
+    });
+
+    // Regression: the strict CSS sub-parsers reject pseudo-elements, namespace
+    // selectors, consecutive combinators and malformed declaration lists. Such
+    // rules must fall back to raw CSS nodes and still convert, as the base
+    // pipeline did, instead of throwing.
+    test.each([
+        [
+            'example.com##h1::before:style(color:red)',
+            ['example.com#$#h1::before { color: red }'],
+        ],
+        [
+            'example.com##*::selection:style(background-color:#338FFF!important)',
+            ['example.com#$#*::selection { background-color: #338FFF !important }'],
+        ],
+        [
+            'example.com##h1:style(color red)',
+            ['example.com#$#h1 { color red }'],
+        ],
+        [
+            'example.com##h1:style(content: ";")',
+            ['example.com#$#h1 { content: ";" }'],
+        ],
+        [
+            'example.com##*|div:style(color:red)',
+            ['example.com#$#*|div { color: red }'],
+        ],
+        [
+            'example.com##div > > p:style(color:red)',
+            ['example.com#$#div > > p { color: red }'],
+        ],
+    ])('falls back to raw CSS and converts %j', (rule, expected) => {
+        expect(() => RawRuleConverter.convertToAdg(rule)).not.toThrow();
+
+        const result = RawRuleConverter.convertToAdg(rule);
+
+        expect(result.isConverted).toBe(true);
+        expect(result.result).toEqual(expected);
     });
 });
 

@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   snippets, CSS injection, HTML filtering), and the `CosmeticRule`/`NetworkRule`
   constructors now reject passing a pre-parsed node and a structural reader
   together.
+- `FilterList` conversion no longer drops rules whose CSS the strict sub-parsers
+  reject (e.g. pseudo-element selectors such as
+  `example.com##*::selection:style(...)`): they fall back to raw CSS and convert
+  as before.
 
 ## [6.0.3] - 2026-08-25
 

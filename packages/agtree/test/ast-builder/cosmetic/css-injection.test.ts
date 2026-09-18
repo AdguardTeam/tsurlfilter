@@ -325,6 +325,20 @@ describe('RuleParser — ADG CSS injection: parseCssSelectorList', () => {
         expect(ast.body.mediaQueryList).toBeDefined();
         expect(ast.body.mediaQueryList!.value).toBe('(max-width: 768px)');
     });
+
+    test('parseCssSelectorList: true falls back to Raw for pseudo-element selectors', () => {
+        // Pseudo-elements are valid CSS but rejected by the strict selector
+        // sub-parser; the builder must keep the raw text instead of failing.
+        const ast = parser.parse('#$#h1::before { color: red }', {
+            parseCssSelectorList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.selectorList).toMatchObject({
+            type: 'Raw',
+            value: 'h1::before',
+            kind: ValueKind.CssSelector,
+        });
+    });
 });
 
 describe('RuleParser — ADG CSS injection: parseCssDeclarationList', () => {
@@ -387,6 +401,20 @@ describe('RuleParser — ADG CSS injection: parseCssDeclarationList', () => {
         const dl = ast.body.declarationList as CssDeclarationList;
         expect(dl.children).toHaveLength(1);
         expect(dl.children[0].property.value).toBe('padding');
+    });
+
+    test('parseCssDeclarationList: true falls back to Raw for malformed declarations', () => {
+        // Malformed declarations are kept raw by the base pipeline; the builder
+        // must not fail the whole rule when the strict sub-parser rejects them.
+        const ast = parser.parse('#$#body { color red }', {
+            parseCssDeclarationList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.declarationList).toMatchObject({
+            type: 'Raw',
+            value: 'color red',
+            kind: ValueKind.CssDeclaration,
+        });
     });
 
     test('both options enabled produce typed nodes with correct values', () => {

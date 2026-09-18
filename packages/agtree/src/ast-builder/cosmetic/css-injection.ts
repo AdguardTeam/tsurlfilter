@@ -7,6 +7,7 @@
  * for ADG CSS injection rules (#$#, #@$#, #$?#, #@$?#).
  */
 
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import type {
     CssInjectionRule,
     CssInjectionRuleBody,
@@ -177,16 +178,33 @@ export class CssInjectionAstBuilder {
         // Build selectorList — sub-parse when requested and ctx is available.
         let selectorList: SelectorList | Raw;
         if (parseCssSelectorList && ctx) {
-            SelectorListParser.parse(ctx, slStartTi, slEndTi, 0, DEFAULT_MAX_COMPLEX);
-            selectorList = SelectorListAstBuilder.parse(
-                source,
-                ctx.data,
-                0,
-                DEFAULT_MAX_COMPLEX,
-                slSourceStart,
-                slSourceEnd,
-                { isLocIncluded },
-            );
+            try {
+                SelectorListParser.parse(ctx, slStartTi, slEndTi, 0, DEFAULT_MAX_COMPLEX);
+                selectorList = SelectorListAstBuilder.parse(
+                    source,
+                    ctx.data,
+                    0,
+                    DEFAULT_MAX_COMPLEX,
+                    slSourceStart,
+                    slSourceEnd,
+                    { isLocIncluded },
+                );
+            } catch (e) {
+                if (!(e instanceof AdblockSyntaxError)) {
+                    throw e;
+                }
+                // The strict CSS sub-parser rejects selectors the base pipeline
+                // kept raw (pseudo-elements, namespaces, consecutive
+                // combinators, …). Fall back to the raw selector text so the
+                // rule still converts instead of failing.
+                selectorList = CssInjectionAstBuilder.buildRaw(
+                    source,
+                    slSourceStart,
+                    slSourceEnd,
+                    isLocIncluded,
+                    ValueKind.CssSelector,
+                );
+            }
         } else {
             selectorList = CssInjectionAstBuilder.buildRaw(
                 source,
@@ -229,22 +247,37 @@ export class CssInjectionAstBuilder {
         if (hasRemove) {
             body.remove = true;
         } else if (parseCssDeclarationList && ctx) {
-            // Sub-parse via the CSS pipeline using the existing token arrays.
-            // ctx.data was potentially overwritten by SelectorListParser above,
-            // but dlStartTi/dlEndTi/dlSourceStart/dlSourceEnd are already in locals.
-            DeclarationListParser.parse(ctx, dlStartTi, dlEndTi, 0, DEFAULT_MAX_DECLARATIONS);
-            if (ctx.status === 1) {
-                throw new Error('Parser data buffer overflow: declaration list too large for current capacity');
+            try {
+                // Sub-parse via the CSS pipeline using the existing token arrays.
+                // ctx.data was potentially overwritten by SelectorListParser above,
+                // but dlStartTi/dlEndTi/dlSourceStart/dlSourceEnd are already in locals.
+                DeclarationListParser.parse(ctx, dlStartTi, dlEndTi, 0, DEFAULT_MAX_DECLARATIONS);
+                if (ctx.status === 1) {
+                    throw new Error('Parser data buffer overflow: declaration list too large for current capacity');
+                }
+                body.declarationList = DeclarationListAstBuilder.parse(
+                    source,
+                    ctx.data,
+                    0,
+                    DEFAULT_MAX_DECLARATIONS,
+                    dlSourceStart,
+                    dlSourceEnd,
+                    { isLocIncluded },
+                );
+            } catch (e) {
+                if (!(e instanceof AdblockSyntaxError)) {
+                    throw e;
+                }
+                // Malformed declaration lists (kept raw by the base pipeline)
+                // fall back to raw text so the rule still converts.
+                body.declarationList = CssInjectionAstBuilder.buildRaw(
+                    source,
+                    dlSourceStart,
+                    dlSourceEnd,
+                    isLocIncluded,
+                    ValueKind.CssDeclaration,
+                );
             }
-            body.declarationList = DeclarationListAstBuilder.parse(
-                source,
-                ctx.data,
-                0,
-                DEFAULT_MAX_DECLARATIONS,
-                dlSourceStart,
-                dlSourceEnd,
-                { isLocIncluded },
-            );
         } else {
             body.declarationList = CssInjectionAstBuilder.buildRaw(
                 source,

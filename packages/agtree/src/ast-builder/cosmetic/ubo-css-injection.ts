@@ -14,6 +14,7 @@
  */
 
 import { UboPseudoName } from '../../common/ubo-selector-common';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import {
     CosmeticRuleType,
     ListNodeType,
@@ -365,37 +366,40 @@ export class UboCssInjectionAstBuilder {
         parseCss: boolean,
     ): SelectorList | Raw {
         if (!parseCss || cleanedSelector.length === 0) {
-            const node: Raw = {
-                type: NodeType.Raw,
-                value: cleanedSelector,
-            };
-            if (isLocIncluded) {
-                node.start = bodyStart;
-                node.end = bodyEnd;
-            }
-            return node;
+            return UboCssInjectionAstBuilder.buildRaw(cleanedSelector, bodyStart, bodyEnd, isLocIncluded);
         }
 
-        // Sub-parse the cleaned selector text via the CSS pipeline.
-        // We re-tokenize because the cleaned selector is a synthesized
-        // string (modifier ranges have been excised from the original).
-        const { tokenizer, ctx } = ensureSubParserContext();
-        tokenizer.source = cleanedSelector;
-        tokenizer.offset = 0;
-        tokenizer.tokenize();
-        initParserContext(ctx, cleanedSelector, tokenizer);
+        try {
+            // Sub-parse the cleaned selector text via the CSS pipeline.
+            // We re-tokenize because the cleaned selector is a synthesized
+            // string (modifier ranges have been excised from the original).
+            const { tokenizer, ctx } = ensureSubParserContext();
+            tokenizer.source = cleanedSelector;
+            tokenizer.offset = 0;
+            tokenizer.tokenize();
+            initParserContext(ctx, cleanedSelector, tokenizer);
 
-        SelectorListParser.parse(ctx, 0, ctx.tokenCount, 0, DEFAULT_MAX_COMPLEX);
+            SelectorListParser.parse(ctx, 0, ctx.tokenCount, 0, DEFAULT_MAX_COMPLEX);
 
-        return SelectorListAstBuilder.parse(
-            cleanedSelector,
-            ctx.data,
-            0,
-            DEFAULT_MAX_COMPLEX,
-            bodyStart,
-            bodyEnd,
-            { isLocIncluded },
-        );
+            return SelectorListAstBuilder.parse(
+                cleanedSelector,
+                ctx.data,
+                0,
+                DEFAULT_MAX_COMPLEX,
+                bodyStart,
+                bodyEnd,
+                { isLocIncluded },
+            );
+        } catch (e) {
+            if (!(e instanceof AdblockSyntaxError)) {
+                throw e;
+            }
+            // The strict CSS sub-parser rejects selectors the base pipeline
+            // kept raw (pseudo-elements, namespaces, consecutive combinators,
+            // …). Fall back to the raw selector text so the rule still
+            // converts instead of failing.
+            return UboCssInjectionAstBuilder.buildRaw(cleanedSelector, bodyStart, bodyEnd, isLocIncluded);
+        }
     }
 
     /**
@@ -426,41 +430,67 @@ export class UboCssInjectionAstBuilder {
             return { type: NodeType.Raw, value: '' };
         }
 
-        if (!parseCss) {
-            const node: Raw = {
-                type: NodeType.Raw,
-                value: source.slice(valueStart, valueEnd),
-            };
-            if (isLocIncluded) {
-                node.start = valueStart;
-                node.end = valueEnd;
-            }
-            return node;
-        }
-
-        // Sub-parse via the CSS pipeline. The declaration text is a
-        // contiguous sub-range of the original source, so we re-tokenize
-        // a substring to keep the sub-parser stand-alone.
         const declText = source.slice(valueStart, valueEnd);
-        const { tokenizer, ctx } = ensureSubParserContext();
-        tokenizer.source = declText;
-        tokenizer.offset = 0;
-        tokenizer.tokenize();
-        initParserContext(ctx, declText, tokenizer);
 
-        DeclarationListParser.parse(ctx, 0, ctx.tokenCount, 0, DEFAULT_MAX_DECLARATIONS);
-        if (ctx.status === 1) {
-            throw new Error('Parser data buffer overflow: declaration list too large for current capacity');
+        if (!parseCss) {
+            return UboCssInjectionAstBuilder.buildRaw(declText, valueStart, valueEnd, isLocIncluded);
         }
 
-        return DeclarationListAstBuilder.parse(
-            declText,
-            ctx.data,
-            0,
-            DEFAULT_MAX_DECLARATIONS,
-            valueStart,
-            valueEnd,
-            { isLocIncluded },
-        );
+        try {
+            // Sub-parse via the CSS pipeline. The declaration text is a
+            // contiguous sub-range of the original source, so we re-tokenize
+            // a substring to keep the sub-parser stand-alone.
+            const { tokenizer, ctx } = ensureSubParserContext();
+            tokenizer.source = declText;
+            tokenizer.offset = 0;
+            tokenizer.tokenize();
+            initParserContext(ctx, declText, tokenizer);
+
+            DeclarationListParser.parse(ctx, 0, ctx.tokenCount, 0, DEFAULT_MAX_DECLARATIONS);
+            if (ctx.status === 1) {
+                throw new Error('Parser data buffer overflow: declaration list too large for current capacity');
+            }
+
+            return DeclarationListAstBuilder.parse(
+                declText,
+                ctx.data,
+                0,
+                DEFAULT_MAX_DECLARATIONS,
+                valueStart,
+                valueEnd,
+                { isLocIncluded },
+            );
+        } catch (e) {
+            if (!(e instanceof AdblockSyntaxError)) {
+                throw e;
+            }
+            // Malformed declaration lists (kept raw by the base pipeline) fall
+            // back to raw text so the rule still converts.
+            return UboCssInjectionAstBuilder.buildRaw(declText, valueStart, valueEnd, isLocIncluded);
+        }
+    }
+
+    /**
+     * Build a `Raw` node carrying the given text and, optionally, its source
+     * range. Used by the sub-parse fallback path when the strict CSS parsers
+     * reject a selector or declaration list.
+     *
+     * @param value Raw text.
+     * @param start Source start offset.
+     * @param end Source end offset.
+     * @param isLocIncluded Whether to include location info.
+     *
+     * @returns Raw AST node.
+     */
+    private static buildRaw(value: string, start: number, end: number, isLocIncluded: boolean): Raw {
+        const node: Raw = {
+            type: NodeType.Raw,
+            value,
+        };
+        if (isLocIncluded) {
+            node.start = start;
+            node.end = end;
+        }
+        return node;
     }
 }

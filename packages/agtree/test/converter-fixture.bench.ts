@@ -25,9 +25,11 @@ const ALL_LINES = fixture.split('\n');
  *
  * Only such rules are benchmarked per rule, so the timed loops never hit the
  * (expensive, unequal) error paths and both engines run an identical workload.
- * UBO scriptlet calls with a trailing backslash before `)` are rejected by v5
- * (8 rules of this fixture); the list-level benches below still cover them,
- * because there they are tolerated (kept verbatim) instead of throwing.
+ * UBO scriptlet calls whose final argument ends with a backslash-escaped
+ * character (e.g. `##+js(aeld, , '\')`, `##+js(acs, Math, ='\x)`) are rejected
+ * by v5 as unclosed (8 rules of this fixture); v4 does not report them. The
+ * list-level benches below still cover them, because there they are tolerated
+ * (kept verbatim) instead of throwing.
  *
  * @param lines Candidate rules.
  *

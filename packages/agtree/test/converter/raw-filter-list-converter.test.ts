@@ -149,6 +149,34 @@ describe('RawFilterListConverter (regression)', () => {
         expect(convertedFilterList.isConverted).toBe(true);
         expect(convertedFilterList.converted).toBe(expectedFilterListContent);
     });
+
+    test('rules rejected by the strict CSS sub-parsers still convert via raw CSS', () => {
+        const filterListContent = [
+            'example.com##h1::before:style(color:red)',
+            'example.com##*|div:style(color:red)',
+            'example.com##div > > p:style(color:red)',
+            'example.com##h1:style(color red)',
+            'example.com##h1:style(color: red)',
+        ].join('\n');
+
+        const expectedFilterListContent = [
+            'example.com#$#h1::before { color: red }',
+            'example.com#$#*|div { color: red }',
+            'example.com#$#div > > p { color: red }',
+            'example.com#$#h1 { color red }',
+            'example.com#$#h1 { color: red }',
+        ].join('\n');
+
+        const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
+
+        expect(convertedFilterList.isConverted).toBe(true);
+        expect(convertedFilterList.converted).toBe(expectedFilterListContent);
+        expect(convertedFilterList.errors).toEqual([]);
+        expect(convertedFilterList.getOriginalContent()).toBe(filterListContent);
+
+        // Strict mode must not throw for these rules either.
+        expect(() => RawFilterListConverter.convertToAdg(filterListContent, { tolerant: false })).not.toThrow();
+    });
 });
 
 describe('RawFilterListConverter parity with tsurlfilter FilterList', () => {

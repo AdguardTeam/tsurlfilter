@@ -16,6 +16,7 @@ import { RuleParserPipeline } from '../ast-builder/rule-parser';
 import { ProductCode } from '../compatibility-tables';
 import { RuleGenerator } from '../generator';
 import { getErrorMessage } from '../utils/error';
+import { findNextLineBreak } from '../utils/line-break';
 
 import { BaseConverter } from './base-interfaces/base-converter';
 import { isConversionCandidate } from './candidate-filter';
@@ -41,30 +42,6 @@ export interface FilterListConvertOptions {
      * `errors` instead of throwing. Defaults to `true`.
      */
     tolerant?: boolean;
-}
-
-/**
- * Finds the next line break at or after `offset`.
- *
- * @param source Source text.
- * @param offset Start offset.
- *
- * @returns Tuple of the line-break index and its length (0 length at EOF).
- */
-function findNextLineBreak(source: string, offset: number): [index: number, length: number] {
-    const { length } = source;
-    for (let i = offset; i < length; i += 1) {
-        const c = source.charCodeAt(i);
-        // Line feed (`\n`).
-        if (c === 0x0a) {
-            return [i, 1];
-        }
-        // Carriage return (`\r`), either CRLF (length 2) or a lone CR (length 1).
-        if (c === 0x0d) {
-            return [i, i + 1 < length && source.charCodeAt(i + 1) === 0x0a ? 2 : 1];
-        }
-    }
-    return [length, 0];
 }
 
 /**

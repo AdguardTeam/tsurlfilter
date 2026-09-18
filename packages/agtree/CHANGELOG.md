@@ -157,6 +157,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `parseAbpSpecificRules` option; when disabled, such rules are no longer
   promoted to `CssInjectionRule` and remain element-hiding rules (their raw body
   keeps the declaration block so consumers can reject it).
+- `RawRuleConverter` and `RawFilterListConverter` no longer fail on rules whose
+  CSS the strict sub-parsers reject (pseudo-element or namespace selectors,
+  consecutive combinators, malformed declaration lists). Such rules fall back to
+  raw CSS nodes and still convert, as they did before the fixed converter detail
+  level was introduced.
 
 ## [4.2.1] - 2026-08-12
 

@@ -102,10 +102,13 @@ Keep these aliases up to date when new major versions are released.
 4. Measure the current implementation as its BUILT bundle, not as source: import
    the package by its own name (`@adguard/agtree`) so its `exports` map resolves
    to `dist/`, and list both the package and the baseline in that project's
-   `deps.optimizer` (`ssr` for Node, `web` for the browser). Serving the current
-   code from `src` while the baseline runs as an optimized published bundle
-   deoptimizes cross-module calls and inflates the current timings by roughly
-   10x. Build before benching: `pnpm build`.
+   dependency optimizer — `deps.optimizer.ssr` for Node, Vite's
+   `optimizeDeps.include` for the browser (Vitest 5 has no
+   `deps.optimizer.web`). Set `force: true` in both so a rebuilt `dist` is
+   re-bundled on every run instead of being measured from the optimizer cache.
+   Serving the current code from `src` while the baseline runs as an optimized
+   published bundle deoptimizes cross-module calls and inflates the current
+   timings by roughly 10x. Build before benching: `pnpm build`.
 
 ### Updating Results
 

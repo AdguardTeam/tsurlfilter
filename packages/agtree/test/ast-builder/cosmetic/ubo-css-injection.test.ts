@@ -285,6 +285,26 @@ describe('UboCssInjectionAstBuilder — CSS sub-parsing options', () => {
         expect(ast.body.selectorList.type).toBe('SelectorList');
         expect(ast.body.declarationList?.type).toBe('CssDeclarationList');
     });
+
+    test('parseCssSelectorList: true falls back to Raw for pseudo-element selectors', () => {
+        // Pseudo-elements are valid CSS but rejected by the strict selector
+        // sub-parser; the builder must keep the raw text instead of failing.
+        const ast = parser.parse('##h1::before:style(padding: 0;)', {
+            parseCssSelectorList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.selectorList).toMatchObject({ type: 'Raw', value: 'h1::before' });
+    });
+
+    test('parseCssDeclarationList: true falls back to Raw for malformed declarations', () => {
+        // Malformed declarations are kept raw by the base pipeline; the builder
+        // must not fail the whole rule when the strict sub-parser rejects them.
+        const ast = parser.parse('##body:style(color red)', {
+            parseCssDeclarationList: true,
+        }) as CssInjectionRule;
+
+        expect(ast.body.declarationList).toMatchObject({ type: 'Raw', value: 'color red' });
+    });
 });
 
 describe('UboCssInjectionAstBuilder — negated :matches-media()', () => {

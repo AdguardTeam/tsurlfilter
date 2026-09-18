@@ -13,6 +13,21 @@ import { playwright } from '@vitest/browser-playwright';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { defineConfig, defineProject } from 'vitest/config';
 
+/**
+ * SSR dependency-optimizer options for the Node benchmark project.
+ *
+ * Vite's SSR dep optimizer honors `force` at runtime
+ * (`environment.config.optimizeDeps.force`), but Vitest 5's
+ * `DepsOptimizationOptions` type does not declare it. Keeping the object in a
+ * variable still type-checks the declared options while letting the
+ * runtime-supported `force` through.
+ */
+const SSR_OPTIMIZER_OPTIONS = {
+    enabled: true,
+    include: ['@adguard/agtree', 'agtree-v4'],
+    force: true,
+};
+
 export default defineConfig({
     test: {
         watch: false,
@@ -26,6 +41,8 @@ export default defineConfig({
             // with esbuild so the in-project v5 `dist` is not served
             // module-by-module (which deoptimizes cross-module calls and skews
             // timings); this makes the node comparison apples-to-apples.
+            // `force` re-bundles on every run so a rebuilt `dist` is never
+            // measured stale through Vite's optimizer cache.
             defineProject({
                 test: {
                     name: 'node',
@@ -35,10 +52,7 @@ export default defineConfig({
                     },
                     deps: {
                         optimizer: {
-                            ssr: {
-                                enabled: true,
-                                include: ['@adguard/agtree', 'agtree-v4'],
-                            },
+                            ssr: SSR_OPTIMIZER_OPTIONS,
                         },
                     },
                 },
