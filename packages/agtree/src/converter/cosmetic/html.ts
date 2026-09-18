@@ -39,6 +39,7 @@ import {
     OPEN_SQUARE_BRACKET,
     SINGLE_QUOTE,
 } from '../../utils/constants';
+import { QuoteType, QuoteUtils } from '../../utils/quotes';
 import { RegExpUtils } from '../../utils/regexp';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
@@ -456,7 +457,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special attribute selectors during AdGuard to AdGuard conversion:
      * - `[tag-content="content"]` -> `:contains(content)`
-     *   direct conversion, no changes to value
+     *   direct conversion, no changes to value.
+     *   Exception: a value that is itself wrapped in double quotes (e.g.
+     *   `[tag-content='"advert"']`) is quoted once more
+     *   (`:contains("\"advert\"")`), so that consumers which decode the
+     *   double-quoted argument form (see
+     *   {@link HtmlRuleConverter.quoteSpecialPseudoClassArgument}) restore
+     *   the literal value, quotes included, instead of stripping them.
      * - `[wildcard="*content*"]` -> `:contains(/*.content*./s)`
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
@@ -478,9 +485,19 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // `[tag-content="content"]` -> `:contains(content)`
             // direct conversion, no changes to value
             case AdgAttributeSelectors.TagContent: {
+                // A value that is itself wrapped in double quotes would be
+                // indistinguishable from the normalized quoted argument form
+                // (see quoteSpecialPseudoClassArgument): consumers decoding
+                // that form would strip the literal quotes. Shield the value
+                // with an extra pair of double quotes, so that decoding
+                // restores the original value, literal quotes included.
+                // Other values (plain text, regexps, single-quoted text) need
+                // no shielding: only double-quoted arguments are decoded.
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
-                    value,
+                    QuoteUtils.getStringQuoteType(value) === QuoteType.Double
+                        ? HtmlRuleConverter.quoteSpecialPseudoClassArgument(value)
+                        : value,
                 );
             }
 
@@ -962,6 +979,30 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
+     * Wraps the raw argument of a special pseudo-class selector in double
+     * quotes as a CSS string, escaping every inner double quote as `\"`,
+     * e.g. `eval(function(p,a,c,k,e,d)` -> `"eval(function(p,a,c,k,e,d)"`.
+     *
+     * This double-quoted form is the transport encoding for `:contains()`-like
+     * arguments whose raw text cannot be serialized as-is (unbalanced
+     * parentheses or an unterminated string — see
+     * {@link HtmlRuleConverter.fixUnclosedSpecialPseudoClassArgument}) or whose
+     * raw text would itself look like a quoted argument (literal double quotes
+     * of `[tag-content]` values — see
+     * {@link HtmlRuleConverter.convertSpecialAttributeSelectorAdgToAdg}).
+     * Consumers of the converted rules (e.g. tsurlfilter's `CosmeticRule`)
+     * decode exactly this form: the wrapping double quotes are removed and
+     * `\"` sequences are unescaped, restoring the original raw argument.
+     *
+     * @param raw Raw argument text.
+     *
+     * @returns Double-quoted argument with escaped inner double quotes.
+     */
+    private static quoteSpecialPseudoClassArgument(raw: string): string {
+        return `"${raw.replace(/"/g, '\\"')}"`;
+    }
+
+    /**
      * Normalizes the raw HTML filtering rule body with an unclosed special
      * pseudo-class selector argument by quoting that argument as a CSS string,
      * e.g. `:contains(eval(function(p,a,c,k,e,d))` ->
@@ -1003,7 +1044,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
         // Extract the raw argument and quote it as a CSS string,
         // escaping any double quotes inside the argument
         const argumentRaw = raw.slice(openParenIndex + 1, closeParenIndex);
-        const quotedArgument = `"${argumentRaw.replace(/"/g, '\\"')}"`;
+        const quotedArgument = HtmlRuleConverter.quoteSpecialPseudoClassArgument(argumentRaw);
 
         return raw.slice(0, openParenIndex + 1) + quotedArgument + raw.slice(closeParenIndex);
     }

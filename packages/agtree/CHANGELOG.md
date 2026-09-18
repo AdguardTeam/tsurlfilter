@@ -28,6 +28,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `[tag-content]` values that are themselves wrapped in double quotes (e.g.
+  `[tag-content='"advert"']`) are now shielded with an extra double-quoted
+  layer during ADG→ADG conversion (`:contains("\"advert\"")`), so that
+  consumers decoding the quoted argument form preserve the literal quotes
+  instead of stripping them.
 - AdGuard HTML filtering rules whose bodies cannot be parsed as CSS selector
   lists are now kept as-is during conversion instead of throwing a parse error,
   e.g. `:contains()` with an unbalanced parenthesis or an unterminated

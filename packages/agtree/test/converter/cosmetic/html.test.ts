@@ -110,6 +110,22 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(a):contains(b)'],
                     },
 
+                    // `[tag-content]` with a single-quoted value — the quotes are part of the
+                    // text to match and are kept as-is: only double-quoted `:contains()`
+                    // arguments are decoded by consumers, so no shielding is needed
+                    {
+                        actual: '$$script[tag-content="\'advert\'"]',
+                        expected: ['$$script:contains(\'advert\')'],
+                    },
+
+                    // `[tag-content]` with a double-quoted value — the literal quotes are
+                    // shielded by an extra double-quoted layer, so that consumers decoding
+                    // the quoted argument form restore them instead of stripping them
+                    {
+                        actual: '$$script[tag-content=\'"advert"\']',
+                        expected: ['$$script:contains("\\"advert\\"")'],
+                    },
+
                     // `[wildcard]` special attribute selector
                     {
                         actual: '$$div[wildcard="*example*"]',
@@ -389,6 +405,20 @@ describe('HtmlRuleConverter', () => {
                     {
                         actual: '$$div[tag-content="example"]',
                         expected: ['$$div:contains(example)'],
+                    },
+
+                    // `[tag-content]` with a single-quoted value — kept as-is (see the
+                    // parsed section for details)
+                    {
+                        actual: '$$script[tag-content="\'advert\'"]',
+                        expected: ['$$script:contains(\'advert\')'],
+                    },
+
+                    // `[tag-content]` with a double-quoted value — shielded by an extra
+                    // double-quoted layer (see the parsed section for details)
+                    {
+                        actual: '$$script[tag-content=\'"advert"\']',
+                        expected: ['$$script:contains("\\"advert\\"")'],
                     },
                     {
                         actual: '$$div:contains(example)',
