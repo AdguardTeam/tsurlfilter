@@ -704,4 +704,61 @@ describe('Html rule selector', () => {
         const notMatchedElements = selector.getMatchedElements(document);
         expect(notMatchedElements).toHaveLength(0);
     });
+
+    it('checks special selector :contains() - converted from [tag-content] with literal single quotes', () => {
+        // The apostrophes of the `[tag-content]` value are part of the text to match:
+        // the converted rule must not match content without them
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$script[tag-content="\'advert\'"]',
+        );
+        expect(convertedRuleText).toBe('example.org$$script:contains(\'advert\')');
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        document.body.innerHTML = `
+        <script id="matched">var x = 'advert';</script>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+
+        // Content without the apostrophes must NOT match
+        document.body.innerHTML = `
+        <script id="not-matched">var x = advert;</script>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
+
+    it('checks special selector :contains() - converted from [tag-content] with literal double quotes', () => {
+        // The converter shields literal double quotes of the `[tag-content]` value
+        // with an extra double-quoted layer; the matcher decodes it and the quotes
+        // remain part of the text to match
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$script[tag-content=\'"advert"\']',
+        );
+        expect(convertedRuleText).toBe('example.org$$script:contains("\\"advert\\"")');
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        document.body.innerHTML = `
+        <script id="matched">var x = "advert";</script>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+
+        // Content without the double quotes must NOT match
+        document.body.innerHTML = `
+        <script id="not-matched">var x = advert;</script>
+        `;
+
+        const notMatchedElements = selector.getMatchedElements(document);
+        expect(notMatchedElements).toHaveLength(0);
+    });
 });
