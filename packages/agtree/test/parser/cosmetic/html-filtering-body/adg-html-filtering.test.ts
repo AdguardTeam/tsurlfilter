@@ -545,6 +545,143 @@ describe('AdgHtmlFilteringBodyParser', () => {
                     ...context.getFullRange(),
                 }),
             },
+
+            // Lenient parsing (CoreLibs parity): `:contains()` with unbalanced
+            // parentheses in the argument — the raw text between the opening
+            // parenthesis and the last closing parenthesis is taken as-is
+            {
+                actual: 'script:contains((function(g,b,a,c,e,d))',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'script',
+                                    ...context.getRangeFor('script'),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'contains',
+                                        ...context.getRangeFor('contains'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: '(function(g,b,a,c,e,d)',
+                                        ...context.getRangeFor('(function(g,b,a,c,e,d)'),
+                                    },
+                                    ...context.getRangeFor(':contains((function(g,b,a,c,e,d))'),
+                                },
+                            ],
+                            ...context.getRangeFor('script'),
+                        }],
+                        ...context.getRangeFor('script'),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // Lenient parsing: `:contains()` with an unterminated string in
+            // the argument, which does not tokenize as a CSS string
+            {
+                actual: "div[style=\"display: none !important;\"]:contains('ed2k://)",
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'div',
+                                    ...context.getRangeFor('div'),
+                                },
+                                {
+                                    type: 'AttributeSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'style',
+                                        ...context.getRangeFor('style'),
+                                    },
+                                    operator: {
+                                        type: 'Value',
+                                        value: '=',
+                                        ...context.getRangeFor('='),
+                                    },
+                                    value: {
+                                        type: 'Value',
+                                        value: 'display: none !important;',
+                                        ...context.getRangeFor('display: none !important;'),
+                                    },
+                                    ...context.getRangeFor('[style="display: none !important;"]'),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'contains',
+                                        ...context.getRangeFor('contains'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: "'ed2k://",
+                                        ...context.getRangeFor("'ed2k://"),
+                                    },
+                                    ...context.getRangeFor(":contains('ed2k://)"),
+                                },
+                            ],
+                            ...context.getRangeFor('div[style="display: none !important;"]'),
+                        }],
+                        ...context.getRangeFor('div[style="display: none !important;"]'),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // Lenient parsing: `:contains()` with a regexp containing square
+            // brackets, which breaks CSS tokenization of the argument
+            {
+                actual: 'script:contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'script',
+                                    ...context.getRangeFor('script'),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'contains',
+                                        ...context.getRangeFor('contains'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: '/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/',
+                                        ...context.getRangeFor('/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/'),
+                                    },
+                                    ...context.getRangeFor(':contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)'),
+                                },
+                            ],
+                            ...context.getRangeFor('script'),
+                        }],
+                        ...context.getRangeFor('script'),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
             expect(AdgHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions)).toEqual(
                 expectedFn(new NodeExpectContext(actual)),
@@ -613,6 +750,21 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: ':pseudo("[attr=""test""]")',
                 expected: ':pseudo("[attr=""test""]")',
+            },
+
+            // Leniently parsed bodies round-trip to the original text verbatim,
+            // no quoting or escaping is inserted (CoreLibs parity)
+            {
+                actual: 'script:contains((function(g,b,a,c,e,d))',
+                expected: 'script:contains((function(g,b,a,c,e,d))',
+            },
+            {
+                actual: "div[style=\"display: none !important;\"]:contains('ed2k://)",
+                expected: "div[style=\"display: none !important;\"]:contains('ed2k://)",
+            },
+            {
+                actual: 'script:contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)',
+                expected: 'script:contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = AdgHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions);

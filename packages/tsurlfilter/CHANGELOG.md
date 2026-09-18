@@ -11,21 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `:contains()` arguments of HTML filtering rules are now handled exactly
+  like CoreLibs does: the argument is the raw text between the parentheses
+  of the pseudo-class, so wrapping quotes of any kind (e.g.
+  `:contains('advert')` or `:contains("...")`) are literal characters of
+  the matched text, never a transport encoding. An argument that looks like
+  a `/regexp/` is compiled to a `RegExp`, everything else is matched as a
+  literal substring. Unbalanced arguments, e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`, are now parsed and matched
+  as-is, mirroring CoreLibs [#96].
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
-
-- HTML filtering rules with double-quoted `:contains()` arguments (e.g.
-  produced by AGTree normalization of unbalanced arguments) no longer treat
-  the wrapping quotes as part of the matched text, and quoted regexp
-  arguments keep their regexp semantics [#96].
-- Single-quoted and unquoted `:contains()` arguments keep their literal
-  meaning — only the double-quoted form is decoded — so rules converted from
-  `[tag-content]` values with literal apostrophes (e.g.
-  `[tag-content="'advert'"]` → `:contains('advert')`) still match the
-  apostrophes as part of the text [#96].
 
 ### Security
 

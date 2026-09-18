@@ -111,19 +111,19 @@ describe('HtmlRuleConverter', () => {
                     },
 
                     // `[tag-content]` with a single-quoted value — the quotes are part of the
-                    // text to match and are kept as-is: only double-quoted `:contains()`
-                    // arguments are decoded by consumers, so no shielding is needed
+                    // text to match and are emitted raw as literal characters
+                    // (CoreLibs parity: `:contains()` arguments are never unquoted)
                     {
                         actual: '$$script[tag-content="\'advert\'"]',
                         expected: ['$$script:contains(\'advert\')'],
                     },
 
                     // `[tag-content]` with a double-quoted value — the literal quotes are
-                    // shielded by an extra double-quoted layer, so that consumers decoding
-                    // the quoted argument form restore them instead of stripping them
+                    // emitted raw as literal characters of the text to match
+                    // (CoreLibs parity: `:contains()` arguments are never unquoted)
                     {
                         actual: '$$script[tag-content=\'"advert"\']',
-                        expected: ['$$script:contains("\\"advert\\"")'],
+                        expected: ['$$script:contains("advert")'],
                     },
 
                     // `[wildcard]` special attribute selector
@@ -414,11 +414,12 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$script:contains(\'advert\')'],
                     },
 
-                    // `[tag-content]` with a double-quoted value — shielded by an extra
-                    // double-quoted layer (see the parsed section for details)
+                    // `[tag-content]` with a double-quoted value — emitted raw, the
+                    // literal quotes are part of the text to match (see the parsed
+                    // section for details)
                     {
                         actual: '$$script[tag-content=\'"advert"\']',
-                        expected: ['$$script:contains("\\"advert\\"")'],
+                        expected: ['$$script:contains("advert")'],
                     },
                     {
                         actual: '$$div:contains(example)',
@@ -438,16 +439,20 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$script:contains({"zone_id":")'],
                     },
 
-                    // `:contains()` with unbalanced parentheses in the argument (normalized to a quoted argument)
+                    // `:contains()` with unbalanced parentheses in the argument — parsed
+                    // leniently (CoreLibs parity) and kept as-is, no quoting is inserted
                     {
                         actual: '$$script:contains((function(g,b,a,c,e,d))',
-                        expected: ['$$script:contains("(function(g,b,a,c,e,d)")'],
+                        expected: ['$$script:contains((function(g,b,a,c,e,d))'],
+                        shouldConvert: false,
                     },
 
-                    // `:contains()` with an unterminated string in the argument (normalized to a quoted argument)
+                    // `:contains()` with an unterminated string in the argument — parsed
+                    // leniently (CoreLibs parity) and kept as-is, no quoting is inserted
                     {
                         actual: "$$div[style=\"display: none !important;\"]:contains('ed2k://)",
-                        expected: ["$$div[style=\"display: none !important;\"]:contains(\"'ed2k://\")"],
+                        expected: ["$$div[style=\"display: none !important;\"]:contains('ed2k://)"],
+                        shouldConvert: false,
                     },
 
                     // `[tag-content]` with escaped double quotes that breaks CSS tokenization (kept as-is)
@@ -459,32 +464,38 @@ describe('HtmlRuleConverter', () => {
                         shouldConvert: false,
                     },
 
-                    // `:contains()` with a regexp containing square brackets (normalized to a quoted argument)
+                    // `:contains()` with a regexp containing square brackets — parsed
+                    // leniently (CoreLibs parity) and kept as-is, no quoting is inserted
                     {
                         actual: 'example.org$$script:contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)',
-                        expected: ['example.org$$script:contains("/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/")'],
+                        expected: ['example.org$$script:contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)'],
+                        shouldConvert: false,
                     },
 
-                    // `:contains()` with unbalanced braces in the argument (normalized to a quoted argument)
+                    // `:contains()` with unbalanced braces in the argument — parsed
+                    // leniently (CoreLibs parity) and kept as-is, no quoting is inserted
                     {
                         // eslint-disable-next-line max-len
                         actual: '~example.org$$script:contains(||!navigator.platform){setTimeout(function () {w.location.href=url)',
                         // eslint-disable-next-line max-len
-                        expected: ['~example.org$$script:contains("||!navigator.platform){setTimeout(function () {w.location.href=url")'],
+                        expected: ['~example.org$$script:contains(||!navigator.platform){setTimeout(function () {w.location.href=url)'],
+                        shouldConvert: false,
                     },
 
-                    // `:has-text()` with unbalanced parentheses in the argument
-                    // (normalized to a quoted argument and converted to `:contains()`)
+                    // `:has-text()` with unbalanced parentheses in the argument —
+                    // parsed leniently, converted to `:contains()` with the raw argument
                     {
                         actual: '$$script:has-text((function(g,b,a,c,e,d))',
-                        expected: ['$$script:contains("(function(g,b,a,c,e,d)")'],
+                        expected: ['$$script:contains((function(g,b,a,c,e,d))'],
                     },
 
-                    // `:-abp-contains()` with unbalanced parentheses in the argument
-                    // (normalized to a quoted argument, the alias itself is kept as-is)
+                    // `:-abp-contains()` with unbalanced parentheses in the argument —
+                    // parsed leniently (CoreLibs parity) and kept as-is: the alias is
+                    // supported as-is, no quoting is inserted
                     {
                         actual: '$$script:-abp-contains((function(g,b,a,c,e,d))',
-                        expected: ['$$script:-abp-contains("(function(g,b,a,c,e,d)")'],
+                        expected: ['$$script:-abp-contains((function(g,b,a,c,e,d))'],
+                        shouldConvert: false,
                     },
 
                     // Invalid selector with `[tag-content]` — kept as-is both with and

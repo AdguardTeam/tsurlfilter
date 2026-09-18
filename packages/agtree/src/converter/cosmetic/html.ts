@@ -39,7 +39,6 @@ import {
     OPEN_SQUARE_BRACKET,
     SINGLE_QUOTE,
 } from '../../utils/constants';
-import { QuoteType, QuoteUtils } from '../../utils/quotes';
 import { RegExpUtils } from '../../utils/regexp';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
@@ -123,7 +122,8 @@ const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
 
 /**
  * Markers of special pseudo-class selectors with raw-text arguments,
- * used to detect and normalize unparseable HTML filtering rule bodies.
+ * used to detect special selector markers in raw (unparseable) HTML
+ * filtering rule bodies.
  *
  * Note: the leading colon is a part of the marker on purpose, so that
  * `contains(` / `has-text(` occurring inside string literals or attribute
@@ -215,29 +215,6 @@ type HtmlFilteringRuleGenerator =
     | typeof UboHtmlFilteringBodyGenerator;
 
 /**
- * Result of scanning a raw HTML filtering rule body for special selector
- * markers — see {@link HtmlRuleConverter.scanSpecialSelectorMarkers}.
- */
-interface SpecialSelectorMarkers {
-    /**
-     * Whether a special attribute selector (e.g. `[tag-content=`) was found.
-     */
-    hasSpecialAttributeSelector: boolean;
-
-    /**
-     * Index of the last special pseudo-class selector marker
-     * (e.g. `:contains(`), or -1 if none was found.
-     */
-    lastPseudoClassMarkerIndex: number;
-
-    /**
-     * Length of the marker at {@link SpecialSelectorMarkers.lastPseudoClassMarkerIndex},
-     * or 0 if none was found.
-     */
-    lastPseudoClassMarkerLength: number;
-}
-
-/**
  * HTML filtering rule converter class.
  *
  * @todo Implement `convertToUbo` (ABP currently doesn't support HTML filtering rules).
@@ -246,11 +223,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Converts a HTML rule to AdGuard syntax, if possible.
      *
-     * Note: for AdGuard rules this is not a strict validation. AdGuard rules
-     * whose bodies cannot be parsed as CSS selector lists (e.g. `:contains()`
-     * with an unbalanced parenthesis in the argument) are tolerated: such
-     * rules are kept as-is with `isConverted: false`, so callers must not
-     * treat a returned result as proof of rule validity.
+     * Note: for AdGuard rules this is not a strict validation. AdGuard rule
+     * bodies with an unbalanced special pseudo-class argument, e.g.
+     * `:contains((function(...)`, are tolerated and parsed leniently by the
+     * parser itself (CoreLibs parity, see `AdgHtmlFilteringBodyParser`);
+     * other unparseable bodies with special selectors are kept as-is with
+     * `isConverted: false`, so callers must not treat a returned result as
+     * proof of rule validity.
      *
      * @param rule Rule node to convert.
      *
@@ -314,15 +293,19 @@ export class HtmlRuleConverter extends RuleConverterBase {
             );
         } catch (error) {
             // Tolerant fallback for AdGuard HTML filtering rules whose bodies
-            // cannot be parsed as CSS selector lists, e.g. `:contains()` with
-            // an unbalanced parenthesis or an unterminated string in the
-            // argument. Such rules are valid in CoreLibs and are present in
-            // production filter lists, so we keep them as-is instead of
-            // excluding them during conversion.
-            // Note: only applies to AdGuard-syntax rules whose raw body
-            // contains special selector markers (see hasSpecialSimpleSelectors);
-            // unparseable rules without such markers still throw.
-
+            // cannot be parsed as CSS selector lists even leniently, e.g. an
+            // unterminated string in a special attribute selector value.
+            // Such rules may still be supported by other adblockers, so we
+            // keep them as-is instead of excluding them during conversion.
+            //
+            // Note: unbalanced special pseudo-class arguments, e.g.
+            // `script:contains((function(g,b,a,c,e,d)`, do not reach this
+            // fallback: such bodies are parsed leniently by the parser
+            // itself, mirroring CoreLibs (see AdgHtmlFilteringBodyParser).
+            // This fallback only applies to AdGuard-syntax rules whose raw
+            // body contains special selector markers (see
+            // hasSpecialSimpleSelectors); unparseable rules without such
+            // markers still throw.
             const isAdgWithSpecialSelectorsWithError = rule.syntax === AdblockSyntax.Adg
                 && error instanceof AdblockSyntaxError
                 && HtmlRuleConverter.hasSpecialSimpleSelectors(
@@ -333,45 +316,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 throw error;
             }
 
-            // First, try to normalize the unclosed special pseudo-class
-            // selector argument by quoting it, e.g.
-            // `:contains(eval(function(p,a,c,k,e,d))` ->
-            // `:contains("eval(function(p,a,c,k,e,d)")`.
-            // The re-parse is self-validating: if the normalized body
-            // still cannot be parsed, the rule is kept as-is.
-            const fixedBodyRaw = HtmlRuleConverter.fixUnclosedSpecialPseudoClassArgument(
-                rule.body.type === 'Value' ? rule.body.value : '',
-            );
-
-            if (fixedBodyRaw === null) {
-                return createNodeConversionResult([rule], false);
-            }
-
-            try {
-                convertedBody = HtmlRuleConverter.convertBody(
-                    {
-                        type: 'Value',
-                        value: fixedBodyRaw,
-                    },
-                    parser,
-                    AdgHtmlFilteringBodyGenerator,
-                    onSpecialAttributeSelector,
-                    onSpecialPseudoClassSelector,
-                    true,
-                );
-                isConverted = true;
-            } catch (retryError) {
-                // Only tolerate syntax errors: the repaired body may still be
-                // unparseable, in which case the rule is kept as-is.
-                // Conversion errors (e.g. mixed AdGuard and uBlock syntax or
-                // invalid length values) must surface instead of being hidden
-                // by the fallback.
-                if (!(retryError instanceof AdblockSyntaxError)) {
-                    throw retryError;
-                }
-
-                return createNodeConversionResult([rule], false);
-            }
+            return createNodeConversionResult([rule], false);
         }
 
         if (!isConverted) {
@@ -457,13 +402,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Handles special attribute selectors during AdGuard to AdGuard conversion:
      * - `[tag-content="content"]` -> `:contains(content)`
-     *   direct conversion, no changes to value.
-     *   Exception: a value that is itself wrapped in double quotes (e.g.
-     *   `[tag-content='"advert"']`) is quoted once more
-     *   (`:contains("\"advert\"")`), so that consumers which decode the
-     *   double-quoted argument form (see
-     *   {@link HtmlRuleConverter.quoteSpecialPseudoClassArgument}) restore
-     *   the literal value, quotes included, instead of stripping them.
+     *   direct conversion, no changes to value. The value is emitted raw:
+     *   any quotes in it are literal characters of the text to match, not
+     *   a transport encoding to strip later. This mirrors CoreLibs, which
+     *   never unquotes `:contains()` arguments.
      * - `[wildcard="*content*"]` -> `:contains(/*.content*./s)`
      *   convert search pattern to regular expression
      * - `[min-length="min"]` -> `:contains(/^(?=.{min,}$).*\/s)`
@@ -485,19 +427,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
             // `[tag-content="content"]` -> `:contains(content)`
             // direct conversion, no changes to value
             case AdgAttributeSelectors.TagContent: {
-                // A value that is itself wrapped in double quotes would be
-                // indistinguishable from the normalized quoted argument form
-                // (see quoteSpecialPseudoClassArgument): consumers decoding
-                // that form would strip the literal quotes. Shield the value
-                // with an extra pair of double quotes, so that decoding
-                // restores the original value, literal quotes included.
-                // Other values (plain text, regexps, single-quoted text) need
-                // no shielding: only double-quoted arguments are decoded.
+                // The value is emitted raw: quotes within the value are
+                // literal characters to match, not a transport encoding —
+                // same as CoreLibs, which never unquotes `:contains()`
+                // arguments.
                 return HtmlRuleConverter.getPseudoClassSelectorNode(
                     AdgPseudoClasses.Contains,
-                    QuoteUtils.getStringQuoteType(value) === QuoteType.Double
-                        ? HtmlRuleConverter.quoteSpecialPseudoClassArgument(value)
-                        : value,
+                    value,
                 );
             }
 
@@ -881,10 +817,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
     }
 
     /**
-     * Scans a raw HTML filtering rule body for special selector markers,
-     * skipping over quoted text (string literals and attribute values), where
-     * marker-like substrings may occur as plain text, e.g. the `:contains(`
-     * in `[data-x=":contains(foo"]` is attribute text, not a selector.
+     * Checks whether the raw HTML filtering rule body contains any special
+     * attribute selector or special pseudo-class selector outside of quoted
+     * text, where marker-like substrings may occur as plain text, e.g. the
+     * `:contains(` in `[data-x=":contains(foo"]`.
      *
      * Quote handling:
      * - both single and double quotes toggle the quoted state;
@@ -892,15 +828,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * - a doubled quote (`""`) inside a quoted section is treated as an
      *   escaped quote (AdGuard escaping convention for `[tag-content]` values).
      *
+     * Used by the tolerant fallback to distinguish rules with special
+     * selectors (which must be kept as-is if unparseable) from genuinely
+     * invalid rules (which must be rejected).
+     *
      * @param raw Raw HTML filtering rule body.
      *
-     * @returns Scan result — see {@link SpecialSelectorMarkers}.
+     * @returns `true` if the body contains special selectors, otherwise `false`.
      */
-    private static scanSpecialSelectorMarkers(raw: string): SpecialSelectorMarkers {
-        let hasSpecialAttributeSelector = false;
-        let lastPseudoClassMarkerIndex = -1;
-        let lastPseudoClassMarkerLength = 0;
-
+    private static hasSpecialSimpleSelectors(raw: string): boolean {
         let quote: string | null = null;
 
         for (let i = 0; i < raw.length; i += 1) {
@@ -935,118 +871,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             // Outside of quoted text — check for special selector markers
             if (char === OPEN_SQUARE_BRACKET && SPECIAL_ATTRIBUTE_SELECTOR_PATTERN.test(raw.slice(i))) {
-                hasSpecialAttributeSelector = true;
-                continue;
+                return true;
             }
 
-            if (char === COLON) {
-                for (const marker of SPECIAL_PSEUDO_CLASS_ARG_MARKERS) {
-                    if (raw.startsWith(marker, i)) {
-                        lastPseudoClassMarkerIndex = i;
-                        lastPseudoClassMarkerLength = marker.length;
-                        break;
-                    }
-                }
+            if (char === COLON && SPECIAL_PSEUDO_CLASS_ARG_MARKERS.some((marker) => raw.startsWith(marker, i))) {
+                return true;
             }
         }
 
-        return {
-            hasSpecialAttributeSelector,
-            lastPseudoClassMarkerIndex,
-            lastPseudoClassMarkerLength,
-        };
-    }
-
-    /**
-     * Checks if the raw HTML filtering rule body contains any special
-     * attribute selector or special pseudo-class selector.
-     *
-     * Used by the tolerant fallback to distinguish rules with special
-     * selectors (which must be kept as-is if unparseable) from genuinely
-     * invalid rules (which must be rejected).
-     *
-     * @param raw Raw HTML filtering rule body.
-     *
-     * @returns `true` if the body contains special selectors, otherwise `false`.
-     */
-    private static hasSpecialSimpleSelectors(raw: string): boolean {
-        const {
-            hasSpecialAttributeSelector,
-            lastPseudoClassMarkerIndex,
-        } = HtmlRuleConverter.scanSpecialSelectorMarkers(raw);
-
-        return hasSpecialAttributeSelector || lastPseudoClassMarkerIndex >= 0;
-    }
-
-    /**
-     * Wraps the raw argument of a special pseudo-class selector in double
-     * quotes as a CSS string, escaping every inner double quote as `\"`,
-     * e.g. `eval(function(p,a,c,k,e,d)` -> `"eval(function(p,a,c,k,e,d)"`.
-     *
-     * This double-quoted form is the transport encoding for `:contains()`-like
-     * arguments whose raw text cannot be serialized as-is (unbalanced
-     * parentheses or an unterminated string — see
-     * {@link HtmlRuleConverter.fixUnclosedSpecialPseudoClassArgument}) or whose
-     * raw text would itself look like a quoted argument (literal double quotes
-     * of `[tag-content]` values — see
-     * {@link HtmlRuleConverter.convertSpecialAttributeSelectorAdgToAdg}).
-     * Consumers of the converted rules (e.g. tsurlfilter's `CosmeticRule`)
-     * decode exactly this form: the wrapping double quotes are removed and
-     * `\"` sequences are unescaped, restoring the original raw argument.
-     *
-     * @param raw Raw argument text.
-     *
-     * @returns Double-quoted argument with escaped inner double quotes.
-     */
-    private static quoteSpecialPseudoClassArgument(raw: string): string {
-        return `"${raw.replace(/"/g, '\\"')}"`;
-    }
-
-    /**
-     * Normalizes the raw HTML filtering rule body with an unclosed special
-     * pseudo-class selector argument by quoting that argument as a CSS string,
-     * e.g. `:contains(eval(function(p,a,c,k,e,d))` ->
-     * `:contains("eval(function(p,a,c,k,e,d)")`.
-     *
-     * The argument of the last special pseudo-class selector is considered to
-     * end at the last closing parenthesis of the rule body; the rest of the
-     * body is kept as-is. This mirrors the lenient behavior of CoreLibs, which
-     * supports such rules in production filter lists.
-     *
-     * @param raw Raw HTML filtering rule body to normalize.
-     *
-     * @returns Normalized body, or `null` if the body cannot be normalized
-     * (no special pseudo-class selector found, or no closing parenthesis found).
-     */
-    private static fixUnclosedSpecialPseudoClassArgument(raw: string): string | null {
-        // Find the last special pseudo-class selector marker outside of quoted text
-        const {
-            lastPseudoClassMarkerIndex,
-            lastPseudoClassMarkerLength,
-        } = HtmlRuleConverter.scanSpecialSelectorMarkers(raw);
-
-        // No special pseudo-class selector found - cannot normalize
-        if (lastPseudoClassMarkerIndex < 0) {
-            return null;
-        }
-
-        // Opening parenthesis of the special pseudo-class selector
-        const openParenIndex = lastPseudoClassMarkerIndex + lastPseudoClassMarkerLength - 1;
-
-        // The argument ends at the last closing parenthesis of the rule body
-        const closeParenIndex = raw.lastIndexOf(')');
-
-        // No closing parenthesis found - cannot normalize
-        if (closeParenIndex <= openParenIndex) {
-            return null;
-        }
-
-        // Extract the raw argument and quote it as a CSS string,
-        // escaping any double quotes inside the argument
-        const argumentRaw = raw.slice(openParenIndex + 1, closeParenIndex);
-        const quotedArgument = HtmlRuleConverter.quoteSpecialPseudoClassArgument(argumentRaw);
-
-        return raw.slice(0, openParenIndex + 1) + quotedArgument + raw.slice(closeParenIndex);
+        return false;
     }
 
     /**

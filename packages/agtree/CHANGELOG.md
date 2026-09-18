@@ -16,11 +16,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- HTML filtering rules with unbalanced `:contains()` / `:-abp-contains()` /
-  `:has-text()` argument are now normalized to a quoted argument during
-  conversion, e.g.
-  `:contains(eval(function(p,a,c,k,e,d))` →
-  `:contains("eval(function(p,a,c,k,e,d)")`.
+- AdGuard HTML filtering rule bodies with an unbalanced or unterminated
+  special pseudo-class argument (`:contains()` / `:-abp-contains()` /
+  `:has-text()`), e.g.
+  `$$script:contains((function(g,b,a,c,e,d)`, are now parsed leniently,
+  mirroring CoreLibs: the argument is the raw text between the opening
+  parenthesis of the pseudo-class and the last closing parenthesis of
+  the body, taken as-is. Previously such bodies either threw a parse
+  error or were normalized to a quoted argument during conversion —
+  no quoting is inserted anymore.
 
 ### Deprecated
 
@@ -28,19 +32,18 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
-- `[tag-content]` values that are themselves wrapped in double quotes (e.g.
-  `[tag-content='"advert"']`) are now shielded with an extra double-quoted
-  layer during ADG→ADG conversion (`:contains("\"advert\"")`), so that
-  consumers decoding the quoted argument form preserve the literal quotes
-  instead of stripping them.
-- AdGuard HTML filtering rules whose bodies cannot be parsed as CSS selector
-  lists are now kept as-is during conversion instead of throwing a parse error,
-  e.g. `:contains()` with an unbalanced parenthesis or an unterminated
-  string in the argument, or `[tag-content]` with escaped double quotes.
-  This tolerant fallback is gated on special selector markers — unparseable
-  bodies without `:contains()` / `:-abp-contains()` / `:has-text()` or
-  `[tag-content]` / `[wildcard]` / `[min-length]` / `[max-length]` markers
-  (outside of quoted text) still throw.
+- `[tag-content]` values are now emitted raw during ADG→ADG conversion:
+  quotes within the value (e.g. `[tag-content='"advert"']` →
+  `:contains("advert")`) are literal characters of the text to match,
+  not a transport encoding to strip later, mirroring CoreLibs.
+- AdGuard HTML filtering rules whose bodies cannot be parsed as CSS
+  selector lists, even leniently, are now kept as-is during conversion
+  instead of throwing a parse error, e.g. `[tag-content]` with escaped
+  double quotes that break CSS tokenization. This tolerant fallback is
+  gated on special selector markers — unparseable bodies without
+  `:contains()` / `:-abp-contains()` / `:has-text()` or `[tag-content]` /
+  `[wildcard]` / `[min-length]` / `[max-length]` markers (outside of
+  quoted text) still throw.
 - uBlock `:min-text-length()` conversion now caps the upper bound of the
   generated length-matching regular expression at 65535 instead of 262144,
   because CoreLibs compiles `:contains(/.../)` patterns with PCRE2, which

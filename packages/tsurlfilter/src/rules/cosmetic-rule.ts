@@ -641,29 +641,21 @@ export class CosmeticRule implements IRule {
 
                             currentSpecialSelectors.push({
                                 name: HtmlSpecialSelectorName.Contains,
-                                // The argument may be wrapped in double quotes: AGTree
-                                // normalizes unbalanced `:contains()` arguments to a
-                                // double-quoted form (`:contains("(function(p,a,c)")`)
-                                // and shields literal double quotes of `[tag-content]`
-                                // values the same way (`[tag-content='"advert"']` ->
-                                // `:contains("\"advert\"")`). Only this double-quoted
-                                // form is a transport encoding and is decoded here;
-                                // quotes of any other kind stay literal parts of the
-                                // matched text (e.g. `:contains('advert')` from
-                                // `[tag-content="'advert'"]` still matches text
-                                // containing the apostrophes).
-                                // Plain-text arguments stay literal (without the
-                                // wrapping quotes), and quoted regexp-lookalike
-                                // arguments (`"/.../flags"`) are still
-                                // treated as regexps by `SimpleRegex.fromLiteral`.
-                                // Note: only the wrapping quotes are unescaped, so regexp
-                                // escape sequences (e.g. `\.`) are kept intact.
-                                value: SimpleRegex.fromLiteral(
-                                    QuoteUtils.getStringQuoteType(simpleSelectorNode.argument.value)
-                                        === QuoteType.Double
-                                        ? QuoteUtils.removeQuotesAndUnescape(simpleSelectorNode.argument.value)
-                                        : simpleSelectorNode.argument.value,
-                                ),
+                                // The argument is used as-is, mirroring CoreLibs:
+                                // it is the raw text between the parentheses of
+                                // the pseudo-class, so wrapping quotes (of any
+                                // kind) are literal characters of the matched
+                                // text — e.g. `:contains('advert')` matches text
+                                // containing the apostrophes, and
+                                // `:contains("(function(p,a,c)")` matches text
+                                // containing the double quotes. An unbalanced
+                                // argument, e.g. `:contains((function(g,b,a,c,e,d)`,
+                                // is possible as well: AGTree parses such rules
+                                // leniently. A regexp-looking argument
+                                // (`/.../flags`) is compiled to a RegExp by
+                                // `SimpleRegex.fromLiteral`, anything else is
+                                // matched as a literal substring.
+                                value: SimpleRegex.fromLiteral(simpleSelectorNode.argument.value),
                             });
                         } else {
                             currentNativeSelector += `:${simpleSelectorNode.name.value}`;

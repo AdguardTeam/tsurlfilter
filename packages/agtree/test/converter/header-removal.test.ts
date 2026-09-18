@@ -82,13 +82,15 @@ describe('HeaderRemovalRuleConverter', () => {
 
     describe('full conversion path (RuleConverter.convertToAdg)', () => {
         test.each([
-            // Unparseable HTML filtering rule with special selectors is normalized
-            // to a quoted argument by the main HTML filtering rule converter
+            // HTML filtering rule with an unbalanced `:contains()` argument —
+            // parsed leniently (CoreLibs parity) and kept as-is by the main
+            // HTML filtering rule converter
             {
                 actual: '$$script:contains(eval(function(p,a,c,k,e,d))',
                 expected: [
-                    '$$script:contains("eval(function(p,a,c,k,e,d)")',
+                    '$$script:contains(eval(function(p,a,c,k,e,d))',
                 ],
+                shouldConvert: false,
             },
 
             // Unparseable HTML filtering rule without special selectors is rejected

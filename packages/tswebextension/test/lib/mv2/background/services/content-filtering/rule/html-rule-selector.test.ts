@@ -647,13 +647,14 @@ describe('Html rule selector', () => {
         expect(notMatchedNoFlags).toHaveLength(0);
     });
 
-    it('checks special selector :contains() - normalized quoted argument keeps matching semantics', () => {
-        // The tolerant fallback normalizes the unbalanced argument to a quoted form;
-        // the matcher must not treat the wrapping quotes as part of the matched text
+    it('checks special selector :contains() - unbalanced argument is kept as-is (CoreLibs parity)', () => {
+        // Unbalanced arguments are parsed leniently and kept as-is, no
+        // quoting is inserted; the matcher treats the raw text between the
+        // parentheses as a literal substring
         const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
             'example.org$$script:contains((function(g,b,a,c,e,d))',
         );
-        expect(convertedRuleText).toBe('example.org$$script:contains("(function(g,b,a,c,e,d)")');
+        expect(convertedRuleText).toBe('example.org$$script:contains((function(g,b,a,c,e,d))');
 
         const rule = createCosmeticRule(convertedRuleText, 0);
         const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
@@ -675,13 +676,14 @@ describe('Html rule selector', () => {
         expect(notMatchedElements).toHaveLength(0);
     });
 
-    it('checks special selector :contains() - normalized quoted regexp argument keeps regexp semantics', () => {
-        // Quoting a regexp argument must not turn it into a literal string match
+    it('checks special selector :contains() - regexp argument keeps regexp semantics', () => {
+        // A `/regexp/` argument is compiled to a RegExp; the rule is kept
+        // as-is, no quoting is inserted
         const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
             String.raw`example.org$$script:contains(/window\.open\([^)]*\);\s*\w+\.focus/)`,
         );
         expect(convertedRuleText).toBe(
-            String.raw`example.org$$script:contains("/window\.open\([^)]*\);\s*\w+\.focus/")`,
+            String.raw`example.org$$script:contains(/window\.open\([^)]*\);\s*\w+\.focus/)`,
         );
 
         const rule = createCosmeticRule(convertedRuleText, 0);
@@ -734,13 +736,13 @@ describe('Html rule selector', () => {
     });
 
     it('checks special selector :contains() - converted from [tag-content] with literal double quotes', () => {
-        // The converter shields literal double quotes of the `[tag-content]` value
-        // with an extra double-quoted layer; the matcher decodes it and the quotes
-        // remain part of the text to match
+        // The literal double quotes of the `[tag-content]` value are kept as-is
+        // in the converted rule; the matcher treats them as literal characters
+        // of the text to match (CoreLibs parity)
         const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
             'example.org$$script[tag-content=\'"advert"\']',
         );
-        expect(convertedRuleText).toBe('example.org$$script:contains("\\"advert\\"")');
+        expect(convertedRuleText).toBe('example.org$$script:contains("advert")');
 
         const rule = createCosmeticRule(convertedRuleText, 0);
         const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
