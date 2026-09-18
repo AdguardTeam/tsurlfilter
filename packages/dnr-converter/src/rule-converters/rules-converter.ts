@@ -92,7 +92,12 @@
 /* eslint-enable jsdoc/require-description-complete-sentence */
 
 import { type DeclarativeRule } from '../declarative-rule';
-import { type ConversionError, InvalidDeclarativeRuleError } from '../errors/conversion-errors';
+import {
+    type ConversionError,
+    InvalidDeclarativeRuleError,
+    isConversionError,
+    UnsupportedModifierError,
+} from '../errors/conversion-errors';
 import {
     type LimitationError,
     TooManyRegexpRulesError,
@@ -101,7 +106,9 @@ import {
 } from '../errors/limitation-errors';
 import { type FilterConverterOptions } from '../filter-converter/filter-converter-options';
 import { UrlTransformRulesConverter } from '../grouped-rules-converters/url-transform-converter';
+import { OPTION_NAMES } from '../rule/option-names';
 import { type Rule } from '../rule/rule';
+import { RuleDeclarativeValidator } from '../rule/rule-validator';
 import { type ScannedFilter } from '../rules-scanner';
 import { type Source } from '../ruleset/source-map';
 import { isSafeRule } from '../utils/is-safe-rule';
@@ -109,6 +116,7 @@ import { Lazy } from '../utils/lazy';
 
 import { type ConvertedRules } from './converted-rules';
 import { CspConverter } from './csp-converter';
+import { CspRulesResolver } from './csp-rules-resolver';
 import { RegularRuleConverter } from './regular-rule-converter';
 import { RemoveHeaderConverter } from './remove-header-converter';
 import { type GroupedRules, RulesGroup, RulesGrouper } from './rules-grouper';
@@ -171,6 +179,97 @@ export class RulesConverter {
         options?: FilterConverterOptions,
     ): Promise<ConvertedRules> {
         const filters = RulesConverter.applyBadFilter(scannedFilters);
+
+        return RulesConverter.convertGroupedFilters(filters, options);
+    }
+
+    /**
+     * Resolves CSP exceptions and converts the remaining CSP rules.
+     *
+     * @param scannedFilters Scanned filters containing CSP and `$badfilter` rules.
+     * @param options Options for conversion.
+     *
+     * @returns Converted CSP rules.
+     */
+    public static async convertCspRules(
+        scannedFilters: ScannedFilter[],
+        options?: FilterConverterOptions,
+    ): Promise<ConvertedRules> {
+        const filters = RulesConverter.applyBadFilter(scannedFilters);
+        const cspRules = filters.flatMap(([, groupedRules]) => groupedRules[RulesGroup.Csp]);
+        const blockingPreflightResults = await Promise.all(filters.map(async ([filterId, groupedRules]) => (
+            new CspConverter(options?.resourcesPath).convert(
+                filterId,
+                groupedRules[RulesGroup.Csp].filter((rule) => !rule.allowlist),
+                new Set(),
+            )
+        )));
+        const blockingPreflightErrors = blockingPreflightResults.flatMap(({ errors }) => errors);
+        const invalidBlockingRules = new Set(blockingPreflightErrors
+            .filter(isConversionError)
+            .map(({ rule }) => rule));
+        const invalidCspExceptions = new Map<Rule, Error>();
+        const validCspRules = cspRules.filter((rule) => {
+            if (!rule.allowlist) {
+                return !invalidBlockingRules.has(rule);
+            }
+
+            try {
+                return RuleDeclarativeValidator.shouldProcessCspException(rule);
+            } catch (error) {
+                invalidCspExceptions.set(rule, error as Error);
+                return false;
+            }
+        });
+        const {
+            rules: resolvedCspRules,
+            excludedRequestDomains,
+            unsupportedExceptions,
+        } = CspRulesResolver.resolve(validCspRules);
+        const resolvedCspRulesSet = new Set(resolvedCspRules);
+        const resolvedFilters: FiltersIdsWithGroupedRules = filters.map(([filterId, groupedRules]) => [
+            filterId,
+            {
+                ...groupedRules,
+                [RulesGroup.Csp]: groupedRules[RulesGroup.Csp]
+                    .filter((rule) => resolvedCspRulesSet.has(rule)),
+            },
+        ]);
+
+        const converted = await RulesConverter.convertGroupedFilters(
+            resolvedFilters,
+            options,
+            excludedRequestDomains,
+        );
+
+        return {
+            ...converted,
+            errors: [
+                ...blockingPreflightErrors,
+                ...invalidCspExceptions.values(),
+                ...unsupportedExceptions.map((rule) => new UnsupportedModifierError(
+                    'Network allowlist rule with $csp modifier cannot be resolved safely',
+                    rule,
+                )),
+                ...converted.errors,
+            ],
+        };
+    }
+
+    /**
+     * Converts already grouped filters.
+     *
+     * @param filters Filter IDs with grouped rules.
+     * @param options Options for conversion.
+     * @param excludedRequestDomains Domains excluded from resolved CSP rules.
+     *
+     * @returns Converted rules.
+     */
+    private static async convertGroupedFilters(
+        filters: FiltersIdsWithGroupedRules,
+        options?: FilterConverterOptions,
+        excludedRequestDomains: Map<Rule, string[]> = new Map(),
+    ): Promise<ConvertedRules> {
         let converted: ConvertedRules = {
             sourceMapValues: [],
             declarativeRules: [],
@@ -200,6 +299,7 @@ export class RulesConverter {
                 groupedRules,
                 uniqueIds,
                 options,
+                excludedRequestDomains,
             );
 
             converted.sourceMapValues = converted.sourceMapValues.concat(sourceMapValues);
@@ -232,6 +332,7 @@ export class RulesConverter {
      * @param groupsRules {@link GroupedRules} to convert.
      * @param usedIds Set with already used IDs to exclude duplications in IDs.
      * @param options Options for conversion.
+     * @param excludedRequestDomains Domains excluded from resolved CSP rules.
      *
      * @returns Result object of {@link ConvertedRules}.
      */
@@ -240,6 +341,7 @@ export class RulesConverter {
         groupsRules: GroupedRules,
         usedIds: Set<number>,
         options?: FilterConverterOptions,
+        excludedRequestDomains: Map<Rule, string[]> = new Map(),
     ): Promise<ConvertedRules> {
         const converted: ConvertedRules = {
             sourceMapValues: [],
@@ -259,7 +361,10 @@ export class RulesConverter {
                 return null;
             }
 
-            const converter = new RulesConverter.CONVERTERS[key](options?.resourcesPath);
+            const Converter = RulesConverter.CONVERTERS[key];
+            const converter = key === RulesGroup.Csp
+                ? new CspConverter(options?.resourcesPath, excludedRequestDomains)
+                : new Converter(options?.resourcesPath);
             return converter.convert(
                 filterId,
                 rules,
@@ -584,12 +689,13 @@ export class RulesConverter {
      * @returns Result tuple of {@link FiltersIdsWithGroupedRules}.
      */
     private static applyBadFilter(scannedFilters: ScannedFilter[]): FiltersIdsWithGroupedRules {
-        let allBadFilterRules: Rule[] = [];
+        // The scanner already collects `$badfilter` rules into the metadata,
+        // so use them directly instead of re-collecting from grouped rules.
+        const allBadFilterRules = scannedFilters.flatMap(({ badFilterRules }) => badFilterRules);
 
         // Group rules
         const filterIdsWithGroupedRules = scannedFilters.map(({ id, rules }) => {
             const rulesToProcess = RulesGrouper.groupRules(rules);
-            allBadFilterRules = allBadFilterRules.concat(rulesToProcess[RulesGroup.BadFilter]);
             const tuple: [number, GroupedRules] = [id, rulesToProcess];
 
             return tuple;
@@ -611,7 +717,10 @@ export class RulesConverter {
             // Map because RulesGroup values are numbers
             const groups = Object.keys(filtered).map(Number);
             groups.forEach((key: RulesGroup) => {
-                filtered[key] = filtered[key].filter(filterByBadFilterFn);
+                filtered[key] = filtered[key].filter((rule) => (
+                    !rule.isModifierEnabled(OPTION_NAMES.BADFILTER)
+                    && filterByBadFilterFn(rule)
+                ));
             });
 
             // Clean up bad filters rules — they are not converted

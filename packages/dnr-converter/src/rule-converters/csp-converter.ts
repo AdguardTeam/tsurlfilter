@@ -1,5 +1,6 @@
 import { CSP_HEADER_NAME } from '../constants';
 import { type DeclarativeRule, type ModifyHeaderInfo, RuleActionType } from '../declarative-rule';
+import { type Rule } from '../rule/rule';
 
 import { type ConvertedRules } from './converted-rules';
 import { RegularRuleConverter } from './regular-rule-converter';
@@ -22,6 +23,41 @@ export function isCspDeclarativeRule(rule: DeclarativeRule): boolean {
  * @see {@link RegularRuleConverter} parent class.
  */
 export class CspConverter extends RegularRuleConverter {
+    /**
+     * Creates a CSP converter.
+     *
+     * @param webAccessibleResourcesPath Path to web-accessible resources.
+     * @param excludedRequestDomains Request domains excluded from source rules.
+     */
+    constructor(
+        webAccessibleResourcesPath?: string,
+        private readonly excludedRequestDomains: Map<Rule, string[]> = new Map(),
+    ) {
+        super(webAccessibleResourcesPath);
+    }
+
+    /**
+     * Converts one CSP rule and applies domains produced by the resolver.
+     *
+     * @param id Rule ID.
+     * @param rule Source CSP rule.
+     *
+     * @returns Converted DNR rule.
+     */
+    protected override async convertRule(id: number, rule: Rule): Promise<DeclarativeRule> {
+        const declarativeRule = await super.convertRule(id, rule);
+        const domains = this.excludedRequestDomains.get(rule);
+
+        if (domains && domains.length > 0) {
+            declarativeRule.condition.excludedRequestDomains = Array.from(new Set([
+                ...(declarativeRule.condition.excludedRequestDomains ?? []),
+                ...domains,
+            ]));
+        }
+
+        return declarativeRule;
+    }
+
     /**
      * Creates rule template for grouping similar `$csp` rules.
      *

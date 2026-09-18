@@ -23,6 +23,7 @@ import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
 import { assistant, Assistant } from './assistant';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
+import { CspRulesManager, type CspRulesResult } from './csp-rules-manager';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { engineApi } from './engine-api';
@@ -43,6 +44,7 @@ import { WebRequestApi } from './web-request-api';
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
     staticFilters: IRulesetWithSourceMap[];
+    cspRules?: Pick<CspRulesResult, 'errors' | 'limitations'>;
     dynamicRules?: ConversionResult;
     stealthResult?: StealthConfigurationResult;
 };
@@ -438,20 +440,72 @@ export class TsWebExtension implements AppInterface<
             );
 
             // Convert quick fixes rules, allowlist, custom filters and user
-            // rules into one rule set and apply it.
-            res.dynamicRules = await DynamicRulesApi.updateDynamicFiltering(
+            // rules without applying them. CSP rules are rebuilt globally below.
+            const dynamicRules = await DynamicRulesApi.prepareDynamicFiltering(
                 allowlistFilter,
                 blockingPageTrustedFilter,
                 userRulesFilter,
                 customFilters,
                 enabledStaticRulesets,
                 this.webAccessibleResourcesPath,
+                true,
             );
 
-            await SessionRulesApi.updateSessionRules(
-                enabledStaticRulesets,
-                res.dynamicRules.declarativeRulesToCancel,
+            const enabledStaticRulesetIds = new Set(enabledStaticRulesets.map((ruleset) => ruleset.getId()));
+            const enabledStaticFilters = staticFilters.filter((filter) => (
+                enabledStaticRulesetIds.has(getRulesetId(filter.getId()))
+            ));
+            const cspRules = await CspRulesManager.build(
+                enabledStaticFilters,
+                [
+                    allowlistFilter,
+                    blockingPageTrustedFilter,
+                    userRulesFilter,
+                    ...customFilters,
+                ],
+                this.webAccessibleResourcesPath,
             );
+            res.cspRules = {
+                errors: cspRules.errors,
+                limitations: cspRules.limitations,
+            };
+
+            const limitedDynamicCspRules = DynamicRulesApi.limitRebuiltCspRules(
+                dynamicRules,
+                cspRules.dynamicRules,
+            );
+
+            res.dynamicRules = {
+                ...dynamicRules,
+                errors: dynamicRules.errors.concat(cspRules.dynamicErrors),
+                limitations: dynamicRules.limitations.concat(
+                    cspRules.limitations,
+                    limitedDynamicCspRules.limitations,
+                ),
+            };
+
+            const dynamicRulesSnapshot = await DynamicRulesApi.applyDynamicFiltering(
+                res.dynamicRules,
+                enabledStaticRulesets,
+                limitedDynamicCspRules.rules,
+                cspRules.ruleset,
+            );
+
+            try {
+                await SessionRulesApi.updateSessionRules(
+                    enabledStaticRulesets,
+                    res.dynamicRules.declarativeRulesToCancel,
+                    cspRules.staticRules,
+                    cspRules.ruleset,
+                );
+            } catch (error) {
+                try {
+                    await DynamicRulesApi.rollbackDynamicFiltering(dynamicRulesSnapshot);
+                } catch (rollbackError) {
+                    logger.error('[tsweb.TsWebExtension.configure]: Cannot roll back dynamic rules:', rollbackError);
+                }
+                throw error;
+            }
 
             await CspService.addCspReportBlockingRule();
 
@@ -473,6 +527,7 @@ export class TsWebExtension implements AppInterface<
             const rulesets = [
                 ...staticRulesets,
                 res.dynamicRules.ruleset,
+                cspRules.ruleset,
             ];
 
             // Update rulesets in declarative filtering log.

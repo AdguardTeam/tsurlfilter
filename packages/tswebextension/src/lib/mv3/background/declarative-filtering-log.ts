@@ -1,4 +1,4 @@
-import { type IRulesetWithSourceMap } from '@adguard/dnr-converter';
+import { type DeclarativeRule, FilterConverter, type IRulesetWithSourceMap } from '@adguard/dnr-converter';
 
 import { type DeclarativeRuleInfo, defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
@@ -6,6 +6,7 @@ import { nanoid } from '../../common/utils/nanoid';
 import { getDomain } from '../../common/utils/url';
 import { Mutex } from '../utils/mutex';
 
+import DynamicRulesApi from './dynamic-rules-api';
 import { requestContextStorage } from './request';
 import { SessionRulesApi } from './session-rules-api';
 
@@ -128,8 +129,21 @@ class DeclarativeFilteringLog {
         }
 
         const sourceRules = await ruleset.getRulesById(sourceDnrRuleId);
-        const unsafeDeclarativeRules = await ruleset.getUnsafeRules();
-        const declarativeRule = unsafeDeclarativeRules.find((r) => r.id === sourceDnrRuleId);
+        // The rebuilt CSP ruleset keeps its rules in the full declarative list
+        // and never in the unsafe list, so skip the always-empty unsafe lookup.
+        const isCspRuleset = sourceRulesetId === FilterConverter.CSP_RULESET_ID;
+        let declarativeRule: DeclarativeRule | undefined;
+        if (isCspRuleset) {
+            const declarativeRules = await ruleset.getDeclarativeRules();
+            declarativeRule = declarativeRules.find((r) => r.id === sourceDnrRuleId);
+        } else {
+            const unsafeDeclarativeRules = await ruleset.getUnsafeRules();
+            declarativeRule = unsafeDeclarativeRules.find((r) => r.id === sourceDnrRuleId);
+            if (!declarativeRule) {
+                const declarativeRules = await ruleset.getDeclarativeRules();
+                declarativeRule = declarativeRules.find((r) => r.id === sourceDnrRuleId);
+            }
+        }
 
         if (!declarativeRule) {
             throw new Error(`Cannot find rule with id ${sourceDnrRuleId} in ruleset ${sourceRulesetId}`);
@@ -165,17 +179,24 @@ class DeclarativeFilteringLog {
             throw new Error('No rulesets loaded yet');
         }
 
-        const ruleset = this.sourceRulesets.find((r) => r.getId() === rulesetId);
+        // A matched dynamic rule can be a rebuilt CSP rule applied under a new
+        // runtime ID, so resolve it through the dynamic CSP source map first.
+        const cspSource = rulesetId === chrome.declarativeNetRequest.DYNAMIC_RULESET_ID
+            ? DynamicRulesApi.sourceMapForCspRules.get(ruleId)
+            : undefined;
+        const sourceRulesetId = cspSource?.[0] ?? rulesetId;
+        const sourceRuleId = cspSource?.[1] ?? ruleId;
+        const ruleset = this.sourceRulesets.find((r) => r.getId() === sourceRulesetId);
         if (!ruleset) {
-            throw new Error(`Cannot find ruleset with id ${rulesetId}`);
+            throw new Error(`Cannot find ruleset with id ${sourceRulesetId}`);
         }
 
-        const sourceRules = await ruleset.getRulesById(ruleId);
+        const sourceRules = await ruleset.getRulesById(sourceRuleId);
         const declarativeRules = await ruleset.getDeclarativeRules();
-        const declarativeRule = declarativeRules.find((r) => r.id === ruleId);
+        const declarativeRule = declarativeRules.find((r) => r.id === sourceRuleId);
 
         if (!declarativeRule) {
-            throw new Error(`Cannot find rule with id ${ruleId} in ruleset ${rulesetId}`);
+            throw new Error(`Cannot find rule with id ${sourceRuleId} in ruleset ${sourceRulesetId}`);
         }
 
         return {

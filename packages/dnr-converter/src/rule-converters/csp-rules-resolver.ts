@@ -128,31 +128,66 @@ export class CspRulesResolver {
     }
 
     /**
-     * Creates a stable key for a DNR condition without URL pattern fields.
+     * Creates a DNR condition without URL pattern fields.
      *
      * @param rule Source rule.
      *
-     * @returns Stable condition key without URL pattern fields.
+     * @returns Condition without URL pattern fields.
      */
-    private static getConditionWithoutUrlKey(rule: Rule): string {
+    private static getConditionWithoutUrl(rule: Rule): Record<string, unknown> {
         const condition: Record<string, unknown> = { ...RegularRuleConverter.getCondition(rule) };
         delete condition.urlFilter;
         delete condition.regexFilter;
 
-        return JSON.stringify(CspRulesResolver.canonicalize(condition));
+        return condition;
     }
 
     /**
-     * Checks whether both rules have the same non-URL DNR conditions.
+     * Checks whether an exception covers a blocking rule's non-URL conditions.
      *
      * @param exceptionRule CSP exception rule.
      * @param blockingRule Blocking CSP rule.
      *
-     * @returns `true` if the non-URL conditions are equal.
+     * @returns `true` if the exception is not narrower than the blocking rule.
      */
-    private static hasSameNonUrlCondition(exceptionRule: Rule, blockingRule: Rule): boolean {
-        return CspRulesResolver.getConditionWithoutUrlKey(exceptionRule)
-            === CspRulesResolver.getConditionWithoutUrlKey(blockingRule);
+    private static coversNonUrlConditions(exceptionRule: Rule, blockingRule: Rule): boolean {
+        const exceptionCondition = CspRulesResolver.getConditionWithoutUrl(exceptionRule);
+        const blockingCondition = CspRulesResolver.getConditionWithoutUrl(blockingRule);
+        const exceptionDomains = exceptionCondition.initiatorDomains;
+        const blockingDomains = blockingCondition.initiatorDomains;
+        const exceptionExcludedRequestDomains = exceptionCondition.excludedRequestDomains;
+        const blockingExcludedRequestDomains = blockingCondition.excludedRequestDomains;
+        const exceptionResponseHeaders = exceptionCondition.responseHeaders;
+        const blockingResponseHeaders = blockingCondition.responseHeaders;
+        delete exceptionCondition.initiatorDomains;
+        delete blockingCondition.initiatorDomains;
+        delete exceptionCondition.excludedRequestDomains;
+        delete blockingCondition.excludedRequestDomains;
+        delete exceptionCondition.responseHeaders;
+        delete blockingCondition.responseHeaders;
+
+        if (JSON.stringify(CspRulesResolver.canonicalize(exceptionCondition))
+            !== JSON.stringify(CspRulesResolver.canonicalize(blockingCondition))) {
+            return false;
+        }
+
+        const coversInitiatorDomains = exceptionDomains === undefined
+            || CspRulesResolver.isDomainListSubset(blockingDomains, exceptionDomains);
+        if (!coversInitiatorDomains) {
+            return false;
+        }
+
+        const coversExcludedRequestDomains = exceptionExcludedRequestDomains === undefined
+            || CspRulesResolver.isDomainListSubset(
+                exceptionExcludedRequestDomains,
+                blockingExcludedRequestDomains,
+            );
+        if (!coversExcludedRequestDomains) {
+            return false;
+        }
+
+        return exceptionResponseHeaders === undefined
+            || CspRulesResolver.isHeaderListSubset(blockingResponseHeaders, exceptionResponseHeaders);
     }
 
     /**
@@ -202,6 +237,80 @@ export class CspRulesResolver {
     }
 
     /**
+     * Checks whether each domain in one list is covered by another list.
+     *
+     * @param subset Domains that must be covered.
+     * @param superset Domains that may cover them.
+     *
+     * @returns `true` if the first domain list is a subset of the second.
+     */
+    private static isDomainListSubset(subset: unknown, superset: unknown): boolean {
+        return Array.isArray(subset)
+            && Array.isArray(superset)
+            && subset.every((domain) => (
+                typeof domain === 'string'
+                && superset.some((parentDomain) => (
+                    typeof parentDomain === 'string'
+                    && CspRulesResolver.isDomainCovered(domain, parentDomain)
+                ))
+            ));
+    }
+
+    /**
+     * Checks whether each header condition is covered by another list.
+     *
+     * @param subset Header conditions that must be covered.
+     * @param superset Header conditions that may cover them.
+     *
+     * @returns `true` if the first header list is a subset of the second.
+     */
+    private static isHeaderListSubset(subset: unknown, superset: unknown): boolean {
+        return Array.isArray(subset)
+            && Array.isArray(superset)
+            && subset.every((header) => (
+                superset.some((coveringHeader) => (
+                    CspRulesResolver.isHeaderInfoCovered(header, coveringHeader)
+                ))
+            ));
+    }
+
+    /**
+     * Checks whether one DNR header condition covers another.
+     *
+     * @param header Header condition to check.
+     * @param coveringHeader Potential covering header condition.
+     *
+     * @returns `true` if the second header condition covers the first.
+     */
+    private static isHeaderInfoCovered(header: unknown, coveringHeader: unknown): boolean {
+        if (
+            header === null
+            || coveringHeader === null
+            || typeof header !== 'object'
+            || typeof coveringHeader !== 'object'
+        ) {
+            return false;
+        }
+
+        const headerInfo = header as Record<string, unknown>;
+        const coveringHeaderInfo = coveringHeader as Record<string, unknown>;
+        if (
+            typeof headerInfo.header !== 'string'
+            || typeof coveringHeaderInfo.header !== 'string'
+            || headerInfo.header.toLowerCase() !== coveringHeaderInfo.header.toLowerCase()
+        ) {
+            return false;
+        }
+
+        const coveringHeaderHasValueRestrictions = coveringHeaderInfo.values !== undefined
+            || coveringHeaderInfo.excludedValues !== undefined;
+
+        return !coveringHeaderHasValueRestrictions
+            || JSON.stringify(CspRulesResolver.canonicalize(headerInfo))
+                === JSON.stringify(CspRulesResolver.canonicalize(coveringHeaderInfo));
+    }
+
+    /**
      * Checks whether a domain exception covers a domain blocking rule.
      *
      * @param exceptionRule CSP exception rule.
@@ -216,7 +325,7 @@ export class CspRulesResolver {
         return exceptionDomain !== null
             && blockingDomain !== null
             && CspRulesResolver.isDomainCovered(blockingDomain, exceptionDomain)
-            && CspRulesResolver.hasSameNonUrlCondition(exceptionRule, blockingRule);
+            && CspRulesResolver.coversNonUrlConditions(exceptionRule, blockingRule);
     }
 
     /**
@@ -239,6 +348,29 @@ export class CspRulesResolver {
     }
 
     /**
+     * Checks whether two rules cannot match the same initiator domain.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns `true` if the initiator domain scopes are disjoint.
+     */
+    private static areInitiatorDomainsDisjoint(exceptionRule: Rule, blockingRule: Rule): boolean {
+        const exceptionDomains = RegularRuleConverter.getCondition(exceptionRule).initiatorDomains;
+        const blockingDomains = RegularRuleConverter.getCondition(blockingRule).initiatorDomains;
+        if (!exceptionDomains || !blockingDomains) {
+            return false;
+        }
+
+        return exceptionDomains.every((exceptionDomain) => (
+            blockingDomains.every((blockingDomain) => (
+                !CspRulesResolver.isDomainCovered(exceptionDomain, blockingDomain)
+                && !CspRulesResolver.isDomainCovered(blockingDomain, exceptionDomain)
+            ))
+        ));
+    }
+
+    /**
      * Gets a domain which can be excluded from a global blocking rule.
      *
      * @param exceptionRule CSP exception rule.
@@ -247,7 +379,7 @@ export class CspRulesResolver {
      * @returns Domain to exclude or `null` if subtraction is unsupported.
      */
     private static getExcludedDomain(exceptionRule: Rule, blockingRule: Rule): string | null {
-        if (!CspRulesResolver.hasSameNonUrlCondition(exceptionRule, blockingRule)) {
+        if (!CspRulesResolver.coversNonUrlConditions(exceptionRule, blockingRule)) {
             return null;
         }
 
@@ -289,7 +421,8 @@ export class CspRulesResolver {
             safe: !hasApplicableValue
                 || cancels
                 || excludedDomain !== null
-                || CspRulesResolver.areDomainsDisjoint(exceptionRule, blockingRule),
+                || CspRulesResolver.areDomainsDisjoint(exceptionRule, blockingRule)
+                || CspRulesResolver.areInitiatorDomainsDisjoint(exceptionRule, blockingRule),
         };
     }
 

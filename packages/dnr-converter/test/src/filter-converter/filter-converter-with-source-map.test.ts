@@ -41,7 +41,58 @@ describe('FilterConverter (withSourceMap: true)', () => {
     const converter = new FilterConverter();
     const withSourceMapOptions = { withSourceMap: true } as const;
 
+    describe('convertCspRules', () => {
+        it('converts a cross-filter CSP exception to excludedRequestDomains', async () => {
+            const blockingFilter = createFilter([
+                "$csp=script-src 'none'",
+            ], 1);
+            const exceptionFilter = createFilter([
+                "@@||cdn.example.com^$csp=script-src 'none'",
+            ], 2);
+
+            const { ruleset, errors } = await converter.convertCspRules([
+                blockingFilter,
+                exceptionFilter,
+            ]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.excludedRequestDomains).toEqual(['cdn.example.com']);
+            expect(errors).toHaveLength(0);
+        });
+
+        it('removes a CSP rule negated by a $badfilter rule', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none'",
+                "||example.com^$csp=script-src 'none',badfilter",
+            ], 1);
+
+            const { ruleset, errors } = await converter.convertCspRules([filter]);
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+    });
+
     describe('convert (per-filter mode)', () => {
+        it('can exclude CSP rules from regular source-map conversion', async () => {
+            const filter = createFilter([
+                "||example.com^$csp=script-src 'none'",
+                '||ads.example^',
+            ], 1);
+
+            const [{ ruleset, errors }] = await converter.convert([filter], {
+                excludeCspRules: true,
+                withSourceMap: true,
+            });
+            const declarativeRules = await ruleset.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0].condition.urlFilter).toBe('||ads.example^');
+            expect(errors).toHaveLength(0);
+        });
+
         it('converts network rules to declarative rules', async () => {
             const filter = createFilter(['||example.org^']);
             const [{ ruleset, errors, limitations }] = await converter.convert([filter], withSourceMapOptions);

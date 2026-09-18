@@ -105,6 +105,7 @@ import {
     ResourcesPathError,
 } from '../errors/converter-options-errors';
 import { type IFilter } from '../filter/types';
+import { OPTION_NAMES } from '../rule/option-names';
 import { type Rule } from '../rule/rule';
 import { type ConvertedRules } from '../rule-converters';
 import { RulesConverter } from '../rule-converters/rules-converter';
@@ -150,6 +151,21 @@ export class FilterConverter {
      * Used as the combined ruleset ID when `combine: true`.
      */
     public static readonly COMBINED_RULESET_ID = '_dynamic';
+
+    /**
+     * Runtime ruleset ID used for CSP rules.
+     */
+    public static readonly CSP_RULESET_ID = '_csp';
+
+    /**
+     * Raw modifier names which may affect CSP conversion.
+     */
+    private static readonly CSP_RAW_MODIFIER_NAMES = [
+        OPTION_NAMES.CSP,
+        OPTION_NAMES.BADFILTER,
+        'inline-script',
+        'inline-font',
+    ];
 
     /**
      * Returns the rule set ID for a given filter ID.
@@ -246,6 +262,65 @@ export class FilterConverter {
         }
 
         return FilterConverter.convertSimple(filters, options);
+    }
+
+    /**
+     * Converts CSP rules from all provided filters into one ruleset.
+     *
+     * @param filters Source filters.
+     * @param resourcesPath Path to web-accessible resources.
+     *
+     * @returns Combined CSP conversion result with source-map support.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public async convertCspRules(
+        filters: IFilter[],
+        resourcesPath?: string,
+    ): Promise<ConversionResult<IRulesetWithSourceMap>> {
+        const relevantFilters = await FilterConverter.filterCspFilters(filters);
+        const {
+            errors: scanErrors,
+            filters: scannedFilters,
+        } = await RulesScanner.scanFilters(relevantFilters, (rule) => (
+            rule.isModifierEnabled(OPTION_NAMES.CSP)
+            || rule.isModifierEnabled(OPTION_NAMES.BADFILTER)
+        ));
+
+        const options: SourceMapConverterOptions = {
+            combine: true,
+            withSourceMap: true,
+        };
+        if (resourcesPath !== undefined) {
+            options.resourcesPath = resourcesPath;
+        }
+
+        const convertedRules = await RulesConverter.convertCspRules(scannedFilters, options);
+        const badFilterRules = scannedFilters.flatMap(({ badFilterRules: rules }) => rules);
+        const result = FilterConverter.collectConvertedResult(
+            FilterConverter.CSP_RULESET_ID,
+            filters,
+            scannedFilters,
+            convertedRules,
+            badFilterRules,
+        );
+        result.errors = scanErrors.concat(result.errors);
+
+        return result;
+    }
+
+    /**
+     * Filters out filters whose content cannot contain CSP or badfilter rules.
+     *
+     * @param filters Source filters.
+     *
+     * @returns Filters whose content mentions a CSP-related modifier.
+     */
+    private static async filterCspFilters(filters: IFilter[]): Promise<IFilter[]> {
+        const contents = await Promise.all(filters.map((filter) => filter.getContent()));
+
+        return filters.filter((filter, index) => FilterConverter.CSP_RAW_MODIFIER_NAMES.some((modifier) => (
+            contents[index].includes(modifier)
+        )));
     }
 
     /**
@@ -396,6 +471,19 @@ export class FilterConverter {
             };
         }
 
+        // When CSP rules are rebuilt globally, the regular conversion must not
+        // convert them again. `$badfilter` rules are kept because they can
+        // still disable other rules.
+        const filterRule = (rule: Rule): boolean => {
+            if (skipNegatedRulesFn && !skipNegatedRulesFn(rule)) {
+                return false;
+            }
+
+            return !options.excludeCspRules
+                || !rule.isModifierEnabled(OPTION_NAMES.CSP)
+                || rule.isModifierEnabled(OPTION_NAMES.BADFILTER);
+        };
+
         const scannedLimit = options?.maxNumberOfRules
             ? Math.ceil(
                 options.maxNumberOfRules
@@ -409,7 +497,7 @@ export class FilterConverter {
                 filters: scannedFilters,
             } = await RulesScanner.scanFilters(
                 filters,
-                skipNegatedRulesFn,
+                filterRule,
                 scannedLimit,
             );
             const convertedRules = await RulesConverter.convert(scannedFilters, options);
@@ -431,7 +519,7 @@ export class FilterConverter {
                 filters: [scannedFilter],
             } = await RulesScanner.scanFilters(
                 [filter],
-                skipNegatedRulesFn,
+                filterRule,
                 scannedLimit,
             );
             const convertedRules = await RulesConverter.convert([scannedFilter], options);

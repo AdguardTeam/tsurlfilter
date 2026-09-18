@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added partial `$csp` exception support for exact conditions and clean domain
+  exclusions, including a focused runtime CSP conversion API.
+
 ### Changed
 
 ### Deprecated

@@ -3,6 +3,7 @@ import browser from 'webextension-polyfill';
 import {
     type DeclarativeRule,
     type IRulesetWithSourceMap,
+    isCspDeclarativeRule,
     type UpdateStaticRulesOptions,
 } from '@adguard/dnr-converter';
 
@@ -121,12 +122,16 @@ export class SessionRulesApi {
      * @param enabledStaticRulesets List of enabled static rule sets.
      * @param declarativeRulesToCancel List of declarative rules to cancel
      * (collected from dynamic rules).
+     * @param rebuiltCspRules Globally rebuilt CSP rules from static filters.
+     * @param cspRuleset Source ruleset for rebuilt CSP rules.
      *
      * @returns Resolved promise when the session rules are updated.
      */
     public static async updateSessionRules(
         enabledStaticRulesets: IRulesetWithSourceMap[],
         declarativeRulesToCancel?: UpdateStaticRulesOptions[] | undefined,
+        rebuiltCspRules?: DeclarativeRule[],
+        cspRuleset?: IRulesetWithSourceMap,
     ): Promise<void> {
         const rulesToCancel = new Map<string, number[]>(
             declarativeRulesToCancel
@@ -134,23 +139,39 @@ export class SessionRulesApi {
                 : [],
         );
 
+        if (rebuiltCspRules !== undefined && !cspRuleset) {
+            throw new Error('CSP source ruleset is required for rebuilt session CSP rules');
+        }
+
+        // Rebuilt static CSP rules replace the stale CSP rules from the static
+        // rulesets, so they are applied first and keep quota priority.
+        const unsafeRulesFromStaticFilters: { rulesetId: string; rules: DeclarativeRule[] }[] = [];
+        if (rebuiltCspRules !== undefined && cspRuleset) {
+            unsafeRulesFromStaticFilters.push({
+                rulesetId: cspRuleset.getId(),
+                rules: rebuiltCspRules,
+            });
+        }
+
         // Apply $badfilter rules from dynamic rules to static rules.
-        const unsafeRulesFromStaticFilters = await Promise.all(
+        unsafeRulesFromStaticFilters.push(...await Promise.all(
             enabledStaticRulesets.map(async (r) => {
                 const rules = await r.getUnsafeRules();
 
                 const rulesToRemove = rulesToCancel.get(r.getId()) || [];
+                const activeRules = rules.filter((rule) => !rulesToRemove.includes(rule.id));
 
                 return {
                     rulesetId: r.getId(),
-                    rules: rules.filter((rule) => !rulesToRemove.includes(rule.id)),
+                    rules: rebuiltCspRules === undefined
+                        ? activeRules
+                        : activeRules.filter((rule) => !isCspDeclarativeRule(rule)),
                 };
             }),
-        );
+        ));
 
-        // Before collect rules to enable, record which rules should be removed
-        // from browser session rules and also remove them from in-memory source
-        // map.
+        // Before collecting rules to enable, record which browser session
+        // rules should be removed.
         const currentSessionRules = await chrome.declarativeNetRequest.getSessionRules();
 
         const removeRuleIds = currentSessionRules
@@ -158,23 +179,19 @@ export class SessionRulesApi {
             // Ignore removing stealth rules.
             .filter((id) => id > SessionRulesApi.MIN_DECLARATIVE_RULE_ID);
 
-        // Clear them from in-memory source map.
-        removeRuleIds.forEach((id) => {
-            SessionRulesApi.sourceMapForUnsafeRules.delete(id);
-        });
-
         // Collect rules to enable.
         const unsafeRulesFromEnabledRulesets: DeclarativeRule[] = [];
+        const nextSourceMap = new Map<number, [string, number]>();
 
         // TODO: Add separated counters for these in ruleset.
         let regexpRulesCounter = 0;
         const ignoredRules = new Map<string, number[]>(
-            enabledStaticRulesets.map((r) => [r.getId(), []]),
+            unsafeRulesFromStaticFilters.map(({ rulesetId }) => [rulesetId, []]),
         );
 
         let availableId = SessionRulesApi.MIN_DECLARATIVE_RULE_ID + 1;
 
-        // Reset id for each rule via saving it's source and check the limits.
+        // Reset id for each rule via saving its source and check the limits.
         unsafeRulesFromStaticFilters.forEach(({ rulesetId, rules }) => {
             rules.forEach((rule) => {
                 if (availableId > SessionRulesApi.MAX_NUMBER_OF_UNSAFE_SESSION_RULES) {
@@ -194,7 +211,7 @@ export class SessionRulesApi {
                     }
                 }
 
-                SessionRulesApi.sourceMapForUnsafeRules.set(
+                nextSourceMap.set(
                     availableId,
                     [rulesetId, rule.id],
                 );
@@ -219,13 +236,18 @@ export class SessionRulesApi {
 
         // The rules with IDs listed in options.removeRuleIds are first removed,
         // and then the rules given in options.addRules are added
-        return chrome.declarativeNetRequest.updateSessionRules({
+        await chrome.declarativeNetRequest.updateSessionRules({
             // dnr-converter uses PascalCase enum member names (Block, Redirect, …)
             // while @types/chrome uses UPPER_SNAKE_CASE (BLOCK, REDIRECT, …).
             // Runtime values are identical, so the cast is safe.
             addRules: unsafeRulesFromEnabledRulesets as unknown as chrome.declarativeNetRequest.Rule[],
             removeRuleIds,
         });
+
+        // Publish the source map only after the browser update succeeds so a
+        // failed update never leaves stale mappings behind.
+        SessionRulesApi.sourceMapForUnsafeRules.clear();
+        nextSourceMap.forEach((source, id) => SessionRulesApi.sourceMapForUnsafeRules.set(id, source));
     }
 
     /**

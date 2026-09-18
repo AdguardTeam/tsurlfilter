@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added partial support for `$csp` exceptions in Manifest V3 across built-in,
+  custom, and user filters [AdguardBrowserExtension#2965].
+- Rebuilt CSP rules are applied atomically across the dynamic and session DNR
+  scopes, fit into the remaining browser quotas, and are rolled back together
+  with the filtering-log source map when a later configuration step fails.
+
 ### Changed
 
 ### Deprecated
@@ -20,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wrong `frameDomain` in cosmetic hits filtering-log events for subframes, breaking
   exception rules created from the filtering log [AdguardBrowserExtension#1449].
 
+[AdguardBrowserExtension#2965]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2965
 [AdguardBrowserExtension#1449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1449
 
 ### Security

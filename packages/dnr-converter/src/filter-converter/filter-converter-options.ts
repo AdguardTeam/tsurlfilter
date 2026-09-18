@@ -74,6 +74,13 @@ export interface SourceMapConverterOptions extends BaseFilterConverterOptions {
      * Only valid in source-map mode (enforced by the discriminated union).
      */
     badFilterRules?: Rule[];
+
+    /**
+     * Excludes CSP rules from regular conversion when they are rebuilt globally.
+     *
+     * @default false
+     */
+    excludeCspRules?: boolean;
 }
 
 /**

@@ -249,4 +249,69 @@ describe('CspRulesResolver.resolve', () => {
             unsupportedExceptions: [rules[1]],
         });
     });
+
+    it('accepts an exception with a disjoint $domain condition as a safe no-op', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=foo.com",
+            "@@||example.com^$csp=script-src 'none',domain=bar.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('lets an unrestricted exception cancel a blocker restricted by $domain', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=foo.com",
+            "@@||example.com^$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('lets a parent $domain exception cancel a subdomain-restricted blocker', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none',domain=sub.foo.com",
+            "@@||example.com^$csp=script-src 'none',domain=foo.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('excludes a clean domain from a blocker restricted by a $domain list', () => {
+        const rules = createRules(
+            "$csp=script-src 'none',domain=foo.com|bar.com",
+            "@@||bar.com^$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map([[rules[0], ['bar.com']]]),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('rejects an exception narrower than an unrestricted blocker by $domain', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none'",
+            "@@||example.com^$csp=script-src 'none',domain=foo.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
 });

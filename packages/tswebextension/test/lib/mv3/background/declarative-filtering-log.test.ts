@@ -12,7 +12,9 @@ import { type HTTPMethod } from '@adguard/tsurlfilter';
 import { defaultFilteringLog, FilteringEventType } from '../../../../src/lib/common/filtering-log';
 import { type ContentType } from '../../../../src/lib/common/request-type';
 import { declarativeFilteringLog } from '../../../../src/lib/mv3/background/declarative-filtering-log';
+import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { requestContextStorage } from '../../../../src/lib/mv3/background/request/request-context-storage';
+import { SessionRulesApi } from '../../../../src/lib/mv3/background/session-rules-api';
 
 // Counter for generating unique nanoid values in tests.
 let nanoidCounter = 0;
@@ -132,6 +134,7 @@ describe('DeclarativeFilteringLog.logMatchedRule', () => {
             ...global.chrome,
             declarativeNetRequest: {
                 ...((global.chrome as any)?.declarativeNetRequest ?? {}),
+                DYNAMIC_RULESET_ID: '_dynamic',
                 SESSION_RULESET_ID: '_session',
             },
         } as any;
@@ -140,6 +143,7 @@ describe('DeclarativeFilteringLog.logMatchedRule', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         nanoidCounter = 0;
+        DynamicRulesApi.sourceMapForCspRules.clear();
 
         // Default: getRuleInfo resolves to a simple declarative rule info.
         (declarativeFilteringLog as any).sourceRulesets = [{
@@ -339,5 +343,56 @@ describe('DeclarativeFilteringLog.logMatchedRule', () => {
         await callLogMatchedRule(record);
 
         expect(defaultFilteringLog.publishEvent).not.toHaveBeenCalled();
+    });
+
+    it('does not apply a dynamic CSP mapping to a static rule with the same id', async () => {
+        DynamicRulesApi.sourceMapForCspRules.set(100, ['_csp', 200]);
+        (declarativeFilteringLog as any).sourceRulesets = [{
+            getId: (): string => 'ruleset_1',
+            getRulesById: vi.fn(async () => [{ sourceRule: '||static.example^', filterId: 1 }]),
+            getDeclarativeRules: vi.fn(async () => [{ id: 100, action: { type: 'block' } }]),
+        }, {
+            getId: (): string => '_csp',
+            getRulesById: vi.fn(async () => [{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]),
+            getDeclarativeRules: vi.fn(async () => [{ id: 200, action: { type: 'modifyHeaders' } }]),
+        }];
+
+        const result = await (declarativeFilteringLog as any).getRuleInfo('ruleset_1', 100);
+
+        expect(result.sourceRules).toEqual([{ sourceRule: '||static.example^', filterId: 1 }]);
+    });
+
+    it('resolves a rebuilt dynamic CSP rule through its runtime mapping', async () => {
+        DynamicRulesApi.sourceMapForCspRules.set(100, ['_csp', 200]);
+        (declarativeFilteringLog as any).sourceRulesets = [{
+            getId: (): string => '_dynamic',
+            getRulesById: vi.fn(async () => [{ sourceRule: '||dynamic.example^', filterId: 1 }]),
+            getDeclarativeRules: vi.fn(async () => [{ id: 100, action: { type: 'block' } }]),
+        }, {
+            getId: (): string => '_csp',
+            getRulesById: vi.fn(async () => [{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]),
+            getDeclarativeRules: vi.fn(async () => [{ id: 200, action: { type: 'modifyHeaders' } }]),
+        }];
+
+        const result = await (declarativeFilteringLog as any).getRuleInfo('_dynamic', 100);
+
+        expect(result.sourceRules).toEqual([{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]);
+    });
+
+    it('does not load unsafe rules for a rebuilt CSP session source', async () => {
+        SessionRulesApi.sourceMapForUnsafeRules.set(50, ['_csp', 200]);
+        const cspRuleset = {
+            getId: (): string => '_csp',
+            getRulesById: vi.fn(async () => [{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]),
+            getUnsafeRules: vi.fn(async () => []),
+            getDeclarativeRules: vi.fn(async () => [{ id: 200, action: { type: 'modifyHeaders' } }]),
+        };
+        (declarativeFilteringLog as any).sourceRulesets = [cspRuleset];
+
+        const result = await (declarativeFilteringLog as any).getRuleInfoForSessionRule('_session', 50);
+
+        expect(cspRuleset.getUnsafeRules).not.toHaveBeenCalled();
+        expect(cspRuleset.getDeclarativeRules).toHaveBeenCalledTimes(1);
+        expect(result.sourceRules).toEqual([{ sourceRule: '||csp.example^$csp=x', filterId: 2 }]);
     });
 });
