@@ -1162,6 +1162,46 @@ describe('HTML filtering rules (content rules)', () => {
         });
     });
 
+    it('correctly parses html rules - contains with single-quoted argument (literal quotes preserved)', () => {
+        // Single quotes are not a transport encoding: `:contains('advert')`
+        // (e.g. converted from `[tag-content="'advert'"]`) must match text
+        // containing the apostrophes, so the argument is kept as-is
+        const rule = createCosmeticRule(
+            "example.org$$script:contains('advert')",
+            0,
+        );
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: "'advert'",
+                }],
+            }]],
+        });
+    });
+
+    it('correctly parses html rules - contains with shielded literal double quotes', () => {
+        // Literal double quotes of a `[tag-content='"advert"']` value are shielded
+        // by the converter with an extra double-quoted layer; decoding the
+        // double-quoted argument form restores them
+        const rule = createCosmeticRule(
+            String.raw`example.org$$script:contains("\"advert\"")`,
+            0,
+        );
+
+        expect(rule.getHtmlSelectorList()).toEqual({
+            selectors: [[{
+                nativeSelector: 'script',
+                specialSelectors: [{
+                    name: 'contains',
+                    value: '"advert"',
+                }],
+            }]],
+        });
+    });
+
     it('correctly parses html rules - attribute selectors', () => {
         // eslint-disable-next-line max-len
         const contentPart = 'div[attr1="value1"][attr2*="value" i][attr3]';

@@ -17,10 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- HTML filtering rules with quoted `:contains()` arguments (e.g. produced by
-  AGTree normalization of unbalanced arguments) no longer treat the wrapping
-  quotes as part of the matched text, and quoted regexp arguments keep their
-  regexp semantics [#96].
+- HTML filtering rules with double-quoted `:contains()` arguments (e.g.
+  produced by AGTree normalization of unbalanced arguments) no longer treat
+  the wrapping quotes as part of the matched text, and quoted regexp
+  arguments keep their regexp semantics [#96].
+- Single-quoted and unquoted `:contains()` arguments keep their literal
+  meaning — only the double-quoted form is decoded — so rules converted from
+  `[tag-content]` values with literal apostrophes (e.g.
+  `[tag-content="'advert'"]` → `:contains('advert')`) still match the
+  apostrophes as part of the text [#96].
 
 ### Security
 
