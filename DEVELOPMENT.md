@@ -77,7 +77,7 @@ Every **same-repository** PR that touches one of the six
 browser-extension-consumed packages (the same `BRIDGED_PACKAGES` set the bridge
 workflows publish, see `devex-bridge.yml`) is automatically published to the
 internal Artifact Keeper npm registry by the `devex-bridge.yml` workflow, with
-head-scoped versions `<next-patch>-dev.pr<N>.<shortsha>`. Fork PRs get no
+run-scoped versions `<next-patch>-dev.pr<N>.<run_number>`. Fork PRs get no
 builds (the publish jobs are gated to same-repo PRs). The PR gets a comment
 with the exact versions once publishing finishes.
 
@@ -91,7 +91,7 @@ To build the browser extension against them:
    TypeScript port of the tool that used to live in this repo):
 
    ```bash
-   pnpm tsx tools/ci/use-dev-builds.ts --pr <N> --head <short-sha> --extension . --with-dnr-converter --with-css-tokenizer --with-agtree --with-tsurlfilter --with-dnr-rulesets --with-tswebextension
+   pnpm tsx tools/ci/use-dev-builds.ts --pr <N> --run <run-number> --extension . --with-dnr-converter --with-css-tokenizer --with-agtree --with-tsurlfilter --with-dnr-rulesets --with-tswebextension
    ```
 
    The registry is fixed — dev builds are only published to the internal
@@ -103,12 +103,14 @@ To build the browser extension against them:
    (`dev-builds`, `chrome-dev-crx`).
 
 After every push to the tsurlfilter PR the dev builds are republished under a
-new head-scoped version, so re-run the same command with the new
-`--head <short-sha>` from the comment and commit the refreshed
-`package.json` / `pnpm-lock.yaml`. The tool resolves the coherent set for the
-requested head: if any package's build for that head is missing on AK (a
-publish leg failed), it fails loudly instead of mixing builds from different
-heads.
+new run-scoped version, so re-run the same command with the new run number
+from the comment and commit the refreshed `package.json` / `pnpm-lock.yaml`.
+The tool selects the highest published run number across all six packages and
+requires the complete set for that run: if any package's build for the selected
+run is missing on AK (a publish leg failed), it fails loudly instead of falling
+back to an older run or mixing builds from different runs. Head-scoped legacy
+versions are ignored, so a PR whose builds predate the run-number change needs
+a new push before it can be pinned.
 
 A branch pinned to dev builds must never be merged. Before marking the
 extension PR ready (once the real versions are released, or if testing is
@@ -154,8 +156,8 @@ failure — the same commands the Slack failure alert points at:
   prefer **Re-run all jobs** or a new push.
 - **Dev pins stop resolving in the extension** (e.g. the PR was idle past the
   7-day TTL and the builds expired on AK): re-push to the tsurlfilter PR to
-  publish fresh head-scoped versions, then re-pin in the browser-extension
-  checkout with `pnpm tsx tools/ci/use-dev-builds.ts --head <short-sha> --extension .`.
+  publish fresh run-scoped versions, then re-pin in the browser-extension
+  checkout with `pnpm tsx tools/ci/use-dev-builds.ts --run <run-number> --extension .`.
   There is nothing to unpublish by hand — AK's lifecycle policy reclaims
   expired builds on its own, and a removed build is gone for good (repeating
   its SHA will not restore it).
