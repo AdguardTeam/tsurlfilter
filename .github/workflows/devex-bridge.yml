@@ -2,15 +2,18 @@ name: DevEx bridge
 
 # Publishes the six tsurlfilter packages consumed by the browser extension to
 # the dedicated internal Artifact Keeper dev registry (`npm-internal-dev`) with
-# PR-scoped, HEAD-scoped dev versions: `<next-patch>-dev.pr<N>.<shortsha>`
-# where <shortsha> is the first 8 hex of the source PR's head commit. AK
-# versions are IMMUTABLE: a re-publish of the same version returns 409. Because
-# every push carries a NEW head SHA, every synchronize publishes a FRESH
-# version for all six packages — so QA always resolves the current source, not
-# the first push's bits. The consumer-side pinning tool (in the
-# browser-extension repo, tools/ci/use-dev-builds.ts) resolves the exact
-# head-scoped set, so a partially published matrix fails loudly instead of
-# mixing builds from different heads.
+# PR-scoped, run-scoped dev versions: `<next-patch>-dev.pr<N>.<run_number>`
+# where <run_number> is this workflow's github.run_number (the same for all six
+# packages of one run). AK versions are IMMUTABLE: a re-publish of the same
+# version returns 409. Every workflow run gets a NEW run number, so every
+# synchronize publishes a FRESH version for all six packages — so QA always
+# resolves the current source, not the first push's bits. The run number is the
+# ordering key: AK packuments carry no `time` map and the shared `devex`
+# dist-tag moves when another PR publishes. The consumer-side pinning tool (in
+# the browser-extension repo, tools/ci/use-dev-builds.ts) selects the HIGHEST
+# run number visible across all six packages and requires the complete set for
+# that exact run, so a partially published matrix fails loudly instead of
+# falling back to an older run or mixing builds from different runs.
 #
 # Cleanup is the registry's job, not CI's: `npm-internal-dev` carries an AK
 # lifecycle policy max_age_days=7, so every dev build expires automatically 7
@@ -126,11 +129,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Compute dev version suffix (head-scoped)
+      - name: Compute dev version suffix (run-scoped)
         id: suffix
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           # The suffix is written to BOTH stores because they serve different
           # consumers:
@@ -141,7 +144,7 @@ jobs:
           #     Variables written to GITHUB_ENV are NOT part of the env expression
           #     context, so the expression-consumers MUST read the output, not
           #     `env.VERSION_SUFFIX`.
-          SUFFIX="pr${PR_NUMBER}.${HEAD_SHA:0:8}"
+          SUFFIX="pr${PR_NUMBER}.${RUN_NUMBER}"
           echo "VERSION_SUFFIX=${SUFFIX}" >> "${GITHUB_ENV}"
           echo "VERSION_SUFFIX=${SUFFIX}" >> "${GITHUB_OUTPUT}"
 
@@ -152,10 +155,10 @@ jobs:
           version-suffix: ${{ steps.suffix.outputs.VERSION_SUFFIX }}
 
       # TODO: once ext-shared-actions#15 lands on master and this workflow runs
-      # against it, set-dev-version@master stamps <next-patch>-dev.pr<N>.<shortsha>
+      # against it, set-dev-version@master stamps <next-patch>-dev.pr<N>.<run_number>
       # directly and this step is a real no-op — delete it then. Until #15
       # merges, the action cannot append the suffix, so this step is
-      # load-bearing: without it every `-dev.pr<N>.<shortsha>` would actually be
+      # load-bearing: without it every `-dev.pr<N>.<run_number>` would actually be
       # plain `-dev`. A wrong suffix (e.g. an empty VERSION_SUFFIX) is caught by
       # the "Verify tarball contents" step below. The rewrite preserves the
       # manifest's original indentation and line endings.
@@ -242,8 +245,8 @@ jobs:
       # propagates the producer's failure as a false "package.json missing" error.
       # VERSION_SUFFIX is a job-level env var (exported by the compute step
       # above), so it is a plain environment variable in the step shell; its
-      # value is built from the numeric PR number and a hex SHA only — no
-      # injection surface.
+      # value is built from the numeric PR number and the numeric run number
+      # only — no injection surface.
       - name: Verify tarball contents
         shell: bash
         env:
@@ -312,11 +315,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Compute dev version suffix (head-scoped)
+      - name: Compute dev version suffix (run-scoped)
         id: suffix
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           # The suffix is written to BOTH stores because they serve different
           # consumers:
@@ -327,7 +330,7 @@ jobs:
           #     Variables written to GITHUB_ENV are NOT part of the env expression
           #     context, so the expression-consumers MUST read the output, not
           #     `env.VERSION_SUFFIX`.
-          SUFFIX="pr${PR_NUMBER}.${HEAD_SHA:0:8}"
+          SUFFIX="pr${PR_NUMBER}.${RUN_NUMBER}"
           echo "VERSION_SUFFIX=${SUFFIX}" >> "${GITHUB_ENV}"
           echo "VERSION_SUFFIX=${SUFFIX}" >> "${GITHUB_OUTPUT}"
 
@@ -356,10 +359,10 @@ jobs:
           name: devex-${{ matrix.package }}
           path: .
 
-      # Head-scoped versions change on every push, so npm publish normally
-      # succeeds; a 409 only means this exact version (this exact head) was
-      # already published by a re-run of the same commit — treat that as the
-      # build being current rather than a failure. Real publish errors still
+      # Run numbers change on every workflow run, so npm publish normally
+      # succeeds; a 409 only means this exact version (this exact run) was
+      # already published by a re-run of the same workflow run — treat that as
+      # the build being current rather than a failure. Real publish errors still
       # fail the job loudly.
       - name: Publish to Artifact Keeper (skip if already published)
         if: steps.pr-open.outputs.open == 'true'
@@ -386,7 +389,7 @@ jobs:
           if out="$(npm publish "${PACKAGE_FILE}" --access public --tag "${TAG}" 2>&1)"; then
               echo "Published ${PACKAGE_FILE} (tag ${TAG})"
           elif grep -qE '\bE409\b|409 Conflict|already exists' <<<"${out}"; then
-              echo "::warning::${PACKAGE_FILE}: already published on AK — same head already built, skipping"
+              echo "::warning::${PACKAGE_FILE}: already published on AK — same run already built, skipping"
           else
               echo "::error::npm publish failed for ${PACKAGE_FILE}:"
               printf '%s\n' "${out}"
@@ -471,13 +474,12 @@ jobs:
             const pr = context.payload.pull_request.number;
             const map = JSON.parse(process.env.MAP);
             const bridgedFlags = process.env.BRIDGED_PACKAGES.split(' ').map((p) => `--with-${p}`).join(' ');
-            const shortSha = context.payload.pull_request.head.sha.slice(0, 8);
             const rows = Object.entries(map)
                 .map(([name, version]) => `| \`${name}\` | \`${version}\` |`)
                 .join('\n');
             const body = [
                 marker,
-                '**Dev builds published** to the internal Artifact Keeper registry under head-scoped versions (`-dev.pr<N>.<shortsha>`) — every push republishes all six, so the pinned tarballs always match the latest committed source:',
+                '**Dev builds published** to the internal Artifact Keeper registry under run-scoped versions (`-dev.pr<N>.<run>`) — every push republishes all six, so the pinned tarballs always match the latest committed source:',
                 '',
                 '| package | version |',
                 '| --- | --- |',
@@ -486,10 +488,10 @@ jobs:
                 'To build the browser extension against them, create your branch in `AdGuardSoftwareLimited/browser-extension` as usual, then pin the dev builds in that checkout with its consumer-side tool:',
                 '',
                 '```bash',
-                `pnpm tsx tools/ci/use-dev-builds.ts --pr ${pr} --head ${shortSha} --extension . ${bridgedFlags}`,
+                `pnpm tsx tools/ci/use-dev-builds.ts --pr ${pr} --run ${context.runNumber} --extension . ${bridgedFlags}`,
                 '```',
                 '',
-                `The tool pins the coherent set for the requested head (--head ${shortSha}); re-run it after every push to this PR.`,
+                `The tool pins run ${context.runNumber} for PR #${pr}; re-run it after every push to this PR.`,
                 'Dev builds are published to the `npm-internal-dev` Artifact Keeper registry and expire automatically 7 days after publish (AK lifecycle TTL). If these versions have already expired, re-push to this PR to republish them.',
             ].join('\n');
             const { owner, repo } = context.repo;

@@ -112,12 +112,13 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   master builds.
 - `devex-bridge.yml` — on same-repository PRs touching any of the six packages
   consumed by the browser extension, publishes them to the dedicated internal
-  Artifact Keeper dev registry (`npm-internal-dev`) as HEAD-scoped
-  `<next-patch>-dev.pr<N>.<shortsha>` versions (AK is immutable; every push
-  carries a new short SHA, so each push yields fresh builds for all six) and
-  posts a usage comment on the PR. Same-repo PRs only (publishes use the org AK
-  secret). Requires the org variable `ARTIFACT_KEEPER_URL` and secret
-  `ARTIFACT_KEEPER_API_KEY`. See DEVELOPMENT.md for the developer workflow.
+  Artifact Keeper dev registry (`npm-internal-dev`) as run-scoped
+  `<next-patch>-dev.pr<N>.<run_number>` versions (AK is immutable; each
+  workflow run gets a new run number, so every run yields fresh builds for all
+  six) and posts a usage comment on the PR. Same-repo PRs only (publishes use
+  the org AK secret). Requires the org variable `ARTIFACT_KEEPER_URL` and
+  secret `ARTIFACT_KEEPER_API_KEY`. See DEVELOPMENT.md for the developer
+  workflow.
   Cleanup is delegated to AK rather than CI: `npm-internal-dev` carries a
   lifecycle policy `max_age_days=7`, so every dev build expires 7 days after
   publish. A PR idle for more than 7 days loses its dev builds and needs a
