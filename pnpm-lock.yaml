@@ -67,8 +67,8 @@ catalogs:
       specifier: ^17.0.25
       version: 17.0.26
     '@types/webextension-polyfill':
-      specifier: ^0.12.1
-      version: 0.12.1
+      specifier: ^0.12.6
+      version: 0.12.6
     '@typescript-eslint/eslint-plugin':
       specifier: ^7.5.0
       version: 7.18.0
@@ -348,7 +348,7 @@ importers:
         version: 22.14.0
       '@types/webextension-polyfill':
         specifier: 'catalog:'
-        version: 0.12.1
+        version: 0.12.6
       '@typescript-eslint/eslint-plugin':
         specifier: 'catalog:'
         version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
@@ -424,7 +424,7 @@ importers:
         version: 22.14.0
       '@types/webextension-polyfill':
         specifier: 'catalog:'
-        version: 0.12.1
+        version: 0.12.6
       '@typescript-eslint/eslint-plugin':
         specifier: 'catalog:'
         version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
@@ -1401,7 +1401,7 @@ importers:
         version: 0.0.305
       '@types/webextension-polyfill':
         specifier: 'catalog:'
-        version: 0.12.1
+        version: 0.12.6
       '@typescript-eslint/eslint-plugin':
         specifier: 'catalog:'
         version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
@@ -1492,7 +1492,7 @@ importers:
         version: 0.0.305
       '@types/webextension-polyfill':
         specifier: 'catalog:'
-        version: 0.12.1
+        version: 0.12.6
       '@typescript-eslint/eslint-plugin':
         specifier: 'catalog:'
         version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
@@ -1601,7 +1601,7 @@ importers:
         version: 17.0.26(@types/react@17.0.85)
       '@types/webextension-polyfill':
         specifier: 'catalog:'
-        version: 0.12.1
+        version: 0.12.6
       '@typescript-eslint/eslint-plugin':
         specifier: 'catalog:'
         version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
@@ -1716,7 +1716,7 @@ importers:
         version: 17.0.26(@types/react@17.0.85)
       '@types/webextension-polyfill':
         specifier: 'catalog:'
-        version: 0.12.1
+        version: 0.12.6
       '@typescript-eslint/eslint-plugin':
         specifier: 'catalog:'
         version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
@@ -2162,7 +2162,7 @@ importers:
         version: 2.2.11
       '@types/webextension-polyfill':
         specifier: 'catalog:'
-        version: 0.12.1
+        version: 0.12.6
       '@typescript-eslint/eslint-plugin':
         specifier: 'catalog:'
         version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
@@ -3993,8 +3993,8 @@ packages:
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
 
-  '@types/webextension-polyfill@0.12.1':
-    resolution: {integrity: sha512-xPTFWwQ8BxPevPF2IKsf4hpZNss4LxaOLZXypQH4E63BDLmcwX/RMGdI4tB4VO4Nb6xDBH3F/p4gz4wvof1o9w==}
+  '@types/webextension-polyfill@0.12.6':
+    resolution: {integrity: sha512-XTNQSGiQaipt1iocbpHSjYHd+Ujcya+K5H4H2uH7JwycReTFixoYqGWIKih2Ec072NuEW2lAyXRDYmlEx00+cw==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -11963,7 +11963,7 @@ snapshots:
 
   '@types/unist@2.0.11': {}
 
-  '@types/webextension-polyfill@0.12.1': {}
+  '@types/webextension-polyfill@0.12.6': {}
 
   '@types/yargs-parser@21.0.3': {}
 

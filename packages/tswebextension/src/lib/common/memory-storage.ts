@@ -58,6 +58,28 @@ export class MemoryStorage implements Storage.StorageArea {
     }
 
     /** @inheritdoc */
+    getBytesInUse(keys?: null | string | string[]): Promise<number> {
+        // Rough estimate: JSON-serialized size in bytes (UTF-16 code units
+        // are a good enough approximation for an in-memory shim).
+        const sizeOf = (value: unknown): number => JSON.stringify(value)?.length ?? 0;
+
+        if (keys === undefined || keys === null) {
+            return Promise.resolve(sizeOf(this.data));
+        }
+
+        const keyList = typeof keys === 'string' ? [keys] : keys;
+
+        return Promise.resolve(
+            keyList.reduce((total, key) => total + sizeOf({ [key]: this.data[key] }), 0),
+        );
+    }
+
+    /** @inheritdoc */
+    getKeys(): Promise<string[]> {
+        return Promise.resolve(Object.keys(this.data));
+    }
+
+    /** @inheritdoc */
     clear(): Promise<void> {
         this.data = {};
         return Promise.resolve();

@@ -136,8 +136,7 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
             return true;
         }
 
-        const background = manifest.background as
-            (Manifest.WebExtensionManifestBackgroundC2Type | Manifest.WebExtensionManifestBackgroundC1Type);
+        const background = manifest.background as Manifest.WebExtensionManifestBackgroundType;
 
         return background.persistent ?? true;
     }

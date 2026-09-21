@@ -603,7 +603,8 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * Checks if the top-level frame ancestor's URL domain matches
      * the main frame's URL domain.
      *
-     * Used as Firefox fallback when parentDocumentId is not available.
+     * Used as fallback for browsers where parentDocumentId is not available
+     * (e.g. Firefox older than 153).
      *
      * @param mainFrameUrl Main frame URL of the tab.
      * @param frameAncestors Frame ancestors from the request (Firefox-specific).
@@ -667,13 +668,13 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * Increments the blocked request count for a tab if the request belongs
      * to the current page. A request is considered part of the current page if:
      * - its referrer URL has the same domain as the tab URL (same-domain check);
-     * - its parentDocumentId chain leads to the main frame (Chromium 106+);
-     * - the top-level frame ancestor URL matches the tab URL (Firefox fallback).
+     * - its parentDocumentId chain leads to the main frame (Chromium 106+, Firefox 153+);
+     * - the top-level frame ancestor URL matches the tab URL (fallback for older Firefox).
      *
      * @param params Blocked request parameters.
      * @param params.tabId Tab ID.
      * @param params.referrerUrl Request initiator URL.
-     * @param params.parentDocumentId Parent document ID of the request (Chromium 106+).
+     * @param params.parentDocumentId Parent document ID of the request (Chromium 106+, Firefox 153+).
      * @param params.frameAncestors Frame ancestors of the request (Firefox).
      */
     public incrementTabBlockedRequestCount({
@@ -705,12 +706,12 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
         }
 
         if (parentDocumentId) {
-            // Chromium-based browsers: parentDocumentId is available.
+            // Chromium-based browsers and Firefox 153+: parentDocumentId is available.
             if (TabsApiCommon.isDescendantOfMainFrame(tabContext, parentDocumentId)) {
                 tabContext.incrementBlockedRequestCount();
             }
         } else if (TabsApiCommon.isSameDomainByAncestors(mainFrameUrl, frameAncestors)) {
-            // Firefox: no parentDocumentId.
+            // Firefox older than 153: no parentDocumentId.
             tabContext.incrementBlockedRequestCount();
         }
     }

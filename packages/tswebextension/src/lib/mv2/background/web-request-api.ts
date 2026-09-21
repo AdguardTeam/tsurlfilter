@@ -221,7 +221,7 @@ import { TabsApi } from './tabs';
 import { FrameMV2 } from './tabs/frame';
 import { browserDetectorMV2 } from './utils/browser-detector';
 
-export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
+export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromiseOrVoid;
 
 export type InjectCosmeticParams = {
     frameId: number;
@@ -855,9 +855,8 @@ export class WebRequestApi {
             parentFrameId,
         } = details;
 
-        // supported by Chrome 106+
-        // but not supported by Firefox so it is calculated based on tabId and frameId
-        // @ts-ignore
+        // supported by Chrome 106+ and Firefox 153+;
+        // for browsers without support it is calculated based on tabId and frameId
         let { parentDocumentId } = details;
 
         const isDocumentLevelFrame = TabsApi.isDocumentLevelFrame(parentFrameId);
@@ -935,9 +934,8 @@ export class WebRequestApi {
         const {
             tabId,
             frameId,
-            // supported by Chrome 106+
-            // but not supported by Firefox so it is calculated based on tabId and frameId
-            // @ts-ignore
+            // supported by Chrome 106+ and Firefox 153+;
+            // for browsers without support it is calculated based on tabId and frameId
             documentId,
         } = details;
 
@@ -988,9 +986,8 @@ export class WebRequestApi {
         const {
             tabId,
             frameId,
-            // supported by Chrome 106+
-            // but not supported by Firefox so it is calculated based on tabId and frameId
-            // @ts-ignore
+            // supported by Chrome 106+ and Firefox 153+;
+            // for browsers without support it is calculated based on tabId and frameId
             documentId,
         } = details;
 
