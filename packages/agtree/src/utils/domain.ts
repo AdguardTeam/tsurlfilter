@@ -52,6 +52,11 @@ export class DomainUtils {
             domainToCheck = domainToCheck.substring(WILDCARD_SUBDOMAIN.length);
         }
 
+        // A leading dot denotes an empty label, which is not valid in domain restrictions.
+        if (domainToCheck.startsWith(DOT)) {
+            return false;
+        }
+
         // Parse the domain with tldts
         const tldtsResult = parse(domainToCheck);
 

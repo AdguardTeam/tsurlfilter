@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Regexp domains now match case-insensitively without changing escape tokens
   such as `\D` into `\d`.
 
+### Fixed
+
+- Domain-scoped cosmetic and JavaScript rules not matching hosts with labels
+  ending in an underscore.
+
 [Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v6.0.3...HEAD
 [#190]: https://github.com/AdguardTeam/tsurlfilter/issues/190
 

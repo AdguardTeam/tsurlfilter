@@ -152,7 +152,6 @@
         "rollup-plugin-cleanup": "catalog:",
         "rollup-plugin-node-externals": "catalog:",
         "rollup-plugin-polyfill-node": "^0.13.0",
-        "tldts-core": "^6.1.13",
         "ts-morph": "catalog:",
         "tsd": "catalog:",
         "tslib": "catalog:",
