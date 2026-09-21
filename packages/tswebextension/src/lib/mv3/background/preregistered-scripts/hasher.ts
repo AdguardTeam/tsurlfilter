@@ -73,7 +73,9 @@ export interface PreregisteredScriptsManifest {
 }
 
 /**
- * Subdirectory within the filters folder where preregistered-script bundles live.
+ * Subdirectory within the filters folder where preregistered-script bundles
+ * live. Consumed by the browser-extension build tool and runtime
+ * configuration, not by this service itself.
  */
 export const PREREGISTERED_SCRIPTS_DIR = 'preregistered-scripts';
 

@@ -11,10 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `TsWebExtension.syncContentScripts()` static method (MV3-only) for dynamic
   content script synchronization via `chrome.scripting` API.
-- Added optional `preregisteredScripts` MV3 configuration for synchronizing
+- Optional `preregisteredScripts` MV3 configuration for synchronizing
   persistent content-script registrations and excluding covered local rules from
   dynamic injection. Rules that are not covered remain on the dynamic path.
-- Added public utilities for hashing preregistered rules and resolving stable
+- Public utilities for hashing preregistered rules and resolving stable
   script filenames. They are exported from
   `@adguard/tswebextension/mv3/preregistered-scripts/hasher`.
   The `manifest.json` format and filename contract are shared by the build and

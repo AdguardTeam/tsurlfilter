@@ -173,6 +173,31 @@ describe('CosmeticApi — preregistered script rules', () => {
             expect(applyLocal).not.toHaveBeenCalled();
         });
 
+        // eslint-disable-next-line max-len
+        it('does NOT skip local rules for a userinfo URL whose authority host differs', async () => {
+            // `getHost()` truncates the authority at the first colon and
+            // would resolve `https://youtube.com:x@evil.com/` to
+            // `youtube.com`; the engine and the WHATWG URL parser resolve
+            // `evil.com`, so youtube.com's coverage must not apply here.
+            const { applyLocal } = await runCosmeticApply(
+                [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                makeFrameContext('https://youtube.com:x@evil.com/'),
+            );
+
+            expect(applyLocal).toHaveBeenCalled();
+        });
+
+        // eslint-disable-next-line max-len
+        it('skips local rules for a userinfo URL whose authority host matches the coverage host', async () => {
+            // The host after the userinfo is what the engine resolves.
+            const { applyLocal } = await runCosmeticApply(
+                [['evil.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],
+                makeFrameContext('https://youtube.com:x@evil.com/'),
+            );
+
+            expect(applyLocal).not.toHaveBeenCalled();
+        });
+
         it('skips local rules for a mixed-case URL host (hosts are matched case-insensitively)', async () => {
             const { applyLocal } = await runCosmeticApply(
                 [['youtube.com', new Set([await hashRule(makeRawRule(LOCAL_JS_RULE_CONTENT))])]],

@@ -318,9 +318,9 @@ type: `{ domains: string[]; path: string }` (optional)
 Build-time preregistered script configuration. Registers persistent content
 scripts for `domains` and skips dynamic injection of both JS (`#%#`) and
 scriptlet (`#%#//scriptlet`) rules they cover. Preregistration is disabled
-while debug scriptlets are enabled (`app.ts` passes
-`filteringEnabled && !debugScriptlets`), so a debugging session silently uses
-the dynamic path.
+while debug scriptlets are enabled: `app.ts` evaluates
+`filteringEnabled && !debugScriptlets` inside `configure()`, so toggling via
+`setDebugScriptlets()` takes effect at the next `configure()` call.
 
 ##### domains
 

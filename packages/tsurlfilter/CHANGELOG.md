@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Engine.getCosmeticResult()` and `Engine.isCosmeticRuleAllowlisted()`
+  accept an options object with `ignorePath` / `ignoreExceptionPath`,
+  skipping the `$path` modifier check for JS/scriptlet rules and the
+  `$path` check of exceptions (build-time preregistration discovery).
+
 ### Changed
 
 - Valueless `$urltransform` modifier now throws a `SyntaxError` in blocking
@@ -23,10 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for `UrlTransformModifier` [#111].
 - `FilterListConversionError` interface, `FilterList.getConversionErrors()`
   and `Engine.getConversionErrors()` methods.
-- `Engine.getCosmeticResult()` accepts an `ignorePath` flag skipping the
-  `$path` modifier check for JS/scriptlet rules (build-time preregistration
-  discovery). `Engine.isCosmeticRuleAllowlisted()` accepts an
-  `ignoreExceptionPath` flag skipping the `$path` check of exceptions.
 
 ### Changed
 

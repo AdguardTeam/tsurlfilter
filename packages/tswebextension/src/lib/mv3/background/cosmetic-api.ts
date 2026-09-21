@@ -4,12 +4,7 @@ import { BACKGROUND_TAB_ID } from '../../common/constants';
 import { type ContentScriptCosmeticData, CosmeticApiCommon, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
-import {
-    getDomain,
-    getHost,
-    isExtensionUrl,
-    isHttpRequest,
-} from '../../common/utils/url';
+import { getDomain, isExtensionUrl, isHttpRequest } from '../../common/utils/url';
 import { type FrameMV3, type PreparedCosmeticResultMV3 } from '../tabs/frame';
 import { tabsApi } from '../tabs/tabs-api';
 
@@ -114,7 +109,12 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         while (current) {
             if (isHttpRequest(current.url)) {
-                return getHost(current.url)?.toLowerCase() ?? null;
+                try {
+                    const { hostname } = new URL(current.url);
+                    return hostname ? hostname.toLowerCase() : null;
+                } catch {
+                    return null;
+                }
             }
 
             // Guard against broken parent chains (partially recorded frame

@@ -77,18 +77,20 @@ const NAMESPACE_SEPARATOR = ':';
  *
  * @returns Canonical descriptor with all optional fields explicit.
  */
-const canonicalize = (script: ContentScriptDescriptor): Required<ContentScriptDescriptor> => ({
-    id: script.id,
-    allFrames: script.allFrames ?? false,
-    matchOriginAsFallback: script.matchOriginAsFallback ?? false,
-    css: [...script.css ?? []],
-    excludeMatches: [...script.excludeMatches ?? []],
-    js: [...script.js ?? []],
-    matches: [...script.matches ?? []],
-    persistAcrossSessions: script.persistAcrossSessions ?? true,
-    runAt: script.runAt ?? 'document_idle',
-    world: script.world ?? 'ISOLATED',
-});
+const canonicalize = (script: ContentScriptDescriptor): Required<ContentScriptDescriptor> => {
+    return {
+        id: script.id,
+        allFrames: script.allFrames ?? false,
+        matchOriginAsFallback: script.matchOriginAsFallback ?? false,
+        css: [...script.css ?? []],
+        excludeMatches: [...script.excludeMatches ?? []],
+        js: [...script.js ?? []],
+        matches: [...script.matches ?? []],
+        persistAcrossSessions: script.persistAcrossSessions ?? true,
+        runAt: script.runAt ?? 'document_idle',
+        world: script.world ?? 'ISOLATED',
+    };
+};
 
 /**
  * Result of {@link ContentScriptManager.syncDetailed}.
@@ -597,9 +599,8 @@ export class ContentScriptManager {
 
         const failedIds: string[] = [];
         retries.forEach((retry, index) => {
-            const item = items[index];
-            if (retry.status === 'rejected' && item) {
-                failedIds.push(getId(item));
+            if (retry.status === 'rejected') {
+                failedIds.push(getId(items[index]));
             }
         });
 

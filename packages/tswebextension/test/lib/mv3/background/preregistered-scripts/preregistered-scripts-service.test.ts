@@ -918,6 +918,29 @@ describe('PreregisteredScriptsService', () => {
             expect(CosmeticApi.setPreregisteredScriptRules).toHaveBeenCalledWith(new Map());
         });
 
+        it('invalidates lastCoveredRules after a successful clear', async () => {
+            // A later sync failure must not publish the stale coverage from
+            // the first sync (it would suppress dynamic injection for rules
+            // with no active registration).
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+
+            // Establish last-known coverage.
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            // Configure without preregistration: the namespace is cleared.
+            await PreregisteredScriptsService.init(true, undefined);
+
+            // A later sync fails: without the invalidation it would publish
+            // the stale coverage from the first sync and suppress dynamic
+            // injection for rules with no active registration.
+            vi.mocked(ContentScriptManager.syncDetailed).mockRejectedValueOnce(new Error('invalid namespace'));
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result).toEqual(new Map());
+        });
+
         it('still reports an empty map when clearing fails and no registrations exist', async () => {
             vi.mocked(ContentScriptManager.clear).mockRejectedValueOnce(new Error('cannot clear'));
 

@@ -23,7 +23,7 @@ import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
 import { assistant, Assistant } from './assistant';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
-import { type ContentScriptDescriptor, ContentScriptManager } from './content-script-manager';
+import { type ContentScriptDescriptor, ContentScriptManager, type SyncScriptsResult } from './content-script-manager';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { engineApi } from './engine-api';
@@ -551,12 +551,12 @@ export class TsWebExtension implements AppInterface<
      * (Manifest V3). Consumers that branch on manifest version should
      * guard calls to this method accordingly.
      *
-     * Delegates to {@link ContentScriptManager.sync}. The operation is
-     * **not atomic** — unregister, register, and update are executed as
+     * Delegates to {@link ContentScriptManager.syncDetailed}. The operation
+     * is **not atomic** — unregister, register, and update are executed as
      * independent steps via `Promise.allSettled`. Partial failures are
-     * returned as an array of {@link PromiseRejectedResult} rather than
-     * thrown; callers should inspect the return value to detect and
-     * handle incomplete synchronization.
+     * reported in the result (`errors` plus the IDs whose desired state is
+     * not guaranteed) rather than thrown; callers should inspect the return
+     * value to detect and handle incomplete synchronization.
      *
      * The namespace implies ownership of all scripts matching its prefix;
      * scripts registered outside this manager under the same prefix will
@@ -565,14 +565,15 @@ export class TsWebExtension implements AppInterface<
      * @param namespace Namespace string used to prefix script IDs.
      * @param descriptors The desired set of content scripts.
      *
-     * @returns Promise that resolves with an array of rejected results if
-     * any operations failed, or an empty array if all succeeded.
+     * @returns Promise that resolves with the per-script sync result:
+     * batch errors and the IDs of scripts whose desired state is not
+     * guaranteed after the call.
      */
     public static syncContentScripts(
         namespace: string,
         descriptors: ContentScriptDescriptor[],
-    ): Promise<PromiseRejectedResult[]> {
-        return ContentScriptManager.sync(namespace, descriptors);
+    ): Promise<SyncScriptsResult> {
+        return ContentScriptManager.syncDetailed(namespace, descriptors);
     }
 
     /**
@@ -851,6 +852,10 @@ export class TsWebExtension implements AppInterface<
 
     /**
      * Sets the debug scriptlets state.
+     *
+     * The preregistration gate (`filteringEnabled && !debugScriptlets`) is
+     * evaluated inside {@link configure()}, so the new value takes effect at
+     * the next configure call.
      *
      * @param debug Debug filtering state.
      *

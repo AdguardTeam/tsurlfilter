@@ -596,14 +596,24 @@ describe('ContentScriptManager', () => {
     });
 
     describe('TsWebExtension.syncContentScripts', () => {
-        it('should delegate to ContentScriptManager.sync()', async () => {
-            await TsWebExtension.syncContentScripts(NS, [
+        it('should delegate to ContentScriptManager.syncDetailed()', async () => {
+            const result = await TsWebExtension.syncContentScripts(NS, [
                 { id: 'test', js: ['test.js'], matches: ['<all_urls>'] },
             ]);
             expect(mockRegister).toHaveBeenCalledTimes(1);
             const [scripts] = mockRegister.mock.calls[0];
             expect(scripts).toHaveLength(1);
             expect(scripts[0].id).toBe('critical:test');
+            expect(result.errors).toEqual([]);
+            expect(result.failedScriptIds).toEqual([]);
+        });
+
+        it('should surface failed script IDs when registration fails', async () => {
+            mockRegister.mockRejectedValue(new Error('Register failed'));
+            const result = await TsWebExtension.syncContentScripts(NS, [
+                { id: 'test', js: ['test.js'], matches: ['<all_urls>'] },
+            ]);
+            expect(result.failedScriptIds).toEqual(['test']);
         });
 
         it('should return rejected results when sync operations fail', async () => {
@@ -621,7 +631,8 @@ describe('ContentScriptManager', () => {
             const result = await TsWebExtension.syncContentScripts(NS, [
                 { id: 'existing', js: ['new.js'], matches: ['<all_urls>'] },
             ]);
-            expect(result).toHaveLength(1);
+            expect(result.errors).toHaveLength(1);
+            expect(result.failedScriptIds).toEqual(['existing']);
         });
 
         it('should perform diff-based sync: unregister stale and register new', async () => {

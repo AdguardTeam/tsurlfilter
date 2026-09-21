@@ -134,6 +134,11 @@ export class PreregisteredScriptsService {
         } else {
             try {
                 await ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE);
+                // A successful clear invalidates the last-known coverage: a
+                // later failed sync would otherwise publish stale covered
+                // hashes and suppress dynamic injection for rules with no
+                // active registration.
+                PreregisteredScriptsService.lastCoveredRules = null;
             } catch (e) {
                 logger.error('[tsweb.PreregisteredScriptsService.init]: Failed to clear preregistered scripts', e);
                 coveredRules = PreregisteredScriptsService.lastCoveredRules
@@ -169,7 +174,7 @@ export class PreregisteredScriptsService {
     }
 
     /**
-     * Synchronises preregistered content scripts with the current engine state.
+     * Synchronizes preregistered content scripts with the current engine state.
      *
      * Unregisters everything when preregistration is disabled or no domains
      * are given. Safe to call repeatedly — diffs against current browser
