@@ -20,6 +20,7 @@
         "./node_modules",
         "./dist",
         "./test/smoke",
-        "./test/converter-fixture.bench.ts"
+        "./test/converter-fixture.bench.ts",
+        "./test/parse-fixture.bench.ts"
     ],
 }

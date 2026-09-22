@@ -15,6 +15,7 @@
     },
     "include": [
         "test/converter-fixture.bench.ts",
+        "test/parse-fixture.bench.ts",
     ],
     "exclude": [
         "./node_modules",

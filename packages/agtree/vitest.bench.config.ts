@@ -33,8 +33,9 @@ export default defineConfig({
         watch: false,
         // The `bench`/`bench:browser` scripts select these projects with
         // `--project "node*"` / `--project "browser*"`; in bench mode Vitest
-        // appends ` (bench)` (and ` (chromium)` for the browser instance), so
-        // wildcards keep the scripts independent of those internal suffixes.
+        // appends ` (bench)` (and ` (chromium)` / ` (firefox)` for the browser
+        // instances), so wildcards keep the scripts independent of those
+        // internal suffixes.
         projects: [
             // Node benchmarks: compare the built `@adguard/agtree` bundle
             // against the npm-alias baseline (`agtree-v4`). Pre-bundle both
@@ -59,9 +60,10 @@ export default defineConfig({
             }),
             // Browser benchmarks. `converter.bench.ts` imports from `src` and
             // therefore transitively requires `node:fs`
-            // (compatibility-table-data), so it cannot run in Chromium. The
-            // fixture-based benches import the built package instead and do run
-            // there.
+            // (compatibility-table-data), so it cannot run in the browser. The
+            // fixture-based benches (`converter-fixture.bench.ts`,
+            // `parse-fixture.bench.ts`) import the built package and `?raw`
+            // fixtures instead and do run in Chromium and Firefox.
             defineProject({
                 test: {
                     name: 'browser',
@@ -76,6 +78,7 @@ export default defineConfig({
                         headless: true,
                         instances: [
                             { browser: 'chromium' },
+                            { browser: 'firefox' },
                         ],
                     },
                 },
