@@ -55,6 +55,19 @@ describe('CspRulesResolver.resolve', () => {
         });
     });
 
+    it('resolves identical exact URL conditions', () => {
+        const rules = createRules(
+            "|https://example.com/path|$csp=script-src 'none'",
+            "@@|https://example.com/path|$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
     it('resolves identical regular expression conditions', () => {
         const rules = createRules(
             String.raw`/^https:\/\/example\.com\//$csp=script-src 'none'`,
@@ -306,6 +319,100 @@ describe('CspRulesResolver.resolve', () => {
         const rules = createRules(
             "||example.com^$csp=script-src 'none'",
             "@@||example.com^$csp=script-src 'none',domain=foo.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('applies an exact exception to its matching blocker while keeping an unrelated global blocker', () => {
+        const rules = createRules(
+            "|https://example.com/path|$csp=script-src 'none'",
+            "$csp=script-src 'none'",
+            "@@|https://example.com/path|$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[1]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('applies a domain exclusion per pair while an unsafe unrelated blocker stays untouched', () => {
+        const rules = createRules(
+            "$csp=script-src 'none'",
+            "$csp=script-src 'none',script",
+            "@@||example.com^$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0], rules[1]],
+            excludedRequestDomains: new Map([[rules[0], ['example.com']]]),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('reports an exception as unsupported only when no pair can apply it', () => {
+        const rules = createRules(
+            "$csp=script-src 'none'",
+            "||example.com^$csp=script-src 'none'",
+            "@@||example.com/path$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0], rules[1]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[2]],
+        });
+    });
+
+    it('lets a narrower denyallow exception cancel a global blocker it covers', () => {
+        const rules = createRules(
+            "$csp=script-src 'none',denyallow=example.com|cdn.example.com",
+            "@@$csp=script-src 'none',denyallow=example.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('keeps a global blocker when a denyallow exception does not cover it', () => {
+        const rules = createRules(
+            "$csp=script-src 'none',denyallow=example.com",
+            "@@$csp=script-src 'none',denyallow=example.com|other.com",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [rules[0]],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [rules[1]],
+        });
+    });
+
+    it('lets a pattern-less exception cancel a URL-scoped blocker', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none'",
+            "@@$csp=script-src 'none'",
+        );
+
+        expect(CspRulesResolver.resolve(rules)).toEqual({
+            rules: [],
+            excludedRequestDomains: new Map(),
+            unsupportedExceptions: [],
+        });
+    });
+
+    it('keeps a URL-scoped blocker when a pattern-less exception is narrower by $domain', () => {
+        const rules = createRules(
+            "||example.com^$csp=script-src 'none'",
+            "@@$csp=script-src 'none',domain=foo.com",
         );
 
         expect(CspRulesResolver.resolve(rules)).toEqual({

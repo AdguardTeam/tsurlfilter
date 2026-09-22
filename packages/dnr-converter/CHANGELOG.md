@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `$badfilter` rules with a different value-bearing modifier, including `$csp`,
+  no longer cancel the original rule.
+- Unicode domain anchors in converted URL filters now preserve their Adblock
+  syntax and match their punycode hostnames.
+
 ### Security
 
 ## [1.1.2] - 2026-08-25

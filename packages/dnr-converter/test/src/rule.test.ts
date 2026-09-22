@@ -171,6 +171,13 @@ describe('Rule', () => {
             expect(badfilterRule.negatesBadfilter(targetRule)).toBe(true);
         });
 
+        it('negatesBadfilter returns false for a different $csp value', () => {
+            const [badfilterRule] = Rule.createFromText(1, 0, "||example.com^$csp=script-src 'self',badfilter");
+            const [targetRule] = Rule.createFromText(1, 0, "||example.com^$csp=script-src 'none'");
+
+            expect(badfilterRule.negatesBadfilter(targetRule)).toBe(false);
+        });
+
         it('negatesBadfilter: null permittedDomains on badfilter side is a wildcard', () => {
             // A $badfilter with no $domain (null permittedDomains) should be
             // treated as a wildcard and intersect with any domain list.

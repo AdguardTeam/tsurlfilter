@@ -176,6 +176,72 @@ describe('CspConverter', () => {
             expect(result).not.toBe(sourceRule);
         });
 
+        it('should not duplicate identical directives when merging header values', () => {
+            const sourceRule: DeclarativeRule = {
+                id: 1,
+                action: {
+                    type: RuleActionType.ModifyHeaders,
+                    responseHeaders: [{
+                        header: CSP_HEADER_NAME,
+                        operation: HeaderOperation.Append,
+                        value: 'script-src \'none\'',
+                    }],
+                },
+                condition: { urlFilter: 'example.com' },
+            };
+
+            const ruleToMerge: DeclarativeRule = {
+                id: 2,
+                action: {
+                    type: RuleActionType.ModifyHeaders,
+                    responseHeaders: [{
+                        header: CSP_HEADER_NAME,
+                        operation: HeaderOperation.Append,
+                        value: 'script-src \'none\'',
+                    }],
+                },
+                condition: { urlFilter: 'example.com' },
+            };
+
+            // @ts-expect-error Accessing private method for testing purposes
+            const result = CspConverter.combineRulePair(sourceRule, ruleToMerge);
+
+            expect(result.action.responseHeaders![0].value).toBe('script-src \'none\'');
+        });
+
+        it('should append only the directives that are not present yet', () => {
+            const sourceRule: DeclarativeRule = {
+                id: 1,
+                action: {
+                    type: RuleActionType.ModifyHeaders,
+                    responseHeaders: [{
+                        header: CSP_HEADER_NAME,
+                        operation: HeaderOperation.Append,
+                        value: 'script-src \'none\'',
+                    }],
+                },
+                condition: { urlFilter: 'example.com' },
+            };
+
+            const ruleToMerge: DeclarativeRule = {
+                id: 2,
+                action: {
+                    type: RuleActionType.ModifyHeaders,
+                    responseHeaders: [{
+                        header: CSP_HEADER_NAME,
+                        operation: HeaderOperation.Append,
+                        value: 'script-src \'none\'; img-src \'none\'',
+                    }],
+                },
+                condition: { urlFilter: 'example.com' },
+            };
+
+            // @ts-expect-error Accessing private method for testing purposes
+            const result = CspConverter.combineRulePair(sourceRule, ruleToMerge);
+
+            expect(result.action.responseHeaders![0].value).toBe('script-src \'none\'; img-src \'none\'');
+        });
+
         it('should set value when source rule has no CSP value', () => {
             const sourceRule: DeclarativeRule = {
                 id: 1,

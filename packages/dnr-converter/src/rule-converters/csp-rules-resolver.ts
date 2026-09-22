@@ -329,6 +329,24 @@ export class CspRulesResolver {
     }
 
     /**
+     * Checks whether an exception covers a blocking rule entirely.
+     *
+     * A pattern-less exception applies to every URL, so it covers any blocking
+     * rule whose non-URL conditions it is not narrower than. This handles
+     * global blockers narrowed by `$denyallow`/`$domain` that a pattern-less
+     * exception fully covers.
+     *
+     * @param exceptionRule CSP exception rule.
+     * @param blockingRule Blocking CSP rule.
+     *
+     * @returns `true` if the exception covers the whole blocking rule.
+     */
+    private static coversWholeRule(exceptionRule: Rule, blockingRule: Rule): boolean {
+        return !exceptionRule.pattern
+            && CspRulesResolver.coversNonUrlConditions(exceptionRule, blockingRule);
+    }
+
+    /**
      * Checks whether two clean domain patterns cannot match the same request domain.
      *
      * @param exceptionRule CSP exception rule.
@@ -410,6 +428,7 @@ export class CspRulesResolver {
             && (
                 CspRulesResolver.hasSameCondition(exceptionRule, blockingRule)
                 || CspRulesResolver.coversBlockingDomain(exceptionRule, blockingRule)
+                || CspRulesResolver.coversWholeRule(exceptionRule, blockingRule)
             );
         const excludedDomain = hasApplicableValue && !cancels
             ? CspRulesResolver.getExcludedDomain(exceptionRule, blockingRule)
@@ -452,7 +471,14 @@ export class CspRulesResolver {
     }
 
     /**
-     * Resolves exact CSP exceptions.
+     * Resolves CSP exceptions against blocking rules.
+     *
+     * Each exception is applied per pair with a blocking rule: a pair cancels
+     * the blocking rule when the exception fully covers it, or contributes an
+     * excluded request domain when the exception is a clean domain. An
+     * exception is never required to be safe against every blocking rule; an
+     * unsafe pair simply leaves its blocking rule untouched while other pairs
+     * of the same exception still apply.
      *
      * @param rules CSP rules from active sources.
      *
@@ -464,19 +490,28 @@ export class CspRulesResolver {
         const exceptionRules = cspRules.filter((rule) => rule.allowlist);
         const processableExceptions = exceptionRules.filter(CspRulesResolver.isProcessableException);
         const getPairResult = CspRulesResolver.createPairResultGetter();
-        const supportedExceptions = processableExceptions.filter((exceptionRule) => (
-            blockingRules.every((blockingRule) => getPairResult(exceptionRule, blockingRule).safe)
-        ));
+        const appliedExceptions = new Set<Rule>();
         const excludedRequestDomains = new Map<Rule, string[]>();
 
         const remainingRules = blockingRules.filter((blockingRule) => {
-            if (supportedExceptions.some((exceptionRule) => getPairResult(exceptionRule, blockingRule).cancels)) {
+            let cancelled = false;
+            const excludedDomains: string[] = [];
+
+            processableExceptions.forEach((exceptionRule) => {
+                const pair = getPairResult(exceptionRule, blockingRule);
+                if (pair.cancels) {
+                    cancelled = true;
+                    appliedExceptions.add(exceptionRule);
+                } else if (pair.excludedDomain !== null) {
+                    excludedDomains.push(pair.excludedDomain);
+                    appliedExceptions.add(exceptionRule);
+                }
+            });
+
+            if (cancelled) {
                 return false;
             }
 
-            const excludedDomains = supportedExceptions
-                .map((exceptionRule) => getPairResult(exceptionRule, blockingRule).excludedDomain)
-                .filter((domain): domain is string => domain !== null);
             if (excludedDomains.length > 0) {
                 excludedRequestDomains.set(blockingRule, Array.from(new Set(excludedDomains)));
             }
@@ -484,12 +519,22 @@ export class CspRulesResolver {
             return true;
         });
 
+        const unsupportedExceptions = exceptionRules.filter((exceptionRule) => {
+            if (!processableExceptions.includes(exceptionRule)) {
+                return true;
+            }
+
+            if (appliedExceptions.has(exceptionRule)) {
+                return false;
+            }
+
+            return blockingRules.some((blockingRule) => !getPairResult(exceptionRule, blockingRule).safe);
+        });
+
         return {
             rules: remainingRules,
             excludedRequestDomains,
-            unsupportedExceptions: exceptionRules.filter((exceptionRule) => (
-                !supportedExceptions.includes(exceptionRule)
-            )),
+            unsupportedExceptions,
         };
     }
 }

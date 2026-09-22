@@ -209,6 +209,29 @@ export class RegularRuleConverter {
     }
 
     /**
+     * Converts the hostname of a domain-anchored URL filter to ASCII.
+     *
+     * @param pattern URL filter pattern.
+     *
+     * @returns URL filter pattern with an ASCII hostname.
+     */
+    private static prepareUrlFilter(pattern: string): string {
+        if (!pattern.startsWith('||')) {
+            return prepareASCII(pattern);
+        }
+
+        const hostAndSuffix = pattern.substring(2);
+        const hostnameEndIndex = hostAndSuffix.search(/[\^/*|?]/);
+        if (hostnameEndIndex === -1) {
+            return `||${prepareASCII(hostAndSuffix)}`;
+        }
+
+        const hostname = hostAndSuffix.substring(0, hostnameEndIndex);
+        const suffix = hostAndSuffix.substring(hostnameEndIndex);
+        return `||${prepareASCII(hostname)}${suffix}`;
+    }
+
+    /**
      * Expands wildcard TLD domain into concrete popular TLD domains.
      *
      * @param domain Wildcard TLD domain.
@@ -655,7 +678,7 @@ export class RegularRuleConverter {
                 const patternWithoutVerticals = pattern.startsWith('||*')
                     ? pattern.substring(2)
                     : pattern;
-                condition.urlFilter = prepareASCII(patternWithoutVerticals);
+                condition.urlFilter = RegularRuleConverter.prepareUrlFilter(patternWithoutVerticals);
             }
         }
 

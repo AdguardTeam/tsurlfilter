@@ -23,6 +23,7 @@ interface BadfilterTarget {
     readonly restrictedDomains: string[] | null;
     readonly permittedDomains: string[] | null;
     readonly denyAllowDomains: string[] | null;
+    readonly advancedModifierValue: string | null;
 }
 
 /**
@@ -86,6 +87,10 @@ export class RuleBadfilter {
         const sameSize = badfilterEnabled.size === targetRule.enabledModifiers.size;
         const sameModifiers = [...badfilterEnabled].every((m) => targetRule.enabledModifiers.has(m));
         if (!sameSize || !sameModifiers) {
+            return false;
+        }
+
+        if (badfilterRule.advancedModifierValue !== targetRule.advancedModifierValue) {
             return false;
         }
 

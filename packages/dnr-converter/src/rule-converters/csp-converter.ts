@@ -100,6 +100,36 @@ export class CspConverter extends RegularRuleConverter {
     }
 
     /**
+     * Appends CSP directives that are not present in the current value yet.
+     *
+     * Identical repeated `$csp` rules must not duplicate their directives in
+     * the merged header value.
+     *
+     * @param currentValue Current CSP header value.
+     * @param valueToMerge CSP header value to append.
+     *
+     * @returns Merged CSP header value.
+     */
+    private static mergeCspValues(currentValue: string, valueToMerge: string): string {
+        const splitDirectives = (value: string) => value
+            .split(';')
+            .map((directive) => directive.trim())
+            .filter((directive) => directive.length > 0);
+
+        const directives = splitDirectives(currentValue);
+        const knownDirectives = new Set(directives);
+
+        splitDirectives(valueToMerge).forEach((directive) => {
+            if (!knownDirectives.has(directive)) {
+                knownDirectives.add(directive);
+                directives.push(directive);
+            }
+        });
+
+        return directives.join('; ');
+    }
+
+    /**
      * Combines two similar `$csp` {@link DeclarativeRule}
      * rules into one by merging their CSP header values.
      *
@@ -146,8 +176,11 @@ export class CspConverter extends RegularRuleConverter {
              * - if `false` - set value from the rule to merge.
              */
             const cspHeaderValue = resultHeaders[cspHeaderIndex].value;
-            if (cspHeaderValue) {
-                resultHeaders[cspHeaderIndex].value = `${cspHeaderValue}; ${cspHeaderInfoToMerge.value}`;
+            if (cspHeaderValue && cspHeaderInfoToMerge.value) {
+                resultHeaders[cspHeaderIndex].value = CspConverter.mergeCspValues(
+                    cspHeaderValue,
+                    cspHeaderInfoToMerge.value,
+                );
             } else {
                 resultHeaders[cspHeaderIndex].value = cspHeaderInfoToMerge.value;
             }
