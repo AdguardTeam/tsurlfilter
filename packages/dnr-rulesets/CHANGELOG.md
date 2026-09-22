@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [5.1.0-beta.0] - 2026-09-22
+
+### Added
+
 - Support for Edge MV3 filters (`BrowserFilters.EdgeMv3`), including
   rulesets generation, metadata, localized metadata, local script rules,
   assets loading, and CLI browser selection (following the Opera MV3
@@ -19,13 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated [@adguard/dnr-converter] to `v1.1.2`.
 - Updated [@adguard/tsurlfilter] to `v6.0.3`.
 
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
+[5.1.0-beta.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v5.1.0-beta.0
 
 ## [5.0.1] - 2026-07-29
 
