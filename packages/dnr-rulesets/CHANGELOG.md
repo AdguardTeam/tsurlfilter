@@ -7,12 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [5.1.0-beta.1] - 2026-09-22
+
+### Added
+
+- Support for Edge MV3 filters (`BrowserFilters.EdgeMv3`), including
+  rulesets generation, metadata, localized metadata, local script rules,
+  assets loading, and CLI browser selection (following the Opera MV3
+  implementation).
+
 ### Changed
 
 - Updated [@adguard/dnr-converter] to `v1.1.2`.
 - Updated [@adguard/tsurlfilter] to `v6.0.3`.
 
-[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/dnr-rulesets-v5.0.1...HEAD
+[5.1.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v5.1.0-beta.1
 
 ## [5.0.1] - 2026-07-29
 
@@ -36,16 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stevo's AI Blocklist filter list (ID 260) to `chromium-mv3` and
   `opera-mv3` rulesets. Updated `tasks/validator-data.json` accordingly.
 
-[5.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v5.0.1
-
 ## [4.2.1] - 2026-04-24
 
 ### Changed
 
 - Updated [@adguard/scriptlets] to `v2.4.2`.
 - Updated [@adguard/tsurlfilter] to `v5.0.1`.
-
-[4.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.1
 
 <!-- 4.2.0-beta.2 is the same as 4.2.0-beta.1, just a new build with latest filters -->
 ## [4.2.0-beta.1] - 2026-04-17
@@ -54,7 +71,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `ROList` filter list [AdguardBrowserExtension#3473].
 
-[4.2.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.0-beta.1
 [AdguardBrowserExtension#3473]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3473
 
 ## [4.2.0-beta] - 2026-04-16
@@ -77,8 +93,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Smoke test failure in Docker CI by adding `--ignore-scripts` to
   `pnpm install` in `test/smoke/exports/test.sh`.
 
-[4.2.0-beta]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.0-beta
-
 ## [4.1.0] - 2026-02-25
 
 ### Changed
@@ -90,8 +104,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Opera MV3 filters support.
 - New option `-b, --browser` for `load` command to specify for which browser to load filters.
 - New option `-b, --browser` for `watch` command to specify for which browser to download latest filters.
-
-[4.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.1.20260225164826
 
 ## [4.0.20260217160105] - 2026-02-17
 
@@ -111,15 +123,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Ruleset metadata now uses `conversionData` instead of `conversionMap`.
     - `conversionData` structure: `{ originals: string[], conversions: Record<number, number> }`.
 
-[4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.0.0
-
 ## [3.3.1] - 2025-12-01
 
 ### Added
 
 - Ability to extend local script rules and build them from custom path.
-
-[3.3.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.3.1
 
 ## [3.3.0] - 2025-11-12
 
@@ -127,15 +135,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Local script rules support.
 
-[3.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.3.0
-
 ## [3.2.0] - 2025-07-09
 
 ### Changed
 
 - Version of DNR rulesets is now packed into metadata ruleset.
-
-[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.2.0
 
 ## [3.1.3] - 2025-07-03
 
@@ -143,15 +147,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated [@adguard/tsurlfilter] to `v3.4.2`.
 
-[3.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.3
-
 ## [3.1.2] - 2025-07-02
 
 ### Removed
 
 - `filters.json` after build.
-
-[3.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.2
 
 ## [3.1.1] - 2025-07-02
 
@@ -168,8 +168,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated [@adguard/tsurlfilter] to `v3.4.1`.
 
-[3.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.1
-
 ## [3.1.0] - 2025-06-06
 
 ### Added
@@ -181,8 +179,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated [@adguard/logger] to `v2.0.0`.
 - Updated [@adguard/tsurlfilter] to `v3.4.0`.
 
-[3.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.0
-
 ## [3.0.0-alpha.12] - 2025-05-28
 
 ### Changed
@@ -192,8 +188,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Types for `NodeNext` module resolution.
-
-[3.0.0-alpha.12]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.12
 
 ## [3.0.0-alpha.7] - 2025-05-19
 
@@ -205,15 +199,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated `zod` dependency to version `3.24.4` to resolve vulnerability warnings.
 
-[3.0.0-alpha.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.7
-
 ## [3.0.0-alpha.3] - 2025-05-15
 
 ### Changed
 
 - Updated `@adguard/tsurlfilter` to `3.3.1`.
-
-[3.0.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.3
 
 ## [3.0.0-alpha.0] - 2025-04-30
 
@@ -224,8 +214,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Byte ranges from metadata ruleset.
-
-[3.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.0
 
 ## [2.0.0] - 2025-02-28
 
@@ -242,15 +230,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Text files from the build result. Now only JSON files are generated and they are including all the necessary data.
 - `filters.json` from the build result. We embedded it to the metadata ruleset.
 
-[2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v2.0.0
-
 ## [1.2.20240930132036] - 2024-09-30
 
 ### Added
 
 - `Polish GDPR-Cookies Filters` [FiltersRegistry#1015].
 
-[1.2.20240930132036]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v1.2.20240930132036
 [FiltersRegistry#1015]: https://github.com/AdguardTeam/FiltersRegistry/issues/1015
 
 ## 1.2.0 - 2024-09-05
@@ -298,6 +283,27 @@ For example, while bundling the manifest with the extension.
 ### Changed
 
 - Improve filters compatibility with Declarative Net Request API.
+
+[Unreleased]: https://github.com/AdguardTeam/tsurlfilter/compare/dnr-rulesets-v5.0.1...HEAD
+[5.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v5.0.1
+[4.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.1
+[4.2.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.0-beta.1
+[4.2.0-beta]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.2.0-beta
+[4.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.1.20260225164826
+[4.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v4.0.0
+[3.3.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.3.1
+[3.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.3.0
+[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.2.0
+[3.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.3
+[3.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.2
+[3.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.1
+[3.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.0
+[3.0.0-alpha.12]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.12
+[3.0.0-alpha.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.7
+[3.0.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.3
+[3.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.0
+[2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v2.0.0
+[1.2.20240930132036]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v1.2.20240930132036
 
 [@adguard/dnr-converter]: ../dnr-converter/CHANGELOG.md
 [@adguard/logger]: ../logger/CHANGELOG.md
