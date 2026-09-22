@@ -107,6 +107,7 @@ const build = async (browser: BrowserFilters): Promise<void> => {
  */
 const buildAll = async (): Promise<void> => {
     await build(BrowserFilters.ChromiumMv3);
+    await build(BrowserFilters.EdgeMv3);
     await build(BrowserFilters.OperaMv3);
 };
 
