@@ -80,9 +80,10 @@ keep the diagram there, not duplicated here, so it cannot rot).
 ## GitHub Environment
 
 The `publish` job uses the **`npm`** GitHub environment (input `environment`).
-With `publish_target: ak`, the `publish-ak` job runs with no environment
+With `publish_target: ak`, the `publish-ak` job runs with **no environment**
 (`environment: ''`) — the AK publish authenticates with the
-`ARTIFACT_KEEPER_API_KEY` secret instead of npm OIDC.
+`ARTIFACT_KEEPER_API_KEY` secret instead of npm OIDC and stays ungated (no
+approval), like the stable line's AK publish.
 
 | Setting | Value |
 | --- | --- |
@@ -99,7 +100,11 @@ environment with the `extensions` team as reviewer).
 
 On success, a Slack notification is posted via the shared `slack` action from
 the [`actions`](https://github.com/AdGuardSoftwareLimited/actions) repo,
-controlled by the `slack_channel` input. Notification failures are
+controlled by the `slack_channel` input. For Artifact Keeper publishes, the
+message includes install instructions (internal AK registry + `pnpm add`),
+similar to the devex-bridge dev-builds PR comment. The message intentionally
+carries no re-run command — how to re-run a release manually is documented in
+`DEPLOYMENT.md` ("Re-running a release manually"). Notification failures are
 non-blocking.
 
 ## Troubleshooting

@@ -135,9 +135,9 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
   429 throttling, AG-58865) and publish to the internal Artifact Keeper
   instead, like the stable line.
 - `_publish-release-monorepo.yml` — reusable monorepo publish engine
-  (Docker test/build → npm or Artifact Keeper (`publish_target` input) → tag
-  after publish → mirror → GitHub Release → Slack, with a failure-notify Slack
-  job).
+  (Docker test/build → npm or Artifact Keeper (`publish_target` input; the AK
+  leg is ungated, like the stable line) → tag after publish → mirror → GitHub
+  Release → Slack, with a failure-notify Slack job).
 - `publish-stable-dnr-rulesets.yml` — twice-daily scheduled build/publish of
   `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0` branch. Only the
   5.0 line is published (under `latest`); the older stable lines are no longer
