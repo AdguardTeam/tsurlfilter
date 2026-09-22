@@ -13,31 +13,12 @@ import {
     SINGLE_QUOTE,
 } from '../../../utils/constants';
 import { QuoteUtils } from '../../../utils/quotes';
+import { SPECIAL_PSEUDO_CLASS_NAMES } from '../../../utils/special-pseudo-classes';
 import { BaseParser } from '../../base-parser';
 import { defaultParserOptions, type ParserOptions } from '../../options';
 import { SelectorListParser } from '../selector/selector-list-parser';
 
 import { HtmlFilteringBodyParser } from './html-filtering-body-parser';
-
-/**
- * Names of the special pseudo-classes which take a raw-text argument —
- * arbitrary text matched against the element content, which may contain
- * unbalanced parentheses, quotes or slashes without any escaping.
- *
- * In AdGuard products (CoreLibs) the argument of such a pseudo-class is
- * simply the raw text between the opening parenthesis of the pseudo-class
- * and the last closing parenthesis of the selector, e.g.
- * `$$script:contains((function(g,b,a,c,e,d)` matches script elements whose
- * content contains `(function(g,b,a,c,e,d`. These rules are present in
- * production filter lists, so the parser handles them the same way.
- *
- * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules--contains}
- */
-const SPECIAL_PSEUDO_CLASS_NAMES = [
-    'contains',
-    '-abp-contains',
-    'has-text',
-] as const;
 
 /**
  * Special pseudo-class marker found in a raw HTML filtering rule body,

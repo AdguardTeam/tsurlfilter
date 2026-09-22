@@ -40,9 +40,9 @@ import {
     SINGLE_QUOTE,
 } from '../../utils/constants';
 import { RegExpUtils } from '../../utils/regexp';
+import { SPECIAL_PSEUDO_CLASS_NAMES } from '../../utils/special-pseudo-classes';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { PseudoClasses } from '../css/index';
 
 /**
  * Upper bound of the length-matching regular expression generated when
@@ -123,18 +123,15 @@ const SUPPORTED_ADG_PSEUDO_CLASSES = new Set<string>([
 /**
  * Markers of special pseudo-class selectors with raw-text arguments,
  * used to detect special selector markers in raw (unparseable) HTML
- * filtering rule bodies.
+ * filtering rule bodies. Derived from {@link SPECIAL_PSEUDO_CLASS_NAMES},
+ * so the converter stays in sync with the lenient body parser.
  *
  * Note: the leading colon is a part of the marker on purpose, so that
  * `contains(` / `has-text(` occurring inside string literals or attribute
  * values (e.g. `[data-x="contains(foo"]`) is not mistaken for a special
  * pseudo-class selector.
  */
-const SPECIAL_PSEUDO_CLASS_ARG_MARKERS = [
-    `:${AdgPseudoClasses.Contains}(`,
-    `:${PseudoClasses.AbpContains}(`,
-    `:${UboPseudoClasses.HasText}(`,
-] as const;
+const SPECIAL_PSEUDO_CLASS_ARG_MARKERS = SPECIAL_PSEUDO_CLASS_NAMES.map((name) => `:${name}(`);
 
 /**
  * Pattern matching special attribute selectors in a raw HTML filtering rule
