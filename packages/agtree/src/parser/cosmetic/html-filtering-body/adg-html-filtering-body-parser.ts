@@ -88,21 +88,19 @@ export class AdgHtmlFilteringBodyParser extends BaseParser {
         options = defaultParserOptions,
         baseOffset = 0,
     ): Value | HtmlFilteringRuleBody {
+        if (!options.parseHtmlFilteringRuleBodies) {
+            return HtmlFilteringBodyParser.parse(raw, options, baseOffset);
+        }
+
         // Only escape AdGuard's `""` → `\"` when the body will actually be
-        // CSS-parsed. When `parseHtmlFilteringRuleBodies` is false the raw
-        // string is stored as-is in a Value node; escaping here would cause
-        // double-escaping when the converter later re-parses it.
+        // CSS-parsed: with `parseHtmlFilteringRuleBodies` disabled (handled
+        // above) the raw string is stored as-is in a Value node, and escaping
+        // it would cause double-escaping when the converter later re-parses it.
         //
         // Needed for proper `[tag-content]` conversion (to `:contains()`)
         // where `""` must be used to escape `"`:
         // https://adguard.com/kb/general/ad-filtering/create-own-filters/#tag-content
-        const input = options.parseHtmlFilteringRuleBodies
-            ? QuoteUtils.escapeAttributeDoubleQuotes(raw)
-            : raw;
-
-        if (!options.parseHtmlFilteringRuleBodies) {
-            return HtmlFilteringBodyParser.parse(input, options, baseOffset);
-        }
+        const input = QuoteUtils.escapeAttributeDoubleQuotes(raw);
 
         try {
             return HtmlFilteringBodyParser.parse(input, options, baseOffset);
