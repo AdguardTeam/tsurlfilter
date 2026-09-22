@@ -676,6 +676,27 @@ describe('Html rule selector', () => {
         expect(notMatchedElements).toHaveLength(0);
     });
 
+    it('checks special selector :contains() - converted from descendant :has-text() keeps the boundary', () => {
+        // The descendant combinator before `:has-text()` must survive the
+        // conversion — without it the converted rule would match the whole
+        // ancestor element instead of the matching descendant
+        const { result: [convertedRuleText] } = RawRuleConverter.convertToAdg(
+            'example.org$$div :has-text(/foo[)]/)',
+        );
+        expect(convertedRuleText).toBe('example.org$$div :contains(/foo[)]/)');
+
+        const rule = createCosmeticRule(convertedRuleText, 0);
+        const selector = new HtmlRuleSelector(rule.getHtmlSelectorList()!);
+
+        document.body.innerHTML = `
+        <div><span id="matched">foo)</span><p>keep</p></div>
+        `;
+
+        const matchedElements = selector.getMatchedElements(document);
+        expect(matchedElements).toHaveLength(1);
+        expect(matchedElements[0].id).toBe('matched');
+    });
+
     it('checks special selector :contains() - regexp argument keeps regexp semantics', () => {
         // A `/regexp/` argument is compiled to a RegExp; the rule is kept
         // as-is, no quoting is inserted

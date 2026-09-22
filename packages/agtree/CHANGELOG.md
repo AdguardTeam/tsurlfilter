@@ -24,7 +24,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   parenthesis of the pseudo-class and the last closing parenthesis of
   the body, taken as-is. Previously such bodies either threw a parse
   error or were normalized to a quoted argument during conversion —
-  no quoting is inserted anymore.
+  no quoting is inserted anymore. A descendant combinator in front of
+  the special pseudo-class is preserved as well, so
+  `$$div :has-text(/foo[)]/)` converts to `$$div :contains(/foo[)]/)`
+  instead of being glued into `$$div:contains(/foo[)]/)`, and the
+  selector list and last complex selector source ranges are extended to
+  cover the appended pseudo-class when locations are enabled.
 
 ### Deprecated
 

@@ -578,9 +578,10 @@ describe('AdgHtmlFilteringBodyParser', () => {
                                     ...context.getRangeFor(':contains((function(g,b,a,c,e,d))'),
                                 },
                             ],
-                            ...context.getRangeFor('script'),
+                            // The appended pseudo-class extends the parent ranges
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('script'),
+                        ...context.getFullRange(),
                     },
                     ...context.getFullRange(),
                 }),
@@ -636,9 +637,10 @@ describe('AdgHtmlFilteringBodyParser', () => {
                                     ...context.getRangeFor(":contains('ed2k://)"),
                                 },
                             ],
-                            ...context.getRangeFor('div[style="display: none !important;"]'),
+                            // The appended pseudo-class extends the parent ranges
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('div[style="display: none !important;"]'),
+                        ...context.getFullRange(),
                     },
                     ...context.getFullRange(),
                 }),
@@ -675,9 +677,55 @@ describe('AdgHtmlFilteringBodyParser', () => {
                                     ...context.getRangeFor(':contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)'),
                                 },
                             ],
-                            ...context.getRangeFor('script'),
+                            // The appended pseudo-class extends the parent ranges
+                            ...context.getFullRange(),
                         }],
-                        ...context.getRangeFor('script'),
+                        ...context.getFullRange(),
+                    },
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // Lenient parsing: the descendant combinator before the special
+            // pseudo-class is preserved — the prefix parser drops a trailing
+            // descendant space, so it is restored as a combinator node
+            {
+                actual: 'div :has-text(/foo[)]/)',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectorList: {
+                        type: 'SelectorList',
+                        children: [{
+                            type: 'ComplexSelector',
+                            children: [
+                                {
+                                    type: 'TypeSelector',
+                                    value: 'div',
+                                    ...context.getRangeFor('div'),
+                                },
+                                {
+                                    type: 'SelectorCombinator',
+                                    value: ' ',
+                                    ...context.getRangeFor(' '),
+                                },
+                                {
+                                    type: 'PseudoClassSelector',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'has-text',
+                                        ...context.getRangeFor('has-text'),
+                                    },
+                                    argument: {
+                                        type: 'Value',
+                                        value: '/foo[)]/',
+                                        ...context.getRangeFor('/foo[)]/'),
+                                    },
+                                    ...context.getRangeFor(':has-text(/foo[)]/)'),
+                                },
+                            ],
+                            ...context.getFullRange(),
+                        }],
+                        ...context.getFullRange(),
                     },
                     ...context.getFullRange(),
                 }),
@@ -765,6 +813,13 @@ describe('AdgHtmlFilteringBodyParser', () => {
             {
                 actual: 'script:contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)',
                 expected: 'script:contains(/window\\.open\\([^)]*\\);\\s*\\w+\\.focus/)',
+            },
+
+            // Leniently parsed body with a descendant combinator before the
+            // special pseudo-class round-trips with the boundary preserved
+            {
+                actual: 'div :has-text(/foo[)]/)',
+                expected: 'div :has-text(/foo[)]/)',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = AdgHtmlFilteringBodyParser.parse(actual, parsingEnabledDefaultParserOptions);

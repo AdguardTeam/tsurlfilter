@@ -489,6 +489,15 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$script:contains((function(g,b,a,c,e,d))'],
                     },
 
+                    // `:has-text()` preceded by a descendant combinator — parsed
+                    // leniently, converted to `:contains()` with the combinator
+                    // boundary preserved, so the pseudo-class applies to the
+                    // descendant, not to the compound selector before the space
+                    {
+                        actual: '$$div :has-text(/foo[)]/)',
+                        expected: ['$$div :contains(/foo[)]/)'],
+                    },
+
                     // `:-abp-contains()` with unbalanced parentheses in the argument —
                     // parsed leniently (CoreLibs parity) and kept as-is: the alias is
                     // supported as-is, no quoting is inserted

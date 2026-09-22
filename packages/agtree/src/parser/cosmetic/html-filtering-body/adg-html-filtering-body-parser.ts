@@ -2,6 +2,7 @@ import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import {
     type HtmlFilteringRuleBody,
     type PseudoClassSelector,
+    type SelectorCombinator,
     type SelectorList,
     type Value,
 } from '../../../nodes';
@@ -11,9 +12,11 @@ import {
     COLON,
     DOUBLE_QUOTE,
     SINGLE_QUOTE,
+    SPACE,
 } from '../../../utils/constants';
 import { QuoteUtils } from '../../../utils/quotes';
 import { SPECIAL_PSEUDO_CLASS_NAMES } from '../../../utils/special-pseudo-classes';
+import { StringUtils } from '../../../utils/string';
 import { BaseParser } from '../../base-parser';
 import { defaultParserOptions, type ParserOptions } from '../../options';
 import { SelectorListParser } from '../selector/selector-list-parser';
@@ -223,7 +226,52 @@ export class AdgHtmlFilteringBodyParser extends BaseParser {
         // complex selector, e.g. `script` in `script:contains(...)`
         const complexSelectors = selectorList.children;
         const lastComplexSelector = complexSelectors[complexSelectors.length - 1];
+
+        // If the pseudo-class is preceded by whitespace, the whitespace is a
+        // descendant combinator, e.g. `div :has-text(...)`. The prefix parser
+        // drops a trailing descendant space, so the combinator must be
+        // restored explicitly — otherwise the appended pseudo-class would be
+        // glued to the last compound selector, turning `div :has-text(...)`
+        // into `div:contains(...)` with different matching semantics (the
+        // whole `div` would match instead of the matching descendant)
+        if (
+            marker.markerIndex > 0
+            && StringUtils.isWhitespace(trimmedInput[marker.markerIndex - 1])
+        ) {
+            const combinator: SelectorCombinator = {
+                type: 'SelectorCombinator',
+                value: SPACE,
+            };
+
+            if (options.isLocIncluded) {
+                // Cover the first character of the whitespace run before the
+                // marker, the same way the regular parser locates the
+                // descendant combinator
+                let whitespaceStart = marker.markerIndex - 1;
+                while (
+                    whitespaceStart > 0
+                    && StringUtils.isWhitespace(trimmedInput[whitespaceStart - 1])
+                ) {
+                    whitespaceStart -= 1;
+                }
+
+                combinator.start = baseOffset + whitespaceStart;
+                combinator.end = combinator.start + SPACE.length;
+            }
+
+            lastComplexSelector.children.push(combinator);
+        }
+
         lastComplexSelector.children.push(pseudoClassSelector);
+
+        // The appended pseudo-class (and the restored combinator, if any)
+        // extends the last complex selector, so the parent ranges must be
+        // extended to cover it — otherwise slicing the selector list or the
+        // last complex selector range would omit the pseudo-class
+        if (options.isLocIncluded) {
+            lastComplexSelector.end = pseudoClassSelector.end;
+            selectorList.end = pseudoClassSelector.end;
+        }
 
         const result: HtmlFilteringRuleBody = {
             type: 'HtmlFilteringRuleBody',
