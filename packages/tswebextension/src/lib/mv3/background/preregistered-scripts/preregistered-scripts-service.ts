@@ -132,6 +132,11 @@ export class PreregisteredScriptsService {
                 preregisteredScripts.path,
             );
         } else {
+            // A sync enqueued by an earlier configure() can still be in
+            // flight; wait for it so it cannot re-register right after the
+            // clear and publish its coverage after we publish the empty map.
+            await PreregisteredScriptsService.syncQueue.catch(() => undefined);
+
             try {
                 await ContentScriptManager.clear(PREREGISTERED_SCRIPTS_NAMESPACE);
                 // A successful clear invalidates the last-known coverage: a
@@ -194,7 +199,10 @@ export class PreregisteredScriptsService {
      * injection path. On sync failure the coverage of the last completed
      * sync is returned (the boot snapshot before the first sync completes):
      * a failed sync leaves the previous registrations active, and this is
-     * the set that describes them.
+     * the set that describes them. On a failed post-sync read the
+     * registrations were already replaced, so empty coverage is returned to
+     * avoid suppressing dynamic injection for rules with no active
+     * registration.
      */
     public static async sync(
         preregistrationEnabled: boolean,
@@ -231,6 +239,8 @@ export class PreregisteredScriptsService {
     ): Promise<Map<string, Set<string>>> {
         const hostnames = expandHostnames(domains);
 
+        // Sync attempt. A failure here leaves the previous registrations
+        // active, so the last-known (or boot) coverage still describes them.
         try {
             let scripts: ContentScriptDescriptor[] = [];
 
@@ -246,11 +256,22 @@ export class PreregisteredScriptsService {
             }
 
             await ContentScriptManager.syncDetailed(PREREGISTERED_SCRIPTS_NAMESPACE, scripts);
+        } catch (e) {
+            logger.error('[tsweb.PreregisteredScriptsService.doSync]: Sync failed, keeping dynamic injection', e);
+            return PreregisteredScriptsService.lastCoveredRules
+                ?? appContext.preregisteredScriptRulesAtBoot
+                ?? new Map();
+        }
 
-            // Report exactly what is registered, not what the sync
-            // attempted: failed updates leave the previous registration
-            // active, and the boot snapshot only describes pre-existing
-            // documents.
+        // Report exactly what is registered, not what the sync attempted:
+        // failed updates leave the previous registration active, and the
+        // boot snapshot only describes pre-existing documents.
+        // A read failure is different from a sync failure — the
+        // registrations were already replaced, so the last-known/boot
+        // coverage no longer matches what is active. Fail safe to empty
+        // coverage: dynamic injection then re-runs everything, which is
+        // harmless, instead of suppressing rules that have no registration.
+        try {
             const coveredRules = await readActiveRegistrations(PREREGISTERED_SCRIPTS_NAMESPACE);
             PreregisteredScriptsService.lastCoveredRules = coveredRules;
 
@@ -258,10 +279,8 @@ export class PreregisteredScriptsService {
 
             return coveredRules;
         } catch (e) {
-            logger.error('[tsweb.PreregisteredScriptsService.doSync]: Sync failed, keeping dynamic injection', e);
-            return PreregisteredScriptsService.lastCoveredRules
-                ?? appContext.preregisteredScriptRulesAtBoot
-                ?? new Map();
+            logger.error('[tsweb.PreregisteredScriptsService.doSync]: Failed to read active registrations, reporting empty coverage', e);
+            return new Map();
         }
     }
 

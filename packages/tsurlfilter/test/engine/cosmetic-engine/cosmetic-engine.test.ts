@@ -9,6 +9,7 @@ import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../../src/filterlist/string-rule-list';
 import { Request } from '../../../src/request';
 import { RequestType } from '../../../src/request-type';
+import { CosmeticRule } from '../../../src/rules/cosmetic-rule';
 import { type IndexedStorageCosmeticRuleParts } from '../../../src/rules/rule';
 
 /**
@@ -620,6 +621,59 @@ describe('Test cosmetic engine - JS rules', () => {
 
             expect(result.elementHiding.specific.length).toBe(0);
             expect(result.CSS.specific.length).toBe(0);
+        });
+    });
+
+    describe('isAllowlisted() with ignoreExceptionPath', () => {
+        const blockingRuleText = "[$domain=example.org,path=/only-here]#%#//scriptlet('set-cookie', 'name', 'val')";
+        const exceptionRuleText = "[$domain=example.org,path=/only-here]#@%#//scriptlet('set-cookie', 'name', 'val')";
+
+        it('does not cancel the rule by default when the exception path does not match', () => {
+            const blockingRule = new CosmeticRule(blockingRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [blockingRuleText, exceptionRuleText].join('\n')),
+            ]);
+
+            const isAllowlisted = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/unrelated-path'),
+                blockingRule,
+            );
+
+            // The exception is scoped to `/only-here`; the request path does
+            // not match, so the rule stays applicable.
+            expect(isAllowlisted).toBe(false);
+        });
+
+        it('cancels the rule when ignoreExceptionPath skips the exception path check', () => {
+            const blockingRule = new CosmeticRule(blockingRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [blockingRuleText, exceptionRuleText].join('\n')),
+            ]);
+
+            const isAllowlisted = cosmeticEngine.isAllowlisted(
+                createRequest('https://example.org/unrelated-path'),
+                blockingRule,
+                true,
+            );
+
+            // With the exception's $path skipped, the exception applies to
+            // any path of the hostname and cancels the rule.
+            expect(isAllowlisted).toBe(true);
+        });
+
+        it('still requires the domain to match when ignoreExceptionPath is set', () => {
+            const blockingRule = new CosmeticRule(blockingRuleText, 1);
+            const cosmeticEngine = createCosmeticEngine([
+                new StringRuleList(1, [blockingRuleText, exceptionRuleText].join('\n')),
+            ]);
+
+            const isAllowlisted = cosmeticEngine.isAllowlisted(
+                createRequest('https://other.org/unrelated-path'),
+                blockingRule,
+                true,
+            );
+
+            expect(isAllowlisted).toBe(false);
         });
     });
 });

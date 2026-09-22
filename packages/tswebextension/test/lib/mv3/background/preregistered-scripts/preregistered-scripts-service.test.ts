@@ -797,6 +797,22 @@ describe('PreregisteredScriptsService', () => {
             expect(result.get('youtube.com')).toEqual(new Set([await computeRuleHash(rule)]));
         });
 
+        it('reports empty coverage (not last/boot) when the post-sync read fails', async () => {
+            const rule = mockScriptletRule('set-cookie', []);
+            await setupRulesWithManifest({ 'youtube.com': [rule] });
+            await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            // The registrations were already replaced by the sync; reading
+            // them back fails. Publishing last-known coverage would suppress
+            // dynamic injection for rules with no active registration, so
+            // the service fails safe to empty coverage.
+            vi.mocked(ContentScriptManager.getRegistered).mockRejectedValueOnce(new Error('read failed'));
+
+            const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+
+            expect(result).toEqual(new Map());
+        });
+
         it('covers no domains (without throwing) when the engine fails', async () => {
             setupManifest([]);
             vi.mocked(engineApi.matchCosmetic).mockImplementation(() => {
@@ -939,6 +955,37 @@ describe('PreregisteredScriptsService', () => {
             const result = await PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
 
             expect(result).toEqual(new Map());
+        });
+
+        it('awaits an in-flight sync before clearing in the no-config path', async () => {
+            await setupRulesWithManifest({ 'youtube.com': [mockScriptletRule('set-cookie', [])] });
+
+            const order: string[] = [];
+            vi.mocked(ContentScriptManager.syncDetailed).mockImplementation(async () => {
+                order.push('sync');
+                await new Promise((resolve) => {
+                    setTimeout(resolve, 10);
+                });
+                return { errors: [], failedScriptIds: [] };
+            });
+            vi.mocked(ContentScriptManager.clear).mockImplementation(async () => {
+                order.push('clear');
+                registryState.descriptors = [];
+            });
+
+            const syncPromise = PreregisteredScriptsService.sync(true, ['youtube.com'], SCRIPTS_PATH);
+            await PreregisteredScriptsService.init(true, undefined);
+            await syncPromise;
+
+            // init() must wait for the queued sync before clearing, so the
+            // sync cannot re-register after the clear and publish coverage
+            // after the empty map.
+            expect(order).toEqual(['sync', 'clear']);
+
+            // Restore the default clear implementation for subsequent tests.
+            vi.mocked(ContentScriptManager.clear).mockImplementation(async () => {
+                registryState.descriptors = [];
+            });
         });
 
         it('still reports an empty map when clearing fails and no registrations exist', async () => {

@@ -136,7 +136,7 @@ type SyncBatchResults = {
  *
  * **Namespace ownership**: A namespace implies ownership of *all* content
  * scripts whose chrome-level IDs start with `namespace:`. Methods like
- * {@link ContentScriptManager.sync} and {@link ContentScriptManager.clear}
+ * {@link ContentScriptManager.syncDetailed} and {@link ContentScriptManager.clear}
  * will unregister any script matching the prefix — including scripts
  * registered outside this manager. Do not co-register scripts under a
  * namespace prefix you do not own.
@@ -146,7 +146,7 @@ type SyncBatchResults = {
  * await ContentScriptManager.register('stealth', scripts);
  * await ContentScriptManager.update('stealth', scripts);
  * await ContentScriptManager.clear('stealth');
- * await ContentScriptManager.sync('stealth', scripts);
+ * await ContentScriptManager.syncDetailed('stealth', scripts);
  * ```
  */
 export class ContentScriptManager {
@@ -399,30 +399,6 @@ export class ContentScriptManager {
     }
 
     /**
-     * Reconciles the actual state of registered content scripts with the
-     * desired state for the given namespace.
-     *
-     * Thin wrapper over {@link ContentScriptManager.syncDetailed} that
-     * discards per-script failure details and returns only the errors.
-     *
-     * @param namespace Namespace string used to prefix script IDs.
-     * @param desiredScripts The desired set of content scripts.
-     *
-     * @returns Promise that resolves with an array of rejected results if
-     * any operations failed, or an empty array if all succeeded.
-     *
-     * @throws {Error} If the namespace is invalid, or if the internal
-     * {@code get()} call fails.
-     */
-    public static async sync(
-        namespace: string,
-        desiredScripts: ContentScriptDescriptor[],
-    ): Promise<PromiseRejectedResult[]> {
-        const { errors } = await ContentScriptManager.syncDetailed(namespace, desiredScripts);
-        return errors;
-    }
-
-    /**
      * Returns the full descriptors of all content scripts currently
      * registered under the given namespace, IDs stripped of the namespace
      * prefix. The descriptors include the `js` file lists, which some
@@ -527,9 +503,11 @@ export class ContentScriptManager {
     }
 
     /**
-     * Processes the settled batch operations of a sync: records the
-     * rejected batches as errors and retries each per item to isolate the
-     * failures to the offending scripts.
+     * Processes the settled batch operations of a sync: retries each
+     * rejected batch per item to isolate the failures to the offending
+     * scripts. A batch rejection is recorded as an error only when its
+     * per-item retry also failed — a fully healed batch is not an error,
+     * so `errors` is empty when everything succeeded.
      *
      * @param namespace Namespace string used to prefix script IDs.
      * @param batches Settled results together with the items each batch
@@ -548,33 +526,39 @@ export class ContentScriptManager {
         const { unregister, register, update } = batches;
 
         if (unregister.result.status === 'rejected') {
-            errors.push(unregister.result);
             const failedIds = await ContentScriptManager.retryFailedBatch(
                 unregister.ids,
                 (id) => ContentScriptManager.unregister(namespace, [id]),
                 (id) => id,
             );
             failedScriptIds.push(...failedIds);
+            if (failedIds.length > 0) {
+                errors.push(unregister.result);
+            }
         }
 
         if (register.result.status === 'rejected') {
-            errors.push(register.result);
             const failedIds = await ContentScriptManager.retryFailedBatch(
                 register.scripts,
                 (script) => ContentScriptManager.register(namespace, [script]),
                 (script) => script.id,
             );
             failedScriptIds.push(...failedIds);
+            if (failedIds.length > 0) {
+                errors.push(register.result);
+            }
         }
 
         if (update.result.status === 'rejected') {
-            errors.push(update.result);
             const failedIds = await ContentScriptManager.retryFailedBatch(
                 update.scripts,
                 (script) => ContentScriptManager.update(namespace, [script]),
                 (script) => script.id,
             );
             failedScriptIds.push(...failedIds);
+            if (failedIds.length > 0) {
+                errors.push(update.result);
+            }
         }
 
         return { errors, failedScriptIds };
@@ -613,7 +597,7 @@ export class ContentScriptManager {
      * Uses `chrome.scripting.updateContentScripts`.
      * Scripts passed to this method **must** already be registered under
      * the namespace. Use {@link ContentScriptManager.register} for new
-     * scripts or {@link ContentScriptManager.sync} for full reconciliation.
+     * scripts or {@link ContentScriptManager.syncDetailed} for full reconciliation.
      *
      * @param namespace Namespace string used to prefix script IDs.
      * @param scripts Array of content script descriptors to update.

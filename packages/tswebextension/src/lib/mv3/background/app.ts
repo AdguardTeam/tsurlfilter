@@ -61,6 +61,7 @@ export type {
     ConfigurationResult,
     ConversionResult,
     FailedEnableRulesetsError,
+    SyncScriptsResult,
 };
 
 /**
