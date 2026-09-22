@@ -1,5 +1,5 @@
 import { debounce } from 'lodash-es';
-import browser, { type Manifest } from 'webextension-polyfill';
+import browser from 'webextension-polyfill';
 
 import { type ExtendedStorageInterface } from './core/storage-interface';
 
@@ -136,8 +136,6 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
             return true;
         }
 
-        const background = manifest.background as Manifest.WebExtensionManifestBackgroundType;
-
-        return background.persistent ?? true;
+        return manifest.background.persistent ?? true;
     }
 }

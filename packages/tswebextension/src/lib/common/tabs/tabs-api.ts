@@ -57,7 +57,7 @@ export type TabFrameRequestContextCommon = {
     /**
      * The UUID of the parent document owning the frame that sent the request.
      *
-     * Available in Chrome 106+. Not available in Firefox.
+     * Available in Chrome 106+ and Firefox 153+. Not available in older Firefox.
      */
     parentDocumentId?: string;
 
@@ -89,7 +89,7 @@ export type IncrementBlockedCountParams = {
     referrerUrl: string;
 
     /**
-     * Parent document ID of the request (Chromium 106+).
+     * Parent document ID of the request (Chromium 106+, Firefox 153+).
      */
     parentDocumentId?: string;
 

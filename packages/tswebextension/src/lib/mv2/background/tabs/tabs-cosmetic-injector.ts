@@ -85,7 +85,8 @@ export class TabsCosmeticInjector {
                 frameId,
                 parentFrameId,
                 // both parentDocumentId and documentId supported by Chrome 106+ and Firefox 153+;
-                // for browsers without support they are calculated based on tabId and frameId
+                // for browsers without support parentDocumentId is calculated based on tabId and parentFrameId,
+                // and documentId — based on tabId and frameId
                 parentDocumentId,
                 documentId,
             } = frameDetails;

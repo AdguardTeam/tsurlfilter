@@ -856,7 +856,7 @@ export class WebRequestApi {
         } = details;
 
         // supported by Chrome 106+ and Firefox 153+;
-        // for browsers without support it is calculated based on tabId and frameId
+        // for browsers without support it is calculated based on tabId and parentFrameId
         let { parentDocumentId } = details;
 
         const isDocumentLevelFrame = TabsApi.isDocumentLevelFrame(parentFrameId);
