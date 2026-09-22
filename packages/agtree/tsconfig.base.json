@@ -5,6 +5,7 @@
         "moduleResolution": "bundler",
         "types": [
             "./typings/vitest-custom.d.ts",
+            "./typings/raw.d.ts",
             "node",
         ],
         "resolveJsonModule": true,

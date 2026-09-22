@@ -41,6 +41,9 @@ Key files:
 - `packages/agtree/test/parse-fixture.bench.ts` — full filter-list parse vs
   `agtree-v4` over the committed `ag-base` corpus, importing the **built**
   `@adguard/agtree` bundle
+- `packages/agtree/test/converter-fixture.bench.ts` — whole-list and per-rule
+  conversion vs `agtree-v4` over the committed uBO fixture, importing the
+  **built** `@adguard/agtree` bundle (Node + Chromium/Firefox)
 - `packages/css-tokenizer/test/tokenizer.bench.ts` — tokenizer vs competitors
 - `packages/tsurlfilter/test/engine/*.bench.ts` — engine startup and request
   matching (vs `tsurlfilter-v3`, from source) and engine init vs
@@ -61,10 +64,11 @@ See `DEVELOPMENT.md` for how to run them and the full workflow.
   stable A/B runs.
 
 - Legacy inline benches import the current implementation from `src/`;
-  full-list A/B benches (`parse-fixture.bench.ts`, `engine-init.bench.ts`)
-  import the current package from its **built** `dist/` bundle (via the
-  package `exports` map) so it competes as an optimized bundle. Build the
-  package before running the dist-importing benches.
+  full-list A/B benches (`parse-fixture.bench.ts`,
+  `converter-fixture.bench.ts`, `engine-init.bench.ts`) import the current
+  package from its **built** `dist/` bundle (via the package `exports` map) so
+  it competes as an optimized bundle. Build the package before running the
+  dist-importing benches.
 
 - Benchmarks are not a CI regression gate; they run manually/locally.
 

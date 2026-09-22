@@ -2,12 +2,24 @@
  * @file AGTree version.
  */
 
-import { version as importedVersion } from '../package.json';
+import packageJson from '../package.json';
 
-// ! Notice:
-// Don't export version from package.json directly, because if you run
-// `tsc` in the root directory, it will generate `dist/types/src/version.d.ts`
-// with wrong relative path to `package.json`. So we need this little "hack"
-const AGTREE_VERSION = importedVersion;
+/**
+ * Version of the `@adguard/agtree` package.
+ *
+ * The committed manifest is versionless: CI injects the release version before
+ * building (`scripts/inject-package-versions.mjs`). Local builds that skip the
+ * injection fall back to a dev placeholder so `pnpm build` and tests work out
+ * of the box; published artifacts always carry the injected version.
+ *
+ * Annotated as `string` (not inferred from `packageJson.version`) because the
+ * versionless manifest makes TypeScript narrow `packageJson.version` to
+ * `never`, which would leak an unstable `never` type into the public API.
+ */
+const AGTREE_VERSION: string = 'version' in packageJson
+    && typeof packageJson.version === 'string'
+    && packageJson.version.length > 0
+    ? packageJson.version
+    : '0.0.0-dev';
 
 export { AGTREE_VERSION };

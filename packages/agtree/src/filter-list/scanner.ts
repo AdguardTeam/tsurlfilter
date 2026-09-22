@@ -33,6 +33,7 @@ import type { RuleKind } from '../parser/rule';
 import { StructuralRuleParser } from '../parser/rule';
 import { TokenType } from '../tokenizer/token-types';
 import { Tokenizer } from '../tokenizer/tokenizer';
+import { findNextLineBreak } from '../utils/line-break';
 
 /**
  * Error message used when the data buffer (modifiers / domains / scriptlet
@@ -105,6 +106,9 @@ export type ScanErrorCallback = (
 /**
  * Scan forward from `offset` in `source` to find the next line-break.
  *
+ * Delegates the line-break policy to the shared
+ * {@link findNextLineBreak} helper so it cannot drift from the converter.
+ *
  * @param source Source string.
  * @param offset Position to start searching from.
  *
@@ -116,20 +120,8 @@ function findNextNewline(
     source: string,
     offset: number,
 ): [ruleEnd: number, nextStart: number] {
-    const len = source.length;
-    for (let i = offset; i < len; i += 1) {
-        const c = source.charCodeAt(i);
-        if (c === 0x0A) {
-            return [i, i + 1];
-        }
-        if (c === 0x0D) {
-            if (i + 1 < len && source.charCodeAt(i + 1) === 0x0A) {
-                return [i, i + 2];
-            }
-            return [i, i + 1];
-        }
-    }
-    return [len, len];
+    const [lineBreakIndex, lineBreakLength] = findNextLineBreak(source, offset);
+    return [lineBreakIndex, lineBreakIndex + lineBreakLength];
 }
 
 /**

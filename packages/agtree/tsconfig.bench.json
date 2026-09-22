@@ -1,0 +1,24 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+        // Point the v4 baseline alias at its concrete type entry. TypeScript
+        // identifies packages by name + version, so when a local version
+        // injection stamps the workspace agtree with the same version as the
+        // pinned alias (e.g. 4.2.1 from the changelog), the self-reference
+        // `@adguard/agtree` would otherwise be conflated with `agtree-v4` and
+        // resolve to v4's types. A `paths` entry has no package identity, so
+        // the two imports stay distinct regardless of the local stamp.
+        "paths": {
+            "agtree-v4": ["./node_modules/agtree-v4/dist/types/index.d.ts"],
+        },
+    },
+    "include": [
+        "test/converter-fixture.bench.ts",
+        "test/parse-fixture.bench.ts",
+    ],
+    "exclude": [
+        "./node_modules",
+        "./test/smoke",
+    ],
+}

@@ -31,7 +31,6 @@ const REQUIRED_PKG_FIELDS = [
     'author',
     'homepage',
     'license',
-    'version',
 ];
 
 for (const field of REQUIRED_PKG_FIELDS) {
@@ -40,9 +39,14 @@ for (const field of REQUIRED_PKG_FIELDS) {
     }
 }
 
+// The committed manifest is versionless: CI injects the release version before
+// building. Fall back to a dev placeholder so local builds work without running
+// `scripts/inject-package-versions.mjs` first.
+const version = pkg.version ?? '0.0.0-dev';
+
 // Generate a banner with the current package & build info
 const banner = `/*
- * ${BASE_NAME} v${pkg.version} (build date: ${new Date().toUTCString()})
+ * ${BASE_NAME} v${version} (build date: ${new Date().toUTCString()})
  * (c) ${new Date().getFullYear()} ${pkg.author}
  * Released under the ${pkg.license} license
  * ${pkg.homepage}

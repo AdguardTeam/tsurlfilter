@@ -318,7 +318,9 @@ export class RulesetsLoaderApi {
 
                 // TODO: AG-53262 — Measure cold start time after migration
                 // from rawFilterList+conversionData → filterContent.
-                // FilterList.prepare() now runs at runtime (was build-time).
+                // RawFilterListConverter.convertToAdg() now runs in the
+                // FilterList constructor at runtime (conversion was build-time
+                // before).
                 // Could add ~100-200ms per 100k+ line filter on first start.
                 const filterList = new FilterList(filterContent);
                 const rawFilterList = filterList.getContent();

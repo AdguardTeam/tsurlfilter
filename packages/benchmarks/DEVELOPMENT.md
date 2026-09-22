@@ -33,7 +33,9 @@ pnpm install
 
 | Package | Benchmark file(s) | What it measures |
 |---------|-------------------|------------------|
-| `agtree` | `test/parser.bench.ts`, `test/converter.bench.ts`, `test/parse-fixture.bench.ts` | AGTree parse/convert vs `agtree-v2`; full filter-list parse vs `agtree-v4` |
+| `agtree` | `test/parser.bench.ts`, `test/converter.bench.ts` | AGTree parse/convert vs `agtree-v2`, over a small inline rule set |
+| `agtree` | `test/parse-fixture.bench.ts` | Full filter-list parse vs `agtree-v4` over `test/fixtures/ag-base.txt` |
+| `agtree` | `test/converter-fixture.bench.ts` | Whole-list and per-rule conversion vs `agtree-v4` over `test/fixtures/ubo-filters.txt` (Node + Chromium/Firefox) |
 | `css-tokenizer` | `test/tokenizer.bench.ts` | Tokenizer vs `css-tree`, `@csstools/*`, `parse-css`, `csslex` |
 | `tsurlfilter` | `test/engine/*.bench.ts` | Engine startup (network/cosmetic/engine) vs `tsurlfilter-v3`, engine init vs `tsurlfilter-v6`; request matching over the committed request corpus |
 
@@ -63,7 +65,8 @@ Results are printed to the console and written as JSON under `.vitest/bench/`.
 ### Build Before Benchmarking
 
 Benchmarks that compare the **current** package against a published baseline —
-`packages/agtree/test/parse-fixture.bench.ts` (vs `agtree-v4`) and
+`packages/agtree/test/parse-fixture.bench.ts` and
+`packages/agtree/test/converter-fixture.bench.ts` (vs `agtree-v4`), and
 `packages/tsurlfilter/test/engine/engine-init.bench.ts` (vs `tsurlfilter-v6`) —
 import the current package through its built `dist/` bundle via the package
 `exports` map, so they measure the built code and not the TypeScript sources.
@@ -101,7 +104,7 @@ Benchmarks compare the current version of a package against older published
 versions using npm-alias dev dependencies:
 
 - `agtree-v2` — older `@adguard/agtree` release (legacy parser benches)
-- `agtree-v4` — last published 4.x `@adguard/agtree` release (fixture bench)
+- `agtree-v4` — last published 4.x `@adguard/agtree` release (fixture benches)
 - `tsurlfilter-v3` — older `@adguard/tsurlfilter` release (legacy engine benches)
 - `tsurlfilter-v6` — last published 6.x `@adguard/tsurlfilter` release (engine-init bench)
 
@@ -118,11 +121,24 @@ stable across dependency updates.
    the Vitest 5 context-fixture API.
 2. Ensure it is picked up by the package's `test.benchmark.include` glob
    (`test/**/*.bench.ts`).
-3. If it imports fixtures via `node:fs`, it is Node-only and must be excluded
-   from the browser project — add it to that project's `test.benchmark.exclude`
-   (see agtree's `vitest.config.ts`, which excludes `converter.bench.ts`);
-   otherwise `pnpm bench:browser` collects it and dies on the import in
-   Chromium.
+3. If it imports fixtures via `node:fs`, or imports the current implementation
+   from `src`, it is Node-only and must be excluded from the browser project —
+   add it to that project's `test.benchmark.exclude` (see agtree's
+   `vitest.bench.config.ts`, which excludes `converter.bench.ts` from the
+   browser project); otherwise `pnpm bench:browser` collects it and dies on the
+   import in Chromium/Firefox. Prefer Vite's `?raw` fixture imports (with the
+   ambient `declare module '*?raw'` typing in `typings/`) when the benchmark
+   should also run in the browser.
+4. Measure the current implementation as its BUILT bundle, not as source: import
+   the package by its own name (`@adguard/agtree`) so its `exports` map resolves
+   to `dist/`, and list both the package and the baseline in that project's
+   dependency optimizer — `deps.optimizer.ssr` for Node, Vite's
+   `optimizeDeps.include` for the browser (Vitest 5 has no
+   `deps.optimizer.web`). Set `force: true` in both so a rebuilt `dist` is
+   re-bundled on every run instead of being measured from the optimizer cache.
+   Serving the current code from `src` while the baseline runs as an optimized
+   published bundle deoptimizes cross-module calls and inflates the current
+   timings by roughly 10x. Build before benching: `pnpm build`.
 
 ### Updating Results
 
@@ -154,14 +170,23 @@ compare against.
   current implementation from source (`../src/...`) while comparators run as
   prebuilt dist, so Node runs print Vitest's module-runner export-getter
   warning; browser benches already run native ESM. The full-list A/B benches
-  (`parse-fixture.bench.ts`, `engine-init.bench.ts`) import the current package
-  from its **built** `dist/` bundle via the package `exports` map so it competes
-  as an optimized bundle — build first (see "Build Before Benchmarking").
+  (`parse-fixture.bench.ts`, `converter-fixture.bench.ts`,
+  `engine-init.bench.ts`) import the current package from its **built** `dist/`
+  bundle via the package `exports` map so it competes as an optimized bundle —
+  build first (see "Build Before Benchmarking").
 
 - **Node-only benches and the browser project.** `tsurlfilter` has no browser
   project (its benches import `node:fs`); `agtree` excludes
   `converter.bench.ts` from its browser project via `test.benchmark.exclude` for
-  the same reason.
+  the same reason. The fixture-based benches (`converter-fixture.bench.ts`,
+  `parse-fixture.bench.ts`) do not have that problem: they import the BUILT
+  package and a `?raw` fixture, so the same files run unchanged in Node,
+  Chromium and Firefox.
+
+- **Forced dependency optimization.** The `agtree` benchmark projects set
+  `force: true` (node `deps.optimizer.ssr` and the browser `optimizeDeps`), so a
+  rebuilt `dist` is never measured stale: Vite re-pre-bundles `@adguard/agtree`
+  and `agtree-v4` on every bench run instead of trusting its optimizer cache.
 
 - **Bounded iterations.** Engine builds take ~200-400 ms each, so their
   `bench.compare` calls cap `iterations`/`warmupIterations` (tinybench defaults
@@ -171,13 +196,16 @@ compare against.
   benches run a small inline corpus (8 representative rules / a repeated CSS
   sample) chosen to cover the main syntax classes (comments, network/exception
   rules, element hiding, extended CSS, scriptlets, CSS injection,
-  `$removeparam`). The full-list A/B benches use a real committed corpus
+  `$removeparam`). The full-list A/B benches use real committed corpora
   instead: the AdGuard Base filter list snapshot at
   `packages/agtree/test/fixtures/ag-base.txt` (mirrored at
   `packages/tsurlfilter/test/resources/ag-base.txt`), which the parser bench
   feeds line-by-line (164,325 lines) and the engine bench indexes (143,149
-  rules). The larger CSS/request corpora of the deleted standalone packages
-  remain a follow-up.
+  rules), and the uBO list at `packages/agtree/test/fixtures/ubo-filters.txt`
+  (~10.9k lines — ~2k blank, ~2.7k comments/directives, ~6.1k filtering rules,
+  of which ~3.8k are converted), because conversion cost is dominated by rules
+  that need rewriting rather than by line count. The larger CSS/request corpora
+  of the deleted standalone packages remain a follow-up.
 
 ## Troubleshooting
 

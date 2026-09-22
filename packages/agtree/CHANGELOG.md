@@ -68,6 +68,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Added `AdgScriptletInjectionBodyGenerator.generateFromRawParams` to render
   canonical ADG scriptlet bodies directly from raw structural parameters
   without allocating AST nodes.
+- `RawFilterListConverter.convertToAdg` now returns a `FilterListConversionResult`
+  with a reverse source map (`ConversionSourceMap`), non-fatal per-rule errors,
+  and reverse-lookup helpers (`getOriginalContent`, `getOriginalRuleText`, …).
+  The list converter parses each line structurally and builds an AST only for
+  conversion candidates. Added `conversionSourceMapValidator` and
+  `createEmptyConversionSourceMap`. **BREAKING:** the second argument is now an
+  options object — `convertToAdg(list, false)` becomes
+  `convertToAdg(list, { tolerant: false })` (in JavaScript the old call silently
+  enables tolerant mode) — and the converted text moved from `.result` to
+  `.converted`.
 
 ### Changed
 
@@ -98,6 +108,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `*_MIN_DATA_SLOTS` sizing constants.
 - `RawRuleConverter.convertToAdg` now reuses a shared `RuleParserPipeline`
   instance instead of allocating one per call.
+- `RawRuleConverter.convertToAdg` and `RawFilterListConverter.convertToAdg` now
+  parse at a fixed converter detail level (CSS selector/declaration and HTML
+  filtering bodies enabled), so conversions no longer silently under-parse.
+- `FilterListConversionResult.isConverted` is now a getter derived from
+  `sourceMap.originals` instead of a constructor argument, and `product` is
+  typed as `SpecificProductCode`, so a result can never claim to be converted
+  while its source map is empty (or target `ProductCode.Any`).
 
 ### Removed
 
@@ -144,6 +161,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `parseAbpSpecificRules` option; when disabled, such rules are no longer
   promoted to `CssInjectionRule` and remain element-hiding rules (their raw body
   keeps the declaration block so consumers can reject it).
+- `RawRuleConverter` and `RawFilterListConverter` no longer fail on rules whose
+  CSS the strict sub-parsers reject (pseudo-element or namespace selectors,
+  consecutive combinators, malformed declaration lists). Such rules fall back to
+  raw CSS nodes and still convert, as they did before the fixed converter detail
+  level was introduced.
+- CSS declaration lists longer than `DEFAULT_MAX_DECLARATIONS` (16) no longer
+  abort conversion: the declaration sub-parser signals the capacity overflow via
+  `ctx.status` instead of throwing, and the cosmetic AST builders now treat that
+  as a rejection and fall back to raw declaration nodes.
 
 ## [4.2.1] - 2026-08-12
 
