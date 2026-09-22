@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-## [5.1.0-beta.0] - 2026-09-22
+## [5.1.0-beta.1] - 2026-09-22
 
 ### Added
 
@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated [@adguard/dnr-converter] to `v1.1.2`.
 - Updated [@adguard/tsurlfilter] to `v6.0.3`.
 
-[5.1.0-beta.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v5.1.0-beta.0
+[5.1.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v5.1.0-beta.1
 
 ## [5.0.1] - 2026-07-29
 
