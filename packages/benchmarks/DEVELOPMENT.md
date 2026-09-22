@@ -8,7 +8,7 @@ This guide covers the development workflow for benchmarks, which are now
 - **Node.js**: v22 or later
 - **pnpm**: v10 (managed via the monorepo root)
 - **Playwright**: required for browser benchmarks (`pnpm bench:browser`),
-  Chromium only for now
+  Chromium and Firefox
 
 ## Getting Started
 
@@ -33,9 +33,9 @@ pnpm install
 
 | Package | Benchmark file(s) | What it measures |
 |---------|-------------------|------------------|
-| `agtree` | `test/parser.bench.ts`, `test/converter.bench.ts` | AGTree parse/convert vs `agtree-v2` |
+| `agtree` | `test/parser.bench.ts`, `test/converter.bench.ts`, `test/parse-fixture.bench.ts` | AGTree parse/convert vs `agtree-v2`; full filter-list parse vs `agtree-v4` |
 | `css-tokenizer` | `test/tokenizer.bench.ts` | Tokenizer vs `css-tree`, `@csstools/*`, `parse-css`, `csslex` |
-| `tsurlfilter` | `test/engine/*.bench.ts` | Engine startup (network/cosmetic/engine) vs `tsurlfilter-v3`; request matching over the committed request corpus |
+| `tsurlfilter` | `test/engine/*.bench.ts` | Engine startup (network/cosmetic/engine) vs `tsurlfilter-v3`, engine init vs `tsurlfilter-v6`; request matching over the committed request corpus |
 
 All benchmarks use Vitest 5's `test(({ bench }) => …)` context-fixture API and
 `bench.compare()` for A/B comparisons.
@@ -46,7 +46,7 @@ From a package directory:
 
 ```bash
 pnpm bench          # Node
-pnpm bench:browser  # Chromium (Playwright provider) — where available
+pnpm bench:browser  # Chromium and Firefox (Playwright provider) — where available
 ```
 
 `pnpm bench:browser` requires a browser project: `agtree` and `css-tokenizer`
@@ -59,6 +59,29 @@ npx lerna run bench
 ```
 
 Results are printed to the console and written as JSON under `.vitest/bench/`.
+
+### Build Before Benchmarking
+
+Benchmarks that compare the **current** package against a published baseline —
+`packages/agtree/test/parse-fixture.bench.ts` (vs `agtree-v4`) and
+`packages/tsurlfilter/test/engine/engine-init.bench.ts` (vs `tsurlfilter-v6`) —
+import the current package through its built `dist/` bundle via the package
+`exports` map, so they measure the built code and not the TypeScript sources.
+Build the package under test before running those benchmarks:
+
+```bash
+cd packages/<package>
+pnpm build
+```
+
+Package manifests are versionless in source, so a local build also needs
+temporary version injection first (do not commit the injected fields):
+
+```bash
+node scripts/inject-package-versions.mjs
+```
+
+See [Building Packages](../../DEVELOPMENT.md#building-packages) for details.
 
 ## Development Workflow
 
@@ -77,10 +100,15 @@ pnpm lint
 Benchmarks compare the current version of a package against older published
 versions using npm-alias dev dependencies:
 
-- `agtree-v2` — older `@adguard/agtree` release
-- `tsurlfilter-v3` — older `@adguard/tsurlfilter` release
+- `agtree-v2` — older `@adguard/agtree` release (legacy parser benches)
+- `agtree-v4` — last published 4.x `@adguard/agtree` release (fixture bench)
+- `tsurlfilter-v3` — older `@adguard/tsurlfilter` release (legacy engine benches)
+- `tsurlfilter-v6` — last published 6.x `@adguard/tsurlfilter` release (engine-init bench)
 
-Keep these aliases up to date when new major versions are released.
+Keep these aliases up to date when new major versions are released. The
+published baselines used by the full-list A/B benches (`agtree-v4`,
+`tsurlfilter-v6`) are pinned exactly (`4.2.1`, `6.0.3`) so comparisons stay
+stable across dependency updates.
 
 ## Common Tasks
 
@@ -122,11 +150,16 @@ compare against.
   `"@adguard/tsurlfilter@3>@adguard/agtree"`), not the workspace agtree v5, so
   its `./serializer`/`./deserializer` imports keep working.
 
-- **Node-only benches and the browser project.** The Node benches import the
+- **Source vs built-package imports.** The legacy inline benches import the
   current implementation from source (`../src/...`) while comparators run as
   prebuilt dist, so Node runs print Vitest's module-runner export-getter
-  warning; browser benches already run native ESM. `tsurlfilter` has no browser
-  project (its benches import `node:fs` and `tsurlfilter-v3`); `agtree` excludes
+  warning; browser benches already run native ESM. The full-list A/B benches
+  (`parse-fixture.bench.ts`, `engine-init.bench.ts`) import the current package
+  from its **built** `dist/` bundle via the package `exports` map so it competes
+  as an optimized bundle — build first (see "Build Before Benchmarking").
+
+- **Node-only benches and the browser project.** `tsurlfilter` has no browser
+  project (its benches import `node:fs`); `agtree` excludes
   `converter.bench.ts` from its browser project via `test.benchmark.exclude` for
   the same reason.
 
@@ -134,14 +167,17 @@ compare against.
   `bench.compare` calls cap `iterations`/`warmupIterations` (tinybench defaults
   to 64 + 16) to keep the whole test well under the bench-mode 60s timeout.
 
-- **Inline fixtures vs real corpora.** The `agtree` and `css-tokenizer` benches
-  run a small inline corpus (8 representative rules / a repeated CSS sample)
-  rather than the large filter-list / CSS corpora the deleted standalone
-  packages downloaded. `agtree` has no committed corpus and `tsurlfilter`'s
-  fixtures live in that package's `test/resources/`, so wiring real corpora in
-  is a follow-up; the inline sets were chosen to cover the main syntax classes
-  (comments, network/exception rules, element hiding, extended CSS, scriptlets,
-  CSS injection, `$removeparam`).
+- **Inline fixtures vs real corpora.** The legacy `agtree` and `css-tokenizer`
+  benches run a small inline corpus (8 representative rules / a repeated CSS
+  sample) chosen to cover the main syntax classes (comments, network/exception
+  rules, element hiding, extended CSS, scriptlets, CSS injection,
+  `$removeparam`). The full-list A/B benches use a real committed corpus
+  instead: the AdGuard Base filter list snapshot at
+  `packages/agtree/test/fixtures/ag-base.txt` (mirrored at
+  `packages/tsurlfilter/test/resources/ag-base.txt`), which the parser bench
+  feeds line-by-line (164,325 lines) and the engine bench indexes (143,149
+  rules). The larger CSS/request corpora of the deleted standalone packages
+  remain a follow-up.
 
 ## Troubleshooting
 
@@ -155,10 +191,10 @@ pnpm ri
 
 ### Issue: Playwright not installed
 
-**Solution**: Install the Chromium browser:
+**Solution**: Install the Chromium and Firefox browsers:
 
 ```bash
-npx playwright install chromium
+pnpm exec playwright install chromium firefox
 ```
 
 ## Additional Resources

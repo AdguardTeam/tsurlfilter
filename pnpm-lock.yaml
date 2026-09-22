@@ -543,6 +543,9 @@ importers:
       agtree-v2:
         specifier: npm:@adguard/agtree@^2.3.0
         version: '@adguard/agtree@2.3.0'
+      agtree-v4:
+        specifier: npm:@adguard/agtree@4.2.1
+        version: '@adguard/agtree@4.2.1'
       comment-parser:
         specifier: ^1.4.5
         version: 1.4.8
@@ -1705,6 +1708,9 @@ importers:
       tsurlfilter-v3:
         specifier: npm:@adguard/tsurlfilter@^3.3.3
         version: '@adguard/tsurlfilter@3.4.6(@adguard/re2-wasm@1.2.0)'
+      tsurlfilter-v6:
+        specifier: npm:@adguard/tsurlfilter@6.0.3
+        version: '@adguard/tsurlfilter@6.0.3'
       tsx:
         specifier: 'catalog:'
         version: 4.19.3
@@ -1989,6 +1995,10 @@ packages:
     hasBin: true
     peerDependencies:
       '@adguard/re2-wasm': 1.2.0
+
+  '@adguard/tsurlfilter@6.0.3':
+    resolution: {integrity: sha512-CXdpEtVFKuvphlSTuvyjrinmYiLC6oRdkvcPM4H0lojfmQm00E2slDdTUue6vd+LQ8HhBDEjZps8q2XL9ljqmg==}
+    engines: {node: '>=22'}
 
   '@asamuzakjp/css-color@3.2.0':
     resolution: {integrity: sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==}
@@ -9837,6 +9847,21 @@ snapshots:
       '@adguard/scriptlets': 2.5.1
       cidr-tools: 6.4.2
       commander: 12.1.0
+      is-cidr: 4.0.2
+      is-ip: 3.1.0
+      lru-cache: 11.1.0
+      punycode: 2.3.1
+      tldts: 5.7.112
+      zod: 3.24.4
+      zod-validation-error: 3.5.2(zod@3.24.4)
+
+  '@adguard/tsurlfilter@6.0.3':
+    dependencies:
+      '@adguard/agtree': 4.2.1
+      '@adguard/css-tokenizer': 1.2.0
+      '@adguard/logger': 2.0.0
+      '@adguard/scriptlets': 2.5.1
+      cidr-tools: 6.4.2
       is-cidr: 4.0.2
       is-ip: 3.1.0
       lru-cache: 11.1.0
