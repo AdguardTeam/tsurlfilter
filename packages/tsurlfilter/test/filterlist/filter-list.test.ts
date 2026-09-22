@@ -240,7 +240,7 @@ describe('FilterList', () => {
         expect(list.getConversionErrors()).toHaveLength(0);
     });
 
-    it('delegates to agtree and tags errors with filterId', () => {
+    it('delegates conversion to agtree', () => {
         const list = new FilterList('example.com##+js(foo)', 42);
         expect(list.getContent()).toBe("example.com#%#//scriptlet('ubo-foo')");
         expect(list.getConvertedRuleOriginal(0)).toBe('example.com##+js(foo)');

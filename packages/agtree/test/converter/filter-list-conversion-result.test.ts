@@ -21,7 +21,6 @@ describe('FilterListConversionResult', () => {
             ProductCode.Adg,
             { originals: ['example.com##+js(foo)'], conversions: { 0: 0 } },
             [],
-            true,
         );
 
         expect(r.getRuleText(0)).toBe("example.com#%#//scriptlet('ubo-foo')");
@@ -40,7 +39,6 @@ describe('FilterListConversionResult', () => {
             ProductCode.Adg,
             { originals: [], conversions: {} },
             [],
-            false,
         );
 
         expect(r.getRuleText(-1)).toBeNull();
@@ -53,7 +51,6 @@ describe('FilterListConversionResult', () => {
             ProductCode.Adg,
             { originals: ['x'], conversions: { 0: 0, 2: 0 } },
             [],
-            true,
         );
 
         expect(r.getOriginalContent()).toBe('x');

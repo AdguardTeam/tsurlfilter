@@ -4,7 +4,7 @@
  * tsurlfilter `ConversionData` so persisted data keeps validating.
  */
 
-import { z as zod } from 'zod';
+import zod from 'zod';
 
 /**
  * Non-negative integer that may arrive as a string (JSON numeric object keys)

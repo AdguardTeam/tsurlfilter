@@ -111,6 +111,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `RawRuleConverter.convertToAdg` and `RawFilterListConverter.convertToAdg` now
   parse at a fixed converter detail level (CSS selector/declaration and HTML
   filtering bodies enabled), so conversions no longer silently under-parse.
+- `FilterListConversionResult.isConverted` is now a getter derived from
+  `sourceMap.originals` instead of a constructor argument, and `product` is
+  typed as `SpecificProductCode`, so a result can never claim to be converted
+  while its source map is empty (or target `ProductCode.Any`).
 
 ### Removed
 
@@ -162,6 +166,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   consecutive combinators, malformed declaration lists). Such rules fall back to
   raw CSS nodes and still convert, as they did before the fixed converter detail
   level was introduced.
+- CSS declaration lists longer than `DEFAULT_MAX_DECLARATIONS` (16) no longer
+  abort conversion: the declaration sub-parser signals the capacity overflow via
+  `ctx.status` instead of throwing, and the cosmetic AST builders now treat that
+  as a rejection and fall back to raw declaration nodes.
 
 ## [4.2.1] - 2026-08-12
 

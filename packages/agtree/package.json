@@ -77,7 +77,7 @@
         "bench": "vitest bench --run --config vitest.bench.config.ts --project \"node*\" --reporter=default --reporter=json --outputFile.json=.vitest/bench/agtree.json",
         "bench:browser": "vitest bench --run --config vitest.bench.config.ts --project \"browser*\" --reporter=default --reporter=json --outputFile.json=.vitest/bench/agtree-browser.json",
         "test:ci": "vitest run --no-cache --reporter default --reporter junit --outputFile=./tests-reports/agtree.xml",
-        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test:ci",
+        "test:prod": "pnpm lint && pnpm test:smoke && pnpm lint:types:bench && pnpm test:ci",
         "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
         "tgz": "pnpm pack --out agtree.tgz",
         "verify-compat": "tsx scripts/compatibility-data-extractor/extractor.ts --scriptlets && tsx scripts/compatibility-data-extractor/validate.ts"

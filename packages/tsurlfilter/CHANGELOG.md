@@ -44,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reject (e.g. pseudo-element selectors such as
   `example.com##*::selection:style(...)`): they fall back to raw CSS and convert
   as before.
+- `FilterList` conversion no longer fails (or records bogus per-rule errors) for
+  CSS injection rules with more than 16 declarations: the agtree CSS
+  sub-parsers now fall back to raw declaration nodes on capacity overflow.
 
 ## [6.0.3] - 2026-08-25
 

@@ -5,7 +5,7 @@
  * tsurlfilter's `FilterList`.
  */
 
-import type { ProductCode } from '../compatibility-tables';
+import type { SpecificProductCode } from '../compatibility-tables';
 import { findNextLineBreak } from '../utils/line-break';
 
 import { type ConversionSourceMap, createEmptyConversionSourceMap } from './source-map';
@@ -42,15 +42,24 @@ export class FilterListConversionResult {
      * @param product Target product the list was converted to (never `Any`).
      * @param sourceMap Source map linking converted lines to originals.
      * @param errors Non-fatal per-rule conversion errors.
-     * @param isConverted Whether at least one rule was converted.
      */
     constructor(
         public readonly converted: string,
-        public readonly product: ProductCode,
+        public readonly product: SpecificProductCode,
         public readonly sourceMap: ConversionSourceMap,
         public readonly errors: readonly FilterListConversionError[],
-        public readonly isConverted: boolean,
     ) {}
+
+    /**
+     * Whether at least one rule was converted.
+     *
+     * Derived from the source map, so the flag can never disagree with it.
+     *
+     * @returns True when at least one rule was converted.
+     */
+    public get isConverted(): boolean {
+        return this.sourceMap.originals.length > 0;
+    }
 
     /**
      * Creates an empty result for the given target product.
@@ -59,8 +68,8 @@ export class FilterListConversionResult {
      *
      * @returns Empty conversion result.
      */
-    public static empty(product: ProductCode): FilterListConversionResult {
-        return new FilterListConversionResult('', product, createEmptyConversionSourceMap(), [], false);
+    public static empty(product: SpecificProductCode): FilterListConversionResult {
+        return new FilterListConversionResult('', product, createEmptyConversionSourceMap(), []);
     }
 
     /**
@@ -71,7 +80,7 @@ export class FilterListConversionResult {
      * @returns Rule text, or null if out of range.
      */
     public getRuleText(offset: number): string | null {
-        if (offset < 0 || offset >= this.converted.length) {
+        if (!this.hasOffset(offset)) {
             return null;
         }
         const [lineBreakStartIndex] = findNextLineBreak(this.converted, offset);
@@ -87,11 +96,8 @@ export class FilterListConversionResult {
      * @returns Original rule text, or null if out of range.
      */
     public getOriginalRuleText(offset: number): string | null {
-        if (offset < 0 || offset >= this.converted.length) {
-            return null;
-        }
-        const originalRuleIndex = this.sourceMap.conversions[offset];
-        if (originalRuleIndex !== undefined) {
+        const originalRuleIndex = this.getOriginalRuleIndex(offset);
+        if (originalRuleIndex !== null) {
             return this.sourceMap.originals[originalRuleIndex];
         }
         return this.getRuleText(offset);
@@ -106,11 +112,8 @@ export class FilterListConversionResult {
      * @returns Original rule text if converted, else null.
      */
     public getConvertedRuleOriginal(offset: number): string | null {
-        if (offset < 0 || offset >= this.converted.length) {
-            return null;
-        }
-        const originalRuleIndex = this.sourceMap.conversions[offset];
-        if (originalRuleIndex !== undefined) {
+        const originalRuleIndex = this.getOriginalRuleIndex(offset);
+        if (originalRuleIndex !== null) {
             return this.sourceMap.originals[originalRuleIndex];
         }
         return null;
@@ -153,5 +156,31 @@ export class FilterListConversionResult {
         }
 
         return originalBuffer;
+    }
+
+    /**
+     * Whether `offset` is a valid position in the converted content.
+     *
+     * @param offset Offset to check.
+     *
+     * @returns True when the offset is within `[0, converted.length)`.
+     */
+    private hasOffset(offset: number): boolean {
+        return offset >= 0 && offset < this.converted.length;
+    }
+
+    /**
+     * Resolves the original rule index mapped at a converted-line offset.
+     *
+     * @param offset Line start offset in the converted content.
+     *
+     * @returns Index into `sourceMap.originals`, or null when the offset is out
+     * of range or the line was not converted.
+     */
+    private getOriginalRuleIndex(offset: number): number | null {
+        if (!this.hasOffset(offset)) {
+            return null;
+        }
+        return this.sourceMap.conversions[offset] ?? null;
     }
 }

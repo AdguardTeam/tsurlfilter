@@ -14,7 +14,6 @@
  */
 
 import { UboPseudoName } from '../../common/ubo-selector-common';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import {
     CosmeticRuleType,
     ListNodeType,
@@ -65,6 +64,7 @@ import { SYNTAX_UBO } from '../../utils/syntax-flags';
 import { DomainListAstBuilder } from '../misc/domain-list';
 import { type ParseOptions } from '../options';
 
+import { tryCssSubParse } from './css-sub-parse';
 import { DeclarationListAstBuilder } from './declaration-list/declaration-list';
 import { SelectorListAstBuilder } from './selector-list/selector-list';
 
@@ -369,11 +369,12 @@ export class UboCssInjectionAstBuilder {
             return UboCssInjectionAstBuilder.buildRaw(cleanedSelector, bodyStart, bodyEnd, isLocIncluded);
         }
 
-        try {
-            // Sub-parse the cleaned selector text via the CSS pipeline.
-            // We re-tokenize because the cleaned selector is a synthesized
-            // string (modifier ranges have been excised from the original).
-            const { tokenizer, ctx } = ensureSubParserContext();
+        // Sub-parse the cleaned selector text via the CSS pipeline.
+        // We re-tokenize because the cleaned selector is a synthesized
+        // string (modifier ranges have been excised from the original).
+        const { tokenizer, ctx } = ensureSubParserContext();
+
+        return tryCssSubParse(ctx, () => {
             tokenizer.source = cleanedSelector;
             tokenizer.offset = 0;
             tokenizer.tokenize();
@@ -390,16 +391,7 @@ export class UboCssInjectionAstBuilder {
                 bodyEnd,
                 { isLocIncluded },
             );
-        } catch (e) {
-            if (!(e instanceof AdblockSyntaxError)) {
-                throw e;
-            }
-            // The strict CSS sub-parser rejects selectors the base pipeline
-            // kept raw (pseudo-elements, namespaces, consecutive combinators,
-            // …). Fall back to the raw selector text so the rule still
-            // converts instead of failing.
-            return UboCssInjectionAstBuilder.buildRaw(cleanedSelector, bodyStart, bodyEnd, isLocIncluded);
-        }
+        }) ?? UboCssInjectionAstBuilder.buildRaw(cleanedSelector, bodyStart, bodyEnd, isLocIncluded);
     }
 
     /**
@@ -436,20 +428,18 @@ export class UboCssInjectionAstBuilder {
             return UboCssInjectionAstBuilder.buildRaw(declText, valueStart, valueEnd, isLocIncluded);
         }
 
-        try {
-            // Sub-parse via the CSS pipeline. The declaration text is a
-            // contiguous sub-range of the original source, so we re-tokenize
-            // a substring to keep the sub-parser stand-alone.
-            const { tokenizer, ctx } = ensureSubParserContext();
+        // Sub-parse via the CSS pipeline. The declaration text is a
+        // contiguous sub-range of the original source, so we re-tokenize
+        // a substring to keep the sub-parser stand-alone.
+        const { tokenizer, ctx } = ensureSubParserContext();
+
+        return tryCssSubParse(ctx, () => {
             tokenizer.source = declText;
             tokenizer.offset = 0;
             tokenizer.tokenize();
             initParserContext(ctx, declText, tokenizer);
 
             DeclarationListParser.parse(ctx, 0, ctx.tokenCount, 0, DEFAULT_MAX_DECLARATIONS);
-            if (ctx.status === 1) {
-                throw new Error('Parser data buffer overflow: declaration list too large for current capacity');
-            }
 
             return DeclarationListAstBuilder.parse(
                 declText,
@@ -460,14 +450,7 @@ export class UboCssInjectionAstBuilder {
                 valueEnd,
                 { isLocIncluded },
             );
-        } catch (e) {
-            if (!(e instanceof AdblockSyntaxError)) {
-                throw e;
-            }
-            // Malformed declaration lists (kept raw by the base pipeline) fall
-            // back to raw text so the rule still converts.
-            return UboCssInjectionAstBuilder.buildRaw(declText, valueStart, valueEnd, isLocIncluded);
-        }
+        }) ?? UboCssInjectionAstBuilder.buildRaw(declText, valueStart, valueEnd, isLocIncluded);
     }
 
     /**

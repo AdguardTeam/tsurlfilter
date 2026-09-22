@@ -1,10 +1,15 @@
 /**
- * @file Fixed parser detail level used by every converter entry point so that
- * single-rule and whole-list conversion can never disagree, and rules are
- * parsed at the highest detail the parser supports (the CSS/HTML flags default
- * off in the parser). The strict CSS sub-parsers degrade to raw selector /
- * declaration nodes for constructs they cannot parse (e.g. pseudo-element
- * selectors), so conversion is never silently lost.
+ * @file Fixed parser detail level used by the raw converter entry points
+ * (`RawRuleConverter` / `RawFilterListConverter`) so that single-rule and
+ * whole-list conversion can never disagree, and rules are parsed at the highest
+ * detail the parser supports (the CSS/HTML flags default off in the parser).
+ * The strict CSS sub-parsers degrade to raw selector / declaration nodes for
+ * constructs they cannot parse (e.g. pseudo-element selectors, oversized
+ * declaration lists), so conversion is never silently lost.
+ *
+ * The AST converters receive caller-parsed nodes, so their output depends on
+ * the flags used to build those nodes. AST callers should parse with these
+ * options for matching output.
  */
 
 import { type ParseOptions } from '../ast-builder/options';

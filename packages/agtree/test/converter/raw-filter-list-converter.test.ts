@@ -177,9 +177,32 @@ describe('RawFilterListConverter (regression)', () => {
         // Strict mode must not throw for these rules either.
         expect(() => RawFilterListConverter.convertToAdg(filterListContent, { tolerant: false })).not.toThrow();
     });
+
+    test('declaration lists longer than the capacity limit still convert via raw CSS', () => {
+        // More declarations than DEFAULT_MAX_DECLARATIONS (16): the declaration
+        // sub-parser signals overflow via ctx.status instead of throwing, so the
+        // rule must convert (not be kept verbatim with a bogus error).
+        const declarations = 'a:1;b:2;c:3;d:4;e:5;f:6;g:7;h:8;i:9;j:10;k:11;l:12;m:13;n:14;o:15;p:16;q:17';
+        const filterListContent = [
+            `example.com##h1:style(${declarations})`,
+            `example.com#$#h1 { ${declarations} }`,
+        ].join('\n');
+
+        const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
+
+        expect(convertedFilterList.errors).toEqual([]);
+        expect(convertedFilterList.converted).toBe([
+            `example.com#$#h1 { ${declarations} }`,
+            `example.com#$#h1 { ${declarations} }`,
+        ].join('\n'));
+        expect(convertedFilterList.getOriginalContent()).toBe(filterListContent);
+
+        // Strict mode must not throw for these rules either.
+        expect(() => RawFilterListConverter.convertToAdg(filterListContent, { tolerant: false })).not.toThrow();
+    });
 });
 
-describe('RawFilterListConverter parity with tsurlfilter FilterList', () => {
+describe('RawFilterListConverter round trip', () => {
     test.each([
         [
             '||example.org^\nexample.com##.ad\nexample.com#@#.ad\n'

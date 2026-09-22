@@ -1,6 +1,8 @@
 import {
+    type FilterListConversionError as AgtreeFilterListConversionError,
     type ConversionSourceMap,
     conversionSourceMapValidator,
+    createEmptyConversionSourceMap,
     FilterListConversionResult,
     ProductCode,
     RawFilterListConverter,
@@ -22,22 +24,7 @@ export type ConversionData = ConversionSourceMap;
 /**
  * Conversion error tagged with the source filter id.
  */
-export interface FilterListConversionError {
-    /**
-     * Original rule text that failed to convert.
-     */
-    rule: string;
-
-    /**
-     * The UTF-16 code-unit offset of the rule in the original content.
-     */
-    offset: number;
-
-    /**
-     * Error message.
-     */
-    message: string;
-
+export interface FilterListConversionError extends AgtreeFilterListConversionError {
     /**
      * Filter id associated with the error.
      */
@@ -55,11 +42,6 @@ export class FilterList {
     private readonly result: FilterListConversionResult;
 
     /**
-     * Filter id used to tag conversion errors.
-     */
-    private readonly filterId: number;
-
-    /**
      * Conversion errors tagged with the filter id.
      */
     private readonly errors: FilterListConversionError[];
@@ -74,20 +56,16 @@ export class FilterList {
      * treated as already converted and is NOT re-converted.
      */
     constructor(content: string, filterId?: number, data?: ConversionData) {
-        this.filterId = filterId ?? FILTER_LIST_ID_NONE;
+        const resolvedFilterId = filterId ?? FILTER_LIST_ID_NONE;
 
         if (data !== undefined) {
-            // `originals` is non-empty exactly when the converter produced at
-            // least one conversion — no need to allocate an array of every
-            // offset just to test the map for emptiness.
-            const isConverted = data.originals.length > 0;
-            this.result = new FilterListConversionResult(content, ProductCode.Adg, data, [], isConverted);
+            this.result = new FilterListConversionResult(content, ProductCode.Adg, data, []);
             this.errors = [];
             return;
         }
 
         this.result = RawFilterListConverter.convertToAdg(content);
-        this.errors = this.result.errors.map((e) => ({ ...e, filterId: this.filterId }));
+        this.errors = this.result.errors.map((e) => ({ ...e, filterId: resolvedFilterId }));
     }
 
     /**
@@ -105,7 +83,7 @@ export class FilterList {
      * @returns Empty conversion data.
      */
     public static createEmptyConversionData(): ConversionData {
-        return { originals: [], conversions: {} };
+        return createEmptyConversionSourceMap();
     }
 
     /**

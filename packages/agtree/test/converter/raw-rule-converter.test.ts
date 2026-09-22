@@ -2,6 +2,12 @@ import { describe, expect, test } from 'vitest';
 
 import { RawRuleConverter } from '../../src/converter/raw-rule';
 
+/**
+ * More declarations than `DEFAULT_MAX_DECLARATIONS` (16); the declaration
+ * sub-parser signals the overflow via `ctx.status` instead of throwing.
+ */
+const OVERFLOW_DECLARATIONS = 'a:1;b:2;c:3;d:4;e:5;f:6;g:7;h:8;i:9;j:10;k:11;l:12;m:13;n:14;o:15;p:16;q:17';
+
 describe('Raw rule converter wrapper should work correctly', () => {
     describe('should convert rules to ADG', () => {
         // Test some rules, no need to test all possible rule types here, since we already tested them in elsewhere.
@@ -93,6 +99,10 @@ describe('RawRuleConverter fixed detail level', () => {
             'example.com##div > > p:style(color:red)',
             ['example.com#$#div > > p { color: red }'],
         ],
+        [
+            `example.com##h1:style(${OVERFLOW_DECLARATIONS})`,
+            [`example.com#$#h1 { ${OVERFLOW_DECLARATIONS} }`],
+        ],
     ])('falls back to raw CSS and converts %j', (rule, expected) => {
         expect(() => RawRuleConverter.convertToAdg(rule)).not.toThrow();
 
@@ -100,6 +110,11 @@ describe('RawRuleConverter fixed detail level', () => {
 
         expect(result.isConverted).toBe(true);
         expect(result.result).toEqual(expected);
+    });
+
+    test('does not throw for an ADG CSS injection rule with oversized declarations', () => {
+        const rule = `example.com#$#h1 { ${OVERFLOW_DECLARATIONS} }`;
+        expect(() => RawRuleConverter.convertToAdg(rule)).not.toThrow();
     });
 });
 

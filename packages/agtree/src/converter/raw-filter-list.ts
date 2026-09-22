@@ -15,6 +15,7 @@
 import { RuleParserPipeline } from '../ast-builder/rule-parser';
 import { ProductCode } from '../compatibility-tables';
 import { RuleGenerator } from '../generator';
+import { LF } from '../utils/constants';
 import { getErrorMessage } from '../utils/error';
 import { findNextLineBreak } from '../utils/line-break';
 
@@ -23,9 +24,7 @@ import { isConversionCandidate } from './candidate-filter';
 import { type FilterListConversionError, FilterListConversionResult } from './filter-list-conversion-result';
 import { CONVERTER_PARSE_OPTIONS } from './parse-options';
 import { RuleConverter } from './rule';
-import { type ConversionSourceMap } from './source-map';
-
-const LF = '\n';
+import { createEmptyConversionSourceMap } from './source-map';
 
 /**
  * Dedicated pipeline for whole-list conversion. Kept separate from the pipeline
@@ -92,8 +91,7 @@ export class RawFilterListConverter extends BaseConverter {
 
         const parts: string[] = [];
         let convertedLength = 0;
-        let isConverted = false;
-        const sourceMap: ConversionSourceMap = { originals: [], conversions: {} };
+        const sourceMap = createEmptyConversionSourceMap();
         const errors: FilterListConversionError[] = [];
 
         const append = (chunk: string): void => {
@@ -139,7 +137,6 @@ export class RawFilterListConverter extends BaseConverter {
                     continue;
                 }
 
-                isConverted = true;
                 const originalIndex = sourceMap.originals.length;
                 sourceMap.originals.push(line);
 
@@ -184,7 +181,6 @@ export class RawFilterListConverter extends BaseConverter {
             ProductCode.Adg,
             sourceMap,
             errors,
-            isConverted,
         );
     }
 }

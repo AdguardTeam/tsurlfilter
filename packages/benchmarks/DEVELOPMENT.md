@@ -95,10 +95,11 @@ Keep these aliases up to date when new major versions are released.
 3. If it imports fixtures via `node:fs`, or imports the current implementation
    from `src`, it is Node-only and must be excluded from the browser project —
    add it to that project's `test.benchmark.exclude` (see agtree's
-   `vitest.config.ts`, which excludes `converter.bench.ts`); otherwise
-   `pnpm bench:browser` collects it and dies on the import in Chromium. Prefer
-   Vite's `?raw` fixture imports (with the ambient `declare module '*?raw'`
-   typing in `test/types/`) when the benchmark should also run in the browser.
+   `vitest.bench.config.ts`, which excludes `converter.bench.ts` from the
+   browser project); otherwise `pnpm bench:browser` collects it and dies on the
+   import in Chromium. Prefer Vite's `?raw` fixture imports (with the ambient
+   `declare module '*?raw'` typing in `typings/`) when the benchmark should
+   also run in the browser.
 4. Measure the current implementation as its BUILT bundle, not as source: import
    the package by its own name (`@adguard/agtree`) so its `exports` map resolves
    to `dist/`, and list both the package and the baseline in that project's
