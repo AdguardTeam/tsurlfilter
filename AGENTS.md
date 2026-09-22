@@ -128,13 +128,16 @@ reusing build layers. Per-package `test:ci` scripts produce JUnit XML output.
 - `_prepare-release-monorepo.yml` — reusable monorepo prepare engine: finalizes
   the package changelog via `.github/actions/finalize-changelog/finalize-changelog.mjs`,
   pushes `release-bump/<package>-v<version>`, opens the release PR.
-- `publish-release.yml` — publishes a package to npm after the release PR
-  merges (Docker test/build → npm → tag `<package>-v<version>` — created only
-  after the publish succeeds → mirror → GitHub Release → Slack); thin caller of
-  `_publish-release-monorepo.yml`.
+- `publish-release.yml` — publishes a package after the release PR merges
+  (Docker test/build → npm → tag `<package>-v<version>` — created only after
+  the publish succeeds → mirror → GitHub Release → Slack); thin caller of
+  `_publish-release-monorepo.yml`. dnr-rulesets releases skip npm (registry
+  429 throttling, AG-58865) and publish to the internal Artifact Keeper
+  instead, like the stable line.
 - `_publish-release-monorepo.yml` — reusable monorepo publish engine
-  (Docker test/build → npm → tag after publish → mirror → GitHub Release →
-  Slack, with a failure-notify Slack job).
+  (Docker test/build → npm or Artifact Keeper (`publish_target` input) → tag
+  after publish → mirror → GitHub Release → Slack, with a failure-notify Slack
+  job).
 - `publish-stable-dnr-rulesets.yml` — twice-daily scheduled build/publish of
   `@adguard/dnr-rulesets` from the `stable/dnr-rulesets-5.0` branch. Only the
   5.0 line is published (under `latest`); the older stable lines are no longer
