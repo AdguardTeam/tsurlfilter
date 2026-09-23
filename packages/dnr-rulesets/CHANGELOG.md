@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for Edge MV3 filters (`BrowserFilters.EdgeMv3`), including rulesets,
+  metadata, local script rules, assets loading, and CLI browser selection.
+
 ### Changed
 
 - Updated [@adguard/agtree] to `v4.2.1`.
