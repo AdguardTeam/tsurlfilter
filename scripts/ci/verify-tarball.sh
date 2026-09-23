@@ -8,7 +8,11 @@
 #   3. when <expected-name> is given, its `name` field must equal it (the
 #      DevEx bridge passes `@adguard/<package>` so a tampered manifest cannot
 #      publish under a different AK package identity with the org secret);
-#   4. the tarball must hold more than five entries.
+#   4. the tarball must hold more than five entries;
+#   5. the tarball must contain a LICENSE/LICENCE/COPYING file (npm/pnpm pack
+#      include these automatically from the package directory even when they
+#      are not listed in "files", so a missing entry means the published
+#      package would ship without a license).
 #
 # This logic used to live inline in
 # .github/workflows/_publish-release-monorepo.yml as
@@ -25,8 +29,10 @@ TGZ="$1"
 EXPECTED_VERSION="$2"
 EXPECTED_NAME="${3:-}"
 
-# The listing doubles as an audit trail in the release log.
-tar -tzf "$TGZ"
+# The listing doubles as an audit trail in the release log. It is captured
+# once and reused by the license check below.
+TARBALL_LISTING=$(tar -tzf "$TGZ")
+printf '%s\n' "$TARBALL_LISTING"
 
 # Presence check: tar -xOf exits non-zero when the member is absent.
 if ! tar -xOf "$TGZ" package/package.json >/dev/null; then
@@ -52,12 +58,23 @@ if [ -n "$EXPECTED_NAME" ]; then
     fi
 fi
 
-# Entry-count check. `wc -l` reads the listing to EOF, so tar never sees a
-# closed pipe here either.
-FILE_COUNT=$(tar -tzf "$TGZ" | wc -l | tr -d ' ')
+# Entry-count check, using the captured listing so tar never sees a closed
+# pipe here either.
+FILE_COUNT=$(printf '%s\n' "$TARBALL_LISTING" | wc -l | tr -d ' ')
 if [ "$FILE_COUNT" -le 5 ]; then
     echo "::error::$TGZ contains only $FILE_COUNT entries — likely a broken package" >&2
     exit 1
 fi
 
-echo "Verified $TGZ: version $PACKED_VERSION${EXPECTED_NAME:+ name $PACKED_NAME}, $FILE_COUNT entries"
+# License presence check. npm/pnpm pack always include LICENSE/LICENCE/COPYING
+# files from the package directory even when they are not listed in "files",
+# so their absence means the package has no license file and the tarball would
+# be published without one. The pattern mirrors npm-packlist's always-included
+# names (case-insensitive, optional .md/.txt/other suffix) and is applied to
+# the captured listing so no early-exiting consumer can break the tar pipe.
+if ! grep -qiE '^package/(LICEN[CS]E|COPYING)([.-][^/~$]*)?$' <<<"$TARBALL_LISTING"; then
+    echo "::error::no LICENSE/COPYING file in $TGZ" >&2
+    exit 1
+fi
+
+echo "Verified $TGZ: version $PACKED_VERSION${EXPECTED_NAME:+ name $PACKED_NAME}, $FILE_COUNT entries, license present"
