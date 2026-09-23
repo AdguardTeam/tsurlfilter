@@ -125,10 +125,7 @@ describe('Content filtering', () => {
 
         const expectedSortedRules: number[] = [2, 3, 1];
 
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore - spying on private static method
-        // (not @ts-expect-error: with vitest 4 + newer polyfill types the expression type-checks,
-        // and an unused @ts-expect-error would fail tsc)
+        // @ts-expect-error - spying on private static method
         const contentStringFilterConstructorSpy = vi.spyOn(ContentFiltering, 'getReplaceRules');
 
         contentFiltering.process({

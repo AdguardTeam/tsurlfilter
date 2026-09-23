@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `documentId`/`parentDocumentId` support to webNavigation types and renames
   `WebRequest.BlockingResponseOrPromise` to `BlockingResponseOrPromiseOrVoid`;
   documentation now reflects that document tracking works the same in Firefox 153+
-  as in Chromium.
+  as in Chromium. Consumers compiling against the published declarations must use
+  `@types/webextension-polyfill` >= 0.12.6, since the previous alias is gone.
 
 ### Deprecated
 
