@@ -92,12 +92,19 @@ jobs:
   tag:
     needs: [parse, build, publish, publish-ak]
     # One of the publish legs is always skipped (the one not selected by
-    # publish_target), and GitHub skips jobs that `need` a skipped job unless
-    # their `if` references the job outcomes — the plain `!inputs.dry_run`
-    # gate silently skipped tag/mirror/notify on the first AK release (beta.1
-    # got no tag, no mirror, no GitHub Release, no Slack message). Gate on the
-    # publish results explicitly instead.
-    if: ${{ !cancelled() && !inputs.dry_run && needs.publish.result != 'failure' && needs.publish-ak.result != 'failure' }}
+    # publish_target). Unless `if` contains one of the status-check functions
+    # (success/failure/always/cancelled), GitHub applies the default
+    # success() check, which is false whenever a needed job was skipped —
+    # hence the plain `!inputs.dry_run` gate silently skipped tag/mirror/notify
+    # on the first AK release (beta.1 got no tag, no mirror, no GitHub
+    # Release, no Slack message). `!cancelled()` (the docs' recommended
+    # alternative to always()) is the load-bearing term — dropping it
+    # reinstates the default check and the skip. Requiring a successful
+    # publish leg — not merely a non-failed one; same as
+    # publish-stable-dnr-rulesets.yml — also keeps the tag away from runs
+    # whose publish legs were both skipped (e.g. a failed build): such a tag
+    # would block a re-release of the version (git-tag uses force: false).
+    if: ${{ !cancelled() && !inputs.dry_run && (needs.publish.result == 'success' || needs.publish-ak.result == 'success') }}
     uses: AdGuardSoftwareLimited/actions/.github/workflows/git-tag.yml@master
     with:
       team: ${{ inputs.team }}
@@ -268,9 +275,14 @@ jobs:
 
   mirror-and-release:
     needs: [parse, tag, publish, publish-ak]
-    # Same skip-propagation fix as `tag`: one publish leg is always skipped,
-    # so gate on the publish results explicitly (see the comment on `tag`).
-    if: ${{ !cancelled() && !inputs.dry_run && needs.publish.result != 'failure' && needs.publish-ak.result != 'failure' }}
+    # Same skip-propagation fix as `tag` — see the full explanation there.
+    # `!cancelled()` must stay: without a status-check function the default
+    # success() check skips this job over the always-skipped publish leg. The
+    # tag must also have succeeded — a failed tag (e.g. the tag already
+    # exists) must not be mirrored or given a GitHub Release, and a version
+    # whose publish legs were both skipped (e.g. a failed build) must not be
+    # released either.
+    if: ${{ !cancelled() && !inputs.dry_run && needs.tag.result == 'success' && (needs.publish.result == 'success' || needs.publish-ak.result == 'success') }}
     uses: AdGuardSoftwareLimited/actions/.github/workflows/mirror-and-release.yml@master
     with:
       team: ${{ inputs.team }}
