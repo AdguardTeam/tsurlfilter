@@ -143,6 +143,10 @@ version via the prepare workflow. A `dry_run` re-run never hits this — under
 ### Re-running a failed publish
 
 Go to **Actions → Publish release → Run workflow** and trigger the caller with
-`package`, an optional `ref` (leave empty for the merge commit / current
-`master`), and optionally `dry_run: true` to validate the pipeline without
-touching the registry.
+`package` and the `ref` pinned to the merge commit SHA of the release PR. Do
+not leave `ref` empty: the changelog at the current `master` tip may already
+describe a newer version, and an empty `ref` publishes whatever it says. For
+failures after something has already been published, re-dispatching is not
+safe — see ["Re-running a release manually"](../../DEPLOYMENT.md#re-running-a-release-manually)
+in `DEPLOYMENT.md` for the right recovery path. Optionally set `dry_run: true`
+to validate the pipeline without touching the registry.

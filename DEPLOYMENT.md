@@ -80,10 +80,14 @@ section instead.
   ```
 
   If the publish leg itself succeeded but the downstream jobs were *skipped*
-  (rather than failed — e.g. the pre-fix skip propagation in AG-59411), GitHub
-  cannot re-run skipped jobs; re-dispatch with the pinned `ref` above only if
-  the version is not yet on the registry, otherwise complete the tag/mirror
-  legs manually.
+  (rather than failed — e.g. the pre-fix skip propagation in AG-59411):
+  re-running does not help. A run with no failures still offers *Re-run all
+  jobs* (`gh run rerun <run-id>`), which re-runs skipped jobs too, but a
+  re-run replays the original workflow revision and commit SHA — the pre-fix
+  `if` conditions would skip the same jobs again — and re-running the publish
+  leg would hit the 409 anyway. Re-dispatch with the pinned `ref` above only
+  if the version is not yet on the registry, otherwise complete the
+  tag/mirror legs manually.
 
 ## Scheduled automation
 
