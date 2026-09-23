@@ -101,11 +101,13 @@ environment with the `extensions` team as reviewer).
 On success, a Slack notification is posted via the shared `slack` action from
 the [`actions`](https://github.com/AdGuardSoftwareLimited/actions) repo,
 controlled by the `slack_channel` input. For Artifact Keeper publishes, the
-message includes install instructions (internal AK registry + `pnpm add`),
-similar to the devex-bridge dev-builds PR comment. The message intentionally
-carries no re-run command — how to re-run a release manually is documented in
-`DEPLOYMENT.md` ("Re-running a release manually"). Notification failures are
-non-blocking.
+message includes install instructions for the internal AK registry: a
+project-scoped `npm config set @adguard:registry … --location=project` (a
+global entry in `~/.npmrc` would redirect every `@adguard` install to the
+VPN-only AK host, so the cleanup step is included too) plus `pnpm add`. The
+message intentionally carries no re-run command — how to re-run a release
+manually is documented in `DEPLOYMENT.md` ("Re-running a release manually").
+Notification failures are non-blocking.
 
 ## Troubleshooting
 

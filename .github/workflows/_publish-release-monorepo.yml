@@ -318,8 +318,11 @@ jobs:
 
       # Artifact Keeper publishes are consumed from the internal AK registry
       # (the browser-extension auto-build pulls from there when npm throttles),
-      # so the success message carries the install instructions — same spirit
-      # as the devex-bridge dev-builds comment on PRs.
+      # so the success message carries the install instructions. The registry
+      # redirect is project-scoped (`--location=project`) with an explicit
+      # cleanup step: a global `@adguard:registry` in ~/.npmrc would redirect
+      # every other @adguard install to the internal host, which is
+      # unreachable off the VPN.
       - name: Send Slack notification (Artifact Keeper)
         if: ${{ inputs.publish_target == 'ak' }}
         uses: AdGuardSoftwareLimited/actions/actions/slack@master
@@ -329,9 +332,12 @@ jobs:
             :white_check_mark: *${{ inputs.npm_package_name }}* *v${{ needs.parse.outputs.version }}*
             published to Artifact Keeper (dist-tag: `${{ needs.parse.outputs.dist-tag }}`) — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>
 
-            To use it, install from the internal AK registry:
-            `npm config set @adguard:registry ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal`
+            To use it, install from the internal AK registry (VPN only). Scope
+            the registry to the project — a global `@adguard:registry` would
+            break every other @adguard install off the VPN:
+            `npm config set @adguard:registry ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal --location=project`
             `pnpm add ${{ inputs.npm_package_name }}@${{ needs.parse.outputs.version }}`
+            Cleanup when done: `npm config delete @adguard:registry --location=project`
           color: good
 
   notify-failure:
