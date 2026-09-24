@@ -38,6 +38,7 @@ import {
     EQUALS,
     OPEN_SQUARE_BRACKET,
     SINGLE_QUOTE,
+    SLASH,
 } from '../../utils/constants';
 import { RegExpUtils } from '../../utils/regexp';
 import { SPECIAL_PSEUDO_CLASS_NAMES } from '../../utils/special-pseudo-classes';
@@ -142,6 +143,16 @@ const SPECIAL_PSEUDO_CLASS_ARG_MARKERS = SPECIAL_PSEUDO_CLASS_NAMES.map((name) =
 const SPECIAL_ATTRIBUTE_SELECTOR_PATTERN = new RegExp(
     `^\\[\\s*(?:${Object.values(AdgAttributeSelectors).join('|')})\\s*=`,
 );
+
+/**
+ * Pattern matching [tag-content] values that are NOT chain-safe, i.e. cannot
+ * be emitted as a standalone `:contains()` literal directly followed by
+ * another special pseudo-class: quotes, parentheses, brackets, braces,
+ * backslashes or colons in the literal make CoreLibs' special pseudo-class
+ * argument scanner swallow the next free `:` so that the two pseudo-classes
+ * silently collapse into one bogus literal argument.
+ */
+const CHAIN_UNSAFE_LITERAL_PATTERN = /["'\\()[\]{}:]/;
 
 /**
  * Error messages used in HTML filtering rule conversion.
@@ -931,7 +942,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
             const lengthConstraints = shouldMergeLengthSelectors
                 ? HtmlRuleConverter.collectLengthConstraints(selectors)
                 : null;
-            let lengthContainsEmitted = false;
+
+            // Deferred special attribute values (ADG→ADG only): [tag-content]
+            // and [wildcard] cannot be converted in isolation, because their
+            // CoreLibs-safe form depends on the other special attributes of
+            // the same complex selector — see appendSpecialAttributePseudoClasses
+            const deferredTagContentValues: string[] = [];
+            const deferredWildcardValues: string[] = [];
 
             // Convert each selector
             const convertedSelectors: (SimpleSelector | SelectorCombinator)[] = [];
@@ -995,6 +1012,31 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         const name = selector.name.value;
                         const { value } = selector.value;
 
+                        // [tag-content] and [wildcard] are deferred in ADG→ADG
+                        // conversion: their emission may need to be merged with
+                        // the length constraints or with each other to stay
+                        // valid in CoreLibs.
+                        if (
+                            shouldMergeLengthSelectors
+                            && (
+                                name === AdgAttributeSelectors.TagContent
+                                || name === AdgAttributeSelectors.Wildcard
+                            )
+                        ) {
+                            // Invoke the callback to trigger its side effects
+                            // (e.g. the isConverted flag in convertToAdg), but
+                            // discard the single-attribute pseudo-class it
+                            // returns — the actual nodes are emitted after the
+                            // selector loop.
+                            onSpecialAttributeSelector(name, value);
+                            if (name === AdgAttributeSelectors.TagContent) {
+                                deferredTagContentValues.push(value);
+                            } else {
+                                deferredWildcardValues.push(value);
+                            }
+                            continue;
+                        }
+
                         // Merge [min-length] and [max-length] into a single :contains() (ADG→ADG)
                         if (
                             lengthConstraints !== null
@@ -1003,21 +1045,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                 || name === AdgAttributeSelectors.MaxLength
                             )
                         ) {
-                            if (!lengthContainsEmitted) {
-                                // Invoke the callback once to trigger its side effects
-                                // (e.g. the isConverted flag in convertToAdg), but discard
-                                // the individual :contains() it returns — we emit the
-                                // merged one instead.
-                                onSpecialAttributeSelector(name, value);
-                                convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
-                                    AdgPseudoClasses.Contains,
-                                    RegExpUtils.getLengthRegexp(
-                                        lengthConstraints.min,
-                                        lengthConstraints.max,
-                                    ),
-                                ));
-                                lengthContainsEmitted = true;
-                            }
+                            // Invoke the callback to trigger its side effects
+                            // (e.g. the isConverted flag in convertToAdg), but
+                            // discard the individual :contains() it returns —
+                            // the merged one is emitted after the selector loop,
+                            // possibly combined with the other deferred
+                            // constraints.
+                            onSpecialAttributeSelector(name, value);
                             continue;
                         }
 
@@ -1082,6 +1116,20 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 convertedSelectors.push(HtmlRuleConverter.cloneSelector(selector));
             }
 
+            // Emit the pseudo-classes converted from the deferred special
+            // attribute selectors (ADG→ADG). They are appended at the end of
+            // the complex selector, which is their original position in any
+            // rule that is valid in CoreLibs: special attributes may only
+            // appear on the leaf selector there.
+            if (shouldMergeLengthSelectors) {
+                HtmlRuleConverter.appendSpecialAttributePseudoClasses(
+                    convertedSelectors,
+                    deferredTagContentValues,
+                    deferredWildcardValues,
+                    lengthConstraints,
+                );
+            }
+
             convertedComplexSelectors.push({
                 type: 'ComplexSelector',
                 children: convertedSelectors,
@@ -1105,6 +1153,184 @@ export class HtmlRuleConverter extends RuleConverterBase {
         }
 
         return convertedBody;
+    }
+
+    /**
+     * Checks whether a [tag-content] literal can be emitted as a standalone
+     * `:contains()` pseudo-class directly followed by another special
+     * pseudo-class ("chain-safe"):
+     *
+     * - it must not be empty and must not start with a slash — a leading `/`
+     *   makes the argument look like a regular expression to CoreLibs;
+     * - it must not contain quotes, parentheses, brackets, braces,
+     *   backslashes or colons — CoreLibs' special pseudo-class argument
+     *   scanner splits a `:contains()` chain at the next free `:`, and any
+     *   of those characters would swallow the separator, silently merging
+     *   the two pseudo-classes into a single bogus literal argument.
+     *
+     * A literal that is not chain-safe is still valid as a *single*
+     * `:contains()` pseudo-class (CoreLibs takes the whole argument between
+     * `(` and the closing `)` of the sole pseudo-class in the rule), but it
+     * must be folded into a merged regular expression as soon as another
+     * regex-like constraint has to be emitted as well.
+     *
+     * @param value [tag-content] value to check.
+     *
+     * @returns `true` if the literal is chain-safe, otherwise `false`.
+     */
+    private static isChainSafeLiteral(value: string): boolean {
+        return value.length > 0
+            && value[0] !== SLASH
+            && !CHAIN_UNSAFE_LITERAL_PATTERN.test(value);
+    }
+
+    /**
+     * Emits the pseudo-classes converted from the deferred special attribute
+     * selectors ([tag-content], [wildcard], [min-length], [max-length]) of a
+     * single complex selector, honoring the constraints of CoreLibs' HTML
+     * filter:
+     *
+     * - at most one "tag-content" constraint (a literal `:contains()`) and one
+     *   "wildcard" constraint (a regex `:contains()`) are allowed per selector,
+     *   so e.g. `[wildcard="..."]` cannot be chained with
+     *   `[max-length="..."]` as two regex `:contains()` pseudo-classes;
+     * - a literal `:contains()` may be chained in front of a single regex
+     *   `:contains()` only when it is chain-safe, see
+     *   {@link HtmlRuleConverter.isChainSafeLiteral}.
+     *
+     * Combinations which cannot be represented as such a chain — an unsafe
+     * literal plus any regex-like constraint, or several regex-like
+     * constraints (multiple [wildcard] values, `[wildcard]` combined with
+     * `[min/max-length]`, multiple [tag-content] values) — are merged into a
+     * single regular expression instead:
+     * `/^(?=.{min,max}$)(?=<glob>)(?=.*<literal>).*\/s`.
+     *
+     * @param convertedSelectors Converted selectors of the complex selector,
+     * the emitted pseudo-classes are appended to it.
+     * @param tagContentValues Deferred [tag-content] values.
+     * @param wildcardGlobValues Deferred [wildcard] glob values.
+     * @param lengthConstraints Deferred length constraints collected from
+     * [min-length] / [max-length], or `null` if absent.
+     */
+    private static appendSpecialAttributePseudoClasses(
+        convertedSelectors: (SimpleSelector | SelectorCombinator)[],
+        tagContentValues: string[],
+        wildcardGlobValues: string[],
+        lengthConstraints: { min: number | null; max: number | null } | null,
+    ): void {
+        // Nothing was deferred
+        if (
+            tagContentValues.length === 0
+            && wildcardGlobValues.length === 0
+            && lengthConstraints === null
+        ) {
+            return;
+        }
+
+        const literalChainSafe = tagContentValues.length === 1
+            && HtmlRuleConverter.isChainSafeLiteral(tagContentValues[0]);
+
+        // Whether the deferred constraints require a regex `:contains()`
+        // pseudo-class: either several regex-like constraints (multiple
+        // [wildcard] values, or [wildcard] combined with [min/max-length]),
+        // or an unsafe literal which cannot stand in front of another
+        // special pseudo-class.
+        const needsRegexContains = lengthConstraints !== null
+            || wildcardGlobValues.length > 0
+            || tagContentValues.length > 1;
+
+        // Whether the single [tag-content] literal is emitted as a standalone
+        // `:contains()` pseudo-class: always safe when it is the only special
+        // pseudo-class of the selector, and safe right before a single regex
+        // `:contains()` only when chain-safe; otherwise it is folded into the
+        // merged regex below.
+        const emitLiteralStandalone = tagContentValues.length === 1
+            && (literalChainSafe || !needsRegexContains);
+
+        if (emitLiteralStandalone) {
+            convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
+                AdgPseudoClasses.Contains,
+                tagContentValues[0],
+            ));
+        }
+
+        // Literals which were not emitted standalone are folded into the
+        // merged regex as lookaheads
+        const mergedLiterals = emitLiteralStandalone
+            ? tagContentValues.slice(1)
+            : tagContentValues;
+
+        // Count the constraints which still have to be emitted: when exactly
+        // one remains, it keeps its own canonical single-constraint form
+        const remainingConstraints = mergedLiterals.length
+            + wildcardGlobValues.length
+            + (lengthConstraints !== null ? 1 : 0);
+
+        if (remainingConstraints === 0) {
+            // A literal-only selection needs nothing else: even a literal
+            // which is not chain-safe is valid as a single `:contains()`, as
+            // CoreLibs takes the whole argument of the only pseudo-class in
+            // the rule.
+            return;
+        }
+
+        if (
+            remainingConstraints === 1
+            && mergedLiterals.length === 0
+            && lengthConstraints === null
+        ) {
+            // A single [wildcard] constraint keeps its own canonical form
+            convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
+                AdgPseudoClasses.Contains,
+                RegExpUtils.globToRegExp(wildcardGlobValues[0]),
+            ));
+            return;
+        }
+
+        if (
+            remainingConstraints === 1
+            && mergedLiterals.length === 0
+            && wildcardGlobValues.length === 0
+        ) {
+            // A single length constraint keeps its own canonical form.
+            // lengthConstraints is non-null because remainingConstraints
+            // is 1 and neither literals nor globs remain.
+            convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
+                AdgPseudoClasses.Contains,
+                RegExpUtils.getLengthRegexp(
+                    lengthConstraints?.min ?? null,
+                    lengthConstraints?.max ?? null,
+                ),
+            ));
+            return;
+        }
+
+        // All remaining constraints are merged into a single regular
+        // expression, each as a lookahead: length `(?=.{min,max}$)`, glob
+        // `(?=<glob>)`, escaped literal `(?=.*<literal>)`.
+        let mergedRegex = '/^';
+
+        if (lengthConstraints !== null) {
+            mergedRegex += RegExpUtils.getLengthLookahead(
+                lengthConstraints.min,
+                lengthConstraints.max,
+            );
+        }
+
+        for (const glob of wildcardGlobValues) {
+            mergedRegex += `(?=${RegExpUtils.globToRegExpBody(glob)})`;
+        }
+
+        for (const literal of mergedLiterals) {
+            mergedRegex += `(?=.*${RegExpUtils.escapeRegexSpecials(literal)})`;
+        }
+
+        mergedRegex += '.*/s';
+
+        convertedSelectors.push(HtmlRuleConverter.getPseudoClassSelectorNode(
+            AdgPseudoClasses.Contains,
+            mergedRegex,
+        ));
     }
 
     /**

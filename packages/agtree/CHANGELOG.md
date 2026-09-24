@@ -55,6 +55,39 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   rejects quantifier numbers greater than 65535. `:min-text-length()`
   arguments greater than 65535 now throw a conversion error instead of
   producing a PCRE2-invalid pattern.
+- ADG→ADG conversion of HTML filtering rules now merges combinations of
+  deprecated special attribute selectors that cannot be represented as a
+  chain of separate `:contains()` pseudo-classes into a single regex
+  `:contains()` built from lookaheads. CoreLibs allows at most one literal
+  and one regex `:contains()` per selector, and its argument scanner
+  treats an unbalanced or quoted literal as the last argument of the
+  chain, so e.g.
+  `aces.gg$$script[tag-content="$('#alert').on('click'"][max-length="250"]`
+  now converts to
+  `aces.gg$$script:contains(/^(?=.{0,250}$)(?=.*\$\('#alert'\)\.on\('click').*/s)`
+  instead of the CoreLibs-rejected
+  `aces.gg$$script:contains($('#alert').on('click'):contains(/^(?=.{0,250}$).*/s)`.
+  Multiple `[tag-content]` values and multiple `[wildcard]` globs are
+  AND-merged the same way (`$$div[tag-content="a"][tag-content="b"]` →
+  `$$div:contains(/^(?=.*a)(?=.*b).*/s)`), while a literal that is safe
+  to chain (non-empty, not starting with `/`, containing no quotes,
+  parentheses, brackets, braces, backslashes or colons) is still emitted
+  as a standalone `:contains()` followed by at most one regex
+  `:contains()`. Converted special attribute pseudo-classes are now
+  appended after pre-existing `:contains()` pseudo-classes of the same
+  selector.
+- `QuoteUtils.escapeAttributeDoubleQuotes()` and
+  `QuoteUtils.unescapeAttributeDoubleQuotes()` no longer get stuck inside
+  the first quoted attribute selector's value for the rest of the
+  selector: an unpaired double quote now closes the value and leaves the
+  nesting state. Previously, an attribute selector following a quoted one
+  was handled as if it were still inside the first value, so the legacy
+  `""` quote doubling there was paired with shifted quotes and escaped
+  incorrectly. For example, the body of
+  `msn.com$$li[class="hasimage"][tag-content="""NativeAdHeadlineItemViewModel"""][max-length="2000"]`
+  previously failed to parse with
+  `Expected '<ident-token>', but got '<string-token>'`; it now converts to
+  `msn.com$$li[class="hasimage"]:contains(/^(?=.{0,2000}$)(?=.*"NativeAdHeadlineItemViewModel").*/s)`.
 
 ### Security
 

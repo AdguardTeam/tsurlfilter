@@ -270,6 +270,19 @@ export class RegExpUtils {
     }
 
     /**
+     * Creates a length-matching lookahead: `(?=.{min,max}$)`, which asserts
+     * that the string length is between min and max.
+     *
+     * @param min Minimum length or `null` for no minimum (default to `0`).
+     * @param max Maximum length or `null` for no maximum (default to no maximum).
+     *
+     * @returns Length-matching lookahead.
+     */
+    public static getLengthLookahead(min: number | null, max: number | null): string {
+        return `(?=.{${min ?? 0},${max ?? ''}}$)`;
+    }
+
+    /**
      * Creates a length-matching regular expression string: /^(?=.{min,max}$).*\/s
      * Where:
      * - (?=.{min,max}$) is a lookahead that ensures the string length is between min and max
@@ -281,7 +294,48 @@ export class RegExpUtils {
      * @returns Length-matching regular expression string.
      */
     public static getLengthRegexp(min: number | null, max: number | null): string {
-        return `/^(?=.{${min ?? 0},${max ?? ''}}$).*/s`;
+        return `/^${RegExpUtils.getLengthLookahead(min, max)}.*/s`;
+    }
+
+    /**
+     * Converts a glob pattern to a regular expression source body with the
+     * leading caret anchor removed, e.g. `.*track.*banner.*$` for the glob
+     * `*track*banner*`. The result is suitable for embedding into a larger
+     * pattern which is already anchored, e.g. as a lookahead: `(?=<body>)`.
+     *
+     * @param glob Glob pattern to convert.
+     *
+     * @returns Glob-converted regular expression source body.
+     *
+     * @example
+     * // Returns '.*track.*banner.*$'
+     * RegExpUtils.globToRegExpBody('*track*banner*');
+     */
+    public static globToRegExpBody(glob: string): string {
+        return GlobToRegExp(glob).source.replace(/^\^/, EMPTY);
+    }
+
+    /**
+     * Escapes all special RegExp symbols in the specified string, so that
+     * the string can be embedded into a larger regular expression and be
+     * matched literally.
+     *
+     * @param value String to escape.
+     *
+     * @returns Escaped string.
+     *
+     * @example
+     * // Returns '\$\('http'\)'
+     * RegExpUtils.escapeRegexSpecials("$('http')");
+     */
+    public static escapeRegexSpecials(value: string): string {
+        let result = EMPTY;
+        for (const ch of value) {
+            result += SPECIAL_REGEX_SYMBOLS.has(ch)
+                ? ESCAPE_CHARACTER + ch
+                : ch;
+        }
+        return result;
     }
 
     /**

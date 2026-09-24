@@ -98,16 +98,78 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$script:contains(/^(?=.{20000,300000}$).*/s)'],
                     },
 
+                    // `[tag-content]` with an unbalanced value + `[max-length]`: such a literal cannot
+                    // be emitted as a standalone `:contains()` chained before the length regex, because
+                    // CoreLibs' scanner would swallow the chain separator `:` into the unbalanced
+                    // argument - both constraints are merged into a single regex `:contains()`
+                    {
+                        actual: 'example.com$$script[tag-content="$(\'#alert\').on(\'click\'"][max-length="250"]',
+                        expected: [
+                            // eslint-disable-next-line max-len
+                            'example.com$$script:contains(/^(?=.{0,250}$)(?=.*\\$\\(\'#alert\'\\)\\.on\\(\'click\').*/s)',
+                        ],
+                    },
+
+                    // `[tag-content]` with an unbalanced value + `[min-length]` + `[max-length]`
+                    {
+                        actual: '$$div[tag-content=")"][min-length="2"][max-length="9"]',
+                        expected: ['$$div:contains(/^(?=.{2,9}$)(?=.*\\)).*/s)'],
+                    },
+
+                    // `[tag-content]` with a leading slash (regex-looking) value + `[max-length]`:
+                    // a leading `/` is also chain-unsafe, so the literal is merged into the regex
+                    {
+                        actual: '$$script[tag-content="/abc"][max-length="10"]',
+                        expected: ['$$script:contains(/^(?=.{0,10}$)(?=.*\\/abc).*/s)'],
+                    },
+
+                    // `[wildcard]` + `[max-length]`: only one regex `:contains()` is allowed, so the
+                    // glob and the length constraint are merged into a single regex
+                    {
+                        actual: 'example.com$$script[wildcard="*track*banner*"][max-length="22000"]',
+                        expected: [
+                            'example.com$$script:contains(/^(?=.{0,22000}$)(?=.*track.*banner.*$).*/s)',
+                        ],
+                    },
+
+                    // `[wildcard]` + `[min-length]` + `[max-length]`
+                    {
+                        actual: '$$script[wildcard="*adcashMacros*zoneSett*"][min-length="2000"][max-length="25000"]',
+                        expected: ['$$script:contains(/^(?=.{2000,25000}$)(?=.*adcashMacros.*zoneSett.*$).*/s)'],
+                    },
+
+                    // `[wildcard]` + chain-unsafe `[tag-content]` without length constraints
+                    {
+                        actual: '$$script[wildcard="*a/b*"][tag-content="x(y"]',
+                        expected: ['$$script:contains(/^(?=.*a\\/b.*$)(?=.*x\\(y).*/s)'],
+                    },
+
+                    // chain-safe `[tag-content]` + `[wildcard]` + `[min-length]`: the literal is
+                    // emitted standalone, while the glob and the length constraint are merged
+                    {
+                        actual: '$$script[tag-content="safe"][wildcard="*gl*b*"][min-length="1"]',
+                        expected: ['$$script:contains(safe):contains(/^(?=.{1,}$)(?=.*gl.*b.*$).*/s)'],
+                    },
+
+                    // special attributes on a leaf selector with combinators: the merged `:contains()`
+                    // is appended to the leaf selector, not to the whole selector
+                    {
+                        actual: 'example.net$$div > span[tag-content="kid("][max-length="9"]',
+                        expected: ['example.net$$div > span:contains(/^(?=.{0,9}$)(?=.*kid\\().*/s)'],
+                    },
+
                     // `[tag-content]` special attribute selector
                     {
                         actual: '$$div[tag-content="example"]',
                         expected: ['$$div:contains(example)'],
                     },
 
-                    // `[tag-content]` special attribute selector - multiple usages
+                    // `[tag-content]` special attribute selector - multiple usages are merged into
+                    // a single regex `:contains()`, with each literal as a lookahead: CoreLibs allows
+                    // at most one literal `:contains()` per selector
                     {
                         actual: '$$div[tag-content="a"][tag-content="b"]',
-                        expected: ['$$div:contains(a):contains(b)'],
+                        expected: ['$$div:contains(/^(?=.*a)(?=.*b).*/s)'],
                     },
 
                     // `[tag-content]` with a single-quoted value — the quotes are part of the
@@ -132,10 +194,12 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(/^.*example.*$/s)'],
                     },
 
-                    // `[wildcard]` special attribute selector - multiple usages
+                    // `[wildcard]` special attribute selector - multiple usages are merged into
+                    // a single regex `:contains()`, with each glob as a lookahead: CoreLibs allows
+                    // at most one regex `:contains()` per selector
                     {
                         actual: '$$div[wildcard="*example*"][wildcard="*test*"]',
-                        expected: ['$$div:contains(/^.*example.*$/s):contains(/^.*test.*$/s)'],
+                        expected: ['$$div:contains(/^(?=.*example.*$)(?=.*test.*$).*/s)'],
                     },
 
                     // `:contains()` special pseudo-class selector (leave as-is)
@@ -192,22 +256,24 @@ describe('HtmlRuleConverter', () => {
                         expected: ['$$div:contains(a):contains(/^.*example.*$/s)'],
                     },
 
-                    // `[tag-content]` and `:contains()` special simple selectors - mixed usage
+                    // `[tag-content]` and `:contains()` special simple selectors - mixed usage:
+                    // pre-existing `:contains()` pseudo-classes keep their position, and the special
+                    // attribute pseudo-classes are appended after them
                     {
                         actual: '$$div[tag-content="a"]:contains(b)',
-                        expected: ['$$div:contains(a):contains(b)'],
+                        expected: ['$$div:contains(b):contains(a)'],
                     },
 
                     // `[wildcard]` and `:contains()` special simple selectors - mixed usage
                     {
                         actual: '$$div[wildcard="*example*"]:contains(b)',
-                        expected: ['$$div:contains(/^.*example.*$/s):contains(b)'],
+                        expected: ['$$div:contains(b):contains(/^.*example.*$/s)'],
                     },
 
                     // `[tag-content]`, `[wildcard]` and `:contains()` special simple selectors - mixed usage
                     {
                         actual: '$$div[tag-content="a"][wildcard="*example*"]:contains(b)',
-                        expected: ['$$div:contains(a):contains(/^.*example.*$/s):contains(b)'],
+                        expected: ['$$div:contains(b):contains(a):contains(/^.*example.*$/s)'],
                     },
 
                     // `[tag-content]` with `""` escaped double quotes - simple case
@@ -455,13 +521,17 @@ describe('HtmlRuleConverter', () => {
                         shouldConvert: false,
                     },
 
-                    // `[tag-content]` with escaped double quotes that breaks CSS tokenization (kept as-is)
+                    // `[tag-content]` with a triple-quoted value (`""` doubling for
+                    // the quotes of the text to match) in a later attribute selector —
+                    // converted, the quoted literal is chain-unsafe, so it is merged
+                    // with `[max-length]` into a single regex `:contains()`
                     {
                         // eslint-disable-next-line max-len
                         actual: 'example.net$$li[class="hasimage"][tag-content="""NativeAdHeadlineItemViewModel"""][max-length="2000"]',
-                        // eslint-disable-next-line max-len
-                        expected: ['example.net$$li[class="hasimage"][tag-content="""NativeAdHeadlineItemViewModel"""][max-length="2000"]'],
-                        shouldConvert: false,
+                        expected: [
+                            // eslint-disable-next-line max-len
+                            'example.net$$li[class="hasimage"]:contains(/^(?=.{0,2000}$)(?=.*"NativeAdHeadlineItemViewModel").*/s)',
+                        ],
                     },
 
                     // `:contains()` with a regexp containing square brackets — parsed
