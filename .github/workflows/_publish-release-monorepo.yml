@@ -302,7 +302,13 @@ jobs:
   notify:
     name: Notify
     needs: [parse, mirror-and-release]
-    if: ${{ needs.mirror-and-release.result == 'success' }}
+    # Same skip-propagation fix as `tag` and `mirror-and-release` — see the
+    # full explanation there. `!cancelled()` must stay: without a status-check
+    # function the default success() check skips this job whenever any needed
+    # job upstream was skipped, and one publish leg is always skipped (the one
+    # not selected by publish_target) — so without it `notify` never runs on a
+    # successful release.
+    if: ${{ !cancelled() && needs.mirror-and-release.result == 'success' }}
     runs-on: team-${{ inputs.team }}
     timeout-minutes: 10
     permissions:
