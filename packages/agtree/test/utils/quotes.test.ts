@@ -530,6 +530,18 @@ describe('Quote utils', () => {
                 expected: '[attr="[attr=\\"test\\"]"]',
             },
 
+            // should escape - inside of a later attribute selector
+            {
+                actual: '[a="x"][b="a""b"]',
+                expected: '[a="x"][b="a\\"b"]',
+            },
+
+            // should escape - triple-quoted value in a later attribute selector
+            {
+                actual: 'li[class="hasimage"][tag-content="""x"""][max-length="2000"]',
+                expected: 'li[class="hasimage"][tag-content="\\"x\\""][max-length="2000"]',
+            },
+
             // should not escape - inside of attribute but outside of string quotes - in middle
             {
                 actual: '[attr=test""test]',
@@ -624,6 +636,18 @@ describe('Quote utils', () => {
             {
                 actual: '[attr="[attr=\\"test\\"]"]',
                 expected: '[attr="[attr=""test""]"]',
+            },
+
+            // should unescape - inside of a later attribute selector
+            {
+                actual: '[a="x"][b="a\\"b"]',
+                expected: '[a="x"][b="a""b"]',
+            },
+
+            // should unescape - escaped-quoted value in a later attribute selector
+            {
+                actual: 'li[class="hasimage"][tag-content="\\"x\\""][max-length="2000"]',
+                expected: 'li[class="hasimage"][tag-content="""x"""][max-length="2000"]',
             },
 
             // should not unescape - inside of attribute but outside of string quotes - in middle
