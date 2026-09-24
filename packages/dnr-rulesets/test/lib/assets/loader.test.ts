@@ -14,6 +14,7 @@ import {
     vi,
 } from 'vitest';
 
+import { BrowserFilters } from '../../../common/constants';
 import { LocalScriptRulesJs } from '../../../src/common/local-script-rules-js';
 import { LocalScriptRulesJson } from '../../../src/common/local-script-rules-json';
 import { AssetsLoader } from '../../../src/lib/assets/loader';
@@ -51,6 +52,24 @@ describe('load', () => {
         expect(cwdSpy).toHaveBeenCalledTimes(1);
         expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
         expect(mockResolve).toHaveBeenCalledWith(expect.any(String), filtersRelativePath);
+        expect(mockCopy).toHaveBeenCalledTimes(1);
+        expect(mockCopy).toHaveBeenCalledWith(src, to, {});
+    });
+
+    it('should load assets for the specified browser', async () => {
+        const loader = new AssetsLoader();
+
+        await expect(
+            loader.load(dest, { browser: BrowserFilters.EdgeMv3 }),
+        ).resolves.toBeUndefined();
+
+        expect(mockResolve).toHaveBeenCalledTimes(2);
+        expect(cwdSpy).toHaveBeenCalledTimes(1);
+        expect(mockResolve).toHaveBeenCalledWith('cwd', dest);
+        expect(mockResolve).toHaveBeenCalledWith(
+            expect.any(String),
+            '../filters/edge-mv3',
+        );
         expect(mockCopy).toHaveBeenCalledTimes(1);
         expect(mockCopy).toHaveBeenCalledWith(src, to, {});
     });

@@ -120,6 +120,22 @@ describe('loadAllowedFilterIds', () => {
         );
     });
 
+    it('returns a Set of allowed filter IDs for Edge MV3 data', async () => {
+        vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({
+            [BrowserFilters.EdgeMv3]: { rulesetIds: [1, 2, 3] },
+        }));
+
+        const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+
+        const loadAllowedFilterIds = await importFresh();
+        const result = loadAllowedFilterIds(BrowserFilters.EdgeMv3);
+
+        expect(result).toEqual(new Set([1, 2, 3]));
+        expect(infoSpy).toHaveBeenCalledWith(
+            expect.stringContaining('3 filters allowed'),
+        );
+    });
+
     it('handles empty rulesetIds array', async () => {
         vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({
             [BrowserFilters.ChromiumMv3]: { rulesetIds: [] },

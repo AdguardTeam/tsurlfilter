@@ -23,11 +23,15 @@ topological publish order.
    `build-<package>-output` targets, verifies the produced `.tgz`, and uploads
    it as an Actions artifact.
 3. **Publish** — publishes the `.tgz` to npm with OIDC trusted publishing,
-   under the computed dist-tag.
+   under the computed dist-tag. With the `publish_target: ak` input the npm
+   leg is skipped and the `.tgz` goes to the internal Artifact Keeper npm
+   registry instead (used for dnr-rulesets while npm throttles the shared
+   GitHub egress IP).
 4. **Tag** — creates the `<package>-v<version>` tag on the target ref **only
-   after the npm publish has succeeded** (`force: false`, the shared
-   `git-tag.yml` default, so an existing tag is never silently moved — a
-   re-run of an already-released version fails instead of rewriting history).
+   after the publish leg has succeeded** (npm or Artifact Keeper;
+   `force: false`, the shared `git-tag.yml` default, so an existing tag is never
+   silently moved — a re-run of an already-released version fails instead of
+   rewriting history).
 5. **Mirror and release** — mirrors refs to the public repo and creates a
    GitHub Release with the changelog section and the package attached.
 6. **Notify** — posts a Slack success message; a separate job alerts the
@@ -45,6 +49,7 @@ topological publish order.
 | `environment` | string | `npm` | GitHub environment for npm publish protection rules |
 | `slack_channel` | string | `#adguard-extension-vcs` | Slack channel for release notifications |
 | `dry_run` | boolean | `false` | Run `npm publish` with `--dry-run` (no registry contact). For CI testing. |
+| `publish_target` | string | `npm` | Registry to publish to: `npm` (default) or `ak` (internal Artifact Keeper npm registry) |
 
 ## Tag convention
 
@@ -75,6 +80,9 @@ keep the diagram there, not duplicated here, so it cannot rot).
 ## GitHub Environment
 
 The `publish` job uses the **`npm`** GitHub environment (input `environment`).
+With `publish_target: ak`, the `publish-ak` job runs with no environment
+(`environment: ''`) — the AK publish authenticates with the
+`ARTIFACT_KEEPER_API_KEY` secret instead of npm OIDC.
 
 | Setting | Value |
 | --- | --- |

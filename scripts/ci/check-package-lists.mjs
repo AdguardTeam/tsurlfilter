@@ -141,7 +141,7 @@ if (bridgeAk[1] !== expectedAkPath) {
 }
 console.log(`bridge registry path: OK (AK_REGISTRY points at '${bridgeAk[1]}')`);
 
-// 4c. The `-dev.pr<N>.<sha>` version grammar is re-encoded in devex-bridge.yml
+// 4c. The `-dev.pr<N>.<run>` version grammar is re-encoded in devex-bridge.yml
 //     (VERSION_SUFFIX) and the consumer-side tool in browser-extension. Unlike
 //     the package list there is no JSON source, so this keeps the in-repo copy
 //     honest syntactically: every `-dev.<...>` literal in the bridge workflow
@@ -172,6 +172,30 @@ for (const file of versionGrammarLiterals) {
     }
 }
 console.log('bridge version grammar: OK (all -dev.<...> literals are -dev.pr<N> or VERSION_SUFFIX interpolations)');
+
+// 4d. The devex-bridge.yml suffix must stamp the workflow run number: the
+//     consumer groups published versions by (PR, run), selects the highest
+//     run, and requires its complete set. A suffix without the run number
+//     silently breaks run grouping and reintroduces the ambiguous-heads
+//     failure this change exists to fix. The expression is duplicated
+//     (pack + publish), so the guard pins both copies.
+const runNumberSuffix = 'SUFFIX="pr${PR_NUMBER}.${RUN_NUMBER}"';
+const suffixCount = bridgeWorkflow.split(runNumberSuffix).length - 1;
+if (suffixCount !== 2) {
+    fail(
+        `devex-bridge.yml must compute ${runNumberSuffix} in both the pack and publish jobs`
+        + ` (found ${suffixCount}) — the consumer selects the highest run number, so the run segment is required`,
+    );
+}
+const runNumberEnv = 'RUN_NUMBER: ${{ github.run_number }}';
+const runNumberEnvCount = bridgeWorkflow.split(runNumberEnv).length - 1;
+if (runNumberEnvCount !== 2) {
+    fail(
+        `devex-bridge.yml must define ${runNumberEnv} in both suffix steps`
+        + ` (found ${runNumberEnvCount})`,
+    );
+}
+console.log('bridge run-number suffix: OK (pack and publish stamp github.run_number)');
 
 console.log('package list drift check passed');
 

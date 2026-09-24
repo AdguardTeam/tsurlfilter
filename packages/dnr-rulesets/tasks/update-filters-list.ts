@@ -62,6 +62,10 @@ const SECTION_TEXTS: Record<BrowserFilters, Pick<MetadataSection, 'title' | 'des
         title: 'Chromium MV3 filters',
         description: 'These filter lists are used in Chromium MV3 browsers.',
     },
+    [BrowserFilters.EdgeMv3]: {
+        title: 'Edge MV3 filters',
+        description: 'These filter lists are used in Edge MV3 browsers.',
+    },
     [BrowserFilters.OperaMv3]: {
         title: 'Opera MV3 filters',
         description: 'These filter lists are used in Opera MV3 browsers.',

@@ -14,6 +14,11 @@ name: Publish stable DNR rulesets
 # per round stays inside its burst budget; a throttled publish gets one retry
 # after a backoff (npm's ~70s retry is shorter than the throttle window).
 # check-npm-version.sh makes re-runs idempotent.
+#
+# PAUSED (AG-58865): publishing @adguard/dnr-rulesets to npm is disabled to
+# avoid the registry 429 throttling (see the publish-5-0 / retry-publish-5-0
+# jobs). Building, AK publish (publish-ak-5-0) and npm version checks
+# (check-5-0) keep running. Re-enable in AG-58867.
 
 on:
   schedule:
@@ -185,10 +190,18 @@ jobs:
         shell: bash
         run: bash scripts/ci/check-npm-version.sh artifact/dnr-rulesets.tgz
 
+  # PAUSED — AG-58865: publishing @adguard/dnr-rulesets to npm is being
+  # throttled (HTTP 429 Too Many Requests) and automated retries keep the
+  # registry limiter active. Do not upload to npm until the throttling settles.
+  # Because this job never fails now, `retry-5-0` (gated on publish-5-0
+  # failing) also stays skipped, pausing the whole npm retry leg. AK publish
+  # (publish-ak-5-0) and npm version checks (check-5-0) keep running.
+  # Re-enable: drop `if: false` (restore the commented condition) — tracked in AG-58867.
   publish-5-0:
     name: Publish DNR rulesets 5.0
     needs: [resolve-lines, build-stable-dnr-rulesets, check-5-0]
-    if: ${{ !cancelled() && needs.resolve-lines.outputs.line-5-0 == 'true' && needs.check-5-0.result == 'success' && needs.check-5-0.outputs.exists == 'false' }}
+    # if: ${{ !cancelled() && needs.resolve-lines.outputs.line-5-0 == 'true' && needs.check-5-0.result == 'success' && needs.check-5-0.outputs.exists == 'false' }}
+    if: false
     uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
     with:
       artifact-name: dnr-rulesets-5.0
@@ -231,10 +244,13 @@ jobs:
         shell: bash
         run: bash scripts/ci/check-npm-version.sh artifact/dnr-rulesets.tgz
 
+  # PAUSED — AG-58865: same as publish-5-0, do not upload to npm.
+  # Re-enable: drop `if: false` (restore the commented condition) — tracked in AG-58867.
   retry-publish-5-0:
     name: Publish DNR rulesets 5.0 (retry)
     needs: [retry-5-0]
-    if: ${{ !cancelled() && needs.retry-5-0.result == 'success' && needs.retry-5-0.outputs.exists == 'false' }}
+    # if: ${{ !cancelled() && needs.retry-5-0.result == 'success' && needs.retry-5-0.outputs.exists == 'false' }}
+    if: false
     uses: AdGuardSoftwareLimited/actions/.github/workflows/deploy-to-npm.yml@master
     with:
       artifact-name: dnr-rulesets-5.0

@@ -41,9 +41,11 @@ derived from the package changelog and injected temporarily by
    `release-bump/<package>-v<version>` and opens the release PR.
 2. **Merge**: review and merge the release PR into `master`.
 3. **Publish**: `publish-release.yml` auto-fires on the merged
-   `release-bump/<package>-v<version>` PR — Docker test + build → npm publish →
-   tag `<package>-v<version>` (created only after the publish succeeds) →
-   mirror to `AdguardTeam/tsurlfilter` + GitHub Release → Slack.
+   `release-bump/<package>-v<version>` PR — Docker test + build → npm publish
+   (`@adguard/dnr-rulesets` publishes to the internal Artifact Keeper instead;
+   its npm publish is paused while npm throttles the shared GitHub egress IP,
+   see AG-58865) → tag `<package>-v<version>` (created only after the publish
+   succeeds) → mirror to `AdguardTeam/tsurlfilter` + GitHub Release → Slack.
 
 There is no version-increment workflow. Start the next release by dispatching
 `prepare-release.yml` with the next version.
@@ -109,14 +111,14 @@ publisher for the workflow that actually invokes `deploy-to-npm.yml`:
 - **Nine normal packages** — register the trusted publisher for this repo's
   `publish-release.yml` (which calls the monorepo publish engine) and restrict
   it to the `npm` environment.
-- **`@adguard/dnr-rulesets`** — register the trusted publisher for
-  `publish-stable-dnr-rulesets.yml`, **not** `publish-release.yml`: the
-  unattended hourly stable path calls the shared `deploy-to-npm.yml` directly
-  and never passes through `publish-release.yml`. Register it **without** the
-  `npm` environment restriction so the unattended hourlies are accepted;
-  normal DNR releases via `publish-release.yml` still use the protected GitHub
-  `npm` environment. Getting this identity wrong fails OIDC validation on the
-  first scheduled run.
+- **`@adguard/dnr-rulesets`** — its npm publish is paused everywhere while
+  npm throttles the shared GitHub egress IP: both the stable path
+  (`publish-stable-dnr-rulesets.yml`) and normal releases
+  (`publish-release.yml` with `publish_target: ak`) skip `deploy-to-npm.yml`
+  and publish to the internal Artifact Keeper instead. The OIDC trusted
+  publisher for `publish-stable-dnr-rulesets.yml` (no `npm` environment
+  restriction) can stay registered until npm publishing is re-enabled;
+  while paused, no dnr-rulesets workflow run contacts npm.
 
 ## External setup checklist
 

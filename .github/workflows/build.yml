@@ -1,14 +1,14 @@
 name: Build
 
 # Lints, tests, and builds affected packages on pull requests and pushes to
-# release/browser-extension-v5.6 using per-package Docker test targets with affected-package detection
+# master using per-package Docker test targets with affected-package detection
 # and workspace dependency closure.
 
 on:
   pull_request:
   push:
     branches:
-      - release/browser-extension-v5.6
+      - master
 
 # Trust boundary (read before enabling): PR CI runs PR-controlled Docker
 # builds — and PR-modified steps of this very workflow, since `pull_request`

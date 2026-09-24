@@ -1,14 +1,20 @@
 packages:
   - "packages/*"
   - "packages/examples/*"
-  - "packages/benchmarks/*"
   - "packages/tsurlfilter/test/builders/*"
 
 # AG-54210
 # minimumReleaseAge is in minutes; 10080 = 7 days.
 minimumReleaseAge: 10080
+# These unversioned excludes lift the 7-day release-age quarantine for the Vitest
+# 5 stack adopted on 2026-09-03. They never expire, so revisit and drop them once
+# those majors are past the window (or add a version suffix to each entry).
 minimumReleaseAgeExclude:
   - '@adguard/*'
+  - '@vitest/*'
+  - 'vitest'
+  - 'vite'
+  - 'tinybench'
 
 # default catalog
 catalog:
@@ -24,7 +30,6 @@ catalog:
   '@swc-node/register': ^1.10.9
   '@swc/core': ^1.10.18
   '@types/archiver': ^6.0.2
-  '@types/benchmark': ^2.1.5
   '@types/chrome': ^0.0.305
   '@types/fs-extra': ^11.0.4
   '@types/lodash-es': ^4.17.12
@@ -35,26 +40,22 @@ catalog:
   '@types/webextension-polyfill': ^0.12.1
   '@typescript-eslint/eslint-plugin': ^7.5.0
   '@typescript-eslint/parser': ^7.5.0
-  '@vitest/coverage-v8': ^4.1.5
-  '@vitest/expect': ^4.1.5
-  '@vitest/browser': ^4.1.5
-  '@vitest/browser-playwright': ^4.1.5
+  '@vitest/coverage-v8': ^5.0.0
+  '@vitest/expect': ^5.0.0
+  '@vitest/browser': ^5.0.0
+  '@vitest/browser-playwright': ^5.0.0
   archiver: ^7.0.1
   axios: ^1.15.0
-  benchmark: ^2.1.4
   bowser: 2.11.0
   chalk: 4.1.2
   clean-webpack-plugin: ^4.0.0
   commander: ^12.1.0
-  consola: ^3.2.3
-  console-table-printer: ^2.12.0
   copy-webpack-plugin: ^10.0.0
   core-js: ^3.33.3
   coveralls: 3.1.1
   cross-env: ^7.0.3
   crypto-browserify: ^3.12.0
   css-loader: ^6.7.1
-  date-fns: ^4.1.0
   esbuild: ^0.19.12
   eslint: 8.57.1
   eslint-config-airbnb-base: 15.0.0
@@ -71,13 +72,10 @@ catalog:
   is-ip: 3.1.0
   lint-staged: ^13.2.2
   lodash-es: ^4.17.21
-  lodash: ^4.17.21
   lru-cache: ^11.0.2
   markdown-table: ^3.0.3
   markdownlint: ^0.37.4
   markdownlint-cli: ^0.44.0
-  node-fetch: ^3.3.2
-  os-name: ^6.0.0
   playwright: ^1.52.0
   punycode: 2.3.1
   react: ^17.0.2
@@ -92,7 +90,6 @@ catalog:
   stream-browserify: ^3.0.0
   style-loader: ^3.3.1
   swc-loader: ^0.2.3
-  systeminformation: ^5.22.0
   terser: ^5.21.0
   tldts: 7.0.32
   ts-morph: ^26.0.0
@@ -101,7 +98,7 @@ catalog:
   tsx: ^4.19.3
   typescript: ^5.7.3
   valibot: ^1.1.0
-  vitest: ^4.1.5
+  vitest: ^5.0.0
   vm-browserify: ^1.1.2
   webextension-polyfill: 0.12.0
   webpack: ^5.64.2
