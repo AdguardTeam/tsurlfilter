@@ -44,7 +44,7 @@ topological publish order.
 | `package` | string | *required* | Package directory name under `packages/`; also the tag prefix and `.tgz` base name (e.g. `agtree`) |
 | `npm_package_name` | string | *required* | npm package name for the Slack notification (e.g. `@adguard/agtree`) |
 | `target_repo` | string | *required* | Public mirror repo (e.g. `AdguardTeam/tsurlfilter`) |
-| `ref` | string | `''` | Ref to publish (merge commit SHA). Leave empty for the triggering commit. |
+| `ref` | string | `''` | Ref to publish (merge commit SHA) — pin to the release PR merge commit; an empty ref checks out the current `master` tip. |
 | `team` | string | `extensions` | Team label for runner selection |
 | `environment` | string | `npm` | GitHub environment for npm publish protection rules |
 | `slack_channel` | string | `#adguard-extension-vcs` | Slack channel for release notifications |

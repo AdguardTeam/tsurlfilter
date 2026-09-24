@@ -24,7 +24,7 @@ on:
         type: string
         required: true
       ref:
-        description: 'Ref to publish (merge commit SHA). Leave empty for the triggering commit.'
+        description: 'Ref to publish (merge commit SHA). Pin to the release PR merge commit; an empty ref checks out the current master tip.'
         type: string
         default: ''
       team:
