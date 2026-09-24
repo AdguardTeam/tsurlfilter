@@ -338,9 +338,7 @@ jobs:
             :white_check_mark: *${{ inputs.npm_package_name }}* *v${{ needs.parse.outputs.version }}*
             published to Artifact Keeper (dist-tag: `${{ needs.parse.outputs.dist-tag }}`) — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|view run>
 
-            To use it, install from the internal AK registry (VPN only). Scope
-            the registry to the project — a global `@adguard:registry` would
-            break every other @adguard install off the VPN:
+            To use it, install from the internal AK registry (VPN only). Scope the registry to the project — a global `@adguard:registry` would break every other @adguard install off the VPN:
             `npm config set @adguard:registry ${{ vars.ARTIFACT_KEEPER_URL }}/npm/npm-internal --location=project`
             `pnpm add ${{ inputs.npm_package_name }}@${{ needs.parse.outputs.version }}`
             Cleanup when done: `npm config delete @adguard:registry --location=project`
