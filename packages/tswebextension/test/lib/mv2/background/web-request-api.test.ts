@@ -32,6 +32,7 @@ describe('web request api', () => {
                 transitionType: 'link',
                 transitionQualifiers: [],
                 timeStamp: Date.now(),
+                documentId: 'document-id',
             };
 
             // @ts-ignore - accessing private method for testing
