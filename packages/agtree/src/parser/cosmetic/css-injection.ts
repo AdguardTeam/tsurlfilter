@@ -78,6 +78,15 @@ function findOpenBrace(
         // and unterminated strings.
         const strLen = cssStringLength(types, ti, endTi);
         if (strLen > 0) {
+            // An unterminated string (no closing quote before the end) is a
+            // real-world typo: treat the opening quote as a delimiter so a
+            // brace after it is still found (e.g.
+            // `:contains(blockId: 'R-A)) { ... }`).
+            if (ti + strLen >= endTi && types[ti + strLen - 1] !== TokenType.LineBreak) {
+                ti += 1;
+                // eslint-disable-next-line no-continue
+                continue;
+            }
             ti += strLen;
             // eslint-disable-next-line no-continue
             continue;
@@ -131,6 +140,12 @@ function findCloseBrace(
         // Skip CSS strings — same as findOpenBrace.
         const strLen = cssStringLength(types, ti, endTi);
         if (strLen > 0) {
+            // Unterminated string typo: treat the opening quote as a delimiter.
+            if (ti + strLen >= endTi && types[ti + strLen - 1] !== TokenType.LineBreak) {
+                ti += 1;
+                // eslint-disable-next-line no-continue
+                continue;
+            }
             ti += strLen;
             // eslint-disable-next-line no-continue
             continue;
@@ -478,7 +493,13 @@ export class AdgCssInjectionParser implements StructuralParser {
 
         // Declaration list = tokens between inner { and inner } (trimmed)
         const dlCandidateStartTi = skipWs(ctx, innerOpenBraceTi + 1);
-        const dlEndTi = lastNonWs(ctx, dlCandidateStartTi, innerCloseBraceTi);
+        let dlEndTi = lastNonWs(ctx, dlCandidateStartTi, innerCloseBraceTi);
+
+        // A trailing colon is a real-world typo (`display: none !important:`)
+        // and is not part of the declaration list.
+        if (dlEndTi >= 0 && types[dlEndTi] === TokenType.Colon) {
+            dlEndTi = lastNonWs(ctx, dlCandidateStartTi, dlEndTi);
+        }
 
         if (dlEndTi < 0) {
             throw new AdblockSyntaxError(

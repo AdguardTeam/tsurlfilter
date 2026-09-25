@@ -1542,6 +1542,36 @@ describe('ModifierValidator', () => {
                 expect(validationResult.error).toBeUndefined();
             });
         });
+
+        describe('redirect values with wildcard platforms', () => {
+            test('valid redirect passes with a product-level wildcard', () => {
+                const modifier = getModifier('redirect=noop.txt');
+                const validationResult = modifierValidator.validate([Platform.AdgAny], modifier);
+                expect(validationResult.valid).toBeTruthy();
+                expect(validationResult.error).toBeUndefined();
+            });
+
+            test('valid redirect passes with the any-product wildcard', () => {
+                const modifier = getModifier('redirect=noop.txt');
+                const validationResult = modifierValidator.validate([Platform.Any], modifier);
+                expect(validationResult.valid).toBeTruthy();
+                expect(validationResult.error).toBeUndefined();
+            });
+
+            test('unknown redirect fails with a product-level wildcard', () => {
+                const modifier = getModifier('redirect=no-such-resource');
+                const validationResult = modifierValidator.validate([Platform.AdgAny], modifier);
+                expect(validationResult.valid).toBeFalsy();
+                expect(validationResult.error).toBeDefined();
+            });
+
+            test('valid redirect passes with a uBO product-level wildcard', () => {
+                const modifier = getModifier('redirect=noop.txt');
+                const validationResult = modifierValidator.validate([Platform.UboAny], modifier);
+                expect(validationResult.valid).toBeTruthy();
+                expect(validationResult.error).toBeUndefined();
+            });
+        });
     });
     /* eslint-enable no-bitwise */
 });

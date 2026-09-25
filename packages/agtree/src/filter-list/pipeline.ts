@@ -107,6 +107,7 @@ export class FilterListPipeline {
                     try {
                         children.push(FilterListPipeline.buildRuleAst(kind, ruleStart, ruleEnd, ctx, options));
                     } catch (e: unknown) {
+                        options?.onParseError?.(e, ruleStart, ruleEnd);
                         children.push(FilterListPipeline.createInvalidRule(
                             source,
                             ruleStart,
@@ -124,6 +125,7 @@ export class FilterListPipeline {
             },
             tolerant
                 ? (e: unknown, ruleStart: number, ruleEnd: number) => {
+                    options?.onParseError?.(e, ruleStart, ruleEnd);
                     children.push(FilterListPipeline.createInvalidRule(
                         source,
                         ruleStart,

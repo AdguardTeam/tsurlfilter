@@ -228,7 +228,7 @@ export class NetworkRuleParser implements StructuralParser {
      * @returns Token index of the separator, or -1 if not found.
      */
     private static findNetSeparator(ctx: ParserContext, searchStart: number, endTi = ctx.tokenCount): number {
-        const { types } = ctx;
+        const { types, source } = ctx;
         let i = endTi;
 
         while (i > searchStart) {
@@ -236,6 +236,18 @@ export class NetworkRuleParser implements StructuralParser {
 
             if (i === -1 || i < searchStart) {
                 break;
+            }
+
+            // A `$` inside a modifier value is not a separator: skip `$`
+            // preceded by an escape (`\$`) or followed by `/` (a regex end
+            // anchor like `/regex$/`) — matches AGTree v4 behavior.
+            const dollarOff = tokenStart(ctx, i);
+            const nextChar = dollarOff + 1 < source.length ? source[dollarOff + 1] : '';
+            const prevChar = dollarOff > 0 ? source[dollarOff - 1] : '';
+
+            if (nextChar === '/' || prevChar === '\\') {
+                // eslint-disable-next-line no-continue
+                continue;
             }
 
             if (isPotentialNetModifier(ctx, i + 1, endTi)) {

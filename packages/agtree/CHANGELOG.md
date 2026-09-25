@@ -44,6 +44,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   the `isHostRuleCandidate` helper, the `DomainItem` type, and a
   `RuleParserPipeline.parseStructural` entry point for zero-AST consumption of
   the structural parser output (`@adguard/agtree/parser`).
+- Added `onParseError` option to `FilterListParseOptions`. In tolerant mode the
+  pipeline now invokes `onParseError(error, ruleStart, ruleEnd)` for every rule
+  that fails to parse, before wrapping it into an `InvalidRule` node.
 - Added `RuleParserPipeline.parseFromCurrentCtx` to build an AST node from an
   already-populated structural context without re-tokenizing or re-running the
   structural parser.
@@ -113,6 +116,21 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Redirect resource validation no longer throws for wildcard platforms:
+  `RedirectsCompatibilityTable.validate()` and the internal
+  `RedirectResourceTable.validate()` now use wildcard-aware `query()` instead
+  of `get()`, so `$redirect`/`$redirect-rule` values can be validated against
+  generic platforms such as `[Platform.AdgAny]` or `[Platform.Any]`.
+- `!###...` decorative separator comments (commonly used in AdGuard filter
+  lists) are again classified as plain comments instead of preprocessor
+  directives with unknown names.
+- Network rule modifier separator detection no longer splits on a `$` that is
+  escaped (`\$`) or followed by `/` (a regex end anchor), so modifier values
+  like `/^\\$ja=/` parse correctly.
+- AdGuard CSS injection bodies tolerate real-world typos: a trailing colon in
+  the declaration list (`display: none !important:`) is excluded from the
+  declaration list, and an unterminated quote in the selector no longer hides
+  the declaration block's opening brace.
 - Network and cosmetic (`[$…]`) modifier parsing no longer drops the `$`
   separator when the first modifier name starts with an underscore, so noop
   modifiers such as `$_`, `$___`, and `$_invalid_` are parsed correctly.

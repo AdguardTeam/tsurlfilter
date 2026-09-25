@@ -123,8 +123,8 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
 
         const redirectName = isString(data) ? data : '';
 
-        // Get platform-specific data
-        const specificRedirectData = this.get(redirectName, platform);
+        // Get platform-specific data (wildcard platforms are supported by `query`)
+        const specificRedirectData = this.query(redirectName, platform);
 
         if (!specificRedirectData) {
             ctx.addError(

@@ -83,6 +83,26 @@ describe('FilterListPipeline', () => {
         }).toThrow();
     });
 
+    test('reports rule errors through onParseError in tolerant mode', () => {
+        const source = '||example.com^\n#%#//scriptlet(';
+        const errors: Array<{ error: unknown; start: number; end: number }> = [];
+
+        const ast = pipeline.parse(source, {
+            tolerant: true,
+            isLocIncluded: true,
+            onParseError: (error, start, end) => {
+                errors.push({ error, start, end });
+            },
+        });
+
+        expect(errors).toHaveLength(1);
+        expect(errors[0]!.error).toBeInstanceOf(Error);
+        expect(errors[0]!.start).toBe(15);
+        expect(errors[0]!.end).toBe(30);
+        expect(ast.children).toHaveLength(2);
+        expect(ast.children[1]!.type).toBe(NodeType.InvalidRule);
+    });
+
     test('ignoreNetwork produces RawRule for network rules', () => {
         const source = '||example.com^\n! comment';
         const ast = pipeline.parse(source, { ignoreNetwork: true });

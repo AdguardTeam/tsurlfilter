@@ -73,7 +73,7 @@ class RedirectResourceTable extends CompatibilityTableBase<RedirectDataSchema> {
 
         const redirectName = typeof data === 'string' ? data : '';
 
-        const specificRedirectData = this.get(redirectName, platform);
+        const specificRedirectData = this.query(redirectName, platform);
 
         if (!specificRedirectData) {
             ctx.addError(

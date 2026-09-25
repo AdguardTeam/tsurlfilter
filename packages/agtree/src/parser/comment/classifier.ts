@@ -85,8 +85,17 @@ export class CommentParser implements StructuralParser {
 
                 // Preprocessor: `!#`
                 if (t1 === TokenType.HashMark) {
-                    PreprocessorCommentParser.parse(ctx, startTi, endTi, dataOffset);
-                    return;
+                    // `!###...` decorative separators are commonly used in
+                    // AdGuard filter lists and must stay plain comments
+                    // (matches AGTree v4 behavior).
+                    const hashOff = tokenStart(ctx, ti2);
+                    const isHashSeparator = hashOff + 1 < ctx.source.length
+                        && ctx.source[hashOff + 1] === '#';
+
+                    if (!isHashSeparator) {
+                        PreprocessorCommentParser.parse(ctx, startTi, endTi, dataOffset);
+                        return;
+                    }
                 }
 
                 // Hint: `!+`

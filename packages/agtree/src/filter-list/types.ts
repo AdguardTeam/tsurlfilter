@@ -29,6 +29,19 @@ export interface ScannedRuleInfo {
 }
 
 /**
+ * Callback invoked for every rule that fails to parse in tolerant mode.
+ *
+ * @param error The original error thrown by the parser (e.g. `AdblockSyntaxError`).
+ * @param ruleStart Start offset of the failed rule in the source.
+ * @param ruleEnd End offset of the failed rule in the source.
+ */
+export type FilterListParseErrorCallback = (
+    error: unknown,
+    ruleStart: number,
+    ruleEnd: number,
+) => void;
+
+/**
  * Options for `FilterListPipeline.parse()`.
  *
  * Extends the standard `ParseOptions` with filter-list-specific flags.
@@ -40,4 +53,10 @@ export interface FilterListParseOptions extends ParseOptions {
      * When `false`, the first syntax error throws immediately.
      */
     tolerant?: boolean;
+
+    /**
+     * Optional callback invoked for every rule that fails to parse in
+     * tolerant mode, before the rule is wrapped into an `InvalidRule` node.
+     */
+    onParseError?: FilterListParseErrorCallback;
 }

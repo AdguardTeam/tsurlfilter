@@ -115,6 +115,28 @@ describe('AdgCssInjectionParser', () => {
             expect(sl(source, d, 0, CSS_INJ_SL_SOURCE_START, CSS_INJ_SL_SOURCE_END)).toBe('body');
             expect(sl(source, d, 0, CSS_INJ_DL_SOURCE_START, CSS_INJ_DL_SOURCE_END)).toBe('padding: 0;');
         });
+
+        test('trailing colon typo before the close brace is excluded', () => {
+            // Real-world typo: `!important:` instead of `!important;`
+            const source = '.single-cta-wrapper { display: none !important: }';
+            expect(parse(source)).toBe(true);
+            const d = ctx.data;
+
+            expect(sl(source, d, 0, CSS_INJ_DL_SOURCE_START, CSS_INJ_DL_SOURCE_END)).toBe('display: none !important');
+        });
+
+        test('unterminated quote in selector does not hide the open brace', () => {
+            // Real-world rule with an unterminated quote typo in :contains()
+            const source = "main > div:has(> div > div > script:contains(blockId: 'R-A)) "
+                + '{ position: absolute !important; top: -9999px !important; }';
+            expect(parse(source)).toBe(true);
+            const d = ctx.data;
+
+            expect(sl(source, d, 0, CSS_INJ_SL_SOURCE_START, CSS_INJ_SL_SOURCE_END))
+                .toBe("main > div:has(> div > div > script:contains(blockId: 'R-A))");
+            expect(sl(source, d, 0, CSS_INJ_DL_SOURCE_START, CSS_INJ_DL_SOURCE_END))
+                .toBe('position: absolute !important; top: -9999px !important;');
+        });
     });
 
     describe('@media-wrapped rules', () => {
