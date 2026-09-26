@@ -1,5 +1,9 @@
 # DNR metadata integration
 
+> **Temporary PR bootstrap document.** Delete this file once implementation
+> changes land in the integration branch. It must not be included in the
+> final PR diff or merged into `master`. The maintained plan is in Jira.
+
 Tracking epic: [AG-59546](https://jira.int.agrd.dev/browse/AG-59546).
 Store issue: [MicrosoftEdge-Extensions#603](https://github.com/microsoft/MicrosoftEdge-Extensions/issues/603).
 
