@@ -86,15 +86,27 @@ export class FiltersStorage {
         const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         const tx = db.transaction(FiltersStorage.DB_STORE_NAME, 'readwrite');
 
+        const requests: Promise<unknown>[] = [tx.done];
+
         try {
-            // Awaiting the requests together with the transaction handles the
-            // rejection of every request when the transaction is aborted.
-            await Promise.all([
-                ...Object.entries(data).map(([key, value]) => tx.store.put(value, key)),
-                tx.done,
-            ]);
+            for (const [key, value] of Object.entries(data)) {
+                requests.push(tx.store.put(value, key));
+            }
+
+            await Promise.all(requests);
         } catch (e) {
-            // A failed write has already aborted the transaction.
+            // A failed request has already aborted the transaction, but a
+            // synchronous throw from `put` (e.g. DataCloneError) has not, so
+            // abort explicitly to drop the writes queued before it.
+            try {
+                tx.abort();
+            } catch {
+                // Already aborted: the original error is the useful one.
+            }
+
+            // Handle the rejections of the requests queued before the throw.
+            await Promise.allSettled(requests);
+
             logger.error('[tsweb.FiltersStorage.setMultiple]: failed to set multiple filter data, got error: ', e);
             throw e;
         }
