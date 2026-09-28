@@ -1,4 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 
 import { FilterList } from '@adguard/tsurlfilter';
 
@@ -82,5 +87,33 @@ describe('FiltersStorage', () => {
 
         // Also, getFilterIds should return an empty array
         await expect(FiltersStorage.getFilterIds()).resolves.toEqual([]);
+    });
+
+    it('rejects with the error that aborted the transaction', async () => {
+        const list = new FilterList('||example.org^');
+        const db = await IdbSingleton.getOpenedDb('filters');
+
+        // The browser aborts the transaction by itself, e.g. on a quota error,
+        // after the writes are queued. The mock runs on the raw database and
+        // returns a raw transaction, so idb wraps it once, as without the mock.
+        vi.spyOn(db, 'transaction').mockImplementationOnce(function abortingTransaction(
+            this: IDBDatabase,
+            ...args: Parameters<IDBDatabase['transaction']>
+        ) {
+            const tx = IDBDatabase.prototype.transaction.apply(this, args);
+            queueMicrotask(() => tx.abort());
+
+            return tx;
+        } as unknown as typeof db.transaction);
+
+        await expect(FiltersStorage.setMultiple({
+            5: {
+                rawFilterList: list.getContent(),
+                conversionData: list.getConversionData(),
+                checksum: 'foo',
+            },
+        })).rejects.toMatchObject({ name: 'AbortError' });
+
+        await expect(FiltersStorage.get(5)).resolves.toBeUndefined();
     });
 });

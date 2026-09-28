@@ -32,6 +32,7 @@ export {
 } from '@adguard/tsurlfilter';
 
 export * from './app';
+export { type IStaticRuleset } from './static-ruleset';
 
 export { tabsApi } from '../tabs/tabs-api';
 export { TabContext } from '../tabs/tab-context';

@@ -1,34 +1,27 @@
-import zod from 'zod';
-
-import { type ConversionData, conversionDataValidator } from '@adguard/tsurlfilter';
+import { type ConversionData } from '@adguard/tsurlfilter';
 
 import { IdbSingleton } from '../idb-singleton';
 import { logger } from '../utils/logger';
 
 /**
- * Validator for filter list with checksum.
+ * Preprocessed filter list extended with checksum.
  */
-const filterListWithChecksumValidator = zod.object({
+export type FilterListWithChecksum = {
     /**
      * Checksum.
      */
-    checksum: zod.string(),
+    checksum: string;
 
     /**
      * Raw filter list converted to AdGuard syntax.
      */
-    rawFilterList: zod.string(),
+    rawFilterList: string;
 
     /**
      * Conversion data.
      */
-    conversionData: conversionDataValidator,
-});
-
-/**
- * Preprocessed filter list extended with checksum.
- */
-export type FilterListWithChecksum = zod.infer<typeof filterListWithChecksumValidator>;
+    conversionData: ConversionData;
+};
 
 /**
  * Provides a "synchronized storage" for filter lists.
@@ -81,17 +74,11 @@ export class FiltersStorage {
      *
      * @throws Error, if transaction failed.
      */
-    public static async setMultiple(filters: Record<number, FilterListWithChecksum | unknown>): Promise<void> {
+    public static async setMultiple(filters: Record<number, FilterListWithChecksum>): Promise<void> {
         const data: Record<string, unknown> = {};
 
         for (const [filterId, filter] of Object.entries(filters)) {
-            const parseResult = filterListWithChecksumValidator.safeParse(filter);
-            if (!parseResult.success) {
-                logger.error(`[tsweb.FiltersStorage.setMultiple]: invalid filter list structure for filter id ${filterId}`, parseResult.error);
-                continue;
-            }
-
-            for (const [key, value] of Object.entries(parseResult.data)) {
+            for (const [key, value] of Object.entries(filter)) {
                 data[FiltersStorage.getKey(key, filterId)] = value;
             }
         }
@@ -100,14 +87,15 @@ export class FiltersStorage {
         const tx = db.transaction(FiltersStorage.DB_STORE_NAME, 'readwrite');
 
         try {
-            for (const [key, value] of Object.entries(data)) {
-                tx.store.put(value, key);
-            }
-
-            await tx.done;
+            // Awaiting the requests together with the transaction handles the
+            // rejection of every request when the transaction is aborted.
+            await Promise.all([
+                ...Object.entries(data).map(([key, value]) => tx.store.put(value, key)),
+                tx.done,
+            ]);
         } catch (e) {
+            // A failed write has already aborted the transaction.
             logger.error('[tsweb.FiltersStorage.setMultiple]: failed to set multiple filter data, got error: ', e);
-            tx.abort();
             throw e;
         }
     }
