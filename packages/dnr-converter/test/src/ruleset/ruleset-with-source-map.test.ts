@@ -186,6 +186,8 @@ describe('Ruleset', () => {
         const ruleset = await createRuleset(content);
 
         expect(ruleset.getSafeRulesCount()).toStrictEqual(2);
+        // Not read from a ruleset file, so there are no metadata rules.
+        expect(ruleset.getMetadataRulesCount()).toStrictEqual(0);
     });
 
     it('returns bad filter rules from constructor', () => {
@@ -714,9 +716,10 @@ describe('Ruleset', () => {
                 async () => JSON.stringify(lazyMetadata),
                 async () => JSON.stringify(declarativeRules),
                 [filter],
-            ));
+            ), 3);
 
             expect(actual.getId()).toBe('rulesetId');
+            expect(actual.getMetadataRulesCount()).toBe(3);
             expect(actual.getSafeRulesCount()).toBe(expected.getSafeRulesCount());
             expect(actual.getUnsafeRulesCount()).toBe(expected.getUnsafeRulesCount());
             expect(actual.getRegexpRulesCount()).toBe(expected.getRegexpRulesCount());
@@ -745,13 +748,11 @@ describe('Ruleset', () => {
             const compactOutput = await ruleset.serializeCompact(await ruleset.getUnsafeRules(), true);
 
             const expected = await restoreFromCompact(compactOutput, filter);
-            const actual = RulesetWithSourceMap.fromCompact(
-                'rulesetId',
-                parseCompactRuleset('rulesetId', JSON.parse(compactOutput)),
-                [filter],
-            );
+            const parsed = parseCompactRuleset('rulesetId', JSON.parse(compactOutput));
+            const actual = RulesetWithSourceMap.fromCompact('rulesetId', parsed, [filter]);
 
             expect(actual.getId()).toBe('rulesetId');
+            expect(actual.getMetadataRulesCount()).toBe(parsed.metadataRulesCount);
             expect(actual.getSafeRulesCount()).toBe(expected.getSafeRulesCount());
             expect(actual.getUnsafeRulesCount()).toBe(expected.getUnsafeRulesCount());
             expect(actual.getRegexpRulesCount()).toBe(expected.getRegexpRulesCount());

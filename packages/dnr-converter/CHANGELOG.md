@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RulesetWithSourceMap.fromCompact()` and
   `RulesetWithSourceMap.fromDeserialized()` build a rule set from
   `parseCompactRuleset()` or `deserialize()` output.
+- `IRulesetWithSourceMap.getMetadataRulesCount()` returns the number of
+  metadata rules in the ruleset file, for static rule quota accounting.
 - `InvalidMetadataChunksError` for missing or malformed metadata rules.
 
 ### Changed

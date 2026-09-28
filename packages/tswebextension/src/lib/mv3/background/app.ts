@@ -4,6 +4,7 @@ import {
     Filter,
     getRulesetId,
     type IFilter,
+    type IRulesetWithSourceMap,
     METADATA_RULESET_ID,
     RULESET_NAME_PREFIX,
 } from '@adguard/dnr-converter';
@@ -36,13 +37,12 @@ import { type LocalScriptFunctionData, localScriptRulesService } from './service
 import { removeParamInjectionService } from './services/remove-param-injection-service';
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { SessionRulesApi } from './session-rules-api';
-import { type IStaticRuleset } from './static-ruleset';
 import { type ITrustedFilter } from './trusted-filter';
 import { WebRequestApi } from './web-request-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
-    staticFilters: IStaticRuleset[];
+    staticFilters: IRulesetWithSourceMap[];
     dynamicRules?: ConversionResult;
     stealthResult?: StealthConfigurationResult;
 };
@@ -754,13 +754,13 @@ export class TsWebExtension implements AppInterface<
      * @param rulesetsPath Path to the rule set metadata.
      * @param staticFilters List of static {@link IFilter}.
      *
-     * @returns A list of static {@link IStaticRuleset}, or an empty list if an error
+     * @returns A list of static {@link IRulesetWithSourceMap}, or an empty list if an error
      * occurred during the rule scanning step.
      */
     private static async loadStaticRulesets(
         rulesetsPath: ConfigurationMV3['rulesetsPath'],
         staticFilters: IFilter[],
-    ): Promise<IStaticRuleset[]> {
+    ): Promise<IRulesetWithSourceMap[]> {
         // Wrap filters into rule sets
         const rulesetsLoaderApi = new RulesetsLoaderApi(rulesetsPath);
         const manifest = browser.runtime.getManifest();

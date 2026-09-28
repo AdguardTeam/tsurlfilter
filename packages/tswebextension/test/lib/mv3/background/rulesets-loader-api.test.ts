@@ -281,6 +281,7 @@ const expectSameRuleset = async (
     expect(actual.getSafeRulesCount()).toBe(expected.getSafeRulesCount());
     expect(actual.getUnsafeRulesCount()).toBe(expected.getUnsafeRulesCount());
     expect(actual.getRegexpRulesCount()).toBe(expected.getRegexpRulesCount());
+    expect(actual.getMetadataRulesCount()).toBe(expected.getMetadataRulesCount());
     expect(await actual.getUnsafeRules()).toEqual(await expected.getUnsafeRules());
     expect(actual.getBadFilterRules().map((rule) => rule.getText()))
         .toEqual(expected.getBadFilterRules().map((rule) => rule.getText()));

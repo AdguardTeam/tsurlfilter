@@ -54,6 +54,17 @@ export interface IRulesetWithSourceMap extends IBaseRuleset {
     getRulesHashMap(): IRulesHashMap;
 
     /**
+     * Returns the number of metadata rules at the beginning of the ruleset
+     * file the rule set was read from. They are static DNR rules too and take
+     * static rules quota, but are not counted by
+     * {@link IBaseRuleset.getSafeRulesCount}. 0 for a rule set that was not
+     * read from a file, e.g. right after conversion.
+     *
+     * @returns Number of metadata rules.
+     */
+    getMetadataRulesCount(): number;
+
+    /**
      * For provided source returns list of ids of converted declarative rule.
      *
      * @param source Source rule index and filter id.
@@ -264,6 +275,11 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     private readonly regexpRulesCount: number = 0;
 
     /**
+     * Number of metadata rules in the ruleset file the rule set was read from.
+     */
+    private readonly metadataRulesCount: number;
+
+    /**
      * Source map for declarative rules.
      */
     private sourceMap: ISourceMap | undefined;
@@ -308,6 +324,8 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      * @param badFilterRules List of rules with $badfilter modifier.
      * @param rulesHashMap Dictionary with hashes for all source rules.
      * @param unsafeRules List of unsafe DNR rules.
+     * @param metadataRulesCount Number of metadata rules in the ruleset file
+     * the rule set was read from, 0 if it was not read from a file.
      */
     constructor(
         id: string,
@@ -318,6 +336,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         badFilterRules: Rule[],
         rulesHashMap: IRulesHashMap,
         unsafeRules: DeclarativeRule[],
+        metadataRulesCount = 0,
     ) {
         this.id = id;
         this.safeRulesCount = safeRulesCount;
@@ -327,6 +346,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         this.badFilterRules = badFilterRules;
         this.rulesHashMap = rulesHashMap;
         this.unsafeRules = unsafeRules;
+        this.metadataRulesCount = metadataRulesCount;
         this.contentLoader = new LazyLoader<void>(async () => {
             const {
                 loadSourceMap,
@@ -362,6 +382,11 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     /** @inheritdoc */
     public getRegexpRulesCount(): number {
         return this.regexpRulesCount;
+    }
+
+    /** @inheritdoc */
+    public getMetadataRulesCount(): number {
+        return this.metadataRulesCount;
     }
 
     /** @inheritdoc */
@@ -617,8 +642,8 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      *
      * @param rulesetId Id of rule set.
      * @param content Parsed content of the ruleset file: `metadata`,
-     * `lazyMetadata` and ordinary `declarativeRules`, as returned by
-     * {@link parseCompactRuleset}.
+     * `lazyMetadata`, ordinary `declarativeRules` and `metadataRulesCount`, as
+     * returned by {@link parseCompactRuleset}.
      * @param filterList List of {@link IFilter} the rule set was converted from.
      *
      * @returns Rule set ready to use.
@@ -631,6 +656,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         rulesetId: string,
         content: Pick<CompactRulesetEnvelope, 'metadata' | 'lazyMetadata'> & {
             declarativeRules: DeclarativeRule[];
+            metadataRulesCount: number;
         },
         filterList: IFilter[],
     ): RulesetWithSourceMap {
@@ -647,7 +673,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
             id: rulesetId,
             data,
             rulesetContentProvider,
-        });
+        }, content.metadataRulesCount);
     }
 
     /**
@@ -657,6 +683,9 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      * constructor.
      *
      * @param deserialized Deserialized rule set data and content provider.
+     * @param metadataRulesCount Number of metadata rules in the ruleset file
+     * the data was read from, `metadataRulesCount` of
+     * {@link parseCompactRuleset}.
      *
      * @returns Rule set ready to use.
      *
@@ -666,7 +695,10 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      * Both come unwrapped: the data is produced by this converter, so such an
      * error is a producer bug, not an unavailable source.
      */
-    public static fromDeserialized(deserialized: DeserializedRuleset): RulesetWithSourceMap {
+    public static fromDeserialized(
+        deserialized: DeserializedRuleset,
+        metadataRulesCount: number,
+    ): RulesetWithSourceMap {
         const { id, data, rulesetContentProvider } = deserialized;
 
         // Rules with `$badfilter` are used only for matching, not for source
@@ -684,6 +716,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
             badFilterRules,
             rulesHashMap,
             data.unsafeRules,
+            metadataRulesCount,
         );
     }
 

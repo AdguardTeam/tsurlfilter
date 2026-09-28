@@ -7,6 +7,7 @@ import {
     getRulesetPath,
     type IFilter,
     InvalidMetadataChunksError,
+    type IRulesetWithSourceMap,
     METADATA_RULESET_ID,
     MetadataRuleset,
     parseCompactRuleset,
@@ -18,10 +19,8 @@ import { IdbSingleton } from '../../common/idb-singleton';
 import { FiltersStorage } from '../../common/storage/filters';
 import { logger } from '../../common/utils/logger';
 
-import { type IStaticRuleset } from './static-ruleset';
-
 /**
- * RulesetsLoaderApi is responsible for creating {@link IStaticRuleset} instances
+ * RulesetsLoaderApi is responsible for creating {@link IRulesetWithSourceMap} instances
  * from provided rule set IDs and paths.
  * It supports lazy loading, meaning the rule set contents are loaded only upon request.
  * This class implements a two-layer caching strategy to optimize performance:
@@ -35,7 +34,7 @@ import { type IStaticRuleset } from './static-ruleset';
  *
  * 2. **In-Memory Cache**: Fast access layer for frequently accessed data within a session
  *    - `idbChecksumsCache`: Caches checksums from IDB with composite keys `<rulesetsPath>_<rulesetId>`
- *    - `rulesetsCache`: Caches fully created IStaticRuleset instances
+ *    - `rulesetsCache`: Caches fully created IRulesetWithSourceMap instances
  *    - `metadataRulesetsCache`: Caches metadata rule sets by path
  *    - It is empty after every service worker restart.
  *
@@ -52,7 +51,7 @@ import { type IStaticRuleset } from './static-ruleset';
  * - Initializing the rule sets loader to prepare it for fetching rule sets.
  * - Fetching checksums of rule sets from disk (source of truth).
  * - Synchronizing rule sets with IDB when checksums change.
- * - Creating new {@link IStaticRuleset} instances with lazy loading capabilities.
+ * - Creating new {@link IRulesetWithSourceMap} instances with lazy loading capabilities.
  *
  * @example
  * ```typescript
@@ -105,7 +104,7 @@ export class RulesetsLoaderApi {
      * Cache for already created rulesets. Needed to avoid multiple loading
      * of the same ruleset.
      */
-    private static rulesetsCache: Map<string, IStaticRuleset>;
+    private static rulesetsCache: Map<string, IRulesetWithSourceMap>;
 
     /**
      * Path to rule sets cache directory to invalidate it when path changes.
@@ -433,14 +432,14 @@ export class RulesetsLoaderApi {
 
     /**
      * If the rule set with the provided ID is already loaded, it will
-     * be returned from the cache. Otherwise, it will create a new {@link IStaticRuleset}
+     * be returned from the cache. Otherwise, it will create a new {@link IRulesetWithSourceMap}
      * from the provided ID and list of {@link IFilter|filters} with lazy
      * loading of this rule set contents.
      *
      * @param rulesetId Rule set id.
      * @param filterList List of all available {@link IFilter|filters}.
      *
-     * @returns New {@link IStaticRuleset}.
+     * @returns New {@link IRulesetWithSourceMap}.
      *
      * @throws If initialization fails, the rule set with the provided ID is not
      * found or invalid, or its number of metadata rules is missing in IDB.
@@ -448,7 +447,7 @@ export class RulesetsLoaderApi {
     public async createRuleset(
         rulesetId: string,
         filterList: IFilter[],
-    ): Promise<IStaticRuleset> {
+    ): Promise<IRulesetWithSourceMap> {
         const rulesetIdNumber = extractRulesetId(rulesetId);
 
         if (rulesetIdNumber === null) {
@@ -483,13 +482,13 @@ export class RulesetsLoaderApi {
             RulesetsLoaderApi.getKey(RulesetsLoaderApi.KEY_PREFIX_RULESET_DECLARATIVE_RULES, rulesetId),
         );
 
-        const ruleset = RulesetWithSourceMap.fromDeserialized(await RulesetWithSourceMap.deserialize(
+        const deserialized = await RulesetWithSourceMap.deserialize(
             rulesetId,
             rawData,
             loadLazyData,
             loadDeclarativeRules,
             filterList,
-        ));
+        );
 
         // The count is written together with the checksum, so a missing count
         // means the cache was synced by a version that did not write it, from
@@ -501,17 +500,13 @@ export class RulesetsLoaderApi {
             throw new Error(message);
         }
 
-        const staticRuleset = Object.assign(ruleset, {
-            getMetadataRulesCount: (): number => {
-                return metadataRulesCount;
-            },
-        });
+        const ruleset = RulesetWithSourceMap.fromDeserialized(deserialized, metadataRulesCount);
 
         if (filterList.some((f) => f.getId() === rulesetIdNumber)) {
             // We save the rule set in the cache only if its filter is loaded.
-            RulesetsLoaderApi.rulesetsCache.set(rulesetId, staticRuleset);
+            RulesetsLoaderApi.rulesetsCache.set(rulesetId, ruleset);
         }
 
-        return staticRuleset;
+        return ruleset;
     }
 }

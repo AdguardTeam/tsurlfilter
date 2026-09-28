@@ -38,8 +38,9 @@ expectType<RulesetWithSourceMap>(
     RulesetWithSourceMap.fromCompact('ruleset_1', {} as CompactRulesetContent, []),
 );
 expectType<RulesetWithSourceMap>(
-    RulesetWithSourceMap.fromDeserialized({} as DeserializedRuleset),
+    RulesetWithSourceMap.fromDeserialized({} as DeserializedRuleset, 0),
 );
+expectType<number>(({} as IRulesetWithSourceMap).getMetadataRulesCount());
 expectType<typeof MetadataRuleset>(MetadataRuleset);
 expectType<0>(METADATA_RULESET_ID);
 

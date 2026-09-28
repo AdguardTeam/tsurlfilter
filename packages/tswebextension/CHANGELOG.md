@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `getMetadataRulesCount()` on the static rule sets in `ConfigurationResult.staticFilters`
-  (type `IStaticRuleset`): the number of metadata rules of the rule set file.
+- `getMetadataRulesCount()` on the static rule sets in `ConfigurationResult.staticFilters`:
+  the number of metadata rules of the rule set file.
 
 ### Changed
 

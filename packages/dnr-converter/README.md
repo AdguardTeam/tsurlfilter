@@ -275,10 +275,11 @@ const rulesToDisable = await converter.computeRulesToDisable(
 | `getRulesById(id)` | `Promise<SourceRuleAndFilterId[]>` | Source rules for a DNR rule |
 | `getBadFilterRules()` | `NetworkRule[]` | `$badfilter` rules in this set |
 | `getRulesHashMap()` | `IRulesHashMap` | Hash map for fast `$badfilter` matching |
+| `getMetadataRulesCount()` | `number` | Metadata rules in the ruleset file the rule set was read from (0 if not read from a file) |
 | `serializeCompact(unsafeRules, prettyPrint?)` | `Promise<string>` | Ruleset file in the [compact ruleset file format](#compact-ruleset-file-format) |
 | `unloadContent()` | `void` | Release lazy-loaded content |
 | `RulesetWithSourceMap.fromCompact(id, content, filters)` | `RulesetWithSourceMap` | Build a rule set from `parseCompactRuleset()` output |
-| `RulesetWithSourceMap.fromDeserialized(deserialized)` | `RulesetWithSourceMap` | Build a rule set from `RulesetWithSourceMap.deserialize()` output |
+| `RulesetWithSourceMap.fromDeserialized(deserialized, metadataRulesCount)` | `RulesetWithSourceMap` | Build a rule set from `RulesetWithSourceMap.deserialize()` output |
 
 ```ts
 import type { ConversionResult } from '@adguard/dnr-converter';
@@ -342,11 +343,13 @@ ordinary rules on first load, with the same schemas as
 in memory for its whole lifetime; `unloadContent()` does not release it.
 
 When the parts are stored as strings, for example in IndexedDB, load them
-lazily with `deserialize()` and build the rule set with `fromDeserialized()`:
+lazily with `deserialize()` and build the rule set with `fromDeserialized()`,
+passing the stored `metadataRulesCount`:
 
 ```ts
 const ruleset = RulesetWithSourceMap.fromDeserialized(
     await RulesetWithSourceMap.deserialize(id, rawData, loadLazyData, loadDeclarativeRules, filters),
+    metadataRulesCount,
 );
 ```
 
