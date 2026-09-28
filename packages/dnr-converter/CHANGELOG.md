@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.0.0-beta.0] - 2026-09-28
+
+### Added
+
 - `parseCompactRuleset()` reads a parsed ruleset file: metadata, ordinary
   rules and the number of metadata rules.
 - `RulesetWithSourceMap.fromCompact()` and
@@ -26,15 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ruleset_0`. 1.x and 2.x ruleset files are incompatible; rebuild rulesets
   with this version.
 
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
-
 [MicrosoftEdge-Extensions#603]: https://github.com/microsoft/MicrosoftEdge-Extensions/issues/603
+[2.0.0-beta.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-converter-v2.0.0-beta.0
 
 ## [1.1.2] - 2026-08-25
 
