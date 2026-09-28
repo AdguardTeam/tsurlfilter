@@ -15,8 +15,8 @@ import { LazyLoader } from '../utils/lazy-loader';
 import { serializeJson } from '../utils/string';
 import { strictObjectByType } from '../utils/valibot';
 
-import { createMetadataRule } from './metadata-rule';
-import { type IRulesHashMap } from './rules-hash-map';
+import { MetadataRules } from './metadata-rule';
+import { type IRulesHashMap, RulesHashMap } from './rules-hash-map';
 import { type ISourceMap, SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
 import { type IBaseRuleset, type SourceRuleAndFilterId } from './types';
 
@@ -54,6 +54,17 @@ export interface IRulesetWithSourceMap extends IBaseRuleset {
     getRulesHashMap(): IRulesHashMap;
 
     /**
+     * Returns the number of metadata rules at the beginning of the ruleset
+     * file the rule set was read from. They are static DNR rules too and take
+     * static rules quota, but are not counted by
+     * {@link IBaseRuleset.getSafeRulesCount}. 0 for a rule set that was not
+     * read from a file, e.g. right after conversion.
+     *
+     * @returns Number of metadata rules.
+     */
+    getMetadataRulesCount(): number;
+
+    /**
      * For provided source returns list of ids of converted declarative rule.
      *
      * @param source Source rule index and filter id.
@@ -86,7 +97,11 @@ export interface IRulesetWithSourceMap extends IBaseRuleset {
     unloadContent(): void;
 
     /**
-     * Serializes rule set to a single file.
+     * Serializes rule set to a single file: a JSON array that starts with
+     * metadata rules carrying the serialized {@link CompactRulesetEnvelope}
+     * in `metadata.chunk` fragments (each `metadata` value at most 64 KiB),
+     * followed by the ordinary declarative rules. Metadata rules take the
+     * smallest ids not used by ordinary rules or by `unsafeRules`.
      *
      * @param unsafeRules List of unsafe rules to add to the serialized output.
      * Number of unsafe rules will be excluded from the counter of declarative
@@ -153,6 +168,28 @@ export type SerializedRulesetData = {
     rulesetHashMapRaw: string;
     badFilterRulesRaw: string[];
     unsafeRules: DeclarativeRule[];
+};
+
+/**
+ * Payload of a filter ruleset file written by
+ * {@link RulesetWithSourceMap.serializeCompact}: it is serialized to JSON,
+ * split into fragments and stored in the leading metadata rules of the file.
+ */
+export type CompactRulesetEnvelope = {
+    /**
+     * Data needed to create the ruleset instantly.
+     */
+    metadata: SerializedRulesetData;
+
+    /**
+     * Data needed only to find and show source rules.
+     */
+    lazyMetadata: SerializedRulesetLazyData;
+
+    /**
+     * Original filter text.
+     */
+    filterContent: string;
 };
 
 /**
@@ -238,6 +275,11 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     private readonly regexpRulesCount: number = 0;
 
     /**
+     * Number of metadata rules in the ruleset file the rule set was read from.
+     */
+    private readonly metadataRulesCount: number;
+
+    /**
      * Source map for declarative rules.
      */
     private sourceMap: ISourceMap | undefined;
@@ -282,6 +324,8 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
      * @param badFilterRules List of rules with $badfilter modifier.
      * @param rulesHashMap Dictionary with hashes for all source rules.
      * @param unsafeRules List of unsafe DNR rules.
+     * @param metadataRulesCount Number of metadata rules in the ruleset file
+     * the rule set was read from, 0 if it was not read from a file.
      */
     constructor(
         id: string,
@@ -292,6 +336,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         badFilterRules: Rule[],
         rulesHashMap: IRulesHashMap,
         unsafeRules: DeclarativeRule[],
+        metadataRulesCount = 0,
     ) {
         this.id = id;
         this.safeRulesCount = safeRulesCount;
@@ -301,6 +346,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         this.badFilterRules = badFilterRules;
         this.rulesHashMap = rulesHashMap;
         this.unsafeRules = unsafeRules;
+        this.metadataRulesCount = metadataRulesCount;
         this.contentLoader = new LazyLoader<void>(async () => {
             const {
                 loadSourceMap,
@@ -336,6 +382,11 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
     /** @inheritdoc */
     public getRegexpRulesCount(): number {
         return this.regexpRulesCount;
+    }
+
+    /** @inheritdoc */
+    public getMetadataRulesCount(): number {
+        return this.metadataRulesCount;
     }
 
     /** @inheritdoc */
@@ -558,18 +609,157 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
         loadDeclarativeRules: () => Promise<string>,
         filterList: IFilter[],
     ): Promise<DeserializedRuleset> {
-        let data: SerializedRulesetData;
+        const data = RulesetWithSourceMap.parseData(id, () => JSON.parse(rawData));
 
+        const rulesetContentProvider = RulesetWithSourceMap.createContentProvider(
+            id,
+            async () => JSON.parse(await loadLazyData()),
+            async () => JSON.parse(await loadDeclarativeRules()),
+            filterList,
+        );
+
+        return {
+            id,
+            data,
+            rulesetContentProvider,
+        };
+    }
+
+    /**
+     * Creates a rule set from the content of a compact ruleset file read by
+     * {@link parseCompactRuleset}, without serializing its parts back to
+     * strings. The metadata is validated at once with the same schema as in
+     * {@link RulesetWithSourceMap.deserialize}; the lazy metadata and the
+     * declarative rules are validated when the content is first loaded.
+     *
+     * The rule set keeps references to `content.lazyMetadata` and
+     * `content.declarativeRules` for its whole lifetime, so the parsed file
+     * stays in memory. Calling {@link RulesetWithSourceMap.unloadContent}
+     * releases only the validated copies made on load, not this content. When
+     * the content must be released, for example in a long-running extension,
+     * keep it in storage and use {@link RulesetWithSourceMap.deserialize} with
+     * loaders instead.
+     *
+     * @param rulesetId Id of rule set.
+     * @param content Parsed content of the ruleset file: `metadata`,
+     * `lazyMetadata`, ordinary `declarativeRules` and `metadataRulesCount`, as
+     * returned by {@link parseCompactRuleset}.
+     * @param filterList List of {@link IFilter} the rule set was converted from.
+     *
+     * @returns Rule set ready to use.
+     *
+     * @throws Error {@link UnavailableRulesetSourceError} if the metadata does
+     * not match {@link SerializedRulesetData}. Errors of
+     * {@link RulesetWithSourceMap.fromDeserialized} come unwrapped.
+     */
+    public static fromCompact(
+        rulesetId: string,
+        content: Pick<CompactRulesetEnvelope, 'metadata' | 'lazyMetadata'> & {
+            declarativeRules: DeclarativeRule[];
+            metadataRulesCount: number;
+        },
+        filterList: IFilter[],
+    ): RulesetWithSourceMap {
+        const data = RulesetWithSourceMap.parseData(rulesetId, () => content.metadata);
+
+        const rulesetContentProvider = RulesetWithSourceMap.createContentProvider(
+            rulesetId,
+            async () => content.lazyMetadata,
+            async () => content.declarativeRules,
+            filterList,
+        );
+
+        return RulesetWithSourceMap.fromDeserialized({
+            id: rulesetId,
+            data,
+            rulesetContentProvider,
+        }, content.metadataRulesCount);
+    }
+
+    /**
+     * Creates a rule set from the result of
+     * {@link RulesetWithSourceMap.deserialize}: builds the `$badfilter` rules
+     * and the rules hash map from the serialized data and calls the
+     * constructor.
+     *
+     * @param deserialized Deserialized rule set data and content provider.
+     * @param metadataRulesCount Number of metadata rules in the ruleset file
+     * the data was read from, `metadataRulesCount` of
+     * {@link parseCompactRuleset}.
+     *
+     * @returns Rule set ready to use.
+     *
+     * @throws Error if a `$badfilter` rule text cannot be parsed
+     * ({@link Rule.createFromText}), and `SyntaxError` if the serialized rules
+     * hash map is not valid JSON ({@link RulesHashMap.deserializeSources}).
+     * Both come unwrapped: the data is produced by this converter, so such an
+     * error is a producer bug, not an unavailable source.
+     */
+    public static fromDeserialized(
+        deserialized: DeserializedRuleset,
+        metadataRulesCount: number,
+    ): RulesetWithSourceMap {
+        const { id, data, rulesetContentProvider } = deserialized;
+
+        // Rules with `$badfilter` are used only for matching, not for source
+        // attribution, so filter id and rule index are not needed.
+        const badFilterRules = data.badFilterRulesRaw.flatMap((rawRule) => Rule.createFromText(0, 0, rawRule));
+
+        const rulesHashMap = new RulesHashMap(RulesHashMap.deserializeSources(data.rulesetHashMapRaw));
+
+        return new RulesetWithSourceMap(
+            id,
+            data.safeRulesCount,
+            data.unsafeRulesCount,
+            data.regexpRulesCount,
+            rulesetContentProvider,
+            badFilterRules,
+            rulesHashMap,
+            data.unsafeRules,
+            metadataRulesCount,
+        );
+    }
+
+    /**
+     * Validates serialized rule set data.
+     *
+     * @param id Id of rule set.
+     * @param getData Returns the data to validate; parsing errors thrown by it
+     * are wrapped as well.
+     *
+     * @returns Validated rule set data.
+     *
+     * @throws Error {@link UnavailableRulesetSourceError} if the data cannot be
+     * obtained or does not match {@link SerializedRulesetData}.
+     */
+    private static parseData(id: string, getData: () => unknown): SerializedRulesetData {
         try {
-            const objectFromString = JSON.parse(rawData);
-            data = v.parse(serializedRulesetDataValidator, objectFromString);
+            return v.parse(serializedRulesetDataValidator, getData());
         } catch (e) {
             // eslint-disable-next-line max-len
             const msg = `Cannot parse serialized ruleset's data with id "${id}", got error: ${getErrorMessage(e)}`;
 
             throw new UnavailableRulesetSourceError(msg, id, e as Error);
         }
+    }
 
+    /**
+     * Creates a content provider that loads and validates the lazy metadata
+     * once and validates declarative rules on each load.
+     *
+     * @param id Id of rule set.
+     * @param loadLazyData Loads the parsed {@link SerializedRulesetLazyData}.
+     * @param loadDeclarativeRules Loads the parsed list of declarative rules.
+     * @param filterList List of {@link IFilter}.
+     *
+     * @returns Rule set content provider.
+     */
+    private static createContentProvider(
+        id: string,
+        loadLazyData: () => Promise<unknown>,
+        loadDeclarativeRules: () => Promise<unknown>,
+        filterList: IFilter[],
+    ): RulesetContentProvider {
         /**
          * This variable is used as a singleton for all three functions
          * (`loadSourceMap`, `loadFilterList`, `loadDeclarativeRules`) to load
@@ -583,11 +773,7 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
             }
 
             try {
-                const lazyData = await loadLazyData();
-
-                const objectFromString = JSON.parse(lazyData);
-
-                const parsed = v.parse(serializedRulesetLazyDataValidator, objectFromString);
+                const parsed = v.parse(serializedRulesetLazyDataValidator, await loadLazyData());
                 deserializedLazyData = parsed;
 
                 return parsed;
@@ -599,37 +785,22 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
             }
         };
 
-        const deserialized: DeserializedRuleset = {
-            id,
-            data,
-            rulesetContentProvider: {
-                loadSourceMap: async () => {
-                    const { sourceMapRaw } = await getLazyData();
-                    const sources = SourceMap.deserializeSources(sourceMapRaw);
+        return {
+            loadSourceMap: async () => {
+                const { sourceMapRaw } = await getLazyData();
+                const sources = SourceMap.deserializeSources(sourceMapRaw);
 
-                    return new SourceMap(sources);
-                },
-                loadFilterList: async () => {
-                    const { filterIds } = await getLazyData();
+                return new SourceMap(sources);
+            },
+            loadFilterList: async () => {
+                const { filterIds } = await getLazyData();
 
-                    return filterList.filter((filter: IFilter) => filterIds.includes(filter.getId()));
-                },
-                loadDeclarativeRules: async () => {
-                    const rawFileContent = await loadDeclarativeRules();
-
-                    const objectFromString = JSON.parse(rawFileContent);
-
-                    const declarativeRules = v.parse(
-                        v.array(DeclarativeRuleValidator),
-                        objectFromString,
-                    );
-
-                    return declarativeRules;
-                },
+                return filterList.filter((filter: IFilter) => filterIds.includes(filter.getId()));
+            },
+            loadDeclarativeRules: async () => {
+                return v.parse(v.array(DeclarativeRuleValidator), await loadDeclarativeRules());
             },
         };
-
-        return deserialized;
     }
 
     /**
@@ -714,32 +885,26 @@ export class RulesetWithSourceMap implements IRulesetWithSourceMap {
             throw new Error(msg);
         }
 
-        const metadataRule = createMetadataRule({
+        const envelope: CompactRulesetEnvelope = {
             metadata: this.getSerializedRulesetData(unsafeRules),
             lazyMetadata: this.getSerializedRulesetLazyData(),
             filterContent: content,
-        });
+        };
 
-        // Insert metadata rule at the beginning of the rules array without
-        // "unshifting" it to avoid mutating the internal state of the Ruleset,
-        // which could lead to issues if serializeCompact is called multiple times.
-        let declarativeRules: DeclarativeRule[] = [];
-        declarativeRules = declarativeRules.concat(metadataRule);
+        const unsafeIds = new Set(unsafeRules.map((rule) => rule.id));
 
-        const convertedRules = await this.getDeclarativeRules();
-        declarativeRules = declarativeRules.concat(convertedRules);
+        // Exclude unsafe rules from declarative rules. `filter()` returns a
+        // new array, so the internal state of the ruleset is never mutated
+        // and repeated calls stay independent.
+        const declarativeRules = (await this.getDeclarativeRules()).filter((rule) => !unsafeIds.has(rule.id));
 
-        // Exclude unsafe rules from declarative rules if any are provided.
-        if (unsafeRules.length > 0) {
-            const unsafeRulesIds = new Set(unsafeRules.map((rule) => rule.id));
+        // Metadata rules take the smallest ids not used by any rule of the
+        // file, including the unsafe rules stored inside the metadata, so
+        // no id appears twice anywhere in the ruleset.
+        const usedIds = new Set([...unsafeIds, ...declarativeRules.map((rule) => rule.id)]);
 
-            declarativeRules = declarativeRules.filter((rule) => {
-                return !unsafeRulesIds.has(rule.id);
-            });
-        }
+        const metadataRules = MetadataRules.create(envelope, usedIds, prettyPrint);
 
-        const result = serializeJson(declarativeRules, prettyPrint);
-
-        return result;
+        return serializeJson([...metadataRules, ...declarativeRules], prettyPrint);
     }
 }

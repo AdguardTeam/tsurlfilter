@@ -133,7 +133,7 @@ export function hasSpaces(str: string): boolean {
 /**
  * Tab character used for pretty printing.
  */
-const TAB = '\t';
+export const TAB = '\t';
 
 /**
  * Serializes data to a JSON string.

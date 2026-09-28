@@ -31,6 +31,8 @@ export {
     UnavailableFilterSourceError,
     UnavailableRulesetSourceError,
 } from './errors/unavailable-sources-errors';
+export { InvalidMetadataChunksError } from './errors/metadata-errors';
+export { type CompactRulesetContent, parseCompactRuleset } from './ruleset/compact-ruleset';
 export { MetadataRuleset, METADATA_RULESET_ID } from './ruleset/metadata-ruleset';
 export { type HttpHeaderMatcher, Rule } from './rule/rule';
 export { RuleDeclarativeValidator } from './rule/rule-validator';
