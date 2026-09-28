@@ -9,7 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `parseCompactRuleset()` reads a parsed ruleset file: metadata, ordinary
+  rules and the number of metadata rules.
+- `RulesetWithSourceMap.fromCompact()` and
+  `RulesetWithSourceMap.fromDeserialized()` build a rule set from
+  `parseCompactRuleset()` or `deserialize()` output.
+- `InvalidMetadataChunksError` for missing or malformed metadata rules.
+
 ### Changed
+
+- **BREAKING:** Ruleset metadata is split into `metadata.chunk` fragments of
+  at most 64 KiB in leading metadata rules, so that Edge Add-ons accepts MV3
+  packages [MicrosoftEdge-Extensions#603]. Applies to filter rulesets and
+  `ruleset_0`. 1.x and 2.x ruleset files are incompatible; rebuild rulesets
+  with this version.
 
 ### Deprecated
 
@@ -18,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+[MicrosoftEdge-Extensions#603]: https://github.com/microsoft/MicrosoftEdge-Extensions/issues/603
 
 ## [1.1.2] - 2026-08-25
 
