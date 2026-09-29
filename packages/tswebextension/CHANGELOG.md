@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `getMetadataRulesCount()` on the static rule sets in `ConfigurationResult.staticFilters`:
+  the number of metadata rules of the rule set file.
+
 ### Changed
+
+- Updated [@adguard/dnr-converter] to `v2.0.0`.
+- **BREAKING:** Rule set metadata is read from `metadata.chunk` rules written by
+  `@adguard/dnr-converter` 2.x; rule sets built with 1.x are no longer supported.
 
 ### Deprecated
 
