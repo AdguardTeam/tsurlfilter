@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **BREAKING:** Updated [@adguard/dnr-converter] to `v2.0.0`: ruleset metadata is split into
-  chunks, each `metadata` value at most 64 KiB.
+- Updated [@adguard/dnr-converter] to `v2.0.0`.
+- **BREAKING:** Ruleset metadata is split into `metadata.chunk` fragments of
+  at most 64 KiB; reading the rulesets requires `@adguard/dnr-converter` 2.x.
 
 ### Deprecated
 
