@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Updated [@adguard/tswebextension] to `v6.0.0`.
+- **BREAKING:** Rule sets must be built with `@adguard/dnr-converter` 2.x,
+  e.g. `@adguard/dnr-rulesets` 6.x.
+
 ### Deprecated
 
 ### Removed
